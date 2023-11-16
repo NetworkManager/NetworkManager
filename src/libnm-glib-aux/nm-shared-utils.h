@@ -2996,21 +2996,28 @@ nm_strvarray_ensure(GArray **p)
         *p = g_array_new(TRUE, FALSE, sizeof(char *));
         g_array_set_clear_func(*p, nm_indirect_g_free);
     } else
-        nm_assert(g_array_get_element_size(*p) == sizeof(char *));
+        nm_assert(sizeof(char *) == g_array_get_element_size(*p));
 
     return *p;
 }
 
 static inline void
+nm_strvarray_add_take(GArray *array, char *str)
+{
+    nm_assert(array);
+    nm_assert(sizeof(char *) == g_array_get_element_size(array));
+
+    /* The array is used as a NULL terminated strv array. Adding NULL is most
+     * likely a bug. Assert against it. */
+    nm_assert(str);
+
+    g_array_append_val(array, str);
+}
+
+static inline void
 nm_strvarray_add(GArray *array, const char *str)
 {
-    char *s;
-
-    nm_assert(array);
-    nm_assert(g_array_get_element_size(array) == sizeof(char *));
-
-    s = g_strdup(str);
-    g_array_append_val(array, s);
+    nm_strvarray_add_take(array, g_strdup(str));
 }
 
 static inline const char *
@@ -3036,7 +3043,7 @@ nm_strvarray_get_idx(GArray *array, guint idx)
 static inline const char *const *
 nm_strvarray_get_strv_non_empty(GArray *arr, guint *length)
 {
-    nm_assert(!arr || g_array_get_element_size(arr) == sizeof(char *));
+    nm_assert(!arr || sizeof(char *) == g_array_get_element_size(arr));
 
     if (!arr || arr->len == 0) {
         NM_SET_OUT(length, 0);
@@ -3052,7 +3059,7 @@ nm_strvarray_get_strv_non_empty_dup(GArray *arr, guint *length)
 {
     const char *const *strv;
 
-    nm_assert(!arr || g_array_get_element_size(arr) == sizeof(char *));
+    nm_assert(!arr || sizeof(char *) == g_array_get_element_size(arr));
 
     if (!arr || arr->len == 0) {
         NM_SET_OUT(length, 0);
@@ -3072,7 +3079,7 @@ nm_strvarray_get_strv(GArray **arr, guint *length)
         return (const char *const *) arr;
     }
 
-    nm_assert(g_array_get_element_size(*arr) == sizeof(char *));
+    nm_assert(sizeof(char *) == g_array_get_element_size(*arr));
 
     NM_SET_OUT(length, (*arr)->len);
     return &g_array_index(*arr, const char *, 0);
@@ -3085,7 +3092,7 @@ nm_strvarray_set_strv(GArray **array, const char *const *strv)
 
     array_old = g_steal_pointer(array);
 
-    nm_assert(!array_old || g_array_get_element_size(array_old) == sizeof(char *));
+    nm_assert(!array_old || sizeof(char *) == g_array_get_element_size(array_old));
 
     if (!strv || !strv[0])
         return;
@@ -3103,7 +3110,7 @@ nm_strvarray_find_first(GArray *strv, const char *needle)
     nm_assert(needle);
 
     if (strv) {
-        nm_assert(g_array_get_element_size(strv) == sizeof(char *));
+        nm_assert(sizeof(char *) == g_array_get_element_size(strv));
         for (i = 0; i < strv->len; i++) {
             if (nm_streq(needle, g_array_index(strv, const char *, i)))
                 return i;
@@ -3111,6 +3118,8 @@ nm_strvarray_find_first(GArray *strv, const char *needle)
     }
     return -1;
 }
+
+#define nm_strvarray_contains(strv, needle) (nm_strvarray_find_first((strv), (needle)) >= 0)
 
 static inline gboolean
 nm_strvarray_remove_first(GArray *strv, const char *needle)
@@ -3126,11 +3135,42 @@ nm_strvarray_remove_first(GArray *strv, const char *needle)
     return TRUE;
 }
 
+#define nm_strvarray_remove_index(strv, idx)                          \
+    G_STMT_START                                                      \
+    {                                                                 \
+        GArray *const _strv = (strv);                                 \
+        typeof(idx)   _idx  = (idx);                                  \
+                                                                      \
+        nm_assert(_strv);                                             \
+        nm_assert((uintmax_t) _idx < _strv->len);                     \
+        nm_assert(sizeof(char *) == g_array_get_element_size(_strv)); \
+                                                                      \
+        g_array_remove_index(_strv, (guint) _idx);                    \
+    }                                                                 \
+    G_STMT_END
+
+static inline void
+nm_strvarray_ensure_and_add(GArray **p, const char *str)
+{
+    nm_strvarray_add(nm_strvarray_ensure(p), str);
+}
+
+static inline gboolean
+nm_strvarray_ensure_and_add_unique(GArray **p, const char *str)
+{
+    nm_assert(p);
+
+    if (nm_strvarray_contains(*p, str))
+        return FALSE;
+    nm_strvarray_add(nm_strvarray_ensure(p), str);
+    return TRUE;
+}
+
 static inline int
 nm_strvarray_cmp(const GArray *a, const GArray *b)
 {
-    nm_assert(!a || sizeof(const char *const *) == g_array_get_element_size((GArray *) a));
-    nm_assert(!b || sizeof(const char *const *) == g_array_get_element_size((GArray *) b));
+    nm_assert(!a || sizeof(char *) == g_array_get_element_size((GArray *) a));
+    nm_assert(!b || sizeof(char *) == g_array_get_element_size((GArray *) b));
 
     NM_CMP_SELF(a, b);
 
@@ -3142,7 +3182,7 @@ nm_strvarray_cmp(const GArray *a, const GArray *b)
 static inline int
 _nm_strvarray_cmp_strv(const GArray *strv, const char *const *ss, gsize ss_len)
 {
-    nm_assert(!strv || sizeof(const char *const *) == g_array_get_element_size((GArray *) strv));
+    nm_assert(!strv || sizeof(char *) == g_array_get_element_size((GArray *) strv));
 
     return nm_strv_cmp_n(nm_g_array_data(strv), strv ? ((gssize) strv->len) : -1, ss, ss_len);
 }
@@ -3151,6 +3191,24 @@ _nm_strvarray_cmp_strv(const GArray *strv, const char *const *ss, gsize ss_len)
 
 #define nm_strvarray_equal_strv(strv, ss, ss_len) \
     (nm_strvarray_cmp_strv((strv), (ss), (ss_len)) == 0)
+
+static inline gboolean
+nm_strvarray_clear(GArray **array)
+{
+    gboolean cleared = FALSE;
+
+    nm_assert(array);
+    nm_assert(!*array || sizeof(char *) == g_array_get_element_size(*array));
+
+    if (*array) {
+        /* We always clear the GArray, but we return TRUE only if the
+         * array was non-empty before. */
+        if ((*array)->len > 0)
+            cleared = TRUE;
+        nm_clear_pointer(array, g_array_unref);
+    }
+    return cleared;
+}
 
 /*****************************************************************************/
 

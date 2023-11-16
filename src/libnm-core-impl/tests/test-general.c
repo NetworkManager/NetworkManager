@@ -5335,7 +5335,8 @@ test_setting_ip4_changed_signal(void)
     ASSERT_CHANGED(nm_setting_ip_config_add_dns_search(s_ip4, "foobar.com"));
     ASSERT_CHANGED(nm_setting_ip_config_remove_dns_search(s_ip4, 0));
 
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(idx >= 0 && idx < priv->dns_search->len));
+    NMTST_EXPECT_LIBNM_CRITICAL(
+        NMTST_G_RETURN_MSG(idx >= 0 && idx < nm_g_array_len(priv->dns_search.arr)));
     ASSERT_UNCHANGED(nm_setting_ip_config_remove_dns_search(s_ip4, 1));
     g_test_assert_expected_messages();
 
@@ -5410,9 +5411,22 @@ test_setting_ip6_changed_signal(void)
     ASSERT_CHANGED(nm_setting_ip_config_clear_dns(s_ip6));
 
     ASSERT_CHANGED(nm_setting_ip_config_add_dns_search(s_ip6, "foobar.com"));
+
+    g_assert_cmpstr(nm_setting_ip_config_get_dns_search(s_ip6, 0), ==, "foobar.com");
+    g_assert_cmpstr(nm_setting_ip_config_get_dns_search(s_ip6, 1), ==, NULL);
+
+    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(_idx <= _len));
+    g_assert_cmpstr(nm_setting_ip_config_get_dns_search(s_ip6, -1), ==, NULL);
+    g_test_assert_expected_messages();
+
+    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(_idx <= _len));
+    g_assert_cmpstr(nm_setting_ip_config_get_dns_search(s_ip6, 2), ==, NULL);
+    g_test_assert_expected_messages();
+
     ASSERT_CHANGED(nm_setting_ip_config_remove_dns_search(s_ip6, 0));
 
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(idx >= 0 && idx < priv->dns_search->len));
+    NMTST_EXPECT_LIBNM_CRITICAL(
+        NMTST_G_RETURN_MSG(idx >= 0 && idx < nm_g_array_len(priv->dns_search.arr)));
     ASSERT_UNCHANGED(nm_setting_ip_config_remove_dns_search(s_ip6, 1));
     g_test_assert_expected_messages();
 
