@@ -1863,10 +1863,15 @@ nm_strv_make_deep_copied_nonnull(const char **strv)
     return nm_strv_make_deep_copied(strv) ?: nm_strv_empty_new();
 }
 
-char **_nm_strv_dup(const char *const *strv, gssize len, gboolean deep_copied);
+char **_nm_strv_dup_full(const char *const *strv,
+                         gssize             len,
+                         gboolean           deep_copied,
+                         gboolean           preserve_empty);
 
-#define nm_strv_dup(strv, len, deep_copied) \
-    _nm_strv_dup(NM_CAST_STRV_CC(strv), (len), (deep_copied))
+#define nm_strv_dup_full(strv, len, deep_copied, preserve_empty) \
+    _nm_strv_dup_full(NM_CAST_STRV_CC(strv), (len), (deep_copied), (preserve_empty))
+
+#define nm_strv_dup(strv, len, deep_copied) nm_strv_dup_full((strv), (len), (deep_copied), FALSE)
 
 const char **_nm_strv_dup_packed(const char *const *strv, gssize len);
 
