@@ -332,9 +332,10 @@ gboolean nm_utils_memeqzero(gconstpointer data, gsize length);
 
 extern const void *const _NM_PTRARRAY_EMPTY[1];
 
-#define NM_PTRARRAY_EMPTY(type) ((type const *) _NM_PTRARRAY_EMPTY)
-#define NM_STRV_EMPTY()         ((char **) _NM_PTRARRAY_EMPTY)
-#define NM_STRV_EMPTY_CC()      NM_PTRARRAY_EMPTY(const char *)
+#define NM_PTRARRAY_EMPTY(type)     ((type const *) _NM_PTRARRAY_EMPTY)
+#define NM_STRV_EMPTY()             ((char **) _NM_PTRARRAY_EMPTY)
+#define NM_STRV_EMPTY_CC()          NM_PTRARRAY_EMPTY(const char *)
+#define NM_PTRARRAY_EMPTY_NEW(type) (g_new0(type, 1))
 
 static inline void
 nm_strbuf_init(char *buf, gsize len, char **p_buf_ptr, gsize *p_buf_len)
@@ -1849,6 +1850,8 @@ int nm_utils_hashtable_cmp(const GHashTable *a,
                            GCompareDataFunc  cmp_keys,
                            GCompareDataFunc  cmp_values,
                            gpointer          user_data);
+
+#define nm_strv_empty_new() NM_PTRARRAY_EMPTY_NEW(char *)
 
 char **nm_strv_make_deep_copied(const char **strv);
 
