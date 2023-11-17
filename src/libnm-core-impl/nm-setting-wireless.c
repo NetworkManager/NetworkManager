@@ -963,7 +963,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         return FALSE;
     }
 
-    if (priv->cloned_mac_address && !NM_CLONED_MAC_IS_SPECIAL(priv->cloned_mac_address)
+    if (priv->cloned_mac_address && !NM_CLONED_MAC_IS_SPECIAL(priv->cloned_mac_address, TRUE)
         && !nm_utils_hwaddr_valid(priv->cloned_mac_address, ETH_ALEN)) {
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
@@ -1542,12 +1542,14 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * This is known as MAC cloning or spoofing.
      *
      * Beside explicitly specifying a MAC address, the special values "preserve", "permanent",
-     * "random" and "stable" are supported.
+     * "random", "stable" and "stable-ssid" are supported.
      * "preserve" means not to touch the MAC address on activation.
      * "permanent" means to use the permanent hardware address of the device.
      * "random" creates a random MAC address on each connect.
      * "stable" creates a hashed MAC address based on connection.stable-id and a
      * machine dependent key.
+     * "stable-ssid" creates a hashed MAC address based on the SSID, the same as setting the
+     * stable-id to "${NETWORK_SSID}".
      *
      * If unspecified, the value can be overwritten via global defaults, see manual
      * of NetworkManager.conf. If still unspecified, it defaults to "preserve"

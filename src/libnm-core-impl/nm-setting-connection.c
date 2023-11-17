@@ -1928,13 +1928,15 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * The '$' character is treated special to perform dynamic substitutions at
      * activation time. Currently, supported are "${CONNECTION}", "${DEVICE}",
-     * "${MAC}", "${BOOT}", "${RANDOM}".  These effectively create unique IDs
-     * per-connection, per-device, per-boot, or every time. The "${CONNECTION}"
-     * uses the profile's connection.uuid, the "${DEVICE}" uses the interface
-     * name of the device and "${MAC}" the permanent MAC address of the device.
-     * Any unrecognized patterns following '$' are treated verbatim, however
-     * are reserved for future use. You are thus advised to avoid '$' or escape
-     * it as "$$".  For example, set it to "${CONNECTION}-${BOOT}-${DEVICE}" to
+     * "${MAC}", "${NETWORK_SSID}", "${BOOT}", "${RANDOM}".  These effectively
+     * create unique IDs per-connection, per-device, per-SSID, per-boot, or
+     * every time.  The "${CONNECTION}" uses the profile's connection.uuid, the
+     * "${DEVICE}" uses the interface name of the device and "${MAC}" the
+     * permanent MAC address of the device. "${NETWORK_SSID}" uses the SSID for
+     * Wi-Fi networks and falls back to "${CONNECTION}" on other networks. Any
+     * unrecognized patterns following '$' are treated verbatim, however are
+     * reserved for future use. You are thus advised to avoid '$' or escape it
+     * as "$$".  For example, set it to "${CONNECTION}-${BOOT}-${DEVICE}" to
      * create a unique id for this connection that changes with every reboot
      * and differs depending on the interface where the profile activates.
      *

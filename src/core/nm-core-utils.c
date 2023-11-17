@@ -3397,6 +3397,7 @@ nm_utils_stable_id_parse(const char *stable_id,
                          const char *hwaddr,
                          const char *bootid,
                          const char *uuid,
+                         GBytes     *ssid,
                          char      **out_generated)
 {
     nm_auto_str_buf NMStrBuf str = NM_STR_BUF_INIT_A(NM_UTILS_GET_NEXT_REALLOC_SIZE_232, FALSE);
@@ -3482,7 +3483,29 @@ nm_utils_stable_id_parse(const char *stable_id,
             _stable_id_append(&str, deviceid);
         else if (CHECK_PREFIX("${MAC}"))
             _stable_id_append(&str, hwaddr);
-        else if (g_str_has_prefix(&stable_id[i], "${RANDOM}")) {
+        else if (CHECK_PREFIX("${NETWORK_SSID}")) {
+            gs_free char *value_free = NULL;
+            gs_free char *s          = NULL;
+            const char   *value;
+            const char   *type_id;
+
+            if (ssid) {
+                type_id = "s:";
+                value   = nm_utils_buf_utf8safe_escape_bytes(ssid,
+                                                           NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL,
+                                                           &value_free);
+            } else {
+                /* If we have no SSID, we fallback to the connection's UUID.
+                 *
+                 * Give a separate prefix (@type_id), so that an SSID and a UUID
+                 * fallback never result in the same output. */
+                type_id = "c:";
+                value   = uuid ?: "";
+            }
+
+            s = g_strjoin("", type_id, value, NULL);
+            _stable_id_append(&str, s);
+        } else if (g_str_has_prefix(&stable_id[i], "${RANDOM}")) {
             /* RANDOM makes not so much sense for cloned-mac-address
              * as the result is similar to specifying "cloned-mac-address=random".
              * It makes however sense for RFC 7217 Stable Privacy IPv6 addresses
@@ -3521,6 +3544,12 @@ nm_utils_stable_id_parse(const char *stable_id,
         nm_str_buf_append_len(&str, &stable_id[idx_start], i - idx_start);
     *out_generated = nm_str_buf_finalize(&str, NULL);
     return NM_UTILS_STABLE_TYPE_GENERATED;
+}
+
+NMUtilsStableType
+nm_utils_stable_id_parse_network_ssid(GBytes *ssid, const char *uuid, char **out_stable_id)
+{
+    return nm_utils_stable_id_parse("${NETWORK_SSID}", NULL, NULL, NULL, uuid, ssid, out_stable_id);
 }
 
 /*****************************************************************************/

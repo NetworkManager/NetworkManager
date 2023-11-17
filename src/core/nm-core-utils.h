@@ -313,7 +313,11 @@ NMUtilsStableType nm_utils_stable_id_parse(const char *stable_id,
                                            const char *hwaddr,
                                            const char *bootid,
                                            const char *uuid,
+                                           GBytes     *ssid,
                                            char      **out_generated);
+
+NMUtilsStableType
+nm_utils_stable_id_parse_network_ssid(GBytes *ssid, const char *uuid, char **out_stable_id);
 
 char *nm_utils_stable_id_random(void);
 char *nm_utils_stable_id_generated_complete(const char *msg);

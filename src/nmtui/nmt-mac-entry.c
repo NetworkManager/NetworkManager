@@ -90,8 +90,10 @@ mac_validator(NmtNewtEntry *entry, const char *text, gpointer user_data)
     if (!*text)
         return TRUE;
 
-    if (priv->entry_type == NMT_MAC_ENTRY_TYPE_CLONED) {
-        if (NM_CLONED_MAC_IS_SPECIAL(text))
+    if (NM_IN_SET(priv->entry_type,
+                  NMT_MAC_ENTRY_TYPE_CLONED_ETHERNET,
+                  NMT_MAC_ENTRY_TYPE_CLONED_WIFI)) {
+        if (NM_CLONED_MAC_IS_SPECIAL(text, priv->entry_type == NMT_MAC_ENTRY_TYPE_CLONED_WIFI))
             return TRUE;
     }
 
@@ -237,7 +239,7 @@ nmt_mac_entry_class_init(NmtMacEntryClass *entry_class)
                          "",
                          "",
                          NMT_MAC_ENTRY_TYPE_MAC,
-                         NMT_MAC_ENTRY_TYPE_CLONED,
+                         NMT_MAC_ENTRY_TYPE_CLONED_WIFI,
                          NMT_MAC_ENTRY_TYPE_MAC,
                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
 }

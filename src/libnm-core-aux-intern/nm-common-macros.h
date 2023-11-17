@@ -34,19 +34,28 @@
     "org.freedesktop.NetworkManager.enable-disable-connectivity-check"
 #define NM_AUTH_PERMISSION_WIFI_SCAN "org.freedesktop.NetworkManager.wifi.scan"
 
-#define NM_CLONED_MAC_PRESERVE  "preserve"
-#define NM_CLONED_MAC_PERMANENT "permanent"
-#define NM_CLONED_MAC_RANDOM    "random"
-#define NM_CLONED_MAC_STABLE    "stable"
+#define NM_CLONED_MAC_PRESERVE    "preserve"
+#define NM_CLONED_MAC_PERMANENT   "permanent"
+#define NM_CLONED_MAC_RANDOM      "random"
+#define NM_CLONED_MAC_STABLE      "stable"
+#define NM_CLONED_MAC_STABLE_SSID "stable-ssid"
 
 static inline gboolean
-NM_CLONED_MAC_IS_SPECIAL(const char *str)
+NM_CLONED_MAC_IS_SPECIAL(const char *str, gboolean is_wifi)
 {
-    return NM_IN_STRSET(str,
-                        NM_CLONED_MAC_PRESERVE,
-                        NM_CLONED_MAC_PERMANENT,
-                        NM_CLONED_MAC_RANDOM,
-                        NM_CLONED_MAC_STABLE);
+    if (NM_IN_STRSET(str,
+                     NM_CLONED_MAC_PRESERVE,
+                     NM_CLONED_MAC_PERMANENT,
+                     NM_CLONED_MAC_RANDOM,
+                     NM_CLONED_MAC_STABLE))
+        return TRUE;
+
+    if (is_wifi) {
+        if (NM_IN_STRSET(str, NM_CLONED_MAC_STABLE_SSID))
+            return TRUE;
+    }
+
+    return FALSE;
 }
 
 #define NM_IAID_MAC      "mac"

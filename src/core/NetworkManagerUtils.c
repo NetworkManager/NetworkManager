@@ -670,9 +670,9 @@ check_connection_cloned_mac_address(NMConnection *orig,
         cand_mac = nm_setting_wired_get_cloned_mac_address(s_wired_cand);
 
     /* special cloned mac address entries are accepted. */
-    if (NM_CLONED_MAC_IS_SPECIAL(orig_mac))
+    if (NM_CLONED_MAC_IS_SPECIAL(orig_mac, FALSE))
         orig_mac = NULL;
-    if (NM_CLONED_MAC_IS_SPECIAL(cand_mac))
+    if (NM_CLONED_MAC_IS_SPECIAL(cand_mac, FALSE))
         cand_mac = NULL;
 
     if (!orig_mac || !cand_mac) {
