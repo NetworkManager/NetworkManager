@@ -1091,6 +1091,15 @@ GPtrArray *_nm_utils_ip4_addresses_from_variant(GVariant *value,
                                                 bool      strict,
                                                 GError  **error);
 
+char **_nm_utils_ip6_dns_from_variant(GVariant *value, bool strict, GError **error);
+
+GPtrArray *_nm_utils_ip6_addresses_from_variant(GVariant *value,
+                                                char    **out_gateway,
+                                                bool      strict,
+                                                GError  **error);
+
+GPtrArray *_nm_utils_ip6_routes_from_variant(GVariant *value, bool strict, GError **error);
+
 GPtrArray *
 _nm_utils_ip_addresses_from_variant(GVariant *value, int family, bool strict, GError **error);
 
