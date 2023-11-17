@@ -2536,6 +2536,21 @@ nm_strv_ptrarray_get_unsafe(GPtrArray *arr, guint *out_len)
     return (const char *const *) arr->pdata;
 }
 
+static inline char **
+nm_strv_ptrarray_to_strv_full(const GPtrArray *a, gboolean not_null)
+{
+    if (!a)
+        return not_null ? nm_strv_empty_new() : NULL;
+    return nm_strv_dup_full((const char *const *) a->pdata, a->len, TRUE, TRUE);
+}
+
+static inline char **
+nm_strv_ptrarray_to_strv(const GPtrArray *a)
+{
+    /* Returns never NULL ("not_null"!) */
+    return nm_strv_ptrarray_to_strv_full(a, TRUE);
+}
+
 static inline GPtrArray *
 nm_strv_ptrarray_clone(const GPtrArray *src, gboolean null_if_empty)
 {
