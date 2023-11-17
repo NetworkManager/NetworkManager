@@ -357,6 +357,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_iptunnel = NML_DBUS_META_I
                                       PROP_FLOW_LABEL,
                                       NMDeviceIPTunnel,
                                       _priv.flow_label),
+        NML_DBUS_META_PROPERTY_INIT_IGNORE("FwMark", "u"),
         NML_DBUS_META_PROPERTY_INIT_S("InputKey",
                                       PROP_INPUT_KEY,
                                       NMDeviceIPTunnel,
