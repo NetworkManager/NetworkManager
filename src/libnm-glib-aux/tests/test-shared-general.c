@@ -450,7 +450,7 @@ _strv_cmp_fuzz_input(const char *const  *in,
         if (l < 0)
             ss = g_strdupv((char **) in);
         else if (l == 0) {
-            ss = nmtst_get_rand_bool() ? NULL : g_new0(char *, 1);
+            ss = nmtst_get_rand_bool() ? NULL : nm_strv_empty_new();
         } else {
             ss = nm_memdup(in, sizeof(const char *) * l);
             for (i = 0; i < (gsize) l; i++)

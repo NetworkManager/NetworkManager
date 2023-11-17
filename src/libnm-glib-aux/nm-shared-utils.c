@@ -1937,7 +1937,7 @@ nm_utils_strsplit_quoted(const char *str)
     }
 
     if (!arr)
-        return g_new0(char *, 1);
+        return nm_strv_empty_new();
 
     /* We want to return an optimally sized strv array, with no excess
      * memory allocated. Hence, clone once more. */

@@ -103,7 +103,7 @@ nm_vpn_editor_plugin_get_service_add_details(NMVpnEditorPlugin *plugin, const ch
     if (vt.fcn_get_service_add_details)
         details = vt.fcn_get_service_add_details(plugin, service_name);
     if (!details)
-        return g_new0(char *, 1);
+        return nm_strv_empty_new();
     return details;
 }
 

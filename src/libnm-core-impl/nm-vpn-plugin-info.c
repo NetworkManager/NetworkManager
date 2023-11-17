@@ -728,7 +728,7 @@ nm_vpn_plugin_info_list_get_service_types(GSList  *list,
 
     if (l->len <= 0) {
         g_ptr_array_free(l, TRUE);
-        return g_new0(char *, 1);
+        return nm_strv_empty_new();
     }
 
     /* sort the result and remove duplicates. */

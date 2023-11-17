@@ -194,7 +194,7 @@ nmt_address_list_set_property(GObject      *object,
         g_strfreev(priv->strings);
         priv->strings = g_value_dup_boxed(value);
         if (!priv->strings)
-            priv->strings = g_new0(char *, 1);
+            priv->strings = nm_strv_empty_new();
         nmt_widget_list_set_length(NMT_WIDGET_LIST(object), g_strv_length(priv->strings));
         break;
     default:
