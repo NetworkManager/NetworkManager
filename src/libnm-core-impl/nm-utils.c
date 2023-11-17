@@ -1446,25 +1446,37 @@ nm_utils_ip4_addresses_to_variant(GPtrArray *addresses, const char *gateway)
 GPtrArray *
 nm_utils_ip4_addresses_from_variant(GVariant *value, char **out_gateway)
 {
-    return _nm_utils_ip4_addresses_from_variant(value, out_gateway, FALSE, NULL);
+    return _nm_utils_ip4_addresses_from_variant(value, NULL, out_gateway, FALSE, NULL);
 }
 
 /**
  * _nm_utils_ip4_addresses_from_variant:
  * @value: a #GVariant of type 'aau'
+ * @labels: (optional) (nullable): a #GVariant of the type 'as'. If not-NULL,
+ *   each element must contain a string with the labels that corresponds to each
+ *   IP address in @value.
  * @out_gateway: (out) (optional) (nullable) (transfer full): on return, will
  *   contain the IP gateway
  * @strict: whether to parse in strict mode or best-effort mode
  * @error: the error location
  *
  * Like #nm_utils_ip4_addresses_from_variant, but allows to parse in strict mode. In
- * strict mode, parsing is aborted on first error and %NULL is returned.
+ * strict mode, parsing is aborted on first error and %NULL is returned. It also
+ * allows to parse the address-labels at the same time than the addresses.
+ *
+ * The labels need to be processed at the same time than the addresses, inside
+ * this function, because if there are invalid addresses they are filtered out,
+ * and the returned array of addresses contains less elements than the original
+ * array. If that happens, the caller don't know what label corresponds to what
+ * address, because they are matched by position in the array. If you are not
+ * interested in the labels, just set @labels to NULL.
  *
  * Returns: (transfer full) (element-type NMIPAddress): a newly allocated
  *   #GPtrArray of #NMIPAddress objects. In strict mode, %NULL is returned on error.
  */
 GPtrArray *
 _nm_utils_ip4_addresses_from_variant(GVariant *value,
+                                     GVariant *labels,
                                      char    **out_gateway,
                                      bool      strict,
                                      GError  **error)
@@ -1475,6 +1487,8 @@ _nm_utils_ip4_addresses_from_variant(GVariant *value,
     const guint32               *addr_array;
     gsize                        length;
     NMIPAddress                 *addr;
+    const char                  *label;
+    gsize                        n_labels = 0;
     guint                        i;
 
     addresses = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_address_unref);
@@ -1491,6 +1505,21 @@ _nm_utils_ip4_addresses_from_variant(GVariant *value,
         }
         return g_steal_pointer(&addresses);
     }
+
+    if (labels && !g_variant_is_of_type(labels, G_VARIANT_TYPE("as"))) {
+        if (strict) {
+            g_set_error_literal(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                _("Expected \"address-labels\" of type \"as\""));
+            return NULL;
+        }
+        /* We still can parse the addresses, without the labels */
+        labels = NULL;
+    }
+
+    if (labels)
+        n_labels = g_variant_n_children(labels);
 
     g_variant_iter_init(&iter, value);
 
@@ -1523,6 +1552,18 @@ _nm_utils_ip4_addresses_from_variant(GVariant *value,
                 return NULL;
             }
             continue;
+        }
+
+        /* We were accepting address-labels to be shorter than addresses, so
+         * let's continue doing so and not consider it as an error */
+        if (labels && i < n_labels) {
+            g_variant_get_child(labels, i, "&s", &label);
+
+            if (label && label[0]) {
+                nm_ip_address_set_attribute(addr,
+                                            NM_IP_ADDRESS_ATTRIBUTE_LABEL,
+                                            g_variant_new_string(label));
+            }
         }
 
         g_ptr_array_add(addresses, addr);
