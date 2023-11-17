@@ -49,7 +49,7 @@ Coding Style
 
 The formatting is automated using [clang-format](https://clang.llvm.org/docs/ClangFormat.html).
 Run `./contrib/scripts/nm-code-format.sh -i` ([[1]](contrib/scripts/nm-code-format.sh)) to reformat
-the code or run `clang-format` directly.
+the code or run `clang-format` directly. Pass `--help` for the list of options.
 
 As the generated format depends on the version of clang-format, you need to use the
 correct clang-format version. That is basically the version that our [gitlab-ci
@@ -58,6 +58,7 @@ for the "check-tree" test. This is the version from a recent Fedora installation
 
 You may also run `./contrib/scripts/nm-code-format-container.sh` which uses a
 Fedora container with podman and the correct version of clang-format.
+This accepts the same arguments as `./contrib/scripts/nm-code-format.sh`.
 
 You are welcome to not bother and open a merge request with wrong formatting,
 but note that we then will automatically adjust your contribution before
