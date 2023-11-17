@@ -177,17 +177,13 @@ _nml_dbus_log(NMLDBusLogLevel level, gboolean use_stdout, const char *fmt, ...)
         break;
     case NML_DBUS_LOG_LEVEL_WARN:
         prefix = "<warn > ";
-        if (NM_FLAGS_HAS(configured_log_level, NML_DBUS_LOG_ASSERT)) {
+        if (NM_FLAGS_HAS(configured_log_level, NML_DBUS_LOG_ASSERT))
             g_warning("libnm-dbus: %s%s", prefix, msg);
-            return;
-        }
         break;
     case NML_DBUS_LOG_LEVEL_ERROR:
         prefix = "<error> ";
-        if (NM_FLAGS_HAS(configured_log_level, NML_DBUS_LOG_ASSERT)) {
+        if (NM_FLAGS_HAS(configured_log_level, NML_DBUS_LOG_ASSERT))
             g_critical("libnm-dbus: %s%s", prefix, msg);
-            return;
-        }
         break;
     default:
         break;
