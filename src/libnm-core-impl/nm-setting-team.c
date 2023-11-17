@@ -1384,8 +1384,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         break;
     case NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_HASH:
         v_ptrarr = priv->team_setting->d.master.runner_tx_hash;
-        g_value_take_boxed(value,
-                           v_ptrarr ? _nm_utils_ptrarray_to_strv((GPtrArray *) v_ptrarr) : NULL);
+        g_value_take_boxed(value, nm_strv_ptrarray_to_strv_full(v_ptrarr, FALSE));
         break;
     case NM_TEAM_ATTRIBUTE_LINK_WATCHERS:
         g_value_take_boxed(value,

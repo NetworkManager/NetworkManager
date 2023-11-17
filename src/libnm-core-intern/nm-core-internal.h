@@ -347,8 +347,6 @@ GPtrArray *_nm_utils_copy_object_array(const GPtrArray *array);
 GSList *nm_strv_to_gslist(char **strv, gboolean deep_copy);
 char  **_nm_utils_slist_to_strv(const GSList *slist, gboolean deep_copy);
 
-char     **_nm_utils_ptrarray_to_strv(const GPtrArray *ptrarray);
-
 gboolean _nm_utils_check_file(const char               *filename,
                               gint64                    check_owner,
                               NMUtilsCheckFilePredicate check_file,
