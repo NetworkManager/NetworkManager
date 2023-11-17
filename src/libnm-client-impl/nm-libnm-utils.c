@@ -30,8 +30,12 @@ _nml_dbus_log_level_init(void)
     const GDebugKey keys[] = {
         {"trace", _NML_DBUS_LOG_LEVEL_TRACE},
         {"debug", _NML_DBUS_LOG_LEVEL_DEBUG},
+        {"warn", _NML_DBUS_LOG_LEVEL_WARN},
         {"warning", _NML_DBUS_LOG_LEVEL_WARN},
         {"error", _NML_DBUS_LOG_LEVEL_ERROR},
+        {"WARN", _NML_DBUS_LOG_LEVEL_WARN | NML_DBUS_LOG_ASSERT},
+        {"WARNING", _NML_DBUS_LOG_LEVEL_WARN | NML_DBUS_LOG_ASSERT},
+        {"ERROR", _NML_DBUS_LOG_LEVEL_ERROR | NML_DBUS_LOG_ASSERT},
         {"stdout", NML_DBUS_LOG_STDOUT},
     };
     int l;
@@ -167,19 +171,15 @@ _nml_dbus_log(NMLDBusLogLevel level, gboolean use_stdout, const char *fmt, ...)
         break;
     case NML_DBUS_LOG_LEVEL_WARN:
         prefix = "<warn > ";
-        if (NM_FLAGS_HAS(configured_log_level, _NML_DBUS_LOG_LEVEL_WARN)) {
+        if (NM_FLAGS_HAS(configured_log_level, NML_DBUS_LOG_ASSERT)) {
             g_warning("libnm-dbus: %s%s", prefix, msg);
             return;
         }
         break;
     case NML_DBUS_LOG_LEVEL_ERROR:
         prefix = "<error> ";
-        if (NM_FLAGS_HAS(configured_log_level, _NML_DBUS_LOG_LEVEL_ERROR)) {
+        if (NM_FLAGS_HAS(configured_log_level, NML_DBUS_LOG_ASSERT)) {
             g_critical("libnm-dbus: %s%s", prefix, msg);
-            return;
-        }
-        if (NM_FLAGS_HAS(configured_log_level, _NML_DBUS_LOG_LEVEL_WARN)) {
-            g_warning("libnm-dbus: %s%s", prefix, msg);
             return;
         }
         break;
@@ -987,10 +987,26 @@ nm_utils_g_param_spec_is_default(const GParamSpec *pspec)
  * with these functions (it implements additional buffering). By
  * using nm_utils_print(), the same logging mechanisms can be used.
  *
- * Also, libnm honors LIBNM_CLIENT_DEBUG_FILE environment. If this
- * is set to a filename pattern (accepting "%p" for the process ID),
- * then the debug log is written to that file instead. With @output_mode
- * zero, the same location will be written. Since: 1.44.
+ * LIBNM_CLIENT_DEBUG is a list of keywords separated by commas. The keyword
+ * "trace" enables printing messages of the lowest up to the highest severity.
+ * Likewise, the severities "debug", "warn" ("warning") and "error" are honored
+ * in similar way. Setting the flags "ERROR" or "WARN" ("WARNING") implies that
+ * respective levels are enabled, but also are ERROR messages printed with
+ * g_critical() and WARN messages with g_warning(). Together with G_DEBUG="fatal-warnings"
+ * or G_DEBUG="fatal-critical" this can be used to abort the program on errors.
+ * Note that all &lt;error&gt; messages imply an unexpected data on the D-Bus API
+ * (due to a bug). &lt;warn&gt; also implies unexepected data, but that can happen
+ * when using different versions of libnm and daemon. For testing, it is
+ * good to turn these into assertions.
+ *
+ * By default, messages are printed to stderr, unless LIBNM_CLIENT_DEBUG
+ * contains "stdout" flag. Also, libnm honors LIBNM_CLIENT_DEBUG_FILE
+ * environment. If this is set to a filename pattern (accepting "%%p" for the
+ * process ID), then the debug log is written to that file instead of
+ * stderr/stdout. With @output_mode zero, the same location will be written.
+ *
+ * LIBNM_CLIENT_DEBUG_FILE is supported since 1.44. "ERROR", "WARN" and "WARNING"
+ * are supported since 1.46.
  *
  * Since: 1.30
  */
