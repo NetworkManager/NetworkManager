@@ -65,6 +65,11 @@ usage() {
     printf "    -F|--fast          Same as \`-u HEAD^\`.\n"
     printf "    --show-filenames   Only print the filenames that would be checked/formatted\n"
     printf "    --                 Separate options from filenames/directories\n"
+    if [ -n "${_NM_CODE_FORMAT_CONTAINER+x}" ] ; then
+        printf "\n"
+        printf "Command runs inside container image \"$_NM_CODE_FORMAT_CONTAINER\".\n"
+        printf "Delete/renew image with \`podman rmi \"$_NM_CODE_FORMAT_CONTAINER\"\`.\n"
+    fi
 }
 
 ls_files_exist() {
