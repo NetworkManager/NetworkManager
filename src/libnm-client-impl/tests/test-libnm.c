@@ -3188,6 +3188,10 @@ check_dbus_properties:
                            && nm_streq(pspec->name, NM_DEVICE_WIREGUARD_FWMARK)) {
                     g_assert_cmpstr(obj_property_name, ==, "fw-mark");
                     expected_property_name = NM_DEVICE_WIREGUARD_FWMARK;
+                } else if (mif == &_nml_dbus_meta_iface_nm_device_iptunnel
+                           && nm_streq(pspec->name, NM_DEVICE_IP_TUNNEL_FWMARK)) {
+                    g_assert_cmpstr(obj_property_name, ==, "fw-mark");
+                    expected_property_name = NM_DEVICE_IP_TUNNEL_FWMARK;
                 } else if (NM_IN_SET(mif,
                                      &_nml_dbus_meta_iface_nm_ip4config,
                                      &_nml_dbus_meta_iface_nm_ip6config)
