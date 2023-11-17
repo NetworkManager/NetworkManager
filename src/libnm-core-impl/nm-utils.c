@@ -897,24 +897,6 @@ _nm_utils_slist_to_strv(const GSList *slist, gboolean deep_copy)
     return strv;
 }
 
-GPtrArray *
-nm_strv_to_ptrarray(char **strv)
-{
-    GPtrArray *ptrarray;
-    gsize      i, l;
-
-    l = NM_PTRARRAY_LEN(strv);
-
-    ptrarray = g_ptr_array_new_full(l, g_free);
-
-    if (strv) {
-        for (i = 0; strv[i]; i++)
-            g_ptr_array_add(ptrarray, g_strdup(strv[i]));
-    }
-
-    return ptrarray;
-}
-
 char **
 _nm_utils_ptrarray_to_strv(const GPtrArray *ptrarray)
 {
