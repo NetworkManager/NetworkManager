@@ -14,6 +14,9 @@ Overview of changes since NetworkManager-1.44
   link local addresses on default wired connection.
 * Honor udev property ID_NET_MANAGED_BY to only manage an interface
   when set to "org.freedesktop.NetworkManager".
+* D-Bus methods StartFind() and StopFind() on interface
+  "org.freedesktop.NetworkManager.Device.WifiP2P" now require the
+  "org.freedesktop.NetworkManager.wifi.scan" Polkit permission.
 * Drop build support with Python2. Python3 is now required.
 * nmcli: limit number of printed addresses/routes in `nmcli` overview to 10.
 * Limit number of exported IP addresses/routes on D-Bus to 100 to reduce
