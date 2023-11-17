@@ -26,9 +26,9 @@ typedef enum {
 
     _NML_DBUS_LOG_LEVEL_INITIALIZED = 0x01,
 
-    _NML_DBUS_LOG_LEVEL_TRACE = 0x02,
+    NML_DBUS_LOG_LEVEL_TRACE = 0x02,
 
-    _NML_DBUS_LOG_LEVEL_DEBUG = 0x04,
+    NML_DBUS_LOG_LEVEL_DEBUG = 0x04,
 
     /* the difference between a warning and a critical is that it results in
      * g_warning() vs. g_critical() messages (with NML_DBUS_LOG_ASSERT). Note
@@ -39,21 +39,22 @@ typedef enum {
      * when NetworkManager exposes something on D-Bus that breaks the current
      * expectations. Usually NetworkManager should not break API, hence such
      * issues are more severe. */
-    _NML_DBUS_LOG_LEVEL_WARN  = 0x08,
-    _NML_DBUS_LOG_LEVEL_ERROR = 0x10,
+    NML_DBUS_LOG_LEVEL_WARN  = 0x08,
+    NML_DBUS_LOG_LEVEL_ERROR = 0x10,
 
     /* ANY is only relevant for nml_dbus_log_enabled() to check whether any of the
      * options is on. */
     NML_DBUS_LOG_LEVEL_ANY = _NML_DBUS_LOG_LEVEL_INITIALIZED,
 
-    NML_DBUS_LOG_LEVEL_TRACE = _NML_DBUS_LOG_LEVEL_TRACE,
-    NML_DBUS_LOG_LEVEL_DEBUG = _NML_DBUS_LOG_LEVEL_DEBUG | NML_DBUS_LOG_LEVEL_TRACE,
-    NML_DBUS_LOG_LEVEL_WARN  = _NML_DBUS_LOG_LEVEL_WARN | NML_DBUS_LOG_LEVEL_DEBUG,
-    NML_DBUS_LOG_LEVEL_ERROR = _NML_DBUS_LOG_LEVEL_ERROR | NML_DBUS_LOG_LEVEL_WARN,
-
     NML_DBUS_LOG_STDOUT = 0x20,
 
     NML_DBUS_LOG_ASSERT = 0x40,
+
+    _NML_DBUS_LOG_LEVEL_ERROR = NML_DBUS_LOG_LEVEL_ERROR,
+    _NML_DBUS_LOG_LEVEL_WARN  = NML_DBUS_LOG_LEVEL_WARN | _NML_DBUS_LOG_LEVEL_ERROR,
+    _NML_DBUS_LOG_LEVEL_DEBUG = NML_DBUS_LOG_LEVEL_DEBUG | _NML_DBUS_LOG_LEVEL_WARN,
+    _NML_DBUS_LOG_LEVEL_TRACE = NML_DBUS_LOG_LEVEL_TRACE | _NML_DBUS_LOG_LEVEL_DEBUG,
+
 } NMLDBusLogLevel;
 
 #undef _LOGL_TRACE
@@ -64,7 +65,6 @@ typedef enum {
 
 #define _LOGL_TRACE NML_DBUS_LOG_LEVEL_TRACE
 #define _LOGL_DEBUG NML_DBUS_LOG_LEVEL_DEBUG
-#define _LOGL_INFO  NML_DBUS_LOG_LEVEL_INFO
 #define _LOGL_WARN  NML_DBUS_LOG_LEVEL_WARN
 #define _LOGL_ERR   NML_DBUS_LOG_LEVEL_ERR
 
@@ -90,7 +90,9 @@ nml_dbus_log_enabled_full(NMLDBusLogLevel level, gboolean *out_use_stdout)
         l = _nml_dbus_log_level_init();
 
     nm_assert(l & _NML_DBUS_LOG_LEVEL_INITIALIZED);
+
     NM_SET_OUT(out_use_stdout, NM_FLAGS_HAS(l, NML_DBUS_LOG_STDOUT));
+
     if (level == NML_DBUS_LOG_LEVEL_ANY) {
         return NM_FLAGS_ANY(l,
                             NML_DBUS_LOG_LEVEL_TRACE | NML_DBUS_LOG_LEVEL_DEBUG

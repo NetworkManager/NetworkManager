@@ -151,6 +151,12 @@ _nml_dbus_log(NMLDBusLogLevel level, gboolean use_stdout, const char *fmt, ...)
     gint64          ts;
     pid_t           pid;
 
+    nm_assert(NM_IN_SET(level,
+                        NML_DBUS_LOG_LEVEL_TRACE,
+                        NML_DBUS_LOG_LEVEL_DEBUG,
+                        NML_DBUS_LOG_LEVEL_WARN,
+                        NML_DBUS_LOG_LEVEL_ERROR));
+
     /* we only call _nml_dbus_log() after nml_dbus_log_enabled(), which already does
      * an atomic access to the variable. Since the value is only initialized once and
      * never changes, we can just access it without additional locking. */
