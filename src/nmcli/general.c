@@ -1411,26 +1411,27 @@ device_overview(NmCli *nmc, NMDevice *device)
 static void
 ac_overview(NmCli *nmc, NMActiveConnection *ac)
 {
-    GString                 *outbuf = g_string_sized_new(80);
-    nm_auto_str_buf NMStrBuf str    = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_104, FALSE);
+    nm_auto_str_buf NMStrBuf str = NM_STR_BUF_INIT_A(NM_UTILS_GET_NEXT_REALLOC_SIZE_488, FALSE);
     int                      IS_IPv4;
 
     if (nm_active_connection_get_controller(ac)) {
-        g_string_append_printf(outbuf,
-                               "%s %s, ",
-                               _("master"),
-                               nm_device_get_iface(nm_active_connection_get_controller(ac)));
+        nm_str_buf_append_printf(&str,
+                                 "%s %s, ",
+                                 _("master"),
+                                 nm_device_get_iface(nm_active_connection_get_controller(ac)));
     }
     if (nm_active_connection_get_vpn(ac))
-        g_string_append_printf(outbuf, "%s, ", _("VPN"));
+        nm_str_buf_append_printf(&str, "%s, ", _("VPN"));
     if (nm_active_connection_get_default(ac))
-        g_string_append_printf(outbuf, "%s, ", _("ip4 default"));
+        nm_str_buf_append_printf(&str, "%s, ", _("ip4 default"));
     if (nm_active_connection_get_default6(ac))
-        g_string_append_printf(outbuf, "%s, ", _("ip6 default"));
-    if (outbuf->len >= 2) {
-        g_string_truncate(outbuf, outbuf->len - 2);
-        nmc_print("\t%s\n", outbuf->str);
+        nm_str_buf_append_printf(&str, "%s, ", _("ip6 default"));
+    if (str.len >= 2) {
+        nm_str_buf_set_size(&str, str.len - 2u, TRUE, FALSE);
+        nmc_print("\t%s\n", nm_str_buf_get_str(&str));
     }
+
+    nm_str_buf_reset(&str);
 
     for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
         NMIPConfig      *ip;
@@ -1462,8 +1463,6 @@ ac_overview(NmCli *nmc, NMActiveConnection *ac)
             nmc_print("\troute%c %s\n", IS_IPv4 ? '4' : '6', nm_str_buf_get_str(&str));
         }
     }
-
-    g_string_free(outbuf, TRUE);
 }
 
 void
