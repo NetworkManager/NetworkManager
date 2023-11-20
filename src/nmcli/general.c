@@ -1458,8 +1458,8 @@ ac_overview(NmCli *nmc, NMActiveConnection *ac)
                 /* Print always at least MAX_ADDRESSES fully.
                  * If there are MAX_ADDRESSES+1 addresses, print them all fully.
                  * If there are more addresses, print MAX_ADDRESSES fully, and a
-                 * "N more" line. */
-                nmc_print("\tinet%c ... %u more\n", IS_IPv4 ? '4' : '6', p->len - i - 1u);
+                 * "more" line. */
+                nmc_print("\tinet%c ... more\n", IS_IPv4 ? '4' : '6');
                 break;
             }
         }
@@ -1474,7 +1474,7 @@ ac_overview(NmCli *nmc, NMActiveConnection *ac)
             nmc_print("\troute%c %s\n", IS_IPv4 ? '4' : '6', nm_str_buf_get_str(&str));
 
             if (i >= MAX_ROUTES - 1u && p->len - i > 2u) {
-                nmc_print("\troute%c ... %u more\n", IS_IPv4 ? '4' : '6', p->len - i - 1u);
+                nmc_print("\troute%c ... more\n", IS_IPv4 ? '4' : '6');
                 break;
             }
         }
