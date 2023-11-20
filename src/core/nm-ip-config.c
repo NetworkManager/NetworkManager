@@ -16,6 +16,10 @@
 
 /*****************************************************************************/
 
+#define NOTIFY_PLATFORM_RATELIMIT_MSEC 333
+
+/*****************************************************************************/
+
 GType nm_ip4_config_get_type(void);
 GType nm_ip6_config_get_type(void);
 
@@ -68,6 +72,73 @@ _value_set_variant_as(GValue *value, const char *const *strv, guint len)
 /*****************************************************************************/
 
 static void
+_notify_platform_handle(NMIPConfig *self, gint64 now_msec)
+{
+    NMIPConfigPrivate *priv = NM_IP_CONFIG_GET_PRIVATE(self);
+    guint32            obj_type_flags;
+
+    nm_clear_g_source_inst(&priv->notify_platform_timeout_source);
+
+    priv->notify_platform_rlimited_until_msec = now_msec + NOTIFY_PLATFORM_RATELIMIT_MSEC;
+
+    obj_type_flags = nm_steal_int(&priv->notify_platform_obj_type_flags);
+
+    nm_assert(obj_type_flags != 0u);
+
+    _handle_platform_change(self, obj_type_flags, FALSE);
+}
+
+static gboolean
+_notify_platform_cb(gpointer user_data)
+{
+    _notify_platform_handle(user_data, nm_utils_get_monotonic_timestamp_msec());
+    return G_SOURCE_CONTINUE;
+}
+
+static void
+_notify_platform(NMIPConfig *self, guint32 obj_type_flags)
+{
+    const int          addr_family = nm_ip_config_get_addr_family(self);
+    const int          IS_IPv4     = NM_IS_IPv4(addr_family);
+    NMIPConfigPrivate *priv        = NM_IP_CONFIG_GET_PRIVATE(self);
+    gint64             now_msec;
+
+    obj_type_flags &= (nmp_object_type_to_flags(NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4))
+                       | nmp_object_type_to_flags(NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4)));
+
+    if (obj_type_flags == 0u)
+        return;
+
+    priv->notify_platform_obj_type_flags |= obj_type_flags;
+
+    if (priv->notify_platform_timeout_source) {
+        /* We are currently rate limited. Don't bother to check whether
+         * (now_msec < priv->notify_platform_rlimited_until_msec), just always
+         * delegate to the timeout handler. It is scheduled with a lower idle
+         * priority, so we want that additional backoff. */
+        return;
+    }
+
+    now_msec = nm_utils_get_monotonic_timestamp_msec();
+
+    if (now_msec < priv->notify_platform_rlimited_until_msec) {
+        priv->notify_platform_timeout_source = nm_g_source_attach(
+            /* Schedule with a low G_PRIORITY_LOW. */
+            nm_g_timeout_source_new(priv->notify_platform_rlimited_until_msec - now_msec,
+                                    G_PRIORITY_LOW - 10,
+                                    _notify_platform_cb,
+                                    self,
+                                    NULL),
+            NULL);
+        return;
+    }
+
+    _notify_platform_handle(self, now_msec);
+}
+
+/*****************************************************************************/
+
+static void
 _l3cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMIPConfig *self)
 {
     switch (notify_data->notify_type) {
@@ -76,7 +147,7 @@ _l3cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMIPCo
             _handle_l3cd_changed(self, notify_data->l3cd_changed.l3cd_new);
         break;
     case NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE:
-        _handle_platform_change(self, notify_data->platform_change_on_idle.obj_type_flags, FALSE);
+        _notify_platform(self, notify_data->platform_change_on_idle.obj_type_flags);
         break;
     default:
         break;
@@ -206,6 +277,8 @@ finalize(GObject *object)
 {
     NMIPConfig        *self = NM_IP_CONFIG(object);
     NMIPConfigPrivate *priv = NM_IP_CONFIG_GET_PRIVATE(self);
+
+    nm_clear_g_source_inst(&priv->notify_platform_timeout_source);
 
     nm_clear_g_signal_handler(priv->l3cfg, &priv->l3cfg_notify_id);
 
