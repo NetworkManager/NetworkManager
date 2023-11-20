@@ -192,7 +192,7 @@ def git_ref_commit_body_get_cherry_picked_one(ref):
     body = git_ref_commit_body(ref)
     result = None
     for r in [
-        re_bin("\(cherry picked from commit ([0-9a-z]+)\)"),
+        re_bin("\\(cherry picked from commit ([0-9a-z]+)\\)"),
         re_bin("\\bIgnore-Backport: *([0-9a-z]+)\\b"),
     ]:
         for mo in re.finditer(r, body):
