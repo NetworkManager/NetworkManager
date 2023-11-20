@@ -969,7 +969,7 @@ typedef enum {
  * @NM_CHECKPOINT_CREATE_FLAG_DISCONNECT_NEW_DEVICES: upon rollback,
  *   disconnect any new device appeared after the checkpoint. Since: 1.6.
  * @NM_CHECKPOINT_CREATE_FLAG_ALLOW_OVERLAPPING: by default, creating
- *   a checkpoint fails if there are already existing checkoints that
+ *   a checkpoint fails if there are already existing checkpoints that
  *   reference the same devices. With this flag, creation of such
  *   checkpoints is allowed, however, if an older checkpoint
  *   that references overlapping devices gets rolled back, it will
