@@ -26,8 +26,13 @@ set -e
 # You can run `make install` and run tests.
 # There is a script nm-env-prepare.sh to generate a net1 interface for testing.
 #
-# This will bind-mount the NetworkManager working tree inside the container.
+# This will bind-mount the NetworkManager working tree inside the container (and symlink
+# from /NetworkManager). Create a file ".git/nm-in-container-host" to bind mount the host's
+# "/" to "/Host".
+#
 # Create a symlink ./.git/NetworkManager-ci, to also bind-mount the CI directory.
+# Create additional symlinks ./.git/nm-guest-link-*, to bind mount additional
+# directories.
 #
 # Currently NM-ci requires a working eth1.
 # Hence call `nm-env-prepare.sh --prefix eth -i 1 && sleep 1 && nmcli device connect eth1` before
@@ -46,10 +51,16 @@ fi
 BASEDIR_NM="$(readlink -f "$(dirname "$(readlink -f "$0")")/..")"
 BASEDIR_DATA="$BASEDIR_NM/tools/nm-guest-data"
 
-BASEDIR_NM_CI=
-if [ -d "$BASEDIR_NM/.git/NetworkManager-ci" ] ; then
-    BASEDIR_NM_CI="$(readlink -f "$BASEDIR_NM/.git/NetworkManager-ci")"
-fi
+SYMLINK_NAME=()
+SYMLINK_TARGET=()
+for d in $(ls -1d "$BASEDIR_NM/.git/NetworkManager-ci" "$BASEDIR_NM/.git/nm-guest-link-"* 2>/dev/null) ; do
+    NAME="${d##*/}"
+    NAME="${NAME##nm-guest-link-}"
+    TARGET="$(readlink -f "$d")"
+    test -e "$TARGET"
+    SYMLINK_NAME+=("$NAME")
+    SYMLINK_TARGET+=("$TARGET")
+done
 
 CONTAINER_NAME_REPOSITORY=${CONTAINER_NAME_REPOSITORY:-nm}
 CONTAINER_NAME_TAG=${CONTAINER_NAME_TAG:-nm}
@@ -113,6 +124,17 @@ bind_files() {
     ARR=()
     H=~
 
+    ARR+=( -v "$BASEDIR_NM:$BASEDIR_NM" )
+
+    if [ -e "$BASEDIR_NM/.git/nm-in-container-host" ] ; then
+        ARR+=( -v /:/Host )
+    fi
+
+    for i in $(seq 1 ${#SYMLINK_TARGET[@]}) ; do
+        j=$((i - 1))
+        ARR+=( -v "${SYMLINK_TARGET[$j]}:${SYMLINK_TARGET[$j]}" )
+    done
+
     for f in ~/.gitconfig* ~/.vim* ; do
         test -e "$f" || continue
         f2="${f#$H/}"
@@ -148,10 +170,13 @@ create_dockerfile() {
         RUN_LN_BASEDIR_NM="RUN ln -snf \"$BASEDIR_NM\" /NetworkManager"
     fi
 
-    RUN_LN_BASEDIR_NM_CI=
-    if [ -n "$BASEDIR_NM_CI" -a "$BASEDIR_NM_CI" != "/NetworkManager-ci" ] ; then
-        RUN_LN_BASEDIR_NM_CI="RUN ln -snf \"$BASEDIR_NM_CI\" /NetworkManager-ci"
-    fi
+    RUN_LN_SYMLINK_CMDS=""
+    for i in $(seq 1 ${#SYMLINK_NAME[@]}) ; do
+        j=$((i - 1))
+        if [ -d "${SYMLINK_TARGET[$j]}" ] ; then
+            RUN_LN_SYMLINK_CMDS="$RUN_LN_SYMLINK_CMDS"$'\n'"RUN ln -snf \"${SYMLINK_TARGET[$j]}\" \"/${SYMLINK_NAME[$j]}\""
+        fi
+    done
 
     cat <<EOF | tmp_file "$CONTAINERFILE"
 FROM $BASE_IMAGE
@@ -337,7 +362,7 @@ RUN chmod 600 /var/lib/NetworkManager/secret_key
 RUN sed 's/.*RateLimitBurst=.*/RateLimitBurst=0/' /etc/systemd/journald.conf -i
 
 $RUN_LN_BASEDIR_NM
-$RUN_LN_BASEDIR_NM_CI
+$RUN_LN_SYMLINK_CMDS
 
 RUN rm -rf /etc/NetworkManager/system-connections/*
 
@@ -391,24 +416,18 @@ do_run() {
 
     if container_exists "$CONTAINER_NAME_NAME" ; then
         podman start "$CONTAINER_NAME_NAME"
-    else
-        bind_files BIND_FILES
-
-        BIND_NM_CI=()
-        if [ -n "$BASEDIR_NM_CI" ] ; then
-            BIND_NM_CI=(-v "$BASEDIR_NM_CI:$BASEDIR_NM_CI")
-        fi
-
-        podman run --privileged \
-            --name "$CONTAINER_NAME_NAME" \
-            --dns=none \
-            --no-hosts \
-            -d \
-            -v "$BASEDIR_NM:$BASEDIR_NM" \
-            "${BIND_NM_CI[@]}" \
-            "${BIND_FILES[@]}" \
-            "$CONTAINER_NAME_REPOSITORY:$CONTAINER_NAME_TAG"
+        return 0
     fi
+
+    bind_files BIND_FILES
+
+    podman run --privileged \
+        --name "$CONTAINER_NAME_NAME" \
+        --dns=none \
+        --no-hosts \
+        -d \
+        "${BIND_FILES[@]}" \
+        "$CONTAINER_NAME_REPOSITORY:$CONTAINER_NAME_TAG"
 }
 
 do_exec() {
