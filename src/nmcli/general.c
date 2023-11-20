@@ -1412,6 +1412,8 @@ static void
 ac_overview(NmCli *nmc, NMActiveConnection *ac)
 {
     nm_auto_str_buf NMStrBuf str = NM_STR_BUF_INIT_A(NM_UTILS_GET_NEXT_REALLOC_SIZE_488, FALSE);
+    const guint              MAX_ADDRESSES = 10;
+    const guint              MAX_ROUTES    = 10;
     int                      IS_IPv4;
 
     if (nm_active_connection_get_controller(ac)) {
@@ -1451,6 +1453,15 @@ ac_overview(NmCli *nmc, NMActiveConnection *ac)
                       IS_IPv4 ? '4' : '6',
                       nm_ip_address_get_address(a),
                       nm_ip_address_get_prefix(a));
+
+            if (i >= MAX_ADDRESSES - 1u && p->len - i > 2u) {
+                /* Print always at least MAX_ADDRESSES fully.
+                 * If there are MAX_ADDRESSES+1 addresses, print them all fully.
+                 * If there are more addresses, print MAX_ADDRESSES fully, and a
+                 * "N more" line. */
+                nmc_print("\tinet%c ... %u more\n", IS_IPv4 ? '4' : '6', p->len - i - 1u);
+                break;
+            }
         }
 
         p = nm_ip_config_get_routes(ip);
@@ -1461,6 +1472,11 @@ ac_overview(NmCli *nmc, NMActiveConnection *ac)
             _nm_ip_route_to_string(a, &str);
 
             nmc_print("\troute%c %s\n", IS_IPv4 ? '4' : '6', nm_str_buf_get_str(&str));
+
+            if (i >= MAX_ROUTES - 1u && p->len - i > 2u) {
+                nmc_print("\troute%c ... %u more\n", IS_IPv4 ? '4' : '6', p->len - i - 1u);
+                break;
+            }
         }
     }
 }

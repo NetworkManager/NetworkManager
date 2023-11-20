@@ -15,6 +15,7 @@ Overview of changes since NetworkManager-1.44
 * Honor udev property ID_NET_MANAGED_BY to only manage an interface
   when set to "org.freedesktop.NetworkManager".
 * Drop build support with Python2. Python3 is now required.
+* nmcli: limit number of printed addresses/routes in `nmcli` overview to 10.
 
 =============================================
 NetworkManager-1.44
