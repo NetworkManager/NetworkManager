@@ -11,6 +11,8 @@ unset DEBUGINFOD_URLS
 
 export NMCI_DEBUG=1
 
+export TERM=xterm
+
 Clean() {
     systemctl stop NetworkManager
     rm -i -rf /run/NetworkManager
