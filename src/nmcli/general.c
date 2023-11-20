@@ -1412,8 +1412,8 @@ static void
 ac_overview(NmCli *nmc, NMActiveConnection *ac)
 {
     GString                 *outbuf = g_string_sized_new(80);
-    NMIPConfig              *ip;
-    nm_auto_str_buf NMStrBuf str = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_104, FALSE);
+    nm_auto_str_buf NMStrBuf str    = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_104, FALSE);
+    int                      IS_IPv4;
 
     if (nm_active_connection_get_controller(ac)) {
         g_string_append_printf(outbuf,
@@ -1432,15 +1432,24 @@ ac_overview(NmCli *nmc, NMActiveConnection *ac)
         nmc_print("\t%s\n", outbuf->str);
     }
 
-    ip = nm_active_connection_get_ip4_config(ac);
-    if (ip) {
+    for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
+        NMIPConfig      *ip;
         const GPtrArray *p;
-        int              i;
+        guint            i;
+
+        ip = IS_IPv4 ? nm_active_connection_get_ip4_config(ac)
+                     : nm_active_connection_get_ip6_config(ac);
+        if (!ip)
+            continue;
 
         p = nm_ip_config_get_addresses(ip);
         for (i = 0; i < p->len; i++) {
             NMIPAddress *a = p->pdata[i];
-            nmc_print("\tinet4 %s/%d\n", nm_ip_address_get_address(a), nm_ip_address_get_prefix(a));
+
+            nmc_print("\tinet%c %s/%d\n",
+                      IS_IPv4 ? '4' : '6',
+                      nm_ip_address_get_address(a),
+                      nm_ip_address_get_prefix(a));
         }
 
         p = nm_ip_config_get_routes(ip);
@@ -1450,29 +1459,7 @@ ac_overview(NmCli *nmc, NMActiveConnection *ac)
             nm_str_buf_reset(&str);
             _nm_ip_route_to_string(a, &str);
 
-            nmc_print("\troute4 %s\n", nm_str_buf_get_str(&str));
-        }
-    }
-
-    ip = nm_active_connection_get_ip6_config(ac);
-    if (ip) {
-        const GPtrArray *p;
-        int              i;
-
-        p = nm_ip_config_get_addresses(ip);
-        for (i = 0; i < p->len; i++) {
-            NMIPAddress *a = p->pdata[i];
-            nmc_print("\tinet6 %s/%d\n", nm_ip_address_get_address(a), nm_ip_address_get_prefix(a));
-        }
-
-        p = nm_ip_config_get_routes(ip);
-        for (i = 0; i < p->len; i++) {
-            NMIPRoute *a = p->pdata[i];
-
-            nm_str_buf_reset(&str);
-            _nm_ip_route_to_string(a, &str);
-
-            nmc_print("\troute6 %s\n", nm_str_buf_get_str(&str));
+            nmc_print("\troute%c %s\n", IS_IPv4 ? '4' : '6', nm_str_buf_get_str(&str));
         }
     }
 
