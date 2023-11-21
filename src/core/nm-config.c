@@ -2354,9 +2354,10 @@ _nm_config_state_set(NMConfig *self, gboolean allow_persist, gboolean force_pers
     "route-metric-default-aspired"
 #define DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_ROUTE_METRIC_DEFAULT_EFFECTIVE \
     "route-metric-default-effective"
-#define DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_ROOT_PATH     "root-path"
-#define DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_NEXT_SERVER   "next-server"
-#define DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_DHCP_BOOTFILE "dhcp-bootfile"
+#define DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_ROOT_PATH        "root-path"
+#define DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_NEXT_SERVER      "next-server"
+#define DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_DHCP_BOOTFILE    "dhcp-bootfile"
+#define DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_GENERIC_SOFTWARE "generic-software"
 
 static NM_UTILS_LOOKUP_STR_DEFINE(
     _device_state_managed_type_to_str,
@@ -2457,6 +2458,12 @@ _config_device_state_data_new(int ifindex, GKeyFile *kf)
     device_state->route_metric_default_aspired   = route_metric_default_aspired;
     device_state->route_metric_default_effective = route_metric_default_effective;
 
+    device_state->generic_sw =
+        nm_config_keyfile_get_boolean(kf,
+                                      DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
+                                      DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_GENERIC_SOFTWARE,
+                                      FALSE);
+
     p = (char *) (&device_state[1]);
     if (connection_uuid) {
         memcpy(p, connection_uuid, connection_uuid_len);
@@ -2502,7 +2509,7 @@ nm_config_device_state_load(int ifindex)
                        ? ", nm-owned=1"
                        : (device_state->nm_owned == NM_TERNARY_FALSE ? ", nm-owned=0" : "");
 
-    _LOGT("device-state: %s #%d (%s); managed=%s%s%s%s%s%s%s%s, "
+    _LOGT("device-state: %s #%d (%s); managed=%s%s%s%s%s%s%s%s%s, "
           "route-metric-default=%" G_GUINT32_FORMAT "-%" G_GUINT32_FORMAT "",
           kf ? "read" : "miss",
           ifindex,
@@ -2519,6 +2526,7 @@ nm_config_device_state_load(int ifindex)
                               "",
                               ""),
           nm_owned_str,
+          device_state->generic_sw ? ", generic-software" : "",
           device_state->route_metric_default_aspired,
           device_state->route_metric_default_effective);
 
@@ -2577,7 +2585,8 @@ nm_config_device_state_write(int                            ifindex,
                              guint32                        route_metric_default_aspired,
                              guint32                        route_metric_default_effective,
                              NMDhcpConfig                  *dhcp4_config,
-                             NMDhcpConfig                  *dhcp6_config)
+                             NMDhcpConfig                  *dhcp6_config,
+                             gboolean                       generic_sw)
 {
     char    path[NM_STRLEN(NM_CONFIG_DEVICE_STATE_DIR "/") + DEVICE_STATE_FILENAME_LEN_MAX + 1];
     GError *local                                 = NULL;
@@ -2664,6 +2673,13 @@ nm_config_device_state_write(int                            ifindex,
                               dhcp_bootfile);
     }
 
+    if (generic_sw) {
+        g_key_file_set_boolean(kf,
+                               DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
+                               DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_GENERIC_SOFTWARE,
+                               TRUE);
+    }
+
     for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
         NMDhcpConfig              *dhcp_config = IS_IPv4 ? dhcp4_config : dhcp6_config;
         gs_free NMUtilsNamedValue *values      = NULL;
@@ -2691,7 +2707,7 @@ nm_config_device_state_write(int                            ifindex,
         g_error_free(local);
         return FALSE;
     }
-    _LOGT("device-state: write #%d (%s); managed=%s%s%s%s%s%s%s, "
+    _LOGT("device-state: write #%d (%s); managed=%s%s%s%s%s%s%s%s, "
           "route-metric-default=%" G_GUINT32_FORMAT "-%" G_GUINT32_FORMAT "%s%s%s"
           "%s%s%s"
           "%s%s%s",
@@ -2700,6 +2716,7 @@ nm_config_device_state_write(int                            ifindex,
           _device_state_managed_type_to_str(managed),
           NM_PRINT_FMT_QUOTED(connection_uuid, ", connection-uuid=", connection_uuid, "", ""),
           NM_PRINT_FMT_QUOTED(perm_hw_addr_fake, ", perm-hw-addr-fake=", perm_hw_addr_fake, "", ""),
+          generic_sw ? ", generic-software" : "",
           route_metric_default_aspired,
           route_metric_default_effective,
           NM_PRINT_FMT_QUOTED(next_server, ", next-server=", next_server, "", ""),
