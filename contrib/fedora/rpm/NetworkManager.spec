@@ -1078,7 +1078,7 @@ fi
 %dir %{_sysconfdir}/%{name}/system-connections
 %config(noreplace) %{_sysconfdir}/%{name}/NetworkManager.conf
 %if 0%{?fedora} >= 40
-%{nmlibdir}/conf.d/22-wifi-mac-addr.conf.conf
+%{nmlibdir}/conf.d/22-wifi-mac-addr.conf
 %endif
 %ghost %{_sysconfdir}/%{name}/VPN
 %{_bindir}/nm-online
