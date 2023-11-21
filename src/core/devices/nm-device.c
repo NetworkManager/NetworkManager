@@ -4284,7 +4284,6 @@ _dev_l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, N
         if (priv->ipshared_data_4.state == NM_DEVICE_IP_STATE_PENDING
             && !priv->ipshared_data_4.v4.dnsmasq_manager && priv->ipshared_data_4.v4.l3cd) {
             _dev_ipshared4_spawn_dnsmasq(self);
-            nm_clear_l3cd(&priv->ipshared_data_4.v4.l3cd);
         }
         _dev_ip_state_check_async(self, AF_UNSPEC);
         _dev_ipmanual_check_ready(self);
@@ -10393,11 +10392,8 @@ _dev_ipmanual_check_ready(NMDevice *self)
         }
     }
 
-    flags = NM_L3CFG_CHECK_READY_FLAGS_NONE;
-    if (has_carrier) {
-        flags |= NM_L3CFG_CHECK_READY_FLAGS_IP4_ACD_READY;
-        flags |= NM_L3CFG_CHECK_READY_FLAGS_IP6_DAD_READY;
-    }
+    flags = NM_L3CFG_CHECK_READY_FLAGS_IP4_ACD_READY;
+    flags |= NM_L3CFG_CHECK_READY_FLAGS_IP6_DAD_READY;
 
     for (IS_IPv4 = 0; IS_IPv4 < 2; IS_IPv4++) {
         const int addr_family = IS_IPv4 ? AF_INET : AF_INET6;
@@ -10407,12 +10403,24 @@ _dev_ipmanual_check_ready(NMDevice *self)
                                      addr_family,
                                      flags,
                                      &conflicts);
-        if (conflicts) {
-            _dev_ipmanual_set_state(self, addr_family, NM_DEVICE_IP_STATE_FAILED);
-            _dev_ip_state_check_async(self, AF_UNSPEC);
-        } else if (ready) {
-            _dev_ipmanual_set_state(self, addr_family, NM_DEVICE_IP_STATE_READY);
-            _dev_ip_state_check_async(self, AF_UNSPEC);
+        if (ready) {
+            guint num_addrs = 0;
+
+            num_addrs =
+                nm_l3_config_data_get_num_addresses(priv->l3cds[L3_CONFIG_DATA_TYPE_MANUALIP].d,
+                                                    addr_family);
+
+            if (conflicts && conflicts->len == num_addrs) {
+                _LOGD_ipmanual(addr_family, "all manual addresses failed DAD, failing");
+                _dev_ipmanual_set_state(self, addr_family, NM_DEVICE_IP_STATE_FAILED);
+                _dev_ip_state_check_async(self, AF_UNSPEC);
+            } else {
+                if (conflicts) {
+                    _LOGD_ipmanual(addr_family, "some manual addresses passed DAD, continuing");
+                }
+                _dev_ipmanual_set_state(self, addr_family, NM_DEVICE_IP_STATE_READY);
+                _dev_ip_state_check_async(self, AF_UNSPEC);
+            }
         }
     }
 }
@@ -12726,17 +12734,31 @@ out_fail:
 static void
 _dev_ipshared4_spawn_dnsmasq(NMDevice *self)
 {
-    NMDevicePrivate      *priv = NM_DEVICE_GET_PRIVATE(self);
-    const char           *ip_iface;
-    gs_free_error GError *error = NULL;
-    NMSettingConnection  *s_con;
-    gboolean              announce_android_metered;
-    NMConnection         *applied;
+    NMDevicePrivate       *priv = NM_DEVICE_GET_PRIVATE(self);
+    const char            *ip_iface;
+    gs_free_error GError  *error = NULL;
+    NMSettingConnection   *s_con;
+    gboolean               announce_android_metered;
+    NMConnection          *applied;
+    gs_unref_array GArray *conflicts = NULL;
+    gboolean               ready;
 
     nm_assert(priv->ipshared_data_4.v4.firewall_config);
     nm_assert(priv->ipshared_data_4.v4.dnsmasq_state_id == 0);
     nm_assert(!priv->ipshared_data_4.v4.dnsmasq_manager);
     nm_assert(priv->ipshared_data_4.v4.l3cd);
+
+    ready = nm_l3cfg_check_ready(priv->l3cfg,
+                                 priv->l3cds[L3_CONFIG_DATA_TYPE_SHARED_4].d,
+                                 AF_INET,
+                                 NM_L3CFG_CHECK_READY_FLAGS_IP4_ACD_READY,
+                                 &conflicts);
+    if (!ready) {
+        _LOGT_ipshared(AF_INET, "address not ready, wait");
+        return;
+    }
+    if (conflicts)
+        goto out_fail;
 
     ip_iface = nm_device_get_ip_iface(self);
     g_return_if_fail(ip_iface);
@@ -12782,9 +12804,11 @@ _dev_ipshared4_spawn_dnsmasq(NMDevice *self)
 
     _dev_ipsharedx_set_state(self, AF_INET, NM_DEVICE_IP_STATE_READY);
     _dev_ip_state_check_async(self, AF_INET);
+    nm_clear_l3cd(&priv->ipshared_data_4.v4.l3cd);
     return;
 
 out_fail:
+    nm_clear_l3cd(&priv->ipshared_data_4.v4.l3cd);
     _dev_ipsharedx_set_state(self, AF_INET, NM_DEVICE_IP_STATE_FAILED);
     _dev_ip_state_check_async(self, AF_INET);
 }
