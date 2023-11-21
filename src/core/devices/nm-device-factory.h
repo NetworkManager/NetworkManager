@@ -234,4 +234,6 @@ NMDeviceFactory *nm_device_factory_manager_find_factory_for_connection(NMConnect
 void nm_device_factory_manager_for_each_factory(NMDeviceFactoryManagerFactoryFunc callback,
                                                 gpointer                          user_data);
 
+NMDeviceFactory *nm_device_factory_get_generic_factory(void);
+
 #endif /* __NETWORKMANAGER_DEVICE_FACTORY_H__ */
