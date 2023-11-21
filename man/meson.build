@@ -119,7 +119,7 @@ if enable_introspection
       output: output,
       command: xsltproc_options + [join_paths(meson.current_source_dir(), man[0] + '.xsl'), '@INPUT@'],
     )
-    content_files += input.full_path()
+    content_files += input
 
     output = '@0@.@1@'.format(man[0], man[1])
 

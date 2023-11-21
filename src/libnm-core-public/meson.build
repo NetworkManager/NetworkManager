@@ -128,5 +128,5 @@ foreach docbook: docbooks
     build_by_default: true,
   )
 
-  content_files += xml.full_path()
+  content_files += xml
 endforeach
