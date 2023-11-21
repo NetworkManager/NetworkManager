@@ -135,12 +135,12 @@ else
         NMTST_USE_VALGRIND=0
     fi
 
-    if [ -z "${NMTST_LIBTOOL+x}" ]; then
-        NMTST_LIBTOOL=(sh "$SCRIPT_PATH/../libtool" "--mode=execute")
-    elif [ -z "$NMTST_LIBTOOL" ]; then
-        NMTST_LIBTOOL=()
-    else
+    if [ -n "$NMTST_LIBTOOL" ] ; then
         NMTST_LIBTOOL=("$NMTST_LIBTOOL" "--mode=execute")
+    elif [ -z "${NMTST_LIBTOOL+x}" -a -f "$SCRIPT_PATH/../libtool" ]; then
+        NMTST_LIBTOOL=(sh "$SCRIPT_PATH/../libtool" "--mode=execute")
+    else
+        NMTST_LIBTOOL=()
     fi
     TEST_ARGV=()
     unset TEST
