@@ -22,6 +22,7 @@ Overview of changes since NetworkManager-1.44
 * Limit number of exported IP addresses/routes on D-Bus to 100 to reduce
   performance cost. Also, D-Bus updates for addresses/routes are now rate
   limited to 3 per second.
+* cloud-setup: enable more sandboxing options in systemd service file.
 
 =============================================
 NetworkManager-1.44
