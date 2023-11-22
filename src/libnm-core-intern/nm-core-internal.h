@@ -815,6 +815,10 @@ struct _NMSettInfoProperty {
      * normalize the string via g_ascii_strdown(). */
     bool direct_set_string_ascii_strdown : 1;
 
+    /* If TRUE, this is a NM_VALUE_TYPE_STRV direct property holding MAC addresses,
+     * and the setter will normalize them via _nm_utils_hwaddr_canonical_or_invalid(). */
+    bool direct_set_strv_normalize_hwaddr : 1;
+
     /* If TRUE, this is a NM_VALUE_TYPE_STRING direct property, and the setter will
      * normalize the string via g_strstrip(). */
     bool direct_set_string_strip : 1;
