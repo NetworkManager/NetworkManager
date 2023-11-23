@@ -5311,6 +5311,7 @@ test_setting_ip4_changed_signal(void)
     NMIPAddress       *addr;
     NMIPRoute         *route;
     GError            *error = NULL;
+    gs_strfreev char **strv  = NULL;
 
     connection = nm_simple_connection_new();
     g_signal_connect(connection,
@@ -5368,8 +5369,54 @@ test_setting_ip4_changed_signal(void)
     nm_setting_ip_config_add_route(s_ip4, route);
     ASSERT_CHANGED(nm_setting_ip_config_clear_routes(s_ip4));
 
+    g_assert(!nm_setting_ip_config_has_dns_options(s_ip4));
+    g_assert_cmpint(nm_setting_ip_config_get_num_dns_options(s_ip4), ==, 0);
+
+    g_object_get(s_ip4, NM_SETTING_IP_CONFIG_DNS_OPTIONS, &strv, NULL);
+    g_assert_null(strv);
+
+    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(priv->dns_options));
+    g_assert_null(nm_setting_ip_config_get_dns_option(s_ip4, 0));
+    g_test_assert_expected_messages();
+    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(priv->dns_options));
+    g_assert_null(nm_setting_ip_config_get_dns_option(s_ip4, 1));
+    g_test_assert_expected_messages();
+
     ASSERT_CHANGED(nm_setting_ip_config_add_dns_option(s_ip4, "debug"));
+
+    g_assert(nm_setting_ip_config_has_dns_options(s_ip4));
+    g_assert_cmpint(nm_setting_ip_config_get_num_dns_options(s_ip4), ==, 1);
+
+    g_object_get(s_ip4, NM_SETTING_IP_CONFIG_DNS_OPTIONS, &strv, NULL);
+    g_assert_nonnull(strv);
+    g_assert_cmpstr(strv[0], ==, "debug");
+    g_assert_cmpstr(strv[1], ==, NULL);
+    nm_clear_pointer(&strv, g_strfreev);
+
+    g_assert_cmpstr(nm_setting_ip_config_get_dns_option(s_ip4, 0), ==, "debug");
+    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(idx < priv->dns_options->len));
+    g_assert_null(nm_setting_ip_config_get_dns_option(s_ip4, 1));
+    g_test_assert_expected_messages();
+    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(idx < priv->dns_options->len));
+    g_assert_null(nm_setting_ip_config_get_dns_option(s_ip4, 2));
+    g_test_assert_expected_messages();
+
     ASSERT_CHANGED(nm_setting_ip_config_remove_dns_option(s_ip4, 0));
+
+    g_assert(nm_setting_ip_config_has_dns_options(s_ip4));
+    g_assert_cmpint(nm_setting_ip_config_get_num_dns_options(s_ip4), ==, 0);
+
+    g_object_get(s_ip4, NM_SETTING_IP_CONFIG_DNS_OPTIONS, &strv, NULL);
+    g_assert_nonnull(strv);
+    g_assert_cmpstr(strv[0], ==, NULL);
+    nm_clear_pointer(&strv, g_strfreev);
+
+    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(idx < priv->dns_options->len));
+    g_assert_null(nm_setting_ip_config_get_dns_option(s_ip4, 0));
+    g_test_assert_expected_messages();
+    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(idx < priv->dns_options->len));
+    g_assert_null(nm_setting_ip_config_get_dns_option(s_ip4, 1));
+    g_test_assert_expected_messages();
 
     NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(idx >= 0 && idx < priv->dns_options->len));
     ASSERT_UNCHANGED(nm_setting_ip_config_remove_dns_option(s_ip4, 1));
@@ -5383,6 +5430,7 @@ test_setting_ip4_changed_signal(void)
 static void
 test_setting_ip6_changed_signal(void)
 {
+    gs_strfreev char **strv = NULL;
     NMConnection      *connection;
     gboolean           changed = FALSE;
     NMSettingIPConfig *s_ip6;
@@ -5410,7 +5458,16 @@ test_setting_ip6_changed_signal(void)
     nm_setting_ip_config_add_dns(s_ip6, "1:2:3::4:5:6");
     ASSERT_CHANGED(nm_setting_ip_config_clear_dns(s_ip6));
 
+    g_object_get(s_ip6, NM_SETTING_IP_CONFIG_DNS_SEARCH, &strv, NULL);
+    g_assert_null(strv);
+
     ASSERT_CHANGED(nm_setting_ip_config_add_dns_search(s_ip6, "foobar.com"));
+
+    g_object_get(s_ip6, NM_SETTING_IP_CONFIG_DNS_SEARCH, &strv, NULL);
+    g_assert_nonnull(strv);
+    g_assert_cmpstr(strv[0], ==, "foobar.com");
+    g_assert_cmpstr(strv[1], ==, NULL);
+    nm_clear_pointer(&strv, g_strfreev);
 
     g_assert_cmpstr(nm_setting_ip_config_get_dns_search(s_ip6, 0), ==, "foobar.com");
     g_assert_cmpstr(nm_setting_ip_config_get_dns_search(s_ip6, 1), ==, NULL);
@@ -5424,6 +5481,9 @@ test_setting_ip6_changed_signal(void)
     g_test_assert_expected_messages();
 
     ASSERT_CHANGED(nm_setting_ip_config_remove_dns_search(s_ip6, 0));
+
+    g_object_get(s_ip6, NM_SETTING_IP_CONFIG_DNS_SEARCH, &strv, NULL);
+    g_assert_null(strv);
 
     NMTST_EXPECT_LIBNM_CRITICAL(
         NMTST_G_RETURN_MSG(idx >= 0 && idx < nm_g_array_len(priv->dns_search.arr)));
