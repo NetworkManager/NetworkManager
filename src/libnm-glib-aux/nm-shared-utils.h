@@ -3021,7 +3021,7 @@ nm_strvarray_add(GArray *array, const char *str)
 }
 
 static inline const char *
-nm_strvarray_get_idx(GArray *array, guint idx)
+nm_strvarray_get_idx(const GArray *array, guint idx)
 {
     return nm_g_array_index(array, const char *, idx);
 }
@@ -3040,53 +3040,159 @@ nm_strvarray_get_idx(GArray *array, guint idx)
         _idx == _len ? NULL : nm_strvarray_get_idx(_arr, _idx); \
     })
 
+/**
+ * nm_strvarray_get_strv_full:
+ * @arr: the strvarray.
+ * @length: (out) (nullable): optionally return the length of the result.
+ * @not_null: if true and @arr is NULL, return NM_STRV_EMPTY_CC() (otherwise NULL).
+ * @preserve_empty: if true and the array is empty, return an empty
+ *   strv array. Otherwise, return NULL.
+ *
+ * If "arr" is NULL, this returns NULL, unless "not_null" is true (in which
+ *   case the static NM_STRV_EMPTY_CC() is returned).
+ * If "arr" is empty, it depends on:
+ *   - if "preserve_empty" or "not_null", then the resulting strv array is the empty "arr".
+ *   - otherwise NULL is returned.
+ * Otherwise, returns the non-empty, non-deep-cloned strv array.
+ *
+ * Like nm_strvarray_get_strv_full_dup(), but the strings are not cloned.
+ *
+ * Returns: (transfer none): a strv list or NULL.
+ */
 static inline const char *const *
-nm_strvarray_get_strv_non_empty(GArray *arr, guint *length)
+nm_strvarray_get_strv_full(const GArray *arr,
+                           guint        *length,
+                           gboolean      not_null,
+                           gboolean      preserve_empty)
 {
-    nm_assert(!arr || sizeof(char *) == g_array_get_element_size(arr));
-
-    if (!arr || arr->len == 0) {
+    if (!arr) {
         NM_SET_OUT(length, 0);
-        return NULL;
+        return not_null ? NM_STRV_EMPTY_CC() : NULL;
     }
 
+    nm_assert(sizeof(char *) == g_array_get_element_size((GArray *) arr));
+
     NM_SET_OUT(length, arr->len);
+
+    if (arr->len == 0 && !(preserve_empty || not_null))
+        return NULL;
+
     return &g_array_index(arr, const char *, 0);
 }
 
+/**
+ * nm_strvarray_get_strv_full_dup:
+ * @arr: the strvarray.
+ * @length: (out) (nullable): optionally return the length of the result.
+ * @not_null: if true, never return NULL but allocate an empty strv array.
+ * @preserve_empty: if true and the array is empty, return an empty
+ *   strv array. Otherwise, return NULL.
+ *
+ * If "arr" is NULL, this returns NULL, unless "not_null" is true (in which case
+ *   am empty strv array is allocated.
+ * If "arr" is empty, it depends on:
+ *   - if "preserve_empty" || "not_null", then the resulting strv array is allocated (and empty).
+ *   - otherwise, NULL is returned.
+ * Otherwise, return the non-empty, deep-cloned strv array.
+ *
+ * Like nm_strvarray_get_strv_full(), but the strings are cloned.
+ *
+ * Returns: (transfer full): a deep-cloned strv list or NULL.
+ */
 static inline char **
-nm_strvarray_get_strv_non_empty_dup(GArray *arr, guint *length)
+nm_strvarray_get_strv_full_dup(const GArray *arr,
+                               guint        *length,
+                               gboolean      not_null,
+                               gboolean      preserve_empty)
 {
-    const char *const *strv;
-
-    nm_assert(!arr || sizeof(char *) == g_array_get_element_size(arr));
-
-    if (!arr || arr->len == 0) {
+    if (!arr) {
         NM_SET_OUT(length, 0);
+        return not_null ? g_new0(char *, 1) : NULL;
+    }
+
+    nm_assert(sizeof(char *) == g_array_get_element_size((GArray *) arr));
+
+    NM_SET_OUT(length, arr->len);
+
+    if (arr->len == 0) {
+        if (preserve_empty || not_null)
+            return g_new0(char *, 1);
         return NULL;
     }
 
-    NM_SET_OUT(length, arr->len);
-    strv = &g_array_index(arr, const char *, 0);
-    return nm_strv_dup(strv, arr->len, TRUE);
+    return nm_strv_dup(&g_array_index(arr, const char *, 0), arr->len, TRUE);
 }
 
+/**
+ * nm_strvarray_get_strv_notnull:
+ * @arr: the strvarray.
+ * @length: (out) (nullable): optionally return the length of the result.
+ *
+ * This never returns NULL. If @arr is NULL, this returns NM_STRV_EMPTY_CC().
+ *
+ * Like nm_strvarray_get_strv_notempty(), but never returns NULL.
+ *
+ * Returns: (transfer none): a pointer to the strv list in @arr or NM_STRV_EMPTY_CC().
+ */
 static inline const char *const *
-nm_strvarray_get_strv(GArray **arr, guint *length)
+nm_strvarray_get_strv_notnull(const GArray *arr, guint *length)
 {
-    if (!*arr) {
-        NM_SET_OUT(length, 0);
-        return (const char *const *) arr;
-    }
-
-    nm_assert(sizeof(char *) == g_array_get_element_size(*arr));
-
-    NM_SET_OUT(length, (*arr)->len);
-    return &g_array_index(*arr, const char *, 0);
+    return nm_strvarray_get_strv_full(arr, length, TRUE, TRUE);
 }
 
+/**
+ * nm_strvarray_get_strv_notempty:
+ * @arr: the strvarray.
+ * @length: (out) (nullable): optionally return the length of the result.
+ *
+ * This never returns an empty strv array. If @arr is NULL or empty, this
+ * returns NULL.
+ *
+ * Like nm_strvarray_get_strv_notempty_dup(), but does not clone strings.
+ *
+ * Returns: (transfer none): a pointer to the strv list in @arr or NULL.
+ */
+static inline const char *const *
+nm_strvarray_get_strv_notempty(const GArray *arr, guint *length)
+{
+    return nm_strvarray_get_strv_full(arr, length, FALSE, FALSE);
+}
+
+/**
+ * nm_strvarray_get_strv_notempty_dup:
+ * @arr: the strvarray.
+ * @length: (out) (nullable): optionally return the length of the result.
+ *
+ * This never returns an empty strv array. If @arr is NULL or empty, this
+ * returns NULL.
+ *
+ * Like nm_strvarray_get_strv_notempty(), but clones strings.
+ *
+ * Returns: (transfer full): a deep-cloned strv list or NULL.
+ */
+static inline char **
+nm_strvarray_get_strv_notempty_dup(const GArray *arr, guint *length)
+{
+    return nm_strvarray_get_strv_full_dup(arr, length, FALSE, FALSE);
+}
+
+/**
+ * nm_strvarray_set_strv_full:
+ * @array: a pointer to the array to set.
+ * @strv: the strv array. May be NULL.
+ * @preserve_empty: how to treat if strv is empty (strv[0]==NULL).
+ *
+ * The old array will be freed (in a way so that the function is self-assignment
+ * safe).
+ *
+ * If "strv" is NULL, then the resulting GArray is NULL.
+ * If "strv" is empty, then it depends on "preserve_empty":
+ *   - if "preserve_empty", then the resulting GArray is allocated (and empty).
+ *   - if "!preserve_empty", then the resulting GArray is NULL.
+ * If "strv" is not empty, a GArray gets allocated and the strv array deep-cloned.
+ */
 static inline void
-nm_strvarray_set_strv(GArray **array, const char *const *strv)
+nm_strvarray_set_strv_full(GArray **array, const char *const *strv, gboolean preserve_empty)
 {
     gs_unref_array GArray *array_old = NULL;
 
@@ -3094,23 +3200,44 @@ nm_strvarray_set_strv(GArray **array, const char *const *strv)
 
     nm_assert(!array_old || sizeof(char *) == g_array_get_element_size(array_old));
 
-    if (!strv || !strv[0])
+    if (!strv)
         return;
+
+    if (!strv[0] && !preserve_empty) {
+        /* An empty strv array is treated like NULL. Don't allocate a GArray. */
+        return;
+    }
 
     nm_strvarray_ensure(array);
     for (; strv[0]; strv++)
         nm_strvarray_add(*array, strv[0]);
 }
 
+/**
+ * nm_strvarray_set_strv:
+ * @array: a pointer to the array to set.
+ * @strv: the strv array. May be NULL.
+ *
+ * The old array will be freed (in a way so that the function is self-assignment
+ * safe).
+ *
+ * Note that this will never initialize an empty GArray. If strv is NULL or
+ * empty, the @array pointer will be set to NULL. */
+static inline void
+nm_strvarray_set_strv(GArray **array, const char *const *strv)
+{
+    nm_strvarray_set_strv_full(array, strv, FALSE);
+}
+
 static inline gssize
-nm_strvarray_find_first(GArray *strv, const char *needle)
+nm_strvarray_find_first(const GArray *strv, const char *needle)
 {
     guint i;
 
     nm_assert(needle);
 
     if (strv) {
-        nm_assert(sizeof(char *) == g_array_get_element_size(strv));
+        nm_assert(sizeof(char *) == g_array_get_element_size((GArray *) strv));
         for (i = 0; i < strv->len; i++) {
             if (nm_streq(needle, g_array_index(strv, const char *, i)))
                 return i;

@@ -4694,7 +4694,7 @@ _nm_utils_strstrdictkey_create(const char *v1, const char *v2)
 static gboolean
 validate_dns_option(const char                 *name,
                     gboolean                    numeric,
-                    gboolean                    ipv6,
+                    int                         addr_family,
                     const NMUtilsDNSOptionDesc *option_descs)
 {
     const NMUtilsDNSOptionDesc *desc;
@@ -4703,8 +4703,15 @@ validate_dns_option(const char                 *name,
         return !!*name;
 
     for (desc = option_descs; desc->name; desc++) {
-        if (nm_streq(name, desc->name) && numeric == desc->numeric && (!desc->ipv6_only || ipv6))
-            return TRUE;
+        if (!nm_streq(name, desc->name))
+            continue;
+        if ((!!numeric) != (!!desc->numeric))
+            continue;
+        if (addr_family != AF_UNSPEC) {
+            if (desc->ipv6_only && addr_family != AF_INET6)
+                continue;
+        }
+        return TRUE;
     }
 
     return FALSE;
@@ -4715,7 +4722,9 @@ validate_dns_option(const char                 *name,
  * @option: option string
  * @out_name: (out) (optional) (nullable): the option name
  * @out_value: (out) (optional): the option value
- * @ipv6: whether the option refers to a IPv6 configuration
+ * @addr_family: AF_INET/AF_INET6 to only allow options for the specified address
+ *   family. AF_UNSPEC to allow either. This argument is ignored, if @option_descs
+ *   is NULL.
  * @option_descs: (nullable): an array of NMUtilsDNSOptionDesc which describes the
  * valid options
  *
@@ -4731,7 +4740,7 @@ gboolean
 _nm_utils_dns_option_validate(const char                 *option,
                               char                      **out_name,
                               long                       *out_value,
-                              gboolean                    ipv6,
+                              int                         addr_family,
                               const NMUtilsDNSOptionDesc *option_descs)
 {
     gs_free char *option0_free = NULL;
@@ -4742,6 +4751,8 @@ _nm_utils_dns_option_validate(const char                 *option,
 
     g_return_val_if_fail(option != NULL, FALSE);
 
+    nm_assert_addr_family_or_unspec(addr_family);
+
     NM_SET_OUT(out_name, NULL);
     NM_SET_OUT(out_value, -1);
 
@@ -4750,7 +4761,7 @@ _nm_utils_dns_option_validate(const char                 *option,
 
     delim = strchr(option, ':');
     if (!delim) {
-        if (!validate_dns_option(option, FALSE, ipv6, option_descs))
+        if (!validate_dns_option(option, FALSE, addr_family, option_descs))
             return FALSE;
         NM_SET_OUT(out_name, g_strdup(option));
         return TRUE;
@@ -4765,7 +4776,7 @@ _nm_utils_dns_option_validate(const char                 *option,
 
     option0 = nm_strndup_a(300, option, delim - option, &option0_free);
 
-    if (!validate_dns_option(option0, TRUE, ipv6, option_descs))
+    if (!validate_dns_option(option0, TRUE, addr_family, option_descs))
         return FALSE;
 
     option1_num = _nm_utils_ascii_str_to_int64(option1, 10, 0, G_MAXINT32, -1);
@@ -4779,7 +4790,8 @@ _nm_utils_dns_option_validate(const char                 *option,
 
 /**
  * _nm_utils_dns_option_find_idx:
- * @array: an array of strings
+ * @strv: an array of strings of length @strv_len
+ * @strv_len: the length of @strv, or -1 for a NULL terminated strv array.
  * @option: a dns option string
  *
  * Searches for an option in an array of strings. The match is
@@ -4789,18 +4801,28 @@ _nm_utils_dns_option_validate(const char                 *option,
  * found.
  */
 gssize
-_nm_utils_dns_option_find_idx(GPtrArray *array, const char *option)
+_nm_utils_dns_option_find_idx(const char *const *strv, gssize strv_len, const char *option)
 {
     gs_free char *option_name = NULL;
-    guint         i;
+    gsize         l;
+    gsize         i;
 
-    if (!_nm_utils_dns_option_validate(option, &option_name, NULL, FALSE, NULL))
+    if (strv_len >= 0)
+        l = strv_len;
+    else
+        l = NM_PTRARRAY_LEN(strv);
+
+    if (l == 0)
         return -1;
 
-    for (i = 0; i < array->len; i++) {
+    if (!_nm_utils_dns_option_validate(option, &option_name, NULL, AF_UNSPEC, NULL))
+        return -1;
+
+    for (i = 0; i < l; i++) {
+        const char   *str      = strv[i];
         gs_free char *tmp_name = NULL;
 
-        if (_nm_utils_dns_option_validate(array->pdata[i], &tmp_name, NULL, FALSE, NULL)) {
+        if (_nm_utils_dns_option_validate(str, &tmp_name, NULL, AF_UNSPEC, NULL)) {
             if (nm_streq(tmp_name, option_name))
                 return i;
         }

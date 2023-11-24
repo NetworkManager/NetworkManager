@@ -411,9 +411,10 @@ extern const NMUtilsDNSOptionDesc _nm_utils_dns_option_descs[];
 gboolean _nm_utils_dns_option_validate(const char                 *option,
                                        char                      **out_name,
                                        long                       *out_value,
-                                       gboolean                    ipv6,
+                                       int                         addr_family,
                                        const NMUtilsDNSOptionDesc *option_descs);
-gssize   _nm_utils_dns_option_find_idx(GPtrArray *array, const char *option);
+
+gssize _nm_utils_dns_option_find_idx(const char *const *strv, gssize strv_len, const char *option);
 
 int nm_setting_ip_config_next_valid_dns_option(NMSettingIPConfig *setting, guint idx);
 
@@ -817,6 +818,14 @@ struct _NMSettInfoProperty {
 
     /* Whether the string property is implemented as a (downcast) NMRefString. */
     bool direct_string_is_refstr : 1;
+
+    /* Usually, for strv arrays (NM_VALUE_TYPE_STRV, NMValueStrv) there is little
+     * difference between NULL/unset and empty arrays. E.g. g_object_get() will
+     * return NULL and never an empty strv array.
+     *
+     * By setting this flag, this property treats a NULL array different from
+     * an empty array. */
+    bool direct_strv_preserve_empty : 1;
 
     /* Usually, properties that are set to the default value for the GParamSpec
      * are not serialized to GVariant (and NULL is returned by to_dbus_data().

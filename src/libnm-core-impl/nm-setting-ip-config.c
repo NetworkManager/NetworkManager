@@ -4345,6 +4345,12 @@ nm_setting_ip_config_clear_dns_searches(NMSettingIPConfig *setting)
         _notify(setting, PROP_DNS_SEARCH);
 }
 
+static gssize
+_dns_option_find_idx_garray(const GArray *arr, const char *option)
+{
+    return _nm_utils_dns_option_find_idx(nm_g_array_data(arr), nm_g_array_len(arr), option);
+}
+
 /**
  * nm_setting_ip_config_get_num_dns_options:
  * @setting: the #NMSettingIPConfig
@@ -4356,13 +4362,9 @@ nm_setting_ip_config_clear_dns_searches(NMSettingIPConfig *setting)
 guint
 nm_setting_ip_config_get_num_dns_options(NMSettingIPConfig *setting)
 {
-    NMSettingIPConfigPrivate *priv;
-
     g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), 0);
 
-    priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
-
-    return priv->dns_options ? priv->dns_options->len : 0;
+    return nm_g_array_len(NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->dns_options.arr);
 }
 
 /**
@@ -4384,13 +4386,15 @@ nm_setting_ip_config_has_dns_options(NMSettingIPConfig *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), 0);
 
-    return !!NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->dns_options;
+    return !!NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->dns_options.arr;
 }
 
 /**
  * nm_setting_ip_config_get_dns_option:
  * @setting: the #NMSettingIPConfig
  * @idx: index number of the DNS option
+ *
+ * Since 1.46, access at index "len" is allowed and returns NULL.
  *
  * Returns: the DNS option at index @idx
  *
@@ -4399,15 +4403,11 @@ nm_setting_ip_config_has_dns_options(NMSettingIPConfig *setting)
 const char *
 nm_setting_ip_config_get_dns_option(NMSettingIPConfig *setting, guint idx)
 {
-    NMSettingIPConfigPrivate *priv;
-
     g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), NULL);
 
-    priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
-    g_return_val_if_fail(priv->dns_options, NULL);
-    g_return_val_if_fail(idx < priv->dns_options->len, NULL);
-
-    return priv->dns_options->pdata[idx];
+    return nm_strvarray_get_idxnull_or_greturn(
+        NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->dns_options.arr,
+        idx);
 }
 
 /**
@@ -4427,14 +4427,14 @@ nm_setting_ip_config_next_valid_dns_option(NMSettingIPConfig *setting, guint idx
 
     priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
 
-    if (!priv->dns_options)
+    if (!priv->dns_options.arr)
         return -1;
 
-    for (; idx < priv->dns_options->len; idx++) {
-        if (_nm_utils_dns_option_validate(priv->dns_options->pdata[idx],
+    for (; idx < priv->dns_options.arr->len; idx++) {
+        if (_nm_utils_dns_option_validate(nm_strvarray_get_idx(priv->dns_options.arr, idx),
                                           NULL,
                                           NULL,
-                                          NM_IS_SETTING_IP6_CONFIG(setting),
+                                          NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting),
                                           _nm_utils_dns_option_descs))
             return idx;
     }
@@ -4462,18 +4462,15 @@ nm_setting_ip_config_add_dns_option(NMSettingIPConfig *setting, const char *dns_
     g_return_val_if_fail(dns_option != NULL, FALSE);
     g_return_val_if_fail(dns_option[0] != '\0', FALSE);
 
-    if (!_nm_utils_dns_option_validate(dns_option, NULL, NULL, FALSE, NULL))
+    if (!_nm_utils_dns_option_validate(dns_option, NULL, NULL, AF_UNSPEC, NULL))
         return FALSE;
 
     priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
-    if (!priv->dns_options)
-        priv->dns_options = g_ptr_array_new_with_free_func(g_free);
-    else {
-        if (_nm_utils_dns_option_find_idx(priv->dns_options, dns_option) >= 0)
-            return FALSE;
-    }
 
-    g_ptr_array_add(priv->dns_options, g_strdup(dns_option));
+    if (_dns_option_find_idx_garray(priv->dns_options.arr, dns_option) >= 0)
+        return FALSE;
+
+    nm_strvarray_ensure_and_add(&priv->dns_options.arr, dns_option);
     _notify(setting, PROP_DNS_OPTIONS);
     return TRUE;
 }
@@ -4495,10 +4492,10 @@ nm_setting_ip_config_remove_dns_option(NMSettingIPConfig *setting, int idx)
     g_return_if_fail(NM_IS_SETTING_IP_CONFIG(setting));
 
     priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
-    g_return_if_fail(priv->dns_options);
-    g_return_if_fail(idx >= 0 && idx < priv->dns_options->len);
 
-    g_ptr_array_remove_index(priv->dns_options, idx);
+    g_return_if_fail(idx >= 0 && idx < nm_g_array_len(priv->dns_options.arr));
+
+    nm_strvarray_remove_index(priv->dns_options.arr, idx);
     _notify(setting, PROP_DNS_OPTIONS);
 }
 
@@ -4524,17 +4521,14 @@ nm_setting_ip_config_remove_dns_option_by_value(NMSettingIPConfig *setting, cons
     g_return_val_if_fail(dns_option[0] != '\0', FALSE);
 
     priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
-    if (!priv->dns_options)
+
+    i = _dns_option_find_idx_garray(priv->dns_options.arr, dns_option);
+    if (i < 0)
         return FALSE;
 
-    i = _nm_utils_dns_option_find_idx(priv->dns_options, dns_option);
-    if (i >= 0) {
-        g_ptr_array_remove_index(priv->dns_options, i);
-        _notify(setting, PROP_DNS_OPTIONS);
-        return TRUE;
-    }
-
-    return FALSE;
+    nm_strvarray_remove_index(priv->dns_options.arr, i);
+    _notify(setting, PROP_DNS_OPTIONS);
+    return TRUE;
 }
 
 /**
@@ -4555,18 +4549,17 @@ nm_setting_ip_config_clear_dns_options(NMSettingIPConfig *setting, gboolean is_s
     g_return_if_fail(NM_IS_SETTING_IP_CONFIG(setting));
 
     priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
-    if (!priv->dns_options) {
+    if (!priv->dns_options.arr) {
         if (!is_set)
             return;
-        priv->dns_options = g_ptr_array_new_with_free_func(g_free);
+        nm_strvarray_ensure(&priv->dns_options.arr);
     } else {
-        if (!is_set) {
-            g_ptr_array_unref(priv->dns_options);
-            priv->dns_options = NULL;
-        } else {
-            if (priv->dns_options->len == 0)
+        if (!is_set)
+            nm_strvarray_clear(&priv->dns_options.arr);
+        else {
+            if (priv->dns_options.arr->len == 0)
                 return;
-            g_ptr_array_set_size(priv->dns_options, 0);
+            g_array_set_size(priv->dns_options.arr, 0);
         }
     }
     _notify(setting, PROP_DNS_OPTIONS);
@@ -5352,8 +5345,8 @@ nm_setting_ip_config_get_dhcp_reject_servers(NMSettingIPConfig *setting, guint *
 {
     g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), NULL);
 
-    return nm_strvarray_get_strv(
-        &NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->dhcp_reject_servers.arr,
+    return nm_strvarray_get_strv_notnull(
+        NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->dhcp_reject_servers.arr,
         out_len);
 }
 
@@ -6124,9 +6117,13 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
         .direct_offset =
             NM_STRUCT_OFFSET_ENSURE_TYPE(NMValueStrv, NMSettingIPConfigPrivate, dns_search));
 
-    _nm_properties_override_gobj(properties_override,
-                                 obj_properties[PROP_DNS_OPTIONS],
-                                 &nm_sett_info_propert_type_gprop_strv_oldstyle);
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_DNS_OPTIONS],
+        &nm_sett_info_propert_type_direct_strv,
+        .direct_offset =
+            NM_STRUCT_OFFSET_ENSURE_TYPE(NMValueStrv, NMSettingIPConfigPrivate, dns_options),
+        .direct_strv_preserve_empty = TRUE, );
 
     _nm_properties_override_gobj(properties_override,
                                  obj_properties[PROP_DHCP_REJECT_SERVERS],
@@ -6151,11 +6148,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_DNS:
         g_value_take_boxed(value, _nm_utils_ptrarray_to_strv(priv->dns));
         break;
-    case PROP_DNS_OPTIONS:
-        g_value_take_boxed(value,
-                           priv->dns_options ? _nm_utils_ptrarray_to_strv(priv->dns_options)
-                                             : NULL);
-        break;
     case PROP_ADDRESSES:
         g_value_take_boxed(value,
                            _nm_utils_copy_array(priv->addresses,
@@ -6177,9 +6169,10 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-    NMSettingIPConfig        *setting = NM_SETTING_IP_CONFIG(object);
-    NMSettingIPConfigPrivate *priv    = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
-    char                    **strv;
+    NMSettingIPConfig        *setting    = NM_SETTING_IP_CONFIG(object);
+    NMSettingIPConfigPrivate *priv       = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
+    gs_unref_array GArray    *array_free = NULL;
+    const char *const        *strv;
     guint                     i;
 
     switch (prop_id) {
@@ -6196,21 +6189,16 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         break;
     }
     case PROP_DNS_OPTIONS:
-        strv = g_value_get_boxed(value);
-        if (!strv) {
-            if (priv->dns_options) {
-                g_ptr_array_unref(priv->dns_options);
-                priv->dns_options = NULL;
-            }
-        } else {
-            if (priv->dns_options)
-                g_ptr_array_set_size(priv->dns_options, 0);
-            else
-                priv->dns_options = g_ptr_array_new_with_free_func(g_free);
+        strv       = g_value_get_boxed(value);
+        array_free = g_steal_pointer(&priv->dns_options.arr);
+        if (strv) {
+            nm_strvarray_ensure(&priv->dns_options.arr);
             for (i = 0; strv[i]; i++) {
-                if (_nm_utils_dns_option_validate(strv[i], NULL, NULL, FALSE, NULL)
-                    && _nm_utils_dns_option_find_idx(priv->dns_options, strv[i]) < 0)
-                    g_ptr_array_add(priv->dns_options, g_strdup(strv[i]));
+                const char *str = strv[i];
+
+                if (_nm_utils_dns_option_validate(str, NULL, NULL, AF_UNSPEC, NULL)
+                    && _dns_option_find_idx_garray(priv->dns_options.arr, str) < 0)
+                    nm_strvarray_add(priv->dns_options.arr, str);
             }
         }
         break;
@@ -6256,7 +6244,6 @@ finalize(GObject *object)
     NMSettingIPConfigPrivate *priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(self);
 
     nm_g_ptr_array_unref(priv->dns);
-    nm_g_ptr_array_unref(priv->dns_options);
     g_ptr_array_unref(priv->addresses);
     g_ptr_array_unref(priv->routes);
     nm_g_ptr_array_unref(priv->routing_rules);

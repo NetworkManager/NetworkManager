@@ -908,7 +908,7 @@ _nm_setting_connection_verify_secondaries(GArray *secondaries, GError **error)
      * Now, when we find any invalid/non-normalized values, we reject/normalize
      * them. We also filter out duplicates. */
 
-    strv = nm_strvarray_get_strv_non_empty(secondaries, NULL);
+    strv = nm_strvarray_get_strv_notempty(secondaries, NULL);
 
     for (i = 0; i < len; i++) {
         const char *uuid = strv[i];
@@ -977,7 +977,7 @@ _normalize_connection_secondaries(NMConnection *self)
     if (_nm_setting_connection_verify_secondaries(secondaries, NULL))
         return FALSE;
 
-    strv = nm_strvarray_get_strv_non_empty_dup(secondaries, NULL);
+    strv = nm_strvarray_get_strv_notempty_dup(secondaries, NULL);
     for (i = 0, j = 0; strv[i]; i++) {
         gs_free char *s = g_steal_pointer(&strv[i]);
         char          uuid_normalized[37];

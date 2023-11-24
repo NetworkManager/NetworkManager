@@ -729,6 +729,24 @@ out_take:
     return nm_strdup_reset_take(dst, s);
 }
 
+static gboolean
+_property_direct_set_strv(const NMSettInfoSetting  *sett_info,
+                          const NMSettInfoProperty *property_info,
+                          NMSetting                *setting,
+                          const char *const        *strv)
+{
+    NMValueStrv *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+
+    if (!property_info->direct_strv_preserve_empty && strv && !strv[0])
+        strv = NULL;
+
+    if (nm_strvarray_equal_strv(p_val->arr, strv, -1))
+        return FALSE;
+
+    nm_strvarray_set_strv_full(&p_val->arr, strv, property_info->direct_strv_preserve_empty);
+    return TRUE;
+}
+
 void
 _nm_setting_property_get_property_direct(GObject    *object,
                                          guint       prop_id,
@@ -817,7 +835,12 @@ _nm_setting_property_get_property_direct(GObject    *object,
     {
         const NMValueStrv *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
 
-        g_value_take_boxed(value, nm_strvarray_get_strv_non_empty_dup(p_val->arr, NULL));
+        g_value_take_boxed(
+            value,
+            nm_strvarray_get_strv_full_dup(p_val->arr,
+                                           NULL,
+                                           FALSE,
+                                           property_info->direct_strv_preserve_empty));
         return;
     }
     default:
@@ -956,17 +979,9 @@ _nm_setting_property_set_property_direct(GObject      *object,
         goto out_notify;
     }
     case NM_VALUE_TYPE_STRV:
-    {
-        NMValueStrv       *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
-        const char *const *v;
-
-        v = g_value_get_boxed(value);
-        if (nm_strvarray_equal_strv(p_val->arr, v, -1))
+        if (!_property_direct_set_strv(sett_info, property_info, setting, g_value_get_boxed(value)))
             return;
-
-        nm_strvarray_set_strv(&p_val->arr, v);
         goto out_notify;
-    }
     default:
         goto out_fail;
     }
@@ -1281,6 +1296,11 @@ _nm_setting_property_to_dbus_fcn_direct(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_
             (const NMValueStrv *) _nm_setting_get_private_field(setting, sett_info, property_info);
         if (!val->arr)
             return NULL;
+        if (!property_info->direct_strv_preserve_empty && val->arr->len == 0) {
+            /* This property does not treat empty strv arrays special. No need
+             * to export the value on D-Bus. */
+            return NULL;
+        }
         return g_variant_new_strv(nm_g_array_data(val->arr), val->arr->len);
     }
     default:
@@ -1645,7 +1665,6 @@ _nm_setting_property_from_dbus_fcn_direct(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS 
     }
     case NM_VALUE_TYPE_STRV:
     {
-        NMValueStrv         *p_val;
         gs_free const char **ss = NULL;
         gsize                ss_len;
 
@@ -1656,13 +1675,10 @@ _nm_setting_property_from_dbus_fcn_direct(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS 
 
         ss = g_variant_get_strv(value, &ss_len);
         nm_assert(ss_len <= G_MAXUINT);
+        nm_assert(NM_PTRARRAY_LEN(ss) == ss_len);
 
-        p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
-
-        if (nm_strvarray_equal_strv(p_val->arr, ss, ss_len))
+        if (!_property_direct_set_strv(sett_info, property_info, setting, ss))
             goto out_unchanged;
-
-        nm_strvarray_set_strv(&p_val->arr, ss);
         goto out_notify;
     }
     default:
@@ -2579,8 +2595,21 @@ _nm_setting_property_compare_fcn_direct(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_
     case NM_VALUE_TYPE_BYTES:
         return nm_g_bytes_equal0(*((const GBytes *const *) p_a), *((const GBytes *const *) p_b));
     case NM_VALUE_TYPE_STRV:
-        return nm_strvarray_equal(((const NMValueStrv *) p_a)->arr,
-                                  ((const NMValueStrv *) p_b)->arr);
+    {
+        const NMValueStrv *v_a = p_a;
+        const NMValueStrv *v_b = p_b;
+        const GArray      *a   = v_a->arr;
+        const GArray      *b   = v_b->arr;
+
+        if (!property_info->direct_strv_preserve_empty) {
+            /* NULL and empty are treated identical. Coerce to NULL. */
+            if (a && a->len == 0)
+                a = NULL;
+            if (b && b->len == 0)
+                b = NULL;
+        }
+        return nm_strvarray_equal(a, b);
+    }
     default:
         return nm_assert_unreachable_val(TRUE);
     }

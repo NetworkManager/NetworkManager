@@ -543,7 +543,7 @@ add_string_item(GPtrArray *array, const char *str, gboolean dup)
 static void
 add_dns_option_item(GPtrArray *array, const char *str)
 {
-    if (_nm_utils_dns_option_find_idx(array, str) < 0)
+    if (_nm_utils_dns_option_find_idx((const char *const *) array->pdata, array->len, str) < 0)
         g_ptr_array_add(array, g_strdup(str));
 }
 
