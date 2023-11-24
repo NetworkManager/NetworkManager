@@ -120,7 +120,7 @@ if enable_introspection
       output: output,
       command: xsltproc_options + ['@INPUT@'],
     )
-    content_files += input.full_path()
+    content_files += input
 
     output = '@0@.@1@'.format(man[0], man[1])
 
