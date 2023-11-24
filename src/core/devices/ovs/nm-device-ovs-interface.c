@@ -323,6 +323,7 @@ _netdev_tun_link_cb(NMPlatform     *platform,
 
             nm_clear_g_signal_handler(platform, &priv->wait_link.tun_link_signal_id);
             nm_device_link_properties_set(device, FALSE);
+            nm_device_bring_up(device);
 
             nm_device_devip_set_state(device, AF_INET, NM_DEVICE_IP_STATE_PENDING, NULL);
             nm_device_devip_set_state(device, AF_INET6, NM_DEVICE_IP_STATE_PENDING, NULL);
