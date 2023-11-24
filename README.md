@@ -1,9 +1,5 @@
-******************
-NetworkManager core daemon has moved to gitlab.freedesktop.org!
-
-git clone https://gitlab.freedesktop.org/NetworkManager/NetworkManager.git
-******************
-
+NetworkManager
+==============
 
 Networking that Just Works
 --------------------------
@@ -31,7 +27,8 @@ network.  NetworkManager will _never_ activate a connection that is not in this
 list, or that the user has not directed NetworkManager to connect to.
 
 
-How it works:
+How it works
+------------
 
 The NetworkManager daemon runs as a privileged service (since it must access
 and control hardware), but provides a D-Bus interface on the system bus to
@@ -56,7 +53,34 @@ link-local addresses.  Most communication with these daemons occurs, again,
 via D-Bus.
 
 
+How to use it
+-------------
+
+Install NetworkManager with your distribution's package manager.
+
+As NetworkManager is actually a daemon that runs in the background, you need to
+use one of the many existing client programs to interact with it.
+
+Terminal clients:
+- `nmcli`: advanced command line client that gives you full control over all the
+  aspects of NetworkManager, developed as part of the NetworkManager project.
+- `nmtui`: text-based user interface (TUI) client. Also for the terminal, but
+  interactive and more user friendly, also part of the NetworkManager project.
+- [`nmstate`][1]: declarative network API and command line tool that uses
+  NetworkManager as backend.
+- Ansible: use the [network-role][2] in your playbooks
+
+GUI clients
+- `nm-connection-editor` and `nm-applet`: basic GUI interfaces developed by
+  the NetworkManager project.
+- GNOME shell: interacts with NetworkManager via its default settings panel
+  `gnome-control-center`
+- KDE Plasma: interacts with NetworkManager via its default settings panel
+  and `plasma-nm`
+
+
 Why doesn't my network Just Work?
+---------------------------------
 
 Driver problems are the #1 cause of why NetworkManager sometimes fails to
 connect to wireless networks.  Often, the driver simply doesn't behave in a
@@ -86,3 +110,45 @@ distribution directs syslog's 'daemon' facility output, as
 enormously.  See the logging section of file
 contrib/fedora/rpm/NetworkManager.conf for how to enable debug logging
 in NetworkManager.
+
+
+Documentation
+-------------
+
+Updated documentation can be found at https://networkmanager.dev/docs
+
+Users can consult the man pages. Most relevant pages for normal users are:
+- NetworkManager daemon: [`NetworkManager (8)`][3], [`NetworkManager.conf (5)`][4]
+- nmcli: [`nmcli (1)`][5], [`nmcli-examples (5)`][6], [`nm-settings-nmcli (5)`][7]
+- nmtui: [`nmtui (1)`][8]
+
+
+Get in touch
+------------
+
+To connect with the community, get help or get involved see the available
+communication channels at https://networkmanager.dev/community/
+
+Report bugs or feature request in our [issue tracker](https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/issues).
+See [Report issues](https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/blob/main/CONTRIBUTING.md?ref_type=heads#report-issues)
+for details about how to do it.
+
+To get involved, see [CONTRIBUTING.md](CONTRIBUTING.md)
+
+
+License
+-------
+
+NetworkManager is free software under GPL-2.0-or-later and LGPL-2.1-or-later.
+See [CONTRIBUTING.md#legal](CONTRIBUTING.md#legal) and
+[RELICENSE.md](RELICENSE.md) for details.
+
+
+[1]: https://nmstate.io/
+[2]: https://linux-system-roles.github.io/network/
+[3]: https://networkmanager.dev/docs/api/latest/NetworkManager.html
+[4]: https://networkmanager.dev/docs/api/latest/NetworkManager.conf.html
+[5]: https://networkmanager.dev/docs/api/latest/nmcli.html
+[6]: https://networkmanager.dev/docs/api/latest/nmcli-examples.html
+[7]: https://networkmanager.dev/docs/api/latest/nm-settings-nmcli.html
+[8]: https://networkmanager.dev/docs/api/latest/nmtui.html
