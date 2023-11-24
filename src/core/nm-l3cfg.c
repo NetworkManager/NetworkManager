@@ -1001,6 +1001,21 @@ out:
 }
 
 static void
+_obj_states_track_new(NML3Cfg *self, const NMPObject *obj)
+{
+    char          sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+    ObjStateData *obj_state;
+
+    obj_state = _obj_state_data_new(
+        obj,
+        nm_platform_lookup_obj(self->priv.platform, NMP_CACHE_ID_TYPE_OBJECT_TYPE, obj));
+    c_list_link_tail(&self->priv.p->obj_state_lst_head, &obj_state->os_lst);
+    g_hash_table_add(self->priv.p->obj_state_hash, obj_state);
+    _LOGD("obj-state: track: %s", _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
+    nm_assert_obj_state(self, obj_state);
+}
+
+static void
 _obj_states_update_all(NML3Cfg *self)
 {
     static const NMPObjectType obj_types[] = {
@@ -1041,19 +1056,15 @@ _obj_states_update_all(NML3Cfg *self)
                 /* this is a nodev route. We don't track an obj-state for this. */
                 continue;
             }
-
+            if (obj_type == NMP_OBJECT_TYPE_IP4_ROUTE
+                && NMP_OBJECT_CAST_IP4_ROUTE(obj)->weight > 0) {
+                /* this route weight is bigger than 0, that means we don't know
+                 * which kind of route this will be. It can only be determined during commit. */
+                continue;
+            }
             obj_state = g_hash_table_lookup(self->priv.p->obj_state_hash, &obj);
             if (!obj_state) {
-                obj_state =
-                    _obj_state_data_new(obj,
-                                        nm_platform_lookup_obj(self->priv.platform,
-                                                               NMP_CACHE_ID_TYPE_OBJECT_TYPE,
-                                                               obj));
-                c_list_link_tail(&self->priv.p->obj_state_lst_head, &obj_state->os_lst);
-                g_hash_table_add(self->priv.p->obj_state_hash, obj_state);
-                _LOGD("obj-state: track: %s",
-                      _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
-                nm_assert_obj_state(self, obj_state);
+                _obj_states_track_new(self, obj);
                 continue;
             }
 
@@ -1265,6 +1276,11 @@ loop_done:
         if (singlehop_routes) {
             for (i = 0; i < singlehop_routes->len; i++) {
                 const NMPObject *obj = singlehop_routes->pdata[i];
+                ObjStateData    *obj_state;
+
+                obj_state = g_hash_table_lookup(self->priv.p->obj_state_hash, &obj);
+                if (!obj_state)
+                    _obj_states_track_new(self, obj);
 
                 if (!_obj_states_sync_filter(self, obj, commit_type))
                     continue;
