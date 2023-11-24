@@ -1064,7 +1064,12 @@ _obj_states_update_all(NML3Cfg *self)
                 /* this is a nodev route. We don't track an obj-state for this. */
                 continue;
             }
-
+            if (obj_type == NMP_OBJECT_TYPE_IP4_ROUTE
+                && NMP_OBJECT_CAST_IP4_ROUTE(obj)->weight > 0) {
+                /* this route weight is bigger than 0, that means we don't know
+                 * which kind of route this will be. It can only be determined during commit. */
+                continue;
+            }
             obj_state = g_hash_table_lookup(self->priv.p->obj_state_hash, &obj);
             if (!obj_state) {
                 _obj_states_track_new(self, obj);
@@ -1279,6 +1284,11 @@ loop_done:
         if (singlehop_routes) {
             for (i = 0; i < singlehop_routes->len; i++) {
                 const NMPObject *obj = singlehop_routes->pdata[i];
+                ObjStateData    *obj_state;
+
+                obj_state = g_hash_table_lookup(self->priv.p->obj_state_hash, &obj);
+                if (!obj_state)
+                    _obj_states_track_new(self, obj);
 
                 if (!_obj_states_sync_filter(self, obj, commit_type))
                     continue;
