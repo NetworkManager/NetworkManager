@@ -8596,7 +8596,7 @@ nm_platform_ip4_rt_nexthop_hash_update(const NMPlatformIP4RtNextHop *obj,
                                        gboolean                      for_id,
                                        NMHashState                  *h)
 {
-    guint8 w;
+    guint16 w;
 
     nm_assert(obj);
 
@@ -8651,7 +8651,7 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
                                     obj->ifindex,
                                     nm_platform_ip4_route_get_n_nexthops(obj),
                                     obj->gateway,
-                                    (guint8) NM_MAX(obj->weight, 1u));
+                                    (guint16) NM_MAX(obj->weight, 1u));
             }
         }
         break;
@@ -8666,7 +8666,7 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
             obj->metric,
             nm_platform_ip4_route_get_n_nexthops(obj),
             obj->gateway,
-            (guint8) NM_MAX(obj->weight, 1u),
+            (guint16) NM_MAX(obj->weight, 1u),
             nmp_utils_ip_config_source_round_trip_rtprot(obj->rt_source),
             _ip_route_scope_inv_get_normalized(obj),
             obj->tos,
@@ -8732,8 +8732,8 @@ nm_platform_ip4_rt_nexthop_cmp(const NMPlatformIP4RtNextHop *a,
                                const NMPlatformIP4RtNextHop *b,
                                gboolean                      for_id)
 {
-    guint8 w_a;
-    guint8 w_b;
+    guint16 w_a;
+    guint16 w_b;
 
     /* Note that weight zero is not valid (in kernel). We thus treat
      * weight zero usually the same as 1.
