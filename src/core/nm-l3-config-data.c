@@ -2512,7 +2512,7 @@ nm_l3_config_data_get_blacklisted_ip4_routes(const NML3ConfigData *self, gboolea
             .metric        = NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE,
             .scope_inv     = nm_platform_route_scope_inv(NM_RT_SCOPE_LINK),
         };
-        nm_platform_ip_route_normalize(AF_INET, &rx.rx);
+        nm_platform_ip_route_normalize(AF_INET, &rx.rx, NMP_IP_ROUTE_NORMALIZE_FLAGS_NONE);
 
         if (nm_l3_config_data_lookup_route(self, AF_INET, &rx.rx)) {
             /* we track such a route explicitly. Don't blacklist it. */
@@ -2693,7 +2693,9 @@ nm_l3_config_data_add_dependent_device_routes(NML3ConfigData       *self,
                     .plen          = plen,
                 };
 
-                nm_platform_ip_route_normalize(addr_family, &rx.rx);
+                nm_platform_ip_route_normalize(addr_family,
+                                               &rx.rx,
+                                               NMP_IP_ROUTE_NORMALIZE_FLAGS_NONE);
                 nm_l3_config_data_add_route(self, addr_family, NULL, &rx.rx);
             }
         }
