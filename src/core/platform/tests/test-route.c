@@ -342,6 +342,7 @@ test_ip4_route(void)
     rts[0].mss        = mss;
     rts[0].scope_inv  = nm_platform_route_scope_inv(RT_SCOPE_LINK);
     rts[0].n_nexthops = 1;
+    rts[0].is_kernel  = TRUE;
     rts[1].rt_source  = nmp_utils_ip_config_source_round_trip_rtprot(NM_IP_CONFIG_SOURCE_USER);
     rts[1].network    = network;
     rts[1].plen       = plen;
@@ -351,6 +352,7 @@ test_ip4_route(void)
     rts[1].mss        = mss;
     rts[1].scope_inv  = nm_platform_route_scope_inv(RT_SCOPE_UNIVERSE);
     rts[1].n_nexthops = 1;
+    rts[1].is_kernel  = TRUE;
     rts[2].rt_source  = nmp_utils_ip_config_source_round_trip_rtprot(NM_IP_CONFIG_SOURCE_USER);
     rts[2].network    = 0;
     rts[2].plen       = 0;
@@ -360,6 +362,7 @@ test_ip4_route(void)
     rts[2].mss        = mss;
     rts[2].scope_inv  = nm_platform_route_scope_inv(RT_SCOPE_UNIVERSE);
     rts[2].n_nexthops = 1;
+    rts[2].is_kernel  = TRUE;
     g_assert_cmpint(routes->len, ==, 3);
     nmtst_platform_ip4_routes_equal_aptr((const NMPObject *const *) routes->pdata,
                                          rts,

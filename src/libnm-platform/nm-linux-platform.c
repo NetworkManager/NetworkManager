@@ -4131,6 +4131,8 @@ rta_multipath_done:
     obj->ip_route.ifindex = nh.ifindex;
 
     if (IS_IPv4) {
+        obj->ip4_route.is_kernel = TRUE;
+
         nm_assert((!!nh.found) == (v4_n_nexthops > 0u));
         obj->ip4_route.n_nexthops = v4_n_nexthops;
         if (v4_n_nexthops > 1) {

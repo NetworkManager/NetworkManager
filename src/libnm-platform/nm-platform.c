@@ -5306,6 +5306,12 @@ nm_platform_ip_route_normalize(int addr_family, NMPlatformIPRoute *route)
         route->metric_any = FALSE;
         r4->network       = nm_ip4_addr_clear_host_address(r4->network, r4->plen);
         r4->scope_inv     = _ip_route_scope_inv_get_normalized(r4);
+        r4->is_kernel     = TRUE;
+        if (r4->ifindex > 0u) {
+            r4->n_nexthops = NM_MAX(r4->n_nexthops, 1u);
+            if (r4->n_nexthops <= 1u)
+                r4->weight = 0;
+        }
         break;
     case AF_INET6:
         r6                = (NMPlatformIP6Route *) route;
@@ -7025,6 +7031,7 @@ nm_platform_ip4_route_to_string_full(const NMPlatformIP4Route     *route,
         "%s"         /* rto_min */
         "%s"         /* quickack */
         "%s"         /* mtu */
+        "%s"         /* is_kernel */
         "",
         nm_net_aux_rtnl_rtntype_n2a_maybe_buf(nm_platform_route_type_uncoerce(route->type_coerced),
                                               str_type),
@@ -7091,7 +7098,8 @@ nm_platform_ip4_route_to_string_full(const NMPlatformIP4Route     *route,
                                                        " mtu %s%" G_GUINT32_FORMAT,
                                                        route->lock_mtu ? "lock " : "",
                                                        route->mtu)
-                                      : "");
+                                      : "",
+        route->is_kernel ? " is-kernel" : "");
 
     if ((n_nexthops == 1 && route->ifindex > 0) || n_nexthops == 0) {
         /* A plain single hop route. Nothing extra to remark. */
@@ -8600,6 +8608,14 @@ nm_platform_ip4_rt_nexthop_hash_update(const NMPlatformIP4RtNextHop *obj,
 
     nm_assert(obj);
 
+    /* Note that NMPlatformIP4Route.weight has some special handling with
+     * what zero/one means.
+     *
+     * Here we compare the next-hop of an (obviously) multi-hop route. Such
+     * considerations don't apply here.
+     *
+     * All that we do, is to normalize a 0 to 1, with "for_id" comparison. */
+
     w = for_id ? NM_MAX(obj->weight, 1u) : obj->weight;
 
     nm_hash_update_vals(h, obj->ifindex, obj->gateway, w);
@@ -8610,6 +8626,8 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
                                   NMPlatformIPRouteCmpType  cmp_type,
                                   NMHashState              *h)
 {
+    guint n_nexthops;
+
     switch (cmp_type) {
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ECMP_ID:
@@ -8647,15 +8665,15 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
                                                       obj->lock_mtu,
                                                       obj->lock_mss));
             if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) {
-                nm_hash_update_vals(h,
-                                    obj->ifindex,
-                                    nm_platform_ip4_route_get_n_nexthops(obj),
-                                    obj->gateway,
-                                    (guint16) NM_MAX(obj->weight, 1u));
+                n_nexthops = nm_platform_ip4_route_get_n_nexthops(obj);
+                /* obj->weight must be ignored for ID hashing, so that cmp()
+                 * below works correctly. */
+                nm_hash_update_vals(h, obj->ifindex, n_nexthops, obj->gateway);
             }
         }
         break;
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
+        n_nexthops = nm_platform_ip4_route_get_n_nexthops(obj);
         nm_hash_update_vals(
             h,
             obj->type_coerced,
@@ -8664,9 +8682,10 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
             nm_ip4_addr_clear_host_address(obj->network, obj->plen),
             obj->plen,
             obj->metric,
-            nm_platform_ip4_route_get_n_nexthops(obj),
+            n_nexthops,
             obj->gateway,
-            (guint16) NM_MAX(obj->weight, 1u),
+            /* obj->weight must be ignored for ID hashing, so that cmp()
+             * below works correctly. */
             nmp_utils_ip_config_source_round_trip_rtprot(obj->rt_source),
             _ip_route_scope_inv_get_normalized(obj),
             obj->tos,
@@ -8722,7 +8741,8 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
                                                   obj->lock_initcwnd,
                                                   obj->lock_initrwnd,
                                                   obj->lock_mtu,
-                                                  obj->lock_mss));
+                                                  obj->lock_mss,
+                                                  obj->is_kernel));
         break;
     }
 }
@@ -8735,15 +8755,17 @@ nm_platform_ip4_rt_nexthop_cmp(const NMPlatformIP4RtNextHop *a,
     guint16 w_a;
     guint16 w_b;
 
-    /* Note that weight zero is not valid (in kernel). We thus treat
-     * weight zero usually the same as 1.
-     *
-     * Not here for cmp/hash_update functions. These functions check for the exact
-     * bit-pattern, and not the it means at other places. */
     NM_CMP_SELF(a, b);
     NM_CMP_FIELD(a, b, ifindex);
     NM_CMP_FIELD(a, b, gateway);
 
+    /* Note that NMPlatformIP4Route.weight has some special handling with
+     * what zero/one means.
+     *
+     * Here we compare the next-hop of an (obviously) multi-hop route. Such
+     * considerations don't apply here.
+     *
+     * All that we do, is to normalize a 0 to 1, with "for_id" comparison. */
     w_a = for_id ? NM_MAX(a->weight, 1u) : a->weight;
     w_b = for_id ? NM_MAX(b->weight, 1u) : b->weight;
     NM_CMP_DIRECT(w_a, w_b);
@@ -8756,6 +8778,41 @@ nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
                           const NMPlatformIP4Route *b,
                           NMPlatformIPRouteCmpType  cmp_type)
 {
+    guint n_nexthops;
+
+#define _CMP_WEIGHT_SEMANTICALLY(n_nexthops, a, b)                           \
+    /* NMPlatformIP4Route.weight has special semantics.
+     *
+     * In particular, whether the objects are from kernel or not.
+     *
+     * Note that this brings an odd asymmetry to the comparison, as it now
+     * depends on whether one of the operands is from kernel.  In practice,
+     * this works fine because our hash tables either have all elements from
+     * kernel or not. So one of the operands is the needle to lookup and the
+     * other is inside the hash table. */                      \
+    G_STMT_START                                                             \
+    {                                                                        \
+        const NMPlatformIP4Route *const _ra = (a);                           \
+        const NMPlatformIP4Route *const _rb = (b);                           \
+                                                                             \
+        if ((n_nexthops) > 1u) {                                             \
+            /* Both routes are multi-hop. The weight is considered, but
+             * zero is normalized to one. */      \
+            NM_CMP_DIRECT(NM_MAX(_ra->weight, 1u), NM_MAX(_rb->weight, 1u)); \
+        } else if (_ra->is_kernel || _rb->is_kernel) {                       \
+            /* At least one of the routes is received from kernel .The
+             * weight is meaningless for single-hop routes and is ignored. */       \
+        } else {                                                             \
+            /* Both routes are single-hop and neither are is-kernel.
+             * This means, we compare the weight directly. In
+             * particular, we need to differentiate a zero, because
+             * that determines whether the route is eligible for ECMP
+             * merging. */         \
+            NM_CMP_DIRECT(_ra->weight, _rb->weight);                         \
+        }                                                                    \
+    }                                                                        \
+    G_STMT_END
+
     NM_CMP_SELF(a, b);
     switch (cmp_type) {
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ECMP_ID:
@@ -8802,9 +8859,9 @@ nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
             if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) {
                 NM_CMP_FIELD(a, b, ifindex);
                 NM_CMP_FIELD(a, b, gateway);
-                NM_CMP_DIRECT(NM_MAX(a->weight, 1u), NM_MAX(b->weight, 1u));
-                NM_CMP_DIRECT(nm_platform_ip4_route_get_n_nexthops(a),
-                              nm_platform_ip4_route_get_n_nexthops(b));
+                n_nexthops = nm_platform_ip4_route_get_n_nexthops(a);
+                NM_CMP_DIRECT(n_nexthops, nm_platform_ip4_route_get_n_nexthops(b));
+                _CMP_WEIGHT_SEMANTICALLY(n_nexthops, a, b);
             }
         }
         break;
@@ -8825,16 +8882,16 @@ nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
         NM_CMP_FIELD(a, b, plen);
         NM_CMP_FIELD_UNSAFE(a, b, metric_any);
         NM_CMP_FIELD(a, b, metric);
-        if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
-            NM_CMP_DIRECT(nm_platform_ip4_route_get_n_nexthops(a),
-                          nm_platform_ip4_route_get_n_nexthops(b));
-        } else
-            NM_CMP_FIELD(a, b, n_nexthops);
         NM_CMP_FIELD(a, b, gateway);
-        if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
-            NM_CMP_DIRECT(NM_MAX(a->weight, 1u), NM_MAX(b->weight, 1u));
-        else
+        if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
+            n_nexthops = nm_platform_ip4_route_get_n_nexthops(a);
+            NM_CMP_DIRECT(n_nexthops, nm_platform_ip4_route_get_n_nexthops(b));
+            _CMP_WEIGHT_SEMANTICALLY(n_nexthops, a, b);
+        } else {
+            NM_CMP_FIELD(a, b, n_nexthops);
             NM_CMP_FIELD(a, b, weight);
+            NM_CMP_FIELD_BOOL(a, b, is_kernel);
+        }
         if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
             NM_CMP_DIRECT(nmp_utils_ip_config_source_round_trip_rtprot(a->rt_source),
                           nmp_utils_ip_config_source_round_trip_rtprot(b->rt_source));

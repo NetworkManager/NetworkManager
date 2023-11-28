@@ -446,16 +446,21 @@ struct _NMPlatformIP4Route {
 
     /* This is the weight of for the first next-hop, in case of n_nexthops > 1.
      *
-     * If n_nexthops is zero, this value is undefined (should be zero).
-     * If n_nexthops is 1, this also doesn't matter, but it's usually set to
-     * zero.
-     * If n_nexthops is greater or equal to one, this is the weight of
-     * the first hop.
+     * For kernel:
+     *   If n_nexthops is zero, this value is undefined (should be zero).
+     *   If n_nexthops is 1, this also doesn't matter, but it's usually set to
+     *   zero.
+     *   If n_nexthops is greater or equal to one, this is the weight of
+     *   the first hop.
+     *   The valid range for weight in kernel is 1-256.
      *
-     * Note that upper layers (nm_utils_ip_route_attribute_to_platform()) use this flag to indicate
-     * whether this is a multihop route. Single-hop, non-ECMP routes will have a weight of zero.
-     *
-     * The valid range for weight in kernel is 1-256. */
+     * Note that upper layers (nm_utils_ip_route_attribute_to_platform()) use
+     * this field to indicate whether this is a multihop route. Single-hop,
+     * non-ECMP routes will have a weight of zero.  In that case, the "weight"
+     * does matter also for single hop routes. See also _CMP_WEIGHT_SEMANTICALLY().
+     * See also the field "is_kernel", which determines how we treat the weight of
+     * single hop routes.
+     */
     guint16 weight;
 
     /* rtm_tos (iproute2: tos)
@@ -477,6 +482,12 @@ struct _NMPlatformIP4Route {
      * For IPv6 routes, the scope is ignored and kernel always assumes global scope.
      * Hence, this field is only in NMPlatformIP4Route. */
     guint8 scope_inv;
+
+    /* If true, this route was received from kernel and is in the platform cache.
+     *
+     * This indicates how the "weight" of single-hop routes is treated.
+     */
+    bool is_kernel : 1;
 } _nm_alignas(NMPlatformObject);
 
 struct _NMPlatformIP6Route {
@@ -704,13 +715,14 @@ typedef struct {
 typedef struct {
     int       ifindex;
     in_addr_t gateway;
-    /* The valid range for weight is 1-256. Single hop routes in kernel
-     * don't have a weight, we assign them weight zero (to indicate the
-     * weight is missing).
+    /* The valid range for weight is 1-256.
      *
-     * Upper layers (nm_utils_ip_route_attribute_to_platform()) care about
-     * the distinction of unset weight (no-ECMP). They express no-ECMP as
-     * zero.
+     * Single hop routes in kernel don't have a weight, we assign them weight
+     * zero (to indicate the weight is missing).
+     *
+     * But note that here we have a next-hop for a NON-single-hop route.  The
+     * weight works just as you'd expect, except that 0 is an alias for 1 (for
+     * convenience)..
      */
     guint16 weight;
 
