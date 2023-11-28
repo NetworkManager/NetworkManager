@@ -719,7 +719,9 @@ test_ip4_route_options(gconstpointer test_data)
 
     for (i = 0; i < rts_n; i++) {
         rts_cmp[i] = rts_add[i];
-        nm_platform_ip_route_normalize(AF_INET, NM_PLATFORM_IP_ROUTE_CAST(&rts_cmp[i]));
+        nm_platform_ip_route_normalize(AF_INET,
+                                       NM_PLATFORM_IP_ROUTE_CAST(&rts_cmp[i]),
+                                       NMP_IP_ROUTE_NORMALIZE_FLAGS_NONE);
     }
 
     routes = nmtstp_ip4_route_get_all(NM_PLATFORM_GET, IFINDEX);
@@ -891,7 +893,9 @@ test_ip6_route_options(gconstpointer test_data)
 
     for (i = 0; i < rts_n; i++) {
         rts_cmp[i] = rts_add[i];
-        nm_platform_ip_route_normalize(AF_INET6, NM_PLATFORM_IP_ROUTE_CAST(&rts_cmp[i]));
+        nm_platform_ip_route_normalize(AF_INET6,
+                                       NM_PLATFORM_IP_ROUTE_CAST(&rts_cmp[i]),
+                                       NMP_IP_ROUTE_NORMALIZE_FLAGS_NONE);
     }
 
     routes = nmtstp_ip6_route_get_all(NM_PLATFORM_GET, IFINDEX);
@@ -1936,7 +1940,7 @@ test_blackhole(gconstpointer test_data)
         };
     }
 
-    nm_platform_ip_route_normalize(addr_family, &rr.rx);
+    nm_platform_ip_route_normalize(addr_family, &rr.rx, NMP_IP_ROUTE_NORMALIZE_FLAGS_NONE);
 
     if (IS_IPv4)
         r = nm_platform_ip4_route_add(NM_PLATFORM_GET, NMP_NLM_FLAG_APPEND, &rr.r4, NULL);

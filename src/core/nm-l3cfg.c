@@ -3911,7 +3911,7 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
                 .type_coerced  = nm_platform_route_type_coerce(RTN_LOCAL),
                 .pref_src      = NM_IPV4LO_ADDR1,
             };
-            nm_platform_ip_route_normalize(AF_INET, &rx.rx);
+            nm_platform_ip_route_normalize(AF_INET, &rx.rx, NMP_IP_ROUTE_NORMALIZE_FLAGS_NONE);
             if (!nm_l3_config_data_lookup_route(l3cd, AF_INET, &rx.rx)) {
                 nm_l3_config_data_add_route_4(l3cd, &rx.r4);
             }

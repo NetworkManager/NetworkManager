@@ -444,18 +444,27 @@ struct _NMPlatformIP4Route {
      * pref_src must match, unless set to 0.0.0.0 to match any. */
     in_addr_t pref_src;
 
-    /* This is the weight of for the first next-hop, in case of n_nexthops > 1.
+    /* This is the weight of for the first next-hop.
      *
-     * If n_nexthops is zero, this value is undefined (should be zero).
-     * If n_nexthops is 1, this also doesn't matter, but it's usually set to
-     * zero.
-     * If n_nexthops is greater or equal to one, this is the weight of
-     * the first hop.
+     * For multi-hop routes (n_nexthops > 1) this is the weight of the first
+     * hop. Note that the valid range is from 1-256. Zero is treated the same
+     * as 1 (for NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID comparison).
      *
-     * Note that upper layers (nm_utils_ip_route_attribute_to_platform()) use this flag to indicate
-     * whether this is a multihop route. Single-hop, non-ECMP routes will have a weight of zero.
+     * For routes without next-hop (e.g. blackhole type), the weight is
+     * meaningless. It should be set to zero. NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID
+     * will treat it as zero.
      *
-     * The valid range for weight in kernel is 1-256. */
+     * For single-hop routes, in kernel they don't have a weight. That means,
+     * all routes in the platform cache have a weight of zero. For tracking
+     * purposes, we find it useful that upper layers have single-hop routes
+     * with a positive weight. Such routes can never exist in kernel. Trying
+     * to add such a route will somewhat work, because
+     * nm_platform_ip_route_normalize() normalizes the weight to zero
+     * (effectively adding another route, according to
+     * NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID). A lookup in the platform cache with
+     * such a route will not yield a result. It does not exist there. If you
+     * want to find such a route, normalize it first.
+     */
     guint16 weight;
 
     /* rtm_tos (iproute2: tos)
@@ -704,13 +713,11 @@ typedef struct {
 typedef struct {
     int       ifindex;
     in_addr_t gateway;
-    /* The valid range for weight is 1-256. Single hop routes in kernel
-     * don't have a weight, we assign them weight zero (to indicate the
-     * weight is missing).
+
+    /* The weight of the next hop. The valid range for weight is 1-256.
      *
-     * Upper layers (nm_utils_ip_route_attribute_to_platform()) care about
-     * the distinction of unset weight (no-ECMP). They express no-ECMP as
-     * zero.
+     * Zero is allowed too, but treated as 1 (by
+     * NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID comparison).
      */
     guint16 weight;
 
@@ -2263,7 +2270,28 @@ nm_platform_ip_address_get_prune_list(NMPlatform            *self,
 
 gboolean nm_platform_ip_address_flush(NMPlatform *self, int addr_family, int ifindex);
 
-void nm_platform_ip_route_normalize(int addr_family, NMPlatformIPRoute *route);
+typedef enum {
+    /* No flags. */
+    NMP_IP_ROUTE_NORMALIZE_FLAGS_NONE = 0,
+
+    /* Don't normalize the "weight" for IPv4 single hop routes.
+     * nm_platform_ip_route_normalize() aims to normalize a route as it
+     * can exist in kernel. But in kernel, a IPv4 single hop route cannot
+     * have a (non-zero) weight. Normalization would usually loose that
+     * information.
+     *
+     * However, it can be useful to normalize routes, but not the "weight".
+     * Upper layers want to track single hop routes with positive weight for
+     * internal purposes, while normalizing all other fields. This flag
+     * allows to opt-out from that normalization. The result may not ever
+     * exist in kernel (as far as NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID is concerned).
+     */
+    NMP_IP_ROUTE_NORMALIZE_FLAGS_KEEP_ECMP_WEIGHT = 0x1,
+} NMPIPRouteNormalizeFlags;
+
+void nm_platform_ip_route_normalize(int                      addr_family,
+                                    NMPlatformIPRoute       *route,
+                                    NMPIPRouteNormalizeFlags flags);
 
 static inline guint32
 nm_platform_ip4_route_get_effective_metric(const NMPlatformIP4Route *r)
