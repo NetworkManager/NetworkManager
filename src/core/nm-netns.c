@@ -916,6 +916,8 @@ nm_netns_ip_route_ecmp_commit(NMNetns    *self,
         }
 
         if (route->n_nexthops <= 1) {
+            NMPObject *rt;
+
             /* This is a single hop route. Return it to the caller. */
             if (!*out_singlehop_routes) {
                 /* Note that the returned array does not own a reference. This
@@ -924,7 +926,26 @@ nm_netns_ip_route_ecmp_commit(NMNetns    *self,
                 *out_singlehop_routes =
                     g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
             }
-            g_ptr_array_add(*out_singlehop_routes, (gpointer) nmp_object_ref(route_obj));
+
+            /* The weight is odd. In single-hop objects received from kernel, it's
+             * always zero (and "is_kernel") is set. For NM-internal purposes, the weight
+             * is relevant.
+             *
+             * There is some special handling for comparing "is_kernel" routes with others.
+             * See _CMP_WEIGHT_SEMANTICALLY(). It still brings an odd asymmetry, and we would
+             * best avoid that.
+             *
+             * Here, we are going to return a route to NML3Cfg, which doesn't track "is_kernel"
+             * routes. But the route we are going to return, really should have weight zero,
+             * to avoid the oddity.
+             *
+             * Normalize the weight to zero. */
+            nm_assert(route_obj->ip4_route.weight > 0u);
+
+            rt                   = nmp_object_clone(route_obj, FALSE);
+            rt->ip4_route.weight = 0;
+            g_ptr_array_add(*out_singlehop_routes, rt);
+
             if (changed) {
                 _LOGT("ecmp-route: single-hop %s",
                       nmp_object_to_string(route_obj,
