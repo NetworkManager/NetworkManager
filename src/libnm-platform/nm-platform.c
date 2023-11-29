@@ -5336,6 +5336,33 @@ nm_platform_ip_route_normalize(int                      addr_family,
 
     route->rt_source = nmp_utils_ip_config_source_round_trip_rtprot(route->rt_source);
 
+    /* For the most part, nm_platform_ip_route_normalize() tries to normalize some fields
+     * as it happens when they go through kernel.
+     *
+     * In most cases, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID comparison performs the same
+     * relaxed comparison. For example, normalize() will normalize "scope_inv", and also
+     * the NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID comparison will do that on-the-fly. Optimally,
+     * looking into a hash table gives you the same result, whether you normalize the
+     * needle first (or whether the entries in the hash table are normalized).
+     *
+     * Unfortunately, that's not always the case. Examples:
+     *
+     * - "metric": we have a "metric_any" field. This is used by higher layers
+     *     to indicate that the metric is dynamically chosen (e.g. by the default
+     *     metric of the default route). As such, as far as NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID
+     *     is concerned, the "metric_any" and "metric" values are treated as distinguishing
+     *     properties. But when we add a route in kernel, "metric_any" no longer exist.
+     *     It becomes a fixed metric. Normalize will fix the metric.
+     * - "weight": for IPv4 single-hop routes, the weight does not exist in kernel. We however
+     *     use the field to track ECMP information in higher layers. Consequently,
+     *     NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID treats the weight as-is, while normalization
+     *     (and adding it to kernel) will mangle it.
+     *
+     * You thus must be careful when you track NMPlatformIP4Route that make use of such
+     * higher-level features, which cannot be represented in kernel or the NMPlatform
+     * cache.
+     */
+
     switch (addr_family) {
     case AF_INET:
         r4                = (NMPlatformIP4Route *) route;
