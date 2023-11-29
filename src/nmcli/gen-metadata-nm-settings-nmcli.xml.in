@@ -652,9 +652,13 @@
         <property name="zone"
                   nmcli-description="The trust level of a the connection.  Free form case-insensitive string (for example &quot;Home&quot;, &quot;Work&quot;, &quot;Public&quot;).  NULL or unspecified zone means the connection will be placed in the default zone as defined by the firewall. When updating this property on a currently activated connection, the change takes effect immediately."
                   format="string" />
+        <property name="controller"
+                  alias="controller"
+                  nmcli-description="Interface name of the controller device or UUID of the controller connection."
+                  format="string" />
         <property name="master"
                   alias="master"
-                  nmcli-description="Interface name of the master device or UUID of the master connection."
+                  nmcli-description="Interface name of the master device or UUID of the master connection. Deprecated 1.46. Use &quot;controller&quot; instead, this is just an alias."
                   format="string" />
         <property name="slave-type"
                   alias="slave-type"

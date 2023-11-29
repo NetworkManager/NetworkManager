@@ -1956,6 +1956,7 @@ global:
 	nm_device_ip_tunnel_get_fwmark;
 	nm_ethtool_optname_is_channels;
 	nm_ethtool_optname_is_eee;
+	nm_setting_connection_get_controller;
 	nm_setting_hsr_get_multicast_spec;
 	nm_setting_hsr_get_port1;
 	nm_setting_hsr_get_port2;

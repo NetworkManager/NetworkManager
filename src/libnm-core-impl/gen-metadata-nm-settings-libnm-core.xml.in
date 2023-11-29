@@ -779,6 +779,10 @@
                   dbus-type="i"
                   gprop-type="NMSettingConnectionAutoconnectSlaves"
                   />
+        <property name="controller"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="dns-over-tls"
                   dbus-type="i"
                   gprop-type="gint"
@@ -804,6 +808,7 @@
                   gprop-type="gint"
                   />
         <property name="master"
+                  is-deprecated="1"
                   dbus-type="s"
                   gprop-type="gchararray"
                   />
