@@ -797,6 +797,14 @@ _nm_n_acd_data_probe_new(NML3Cfg *self, in_addr_t addr, guint32 timeout_msec, gp
                     nm_assert(_self->priv.p->combined_l3cd_commited);                            \
                                                                                                  \
                     if (NM_MORE_ASSERTS > 5) {                                                   \
+                        /* metric-any must be resolved before adding the object. Otherwise,
+                         * their real metric is not known, and they cannot be compared to objects
+                         * from NMPlatform cache. */      \
+                        nm_assert(!NM_IN_SET(NMP_OBJECT_GET_TYPE(_obj_state->obj),               \
+                                             NMP_OBJECT_TYPE_IP4_ROUTE,                          \
+                                             NMP_OBJECT_TYPE_IP6_ROUTE)                          \
+                                  || !NMP_OBJECT_CAST_IP_ROUTE(_obj_state->obj)->metric_any);    \
+                                                                                                 \
                         nm_assert(c_list_contains(&_self->priv.p->obj_state_lst_head,            \
                                                   &_obj_state->os_lst));                         \
                         nm_assert(_obj_state->os_plobj                                           \
