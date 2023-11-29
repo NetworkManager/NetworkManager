@@ -136,7 +136,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                                NM_SETTING_CONNECTION_SETTING_NAME,
                                nm_setting_connection_get_slave_type(s_con)
                                    ? NM_SETTING_CONNECTION_SLAVE_TYPE
-                                   : NM_SETTING_CONNECTION_MASTER);
+                                   : NM_SETTING_CONNECTION_CONTROLLER);
                 return FALSE;
             }
         }

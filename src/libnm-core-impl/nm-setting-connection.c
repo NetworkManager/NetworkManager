@@ -1125,11 +1125,11 @@ _nm_connection_detect_slave_type_full(NMSettingConnection *s_con,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_MISSING_PROPERTY,
                         _("Slave connections need a valid '%s' property"),
-                        NM_SETTING_CONNECTION_MASTER);
+                        NM_SETTING_CONNECTION_CONTROLLER);
             g_prefix_error(error,
                            "%s.%s: ",
                            NM_SETTING_CONNECTION_SETTING_NAME,
-                           NM_SETTING_CONNECTION_MASTER);
+                           NM_SETTING_CONNECTION_CONTROLLER);
             return FALSE;
         }
         if (slave_setting_type && connection
@@ -1149,7 +1149,7 @@ _nm_connection_detect_slave_type_full(NMSettingConnection *s_con,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_MISSING_PROPERTY,
                             _("Cannot set '%s' without '%s'"),
-                            NM_SETTING_CONNECTION_MASTER,
+                            NM_SETTING_CONNECTION_CONTROLLER,
                             NM_SETTING_CONNECTION_SLAVE_TYPE);
                 g_prefix_error(error,
                                "%s.%s: ",
@@ -1595,7 +1595,7 @@ after_interface_name:
                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
                     _("Detect a slave connection with '%s' set and a port type '%s'. '%s' should "
                       "be set to '%s'"),
-                    NM_SETTING_CONNECTION_MASTER,
+                    NM_SETTING_CONNECTION_CONTROLLER,
                     normerr_missing_slave_type_port,
                     NM_SETTING_CONNECTION_SLAVE_TYPE,
                     normerr_missing_slave_type);

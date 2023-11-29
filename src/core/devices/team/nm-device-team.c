@@ -290,7 +290,7 @@ master_update_slave_connection(NMDevice     *device,
     g_free(port_config);
 
     g_object_set(nm_connection_get_setting_connection(connection),
-                 NM_SETTING_CONNECTION_MASTER,
+                 NM_SETTING_CONNECTION_CONTROLLER,
                  nm_connection_get_uuid(applied_connection),
                  NM_SETTING_CONNECTION_SLAVE_TYPE,
                  NM_SETTING_TEAM_SETTING_NAME,

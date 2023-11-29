@@ -312,12 +312,12 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                        _("A connection with a '%s' setting must have a master."),
+                        _("A connection with a '%s' setting must have a controller."),
                         NM_SETTING_OVS_INTERFACE_SETTING_NAME);
             g_prefix_error(error,
                            "%s.%s: ",
                            NM_SETTING_CONNECTION_SETTING_NAME,
-                           NM_SETTING_CONNECTION_MASTER);
+                           NM_SETTING_CONNECTION_CONTROLLER);
             return FALSE;
         }
 

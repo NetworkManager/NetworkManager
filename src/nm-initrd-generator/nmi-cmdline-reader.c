@@ -926,7 +926,7 @@ reader_parse_master(Reader *reader, char *argument, const char *type_name, const
         g_object_set(s_con,
                      NM_SETTING_CONNECTION_SLAVE_TYPE,
                      type_name,
-                     NM_SETTING_CONNECTION_MASTER,
+                     NM_SETTING_CONNECTION_CONTROLLER,
                      master,
                      NULL);
     } while (slaves && *slaves != '\0');
