@@ -5318,14 +5318,14 @@ _ip4_route_weight_normalize(guint n_nexthops, guint16 weight, gboolean keep_ecmp
  * Note that a positive "weight" of IPv4 single hop routes is not meaningful in
  * kernel. While we track such routes at upper layers, they don't exist in
  * kernel (well, they exist, with their weight set to zero, which makes them a
- * different route according to NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID. The
- * NMP_IP_ROUTE_NORMALIZE_FLAGS_KEEP_ECMP_WEIGHT flag can be used to prevent
- * such normalization.
+ * different route according to NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID. It will
+ * be normalized to zero too, making basically it a different route.
+ *
+ * Also, "metric_any" is normalized to FALSE. This also makes it a different route
+ * according to NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID.
  */
 void
-nm_platform_ip_route_normalize(int                      addr_family,
-                               NMPlatformIPRoute       *route,
-                               NMPIPRouteNormalizeFlags flags)
+nm_platform_ip_route_normalize(int addr_family, NMPlatformIPRoute *route)
 {
     NMPlatformIP4Route *r4;
     NMPlatformIP6Route *r6;
@@ -5344,10 +5344,7 @@ nm_platform_ip_route_normalize(int                      addr_family,
         r4->network       = nm_ip4_addr_clear_host_address(r4->network, r4->plen);
         r4->scope_inv     = _ip_route_scope_inv_get_normalized(r4);
         r4->n_nexthops    = nm_platform_ip4_route_get_n_nexthops(r4);
-        r4->weight        = _ip4_route_weight_normalize(
-            r4->n_nexthops,
-            r4->weight,
-            NM_FLAGS_HAS(flags, NMP_IP_ROUTE_NORMALIZE_FLAGS_KEEP_ECMP_WEIGHT));
+        r4->weight        = _ip4_route_weight_normalize(r4->n_nexthops, r4->weight, FALSE);
         break;
     case AF_INET6:
         r6                = (NMPlatformIP6Route *) route;
@@ -5385,8 +5382,7 @@ _ip_route_add(NMPlatform *self, NMPNlmFlags flags, NMPObject *obj_stack, char **
               || obj_stack->ip4_route.n_nexthops <= 1u || obj_stack->_ip4_route.extra_nexthops);
 
     nm_platform_ip_route_normalize(NMP_OBJECT_GET_ADDR_FAMILY((obj_stack)),
-                                   NMP_OBJECT_CAST_IP_ROUTE(obj_stack),
-                                   NMP_IP_ROUTE_NORMALIZE_FLAGS_NONE);
+                                   NMP_OBJECT_CAST_IP_ROUTE(obj_stack));
 
     ifindex = obj_stack->ip_route.ifindex;
 
@@ -9458,9 +9454,7 @@ nm_platform_ip4_address_generate_device_route(const NMPlatformIP4Address *addr,
         .scope_inv     = nm_platform_route_scope_inv(NM_RT_SCOPE_LINK),
     };
 
-    nm_platform_ip_route_normalize(AF_INET,
-                                   (NMPlatformIPRoute *) dst,
-                                   NMP_IP_ROUTE_NORMALIZE_FLAGS_NONE);
+    nm_platform_ip_route_normalize(AF_INET, (NMPlatformIPRoute *) dst);
 
     return dst;
 }

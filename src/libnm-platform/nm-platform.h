@@ -2270,28 +2270,7 @@ nm_platform_ip_address_get_prune_list(NMPlatform            *self,
 
 gboolean nm_platform_ip_address_flush(NMPlatform *self, int addr_family, int ifindex);
 
-typedef enum {
-    /* No flags. */
-    NMP_IP_ROUTE_NORMALIZE_FLAGS_NONE = 0,
-
-    /* Don't normalize the "weight" for IPv4 single hop routes.
-     * nm_platform_ip_route_normalize() aims to normalize a route as it
-     * can exist in kernel. But in kernel, a IPv4 single hop route cannot
-     * have a (non-zero) weight. Normalization would usually loose that
-     * information.
-     *
-     * However, it can be useful to normalize routes, but not the "weight".
-     * Upper layers want to track single hop routes with positive weight for
-     * internal purposes, while normalizing all other fields. This flag
-     * allows to opt-out from that normalization. The result may not ever
-     * exist in kernel (as far as NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID is concerned).
-     */
-    NMP_IP_ROUTE_NORMALIZE_FLAGS_KEEP_ECMP_WEIGHT = 0x1,
-} NMPIPRouteNormalizeFlags;
-
-void nm_platform_ip_route_normalize(int                      addr_family,
-                                    NMPlatformIPRoute       *route,
-                                    NMPIPRouteNormalizeFlags flags);
+void nm_platform_ip_route_normalize(int addr_family, NMPlatformIPRoute *route);
 
 static inline guint32
 nm_platform_ip4_route_get_effective_metric(const NMPlatformIP4Route *r)
