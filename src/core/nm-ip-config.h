@@ -32,7 +32,10 @@ struct _NMIPConfigPrivate {
     struct {
         const NMPObject *best_default_route;
     } v_gateway;
-    gulong l3cfg_notify_id;
+    GSource *notify_platform_timeout_source;
+    gint64   notify_platform_rlimited_until_msec;
+    gulong   l3cfg_notify_id;
+    guint32  notify_platform_obj_type_flags;
 };
 
 struct _NMIPConfig {

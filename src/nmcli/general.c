@@ -1411,36 +1411,57 @@ device_overview(NmCli *nmc, NMDevice *device)
 static void
 ac_overview(NmCli *nmc, NMActiveConnection *ac)
 {
-    GString                 *outbuf = g_string_sized_new(80);
-    NMIPConfig              *ip;
-    nm_auto_str_buf NMStrBuf str = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_104, FALSE);
+    nm_auto_str_buf NMStrBuf str = NM_STR_BUF_INIT_A(NM_UTILS_GET_NEXT_REALLOC_SIZE_488, FALSE);
+    const guint              MAX_ADDRESSES = 10;
+    const guint              MAX_ROUTES    = 10;
+    int                      IS_IPv4;
 
     if (nm_active_connection_get_controller(ac)) {
-        g_string_append_printf(outbuf,
-                               "%s %s, ",
-                               _("master"),
-                               nm_device_get_iface(nm_active_connection_get_controller(ac)));
+        nm_str_buf_append_printf(&str,
+                                 "%s %s, ",
+                                 _("master"),
+                                 nm_device_get_iface(nm_active_connection_get_controller(ac)));
     }
     if (nm_active_connection_get_vpn(ac))
-        g_string_append_printf(outbuf, "%s, ", _("VPN"));
+        nm_str_buf_append_printf(&str, "%s, ", _("VPN"));
     if (nm_active_connection_get_default(ac))
-        g_string_append_printf(outbuf, "%s, ", _("ip4 default"));
+        nm_str_buf_append_printf(&str, "%s, ", _("ip4 default"));
     if (nm_active_connection_get_default6(ac))
-        g_string_append_printf(outbuf, "%s, ", _("ip6 default"));
-    if (outbuf->len >= 2) {
-        g_string_truncate(outbuf, outbuf->len - 2);
-        nmc_print("\t%s\n", outbuf->str);
+        nm_str_buf_append_printf(&str, "%s, ", _("ip6 default"));
+    if (str.len >= 2) {
+        nm_str_buf_set_size(&str, str.len - 2u, TRUE, FALSE);
+        nmc_print("\t%s\n", nm_str_buf_get_str(&str));
     }
 
-    ip = nm_active_connection_get_ip4_config(ac);
-    if (ip) {
+    nm_str_buf_reset(&str);
+
+    for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
+        NMIPConfig      *ip;
         const GPtrArray *p;
-        int              i;
+        guint            i;
+
+        ip = IS_IPv4 ? nm_active_connection_get_ip4_config(ac)
+                     : nm_active_connection_get_ip6_config(ac);
+        if (!ip)
+            continue;
 
         p = nm_ip_config_get_addresses(ip);
         for (i = 0; i < p->len; i++) {
             NMIPAddress *a = p->pdata[i];
-            nmc_print("\tinet4 %s/%d\n", nm_ip_address_get_address(a), nm_ip_address_get_prefix(a));
+
+            nmc_print("\tinet%c %s/%d\n",
+                      IS_IPv4 ? '4' : '6',
+                      nm_ip_address_get_address(a),
+                      nm_ip_address_get_prefix(a));
+
+            if (i >= MAX_ADDRESSES - 1u && p->len - i > 2u) {
+                /* Print always at least MAX_ADDRESSES fully.
+                 * If there are MAX_ADDRESSES+1 addresses, print them all fully.
+                 * If there are more addresses, print MAX_ADDRESSES fully, and a
+                 * "more" line. */
+                nmc_print("\tinet%c ... more\n", IS_IPv4 ? '4' : '6');
+                break;
+            }
         }
 
         p = nm_ip_config_get_routes(ip);
@@ -1450,33 +1471,14 @@ ac_overview(NmCli *nmc, NMActiveConnection *ac)
             nm_str_buf_reset(&str);
             _nm_ip_route_to_string(a, &str);
 
-            nmc_print("\troute4 %s\n", nm_str_buf_get_str(&str));
+            nmc_print("\troute%c %s\n", IS_IPv4 ? '4' : '6', nm_str_buf_get_str(&str));
+
+            if (i >= MAX_ROUTES - 1u && p->len - i > 2u) {
+                nmc_print("\troute%c ... more\n", IS_IPv4 ? '4' : '6');
+                break;
+            }
         }
     }
-
-    ip = nm_active_connection_get_ip6_config(ac);
-    if (ip) {
-        const GPtrArray *p;
-        int              i;
-
-        p = nm_ip_config_get_addresses(ip);
-        for (i = 0; i < p->len; i++) {
-            NMIPAddress *a = p->pdata[i];
-            nmc_print("\tinet6 %s/%d\n", nm_ip_address_get_address(a), nm_ip_address_get_prefix(a));
-        }
-
-        p = nm_ip_config_get_routes(ip);
-        for (i = 0; i < p->len; i++) {
-            NMIPRoute *a = p->pdata[i];
-
-            nm_str_buf_reset(&str);
-            _nm_ip_route_to_string(a, &str);
-
-            nmc_print("\troute6 %s\n", nm_str_buf_get_str(&str));
-        }
-    }
-
-    g_string_free(outbuf, TRUE);
 }
 
 void
