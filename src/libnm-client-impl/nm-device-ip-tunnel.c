@@ -26,6 +26,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_MODE,
                                   PROP_OUTPUT_KEY,
                                   PROP_ENCAPSULATION_LIMIT,
                                   PROP_FLOW_LABEL,
+                                  PROP_FWMARK,
                                   PROP_FLAGS, );
 
 typedef struct {
@@ -37,6 +38,7 @@ typedef struct {
     guint32          mode;
     guint32          flow_label;
     guint32          flags;
+    guint32          fwmark;
     guint8           ttl;
     guint8           tos;
     guint8           encapsulation_limit;
@@ -237,6 +239,23 @@ nm_device_ip_tunnel_get_flow_label(NMDeviceIPTunnel *device)
 }
 
 /**
+ * nm_device_ip_tunnel_get_fwmark:
+ * @device: a #NMDeviceIPTunnel
+ *
+ * Returns: the fwmark assigned to tunnel packets. This property applies only
+ * to VTI tunnels.
+ *
+ * Since: 1.46
+ **/
+guint32
+nm_device_ip_tunnel_get_fwmark(NMDeviceIPTunnel *device)
+{
+    g_return_val_if_fail(NM_IS_DEVICE_IP_TUNNEL(device), 0);
+
+    return NM_DEVICE_IP_TUNNEL_GET_PRIVATE(device)->fwmark;
+}
+
+/**
  * nm_device_ip_tunnel_get_flags:
  * @device: a #NMDeviceIPTunnel
  *
@@ -334,6 +353,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_FLOW_LABEL:
         g_value_set_uint(value, nm_device_ip_tunnel_get_flow_label(device));
         break;
+    case PROP_FWMARK:
+        g_value_set_uint(value, nm_device_ip_tunnel_get_fwmark(device));
+        break;
     case PROP_FLAGS:
         g_value_set_uint(value, nm_device_ip_tunnel_get_flags(device));
         break;
@@ -357,6 +379,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_iptunnel = NML_DBUS_META_I
                                       PROP_FLOW_LABEL,
                                       NMDeviceIPTunnel,
                                       _priv.flow_label),
+        NML_DBUS_META_PROPERTY_INIT_U("FwMark", PROP_FWMARK, NMDeviceIPTunnel, _priv.fwmark),
         NML_DBUS_META_PROPERTY_INIT_S("InputKey",
                                       PROP_INPUT_KEY,
                                       NMDeviceIPTunnel,
@@ -557,6 +580,22 @@ nm_device_ip_tunnel_class_init(NMDeviceIPTunnelClass *klass)
                                                         (1 << 20) - 1,
                                                         0,
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
+    /**
+     * NMDeviceIPTunnel:fwmark:
+     *
+     * The fwmark value to assign to tunnel packets. This property applies only
+     * to VTI tunnels.
+     *
+     * Since: 1.46
+     **/
+    obj_properties[PROP_FWMARK] = g_param_spec_uint(NM_DEVICE_IP_TUNNEL_FWMARK,
+                                                    "",
+                                                    "",
+                                                    0,
+                                                    G_MAXUINT32,
+                                                    0,
+                                                    G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMDeviceIPTunnel:flags:

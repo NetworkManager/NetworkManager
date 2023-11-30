@@ -37,6 +37,7 @@ G_BEGIN_DECLS
 #define NM_DEVICE_IP_TUNNEL_OUTPUT_KEY          "output-key"
 #define NM_DEVICE_IP_TUNNEL_ENCAPSULATION_LIMIT "encapsulation-limit"
 #define NM_DEVICE_IP_TUNNEL_FLOW_LABEL          "flow-label"
+#define NM_DEVICE_IP_TUNNEL_FWMARK              "fwmark"
 #define NM_DEVICE_IP_TUNNEL_FLAGS               "flags"
 
 /**
@@ -72,6 +73,8 @@ NM_AVAILABLE_IN_1_2
 guint8 nm_device_ip_tunnel_get_encapsulation_limit(NMDeviceIPTunnel *device);
 NM_AVAILABLE_IN_1_2
 guint nm_device_ip_tunnel_get_flow_label(NMDeviceIPTunnel *device);
+NM_AVAILABLE_IN_1_46
+guint32 nm_device_ip_tunnel_get_fwmark(NMDeviceIPTunnel *device);
 NM_AVAILABLE_IN_1_12
 NMIPTunnelFlags nm_device_ip_tunnel_get_flags(NMDeviceIPTunnel *device);
 

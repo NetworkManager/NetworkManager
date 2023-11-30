@@ -1947,6 +1947,7 @@ global:
 libnm_1_46_0 {
 global:
 	nm_access_point_get_bandwidth;
+	nm_device_ip_tunnel_get_fwmark;
 	nm_ethtool_optname_is_channels;
 	nm_ethtool_optname_is_eee;
 } libnm_1_44_0;
