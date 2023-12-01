@@ -1228,7 +1228,7 @@ nmtst_rand_perm_strv(const char *const *strv)
     /* this returns a (scrambled) SHALLOW copy of the strv array! */
 
     n   = NM_PTRARRAY_LEN(strv);
-    res = (const char **) (nm_strv_dup(strv, n, FALSE) ?: g_new0(char *, 1));
+    res = (const char **) (nm_strv_dup(strv, n, FALSE) ?: nm_strv_empty_new());
     nmtst_rand_perm(NULL, res, res, sizeof(char *), n);
     return res;
 }

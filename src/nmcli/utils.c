@@ -497,7 +497,7 @@ nmc_string_to_arg_array(const char *line,
 
     arr0 = nm_strsplit_set(line ?: "", delim ?: " \t");
     if (!arr0)
-        arr = g_new0(char *, 1);
+        arr = nm_strv_empty_new();
     else
         arr = g_strdupv((char **) arr0);
 

@@ -332,9 +332,10 @@ gboolean nm_utils_memeqzero(gconstpointer data, gsize length);
 
 extern const void *const _NM_PTRARRAY_EMPTY[1];
 
-#define NM_PTRARRAY_EMPTY(type) ((type const *) _NM_PTRARRAY_EMPTY)
-#define NM_STRV_EMPTY()         ((char **) _NM_PTRARRAY_EMPTY)
-#define NM_STRV_EMPTY_CC()      NM_PTRARRAY_EMPTY(const char *)
+#define NM_PTRARRAY_EMPTY(type)     ((type const *) _NM_PTRARRAY_EMPTY)
+#define NM_STRV_EMPTY()             ((char **) _NM_PTRARRAY_EMPTY)
+#define NM_STRV_EMPTY_CC()          NM_PTRARRAY_EMPTY(const char *)
+#define NM_PTRARRAY_EMPTY_NEW(type) (g_new0(type, 1))
 
 static inline void
 nm_strbuf_init(char *buf, gsize len, char **p_buf_ptr, gsize *p_buf_len)
@@ -1850,6 +1851,8 @@ int nm_utils_hashtable_cmp(const GHashTable *a,
                            GCompareDataFunc  cmp_values,
                            gpointer          user_data);
 
+#define nm_strv_empty_new() NM_PTRARRAY_EMPTY_NEW(char *)
+
 char **nm_strv_make_deep_copied(const char **strv);
 
 char **nm_strv_make_deep_copied_n(const char **strv, gsize len);
@@ -1857,13 +1860,18 @@ char **nm_strv_make_deep_copied_n(const char **strv, gsize len);
 static inline char **
 nm_strv_make_deep_copied_nonnull(const char **strv)
 {
-    return nm_strv_make_deep_copied(strv) ?: g_new0(char *, 1);
+    return nm_strv_make_deep_copied(strv) ?: nm_strv_empty_new();
 }
 
-char **_nm_strv_dup(const char *const *strv, gssize len, gboolean deep_copied);
+char **_nm_strv_dup_full(const char *const *strv,
+                         gssize             len,
+                         gboolean           deep_copied,
+                         gboolean           preserve_empty);
 
-#define nm_strv_dup(strv, len, deep_copied) \
-    _nm_strv_dup(NM_CAST_STRV_CC(strv), (len), (deep_copied))
+#define nm_strv_dup_full(strv, len, deep_copied, preserve_empty) \
+    _nm_strv_dup_full(NM_CAST_STRV_CC(strv), (len), (deep_copied), (preserve_empty))
+
+#define nm_strv_dup(strv, len, deep_copied) nm_strv_dup_full((strv), (len), (deep_copied), FALSE)
 
 const char **_nm_strv_dup_packed(const char *const *strv, gssize len);
 
@@ -2528,6 +2536,21 @@ nm_strv_ptrarray_get_unsafe(GPtrArray *arr, guint *out_len)
     return (const char *const *) arr->pdata;
 }
 
+static inline char **
+nm_strv_ptrarray_to_strv_full(const GPtrArray *a, gboolean not_null)
+{
+    if (!a)
+        return not_null ? nm_strv_empty_new() : NULL;
+    return nm_strv_dup_full((const char *const *) a->pdata, a->len, TRUE, TRUE);
+}
+
+static inline char **
+nm_strv_ptrarray_to_strv(const GPtrArray *a)
+{
+    /* Returns never NULL ("not_null"!) */
+    return nm_strv_ptrarray_to_strv_full(a, TRUE);
+}
+
 static inline GPtrArray *
 nm_strv_ptrarray_clone(const GPtrArray *src, gboolean null_if_empty)
 {
@@ -3107,7 +3130,7 @@ nm_strvarray_get_strv_full_dup(const GArray *arr,
 {
     if (!arr) {
         NM_SET_OUT(length, 0);
-        return not_null ? g_new0(char *, 1) : NULL;
+        return not_null ? nm_strv_empty_new() : NULL;
     }
 
     nm_assert(sizeof(char *) == g_array_get_element_size((GArray *) arr));
@@ -3116,7 +3139,7 @@ nm_strvarray_get_strv_full_dup(const GArray *arr,
 
     if (arr->len == 0) {
         if (preserve_empty || not_null)
-            return g_new0(char *, 1);
+            return nm_strv_empty_new();
         return NULL;
     }
 

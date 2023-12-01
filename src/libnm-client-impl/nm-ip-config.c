@@ -190,7 +190,7 @@ next:
             if (arr && arr->len > 0)
                 nameservers_new = nm_strv_dup((char **) arr->pdata, arr->len, FALSE);
             else
-                nameservers_new = g_new0(char *, 1);
+                nameservers_new = nm_strv_empty_new();
         }
         nm_assert(nameservers_new);
     }

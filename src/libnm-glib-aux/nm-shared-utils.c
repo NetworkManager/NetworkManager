@@ -1937,7 +1937,7 @@ nm_utils_strsplit_quoted(const char *str)
     }
 
     if (!arr)
-        return g_new0(char *, 1);
+        return nm_strv_empty_new();
 
     /* We want to return an optimally sized strv array, with no excess
      * memory allocated. Hence, clone once more. */
@@ -3580,6 +3580,9 @@ nm_strv_make_deep_copied_n(const char **strv, gsize len)
  *   the returned array must be freed with g_strfreev(). Otherwise, the
  *   strings themself are not copied. You must take care of who owns the
  *   strings yourself.
+ * @preserved_empty: affects how to handle if the strv array is empty (length 0).
+ *   If TRUE, results in a non-NULL, empty, allocated strv array. If FALSE,
+ *   returns NULL instead of an empty strv array.
  *
  * Like g_strdupv(), with two differences:
  *
@@ -3598,7 +3601,10 @@ nm_strv_make_deep_copied_n(const char **strv, gsize len)
  *   cloned or not.
  */
 char **
-_nm_strv_dup(const char *const *strv, gssize len, gboolean deep_copied)
+_nm_strv_dup_full(const char *const *strv,
+                  gssize             len,
+                  gboolean           deep_copied,
+                  gboolean           preserve_empty)
 {
     gsize  i, l;
     char **v;
@@ -3607,13 +3613,16 @@ _nm_strv_dup(const char *const *strv, gssize len, gboolean deep_copied)
         l = NM_PTRARRAY_LEN(strv);
     else
         l = len;
-    if (l == 0) {
-        /* this function never returns an empty strv array. If you
-         * need that, handle it yourself. */
+
+    if (l == 0 && !preserve_empty) {
+        /* An empty strv array is not returned (as requested by
+         * !preserved_empty). Instead, return NULL. */
         return NULL;
     }
 
-    v = g_new(char *, l + 1);
+    nm_assert(l < G_MAXSIZE);
+
+    v = g_new(char *, l + 1u);
     for (i = 0; i < l; i++) {
         if (G_UNLIKELY(!strv[i])) {
             /* NULL strings are not allowed. Clear the remainder of the array

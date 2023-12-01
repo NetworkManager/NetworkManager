@@ -6146,7 +6146,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 
     switch (prop_id) {
     case PROP_DNS:
-        g_value_take_boxed(value, _nm_utils_ptrarray_to_strv(priv->dns));
+        g_value_take_boxed(value, nm_strv_ptrarray_to_strv(priv->dns));
         break;
     case PROP_ADDRESSES:
         g_value_take_boxed(value,
