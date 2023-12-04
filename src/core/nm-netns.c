@@ -905,11 +905,19 @@ nm_netns_ip_route_ecmp_commit(NMNetns    *self,
         if (obj_del) {
             if (NMP_OBJECT_CAST_IP4_ROUTE(obj_del)->n_nexthops > 1)
                 nm_platform_object_delete(priv->platform, obj_del);
-            else if (track_obj->l3cfg != l3cfg)
-                nm_l3cfg_commit_on_idle_schedule(track_obj->l3cfg, NM_L3_CFG_COMMIT_TYPE_AUTO);
+            else if (NMP_OBJECT_CAST_IP4_ROUTE(obj_del)->ifindex != nm_l3cfg_get_ifindex(l3cfg)) {
+                /* A single-hop route from a different interface was merged
+                 * into a ECMP route. Now, it is time to notify the l3cfg that
+                 * is managing that single-hop route to remove it. */
+                nm_l3cfg_commit_on_idle_schedule(
+                    nm_netns_l3cfg_get(self, NMP_OBJECT_CAST_IP4_ROUTE(obj_del)->ifindex),
+                    NM_L3_CFG_COMMIT_TYPE_UPDATE);
+            }
         }
 
         if (route->n_nexthops <= 1) {
+            NMPObject *route_clone;
+
             /* This is a single hop route. Return it to the caller. */
             if (!*out_singlehop_routes) {
                 /* Note that the returned array does not own a reference. This
@@ -918,7 +926,28 @@ nm_netns_ip_route_ecmp_commit(NMNetns    *self,
                 *out_singlehop_routes =
                     g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
             }
-            g_ptr_array_add(*out_singlehop_routes, (gpointer) nmp_object_ref(route_obj));
+
+            /* We have here a IPv4 single-hop route. For internal tracking purposes,
+             * this route has a positive "weight" (which was used to mark it as a candidate
+             * for ECMP merging). Now we want to return this route to NML3Cfg and add it
+             * as regular single-hop routes.
+             *
+             * A single-hop route in kernel always has a "weight" of zero. This route
+             * cannot be added as-is. Well, if we would, then the result would be
+             * a different(!) route (with a zero "weight").
+             *
+             * Anticipate that and normalize the route now to be a regular single-hop
+             * route (with weight zero). nm_platform_ip_route_normalize() does that.
+             * We really want to return a regular route here, not the route with a positive
+             * weight that exists for internal tracking purposes.
+             */
+            nm_assert(NMP_OBJECT_GET_TYPE(route_obj) == NMP_OBJECT_TYPE_IP4_ROUTE);
+            nm_assert(route_obj->ip4_route.weight > 0u);
+
+            route_clone = nmp_object_clone(route_obj, FALSE);
+            nm_platform_ip_route_normalize(AF_INET, NMP_OBJECT_CAST_IP_ROUTE(route_clone));
+            g_ptr_array_add(*out_singlehop_routes, route_clone);
+
             if (changed) {
                 _LOGT("ecmp-route: single-hop %s",
                       nmp_object_to_string(route_obj,
