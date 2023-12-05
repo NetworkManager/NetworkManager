@@ -6645,7 +6645,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      *
      * A zero value means that no duplicate address detection is performed, -1 means
      * the default value (either the value configured globally in NetworkManger.conf
-     * or zero).  A value greater than zero is a timeout in milliseconds.  Note that
+     * or 3000ms).  A value greater than zero is a timeout in milliseconds.  Note that
      * the time intervals are subject to randomization as per RFC 5227 and so the
      * actual duration can be between half and the full time specified in this
      * property.
