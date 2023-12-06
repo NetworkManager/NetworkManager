@@ -3547,9 +3547,26 @@ nm_utils_stable_id_parse(const char *stable_id,
 }
 
 NMUtilsStableType
-nm_utils_stable_id_parse_network_ssid(GBytes *ssid, const char *uuid, char **out_stable_id)
+nm_utils_stable_id_parse_network_ssid(GBytes     *ssid,
+                                      const char *uuid,
+                                      gboolean    complete,
+                                      char      **out_stable_id)
 {
-    return nm_utils_stable_id_parse("${NETWORK_SSID}", NULL, NULL, NULL, uuid, ssid, out_stable_id);
+    NMUtilsStableType stable_type;
+
+    stable_type =
+        nm_utils_stable_id_parse("${NETWORK_SSID}", NULL, NULL, NULL, uuid, ssid, out_stable_id);
+
+    nm_assert(stable_type == NM_UTILS_STABLE_TYPE_GENERATED);
+    nm_assert(!out_stable_id || nm_str_not_empty(*out_stable_id));
+
+    if (complete && out_stable_id) {
+        gs_free char *ss = g_steal_pointer(out_stable_id);
+
+        *out_stable_id = nm_utils_stable_id_generated_complete(ss);
+    }
+
+    return stable_type;
 }
 
 /*****************************************************************************/

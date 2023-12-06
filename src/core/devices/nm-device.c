@@ -17459,6 +17459,7 @@ _hw_addr_get_cloned(NMDevice     *self,
         if (G_UNLIKELY(ssid)) {
             stable_type = nm_utils_stable_id_parse_network_ssid(ssid,
                                                                 nm_connection_get_uuid(connection),
+                                                                TRUE,
                                                                 &stable_id_free);
             stable_id   = stable_id_free;
         } else {

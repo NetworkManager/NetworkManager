@@ -2198,10 +2198,22 @@ test_stable_id_parse(void)
         gs_unref_bytes GBytes *ssid       = g_bytes_new_static(ssid_bin, sizeof(ssid_bin) - 1);
         NMUtilsStableType      stable_type;
 
-        stable_type = nm_utils_stable_id_parse_network_ssid(ssid, "uuid", &str);
+        stable_type = nm_utils_stable_id_parse_network_ssid(ssid, "uuid", FALSE, &str);
 
-        g_assert_cmpstr(str, ==, "${NETWORK_SSID}=9{s:foo\\012}");
         g_assert_cmpint(stable_type, ==, NM_UTILS_STABLE_TYPE_GENERATED);
+        g_assert_cmpstr(str, ==, "${NETWORK_SSID}=9{s:foo\\012}");
+
+        nm_clear_g_free(&str);
+
+        stable_type = nm_utils_stable_id_parse_network_ssid(ssid, "uuid", TRUE, &str);
+
+        g_assert_cmpint(stable_type, ==, NM_UTILS_STABLE_TYPE_GENERATED);
+        g_assert_cmpstr(str, ==, "wqLBg0FtOnCi7yYQKGDUj6CDixc");
+
+        nm_clear_g_free(&str);
+
+        str = nm_utils_stable_id_generated_complete("${NETWORK_SSID}=9{s:foo\\012}");
+        g_assert_cmpstr(str, ==, "wqLBg0FtOnCi7yYQKGDUj6CDixc");
     }
 }
 
