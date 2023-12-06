@@ -169,7 +169,6 @@ class SocketHTTPServer(HTTPServer):
 
 
 def create_default_resources_for_provider(provider):
-
     mac1 = b"cc:00:00:00:00:01"
     mac2 = b"cc:00:00:00:00:02"
 
@@ -244,7 +243,6 @@ def create_default_resources_for_provider(provider):
 
 
 def create_default_resources():
-
     return {p: create_default_resources_for_provider(p) for p in PROVIDERS}
 
 

@@ -111,7 +111,6 @@ def mainloop_run(timeout_msec=0, mainloop=None):
 
 
 def connection_update2(remote_connection, connection):
-
     mainloop = GLib.MainLoop()
     result_error = []
 
@@ -160,7 +159,6 @@ def device_get_applied_connection(device):
 
 
 def device_reapply(device, connection, version_id):
-
     mainloop = GLib.MainLoop()
     result_error = []
 
@@ -443,7 +441,6 @@ def connection_print(connection, mode, ids_arg, dbus_path, prefix=""):
         _print("%s   %s" % (prefix, dbus_path))
 
     for data_type in [DataTypeE, DataTypeO]:
-
         if data_type.setting_type is None:
             continue
 
@@ -465,7 +462,6 @@ def connection_print(connection, mode, ids_arg, dbus_path, prefix=""):
 
 
 def sett_update(connection, ids_arg):
-
     for d in ids_arg:
         op = d[0][0]
         key = d[0][1:]
@@ -554,7 +550,6 @@ def do_get(connections, ids_arg):
 
 
 def do_set(nmc, connection, ids_arg, do_test):
-
     remote_connection = connection
     connection = NM.SimpleConnection.new_clone(remote_connection)
 
@@ -611,7 +606,6 @@ def do_set(nmc, connection, ids_arg, do_test):
 
 
 def do_apply(nmc, device, ids_arg, do_test):
-
     try:
         connection_orig, version_id = device_get_applied_connection(device)
     except Exception as e:
@@ -677,13 +671,11 @@ def do_apply(nmc, device, ids_arg, do_test):
 ###############################################################################
 
 if __name__ == "__main__":
-
     args = parse_args(sys.argv)
 
     nmc = NM.Client.new(None)
 
     if args["mode"] == MODE_APPLY:
-
         devices = devices_filter(nmc.get_devices(), args["select_arg"])
 
         if len(devices) != 1:
@@ -695,7 +687,6 @@ if __name__ == "__main__":
         do_apply(nmc, devices[0], args["ids_arg"], do_test=args["do_test"])
 
     else:
-
         connections = connections_filter(nmc.get_connections(), args["select_arg"])
 
         if args["mode"] == MODE_SET:

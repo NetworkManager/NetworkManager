@@ -50,7 +50,6 @@ class TestError(AssertionError):
 
 
 class Util:
-
     PY3 = sys.version_info[0] == 3
 
     @staticmethod
@@ -509,7 +508,6 @@ class BusErr:
 class NmUtil:
     @staticmethod
     def con_hash_to_connection(con_hash, do_verify=False, do_normalize=False):
-
         x_con = []
         for v_setting_name, v_setting in list(con_hash.items()):
             if isinstance(v_setting_name, (dbus.String, str)):
@@ -628,7 +626,6 @@ class NmUtil:
 
 
 class ExportedObj(dbus.service.Object):
-
     DBusInterface = collections.namedtuple("DBusInterface", ["dbus_iface", "props"])
 
     @staticmethod
@@ -820,12 +817,10 @@ PRP_DEVICE_INTERFACE_FLAGS = "InterfaceFlags"
 
 
 class Device(ExportedObj):
-
     path_counter_next = 1
     path_prefix = "/org/freedesktop/NetworkManager/Devices/"
 
     def __init__(self, iface, devtype, ident=None):
-
         if ident is None:
             ident = iface
 
@@ -1214,7 +1209,6 @@ PRP_WIFI_AP_BANDWIDTH = "Bandwidth"
 
 
 class WifiAp(ExportedObj):
-
     path_counter_next = 1
     path_prefix = "/org/freedesktop/NetworkManager/AccessPoint/"
 
@@ -1229,7 +1223,6 @@ class WifiAp(ExportedObj):
         strength=None,
         ident=None,
     ):
-
         ExportedObj.__init__(self, ExportedObj.create_path(WifiAp), ident)
 
         NM_AP_FLAGS = getattr(NM, "80211ApSecurityFlags")
@@ -1404,12 +1397,10 @@ PRP_VPN_CONNECTION_BANNER = "Banner"
 
 
 class ActiveConnection(ExportedObj):
-
     path_counter_next = 1
     path_prefix = "/org/freedesktop/NetworkManager/ActiveConnection/"
 
     def __init__(self, device, con_inst, specific_object):
-
         ExportedObj.__init__(self, ExportedObj.create_path(ActiveConnection))
 
         self.device = device
@@ -2036,7 +2027,6 @@ PRP_CONNECTION_FILENAME = "Filename"
 
 class Connection(ExportedObj):
     def __init__(self, path_counter, con_hash, do_verify_strict=True):
-
         path = "/org/freedesktop/NetworkManager/Settings/Connection/%s" % (path_counter)
 
         ExportedObj.__init__(self, path)
@@ -2079,7 +2069,6 @@ class Connection(ExportedObj):
         return self.get_type() == NM.SETTING_VPN_SETTING_NAME
 
     def update_connection(self, con_hash, do_verify_strict):
-
         NmUtil.con_hash_verify(con_hash, do_verify_strict=do_verify_strict)
 
         old_uuid = self.get_uuid()
@@ -2303,7 +2292,6 @@ PRP_IP4_CONFIG_WINSSERVERS = "WinsServers"
 
 
 class IP4Config(ExportedObj):
-
     path_counter_next = 1
     path_prefix = "/org/freedesktop/NetworkManager/IP4Config/"
 
@@ -2502,7 +2490,6 @@ PRP_IP6_CONFIG_DNSPRIORITY = "DnsPriority"
 
 
 class IP6Config(ExportedObj):
-
     path_counter_next = 1
     path_prefix = "/org/freedesktop/NetworkManager/IP6Config/"
 
@@ -2676,7 +2663,6 @@ PRP_DHCP4_CONFIG_OPTIONS = "Options"
 
 
 class Dhcp4Config(ExportedObj):
-
     path_counter_next = 1
     path_prefix = "/org/freedesktop/NetworkManager/DHCP4Config/"
 
@@ -2717,7 +2703,6 @@ PRP_DHCP6_CONFIG_OPTIONS = "Options"
 
 
 class Dhcp6Config(ExportedObj):
-
     path_counter_next = 1
     path_prefix = "/org/freedesktop/NetworkManager/DHCP6Config/"
 

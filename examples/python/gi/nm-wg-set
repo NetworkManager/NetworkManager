@@ -146,7 +146,6 @@ def print_hint(nm_client):
 
 
 def argv_get_one(argv, idx, type_ctor=None, topic=None):
-
     if topic is not None:
         try:
             v = argv_get_one(argv, idx, type_ctor, None)
@@ -479,7 +478,6 @@ def do_set(nm_client, conn, argv):
 ###############################################################################
 
 if __name__ == "__main__":
-
     nm_client = NM.Client.new(None)
 
     argv = sys.argv

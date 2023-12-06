@@ -184,7 +184,6 @@ def keywords_allowed(tag, keyword):
 
 
 def write_data(tag, setting_node, line_no, parsed_data):
-
     for k in parsed_data.keys():
         assert keywords_allowed(tag, k)
         assert k in keywords
@@ -375,7 +374,6 @@ def parse_data(tag, line_no, lines):
 
 
 def process_setting(tag, root_node, source_file, setting_name):
-
     dbg(
         "> > tag:%s, source_file:%s, setting_name:%s" % (tag, source_file, setting_name)
     )
@@ -448,7 +446,6 @@ def process_setting(tag, root_node, source_file, setting_name):
 
 
 def process_settings_docs(tag, output, gir_file, source_files):
-
     dbg("> tag:%s, output:%s" % (tag, output))
 
     root_node = ET.Element("nm-setting-docs")
@@ -531,7 +528,6 @@ def test_get_setting_names():
 
 
 def test_get_file_infos():
-
     t = ["connection", "ip-config", "ip4-config", "proxy", "wired"]
 
     assert [

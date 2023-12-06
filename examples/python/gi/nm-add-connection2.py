@@ -49,7 +49,6 @@ def die(msg, print_usage=False):
 
 
 def main():
-
     main_loop = GLib.MainLoop()
 
     nm_client = NM.Client.new(None)

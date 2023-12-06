@@ -250,7 +250,6 @@ settings_roots = [node_to_dict(root, "setting", "name") for root in xml_roots]
 root_node = ET.Element("nm-setting-docs")
 
 for setting_name in iter_keys_of_dicts(settings_roots, key_fcn_setting_name):
-
     dbg("> > setting_name: %s" % (setting_name))
 
     if skip_property(setting_name, None):
@@ -272,7 +271,6 @@ for setting_name in iter_keys_of_dicts(settings_roots, key_fcn_setting_name):
     dbg("> > > create node")
 
     for property_name in iter_keys_of_dicts(properties):
-
         dbg("> > > > property_name: %s" % (property_name))
 
         properties_attrs = [p.get(property_name) for p in properties]

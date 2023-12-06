@@ -51,7 +51,6 @@ def nmc_new(io_priority=GLib.PRIORITY_DEFAULT, cancellable=None):
     result = []
 
     def cb(source_object, res):
-
         try:
             source_object.init_finish(res)
         except Exception as e:
@@ -73,7 +72,6 @@ def nmc_new(io_priority=GLib.PRIORITY_DEFAULT, cancellable=None):
 
 
 def nmc_destroy(nmc_transfer_ref):
-
     # Just for fun, show how to completely cleanup a NMClient instance.
     # An NMClient instance registers D-Bus signals and unrefing the instance
     # will cancel/unsubscribe those signals, but there might still be some
@@ -106,7 +104,6 @@ def nmc_destroy(nmc_transfer_ref):
 
 
 def find_connections(nmc, argv):
-
     # parse the inpurt argv and select the connection profiles to activate.
     # The arguments are either "connection.id" or "connection.uuid", possibly
     # qualified by "id" or "uuid".
@@ -173,7 +170,6 @@ class Activation(object):
         return "%s (%s)" % (self.con.get_id(), self.con.get_uuid())
 
     def is_done(self, log=log):
-
         if self.state == Activation.ACTIVATION_STATE_DONE:
             return True
 
@@ -206,7 +202,6 @@ class Activation(object):
         return False
 
     def start(self, nmc, cancellable=None, activated_callback=None, log=log):
-
         # Call nmc.activate_connection_async() and return a user data
         # with the information about the pending operation.
 
@@ -242,7 +237,6 @@ class Activation(object):
         )
 
     def wait(self, done_callback=None, log=log):
-
         assert self.state == Activation.ACTIVATION_STATE_WAITING
         assert self.result_ac
         assert self.wait_id is None
@@ -259,7 +253,6 @@ class Activation(object):
 
 class Manager(object):
     def __init__(self, nmc, cons):
-
         self.nmc = nmc
 
         self.ac_start = [Activation(c) for c in cons]
@@ -268,7 +261,6 @@ class Manager(object):
         self.ac_done = []
 
     def _log(self, msg):
-
         lists = [self.ac_start, self.ac_starting, self.ac_waiting, self.ac_done]
 
         n = sum(len(l) for l in lists)
@@ -278,11 +270,9 @@ class Manager(object):
         log("%s: %s" % (prefix, msg))
 
     def ac_run(self):
-
         loop = GLib.MainLoop(self.nmc.get_main_context())
 
         while self.ac_start or self.ac_starting or self.ac_waiting:
-
             rate_limit_parallel_in_progress = (
                 len(self.ac_starting) + len(self.ac_waiting) >= NUM_PARALLEL_IN_PROGRESS
             )

@@ -118,7 +118,7 @@ ver_syms = syms_from_ver(args.ver)
 
 exit_code = 0
 
-for (gir_sym, gir_ver) in gir_syms.items():
+for gir_sym, gir_ver in gir_syms.items():
     if gir_sym not in ver_syms:
         exit_code = 1
         print(
