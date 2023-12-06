@@ -654,8 +654,13 @@ nm_utils_is_empty_ssid(const guint8 *ssid, gsize len)
  * representation of that character.  Intended for debugging only, should not
  * be used for display of SSIDs.
  *
+ * Warning: this function uses a static buffer. It is not thread-safe. Don't
+ *   use this function.
+ *
  * Returns: pointer to the escaped SSID, which uses an internal static buffer
  * and will be overwritten by subsequent calls to this function
+ *
+ * Deprecated: 1.46: use nm_utils_ssid_to_utf8() or nm_utils_bin2hexstr().
  **/
 const char *
 nm_utils_escape_ssid(const guint8 *ssid, gsize len)
