@@ -35,7 +35,6 @@
 #define NM_CONFIG_KEYFILE_KEY_MAIN_NO_AUTO_DEFAULT             "no-auto-default"
 #define NM_CONFIG_KEYFILE_KEY_MAIN_PLUGINS                     "plugins"
 #define NM_CONFIG_KEYFILE_KEY_MAIN_RC_MANAGER                  "rc-manager"
-#define NM_CONFIG_KEYFILE_KEY_MAIN_SLAVES_ORDER                "slaves-order"
 #define NM_CONFIG_KEYFILE_KEY_MAIN_SYSTEMD_RESOLVED            "systemd-resolved"
 
 #define NM_CONFIG_KEYFILE_KEY_LOGGING_AUDIT   "audit"
