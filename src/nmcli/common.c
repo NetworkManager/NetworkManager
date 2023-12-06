@@ -1016,7 +1016,7 @@ nmc_readline_echo(const NmcConfig *nmc_config, gboolean echo_on, const char *pro
         saved_history = history_get_history_state();
         history_set_history_state(&passwd_history);
 #else
-        start  = where_history();
+        start = where_history();
 #endif
         /* stifling history is important as it tells readline to
          * not store anything, otherwise sensitive data could be

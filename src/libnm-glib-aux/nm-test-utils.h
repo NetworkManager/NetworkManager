@@ -134,7 +134,7 @@
     ({                                                                                        \
         gboolean     _not_expired             = TRUE;                                         \
         const gint64 nmtst_wait_start_us      = g_get_monotonic_time();                       \
-        const gint64 nmtst_wait_duration_us   = (max_wait_ms) *1000L;                         \
+        const gint64 nmtst_wait_duration_us   = (max_wait_ms) * 1000L;                        \
         const gint64 nmtst_wait_end_us        = nmtst_wait_start_us + nmtst_wait_duration_us; \
         gint64       _nmtst_wait_remaining_us = nmtst_wait_duration_us;                       \
         int          _nmtst_wait_iteration    = 0;                                            \
