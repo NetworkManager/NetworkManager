@@ -1651,7 +1651,7 @@ const NMPlatformLink *nm_platform_link_get_by_address(NMPlatform   *self,
                                                       gconstpointer address,
                                                       size_t        length);
 
-GPtrArray *nm_platform_link_get_all(NMPlatform *self, gboolean sort_by_name);
+GPtrArray *nm_platform_link_get_all(NMPlatform *self);
 
 int nm_platform_link_add(NMPlatform            *self,
                          NMLinkType             type,

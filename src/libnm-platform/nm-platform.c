@@ -991,7 +991,7 @@ nm_platform_sysctl_ip_conf_get_rp_filter_ipv4(NMPlatform *self,
 /*****************************************************************************/
 
 static int
-_link_get_all_presort(gconstpointer p_a, gconstpointer p_b, gpointer sort_by_name)
+_link_get_all_presort(gconstpointer p_a, gconstpointer p_b)
 {
     const NMPlatformLink *a = NMP_OBJECT_CAST_LINK(*((const NMPObject **) p_a));
     const NMPlatformLink *b = NMP_OBJECT_CAST_LINK(*((const NMPObject **) p_b));
@@ -1002,28 +1002,30 @@ _link_get_all_presort(gconstpointer p_a, gconstpointer p_b, gpointer sort_by_nam
     if (b->ifindex == NM_LOOPBACK_IFINDEX)
         return 1;
 
-    if (GPOINTER_TO_INT(sort_by_name)) {
-        /* Initialized links first */
-        if (a->initialized > b->initialized)
-            return -1;
-        if (a->initialized < b->initialized)
-            return 1;
+    /* Initialized links first */
+    if (a->initialized > b->initialized)
+        return -1;
+    if (a->initialized < b->initialized)
+        return 1;
 
-        return strcmp(a->name, b->name);
-    } else
-        return a->ifindex - b->ifindex;
+    NM_CMP_DIRECT_STRCMP(a->name, b->name);
+    /* Fallback to ifindex */
+    NM_CMP_DIRECT(a->ifindex, b->ifindex);
+    /* Fallback to pointer comparison */
+    NM_CMP_DIRECT_PTR(a, b);
+
+    return 0;
 }
 
 /**
  * nm_platform_link_get_all:
  * @self: platform instance
- * @sort_by_name: whether to sort by name or ifindex.
  *
  * Retrieve a snapshot of configuration for all links at once. The result is
  * owned by the caller and should be freed with g_ptr_array_unref().
  */
 GPtrArray *
-nm_platform_link_get_all(NMPlatform *self, gboolean sort_by_name)
+nm_platform_link_get_all(NMPlatform *self)
 {
     gs_unref_ptrarray GPtrArray   *links = NULL;
     GPtrArray                     *result;
@@ -1049,9 +1051,9 @@ nm_platform_link_get_all(NMPlatform *self, gboolean sort_by_name)
     if (links->len == 0)
         return NULL;
 
-    /* first sort the links by their ifindex or name. Below we will sort
+    /* first sort the links by their name. Below we will sort
      * further by moving children/slaves to the end. */
-    g_ptr_array_sort_with_data(links, _link_get_all_presort, GINT_TO_POINTER(sort_by_name));
+    g_ptr_array_sort(links, _link_get_all_presort);
 
     unseen = g_hash_table_new(nm_direct_hash, NULL);
     for (i = 0; i < links->len; i++) {

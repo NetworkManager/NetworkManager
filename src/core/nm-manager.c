@@ -4424,11 +4424,7 @@ platform_query_devices(NMManager *self)
     gs_free char                *order = NULL;
 
     guess_assume = nm_config_get_first_start(nm_config_get());
-    order        = nm_config_data_get_value(NM_CONFIG_GET_DATA,
-                                     NM_CONFIG_KEYFILE_GROUP_MAIN,
-                                     NM_CONFIG_KEYFILE_KEY_MAIN_SLAVES_ORDER,
-                                     NM_CONFIG_GET_VALUE_STRIP);
-    links        = nm_platform_link_get_all(priv->platform, !nm_streq0(order, "index"));
+    links        = nm_platform_link_get_all(priv->platform);
     if (!links)
         return;
     for (i = 0; i < links->len; i++) {
@@ -5364,7 +5360,7 @@ out:
 }
 
 static int
-compare_slaves(gconstpointer a, gconstpointer b, gpointer sort_by_name)
+compare_slaves(gconstpointer a, gconstpointer b)
 {
     const SlaveConnectionInfo *a_info = a;
     const SlaveConnectionInfo *b_info = b;
@@ -5375,11 +5371,7 @@ compare_slaves(gconstpointer a, gconstpointer b, gpointer sort_by_name)
     if (!b_info->device)
         return -1;
 
-    if (GPOINTER_TO_INT(sort_by_name)) {
-        return nm_strcmp0(nm_device_get_iface(a_info->device), nm_device_get_iface(b_info->device));
-    }
-
-    return nm_device_get_ifindex(a_info->device) - nm_device_get_ifindex(b_info->device);
+    return nm_strcmp0(nm_device_get_iface(a_info->device), nm_device_get_iface(b_info->device));
 }
 
 static void
@@ -5399,17 +5391,7 @@ autoconnect_slaves(NMManager            *self,
 
         slaves = find_slaves(self, master_connection, master_device, &n_slaves, for_user_request);
         if (n_slaves > 1) {
-            gs_free char *value = NULL;
-
-            value = nm_config_data_get_value(NM_CONFIG_GET_DATA,
-                                             NM_CONFIG_KEYFILE_GROUP_MAIN,
-                                             NM_CONFIG_KEYFILE_KEY_MAIN_SLAVES_ORDER,
-                                             NM_CONFIG_GET_VALUE_STRIP);
-            g_qsort_with_data(slaves,
-                              n_slaves,
-                              sizeof(slaves[0]),
-                              compare_slaves,
-                              GINT_TO_POINTER(!nm_streq0(value, "index")));
+            qsort(slaves, n_slaves, sizeof(slaves[0]), compare_slaves);
         }
 
         bind_lifetime_to_profile_visibility =
