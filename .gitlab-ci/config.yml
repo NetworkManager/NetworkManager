@@ -22,7 +22,7 @@ distributions:
     # The first tier:1 in the list is used to build the pages and check-{tree,patch}
     tier: 1
     versions:
-      - '38'
+      - '39'
   - name: fedora
     tier: 2
     versions:
