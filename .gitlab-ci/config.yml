@@ -27,7 +27,7 @@ distributions:
     tier: 2
     versions:
       - '37'
-      - '39'
+      - '38'
       - '40'
   - name: fedora
     tier: 3
