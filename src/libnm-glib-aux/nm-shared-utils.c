@@ -5970,6 +5970,9 @@ nm_utils_exp10(gint16 ex)
 gboolean
 _nm_utils_is_empty_ssid_arr(const guint8 *ssid, gsize len)
 {
+    if (len == 0)
+        return TRUE;
+
     /* Single white space is for Linksys APs */
     if (len == 1 && ssid[0] == ' ')
         return TRUE;
