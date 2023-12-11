@@ -6824,7 +6824,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                           "",
                           NM_TYPE_TERNARY,
                           NM_TERNARY_DEFAULT,
-                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                          G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:replace-local-rule:
@@ -6840,7 +6840,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                           "",
                           NM_TYPE_TERNARY,
                           NM_TERNARY_DEFAULT,
-                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                          G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

@@ -898,13 +898,13 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
                           ~(NM_SETTING_PARAM_REAPPLY_IMMEDIATELY | NM_SETTING_PARAM_FUZZY_IGNORE \
                             | NM_SETTING_PARAM_INFERRABLE)));                                    \
                                                                                                  \
-        _param_spec =                                                                            \
-            g_param_spec_enum("" prop_name "",                                                   \
-                              "",                                                                \
-                              "",                                                                \
-                              (gtype_enum),                                                      \
-                              (default_value),                                                   \
-                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | (param_flags));       \
+        _param_spec = g_param_spec_enum("" prop_name "",                                         \
+                                        "",                                                      \
+                                        "",                                                      \
+                                        (gtype_enum),                                            \
+                                        (default_value),                                         \
+                                        G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY              \
+                                            | G_PARAM_STATIC_STRINGS | (param_flags));           \
                                                                                                  \
         (obj_properties)[(prop_id)] = _param_spec;                                               \
                                                                                                  \
