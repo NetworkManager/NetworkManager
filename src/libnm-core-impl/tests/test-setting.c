@@ -4565,7 +4565,7 @@ test_setting_metadata(void)
             GArray                   *property_types_data;
             guint                     prop_idx_val;
             gboolean                  can_set_including_default = FALSE;
-            gboolean                  can_have_direct_hook      = FALSE;
+            gboolean                  can_have_direct_set_fcn   = FALSE;
             int                       n_special_options;
 
             g_assert(sip->name);
@@ -4708,7 +4708,7 @@ test_setting_metadata(void)
                     g_assert(g_variant_type_equal(sip->property_type->dbus_type, "s"));
                     g_assert(sip->property_type->to_dbus_fcn
                              == _nm_setting_property_to_dbus_fcn_direct);
-                    can_have_direct_hook = TRUE;
+                    can_have_direct_set_fcn = TRUE;
                 }
                 g_assert(sip->param_spec);
                 g_assert(sip->param_spec->value_type == G_TYPE_STRING);
@@ -4746,8 +4746,8 @@ test_setting_metadata(void)
                 g_assert(sip->property_type->direct_type == NM_VALUE_TYPE_STRING);
             }
 
-            if (!can_have_direct_hook)
-                g_assert(!sip->direct_hook.set_string_fcn);
+            if (!can_have_direct_set_fcn)
+                g_assert(!sip->direct_set_fcn.set_string);
 
             n_special_options = (sip->direct_set_string_mac_address_len != 0)
                                 + (!!sip->direct_set_string_strip)

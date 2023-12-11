@@ -683,10 +683,10 @@ _property_direct_set_string(const NMSettInfoSetting  *sett_info,
                + (!!property_info->direct_string_is_refstr)
                + (property_info->direct_set_string_mac_address_len > 0)
                + (property_info->direct_set_string_ip_address_addr_family != 0))
-              <= (property_info->direct_hook.set_string_fcn ? 0 : 1));
+              <= (property_info->direct_set_fcn.set_string ? 0 : 1));
 
-    if (property_info->direct_hook.set_string_fcn) {
-        return property_info->direct_hook.set_string_fcn(sett_info, property_info, setting, src);
+    if (property_info->direct_set_fcn.set_string) {
+        return property_info->direct_set_fcn.set_string(sett_info, property_info, setting, src);
     }
 
     dst = _nm_setting_get_private_field(setting, sett_info, property_info);

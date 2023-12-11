@@ -778,11 +778,11 @@ struct _NMSettInfoProperty {
     union {
         /* Optional hook for direct string properties, this gets called when setting the string.
          * Return whether the value changed. */
-        gboolean (*set_string_fcn)(const NMSettInfoSetting  *sett_info,
-                                   const NMSettInfoProperty *property_info,
-                                   NMSetting                *setting,
-                                   const char               *src);
-    } direct_hook;
+        gboolean (*set_string)(const NMSettInfoSetting  *sett_info,
+                               const NMSettInfoProperty *property_info,
+                               NMSetting                *setting,
+                               const char               *src);
+    } direct_set_fcn;
 
     /* This only has meaning for direct properties (property_type->direct_type != NM_VALUE_TYPE_UNSPEC).
      * In that case, this is the offset where _nm_setting_get_private() can find

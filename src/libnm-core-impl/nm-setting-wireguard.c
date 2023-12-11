@@ -2362,7 +2362,7 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
                                               NM_SETTING_PARAM_SECRET,
                                               NMSettingWireGuard,
                                               _priv.private_key,
-                                              .direct_hook.set_string_fcn =
+                                              .direct_set_fcn.set_string =
                                                   _set_string_fcn_public_key);
 
     /**
