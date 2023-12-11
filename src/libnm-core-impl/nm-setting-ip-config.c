@@ -6201,6 +6201,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
                     nm_strvarray_add(priv->dns_options.arr, str);
             }
         }
+        _notify(NM_SETTING_IP_CONFIG(object), PROP_DNS_OPTIONS);
         break;
     case PROP_ADDRESSES:
         g_ptr_array_unref(priv->addresses);
@@ -6337,7 +6338,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                            "",
                            "",
                            G_TYPE_STRV,
-                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                           G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:dns-options:
@@ -6376,7 +6377,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                            "",
                            "",
                            G_TYPE_STRV,
-                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                           G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:dns-priority:
@@ -6804,7 +6805,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                            "",
                            "",
                            G_TYPE_STRV,
-                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                           G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:auto-route-ext-gw:

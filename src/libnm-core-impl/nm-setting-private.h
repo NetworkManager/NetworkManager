@@ -857,12 +857,12 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
                                                                                              \
         G_STATIC_ASSERT(!NM_FLAGS_ANY((param_flags), ~(NM_SETTING_PARAM_FUZZY_IGNORE)));     \
                                                                                              \
-        _param_spec =                                                                        \
-            g_param_spec_boxed("" prop_name "",                                              \
-                               "",                                                           \
-                               "",                                                           \
-                               G_TYPE_STRV,                                                  \
-                               G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | (param_flags));  \
+        _param_spec = g_param_spec_boxed("" prop_name "",                                    \
+                                         "",                                                 \
+                                         "",                                                 \
+                                         G_TYPE_STRV,                                        \
+                                         G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY         \
+                                             | G_PARAM_STATIC_STRINGS | (param_flags));      \
                                                                                              \
         (obj_properties)[(prop_id)] = _param_spec;                                           \
                                                                                              \
