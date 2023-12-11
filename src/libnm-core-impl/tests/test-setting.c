@@ -4915,7 +4915,8 @@ check_done:;
                  */
                 expected = NM_IN_SET(sip->property_type->direct_type,
                                      NM_VALUE_TYPE_BOOL,
-                                     NM_VALUE_TYPE_UINT32);
+                                     NM_VALUE_TYPE_UINT32,
+                                     NM_VALUE_TYPE_INT32);
 
                 if (NM_FLAGS_HAS(sip->param_spec->flags, G_PARAM_EXPLICIT_NOTIFY)) {
                     g_assert(expected);

@@ -6437,7 +6437,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                          G_MININT32,
                          G_MAXINT32,
                          0,
-                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                         G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:addresses: (type GPtrArray(NMIPAddress))
@@ -6653,14 +6653,15 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      *
      * Since: 1.2
      **/
-    obj_properties[PROP_DAD_TIMEOUT] = g_param_spec_int(
-        NM_SETTING_IP_CONFIG_DAD_TIMEOUT,
-        "",
-        "",
-        -1,
-        NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX,
-        -1,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_DAD_TIMEOUT] =
+        g_param_spec_int(NM_SETTING_IP_CONFIG_DAD_TIMEOUT,
+                         "",
+                         "",
+                         -1,
+                         NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX,
+                         -1,
+                         G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | NM_SETTING_PARAM_FUZZY_IGNORE
+                             | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:dhcp-timeout:
@@ -6671,14 +6672,15 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      *
      * Set to 2147483647 (MAXINT32) for infinity.
      **/
-    obj_properties[PROP_DHCP_TIMEOUT] = g_param_spec_int(
-        NM_SETTING_IP_CONFIG_DHCP_TIMEOUT,
-        "",
-        "",
-        0,
-        G_MAXINT32,
-        0,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_DHCP_TIMEOUT] =
+        g_param_spec_int(NM_SETTING_IP_CONFIG_DHCP_TIMEOUT,
+                         "",
+                         "",
+                         0,
+                         G_MAXINT32,
+                         0,
+                         G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | NM_SETTING_PARAM_FUZZY_IGNORE
+                             | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:required-timeout:
@@ -6703,14 +6705,15 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      *
      * Since: 1.34
      **/
-    obj_properties[PROP_REQUIRED_TIMEOUT] = g_param_spec_int(
-        NM_SETTING_IP_CONFIG_REQUIRED_TIMEOUT,
-        "",
-        "",
-        -1,
-        G_MAXINT32,
-        -1,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_REQUIRED_TIMEOUT] =
+        g_param_spec_int(NM_SETTING_IP_CONFIG_REQUIRED_TIMEOUT,
+                         "",
+                         "",
+                         -1,
+                         G_MAXINT32,
+                         -1,
+                         G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | NM_SETTING_PARAM_FUZZY_IGNORE
+                             | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:dhcp-iaid:
