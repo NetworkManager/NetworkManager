@@ -274,7 +274,7 @@ config_h.set10('HAVE_LIBSYSTEMD', libsystemd_dep.found())
 
 systemd_dep = dependency('systemd', required: false)
 
-gio_unix_dep = dependency('gio-unix-2.0', version: '>= 2.40')
+gio_unix_dep = dependency('gio-unix-2.0', version: '>= 2.42')
 
 glib_dep = declare_dependency(
   dependencies: [
@@ -282,8 +282,8 @@ glib_dep = declare_dependency(
     dependency('gmodule-2.0'),
   ],
   compile_args: [
-    '-DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_40',
-    '-DGLIB_VERSION_MAX_ALLOWED=GLIB_VERSION_2_40',
+    '-DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_42',
+    '-DGLIB_VERSION_MAX_ALLOWED=GLIB_VERSION_2_42',
   ]
 )
 
