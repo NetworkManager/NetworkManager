@@ -4922,7 +4922,8 @@ check_done:;
                                      NM_VALUE_TYPE_STRING,
                                      NM_VALUE_TYPE_BYTES,
                                      NM_VALUE_TYPE_STRV,
-                                     NM_VALUE_TYPE_ENUM);
+                                     NM_VALUE_TYPE_ENUM,
+                                     NM_VALUE_TYPE_FLAGS);
 
                 if (NM_FLAGS_HAS(sip->param_spec->flags, G_PARAM_EXPLICIT_NOTIFY)) {
                     g_assert(expected);

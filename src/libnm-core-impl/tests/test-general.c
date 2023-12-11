@@ -5676,9 +5676,13 @@ test_setting_wireless_security_changed_signal(void)
                                                         "wep-key0",
                                                         NM_SETTING_SECRET_FLAG_AGENT_OWNED,
                                                         NULL)));
+    ASSERT_UNCHANGED(g_assert(nm_setting_set_secret_flags(NM_SETTING(s_wsec),
+                                                          "wep-key1",
+                                                          NM_SETTING_SECRET_FLAG_AGENT_OWNED,
+                                                          NULL)));
     ASSERT_CHANGED(g_assert(nm_setting_set_secret_flags(NM_SETTING(s_wsec),
                                                         "wep-key1",
-                                                        NM_SETTING_SECRET_FLAG_AGENT_OWNED,
+                                                        NM_SETTING_SECRET_FLAG_NOT_SAVED,
                                                         NULL)));
     ASSERT_CHANGED(g_assert(nm_setting_set_secret_flags(NM_SETTING(s_wsec),
                                                         "wep-key2",
@@ -5686,7 +5690,7 @@ test_setting_wireless_security_changed_signal(void)
                                                         NULL)));
     ASSERT_CHANGED(g_assert(nm_setting_set_secret_flags(NM_SETTING(s_wsec),
                                                         "wep-key3",
-                                                        NM_SETTING_SECRET_FLAG_AGENT_OWNED,
+                                                        NM_SETTING_SECRET_FLAG_NOT_SAVED,
                                                         NULL)));
 
     g_object_unref(connection);
