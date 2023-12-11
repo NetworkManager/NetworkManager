@@ -677,14 +677,14 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
         G_STATIC_ASSERT((default_value) <= (max_value));                                         \
         G_STATIC_ASSERT((max_value) <= G_MAXINT64);                                              \
                                                                                                  \
-        _param_spec =                                                                            \
-            g_param_spec_int64("" prop_name "",                                                  \
-                               "",                                                               \
-                               "",                                                               \
-                               (min_value),                                                      \
-                               (max_value),                                                      \
-                               (default_value),                                                  \
-                               G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | (param_flags));      \
+        _param_spec = g_param_spec_int64("" prop_name "",                                        \
+                                         "",                                                     \
+                                         "",                                                     \
+                                         (min_value),                                            \
+                                         (max_value),                                            \
+                                         (default_value),                                        \
+                                         G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY             \
+                                             | G_PARAM_STATIC_STRINGS | (param_flags));          \
                                                                                                  \
         (obj_properties)[(prop_id)] = _param_spec;                                               \
                                                                                                  \
@@ -722,14 +722,14 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
         G_STATIC_ASSERT((default_value) == 0 || (default_value) -1u < (max_value));               \
         G_STATIC_ASSERT((max_value) <= G_MAXUINT64);                                              \
                                                                                                   \
-        _param_spec =                                                                             \
-            g_param_spec_uint64("" prop_name "",                                                  \
-                                "",                                                               \
-                                "",                                                               \
-                                (min_value),                                                      \
-                                (max_value),                                                      \
-                                (default_value),                                                  \
-                                G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | (param_flags));      \
+        _param_spec = g_param_spec_uint64("" prop_name "",                                        \
+                                          "",                                                     \
+                                          "",                                                     \
+                                          (min_value),                                            \
+                                          (max_value),                                            \
+                                          (default_value),                                        \
+                                          G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY             \
+                                              | G_PARAM_STATIC_STRINGS | (param_flags));          \
                                                                                                   \
         (obj_properties)[(prop_id)] = _param_spec;                                                \
                                                                                                   \

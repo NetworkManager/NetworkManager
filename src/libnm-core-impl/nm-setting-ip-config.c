@@ -6512,7 +6512,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                            -1,
                            G_MAXUINT32,
                            -1,
-                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                           G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:route-table:
