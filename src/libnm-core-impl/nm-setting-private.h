@@ -768,12 +768,12 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
         nm_assert(_property_type->direct_type == NM_VALUE_TYPE_STRING);                           \
         nm_assert(_property_type->to_dbus_fcn == _nm_setting_property_to_dbus_fcn_direct);        \
                                                                                                   \
-        _param_spec =                                                                             \
-            g_param_spec_string("" prop_name "",                                                  \
-                                "",                                                               \
-                                "",                                                               \
-                                NULL,                                                             \
-                                G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | (param_flags));      \
+        _param_spec = g_param_spec_string("" prop_name "",                                        \
+                                          "",                                                     \
+                                          "",                                                     \
+                                          NULL,                                                   \
+                                          G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY             \
+                                              | G_PARAM_STATIC_STRINGS | (param_flags));          \
                                                                                                   \
         (obj_properties)[(prop_id)] = _param_spec;                                                \
                                                                                                   \
@@ -1018,12 +1018,12 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
                                         | NM_SETTING_PARAM_INFERRABLE                             \
                                         | NM_SETTING_PARAM_REAPPLY_IMMEDIATELY)));                \
                                                                                                   \
-        _param_spec =                                                                             \
-            g_param_spec_string("" prop_name "",                                                  \
-                                "",                                                               \
-                                "",                                                               \
-                                NULL,                                                             \
-                                G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | (param_flags));      \
+        _param_spec = g_param_spec_string("" prop_name "",                                        \
+                                          "",                                                     \
+                                          "",                                                     \
+                                          NULL,                                                   \
+                                          G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY             \
+                                              | G_PARAM_STATIC_STRINGS | (param_flags));          \
                                                                                                   \
         (obj_properties)[(prop_id)] = _param_spec;                                                \
                                                                                                   \
