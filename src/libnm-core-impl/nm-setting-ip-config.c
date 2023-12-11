@@ -6535,14 +6535,15 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      *
      * Since: 1.10
      **/
-    obj_properties[PROP_ROUTE_TABLE] = g_param_spec_uint(
-        NM_SETTING_IP_CONFIG_ROUTE_TABLE,
-        "",
-        "",
-        0,
-        G_MAXUINT32,
-        0,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_ROUTE_TABLE] =
+        g_param_spec_uint(NM_SETTING_IP_CONFIG_ROUTE_TABLE,
+                          "",
+                          "",
+                          0,
+                          G_MAXUINT32,
+                          0,
+                          G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY
+                              | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
     /**
      * NMSettingIPConfig:ignore-auto-routes:
      *
@@ -6778,7 +6779,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                           0,
                           G_MAXUINT32,
                           NM_DHCP_HOSTNAME_FLAG_NONE,
-                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                          G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:dhcp-reject-servers:

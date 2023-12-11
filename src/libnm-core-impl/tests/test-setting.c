@@ -4913,7 +4913,9 @@ check_done:;
                  * to notify the property change in set_property(). Optimally, the property uses
                  * _nm_setting_property_set_property_direct(), which takes care of that.
                  */
-                expected = NM_IN_SET(sip->property_type->direct_type, NM_VALUE_TYPE_BOOL);
+                expected = NM_IN_SET(sip->property_type->direct_type,
+                                     NM_VALUE_TYPE_BOOL,
+                                     NM_VALUE_TYPE_UINT32);
 
                 if (NM_FLAGS_HAS(sip->param_spec->flags, G_PARAM_EXPLICIT_NOTIFY)) {
                     g_assert(expected);
