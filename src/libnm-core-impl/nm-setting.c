@@ -989,10 +989,11 @@ _nm_setting_property_set_property_direct(GObject      *object,
     nm_assert_not_reached();
 
 out_notify:
-    nm_gobject_notify_together_by_pspec(
-        object,
-        NM_FLAGS_HAS(pspec->flags, G_PARAM_EXPLICIT_NOTIFY) ? property_info->param_spec : NULL,
-        property_info->direct_also_notify);
+    nm_assert(NM_FLAGS_HAS(pspec->flags, G_PARAM_EXPLICIT_NOTIFY));
+
+    nm_gobject_notify_together_by_pspec(object,
+                                        property_info->param_spec,
+                                        property_info->direct_also_notify);
 
     return;
 
