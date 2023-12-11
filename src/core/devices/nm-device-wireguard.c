@@ -598,7 +598,7 @@ _peers_add(NMDeviceWireGuard *self, NMWireGuardPeer *peer)
     };
 
     c_list_link_tail(&priv->lst_peers_head, &peer_data->lst_peers);
-    if (!nm_g_hash_table_add(priv->peers, peer_data))
+    if (!g_hash_table_add(priv->peers, peer_data))
         nm_assert_not_reached();
     return peer_data;
 }

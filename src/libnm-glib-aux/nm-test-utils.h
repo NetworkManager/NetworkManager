@@ -497,8 +497,6 @@ __nmtst_init(int        *argc,
 
     __nmtst_internal.assert_logging = !!assert_logging;
 
-    nm_g_type_init();
-
     is_debug = g_test_verbose();
 
     nmtst_debug = g_getenv("NMTST_DEBUG");
@@ -2605,7 +2603,7 @@ _nmtst_assert_connection_has_settings(NMConnection *connection,
 
     va_start(ap, has_at_most);
     while ((name = va_arg(ap, const char *))) {
-        if (!nm_g_hash_table_add(names, (gpointer) name))
+        if (!g_hash_table_add(names, (gpointer) name))
             g_assert_not_reached();
         g_ptr_array_add(names_arr, (gpointer) name);
     }

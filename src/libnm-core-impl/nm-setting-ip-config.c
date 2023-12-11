@@ -6437,7 +6437,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                          G_MININT32,
                          G_MAXINT32,
                          0,
-                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                         G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:addresses: (type GPtrArray(NMIPAddress))
@@ -6535,14 +6535,15 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      *
      * Since: 1.10
      **/
-    obj_properties[PROP_ROUTE_TABLE] = g_param_spec_uint(
-        NM_SETTING_IP_CONFIG_ROUTE_TABLE,
-        "",
-        "",
-        0,
-        G_MAXUINT32,
-        0,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_ROUTE_TABLE] =
+        g_param_spec_uint(NM_SETTING_IP_CONFIG_ROUTE_TABLE,
+                          "",
+                          "",
+                          0,
+                          G_MAXUINT32,
+                          0,
+                          G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY
+                              | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
     /**
      * NMSettingIPConfig:ignore-auto-routes:
      *
@@ -6555,7 +6556,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                              "",
                              "",
                              FALSE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                             G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:ignore-auto-dns:
@@ -6571,7 +6572,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                              "",
                              "",
                              FALSE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                             G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:dhcp-hostname:
@@ -6602,7 +6603,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                              "",
                              "",
                              TRUE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                             G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:never-default:
@@ -6616,7 +6617,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                              "",
                              "",
                              FALSE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                             G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:may-fail:
@@ -6634,7 +6635,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                              "",
                              "",
                              TRUE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                             G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:dad-timeout:
@@ -6652,14 +6653,15 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      *
      * Since: 1.2
      **/
-    obj_properties[PROP_DAD_TIMEOUT] = g_param_spec_int(
-        NM_SETTING_IP_CONFIG_DAD_TIMEOUT,
-        "",
-        "",
-        -1,
-        NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX,
-        -1,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_DAD_TIMEOUT] =
+        g_param_spec_int(NM_SETTING_IP_CONFIG_DAD_TIMEOUT,
+                         "",
+                         "",
+                         -1,
+                         NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX,
+                         -1,
+                         G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | NM_SETTING_PARAM_FUZZY_IGNORE
+                             | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:dhcp-timeout:
@@ -6670,14 +6672,15 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      *
      * Set to 2147483647 (MAXINT32) for infinity.
      **/
-    obj_properties[PROP_DHCP_TIMEOUT] = g_param_spec_int(
-        NM_SETTING_IP_CONFIG_DHCP_TIMEOUT,
-        "",
-        "",
-        0,
-        G_MAXINT32,
-        0,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_DHCP_TIMEOUT] =
+        g_param_spec_int(NM_SETTING_IP_CONFIG_DHCP_TIMEOUT,
+                         "",
+                         "",
+                         0,
+                         G_MAXINT32,
+                         0,
+                         G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | NM_SETTING_PARAM_FUZZY_IGNORE
+                             | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:required-timeout:
@@ -6702,14 +6705,15 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      *
      * Since: 1.34
      **/
-    obj_properties[PROP_REQUIRED_TIMEOUT] = g_param_spec_int(
-        NM_SETTING_IP_CONFIG_REQUIRED_TIMEOUT,
-        "",
-        "",
-        -1,
-        G_MAXINT32,
-        -1,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_REQUIRED_TIMEOUT] =
+        g_param_spec_int(NM_SETTING_IP_CONFIG_REQUIRED_TIMEOUT,
+                         "",
+                         "",
+                         -1,
+                         G_MAXINT32,
+                         -1,
+                         G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | NM_SETTING_PARAM_FUZZY_IGNORE
+                             | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:dhcp-iaid:
@@ -6778,7 +6782,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                           0,
                           G_MAXUINT32,
                           NM_DHCP_HOSTNAME_FLAG_NONE,
-                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                          G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:dhcp-reject-servers:

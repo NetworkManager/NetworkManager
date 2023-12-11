@@ -273,13 +273,11 @@ AC_SEARCH_LIBS([dlopen], [dl dld],
 	[test "$ac_cv_search_dlopen" = "none required" || AC_SUBST([DL_LIBS], "$ac_cv_search_dlopen"]),
 	[])
 
-PKG_CHECK_MODULES(GLIB, [gio-unix-2.0 >= 2.37.6 gmodule-2.0],
-                  [AC_SUBST(LOG_DRIVER, '$(top_srcdir)/build-aux/tap-driver.sh')
-                   AC_SUBST(AM_TESTS_FD_REDIRECT, '--tap')],
-                  [PKG_CHECK_MODULES(GLIB, gio-unix-2.0 >= 2.40 gmodule-2.0)
-                   AC_SUBST(LOG_DRIVER, '$(top_srcdir)/build-aux/test-driver')])
+PKG_CHECK_MODULES(GLIB, [gio-unix-2.0 >= 2.42 gmodule-2.0])
 
-GLIB_CFLAGS="$GLIB_CFLAGS -DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_40 -DGLIB_VERSION_MAX_ALLOWED=GLIB_VERSION_2_40"
+AC_SUBST(LOG_DRIVER, '$(top_srcdir)/build-aux/test-driver')
+
+GLIB_CFLAGS="$GLIB_CFLAGS -DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_42 -DGLIB_VERSION_MAX_ALLOWED=GLIB_VERSION_2_42"
 
 AC_SUBST(GLIB_CFLAGS)
 AC_SUBST(GLIB_LIBS)

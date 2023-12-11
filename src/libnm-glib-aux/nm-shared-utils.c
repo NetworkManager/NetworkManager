@@ -2217,6 +2217,44 @@ nm_utils_error_is_notfound(GError *error)
 
 /*****************************************************************************/
 
+void
+nm_gobject_notify_together_by_pspec_v(gpointer                 obj,
+                                      const GParamSpec *const *param_specs,
+                                      gsize                    param_specs_len)
+{
+    GObject *const    gobj        = obj;
+    gboolean          frozen      = FALSE;
+    const GParamSpec *pspec_first = NULL;
+
+    nm_assert(G_IS_OBJECT(gobj));
+    nm_assert(param_specs_len > 0);
+
+    while (param_specs_len-- > 0) {
+        const GParamSpec *pspec = (param_specs++)[0];
+
+        if (!pspec)
+            continue;
+
+        if (!frozen) {
+            if (!pspec_first) {
+                pspec_first = pspec;
+                continue;
+            }
+            frozen = TRUE;
+            g_object_freeze_notify(gobj);
+            g_object_notify_by_pspec(gobj, (GParamSpec *) pspec_first);
+        }
+        g_object_notify_by_pspec(gobj, (GParamSpec *) pspec);
+    }
+
+    if (frozen)
+        g_object_thaw_notify(gobj);
+    else if (pspec_first)
+        g_object_notify_by_pspec(gobj, (GParamSpec *) pspec_first);
+}
+
+/*****************************************************************************/
+
 /**
  * nm_g_object_set_property:
  * @object: the target object

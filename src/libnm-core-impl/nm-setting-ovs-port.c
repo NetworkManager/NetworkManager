@@ -349,7 +349,7 @@ verify_trunks(GPtrArray *ranges, GError **error)
         }
 
         for (vlan = range->start; vlan <= range->end; vlan++) {
-            if (!nm_g_hash_table_add(h, GUINT_TO_POINTER(vlan))) {
+            if (!g_hash_table_add(h, GUINT_TO_POINTER(vlan))) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,

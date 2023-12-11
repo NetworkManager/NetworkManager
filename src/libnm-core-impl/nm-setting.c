@@ -683,10 +683,10 @@ _property_direct_set_string(const NMSettInfoSetting  *sett_info,
                + (!!property_info->direct_string_is_refstr)
                + (property_info->direct_set_string_mac_address_len > 0)
                + (property_info->direct_set_string_ip_address_addr_family != 0))
-              <= (property_info->direct_hook.set_string_fcn ? 0 : 1));
+              <= (property_info->direct_set_fcn.set_string ? 0 : 1));
 
-    if (property_info->direct_hook.set_string_fcn) {
-        return property_info->direct_hook.set_string_fcn(sett_info, property_info, setting, src);
+    if (property_info->direct_set_fcn.set_string) {
+        return property_info->direct_set_fcn.set_string(sett_info, property_info, setting, src);
     }
 
     dst = _nm_setting_get_private_field(setting, sett_info, property_info);
@@ -989,10 +989,11 @@ _nm_setting_property_set_property_direct(GObject      *object,
     nm_assert_not_reached();
 
 out_notify:
-    /* If explicit-notify would be set, we would need to emit g_object_notify_by_pspec().
-     *
-     * Currently we never set that, also because we still support glib 2.40. */
-    nm_assert(!NM_FLAGS_HAS(pspec->flags, 1 << 30 /* G_PARAM_EXPLICIT_NOTIFY */));
+    nm_gobject_notify_together_by_pspec(
+        object,
+        NM_FLAGS_HAS(pspec->flags, G_PARAM_EXPLICIT_NOTIFY) ? property_info->param_spec : NULL,
+        property_info->direct_also_notify);
+
     return;
 
 out_fail:
@@ -1388,7 +1389,9 @@ _nm_setting_property_from_dbus_fcn_direct_mac_address(_NM_SETT_INFO_PROP_FROM_DB
 
     if (nm_strdup_reset_take(_nm_setting_get_private_field(setting, sett_info, property_info),
                              length > 0 ? nm_utils_hwaddr_ntoa(array, length) : NULL)) {
-        g_object_notify_by_pspec(G_OBJECT(setting), property_info->param_spec);
+        nm_gobject_notify_together_by_pspec(setting,
+                                            property_info->param_spec,
+                                            property_info->direct_also_notify);
     } else
         *out_is_modified = FALSE;
 
@@ -1692,7 +1695,9 @@ out_unchanged:
 
 out_notify:
     *out_is_modified = TRUE;
-    g_object_notify_by_pspec(G_OBJECT(setting), property_info->param_spec);
+    nm_gobject_notify_together_by_pspec(setting,
+                                        property_info->param_spec,
+                                        property_info->direct_also_notify);
     return TRUE;
 
 out_error_wrong_dbus_type:

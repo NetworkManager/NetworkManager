@@ -4565,7 +4565,7 @@ test_setting_metadata(void)
             GArray                   *property_types_data;
             guint                     prop_idx_val;
             gboolean                  can_set_including_default = FALSE;
-            gboolean                  can_have_direct_hook      = FALSE;
+            gboolean                  can_have_direct_set_fcn   = FALSE;
             int                       n_special_options;
 
             g_assert(sip->name);
@@ -4708,7 +4708,7 @@ test_setting_metadata(void)
                     g_assert(g_variant_type_equal(sip->property_type->dbus_type, "s"));
                     g_assert(sip->property_type->to_dbus_fcn
                              == _nm_setting_property_to_dbus_fcn_direct);
-                    can_have_direct_hook = TRUE;
+                    can_have_direct_set_fcn = TRUE;
                 }
                 g_assert(sip->param_spec);
                 g_assert(sip->param_spec->value_type == G_TYPE_STRING);
@@ -4746,8 +4746,26 @@ test_setting_metadata(void)
                 g_assert(sip->property_type->direct_type == NM_VALUE_TYPE_STRING);
             }
 
-            if (!can_have_direct_hook)
-                g_assert(!sip->direct_hook.set_string_fcn);
+            if (!can_have_direct_set_fcn)
+                g_assert(!sip->direct_set_fcn.set_string);
+
+            if (sip->property_type->direct_type == NM_VALUE_TYPE_NONE)
+                g_assert(!sip->direct_also_notify);
+            else {
+                if (sip->direct_also_notify) {
+                    guint prop_idx2;
+                    guint cnt = 0;
+
+                    for (prop_idx2 = 0; prop_idx2 < sis->property_infos_len; prop_idx2++) {
+                        const NMSettInfoProperty *sip2 = &sis->property_infos[prop_idx2];
+
+                        if (sip2->param_spec == sip->direct_also_notify)
+                            cnt++;
+                    }
+                    g_assert_cmpint(cnt, ==, 1u);
+                    g_assert(sip->param_spec != sip->direct_also_notify);
+                }
+            }
 
             n_special_options = (sip->direct_set_string_mac_address_len != 0)
                                 + (!!sip->direct_set_string_strip)
@@ -4883,6 +4901,29 @@ check_done:;
             }
             prop_idx_val = _PROP_IDX_PACK(meta_type, prop_idx);
             g_array_append_val(property_types_data, prop_idx_val);
+
+            if (sip->param_spec) {
+                gboolean expected;
+
+                /* TODO: we should move all "direct" properties to use G_PARAM_EXPLICIT_NOTIFY.
+                 *
+                 * Currently only certain direct properties are as such. This should change.
+                 *
+                 * Warning: this is potentially dangerous, because implementations MUST remember
+                 * to notify the property change in set_property(). Optimally, the property uses
+                 * _nm_setting_property_set_property_direct(), which takes care of that.
+                 */
+                expected = NM_IN_SET(sip->property_type->direct_type,
+                                     NM_VALUE_TYPE_BOOL,
+                                     NM_VALUE_TYPE_UINT32,
+                                     NM_VALUE_TYPE_INT32);
+
+                if (NM_FLAGS_HAS(sip->param_spec->flags, G_PARAM_EXPLICIT_NOTIFY)) {
+                    g_assert(expected);
+                } else {
+                    g_assert(!expected);
+                }
+            }
 
             if (sip->param_spec) {
                 nm_auto_unset_gvalue GValue val = G_VALUE_INIT;

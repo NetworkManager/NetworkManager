@@ -1115,6 +1115,21 @@ nm_utils_error_set_literal(GError **error, int error_code, const char *literal)
 
 /*****************************************************************************/
 
+void nm_gobject_notify_together_by_pspec_v(gpointer                 obj,
+                                           const GParamSpec *const *param_specs,
+                                           gsize                    param_specs_len);
+
+#define nm_gobject_notify_together_by_pspec(obj, ...)                           \
+    G_STMT_START                                                                \
+    {                                                                           \
+        const GParamSpec *const _arr[] = {__VA_ARGS__};                         \
+                                                                                \
+        G_STATIC_ASSERT(NM_NARG(__VA_ARGS__) == G_N_ELEMENTS(_arr));            \
+                                                                                \
+        nm_gobject_notify_together_by_pspec_v((obj), _arr, G_N_ELEMENTS(_arr)); \
+    }                                                                           \
+    G_STMT_END
+
 gboolean nm_g_object_set_property(GObject      *object,
                                   const char   *property_name,
                                   const GValue *value,
