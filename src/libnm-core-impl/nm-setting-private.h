@@ -475,20 +475,20 @@ void _nm_setting_class_commit(NMSettingClass             *setting_class,
 
 gboolean _nm_properties_override_assert(const NMSettInfoProperty *prop_info);
 
-static inline void
+static inline guint
 _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *prop_info)
 {
     nm_assert(properties_override);
     nm_assert(_nm_properties_override_assert(prop_info));
     g_array_append_vals(properties_override, prop_info, 1);
+    return properties_override->len - 1u;
 }
 
 #define _nm_properties_override_gobj(properties_override,                                     \
                                      p_param_spec,                                            \
                                      p_property_type,                                         \
                                      ... /* extra NMSettInfoProperty fields */)               \
-    G_STMT_START                                                                              \
-    {                                                                                         \
+    ({                                                                                        \
         GParamSpec *const _p_param_spec_2 = (p_param_spec);                                   \
                                                                                               \
         nm_assert(_p_param_spec_2);                                                           \
@@ -498,8 +498,7 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
                                                       .param_spec    = _p_param_spec_2,       \
                                                       .property_type = (p_property_type),     \
                                                       __VA_ARGS__));                          \
-    }                                                                                         \
-    G_STMT_END
+    })
 
 #define _nm_properties_override_dbus(properties_override,                             \
                                      p_name,                                          \
@@ -755,8 +754,7 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
                                                        private_struct_type,                       \
                                                        private_struct_field,                      \
                                                        ... /* extra NMSettInfoProperty fields */) \
-    G_STMT_START                                                                                  \
-    {                                                                                             \
+    ({                                                                                            \
         GParamSpec                  *_param_spec;                                                 \
         const NMSettInfoPropertType *_property_type = (property_type);                            \
                                                                                                   \
@@ -786,8 +784,7 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
             .direct_offset =                                                                      \
                 NM_STRUCT_OFFSET_ENSURE_TYPE(char *, private_struct_type, private_struct_field),  \
             __VA_ARGS__);                                                                         \
-    }                                                                                             \
-    G_STMT_END
+    })
 
 #define _nm_setting_property_define_direct_string(properties_override,                       \
                                                   obj_properties,                            \
