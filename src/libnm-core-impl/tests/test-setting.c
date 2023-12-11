@@ -4749,6 +4749,24 @@ test_setting_metadata(void)
             if (!can_have_direct_set_fcn)
                 g_assert(!sip->direct_set_fcn.set_string);
 
+            if (sip->property_type->direct_type == NM_VALUE_TYPE_NONE)
+                g_assert(!sip->direct_also_notify);
+            else {
+                if (sip->direct_also_notify) {
+                    guint prop_idx2;
+                    guint cnt = 0;
+
+                    for (prop_idx2 = 0; prop_idx2 < sis->property_infos_len; prop_idx2++) {
+                        const NMSettInfoProperty *sip2 = &sis->property_infos[prop_idx2];
+
+                        if (sip2->param_spec == sip->direct_also_notify)
+                            cnt++;
+                    }
+                    g_assert_cmpint(cnt, ==, 1u);
+                    g_assert(sip->param_spec != sip->direct_also_notify);
+                }
+            }
+
             n_special_options = (sip->direct_set_string_mac_address_len != 0)
                                 + (!!sip->direct_set_string_strip)
                                 + (!!sip->direct_set_string_ascii_strdown)

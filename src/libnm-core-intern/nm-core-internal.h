@@ -784,6 +784,10 @@ struct _NMSettInfoProperty {
                                const char               *src);
     } direct_set_fcn;
 
+    /* For direct properties, this is the param_spec that also should be
+     * notified on changes. */
+    GParamSpec *direct_also_notify;
+
     /* This only has meaning for direct properties (property_type->direct_type != NM_VALUE_TYPE_UNSPEC).
      * In that case, this is the offset where _nm_setting_get_private() can find
      * the direct location. */
