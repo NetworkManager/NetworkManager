@@ -5534,7 +5534,7 @@ _nm_utils_bridge_vlan_verify_list(GPtrArray  *vlans,
         nm_bridge_vlan_get_vid_range(vlan, &vid_start, &vid_end);
 
         for (v = vid_start; v <= vid_end; v++) {
-            if (!nm_g_hash_table_add(h, GUINT_TO_POINTER(v))) {
+            if (!g_hash_table_add(h, GUINT_TO_POINTER(v))) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,

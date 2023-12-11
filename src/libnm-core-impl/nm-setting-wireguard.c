@@ -1318,7 +1318,7 @@ _peers_set(NMSettingWireGuardPrivate *priv,
     };
 
     g_ptr_array_add(priv->peers_arr, pd_same_key);
-    if (!nm_g_hash_table_add(priv->peers_hash, pd_same_key))
+    if (!g_hash_table_add(priv->peers_hash, pd_same_key))
         nm_assert_not_reached();
 
     nm_assert(_peers_get(priv, pd_same_key->idx) == pd_same_key);
