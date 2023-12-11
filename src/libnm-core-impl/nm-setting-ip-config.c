@@ -6555,7 +6555,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                              "",
                              "",
                              FALSE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                             G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:ignore-auto-dns:
@@ -6571,7 +6571,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                              "",
                              "",
                              FALSE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                             G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:dhcp-hostname:
@@ -6602,7 +6602,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                              "",
                              "",
                              TRUE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                             G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:never-default:
@@ -6616,7 +6616,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                              "",
                              "",
                              FALSE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                             G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:may-fail:
@@ -6634,7 +6634,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                              "",
                              "",
                              TRUE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                             G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:dad-timeout:

@@ -542,12 +542,12 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
                                                                                                \
         nm_assert(NM_IN_SET(_default_value, 0, 1));                                            \
                                                                                                \
-        _param_spec =                                                                          \
-            g_param_spec_boolean("" prop_name "",                                              \
-                                 "",                                                           \
-                                 "",                                                           \
-                                 _default_value,                                               \
-                                 G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | (param_flags));  \
+        _param_spec = g_param_spec_boolean("" prop_name "",                                    \
+                                           "",                                                 \
+                                           "",                                                 \
+                                           _default_value,                                     \
+                                           G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY         \
+                                               | G_PARAM_STATIC_STRINGS | (param_flags));      \
                                                                                                \
         (obj_properties)[(prop_id)] = _param_spec;                                             \
                                                                                                \

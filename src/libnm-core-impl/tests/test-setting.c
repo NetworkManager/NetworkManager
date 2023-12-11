@@ -4903,6 +4903,26 @@ check_done:;
             g_array_append_val(property_types_data, prop_idx_val);
 
             if (sip->param_spec) {
+                gboolean expected;
+
+                /* TODO: we should move all "direct" properties to use G_PARAM_EXPLICIT_NOTIFY.
+                 *
+                 * Currently only certain direct properties are as such. This should change.
+                 *
+                 * Warning: this is potentially dangerous, because implementations MUST remember
+                 * to notify the property change in set_property(). Optimally, the property uses
+                 * _nm_setting_property_set_property_direct(), which takes care of that.
+                 */
+                expected = NM_IN_SET(sip->property_type->direct_type, NM_VALUE_TYPE_BOOL);
+
+                if (NM_FLAGS_HAS(sip->param_spec->flags, G_PARAM_EXPLICIT_NOTIFY)) {
+                    g_assert(expected);
+                } else {
+                    g_assert(!expected);
+                }
+            }
+
+            if (sip->param_spec) {
                 nm_auto_unset_gvalue GValue val = G_VALUE_INIT;
 
                 g_assert_cmpstr(sip->name, ==, sip->param_spec->name);

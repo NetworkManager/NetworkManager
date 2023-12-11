@@ -989,13 +989,10 @@ _nm_setting_property_set_property_direct(GObject      *object,
     nm_assert_not_reached();
 
 out_notify:
-    /* If explicit-notify would be set, we would need to emit g_object_notify_by_pspec().
-     *
-     * Currently we never set that, also because we still support glib 2.40. */
-    nm_assert(!NM_FLAGS_HAS(pspec->flags, 1 << 30 /* G_PARAM_EXPLICIT_NOTIFY */));
-
-    /* We only notify "direct_also_notify". The other property is automatically notified. */
-    nm_gobject_notify_together_by_pspec(object, property_info->direct_also_notify);
+    nm_gobject_notify_together_by_pspec(
+        object,
+        NM_FLAGS_HAS(pspec->flags, G_PARAM_EXPLICIT_NOTIFY) ? property_info->param_spec : NULL,
+        property_info->direct_also_notify);
 
     return;
 
