@@ -1418,6 +1418,10 @@ nm_g_variant_builder_add_sv_str(GVariantBuilder *builder, const char *key, const
     nm_g_variant_builder_add_sv(builder, key, g_variant_new_string(str));
 }
 
+int nm_g_variant_type_cmp(const GVariantType *type1, const GVariantType *type2);
+
+int nm_g_variant_cmp(GVariant *value1, GVariant *value2);
+
 static inline void
 nm_g_source_destroy_and_unref(GSource *source)
 {
