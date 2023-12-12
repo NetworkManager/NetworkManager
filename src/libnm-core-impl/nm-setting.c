@@ -11,7 +11,6 @@
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-glib-aux/nm-ref-string.h"
 #include "libnm-glib-aux/nm-secret-utils.h"
-#include "nm-property-compare.h"
 #include "nm-setting-private.h"
 #include "nm-utils-private.h"
 #include "nm-utils.h"
@@ -2653,7 +2652,7 @@ _nm_setting_property_compare_fcn_default(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm
                                   NM_CONNECTION_SERIALIZE_ALL,
                                   NULL,
                                   TRUE);
-        return nm_property_compare(value1, value2) == 0;
+        return nm_g_variant_equal(value1, value2);
     }
 }
 
