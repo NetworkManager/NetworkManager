@@ -8,7 +8,6 @@ enum_sources = gnome.mkenums_simple(
 )
 
 test_units = [
-  'test-compare',
   'test-crypto',
   'test-general',
   'test-keyfile',

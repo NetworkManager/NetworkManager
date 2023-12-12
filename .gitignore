@@ -141,7 +141,6 @@ test-*.trs
 /src/libnm-core-public/nm-version-macros.h
 /src/libnm-core-public/nm-dbus-types.xml
 /src/libnm-core-public/nm-vpn-dbus-types.xml
-/src/libnm-core-impl/tests/test-compare
 /src/libnm-core-impl/tests/test-crypto
 /src/libnm-core-impl/tests/test-settings-defaults
 /src/libnm-core-impl/tests/test-general
@@ -439,6 +438,7 @@ test-*.trs
 /src/initrd/tests/test-dt-reader
 /src/initrd/tests/test-ibft-reader
 /src/libnm-client-impl/nm-settings-docs-gir.xml
+/src/libnm-core-impl/tests/test-compare
 /src/ndisc/tests/test-ndisc-fake
 /src/ndisc/tests/test-ndisc-linux
 /src/nm-daemon-helper/nm-daemon-helper

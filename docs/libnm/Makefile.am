@@ -52,7 +52,6 @@ IGNORE_HFILES= \
 	\
 	nm-connection-private.h \
 	nm-default-libnm-core.h \
-	nm-property-compare.h \
 	nm-setting-private.h \
 	nm-team-utils.h \
 	nm-utils-private.h \

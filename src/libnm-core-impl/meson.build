@@ -68,7 +68,6 @@ libnm_core_impl_sources = files(
   'nm-keyfile-utils.c',
   'nm-keyfile.c',
   'nm-meta-setting-base-impl.c',
-  'nm-property-compare.c',
   'nm-setting.c',
   'nm-simple-connection.c',
   'nm-team-utils.c',
