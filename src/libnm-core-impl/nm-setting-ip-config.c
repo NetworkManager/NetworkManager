@@ -6169,9 +6169,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-    NMSettingIPConfig        *setting    = NM_SETTING_IP_CONFIG(object);
-    NMSettingIPConfigPrivate *priv       = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
-    gs_unref_array GArray    *array_free = NULL;
+    NMSettingIPConfig        *setting = NM_SETTING_IP_CONFIG(object);
+    NMSettingIPConfigPrivate *priv    = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
+    gs_unref_array GArray    *array   = NULL;
     const char *const        *strv;
     guint                     i;
 
@@ -6189,19 +6189,21 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         break;
     }
     case PROP_DNS_OPTIONS:
-        strv       = g_value_get_boxed(value);
-        array_free = g_steal_pointer(&priv->dns_options.arr);
+        strv = g_value_get_boxed(value);
         if (strv) {
-            nm_strvarray_ensure(&priv->dns_options.arr);
+            nm_strvarray_ensure(&array);
             for (i = 0; strv[i]; i++) {
                 const char *str = strv[i];
 
                 if (_nm_utils_dns_option_validate(str, NULL, NULL, AF_UNSPEC, NULL)
-                    && _dns_option_find_idx_garray(priv->dns_options.arr, str) < 0)
-                    nm_strvarray_add(priv->dns_options.arr, str);
+                    && _dns_option_find_idx_garray(array, str) < 0)
+                    nm_strvarray_add(array, str);
             }
         }
-        _notify(NM_SETTING_IP_CONFIG(object), PROP_DNS_OPTIONS);
+        if (!nm_strvarray_equal(priv->dns_options.arr, array)) {
+            NM_SWAP(&priv->dns_options.arr, &array);
+            _notify(setting, PROP_DNS_OPTIONS);
+        }
         break;
     case PROP_ADDRESSES:
         g_ptr_array_unref(priv->addresses);
