@@ -1214,25 +1214,33 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-    NMSettingWirelessPrivate *priv = NM_SETTING_WIRELESS_GET_PRIVATE(object);
+    NMSettingWireless        *self = NM_SETTING_WIRELESS(object);
+    NMSettingWirelessPrivate *priv = NM_SETTING_WIRELESS_GET_PRIVATE(self);
     const char *const        *blacklist;
     const char               *mac;
     gboolean                  bool_val;
+    _PropertyEnums            prop1 = PROP_0;
+    _PropertyEnums            prop2 = PROP_0;
 
     switch (prop_id) {
     case PROP_CLONED_MAC_ADDRESS:
         bool_val = !!priv->cloned_mac_address;
-        g_free(priv->cloned_mac_address);
-        priv->cloned_mac_address =
-            _nm_utils_hwaddr_canonical_or_invalid(g_value_get_string(value), ETH_ALEN);
+
+        if (nm_strdup_reset_take(
+                &priv->cloned_mac_address,
+                _nm_utils_hwaddr_canonical_or_invalid(g_value_get_string(value), ETH_ALEN)))
+            prop1 = prop_id;
+
         if (bool_val && !priv->cloned_mac_address) {
             /* cloned-mac-address was set before but was now explicitly cleared.
              * In this case, we also clear mac-address-randomization flag */
             if (priv->mac_address_randomization != NM_SETTING_MAC_RANDOMIZATION_DEFAULT) {
                 priv->mac_address_randomization = NM_SETTING_MAC_RANDOMIZATION_DEFAULT;
-                _notify(NM_SETTING_WIRELESS(object), PROP_MAC_ADDRESS_RANDOMIZATION);
+                prop2                           = PROP_MAC_ADDRESS_RANDOMIZATION;
             }
         }
+
+        nm_gobject_notify_together(self, prop1, prop2);
         break;
     case PROP_MAC_ADDRESS_BLACKLIST:
         blacklist = g_value_get_boxed(value);
@@ -1581,12 +1589,13 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      *    For libnm and nmcli, this field is called "cloned-mac-address".
      * ---end---
      */
-    obj_properties[PROP_CLONED_MAC_ADDRESS] = g_param_spec_string(
-        NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS,
-        "",
-        "",
-        NULL,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_CLONED_MAC_ADDRESS] =
+        g_param_spec_string(NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS,
+                            "",
+                            "",
+                            NULL,
+                            G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY
+                                | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
     _nm_properties_override_gobj(
         properties_override,
         obj_properties[PROP_CLONED_MAC_ADDRESS],
