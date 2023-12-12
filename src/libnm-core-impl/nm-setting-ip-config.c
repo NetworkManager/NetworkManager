@@ -6201,6 +6201,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
                     nm_strvarray_add(priv->dns_options.arr, str);
             }
         }
+        _notify(NM_SETTING_IP_CONFIG(object), PROP_DNS_OPTIONS);
         break;
     case PROP_ADDRESSES:
         g_ptr_array_unref(priv->addresses);
@@ -6288,12 +6289,13 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      * shared method must be configured on the interface which shares the internet
      * to a subnet, not on the uplink which is shared.
      **/
-    obj_properties[PROP_METHOD] = g_param_spec_string(
-        NM_SETTING_IP_CONFIG_METHOD,
-        "",
-        "",
-        NULL,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_METHOD] =
+        g_param_spec_string(NM_SETTING_IP_CONFIG_METHOD,
+                            "",
+                            "",
+                            NULL,
+                            G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY
+                                | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:dns:
@@ -6336,7 +6338,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                            "",
                            "",
                            G_TYPE_STRV,
-                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                           G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:dns-options:
@@ -6375,7 +6377,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                            "",
                            "",
                            G_TYPE_STRV,
-                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                           G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:dns-priority:
@@ -6468,14 +6470,15 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      * for WireGuard interfaces, so usually it should not be set in that case. See
      * #NMSettingWireGuard:ip4-auto-default-route.
      **/
-    obj_properties[PROP_GATEWAY] = g_param_spec_string(
-        NM_SETTING_IP_CONFIG_GATEWAY,
-        "",
-        "",
-        NULL,
-        /* On D-Bus, the legacy property "addresses" contains the gateway.
-         * This was replaced by "address-data" and "gateway". */
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_GATEWAY] =
+        g_param_spec_string(NM_SETTING_IP_CONFIG_GATEWAY,
+                            "",
+                            "",
+                            NULL,
+                            /* On D-Bus, the legacy property "addresses" contains the gateway.
+                             * This was replaced by "address-data" and "gateway". */
+                            G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY
+                                | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:routes: (type GPtrArray(NMIPRoute))
@@ -6512,7 +6515,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                            -1,
                            G_MAXUINT32,
                            -1,
-                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                           G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:route-table:
@@ -6587,7 +6590,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                             "",
                             "",
                             NULL,
-                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                            G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:dhcp-send-hostname:
@@ -6748,7 +6751,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                             "",
                             "",
                             NULL,
-                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                            G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:dhcp-hostname-flags:
@@ -6802,7 +6805,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                            "",
                            "",
                            G_TYPE_STRV,
-                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                           G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:auto-route-ext-gw:
@@ -6821,7 +6824,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                           "",
                           NM_TYPE_TERNARY,
                           NM_TERNARY_DEFAULT,
-                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                          G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:replace-local-rule:
@@ -6837,7 +6840,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                           "",
                           NM_TYPE_TERNARY,
                           NM_TERNARY_DEFAULT,
-                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                          G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }
