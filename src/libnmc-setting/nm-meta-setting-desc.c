@@ -4378,6 +4378,43 @@ _set_fcn_wireless_wep_key(ARGS_SET_FCN)
     return TRUE;
 }
 
+static gboolean
+_set_fcn_wireless_mac_address_randomization(ARGS_SET_FCN)
+{
+    gboolean result;
+
+    result = _set_fcn_gobject_enum(property_info,
+                                   environment,
+                                   environment_user_data,
+                                   setting,
+                                   modifier,
+                                   value,
+                                   error);
+
+    if (result) {
+        NMSettingMacRandomization mac_address_randomization;
+
+        mac_address_randomization =
+            nm_setting_wireless_get_mac_address_randomization(NM_SETTING_WIRELESS(setting));
+
+        /* "wifi.mac-address-randomization" is deprecated for "wifi.cloned-mac-address". To make that
+         * work, there is some normalization taking place, which mostly prefers "cloned-mac-address".
+         * Once set, "cloned-mac-address" will take preference.
+         *
+         * To workaround this normalization, we need to reset the "cloned-mac-address" explicitly. */
+        g_object_set(setting, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, NULL, NULL);
+
+        /* Clearing "cloned-mac-address" will also reset "mac-address-randomization". Need
+         * to set the value once again.*/
+        g_object_set(setting,
+                     NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION,
+                     (guint) mac_address_randomization,
+                     NULL);
+    }
+
+    return result;
+}
+
 static void
 _gobject_enum_pre_set_notify_fcn_wireless_security_wep_key_type(
     const NMMetaPropertyInfo *property_info,
@@ -8179,7 +8216,13 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS[] = {
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION,
-        .property_type =                &_pt_gobject_enum,
+        .property_type = DEFINE_PROPERTY_TYPE (
+            .get_fcn =                  _get_fcn_gobject_enum,
+            .set_fcn =                  _set_fcn_wireless_mac_address_randomization,
+            .values_fcn =               _values_fcn_gobject_enum,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_ENUM,
+            .set_supports_remove =      TRUE,
+        ),
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
             PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
                 .get_gtype =            nm_setting_mac_randomization_get_type,
