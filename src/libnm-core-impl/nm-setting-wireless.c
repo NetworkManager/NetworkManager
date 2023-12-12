@@ -829,6 +829,49 @@ nm_setting_wireless_get_ap_isolation(NMSettingWireless *setting)
 
 /*****************************************************************************/
 
+void
+_nm_setting_wireless_normalize_mac_address_randomization(
+    NMSettingWireless         *s_wifi,
+    const char               **out_cloned_mac_address,
+    NMSettingMacRandomization *out_mac_address_randomization)
+{
+    NMSettingWirelessPrivate *priv = NM_SETTING_WIRELESS_GET_PRIVATE(s_wifi);
+    guint32                   mac_address_randomization;
+    const char               *cloned_mac_address;
+
+    mac_address_randomization = priv->mac_address_randomization;
+    cloned_mac_address        = priv->cloned_mac_address;
+
+    if (cloned_mac_address) {
+        /* If cloned_mac_address is set, it takes precedence and determines
+         * mac_address_randomization. */
+        if (nm_streq(cloned_mac_address, "random"))
+            mac_address_randomization = NM_SETTING_MAC_RANDOMIZATION_ALWAYS;
+        else if (nm_streq(cloned_mac_address, "permanent"))
+            mac_address_randomization = NM_SETTING_MAC_RANDOMIZATION_NEVER;
+        else
+            mac_address_randomization = NM_SETTING_MAC_RANDOMIZATION_DEFAULT;
+    } else if (!NM_IN_SET(mac_address_randomization,
+                          NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
+                          NM_SETTING_MAC_RANDOMIZATION_NEVER,
+                          NM_SETTING_MAC_RANDOMIZATION_ALWAYS)) {
+        /* cloned_mac_address is NULL and mac_address_randomization is invalid. Normalize
+         * mac_address_randomization to the default. */
+        mac_address_randomization = NM_SETTING_MAC_RANDOMIZATION_DEFAULT;
+    } else if (mac_address_randomization != NM_SETTING_MAC_RANDOMIZATION_DEFAULT) {
+        /* mac_address_randomization is not (guint32)set to the default. cloned_mac_address gets
+         * overwritten. */
+        cloned_mac_address = mac_address_randomization == NM_SETTING_MAC_RANDOMIZATION_ALWAYS
+                                 ? "random"
+                                 : "permanent";
+    }
+
+    *out_cloned_mac_address        = cloned_mac_address;
+    *out_mac_address_randomization = mac_address_randomization;
+}
+
+/*****************************************************************************/
+
 static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
@@ -842,6 +885,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     guint                     i;
     gsize                     length;
     GError                   *local = NULL;
+    const char               *desired_cloned_mac_address;
+    NMSettingMacRandomization desired_mac_address_randomization;
 
     if (!priv->ssid) {
         g_set_error_literal(error,
@@ -1087,27 +1132,21 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
     /* from here on, check for NM_SETTING_VERIFY_NORMALIZABLE conditions. */
 
-    if (priv->cloned_mac_address) {
-        if (priv->mac_address_randomization == NM_SETTING_MAC_RANDOMIZATION_ALWAYS
-            && nm_streq(priv->cloned_mac_address, "random"))
-            goto mac_addr_rand_ok;
-        if (priv->mac_address_randomization == NM_SETTING_MAC_RANDOMIZATION_NEVER
-            && nm_streq(priv->cloned_mac_address, "permanent"))
-            goto mac_addr_rand_ok;
-        if (priv->mac_address_randomization == NM_SETTING_MAC_RANDOMIZATION_DEFAULT)
-            goto mac_addr_rand_ok;
-    } else if (priv->mac_address_randomization == NM_SETTING_MAC_RANDOMIZATION_DEFAULT)
-        goto mac_addr_rand_ok;
-    g_set_error(error,
-                NM_CONNECTION_ERROR,
-                NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                _("conflicting value of mac-address-randomization and cloned-mac-address"));
-    g_prefix_error(error,
-                   "%s.%s: ",
-                   NM_SETTING_WIRELESS_SETTING_NAME,
-                   NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS);
-    return NM_SETTING_VERIFY_NORMALIZABLE;
-mac_addr_rand_ok:
+    _nm_setting_wireless_normalize_mac_address_randomization(NM_SETTING_WIRELESS(setting),
+                                                             &desired_cloned_mac_address,
+                                                             &desired_mac_address_randomization);
+    if (desired_mac_address_randomization != priv->mac_address_randomization
+        || !nm_streq0(desired_cloned_mac_address, priv->cloned_mac_address)) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("conflicting value of mac-address-randomization and cloned-mac-address"));
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_WIRELESS_SETTING_NAME,
+                       NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS);
+        return NM_SETTING_VERIFY_NORMALIZABLE;
+    }
 
     if (priv->tx_power != 0 || priv->rate != 0) {
         g_set_error(error,
