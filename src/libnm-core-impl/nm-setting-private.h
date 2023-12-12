@@ -1113,4 +1113,11 @@ _nm_sett_info_prop_from_dbus_fcn_cloned_mac_address(_NM_SETT_INFO_PROP_FROM_DBUS
 
 /*****************************************************************************/
 
+void _nm_setting_wireless_normalize_mac_address_randomization(
+    NMSettingWireless         *s_wifi,
+    const char               **out_cloned_mac_address,
+    NMSettingMacRandomization *out_mac_address_randomization);
+
+/*****************************************************************************/
+
 #endif /* NM_SETTING_PRIVATE_H */
