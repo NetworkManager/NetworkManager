@@ -24,14 +24,17 @@ G_BEGIN_DECLS
 typedef struct _NMVariantAttributeSpec NMVariantAttributeSpec;
 
 /* SSID helpers */
-gboolean    nm_utils_is_empty_ssid(const guint8 *ssid, gsize len);
+gboolean nm_utils_is_empty_ssid(const guint8 *ssid, gsize len);
+
+NM_DEPRECATED_IN_1_46
 const char *nm_utils_escape_ssid(const guint8 *ssid, gsize len);
-gboolean    nm_utils_same_ssid(const guint8 *ssid1,
-                               gsize         len1,
-                               const guint8 *ssid2,
-                               gsize         len2,
-                               gboolean      ignore_trailing_null);
-char       *nm_utils_ssid_to_utf8(const guint8 *ssid, gsize len);
+
+gboolean nm_utils_same_ssid(const guint8 *ssid1,
+                            gsize         len1,
+                            const guint8 *ssid2,
+                            gsize         len2,
+                            gboolean      ignore_trailing_null);
+char    *nm_utils_ssid_to_utf8(const guint8 *ssid, gsize len);
 
 /**
  * NMUtilsSecurityType:
