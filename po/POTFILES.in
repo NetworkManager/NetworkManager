@@ -46,6 +46,7 @@ src/libnm-client-impl/nm-device-bt.c
 src/libnm-client-impl/nm-device-dummy.c
 src/libnm-client-impl/nm-device-ethernet.c
 src/libnm-client-impl/nm-device-generic.c
+src/libnm-client-impl/nm-device-hsr.c
 src/libnm-client-impl/nm-device-infiniband.c
 src/libnm-client-impl/nm-device-ip-tunnel.c
 src/libnm-client-impl/nm-device-loopback.c
@@ -89,6 +90,7 @@ src/libnm-core-impl/nm-setting-connection.c
 src/libnm-core-impl/nm-setting-dcb.c
 src/libnm-core-impl/nm-setting-ethtool.c
 src/libnm-core-impl/nm-setting-gsm.c
+src/libnm-core-impl/nm-setting-hsr.c
 src/libnm-core-impl/nm-setting-infiniband.c
 src/libnm-core-impl/nm-setting-ip-config.c
 src/libnm-core-impl/nm-setting-ip-tunnel.c
@@ -185,9 +187,9 @@ src/nmtui/nmt-page-wifi.c
 src/nmtui/nmt-page-wireguard.c
 src/nmtui/nmt-password-dialog.c
 src/nmtui/nmt-password-fields.c
+src/nmtui/nmt-port-list.c
 src/nmtui/nmt-route-editor.c
 src/nmtui/nmt-route-table.c
-src/nmtui/nmt-port-list.c
 src/nmtui/nmt-widget-list.c
 src/nmtui/nmt-wireguard-peer-editor.c
 src/nmtui/nmt-wireguard-peer-list.c
