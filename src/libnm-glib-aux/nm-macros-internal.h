@@ -571,10 +571,10 @@ nm_str_realloc(char *str)
     }
 
 #define NM_GOBJECT_PROPERTIES_DEFINE_NOTIFY(suffix, obj_type)                                 \
-    static inline void _nm_gobject_notify_together_impl##suffix(                              \
+    static inline void _nm_gobject_notify_together_full_v##suffix(                            \
         obj_type                     *obj,                                                    \
-        guint                         n,                                                      \
-        const _PropertyEnums##suffix *props)                                                  \
+        const _PropertyEnums##suffix *props,                                                  \
+        guint                         n)                                                      \
     {                                                                                         \
         GObject *const gobj        = (GObject *) obj;                                         \
         GParamSpec    *pspec_first = NULL;                                                    \
@@ -614,7 +614,7 @@ nm_str_realloc(char *str)
                                                                                               \
     _nm_unused static inline void _notify##suffix(obj_type *obj, _PropertyEnums##suffix prop) \
     {                                                                                         \
-        _nm_gobject_notify_together_impl##suffix(obj, 1, &prop);                              \
+        _nm_gobject_notify_together_full_v##suffix(obj, &prop, 1);                            \
     }                                                                                         \
     _NM_DUMMY_STRUCT_FOR_TRAILING_SEMICOLON
 
@@ -631,15 +631,15 @@ nm_str_realloc(char *str)
 /* invokes _notify() for all arguments (of type _PropertyEnums). Note, that if
  * there are more than one prop arguments, this will involve a freeze/thaw
  * of GObject property notifications. */
-#define nm_gobject_notify_together_full(suffix, obj, ...)                            \
-    G_STMT_START                                                                     \
-    {                                                                                \
-        const _PropertyEnums##suffix _props[] = {__VA_ARGS__};                       \
-                                                                                     \
-        G_STATIC_ASSERT(G_N_ELEMENTS(_props) == NM_NARG(__VA_ARGS__));               \
-                                                                                     \
-        _nm_gobject_notify_together_impl##suffix(obj, G_N_ELEMENTS(_props), _props); \
-    }                                                                                \
+#define nm_gobject_notify_together_full(suffix, obj, ...)                              \
+    G_STMT_START                                                                       \
+    {                                                                                  \
+        const _PropertyEnums##suffix _props[] = {__VA_ARGS__};                         \
+                                                                                       \
+        G_STATIC_ASSERT(G_N_ELEMENTS(_props) == NM_NARG(__VA_ARGS__));                 \
+                                                                                       \
+        _nm_gobject_notify_together_full_v##suffix(obj, _props, G_N_ELEMENTS(_props)); \
+    }                                                                                  \
     G_STMT_END
 
 #define nm_gobject_notify_together(obj, ...) nm_gobject_notify_together_full(, obj, __VA_ARGS__)
