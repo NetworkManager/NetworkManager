@@ -403,6 +403,8 @@ ip4_dns_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
     }
 
     strv = nm_utils_ip4_dns_from_variant(value);
+    nm_assert(strv);
+
     g_object_set(setting, NM_SETTING_IP_CONFIG_DNS, strv, NULL);
     return TRUE;
 }
@@ -423,31 +425,24 @@ ip4_addresses_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *addrs   = NULL;
     gs_unref_variant GVariant   *s_ip4   = NULL;
-    gs_free const char         **labels  = NULL;
+    gs_unref_variant GVariant   *labels  = NULL;
     gs_free char                *gateway = NULL;
-    guint                        i;
-
-    /* FIXME: properly handle errors */
+    bool                         strict  = NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_STRICT);
 
     if (!_nm_setting_use_legacy_property(setting, connection_dict, "addresses", "address-data")) {
         *out_is_modified = FALSE;
         return TRUE;
     }
 
-    addrs = nm_utils_ip4_addresses_from_variant(value, &gateway);
-
     s_ip4 = g_variant_lookup_value(connection_dict,
                                    NM_SETTING_IP4_CONFIG_SETTING_NAME,
                                    NM_VARIANT_TYPE_SETTING);
-    if (g_variant_lookup(s_ip4, "address-labels", "^a&s", &labels)) {
-        for (i = 0; i < addrs->len && labels[i]; i++) {
-            if (*labels[i]) {
-                nm_ip_address_set_attribute(addrs->pdata[i],
-                                            NM_IP_ADDRESS_ATTRIBUTE_LABEL,
-                                            g_variant_new_string(labels[i]));
-            }
-        }
-    }
+
+    labels = g_variant_lookup_value(s_ip4, "address-labels", NULL);
+
+    addrs = _nm_utils_ip4_addresses_from_variant(value, labels, &gateway, strict, error);
+    if (!addrs)
+        return FALSE;
 
     g_object_set(setting,
                  NM_SETTING_IP_CONFIG_ADDRESSES,
@@ -512,9 +507,8 @@ ip4_address_data_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 static gboolean
 ip4_address_data_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
-    gs_unref_ptrarray GPtrArray *addrs = NULL;
-
-    /* FIXME: properly handle errors */
+    gs_unref_ptrarray GPtrArray *addrs  = NULL;
+    bool                         strict = NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_STRICT);
 
     /* Ignore 'address-data' if we're going to process 'addresses' */
     if (_nm_setting_use_legacy_property(setting, connection_dict, "addresses", "address-data")) {
@@ -522,7 +516,10 @@ ip4_address_data_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
         return TRUE;
     }
 
-    addrs = nm_utils_ip_addresses_from_variant(value, AF_INET);
+    addrs = _nm_utils_ip_addresses_from_variant(value, AF_INET, strict, error);
+    if (!addrs)
+        return FALSE;
+
     g_object_set(setting, NM_SETTING_IP_CONFIG_ADDRESSES, addrs, NULL);
     return TRUE;
 }
@@ -540,15 +537,17 @@ static gboolean
 ip4_routes_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *routes = NULL;
-
-    /* FIXME: properly handle errors */
+    bool                         strict = NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_STRICT);
 
     if (!_nm_setting_use_legacy_property(setting, connection_dict, "routes", "route-data")) {
         *out_is_modified = FALSE;
         return TRUE;
     }
 
-    routes = nm_utils_ip4_routes_from_variant(value);
+    routes = _nm_utils_ip4_routes_from_variant(value, strict, error);
+    if (!routes)
+        return FALSE;
+
     g_object_set(setting, property_info->name, routes, NULL);
     return TRUE;
 }
@@ -569,8 +568,7 @@ static gboolean
 ip4_route_data_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *routes = NULL;
-
-    /* FIXME: properly handle errors */
+    bool                         strict = NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_STRICT);
 
     /* Ignore 'route-data' if we're going to process 'routes' */
     if (_nm_setting_use_legacy_property(setting, connection_dict, "routes", "route-data")) {
@@ -578,7 +576,10 @@ ip4_route_data_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
         return TRUE;
     }
 
-    routes = nm_utils_ip_routes_from_variant(value, AF_INET);
+    routes = _nm_utils_ip_routes_from_variant(value, AF_INET, strict, error);
+    if (!routes)
+        return FALSE;
+
     g_object_set(setting, NM_SETTING_IP_CONFIG_ROUTES, routes, NULL);
     return TRUE;
 }

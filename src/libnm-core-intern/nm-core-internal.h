@@ -192,6 +192,21 @@ NM_TERNARY_TO_OPTION_BOOL(NMTernary v)
 
 NMSetting **_nm_connection_get_settings_arr(NMConnection *connection);
 
+/**
+ * NMSettingParseFlags:
+ * @NM_SETTING_PARSE_FLAGS_NONE: no special handling.
+ * @NM_SETTING_PARSE_FLAGS_STRICT: be strict about unexpected/invalid settings.
+ *   Such issues cause the parsing method to fail.
+ * @NM_SETTING_PARSE_FLAGS_BEST_EFFORT: ignore most errors about invalid/unexpected
+ *   settings. This is, in theory, an even less strict mode than NONE (in practice
+ *   we already ignore most errors without BEST_EFFORT, so both are almost the
+ *   same). Only if the property has from_dbus_is_full are errors taken into
+ *   account with this flag set.
+ * @NM_SETTING_PARSE_FLAGS_NORMALIZE: normalize the connection after loading it.
+ *   A failure to normalize is always an error, even with BEST_EFFORT.
+ *
+ * It is an error to set NM_SETTING_PARSE_FLAGS_STRICT | NM_SETTING_PARSE_FLAGS_BEST_EFFORT
+ */
 typedef enum /*< skip >*/ {
     NM_SETTING_PARSE_FLAGS_NONE        = 0,
     NM_SETTING_PARSE_FLAGS_STRICT      = 1LL << 0,
@@ -723,6 +738,9 @@ typedef struct {
         NMSetting *setting, GVariant *connection_dict, GVariant *value,          \
         NMSettingParseFlags parse_flags, NMTernary *out_is_modified, GError **error
 
+    /* If there might be errors, see #NMSettingParseFlags to understand the
+     * different parsing modes (strict/best effort).
+     */
     gboolean (*from_dbus_fcn)(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil);
 
 #define _NM_SETT_INFO_PROP_MISSING_FROM_DBUS_FCN_ARGS                    \
@@ -1080,6 +1098,31 @@ gboolean _nm_utils_iaid_verify(const char *str, gint64 *out_value);
 
 gboolean
 _nm_utils_validate_dhcp_hostname_flags(NMDhcpHostnameFlags flags, int addr_family, GError **error);
+
+char **_nm_utils_ip4_dns_from_variant(GVariant *value, bool strict, GError **error);
+
+GPtrArray *_nm_utils_ip4_routes_from_variant(GVariant *value, bool strict, GError **error);
+
+GPtrArray *_nm_utils_ip4_addresses_from_variant(GVariant *value,
+                                                GVariant *labels,
+                                                char    **out_gateway,
+                                                bool      strict,
+                                                GError  **error);
+
+char **_nm_utils_ip6_dns_from_variant(GVariant *value, bool strict, GError **error);
+
+GPtrArray *_nm_utils_ip6_addresses_from_variant(GVariant *value,
+                                                char    **out_gateway,
+                                                bool      strict,
+                                                GError  **error);
+
+GPtrArray *_nm_utils_ip6_routes_from_variant(GVariant *value, bool strict, GError **error);
+
+GPtrArray *
+_nm_utils_ip_addresses_from_variant(GVariant *value, int family, bool strict, GError **error);
+
+GPtrArray *
+_nm_utils_ip_routes_from_variant(GVariant *value, int family, bool strict, GError **error);
 
 /*****************************************************************************/
 
