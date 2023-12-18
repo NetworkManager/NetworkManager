@@ -1430,52 +1430,42 @@ again:
 }
 
 static gboolean
-_normalize_wireless_mac_address_randomization(NMConnection *self)
+_normalize_wireless_mac_address_randomization(NMSettingWireless *s_wifi)
 {
-    NMSettingWireless        *s_wifi = nm_connection_get_setting_wireless(self);
+    const char               *desired_cloned_mac_address;
     const char               *cloned_mac_address;
+    NMSettingMacRandomization desired_mac_address_randomization;
     NMSettingMacRandomization mac_address_randomization;
+    gboolean                  changed = FALSE;
 
-    if (!s_wifi)
-        return FALSE;
+    _nm_setting_wireless_normalize_mac_address_randomization(s_wifi,
+                                                             &desired_cloned_mac_address,
+                                                             &desired_mac_address_randomization);
 
     mac_address_randomization = nm_setting_wireless_get_mac_address_randomization(s_wifi);
-    if (!NM_IN_SET(mac_address_randomization,
-                   NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
-                   NM_SETTING_MAC_RANDOMIZATION_NEVER,
-                   NM_SETTING_MAC_RANDOMIZATION_ALWAYS))
-        return FALSE;
+    cloned_mac_address        = nm_setting_wireless_get_cloned_mac_address(s_wifi);
 
-    cloned_mac_address = nm_setting_wireless_get_cloned_mac_address(s_wifi);
-    if (cloned_mac_address) {
-        if (nm_streq(cloned_mac_address, "random")) {
-            if (mac_address_randomization == NM_SETTING_MAC_RANDOMIZATION_ALWAYS)
-                return FALSE;
-            mac_address_randomization = NM_SETTING_MAC_RANDOMIZATION_ALWAYS;
-        } else if (nm_streq(cloned_mac_address, "permanent")) {
-            if (mac_address_randomization == NM_SETTING_MAC_RANDOMIZATION_NEVER)
-                return FALSE;
-            mac_address_randomization = NM_SETTING_MAC_RANDOMIZATION_NEVER;
-        } else {
-            if (mac_address_randomization == NM_SETTING_MAC_RANDOMIZATION_DEFAULT)
-                return FALSE;
-            mac_address_randomization = NM_SETTING_MAC_RANDOMIZATION_DEFAULT;
-        }
-        g_object_set(s_wifi,
-                     NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION,
-                     mac_address_randomization,
-                     NULL);
-        return TRUE;
-    }
-    if (mac_address_randomization != NM_SETTING_MAC_RANDOMIZATION_DEFAULT) {
+    /* Note that "mac_address_randomization" is possibly the string owned by
+     * "s_wifi".  We must be careful that modifying "s_wifi" might invalidate
+     * the string. */
+
+    if (!nm_streq0(cloned_mac_address, desired_cloned_mac_address)) {
         g_object_set(s_wifi,
                      NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS,
-                     mac_address_randomization == NM_SETTING_MAC_RANDOMIZATION_ALWAYS ? "random"
-                                                                                      : "permanent",
+                     desired_cloned_mac_address,
                      NULL);
-        return TRUE;
+        changed = TRUE;
     }
-    return FALSE;
+
+    if (mac_address_randomization != desired_mac_address_randomization) {
+        g_object_set(s_wifi,
+                     NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION,
+                     (guint) desired_mac_address_randomization,
+                     NULL);
+        changed = TRUE;
+    }
+
+    return changed;
 }
 
 static gboolean
@@ -1496,6 +1486,9 @@ _normalize_wireless(NMConnection *self)
         g_object_set(s_wifi, NM_SETTING_WIRELESS_TX_POWER, 0u, NULL);
         changed = TRUE;
     }
+
+    if (_normalize_wireless_mac_address_randomization(s_wifi))
+        changed = TRUE;
 
     return changed;
 }
@@ -2043,7 +2036,6 @@ _connection_normalize(NMConnection *connection,
     was_modified |= _normalize_infiniband(connection);
     was_modified |= _normalize_bond_mode(connection);
     was_modified |= _normalize_bond_options(connection);
-    was_modified |= _normalize_wireless_mac_address_randomization(connection);
     was_modified |= _normalize_wireless(connection);
     was_modified |= _normalize_macsec(connection);
     was_modified |= _normalize_team_config(connection);
