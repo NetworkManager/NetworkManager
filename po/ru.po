@@ -7,8 +7,8 @@ msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: https://gitlab.freedesktop.org/NetworkManager/"
 "NetworkManager/issues\n"
-"POT-Creation-Date: 2023-12-07 03:31+0000\n"
-"PO-Revision-Date: 2023-12-07 16:32+0300\n"
+"POT-Creation-Date: 2023-12-18 03:26+0000\n"
+"PO-Revision-Date: 2023-12-18 14:16+0300\n"
 "Last-Translator: Aleksandr Melman <Alexmelman88@gmail.com>\n"
 "Language-Team: RU\n"
 "Language: ru\n"
@@ -637,7 +637,7 @@ msgstr "Параметры NetworkManager"
 msgid "Show NetworkManager options"
 msgstr "Показать параметры NetworkManager"
 
-#: src/core/nm-manager.c:6904 src/libnmc-setting/nm-meta-setting-desc.c:8628
+#: src/core/nm-manager.c:6886 src/libnmc-setting/nm-meta-setting-desc.c:8628
 msgid "VPN connection"
 msgstr "Подключение VPN"
 
@@ -1497,6 +1497,8 @@ msgid "unsupported option \"%s.%s\" of variant type %s"
 msgstr "неподдерживаемый параметр \"%s.%s\" типа варианта %s"
 
 #: src/libnm-core-impl/nm-setting-6lowpan.c:81
+#: src/libnm-core-impl/nm-setting-hsr.c:153
+#: src/libnm-core-impl/nm-setting-hsr.c:171
 #: src/libnm-core-impl/nm-setting-veth.c:81
 msgid "property is not specified"
 msgstr "свойство не указано"
@@ -1589,7 +1591,7 @@ msgstr "пароль не поддерживается, если сертифи�
 #: src/libnm-core-impl/nm-setting-wimax.c:107
 #: src/libnm-core-impl/nm-setting-wireless-security.c:968
 #: src/libnm-core-impl/nm-setting-wireless-security.c:996
-#: src/libnm-core-impl/nm-setting.c:2456
+#: src/libnm-core-impl/nm-setting.c:2462
 msgid "property is empty"
 msgstr "пустое свойство"
 
@@ -1630,7 +1632,7 @@ msgstr "может активироваться только в подключе
 #: src/libnm-core-impl/nm-setting-wireless.c:946
 #: src/libnm-core-impl/nm-setting-wireless.c:958
 #: src/libnm-core-impl/nm-setting-wireless.c:971
-#: src/libnm-core-impl/nm-setting-wpan.c:164 src/libnm-core-impl/nm-utils.c:4115
+#: src/libnm-core-impl/nm-setting-wpan.c:164 src/libnm-core-impl/nm-utils.c:4557
 msgid "property is invalid"
 msgstr "недействительное свойство"
 
@@ -2025,6 +2027,26 @@ msgstr "свойство может содержать только цифры"
 #: src/libnm-core-impl/nm-setting-gsm.c:503
 msgid "can't be enabled when manual configuration is present"
 msgstr "нельзя активировать в присутствии ручной конфигурации"
+
+#: src/libnm-core-impl/nm-setting-hsr.c:161
+#: src/libnm-core-impl/nm-setting-hsr.c:179
+#: src/libnm-core-impl/nm-setting-veth.c:90
+#, c-format
+msgid "'%s' is not a valid interface name"
+msgstr "Недействительное имя интерфейса «%s»"
+
+#: src/libnm-core-impl/nm-setting-hsr.c:189
+#: src/libnm-core-impl/nm-setting-sriov.c:422
+#: src/libnm-core-impl/nm-setting-wired.c:809
+#: src/libnm-core-impl/nm-setting-wired.c:825
+#: src/libnm-core-impl/nm-setting-wired.c:899
+#: src/libnm-core-impl/nm-setting-wired.c:958
+#: src/libnm-core-impl/nm-setting-wireless.c:1006
+#: src/libnm-core-impl/nm-setting-wireless.c:1025
+#: src/libnmc-setting/nm-meta-setting-desc.c:4283
+#, c-format
+msgid "'%s' is not a valid MAC address"
+msgstr "Недействительный MAC-адрес: «%s»"
 
 #: src/libnm-core-impl/nm-setting-infiniband.c:213
 msgid "Must specify a P_Key if specifying parent"
@@ -2740,18 +2762,6 @@ msgstr "кодировка сценария не является действи
 msgid "the script lacks FindProxyForURL function"
 msgstr "сценарию не хватает функции FindProxyForURL"
 
-#: src/libnm-core-impl/nm-setting-sriov.c:422
-#: src/libnm-core-impl/nm-setting-wired.c:809
-#: src/libnm-core-impl/nm-setting-wired.c:825
-#: src/libnm-core-impl/nm-setting-wired.c:899
-#: src/libnm-core-impl/nm-setting-wired.c:958
-#: src/libnm-core-impl/nm-setting-wireless.c:1006
-#: src/libnm-core-impl/nm-setting-wireless.c:1025
-#: src/libnmc-setting/nm-meta-setting-desc.c:4283
-#, c-format
-msgid "'%s' is not a valid MAC address"
-msgstr "Недействительный MAC-адрес: «%s»"
-
 #: src/libnm-core-impl/nm-setting-sriov.c:1045
 #, c-format
 msgid "VF with index %u, but the total number of VFs is %u"
@@ -2864,11 +2874,6 @@ msgstr ""
 "достигнуто максимальное число записей с пользовательскими данными (%u вместо "
 "%u)"
 
-#: src/libnm-core-impl/nm-setting-veth.c:90
-#, c-format
-msgid "'%s' is not a valid interface name"
-msgstr "Недействительное имя интерфейса «%s»"
-
 #: src/libnm-core-impl/nm-setting-vlan.c:666
 #, c-format
 msgid "the vlan id must be in range 0-4094 but is %u"
@@ -2897,7 +2902,7 @@ msgstr "нельзя указывать connection.multi-connect как пара
 msgid "setting contained a secret with an empty name"
 msgstr "параметр содержал секрет с пустым именем"
 
-#: src/libnm-core-impl/nm-setting-vpn.c:651 src/libnm-core-impl/nm-setting.c:3404
+#: src/libnm-core-impl/nm-setting-vpn.c:651 src/libnm-core-impl/nm-setting.c:3410
 msgid "not a secret property"
 msgstr "не является свойством секрета"
 
@@ -3142,40 +3147,40 @@ msgstr "страница должна иметь значение между %d 
 msgid "channel must not be between %d and %d"
 msgstr "значение канала должно быть между %d и %d"
 
-#: src/libnm-core-impl/nm-setting.c:1704 src/libnm-core-impl/nm-setting.c:1744
-#: src/libnm-core-impl/nm-setting.c:2055
+#: src/libnm-core-impl/nm-setting.c:1710 src/libnm-core-impl/nm-setting.c:1750
+#: src/libnm-core-impl/nm-setting.c:2061
 #, c-format
 msgid "can't set property of type '%s' from value of type '%s'"
 msgstr ""
 "свойство с типом «%s» не может быть настроено на основании значения с типом "
 "«%s»"
 
-#: src/libnm-core-impl/nm-setting.c:1720
+#: src/libnm-core-impl/nm-setting.c:1726
 #, c-format
 msgid "value of type '%s' is invalid or out of range for property '%s'"
 msgstr ""
 "значение с типом '%s' является недействительным или вне диапазона для свойства "
 "'%s'"
 
-#: src/libnm-core-impl/nm-setting.c:1765
+#: src/libnm-core-impl/nm-setting.c:1771
 #, c-format
 msgid "can not set property: %s"
 msgstr "невозможно настроить свойство: %s"
 
-#: src/libnm-core-impl/nm-setting.c:1994
+#: src/libnm-core-impl/nm-setting.c:2000
 msgid "duplicate property"
 msgstr "дублируемое свойство"
 
-#: src/libnm-core-impl/nm-setting.c:2014
+#: src/libnm-core-impl/nm-setting.c:2020
 msgid "unknown property"
 msgstr "неизвестное свойство"
 
-#: src/libnm-core-impl/nm-setting.c:2088 src/libnm-core-impl/nm-setting.c:2170
+#: src/libnm-core-impl/nm-setting.c:2094 src/libnm-core-impl/nm-setting.c:2176
 #, c-format
 msgid "failed to set property: %s"
 msgstr "не удалось настроить свойство: %s"
 
-#: src/libnm-core-impl/nm-setting.c:3301
+#: src/libnm-core-impl/nm-setting.c:3307
 msgid "secret not found"
 msgstr "секрет не найден"
 
@@ -3246,228 +3251,318 @@ msgstr "недействительный тип D-Bus «%s»"
 msgid "invalid link-watchers: %s"
 msgstr "недействительный наблюдатель за каналами: %s"
 
-#: src/libnm-core-impl/nm-utils.c:2218
+#: src/libnm-core-impl/nm-utils.c:1365
+msgid "Expected value of type \"au\""
+msgstr "Ожидаемое значение типа \"au\""
+
+#: src/libnm-core-impl/nm-utils.c:1508 src/libnm-core-impl/nm-utils.c:1673
+msgid "Expected value of type \"aau\""
+msgstr "Ожидаемое значение типа \"aau\""
+
+#: src/libnm-core-impl/nm-utils.c:1519
+msgid "Expected \"address-labels\" of type \"as\""
+msgstr "Ожидается \"address-labels\" типа \"as\""
+
+#: src/libnm-core-impl/nm-utils.c:1541
+#, c-format
+msgid "Incomplete IPv4 address (idx=%u)"
+msgstr "Неполный IPv4-адрес (idx=%u)"
+
+#: src/libnm-core-impl/nm-utils.c:1554 src/libnm-core-impl/nm-utils.c:1710
+#: src/libnm-core-impl/nm-utils.c:2019 src/libnm-core-impl/nm-utils.c:2216
+#: src/libnm-core-impl/nm-utils.c:2372 src/libnm-core-impl/nm-utils.c:2557
+#, c-format
+msgid "%s (idx=%u)"
+msgstr "%s (idx=%u)"
+
+#: src/libnm-core-impl/nm-utils.c:1691
+#, c-format
+msgid "Incomplete IPv4 route (idx=%u)"
+msgstr "Неполный маршрут IPv4 (idx=%u)"
+
+#: src/libnm-core-impl/nm-utils.c:1819
+msgid "Expected value of type \"aay\""
+msgstr "Ожидаемое значение типа \"aay\""
+
+#: src/libnm-core-impl/nm-utils.c:1844
+#, c-format
+msgid "Invalid IPv6 DNS address length (idx=%u)"
+msgstr "Недопустимая длина адреса IPv6 DNS (idx=%u)"
+
+#: src/libnm-core-impl/nm-utils.c:1971
+msgid "Expected value of type \"a(ayuay)\""
+msgstr "Ожидаемое значение типа \"a(ayuay)\""
+
+#: src/libnm-core-impl/nm-utils.c:1993
+#, c-format
+msgid "Expected value of type \"(ayuay)\" (idx=%u)"
+msgstr "Ожидаемое значение типа \"(ayuay)\" (idx=%u)"
+
+#: src/libnm-core-impl/nm-utils.c:2006
+#, c-format
+msgid "IPv6 address with invalid length (idx=%u)"
+msgstr "IPv6-адрес с недопустимой длиной (idx=%u)"
+
+#: src/libnm-core-impl/nm-utils.c:2036
+#, c-format
+msgid "IPv6 gateway with invalid length (idx=%u)"
+msgstr "Шлюз IPv6 с недопустимой длиной (idx=%u)"
+
+#: src/libnm-core-impl/nm-utils.c:2148
+msgid "Expected value of type \"a(ayuayu)\""
+msgstr "Ожидаемое значение типа \"a(ayuayu)\""
+
+#: src/libnm-core-impl/nm-utils.c:2172
+#, c-format
+msgid "Expected value of type \"(ayuayu)\" (idx=%u)"
+msgstr "Ожидаемое значение типа \"(ayuayu)\" (idx=%u)"
+
+#: src/libnm-core-impl/nm-utils.c:2185
+#, c-format
+msgid "IPv6 dest address with invalid length (idx=%u)"
+msgstr "DEST-адрес IPv6 с недопустимой длиной (idx=%u)"
+
+#: src/libnm-core-impl/nm-utils.c:2198
+#, c-format
+msgid "IPv6 next-hop address with invalid length (idx=%u)"
+msgstr "IPv6-адрес следующего перехода с недопустимой длиной (idx=%u)"
+
+#: src/libnm-core-impl/nm-utils.c:2341 src/libnm-core-impl/nm-utils.c:2520
+msgid "Expected value of type \"aa{sv}\""
+msgstr "Ожидаемое значение типа \"aa{sv}\""
+
+#: src/libnm-core-impl/nm-utils.c:2359
+#, c-format
+msgid "IP address requires fields \"dest\" and \"prefix\" (idx=%u)"
+msgstr "IP-адрес требует полей \"dest\" и \"prefix\" (idx=%u)"
+
+#: src/libnm-core-impl/nm-utils.c:2538
+#, c-format
+msgid "Route requires fields \"dest\" and \"prefix\" (idx=%u)"
+msgstr "Маршрут требует полей \"dest\" и \"prefix\" (idx=%u)"
+
+#: src/libnm-core-impl/nm-utils.c:2660
 #, c-format
 msgid "'%s' is not a valid handle."
 msgstr "недействительный дескриптор «%s»."
 
-#: src/libnm-core-impl/nm-utils.c:2366
+#: src/libnm-core-impl/nm-utils.c:2808
 #, c-format
 msgid "'%s' unexpected: parent already specified."
 msgstr "неожиданный «%s»: родитель уже указан."
 
-#: src/libnm-core-impl/nm-utils.c:2384
+#: src/libnm-core-impl/nm-utils.c:2826
 #, c-format
 msgid "invalid handle: '%s'"
 msgstr "недействительный дескриптор: «%s»"
 
-#: src/libnm-core-impl/nm-utils.c:2406
+#: src/libnm-core-impl/nm-utils.c:2848
 msgid "parent not specified."
 msgstr "родитель не указан."
 
-#: src/libnm-core-impl/nm-utils.c:2470
+#: src/libnm-core-impl/nm-utils.c:2912
 #, c-format
 msgid "unsupported qdisc option: '%s'."
 msgstr "неподдерживаемый параметр планировщика очередей: «%s»."
 
-#: src/libnm-core-impl/nm-utils.c:2600
+#: src/libnm-core-impl/nm-utils.c:3042
 msgid "action name missing."
 msgstr "не указано имя действия."
 
-#: src/libnm-core-impl/nm-utils.c:2625
+#: src/libnm-core-impl/nm-utils.c:3067
 #, c-format
 msgid "unsupported action option: '%s'."
 msgstr "неподдерживаемый параметр действия: «%s»."
 
-#: src/libnm-core-impl/nm-utils.c:2762
+#: src/libnm-core-impl/nm-utils.c:3204
 msgid "invalid action: "
 msgstr "недействительное действие: "
 
-#: src/libnm-core-impl/nm-utils.c:2766
+#: src/libnm-core-impl/nm-utils.c:3208
 #, c-format
 msgid "unsupported tfilter option: '%s'."
 msgstr "неподдерживаемый параметр tfilter: «%s»."
 
-#: src/libnm-core-impl/nm-utils.c:3066
+#: src/libnm-core-impl/nm-utils.c:3508
 #, c-format
 msgid "failed stat file %s: %s"
 msgstr "не удалось получить статические данные для файла %s: %s"
 
-#: src/libnm-core-impl/nm-utils.c:3077
+#: src/libnm-core-impl/nm-utils.c:3519
 #, c-format
 msgid "not a file (%s)"
 msgstr "не является файлом (%s)"
 
-#: src/libnm-core-impl/nm-utils.c:3088
+#: src/libnm-core-impl/nm-utils.c:3530
 #, c-format
 msgid "invalid file owner %d for %s"
 msgstr "недействительный владелец файла %d для %s"
 
-#: src/libnm-core-impl/nm-utils.c:3100
+#: src/libnm-core-impl/nm-utils.c:3542
 #, c-format
 msgid "file permissions for %s"
 msgstr "права доступа к файлам для %s"
 
-#: src/libnm-core-impl/nm-utils.c:3110
+#: src/libnm-core-impl/nm-utils.c:3552
 #, c-format
 msgid "reject %s"
 msgstr "отказать %s"
 
-#: src/libnm-core-impl/nm-utils.c:3130
+#: src/libnm-core-impl/nm-utils.c:3572
 #, c-format
 msgid "path is not absolute (%s)"
 msgstr "путь не является абсолютным (%s)"
 
-#: src/libnm-core-impl/nm-utils.c:3145
+#: src/libnm-core-impl/nm-utils.c:3587
 #, c-format
 msgid "Plugin file does not exist (%s)"
 msgstr "Файл модуля не существует (%s)"
 
-#: src/libnm-core-impl/nm-utils.c:3154
+#: src/libnm-core-impl/nm-utils.c:3596
 #, c-format
 msgid "Plugin is not a valid file (%s)"
 msgstr "Модуль не является действительным файлом (%s)"
 
-#: src/libnm-core-impl/nm-utils.c:3165
+#: src/libnm-core-impl/nm-utils.c:3607
 #, c-format
 msgid "libtool archives are not supported (%s)"
 msgstr "архивы libtool не поддерживаются (%s)"
 
-#: src/libnm-core-impl/nm-utils.c:3242
+#: src/libnm-core-impl/nm-utils.c:3684
 #, c-format
 msgid "Could not find \"%s\" binary"
 msgstr "Не удалось найти бинарный файл «%s»"
 
-#: src/libnm-core-impl/nm-utils.c:4066
+#: src/libnm-core-impl/nm-utils.c:4508
 msgid "unknown secret flags"
 msgstr "неизвестные флаги секретов"
 
-#: src/libnm-core-impl/nm-utils.c:4076
+#: src/libnm-core-impl/nm-utils.c:4518
 msgid "conflicting secret flags"
 msgstr "конфликтующие флаги секретов"
 
-#: src/libnm-core-impl/nm-utils.c:4087
+#: src/libnm-core-impl/nm-utils.c:4529
 msgid "secret flags must not be \"not-required\""
 msgstr "флаги секретов не должны иметь параметр \"not-required\""
 
-#: src/libnm-core-impl/nm-utils.c:4095
+#: src/libnm-core-impl/nm-utils.c:4537
 msgid "unsupported secret flags"
 msgstr "неподдерживаемые флаги секретов"
 
-#: src/libnm-core-impl/nm-utils.c:4125
+#: src/libnm-core-impl/nm-utils.c:4567
 msgid "can't be simultaneously disabled and enabled"
 msgstr "нельзя одновременно отключить и включить"
 
-#: src/libnm-core-impl/nm-utils.c:4133
+#: src/libnm-core-impl/nm-utils.c:4575
 msgid "WPS is required"
 msgstr "Требуется WPS"
 
-#: src/libnm-core-impl/nm-utils.c:4201
+#: src/libnm-core-impl/nm-utils.c:4643
 #, c-format
 msgid "not a valid ethernet MAC address for mask at position %lld"
 msgstr "маска имеет недействительный ethernet MAC-адрес на позиции %lld"
 
-#: src/libnm-core-impl/nm-utils.c:4220
+#: src/libnm-core-impl/nm-utils.c:4662
 #, c-format
 msgid "not a valid ethernet MAC address #%u at position %lld"
 msgstr "ethernet MAC-адрес #%u на позиции %lld является недействительным"
 
-#: src/libnm-core-impl/nm-utils.c:4877
+#: src/libnm-core-impl/nm-utils.c:5319
 msgid "not valid utf-8"
 msgstr "недействительный utf-8"
 
-#: src/libnm-core-impl/nm-utils.c:4898 src/libnm-core-impl/nm-utils.c:4951
+#: src/libnm-core-impl/nm-utils.c:5340 src/libnm-core-impl/nm-utils.c:5393
 msgid "is not a JSON object"
 msgstr "не является объектом JSON"
 
-#: src/libnm-core-impl/nm-utils.c:4927
+#: src/libnm-core-impl/nm-utils.c:5369
 msgid "value is NULL"
 msgstr "значение равно NULL"
 
-#: src/libnm-core-impl/nm-utils.c:4927
+#: src/libnm-core-impl/nm-utils.c:5369
 msgid "value is empty"
 msgstr "пустое значение"
 
-#: src/libnm-core-impl/nm-utils.c:4939
+#: src/libnm-core-impl/nm-utils.c:5381
 #, c-format
 msgid "invalid JSON at position %d (%s)"
 msgstr "недействительный JSON в позиции %d (%s)"
 
-#: src/libnm-core-impl/nm-utils.c:5064 src/libnm-core-impl/nm-utils.c:5084
+#: src/libnm-core-impl/nm-utils.c:5506 src/libnm-core-impl/nm-utils.c:5526
 msgid "unterminated escape sequence"
 msgstr "незавершённая последовательность escape"
 
-#: src/libnm-core-impl/nm-utils.c:5110
+#: src/libnm-core-impl/nm-utils.c:5552
 #, c-format
 msgid "unknown attribute '%s'"
 msgstr "неизвестный атрибут «%s»"
 
-#: src/libnm-core-impl/nm-utils.c:5128
+#: src/libnm-core-impl/nm-utils.c:5570
 #, c-format
 msgid "missing key-value separator '%c' after '%s'"
 msgstr "не указан разделитель ключа-значения '%c' после '%s'"
 
-#: src/libnm-core-impl/nm-utils.c:5148
+#: src/libnm-core-impl/nm-utils.c:5590
 #, c-format
 msgid "invalid uint32 value '%s' for attribute '%s'"
 msgstr "недействительное значение uint32 «%s» атрибута «%s»"
 
-#: src/libnm-core-impl/nm-utils.c:5162
+#: src/libnm-core-impl/nm-utils.c:5604
 #, c-format
 msgid "invalid int32 value '%s' for attribute '%s'"
 msgstr "недействительное значение int32 «%s» атрибута «%s»"
 
-#: src/libnm-core-impl/nm-utils.c:5175
+#: src/libnm-core-impl/nm-utils.c:5617
 #, c-format
 msgid "invalid uint64 value '%s' for attribute '%s'"
 msgstr "недействительное значение uint64 «%s» атрибута «%s»"
 
-#: src/libnm-core-impl/nm-utils.c:5188
+#: src/libnm-core-impl/nm-utils.c:5630
 #, c-format
 msgid "invalid uint8 value '%s' for attribute '%s'"
 msgstr "недействительное значение uint8 «%s» атрибута «%s»"
 
-#: src/libnm-core-impl/nm-utils.c:5202
+#: src/libnm-core-impl/nm-utils.c:5644
 #, c-format
 msgid "invalid boolean value '%s' for attribute '%s'"
 msgstr "недействительное логическое значение «%s» атрибута «%s»"
 
-#: src/libnm-core-impl/nm-utils.c:5216
+#: src/libnm-core-impl/nm-utils.c:5658
 #, c-format
 msgid "unsupported attribute '%s' of type '%s'"
 msgstr "неподдерживаемый атрибут «%s» типа «%s»"
 
-#: src/libnm-core-impl/nm-utils.c:5517
+#: src/libnm-core-impl/nm-utils.c:5959
 #, c-format
 msgid "Bridge VLANs %d and %d are not sorted by ascending vid"
 msgstr ""
 "Виртуальные LAN моста %d и %d не отсортированы по возрастанию виртуальных id"
 
-#: src/libnm-core-impl/nm-utils.c:5541
+#: src/libnm-core-impl/nm-utils.c:5983
 #, c-format
 msgid "duplicate bridge VLAN vid %u"
 msgstr "дублирующий виртуальный id виртуальной LAN моста %u"
 
-#: src/libnm-core-impl/nm-utils.c:5553
+#: src/libnm-core-impl/nm-utils.c:5995
 msgid "only one VLAN can be the PVID"
 msgstr "только одна VLAN может быть PVID"
 
-#: src/libnm-core-impl/nm-utils.c:5696
+#: src/libnm-core-impl/nm-utils.c:6138
 #, c-format
 msgid "unknown flags 0x%x"
 msgstr "неизвестные флаги 0x%x"
 
-#: src/libnm-core-impl/nm-utils.c:5708
+#: src/libnm-core-impl/nm-utils.c:6150
 msgid ""
 "'fqdn-no-update' and 'fqdn-serv-update' flags cannot be set at the same time"
 msgstr ""
 "флаги 'fqdn-no-update' и 'fqdn-serv-update' нельзя указывать одновременно"
 
-#: src/libnm-core-impl/nm-utils.c:5719
+#: src/libnm-core-impl/nm-utils.c:6161
 msgid "'fqdn-clear-flags' flag is incompatible with other FQDN flags"
 msgstr "флаг 'fqdn-clear-flags' несовместим с другими флагами FQDN"
 
-#: src/libnm-core-impl/nm-utils.c:5727
+#: src/libnm-core-impl/nm-utils.c:6169
 msgid "DHCPv6 does not support the E (encoded) FQDN flag"
 msgstr "DHCPv6 не поддерживает флаг E (encoded) для FQDN"
 
@@ -3843,37 +3938,37 @@ msgstr "недействительный закрытый ключ"
 msgid "Method returned type '%s', but expected '%s'"
 msgstr "Метод вернул тип «%s», но ожидался «%s»"
 
-#: src/libnm-glib-aux/nm-shared-utils.c:2258
+#: src/libnm-glib-aux/nm-shared-utils.c:2296
 #, c-format
 msgid "object class '%s' has no property named '%s'"
 msgstr "класс объекта «%s» не содержит свойства «%s»"
 
-#: src/libnm-glib-aux/nm-shared-utils.c:2267
+#: src/libnm-glib-aux/nm-shared-utils.c:2305
 #, c-format
 msgid "property '%s' of object class '%s' is not writable"
 msgstr "свойство «%s» класса объекта «%s» недоступно для записи"
 
-#: src/libnm-glib-aux/nm-shared-utils.c:2276
+#: src/libnm-glib-aux/nm-shared-utils.c:2314
 #, c-format
 msgid "construct property \"%s\" for object '%s' can't be set after construction"
 msgstr ""
 "свойство конструкции \"%s\" объекта '%s' не может быть установлено после "
 "создания конструкции"
 
-#: src/libnm-glib-aux/nm-shared-utils.c:2287
+#: src/libnm-glib-aux/nm-shared-utils.c:2325
 #, c-format
 msgid "'%s::%s' is not a valid property name; '%s' is not a GObject subtype"
 msgstr ""
 "'%s::%s' не является недействительным именем свойства; '%s' не является "
 "подтипом GObject"
 
-#: src/libnm-glib-aux/nm-shared-utils.c:2300
+#: src/libnm-glib-aux/nm-shared-utils.c:2338
 #, c-format
 msgid "unable to set property '%s' of type '%s' from value of type '%s'"
 msgstr ""
 "невозможно настроить свойство '%s' с типом '%s' на базе значения с типом '%s'"
 
-#: src/libnm-glib-aux/nm-shared-utils.c:2312
+#: src/libnm-glib-aux/nm-shared-utils.c:2350
 #, c-format
 msgid ""
 "value \"%s\" of type '%s' is invalid or out of range for property '%s' of type "
@@ -3882,47 +3977,47 @@ msgstr ""
 "значение \"%s\" с типом '%s' для свойства '%s' с типом '%s' не является "
 "действительным, или выходит за пределы диапазона"
 
-#: src/libnm-glib-aux/nm-shared-utils.c:5335
+#: src/libnm-glib-aux/nm-shared-utils.c:5373
 msgid "interface name is missing"
 msgstr "отсутствует имя интерфейса"
 
-#: src/libnm-glib-aux/nm-shared-utils.c:5343
+#: src/libnm-glib-aux/nm-shared-utils.c:5381
 msgid "interface name is too short"
 msgstr "слишком короткое имя интерфейса"
 
-#: src/libnm-glib-aux/nm-shared-utils.c:5351
+#: src/libnm-glib-aux/nm-shared-utils.c:5389
 msgid "interface name is reserved"
 msgstr "имя интерфейса зарезервировано"
 
-#: src/libnm-glib-aux/nm-shared-utils.c:5364
+#: src/libnm-glib-aux/nm-shared-utils.c:5402
 msgid "interface name contains an invalid character"
 msgstr "имя интерфейса содержит недействительный символ"
 
-#: src/libnm-glib-aux/nm-shared-utils.c:5372
+#: src/libnm-glib-aux/nm-shared-utils.c:5410
 msgid "interface name is longer than 15 characters"
 msgstr "имя интерфейса длиннее 15 символов"
 
-#: src/libnm-glib-aux/nm-shared-utils.c:5397
+#: src/libnm-glib-aux/nm-shared-utils.c:5435
 #, c-format
 msgid "'%%' is not allowed in interface names"
 msgstr "'%%' не разрешается в именах интерфейсов"
 
-#: src/libnm-glib-aux/nm-shared-utils.c:5409
+#: src/libnm-glib-aux/nm-shared-utils.c:5447
 #, c-format
 msgid "'%s' is not allowed as interface name"
 msgstr "'%s' не разрешается в качестве имени интерфейса"
 
-#: src/libnm-glib-aux/nm-shared-utils.c:5431
+#: src/libnm-glib-aux/nm-shared-utils.c:5469
 msgid "interface name must be alphanumerical with no forward or backward slashes"
 msgstr ""
 "имя интерфейса должно состоять из букв и цифр без обратных или прямых косых "
 "черт"
 
-#: src/libnm-glib-aux/nm-shared-utils.c:5448
+#: src/libnm-glib-aux/nm-shared-utils.c:5486
 msgid "interface name must not be empty"
 msgstr "имя интерфейса не должно быть пустым"
 
-#: src/libnm-glib-aux/nm-shared-utils.c:5456
+#: src/libnm-glib-aux/nm-shared-utils.c:5494
 msgid "interface name must be UTF-8 encoded"
 msgstr "имя интерфейса должно иметь кодировку UTF-8"
 
@@ -15866,6 +15961,10 @@ msgstr "Запрашивать пароль каждый раз"
 msgid "Show password"
 msgstr "Показать пароль"
 
+#: src/nmtui/nmt-port-list.c:127
+msgid "Select the type of slave connection you wish to add."
+msgstr "Выберите тип добавляемого подчинённого подключения."
+
 #: src/nmtui/nmt-route-table.c:169
 msgid "Destination"
 msgstr "Назначение"
@@ -15885,10 +15984,6 @@ msgstr "Метрика"
 #: src/nmtui/nmt-route-table.c:201
 msgid "No custom routes are defined."
 msgstr "Нет дополнительных маршрутов."
-
-#: src/nmtui/nmt-port-list.c:127
-msgid "Select the type of slave connection you wish to add."
-msgstr "Выберите тип добавляемого подчинённого подключения."
 
 #: src/nmtui/nmt-widget-list.c:131
 msgid "Add..."
