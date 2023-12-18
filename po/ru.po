@@ -505,8 +505,8 @@ msgid "Cannot create '%s': %s"
 msgstr "Не удалось создать «%s»: %s"
 
 #: src/core/main-utils.c:196
-msgid "%s is already running (pid %"
-msgstr "%s уже запущен (pid %)"
+msgid "%s is already running (pid %lld)\n"
+msgstr "%s уже запущен (pid %lld)\n"
 
 #: src/core/main-utils.c:266 src/core/main.c:368
 #, c-format
