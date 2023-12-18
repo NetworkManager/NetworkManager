@@ -192,10 +192,7 @@ nm_main_utils_ensure_not_running_pidfile(const char *pidfile)
     if (strcmp(process_name, prgname) == 0) {
         /* Check that the process exists */
         if (kill(pid, 0) == 0) {
-            fprintf(stderr,
-                    _("%s is already running (pid %" G_GINT64_FORMAT ")\n"),
-                    prgname,
-                    (gint64) pid);
+            fprintf(stderr, _("%s is already running (pid %lld)\n"), prgname, (long long) pid);
             exit(1);
         }
     }

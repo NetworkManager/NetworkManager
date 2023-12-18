@@ -57,11 +57,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-b51da9e3f95a'
-  CENTOS_TAG:  'tag-c89e0aac1363'
-  DEBIAN_TAG:  'tag-76973ff363a5'
-  FEDORA_TAG:  'tag-c89e0aac1363'
-  UBUNTU_TAG:  'tag-76973ff363a5'
+  ALPINE_TAG:  'tag-7da44bbacc09'
+  CENTOS_TAG:  'tag-c8090b8a9a6b'
+  DEBIAN_TAG:  'tag-86a16c2d74d8'
+  FEDORA_TAG:  'tag-c8090b8a9a6b'
+  UBUNTU_TAG:  'tag-86a16c2d74d8'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
@@ -710,6 +710,7 @@ check-tree:
     - date '+%Y%m%d-%H%M%S'; git ls-files -z -- 'po/*.po' | xargs -0 -n1 msgfmt -vc
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-code-format.sh -n
     - date '+%Y%m%d-%H%M%S'; ci-fairy generate-template && git diff --exit-code
+    - date '+%Y%m%d-%H%M%S'; ./autogen.sh && [ "$(LANG=C make -C po update-po 2>&1 1>/dev/null | grep -c 'warning:')" = 0 ]
 
 pages:
   stage: deploy
