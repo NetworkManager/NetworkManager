@@ -3045,10 +3045,6 @@ static const ParseInfoSetting *const parse_infos[_NM_META_SETTING_TYPE_NUM] = {
                                                   .parser = setting_alias_parser,
                                                   .writer = setting_alias_writer, ), ), ),
     PARSE_INFO_SETTING(
-        NM_META_SETTING_TYPE_HSR,
-        PARSE_INFO_PROPERTIES(PARSE_INFO_PROPERTY(NM_SETTING_HSR_SUPERVISION_ADDRESS,
-                                                  .parser = mac_address_parser_ETHER, ), ), ),
-    PARSE_INFO_SETTING(
         NM_META_SETTING_TYPE_INFINIBAND,
         PARSE_INFO_PROPERTIES(PARSE_INFO_PROPERTY(NM_SETTING_INFINIBAND_MAC_ADDRESS,
                                                   .parser = mac_address_parser_INFINIBAND, ), ), ),

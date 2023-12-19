@@ -23,11 +23,10 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_HSR_SETTING_NAME "hsr"
 
-#define NM_SETTING_HSR_PORT1               "port1"
-#define NM_SETTING_HSR_PORT2               "port2"
-#define NM_SETTING_HSR_SUPERVISION_ADDRESS "supervision-address"
-#define NM_SETTING_HSR_MULTICAST_SPEC      "multicast-spec"
-#define NM_SETTING_HSR_PRP                 "prp"
+#define NM_SETTING_HSR_PORT1          "port1"
+#define NM_SETTING_HSR_PORT2          "port2"
+#define NM_SETTING_HSR_MULTICAST_SPEC "multicast-spec"
+#define NM_SETTING_HSR_PRP            "prp"
 
 typedef struct _NMSettingHsrClass NMSettingHsrClass;
 
@@ -40,8 +39,6 @@ NM_AVAILABLE_IN_1_46
 const char *nm_setting_hsr_get_port1(NMSettingHsr *setting);
 NM_AVAILABLE_IN_1_46
 const char *nm_setting_hsr_get_port2(NMSettingHsr *setting);
-NM_AVAILABLE_IN_1_46
-const char *nm_setting_hsr_get_supervision_address(NMSettingHsr *setting);
 NM_AVAILABLE_IN_1_46
 guint32 nm_setting_hsr_get_multicast_spec(NMSettingHsr *setting);
 NM_AVAILABLE_IN_1_46

@@ -126,9 +126,6 @@ create_and_realize(NMDevice              *device,
         lnk.port1 = nm_platform_link_get_ifindex(NM_PLATFORM_GET, nm_setting_hsr_get_port1(s_hsr));
     if (nm_setting_hsr_get_port2(s_hsr) != NULL)
         lnk.port2 = nm_platform_link_get_ifindex(NM_PLATFORM_GET, nm_setting_hsr_get_port2(s_hsr));
-    if (nm_setting_hsr_get_supervision_address(s_hsr) != NULL)
-        nm_ether_addr_from_string(&lnk.supervision_address,
-                                  nm_setting_hsr_get_supervision_address(s_hsr));
     lnk.multicast_spec = nm_setting_hsr_get_multicast_spec(s_hsr);
     lnk.prp            = nm_setting_hsr_get_prp(s_hsr);
     r = nm_platform_link_hsr_add(nm_device_get_platform(device), iface, &lnk, out_plink);

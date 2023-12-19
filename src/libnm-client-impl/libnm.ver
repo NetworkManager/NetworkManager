@@ -1960,7 +1960,6 @@ global:
 	nm_setting_hsr_get_port1;
 	nm_setting_hsr_get_port2;
 	nm_setting_hsr_get_prp;
-	nm_setting_hsr_get_supervision_address;
 	nm_setting_hsr_get_type;
 	nm_setting_hsr_new;
 } libnm_1_44_0;

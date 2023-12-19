@@ -5075,11 +5075,6 @@ _nl_msg_new_link_set_linkinfo(struct nl_msg *msg, NMLinkType link_type, gconstpo
 
         if (props->multicast_spec)
             NLA_PUT_U8(msg, IFLA_HSR_MULTICAST_SPEC, props->multicast_spec);
-        if (!nm_ether_addr_is_zero(&props->supervision_address))
-            NLA_PUT(msg,
-                    IFLA_HSR_SUPERVISION_ADDR,
-                    sizeof(props->supervision_address),
-                    &props->supervision_address);
 
         NLA_PUT_U8(msg, IFLA_HSR_PROTOCOL, props->prp);
         break;

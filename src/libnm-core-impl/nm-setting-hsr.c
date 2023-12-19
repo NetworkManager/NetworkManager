@@ -23,17 +23,11 @@
 
 /*****************************************************************************/
 
-NM_GOBJECT_PROPERTIES_DEFINE(NMSettingHsr,
-                             PROP_PORT1,
-                             PROP_PORT2,
-                             PROP_SUPERVISION_ADDRESS,
-                             PROP_MULTICAST_SPEC,
-                             PROP_PRP, );
+NM_GOBJECT_PROPERTIES_DEFINE(NMSettingHsr, PROP_PORT1, PROP_PORT2, PROP_MULTICAST_SPEC, PROP_PRP, );
 
 typedef struct {
     char   *port1;
     char   *port2;
-    char   *supervision_address;
     guint32 multicast_spec;
     bool    prp;
 } NMSettingHsrPrivate;
@@ -89,22 +83,6 @@ nm_setting_hsr_get_port2(NMSettingHsr *setting)
     g_return_val_if_fail(NM_IS_SETTING_HSR(setting), NULL);
 
     return NM_SETTING_HSR_GET_PRIVATE(setting)->port2;
-}
-
-/**
- * nm_setting_hsr_get_supervision_address:
- * @setting: the #NMSettingHsr
- *
- * Returns: the #NMSettingHsr:supervision_address property of the setting
- *
- * Since: 1.46
- **/
-const char *
-nm_setting_hsr_get_supervision_address(NMSettingHsr *setting)
-{
-    g_return_val_if_fail(NM_IS_SETTING_HSR(setting), NULL);
-
-    return NM_SETTING_HSR_GET_PRIVATE(setting)->supervision_address;
 }
 
 /**
@@ -182,19 +160,6 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         return FALSE;
     }
 
-    if (priv->supervision_address && !nm_utils_hwaddr_valid(priv->supervision_address, ETH_ALEN)) {
-        g_set_error(error,
-                    NM_CONNECTION_ERROR,
-                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                    _("'%s' is not a valid MAC address"),
-                    priv->supervision_address);
-        g_prefix_error(error,
-                       "%s.%s: ",
-                       NM_SETTING_HSR_SETTING_NAME,
-                       NM_SETTING_HSR_SUPERVISION_ADDRESS);
-        return FALSE;
-    }
-
     return TRUE;
 }
 
@@ -260,21 +225,6 @@ nm_setting_hsr_class_init(NMSettingHsrClass *klass)
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingHsr,
                                               _priv.port2);
-
-    /**
-      * NMSettingHsr:supervision-address:
-      *
-      * The supervision MAC address.
-      *
-      * Since: 1.46
-      **/
-    _nm_setting_property_define_direct_string(properties_override,
-                                              obj_properties,
-                                              NM_SETTING_HSR_SUPERVISION_ADDRESS,
-                                              PROP_SUPERVISION_ADDRESS,
-                                              NM_SETTING_PARAM_INFERRABLE,
-                                              NMSettingHsr,
-                                              _priv.supervision_address);
 
     /**
       * NMSettingHsr:multicast-spec:

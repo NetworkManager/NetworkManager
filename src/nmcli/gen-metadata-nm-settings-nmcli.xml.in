@@ -1144,10 +1144,6 @@
                   alias="port2"
                   nmcli-description="The port2 interface name of the HSR. This property is mandatory."
                   format="string" />
-        <property name="supervision-address"
-                  alias="supervision-address"
-                  nmcli-description="The supervision MAC address."
-                  format="MAC address" />
         <property name="multicast-spec"
                   alias="multicast-spec"
                   nmcli-description="The last byte of supervision address."

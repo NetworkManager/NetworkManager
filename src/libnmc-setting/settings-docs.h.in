@@ -449,7 +449,6 @@
 #define DESCRIBE_DOC_NM_SETTING_HSR_PORT1 N_("The port1 interface name of the HSR. This property is mandatory.")
 #define DESCRIBE_DOC_NM_SETTING_HSR_PORT2 N_("The port2 interface name of the HSR. This property is mandatory.")
 #define DESCRIBE_DOC_NM_SETTING_HSR_PRP N_("The protocol used by the interface, whether it is PRP or HSR.")
-#define DESCRIBE_DOC_NM_SETTING_HSR_SUPERVISION_ADDRESS N_("The supervision MAC address.")
 #define DESCRIBE_DOC_NM_SETTING_LINK_GRO_MAX_SIZE N_("The maximum size of a packet built by the Generic Receive Offload stack for this device. The value must be between 0 and 4294967295. When set to -1, the existing value is preserved.")
 #define DESCRIBE_DOC_NM_SETTING_LINK_GSO_MAX_SEGMENTS N_("The maximum segments of a Generic Segment Offload packet the device should accept. The value must be between 0 and 4294967295. When set to -1, the existing value is preserved.")
 #define DESCRIBE_DOC_NM_SETTING_LINK_GSO_MAX_SIZE N_("The maximum size of a Generic Segment Offload packet the device should accept. The value must be between 0 and 4294967295. When set to -1, the existing value is preserved.")

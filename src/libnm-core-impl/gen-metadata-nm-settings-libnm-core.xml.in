@@ -1437,10 +1437,6 @@
                   dbus-type="b"
                   gprop-type="gboolean"
                   />
-        <property name="supervision-address"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
     </setting>
     <setting name="infiniband"
              gtype="NMSettingInfiniband"
