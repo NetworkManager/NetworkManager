@@ -133,6 +133,7 @@ int n_dhcp4_c_socket_packet_new(int *sockfdp, int ifindex) {
  * @ifindex:            interface index to bind to
  * @client_addr:        client address to bind to
  * @server_addr:        server address to connect to
+ * @dscp:               the DSCP value
  *
  * Create a new AF_INET/SOCK_DGRAM socket usable to listen to and send DHCP client
  * packets.
@@ -145,7 +146,8 @@ int n_dhcp4_c_socket_packet_new(int *sockfdp, int ifindex) {
 int n_dhcp4_c_socket_udp_new(int *sockfdp,
                              int ifindex,
                              const struct in_addr *client_addr,
-                             const struct in_addr *server_addr) {
+                             const struct in_addr *server_addr,
+                             uint8_t dscp) {
         _c_cleanup_(c_closep) int sockfd = -1;
         struct sock_filter filter[] = {
                 /*
@@ -189,7 +191,8 @@ int n_dhcp4_c_socket_udp_new(int *sockfdp,
                 .sin_addr = *server_addr,
                 .sin_port = htons(N_DHCP4_NETWORK_SERVER_PORT),
         };
-        int r, tos = IPTOS_CLASS_CS6, on = 1;
+        int r, on = 1;
+        int tos = dscp << 2;
 
         sockfd = socket(AF_INET, SOCK_DGRAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0);
         if (sockfd < 0)
@@ -340,6 +343,7 @@ static int n_dhcp4_socket_packet_send(int sockfd,
                                       const unsigned char *dest_haddr,
                                       unsigned char halen,
                                       const struct sockaddr_in *dest_paddr,
+                                      uint8_t dscp,
                                       NDhcp4Outgoing *message) {
         struct packet_sockaddr_ll haddr = {
                 .sll_family = AF_PACKET,
@@ -357,7 +361,7 @@ static int n_dhcp4_socket_packet_send(int sockfd,
 
         n_buf = n_dhcp4_outgoing_get_raw(message, &buf);
 
-        r = packet_sendto_udp(sockfd, buf, n_buf, &len, src_paddr, &haddr, dest_paddr);
+        r = packet_sendto_udp(sockfd, buf, n_buf, &len, src_paddr, &haddr, dest_paddr, dscp);
         if (r < 0) {
                 if (r == -EAGAIN || r == -ENOBUFS)
                         return N_DHCP4_E_DROPPED;
@@ -379,6 +383,7 @@ int n_dhcp4_c_socket_packet_send(int sockfd,
                                  int ifindex,
                                  const unsigned char *dest_haddr,
                                  unsigned char halen,
+                                 uint8_t dscp,
                                  NDhcp4Outgoing *message) {
         struct sockaddr_in src_paddr = {
                 .sin_family = AF_INET,
@@ -397,6 +402,7 @@ int n_dhcp4_c_socket_packet_send(int sockfd,
                                           dest_haddr,
                                           halen,
                                           &dest_paddr,
+                                          dscp,
                                           message);
 }
 
@@ -468,6 +474,7 @@ int n_dhcp4_s_socket_packet_send(int sockfd,
                                  const unsigned char *dest_haddr,
                                  unsigned char halen,
                                  const struct in_addr *dest_inaddr,
+                                 uint8_t dscp,
                                  NDhcp4Outgoing *message) {
         struct sockaddr_in src_paddr = {
                 .sin_family = AF_INET,
@@ -486,6 +493,7 @@ int n_dhcp4_s_socket_packet_send(int sockfd,
                                           dest_haddr,
                                           halen,
                                           &dest_paddr,
+                                          dscp,
                                           message);
 }
 

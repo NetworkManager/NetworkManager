@@ -7,6 +7,7 @@
 #include <endian.h>
 #include <inttypes.h>
 #include <limits.h>
+#include <netinet/ip.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <time.h>
@@ -34,6 +35,7 @@ typedef struct NDhcp4LogQueue NDhcp4LogQueue;
 #define N_DHCP4_NETWORK_CLIENT_PORT (68)
 #define N_DHCP4_MESSAGE_MAGIC ((uint32_t)(0x63825363))
 #define N_DHCP4_MESSAGE_FLAG_BROADCAST (htons(0x8000))
+#define N_DHCP4_DSCP_DEFAULT (IPTOS_CLASS_CS6 >> 2)
 
 enum {
         N_DHCP4_OP_BOOTREQUEST                          = 1,
@@ -263,6 +265,7 @@ struct NDhcp4ClientProbeOption {
 struct NDhcp4ClientProbeConfig {
         bool inform_only;
         bool init_reboot;
+        uint8_t dscp;
         struct in_addr requested_ip;
         unsigned short int entropy[3];
         uint64_t ms_start_delay;        /* max ms to wait before starting probe */
@@ -273,6 +276,7 @@ struct NDhcp4ClientProbeConfig {
 
 #define N_DHCP4_CLIENT_PROBE_CONFIG_NULL(_x) {                                  \
                 .ms_start_delay = N_DHCP4_CLIENT_START_DELAY_RFC2131,           \
+                .dscp = N_DHCP4_DSCP_DEFAULT,                                   \
         }
 
 struct NDhcp4CEventNode {
@@ -536,7 +540,8 @@ int n_dhcp4_c_socket_packet_new(int *sockfdp, int ifindex);
 int n_dhcp4_c_socket_udp_new(int *sockfdp,
                              int ifindex,
                              const struct in_addr *client_addr,
-                             const struct in_addr *server_addr);
+                             const struct in_addr *server_addr,
+                             uint8_t dscp);
 int n_dhcp4_s_socket_packet_new(int *sockfdp);
 int n_dhcp4_s_socket_udp_new(int *sockfdp, int ifindex);
 
@@ -544,6 +549,7 @@ int n_dhcp4_c_socket_packet_send(int sockfd,
                                  int ifindex,
                                  const unsigned char *dest_haddr,
                                  unsigned char halen,
+                                 uint8_t dscp,
                                  NDhcp4Outgoing *message);
 int n_dhcp4_c_socket_udp_send(int sockfd, NDhcp4Outgoing *message);
 int n_dhcp4_c_socket_udp_broadcast(int sockfd, NDhcp4Outgoing *message);
@@ -553,6 +559,7 @@ int n_dhcp4_s_socket_packet_send(int sockfd,
                                  const unsigned char *dest_haddr,
                                  unsigned char halen,
                                  const struct in_addr *dest_inaddr,
+                                 uint8_t dscp,
                                  NDhcp4Outgoing *message);
 int n_dhcp4_s_socket_udp_send(int sockfd,
                               const struct in_addr *inaddr_src,
