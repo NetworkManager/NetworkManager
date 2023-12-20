@@ -123,7 +123,7 @@ static void test_packet_unicast(int ifindex, int sk, void *buf, size_t n_buf,
 
         memcpy(addr.sll_addr, haddr_dst, ETH_ALEN);
 
-        r = packet_sendto_udp(sk, buf, n_buf, &len, paddr_src, &addr, paddr_dst);
+        r = packet_sendto_udp(sk, buf, n_buf, &len, paddr_src, &addr, paddr_dst, N_DHCP4_DSCP_DEFAULT);
         c_assert(!r);
         c_assert(len == n_buf);
 }
@@ -142,7 +142,7 @@ static void test_packet_broadcast(int ifindex, int sk, void *buf, size_t n_buf,
 
         memcpy(addr.sll_addr, (unsigned char[]){ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, }, ETH_ALEN);
 
-        r = packet_sendto_udp(sk, buf, n_buf, &len, paddr_src, &addr, paddr_dst);
+        r = packet_sendto_udp(sk, buf, n_buf, &len, paddr_src, &addr, paddr_dst, N_DHCP4_DSCP_DEFAULT);
         c_assert(!r);
         c_assert(len == n_buf);
 }
