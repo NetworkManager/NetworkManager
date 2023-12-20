@@ -273,6 +273,7 @@ NMClientPermissionResult nm_client_permission_result_from_string(const char *nm)
 const char              *nm_client_permission_result_to_string(NMClientPermissionResult permission);
 
 gboolean nm_utils_validate_dhcp4_vendor_class_id(const char *vci, GError **error);
+gboolean nm_utils_validate_dhcp_dscp(const char *dscp, GError **error);
 
 /*****************************************************************************/
 

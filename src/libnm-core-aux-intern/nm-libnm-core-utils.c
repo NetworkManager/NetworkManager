@@ -462,6 +462,23 @@ nm_utils_validate_dhcp4_vendor_class_id(const char *vci, GError **error)
 }
 
 gboolean
+nm_utils_validate_dhcp_dscp(const char *dscp, GError **error)
+{
+    g_return_val_if_fail(!error || !(*error), FALSE);
+    g_return_val_if_fail(dscp, FALSE);
+
+    if (!NM_IN_STRSET(dscp, "CS0", "CS4", "CS6")) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("invalid DSCP value; allowed values are: 'CS0', 'CS4', 'CS6'"));
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+gboolean
 nm_settings_connection_validate_permission_user(const char *item, gssize len)
 {
     gsize l;

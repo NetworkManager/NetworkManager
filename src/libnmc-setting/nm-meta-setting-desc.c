@@ -6368,6 +6368,12 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
     PROPERTY_INFO (NM_SETTING_IP_CONFIG_DHCP_IAID, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DHCP_IAID,
         .property_type =                &_pt_gobject_string,
     ),
+    PROPERTY_INFO (NM_SETTING_IP_CONFIG_DHCP_DSCP, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DHCP_DSCP,
+        .property_type =                &_pt_gobject_string,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+            .values_static = NM_MAKE_STRV ("CS0", "CS4", "CS6"),
+        ),
+    ),
     PROPERTY_INFO (NM_SETTING_IP_CONFIG_DHCP_TIMEOUT, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DHCP_TIMEOUT,
         .property_type =                &_pt_gobject_int,
         .property_typ_data =            &_ptd_gobject_int_timeout,
