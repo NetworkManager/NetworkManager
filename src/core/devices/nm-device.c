@@ -4466,7 +4466,7 @@ _dev_l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, N
         char                   buf_addr[NM_INET_ADDRSTRLEN];
 
         if (addr_info->state == NM_L3_ACD_ADDR_STATE_USED) {
-            _LOGI(LOGD_DEVICE,
+            _LOGW(LOGD_DEVICE,
                   "IP address %s cannot be configured because it is already in use in the "
                   "network by host %s",
                   nm_inet4_ntop(addr_info->addr, buf_addr),
