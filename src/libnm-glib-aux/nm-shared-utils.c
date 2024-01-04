@@ -623,6 +623,149 @@ nm_g_variant_maybe_singleton_i(gint32 value)
 
 /*****************************************************************************/
 
+static int
+_variant_type_cmp(const GVariantType *type1, const GVariantType *type2)
+{
+    const char *string1;
+    const char *string2;
+    gsize       size;
+
+    NM_CMP_SELF(type1, type2);
+
+    size = g_variant_type_get_string_length(type1);
+
+    NM_CMP_DIRECT(size, g_variant_type_get_string_length(type2));
+
+    string1 = g_variant_type_peek_string(type1);
+    string2 = g_variant_type_peek_string(type2);
+
+    NM_CMP_DIRECT_MEMCMP(string1, string2, size);
+    return 0;
+}
+
+int
+nm_g_variant_type_cmp(const GVariantType *type1, const GVariantType *type2)
+{
+    int r;
+
+    r = _variant_type_cmp(type1, type2);
+    nm_assert((!!g_variant_type_equal(type1, type2)) == (r == 0));
+    return r;
+}
+
+/*****************************************************************************/
+
+typedef enum {
+    VARIANT_CMP_TYPE_VARIANT,
+    VARIANT_CMP_TYPE_STRDICT,
+    VARIANT_CMP_TYPE_VARDICT,
+} VariantCmpType;
+
+static int
+_variant_cmp_array(GVariant *value1, GVariant *value2, VariantCmpType type)
+{
+    gsize len;
+    gsize i;
+
+    len = g_variant_n_children(value1);
+
+    NM_CMP_DIRECT(len, g_variant_n_children(value2));
+
+    for (i = 0; i < len; i++) {
+        gs_unref_variant GVariant *child1 = g_variant_get_child_value(value1, i);
+        gs_unref_variant GVariant *child2 = g_variant_get_child_value(value2, i);
+        const char                *key1;
+        const char                *key2;
+        const char                *val1_str;
+        const char                *val2_str;
+
+        nm_assert(child1);
+        nm_assert(child2);
+
+        switch (type) {
+        case VARIANT_CMP_TYPE_VARIANT:
+            NM_CMP_RETURN(nm_g_variant_cmp(child1, child2));
+            break;
+        case VARIANT_CMP_TYPE_STRDICT:
+            g_variant_get(child1, "{&s&s}", &key1, &val1_str);
+            g_variant_get(child2, "{&s&s}", &key2, &val2_str);
+            NM_CMP_DIRECT_STRCMP(key1, key2);
+            NM_CMP_DIRECT_STRCMP(val1_str, val2_str);
+            break;
+        case VARIANT_CMP_TYPE_VARDICT:
+        {
+            gs_unref_variant GVariant *val1_var = NULL;
+            gs_unref_variant GVariant *val2_var = NULL;
+
+            g_variant_get(child1, "{&sv}", &key1, &val1_var);
+            g_variant_get(child2, "{&sv}", &key2, &val2_var);
+            NM_CMP_DIRECT_STRCMP(key1, key2);
+            NM_CMP_RETURN(nm_g_variant_cmp(val1_var, val2_var));
+            break;
+        }
+        }
+    }
+
+    return 0;
+}
+
+static int
+_variant_cmp_generic(GVariant *value1, GVariant *value2)
+{
+    gs_free char *str1 = NULL;
+    gs_free char *str2 = NULL;
+
+    /* This is like g_variant_equal(), which also resorts to pretty-printing
+     * the variants for comparison.
+     *
+     * Note that the variant types are already checked and equal. We thus don't
+     * need to include the type annotation. */
+    str1 = g_variant_print(value1, FALSE);
+    str2 = g_variant_print(value2, FALSE);
+
+    NM_CMP_DIRECT_STRCMP(str1, str2);
+    return 0;
+}
+
+static int
+_variant_cmp(GVariant *value1, GVariant *value2)
+{
+    const GVariantType *type;
+
+    NM_CMP_SELF(value1, value2);
+
+    type = g_variant_get_type(value1);
+
+    NM_CMP_RETURN(nm_g_variant_type_cmp(type, g_variant_get_type(value2)));
+
+    if (g_variant_type_is_basic(type))
+        NM_CMP_RETURN(g_variant_compare(value1, value2));
+    else if (g_variant_type_is_subtype_of(type, G_VARIANT_TYPE("a{ss}")))
+        NM_CMP_RETURN(_variant_cmp_array(value1, value2, VARIANT_CMP_TYPE_STRDICT));
+    else if (g_variant_type_is_subtype_of(type, G_VARIANT_TYPE("a{sv}")))
+        NM_CMP_RETURN(_variant_cmp_array(value1, value2, VARIANT_CMP_TYPE_VARDICT));
+    else if (g_variant_type_is_array(type) || g_variant_type_is_tuple(type))
+        NM_CMP_RETURN(_variant_cmp_array(value1, value2, VARIANT_CMP_TYPE_VARIANT));
+    else
+        NM_CMP_RETURN(_variant_cmp_generic(value1, value2));
+
+    return 0;
+}
+
+int
+nm_g_variant_cmp(GVariant *value1, GVariant *value2)
+{
+    int r;
+
+    r = _variant_cmp(value1, value2);
+
+    nm_assert((!!nm_g_variant_equal(value1, value2)) == (r == 0));
+
+    return r;
+}
+
+/*****************************************************************************/
+
 GHashTable *
 nm_strdict_clone(GHashTable *src)
 {
