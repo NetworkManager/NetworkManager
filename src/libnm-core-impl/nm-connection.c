@@ -1731,6 +1731,10 @@ _normalize_802_1x_empty_strings(NMConnection *self)
                 nm_setting_802_1x_get_phase2_domain_match,
                 NM_SETTING_802_1X_PHASE2_DOMAIN_MATCH,
                 &changed);
+    _norm_8021x(s_8021x,
+                nm_setting_802_1x_get_openssl_ciphers,
+                NM_SETTING_802_1X_OPENSSL_CIPHERS,
+                &changed);
 
     return changed;
 }

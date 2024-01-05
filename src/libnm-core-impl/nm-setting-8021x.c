@@ -131,7 +131,8 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSetting8021x,
                              PROP_PIN_FLAGS,
                              PROP_SYSTEM_CA_CERTS,
                              PROP_OPTIONAL,
-                             PROP_AUTH_TIMEOUT, );
+                             PROP_AUTH_TIMEOUT,
+                             PROP_OPENSSL_CIPHERS, );
 
 typedef struct {
     GSList *eap; /* GSList of strings */
@@ -181,6 +182,7 @@ typedef struct {
     gint32  auth_timeout;
     bool    optional;
     bool    system_ca_certs;
+    char   *openssl_ciphers;
 } NMSetting8021xPrivate;
 
 /**
@@ -2498,6 +2500,24 @@ nm_setting_802_1x_get_optional(NMSetting8021x *setting)
     return NM_SETTING_802_1X_GET_PRIVATE(setting)->optional;
 }
 
+/**
+ * nm_setting_802_1x_get_openssl_ciphers:
+ * @setting: the #NMSetting8021x
+ *
+ * Returns the openssl_ciphers configuration for wpa_supplicant.
+ *
+ * Returns: cipher string for tls setup in wpa_supplicant.
+ *
+ * Since: 1.46
+ **/
+const char *
+nm_setting_802_1x_get_openssl_ciphers(NMSetting8021x *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_802_1X(setting), NULL);
+
+    return NM_SETTING_802_1X_GET_PRIVATE(setting)->openssl_ciphers;
+}
+
 /*****************************************************************************/
 
 static void
@@ -3064,6 +3084,10 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     _check_strempty_and_return(priv,
                                NM_SETTING_802_1X_PHASE2_DOMAIN_MATCH,
                                phase2_domain_match,
+                               error);
+    _check_strempty_and_return(priv,
+                               NM_SETTING_802_1X_OPENSSL_CIPHERS,
+                               openssl_ciphers,
                                error);
 
     return TRUE;
@@ -4339,6 +4363,30 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                                NM_SETTING_PARAM_NONE,
                                                NMSetting8021xPrivate,
                                                optional);
+
+    /**
+     * NMSetting8021x:openssl-ciphers:
+     *
+     * Define openssl_ciphers for wpa_supplicant. Openssl sometimes moves ciphers
+     * among SECLEVELs, thus compiled-in default value in wpa_supplicant
+     * (as modified by some linux distributions) sometimes prevents
+     * to connect to old servers that do not support new protocols.
+     *
+     * Since: 1.46
+     **/
+    /* ---ifcfg-rh---
+     * property: openssl-ciphers
+     * variable: IEEE_8021X_OPENSSL_CIPHERS(+)
+     * description: Cipher string for tls setup of wpa_supplicant.
+     * ---end---
+     */
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_802_1X_OPENSSL_CIPHERS,
+                                              PROP_OPENSSL_CIPHERS,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSetting8021xPrivate,
+                                              openssl_ciphers);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

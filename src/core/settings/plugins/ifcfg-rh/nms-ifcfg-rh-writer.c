@@ -579,6 +579,10 @@ write_8021x_setting(NMConnection *connection,
                "IEEE_8021X_PIN_FLAGS",
                nm_setting_802_1x_get_pin_flags(s_8021x));
 
+    svSetValueStr(ifcfg,
+                  "IEEE_8021X_OPENSSL_CIPHERS",
+                  nm_setting_802_1x_get_openssl_ciphers(s_8021x));
+
     if (!write_8021x_certs(s_8021x, secrets, blobs, FALSE, ifcfg, error))
         return FALSE;
 

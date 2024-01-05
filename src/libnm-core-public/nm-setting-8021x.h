@@ -155,6 +155,7 @@ typedef enum /*< underscore_name=nm_setting_802_1x_auth_flags, flags >*/ {
 #define NM_SETTING_802_1X_SYSTEM_CA_CERTS                   "system-ca-certs"
 #define NM_SETTING_802_1X_AUTH_TIMEOUT                      "auth-timeout"
 #define NM_SETTING_802_1X_OPTIONAL                          "optional"
+#define NM_SETTING_802_1X_OPENSSL_CIPHERS                   "openssl-ciphers"
 
 /* PRIVATE KEY NOTE: when setting PKCS#12 private keys directly via properties
  * using the "blob" scheme, the data must be passed in PKCS#12 binary format.
@@ -358,6 +359,8 @@ NM_AVAILABLE_IN_1_8
 int nm_setting_802_1x_get_auth_timeout(NMSetting8021x *setting);
 NM_AVAILABLE_IN_1_22
 gboolean nm_setting_802_1x_get_optional(NMSetting8021x *setting);
+NM_AVAILABLE_IN_1_46
+const char *nm_setting_802_1x_get_openssl_ciphers(NMSetting8021x *setting);
 
 G_END_DECLS
 

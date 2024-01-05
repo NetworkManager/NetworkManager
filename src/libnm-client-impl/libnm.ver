@@ -1962,4 +1962,5 @@ global:
 	nm_setting_hsr_get_prp;
 	nm_setting_hsr_get_type;
 	nm_setting_hsr_new;
+	nm_setting_802_1x_get_openssl_ciphers;
 } libnm_1_44_0;

@@ -5317,6 +5317,8 @@ test_write_wired_dhcp_8021x_peap_mschapv2(void)
                  "1",
                  NM_SETTING_802_1X_PHASE2_AUTH,
                  "mschapv2",
+                 NM_SETTING_802_1X_OPENSSL_CIPHERS,
+                 "DEFAULT@SECLEVEL=0",
                  NULL);
     nm_setting_802_1x_add_eap_method(s_8021x, "peap");
 
