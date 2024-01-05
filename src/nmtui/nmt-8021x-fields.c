@@ -297,7 +297,7 @@ eap_method_populate_ttls(EapMethod *method, NmtNewtWidget *subgrid)
                                               {N_("GTC"), "eap-gtc"},
                                               {NULL, NULL}};
 
-    widget = nmt_newt_entry_new(40, NMT_NEWT_ENTRY_NONEMPTY);
+    widget = nmt_newt_entry_new(40, 0);
     nmt_editor_grid_append(NMT_EDITOR_GRID(subgrid), _("Anonymous identity"), widget, NULL);
     g_object_bind_property(method->setting,
                            NM_SETTING_802_1X_ANONYMOUS_IDENTITY,
@@ -386,7 +386,7 @@ eap_method_populate_peap(EapMethod *method, NmtNewtWidget *subgrid)
                                                        {N_("GTC"), "gtc"},
                                                        {NULL, NULL}};
 
-    widget = nmt_newt_entry_new(40, NMT_NEWT_ENTRY_NONEMPTY);
+    widget = nmt_newt_entry_new(40, 0);
     nmt_editor_grid_append(NMT_EDITOR_GRID(subgrid), _("Anonymous identity"), widget, NULL);
     g_object_bind_property(method->setting,
                            NM_SETTING_802_1X_ANONYMOUS_IDENTITY,
