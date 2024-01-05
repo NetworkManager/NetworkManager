@@ -30,6 +30,7 @@ struct _EapMethod {
     const EapMethodDesc *desc;
     NMSetting8021x      *setting;
     NmtNewtWidget       *inner_popup;
+    NmtNewtWidget       *advanced_tls_settings;
 };
 
 typedef struct {
@@ -196,6 +197,166 @@ eap_method_populate_simple(EapMethod *method, NmtNewtWidget *subgrid)
 }
 
 static void
+checkbox_advanced_tls_settings_changed(NmtNewtWidget *widget, GParamSpec *pspec, gpointer user_data)
+{
+    EapMethod *method = (EapMethod *) (user_data);
+    gboolean   active;
+
+    active = nmt_newt_checkbox_get_active(NMT_NEWT_CHECKBOX(widget));
+    nmt_newt_widget_set_visible(method->advanced_tls_settings, active);
+}
+
+static NmtNewtPopupEntry pe_tristate[] = {{N_("Default"), ""},
+                                          {N_("Disable"), "disable"},
+                                          {N_("Enable"), "enable"},
+                                          {NULL, NULL}};
+
+static NmtNewtPopupEntry pe_disable[] = {{N_("Default"), ""},
+                                         {N_("Disable"), "disable"},
+                                         {NULL, NULL}};
+
+typedef struct _AuthFlagsTls AuthFlagsTls;
+struct _AuthFlagsTls {
+    const char             *label;
+    NMSetting8021xAuthFlags disable;
+    NMSetting8021xAuthFlags enable;
+    NmtNewtPopupEntry      *states;
+};
+
+static gboolean
+phase1_auth_flag_get_bit(GBinding     *binding,
+                         const GValue *from_value,
+                         GValue       *to_value,
+                         gpointer      user_data)
+{
+    AuthFlagsTls *af  = (AuthFlagsTls *) user_data;
+    unsigned      src = g_value_get_uint(from_value);
+
+    if (src & af->disable)
+        g_value_set_string(to_value, "disable");
+    else if (src & af->enable)
+        g_value_set_string(to_value, "enable");
+    else
+        g_value_set_string(to_value, NULL);
+    return TRUE;
+}
+
+static gboolean
+phase1_auth_flag_set_bit(GBinding     *binding,
+                         const GValue *from_value,
+                         GValue       *to_value,
+                         gpointer      user_data)
+{
+    AuthFlagsTls *af          = (AuthFlagsTls *) user_data;
+    GObject      *from_object = g_binding_get_source(binding);
+    GValue        orig_value;
+    unsigned      bits;
+    const char   *str_value;
+
+    if (from_object == NULL)
+        return FALSE;
+    g_value_init(&orig_value, G_TYPE_UINT);
+    g_object_get_property(from_object, g_binding_get_source_property(binding), &orig_value);
+    bits = g_value_get_uint(&orig_value);
+    g_value_unset(&orig_value);
+    str_value = g_value_get_string(from_value);
+    bits      = bits & ~(unsigned) (af->enable | af->disable);
+    if (str_value)
+        switch (str_value[0]) {
+        case 'd':
+            bits |= af->disable;
+            break;
+        case 'e':
+            bits |= af->enable;
+            break;
+        }
+    g_value_set_uint(to_value, bits);
+    return TRUE;
+}
+
+static gboolean
+empty_string_to_null(GBinding     *binding,
+                     const GValue *from_value,
+                     GValue       *to_value,
+                     gpointer      _unused)
+{
+    const char *value = g_value_get_string(from_value);
+
+    if (value && value[0])
+        g_value_set_string(to_value, value);
+    return TRUE;
+}
+
+static void
+eap_populate_advanced_tls_settings(EapMethod *method, NmtNewtWidget *subgrid)
+{
+    NmtNewtWidget      *widget, *tlsgrid;
+    gboolean            has_advanced_settings;
+    const char         *oc;
+    static AuthFlagsTls auth_flag_switches[] = {
+#define ENDIS_TLS(name, proto)                       \
+    {name,                                           \
+     NM_SETTING_802_1X_AUTH_FLAGS_##proto##_DISABLE, \
+     NM_SETTING_802_1X_AUTH_FLAGS_##proto##_ENABLE,  \
+     pe_tristate}
+        ENDIS_TLS(N_("TLS 1.0"), TLS_1_0),
+        ENDIS_TLS(N_("TLS 1.1"), TLS_1_1),
+        ENDIS_TLS(N_("TLS 1.2"), TLS_1_2),
+        ENDIS_TLS(N_("TLS 1.3"), TLS_1_3),
+#undef ENDIS_TLS
+        {N_("Disable time checks"),
+         NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_TIME_CHECKS,
+         NM_SETTING_802_1X_AUTH_FLAGS_NONE,
+         pe_disable},
+        {NULL, NM_SETTING_802_1X_AUTH_FLAGS_NONE, NM_SETTING_802_1X_AUTH_FLAGS_NONE, NULL},
+    };
+
+    oc = nm_setting_802_1x_get_openssl_ciphers(method->setting);
+    has_advanced_settings =
+        (oc != NULL && !!strlen(oc)) || !!nm_setting_802_1x_get_phase1_auth_flags(method->setting);
+
+    widget = nmt_newt_checkbox_new(_("Show expert TLS options"));
+    nmt_newt_checkbox_set_active(NMT_NEWT_CHECKBOX(widget), has_advanced_settings);
+    g_signal_connect(widget,
+                     "notify::active",
+                     G_CALLBACK(checkbox_advanced_tls_settings_changed),
+                     method);
+    nmt_editor_grid_append(NMT_EDITOR_GRID(subgrid), NULL, widget, NULL);
+
+    tlsgrid                       = nmt_editor_grid_new();
+    method->advanced_tls_settings = tlsgrid;
+    nmt_editor_grid_append(NMT_EDITOR_GRID(subgrid), NULL, tlsgrid, NULL);
+    checkbox_advanced_tls_settings_changed(widget, NULL, method);
+
+    nmt_editor_grid_append(NMT_EDITOR_GRID(tlsgrid), _("Wpa_supplicant settings:"), NULL, NULL);
+    widget = nmt_newt_entry_new(40, 0);
+    nmt_editor_grid_append(NMT_EDITOR_GRID(tlsgrid), _("Cipher string"), widget, NULL);
+    g_object_bind_property_full(method->setting,
+                                NM_SETTING_802_1X_OPENSSL_CIPHERS,
+                                widget,
+                                "text",
+                                G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL,
+                                NULL,
+                                empty_string_to_null,
+                                NULL,
+                                NULL);
+
+    for (AuthFlagsTls *sw = auth_flag_switches; sw->states; sw++) {
+        widget = nmt_newt_popup_new(sw->states);
+        nmt_editor_grid_append(NMT_EDITOR_GRID(tlsgrid), sw->label, widget, NULL);
+        g_object_bind_property_full(method->setting,
+                                    NM_SETTING_802_1X_PHASE1_AUTH_FLAGS,
+                                    widget,
+                                    "active-id",
+                                    G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE,
+                                    phase1_auth_flag_get_bit,
+                                    phase1_auth_flag_set_bit,
+                                    (gpointer) sw,
+                                    NULL);
+    }
+}
+
+static void
 eap_method_populate_tls(EapMethod *method, NmtNewtWidget *subgrid)
 {
     NmtNewtWidget *widget;
@@ -282,6 +443,8 @@ eap_method_populate_tls(EapMethod *method, NmtNewtWidget *subgrid)
                            "password",
                            G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
     nmt_editor_grid_append(NMT_EDITOR_GRID(subgrid), _("User privkey password"), widget, NULL);
+
+    eap_populate_advanced_tls_settings(method, subgrid);
 }
 
 static void
@@ -371,6 +534,8 @@ eap_method_populate_ttls(EapMethod *method, NmtNewtWidget *subgrid)
                            "secret-flags",
                            G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
     nmt_editor_grid_append(NMT_EDITOR_GRID(subgrid), _("Password"), widget, NULL);
+
+    eap_populate_advanced_tls_settings(method, subgrid);
 }
 
 static void
@@ -475,6 +640,8 @@ eap_method_populate_peap(EapMethod *method, NmtNewtWidget *subgrid)
                            "secret-flags",
                            G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
     nmt_editor_grid_append(NMT_EDITOR_GRID(subgrid), _("Password"), widget, NULL);
+
+    eap_populate_advanced_tls_settings(method, subgrid);
 }
 
 static void
