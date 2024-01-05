@@ -311,6 +311,10 @@
                   dbus-type="s"
                   gprop-type="gchararray"
                   />
+        <property name="openssl-ciphers"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="optional"
                   dbus-type="b"
                   gprop-type="gboolean"

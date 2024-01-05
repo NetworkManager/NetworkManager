@@ -4129,6 +4129,10 @@ next:
     v = svGetValueStr(ifcfg, "IEEE_8021X_PHASE2_CA_PATH", &value);
     g_object_set(s_8021x, NM_SETTING_802_1X_PHASE2_CA_PATH, v, NULL);
 
+    nm_clear_g_free(&value);
+    v = svGetValueStr(ifcfg, "IEEE_8021X_OPENSSL_CIPHERS", &value);
+    g_object_set(s_8021x, NM_SETTING_802_1X_OPENSSL_CIPHERS, v, NULL);
+
     g_object_set(s_8021x,
                  NM_SETTING_802_1X_OPTIONAL,
                  svGetValueBoolean(ifcfg, "IEEE_8021X_OPTIONAL", FALSE),

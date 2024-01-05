@@ -1991,4 +1991,5 @@ global:
 	nm_setting_wireless_get_num_mac_denylist_items;
 	nm_setting_wireless_remove_mac_denylist_item;
 	nm_setting_wireless_remove_mac_denylist_item_by_value;
+	nm_setting_802_1x_get_openssl_ciphers;
 } libnm_1_46_0;
