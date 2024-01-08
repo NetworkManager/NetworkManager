@@ -868,6 +868,10 @@ struct _NMSettInfoProperty {
      * an empty array. */
     bool direct_strv_preserve_empty : 1;
 
+    /* This flag indicates that an empty strv array should be returned
+     * instead of NULL if it hadn't been created yet. */
+    bool direct_strv_not_null : 1;
+
     /* Usually, properties that are set to the default value for the GParamSpec
      * are not serialized to GVariant (and NULL is returned by to_dbus_data().
      * Set this flag to force always converting the property even if the value

@@ -859,7 +859,7 @@ _nm_setting_property_get_property_direct(GObject    *object,
             value,
             nm_strvarray_get_strv_full_dup(p_val->arr,
                                            NULL,
-                                           FALSE,
+                                           property_info->direct_strv_not_null,
                                            property_info->direct_strv_preserve_empty));
         return;
     }
