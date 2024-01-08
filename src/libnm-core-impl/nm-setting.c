@@ -2405,17 +2405,68 @@ nm_setting_verify(NMSetting *setting, NMConnection *connection, GError **error)
     return result == NM_SETTING_VERIFY_SUCCESS || result == NM_SETTING_VERIFY_NORMALIZABLE;
 }
 
+static gboolean
+_verify_properties(NMSetting *setting, GError **error)
+{
+    NMSettingClass          *klass     = NM_SETTING_GET_CLASS(setting);
+    const NMSettInfoSetting *sett_info = _nm_setting_class_get_sett_info(klass);
+    guint16                  i;
+
+    if (!sett_info)
+        return TRUE;
+
+    for (i = 0; i < sett_info->property_infos_len; i++) {
+        const NMSettInfoProperty *property_info = &sett_info->property_infos[i];
+
+        switch (property_info->property_type->direct_type) {
+        case NM_VALUE_TYPE_BOOL:
+        case NM_VALUE_TYPE_BYTES:
+        case NM_VALUE_TYPE_STRV:
+        case NM_VALUE_TYPE_ENUM:
+        case NM_VALUE_TYPE_FLAGS:
+        case NM_VALUE_TYPE_INT32:
+        case NM_VALUE_TYPE_INT64:
+        case NM_VALUE_TYPE_NONE:
+        case NM_VALUE_TYPE_UINT32:
+        case NM_VALUE_TYPE_UINT64:
+        case NM_VALUE_TYPE_STRING:
+            break;
+        default:
+            nm_assert_not_reached();
+        }
+    }
+
+    return TRUE;
+}
+
 NMSettingVerifyResult
 _nm_setting_verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
+    NMSettingClass       *klass;
+    NMSettingVerifyResult r;
+
     g_return_val_if_fail(NM_IS_SETTING(setting), NM_SETTING_VERIFY_ERROR);
     g_return_val_if_fail(!connection || NM_IS_CONNECTION(connection), NM_SETTING_VERIFY_ERROR);
     g_return_val_if_fail(!error || *error == NULL, NM_SETTING_VERIFY_ERROR);
 
-    if (NM_SETTING_GET_CLASS(setting)->verify)
-        return NM_SETTING_GET_CLASS(setting)->verify(setting, connection, error);
+    klass = NM_SETTING_GET_CLASS(setting);
 
-    return NM_SETTING_VERIFY_SUCCESS;
+    if (!klass->verify)
+        return NM_SETTING_VERIFY_SUCCESS;
+
+    r = klass->verify(setting, connection, error);
+
+    if (r != NM_SETTING_VERIFY_ERROR) {
+        gs_free_error GError *local = NULL;
+
+        if (!_verify_properties(setting, &local)) {
+            g_clear_error(error);
+            g_propagate_error(error, g_steal_pointer(&local));
+            r = NM_SETTING_VERIFY_ERROR;
+        }
+    }
+
+    return r;
 }
 
 /**
