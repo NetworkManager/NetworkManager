@@ -209,7 +209,8 @@ nm_setting_hsr_class_init(NMSettingHsrClass *klass)
                                               PROP_PORT1,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingHsr,
-                                              _priv.port1);
+                                              _priv.port1,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
       * NMSettingHsr:port2:
@@ -224,7 +225,8 @@ nm_setting_hsr_class_init(NMSettingHsrClass *klass)
                                               PROP_PORT2,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingHsr,
-                                              _priv.port2);
+                                              _priv.port2,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
       * NMSettingHsr:multicast-spec:

@@ -190,7 +190,8 @@ nm_setting_ovs_dpdk_class_init(NMSettingOvsDpdkClass *klass)
                                               PROP_DEVARGS,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingOvsDpdk,
-                                              devargs);
+                                              devargs,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingOvsDpdk:n-rxq:

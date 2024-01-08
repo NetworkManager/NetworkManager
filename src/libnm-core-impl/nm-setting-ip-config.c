@@ -5951,7 +5951,8 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
         properties_override,
         obj_properties[PROP_METHOD],
         &nm_sett_info_propert_type_direct_string,
-        .direct_offset = NM_STRUCT_OFFSET_ENSURE_TYPE(char *, NMSettingIPConfigPrivate, method));
+        .direct_offset = NM_STRUCT_OFFSET_ENSURE_TYPE(char *, NMSettingIPConfigPrivate, method),
+        .direct_string_allow_empty = TRUE);
 
     _nm_properties_override_gobj(
         properties_override,
@@ -5964,20 +5965,23 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
             .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_direct_ip_config_gateway),
         .direct_offset = NM_STRUCT_OFFSET_ENSURE_TYPE(char *, NMSettingIPConfigPrivate, gateway),
         .direct_set_string_ip_address_addr_family                  = addr_family + 1,
-        .direct_set_string_ip_address_addr_family_map_zero_to_null = TRUE);
+        .direct_set_string_ip_address_addr_family_map_zero_to_null = TRUE,
+        .direct_string_allow_empty                                 = TRUE);
 
     _nm_properties_override_gobj(
         properties_override,
         obj_properties[PROP_DHCP_HOSTNAME],
         &nm_sett_info_propert_type_direct_string,
         .direct_offset =
-            NM_STRUCT_OFFSET_ENSURE_TYPE(char *, NMSettingIPConfigPrivate, dhcp_hostname));
+            NM_STRUCT_OFFSET_ENSURE_TYPE(char *, NMSettingIPConfigPrivate, dhcp_hostname),
+        .direct_string_allow_empty = TRUE);
 
     _nm_properties_override_gobj(
         properties_override,
         obj_properties[PROP_DHCP_IAID],
         &nm_sett_info_propert_type_direct_string,
-        .direct_offset = NM_STRUCT_OFFSET_ENSURE_TYPE(char *, NMSettingIPConfigPrivate, dhcp_iaid));
+        .direct_offset = NM_STRUCT_OFFSET_ENSURE_TYPE(char *, NMSettingIPConfigPrivate, dhcp_iaid),
+        .direct_string_allow_empty = TRUE);
 
     /* ---dbus---
      * property: routing-rules

@@ -614,7 +614,8 @@ nm_setting_ovs_port_class_init(NMSettingOvsPortClass *klass)
                                               PROP_VLAN_MODE,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingOvsPort,
-                                              vlan_mode);
+                                              vlan_mode,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingOvsPort:tag:
@@ -672,7 +673,8 @@ nm_setting_ovs_port_class_init(NMSettingOvsPortClass *klass)
                                               PROP_LACP,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingOvsPort,
-                                              lacp);
+                                              lacp,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingOvsPort:bond-mode:
@@ -687,7 +689,8 @@ nm_setting_ovs_port_class_init(NMSettingOvsPortClass *klass)
                                               PROP_BOND_MODE,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingOvsPort,
-                                              bond_mode);
+                                              bond_mode,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingOvsPort:bond-updelay:

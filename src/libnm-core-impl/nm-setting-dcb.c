@@ -920,7 +920,8 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
                                               PROP_APP_FCOE_MODE,
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingDcbPrivate,
-                                              app_fcoe_mode);
+                                              app_fcoe_mode,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingDcb:app-iscsi-flags:

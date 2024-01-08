@@ -1048,6 +1048,7 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
             &nm_sett_info_propert_type_direct_mac_address,                                        \
             .direct_offset =                                                                      \
                 NM_STRUCT_OFFSET_ENSURE_TYPE(char *, private_struct_type, private_struct_field),  \
+            .direct_string_allow_empty = TRUE,                                                    \
             __VA_ARGS__);                                                                         \
     }                                                                                             \
     G_STMT_END

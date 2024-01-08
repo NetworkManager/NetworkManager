@@ -872,7 +872,8 @@ nm_setting_vlan_class_init(NMSettingVlanClass *klass)
                                               PROP_PARENT,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingVlanPrivate,
-                                              parent);
+                                              parent,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingVlan:id:
@@ -963,7 +964,8 @@ nm_setting_vlan_class_init(NMSettingVlanClass *klass)
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingVlanPrivate,
                                               protocol,
-                                              .direct_string_is_refstr = TRUE);
+                                              .direct_string_is_refstr   = TRUE,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingVlan:ingress-priority-map:

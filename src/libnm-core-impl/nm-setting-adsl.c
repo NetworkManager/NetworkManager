@@ -283,7 +283,8 @@ nm_setting_adsl_class_init(NMSettingAdslClass *klass)
                                               PROP_USERNAME,
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingAdslPrivate,
-                                              username);
+                                              username,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingAdsl:password:
@@ -296,7 +297,8 @@ nm_setting_adsl_class_init(NMSettingAdslClass *klass)
                                               PROP_PASSWORD,
                                               NM_SETTING_PARAM_SECRET,
                                               NMSettingAdslPrivate,
-                                              password);
+                                              password,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingAdsl:password-flags:
@@ -322,7 +324,8 @@ nm_setting_adsl_class_init(NMSettingAdslClass *klass)
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingAdslPrivate,
                                               protocol,
-                                              .direct_set_string_ascii_strdown = TRUE);
+                                              .direct_set_string_ascii_strdown = TRUE,
+                                              .direct_string_allow_empty       = TRUE);
 
     /**
      * NMSettingAdsl:encapsulation:
@@ -336,7 +339,8 @@ nm_setting_adsl_class_init(NMSettingAdslClass *klass)
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingAdslPrivate,
                                               encapsulation,
-                                              .direct_set_string_ascii_strdown = TRUE);
+                                              .direct_set_string_ascii_strdown = TRUE,
+                                              .direct_string_allow_empty       = TRUE);
 
     /**
      * NMSettingAdsl:vpi:

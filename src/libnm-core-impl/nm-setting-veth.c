@@ -146,7 +146,8 @@ nm_setting_veth_class_init(NMSettingVethClass *klass)
                                               PROP_PEER,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingVeth,
-                                              _priv.peer);
+                                              _priv.peer,
+                                              .direct_string_allow_empty = TRUE);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

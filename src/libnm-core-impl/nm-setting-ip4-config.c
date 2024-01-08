@@ -919,7 +919,8 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
                                               PROP_DHCP_CLIENT_ID,
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingIP4ConfigPrivate,
-                                              dhcp_client_id);
+                                              dhcp_client_id,
+                                              .direct_string_allow_empty = TRUE);
 
     /* ---ifcfg-rh---
      * property: dad-timeout
@@ -972,7 +973,8 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
                                               PROP_DHCP_FQDN,
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingIP4ConfigPrivate,
-                                              dhcp_fqdn);
+                                              dhcp_fqdn,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingIP4Config:dhcp-vendor-class-identifier:
@@ -999,7 +1001,8 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
                                               PROP_DHCP_VENDOR_CLASS_IDENTIFIER,
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingIP4ConfigPrivate,
-                                              dhcp_vendor_class_identifier);
+                                              dhcp_vendor_class_identifier,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingIP4Config:link-local:

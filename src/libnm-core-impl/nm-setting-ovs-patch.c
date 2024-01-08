@@ -138,7 +138,8 @@ nm_setting_ovs_patch_class_init(NMSettingOvsPatchClass *klass)
                                               PROP_PEER,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingOvsPatch,
-                                              peer);
+                                              peer,
+                                              .direct_string_allow_empty = TRUE);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

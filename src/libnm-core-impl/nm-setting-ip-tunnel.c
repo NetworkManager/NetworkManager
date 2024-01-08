@@ -584,7 +584,8 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
                                               PROP_PARENT,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingIPTunnelPrivate,
-                                              parent);
+                                              parent,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingIPTunnel:mode:
@@ -630,7 +631,8 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
                                               PROP_LOCAL,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingIPTunnelPrivate,
-                                              local);
+                                              local,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingIPTunnel:remote:
@@ -646,7 +648,8 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
                                               PROP_REMOTE,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingIPTunnelPrivate,
-                                              remote);
+                                              remote,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingIPTunnel:ttl
@@ -716,7 +719,8 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
                                               PROP_INPUT_KEY,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingIPTunnelPrivate,
-                                              input_key);
+                                              input_key,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingIPTunnel:output-key:
@@ -732,7 +736,8 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
                                               PROP_OUTPUT_KEY,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingIPTunnelPrivate,
-                                              output_key);
+                                              output_key,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingIPTunnel:encapsulation-limit:

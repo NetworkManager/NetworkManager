@@ -240,7 +240,8 @@ nm_setting_pppoe_class_init(NMSettingPppoeClass *klass)
                                               PROP_PARENT,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingPppoePrivate,
-                                              parent);
+                                              parent,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingPppoe:service:
@@ -256,7 +257,8 @@ nm_setting_pppoe_class_init(NMSettingPppoeClass *klass)
                                               PROP_SERVICE,
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingPppoePrivate,
-                                              service);
+                                              service,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingPppoe:username:
@@ -269,7 +271,8 @@ nm_setting_pppoe_class_init(NMSettingPppoeClass *klass)
                                               PROP_USERNAME,
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingPppoePrivate,
-                                              username);
+                                              username,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingPppoe:password:
@@ -282,7 +285,8 @@ nm_setting_pppoe_class_init(NMSettingPppoeClass *klass)
                                               PROP_PASSWORD,
                                               NM_SETTING_PARAM_SECRET,
                                               NMSettingPppoePrivate,
-                                              password);
+                                              password,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingPppoe:password-flags:

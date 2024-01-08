@@ -236,7 +236,8 @@ nm_setting_cdma_class_init(NMSettingCdmaClass *klass)
                                               PROP_NUMBER,
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingCdmaPrivate,
-                                              number);
+                                              number,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingCdma:username:
@@ -251,7 +252,8 @@ nm_setting_cdma_class_init(NMSettingCdmaClass *klass)
                                               PROP_USERNAME,
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingCdmaPrivate,
-                                              username);
+                                              username,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingCdma:password:
@@ -266,7 +268,8 @@ nm_setting_cdma_class_init(NMSettingCdmaClass *klass)
                                               PROP_PASSWORD,
                                               NM_SETTING_PARAM_SECRET,
                                               NMSettingCdmaPrivate,
-                                              password);
+                                              password,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingCdma:password-flags:

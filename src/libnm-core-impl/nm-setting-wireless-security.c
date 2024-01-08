@@ -1420,7 +1420,8 @@ nm_setting_wireless_security_class_init(NMSettingWirelessSecurityClass *klass)
                                               NM_SETTING_PARAM_REQUIRED,
                                               NMSettingWirelessSecurityPrivate,
                                               key_mgmt,
-                                              .direct_set_string_ascii_strdown = TRUE);
+                                              .direct_set_string_ascii_strdown = TRUE,
+                                              .direct_string_allow_empty       = TRUE);
 
     /**
      * NMSettingWirelessSecurity:wep-tx-keyidx:
@@ -1473,7 +1474,8 @@ nm_setting_wireless_security_class_init(NMSettingWirelessSecurityClass *klass)
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingWirelessSecurityPrivate,
                                               auth_alg,
-                                              .direct_set_string_ascii_strdown = TRUE);
+                                              .direct_set_string_ascii_strdown = TRUE,
+                                              .direct_string_allow_empty       = TRUE);
 
     /**
      * NMSettingWirelessSecurity:proto:
@@ -1591,7 +1593,8 @@ nm_setting_wireless_security_class_init(NMSettingWirelessSecurityClass *klass)
                                               PROP_LEAP_USERNAME,
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingWirelessSecurityPrivate,
-                                              leap_username);
+                                              leap_username,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingWirelessSecurity:wep-key0:
@@ -1611,7 +1614,8 @@ nm_setting_wireless_security_class_init(NMSettingWirelessSecurityClass *klass)
                                               PROP_WEP_KEY0,
                                               NM_SETTING_PARAM_SECRET,
                                               NMSettingWirelessSecurityPrivate,
-                                              wep_key0);
+                                              wep_key0,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingWirelessSecurity:wep-key1:
@@ -1631,7 +1635,8 @@ nm_setting_wireless_security_class_init(NMSettingWirelessSecurityClass *klass)
                                               PROP_WEP_KEY1,
                                               NM_SETTING_PARAM_SECRET,
                                               NMSettingWirelessSecurityPrivate,
-                                              wep_key1);
+                                              wep_key1,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingWirelessSecurity:wep-key2:
@@ -1651,7 +1656,8 @@ nm_setting_wireless_security_class_init(NMSettingWirelessSecurityClass *klass)
                                               PROP_WEP_KEY2,
                                               NM_SETTING_PARAM_SECRET,
                                               NMSettingWirelessSecurityPrivate,
-                                              wep_key2);
+                                              wep_key2,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingWirelessSecurity:wep-key3:
@@ -1671,7 +1677,8 @@ nm_setting_wireless_security_class_init(NMSettingWirelessSecurityClass *klass)
                                               PROP_WEP_KEY3,
                                               NM_SETTING_PARAM_SECRET,
                                               NMSettingWirelessSecurityPrivate,
-                                              wep_key3);
+                                              wep_key3,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingWirelessSecurity:wep-key-flags:
@@ -1715,7 +1722,8 @@ nm_setting_wireless_security_class_init(NMSettingWirelessSecurityClass *klass)
                                               PROP_PSK,
                                               NM_SETTING_PARAM_SECRET,
                                               NMSettingWirelessSecurityPrivate,
-                                              psk);
+                                              psk,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingWirelessSecurity:psk-flags:
@@ -1757,7 +1765,8 @@ nm_setting_wireless_security_class_init(NMSettingWirelessSecurityClass *klass)
                                               PROP_LEAP_PASSWORD,
                                               NM_SETTING_PARAM_SECRET,
                                               NMSettingWirelessSecurityPrivate,
-                                              leap_password);
+                                              leap_password,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingWirelessSecurity:leap-password-flags:

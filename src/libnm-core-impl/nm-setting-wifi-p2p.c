@@ -201,7 +201,8 @@ nm_setting_wifi_p2p_class_init(NMSettingWifiP2PClass *setting_wifi_p2p_class)
                                               PROP_PEER,
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingWifiP2P,
-                                              _priv.peer);
+                                              _priv.peer,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingWifiP2P:wps-method:

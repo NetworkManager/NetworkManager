@@ -2429,8 +2429,27 @@ _verify_properties(NMSetting *setting, GError **error)
         case NM_VALUE_TYPE_NONE:
         case NM_VALUE_TYPE_UINT32:
         case NM_VALUE_TYPE_UINT64:
-        case NM_VALUE_TYPE_STRING:
             break;
+        case NM_VALUE_TYPE_STRING:
+        {
+            const char *val;
+
+            if (!property_info->direct_string_allow_empty
+                && (val = *((const char *const *)
+                                _nm_setting_get_private_field(setting, sett_info, property_info)))
+                && val[0] == '\0') {
+                g_set_error_literal(error,
+                                    NM_CONNECTION_ERROR,
+                                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                    _("cannot be empty"));
+                g_prefix_error(error,
+                               "%s.%s: ",
+                               klass->setting_info->setting_name,
+                               property_info->name);
+                return FALSE;
+            }
+            break;
+        }
         default:
             nm_assert_not_reached();
         }

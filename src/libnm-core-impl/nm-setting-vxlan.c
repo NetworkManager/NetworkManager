@@ -444,7 +444,8 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
                                               PROP_PARENT,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingVxlanPrivate,
-                                              parent);
+                                              parent,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingVxlan:id:
@@ -480,7 +481,8 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
                                               NMSettingVxlanPrivate,
                                               local,
                                               .direct_set_string_ip_address_addr_family =
-                                                  AF_UNSPEC + 1);
+                                                  AF_UNSPEC + 1,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingVxlan:remote:
@@ -499,7 +501,8 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
                                               NMSettingVxlanPrivate,
                                               remote,
                                               .direct_set_string_ip_address_addr_family =
-                                                  AF_UNSPEC + 1);
+                                                  AF_UNSPEC + 1,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingVxlan:source-port-min:
