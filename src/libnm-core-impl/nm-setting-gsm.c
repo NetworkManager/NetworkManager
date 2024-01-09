@@ -658,6 +658,10 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
      * is important to use the correct APN for the user's mobile broadband plan.
      * The APN may only be composed of the characters a-z, 0-9, ., and - per GSM
      * 03.60 Section 14.9.
+     *
+     * If the APN is unset (the default) then it may be detected based on
+     * "auto-config" setting. The property can be explicitly set to the
+     * empty string to prevent that and use no APN.
      **/
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
