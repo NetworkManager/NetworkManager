@@ -11,6 +11,18 @@
 
 /*****************************************************************************/
 
+const GDBusAnnotationInfo _nm_gdbus_annotation_info_deprecated = {
+    .key   = "org.freedesktop.DBus.Deprecated",
+    .value = "true",
+};
+
+const GDBusAnnotationInfo *const _nm_gdbus_annotation_info_list_deprecated[] = {
+    NM_GDBUS_ANNOTATION_INFO_DEPRECATED(),
+    NULL,
+};
+
+/*****************************************************************************/
+
 GDBusPropertyInfo *
 nm_dbus_utils_interface_info_lookup_property(const GDBusInterfaceInfo *interface_info,
                                              const char               *property_name,
