@@ -132,7 +132,8 @@ const NMDBusInterfaceInfoExtended nm_interface_info_device_wireless = {
                 NM_DEFINE_GDBUS_METHOD_INFO_INIT(
                     "GetAccessPoints",
                     .out_args = NM_DEFINE_GDBUS_ARG_INFOS(
-                        NM_DEFINE_GDBUS_ARG_INFO("access_points", "ao"), ), ),
+                        NM_DEFINE_GDBUS_ARG_INFO("access_points", "ao"), ),
+                    .annotations = NM_GDBUS_ANNOTATION_INFO_LIST_DEPRECATED(), ),
                 .handle = impl_device_wifi_get_access_points, ),
             NM_DEFINE_DBUS_METHOD_INFO_EXTENDED(
                 NM_DEFINE_GDBUS_METHOD_INFO_INIT(
@@ -150,9 +151,11 @@ const NMDBusInterfaceInfoExtended nm_interface_info_device_wireless = {
                                                 &nm_signal_info_wireless_access_point_removed, ),
         .properties = NM_DEFINE_GDBUS_PROPERTY_INFOS(
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("HwAddress", "s", NM_DEVICE_HW_ADDRESS),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("PermHwAddress",
-                                                           "s",
-                                                           NM_DEVICE_PERM_HW_ADDRESS),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE(
+                "PermHwAddress",
+                "s",
+                NM_DEVICE_PERM_HW_ADDRESS,
+                .annotations = NM_GDBUS_ANNOTATION_INFO_LIST_DEPRECATED(), ),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Mode", "u", NM_DEVICE_WIFI_MODE),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Bitrate", "u", NM_DEVICE_WIFI_BITRATE),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("AccessPoints",

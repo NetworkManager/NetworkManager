@@ -485,23 +485,31 @@ static const NMDBusInterfaceInfoExtended interface_info_ip4_config = {
     .parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT(
         NM_DBUS_INTERFACE_IP4_CONFIG,
         .properties = NM_DEFINE_GDBUS_PROPERTY_INFOS(
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Addresses",
-                                                           "aau",
-                                                           NM_IP4_CONFIG_ADDRESSES),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE(
+                "Addresses",
+                "aau",
+                NM_IP4_CONFIG_ADDRESSES,
+                .annotations = NM_GDBUS_ANNOTATION_INFO_LIST_DEPRECATED(), ),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("AddressData",
                                                            "aa{sv}",
                                                            NM_IP_CONFIG_ADDRESS_DATA),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Gateway", "s", NM_IP_CONFIG_GATEWAY),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Routes", "aau", NM_IP4_CONFIG_ROUTES),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE(
+                "Routes",
+                "aau",
+                NM_IP4_CONFIG_ROUTES,
+                .annotations = NM_GDBUS_ANNOTATION_INFO_LIST_DEPRECATED(), ),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("RouteData",
                                                            "aa{sv}",
                                                            NM_IP_CONFIG_ROUTE_DATA),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("NameserverData",
                                                            "aa{sv}",
                                                            NM_IP4_CONFIG_NAMESERVER_DATA),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Nameservers",
-                                                           "au",
-                                                           NM_IP4_CONFIG_NAMESERVERS),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE(
+                "Nameservers",
+                "au",
+                NM_IP4_CONFIG_NAMESERVERS,
+                .annotations = NM_GDBUS_ANNOTATION_INFO_LIST_DEPRECATED(), ),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Domains", "as", NM_IP_CONFIG_DOMAINS),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Searches", "as", NM_IP_CONFIG_SEARCHES),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("DnsOptions",
@@ -513,9 +521,11 @@ static const NMDBusInterfaceInfoExtended interface_info_ip4_config = {
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("WinsServerData",
                                                            "as",
                                                            NM_IP4_CONFIG_WINS_SERVER_DATA),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("WinsServers",
-                                                           "au",
-                                                           NM_IP4_CONFIG_WINS_SERVERS), ), ),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE(
+                "WinsServers",
+                "au",
+                NM_IP4_CONFIG_WINS_SERVERS,
+                .annotations = NM_GDBUS_ANNOTATION_INFO_LIST_DEPRECATED(), ), ), ),
 };
 
 static void
@@ -614,16 +624,20 @@ static const NMDBusInterfaceInfoExtended interface_info_ip6_config = {
     .parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT(
         NM_DBUS_INTERFACE_IP6_CONFIG,
         .properties = NM_DEFINE_GDBUS_PROPERTY_INFOS(
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Addresses",
-                                                           "a(ayuay)",
-                                                           NM_IP6_CONFIG_ADDRESSES),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE(
+                "Addresses",
+                "a(ayuay)",
+                NM_IP6_CONFIG_ADDRESSES,
+                .annotations = NM_GDBUS_ANNOTATION_INFO_LIST_DEPRECATED(), ),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("AddressData",
                                                            "aa{sv}",
                                                            NM_IP_CONFIG_ADDRESS_DATA),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Gateway", "s", NM_IP_CONFIG_GATEWAY),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Routes",
-                                                           "a(ayuayu)",
-                                                           NM_IP6_CONFIG_ROUTES),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE(
+                "Routes",
+                "a(ayuayu)",
+                NM_IP6_CONFIG_ROUTES,
+                .annotations = NM_GDBUS_ANNOTATION_INFO_LIST_DEPRECATED(), ),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("RouteData",
                                                            "aa{sv}",
                                                            NM_IP_CONFIG_ROUTE_DATA),
