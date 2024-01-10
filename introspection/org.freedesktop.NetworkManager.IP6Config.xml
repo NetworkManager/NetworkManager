@@ -10,8 +10,9 @@
     <!--
         Addresses:
 
-        Array of tuples of IPv6 address/prefix/gateway. Deprecated: use
-        AddressData and Gateway.
+        Array of tuples of IPv6 address/prefix/gateway.
+
+        DEPRECATED: use AddressData and Gateway.
     -->
     <property name="Addresses" type="a(ayuay)" access="read"/>
 
@@ -34,7 +35,9 @@
     <!--
         Routes:
 
-        Tuples of IPv6 route/prefix/next-hop/metric. Deprecated: use RouteData
+        Tuples of IPv6 route/prefix/next-hop/metric.
+
+        DEPRECATED: use RouteData.
     -->
     <property name="Routes" type="a(ayuayu)" access="read"/>
 

@@ -12,7 +12,9 @@
 
         Array of arrays of IPv4 address/prefix/gateway. All 3 elements of each
         array are in network byte order. Essentially: [(addr, prefix, gateway),
-        (addr, prefix, gateway), ...] Deprecated: use AddressData and Gateway
+        (addr, prefix, gateway), ...].
+
+        DEPRECATED: use AddressData and Gateway
     -->
     <property name="Addresses" type="aau" access="read"/>
 
@@ -39,7 +41,9 @@
         are in network byte order. 'route' and 'next hop' are IPv4 addresses,
         while prefix and metric are simple unsigned integers. Essentially:
         [(route, prefix, next-hop, metric), (route, prefix, next-hop, metric),
-        ...] Deprecated: use RouteData
+        ...].
+
+        DEPRECATED: use RouteData
     -->
     <property name="Routes" type="aau" access="read"/>
 
@@ -55,7 +59,9 @@
     <!--
         Nameservers:
 
-        The nameservers in use. Deprecated: use NameserverData
+        The nameservers in use.
+
+        DEPRECATED: use NameserverData
     -->
     <property name="Nameservers" type="au" access="read"/>
 
@@ -101,7 +107,9 @@
         WinsServers:
 
         The Windows Internet Name Service servers associated with the connection.
-        Each address is in network byte order. Deprecated: use WinsServerData
+        Each address is in network byte order.
+
+        DEPRECATED: use WinsServerData
     -->
     <property name="WinsServers" type="au" access="read"/>
 
