@@ -302,7 +302,7 @@ test_nm_utils_log_connection_diff(void)
     g_object_set(nm_connection_get_setting_connection(connection2),
                  NM_SETTING_CONNECTION_ID,
                  "id2",
-                 NM_SETTING_CONNECTION_MASTER,
+                 NM_SETTING_CONNECTION_CONTROLLER,
                  "master2",
                  NULL);
     nm_utils_log_connection_diff(connection,

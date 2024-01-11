@@ -306,7 +306,7 @@ check_if_bond_slave(shvarFile *ifcfg, NMSettingConnection *s_con)
         }
 
         g_object_set(s_con,
-                     NM_SETTING_CONNECTION_MASTER,
+                     NM_SETTING_CONNECTION_CONTROLLER,
                      v,
                      NM_SETTING_CONNECTION_SLAVE_TYPE,
                      NM_SETTING_BOND_SETTING_NAME,
@@ -340,7 +340,7 @@ check_if_team_slave(shvarFile *ifcfg, NMSettingConnection *s_con)
     }
 
     g_object_set(s_con,
-                 NM_SETTING_CONNECTION_MASTER,
+                 NM_SETTING_CONNECTION_CONTROLLER,
                  v,
                  NM_SETTING_CONNECTION_SLAVE_TYPE,
                  NM_SETTING_TEAM_SETTING_NAME,
@@ -512,7 +512,7 @@ make_connection_setting(const char *file,
                           old_value,
                           v);
         } else {
-            g_object_set(s_con, NM_SETTING_CONNECTION_MASTER, v, NULL);
+            g_object_set(s_con, NM_SETTING_CONNECTION_CONTROLLER, v, NULL);
             g_object_set(s_con,
                          NM_SETTING_CONNECTION_SLAVE_TYPE,
                          NM_SETTING_BRIDGE_SETTING_NAME,
@@ -535,7 +535,7 @@ make_connection_setting(const char *file,
                           old_value,
                           v);
         } else {
-            g_object_set(s_con, NM_SETTING_CONNECTION_MASTER, v, NULL);
+            g_object_set(s_con, NM_SETTING_CONNECTION_CONTROLLER, v, NULL);
             g_object_set(s_con,
                          NM_SETTING_CONNECTION_SLAVE_TYPE,
                          NM_SETTING_OVS_PORT_SETTING_NAME,
@@ -555,7 +555,7 @@ make_connection_setting(const char *file,
                           old_value,
                           v);
         } else {
-            g_object_set(s_con, NM_SETTING_CONNECTION_MASTER, v, NULL);
+            g_object_set(s_con, NM_SETTING_CONNECTION_CONTROLLER, v, NULL);
             g_object_set(s_con,
                          NM_SETTING_CONNECTION_SLAVE_TYPE,
                          NM_SETTING_VRF_SETTING_NAME,

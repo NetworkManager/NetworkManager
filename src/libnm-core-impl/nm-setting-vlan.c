@@ -624,7 +624,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                                 NM_CONNECTION_ERROR_INVALID_PROPERTY,
                                 _("'%s' value doesn't match '%s=%s'"),
                                 priv->parent,
-                                NM_SETTING_CONNECTION_MASTER,
+                                NM_SETTING_CONNECTION_CONTROLLER,
                                 master);
                     g_prefix_error(error,
                                    "%s.%s: ",

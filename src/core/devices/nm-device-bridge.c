@@ -610,7 +610,7 @@ master_update_slave_connection(NMDevice     *device,
     }
 
     g_object_set(s_con,
-                 NM_SETTING_CONNECTION_MASTER,
+                 NM_SETTING_CONNECTION_CONTROLLER,
                  nm_connection_get_uuid(applied_connection),
                  NM_SETTING_CONNECTION_SLAVE_TYPE,
                  NM_SETTING_BRIDGE_SETTING_NAME,

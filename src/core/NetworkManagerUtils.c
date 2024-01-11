@@ -695,7 +695,8 @@ check_connection_controller(NMConnection *orig, NMConnection *candidate, GHashTa
 
     props = check_property_in_hash(settings,
                                    NM_SETTING_CONNECTION_SETTING_NAME,
-                                   NM_SETTING_CONNECTION_MASTER);
+                                   NM_SETTING_CONNECTION_CONTROLLER);
+
     if (!props)
         return TRUE;
 
@@ -721,7 +722,7 @@ check_connection_controller(NMConnection *orig, NMConnection *candidate, GHashTa
                 remove_from_hash(settings,
                                  props,
                                  NM_SETTING_CONNECTION_SETTING_NAME,
-                                 NM_SETTING_CONNECTION_MASTER);
+                                 NM_SETTING_CONNECTION_CONTROLLER);
                 return TRUE;
             } else {
                 return FALSE;

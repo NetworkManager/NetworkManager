@@ -2046,7 +2046,7 @@ test_write_bridge_component(void)
                  TRUE,
                  NM_SETTING_CONNECTION_TYPE,
                  NM_SETTING_WIRED_SETTING_NAME,
-                 NM_SETTING_CONNECTION_MASTER,
+                 NM_SETTING_CONNECTION_CONTROLLER,
                  "br0",
                  NM_SETTING_CONNECTION_SLAVE_TYPE,
                  NM_SETTING_BRIDGE_SETTING_NAME,
@@ -2357,7 +2357,7 @@ test_read_minimal_slave(void)
                                                     NM_SETTING_WIRED_SETTING_NAME,
                                                     &s_con);
     g_object_set(s_con,
-                 NM_SETTING_CONNECTION_MASTER,
+                 NM_SETTING_CONNECTION_CONTROLLER,
                  "br0",
                  NM_SETTING_CONNECTION_SLAVE_TYPE,
                  "bridge",

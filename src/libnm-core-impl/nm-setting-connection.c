@@ -56,6 +56,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingConnection,
                              PROP_READ_ONLY,
                              PROP_ZONE,
                              PROP_MASTER,
+                             PROP_CONTROLLER,
                              PROP_SLAVE_TYPE,
                              PROP_AUTOCONNECT_SLAVES,
                              PROP_SECONDARIES,
@@ -80,7 +81,7 @@ typedef struct {
     char       *stable_id;
     char       *interface_name;
     char       *type;
-    char       *master;
+    char       *controller;
     char       *slave_type;
     char       *zone;
     char       *mud_url;
@@ -709,13 +710,33 @@ nm_setting_connection_get_zone(NMSettingConnection *setting)
  *
  * Returns: interface name of the master device or UUID of the master
  * connection.
+ *
+ * Deprecated: 1.46. Use nm_setting_connection_get_controller() instead which
+ * is just an alias.
  */
 const char *
 nm_setting_connection_get_master(NMSettingConnection *setting)
 {
+    return nm_setting_connection_get_controller(setting);
+}
+
+/**
+ * nm_setting_connection_get_controller:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns the #NMSettingConnection:controller property of the connection.
+ *
+ * Returns: interface name of the controller device or UUID of the controller
+ * connection.
+ *
+ * Since: 1.46
+ */
+const char *
+nm_setting_connection_get_controller(NMSettingConnection *setting)
+{
     g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), NULL);
 
-    return NM_SETTING_CONNECTION_GET_PRIVATE(setting)->master;
+    return NM_SETTING_CONNECTION_GET_PRIVATE(setting)->controller;
 }
 
 /**
@@ -1099,16 +1120,16 @@ _nm_connection_detect_slave_type_full(NMSettingConnection *s_con,
     }
 
     if (is_slave) {
-        if (!priv->master) {
+        if (!priv->controller) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_MISSING_PROPERTY,
                         _("Slave connections need a valid '%s' property"),
-                        NM_SETTING_CONNECTION_MASTER);
+                        NM_SETTING_CONNECTION_CONTROLLER);
             g_prefix_error(error,
                            "%s.%s: ",
                            NM_SETTING_CONNECTION_SETTING_NAME,
-                           NM_SETTING_CONNECTION_MASTER);
+                           NM_SETTING_CONNECTION_CONTROLLER);
             return FALSE;
         }
         if (slave_setting_type && connection
@@ -1116,7 +1137,7 @@ _nm_connection_detect_slave_type_full(NMSettingConnection *s_con,
             normerr_slave_setting_type = slave_setting_type;
     } else {
         nm_assert(!slave_type);
-        if (priv->master) {
+        if (priv->controller) {
             NMSetting *s_port;
 
             if (connection
@@ -1128,7 +1149,7 @@ _nm_connection_detect_slave_type_full(NMSettingConnection *s_con,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_MISSING_PROPERTY,
                             _("Cannot set '%s' without '%s'"),
-                            NM_SETTING_CONNECTION_MASTER,
+                            NM_SETTING_CONNECTION_CONTROLLER,
                             NM_SETTING_CONNECTION_SLAVE_TYPE);
                 g_prefix_error(error,
                                "%s.%s: ",
@@ -1574,7 +1595,7 @@ after_interface_name:
                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
                     _("Detect a slave connection with '%s' set and a port type '%s'. '%s' should "
                       "be set to '%s'"),
-                    NM_SETTING_CONNECTION_MASTER,
+                    NM_SETTING_CONNECTION_CONTROLLER,
                     normerr_missing_slave_type_port,
                     NM_SETTING_CONNECTION_SLAVE_TYPE,
                     normerr_missing_slave_type);
@@ -1791,6 +1812,67 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
 
 /*****************************************************************************/
 
+gboolean
+_nm_setting_connection_master_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+{
+    const char *str;
+
+    if (!_nm_setting_use_legacy_property(setting,
+                                         connection_dict,
+                                         NM_SETTING_CONNECTION_MASTER,
+                                         NM_SETTING_CONNECTION_CONTROLLER)) {
+        *out_is_modified = FALSE;
+        return TRUE;
+    }
+    str = g_variant_get_string(value, NULL);
+
+    g_object_set(setting, NM_SETTING_CONNECTION_MASTER, str, NULL);
+    return TRUE;
+}
+
+GVariant *
+_nm_setting_connection_controller_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+{
+    const char *controller;
+
+    /* FIXME: `controller` is an alias of `master` property. Serializing the
+     * property to the clients would break them as they won't be able to drop
+     * it if they are not aware of the existance of `controller`. In order to
+     * give them time to adapt their code, NetworkManager is not serializing
+     * `controller` on DBus.
+     */
+    if (_nm_utils_is_manager_process) {
+        return NULL;
+    }
+
+    controller = nm_setting_connection_get_controller(NM_SETTING_CONNECTION(setting));
+    if (!controller)
+        return NULL;
+
+    return g_variant_new_string(controller);
+}
+
+gboolean
+_nm_setting_connection_controller_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+{
+    const char *str;
+
+    /* Ignore 'controller' if we're going to process 'master' */
+    if (_nm_setting_use_legacy_property(setting,
+                                        connection_dict,
+                                        NM_SETTING_CONNECTION_MASTER,
+                                        NM_SETTING_CONNECTION_CONTROLLER)) {
+        *out_is_modified = FALSE;
+        return TRUE;
+    }
+    str = g_variant_get_string(value, NULL);
+
+    g_object_set(setting, NM_SETTING_CONNECTION_CONTROLLER, str, NULL);
+    return TRUE;
+}
+
+/*****************************************************************************/
+
 static void
 nm_setting_connection_init(NMSettingConnection *setting)
 {}
@@ -1824,6 +1906,7 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
     GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
     GArray         *properties_override = _nm_sett_info_property_override_create_array_sized(35);
+    guint           prop_idx;
 
     object_class->get_property = get_property;
     object_class->set_property = set_property;
@@ -2264,6 +2347,8 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * NMSettingConnection:master:
      *
      * Interface name of the master device or UUID of the master connection.
+     *
+     * Deprecated 1.46. Use #NMSettingConnection:controller instead, this is just an alias.
      **/
     /* ---ifcfg-rh---
      * property: master
@@ -2274,14 +2359,44 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *   for compatibility with legacy tooling.
      * ---end---
      */
-    _nm_setting_property_define_direct_string(properties_override,
-                                              obj_properties,
-                                              NM_SETTING_CONNECTION_MASTER,
-                                              PROP_MASTER,
-                                              NM_SETTING_PARAM_FUZZY_IGNORE
-                                                  | NM_SETTING_PARAM_INFERRABLE,
-                                              NMSettingConnectionPrivate,
-                                              master);
+    prop_idx = _nm_setting_property_define_direct_string_full(
+        properties_override,
+        obj_properties,
+        NM_SETTING_CONNECTION_MASTER,
+        PROP_MASTER,
+        NM_SETTING_PARAM_INFERRABLE | NM_SETTING_PARAM_FUZZY_IGNORE,
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING,
+                                       .direct_type   = NM_VALUE_TYPE_STRING,
+                                       .compare_fcn   = _nm_setting_property_compare_fcn_direct,
+                                       .to_dbus_fcn   = _nm_setting_property_to_dbus_fcn_direct,
+                                       .from_dbus_fcn = _nm_setting_connection_master_from_dbus, ),
+        NMSettingConnectionPrivate,
+        controller,
+        .is_deprecated = 1);
+
+    /**
+     * NMSettingConnection:controller:
+     *
+     * Interface name of the controller device or UUID of the controller connection.
+     **/
+    _nm_setting_property_define_direct_string_full(
+        properties_override,
+        obj_properties,
+        NM_SETTING_CONNECTION_CONTROLLER,
+        PROP_CONTROLLER,
+        NM_SETTING_PARAM_INFERRABLE | NM_SETTING_PARAM_FUZZY_IGNORE,
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING,
+                                       .direct_type = NM_VALUE_TYPE_STRING,
+                                       .compare_fcn = _nm_setting_property_compare_fcn_direct,
+                                       .to_dbus_fcn = _nm_setting_connection_controller_to_dbus,
+                                       .from_dbus_fcn =
+                                           _nm_setting_connection_controller_from_dbus),
+        NMSettingConnectionPrivate,
+        controller,
+        .direct_also_notify = obj_properties[PROP_MASTER]);
+
+    nm_g_array_index(properties_override, NMSettInfoProperty, prop_idx).direct_also_notify =
+        obj_properties[PROP_CONTROLLER];
 
     /**
      * NMSettingConnection:slave-type:

@@ -342,7 +342,7 @@ nmc_setting_connection_connect_handlers(NMSettingConnection *setting, NMConnecti
     g_return_if_fail(NM_IS_SETTING_CONNECTION(setting));
 
     g_signal_connect(setting,
-                     "notify::" NM_SETTING_CONNECTION_MASTER,
+                     "notify::" NM_SETTING_CONNECTION_CONTROLLER,
                      G_CALLBACK(connection_controller_changed_cb),
                      connection);
 }
