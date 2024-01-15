@@ -1084,6 +1084,7 @@ nm_platform_kernel_support_get(NMPlatformKernelSupportType type)
 }
 
 typedef enum {
+    NMP_GENL_FAMILY_TYPE_DEVLINK,
     NMP_GENL_FAMILY_TYPE_ETHTOOL,
     NMP_GENL_FAMILY_TYPE_MPTCP_PM,
     NMP_GENL_FAMILY_TYPE_NL80211,

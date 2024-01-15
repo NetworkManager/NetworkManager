@@ -452,6 +452,10 @@ _nm_platform_kernel_support_init(NMPlatformKernelSupportType type, int value)
 /*****************************************************************************/
 
 const NMPGenlFamilyInfo nmp_genl_family_infos[_NMP_GENL_FAMILY_TYPE_NUM] = {
+    [NMP_GENL_FAMILY_TYPE_DEVLINK] =
+        {
+            .name = "devlink",
+        },
     [NMP_GENL_FAMILY_TYPE_ETHTOOL] =
         {
             .name = "ethtool",

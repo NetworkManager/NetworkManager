@@ -672,6 +672,8 @@ src_libnm_platform_libnm_platform_la_SOURCES = \
 	src/libnm-platform/nmp-object.h \
 	src/libnm-platform/nmp-plobj.c \
 	src/libnm-platform/nmp-plobj.h \
+	src/libnm-platform/devlink/nm-devlink.c \
+	src/libnm-platform/devlink/nm-devlink.h \
 	src/libnm-platform/wifi/nm-wifi-utils-nl80211.c \
 	src/libnm-platform/wifi/nm-wifi-utils-nl80211.h \
 	src/libnm-platform/wifi/nm-wifi-utils-private.h \
