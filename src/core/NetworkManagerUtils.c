@@ -722,6 +722,10 @@ check_connection_controller(NMConnection *orig, NMConnection *candidate, GHashTa
                 remove_from_hash(settings,
                                  props,
                                  NM_SETTING_CONNECTION_SETTING_NAME,
+                                 NM_SETTING_CONNECTION_MASTER);
+                remove_from_hash(settings,
+                                 props,
+                                 NM_SETTING_CONNECTION_SETTING_NAME,
                                  NM_SETTING_CONNECTION_CONTROLLER);
                 return TRUE;
             } else {
