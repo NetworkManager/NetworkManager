@@ -2099,20 +2099,12 @@ _dbus_signal_ip_config_cb(NMVpnConnection *self, int addr_family, GVariant *dict
                                                  NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4))
                 nm_l3_config_data_add_route(l3cd, addr_family, route, NULL);
         }
-    } else if (IS_IPv4 ? g_variant_lookup(dict, NM_VPN_PLUGIN_IP4_CONFIG_ROUTES, "aau", &var_iter)
-                       : g_variant_lookup(dict,
-                                          NM_VPN_PLUGIN_IP6_CONFIG_ROUTES,
-                                          "a(ayuayu)",
-                                          &var_iter)) {
-        _nm_unused nm_auto_free_variant_iter GVariantIter *var_iter_ref_owner = var_iter;
-        NMPlatformIPXRoute                                 route              = {};
-        guint32                                            plen;
-        GVariant                                          *next_hop;
-        GVariant                                          *dest;
-        guint32                                            prefix;
-        guint32                                            metric;
+    } else if (IS_IPv4) {
+        if (g_variant_lookup(dict, NM_VPN_PLUGIN_IP4_CONFIG_ROUTES, "aau", &var_iter)) {
+            _nm_unused nm_auto_free_variant_iter GVariantIter *var_iter_ref_owner = var_iter;
+            NMPlatformIPXRoute                                 route              = {};
+            guint32                                            plen;
 
-        if (IS_IPv4) {
             while (g_variant_iter_next(var_iter, "@au", &v)) {
                 _nm_unused gs_unref_variant GVariant *v_ref_owner = v;
 
@@ -2151,7 +2143,19 @@ _dbus_signal_ip_config_cb(NMVpnConnection *self, int addr_family, GVariant *dict
                     break;
                 }
             }
-        } else {
+        }
+    } else {
+        _nm_unused nm_auto_free_variant_iter GVariantIter *var_iter_ref_owner = NULL;
+        NMPlatformIPXRoute                                 route              = {};
+        GVariant                                          *next_hop;
+        GVariant                                          *dest;
+        guint32                                            prefix;
+        guint32                                            metric;
+
+        /* IPv6 and no "preserve-routes" */
+
+        if (g_variant_lookup(dict, NM_VPN_PLUGIN_IP6_CONFIG_ROUTES, "a(ayuayu)", &var_iter)) {
+            var_iter_ref_owner = var_iter;
             while (
                 g_variant_iter_next(var_iter, "(@ayu@ayu)", &dest, &prefix, &next_hop, &metric)) {
                 _nm_unused gs_unref_variant GVariant *next_hop_ref_owner = next_hop;
