@@ -554,6 +554,8 @@ NMSettingIP6ConfigPrivacy nm_l3_config_data_get_ip6_privacy(const NML3ConfigData
 gboolean nm_l3_config_data_set_ip6_privacy(NML3ConfigData           *self,
                                            NMSettingIP6ConfigPrivacy ip6_privacy);
 
+gboolean nm_l3_config_data_get_dhcp_enabled(const NML3ConfigData *self, int addr_family);
+
 NMProxyConfigMethod nm_l3_config_data_get_proxy_method(const NML3ConfigData *self);
 
 gboolean nm_l3_config_data_set_proxy_method(NML3ConfigData *self, NMProxyConfigMethod value);
