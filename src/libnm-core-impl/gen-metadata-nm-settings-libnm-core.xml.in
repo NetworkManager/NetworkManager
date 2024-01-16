@@ -836,6 +836,10 @@
                   dbus-type="as"
                   gprop-type="GStrv"
                   />
+        <property name="port-type"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="read-only"
                   is-deprecated="1"
                   dbus-type="b"
@@ -846,6 +850,7 @@
                   gprop-type="GStrv"
                   />
         <property name="slave-type"
+                  is-deprecated="1"
                   dbus-type="s"
                   gprop-type="gchararray"
                   />

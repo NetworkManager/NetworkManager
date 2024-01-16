@@ -405,6 +405,12 @@ GVariant *_nm_setting_connection_controller_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_F
 
 gboolean _nm_setting_connection_master_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil);
 
+gboolean _nm_setting_connection_port_type_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil);
+
+GVariant *_nm_setting_connection_port_type_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil);
+
+gboolean _nm_setting_connection_slave_type_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil);
+
 GVariant *_nm_setting_to_dbus(NMSetting                              *setting,
                               NMConnection                           *connection,
                               NMConnectionSerializationFlags          flags,
@@ -774,7 +780,8 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
         nm_assert(_property_type->direct_type == NM_VALUE_TYPE_STRING);                           \
         nm_assert(NM_IN_SET(_property_type->to_dbus_fcn,                                          \
                             _nm_setting_property_to_dbus_fcn_direct,                              \
-                            _nm_setting_connection_controller_to_dbus));                          \
+                            _nm_setting_connection_controller_to_dbus,                            \
+                            _nm_setting_connection_port_type_to_dbus));                           \
                                                                                                   \
         _param_spec = g_param_spec_string("" prop_name "",                                        \
                                           "",                                                     \
