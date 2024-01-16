@@ -2147,50 +2147,80 @@ _dbus_signal_ip_config_cb(NMVpnConnection *self, int addr_family, GVariant *dict
     } else {
         _nm_unused nm_auto_free_variant_iter GVariantIter *var_iter_ref_owner = NULL;
         NMPlatformIPXRoute                                 route              = {};
-        GVariant                                          *next_hop;
-        GVariant                                          *dest;
         guint32                                            prefix;
         guint32                                            metric;
+        NMOptionBool                                       new_signature = NM_OPTION_BOOL_DEFAULT;
 
         /* IPv6 and no "preserve-routes" */
 
-        if (g_variant_lookup(dict, NM_VPN_PLUGIN_IP6_CONFIG_ROUTES, "a(ayuayu)", &var_iter)) {
-            var_iter_ref_owner = var_iter;
-            while (
-                g_variant_iter_next(var_iter, "(@ayu@ayu)", &dest, &prefix, &next_hop, &metric)) {
-                _nm_unused gs_unref_variant GVariant *next_hop_ref_owner = next_hop;
-                _nm_unused gs_unref_variant GVariant *dest_ref_owner     = dest;
+        if (g_variant_lookup(dict, NM_VPN_PLUGIN_IP6_CONFIG_ROUTES, "a(ayuayu)", &var_iter))
+            new_signature = FALSE;
+        else if (g_variant_lookup(dict, NM_VPN_PLUGIN_IP6_CONFIG_ROUTES, "a(ayuayuay)", &var_iter))
+            new_signature = TRUE;
+        else
+            var_iter = NULL;
 
-                if (prefix > 128)
-                    continue;
+        var_iter_ref_owner = var_iter;
 
-                route.r6 = (NMPlatformIP6Route){
-                    .plen       = prefix,
-                    .table_any  = TRUE,
-                    .metric_any = TRUE,
-                    .rt_source  = NM_IP_CONFIG_SOURCE_VPN,
-                };
+        while (TRUE) {
+            gs_unref_variant GVariant *next_hop = NULL;
+            gs_unref_variant GVariant *dest     = NULL;
+            gs_unref_variant GVariant *pref_src = NULL;
 
-                if (!nm_ip_addr_set_from_variant(AF_INET6, &route.r6.network, dest, NULL))
-                    continue;
-
-                nm_ip_addr_set_from_variant(AF_INET6, &route.r6.gateway, next_hop, NULL);
-
-                nm_ip6_addr_clear_host_address(&route.r6.network, &route.r6.network, route.r6.plen);
-
-                if (!IN6_IS_ADDR_UNSPECIFIED(&priv->ip_data_6.gw_external.addr6)
-                    && IN6_ARE_ADDR_EQUAL(&route.r6.network, &priv->ip_data_6.gw_external.addr6)
-                    && route.r6.plen == 128) {
-                    /* Ignore host routes to the VPN gateway since NM adds one itself.
-                     * Since NM knows more about the routing situation than the VPN
-                     * server, we want to use the NM created route instead of whatever
-                     * the server provides.
-                     */
-                    continue;
-                }
-
-                nm_l3_config_data_add_route_6(l3cd, &route.r6);
+            if (new_signature == NM_OPTION_BOOL_DEFAULT) {
+                break;
+            } else if (new_signature) {
+                if (!g_variant_iter_next(var_iter,
+                                         "(@ayu@ayu@ay)",
+                                         &dest,
+                                         &prefix,
+                                         &next_hop,
+                                         &metric,
+                                         &pref_src))
+                    break;
+            } else {
+                if (!g_variant_iter_next(var_iter,
+                                         "(@ayu@ayu)",
+                                         &dest,
+                                         &prefix,
+                                         &next_hop,
+                                         &metric))
+                    break;
             }
+
+            if (prefix > 128)
+                continue;
+
+            route.r6 = (NMPlatformIP6Route){
+                .plen       = prefix,
+                .table_any  = TRUE,
+                .metric_any = TRUE,
+                .rt_source  = NM_IP_CONFIG_SOURCE_VPN,
+            };
+
+            if (!nm_ip_addr_set_from_variant(AF_INET6, &route.r6.network, dest, NULL))
+                continue;
+
+            if (pref_src
+                && !nm_ip_addr_set_from_variant(AF_INET6, &route.r6.pref_src, pref_src, NULL))
+                continue;
+
+            nm_ip_addr_set_from_variant(AF_INET6, &route.r6.gateway, next_hop, NULL);
+
+            nm_ip6_addr_clear_host_address(&route.r6.network, &route.r6.network, route.r6.plen);
+
+            if (!IN6_IS_ADDR_UNSPECIFIED(&priv->ip_data_6.gw_external.addr6)
+                && IN6_ARE_ADDR_EQUAL(&route.r6.network, &priv->ip_data_6.gw_external.addr6)
+                && route.r6.plen == 128) {
+                /* Ignore host routes to the VPN gateway since NM adds one itself.
+                 * Since NM knows more about the routing situation than the VPN
+                 * server, we want to use the NM created route instead of whatever
+                 * the server provides.
+                 */
+                continue;
+            }
+
+            nm_l3_config_data_add_route_6(l3cd, &route.r6);
         }
     }
 
