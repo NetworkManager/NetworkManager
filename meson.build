@@ -978,9 +978,13 @@ endif
 
 if enable_docs
   assert(enable_introspection, '-Ddocs=true requires -Dintrospection=true')
-  assert(meson.version().version_compare('>= 0.46.0'), '-Ddocs requires meson >= 0.46')
+  assert(meson.version().version_compare('>= 0.49.0'), '-Ddocs requires meson >= 0.49')
   subdir('man')
   subdir('docs')
+  meson.add_dist_script(
+    'tools/meson-dist-data.sh',
+    '--build-root', build_root
+  )
 endif
 
 configure_file(
