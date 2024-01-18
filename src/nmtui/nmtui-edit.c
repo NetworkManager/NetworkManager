@@ -511,7 +511,7 @@ nmt_remove_connection(NMRemoteConnection *connection)
                                     _("Delete"),
                                     _("Are you sure you want to delete the connection '%s'?"),
                                     nm_connection_get_id(NM_CONNECTION(connection)));
-    if (choice == 1)
+    if (choice != 2)
         return;
 
     g_object_ref(connection);
