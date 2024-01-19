@@ -282,7 +282,7 @@ nmt_newt_message_dialog(const char *message, ...)
  * Displays the given message in a dialog box with two buttons with
  * the indicated labels, and waits for the user to click one.
  *
- * Returns: which button was clicked: 0 for @button1 or 1 for @button2
+ * Returns: which button was clicked: 1 for @button1, 2 for @button2 or 0 otherwise
  */
 int
 nmt_newt_choice_dialog(const char *button1, const char *button2, const char *message, ...)
