@@ -614,7 +614,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
             if (s_con) {
                 const char *master = NULL, *slave_type = NULL;
 
-                slave_type = nm_setting_connection_get_slave_type(s_con);
+                slave_type = nm_setting_connection_get_port_type(s_con);
                 if (!g_strcmp0(slave_type, NM_SETTING_VLAN_SETTING_NAME))
                     master = nm_setting_connection_get_master(s_con);
 

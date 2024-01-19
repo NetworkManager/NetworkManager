@@ -292,7 +292,7 @@ master_update_slave_connection(NMDevice     *device,
     g_object_set(nm_connection_get_setting_connection(connection),
                  NM_SETTING_CONNECTION_CONTROLLER,
                  nm_connection_get_uuid(applied_connection),
-                 NM_SETTING_CONNECTION_SLAVE_TYPE,
+                 NM_SETTING_CONNECTION_PORT_TYPE,
                  NM_SETTING_TEAM_SETTING_NAME,
                  NULL);
     return TRUE;

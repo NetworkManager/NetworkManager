@@ -2284,7 +2284,7 @@ write_connection_setting(NMSettingConnection *s_con, shvarFile *ifcfg, const cha
             svSetValueStr(ifcfg, "VRF", master_iface);
         } else {
             _LOGW("don't know how to set master for a %s slave",
-                  nm_setting_connection_get_slave_type(s_con));
+                  nm_setting_connection_get_port_type(s_con));
         }
     }
 

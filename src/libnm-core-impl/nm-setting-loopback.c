@@ -125,7 +125,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }
 
         if ((s_con = nm_connection_get_setting_connection(connection))) {
-            if (nm_setting_connection_get_slave_type(s_con)
+            if (nm_setting_connection_get_port_type(s_con)
                 || nm_setting_connection_get_master(s_con)) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
@@ -134,8 +134,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                 g_prefix_error(error,
                                "%s.%s: ",
                                NM_SETTING_CONNECTION_SETTING_NAME,
-                               nm_setting_connection_get_slave_type(s_con)
-                                   ? NM_SETTING_CONNECTION_SLAVE_TYPE
+                               nm_setting_connection_get_port_type(s_con)
+                                   ? NM_SETTING_CONNECTION_PORT_TYPE
                                    : NM_SETTING_CONNECTION_CONTROLLER);
                 return FALSE;
             }

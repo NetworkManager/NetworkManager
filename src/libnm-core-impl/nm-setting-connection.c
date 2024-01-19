@@ -1136,7 +1136,7 @@ _nm_connection_detect_slave_type_full(NMSettingConnection *s_con,
             g_prefix_error(error,
                            "%s.%s: ",
                            NM_SETTING_CONNECTION_SETTING_NAME,
-                           NM_SETTING_CONNECTION_SLAVE_TYPE);
+                           NM_SETTING_CONNECTION_PORT_TYPE);
             return FALSE;
         }
     }
@@ -1172,11 +1172,11 @@ _nm_connection_detect_slave_type_full(NMSettingConnection *s_con,
                             NM_CONNECTION_ERROR_MISSING_PROPERTY,
                             _("Cannot set '%s' without '%s'"),
                             NM_SETTING_CONNECTION_CONTROLLER,
-                            NM_SETTING_CONNECTION_SLAVE_TYPE);
+                            NM_SETTING_CONNECTION_PORT_TYPE);
                 g_prefix_error(error,
                                "%s.%s: ",
                                NM_SETTING_CONNECTION_SETTING_NAME,
-                               NM_SETTING_CONNECTION_SLAVE_TYPE);
+                               NM_SETTING_CONNECTION_PORT_TYPE);
                 return FALSE;
             }
         }
@@ -1387,7 +1387,7 @@ after_interface_name:
         g_prefix_error(error,
                        "%s.%s: ",
                        NM_SETTING_CONNECTION_SETTING_NAME,
-                       NM_SETTING_CONNECTION_SLAVE_TYPE);
+                       NM_SETTING_CONNECTION_PORT_TYPE);
         return FALSE;
     }
 
@@ -1619,12 +1619,12 @@ after_interface_name:
                       "be set to '%s'"),
                     NM_SETTING_CONNECTION_CONTROLLER,
                     normerr_missing_slave_type_port,
-                    NM_SETTING_CONNECTION_SLAVE_TYPE,
+                    NM_SETTING_CONNECTION_PORT_TYPE,
                     normerr_missing_slave_type);
         g_prefix_error(error,
                        "%s.%s: ",
                        NM_SETTING_CONNECTION_SETTING_NAME,
-                       NM_SETTING_CONNECTION_SLAVE_TYPE);
+                       NM_SETTING_CONNECTION_PORT_TYPE);
         return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
     }
 
@@ -1642,14 +1642,14 @@ after_interface_name:
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_SETTING,
                         _("A slave connection with '%s' set to '%s' cannot have a '%s' setting"),
-                        NM_SETTING_CONNECTION_SLAVE_TYPE,
+                        NM_SETTING_CONNECTION_PORT_TYPE,
                         priv->port_type ?: "",
                         has_bridge_port ? NM_SETTING_BRIDGE_PORT_SETTING_NAME
                                         : NM_SETTING_TEAM_PORT_SETTING_NAME);
             g_prefix_error(error,
                            "%s.%s: ",
                            NM_SETTING_CONNECTION_SETTING_NAME,
-                           NM_SETTING_CONNECTION_SLAVE_TYPE);
+                           NM_SETTING_CONNECTION_PORT_TYPE);
             return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
         }
     }

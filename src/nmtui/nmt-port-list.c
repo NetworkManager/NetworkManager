@@ -103,7 +103,7 @@ nmt_port_list_connection_filter(NmtEditConnectionList *list,
     s_con = nm_connection_get_setting_connection(connection);
     g_return_val_if_fail(s_con != NULL, FALSE);
 
-    port_type = nm_setting_connection_get_slave_type(s_con);
+    port_type = nm_setting_connection_get_port_type(s_con);
     if (g_strcmp0(port_type, priv->controller_type) != 0)
         return FALSE;
 

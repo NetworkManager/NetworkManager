@@ -924,7 +924,7 @@ reader_parse_master(Reader *reader, char *argument, const char *type_name, const
         connection = reader_get_connection(reader, slave, NULL, TRUE);
         s_con      = nm_connection_get_setting_connection(connection);
         g_object_set(s_con,
-                     NM_SETTING_CONNECTION_SLAVE_TYPE,
+                     NM_SETTING_CONNECTION_PORT_TYPE,
                      type_name,
                      NM_SETTING_CONNECTION_CONTROLLER,
                      master,

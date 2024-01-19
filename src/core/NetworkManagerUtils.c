@@ -897,8 +897,8 @@ nm_utils_match_connection(NMConnection *const   *connections,
             if (!nm_streq0(nm_setting_connection_get_connection_type(s_orig),
                            nm_setting_connection_get_connection_type(s_cand)))
                 continue;
-            if (!nm_streq0(nm_setting_connection_get_slave_type(s_orig),
-                           nm_setting_connection_get_slave_type(s_cand)))
+            if (!nm_streq0(nm_setting_connection_get_port_type(s_orig),
+                           nm_setting_connection_get_port_type(s_cand)))
                 continue;
 
             /* this is good enough for a match */

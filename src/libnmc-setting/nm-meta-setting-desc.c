@@ -2809,7 +2809,7 @@ _complete_fcn_connection_master(ARGS_COMPLETE_FCN)
          * slave-type. */
         s_con = nm_connection_get_setting_connection(operation_context->connection);
         if (s_con)
-            expected_type = nm_setting_connection_get_slave_type(s_con);
+            expected_type = nm_setting_connection_get_port_type(s_con);
     }
 
     text_len = text ? strlen(text) : 0;

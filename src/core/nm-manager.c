@@ -4847,7 +4847,7 @@ is_compatible_with_slave(NMConnection *master, NMConnection *slave)
     s_con = nm_connection_get_setting_connection(slave);
     g_assert(s_con);
 
-    return nm_connection_is_type(master, nm_setting_connection_get_slave_type(s_con));
+    return nm_connection_is_type(master, nm_setting_connection_get_port_type(s_con));
 }
 
 /**

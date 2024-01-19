@@ -6239,7 +6239,7 @@ test_connection_normalize_slave_type_1(void)
     g_object_set(s_con,
                  NM_SETTING_CONNECTION_CONTROLLER,
                  "master0",
-                 NM_SETTING_CONNECTION_SLAVE_TYPE,
+                 NM_SETTING_CONNECTION_PORT_TYPE,
                  "invalid-type",
                  NULL);
 
@@ -6248,7 +6248,7 @@ test_connection_normalize_slave_type_1(void)
                                            NM_CONNECTION_ERROR_INVALID_PROPERTY);
     g_assert(!nm_connection_get_setting_by_name(con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
 
-    g_object_set(s_con, NM_SETTING_CONNECTION_SLAVE_TYPE, "bridge", NULL);
+    g_object_set(s_con, NM_SETTING_CONNECTION_PORT_TYPE, "bridge", NULL);
 
     g_assert(!nm_connection_get_setting_by_name(con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
     nmtst_assert_connection_verifies_after_normalization(con,
@@ -6256,9 +6256,7 @@ test_connection_normalize_slave_type_1(void)
                                                          NM_CONNECTION_ERROR_MISSING_SETTING);
     nmtst_connection_normalize(con);
     g_assert(nm_connection_get_setting_by_name(con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
-    g_assert_cmpstr(nm_setting_connection_get_slave_type(s_con),
-                    ==,
-                    NM_SETTING_BRIDGE_SETTING_NAME);
+    g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NM_SETTING_BRIDGE_SETTING_NAME);
 }
 
 static void
@@ -6275,7 +6273,7 @@ test_connection_normalize_slave_type_2(void)
     g_object_set(s_con,
                  NM_SETTING_CONNECTION_CONTROLLER,
                  "master0",
-                 NM_SETTING_CONNECTION_SLAVE_TYPE,
+                 NM_SETTING_CONNECTION_PORT_TYPE,
                  "invalid-type",
                  NULL);
 
@@ -6284,19 +6282,17 @@ test_connection_normalize_slave_type_2(void)
                                            NM_CONNECTION_ERROR_INVALID_PROPERTY);
     g_assert(!nm_connection_get_setting_by_name(con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
 
-    g_object_set(s_con, NM_SETTING_CONNECTION_SLAVE_TYPE, NULL, NULL);
+    g_object_set(s_con, NM_SETTING_CONNECTION_PORT_TYPE, NULL, NULL);
     nm_connection_add_setting(con, nm_setting_bridge_port_new());
 
     g_assert(nm_connection_get_setting_by_name(con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
-    g_assert_cmpstr(nm_setting_connection_get_slave_type(s_con), ==, NULL);
+    g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NULL);
     nmtst_assert_connection_verifies_after_normalization(con,
                                                          NM_CONNECTION_ERROR,
                                                          NM_CONNECTION_ERROR_MISSING_PROPERTY);
     nmtst_connection_normalize(con);
     g_assert(nm_connection_get_setting_by_name(con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
-    g_assert_cmpstr(nm_setting_connection_get_slave_type(s_con),
-                    ==,
-                    NM_SETTING_BRIDGE_SETTING_NAME);
+    g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NM_SETTING_BRIDGE_SETTING_NAME);
 }
 
 static void
@@ -6576,7 +6572,7 @@ test_connection_normalize_ovs_interface_type_system(gconstpointer test_data)
         g_object_set(s_con,
                      NM_SETTING_CONNECTION_CONTROLLER,
                      "master0",
-                     NM_SETTING_CONNECTION_SLAVE_TYPE,
+                     NM_SETTING_CONNECTION_PORT_TYPE,
                      NM_SETTING_OVS_PORT_SETTING_NAME,
                      NULL);
 
@@ -6597,7 +6593,7 @@ test_connection_normalize_ovs_interface_type_system(gconstpointer test_data)
         g_object_set(s_con,
                      NM_SETTING_CONNECTION_CONTROLLER,
                      "master0",
-                     NM_SETTING_CONNECTION_SLAVE_TYPE,
+                     NM_SETTING_CONNECTION_PORT_TYPE,
                      NM_SETTING_OVS_PORT_SETTING_NAME,
                      NULL);
 
@@ -6620,7 +6616,7 @@ test_connection_normalize_ovs_interface_type_system(gconstpointer test_data)
         g_object_set(s_con,
                      NM_SETTING_CONNECTION_CONTROLLER,
                      "master0",
-                     NM_SETTING_CONNECTION_SLAVE_TYPE,
+                     NM_SETTING_CONNECTION_PORT_TYPE,
                      NM_SETTING_OVS_PORT_SETTING_NAME,
                      NULL);
 
@@ -6638,7 +6634,7 @@ test_connection_normalize_ovs_interface_type_system(gconstpointer test_data)
         g_object_set(s_con,
                      NM_SETTING_CONNECTION_CONTROLLER,
                      "master0",
-                     NM_SETTING_CONNECTION_SLAVE_TYPE,
+                     NM_SETTING_CONNECTION_PORT_TYPE,
                      NM_SETTING_OVS_PORT_SETTING_NAME,
                      NULL);
 
@@ -6667,7 +6663,7 @@ test_connection_normalize_ovs_interface_type_system(gconstpointer test_data)
                                              NM_SETTING_WIRED_SETTING_NAME,
                                              NM_SETTING_OVS_INTERFACE_SETTING_NAME);
         g_assert(s_con == nm_connection_get_setting_connection(con));
-        g_assert_cmpstr(nm_setting_connection_get_slave_type(s_con),
+        g_assert_cmpstr(nm_setting_connection_get_port_type(s_con),
                         ==,
                         NM_SETTING_OVS_PORT_SETTING_NAME);
         break;
@@ -6675,7 +6671,7 @@ test_connection_normalize_ovs_interface_type_system(gconstpointer test_data)
         g_object_set(s_con,
                      NM_SETTING_CONNECTION_CONTROLLER,
                      "master0",
-                     NM_SETTING_CONNECTION_SLAVE_TYPE,
+                     NM_SETTING_CONNECTION_PORT_TYPE,
                      NM_SETTING_BRIDGE_SETTING_NAME,
                      NULL);
 
@@ -6691,7 +6687,7 @@ test_connection_normalize_ovs_interface_type_system(gconstpointer test_data)
         g_object_set(s_con,
                      NM_SETTING_CONNECTION_CONTROLLER,
                      "master0",
-                     NM_SETTING_CONNECTION_SLAVE_TYPE,
+                     NM_SETTING_CONNECTION_PORT_TYPE,
                      NM_SETTING_BRIDGE_SETTING_NAME,
                      NULL);
 
@@ -6750,7 +6746,7 @@ test_connection_normalize_ovs_interface_type_ovs_interface(gconstpointer test_da
                                              NM_SETTING_OVS_INTERFACE_SETTING_NAME);
         g_assert(s_con == nm_connection_get_setting_connection(con));
         g_assert(s_ovs_if == nm_connection_get_setting_ovs_interface(con));
-        g_assert_cmpstr(nm_setting_connection_get_slave_type(s_con),
+        g_assert_cmpstr(nm_setting_connection_get_port_type(s_con),
                         ==,
                         NM_SETTING_OVS_PORT_SETTING_NAME);
         g_assert_cmpstr(nm_setting_ovs_interface_get_interface_type(s_ovs_if), ==, "internal");
@@ -6759,7 +6755,7 @@ test_connection_normalize_ovs_interface_type_ovs_interface(gconstpointer test_da
         g_object_set(s_con,
                      NM_SETTING_CONNECTION_CONTROLLER,
                      "master0",
-                     NM_SETTING_CONNECTION_SLAVE_TYPE,
+                     NM_SETTING_CONNECTION_PORT_TYPE,
                      NM_SETTING_OVS_PORT_SETTING_NAME,
                      NULL);
         nmtst_assert_connection_verifies_after_normalization(con,
@@ -6774,7 +6770,7 @@ test_connection_normalize_ovs_interface_type_ovs_interface(gconstpointer test_da
                                              NM_SETTING_OVS_INTERFACE_SETTING_NAME);
         g_assert(s_con == nm_connection_get_setting_connection(con));
         g_assert(s_ovs_if == nm_connection_get_setting_ovs_interface(con));
-        g_assert_cmpstr(nm_setting_connection_get_slave_type(s_con),
+        g_assert_cmpstr(nm_setting_connection_get_port_type(s_con),
                         ==,
                         NM_SETTING_OVS_PORT_SETTING_NAME);
         g_assert_cmpstr(nm_setting_ovs_interface_get_interface_type(s_ovs_if), ==, "internal");
@@ -6794,7 +6790,7 @@ test_connection_normalize_ovs_interface_type_ovs_interface(gconstpointer test_da
                                              NM_SETTING_OVS_INTERFACE_SETTING_NAME);
         g_assert(s_con == nm_connection_get_setting_connection(con));
         g_assert(s_ovs_if == nm_connection_get_setting_ovs_interface(con));
-        g_assert_cmpstr(nm_setting_connection_get_slave_type(s_con),
+        g_assert_cmpstr(nm_setting_connection_get_port_type(s_con),
                         ==,
                         NM_SETTING_OVS_PORT_SETTING_NAME);
         g_assert_cmpstr(nm_setting_ovs_interface_get_interface_type(s_ovs_if), ==, "internal");
@@ -6803,7 +6799,7 @@ test_connection_normalize_ovs_interface_type_ovs_interface(gconstpointer test_da
         g_object_set(s_con,
                      NM_SETTING_CONNECTION_CONTROLLER,
                      "master0",
-                     NM_SETTING_CONNECTION_SLAVE_TYPE,
+                     NM_SETTING_CONNECTION_PORT_TYPE,
                      NM_SETTING_OVS_PORT_SETTING_NAME,
                      NULL);
         g_object_set(s_ovs_if, NM_SETTING_OVS_INTERFACE_TYPE, "internal", NULL);
@@ -6826,7 +6822,7 @@ test_connection_normalize_ovs_interface_type_ovs_interface(gconstpointer test_da
         g_object_set(s_con,
                      NM_SETTING_CONNECTION_CONTROLLER,
                      "master0",
-                     NM_SETTING_CONNECTION_SLAVE_TYPE,
+                     NM_SETTING_CONNECTION_PORT_TYPE,
                      NM_SETTING_OVS_PORT_SETTING_NAME,
                      NULL);
         g_object_set(s_ovs_if, NM_SETTING_OVS_INTERFACE_TYPE, "internal", NULL);
@@ -6840,7 +6836,7 @@ test_connection_normalize_ovs_interface_type_ovs_interface(gconstpointer test_da
                                              NM_SETTING_OVS_INTERFACE_SETTING_NAME);
         g_assert(s_con == nm_connection_get_setting_connection(con));
         g_assert(s_ovs_if == nm_connection_get_setting_ovs_interface(con));
-        g_assert_cmpstr(nm_setting_connection_get_slave_type(s_con),
+        g_assert_cmpstr(nm_setting_connection_get_port_type(s_con),
                         ==,
                         NM_SETTING_OVS_PORT_SETTING_NAME);
         g_assert_cmpstr(nm_setting_ovs_interface_get_interface_type(s_ovs_if), ==, "internal");
@@ -6849,7 +6845,7 @@ test_connection_normalize_ovs_interface_type_ovs_interface(gconstpointer test_da
         g_object_set(s_con,
                      NM_SETTING_CONNECTION_CONTROLLER,
                      "master0",
-                     NM_SETTING_CONNECTION_SLAVE_TYPE,
+                     NM_SETTING_CONNECTION_PORT_TYPE,
                      NM_SETTING_OVS_PORT_SETTING_NAME,
                      NULL);
         g_object_set(s_ovs_if, NM_SETTING_OVS_INTERFACE_TYPE, "system", NULL);
@@ -6861,7 +6857,7 @@ test_connection_normalize_ovs_interface_type_ovs_interface(gconstpointer test_da
         g_object_set(s_con,
                      NM_SETTING_CONNECTION_CONTROLLER,
                      "master0",
-                     NM_SETTING_CONNECTION_SLAVE_TYPE,
+                     NM_SETTING_CONNECTION_PORT_TYPE,
                      NM_SETTING_OVS_PORT_SETTING_NAME,
                      NULL);
         g_object_set(s_ovs_if, NM_SETTING_OVS_INTERFACE_TYPE, "bogus", NULL);
@@ -6873,7 +6869,7 @@ test_connection_normalize_ovs_interface_type_ovs_interface(gconstpointer test_da
         g_object_set(s_con,
                      NM_SETTING_CONNECTION_CONTROLLER,
                      "master0",
-                     NM_SETTING_CONNECTION_SLAVE_TYPE,
+                     NM_SETTING_CONNECTION_PORT_TYPE,
                      NM_SETTING_OVS_PORT_SETTING_NAME,
                      NULL);
         g_object_set(s_ovs_if, NM_SETTING_OVS_INTERFACE_TYPE, "patch", NULL);
@@ -6885,7 +6881,7 @@ test_connection_normalize_ovs_interface_type_ovs_interface(gconstpointer test_da
         g_object_set(s_con,
                      NM_SETTING_CONNECTION_CONTROLLER,
                      "master0",
-                     NM_SETTING_CONNECTION_SLAVE_TYPE,
+                     NM_SETTING_CONNECTION_PORT_TYPE,
                      NM_SETTING_OVS_PORT_SETTING_NAME,
                      NULL);
         g_object_set(s_ovs_if, NM_SETTING_OVS_INTERFACE_TYPE, "patch", NULL);
@@ -6898,7 +6894,7 @@ test_connection_normalize_ovs_interface_type_ovs_interface(gconstpointer test_da
         g_object_set(s_con,
                      NM_SETTING_CONNECTION_CONTROLLER,
                      "master0",
-                     NM_SETTING_CONNECTION_SLAVE_TYPE,
+                     NM_SETTING_CONNECTION_PORT_TYPE,
                      NM_SETTING_OVS_PORT_SETTING_NAME,
                      NM_SETTING_CONNECTION_INTERFACE_NAME,
                      "adsf",
@@ -6913,7 +6909,7 @@ test_connection_normalize_ovs_interface_type_ovs_interface(gconstpointer test_da
         g_object_set(s_con,
                      NM_SETTING_CONNECTION_CONTROLLER,
                      "master0",
-                     NM_SETTING_CONNECTION_SLAVE_TYPE,
+                     NM_SETTING_CONNECTION_PORT_TYPE,
                      NM_SETTING_OVS_PORT_SETTING_NAME,
                      NM_SETTING_CONNECTION_INTERFACE_NAME,
                      "adsf",
@@ -6933,7 +6929,7 @@ test_connection_normalize_ovs_interface_type_ovs_interface(gconstpointer test_da
                                              NM_SETTING_OVS_PATCH_SETTING_NAME);
         g_assert(s_con == nm_connection_get_setting_connection(con));
         g_assert(s_ovs_if == nm_connection_get_setting_ovs_interface(con));
-        g_assert_cmpstr(nm_setting_connection_get_slave_type(s_con),
+        g_assert_cmpstr(nm_setting_connection_get_port_type(s_con),
                         ==,
                         NM_SETTING_OVS_PORT_SETTING_NAME);
         g_assert_cmpstr(nm_setting_ovs_interface_get_interface_type(s_ovs_if), ==, "patch");
@@ -10705,7 +10701,7 @@ test_connection_ovs_ifname(gconstpointer test_data)
         g_object_set(s_con,
                      NM_SETTING_CONNECTION_CONTROLLER,
                      "master0",
-                     NM_SETTING_CONNECTION_SLAVE_TYPE,
+                     NM_SETTING_CONNECTION_PORT_TYPE,
                      NM_SETTING_OVS_BRIDGE_SETTING_NAME,
                      NULL);
 
@@ -10723,7 +10719,7 @@ test_connection_ovs_ifname(gconstpointer test_data)
         g_object_set(s_con,
                      NM_SETTING_CONNECTION_CONTROLLER,
                      "master0",
-                     NM_SETTING_CONNECTION_SLAVE_TYPE,
+                     NM_SETTING_CONNECTION_PORT_TYPE,
                      NM_SETTING_OVS_PORT_SETTING_NAME,
                      NULL);
 
@@ -10750,7 +10746,7 @@ test_connection_ovs_ifname(gconstpointer test_data)
         g_object_set(s_con,
                      NM_SETTING_CONNECTION_CONTROLLER,
                      "master0",
-                     NM_SETTING_CONNECTION_SLAVE_TYPE,
+                     NM_SETTING_CONNECTION_PORT_TYPE,
                      NM_SETTING_OVS_PORT_SETTING_NAME,
                      NULL);
 
@@ -10766,7 +10762,7 @@ test_connection_ovs_ifname(gconstpointer test_data)
         g_object_set(s_con,
                      NM_SETTING_CONNECTION_CONTROLLER,
                      "master0",
-                     NM_SETTING_CONNECTION_SLAVE_TYPE,
+                     NM_SETTING_CONNECTION_PORT_TYPE,
                      NM_SETTING_OVS_PORT_SETTING_NAME,
                      NULL);
 
@@ -10792,7 +10788,7 @@ test_connection_ovs_ifname(gconstpointer test_data)
         g_object_set(s_con,
                      NM_SETTING_CONNECTION_CONTROLLER,
                      "master0",
-                     NM_SETTING_CONNECTION_SLAVE_TYPE,
+                     NM_SETTING_CONNECTION_PORT_TYPE,
                      NM_SETTING_OVS_PORT_SETTING_NAME,
                      NULL);
 

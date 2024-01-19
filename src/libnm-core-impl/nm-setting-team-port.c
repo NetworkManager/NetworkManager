@@ -323,7 +323,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
             return FALSE;
         }
 
-        slave_type = nm_setting_connection_get_slave_type(s_con);
+        slave_type = nm_setting_connection_get_port_type(s_con);
         if (slave_type && strcmp(slave_type, NM_SETTING_TEAM_SETTING_NAME)) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
@@ -336,7 +336,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
             g_prefix_error(error,
                            "%s.%s: ",
                            NM_SETTING_CONNECTION_SETTING_NAME,
-                           NM_SETTING_CONNECTION_SLAVE_TYPE);
+                           NM_SETTING_CONNECTION_PORT_TYPE);
             return FALSE;
         }
     }

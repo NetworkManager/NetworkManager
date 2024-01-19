@@ -385,7 +385,7 @@ nmt_editor_constructed(GObject *object)
     add_sections_for_page(editor, grid, page);
     nmt_editor_grid_append(grid, NULL, nmt_newt_separator_new(), NULL);
 
-    port_type = nm_setting_connection_get_slave_type(s_con);
+    port_type = nm_setting_connection_get_port_type(s_con);
     if (port_type) {
         if (!strcmp(port_type, NM_SETTING_BRIDGE_SETTING_NAME))
             add_sections_for_page(editor, grid, nmt_page_bridge_port_new(priv->edit_connection));

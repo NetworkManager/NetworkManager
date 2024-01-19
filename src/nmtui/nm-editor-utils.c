@@ -449,7 +449,7 @@ nm_editor_utils_create_connection(GType type, NMConnection *controller, NMClient
                  !type_data->no_autoconnect,
                  NM_SETTING_CONNECTION_CONTROLLER,
                  controller_uuid,
-                 NM_SETTING_CONNECTION_SLAVE_TYPE,
+                 NM_SETTING_CONNECTION_PORT_TYPE,
                  controller_setting_type,
                  NM_SETTING_CONNECTION_INTERFACE_NAME,
                  ifname,

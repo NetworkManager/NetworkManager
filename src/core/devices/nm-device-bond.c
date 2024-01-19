@@ -250,7 +250,7 @@ controller_update_port_connection(NMDevice     *self,
     g_object_set(nm_connection_get_setting_connection(connection),
                  NM_SETTING_CONNECTION_CONTROLLER,
                  nm_connection_get_uuid(applied_connection),
-                 NM_SETTING_CONNECTION_SLAVE_TYPE,
+                 NM_SETTING_CONNECTION_PORT_TYPE,
                  NM_SETTING_BOND_SETTING_NAME,
                  NULL);
     return TRUE;

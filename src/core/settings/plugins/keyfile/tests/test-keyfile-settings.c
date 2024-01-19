@@ -2048,7 +2048,7 @@ test_write_bridge_component(void)
                  NM_SETTING_WIRED_SETTING_NAME,
                  NM_SETTING_CONNECTION_CONTROLLER,
                  "br0",
-                 NM_SETTING_CONNECTION_SLAVE_TYPE,
+                 NM_SETTING_CONNECTION_PORT_TYPE,
                  NM_SETTING_BRIDGE_SETTING_NAME,
                  NULL);
 
@@ -2359,7 +2359,7 @@ test_read_minimal_slave(void)
     g_object_set(s_con,
                  NM_SETTING_CONNECTION_CONTROLLER,
                  "br0",
-                 NM_SETTING_CONNECTION_SLAVE_TYPE,
+                 NM_SETTING_CONNECTION_PORT_TYPE,
                  "bridge",
                  NULL);
     nmtst_connection_normalize(con_archetype);
