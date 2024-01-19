@@ -790,7 +790,7 @@ nm_setting_connection_is_slave_type(NMSettingConnection *setting, const char *ty
 {
     g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), FALSE);
 
-    return !g_strcmp0(NM_SETTING_CONNECTION_GET_PRIVATE(setting)->port_type, type);
+    return nm_streq0(NM_SETTING_CONNECTION_GET_PRIVATE(setting)->port_type, type);
 }
 
 /**

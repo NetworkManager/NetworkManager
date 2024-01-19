@@ -2260,22 +2260,26 @@ write_connection_setting(NMSettingConnection *s_con, shvarFile *ifcfg, const cha
             master       = NULL;
         }
 
-        if (nm_setting_connection_is_slave_type(s_con, NM_SETTING_BOND_SETTING_NAME)) {
+        if (nm_streq0(nm_setting_connection_get_port_type(s_con), NM_SETTING_BOND_SETTING_NAME)) {
             svSetValueStr(ifcfg, "MASTER_UUID", master);
             svSetValueStr(ifcfg, "MASTER", master_iface);
             svSetValueStr(ifcfg, "SLAVE", "yes");
-        } else if (nm_setting_connection_is_slave_type(s_con, NM_SETTING_BRIDGE_SETTING_NAME)) {
+        } else if (nm_streq0(nm_setting_connection_get_port_type(s_con),
+                             NM_SETTING_BRIDGE_SETTING_NAME)) {
             svSetValueStr(ifcfg, "BRIDGE_UUID", master);
             svSetValueStr(ifcfg, "BRIDGE", master_iface);
-        } else if (nm_setting_connection_is_slave_type(s_con, NM_SETTING_TEAM_SETTING_NAME)) {
+        } else if (nm_streq0(nm_setting_connection_get_port_type(s_con),
+                             NM_SETTING_TEAM_SETTING_NAME)) {
             svSetValueStr(ifcfg, "TEAM_MASTER_UUID", master);
             svSetValueStr(ifcfg, "TEAM_MASTER", master_iface);
             if (NM_IN_STRSET(type, NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_VLAN_SETTING_NAME))
                 svUnsetValue(ifcfg, "TYPE");
-        } else if (nm_setting_connection_is_slave_type(s_con, NM_SETTING_OVS_PORT_SETTING_NAME)) {
+        } else if (nm_streq0(nm_setting_connection_get_port_type(s_con),
+                             NM_SETTING_OVS_PORT_SETTING_NAME)) {
             svSetValueStr(ifcfg, "OVS_PORT_UUID", master);
             svSetValueStr(ifcfg, "OVS_PORT", master_iface);
-        } else if (nm_setting_connection_is_slave_type(s_con, NM_SETTING_VRF_SETTING_NAME)) {
+        } else if (nm_streq0(nm_setting_connection_get_port_type(s_con),
+                             NM_SETTING_VRF_SETTING_NAME)) {
             svSetValueStr(ifcfg, "VRF_UUID", master);
             svSetValueStr(ifcfg, "VRF", master_iface);
         } else {
@@ -2287,7 +2291,7 @@ write_connection_setting(NMSettingConnection *s_con, shvarFile *ifcfg, const cha
     if (nm_streq0(type, NM_SETTING_TEAM_SETTING_NAME))
         svSetValueStr(ifcfg, "DEVICETYPE", TYPE_TEAM);
     else if (master_iface
-             && nm_setting_connection_is_slave_type(s_con, NM_SETTING_TEAM_SETTING_NAME))
+             && nm_streq0(nm_setting_connection_get_port_type(s_con), NM_SETTING_TEAM_SETTING_NAME))
         svSetValueStr(ifcfg, "DEVICETYPE", TYPE_TEAM_PORT);
 
     /* secondary connection UUIDs */
