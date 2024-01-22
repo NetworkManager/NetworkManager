@@ -4664,7 +4664,6 @@ test_setting_metadata(void)
             } else if (sip->property_type->direct_type == NM_VALUE_TYPE_ENUM) {
                 const GParamSpecEnum *pspec;
 
-                g_assert(sip->property_type == &nm_sett_info_propert_type_direct_enum);
                 g_assert(g_variant_type_equal(sip->property_type->dbus_type, "i"));
                 g_assert(sip->param_spec);
                 g_assert(g_type_is_a(sip->param_spec->value_type, G_TYPE_ENUM));

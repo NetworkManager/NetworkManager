@@ -60,6 +60,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingConnection,
                              PROP_SLAVE_TYPE,
                              PROP_PORT_TYPE,
                              PROP_AUTOCONNECT_SLAVES,
+                             PROP_AUTOCONNECT_PORTS,
                              PROP_SECONDARIES,
                              PROP_GATEWAY_PING_TIMEOUT,
                              PROP_METERED,
@@ -87,7 +88,7 @@ typedef struct {
     char       *zone;
     char       *mud_url;
     guint64     timestamp;
-    int         autoconnect_slaves;
+    int         autoconnect_ports;
     int         metered;
     gint32      autoconnect_priority;
     gint32      autoconnect_retries;
@@ -828,6 +829,25 @@ nm_setting_connection_get_wait_activation_delay(NMSettingConnection *setting)
 }
 
 /**
+ * nm_setting_connection_get_autoconnect_ports:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns the #NMSettingConnection:autoconnect-ports property of the connection.
+ *
+ * Returns: whether ports of the connection should be activated together
+ *          with the connection.
+ *
+ * Since: 1.46
+ **/
+NMTernary
+nm_setting_connection_get_autoconnect_ports(NMSettingConnection *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), NM_TERNARY_DEFAULT);
+
+    return NM_SETTING_CONNECTION_GET_PRIVATE(setting)->autoconnect_ports;
+}
+
+/**
  * nm_setting_connection_get_autoconnect_slaves:
  * @setting: the #NMSettingConnection
  *
@@ -837,14 +857,15 @@ nm_setting_connection_get_wait_activation_delay(NMSettingConnection *setting)
  *          with the connection.
  *
  * Since: 1.2
+ *
+ * Deprecated: 1.46. Use nm_setting_connection_get_autoconnect_ports() instead, this
+ * is just an alias.
  **/
 NMSettingConnectionAutoconnectSlaves
 nm_setting_connection_get_autoconnect_slaves(NMSettingConnection *setting)
 {
-    g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting),
-                         NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT);
-
-    return NM_SETTING_CONNECTION_GET_PRIVATE(setting)->autoconnect_slaves;
+    return (NMSettingConnectionAutoconnectSlaves) nm_setting_connection_get_autoconnect_ports(
+        setting);
 }
 
 GArray *
@@ -1911,6 +1932,24 @@ _nm_setting_connection_slave_type_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARG
     return TRUE;
 }
 
+gboolean
+_nm_setting_connection_autoconnect_slaves_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+{
+    gint32 autoconnect;
+
+    if (!_nm_setting_use_legacy_property(setting,
+                                         connection_dict,
+                                         NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES,
+                                         NM_SETTING_CONNECTION_AUTOCONNECT_PORTS)) {
+        *out_is_modified = FALSE;
+        return TRUE;
+    }
+    autoconnect = g_variant_get_int32(value);
+
+    g_object_set(setting, NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES, autoconnect, NULL);
+    return TRUE;
+}
+
 GVariant *
 _nm_setting_connection_port_type_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
@@ -1949,6 +1988,45 @@ _nm_setting_connection_port_type_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS
     str = g_variant_get_string(value, NULL);
 
     g_object_set(setting, NM_SETTING_CONNECTION_PORT_TYPE, str, NULL);
+    return TRUE;
+}
+
+GVariant *
+_nm_setting_connection_autoconnect_ports_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+{
+    NMTernary autoconnect;
+
+    /* FIXME: `autoconnect-ports` is an alias of `autoconnect-slaves` property.
+     * Serializing the property to the clients would break them as they won't
+     * be able to drop it if they are not aware of the existance of
+     * `autoconnect-ports`. In order to give them time to adapt their code,
+     * NetworkManager is not serializing `autoconnect-ports` on DBus.
+     */
+    if (_nm_utils_is_manager_process) {
+        return NULL;
+    }
+
+    autoconnect = nm_setting_connection_get_autoconnect_ports(NM_SETTING_CONNECTION(setting));
+
+    return g_variant_new_int32(autoconnect);
+}
+
+gboolean
+_nm_setting_connection_autoconnect_ports_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+{
+    NMTernary autoconnect;
+
+    /* Ignore 'autoconnect-ports' if we're going to process 'autoconnect-slaves' */
+    if (_nm_setting_use_legacy_property(setting,
+                                        connection_dict,
+                                        NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES,
+                                        NM_SETTING_CONNECTION_AUTOCONNECT_PORTS)) {
+        *out_is_modified = FALSE;
+        return TRUE;
+    }
+    autoconnect = g_variant_get_int32(value);
+
+    g_object_set(setting, NM_SETTING_CONNECTION_AUTOCONNECT_PORTS, autoconnect, NULL);
     return TRUE;
 }
 
@@ -2566,6 +2644,8 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * determine the real value. If it is default as well, this fallbacks to 0.
      *
      * Since: 1.2
+     *
+     * Deprecated 1.46. Use #NMSettingConnection:autoconnect-ports instead, this is just an alias.
      **/
     /* ---ifcfg-rh---
      * property: autoconnect-slaves
@@ -2575,16 +2655,60 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *   when this connection is activated.
      * ---end---
      */
-    _nm_setting_property_define_direct_enum(properties_override,
-                                            obj_properties,
-                                            NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES,
-                                            PROP_AUTOCONNECT_SLAVES,
-                                            NM_TYPE_SETTING_CONNECTION_AUTOCONNECT_SLAVES,
-                                            NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT,
-                                            NM_SETTING_PARAM_FUZZY_IGNORE,
-                                            NULL,
-                                            NMSettingConnectionPrivate,
-                                            autoconnect_slaves);
+    prop_idx = _nm_setting_property_define_direct_enum(
+        properties_override,
+        obj_properties,
+        NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES,
+        PROP_AUTOCONNECT_SLAVES,
+        NM_TYPE_SETTING_CONNECTION_AUTOCONNECT_SLAVES,
+        NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT,
+        NM_SETTING_PARAM_FUZZY_IGNORE,
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_INT32,
+                                       .direct_type = NM_VALUE_TYPE_ENUM,
+                                       .compare_fcn = _nm_setting_property_compare_fcn_direct,
+                                       .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_direct,
+                                       .from_dbus_fcn =
+                                           _nm_setting_connection_autoconnect_slaves_from_dbus, ),
+        NMSettingConnectionPrivate,
+        autoconnect_ports,
+        .is_deprecated           = 1,
+        .direct_is_aliased_field = TRUE, );
+
+    /**
+     * NMSettingConnection:autoconnect-ports:
+     *
+     * Whether or not ports of this connection should be automatically brought up
+     * when NetworkManager activates this connection. This only has a real effect
+     * for controller connections. The properties #NMSettingConnection:autoconnect,
+     * #NMSettingConnection:autoconnect-priority and #NMSettingConnection:autoconnect-retries
+     * are unrelated to this setting.
+     * The permitted values are: 0: leave port connections untouched,
+     * 1: activate all the port connections with this connection, -1: default.
+     * If -1 (default) is set, global connection.autoconnect-ports is read to
+     * determine the real value. If it is default as well, this fallbacks to 0.
+     *
+     * Since: 1.46
+     **/
+    _nm_setting_property_define_direct_enum(
+        properties_override,
+        obj_properties,
+        NM_SETTING_CONNECTION_AUTOCONNECT_PORTS,
+        PROP_AUTOCONNECT_PORTS,
+        NM_TYPE_TERNARY,
+        NM_TERNARY_DEFAULT,
+        NM_SETTING_PARAM_FUZZY_IGNORE,
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(
+            G_VARIANT_TYPE_INT32,
+            .direct_type   = NM_VALUE_TYPE_ENUM,
+            .compare_fcn   = _nm_setting_property_compare_fcn_direct,
+            .to_dbus_fcn   = _nm_setting_connection_autoconnect_ports_to_dbus,
+            .from_dbus_fcn = _nm_setting_connection_autoconnect_ports_from_dbus, ),
+        NMSettingConnectionPrivate,
+        autoconnect_ports,
+        .direct_also_notify = obj_properties[PROP_AUTOCONNECT_SLAVES]);
+
+    nm_g_array_index(properties_override, NMSettInfoProperty, prop_idx).direct_also_notify =
+        obj_properties[PROP_AUTOCONNECT_PORTS];
 
     /**
      * NMSettingConnection:secondaries:

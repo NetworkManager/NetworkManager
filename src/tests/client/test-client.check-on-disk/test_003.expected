@@ -182,12 +182,12 @@ id
 path
 uuid
 <<<
-size: 5268
+size: 5321
 location: src/tests/client/test-client.py:test_003()/14
 cmd: $NMCLI con s con-gsm1
 lang: C
 returncode: 0
-stdout: 5135 bytes
+stdout: 5188 bytes
 >>>
 connection.id:                          con-gsm1
 connection.uuid:                        UUID-con-gsm1-REPLACED-REPLACED-REPL
@@ -207,6 +207,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     unknown
@@ -303,12 +304,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 5306
+size: 5359
 location: src/tests/client/test-client.py:test_003()/15
 cmd: $NMCLI con s con-gsm1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5163 bytes
+stdout: 5216 bytes
 >>>
 connection.id:                          con-gsm1
 connection.uuid:                        UUID-con-gsm1-REPLACED-REPLACED-REPL
@@ -328,6 +329,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     nieznane
@@ -424,14 +426,14 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 509
+size: 512
 location: src/tests/client/test-client.py:test_003()/16
 cmd: $NMCLI -g all con s con-gsm1
 lang: C
 returncode: 0
-stdout: 370 bytes
+stdout: 373 bytes
 >>>
-connection:con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:::::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
+connection:con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:::::::-1:-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::: :0::::-1:0::-1:no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::-1:no:no:no:yes:-1:-1:default:0:auto::::0:yes::0x0:-1:
 serial:5:8:even:1:100
@@ -439,14 +441,14 @@ gsm:no:::<hidden>:0:xyz.con-gsm1::<hidden>:0:no::::auto:no:
 proxy:none:no::
 
 <<<
-size: 519
+size: 522
 location: src/tests/client/test-client.py:test_003()/17
 cmd: $NMCLI -g all con s con-gsm1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 370 bytes
+stdout: 373 bytes
 >>>
-connection:con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:::::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
+connection:con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:::::::-1:-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::: :0::::-1:0::-1:no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::-1:no:no:no:yes:-1:-1:default:0:auto::::0:yes::0x0:-1:
 serial:5:8:even:1:100
@@ -454,12 +456,12 @@ gsm:no:::<hidden>:0:xyz.con-gsm1::<hidden>:0:no::::auto:no:
 proxy:none:no::
 
 <<<
-size: 5256
+size: 5309
 location: src/tests/client/test-client.py:test_003()/18
 cmd: $NMCLI con s con-gsm2
 lang: C
 returncode: 0
-stdout: 5123 bytes
+stdout: 5176 bytes
 >>>
 connection.id:                          con-gsm2
 connection.uuid:                        UUID-con-gsm2-REPLACED-REPLACED-REPL
@@ -479,6 +481,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     unknown
@@ -575,12 +578,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 5294
+size: 5347
 location: src/tests/client/test-client.py:test_003()/19
 cmd: $NMCLI con s con-gsm2
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5151 bytes
+stdout: 5204 bytes
 >>>
 connection.id:                          con-gsm2
 connection.uuid:                        UUID-con-gsm2-REPLACED-REPLACED-REPL
@@ -600,6 +603,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     nieznane
@@ -696,14 +700,14 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 497
+size: 500
 location: src/tests/client/test-client.py:test_003()/20
 cmd: $NMCLI -g all con s con-gsm2
 lang: C
 returncode: 0
-stdout: 358 bytes
+stdout: 361 bytes
 >>>
-connection:con-gsm2:UUID-con-gsm2-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:::::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
+connection:con-gsm2:UUID-con-gsm2-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:::::::-1:-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::: :0::::-1:0::-1:no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::-1:no:no:no:yes:-1:-1:default:0:auto::::0:yes::0x0:-1:
 serial:5:8:even:1:100
@@ -711,14 +715,14 @@ gsm:no:::<hidden>:0:::<hidden>:0:no::::auto:no:
 proxy:none:no::
 
 <<<
-size: 507
+size: 510
 location: src/tests/client/test-client.py:test_003()/21
 cmd: $NMCLI -g all con s con-gsm2
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 358 bytes
+stdout: 361 bytes
 >>>
-connection:con-gsm2:UUID-con-gsm2-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:::::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
+connection:con-gsm2:UUID-con-gsm2-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:::::::-1:-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::: :0::::-1:0::-1:no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::-1:no:no:no:yes:-1:-1:default:0:auto::::0:yes::0x0:-1:
 serial:5:8:even:1:100
@@ -726,12 +730,12 @@ gsm:no:::<hidden>:0:::<hidden>:0:no::::auto:no:
 proxy:none:no::
 
 <<<
-size: 5256
+size: 5309
 location: src/tests/client/test-client.py:test_003()/22
 cmd: $NMCLI con s con-gsm3
 lang: C
 returncode: 0
-stdout: 5123 bytes
+stdout: 5176 bytes
 >>>
 connection.id:                          con-gsm3
 connection.uuid:                        UUID-con-gsm3-REPLACED-REPLACED-REPL
@@ -751,6 +755,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     unknown
@@ -847,12 +852,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 5294
+size: 5347
 location: src/tests/client/test-client.py:test_003()/23
 cmd: $NMCLI con s con-gsm3
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5151 bytes
+stdout: 5204 bytes
 >>>
 connection.id:                          con-gsm3
 connection.uuid:                        UUID-con-gsm3-REPLACED-REPLACED-REPL
@@ -872,6 +877,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     nieznane
@@ -968,14 +974,14 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 498
+size: 501
 location: src/tests/client/test-client.py:test_003()/24
 cmd: $NMCLI -g all con s con-gsm3
 lang: C
 returncode: 0
-stdout: 359 bytes
+stdout: 362 bytes
 >>>
-connection:con-gsm3:UUID-con-gsm3-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:::::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
+connection:con-gsm3:UUID-con-gsm3-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:::::::-1:-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::: :0::::-1:0::-1:no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::-1:no:no:no:yes:-1:-1:default:0:auto::::0:yes::0x0:-1:
 serial:5:8:even:1:100
@@ -983,14 +989,14 @@ gsm:no:::<hidden>:0: ::<hidden>:0:no::::auto:no:
 proxy:none:no::
 
 <<<
-size: 508
+size: 511
 location: src/tests/client/test-client.py:test_003()/25
 cmd: $NMCLI -g all con s con-gsm3
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 359 bytes
+stdout: 362 bytes
 >>>
-connection:con-gsm3:UUID-con-gsm3-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:::::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
+connection:con-gsm3:UUID-con-gsm3-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:::::::-1:-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::: :0::::-1:0::-1:no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::-1:no:no:no:yes:-1:-1:default:0:auto::::0:yes::0x0:-1:
 serial:5:8:even:1:100
@@ -1138,12 +1144,12 @@ UUID                                  NAME
 UUID-ethernet-REPLACED-REPLACED-REPL  ethernet 
 
 <<<
-size: 5008
+size: 5061
 location: src/tests/client/test-client.py:test_003()/37
 cmd: $NMCLI -f ALL con s ethernet
 lang: C
 returncode: 0
-stdout: 4868 bytes
+stdout: 4921 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -1163,6 +1169,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     unknown
@@ -1253,12 +1260,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 5043
+size: 5096
 location: src/tests/client/test-client.py:test_003()/38
 cmd: $NMCLI -f ALL con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4893 bytes
+stdout: 4946 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -1278,6 +1285,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     nieznane
@@ -1388,12 +1396,12 @@ stdout: 51 bytes
 GENERAL.STATE:                          aktywowano
 
 <<<
-size: 5710
+size: 5763
 location: src/tests/client/test-client.py:test_003()/41
 cmd: $NMCLI con s ethernet
 lang: C
 returncode: 0
-stdout: 5577 bytes
+stdout: 5630 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -1413,6 +1421,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     unknown
@@ -1516,12 +1525,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5749
+size: 5802
 location: src/tests/client/test-client.py:test_003()/42
 cmd: $NMCLI con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5606 bytes
+stdout: 5659 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -1541,6 +1550,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     nieznane
@@ -2130,12 +2140,12 @@ UUID                                  NAME
 UUID-ethernet-REPLACED-REPLACED-REPL  ethernet 
 
 <<<
-size: 5008
+size: 5061
 location: src/tests/client/test-client.py:test_003()/62
 cmd: $NMCLI -f ALL con s ethernet
 lang: C
 returncode: 0
-stdout: 4868 bytes
+stdout: 4921 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -2155,6 +2165,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     unknown
@@ -2245,12 +2256,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 5043
+size: 5096
 location: src/tests/client/test-client.py:test_003()/63
 cmd: $NMCLI -f ALL con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4893 bytes
+stdout: 4946 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -2270,6 +2281,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     nieznane
@@ -2384,12 +2396,12 @@ GENERAL.STATE:                          aktywowano
 GENERAL.STATE:                          aktywowano
 
 <<<
-size: 6420
+size: 6473
 location: src/tests/client/test-client.py:test_003()/66
 cmd: $NMCLI con s ethernet
 lang: C
 returncode: 0
-stdout: 6287 bytes
+stdout: 6340 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -2409,6 +2421,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     unknown
@@ -2526,12 +2539,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 6463
+size: 6516
 location: src/tests/client/test-client.py:test_003()/67
 cmd: $NMCLI con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6320 bytes
+stdout: 6373 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -2551,6 +2564,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     nieznane
@@ -3176,12 +3190,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 6423
+size: 6476
 location: src/tests/client/test-client.py:test_003()/84
 cmd: $NMCLI con s ethernet
 lang: C
 returncode: 0
-stdout: 6290 bytes
+stdout: 6343 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -3201,6 +3215,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     unknown
@@ -3318,12 +3333,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 6467
+size: 6520
 location: src/tests/client/test-client.py:test_003()/85
 cmd: $NMCLI con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6324 bytes
+stdout: 6377 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -3343,6 +3358,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     nieznane
@@ -3460,12 +3476,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5753
+size: 5806
 location: src/tests/client/test-client.py:test_003()/86
 cmd: $NMCLI c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 5580 bytes
+stdout: 5633 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -3485,6 +3501,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     unknown
@@ -3588,12 +3605,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5793
+size: 5846
 location: src/tests/client/test-client.py:test_003()/87
 cmd: $NMCLI c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5610 bytes
+stdout: 5663 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -3613,6 +3630,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     nieznane
@@ -3926,12 +3944,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 6435
+size: 6488
 location: src/tests/client/test-client.py:test_003()/94
 cmd: $NMCLI --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 6290 bytes
+stdout: 6343 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -3951,6 +3969,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     unknown
@@ -4068,12 +4087,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 6479
+size: 6532
 location: src/tests/client/test-client.py:test_003()/95
 cmd: $NMCLI --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6324 bytes
+stdout: 6377 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -4093,6 +4112,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     nieznane
@@ -4210,12 +4230,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5765
+size: 5818
 location: src/tests/client/test-client.py:test_003()/96
 cmd: $NMCLI --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 5580 bytes
+stdout: 5633 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -4235,6 +4255,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     unknown
@@ -4338,12 +4359,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5805
+size: 5858
 location: src/tests/client/test-client.py:test_003()/97
 cmd: $NMCLI --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5610 bytes
+stdout: 5663 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -4363,6 +4384,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     nieznane
@@ -4692,12 +4714,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 7676
+size: 7729
 location: src/tests/client/test-client.py:test_003()/104
 cmd: $NMCLI --pretty con s ethernet
 lang: C
 returncode: 0
-stdout: 7533 bytes
+stdout: 7586 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -4720,6 +4742,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     unknown
@@ -4850,12 +4873,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 7741
+size: 7794
 location: src/tests/client/test-client.py:test_003()/105
 cmd: $NMCLI --pretty con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 7588 bytes
+stdout: 7641 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -4878,6 +4901,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     nieznane
@@ -5008,12 +5032,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6694
+size: 6747
 location: src/tests/client/test-client.py:test_003()/106
 cmd: $NMCLI --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 6511 bytes
+stdout: 6564 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -5036,6 +5060,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     unknown
@@ -5148,12 +5173,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6747
+size: 6800
 location: src/tests/client/test-client.py:test_003()/107
 cmd: $NMCLI --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6554 bytes
+stdout: 6607 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -5176,6 +5201,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     nieznane
@@ -5538,12 +5564,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 7688
+size: 7741
 location: src/tests/client/test-client.py:test_003()/114
 cmd: $NMCLI --pretty --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 7533 bytes
+stdout: 7586 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -5566,6 +5592,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     unknown
@@ -5696,12 +5723,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 7753
+size: 7806
 location: src/tests/client/test-client.py:test_003()/115
 cmd: $NMCLI --pretty --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 7588 bytes
+stdout: 7641 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -5724,6 +5751,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     nieznane
@@ -5854,12 +5882,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6706
+size: 6759
 location: src/tests/client/test-client.py:test_003()/116
 cmd: $NMCLI --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 6511 bytes
+stdout: 6564 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -5882,6 +5910,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     unknown
@@ -5994,12 +6023,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6759
+size: 6812
 location: src/tests/client/test-client.py:test_003()/117
 cmd: $NMCLI --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6554 bytes
+stdout: 6607 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -6022,6 +6051,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     nieznane
@@ -6364,12 +6394,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL:gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
 
 <<<
-size: 3427
+size: 3459
 location: src/tests/client/test-client.py:test_003()/124
 cmd: $NMCLI --terse con s ethernet
 lang: C
 returncode: 0
-stdout: 3285 bytes
+stdout: 3317 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -6389,6 +6419,7 @@ connection.master:
 connection.slave-type:
 connection.port-type:
 connection.autoconnect-slaves:-1
+connection.autoconnect-ports:-1
 connection.secondaries:
 connection.gateway-ping-timeout:0
 connection.metered:unknown
@@ -6506,12 +6537,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3437
+size: 3469
 location: src/tests/client/test-client.py:test_003()/125
 cmd: $NMCLI --terse con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3285 bytes
+stdout: 3317 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -6531,6 +6562,7 @@ connection.master:
 connection.slave-type:
 connection.port-type:
 connection.autoconnect-slaves:-1
+connection.autoconnect-ports:-1
 connection.secondaries:
 connection.gateway-ping-timeout:0
 connection.metered:unknown
@@ -6648,12 +6680,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3077
+size: 3109
 location: src/tests/client/test-client.py:test_003()/126
 cmd: $NMCLI --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 2895 bytes
+stdout: 2927 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -6673,6 +6705,7 @@ connection.master:
 connection.slave-type:
 connection.port-type:
 connection.autoconnect-slaves:-1
+connection.autoconnect-ports:-1
 connection.secondaries:
 connection.gateway-ping-timeout:0
 connection.metered:unknown
@@ -6776,12 +6809,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3087
+size: 3119
 location: src/tests/client/test-client.py:test_003()/127
 cmd: $NMCLI --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2895 bytes
+stdout: 2927 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -6801,6 +6834,7 @@ connection.master:
 connection.slave-type:
 connection.port-type:
 connection.autoconnect-slaves:-1
+connection.autoconnect-ports:-1
 connection.secondaries:
 connection.gateway-ping-timeout:0
 connection.metered:unknown
@@ -7110,12 +7144,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL:gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
 
 <<<
-size: 3439
+size: 3471
 location: src/tests/client/test-client.py:test_003()/134
 cmd: $NMCLI --terse --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 3285 bytes
+stdout: 3317 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -7135,6 +7169,7 @@ connection.master:
 connection.slave-type:
 connection.port-type:
 connection.autoconnect-slaves:-1
+connection.autoconnect-ports:-1
 connection.secondaries:
 connection.gateway-ping-timeout:0
 connection.metered:unknown
@@ -7252,12 +7287,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3449
+size: 3481
 location: src/tests/client/test-client.py:test_003()/135
 cmd: $NMCLI --terse --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3285 bytes
+stdout: 3317 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -7277,6 +7312,7 @@ connection.master:
 connection.slave-type:
 connection.port-type:
 connection.autoconnect-slaves:-1
+connection.autoconnect-ports:-1
 connection.secondaries:
 connection.gateway-ping-timeout:0
 connection.metered:unknown
@@ -7394,12 +7430,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3089
+size: 3121
 location: src/tests/client/test-client.py:test_003()/136
 cmd: $NMCLI --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 2895 bytes
+stdout: 2927 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -7419,6 +7455,7 @@ connection.master:
 connection.slave-type:
 connection.port-type:
 connection.autoconnect-slaves:-1
+connection.autoconnect-ports:-1
 connection.secondaries:
 connection.gateway-ping-timeout:0
 connection.metered:unknown
@@ -7522,12 +7559,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3099
+size: 3131
 location: src/tests/client/test-client.py:test_003()/137
 cmd: $NMCLI --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2895 bytes
+stdout: 2927 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -7547,6 +7584,7 @@ connection.master:
 connection.slave-type:
 connection.port-type:
 connection.autoconnect-slaves:-1
+connection.autoconnect-ports:-1
 connection.secondaries:
 connection.gateway-ping-timeout:0
 connection.metered:unknown
@@ -7860,15 +7898,15 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 4313
+size: 4351
 location: src/tests/client/test-client.py:test_003()/144
 cmd: $NMCLI --mode tabular con s ethernet
 lang: C
 returncode: 0
-stdout: 4164 bytes
+stdout: 4202 bytes
 >>>
-name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
-connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
+name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
+connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
 name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
 802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                    -1 (default)             
@@ -7891,15 +7929,15 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 4363
+size: 4401
 location: src/tests/client/test-client.py:test_003()/145
 cmd: $NMCLI --mode tabular con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4204 bytes
+stdout: 4242 bytes
 >>>
-name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
-connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
+name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
+connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
 name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
 802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                    -1 (default)             
@@ -7922,15 +7960,15 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 3851
+size: 3889
 location: src/tests/client/test-client.py:test_003()/146
 cmd: $NMCLI --mode tabular c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 3662 bytes
+stdout: 3700 bytes
 >>>
-name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
-connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
+name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
+connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
 name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
 802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                    -1 (default)             
@@ -7949,15 +7987,15 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 3899
+size: 3937
 location: src/tests/client/test-client.py:test_003()/147
 cmd: $NMCLI --mode tabular c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3700 bytes
+stdout: 3738 bytes
 >>>
-name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
-connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
+name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
+connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
 name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
 802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                    -1 (default)             
@@ -8112,15 +8150,15 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 4325
+size: 4363
 location: src/tests/client/test-client.py:test_003()/154
 cmd: $NMCLI --mode tabular --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 4164 bytes
+stdout: 4202 bytes
 >>>
-name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
-connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
+name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
+connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
 name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
 802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                    -1 (default)             
@@ -8143,15 +8181,15 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 4375
+size: 4413
 location: src/tests/client/test-client.py:test_003()/155
 cmd: $NMCLI --mode tabular --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4204 bytes
+stdout: 4242 bytes
 >>>
-name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
-connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
+name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
+connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
 name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
 802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                    -1 (default)             
@@ -8174,15 +8212,15 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 3863
+size: 3901
 location: src/tests/client/test-client.py:test_003()/156
 cmd: $NMCLI --mode tabular --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 3662 bytes
+stdout: 3700 bytes
 >>>
-name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
-connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
+name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
+connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
 name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
 802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                    -1 (default)             
@@ -8201,15 +8239,15 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 3911
+size: 3949
 location: src/tests/client/test-client.py:test_003()/157
 cmd: $NMCLI --mode tabular --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3700 bytes
+stdout: 3738 bytes
 >>>
-name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
-connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
+name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
+connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
 name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
 802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                    -1 (default)             
@@ -8380,19 +8418,19 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 6941
+size: 6998
 location: src/tests/client/test-client.py:test_003()/164
 cmd: $NMCLI --mode tabular --pretty con s ethernet
 lang: C
 returncode: 0
-stdout: 6783 bytes
+stdout: 6840 bytes
 >>>
 =========================================
   Connection profile details (ethernet)
 =========================================
-name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
+name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
 name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -8427,19 +8465,19 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 7071
+size: 7128
 location: src/tests/client/test-client.py:test_003()/165
 cmd: $NMCLI --mode tabular --pretty con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6903 bytes
+stdout: 6960 bytes
 >>>
 ===========================================
   Szczegóły profilu połączenia (ethernet)
 ===========================================
-name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
+name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
 name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -8474,19 +8512,19 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 6023
+size: 6080
 location: src/tests/client/test-client.py:test_003()/166
 cmd: $NMCLI --mode tabular --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 5825 bytes
+stdout: 5882 bytes
 >>>
 =========================================
   Connection profile details (ethernet)
 =========================================
-name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
+name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
 name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -8513,19 +8551,19 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 6125
+size: 6182
 location: src/tests/client/test-client.py:test_003()/167
 cmd: $NMCLI --mode tabular --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5917 bytes
+stdout: 5974 bytes
 >>>
 ===========================================
   Szczegóły profilu połączenia (ethernet)
 ===========================================
-name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
+name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
 name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -8728,19 +8766,19 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 6953
+size: 7010
 location: src/tests/client/test-client.py:test_003()/174
 cmd: $NMCLI --mode tabular --pretty --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 6783 bytes
+stdout: 6840 bytes
 >>>
 =========================================
   Connection profile details (ethernet)
 =========================================
-name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
+name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
 name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -8775,19 +8813,19 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 7083
+size: 7140
 location: src/tests/client/test-client.py:test_003()/175
 cmd: $NMCLI --mode tabular --pretty --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6903 bytes
+stdout: 6960 bytes
 >>>
 ===========================================
   Szczegóły profilu połączenia (ethernet)
 ===========================================
-name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
+name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
 name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -8822,19 +8860,19 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 6035
+size: 6092
 location: src/tests/client/test-client.py:test_003()/176
 cmd: $NMCLI --mode tabular --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 5825 bytes
+stdout: 5882 bytes
 >>>
 =========================================
   Connection profile details (ethernet)
 =========================================
-name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
+name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
 name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -8861,19 +8899,19 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 6137
+size: 6194
 location: src/tests/client/test-client.py:test_003()/177
 cmd: $NMCLI --mode tabular --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5917 bytes
+stdout: 5974 bytes
 >>>
 ===========================================
   Szczegóły profilu połączenia (ethernet)
 ===========================================
-name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
+name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
 name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -9056,14 +9094,14 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL:gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
 
 <<<
-size: 887
+size: 890
 location: src/tests/client/test-client.py:test_003()/184
 cmd: $NMCLI --mode tabular --terse con s ethernet
 lang: C
 returncode: 0
-stdout: 731 bytes
+stdout: 734 bytes
 >>>
-connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:::::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
+connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:::::::-1:-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 802-3-ethernet::0::no:::::auto::::default::-1
 ipv4:auto::::0::::-1:0::-1:no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::-1:no:no:no:yes:-1:-1:default:0:auto::::0:yes::0x0:-1:
@@ -9073,14 +9111,14 @@ GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1:eth1:activated:no:no:
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/6::
 
 <<<
-size: 897
+size: 900
 location: src/tests/client/test-client.py:test_003()/185
 cmd: $NMCLI --mode tabular --terse con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 731 bytes
+stdout: 734 bytes
 >>>
-connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:::::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
+connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:::::::-1:-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 802-3-ethernet::0::no:::::auto::::default::-1
 ipv4:auto::::0::::-1:0::-1:no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::-1:no:no:no:yes:-1:-1:default:0:auto::::0:yes::0x0:-1:
@@ -9090,14 +9128,14 @@ GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1:eth1:activated:no:no:
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/6::
 
 <<<
-size: 735
+size: 738
 location: src/tests/client/test-client.py:test_003()/186
 cmd: $NMCLI --mode tabular --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 539 bytes
+stdout: 542 bytes
 >>>
-connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:::::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
+connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:::::::-1:-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 802-3-ethernet::0::no:::::auto::::default::-1
 ipv4:auto::::0::::-1:0::-1:no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::-1:no:no:no:yes:-1:-1:default:0:auto::::0:yes::0x0:-1:
@@ -9105,14 +9143,14 @@ proxy:none:no::
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/6::
 
 <<<
-size: 745
+size: 748
 location: src/tests/client/test-client.py:test_003()/187
 cmd: $NMCLI --mode tabular --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 539 bytes
+stdout: 542 bytes
 >>>
-connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:::::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
+connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:::::::-1:-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 802-3-ethernet::0::no:::::auto::::default::-1
 ipv4:auto::::0::::-1:0::-1:no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::-1:no:no:no:yes:-1:-1:default:0:auto::::0:yes::0x0:-1:
@@ -9218,14 +9256,14 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL:gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
 
 <<<
-size: 899
+size: 902
 location: src/tests/client/test-client.py:test_003()/194
 cmd: $NMCLI --mode tabular --terse --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 731 bytes
+stdout: 734 bytes
 >>>
-connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:::::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
+connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:::::::-1:-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 802-3-ethernet::0::no:::::auto::::default::-1
 ipv4:auto::::0::::-1:0::-1:no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::-1:no:no:no:yes:-1:-1:default:0:auto::::0:yes::0x0:-1:
@@ -9235,14 +9273,14 @@ GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1:eth1:activated:no:no:
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/6::
 
 <<<
-size: 909
+size: 912
 location: src/tests/client/test-client.py:test_003()/195
 cmd: $NMCLI --mode tabular --terse --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 731 bytes
+stdout: 734 bytes
 >>>
-connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:::::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
+connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:::::::-1:-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 802-3-ethernet::0::no:::::auto::::default::-1
 ipv4:auto::::0::::-1:0::-1:no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::-1:no:no:no:yes:-1:-1:default:0:auto::::0:yes::0x0:-1:
@@ -9252,14 +9290,14 @@ GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1:eth1:activated:no:no:
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/6::
 
 <<<
-size: 747
+size: 750
 location: src/tests/client/test-client.py:test_003()/196
 cmd: $NMCLI --mode tabular --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 539 bytes
+stdout: 542 bytes
 >>>
-connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:::::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
+connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:::::::-1:-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 802-3-ethernet::0::no:::::auto::::default::-1
 ipv4:auto::::0::::-1:0::-1:no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::-1:no:no:no:yes:-1:-1:default:0:auto::::0:yes::0x0:-1:
@@ -9267,14 +9305,14 @@ proxy:none:no::
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/6::
 
 <<<
-size: 757
+size: 760
 location: src/tests/client/test-client.py:test_003()/197
 cmd: $NMCLI --mode tabular --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 539 bytes
+stdout: 542 bytes
 >>>
-connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:::::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
+connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:::::::-1:-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 802-3-ethernet::0::no:::::auto::::default::-1
 ipv4:auto::::0::::-1:0::-1:no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::-1:no:no:no:yes:-1:-1:default:0:auto::::0:yes::0x0:-1:
@@ -9588,12 +9626,12 @@ UUID:                                   UUID-con-xx1-REPLACED-REPLACED-REPLA
 TYPE:                                   ethernet
 
 <<<
-size: 6441
+size: 6494
 location: src/tests/client/test-client.py:test_003()/204
 cmd: $NMCLI --mode multiline con s ethernet
 lang: C
 returncode: 0
-stdout: 6290 bytes
+stdout: 6343 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -9613,6 +9651,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     unknown
@@ -9730,12 +9769,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 6485
+size: 6538
 location: src/tests/client/test-client.py:test_003()/205
 cmd: $NMCLI --mode multiline con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6324 bytes
+stdout: 6377 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -9755,6 +9794,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     nieznane
@@ -9872,12 +9912,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5771
+size: 5824
 location: src/tests/client/test-client.py:test_003()/206
 cmd: $NMCLI --mode multiline c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 5580 bytes
+stdout: 5633 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -9897,6 +9937,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     unknown
@@ -10000,12 +10041,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5811
+size: 5864
 location: src/tests/client/test-client.py:test_003()/207
 cmd: $NMCLI --mode multiline c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5610 bytes
+stdout: 5663 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -10025,6 +10066,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     nieznane
@@ -10542,12 +10584,12 @@ UUID:                                   UUID-con-xx1-REPLACED-REPLACED-REPLA
 TYPE:                                   ethernet
 
 <<<
-size: 6453
+size: 6506
 location: src/tests/client/test-client.py:test_003()/214
 cmd: $NMCLI --mode multiline --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 6290 bytes
+stdout: 6343 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -10567,6 +10609,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     unknown
@@ -10684,12 +10727,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 6497
+size: 6550
 location: src/tests/client/test-client.py:test_003()/215
 cmd: $NMCLI --mode multiline --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6324 bytes
+stdout: 6377 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -10709,6 +10752,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     nieznane
@@ -10826,12 +10870,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5783
+size: 5836
 location: src/tests/client/test-client.py:test_003()/216
 cmd: $NMCLI --mode multiline --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 5580 bytes
+stdout: 5633 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -10851,6 +10895,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     unknown
@@ -10954,12 +10999,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5823
+size: 5876
 location: src/tests/client/test-client.py:test_003()/217
 cmd: $NMCLI --mode multiline --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5610 bytes
+stdout: 5663 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -10979,6 +11024,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     nieznane
@@ -11534,12 +11580,12 @@ TYPE:                                   ethernet
 -------------------------------------------------------------------------------
 
 <<<
-size: 7693
+size: 7746
 location: src/tests/client/test-client.py:test_003()/224
 cmd: $NMCLI --mode multiline --pretty con s ethernet
 lang: C
 returncode: 0
-stdout: 7533 bytes
+stdout: 7586 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -11562,6 +11608,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     unknown
@@ -11692,12 +11739,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 7758
+size: 7811
 location: src/tests/client/test-client.py:test_003()/225
 cmd: $NMCLI --mode multiline --pretty con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 7588 bytes
+stdout: 7641 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -11720,6 +11767,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     nieznane
@@ -11850,12 +11898,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6711
+size: 6764
 location: src/tests/client/test-client.py:test_003()/226
 cmd: $NMCLI --mode multiline --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 6511 bytes
+stdout: 6564 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -11878,6 +11926,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     unknown
@@ -11990,12 +12039,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6764
+size: 6817
 location: src/tests/client/test-client.py:test_003()/227
 cmd: $NMCLI --mode multiline --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6554 bytes
+stdout: 6607 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -12018,6 +12067,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     nieznane
@@ -12606,12 +12656,12 @@ TYPE:                                   ethernet
 -------------------------------------------------------------------------------
 
 <<<
-size: 7705
+size: 7758
 location: src/tests/client/test-client.py:test_003()/234
 cmd: $NMCLI --mode multiline --pretty --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 7533 bytes
+stdout: 7586 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -12634,6 +12684,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     unknown
@@ -12764,12 +12815,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 7770
+size: 7823
 location: src/tests/client/test-client.py:test_003()/235
 cmd: $NMCLI --mode multiline --pretty --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 7588 bytes
+stdout: 7641 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -12792,6 +12843,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     nieznane
@@ -12922,12 +12974,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6723
+size: 6776
 location: src/tests/client/test-client.py:test_003()/236
 cmd: $NMCLI --mode multiline --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 6511 bytes
+stdout: 6564 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -12950,6 +13002,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     unknown
@@ -13062,12 +13115,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6776
+size: 6829
 location: src/tests/client/test-client.py:test_003()/237
 cmd: $NMCLI --mode multiline --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6554 bytes
+stdout: 6607 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -13090,6 +13143,7 @@ connection.master:                      --
 connection.slave-type:                  --
 connection.port-type:                   --
 connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
 connection.secondaries:                 --
 connection.gateway-ping-timeout:        0
 connection.metered:                     nieznane
@@ -13640,12 +13694,12 @@ UUID:UUID-con-xx1-REPLACED-REPLACED-REPLA
 TYPE:802-3-ethernet
 
 <<<
-size: 3444
+size: 3476
 location: src/tests/client/test-client.py:test_003()/244
 cmd: $NMCLI --mode multiline --terse con s ethernet
 lang: C
 returncode: 0
-stdout: 3285 bytes
+stdout: 3317 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -13665,6 +13719,7 @@ connection.master:
 connection.slave-type:
 connection.port-type:
 connection.autoconnect-slaves:-1
+connection.autoconnect-ports:-1
 connection.secondaries:
 connection.gateway-ping-timeout:0
 connection.metered:unknown
@@ -13782,12 +13837,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3454
+size: 3486
 location: src/tests/client/test-client.py:test_003()/245
 cmd: $NMCLI --mode multiline --terse con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3285 bytes
+stdout: 3317 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -13807,6 +13862,7 @@ connection.master:
 connection.slave-type:
 connection.port-type:
 connection.autoconnect-slaves:-1
+connection.autoconnect-ports:-1
 connection.secondaries:
 connection.gateway-ping-timeout:0
 connection.metered:unknown
@@ -13924,12 +13980,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3094
+size: 3126
 location: src/tests/client/test-client.py:test_003()/246
 cmd: $NMCLI --mode multiline --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 2895 bytes
+stdout: 2927 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -13949,6 +14005,7 @@ connection.master:
 connection.slave-type:
 connection.port-type:
 connection.autoconnect-slaves:-1
+connection.autoconnect-ports:-1
 connection.secondaries:
 connection.gateway-ping-timeout:0
 connection.metered:unknown
@@ -14052,12 +14109,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3104
+size: 3136
 location: src/tests/client/test-client.py:test_003()/247
 cmd: $NMCLI --mode multiline --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2895 bytes
+stdout: 2927 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -14077,6 +14134,7 @@ connection.master:
 connection.slave-type:
 connection.port-type:
 connection.autoconnect-slaves:-1
+connection.autoconnect-ports:-1
 connection.secondaries:
 connection.gateway-ping-timeout:0
 connection.metered:unknown
@@ -14594,12 +14652,12 @@ UUID:UUID-con-xx1-REPLACED-REPLACED-REPLA
 TYPE:802-3-ethernet
 
 <<<
-size: 3456
+size: 3488
 location: src/tests/client/test-client.py:test_003()/254
 cmd: $NMCLI --mode multiline --terse --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 3285 bytes
+stdout: 3317 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -14619,6 +14677,7 @@ connection.master:
 connection.slave-type:
 connection.port-type:
 connection.autoconnect-slaves:-1
+connection.autoconnect-ports:-1
 connection.secondaries:
 connection.gateway-ping-timeout:0
 connection.metered:unknown
@@ -14736,12 +14795,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3466
+size: 3498
 location: src/tests/client/test-client.py:test_003()/255
 cmd: $NMCLI --mode multiline --terse --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3285 bytes
+stdout: 3317 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -14761,6 +14820,7 @@ connection.master:
 connection.slave-type:
 connection.port-type:
 connection.autoconnect-slaves:-1
+connection.autoconnect-ports:-1
 connection.secondaries:
 connection.gateway-ping-timeout:0
 connection.metered:unknown
@@ -14878,12 +14938,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3106
+size: 3138
 location: src/tests/client/test-client.py:test_003()/256
 cmd: $NMCLI --mode multiline --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 2895 bytes
+stdout: 2927 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -14903,6 +14963,7 @@ connection.master:
 connection.slave-type:
 connection.port-type:
 connection.autoconnect-slaves:-1
+connection.autoconnect-ports:-1
 connection.secondaries:
 connection.gateway-ping-timeout:0
 connection.metered:unknown
@@ -15006,12 +15067,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3116
+size: 3148
 location: src/tests/client/test-client.py:test_003()/257
 cmd: $NMCLI --mode multiline --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2895 bytes
+stdout: 2927 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -15031,6 +15092,7 @@ connection.master:
 connection.slave-type:
 connection.port-type:
 connection.autoconnect-slaves:-1
+connection.autoconnect-ports:-1
 connection.secondaries:
 connection.gateway-ping-timeout:0
 connection.metered:unknown
