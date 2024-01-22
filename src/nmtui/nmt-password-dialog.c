@@ -139,7 +139,7 @@ nmt_password_dialog_constructed(GObject *object)
         nmt_newt_widget_set_padding(widget, 4, 0, 1, 0);
 
         flags = NMT_NEWT_ENTRY_NONEMPTY;
-        if (secret->is_secret)
+        if (secret->is_secret && !secret->force_echo)
             flags |= NMT_NEWT_ENTRY_PASSWORD;
         widget = nmt_newt_entry_new(30, flags);
         if (secret->value)

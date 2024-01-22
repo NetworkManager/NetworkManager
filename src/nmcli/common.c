@@ -700,7 +700,7 @@ get_secrets_from_user(const NmcConfig *nmc_config,
                 if (msg)
                     nmc_print("%s\n", msg);
 
-                echo_on = secret->is_secret ? nmc_config->show_secrets : TRUE;
+                echo_on = secret->is_secret ? secret->force_echo || nmc_config->show_secrets : TRUE;
 
                 if (secret->no_prompt_entry_id)
                     pwd = nmc_readline_echo(nmc_config, echo_on, "%s: ", secret->pretty_name);
