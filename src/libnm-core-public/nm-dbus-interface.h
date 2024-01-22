@@ -1420,13 +1420,16 @@ typedef enum /*< flags >*/ {
  */
 #define NM_SECRET_TAG_VPN_MSG "x-vpn-message:"
 
-/* For secrets requests, hints starting with "x-dynamic-challenge:" are dynamic
+/* For secrets requests, hints starting with "x-dynamic-challenge(-echo):" are dynamic
  * 2FA challenges that are requested in a second authentication step, after the password
  * (or whatever auth method is used) was already successfully validated. Because of
  * that, the default secrets of the service mustn't be requested (again).
+ * When using the "-echo" variant, the user input doesn't need to be hidden even
+ * without --show-secrets
  *
  * Note: currently only implemented for VPN, but can be extended.
  */
-#define NM_SECRET_TAG_DYNAMIC_CHALLENGE "x-dynamic-challenge:"
+#define NM_SECRET_TAG_DYNAMIC_CHALLENGE      "x-dynamic-challenge:"
+#define NM_SECRET_TAG_DYNAMIC_CHALLENGE_ECHO "x-dynamic-challenge-echo:"
 
 #endif /* __NM_DBUS_INTERFACE_H__ */
