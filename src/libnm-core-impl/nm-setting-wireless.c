@@ -600,7 +600,7 @@ nm_setting_wireless_remove_mac_blacklist_item_by_value(NMSettingWireless *settin
     priv = NM_SETTING_WIRELESS_GET_PRIVATE(setting);
     for (i = 0; i < priv->mac_address_blacklist->len; i++) {
         candidate = nm_g_array_index(priv->mac_address_blacklist, char *, i);
-        if (!nm_utils_hwaddr_matches(mac, -1, candidate, -1)) {
+        if (nm_utils_hwaddr_matches(mac, -1, candidate, -1)) {
             g_array_remove_index(priv->mac_address_blacklist, i);
             _notify(setting, PROP_MAC_ADDRESS_BLACKLIST);
             return TRUE;
