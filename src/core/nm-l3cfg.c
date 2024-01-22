@@ -1301,6 +1301,7 @@ _commit_collect_routes(NML3Cfg          *self,
     const int                    IS_IPv4 = NM_IS_IPv4(addr_family);
     const NMDedupMultiHeadEntry *head_entry;
     const NMDedupMultiEntry     *entry;
+    gboolean                     is_dhcp_enabled;
 
     nm_assert(routes && !*routes);
     nm_assert(routes_nodev && !*routes_nodev);
@@ -1320,17 +1321,21 @@ _commit_collect_routes(NML3Cfg          *self,
         else {
             nm_assert(NMP_OBJECT_CAST_IP_ROUTE(obj)->ifindex == self->priv.ifindex);
 
-            if (!any_addrs) {
+            is_dhcp_enabled =
+                nm_l3_config_data_get_dhcp_enabled(self->priv.p->combined_l3cd_commited,
+                                                   addr_family);
+            if (!any_addrs && is_dhcp_enabled) {
                 /* This is a unicast route (or a similar route, which has an
                  * ifindex).
                  *
                  * However, during this commit we don't plan to configure any
-                 * IP addresses.  With `ipvx.method=manual` that should not be
-                 * possible. More likely, this is because the profile has
-                 * `ipvx.method=auto` and static routes.
+                 * IP addresses when the profile has `ipvx.method=auto` and
+                 * static routes.
                  *
                  * Don't configure any such routes before we also have at least
-                 * one IP address.
+                 * one IP address except for `ipvx.method=manual` where static
+                 * routes are allowed to configure even if the connection has
+                 * no addresses
                  *
                  * This code applies to IPv4 and IPv6, however for IPv6 we
                  * early on configure a link local address, so in practice the
