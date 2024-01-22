@@ -2458,7 +2458,8 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
         NMSettingConnectionPrivate,
         controller,
         .direct_string_allow_empty = TRUE,
-        .is_deprecated             = TRUE);
+        .is_deprecated             = TRUE,
+        .direct_is_aliased_field   = TRUE, );
 
     /**
      * NMSettingConnection:controller:
@@ -2518,8 +2519,9 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                            _nm_setting_connection_slave_type_from_dbus, ),
         NMSettingConnectionPrivate,
         port_type,
-        .is_deprecated             = 1,
-        .direct_string_allow_empty = TRUE);
+        .is_deprecated             = TRUE,
+        .direct_string_allow_empty = TRUE,
+        .direct_is_aliased_field   = TRUE, );
 
     /**
      * NMSettingConnection:port-type:

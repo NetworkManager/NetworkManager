@@ -907,6 +907,14 @@ struct _NMSettInfoProperty {
      * is not deprecated. This flag is about the deprecation of the D-Bus representation
      * of a property. */
     bool dbus_deprecated : 1;
+
+    /* Whether the property is an alias.
+     *
+     * This flag indicates whether a property is an alias of another. This is used
+     * during _init_direct() to allow two or more properties to set the value of
+     * the same field.
+     */
+    bool direct_is_aliased_field : 1;
 };
 
 typedef struct {

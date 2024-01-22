@@ -1077,7 +1077,7 @@ _init_direct(NMSetting *setting)
             int  def_val;
 
             def_val = NM_G_PARAM_SPEC_GET_DEFAULT_ENUM(property_info->param_spec);
-            nm_assert(*p_val == 0);
+            nm_assert(NM_IN_SET(*p_val, 0, property_info->direct_is_aliased_field ? def_val : 0));
             *p_val = def_val;
             break;
         }
