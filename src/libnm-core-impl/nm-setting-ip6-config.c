@@ -936,6 +936,7 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
                                             NM_TYPE_SETTING_IP6_CONFIG_PRIVACY,
                                             NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
                                             NM_SETTING_PARAM_NONE,
+                                            NULL,
                                             NMSettingIP6ConfigPrivate,
                                             ip6_privacy);
 
