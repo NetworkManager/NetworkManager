@@ -416,8 +416,6 @@ add_vpn_secret_helper(GPtrArray    *secrets,
     }
 }
 
-#define VPN_MSG_TAG "x-vpn-message:"
-
 static gboolean
 add_vpn_secrets(RequestData *request, GPtrArray *secrets, char **msg)
 {
@@ -425,18 +423,32 @@ add_vpn_secrets(RequestData *request, GPtrArray *secrets, char **msg)
     const NmcVpnPasswordName *p;
     const char               *vpn_msg = NULL;
     char                    **iter;
+    char                     *secret_name;
+    bool                      is_challenge = FALSE;
 
     /* If hints are given, then always ask for what the hints require */
     if (request->hints) {
         for (iter = request->hints; *iter; iter++) {
-            if (!vpn_msg && g_str_has_prefix(*iter, VPN_MSG_TAG))
-                vpn_msg = &(*iter)[NM_STRLEN(VPN_MSG_TAG)];
-            else
-                add_vpn_secret_helper(secrets, s_vpn, *iter, *iter);
+            if (!vpn_msg && NM_STR_HAS_PREFIX(*iter, NM_SECRET_TAG_VPN_MSG)) {
+                vpn_msg = &(*iter)[NM_STRLEN(NM_SECRET_TAG_VPN_MSG)];
+            } else {
+                if (NM_STR_HAS_PREFIX(*iter, NM_SECRET_TAG_DYNAMIC_CHALLENGE)) {
+                    secret_name  = &(*iter)[NM_STRLEN(NM_SECRET_TAG_DYNAMIC_CHALLENGE)];
+                    is_challenge = TRUE;
+                } else {
+                    secret_name = *iter;
+                }
+
+                add_vpn_secret_helper(secrets, s_vpn, secret_name, secret_name);
+            }
         }
     }
 
     NM_SET_OUT(msg, g_strdup(vpn_msg));
+
+    /* If we are in the 2nd step of a 2FA authentication, don't ask again for the default secrets */
+    if (is_challenge)
+        return TRUE;
 
     /* Now add what client thinks might be required, because hints may be empty or incomplete */
     p = nm_vpn_get_secret_names(nm_setting_vpn_get_service_type(s_vpn));

@@ -1415,4 +1415,18 @@ typedef enum /*< flags >*/ {
     NM_MPTCP_FLAGS_FULLMESH = 0x80,
 } NMMptcpFlags;
 
+/* For secrets requests, hints starting with "x-vpn-message:" are a message to show, not
+ * a secret to request
+ */
+#define NM_SECRET_TAG_VPN_MSG "x-vpn-message:"
+
+/* For secrets requests, hints starting with "x-dynamic-challenge:" are dynamic
+ * 2FA challenges that are requested in a second authentication step, after the password
+ * (or whatever auth method is used) was already successfully validated. Because of
+ * that, the default secrets of the service mustn't be requested (again).
+ *
+ * Note: currently only implemented for VPN, but can be extended.
+ */
+#define NM_SECRET_TAG_DYNAMIC_CHALLENGE "x-dynamic-challenge:"
+
 #endif /* __NM_DBUS_INTERFACE_H__ */
