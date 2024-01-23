@@ -1090,7 +1090,8 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
                                               PROP_SERVICE_TYPE,
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingVpnPrivate,
-                                              service_type);
+                                              service_type,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingVpn:user-name:
@@ -1108,7 +1109,8 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
                                               PROP_USER_NAME,
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingVpnPrivate,
-                                              user_name);
+                                              user_name,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingVpn:persistent:

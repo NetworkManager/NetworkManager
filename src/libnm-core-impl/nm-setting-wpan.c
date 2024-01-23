@@ -255,7 +255,8 @@ nm_setting_wpan_class_init(NMSettingWpanClass *klass)
                                               NMSettingWpanPrivate,
                                               mac_address,
                                               .direct_set_string_mac_address_len =
-                                                  IEEE802154_ADDR_LEN);
+                                                  IEEE802154_ADDR_LEN,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingWpan:pan-id:

@@ -242,7 +242,8 @@ nm_setting_ovs_bridge_class_init(NMSettingOvsBridgeClass *klass)
                                               PROP_FAIL_MODE,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingOvsBridge,
-                                              fail_mode);
+                                              fail_mode,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingOvsBridge:mcast-snooping-enable:
@@ -305,7 +306,8 @@ nm_setting_ovs_bridge_class_init(NMSettingOvsBridgeClass *klass)
                                               PROP_DATAPATH_TYPE,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingOvsBridge,
-                                              datapath_type);
+                                              datapath_type,
+                                              .direct_string_allow_empty = TRUE);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

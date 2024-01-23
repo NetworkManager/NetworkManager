@@ -283,7 +283,8 @@ nm_setting_bluetooth_class_init(NMSettingBluetoothClass *klass)
                                               PROP_TYPE,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingBluetoothPrivate,
-                                              type);
+                                              type,
+                                              .direct_string_allow_empty = TRUE);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

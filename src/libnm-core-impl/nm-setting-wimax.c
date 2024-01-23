@@ -175,7 +175,8 @@ nm_setting_wimax_class_init(NMSettingWimaxClass *klass)
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingWimaxPrivate,
                                               network_name,
-                                              .is_deprecated = TRUE, );
+                                              .is_deprecated             = TRUE,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingWimax:mac-address:

@@ -307,7 +307,8 @@ nm_setting_proxy_class_init(NMSettingProxyClass *klass)
                                               PROP_PAC_URL,
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingProxyPrivate,
-                                              pac_url);
+                                              pac_url,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingProxy:pac-script:
@@ -339,7 +340,8 @@ nm_setting_proxy_class_init(NMSettingProxyClass *klass)
                                               PROP_PAC_SCRIPT,
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingProxyPrivate,
-                                              pac_script);
+                                              pac_script,
+                                              .direct_string_allow_empty = TRUE);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

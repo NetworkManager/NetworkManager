@@ -1069,7 +1069,8 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
                                               PROP_TOKEN,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingIP6ConfigPrivate,
-                                              token);
+                                              token,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingIP6Config:ra-timeout:
@@ -1172,7 +1173,8 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
                                               PROP_DHCP_DUID,
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingIP6ConfigPrivate,
-                                              dhcp_duid);
+                                              dhcp_duid,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingIP6Config:dhcp-pd-hint:
@@ -1201,7 +1203,8 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
                                               NMSettingIP6ConfigPrivate,
                                               dhcp_pd_hint,
                                               .direct_set_fcn.set_string =
-                                                  _set_string_fcn_dhcp_pd_hint);
+                                                  _set_string_fcn_dhcp_pd_hint,
+                                              .direct_string_allow_empty = TRUE);
 
     /* IP6-specific property overrides */
 

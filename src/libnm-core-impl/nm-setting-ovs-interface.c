@@ -394,7 +394,8 @@ nm_setting_ovs_interface_class_init(NMSettingOvsInterfaceClass *klass)
                                               PROP_TYPE,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingOvsInterface,
-                                              type);
+                                              type,
+                                              .direct_string_allow_empty = TRUE);
     /**
      * NMSettingOvsInterface:ofport-request:
      *

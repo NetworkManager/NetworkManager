@@ -1203,7 +1203,8 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
                                               PROP_PORT,
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingWiredPrivate,
-                                              port);
+                                              port,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingWired:speed:
@@ -1269,7 +1270,8 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
                                               PROP_DUPLEX,
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingWiredPrivate,
-                                              duplex);
+                                              duplex,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingWired:auto-negotiate:
@@ -1458,7 +1460,8 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
                                               PROP_GENERATE_MAC_ADDRESS_MASK,
                                               NM_SETTING_PARAM_FUZZY_IGNORE,
                                               NMSettingWiredPrivate,
-                                              generate_mac_address_mask);
+                                              generate_mac_address_mask,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingWired:mac-address-blacklist:
@@ -1556,7 +1559,8 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
                                               PROP_S390_NETTYPE,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingWiredPrivate,
-                                              s390_nettype);
+                                              s390_nettype,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingWired:s390-options: (type GHashTable(utf8,utf8))
@@ -1644,7 +1648,8 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
                                               PROP_WAKE_ON_LAN_PASSWORD,
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingWiredPrivate,
-                                              wol_password);
+                                              wol_password,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingWired:accept-all-mac-addresses:

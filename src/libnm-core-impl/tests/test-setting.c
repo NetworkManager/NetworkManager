@@ -4740,6 +4740,9 @@ test_setting_metadata(void)
             }
             if (sip->direct_strv_preserve_empty)
                 g_assert(sip->property_type->direct_type == NM_VALUE_TYPE_STRV);
+            if (sip->direct_string_allow_empty) {
+                g_assert(sip->property_type->direct_type == NM_VALUE_TYPE_STRING);
+            }
 
             if (sip->direct_set_string_mac_address_len != 0) {
                 g_assert(NM_IN_SET(sip->property_type,

@@ -456,7 +456,8 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
                                               PROP_PARENT,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingMacsecPrivate,
-                                              parent);
+                                              parent,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingMacsec:mode:
@@ -507,7 +508,8 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
                                               PROP_MKA_CAK,
                                               NM_SETTING_PARAM_SECRET,
                                               NMSettingMacsecPrivate,
-                                              mka_cak);
+                                              mka_cak,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingMacsec:mka-cak-flags:
@@ -539,7 +541,8 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
                                               PROP_MKA_CKN,
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingMacsecPrivate,
-                                              mka_ckn);
+                                              mka_ckn,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingMacsec:port:

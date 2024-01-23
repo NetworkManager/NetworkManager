@@ -2566,20 +2566,21 @@ nmtst_assert_connection_unnormalizable(NMConnection *con,
     g_clear_error(&error);
 }
 
-static inline void
-nmtst_assert_setting_verifies(NMSetting *setting)
-{
-    /* assert that the setting verifies without an error */
-
-    GError  *error = NULL;
-    gboolean success;
-
-    g_assert(NM_IS_SETTING(setting));
-
-    success = nm_setting_verify(setting, NULL, &error);
-    g_assert_no_error(error);
-    g_assert(success);
-}
+#define nmtst_assert_setting_verifies(setting)                  \
+    G_STMT_START                                                \
+    {                                                           \
+        NMSetting *_setting = NM_SETTING(setting);              \
+        GError    *_error   = NULL;                             \
+        gboolean   _success;                                    \
+                                                                \
+        /* assert that the setting verifies without an error */ \
+                                                                \
+        g_assert(NM_IS_SETTING(_setting));                      \
+                                                                \
+        _success = nm_setting_verify(_setting, NULL, &_error);  \
+        nmtst_assert_success(_success, _error);                 \
+    }                                                           \
+    G_STMT_END
 
 #if defined(__NM_SIMPLE_CONNECTION_H__) && NM_CHECK_VERSION(1, 10, 0) \
     && (!defined(NM_VERSION_MAX_ALLOWED) || NM_VERSION_MAX_ALLOWED >= NM_VERSION_1_10)

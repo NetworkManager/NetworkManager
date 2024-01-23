@@ -260,7 +260,8 @@ nm_setting_tun_class_init(NMSettingTunClass *klass)
                                               PROP_OWNER,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingTunPrivate,
-                                              owner);
+                                              owner,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingTun:group:
@@ -276,7 +277,8 @@ nm_setting_tun_class_init(NMSettingTunClass *klass)
                                               PROP_GROUP,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingTunPrivate,
-                                              group);
+                                              group,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingTun:pi:

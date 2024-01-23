@@ -3248,7 +3248,8 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               PROP_IDENTITY,
                                               NM_SETTING_PARAM_NONE,
                                               NMSetting8021xPrivate,
-                                              identity);
+                                              identity,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSetting8021x:anonymous-identity:
@@ -3269,7 +3270,8 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               PROP_ANONYMOUS_IDENTITY,
                                               NM_SETTING_PARAM_NONE,
                                               NMSetting8021xPrivate,
-                                              anonymous_identity);
+                                              anonymous_identity,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSetting8021x:pac-file:
@@ -3289,7 +3291,8 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               PROP_PAC_FILE,
                                               NM_SETTING_PARAM_NONE,
                                               NMSetting8021xPrivate,
-                                              pac_file);
+                                              pac_file,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSetting8021x:ca-cert:
@@ -3342,7 +3345,8 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               PROP_CA_CERT_PASSWORD,
                                               NM_SETTING_PARAM_SECRET,
                                               NMSetting8021xPrivate,
-                                              ca_cert_password);
+                                              ca_cert_password,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSetting8021x:ca-cert-password-flags:
@@ -3380,7 +3384,8 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               PROP_CA_PATH,
                                               NM_SETTING_PARAM_NONE,
                                               NMSetting8021xPrivate,
-                                              ca_path);
+                                              ca_path,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSetting8021x:subject-match:
@@ -3406,7 +3411,8 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               NM_SETTING_PARAM_NONE,
                                               NMSetting8021xPrivate,
                                               subject_match,
-                                              .is_deprecated = TRUE, );
+                                              .is_deprecated             = TRUE,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSetting8021x:altsubject-matches:
@@ -3453,7 +3459,8 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               PROP_DOMAIN_SUFFIX_MATCH,
                                               NM_SETTING_PARAM_NONE,
                                               NMSetting8021xPrivate,
-                                              domain_suffix_match);
+                                              domain_suffix_match,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSetting8021x:domain-match:
@@ -3479,7 +3486,8 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               PROP_DOMAIN_MATCH,
                                               NM_SETTING_PARAM_NONE,
                                               NMSetting8021xPrivate,
-                                              domain_match);
+                                              domain_match,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSetting8021x:client-cert:
@@ -3527,7 +3535,8 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               PROP_CLIENT_CERT_PASSWORD,
                                               NM_SETTING_PARAM_SECRET,
                                               NMSetting8021xPrivate,
-                                              client_cert_password);
+                                              client_cert_password,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSetting8021x:client-cert-password-flags:
@@ -3566,7 +3575,8 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               PROP_PHASE1_PEAPVER,
                                               NM_SETTING_PARAM_NONE,
                                               NMSetting8021xPrivate,
-                                              phase1_peapver);
+                                              phase1_peapver,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSetting8021x:phase1-peaplabel:
@@ -3590,7 +3600,8 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               PROP_PHASE1_PEAPLABEL,
                                               NM_SETTING_PARAM_NONE,
                                               NMSetting8021xPrivate,
-                                              phase1_peaplabel);
+                                              phase1_peaplabel,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSetting8021x:phase1-fast-provisioning:
@@ -3616,7 +3627,8 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               PROP_PHASE1_FAST_PROVISIONING,
                                               NM_SETTING_PARAM_NONE,
                                               NMSetting8021xPrivate,
-                                              phase1_fast_provisioning);
+                                              phase1_fast_provisioning,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSetting8021x:phase1-auth-flags:
@@ -3680,7 +3692,8 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               PROP_PHASE2_AUTH,
                                               NM_SETTING_PARAM_NONE,
                                               NMSetting8021xPrivate,
-                                              phase2_auth);
+                                              phase2_auth,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSetting8021x:phase2-autheap:
@@ -3707,7 +3720,8 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               PROP_PHASE2_AUTHEAP,
                                               NM_SETTING_PARAM_NONE,
                                               NMSetting8021xPrivate,
-                                              phase2_autheap);
+                                              phase2_autheap,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSetting8021x:phase2-ca-cert:
@@ -3754,7 +3768,8 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               PROP_PHASE2_CA_CERT_PASSWORD,
                                               NM_SETTING_PARAM_SECRET,
                                               NMSetting8021xPrivate,
-                                              phase2_ca_cert_password);
+                                              phase2_ca_cert_password,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSetting8021x:phase2-ca-cert-password-flags:
@@ -3792,7 +3807,8 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               PROP_PHASE2_CA_PATH,
                                               NM_SETTING_PARAM_NONE,
                                               NMSetting8021xPrivate,
-                                              phase2_ca_path);
+                                              phase2_ca_path,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSetting8021x:phase2-subject-match:
@@ -3819,7 +3835,8 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               NM_SETTING_PARAM_NONE,
                                               NMSetting8021xPrivate,
                                               phase2_subject_match,
-                                              .is_deprecated = TRUE, );
+                                              .is_deprecated             = TRUE,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSetting8021x:phase2-altsubject-matches:
@@ -3866,7 +3883,8 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               PROP_PHASE2_DOMAIN_SUFFIX_MATCH,
                                               NM_SETTING_PARAM_NONE,
                                               NMSetting8021xPrivate,
-                                              phase2_domain_suffix_match);
+                                              phase2_domain_suffix_match,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSetting8021x:phase2-domain-match:
@@ -3893,7 +3911,8 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               PROP_PHASE2_DOMAIN_MATCH,
                                               NM_SETTING_PARAM_NONE,
                                               NMSetting8021xPrivate,
-                                              phase2_domain_match);
+                                              phase2_domain_match,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSetting8021x:phase2-client-cert:
@@ -3944,7 +3963,8 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               PROP_PHASE2_CLIENT_CERT_PASSWORD,
                                               NM_SETTING_PARAM_SECRET,
                                               NMSetting8021xPrivate,
-                                              phase2_client_cert_password);
+                                              phase2_client_cert_password,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSetting8021x:phase2-client-cert-password-flags:
@@ -3981,7 +4001,8 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               PROP_PASSWORD,
                                               NM_SETTING_PARAM_SECRET,
                                               NMSetting8021xPrivate,
-                                              password);
+                                              password,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSetting8021x:password-flags:
@@ -4113,7 +4134,8 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               PROP_PRIVATE_KEY_PASSWORD,
                                               NM_SETTING_PARAM_SECRET,
                                               NMSetting8021xPrivate,
-                                              private_key_password);
+                                              private_key_password,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSetting8021x:private-key-password-flags:
@@ -4199,7 +4221,8 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               PROP_PHASE2_PRIVATE_KEY_PASSWORD,
                                               NM_SETTING_PARAM_SECRET,
                                               NMSetting8021xPrivate,
-                                              phase2_private_key_password);
+                                              phase2_private_key_password,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSetting8021x:phase2-private-key-password-flags:
@@ -4239,7 +4262,8 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               PROP_PIN,
                                               NM_SETTING_PARAM_SECRET,
                                               NMSetting8021xPrivate,
-                                              pin);
+                                              pin,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSetting8021x:pin-flags:

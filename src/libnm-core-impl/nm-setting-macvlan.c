@@ -226,7 +226,8 @@ nm_setting_macvlan_class_init(NMSettingMacvlanClass *klass)
                                               PROP_PARENT,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingMacvlanPrivate,
-                                              parent);
+                                              parent,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingMacvlan:mode:

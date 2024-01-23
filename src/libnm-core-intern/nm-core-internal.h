@@ -839,6 +839,23 @@ struct _NMSettInfoProperty {
     /* Whether the string property is implemented as a (downcast) NMRefString. */
     bool direct_string_is_refstr : 1;
 
+    /* Usually, string properties cannot be empty (because it's unclear how
+     * that relates to NULL and how to distinguish that in nmcli). In some
+     * cases, it's allowed however (e.g. "gsm.apm").
+     *
+     * The lack of this flag indicates to perform an additional check after
+     * verify(), that the string is not empty.
+     *
+     * In some cases, we can also normalize an empty value, in which case verify()
+     * also allows the string to be empty.
+     *
+     * FIXME: historically, many properties allowed to be empty. Hence, to
+     * preserve behavior this flag is also set for many properties where it
+     * maybe should not be set. We should review the use of this flag and clear
+     * it where possible. New properties generally should not allow empty
+     * strings (unless they have specific reasons). */
+    bool direct_string_allow_empty : 1;
+
     /* Usually, for strv arrays (NM_VALUE_TYPE_STRV, NMValueStrv) there is little
      * difference between NULL/unset and empty arrays. E.g. g_object_get() will
      * return NULL and never an empty strv array.

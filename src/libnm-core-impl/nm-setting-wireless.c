@@ -1413,7 +1413,8 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                                               PROP_MODE,
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingWirelessPrivate,
-                                              mode);
+                                              mode,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingWireless:band:
@@ -1440,7 +1441,8 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                                               PROP_BAND,
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingWirelessPrivate,
-                                              band);
+                                              band,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingWireless:channel:
@@ -1707,7 +1709,8 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                                               PROP_GENERATE_MAC_ADDRESS_MASK,
                                               NM_SETTING_PARAM_FUZZY_IGNORE,
                                               NMSettingWirelessPrivate,
-                                              generate_mac_address_mask);
+                                              generate_mac_address_mask,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingWireless:mac-address-blacklist:
