@@ -195,48 +195,6 @@ _nm_auto_freev(gpointer ptr)
 
 /*****************************************************************************/
 
-#if defined(__GNUC__)
-#define _NM_PRAGMA_WARNING_DO(warning) G_STRINGIFY(GCC diagnostic ignored warning)
-#elif defined(__clang__)
-#define _NM_PRAGMA_WARNING_DO(warning) G_STRINGIFY(clang diagnostic ignored warning)
-#endif
-
-/* you can only suppress a specific warning that the compiler
- * understands. Otherwise you will get another compiler warning
- * about invalid pragma option.
- * It's not that bad however, because gcc and clang often have the
- * same name for the same warning. */
-
-#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#define NM_PRAGMA_DIAGNOSTICS_PUSH _Pragma("GCC diagnostic push")
-#define NM_PRAGMA_WARNING_DISABLE(warning) \
-    NM_PRAGMA_DIAGNOSTICS_PUSH _Pragma(_NM_PRAGMA_WARNING_DO(warning))
-#define NM_PRAGMA_WARNING_REENABLE _Pragma("GCC diagnostic pop")
-#elif defined(__clang__)
-#define NM_PRAGMA_DIAGNOSTICS_PUSH _Pragma("clang diagnostic push")
-#define NM_PRAGMA_WARNING_DISABLE(warning)                                                \
-    NM_PRAGMA_DIAGNOSTICS_PUSH _Pragma(_NM_PRAGMA_WARNING_DO("-Wunknown-warning-option")) \
-        _Pragma(_NM_PRAGMA_WARNING_DO(warning))
-#define NM_PRAGMA_WARNING_REENABLE _Pragma("clang diagnostic pop")
-#else
-#define NM_PRAGMA_DIAGNOSTICS_PUSH
-#define NM_PRAGMA_WARNING_DISABLE(warning)
-#define NM_PRAGMA_WARNING_REENABLE
-#endif
-
-/*****************************************************************************/
-
-/* Seems gcc-12 has a tendency for false-positive -Wdangling-pointer warnings with
- * g_error()'s `for(;;);`. See https://bugzilla.redhat.com/show_bug.cgi?id=2056613 .
- * Work around, but only for the affected gcc 12.0.1. */
-#if defined(__GNUC__) && __GNUC__ == 12 && __GNUC_MINOR__ == 0 && __GNUC_PATCHLEVEL__ <= 1
-#define NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER NM_PRAGMA_WARNING_DISABLE("-Wdangling-pointer")
-#else
-#define NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER NM_PRAGMA_DIAGNOSTICS_PUSH
-#endif
-
-/*****************************************************************************/
-
 /**
  * NM_G_ERROR_MSG:
  * @error: (allow-none): the #GError instance
