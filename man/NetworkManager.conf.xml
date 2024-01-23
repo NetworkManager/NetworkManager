@@ -824,6 +824,11 @@ domains=ALL
       to use the default from <literal>NetworkManager.conf</literal>.
     </para>
     <para>
+      Note that while nmcli supports various aliases and convenience features for configuring
+      properties, the settings in this section do not. For example, enum values usually only
+      can be configured via their numeric magic number.
+    </para>
+    <para>
       Example:
 <programlisting>
 [connection]
