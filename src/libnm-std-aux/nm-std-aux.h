@@ -235,6 +235,8 @@ typedef uint64_t _nm_bitwise nm_be64_t;
 
 #define nm_assert(cond)                                                \
     ({                                                                 \
+        NM_PRAGMA_WARNING_DISABLE("-Wnonnull-compare");                \
+                                                                       \
         /* nm_assert() must do *nothing* of effect, except evaluating
          * @cond (0 or 1 times).
          *
@@ -252,6 +254,9 @@ typedef uint64_t _nm_bitwise nm_be64_t;
         } else {                                                       \
             _nm_assert_fail(#cond);                                    \
         }                                                              \
+                                                                       \
+        NM_PRAGMA_WARNING_REENABLE;                                    \
+                                                                       \
         1;                                                             \
     })
 
