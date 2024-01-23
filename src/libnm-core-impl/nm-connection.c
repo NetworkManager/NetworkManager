@@ -1096,7 +1096,7 @@ _normalize_connection_slave_type(NMConnection *self)
     if (!nm_setting_connection_get_master(s_con))
         return FALSE;
 
-    slave_type = nm_setting_connection_get_slave_type(s_con);
+    slave_type = nm_setting_connection_get_port_type(s_con);
     if (slave_type) {
         if (_nm_setting_slave_type_is_valid(slave_type, &port_type) && port_type) {
             NMSetting *s_port;
@@ -1112,7 +1112,7 @@ _normalize_connection_slave_type(NMConnection *self)
         }
     } else {
         if ((slave_type = _nm_connection_detect_slave_type(self, NULL))) {
-            g_object_set(s_con, NM_SETTING_CONNECTION_SLAVE_TYPE, slave_type, NULL);
+            g_object_set(s_con, NM_SETTING_CONNECTION_PORT_TYPE, slave_type, NULL);
             return TRUE;
         }
     }
@@ -1172,7 +1172,7 @@ _supports_addr_family(NMConnection *self, int family)
     if (strcmp(connection_type, NM_SETTING_6LOWPAN_SETTING_NAME) == 0)
         return family == AF_INET6 || family == AF_UNSPEC;
     if ((s_con = nm_connection_get_setting_connection(self))
-        && (nm_streq0(nm_setting_connection_get_slave_type(s_con), NM_SETTING_VRF_SETTING_NAME)))
+        && (nm_streq0(nm_setting_connection_get_port_type(s_con), NM_SETTING_VRF_SETTING_NAME)))
         return TRUE;
 
     return !nm_setting_connection_get_master(nm_connection_get_setting_connection(self));
@@ -1768,7 +1768,7 @@ _normalize_invalid_slave_port_settings(NMConnection *self)
     const char          *slave_type;
     gboolean             changed = FALSE;
 
-    slave_type = nm_setting_connection_get_slave_type(s_con);
+    slave_type = nm_setting_connection_get_port_type(s_con);
 
     if (!nm_streq0(slave_type, NM_SETTING_BRIDGE_SETTING_NAME)
         && _nm_connection_remove_setting(self, NM_TYPE_SETTING_BRIDGE_PORT))

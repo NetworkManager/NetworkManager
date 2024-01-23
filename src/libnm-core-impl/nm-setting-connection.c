@@ -58,6 +58,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingConnection,
                              PROP_MASTER,
                              PROP_CONTROLLER,
                              PROP_SLAVE_TYPE,
+                             PROP_PORT_TYPE,
                              PROP_AUTOCONNECT_SLAVES,
                              PROP_SECONDARIES,
                              PROP_GATEWAY_PING_TIMEOUT,
@@ -82,7 +83,7 @@ typedef struct {
     char       *interface_name;
     char       *type;
     char       *controller;
-    char       *slave_type;
+    char       *port_type;
     char       *zone;
     char       *mud_url;
     guint64     timestamp;
@@ -740,19 +741,38 @@ nm_setting_connection_get_controller(NMSettingConnection *setting)
 }
 
 /**
+ * nm_setting_connection_get_port_type:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns the #NMSettingConnection:port-type property of the connection.
+ *
+ * Returns: the type of port this connection is, if any.
+ *
+ * Since: 1.46
+ */
+const char *
+nm_setting_connection_get_port_type(NMSettingConnection *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), NULL);
+
+    return NM_SETTING_CONNECTION_GET_PRIVATE(setting)->port_type;
+}
+
+/**
  * nm_setting_connection_get_slave_type:
  * @setting: the #NMSettingConnection
  *
  * Returns the #NMSettingConnection:slave-type property of the connection.
  *
  * Returns: the type of slave this connection is, if any
+ *
+ * Deprecated: 1.46. Use nm_setting_connection_get_port_type() instead which
+ * is just an alias.
  */
 const char *
 nm_setting_connection_get_slave_type(NMSettingConnection *setting)
 {
-    g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), NULL);
-
-    return NM_SETTING_CONNECTION_GET_PRIVATE(setting)->slave_type;
+    return nm_setting_connection_get_port_type(setting);
 }
 
 /**
@@ -762,13 +782,15 @@ nm_setting_connection_get_slave_type(NMSettingConnection *setting)
  * against @setting's slave type
  *
  * Returns: %TRUE if connection is of the given slave @type
+ *
+ * Deprecated: 1.46.
  */
 gboolean
 nm_setting_connection_is_slave_type(NMSettingConnection *setting, const char *type)
 {
     g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), FALSE);
 
-    return !g_strcmp0(NM_SETTING_CONNECTION_GET_PRIVATE(setting)->slave_type, type);
+    return nm_streq0(NM_SETTING_CONNECTION_GET_PRIVATE(setting)->port_type, type);
 }
 
 /**
@@ -1102,7 +1124,7 @@ _nm_connection_detect_slave_type_full(NMSettingConnection *s_con,
 
     is_slave           = FALSE;
     slave_setting_type = NULL;
-    slave_type         = priv->slave_type;
+    slave_type         = priv->port_type;
     if (slave_type) {
         is_slave = _nm_setting_slave_type_is_valid(slave_type, &slave_setting_type);
         if (!is_slave) {
@@ -1114,7 +1136,7 @@ _nm_connection_detect_slave_type_full(NMSettingConnection *s_con,
             g_prefix_error(error,
                            "%s.%s: ",
                            NM_SETTING_CONNECTION_SETTING_NAME,
-                           NM_SETTING_CONNECTION_SLAVE_TYPE);
+                           NM_SETTING_CONNECTION_PORT_TYPE);
             return FALSE;
         }
     }
@@ -1150,11 +1172,11 @@ _nm_connection_detect_slave_type_full(NMSettingConnection *s_con,
                             NM_CONNECTION_ERROR_MISSING_PROPERTY,
                             _("Cannot set '%s' without '%s'"),
                             NM_SETTING_CONNECTION_CONTROLLER,
-                            NM_SETTING_CONNECTION_SLAVE_TYPE);
+                            NM_SETTING_CONNECTION_PORT_TYPE);
                 g_prefix_error(error,
                                "%s.%s: ",
                                NM_SETTING_CONNECTION_SETTING_NAME,
-                               NM_SETTING_CONNECTION_SLAVE_TYPE);
+                               NM_SETTING_CONNECTION_PORT_TYPE);
                 return FALSE;
             }
         }
@@ -1365,7 +1387,7 @@ after_interface_name:
         g_prefix_error(error,
                        "%s.%s: ",
                        NM_SETTING_CONNECTION_SETTING_NAME,
-                       NM_SETTING_CONNECTION_SLAVE_TYPE);
+                       NM_SETTING_CONNECTION_PORT_TYPE);
         return FALSE;
     }
 
@@ -1582,8 +1604,8 @@ after_interface_name:
         g_set_error(error,
                     NM_CONNECTION_ERROR,
                     NM_CONNECTION_ERROR_MISSING_SETTING,
-                    _("slave-type '%s' requires a '%s' setting in the connection"),
-                    priv->slave_type,
+                    _("port-type '%s' requires a '%s' setting in the connection"),
+                    priv->port_type,
                     normerr_slave_setting_type);
         g_prefix_error(error, "%s: ", normerr_slave_setting_type);
         return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
@@ -1597,37 +1619,37 @@ after_interface_name:
                       "be set to '%s'"),
                     NM_SETTING_CONNECTION_CONTROLLER,
                     normerr_missing_slave_type_port,
-                    NM_SETTING_CONNECTION_SLAVE_TYPE,
+                    NM_SETTING_CONNECTION_PORT_TYPE,
                     normerr_missing_slave_type);
         g_prefix_error(error,
                        "%s.%s: ",
                        NM_SETTING_CONNECTION_SETTING_NAME,
-                       NM_SETTING_CONNECTION_SLAVE_TYPE);
+                       NM_SETTING_CONNECTION_PORT_TYPE);
         return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
     }
 
     if (connection) {
         gboolean has_bridge_port = FALSE;
 
-        if ((!nm_streq0(priv->slave_type, NM_SETTING_BRIDGE_SETTING_NAME)
+        if ((!nm_streq0(priv->port_type, NM_SETTING_BRIDGE_SETTING_NAME)
              && (has_bridge_port =
                      !!nm_connection_get_setting_by_name(connection,
                                                          NM_SETTING_BRIDGE_PORT_SETTING_NAME)))
-            || (!nm_streq0(priv->slave_type, NM_SETTING_TEAM_SETTING_NAME)
+            || (!nm_streq0(priv->port_type, NM_SETTING_TEAM_SETTING_NAME)
                 && nm_connection_get_setting_by_name(connection,
                                                      NM_SETTING_TEAM_PORT_SETTING_NAME))) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_SETTING,
                         _("A slave connection with '%s' set to '%s' cannot have a '%s' setting"),
-                        NM_SETTING_CONNECTION_SLAVE_TYPE,
-                        priv->slave_type ?: "",
+                        NM_SETTING_CONNECTION_PORT_TYPE,
+                        priv->port_type ?: "",
                         has_bridge_port ? NM_SETTING_BRIDGE_PORT_SETTING_NAME
                                         : NM_SETTING_TEAM_PORT_SETTING_NAME);
             g_prefix_error(error,
                            "%s.%s: ",
                            NM_SETTING_CONNECTION_SETTING_NAME,
-                           NM_SETTING_CONNECTION_SLAVE_TYPE);
+                           NM_SETTING_CONNECTION_PORT_TYPE);
             return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
         }
     }
@@ -1868,6 +1890,65 @@ _nm_setting_connection_controller_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARG
     str = g_variant_get_string(value, NULL);
 
     g_object_set(setting, NM_SETTING_CONNECTION_CONTROLLER, str, NULL);
+    return TRUE;
+}
+
+gboolean
+_nm_setting_connection_slave_type_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+{
+    const char *str;
+
+    if (!_nm_setting_use_legacy_property(setting,
+                                         connection_dict,
+                                         NM_SETTING_CONNECTION_SLAVE_TYPE,
+                                         NM_SETTING_CONNECTION_PORT_TYPE)) {
+        *out_is_modified = FALSE;
+        return TRUE;
+    }
+    str = g_variant_get_string(value, NULL);
+
+    g_object_set(setting, NM_SETTING_CONNECTION_SLAVE_TYPE, str, NULL);
+    return TRUE;
+}
+
+GVariant *
+_nm_setting_connection_port_type_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+{
+    const char *port_type;
+
+    /* FIXME: `port-type` is an alias of `slave-type` property. Serializing the
+     * property to the clients would break them as they won't be able to drop
+     * it if they are not aware of the existance of `port-type`. In order to
+     * give them time to adapt their code, NetworkManager is not serializing
+     * `port-type` on DBus.
+     */
+    if (_nm_utils_is_manager_process) {
+        return NULL;
+    }
+
+    port_type = nm_setting_connection_get_port_type(NM_SETTING_CONNECTION(setting));
+    if (!port_type)
+        return NULL;
+
+    return g_variant_new_string(port_type);
+}
+
+gboolean
+_nm_setting_connection_port_type_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+{
+    const char *str;
+
+    /* Ignore 'port-type' if we're going to process 'slave-type' */
+    if (_nm_setting_use_legacy_property(setting,
+                                        connection_dict,
+                                        NM_SETTING_CONNECTION_SLAVE_TYPE,
+                                        NM_SETTING_CONNECTION_PORT_TYPE)) {
+        *out_is_modified = FALSE;
+        return TRUE;
+    }
+    str = g_variant_get_string(value, NULL);
+
+    g_object_set(setting, NM_SETTING_CONNECTION_PORT_TYPE, str, NULL);
     return TRUE;
 }
 
@@ -2404,6 +2485,8 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * Setting name of the device type of this slave's master connection (eg,
      * %NM_SETTING_BOND_SETTING_NAME), or %NULL if this connection is not a
      * slave.
+     *
+     * Deprecated 1.46. Use #NMSettingConnection:port-type instead, this is just an alias.
      **/
     /* ---ifcfg-rh---
      * property: slave-type
@@ -2415,14 +2498,49 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *   and BRIDGE_UUID for bridging.
      * ---end---
      */
-    _nm_setting_property_define_direct_string(properties_override,
-                                              obj_properties,
-                                              NM_SETTING_CONNECTION_SLAVE_TYPE,
-                                              PROP_SLAVE_TYPE,
-                                              NM_SETTING_PARAM_FUZZY_IGNORE
-                                                  | NM_SETTING_PARAM_INFERRABLE,
-                                              NMSettingConnectionPrivate,
-                                              slave_type);
+    prop_idx = _nm_setting_property_define_direct_string_full(
+        properties_override,
+        obj_properties,
+        NM_SETTING_CONNECTION_SLAVE_TYPE,
+        PROP_SLAVE_TYPE,
+        NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_INFERRABLE,
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING,
+                                       .direct_type = NM_VALUE_TYPE_STRING,
+                                       .compare_fcn = _nm_setting_property_compare_fcn_direct,
+                                       .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_direct,
+                                       .from_dbus_fcn =
+                                           _nm_setting_connection_slave_type_from_dbus, ),
+        NMSettingConnectionPrivate,
+        port_type,
+        .is_deprecated = 1);
+
+    /**
+     * NMSettingConnection:port-type:
+     *
+     * Setting name of the device type of this port's controller connection (eg,
+     * %NM_SETTING_BOND_SETTING_NAME), or %NULL if this connection is not a
+     * port.
+     *
+     * Since: 1.46
+     **/
+    _nm_setting_property_define_direct_string_full(
+        properties_override,
+        obj_properties,
+        NM_SETTING_CONNECTION_PORT_TYPE,
+        PROP_PORT_TYPE,
+        NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_INFERRABLE,
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING,
+                                       .direct_type = NM_VALUE_TYPE_STRING,
+                                       .compare_fcn = _nm_setting_property_compare_fcn_direct,
+                                       .to_dbus_fcn = _nm_setting_connection_port_type_to_dbus,
+                                       .from_dbus_fcn =
+                                           _nm_setting_connection_port_type_from_dbus, ),
+        NMSettingConnectionPrivate,
+        port_type,
+        .direct_also_notify = obj_properties[PROP_SLAVE_TYPE]);
+
+    nm_g_array_index(properties_override, NMSettInfoProperty, prop_idx).direct_also_notify =
+        obj_properties[PROP_PORT_TYPE];
 
     /**
      * NMSettingConnection:autoconnect-slaves:

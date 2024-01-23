@@ -1523,7 +1523,7 @@ _prop_get_ipvx_route_table(NMDevice *self, int addr_family)
 
     if (route_table == 0u && connection
         && (s_con = nm_connection_get_setting_connection(connection))
-        && (nm_streq0(nm_setting_connection_get_slave_type(s_con), NM_SETTING_VRF_SETTING_NAME)
+        && (nm_streq0(nm_setting_connection_get_port_type(s_con), NM_SETTING_VRF_SETTING_NAME)
             && priv->master && nm_device_get_device_type(priv->master) == NM_DEVICE_TYPE_VRF)) {
         const NMPlatformLnkVrf *lnk;
 
@@ -9441,7 +9441,7 @@ nm_device_check_slave_connection_compatible(NMDevice *self, NMConnection *slave)
 
     s_con = nm_connection_get_setting_connection(slave);
     g_assert(s_con);
-    slave_type = nm_setting_connection_get_slave_type(s_con);
+    slave_type = nm_setting_connection_get_port_type(s_con);
     if (!slave_type)
         return FALSE;
 

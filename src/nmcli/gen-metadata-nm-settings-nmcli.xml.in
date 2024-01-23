@@ -662,7 +662,12 @@
                   format="string" />
         <property name="slave-type"
                   alias="slave-type"
-                  nmcli-description="Setting name of the device type of this slave&apos;s master connection (eg, &quot;bond&quot;), or NULL if this connection is not a slave."
+                  nmcli-description="Setting name of the device type of this slave&apos;s master connection (eg, &quot;bond&quot;), or NULL if this connection is not a slave. Deprecated 1.46. Use &quot;port-type&quot; instead, this is just an alias."
+                  format="string"
+                  values="bond, bridge, ovs-bridge, ovs-port, team, vrf" />
+        <property name="port-type"
+                  alias="port-type"
+                  nmcli-description="Setting name of the device type of this port&apos;s controller connection (eg, &quot;bond&quot;), or NULL if this connection is not a port."
                   format="string"
                   values="bond, bridge, ovs-bridge, ovs-port, team, vrf" />
         <property name="autoconnect-slaves"

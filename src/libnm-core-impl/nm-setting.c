@@ -2567,7 +2567,8 @@ _nm_setting_property_compare_fcn_direct(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_
     nm_assert(NM_IN_SET(property_info->property_type->to_dbus_fcn,
                         _nm_setting_property_to_dbus_fcn_direct,
                         _nm_setting_property_to_dbus_fcn_direct_mac_address,
-                        _nm_setting_connection_controller_to_dbus));
+                        _nm_setting_connection_controller_to_dbus,
+                        _nm_setting_connection_port_type_to_dbus));
 
     if (!property_info->param_spec)
         return nm_assert_unreachable_val(NM_TERNARY_DEFAULT);

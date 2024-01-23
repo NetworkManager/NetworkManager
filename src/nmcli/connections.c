@@ -805,7 +805,7 @@ _metagen_con_show_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
     case NMC_GENERIC_INFO_TYPE_CON_SHOW_PORT:
         if (!s_con)
             return NULL;
-        return nm_setting_connection_get_slave_type(s_con);
+        return nm_setting_connection_get_port_type(s_con);
     case NMC_GENERIC_INFO_TYPE_CON_SHOW_FILENAME:
         if (!NM_IS_REMOTE_CONNECTION(c))
             return NULL;
@@ -3865,7 +3865,7 @@ is_setting_mandatory(NMConnection *connection, NMSetting *setting)
     g_return_val_if_fail(s_con, FALSE);
 
     c_type = nm_setting_connection_get_connection_type(s_con);
-    s_type = nm_setting_connection_get_slave_type(s_con);
+    s_type = nm_setting_connection_get_port_type(s_con);
 
     name = nm_setting_get_name(setting);
 
@@ -4454,7 +4454,7 @@ con_settings(NMConnection                             *connection,
     s_con = nm_connection_get_setting_connection(connection);
     g_return_val_if_fail(s_con, FALSE);
 
-    con_type       = nm_setting_connection_get_slave_type(s_con);
+    con_type       = nm_setting_connection_get_port_type(s_con);
     *port_settings = nm_meta_setting_info_valid_parts_for_slave_type(con_type, NULL);
     if (!*port_settings) {
         g_set_error(error,
@@ -4554,7 +4554,7 @@ enable_type_settings_and_options(NmCli *nmc, NMConnection *con, GError **error)
     s_con = nm_connection_get_setting_connection(con);
     g_return_val_if_fail(s_con, FALSE);
 
-    if (nm_setting_connection_get_slave_type(s_con)) {
+    if (nm_setting_connection_get_port_type(s_con)) {
         enable_options(NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_CONTROLLER, NULL);
     }
 
@@ -4616,7 +4616,7 @@ set_connection_type(NmCli            *nmc,
         if (!set_property(nmc->client,
                           con,
                           NM_SETTING_CONNECTION_SETTING_NAME,
-                          NM_SETTING_CONNECTION_SLAVE_TYPE,
+                          NM_SETTING_CONNECTION_PORT_TYPE,
                           port_type,
                           NM_META_ACCESSOR_MODIFIER_SET,
                           error)) {
@@ -4686,14 +4686,14 @@ set_connection_controller(NmCli            *nmc,
         return FALSE;
     }
 
-    port_type   = nm_setting_connection_get_slave_type(s_con);
+    port_type   = nm_setting_connection_get_port_type(s_con);
     connections = nmc_get_connections(nmc);
     value       = normalized_controller_for_port(connections, value, port_type, &port_type);
 
     if (!set_property(nmc->client,
                       con,
                       NM_SETTING_CONNECTION_SETTING_NAME,
-                      NM_SETTING_CONNECTION_SLAVE_TYPE,
+                      NM_SETTING_CONNECTION_PORT_TYPE,
                       port_type,
                       NM_META_ACCESSOR_MODIFIER_SET,
                       error)) {
@@ -5018,7 +5018,7 @@ complete_property_name(NmCli                 *nmc,
     connection_type = nm_connection_get_connection_type(connection);
     s_con           = nm_connection_get_setting_connection(connection);
     if (s_con)
-        port_type = nm_setting_connection_get_slave_type(s_con);
+        port_type = nm_setting_connection_get_port_type(s_con);
     valid_settings_main = get_valid_settings_array(connection_type);
     valid_settings_port = nm_meta_setting_info_valid_parts_for_slave_type(port_type, NULL);
 
@@ -5961,7 +5961,7 @@ read_properties:
 
     /* Traditionally, we didn't ask for these options for ethernet ports. They don't
      * make much sense, since these are likely to be set by the controller anyway. */
-    if (nm_setting_connection_get_slave_type(s_con)) {
+    if (nm_setting_connection_get_port_type(s_con)) {
         disable_options(NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_MTU);
         disable_options(NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_MAC_ADDRESS);
         disable_options(NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_CLONED_MAC_ADDRESS);
@@ -5972,7 +5972,7 @@ read_properties:
     if (!nm_setting_connection_get_id(s_con)) {
         const char *ifname    = nm_setting_connection_get_interface_name(s_con);
         const char *type      = nm_setting_connection_get_connection_type(s_con);
-        const char *port_type = nm_setting_connection_get_slave_type(s_con);
+        const char *port_type = nm_setting_connection_get_port_type(s_con);
 
         /* If only bother when there's a type, which is not guaranteed at this point.
          * Otherwise, the validation will fail anyway. */
@@ -6247,7 +6247,7 @@ gen_setting_names(const char *text, int state)
     /* is_port */
     s_con = nm_connection_get_setting_connection(nmc_tab_completion.connection);
     if (s_con)
-        s_type = nm_setting_connection_get_slave_type(s_con);
+        s_type = nm_setting_connection_get_port_type(s_con);
     valid_settings_arr = nm_meta_setting_info_valid_parts_for_slave_type(s_type, NULL);
 
     if (list_idx < NM_PTRARRAY_LEN(valid_settings_arr)) {
@@ -6614,7 +6614,7 @@ get_setting_and_property(const char *prompt,
         /* Is this too much (and useless?) effort for an unlikely case? */
         s_con = nm_connection_get_setting_connection(nmc_tab_completion.connection);
         if (s_con)
-            s_type = nm_setting_connection_get_slave_type(s_con);
+            s_type = nm_setting_connection_get_port_type(s_con);
 
         valid_settings_main = get_valid_settings_array(nmc_tab_completion.con_type);
         valid_settings_port = nm_meta_setting_info_valid_parts_for_slave_type(s_type, NULL);
@@ -7985,7 +7985,7 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
 
     s_con = nm_connection_get_setting_connection(connection);
     if (s_con)
-        s_type = nm_setting_connection_get_slave_type(s_con);
+        s_type = nm_setting_connection_get_port_type(s_con);
 
     valid_settings_main = get_valid_settings_array(connection_type);
     valid_settings_port = nm_meta_setting_info_valid_parts_for_slave_type(s_type, NULL);
@@ -8860,7 +8860,7 @@ editor_init_new_connection(NmCli *nmc, NMConnection *connection, const char *por
                      NM_SETTING_WIRED_SETTING_NAME,
                      NM_SETTING_CONNECTION_CONTROLLER,
                      dev_ifname ?: "eth0",
-                     NM_SETTING_CONNECTION_SLAVE_TYPE,
+                     NM_SETTING_CONNECTION_PORT_TYPE,
                      port_type,
                      NULL);
     } else {

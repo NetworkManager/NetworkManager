@@ -61,7 +61,7 @@ edit_connection_list_filter(NmtEditConnectionList *list,
     controller = nm_setting_connection_get_master(s_con);
     if (!controller)
         return TRUE;
-    port_type = nm_setting_connection_get_slave_type(s_con);
+    port_type = nm_setting_connection_get_port_type(s_con);
     if (g_strcmp0(port_type, NM_SETTING_BOND_SETTING_NAME) != 0
         && g_strcmp0(port_type, NM_SETTING_TEAM_SETTING_NAME) != 0
         && g_strcmp0(port_type, NM_SETTING_BRIDGE_SETTING_NAME) != 0)

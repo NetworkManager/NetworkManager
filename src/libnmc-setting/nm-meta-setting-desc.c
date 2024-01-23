@@ -2809,7 +2809,7 @@ _complete_fcn_connection_master(ARGS_COMPLETE_FCN)
          * slave-type. */
         s_con = nm_connection_get_setting_connection(operation_context->connection);
         if (s_con)
-            expected_type = nm_setting_connection_get_slave_type(s_con);
+            expected_type = nm_setting_connection_get_port_type(s_con);
     }
 
     text_len = text ? strlen(text) : 0;
@@ -5657,6 +5657,20 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_SLAVE_TYPE,
         .is_cli_option =                TRUE,
         .property_alias =               "slave-type",
+        .inf_flags =                    NM_META_PROPERTY_INF_FLAG_DONT_ASK,
+        .property_type =                &_pt_gobject_string,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+            .values_static =            NM_MAKE_STRV (NM_SETTING_BOND_SETTING_NAME,
+                                                      NM_SETTING_BRIDGE_SETTING_NAME,
+                                                      NM_SETTING_OVS_BRIDGE_SETTING_NAME,
+                                                      NM_SETTING_OVS_PORT_SETTING_NAME,
+                                                      NM_SETTING_TEAM_SETTING_NAME,
+                                                      NM_SETTING_VRF_SETTING_NAME),
+        ),
+    ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_PORT_TYPE,
+        .is_cli_option =                TRUE,
+        .property_alias =               "port-type",
         .inf_flags =                    NM_META_PROPERTY_INF_FLAG_DONT_ASK,
         .property_type =                &_pt_gobject_string,
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
