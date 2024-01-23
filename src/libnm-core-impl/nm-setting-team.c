@@ -123,6 +123,7 @@ nm_team_link_watcher_new_ethtool(int delay_up, int delay_down, GError **error)
     }
 
     NM_PRAGMA_WARNING_DISABLE("-Warray-bounds")
+    NM_PRAGMA_WARNING_DISABLE("-Walloc-size")
 
     watcher = g_malloc(nm_offsetofend(NMTeamLinkWatcher, ethtool));
 
@@ -131,6 +132,7 @@ nm_team_link_watcher_new_ethtool(int delay_up, int delay_down, GError **error)
     watcher->ethtool.delay_up   = delay_up;
     watcher->ethtool.delay_down = delay_down;
 
+    NM_PRAGMA_WARNING_REENABLE
     NM_PRAGMA_WARNING_REENABLE
 
     return watcher;
