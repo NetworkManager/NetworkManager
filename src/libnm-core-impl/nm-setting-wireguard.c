@@ -311,10 +311,9 @@ _nm_wireguard_peer_set_public_key_bin(NMWireGuardPeer *self,
 {
     g_return_if_fail(NM_IS_WIREGUARD_PEER(self, FALSE));
 
-    nm_clear_g_free(&self->public_key);
+    nm_assert(public_key);
 
-    if (!public_key)
-        return;
+    nm_clear_g_free(&self->public_key);
 
     self->public_key       = g_base64_encode(public_key, NM_WIREGUARD_PUBLIC_KEY_LEN);
     self->public_key_valid = TRUE;
