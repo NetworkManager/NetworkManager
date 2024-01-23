@@ -4614,7 +4614,7 @@ nm_utils_bond_mode_string_to_int(const char *mode)
 
 struct _NMUtilsStrStrDictKey {
     char type;
-    char data[1];
+    char data[];
 };
 
 guint
