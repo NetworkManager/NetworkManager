@@ -83,6 +83,11 @@
 
 /*****************************************************************************/
 
+#define NM_STRINGIFY_ARG(contents)    #contents
+#define NM_STRINGIFY(macro_or_string) NM_STRINGIFY_ARG(macro_or_string)
+
+/*****************************************************************************/
+
 #ifndef _NM_CC_SUPPORT_AUTO_TYPE
 #if (defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9)))
 #define _NM_CC_SUPPORT_AUTO_TYPE 1
