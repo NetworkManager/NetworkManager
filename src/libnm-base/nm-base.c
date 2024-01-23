@@ -54,7 +54,8 @@ nm_dhcp_iaid_from_hexstr(const char *str, guint32 *out_value)
 const char *
 nm_net_devname_infiniband(char name[static NM_IFNAMSIZ], const char *parent_name, int p_key)
 {
-    g_return_val_if_fail(name, NULL);
+    nm_assert(name);
+
     g_return_val_if_fail(parent_name && parent_name[0], NULL);
     g_return_val_if_fail(strlen(parent_name) < NM_IFNAMSIZ, NULL);
 
