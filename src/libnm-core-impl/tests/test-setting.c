@@ -5113,6 +5113,50 @@ check_done:;
 /*****************************************************************************/
 
 static void
+test_setting_connection_empty_address_and_route(void)
+{
+    NMSettingIPConfig            *s_ip4;
+    NMIPRoute                    *route;
+    NMIPAddress                  *addr;
+    gs_unref_object NMConnection *con   = NULL;
+    gs_free_error GError         *error = NULL;
+    gboolean                      success;
+
+    /* IP4 setting */
+    con   = nmtst_create_minimal_connection("wired", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+    s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new();
+    nm_connection_add_setting(con, NM_SETTING(s_ip4));
+    g_object_set(s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL, NULL);
+    g_assert(s_ip4 != NULL);
+    g_assert(NM_IS_SETTING_IP4_CONFIG(s_ip4));
+    success = nm_setting_verify((NMSetting *) s_ip4, con, &error);
+    nmtst_assert_no_success(success, error);
+    nm_clear_error(&error);
+
+    route = nm_ip_route_new(AF_INET, "192.168.12.0", 24, NULL, 0, NULL);
+    nm_setting_ip_config_add_route(s_ip4, route);
+    success = nm_setting_verify((NMSetting *) s_ip4, con, &error);
+    nmtst_assert_success(success, error);
+    nm_clear_error(&error);
+
+    nm_setting_ip_config_clear_routes(s_ip4);
+    addr = nm_ip_address_new(AF_INET, "1.1.1.3", 24, NULL);
+    nm_setting_ip_config_add_address(s_ip4, addr);
+    success = nm_setting_verify((NMSetting *) s_ip4, con, &error);
+    nmtst_assert_success(success, error);
+    nm_clear_error(&error);
+
+    nm_setting_ip_config_add_route(s_ip4, route);
+    success = nm_setting_verify((NMSetting *) s_ip4, con, &error);
+    nmtst_assert_success(success, error);
+    nm_ip_address_unref(addr);
+    nm_ip_route_unref(route);
+    nm_clear_error(&error);
+}
+
+/*****************************************************************************/
+
+static void
 test_setting_connection_secondaries_verify(void)
 {
     gs_unref_object NMConnection *con = NULL;
@@ -5420,6 +5464,8 @@ main(int argc, char **argv)
                          test_8021x);
     g_test_add_data_func("/libnm/setting-8021x/pkcs12", "test-cert.p12, test", test_8021x);
 
+    g_test_add_func("/libnm/settings/test_setting_connection_empty_address_and_route",
+                    test_setting_connection_empty_address_and_route);
     g_test_add_func("/libnm/settings/test_setting_connection_secondaries_verify",
                     test_setting_connection_secondaries_verify);
 

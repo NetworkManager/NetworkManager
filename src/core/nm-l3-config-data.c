@@ -157,6 +157,8 @@ struct _NML3ConfigData {
     bool has_routes_with_type_local_6_set : 1;
     bool has_routes_with_type_local_4_val : 1;
     bool has_routes_with_type_local_6_val : 1;
+    bool dhcp_enabled_4 : 1;
+    bool dhcp_enabled_6 : 1;
 
     bool ndisc_hop_limit_set : 1;
     bool ndisc_reachable_time_msec_set : 1;
@@ -1933,6 +1935,19 @@ nm_l3_config_data_set_mptcp_flags(NML3ConfigData *self, NMMptcpFlags mptcp_flags
     return TRUE;
 }
 
+gboolean
+nm_l3_config_data_get_dhcp_enabled(const NML3ConfigData *self, int addr_family)
+{
+    const int IS_IPv4 = NM_IS_IPv4(addr_family);
+
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+    if (IS_IPv4) {
+        return self->dhcp_enabled_4;
+    } else {
+        return self->dhcp_enabled_6;
+    }
+}
+
 NMProxyConfigMethod
 nm_l3_config_data_get_proxy_method(const NML3ConfigData *self)
 {
@@ -2722,6 +2737,7 @@ _init_from_connection_ip(NML3ConfigData *self, int addr_family, NMConnection *co
     guint              nnameservers;
     guint              nsearches;
     const char        *gateway_str;
+    const char        *method;
     NMIPAddr           gateway_bin;
     guint              i;
     int                idx;
@@ -2738,6 +2754,24 @@ _init_from_connection_ip(NML3ConfigData *self, int addr_family, NMConnection *co
         return;
 
     never_default = nm_setting_ip_config_get_never_default(s_ip);
+
+    method = nm_setting_ip_config_get_method(s_ip);
+    if (IS_IPv4) {
+        if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
+            self->dhcp_enabled_4 = TRUE;
+        } else {
+            self->dhcp_enabled_4 = FALSE;
+        }
+    } else {
+        method = nm_setting_ip_config_get_method(s_ip);
+        if (NM_IN_STRSET(method,
+                         NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+                         NM_SETTING_IP6_CONFIG_METHOD_DHCP)) {
+            self->dhcp_enabled_6 = TRUE;
+        } else {
+            self->dhcp_enabled_6 = FALSE;
+        }
+    }
 
     nm_l3_config_data_set_never_default(self, addr_family, !!never_default);
 
@@ -3422,6 +3456,11 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
         self->dhcp_lease_x[0] = nm_dhcp_lease_ref(self->dhcp_lease_x[0]);
         self->dhcp_lease_x[1] = nm_dhcp_lease_ref(self->dhcp_lease_x[1]);
     }
+    if (src->dhcp_enabled_4)
+        self->dhcp_enabled_4 = TRUE;
+
+    if (src->dhcp_enabled_6)
+        self->dhcp_enabled_6 = TRUE;
 }
 
 NML3ConfigData *
