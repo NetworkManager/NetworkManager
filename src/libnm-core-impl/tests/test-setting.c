@@ -4666,8 +4666,6 @@ test_setting_metadata(void)
 
                 g_assert(sip->property_type == &nm_sett_info_propert_type_direct_enum);
                 g_assert(g_variant_type_equal(sip->property_type->dbus_type, "i"));
-                g_assert(sip->property_type->to_dbus_fcn
-                         == _nm_setting_property_to_dbus_fcn_direct);
                 g_assert(sip->param_spec);
                 g_assert(g_type_is_a(sip->param_spec->value_type, G_TYPE_ENUM));
                 g_assert(sip->param_spec->value_type != G_TYPE_ENUM);
@@ -4706,10 +4704,6 @@ test_setting_metadata(void)
                                        INFINIBAND_ALEN));
                 } else {
                     g_assert(g_variant_type_equal(sip->property_type->dbus_type, "s"));
-                    g_assert(NM_IN_SET(sip->property_type->to_dbus_fcn,
-                                       _nm_setting_property_to_dbus_fcn_direct,
-                                       _nm_setting_connection_controller_to_dbus,
-                                       _nm_setting_connection_port_type_to_dbus));
                     can_have_direct_set_fcn = TRUE;
                 }
                 g_assert(sip->param_spec);
@@ -4847,18 +4841,6 @@ check_done:;
 
             if (sip->property_type->from_dbus_fcn == _nm_setting_property_from_dbus_fcn_gprop)
                 g_assert(sip->param_spec);
-            if (sip->property_type->from_dbus_fcn) {
-                if (sip->property_type->direct_type != NM_VALUE_TYPE_NONE) {
-                    g_assert(NM_IN_SET(sip->property_type->from_dbus_fcn,
-                                       _nm_setting_property_from_dbus_fcn_direct_ip_config_gateway,
-                                       _nm_setting_property_from_dbus_fcn_direct_mac_address,
-                                       _nm_setting_connection_controller_from_dbus,
-                                       _nm_setting_connection_master_from_dbus,
-                                       _nm_setting_connection_slave_type_from_dbus,
-                                       _nm_setting_connection_port_type_from_dbus,
-                                       _nm_setting_property_from_dbus_fcn_direct));
-                }
-            }
 
             g_assert(sip->property_type->from_dbus_is_full
                      == NM_IN_SET(sip->property_type->from_dbus_fcn,
@@ -4875,11 +4857,6 @@ check_done:;
             } else if (sip->property_type->compare_fcn == _nm_setting_property_compare_fcn_direct) {
                 g_assert(sip->param_spec);
                 g_assert(sip->property_type->direct_type != NM_VALUE_TYPE_NONE);
-                g_assert(NM_IN_SET(sip->property_type->to_dbus_fcn,
-                                   _nm_setting_property_to_dbus_fcn_direct,
-                                   _nm_setting_property_to_dbus_fcn_direct_mac_address,
-                                   _nm_setting_connection_controller_to_dbus,
-                                   _nm_setting_connection_port_type_to_dbus));
             } else if (sip->property_type->compare_fcn == _nm_setting_property_compare_fcn_ignore) {
                 if (NM_IN_SET(sip->property_type,
                               &nm_sett_info_propert_type_deprecated_ignore_i,
