@@ -675,9 +675,13 @@ _property_direct_set_string(const NMSettInfoSetting  *sett_info,
                             NMSetting                *setting,
                             const char               *src)
 {
-    char **dst;
-    char  *s;
+    gs_free char *s_cpy = NULL;
+    char         *s_tmp = NULL;
+    gboolean      is_secret;
+    gboolean      changed;
+    char        **dst;
 
+    nm_assert(property_info->param_spec);
     nm_assert(property_info->property_type->direct_type == NM_VALUE_TYPE_STRING);
     nm_assert(((!!property_info->direct_set_string_ascii_strdown)
                + (!!property_info->direct_set_string_strip)
@@ -690,44 +694,68 @@ _property_direct_set_string(const NMSettInfoSetting  *sett_info,
         return property_info->direct_set_fcn.set_string(sett_info, property_info, setting, src);
     }
 
+    is_secret = NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_SECRET);
+
+#define _move_tmpstr(dst, src, is_secret)        \
+    ({                                           \
+        const gboolean _is_secret = (is_secret); \
+        char **const   _dst       = (dst);       \
+        char **const   _src       = (src);       \
+        char *const    _old       = *_dst;       \
+                                                 \
+        *_dst = g_steal_pointer(_src);           \
+        if (_old) {                              \
+            nm_assert(_old != *_dst);            \
+            if (_is_secret)                      \
+                nm_free_secret(_old);            \
+            else                                 \
+                g_free(_old);                    \
+        }                                        \
+                                                 \
+        (const char *) (*_dst);                  \
+    })
+
+    /* normalize/mangle the string, as requested. */
+    if (src) {
+        if (property_info->direct_set_string_strip) {
+            src = nm_strstrip_avoid_copy_a(300, src, &s_tmp);
+            if (s_tmp)
+                src = _move_tmpstr(&s_cpy, &s_tmp, is_secret);
+        }
+        if (property_info->direct_set_string_ascii_strdown) {
+            s_tmp = g_ascii_strdown(src, -1);
+            src   = _move_tmpstr(&s_cpy, &s_tmp, is_secret);
+        }
+
+        if (property_info->direct_set_string_mac_address_len > 0) {
+            s_tmp = _nm_utils_hwaddr_canonical_or_invalid(
+                src,
+                property_info->direct_set_string_mac_address_len);
+            src = _move_tmpstr(&s_cpy, &s_tmp, is_secret);
+        } else if (property_info->direct_set_string_ip_address_addr_family != 0) {
+            s_tmp = _nm_utils_ipaddr_canonical_or_invalid(
+                property_info->direct_set_string_ip_address_addr_family - 1,
+                src,
+                property_info->direct_set_string_ip_address_addr_family_map_zero_to_null);
+            src = _move_tmpstr(&s_cpy, &s_tmp, is_secret);
+        }
+    }
+
     dst = _nm_setting_get_private_field(setting, sett_info, property_info);
 
     if (property_info->direct_string_is_refstr) {
-        nm_assert(property_info->param_spec);
-        nm_assert(!NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_SECRET));
-        return nm_ref_string_reset_str_upcast((const char **) dst, src);
-    }
+        /* secrets and refstr doesn't work together. */
+        nm_assert(!is_secret);
+        changed = nm_ref_string_reset_str_upcast((const char **) dst, src);
+    } else if (is_secret) {
+        changed = nm_strdup_reset_secret(dst, src);
+        nm_clear_pointer(&s_cpy, nm_free_secret);
+    } else if (src && src == s_cpy)
+        changed = nm_strdup_reset_take(dst, g_steal_pointer(&s_cpy));
+    else
+        changed = nm_strdup_reset(dst, src);
 
-    if (property_info->direct_set_string_ascii_strdown) {
-        s = src ? g_ascii_strdown(src, -1) : NULL;
-        goto out_take;
-    }
-    if (property_info->direct_set_string_strip) {
-        s = nm_strstrip_dup(src);
-        goto out_take;
-    }
-    if (property_info->direct_set_string_mac_address_len > 0) {
-        s = _nm_utils_hwaddr_canonical_or_invalid(src,
-                                                  property_info->direct_set_string_mac_address_len);
-        goto out_take;
-    }
-    if (property_info->direct_set_string_ip_address_addr_family != 0) {
-        s = _nm_utils_ipaddr_canonical_or_invalid(
-            property_info->direct_set_string_ip_address_addr_family - 1,
-            src,
-            property_info->direct_set_string_ip_address_addr_family_map_zero_to_null);
-        goto out_take;
-    } else
-        nm_assert(!property_info->direct_set_string_ip_address_addr_family_map_zero_to_null);
-
-    if (NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_SECRET))
-        return nm_strdup_reset_secret(dst, src);
-
-    return nm_strdup_reset(dst, src);
-
-out_take:
-    nm_assert(!NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_SECRET));
-    return nm_strdup_reset_take(dst, s);
+    return changed;
 }
 
 static gboolean
