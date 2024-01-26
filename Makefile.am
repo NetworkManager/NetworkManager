@@ -5853,6 +5853,7 @@ EXTRA_DIST += \
 	tools/debug-helper.py \
 	tools/enums-to-docbook.pl \
 	tools/meson-post-install.sh \
+	tools/meson-dist-data.sh \
 	tools/run-nm-test.sh \
 	tools/test-cloud-meta-mock.py \
 	tools/test-networkmanager-service.py \
