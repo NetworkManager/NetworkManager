@@ -10953,10 +10953,37 @@ _dev_ipdhcpx_set_state(NMDevice *self, int addr_family, NMDeviceIPState state)
 static void
 _dev_ipdhcpx_cleanup(NMDevice *self, int addr_family, gboolean full_cleanup, gboolean force_release)
 {
-    NMDevicePrivate *priv    = NM_DEVICE_GET_PRIVATE(self);
-    const int        IS_IPv4 = NM_IS_IPv4(addr_family);
+    NMDevicePrivate   *priv    = NM_DEVICE_GET_PRIVATE(self);
+    const int          IS_IPv4 = NM_IS_IPv4(addr_family);
+    NMSettingIPConfig *s_ip4   = NULL;
+    NMSettingIPConfig *s_ip6   = NULL;
+    gboolean           release;
 
     _dev_ipdhcpx_set_state(self, addr_family, NM_DEVICE_IP_STATE_NONE);
+
+    if (IS_IPv4)
+        s_ip4 = nm_device_get_applied_setting(self, NM_TYPE_SETTING_IP4_CONFIG);
+    else
+        s_ip6 = nm_device_get_applied_setting(self, NM_TYPE_SETTING_IP6_CONFIG);
+
+    if ((IS_IPv4 && s_ip4) || (!IS_IPv4 && s_ip6)) {
+        if (nm_setting_ip_config_get_dhcp_send_release(IS_IPv4 ? s_ip4 : s_ip6)
+            == NM_TERNARY_DEFAULT)
+            release = nm_config_data_get_connection_default_int64(
+                NM_CONFIG_GET_DATA,
+                IS_IPv4 ? NM_CON_DEFAULT("ipv4.dhcp-send-release")
+                        : NM_CON_DEFAULT("ipv6.dhcp-send-release"),
+                self,
+                NM_TERNARY_FALSE,
+                NM_TERNARY_TRUE,
+                NM_TERNARY_FALSE);
+        else
+            release = nm_setting_ip_config_get_dhcp_send_release(IS_IPv4 ? s_ip4 : s_ip6);
+
+        release = force_release || (release && full_cleanup);
+    } else {
+        release = force_release;
+    }
 
     if (full_cleanup && !IS_IPv4) {
         priv->ipdhcp_data_6.v6.mode            = NM_NDISC_DHCP_LEVEL_NONE;
@@ -10969,7 +10996,7 @@ _dev_ipdhcpx_cleanup(NMDevice *self, int addr_family, gboolean full_cleanup, gbo
     if (priv->ipdhcp_data_x[IS_IPv4].client) {
         nm_clear_g_signal_handler(priv->ipdhcp_data_x[IS_IPv4].client,
                                   &priv->ipdhcp_data_x[IS_IPv4].notify_sigid);
-        nm_dhcp_client_stop(priv->ipdhcp_data_x[IS_IPv4].client, force_release);
+        nm_dhcp_client_stop(priv->ipdhcp_data_x[IS_IPv4].client, release);
         g_clear_object(&priv->ipdhcp_data_x[IS_IPv4].client);
     }
 
@@ -16830,6 +16857,10 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
             _cleanup_ip_pre(self, AF_INET6, CLEANUP_TYPE_DECONFIGURE, FALSE);
         }
         break;
+    case NM_DEVICE_STATE_DEACTIVATING:
+        /* If we are now deactivating we should enforce IP cleanup. */
+        _cleanup_ip_pre(self, AF_INET, CLEANUP_TYPE_DECONFIGURE, FALSE);
+        _cleanup_ip_pre(self, AF_INET6, CLEANUP_TYPE_DECONFIGURE, FALSE);
     default:
         break;
     }

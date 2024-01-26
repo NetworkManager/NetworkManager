@@ -342,6 +342,7 @@ char *nm_ip_routing_rule_to_string(const NMIPRoutingRule       *self,
 #define NM_SETTING_IP_CONFIG_DHCP_REJECT_SERVERS "dhcp-reject-servers"
 #define NM_SETTING_IP_CONFIG_AUTO_ROUTE_EXT_GW   "auto-route-ext-gw"
 #define NM_SETTING_IP_CONFIG_REPLACE_LOCAL_RULE  "replace-local-rule"
+#define NM_SETTING_IP_CONFIG_DHCP_SEND_RELEASE   "dhcp-send-release"
 
 /* these are not real GObject properties. */
 #define NM_SETTING_IP_CONFIG_ROUTING_RULES "routing-rules"
@@ -509,6 +510,8 @@ NM_AVAILABLE_IN_1_42
 NMTernary nm_setting_ip_config_get_auto_route_ext_gw(NMSettingIPConfig *setting);
 NM_AVAILABLE_IN_1_44
 NMTernary nm_setting_ip_config_get_replace_local_rule(NMSettingIPConfig *setting);
+NM_AVAILABLE_IN_1_46_8
+NMTernary nm_setting_ip_config_get_dhcp_send_release(NMSettingIPConfig *setting);
 
 G_END_DECLS
 

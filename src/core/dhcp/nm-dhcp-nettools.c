@@ -1483,6 +1483,11 @@ stop(NMDhcpClient *client, gboolean release)
     NMDhcpNettools        *self = NM_DHCP_NETTOOLS(client);
     NMDhcpNettoolsPrivate *priv = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
 
+    if (release) {
+        if (n_dhcp4_client_probe_release(priv->probe))
+            _LOGT("dhcp-client4: failed to send request with RELEASE message");
+    }
+
     NM_DHCP_CLIENT_CLASS(nm_dhcp_nettools_parent_class)->stop(client, release);
 
     _LOGT("dhcp-client4: stop " NM_HASH_OBFUSCATE_PTR_FMT, NM_HASH_OBFUSCATE_PTR(priv->client));
