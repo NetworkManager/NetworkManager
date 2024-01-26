@@ -1983,4 +1983,5 @@ libnm_1_48_0 {
 global:
 	nm_setting_connection_down_on_poweroff_get_type;
 	nm_setting_connection_get_down_on_poweroff;
+	nm_setting_ip_config_get_dhcp_send_release;
 } libnm_1_46_0;
