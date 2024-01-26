@@ -8882,20 +8882,240 @@ nla_put_failure:
     g_return_val_if_reached(FALSE);
 }
 
-static void
-sriov_idle_cb(gpointer user_data, GCancellable *cancellable)
+static gint64
+sriov_read_sysctl_uint(NMPlatform *platform,
+                       int         dirfd,
+                       const char *ifname,
+                       const char *dev_file,
+                       GError    **error)
 {
-    gs_unref_object NMPlatform *platform        = NULL;
-    gs_free_error GError       *cancelled_error = NULL;
-    gs_free_error GError       *error           = NULL;
-    NMPlatformAsyncCallback     callback;
-    gpointer                    callback_data;
+    const char *path;
+    gint64      val;
+
+    nm_assert(NM_STRLEN("device/%s") + strlen(dev_file));
+
+    path = nm_sprintf_bufa(256, "device/%s", dev_file);
+    val  = nm_platform_sysctl_get_int_checked(platform,
+                                             NMP_SYSCTL_PATHID_NETDIR_UNSAFE_A(dirfd, ifname, path),
+                                             10,
+                                             0,
+                                             G_MAXUINT,
+                                             -1);
+
+    if (val < 0) {
+        g_set_error(error,
+                    NM_UTILS_ERROR,
+                    NM_UTILS_ERROR_UNKNOWN,
+                    "couldn't read %s: %s",
+                    dev_file,
+                    nm_strerror_native(errno));
+        return -errno;
+    }
+
+    return val;
+}
+
+static gboolean
+sriov_set_autoprobe(NMPlatform  *platform,
+                    int          dirfd,
+                    const char  *ifname,
+                    NMOptionBool autoprobe,
+                    GError     **error)
+{
+    int current_autoprobe =
+        (int) sriov_read_sysctl_uint(platform, dirfd, ifname, "sriov_drivers_autoprobe", error);
+
+    if (current_autoprobe == -ENOENT) {
+        /* older kernel versions don't have this sysctl. Assume the value is "1". */
+        current_autoprobe = 1;
+        g_clear_error(error);
+    }
+
+    if (current_autoprobe < 0)
+        return FALSE;
+
+    if (autoprobe != NM_OPTION_BOOL_DEFAULT && current_autoprobe != autoprobe) {
+        if (!nm_platform_sysctl_set(
+                platform,
+                NMP_SYSCTL_PATHID_NETDIR_A(dirfd, ifname, "device/sriov_drivers_autoprobe"),
+                autoprobe == 1 ? "1" : "0")) {
+            g_set_error(error,
+                        NM_UTILS_ERROR,
+                        NM_UTILS_ERROR_UNKNOWN,
+                        "couldn't set SR-IOV drivers-autoprobe to %d: %s",
+                        (int) autoprobe,
+                        nm_strerror_native(errno));
+            return FALSE;
+        }
+    }
+
+    return TRUE;
+}
+
+#define _SRIOV_ASYNC_MAX_STEPS 4
+
+typedef struct _SriovAsyncState {
+    NMPlatform         *platform;
+    int                 ifindex;
+    guint               num_vfs;
+    _NMSriovEswitchMode eswitch_mode;
+    void (*steps[_SRIOV_ASYNC_MAX_STEPS])(struct _SriovAsyncState *);
+    int                     current_step;
+    NMPlatformAsyncCallback callback;
+    gpointer                data;
+    GCancellable           *cancellable;
+} SriovAsyncState;
+
+static void
+sriov_async_invoke_callback(gpointer user_data, GCancellable *cancellable)
+{
+    gs_free_error GError   *cancelled_error = NULL;
+    gs_free_error GError   *error           = NULL;
+    NMPlatformAsyncCallback callback;
+    gpointer                callback_data;
 
     g_cancellable_set_error_if_cancelled(cancellable, &cancelled_error);
-    nm_utils_user_data_unpack(user_data, &platform, &error, &callback, &callback_data);
+    nm_utils_user_data_unpack(user_data, &error, &callback, &callback_data);
     callback(cancelled_error ?: error, callback_data);
 }
 
+static void
+sriov_async_finish_err(SriovAsyncState *async_state, GError *error)
+{
+    NMPlatform *platform = async_state->platform;
+
+    _LOGD("finished configuring SR-IOV, error: %s", error ? error->message : "none");
+
+    if (async_state->callback) {
+        /* nm_platform_link_set_sriov_params() promises to always call the callback,
+         * and always asynchronously. We might have reached here without doing
+         * any asynchronous task, so invoke the user's callback in the idle task
+         * to make it asynchronous. Actually, let's make it simple and do it
+         * always in this way, even if asynchronous tasks were made.
+         */
+        gpointer packed = nm_utils_user_data_pack(g_steal_pointer(&error),
+                                                  async_state->callback,
+                                                  async_state->data);
+        nm_utils_invoke_on_idle(async_state->cancellable, sriov_async_invoke_callback, packed);
+    }
+
+    g_object_unref(async_state->platform);
+    g_object_unref(async_state->cancellable);
+    g_free(async_state);
+    g_free(error);
+}
+
+static void
+sriov_async_call_next_step(SriovAsyncState *async_state)
+{
+    if (g_cancellable_is_cancelled(async_state->cancellable)) {
+        sriov_async_finish_err(async_state, NULL); /* The error will be set later */
+        return;
+    }
+
+    async_state->current_step++;
+
+    nm_assert(async_state->current_step >= 0);
+    nm_assert(async_state->current_step < _SRIOV_ASYNC_MAX_STEPS);
+    nm_assert(async_state->steps[async_state->current_step] != NULL);
+
+    async_state->steps[async_state->current_step](async_state);
+}
+
+static void
+sriov_async_sysctl_done_cb(GError *error, gpointer data)
+{
+    SriovAsyncState *async_state = data;
+
+    if (error)
+        sriov_async_finish_err(async_state, g_error_copy(error));
+    else
+        sriov_async_call_next_step(async_state);
+}
+
+static void
+sriov_async_set_num_vfs(SriovAsyncState *async_state, const char *val)
+{
+    NMPlatform           *platform = async_state->platform;
+    const char           *values[] = {val, NULL};
+    nm_auto_close int     dirfd    = -1;
+    char                  ifname[IFNAMSIZ];
+    gs_free_error GError *error = NULL;
+
+    dirfd = nm_platform_sysctl_open_netdir(platform, async_state->ifindex, ifname);
+    if (!dirfd) {
+        g_set_error(&error,
+                    NM_UTILS_ERROR,
+                    NM_UTILS_ERROR_UNKNOWN,
+                    "couldn't open netdir for device with ifindex %d",
+                    async_state->ifindex);
+        sriov_async_finish_err(async_state, g_steal_pointer(&error));
+        return;
+    }
+
+    sysctl_set_async(platform,
+                     NMP_SYSCTL_PATHID_NETDIR_A(dirfd, ifname, "device/sriov_numvfs"),
+                     values,
+                     sriov_async_sysctl_done_cb,
+                     async_state,
+                     async_state->cancellable);
+}
+
+static void
+sriov_async_step1_destroy_vfs(SriovAsyncState *async_state)
+{
+    NMPlatform *platform = async_state->platform;
+
+    _LOGD("destroying VFs before configuring SR-IOV");
+
+    sriov_async_set_num_vfs(async_state, "0");
+}
+
+static void
+sriov_async_step2_set_eswitch_mode(SriovAsyncState *async_state)
+{
+    NMPlatform               *platform     = async_state->platform;
+    NMLinuxPlatformPrivate   *priv         = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+    enum devlink_eswitch_mode eswitch_mode = (enum devlink_eswitch_mode) async_state->eswitch_mode;
+    gs_free NMDevlink        *devlink      = NULL;
+    gs_free_error GError     *error        = NULL;
+
+    _LOGD("setting eswitch-mode to '%d'", (int) eswitch_mode);
+
+    /* We set eswitch mode as a sriov_async step because it's in the middle of
+     * other steps that are async. However, this step itself is synchronous. */
+    devlink = nm_devlink_new(platform, priv->sk_genl_sync, async_state->ifindex);
+    if (!nm_devlink_set_eswitch_mode(devlink, eswitch_mode, &error)) {
+        sriov_async_finish_err(async_state, g_steal_pointer(&error));
+        return;
+    }
+
+    sriov_async_call_next_step(async_state);
+}
+
+static void
+sriov_async_step3_create_vfs(SriovAsyncState *async_state)
+{
+    NMPlatform *platform = async_state->platform;
+    const char *val      = nm_sprintf_bufa(32, "%u", async_state->num_vfs);
+
+    _LOGD("setting sriov_numvfs to %u", async_state->num_vfs);
+
+    sriov_async_set_num_vfs(async_state, val);
+}
+
+static void
+sriov_async_step_finish_ok(SriovAsyncState *async_state)
+{
+    sriov_async_finish_err(async_state, NULL);
+}
+
+/*
+ * Take special care when setting new values:
+ *  - don't touch anything if the right values are already set
+ *  - to change the number of VFs, eswitch mode or autoprobe we need to destroy existing VFs
+ *  - the autoprobe setting is irrelevant when numvfs is zero
+ */
 static void
 link_set_sriov_params_async(NMPlatform             *platform,
                             int                     ifindex,
@@ -8906,140 +9126,117 @@ link_set_sriov_params_async(NMPlatform             *platform,
                             gpointer                data,
                             GCancellable           *cancellable)
 {
+    SriovAsyncState            *async_state;
     NMLinuxPlatformPrivate     *priv  = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
     nm_auto_pop_netns NMPNetns *netns = NULL;
     gs_free_error GError       *error = NULL;
     nm_auto_close int           dirfd = -1;
-    int                         current_autoprobe;
-    guint                       i, total;
-    gint64                      current_num;
     char                        ifname[IFNAMSIZ];
-    gpointer                    packed;
-    const char                 *values[3];
-    char                        buf[64];
-    gs_free NMDevlink          *devlink = NULL;
-    int                         current_eswitch_mode;
+    int                         max_vfs;
+    int                         current_num_vfs;
+    int                         current_eswitch_mode = _NM_SRIOV_ESWITCH_MODE_PRESERVE;
+    gboolean                    need_change_eswitch_mode;
+    gboolean                    need_change_vfs;
+    gboolean                    need_destroy_vfs;
+    gboolean                    need_create_vfs;
+    int                         i;
 
     g_return_if_fail(callback || !data);
     g_return_if_fail(cancellable);
+
+    async_state               = g_new0(SriovAsyncState, 1);
+    async_state->platform     = g_object_ref(platform);
+    async_state->ifindex      = ifindex;
+    async_state->eswitch_mode = eswitch_mode;
+    async_state->current_step = -1;
+    async_state->callback     = callback;
+    async_state->data         = data;
+    async_state->cancellable  = g_object_ref(cancellable);
 
     if (!nm_platform_netns_push(platform, &netns)) {
         g_set_error_literal(&error,
                             NM_UTILS_ERROR,
                             NM_UTILS_ERROR_UNKNOWN,
-                            "couldn't change namespace");
-        goto out_idle;
+                            "couldn't change network namespace");
+        sriov_async_finish_err(async_state, g_steal_pointer(&error));
+        return;
     }
-
-    devlink = nm_devlink_new(platform, priv->sk_genl_sync, ifindex);
 
     dirfd = nm_platform_sysctl_open_netdir(platform, ifindex, ifname);
     if (!dirfd) {
-        g_set_error_literal(&error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN, "couldn't open netdir");
-        goto out_idle;
-    }
-
-    total = nm_platform_sysctl_get_int_checked(
-        platform,
-        NMP_SYSCTL_PATHID_NETDIR_A(dirfd, ifname, "device/sriov_totalvfs"),
-        10,
-        0,
-        G_MAXUINT,
-        0);
-    if (!errno && num_vfs > total) {
-        _LOGW("link: %d only supports %u VFs (requested %u)", ifindex, total, num_vfs);
-        num_vfs = total;
-    }
-
-    /*
-     * Take special care when setting new values:
-     *  - don't touch anything if the right values are already set
-     *  - to change the number of VFs or autoprobe we need to destroy existing VFs
-     *  - the autoprobe setting is irrelevant when numvfs is zero
-     */
-    current_num = nm_platform_sysctl_get_int_checked(
-        platform,
-        NMP_SYSCTL_PATHID_NETDIR_A(dirfd, ifname, "device/sriov_numvfs"),
-        10,
-        0,
-        G_MAXUINT,
-        -1);
-
-    current_autoprobe = nm_platform_sysctl_get_int_checked(
-        platform,
-        NMP_SYSCTL_PATHID_NETDIR_A(dirfd, ifname, "device/sriov_drivers_autoprobe"),
-        10,
-        0,
-        1,
-        -1);
-    if (current_autoprobe == -1 && errno == ENOENT) {
-        /* older kernel versions don't have this sysctl. Assume the value is
-         * "1". */
-        current_autoprobe = 1;
-    }
-
-    current_eswitch_mode = nm_devlink_get_eswitch_mode(devlink, &error);
-    if (current_eswitch_mode < 0) {
-        /* We can proceed if eswith-mode is "preserve", otherwise propagate the error */
-        if (eswitch_mode != _NM_SRIOV_ESWITCH_MODE_PRESERVE)
-            goto out_idle;
-
-        _LOGD("%s", error->message);
-        g_clear_error(&error);
-    }
-
-    if (current_num == num_vfs
-        && (autoprobe == NM_OPTION_BOOL_DEFAULT || current_autoprobe == autoprobe)
-        && (eswitch_mode == _NM_SRIOV_ESWITCH_MODE_PRESERVE
-            || current_eswitch_mode == eswitch_mode))
-        goto out_idle;
-
-    if (NM_IN_SET(autoprobe, NM_OPTION_BOOL_TRUE, NM_OPTION_BOOL_FALSE)
-        && current_autoprobe != autoprobe
-        && !nm_platform_sysctl_set(
-            platform,
-            NMP_SYSCTL_PATHID_NETDIR_A(dirfd, ifname, "device/sriov_drivers_autoprobe"),
-            nm_sprintf_buf(buf, "%d", (int) autoprobe))) {
         g_set_error(&error,
                     NM_UTILS_ERROR,
                     NM_UTILS_ERROR_UNKNOWN,
-                    "couldn't set SR-IOV drivers-autoprobe to %d: %s",
-                    (int) autoprobe,
-                    nm_strerror_native(errno));
-        goto out_idle;
+                    "couldn't open netdir for device with ifindex %d",
+                    ifindex);
+        sriov_async_finish_err(async_state, g_steal_pointer(&error));
+        return;
     }
 
-    if (eswitch_mode != _NM_SRIOV_ESWITCH_MODE_PRESERVE && current_eswitch_mode != eswitch_mode) {
-        if (!nm_devlink_set_eswitch_mode(devlink, (enum devlink_eswitch_mode) eswitch_mode, &error))
-            goto out_idle;
+    current_num_vfs = sriov_read_sysctl_uint(platform, dirfd, ifname, "sriov_numvfs", &error);
+    if (current_num_vfs < 0) {
+        sriov_async_finish_err(async_state, g_steal_pointer(&error));
+        return;
     }
 
-    if (current_num == 0 && num_vfs == 0)
-        goto out_idle;
+    max_vfs = sriov_read_sysctl_uint(platform, dirfd, ifname, "sriov_totalvfs", &error);
+    if (max_vfs < 0) {
+        sriov_async_finish_err(async_state, g_steal_pointer(&error));
+        return;
+    }
+
+    if (num_vfs > max_vfs) {
+        _LOGW("link: device %d only supports %u VFs (requested %u)", ifindex, max_vfs, num_vfs);
+        _LOGW("link: reducing num_vfs to %u for device %d", max_vfs, ifindex);
+        num_vfs = max_vfs;
+    }
+
+    async_state->num_vfs = num_vfs;
+
+    /* Setting autoprobe goes first, we can do it synchronously */
+    if (num_vfs > 0 && !sriov_set_autoprobe(platform, dirfd, ifname, autoprobe, &error)) {
+        sriov_async_finish_err(async_state, g_steal_pointer(&error));
+        return;
+    }
+
+    if (eswitch_mode != _NM_SRIOV_ESWITCH_MODE_PRESERVE) {
+        gs_free NMDevlink *devlink = nm_devlink_new(platform, priv->sk_genl_sync, ifindex);
+
+        current_eswitch_mode = nm_devlink_get_eswitch_mode(devlink, &error);
+        if (current_eswitch_mode < 0) {
+            sriov_async_finish_err(async_state, g_steal_pointer(&error));
+            return;
+        }
+    }
+
+    /* Decide what actions we must do. Note that we might need to destroy the VFs even
+     * if num_vfs == current_num_vfs, for example to change the eswitch mode. Because of
+     * that, we might need to create VFs even if num_vfs == current_num_vfs.
+     * Steps in order (unnecessary steps are skipped):
+     *   1. Destroy VFs
+     *   2. Set eswitch mode
+     *   3. Create VFs
+     *   4. Invoke caller's callback
+     */
+    need_change_eswitch_mode =
+        eswitch_mode != _NM_SRIOV_ESWITCH_MODE_PRESERVE && current_eswitch_mode != eswitch_mode;
+    need_change_vfs  = num_vfs != current_num_vfs;
+    need_destroy_vfs = current_num_vfs > 0 && (need_change_eswitch_mode || need_change_vfs);
+    need_create_vfs  = (current_num_vfs == 0 || need_destroy_vfs) && num_vfs > 0;
 
     i = 0;
-    if (current_num != 0)
-        values[i++] = "0";
-    if (num_vfs != 0)
-        values[i++] = nm_sprintf_bufa(32, "%u", num_vfs);
-    values[i++] = NULL;
+    if (need_destroy_vfs)
+        async_state->steps[i++] = sriov_async_step1_destroy_vfs;
+    if (need_change_eswitch_mode)
+        async_state->steps[i++] = sriov_async_step2_set_eswitch_mode;
+    if (need_create_vfs)
+        async_state->steps[i++] = sriov_async_step3_create_vfs;
 
-    sysctl_set_async(platform,
-                     NMP_SYSCTL_PATHID_NETDIR_A(dirfd, ifname, "device/sriov_numvfs"),
-                     values,
-                     callback,
-                     data,
-                     cancellable);
-    return;
+    nm_assert(i < _SRIOV_ASYNC_MAX_STEPS);
 
-out_idle:
-    if (callback) {
-        packed = nm_utils_user_data_pack(g_object_ref(platform),
-                                         g_steal_pointer(&error),
-                                         callback,
-                                         data);
-        nm_utils_invoke_on_idle(cancellable, sriov_idle_cb, packed);
-    }
+    async_state->steps[i] = sriov_async_step_finish_ok;
+
+    sriov_async_call_next_step(async_state);
 }
 
 static gboolean
