@@ -669,6 +669,11 @@ test_l3_ipv4ll(gconstpointer test_data)
     nm_auto_remove_l3ipv4ll_registration NML3IPv4LLRegistration *l3ipv4ll_reg = NULL;
     char                                                         sbuf_addr[NM_INET_ADDRSTRLEN];
 
+    if (!nmtstp_check_ebpf()) {
+        g_test_skip("eBPF is not usable. Try: echo 0 > /proc/sys/kernel/unprivileged_bpf_disabled");
+        return;
+    }
+
     _LOGD("test start (/l3-ipv4ll/%d)", TEST_IDX);
 
     if (nmtst_test_quick()) {

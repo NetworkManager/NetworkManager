@@ -13,6 +13,10 @@
 #include <fcntl.h>
 #include <linux/if_tun.h>
 #include <linux/rtnetlink.h>
+#include <sys/syscall.h>
+#if WITH_EBPF
+#include <linux/bpf.h>
+#endif
 
 #include "n-acd/src/n-acd.h"
 #include "libnm-platform/nm-platform-utils.h"
@@ -94,6 +98,46 @@ nmtstp_is_root_test(void)
     return NM_IN_SET(_nmtstp_setup_platform_func,
                      nm_linux_platform_setup,
                      nm_linux_platform_setup_with_tc_cache);
+}
+
+/*
+ * Check that eBPF is usable if needed.
+ *
+ * Since Linux 4.4, unprivileged users may create programs of type
+ * BPF_PROG_TYPE_SOCKET_FILTER and associated maps, with some limitations.
+ * However, most distributions disable unprivileged access by setting
+ * /proc/sys/kernel/unprivileged_bpf_disabled to 1 or 2.
+ */
+gboolean
+nmtstp_check_ebpf(void)
+{
+#if WITH_EBPF
+    {
+        static int     cached = -1;
+        union bpf_attr attr;
+        int            ret;
+
+        if (cached != -1)
+            return cached;
+
+        attr = (union bpf_attr){
+            .map_type    = BPF_MAP_TYPE_HASH,
+            .key_size    = sizeof(uint32_t),
+            .value_size  = sizeof(uint8_t),
+            .max_entries = 1,
+        };
+
+        ret = (int) syscall(__NR_bpf, BPF_MAP_CREATE, &attr, sizeof(attr));
+        if (ret >= 0) {
+            nm_close(ret);
+            cached = TRUE;
+        } else {
+            cached = FALSE;
+        }
+        return cached;
+    }
+#endif
+    return TRUE;
 }
 
 gboolean

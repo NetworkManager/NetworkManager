@@ -476,6 +476,7 @@ else
     enable_ebpf = false
   endif
 endif
+config_h.set10('WITH_EBPF', enable_ebpf)
 
 # libaudit support
 libaudit = get_option('libaudit')

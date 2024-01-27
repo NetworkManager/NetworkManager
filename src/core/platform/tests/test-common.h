@@ -68,6 +68,7 @@
 
 gboolean nmtstp_is_root_test(void);
 gboolean nmtstp_is_sysfs_writable(void);
+gboolean nmtstp_check_ebpf(void);
 
 /*****************************************************************************/
 
