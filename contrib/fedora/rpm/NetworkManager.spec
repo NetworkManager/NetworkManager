@@ -176,13 +176,8 @@
 %global ifcfg_migrate 0
 %endif
 
-%if 0%{?fedora}
-# Although eBPF would be available on Fedora's kernel, it seems
-# we often get SELinux denials (rh#1651654). But even aside them,
-# bpf(BPF_MAP_CREATE, ...) randomly fails with EPERM. That might
-# be related to `ulimit -l`. Anyway, this is not usable at the
-# moment.
-%global ebpf_enabled "no"
+%if 0%{?fedora} >= 40
+%global ebpf_enabled "yes"
 %else
 %global ebpf_enabled "no"
 %endif
