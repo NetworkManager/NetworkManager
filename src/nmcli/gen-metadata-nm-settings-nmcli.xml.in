@@ -690,7 +690,7 @@
                   format="choice (NMSettingConnectionLldp)"
                   values="default (-1), disable (0), enable-rx/enable (1)" />
         <property name="mdns"
-                  nmcli-description="Whether mDNS is enabled for the connection. The permitted values are: &quot;yes&quot; (2) register hostname and resolving for the connection, &quot;no&quot; (0) disable mDNS for the interface, &quot;resolve&quot; (1) do not register hostname but allow resolving of mDNS host names and &quot;default&quot; (-1) to allow lookup of a global default in NetworkManager.conf. If unspecified, &quot;default&quot; ultimately depends on the DNS plugin (which for systemd-resolved currently means &quot;no&quot;). This feature requires a plugin which supports mDNS. Otherwise, the setting has no effect. One such plugin is dns-systemd-resolved."
+                  nmcli-description="Whether mDNS is enabled for the connection. The permitted values are: &quot;yes&quot; (2) register hostname and resolving for the connection, &quot;no&quot; (0) disable mDNS for the interface, &quot;resolve&quot; (1) do not register hostname but allow resolving of mDNS host names and &quot;default&quot; (-1) to allow lookup of a global default in NetworkManager.conf. If unspecified, &quot;default&quot; ultimately depends on the DNS plugin. This feature requires a plugin which supports mDNS. Otherwise, the setting has no effect. Currently the only supported DNS plugin is systemd-resolved. For systemd-resolved, the default is configurable via MulticastDNS= setting in resolved.conf."
                   format="choice (NMSettingConnectionMdns)"
                   values="default (-1), no (0), resolve (1), yes (2)" />
         <property name="llmnr"
