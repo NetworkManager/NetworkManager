@@ -824,6 +824,11 @@ domains=ALL
       to use the default from <literal>NetworkManager.conf</literal>.
     </para>
     <para>
+      Note that while nmcli supports various aliases and convenience features for configuring
+      properties, the settings in this section do not. For example, enum values usually only
+      can be configured via their numeric magic number.
+    </para>
+    <para>
       Example:
 <programlisting>
 [connection]
@@ -868,7 +873,13 @@ ipv6.ip6-privacy=0
         </varlistentry>
         <varlistentry>
           <term><varname>connection.mdns</varname></term>
-          <listitem><para>If unspecified, the ultimate default values depends on the DNS plugin. With systemd-resolved the default currently is "no" (0) and for all other plugins also "no" (0).</para></listitem>
+          <listitem><para>
+            Currently only the systemd-resolve DNS plugin supports this setting.
+            If the setting is unspecified both in the profile and in the global
+            default here, then the default is determined by systemd-resolved.
+            See <literal>MulticastDNS=</literal> in
+            <citerefentry><refentrytitle>resolved.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+          </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>connection.mptcp-flags</varname></term>
