@@ -10804,7 +10804,7 @@ _dev_ipdhcpx_set_state(NMDevice *self, int addr_family, NMDeviceIPState state)
 }
 
 static void
-_dev_ipdhcpx_cleanup(NMDevice *self, int addr_family, gboolean full_cleanup, gboolean release)
+_dev_ipdhcpx_cleanup(NMDevice *self, int addr_family, gboolean full_cleanup, gboolean force_release)
 {
     NMDevicePrivate *priv    = NM_DEVICE_GET_PRIVATE(self);
     const int        IS_IPv4 = NM_IS_IPv4(addr_family);
@@ -10822,7 +10822,7 @@ _dev_ipdhcpx_cleanup(NMDevice *self, int addr_family, gboolean full_cleanup, gbo
     if (priv->ipdhcp_data_x[IS_IPv4].client) {
         nm_clear_g_signal_handler(priv->ipdhcp_data_x[IS_IPv4].client,
                                   &priv->ipdhcp_data_x[IS_IPv4].notify_sigid);
-        nm_dhcp_client_stop(priv->ipdhcp_data_x[IS_IPv4].client, release);
+        nm_dhcp_client_stop(priv->ipdhcp_data_x[IS_IPv4].client, force_release);
         g_clear_object(&priv->ipdhcp_data_x[IS_IPv4].client);
     }
 
