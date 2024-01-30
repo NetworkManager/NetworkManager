@@ -8,6 +8,8 @@
 
 #include "nm-setting.h"
 
+#include <linux/if_ether.h>
+
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-glib-aux/nm-ref-string.h"
 #include "libnm-glib-aux/nm-secret-utils.h"
@@ -739,10 +741,29 @@ _property_direct_set_strv(const NMSettInfoSetting  *sett_info,
     if (!property_info->direct_strv_preserve_empty && strv && !strv[0])
         strv = NULL;
 
-    if (nm_strvarray_equal_strv(p_val->arr, strv, -1))
-        return FALSE;
+    if (property_info->direct_set_strv_normalize_hwaddr) {
+        gs_unref_array GArray *arr = NULL;
+        if (strv) {
+            nm_strvarray_ensure(&arr);
 
+            for (; strv[0]; strv++) {
+                nm_strvarray_add_take(arr,
+                                      _nm_utils_hwaddr_canonical_or_invalid(strv[0], ETH_ALEN));
+            }
+        }
+
+        if (nm_strvarray_equal(p_val->arr, arr))
+            return FALSE;
+
+        NM_SWAP(&p_val->arr, &arr);
+        return TRUE;
+    }
+
+    if (nm_strvarray_equal_strv(p_val->arr, strv, -1)) {
+        return FALSE;
+    }
     nm_strvarray_set_strv_full(&p_val->arr, strv, property_info->direct_strv_preserve_empty);
+
     return TRUE;
 }
 
@@ -838,7 +859,7 @@ _nm_setting_property_get_property_direct(GObject    *object,
             value,
             nm_strvarray_get_strv_full_dup(p_val->arr,
                                            NULL,
-                                           FALSE,
+                                           property_info->direct_strv_not_null,
                                            property_info->direct_strv_preserve_empty));
         return;
     }

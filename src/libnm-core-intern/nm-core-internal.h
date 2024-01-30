@@ -815,6 +815,10 @@ struct _NMSettInfoProperty {
      * normalize the string via g_ascii_strdown(). */
     bool direct_set_string_ascii_strdown : 1;
 
+    /* If TRUE, this is a NM_VALUE_TYPE_STRV direct property holding MAC addresses,
+     * and the setter will normalize them via _nm_utils_hwaddr_canonical_or_invalid(). */
+    bool direct_set_strv_normalize_hwaddr : 1;
+
     /* If TRUE, this is a NM_VALUE_TYPE_STRING direct property, and the setter will
      * normalize the string via g_strstrip(). */
     bool direct_set_string_strip : 1;
@@ -863,6 +867,10 @@ struct _NMSettInfoProperty {
      * By setting this flag, this property treats a NULL array different from
      * an empty array. */
     bool direct_strv_preserve_empty : 1;
+
+    /* This flag indicates that an empty strv array should be returned
+     * instead of NULL if it hadn't been created yet. */
+    bool direct_strv_not_null : 1;
 
     /* Usually, properties that are set to the default value for the GParamSpec
      * are not serialized to GVariant (and NULL is returned by to_dbus_data().
