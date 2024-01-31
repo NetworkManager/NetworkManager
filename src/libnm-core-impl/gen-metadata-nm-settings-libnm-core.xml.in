@@ -792,6 +792,10 @@
                   dbus-type="i"
                   gprop-type="gint"
                   />
+        <property name="down-on-poweroff"
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="gateway-ping-timeout"
                   dbus-type="u"
                   gprop-type="guint"

@@ -5663,6 +5663,9 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_AUTOCONNECT_PORTS,
         .property_type =                &_pt_gobject_enum,
     ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_DOWN_ON_POWEROFF,
+        .property_type =                &_pt_gobject_ternary,
+    ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_SECONDARIES,
         .describe_message =
             N_("Enter secondary connections that should be activated when this connection is\n"

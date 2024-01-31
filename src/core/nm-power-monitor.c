@@ -47,6 +47,7 @@
 
 enum {
     SLEEPING,
+    SHUTDOWN,
     LAST_SIGNAL,
 };
 
@@ -66,6 +67,7 @@ struct _NMPowerMonitor {
 
     gulong sig_id_1;
     gulong sig_id_2;
+    gulong sig_id_3;
 };
 
 struct _NMPowerMonitorClass {
@@ -82,6 +84,8 @@ G_DEFINE_TYPE(NMPowerMonitor, nm_power_monitor, G_TYPE_OBJECT);
 /*****************************************************************************/
 
 static void sleep_signal(NMPowerMonitor *self, gboolean is_about_to_suspend);
+
+static void shutdown_signal(NMPowerMonitor *self);
 
 /*****************************************************************************/
 
@@ -166,6 +170,12 @@ prepare_for_sleep_cb(GDBusProxy *proxy, gboolean is_about_to_suspend, gpointer d
 }
 
 static void
+prepare_for_shutdown_cb(GDBusProxy *proxy, gpointer data)
+{
+    shutdown_signal(data);
+}
+
+static void
 name_owner_cb(GObject *object, GParamSpec *pspec, gpointer user_data)
 {
     GDBusProxy     *proxy = G_DBUS_PROXY(object);
@@ -196,6 +206,16 @@ sleep_signal(NMPowerMonitor *self, gboolean is_about_to_suspend)
 
     if (is_about_to_suspend)
         drop_inhibitor(self, FALSE);
+}
+
+static void
+shutdown_signal(NMPowerMonitor *self)
+{
+    g_return_if_fail(NM_IS_POWER_MONITOR(self));
+
+    _LOGD("received SHUTDOWN signal");
+
+    g_signal_emit(self, signals[SHUTDOWN], 0);
 }
 
 /**
@@ -268,6 +288,12 @@ on_proxy_acquired(GObject *object, GAsyncResult *res, NMPowerMonitor *self)
                                                    G_VARIANT_TYPE("(b)"),
                                                    G_CALLBACK(prepare_for_sleep_cb),
                                                    self);
+    self->sig_id_3 = _nm_dbus_proxy_signal_connect(self->proxy,
+                                                   "PrepareForShutdown",
+                                                   G_VARIANT_TYPE("(b)"),
+                                                   G_CALLBACK(prepare_for_shutdown_cb),
+                                                   self);
+
     {
         gs_free char *owner = NULL;
 
@@ -314,6 +340,7 @@ dispose(GObject *object)
     if (self->proxy) {
         nm_clear_g_signal_handler(self->proxy, &self->sig_id_1);
         nm_clear_g_signal_handler(self->proxy, &self->sig_id_2);
+        nm_clear_g_signal_handler(self->proxy, &self->sig_id_3);
         g_clear_object(&self->proxy);
     }
 
@@ -330,6 +357,16 @@ nm_power_monitor_class_init(NMPowerMonitorClass *klass)
     gobject_class->dispose = dispose;
 
     signals[SLEEPING] = g_signal_new(NM_POWER_MONITOR_SLEEPING,
+                                     NM_TYPE_POWER_MONITOR,
+                                     G_SIGNAL_RUN_LAST,
+                                     0,
+                                     NULL,
+                                     NULL,
+                                     g_cclosure_marshal_VOID__BOOLEAN,
+                                     G_TYPE_NONE,
+                                     1,
+                                     G_TYPE_BOOLEAN);
+    signals[SHUTDOWN] = g_signal_new(NM_POWER_MONITOR_SHUTDOWN,
                                      NM_TYPE_POWER_MONITOR,
                                      G_SIGNAL_RUN_LAST,
                                      0,

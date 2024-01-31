@@ -678,6 +678,10 @@
                   nmcli-description="Whether or not ports of this connection should be automatically brought up when NetworkManager activates this connection. This only has a real effect for controller connections. The properties &quot;autoconnect&quot;, &quot;autoconnect-priority&quot; and &quot;autoconnect-retries&quot; are unrelated to this setting. The permitted values are: 0: leave port connections untouched, 1: activate all the port connections with this connection, -1: default. If -1 (default) is set, global connection.autoconnect-ports is read to determine the real value. If it is default as well, this fallbacks to 0."
                   format="choice (NMTernary)"
                   values="default (-1), false (0), true (1)" />
+        <property name="down-on-poweroff"
+                  nmcli-description="Whether the connection will be brought down before the system is powered off.  The default value is &quot;default&quot; (-1). When the default value is specified, then the global value from NetworkManager configuration is looked up, if not set, it is considered as &quot;no&quot; (0)."
+                  format="ternary"
+                  values="true/yes/on, false/no/off, default/unknown" />
         <property name="secondaries"
                   nmcli-description="List of connection UUIDs that should be activated when the base connection itself is activated. Currently, only VPN connections are supported."
                   format="list of strings" />

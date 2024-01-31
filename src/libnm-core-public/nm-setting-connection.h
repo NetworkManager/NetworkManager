@@ -64,6 +64,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT   "wait-device-timeout"
 #define NM_SETTING_CONNECTION_MUD_URL               "mud-url"
 #define NM_SETTING_CONNECTION_WAIT_ACTIVATION_DELAY "wait-activation-delay"
+#define NM_SETTING_CONNECTION_DOWN_ON_POWEROFF      "down-on-poweroff"
 
 /* Types for property values */
 /**
@@ -157,6 +158,23 @@ typedef enum {
     NM_SETTING_CONNECTION_DNS_OVER_TLS_OPPORTUNISTIC = 1,
     NM_SETTING_CONNECTION_DNS_OVER_TLS_YES           = 2,
 } NMSettingConnectionDnsOverTls;
+
+/**
+ * NMSettingConnectionDownOnPoweroff:
+ * @NM_SETTING_CONNECTION_DOWN_ON_POWEROFF_DEFAULT: default value
+ * @NM_SETTING_CONNECTION_DOWN_ON_POWEROFF_NO: disable down-on-poweroff
+ * @NM_SETTING_CONNECTION_DOWN_ON_POWEROFF_YES: enable down-on-poweroff
+ *
+ * #NMSettingConnectionDownOnPoweroff indicates whether the connection will be
+ * brought down before the system is powered off.
+ *
+ * Since: 1.48
+ */
+typedef enum {
+    NM_SETTING_CONNECTION_DOWN_ON_POWEROFF_DEFAULT = -1,
+    NM_SETTING_CONNECTION_DOWN_ON_POWEROFF_NO      = 0,
+    NM_SETTING_CONNECTION_DOWN_ON_POWEROFF_YES     = 1,
+} NMSettingConnectionDownOnPoweroff;
 
 typedef struct _NMSettingConnectionClass NMSettingConnectionClass;
 
@@ -253,6 +271,10 @@ gint32 nm_setting_connection_get_wait_device_timeout(NMSettingConnection *settin
 
 NM_AVAILABLE_IN_1_40
 gint32 nm_setting_connection_get_wait_activation_delay(NMSettingConnection *setting);
+
+NM_AVAILABLE_IN_1_48
+NMSettingConnectionDownOnPoweroff
+nm_setting_connection_get_down_on_poweroff(NMSettingConnection *setting);
 
 NM_AVAILABLE_IN_1_26
 const char *nm_setting_connection_get_mud_url(NMSettingConnection *setting);

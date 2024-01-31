@@ -7216,14 +7216,18 @@ device_sleep_cb(NMDevice *device, GParamSpec *pspec, NMManager *self)
 }
 
 static void
-_handle_device_takedown(NMManager *self, NMDevice *device, gboolean suspending)
+_handle_device_takedown(NMManager *self,
+                        NMDevice  *device,
+                        gboolean   suspending,
+                        gboolean   is_shutdown)
 {
     nm_device_notify_sleeping(device);
 
     if (nm_device_is_activating(device)
         || nm_device_get_state(device) == NM_DEVICE_STATE_ACTIVATED) {
         _LOGD(LOGD_SUSPEND,
-              "sleep: wait disconnection of device %s",
+              "%s: wait disconnection of device %s",
+              is_shutdown ? "shutdown" : "sleep",
               nm_device_get_ip_iface(device));
 
         if (sleep_devices_add(self, device, suspending))
@@ -7272,7 +7276,7 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
                 continue;
             }
 
-            _handle_device_takedown(self, device, suspending);
+            _handle_device_takedown(self, device, suspending, FALSE);
         }
     } else {
         _LOGD(LOGD_SUSPEND, "sleep: %s...", waking_from_suspend ? "waking up" : "re-enabling");
@@ -7450,6 +7454,41 @@ sleeping_cb(NMPowerMonitor *monitor, gboolean is_about_to_suspend, gpointer user
 
     _LOGT(LOGD_SUSPEND, "sleep: received %s signal", is_about_to_suspend ? "sleeping" : "resuming");
     _internal_sleep(self, is_about_to_suspend);
+}
+
+static void
+shutdown_cb(NMPowerMonitor *monitor, gpointer user_data)
+{
+    NMManager        *self = user_data;
+    NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE(self);
+    NMDevice         *device;
+
+    _LOGT(LOGD_SUSPEND, "shutdown: received shutdown signal");
+
+    c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
+        NMSettingConnection *s_con;
+        gboolean             take_down = FALSE;
+
+        s_con = nm_device_get_applied_setting(device, NM_META_SETTING_TYPE_CONNECTION);
+        if (!s_con)
+            continue;
+
+        if (nm_setting_connection_get_down_on_poweroff(s_con)
+            == NM_SETTING_CONNECTION_DOWN_ON_POWEROFF_YES)
+            take_down = TRUE;
+        else if (nm_setting_connection_get_down_on_poweroff(s_con)
+                 == NM_SETTING_CONNECTION_DOWN_ON_POWEROFF_DEFAULT)
+            take_down = nm_config_data_get_connection_default_int64(
+                NM_CONFIG_GET_DATA,
+                NM_CON_DEFAULT("connection.down-on-poweroff"),
+                device,
+                NM_SETTING_CONNECTION_DOWN_ON_POWEROFF_NO,
+                NM_SETTING_CONNECTION_DOWN_ON_POWEROFF_YES,
+                NM_SETTING_CONNECTION_DOWN_ON_POWEROFF_NO);
+
+        if (take_down)
+            _handle_device_takedown(self, device, FALSE, TRUE);
+    }
 }
 
 static void
@@ -8842,6 +8881,7 @@ nm_manager_init(NMManager *self)
     /* sleep/wake handling */
     priv->power_monitor = nm_power_monitor_new();
     g_signal_connect(priv->power_monitor, NM_POWER_MONITOR_SLEEPING, G_CALLBACK(sleeping_cb), self);
+    g_signal_connect(priv->power_monitor, NM_POWER_MONITOR_SHUTDOWN, G_CALLBACK(shutdown_cb), self);
 
     /* Listen for authorization changes */
     priv->auth_mgr = g_object_ref(nm_auth_manager_get());

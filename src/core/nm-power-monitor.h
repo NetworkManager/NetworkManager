@@ -18,6 +18,7 @@
 #define NM_IS_POWER_MONITOR_CLASS(k) (G_TYPE_CHECK_CLASS_TYPE((k), NM_TYPE_POWER_MONITOR))
 
 #define NM_POWER_MONITOR_SLEEPING "sleeping"
+#define NM_POWER_MONITOR_SHUTDOWN "shutdown"
 
 typedef struct _NMPowerMonitorClass NMPowerMonitorClass;
 
