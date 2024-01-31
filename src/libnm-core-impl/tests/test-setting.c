@@ -5250,6 +5250,86 @@ test_setting_connection_secondaries_verify(void)
 /*****************************************************************************/
 
 static void
+test_setting_connection_autoconnect_ports(void)
+{
+    nm_auto_unref_gtypeclass GTypeClass *klass_tern = NULL;
+    nm_auto_unref_gtypeclass GTypeClass *klass_auto = NULL;
+    gs_unref_object NMSettingConnection *setting    = NULL;
+    gint                                 last_val;
+    int                                  i;
+
+    klass_tern = g_type_class_ref(NM_TYPE_TERNARY);
+    klass_auto = g_type_class_ref(NM_TYPE_SETTING_CONNECTION_AUTOCONNECT_SLAVES);
+
+    g_assert_cmpint(G_ENUM_CLASS(klass_tern)->n_values, ==, 3);
+    g_assert_cmpint(G_ENUM_CLASS(klass_auto)->n_values, ==, 3);
+
+    setting = NM_SETTING_CONNECTION(nm_setting_connection_new());
+
+    last_val = -1;
+
+    for (i = -5; i < 300; i++) {
+        gboolean use_ports;
+        gboolean is_ok;
+        gint     val;
+        gint     val2;
+
+        if (i > 10)
+            val = (gint) nmtst_get_rand_uint();
+        else
+            val = i;
+
+        is_ok = NM_IN_SET(val, -1, 0, 1);
+
+        g_assert(is_ok == (!!g_enum_get_value(G_ENUM_CLASS(klass_tern), val)));
+        g_assert(is_ok == (!!g_enum_get_value(G_ENUM_CLASS(klass_auto), val)));
+
+        use_ports = nmtst_get_rand_bool();
+
+        if (!is_ok) {
+            if (use_ports) {
+                NMTST_EXPECT("GLib-GObject",
+                             G_LOG_LEVEL_CRITICAL,
+                             "*value \"((NMTernary) *)\" of type 'NMTernary' is invalid or out of "
+                             "range for property 'autoconnect-ports' of type 'NMTernary'");
+            } else {
+                NMTST_EXPECT("GLib-GObject",
+                             G_LOG_LEVEL_CRITICAL,
+                             "*value \"((NMSettingConnectionAutoconnectSlaves) *)\" of type "
+                             "'NMSettingConnectionAutoconnectSlaves' is invalid or out of "
+                             "range for property 'autoconnect-slaves' of type "
+                             "'NMSettingConnectionAutoconnectSlaves'");
+            }
+        }
+
+        g_object_set(setting,
+                     use_ports ? NM_SETTING_CONNECTION_AUTOCONNECT_PORTS
+                               : NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES,
+                     val,
+                     NULL);
+
+        if (!is_ok)
+            g_test_assert_expected_messages();
+
+        g_object_get(setting,
+                     nmtst_rand_select(NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES,
+                                       NM_SETTING_CONNECTION_AUTOCONNECT_PORTS),
+                     &val2,
+                     NULL);
+        if (is_ok) {
+            g_assert_cmpint(val2, ==, val);
+            last_val = val2;
+        } else
+            g_assert_cmpint(val2, ==, last_val);
+
+        g_assert_cmpint(last_val, ==, nm_setting_connection_get_autoconnect_slaves(setting));
+        g_assert_cmpint(last_val, ==, nm_setting_connection_get_autoconnect_ports(setting));
+    }
+}
+
+/*****************************************************************************/
+
+static void
 test_6lowpan_1(void)
 {
     gs_unref_object NMConnection *con = NULL;
@@ -5444,6 +5524,9 @@ main(int argc, char **argv)
                     test_setting_connection_empty_address_and_route);
     g_test_add_func("/libnm/settings/test_setting_connection_secondaries_verify",
                     test_setting_connection_secondaries_verify);
+
+    g_test_add_func("/libnm/settings/test_setting_connection_autoconnect_ports",
+                    test_setting_connection_autoconnect_ports);
 
     g_test_add_func("/libnm/settings/bond/verify", test_bond_verify);
     g_test_add_func("/libnm/settings/bond/compare", test_bond_compare);
