@@ -1077,7 +1077,7 @@ _init_direct(NMSetting *setting)
             int  def_val;
 
             def_val = NM_G_PARAM_SPEC_GET_DEFAULT_ENUM(property_info->param_spec);
-            nm_assert(*p_val == 0);
+            nm_assert(NM_IN_SET(*p_val, 0, property_info->direct_is_aliased_field ? def_val : 0));
             *p_val = def_val;
             break;
         }
@@ -2638,7 +2638,8 @@ _nm_setting_property_compare_fcn_direct(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_
                         _nm_setting_property_to_dbus_fcn_direct,
                         _nm_setting_property_to_dbus_fcn_direct_mac_address,
                         _nm_setting_connection_controller_to_dbus,
-                        _nm_setting_connection_port_type_to_dbus));
+                        _nm_setting_connection_port_type_to_dbus,
+                        _nm_setting_connection_autoconnect_ports_to_dbus));
 
     if (!property_info->param_spec)
         return nm_assert_unreachable_val(NM_TERNARY_DEFAULT);

@@ -767,6 +767,10 @@
                   dbus-type="b"
                   gprop-type="gboolean"
                   />
+        <property name="autoconnect-ports"
+                  dbus-type="i"
+                  gprop-type="NMTernary"
+                  />
         <property name="autoconnect-priority"
                   dbus-type="i"
                   gprop-type="gint"
@@ -776,6 +780,7 @@
                   gprop-type="gint"
                   />
         <property name="autoconnect-slaves"
+                  is-deprecated="1"
                   dbus-type="i"
                   gprop-type="NMSettingConnectionAutoconnectSlaves"
                   />

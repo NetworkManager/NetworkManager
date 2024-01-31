@@ -411,6 +411,15 @@ GVariant *_nm_setting_connection_port_type_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FC
 
 gboolean _nm_setting_connection_slave_type_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil);
 
+gboolean
+_nm_setting_connection_autoconnect_ports_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil);
+
+GVariant *
+_nm_setting_connection_autoconnect_ports_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil);
+
+gboolean
+_nm_setting_connection_autoconnect_slaves_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil);
+
 GVariant *_nm_setting_to_dbus(NMSetting                              *setting,
                               NMConnection                           *connection,
                               NMConnectionSerializationFlags          flags,
@@ -901,12 +910,13 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
                                                 gtype_enum,                                      \
                                                 default_value,                                   \
                                                 param_flags,                                     \
+                                                property_type,                                   \
                                                 private_struct_type,                             \
                                                 private_struct_field,                            \
                                                 ... /* extra NMSettInfoProperty fields */)       \
-    G_STMT_START                                                                                 \
-    {                                                                                            \
-        GParamSpec *_param_spec;                                                                 \
+    ({                                                                                           \
+        GParamSpec                  *_param_spec;                                                \
+        const NMSettInfoPropertType *_property_type;                                             \
                                                                                                  \
         G_STATIC_ASSERT(                                                                         \
             !NM_FLAGS_ANY((param_flags),                                                         \
@@ -922,16 +932,16 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
                                             | G_PARAM_STATIC_STRINGS | (param_flags));           \
                                                                                                  \
         (obj_properties)[(prop_id)] = _param_spec;                                               \
+        _property_type              = (property_type) ?: &nm_sett_info_propert_type_direct_enum; \
                                                                                                  \
         _nm_properties_override_gobj(                                                            \
             (properties_override),                                                               \
             _param_spec,                                                                         \
-            &nm_sett_info_propert_type_direct_enum,                                              \
+            _property_type,                                                                      \
             .direct_offset =                                                                     \
                 NM_STRUCT_OFFSET_ENSURE_TYPE(int, private_struct_type, private_struct_field),    \
             __VA_ARGS__);                                                                        \
-    }                                                                                            \
-    G_STMT_END
+    })
 
 /*****************************************************************************/
 
@@ -950,6 +960,7 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
                                             NM_TYPE_TERNARY,                  \
                                             NM_TERNARY_DEFAULT,               \
                                             (param_flags),                    \
+                                            NULL,                             \
                                             private_struct_type,              \
                                             private_struct_field,             \
                                             __VA_ARGS__)
