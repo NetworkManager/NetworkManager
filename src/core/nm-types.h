@@ -33,7 +33,7 @@ typedef struct _NMRfkillManager         NMRfkillManager;
 typedef struct _NMPacrunnerManager      NMPacrunnerManager;
 typedef struct _NMSessionMonitor        NMSessionMonitor;
 typedef struct _NMKeepAlive             NMKeepAlive;
-typedef struct _NMSleepMonitor          NMSleepMonitor;
+typedef struct _NMPowerMonitor          NMPowerMonitor;
 typedef struct _NMLldpListener          NMLldpListener;
 typedef struct _NMConfigDeviceStateData NMConfigDeviceStateData;
 

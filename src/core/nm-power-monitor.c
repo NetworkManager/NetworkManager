@@ -6,7 +6,7 @@
 
 #include "src/core/nm-default-daemon.h"
 
-#include "nm-sleep-monitor.h"
+#include "nm-power-monitor.h"
 
 #include <sys/stat.h>
 #include <gio/gunixfdlist.h>
@@ -21,7 +21,7 @@
 #define SUSPEND_DBUS_PATH      "/org/freedesktop/UPower"
 #define SUSPEND_DBUS_INTERFACE "org.freedesktop.UPower"
 #define USE_UPOWER             1
-#define _NMLOG_PREFIX_NAME     "sleep-monitor-up"
+#define _NMLOG_PREFIX_NAME     "power-monitor-up"
 
 #elif defined(SUSPEND_RESUME_SYSTEMD) || defined(SUSPEND_RESUME_ELOGIND)
 
@@ -30,9 +30,9 @@
 #define SUSPEND_DBUS_INTERFACE "org.freedesktop.login1.Manager"
 #define USE_UPOWER             0
 #if defined(SUSPEND_RESUME_SYSTEMD)
-#define _NMLOG_PREFIX_NAME "sleep-monitor-sd"
+#define _NMLOG_PREFIX_NAME "power-monitor-sd"
 #else
-#define _NMLOG_PREFIX_NAME "sleep-monitor-el"
+#define _NMLOG_PREFIX_NAME "power-monitor-el"
 #endif
 
 #elif defined(SUSPEND_RESUME_CONSOLEKIT)
@@ -45,7 +45,7 @@
 #define SUSPEND_DBUS_PATH      "/org/freedesktop/ConsoleKit/Manager"
 #define SUSPEND_DBUS_INTERFACE "org.freedesktop.ConsoleKit.Manager"
 #define USE_UPOWER             0
-#define _NMLOG_PREFIX_NAME     "sleep-monitor-ck"
+#define _NMLOG_PREFIX_NAME     "power-monitor-ck"
 
 #else
 
@@ -62,7 +62,7 @@ enum {
 
 static guint signals[LAST_SIGNAL] = {0};
 
-struct _NMSleepMonitor {
+struct _NMPowerMonitor {
     GObject parent;
 
     GDBusProxy *proxy;
@@ -78,11 +78,11 @@ struct _NMSleepMonitor {
     gulong sig_id_2;
 };
 
-struct _NMSleepMonitorClass {
+struct _NMPowerMonitorClass {
     GObjectClass parent;
 };
 
-G_DEFINE_TYPE(NMSleepMonitor, nm_sleep_monitor, G_TYPE_OBJECT);
+G_DEFINE_TYPE(NMPowerMonitor, nm_power_monitor, G_TYPE_OBJECT);
 
 /*****************************************************************************/
 
@@ -91,7 +91,7 @@ G_DEFINE_TYPE(NMSleepMonitor, nm_sleep_monitor, G_TYPE_OBJECT);
 
 /*****************************************************************************/
 
-static void sleep_signal(NMSleepMonitor *self, gboolean is_about_to_suspend);
+static void sleep_signal(NMPowerMonitor *self, gboolean is_about_to_suspend);
 
 /*****************************************************************************/
 
@@ -112,7 +112,7 @@ upower_resuming_cb(GDBusProxy *proxy, gpointer user_data)
 #else  /* USE_UPOWER */
 
 static void
-drop_inhibitor(NMSleepMonitor *self, gboolean force)
+drop_inhibitor(NMPowerMonitor *self, gboolean force)
 {
     if (!force && self->handles_active)
         return;
@@ -135,7 +135,7 @@ static void
 inhibit_done(GObject *source, GAsyncResult *result, gpointer user_data)
 {
     GDBusProxy                  *proxy   = G_DBUS_PROXY(source);
-    NMSleepMonitor              *self    = user_data;
+    NMPowerMonitor              *self    = user_data;
     gs_free_error GError        *error   = NULL;
     gs_unref_variant GVariant   *res     = NULL;
     gs_unref_object GUnixFDList *fd_list = NULL;
@@ -161,9 +161,9 @@ inhibit_done(GObject *source, GAsyncResult *result, gpointer user_data)
 }
 
 static void
-take_inhibitor(NMSleepMonitor *self)
+take_inhibitor(NMPowerMonitor *self)
 {
-    g_return_if_fail(NM_IS_SLEEP_MONITOR(self));
+    g_return_if_fail(NM_IS_POWER_MONITOR(self));
     g_return_if_fail(G_IS_DBUS_PROXY(self->proxy));
 
     drop_inhibitor(self, TRUE);
@@ -195,7 +195,7 @@ static void
 name_owner_cb(GObject *object, GParamSpec *pspec, gpointer user_data)
 {
     GDBusProxy     *proxy = G_DBUS_PROXY(object);
-    NMSleepMonitor *self  = NM_SLEEP_MONITOR(user_data);
+    NMPowerMonitor *self  = NM_POWER_MONITOR(user_data);
     char           *owner;
 
     g_assert(proxy == self->proxy);
@@ -210,9 +210,9 @@ name_owner_cb(GObject *object, GParamSpec *pspec, gpointer user_data)
 #endif /* USE_UPOWER */
 
 static void
-sleep_signal(NMSleepMonitor *self, gboolean is_about_to_suspend)
+sleep_signal(NMPowerMonitor *self, gboolean is_about_to_suspend)
 {
-    g_return_if_fail(NM_IS_SLEEP_MONITOR(self));
+    g_return_if_fail(NM_IS_POWER_MONITOR(self));
 
     _LOGD("received %s signal", is_about_to_suspend ? "SLEEP" : "RESUME");
 
@@ -230,36 +230,36 @@ sleep_signal(NMSleepMonitor *self, gboolean is_about_to_suspend)
 }
 
 /**
- * nm_sleep_monitor_inhibit_take:
- * @self: the #NMSleepMonitor instance
+ * nm_power_monitor_inhibit_take:
+ * @self: the #NMPowerMonitor instance
  *
  * Prevent the release of inhibitor lock
  *
  * Returns: an inhibitor handle that must be returned via
- *   nm_sleep_monitor_inhibit_release().
+ *   nm_power_monitor_inhibit_release().
  **/
-NMSleepMonitorInhibitorHandle *
-nm_sleep_monitor_inhibit_take(NMSleepMonitor *self)
+NMPowerMonitorInhibitorHandle *
+nm_power_monitor_inhibit_take(NMPowerMonitor *self)
 {
-    g_return_val_if_fail(NM_IS_SLEEP_MONITOR(self), NULL);
+    g_return_val_if_fail(NM_IS_POWER_MONITOR(self), NULL);
 
     self->handles_active = g_slist_prepend(self->handles_active, NULL);
-    return (NMSleepMonitorInhibitorHandle *) self->handles_active;
+    return (NMPowerMonitorInhibitorHandle *) self->handles_active;
 }
 
 /**
- * nm_sleep_monitor_inhibit_release:
- * @self: the #NMSleepMonitor instance
- * @handle: the #NMSleepMonitorInhibitorHandle inhibitor handle.
+ * nm_power_monitor_inhibit_release:
+ * @self: the #NMPowerMonitor instance
+ * @handle: the #NMPowerMonitorInhibitorHandle inhibitor handle.
  *
  * Allow again the release of inhibitor lock
  **/
 void
-nm_sleep_monitor_inhibit_release(NMSleepMonitor *self, NMSleepMonitorInhibitorHandle *handle)
+nm_power_monitor_inhibit_release(NMPowerMonitor *self, NMPowerMonitorInhibitorHandle *handle)
 {
     GSList *l;
 
-    g_return_if_fail(NM_IS_SLEEP_MONITOR(self));
+    g_return_if_fail(NM_IS_POWER_MONITOR(self));
     g_return_if_fail(handle);
 
     l = (GSList *) handle;
@@ -279,7 +279,7 @@ nm_sleep_monitor_inhibit_release(NMSleepMonitor *self, NMSleepMonitorInhibitorHa
 }
 
 static void
-on_proxy_acquired(GObject *object, GAsyncResult *res, NMSleepMonitor *self)
+on_proxy_acquired(GObject *object, GAsyncResult *res, NMPowerMonitor *self)
 {
     GError     *error = NULL;
     GDBusProxy *proxy;
@@ -326,7 +326,7 @@ on_proxy_acquired(GObject *object, GAsyncResult *res, NMSleepMonitor *self)
 /*****************************************************************************/
 
 static void
-nm_sleep_monitor_init(NMSleepMonitor *self)
+nm_power_monitor_init(NMPowerMonitor *self)
 {
     self->inhibit_fd  = -1;
     self->cancellable = g_cancellable_new();
@@ -342,16 +342,16 @@ nm_sleep_monitor_init(NMSleepMonitor *self)
                              self);
 }
 
-NMSleepMonitor *
-nm_sleep_monitor_new(void)
+NMPowerMonitor *
+nm_power_monitor_new(void)
 {
-    return g_object_new(NM_TYPE_SLEEP_MONITOR, NULL);
+    return g_object_new(NM_TYPE_POWER_MONITOR, NULL);
 }
 
 static void
 dispose(GObject *object)
 {
-    NMSleepMonitor *self = NM_SLEEP_MONITOR(object);
+    NMPowerMonitor *self = NM_POWER_MONITOR(object);
 
 #if !USE_UPOWER
     drop_inhibitor(self, TRUE);
@@ -365,11 +365,11 @@ dispose(GObject *object)
         g_clear_object(&self->proxy);
     }
 
-    G_OBJECT_CLASS(nm_sleep_monitor_parent_class)->dispose(object);
+    G_OBJECT_CLASS(nm_power_monitor_parent_class)->dispose(object);
 }
 
 static void
-nm_sleep_monitor_class_init(NMSleepMonitorClass *klass)
+nm_power_monitor_class_init(NMPowerMonitorClass *klass)
 {
     GObjectClass *gobject_class;
 
@@ -377,8 +377,8 @@ nm_sleep_monitor_class_init(NMSleepMonitorClass *klass)
 
     gobject_class->dispose = dispose;
 
-    signals[SLEEPING] = g_signal_new(NM_SLEEP_MONITOR_SLEEPING,
-                                     NM_TYPE_SLEEP_MONITOR,
+    signals[SLEEPING] = g_signal_new(NM_POWER_MONITOR_SLEEPING,
+                                     NM_TYPE_POWER_MONITOR,
                                      G_SIGNAL_RUN_LAST,
                                      0,
                                      NULL,

@@ -46,7 +46,7 @@
 #include "nm-priv-helper-call.h"
 #include "nm-rfkill-manager.h"
 #include "nm-session-monitor.h"
-#include "nm-sleep-monitor.h"
+#include "nm-power-monitor.h"
 #include "settings/nm-settings-connection.h"
 #include "settings/nm-settings.h"
 #include "vpn/nm-vpn-manager.h"
@@ -214,7 +214,7 @@ typedef struct {
 
     NMVpnManager *vpn_manager;
 
-    NMSleepMonitor *sleep_monitor;
+    NMPowerMonitor *power_monitor;
 
     NMAuthManager *auth_mgr;
 
@@ -7128,7 +7128,7 @@ static gboolean
 sleep_devices_add(NMManager *self, NMDevice *device, gboolean suspending)
 {
     NMManagerPrivate              *priv   = NM_MANAGER_GET_PRIVATE(self);
-    NMSleepMonitorInhibitorHandle *handle = NULL;
+    NMPowerMonitorInhibitorHandle *handle = NULL;
 
     if (g_hash_table_lookup_extended(priv->sleep_devices, device, NULL, (gpointer *) &handle)) {
         if (suspending) {
@@ -7136,16 +7136,16 @@ sleep_devices_add(NMManager *self, NMDevice *device, gboolean suspending)
              * Even if we had an old handle, it might be stale by now. */
             g_hash_table_insert(priv->sleep_devices,
                                 device,
-                                nm_sleep_monitor_inhibit_take(priv->sleep_monitor));
+                                nm_power_monitor_inhibit_take(priv->power_monitor));
             if (handle)
-                nm_sleep_monitor_inhibit_release(priv->sleep_monitor, handle);
+                nm_power_monitor_inhibit_release(priv->power_monitor, handle);
         }
         return FALSE;
     }
 
     g_hash_table_insert(priv->sleep_devices,
                         g_object_ref(device),
-                        suspending ? nm_sleep_monitor_inhibit_take(priv->sleep_monitor) : NULL);
+                        suspending ? nm_power_monitor_inhibit_take(priv->power_monitor) : NULL);
     g_signal_connect(device, "notify::" NM_DEVICE_STATE, G_CALLBACK(device_sleep_cb), self);
     return TRUE;
 }
@@ -7154,13 +7154,13 @@ static gboolean
 sleep_devices_remove(NMManager *self, NMDevice *device)
 {
     NMManagerPrivate              *priv = NM_MANAGER_GET_PRIVATE(self);
-    NMSleepMonitorInhibitorHandle *handle;
+    NMPowerMonitorInhibitorHandle *handle;
 
     if (!g_hash_table_lookup_extended(priv->sleep_devices, device, NULL, (gpointer *) &handle))
         return FALSE;
 
     if (handle)
-        nm_sleep_monitor_inhibit_release(priv->sleep_monitor, handle);
+        nm_power_monitor_inhibit_release(priv->power_monitor, handle);
 
     /* Remove device from hash */
     g_signal_handlers_disconnect_by_func(device, device_sleep_cb, self);
@@ -7177,14 +7177,14 @@ sleep_devices_clear(NMManager *self)
 {
     NMManagerPrivate              *priv = NM_MANAGER_GET_PRIVATE(self);
     NMDevice                      *device;
-    NMSleepMonitorInhibitorHandle *handle;
+    NMPowerMonitorInhibitorHandle *handle;
     GHashTableIter                 iter;
 
     g_hash_table_iter_init(&iter, priv->sleep_devices);
     while (g_hash_table_iter_next(&iter, (gpointer *) &device, (gpointer *) &handle)) {
         g_signal_handlers_disconnect_by_func(device, device_sleep_cb, self);
         if (handle)
-            nm_sleep_monitor_inhibit_release(priv->sleep_monitor, handle);
+            nm_power_monitor_inhibit_release(priv->power_monitor, handle);
         g_object_unref(device);
         g_hash_table_iter_remove(&iter);
     }
@@ -7438,7 +7438,7 @@ impl_manager_sleep(NMDBusObject                      *obj,
 }
 
 static void
-sleeping_cb(NMSleepMonitor *monitor, gboolean is_about_to_suspend, gpointer user_data)
+sleeping_cb(NMPowerMonitor *monitor, gboolean is_about_to_suspend, gpointer user_data)
 {
     NMManager *self = user_data;
 
@@ -8834,8 +8834,8 @@ nm_manager_init(NMManager *self)
     priv->devcon_data_dict = g_hash_table_new(_devcon_data_hash, _devcon_data_equal);
 
     /* sleep/wake handling */
-    priv->sleep_monitor = nm_sleep_monitor_new();
-    g_signal_connect(priv->sleep_monitor, NM_SLEEP_MONITOR_SLEEPING, G_CALLBACK(sleeping_cb), self);
+    priv->power_monitor = nm_power_monitor_new();
+    g_signal_connect(priv->power_monitor, NM_POWER_MONITOR_SLEEPING, G_CALLBACK(sleeping_cb), self);
 
     /* Listen for authorization changes */
     priv->auth_mgr = g_object_ref(nm_auth_manager_get());
@@ -9134,9 +9134,9 @@ dispose(GObject *object)
         nm_clear_pointer(&priv->sleep_devices, g_hash_table_unref);
     }
 
-    if (priv->sleep_monitor) {
-        g_signal_handlers_disconnect_by_func(priv->sleep_monitor, sleeping_cb, self);
-        g_clear_object(&priv->sleep_monitor);
+    if (priv->power_monitor) {
+        g_signal_handlers_disconnect_by_func(priv->power_monitor, sleeping_cb, self);
+        g_clear_object(&priv->power_monitor);
     }
 
     if (priv->fw_monitor) {
