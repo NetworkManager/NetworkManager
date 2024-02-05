@@ -578,6 +578,11 @@ else
 fi
 AM_CONDITIONAL(WITH_EBPF, test "${have_ebpf}" = "yes")
 
+if test "$have_ebpf" = "yes"; then
+	SERVICE_EXTRA_CAPABILITIES="$SERVICE_EXTRA_CAPABILITIES CAP_BPF"
+fi
+AC_SUBST(SERVICE_EXTRA_CAPABILITIES)
+
 # SELinux support
 AC_ARG_WITH(selinux,
             AS_HELP_STRING([--with-selinux=yes|no|auto], [Build with SELinux [default=auto]]),
