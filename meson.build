@@ -26,6 +26,7 @@ nm_micro_version = version_array[2].to_int()
 nm_id_prefix = 'NM'
 
 nm_gir_version = '1.0'
+service_extra_capabilities = []
 
 # Distribution version string
 dist_version = get_option('dist_version')
@@ -495,6 +496,12 @@ if enable_clat
   libbpf = dependency('libbpf', version: '>= 0.1.0', required: false)
   assert(libbpf.found(), 'You must have libbpf installed to build. Use -Dclat=false to disable use of it')
   libxdp = dependency('libxdp', version: '>= 0.1.0', required: false)
+  if 'CAP_BPF' not in service_extra_capabilities
+    service_extra_capabilities += 'CAP_BPF'
+  endif
+  if 'CAP_PERFMON' not in service_extra_capabilities
+    service_extra_capabilities += 'CAP_PERFMON'
+  endif
 endif
 config_h.set10('HAVE_CLAT', enable_clat)
 
@@ -963,6 +970,7 @@ data_conf.set('NM_MAJOR_VERSION',                        nm_major_version)
 data_conf.set('NM_MICRO_VERSION',                        nm_micro_version)
 data_conf.set('NM_MINOR_VERSION',                        nm_minor_version)
 data_conf.set('NM_MODIFY_SYSTEM_POLICY',                 (enable_modify_system ? 'yes' : 'auth_admin_keep'))
+data_conf.set('SERVICE_EXTRA_CAPABILITIES',              ' '.join(service_extra_capabilities))
 data_conf.set('NM_VERSION',                              nm_version)
 data_conf.set('VERSION',                                 nm_version)
 data_conf.set('bindir',                                  nm_bindir)
@@ -1169,4 +1177,5 @@ output += '  vapi: ' + enable_vapi.to_string() + '\n'
 output += '  ebpf: ' + enable_ebpf.to_string() + '\n'
 output += '  clat: ' + enable_clat.to_string() + '\n'
 output += '  readline: ' + with_readline + '\n'
+output += '  systemd service extra capabilities: ' + ', '.join(service_extra_capabilities) + '\n'
 message(output)
