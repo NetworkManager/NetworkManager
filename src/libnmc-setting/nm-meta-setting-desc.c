@@ -1146,6 +1146,7 @@ _get_fcn_gobject_enum(ARGS_GET_FCN)
         gtype = pspec->value_type;
     }
 
+    /* Setting a correct get_gtype in property_info->property_typ_data was required */
     g_return_val_if_fail(G_TYPE_IS_ENUM(gtype) || G_TYPE_IS_FLAGS(gtype), NULL);
 
     g_value_init(&gval, pspec->value_type);
