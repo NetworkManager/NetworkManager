@@ -160,7 +160,7 @@ The diagram shows other objects on the right side:
  
  - *SleepMonitor*: gets notifications for sleep and wake events by
     registering to the available subsystem provided by the distro such
-    as systemd-logind, upower or ConsoleKit.
+    as systemd-logind or ConsoleKit.
     
  - *SessionMonitor*: tracks which users have an active session by
     using systemd-logind, elogind or ConsoleKit.

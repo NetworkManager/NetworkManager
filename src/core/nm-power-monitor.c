@@ -15,20 +15,11 @@
 #include "libnm-core-intern/nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 
-#if defined(SUSPEND_RESUME_UPOWER)
-
-#define SUSPEND_DBUS_NAME      "org.freedesktop.UPower"
-#define SUSPEND_DBUS_PATH      "/org/freedesktop/UPower"
-#define SUSPEND_DBUS_INTERFACE "org.freedesktop.UPower"
-#define USE_UPOWER             1
-#define _NMLOG_PREFIX_NAME     "power-monitor-up"
-
-#elif defined(SUSPEND_RESUME_SYSTEMD) || defined(SUSPEND_RESUME_ELOGIND)
+#if defined(SUSPEND_RESUME_SYSTEMD) || defined(SUSPEND_RESUME_ELOGIND)
 
 #define SUSPEND_DBUS_NAME      "org.freedesktop.login1"
 #define SUSPEND_DBUS_PATH      "/org/freedesktop/login1"
 #define SUSPEND_DBUS_INTERFACE "org.freedesktop.login1.Manager"
-#define USE_UPOWER             0
 #if defined(SUSPEND_RESUME_SYSTEMD)
 #define _NMLOG_PREFIX_NAME "power-monitor-sd"
 #else
@@ -44,12 +35,11 @@
 #define SUSPEND_DBUS_NAME      "org.freedesktop.ConsoleKit"
 #define SUSPEND_DBUS_PATH      "/org/freedesktop/ConsoleKit/Manager"
 #define SUSPEND_DBUS_INTERFACE "org.freedesktop.ConsoleKit.Manager"
-#define USE_UPOWER             0
 #define _NMLOG_PREFIX_NAME     "power-monitor-ck"
 
 #else
 
-#error define one of SUSPEND_RESUME_SYSTEMD, SUSPEND_RESUME_ELOGIND, SUSPEND_RESUME_CONSOLEKIT, or SUSPEND_RESUME_UPOWER
+#error define one of SUSPEND_RESUME_SYSTEMD, SUSPEND_RESUME_ELOGIND, SUSPEND_RESUME_CONSOLEKIT
 
 #endif
 
@@ -94,22 +84,6 @@ G_DEFINE_TYPE(NMPowerMonitor, nm_power_monitor, G_TYPE_OBJECT);
 static void sleep_signal(NMPowerMonitor *self, gboolean is_about_to_suspend);
 
 /*****************************************************************************/
-
-#if USE_UPOWER
-
-static void
-upower_sleeping_cb(GDBusProxy *proxy, gpointer user_data)
-{
-    sleep_signal(user_data, TRUE);
-}
-
-static void
-upower_resuming_cb(GDBusProxy *proxy, gpointer user_data)
-{
-    sleep_signal(user_data, FALSE);
-}
-
-#else  /* USE_UPOWER */
 
 static void
 drop_inhibitor(NMPowerMonitor *self, gboolean force)
@@ -207,7 +181,6 @@ name_owner_cb(GObject *object, GParamSpec *pspec, gpointer user_data)
         drop_inhibitor(self, TRUE);
     g_free(owner);
 }
-#endif /* USE_UPOWER */
 
 static void
 sleep_signal(NMPowerMonitor *self, gboolean is_about_to_suspend)
@@ -216,17 +189,13 @@ sleep_signal(NMPowerMonitor *self, gboolean is_about_to_suspend)
 
     _LOGD("received %s signal", is_about_to_suspend ? "SLEEP" : "RESUME");
 
-#if !USE_UPOWER
     if (!is_about_to_suspend)
         take_inhibitor(self);
-#endif
 
     g_signal_emit(self, signals[SLEEPING], 0, is_about_to_suspend);
 
-#if !USE_UPOWER
     if (is_about_to_suspend)
         drop_inhibitor(self, FALSE);
-#endif
 }
 
 /**
@@ -273,9 +242,7 @@ nm_power_monitor_inhibit_release(NMPowerMonitor *self, NMPowerMonitorInhibitorHa
 
     self->handles_active = g_slist_delete_link(self->handles_active, l);
 
-#if !USE_UPOWER
     drop_inhibitor(self, FALSE);
-#endif
 }
 
 static void
@@ -294,18 +261,6 @@ on_proxy_acquired(GObject *object, GAsyncResult *res, NMPowerMonitor *self)
     self->proxy = proxy;
     g_clear_object(&self->cancellable);
 
-#if USE_UPOWER
-    self->sig_id_1 = _nm_dbus_proxy_signal_connect(self->proxy,
-                                                   "Sleeping",
-                                                   NULL,
-                                                   G_CALLBACK(upower_sleeping_cb),
-                                                   self);
-    self->sig_id_2 = _nm_dbus_proxy_signal_connect(self->proxy,
-                                                   "Resuming",
-                                                   NULL,
-                                                   G_CALLBACK(upower_resuming_cb),
-                                                   self);
-#else
     self->sig_id_1 =
         g_signal_connect(self->proxy, "notify::g-name-owner", G_CALLBACK(name_owner_cb), self);
     self->sig_id_2 = _nm_dbus_proxy_signal_connect(self->proxy,
@@ -320,7 +275,6 @@ on_proxy_acquired(GObject *object, GAsyncResult *res, NMPowerMonitor *self)
         if (owner)
             take_inhibitor(self);
     }
-#endif
 }
 
 /*****************************************************************************/
@@ -353,9 +307,7 @@ dispose(GObject *object)
 {
     NMPowerMonitor *self = NM_POWER_MONITOR(object);
 
-#if !USE_UPOWER
     drop_inhibitor(self, TRUE);
-#endif
 
     nm_clear_g_cancellable(&self->cancellable);
 
