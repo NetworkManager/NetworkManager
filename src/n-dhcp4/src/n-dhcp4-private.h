@@ -35,7 +35,7 @@ typedef struct NDhcp4LogQueue NDhcp4LogQueue;
 #define N_DHCP4_NETWORK_CLIENT_PORT (68)
 #define N_DHCP4_MESSAGE_MAGIC ((uint32_t)(0x63825363))
 #define N_DHCP4_MESSAGE_FLAG_BROADCAST (htons(0x8000))
-#define N_DHCP4_DSCP_DEFAULT (IPTOS_CLASS_CS6 >> 2)
+#define N_DHCP4_DSCP_DEFAULT (IPTOS_CLASS_CS0 >> 2)
 
 enum {
         N_DHCP4_OP_BOOTREQUEST                          = 1,
