@@ -7216,6 +7216,29 @@ device_sleep_cb(NMDevice *device, GParamSpec *pspec, NMManager *self)
 }
 
 static void
+_handle_device_takedown(NMManager *self, NMDevice *device, gboolean suspending)
+{
+    nm_device_notify_sleeping(device);
+
+    if (nm_device_is_activating(device)
+        || nm_device_get_state(device) == NM_DEVICE_STATE_ACTIVATED) {
+        _LOGD(LOGD_SUSPEND,
+              "sleep: wait disconnection of device %s",
+              nm_device_get_ip_iface(device));
+
+        if (sleep_devices_add(self, device, suspending))
+            nm_device_queue_state(device,
+                                  NM_DEVICE_STATE_DEACTIVATING,
+                                  NM_DEVICE_STATE_REASON_SLEEPING);
+    } else {
+        nm_device_set_unmanaged_by_flags(device,
+                                         NM_UNMANAGED_SLEEPING,
+                                         NM_UNMAN_FLAG_OP_SET_UNMANAGED,
+                                         NM_DEVICE_STATE_REASON_SLEEPING);
+    }
+}
+
+static void
 do_sleep_wake(NMManager *self, gboolean sleeping_changed)
 {
     NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE(self);
@@ -7249,24 +7272,7 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
                 continue;
             }
 
-            nm_device_notify_sleeping(device);
-
-            if (nm_device_is_activating(device)
-                || nm_device_get_state(device) == NM_DEVICE_STATE_ACTIVATED) {
-                _LOGD(LOGD_SUSPEND,
-                      "sleep: wait disconnection of device %s",
-                      nm_device_get_ip_iface(device));
-
-                if (sleep_devices_add(self, device, suspending))
-                    nm_device_queue_state(device,
-                                          NM_DEVICE_STATE_DEACTIVATING,
-                                          NM_DEVICE_STATE_REASON_SLEEPING);
-            } else {
-                nm_device_set_unmanaged_by_flags(device,
-                                                 NM_UNMANAGED_SLEEPING,
-                                                 NM_UNMAN_FLAG_OP_SET_UNMANAGED,
-                                                 NM_DEVICE_STATE_REASON_SLEEPING);
-            }
+            _handle_device_takedown(self, device, suspending);
         }
     } else {
         _LOGD(LOGD_SUSPEND, "sleep: %s...", waking_from_suspend ? "waking up" : "re-enabling");
