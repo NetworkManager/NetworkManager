@@ -1073,7 +1073,6 @@ _get_fcn_gobject_enum(ARGS_GET_FCN)
 {
     GType                       gtype       = 0;
     const NMUtilsEnumValueInfo *value_infos = NULL;
-    gboolean                    has_gtype   = FALSE;
     nm_auto_unset_gvalue GValue gval        = G_VALUE_INIT;
     gint64                      v;
     gboolean                    format_numeric             = FALSE;
@@ -1086,13 +1085,6 @@ _get_fcn_gobject_enum(ARGS_GET_FCN)
     GParamSpec                 *pspec;
 
     RETURN_UNSUPPORTED_GET_TYPE();
-
-    if (property_info->property_typ_data) {
-        if (property_info->property_typ_data->subtype.gobject_enum.get_gtype) {
-            gtype     = property_info->property_typ_data->subtype.gobject_enum.get_gtype();
-            has_gtype = TRUE;
-        }
-    }
 
     if (property_info->property_typ_data && get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY
         && NM_FLAGS_ANY(property_info->property_typ_data->typ_flags,
@@ -1136,18 +1128,11 @@ _get_fcn_gobject_enum(ARGS_GET_FCN)
 
     nm_assert(format_text || format_numeric);
 
+    gtype = nm_meta_property_enum_get_type(property_info);
+    g_return_val_if_fail(gtype != G_TYPE_INVALID, NULL);
+
     pspec = g_object_class_find_property(G_OBJECT_GET_CLASS(setting), property_info->property_name);
     g_return_val_if_fail(pspec, NULL);
-
-    if (has_gtype) {
-        /* if the property is already enum, don't set get_gtype: it's redundant and error prone */
-        g_return_val_if_fail(NM_IN_SET(pspec->value_type, G_TYPE_INT, G_TYPE_UINT), FALSE);
-    } else {
-        gtype = pspec->value_type;
-    }
-
-    /* Setting a correct get_gtype in property_info->property_typ_data was required */
-    g_return_val_if_fail(G_TYPE_IS_ENUM(gtype) || G_TYPE_IS_FLAGS(gtype), NULL);
 
     g_value_init(&gval, pspec->value_type);
     g_object_get_property(G_OBJECT(setting), property_info->property_name, &gval);
@@ -1256,17 +1241,19 @@ nm_meta_property_int_get_range(const NMMetaPropertyInfo *property_info,
 GType
 nm_meta_property_enum_get_type(const NMMetaPropertyInfo *property_info)
 {
-    GType gtype = _property_get_spec(property_info)->value_type;
+    GType setting_gtype = property_info->setting_info->general->get_setting_gtype();
+    GType prop_gtype =
+        nm_setting_get_enum_property_type(setting_gtype, property_info->property_name);
 
     if (property_info->property_typ_data
         && property_info->property_typ_data->subtype.gobject_enum.get_gtype) {
         /* if the property is already enum, don't set get_gtype: it's redundant and error prone */
-        g_return_val_if_fail(NM_IN_SET(gtype, G_TYPE_INT, G_TYPE_UINT), G_TYPE_INVALID);
+        g_return_val_if_fail(prop_gtype == G_TYPE_INVALID, G_TYPE_INVALID);
         return property_info->property_typ_data->subtype.gobject_enum.get_gtype();
     }
 
-    g_return_val_if_fail(G_TYPE_IS_ENUM(gtype) || G_TYPE_IS_FLAGS(gtype), G_TYPE_INVALID);
-    return gtype;
+    g_return_val_if_fail(G_TYPE_IS_ENUM(prop_gtype) || G_TYPE_IS_FLAGS(prop_gtype), G_TYPE_INVALID);
+    return prop_gtype;
 }
 
 /**
@@ -1580,33 +1567,18 @@ _set_fcn_gobject_mac(ARGS_SET_FCN)
 static gboolean
 _set_fcn_gobject_enum(ARGS_SET_FCN)
 {
-    GType                       gtype = 0;
-    GType                       gtype_prop;
-    gboolean                    has_gtype = FALSE;
-    nm_auto_unset_gvalue GValue gval      = G_VALUE_INIT;
+    GType                       gtype;
+    GType                       gtype_gobj;
+    nm_auto_unset_gvalue GValue gval = G_VALUE_INIT;
     gboolean                    is_flags;
     int                         v;
 
     if (_SET_FCN_DO_RESET_DEFAULT_WITH_SUPPORTS_REMOVE(property_info, modifier, value))
         return _gobject_property_reset_default(setting, property_info->property_name);
 
-    if (property_info->property_typ_data) {
-        if (property_info->property_typ_data->subtype.gobject_enum.get_gtype) {
-            gtype     = property_info->property_typ_data->subtype.gobject_enum.get_gtype();
-            has_gtype = TRUE;
-        }
-    }
+    gtype = nm_meta_property_enum_get_type(property_info);
+    g_return_val_if_fail(gtype != G_TYPE_INVALID, FALSE);
 
-    gtype_prop = _gobject_property_get_gtype(G_OBJECT(setting), property_info->property_name);
-
-    if (has_gtype) {
-        /* if the property is already enum, don't set get_gtype: it's redundant and error prone */
-        g_return_val_if_fail(NM_IN_SET(gtype_prop, G_TYPE_INT, G_TYPE_UINT), FALSE);
-    } else {
-        gtype = gtype_prop;
-    }
-
-    g_return_val_if_fail(G_TYPE_IS_FLAGS(gtype) || G_TYPE_IS_ENUM(gtype), FALSE);
     is_flags = G_TYPE_IS_FLAGS(gtype);
 
     if (!_nm_utils_enum_from_str_full(
@@ -1642,10 +1614,12 @@ _set_fcn_gobject_enum(ARGS_SET_FCN)
             v = (int) (v_flag | ((guint) v));
     }
 
-    g_value_init(&gval, gtype_prop);
-    if (gtype_prop == G_TYPE_INT)
+    gtype_gobj = _gobject_property_get_gtype(G_OBJECT(setting), property_info->property_name);
+
+    g_value_init(&gval, gtype_gobj);
+    if (gtype_gobj == G_TYPE_INT)
         g_value_set_int(&gval, v);
-    else if (gtype_prop == G_TYPE_UINT)
+    else if (gtype_gobj == G_TYPE_UINT)
         g_value_set_uint(&gval, v);
     else if (is_flags)
         g_value_set_flags(&gval, v);
