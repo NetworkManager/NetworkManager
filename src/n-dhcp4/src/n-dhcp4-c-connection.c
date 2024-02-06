@@ -191,7 +191,8 @@ int n_dhcp4_c_connection_connect(NDhcp4CConnection *connection,
         r = n_dhcp4_c_socket_udp_new(&fd_udp,
                                      connection->client_config->ifindex,
                                      client,
-                                     server);
+                                     server,
+                                     connection->probe_config->dscp);
         if (r)
                 return r;
 
@@ -388,6 +389,7 @@ static int n_dhcp4_c_connection_packet_broadcast(NDhcp4CConnection *connection,
                                          connection->client_config->ifindex,
                                          connection->client_config->broadcast_mac,
                                          connection->client_config->n_broadcast_mac,
+                                         connection->probe_config->dscp,
                                          message);
         if (r)
                 return r;

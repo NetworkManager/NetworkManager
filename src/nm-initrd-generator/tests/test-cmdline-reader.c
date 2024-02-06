@@ -2355,6 +2355,33 @@ test_dhcp_vendor_class_id(void)
 }
 
 static void
+test_dhcp_dscp(void)
+{
+    const char *const            *ARGV;
+    gs_unref_object NMConnection *connection = NULL;
+    NMSettingIPConfig            *s_ip4;
+
+    ARGV       = NM_MAKE_STRV("rd.net.dhcp.dscp=CS4", "ip=eno1:dhcp");
+    connection = _parse_con(ARGV, "eno1");
+    s_ip4      = NM_SETTING_IP_CONFIG(nm_connection_get_setting_ip4_config(connection));
+    g_assert_cmpstr(nm_setting_ip_config_get_dhcp_dscp(s_ip4), ==, "CS4");
+
+    g_clear_object(&connection);
+
+    ARGV       = NM_MAKE_STRV("rd.net.dhcp.dscp=CS0", "ip=eno1:dhcp");
+    connection = _parse_con(ARGV, "eno1");
+    s_ip4      = NM_SETTING_IP_CONFIG(nm_connection_get_setting_ip4_config(connection));
+    g_assert_cmpstr(nm_setting_ip_config_get_dhcp_dscp(s_ip4), ==, "CS0");
+
+    g_clear_object(&connection);
+
+    ARGV       = NM_MAKE_STRV("ip=eno1:dhcp");
+    connection = _parse_con(ARGV, "eno1");
+    s_ip4      = NM_SETTING_IP_CONFIG(nm_connection_get_setting_ip4_config(connection));
+    g_assert_cmpstr(nm_setting_ip_config_get_dhcp_dscp(s_ip4), ==, NULL);
+}
+
+static void
 test_infiniband_iface(void)
 {
     const char *const            *ARGV       = NM_MAKE_STRV("ip=ib1:dhcp");
@@ -2652,6 +2679,7 @@ main(int argc, char **argv)
     g_test_add_func("/initrd/cmdline/neednet/no_args", test_neednet_no_args);
     g_test_add_func("/initrd/cmdline/neednet/args", test_neednet_args);
     g_test_add_func("/initrd/cmdline/dhcp/vendor_class_id", test_dhcp_vendor_class_id);
+    g_test_add_func("/initrd/cmdline/dhcp/dscp", test_dhcp_dscp);
     g_test_add_func("/initrd/cmdline/infiniband/iface", test_infiniband_iface);
     g_test_add_func("/initrd/cmdline/infiniband/mac", test_infiniband_mac);
     g_test_add_func("/initrd/cmdline/infiniband/pkey", test_infiniband_pkey);

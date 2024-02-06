@@ -158,6 +158,13 @@ typedef struct {
              * is disabled. */
             guint acd_timeout_msec;
 
+            /* The DSCP value to use */
+            guint8 dscp;
+
+            /* Whether the DSCP value is explicitly set (or it is the default
+             * one) */
+            bool dscp_explicit : 1;
+
             /* Set BOOTP broadcast flag in request packets, so that servers
              * will always broadcast replies. */
             bool request_broadcast : 1;

@@ -1965,4 +1965,5 @@ global:
 	nm_setting_hsr_get_prp;
 	nm_setting_hsr_get_type;
 	nm_setting_hsr_new;
+	nm_setting_ip_config_get_dhcp_dscp;
 } libnm_1_44_0;

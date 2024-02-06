@@ -185,6 +185,7 @@ typedef struct {
     char       *gateway;
     char       *dhcp_hostname;
     char       *dhcp_iaid;
+    char       *dhcp_dscp;
     gint64      route_metric;
     int         auto_route_ext_gw;
     int         replace_local_rule;

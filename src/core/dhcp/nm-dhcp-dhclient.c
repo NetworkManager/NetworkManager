@@ -457,6 +457,11 @@ dhclient_start(NMDhcpClient *client,
         g_ptr_array_add(argv, (gpointer) priv->conf_file);
     }
 
+    if (client_config->v4.dscp_explicit) {
+        _LOGW("dhclient does not support specifying a custom DSCP value; the TOS field will be set "
+              "to LOWDELAY (0x10).");
+    }
+
     /* Usually the system bus address is well-known; but if it's supposed
      * to be something else, we need to push it to dhclient, since dhclient
      * sanitizes the environment it gives the action scripts.

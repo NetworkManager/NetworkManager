@@ -46,7 +46,7 @@ static void test_client_udp_socket_new(Link *link,
         netns_get(&oldns);
         netns_set(link->netns);
 
-        r = n_dhcp4_c_socket_udp_new(skp, link->ifindex, addr_client, addr_server);
+        r = n_dhcp4_c_socket_udp_new(skp, link->ifindex, addr_client, addr_server, N_DHCP4_DSCP_DEFAULT);
         c_assert(r >= 0);
 
         netns_set(oldns);
@@ -95,6 +95,7 @@ static void test_client_server_packet(Link *link_server, Link *link_client) {
                                          link_client->ifindex,
                                          (const unsigned char[]){0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
                                          ETH_ALEN,
+                                         -1,
                                          outgoing);
         c_assert(!r);
 
@@ -178,6 +179,7 @@ static void test_server_client_packet(Link *link_server, Link *link_client) {
                                          link_client->mac.ether_addr_octet,
                                          ETH_ALEN,
                                          &addr_client,
+                                         N_DHCP4_DSCP_DEFAULT,
                                          outgoing);
         c_assert(!r);
         r = n_dhcp4_s_socket_packet_send(sk_server,
@@ -188,6 +190,7 @@ static void test_server_client_packet(Link *link_server, Link *link_client) {
                                          },
                                          ETH_ALEN,
                                          &addr_client,
+                                         N_DHCP4_DSCP_DEFAULT,
                                          outgoing);
         c_assert(!r);
 

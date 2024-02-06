@@ -2185,6 +2185,52 @@ out_good:
     return result;
 }
 
+static guint8
+_prop_get_ipv4_dhcp_dscp(NMDevice *self, gboolean *out_dscp_explicit)
+{
+    gs_free_error GError *error = NULL;
+    NMConnection         *connection;
+    NMSettingIPConfig    *s_ip;
+    const char           *str;
+
+    connection = nm_device_get_applied_connection(self);
+    s_ip       = nm_connection_get_setting_ip_config(connection, AF_INET);
+    g_return_val_if_fail(s_ip, 0);
+
+    NM_SET_OUT(out_dscp_explicit, TRUE);
+
+    str = nm_setting_ip_config_get_dhcp_dscp(s_ip);
+    if (str) {
+        nm_assert(nm_utils_validate_dhcp_dscp(str, NULL));
+    } else {
+        str = nm_config_data_get_connection_default(NM_CONFIG_GET_DATA,
+                                                    NM_CON_DEFAULT("ipv4.dhcp-dscp"),
+                                                    self);
+        if (!str || !str[0]) {
+            str = "CS0";
+            NM_SET_OUT(out_dscp_explicit, FALSE);
+        } else if (!nm_utils_validate_dhcp_dscp(str, &error)) {
+            _LOGW(LOGD_DEVICE,
+                  "invalid global default value '%s' for ipv4.%s: %s",
+                  str,
+                  NM_SETTING_IP_CONFIG_DHCP_DSCP,
+                  error->message);
+            str = "CS0";
+            NM_SET_OUT(out_dscp_explicit, FALSE);
+        }
+    }
+
+    if (nm_streq(str, "CS0")) {
+        return 0;
+    } else if (nm_streq(str, "CS6")) {
+        return 0x30;
+    } else if (nm_streq(str, "CS4")) {
+        return 0x20;
+    };
+
+    nm_assert_unreachable_val(0);
+}
+
 static GBytes *
 _prop_get_ipv4_dhcp_vendor_class_identifier(NMDevice *self, NMSettingIP4Config *s_ip4)
 {
@@ -10970,8 +11016,11 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
         const char            *hostname;
         gboolean               hostname_is_fqdn;
         gboolean               send_client_id;
+        guint8                 dscp;
+        gboolean               dscp_explicit = FALSE;
 
         client_id = _prop_get_ipv4_dhcp_client_id(self, connection, hwaddr, &send_client_id);
+        dscp      = _prop_get_ipv4_dhcp_dscp(self, &dscp_explicit);
 
         vendor_class_identifier =
             _prop_get_ipv4_dhcp_vendor_class_identifier(self, NM_SETTING_IP4_CONFIG(s_ip));
@@ -11010,6 +11059,8 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
                     .request_broadcast = request_broadcast,
                     .acd_timeout_msec  = _prop_get_ipv4_dad_timeout(self),
                     .send_client_id    = send_client_id,
+                    .dscp              = dscp,
+                    .dscp_explicit     = dscp_explicit,
                 },
             .previous_lease = priv->l3cds[L3_CONFIG_DATA_TYPE_DHCP_X(IS_IPv4)].d,
         };

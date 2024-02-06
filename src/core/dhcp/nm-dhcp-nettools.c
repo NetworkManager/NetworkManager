@@ -1388,6 +1388,8 @@ ip4_start(NMDhcpClient *client, GError **error)
         }
     }
 
+    n_dhcp4_client_probe_config_set_dscp(config, client_config->v4.dscp);
+
     if (client_config->hostname) {
         if (client_config->use_fqdn) {
             uint8_t             buffer[255];
