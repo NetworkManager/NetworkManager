@@ -4537,6 +4537,43 @@ nm_range_from_str(const char *str, GError **error)
     return nm_range_new(start, end);
 }
 
+/**
+ * nm_setting_get_enum_property_type:
+ * @setting_type: the GType of the NMSetting instance
+ * @property_name: the name of the property
+ *
+ * Get the type of the enum that defines the values that the property accepts. It is only
+ * useful for properties configured to accept values from certain enum type, otherwise
+ * it will return %G_TYPE_INVALID. Note that flags (children of G_TYPE_FLAGS) are also
+ * considered enums.
+ *
+ * Note that the GObject property might be implemented as an integer, actually, and not
+ * as enum. Find out what underlying type is used, checking the #GParamSpec, before
+ * setting the GObject property.
+ *
+ * Returns: the enum's GType, or %G_TYPE_INVALID if the property is not of enum type
+ *
+ * Since: 1.46
+ */
+GType
+nm_setting_get_enum_property_type(GType setting_type, const char *property_name)
+{
+    nm_auto_unref_gtypeclass NMSettingClass *setting_class = g_type_class_ref(setting_type);
+    const NMSettInfoProperty                *property_info;
+    GParamSpec                              *spec;
+
+    g_return_val_if_fail(NM_IS_SETTING_CLASS(setting_class), G_TYPE_INVALID);
+
+    property_info = _nm_setting_class_get_property_info(setting_class, property_name);
+    spec          = property_info->param_spec;
+
+    if (spec && (G_TYPE_IS_ENUM(spec->value_type) || G_TYPE_IS_FLAGS(spec->value_type)))
+        return property_info->param_spec->value_type;
+    if (property_info->property_type->direct_type == NM_VALUE_TYPE_ENUM)
+        return property_info->direct_data.enum_gtype;
+    return G_TYPE_INVALID;
+}
+
 /*****************************************************************************/
 
 static void
