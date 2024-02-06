@@ -3993,6 +3993,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingIPConfig,
                              PROP_IGNORE_AUTO_ROUTES,
                              PROP_IGNORE_AUTO_DNS,
                              PROP_DHCP_HOSTNAME,
+                             PROP_DHCP_DSCP,
                              PROP_DHCP_HOSTNAME_FLAGS,
                              PROP_DHCP_SEND_HOSTNAME,
                              PROP_NEVER_DEFAULT,
@@ -5201,6 +5202,25 @@ nm_setting_ip_config_get_dhcp_send_hostname(NMSettingIPConfig *setting)
 }
 
 /**
+ * nm_setting_ip_config_get_dhcp_dscp:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns the value contained in the #NMSettingIPConfig:dhcp-dscp
+ * property.
+ *
+ * Returns: the value for the DSCP field for DHCP
+ *
+ * Since: 1.46
+ **/
+const char *
+nm_setting_ip_config_get_dhcp_dscp(NMSettingIPConfig *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), NULL);
+
+    return NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->dhcp_dscp;
+}
+
+/**
  * nm_setting_ip_config_get_never_default:
  * @setting: the #NMSettingIPConfig
  *
@@ -5731,6 +5751,14 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }
     }
 
+    if (priv->dhcp_dscp && !nm_utils_validate_dhcp_dscp(priv->dhcp_dscp, error)) {
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       nm_setting_get_name(setting),
+                       NM_SETTING_IP_CONFIG_DHCP_DSCP);
+        return FALSE;
+    }
+
     /* Normalizable errors */
     if (priv->gateway && priv->never_default) {
         g_set_error(error,
@@ -5982,6 +6010,12 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
         &nm_sett_info_propert_type_direct_string,
         .direct_offset = NM_STRUCT_OFFSET_ENSURE_TYPE(char *, NMSettingIPConfigPrivate, dhcp_iaid),
         .direct_string_allow_empty = TRUE);
+
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_DHCP_DSCP],
+        &nm_sett_info_propert_type_direct_string,
+        .direct_offset = NM_STRUCT_OFFSET_ENSURE_TYPE(char *, NMSettingIPConfigPrivate, dhcp_dscp));
 
     /* ---dbus---
      * property: routing-rules
@@ -6613,6 +6647,25 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                              "",
                              TRUE,
                              G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
+
+    /**
+     * NMSettingIPConfig:dhcp-dscp:
+     *
+     * Specifies the value for the DSCP field (traffic class) of the IP header. When
+     * empty, the global default value is used; if no global default is specified, it is
+     * assumed to be "CS0". Allowed values are: "CS0", "CS4" and "CS6".
+     *
+     * The property is currently valid only for IPv4, and it is supported only by the
+     * "internal" DHCP plugin.
+     *
+     * Since: 1.46
+     **/
+    obj_properties[PROP_DHCP_DSCP] =
+        g_param_spec_string(NM_SETTING_IP_CONFIG_DHCP_DSCP,
+                            "",
+                            "",
+                            NULL,
+                            G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:never-default:

@@ -3360,6 +3360,8 @@ do_write_construct(NMConnection                   *connection,
                    GError                        **error)
 {
     NMSettingConnection                *s_con;
+    NMSettingIPConfig                  *s_ip4;
+    NMSettingIPConfig                  *s_ip6;
     nm_auto_shvar_file_close shvarFile *ifcfg = NULL;
     const char                         *ifcfg_name;
     gs_free char                       *ifcfg_name_free = NULL;
@@ -3546,8 +3548,6 @@ do_write_construct(NMConnection                   *connection,
     has_complex_routes_v6 = utils_has_complex_routes(ifcfg_name, AF_INET6);
 
     if (has_complex_routes_v4 || has_complex_routes_v6) {
-        NMSettingIPConfig *s_ip4, *s_ip6;
-
         s_ip4 = nm_connection_get_setting_ip4_config(connection);
         s_ip6 = nm_connection_get_setting_ip6_config(connection);
         if ((s_ip4 && nm_setting_ip_config_get_num_routes(s_ip4) > 0)
@@ -3583,6 +3583,15 @@ do_write_construct(NMConnection                   *connection,
         route_ignore = TRUE;
     } else
         route_ignore = FALSE;
+
+    if ((s_ip4 = nm_connection_get_setting_ip4_config(connection))
+        && nm_setting_ip_config_get_dhcp_dscp(s_ip4)) {
+        set_error_unsupported(error,
+                              connection,
+                              NM_SETTING_IP4_CONFIG_SETTING_NAME "." NM_SETTING_IP_CONFIG_DHCP_DSCP,
+                              FALSE);
+        return FALSE;
+    }
 
     write_ip4_setting(connection,
                       ifcfg,

@@ -332,6 +332,7 @@ char *nm_ip_routing_rule_to_string(const NMIPRoutingRule       *self,
 #define NM_SETTING_IP_CONFIG_DHCP_HOSTNAME       "dhcp-hostname"
 #define NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME  "dhcp-send-hostname"
 #define NM_SETTING_IP_CONFIG_DHCP_HOSTNAME_FLAGS "dhcp-hostname-flags"
+#define NM_SETTING_IP_CONFIG_DHCP_DSCP           "dhcp-dscp"
 #define NM_SETTING_IP_CONFIG_NEVER_DEFAULT       "never-default"
 #define NM_SETTING_IP_CONFIG_MAY_FAIL            "may-fail"
 #define NM_SETTING_IP_CONFIG_DAD_TIMEOUT         "dad-timeout"
@@ -478,6 +479,8 @@ gboolean nm_setting_ip_config_get_ignore_auto_dns(NMSettingIPConfig *setting);
 
 const char *nm_setting_ip_config_get_dhcp_hostname(NMSettingIPConfig *setting);
 gboolean    nm_setting_ip_config_get_dhcp_send_hostname(NMSettingIPConfig *setting);
+NM_AVAILABLE_IN_1_46
+const char *nm_setting_ip_config_get_dhcp_dscp(NMSettingIPConfig *setting);
 
 gboolean nm_setting_ip_config_get_never_default(NMSettingIPConfig *setting);
 gboolean nm_setting_ip_config_get_may_fail(NMSettingIPConfig *setting);
