@@ -1126,6 +1126,7 @@ NM_COMPILER_WARNINGS(AM_CFLAGS, ${more_warnings_default})
 
 for w in \
     -Wno-nonnull-compare \
+    -Wno-calloc-transposed-args \
     ; do
     NM_COMPILER_WARNING_FLAG(LIBSYSTEMD_NM_CFLAGS, "$w")
 done

@@ -73,6 +73,7 @@ libnm_systemd_common_cflags = [ ]
 
 libnm_systemd_common_cflags += cc.get_supported_arguments([
   '-Wno-nonnull-compare',
+  '-Wno-calloc-transposed-args',
 ])
 
 ###############################################################################
