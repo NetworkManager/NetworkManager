@@ -30,6 +30,7 @@ libnm_systemd_core = static_library(
     top_inc,
     src_inc,
   ],
+  c_args: libnm_systemd_common_cflags,
   dependencies: [
     libnm_systemd_shared_dep_inc,
     glib_dep,
