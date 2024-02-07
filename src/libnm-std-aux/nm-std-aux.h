@@ -286,9 +286,17 @@ typedef uint64_t _nm_bitwise nm_be64_t;
 
 #define NM_MORE_ASSERTS_EFFECTIVE (_NM_ASSERT_FAIL_ENABLED ? NM_MORE_ASSERTS : 0)
 
+#if defined(__GNUC__) && __GNUC__ >= 12
+#define _nm_assert_pragma_enter NM_PRAGMA_WARNING_DISABLE("-Wnonnull-compare")
+#define _nm_assert_pragma_leave NM_PRAGMA_WARNING_REENABLE
+#else
+#define _nm_assert_pragma_enter
+#define _nm_assert_pragma_leave
+#endif
+
 #define nm_assert(cond)                                                \
     ({                                                                 \
-        NM_PRAGMA_WARNING_DISABLE("-Wnonnull-compare");                \
+        _nm_assert_pragma_enter;                                       \
                                                                        \
         /* nm_assert() must do *nothing* of effect, except evaluating
          * @cond (0 or 1 times).
@@ -308,7 +316,7 @@ typedef uint64_t _nm_bitwise nm_be64_t;
             _nm_assert_fail(#cond);                                    \
         }                                                              \
                                                                        \
-        NM_PRAGMA_WARNING_REENABLE;                                    \
+        _nm_assert_pragma_leave;                                       \
                                                                        \
         1;                                                             \
     })
