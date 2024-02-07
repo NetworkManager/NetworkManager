@@ -185,13 +185,16 @@ nm_audit_log(NMAuditManager *self,
     priv = NM_AUDIT_MANAGER_GET_PRIVATE(self);
 
     if (priv->auditd_fd >= 0) {
-        audit_log_user_message(priv->auditd_fd,
-                               AUDIT_USYS_CONFIG,
-                               build_message(&strbuf, BACKEND_AUDITD, fields),
-                               NULL,
-                               NULL,
-                               NULL,
-                               success);
+        int r;
+
+        r = audit_log_user_message(priv->auditd_fd,
+                                   AUDIT_USYS_CONFIG,
+                                   build_message(&strbuf, BACKEND_AUDITD, fields),
+                                   NULL,
+                                   NULL,
+                                   NULL,
+                                   success);
+        (void) r;
     }
 #endif
 
