@@ -2228,7 +2228,7 @@ _prop_get_ipv4_dhcp_dscp(NMDevice *self, gboolean *out_dscp_explicit)
         return 0x20;
     };
 
-    nm_assert_unreachable_val(0);
+    return nm_assert_unreachable_val(0);
 }
 
 static GBytes *
