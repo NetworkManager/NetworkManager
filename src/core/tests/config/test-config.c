@@ -1062,7 +1062,7 @@ _set_values_intern_atomic_section_2_set(NMConfig            *config,
     g_key_file_set_value(keyfile,
                          NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN "with-whitespace",
                          "key2",
-                         " b c\\,  d  ");
+                         " b c\\\\,  d  ");
     *out_expected_changes = NM_CONFIG_CHANGE_CAUSE_SET_VALUES | NM_CONFIG_CHANGE_VALUES
                             | NM_CONFIG_CHANGE_VALUES_INTERN;
 }
