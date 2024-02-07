@@ -1162,7 +1162,11 @@ fi
 
 NM_COMPILER_WARNINGS(AM_CFLAGS, ${more_warnings_default})
 
-NM_COMPILER_WARNING_FLAG(LIBSYSTEMD_NM_CFLAGS, "-Wno-gnu-variable-sized-type-not-at-end")
+for w in \
+    -Wno-nonnull-compare \
+    ; do
+    NM_COMPILER_WARNING_FLAG(LIBSYSTEMD_NM_CFLAGS, "$w")
+done
 AC_SUBST(LIBSYSTEMD_NM_CFLAGS)
 
 CC_CHECK_FLAGS_APPEND([with_cflags], [CFLAGS], [\
