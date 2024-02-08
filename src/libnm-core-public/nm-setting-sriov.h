@@ -26,10 +26,12 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_SRIOV_SETTING_NAME "sriov"
 
-#define NM_SETTING_SRIOV_TOTAL_VFS         "total-vfs"
-#define NM_SETTING_SRIOV_VFS               "vfs"
-#define NM_SETTING_SRIOV_AUTOPROBE_DRIVERS "autoprobe-drivers"
-#define NM_SETTING_SRIOV_ESWITCH_MODE      "eswitch-mode"
+#define NM_SETTING_SRIOV_TOTAL_VFS           "total-vfs"
+#define NM_SETTING_SRIOV_VFS                 "vfs"
+#define NM_SETTING_SRIOV_AUTOPROBE_DRIVERS   "autoprobe-drivers"
+#define NM_SETTING_SRIOV_ESWITCH_MODE        "eswitch-mode"
+#define NM_SETTING_SRIOV_ESWITCH_INLINE_MODE "eswitch-inline-mode"
+#define NM_SETTING_SRIOV_ESWITCH_ENCAP_MODE  "eswitch-encap-mode"
 
 #define NM_SRIOV_VF_ATTRIBUTE_MAC         "mac"
 #define NM_SRIOV_VF_ATTRIBUTE_SPOOF_CHECK "spoof-check"
@@ -68,6 +70,38 @@ typedef enum {
     NM_SRIOV_ESWITCH_MODE_SWITCHDEV = 1,
 } NMSriovEswitchMode;
 
+/**
+ * NMSriovEswitchInlineMode:
+ * @NM_SRIOV_ESWITCH_INLINE_MODE_PRESERVE:  don't modify current inline-mode
+ * @NM_SRIOV_ESWITCH_INLINE_MODE_NONE:      don't use inline mode
+ * @NM_SRIOV_ESWITCH_INLINE_MODE_LINK:      L2 mode
+ * @NM_SRIOV_ESWITCH_INLINE_MODE_NETWORK:   L3 mode
+ * @NM_SRIOV_ESWITCH_INLINE_MODE_TRANSPORT: L4 mode
+ *
+ * Since: 1.46
+ */
+typedef enum {
+    NM_SRIOV_ESWITCH_INLINE_MODE_PRESERVE  = -1,
+    NM_SRIOV_ESWITCH_INLINE_MODE_NONE      = 0,
+    NM_SRIOV_ESWITCH_INLINE_MODE_LINK      = 1,
+    NM_SRIOV_ESWITCH_INLINE_MODE_NETWORK   = 2,
+    NM_SRIOV_ESWITCH_INLINE_MODE_TRANSPORT = 3,
+} NMSriovEswitchInlineMode;
+
+/**
+ * NMSriovEswitchEncapMode:
+ * @NM_SRIOV_ESWITCH_ENCAP_MODE_PRESERVE: don't modify current encap-mode
+ * @NM_SRIOV_ESWITCH_ENCAP_MODE_NONE: disable encapsulation mode
+ * @NM_SRIOV_ESWITCH_ENCAP_MODE_BASIC: enable encapsulation mode
+ *
+ * Since: 1.46
+ */
+typedef enum {
+    NM_SRIOV_ESWITCH_ENCAP_MODE_PRESERVE = -1,
+    NM_SRIOV_ESWITCH_ENCAP_MODE_NONE     = 0,
+    NM_SRIOV_ESWITCH_ENCAP_MODE_BASIC    = 1,
+} NMSriovEswitchEncapMode;
+
 NM_AVAILABLE_IN_1_14
 GType nm_setting_sriov_get_type(void);
 NM_AVAILABLE_IN_1_14
@@ -90,6 +124,10 @@ NM_AVAILABLE_IN_1_14
 NMTernary nm_setting_sriov_get_autoprobe_drivers(NMSettingSriov *setting);
 NM_AVAILABLE_IN_1_46
 NMSriovEswitchMode nm_setting_sriov_get_eswitch_mode(NMSettingSriov *setting);
+NM_AVAILABLE_IN_1_46
+NMSriovEswitchInlineMode nm_setting_sriov_get_eswitch_inline_mode(NMSettingSriov *setting);
+NM_AVAILABLE_IN_1_46
+NMSriovEswitchEncapMode nm_setting_sriov_get_eswitch_encap_mode(NMSettingSriov *setting);
 
 NM_AVAILABLE_IN_1_14
 gboolean nm_sriov_vf_add_vlan(NMSriovVF *vf, guint vlan_id);
