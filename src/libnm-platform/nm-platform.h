@@ -779,6 +779,8 @@ typedef struct {
     bool        mcast_snooping : 1;
     bool        stp_state : 1;
     bool        vlan_stats_enabled : 1;
+    bool        vlan_filtering;
+    guint16     default_pvid;
 } _nm_alignas(NMPlatformObject) NMPlatformLnkBridge;
 
 extern const NMPlatformLnkBridge nm_platform_lnk_bridge_default;
