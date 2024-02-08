@@ -9,6 +9,7 @@
 
 #include "nm-setting-private.h"
 #include "nm-utils-private.h"
+#include "nm-core-enum-types.h"
 
 /**
  * SECTION:nm-setting-sriov
@@ -18,7 +19,11 @@
 
 /*****************************************************************************/
 
-NM_GOBJECT_PROPERTIES_DEFINE(NMSettingSriov, PROP_TOTAL_VFS, PROP_VFS, PROP_AUTOPROBE_DRIVERS, );
+NM_GOBJECT_PROPERTIES_DEFINE(NMSettingSriov,
+                             PROP_TOTAL_VFS,
+                             PROP_VFS,
+                             PROP_AUTOPROBE_DRIVERS,
+                             PROP_ESWITCH_MODE, );
 
 /**
  * NMSettingSriov:
@@ -32,6 +37,7 @@ struct _NMSettingSriov {
     GPtrArray *vfs;
     int        autoprobe_drivers;
     guint32    total_vfs;
+    int        eswitch_mode;
 };
 
 struct _NMSettingSriovClass {
@@ -835,6 +841,22 @@ nm_setting_sriov_get_autoprobe_drivers(NMSettingSriov *setting)
     return setting->autoprobe_drivers;
 }
 
+/**
+ * nm_setting_sriov_get_eswitch_mode:
+ * @setting: the #NMSettingSriov
+ *
+ * Returns: the value contained in the #NMSettingSriov:eswitch-mode property.
+ *
+ * Since: 1.46
+ */
+NMSriovEswitchMode
+nm_setting_sriov_get_eswitch_mode(NMSettingSriov *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_SRIOV(setting), NM_SRIOV_ESWITCH_MODE_PRESERVE);
+
+    return setting->eswitch_mode;
+}
+
 static int
 vf_index_compare(gconstpointer a, gconstpointer b)
 {
@@ -1330,6 +1352,29 @@ nm_setting_sriov_class_init(NMSettingSriovClass *klass)
                                                     NM_SETTING_PARAM_FUZZY_IGNORE,
                                                     NMSettingSriov,
                                                     autoprobe_drivers);
+
+    /**
+     * NMSettingSriov:eswitch-mode
+     *
+     * Select the eswitch mode of the device. Currently it's only supported for
+     * PCI PF devices, and only if the eswitch device is managed from the same
+     * PCI address than the PF.
+     *
+     * If set to %NM_SRIOV_ESWITCH_MODE_PRESERVE (default) the eswitch mode won't be
+     * modified by NetworkManager.
+     *
+     * Since: 1.46
+     */
+    _nm_setting_property_define_direct_enum(properties_override,
+                                            obj_properties,
+                                            NM_SETTING_SRIOV_ESWITCH_MODE,
+                                            PROP_ESWITCH_MODE,
+                                            NM_TYPE_SRIOV_ESWITCH_MODE,
+                                            NM_SRIOV_ESWITCH_MODE_PRESERVE,
+                                            NM_SETTING_PARAM_FUZZY_IGNORE,
+                                            NULL,
+                                            NMSettingSriov,
+                                            eswitch_mode);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

@@ -7363,6 +7363,9 @@ static const NMMetaPropertyInfo *const property_infos_SRIOV[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_SRIOV_AUTOPROBE_DRIVERS,
         .property_type =                &_pt_gobject_ternary,
     ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_SRIOV_ESWITCH_MODE,
+        .property_type =                &_pt_gobject_enum,
+    ),
     NULL
 };
 

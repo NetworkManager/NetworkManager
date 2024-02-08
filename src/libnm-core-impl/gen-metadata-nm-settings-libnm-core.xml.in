@@ -2198,6 +2198,10 @@
                   dbus-type="i"
                   gprop-type="NMTernary"
                   />
+        <property name="eswitch-mode"
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="total-vfs"
                   dbus-type="u"
                   gprop-type="guint"
