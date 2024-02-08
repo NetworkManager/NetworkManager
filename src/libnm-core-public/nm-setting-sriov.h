@@ -29,6 +29,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_SRIOV_TOTAL_VFS         "total-vfs"
 #define NM_SETTING_SRIOV_VFS               "vfs"
 #define NM_SETTING_SRIOV_AUTOPROBE_DRIVERS "autoprobe-drivers"
+#define NM_SETTING_SRIOV_ESWITCH_MODE      "eswitch-mode"
 
 #define NM_SRIOV_VF_ATTRIBUTE_MAC         "mac"
 #define NM_SRIOV_VF_ATTRIBUTE_SPOOF_CHECK "spoof-check"
@@ -53,6 +54,20 @@ typedef enum {
     NM_SRIOV_VF_VLAN_PROTOCOL_802_1AD = 1,
 } NMSriovVFVlanProtocol;
 
+/**
+ * NMSriovEswitchMode:
+ * @NM_SRIOV_ESWITCH_MODE_PRESERVE:  don't modify current eswitch mode
+ * @NM_SRIOV_ESWITCH_MODE_LEGACY:    use legacy SRIOV
+ * @NM_SRIOV_ESWITCH_MODE_SWITCHDEV: use switchdev mode
+ *
+ * Since: 1.46
+ */
+typedef enum {
+    NM_SRIOV_ESWITCH_MODE_PRESERVE  = -1,
+    NM_SRIOV_ESWITCH_MODE_LEGACY    = 0,
+    NM_SRIOV_ESWITCH_MODE_SWITCHDEV = 1,
+} NMSriovEswitchMode;
+
 NM_AVAILABLE_IN_1_14
 GType nm_setting_sriov_get_type(void);
 NM_AVAILABLE_IN_1_14
@@ -73,6 +88,8 @@ NM_AVAILABLE_IN_1_14
 void nm_setting_sriov_clear_vfs(NMSettingSriov *setting);
 NM_AVAILABLE_IN_1_14
 NMTernary nm_setting_sriov_get_autoprobe_drivers(NMSettingSriov *setting);
+NM_AVAILABLE_IN_1_46
+NMSriovEswitchMode nm_setting_sriov_get_eswitch_mode(NMSettingSriov *setting);
 
 NM_AVAILABLE_IN_1_14
 gboolean nm_sriov_vf_add_vlan(NMSriovVF *vf, guint vlan_id);
