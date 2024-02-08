@@ -6086,7 +6086,8 @@ nm_platform_lnk_bridge_to_string(const NMPlatformLnkBridge *lnk, char *buf, gsiz
                " mcast_querier_interval %" G_GUINT64_FORMAT
                " mcast_query_interval %" G_GUINT64_FORMAT
                " mcast_query_response_interval %" G_GUINT64_FORMAT
-               " mcast_startup_query_interval %" G_GUINT64_FORMAT "",
+               " mcast_startup_query_interval %" G_GUINT64_FORMAT " vlan_filtering %d"
+               " default_pvid %" G_GUINT16_FORMAT "",
                lnk->forward_delay,
                lnk->hello_time,
                lnk->max_age,
@@ -6109,7 +6110,9 @@ nm_platform_lnk_bridge_to_string(const NMPlatformLnkBridge *lnk, char *buf, gsiz
                lnk->mcast_querier_interval,
                lnk->mcast_query_interval,
                lnk->mcast_query_response_interval,
-               lnk->mcast_startup_query_interval);
+               lnk->mcast_startup_query_interval,
+               lnk->vlan_filtering,
+               lnk->default_pvid);
     return buf;
 }
 
@@ -7978,12 +7981,14 @@ nm_platform_lnk_bridge_hash_update(const NMPlatformLnkBridge *obj, NMHashState *
                         obj->mcast_router,
                         obj->mcast_query_response_interval,
                         obj->mcast_startup_query_interval,
+                        obj->default_pvid,
                         NM_HASH_COMBINE_BOOLS(guint8,
                                               obj->stp_state,
                                               obj->mcast_querier,
                                               obj->mcast_query_use_ifaddr,
                                               obj->mcast_snooping,
-                                              obj->vlan_stats_enabled));
+                                              obj->vlan_stats_enabled,
+                                              obj->vlan_filtering));
 }
 
 void
@@ -8124,6 +8129,8 @@ nm_platform_lnk_bridge_cmp(const NMPlatformLnkBridge *a, const NMPlatformLnkBrid
     NM_CMP_FIELD(a, b, mcast_query_interval);
     NM_CMP_FIELD(a, b, mcast_query_response_interval);
     NM_CMP_FIELD(a, b, mcast_startup_query_interval);
+    NM_CMP_FIELD_BOOL(a, b, vlan_filtering);
+    NM_CMP_FIELD(a, b, default_pvid);
 
     return 0;
 }
