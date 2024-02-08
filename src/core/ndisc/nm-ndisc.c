@@ -114,7 +114,7 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex        *multi_idx,
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
     guint32                                 ifa_flags;
     guint                                   i;
-    const gint32                            now_sec = nm_utils_get_monotonic_timestamp_sec();
+    const gint64                            now_msec = nm_utils_get_monotonic_timestamp_msec();
 
     l3cd = nm_l3_config_data_new(multi_idx, ifindex, NM_IP_CONFIG_SOURCE_NDISC);
 
@@ -134,12 +134,10 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex        *multi_idx,
             .ifindex   = ifindex,
             .address   = ndisc_addr->address,
             .plen      = 64,
-            .timestamp = now_sec,
-            .lifetime  = _nm_ndisc_lifetime_from_expiry(((gint64) now_sec) * 1000,
-                                                       ndisc_addr->expiry_msec,
-                                                       TRUE),
+            .timestamp = now_msec / 1000,
+            .lifetime  = _nm_ndisc_lifetime_from_expiry(now_msec, ndisc_addr->expiry_msec, TRUE),
             .preferred = _nm_ndisc_lifetime_from_expiry(
-                ((gint64) now_sec) * 1000,
+                now_msec,
                 NM_MIN(ndisc_addr->expiry_msec, ndisc_addr->expiry_preferred_msec),
                 TRUE),
             .addr_source = NM_IP_CONFIG_SOURCE_NDISC,
