@@ -1959,6 +1959,7 @@ global:
 	nm_setting_connection_get_autoconnect_ports;
 	nm_setting_connection_get_controller;
 	nm_setting_connection_get_port_type;
+	nm_setting_get_enum_property_type;
 	nm_setting_hsr_get_multicast_spec;
 	nm_setting_hsr_get_port1;
 	nm_setting_hsr_get_port2;
@@ -1966,11 +1967,12 @@ global:
 	nm_setting_hsr_get_type;
 	nm_setting_hsr_new;
 	nm_setting_ip_config_get_dhcp_dscp;
-	nm_setting_get_enum_property_type;
-	nm_setting_sriov_get_eswitch_mode;
-	nm_sriov_eswitch_mode_get_type;
-	nm_setting_sriov_get_eswitch_inline_mode;
-	nm_sriov_eswitch_inline_mode_get_type;
+	nm_setting_macsec_get_offload;
+	nm_setting_macsec_offload_get_type;
 	nm_setting_sriov_get_eswitch_encap_mode;
+	nm_setting_sriov_get_eswitch_inline_mode;
+	nm_setting_sriov_get_eswitch_mode;
 	nm_sriov_eswitch_encap_mode_get_type;
+	nm_sriov_eswitch_inline_mode_get_type;
+	nm_sriov_eswitch_mode_get_type;
 } libnm_1_44_0;

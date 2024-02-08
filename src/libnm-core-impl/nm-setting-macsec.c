@@ -35,7 +35,8 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_PARENT,
                                   PROP_MKA_CKN,
                                   PROP_PORT,
                                   PROP_VALIDATION,
-                                  PROP_SEND_SCI, );
+                                  PROP_SEND_SCI,
+                                  PROP_OFFLOAD, );
 
 typedef struct {
     char  *parent;
@@ -47,6 +48,7 @@ typedef struct {
     gint32 port;
     bool   encrypt;
     bool   send_sci;
+    gint32 offload;
 } NMSettingMacsecPrivate;
 
 /**
@@ -210,6 +212,22 @@ nm_setting_macsec_get_send_sci(NMSettingMacsec *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_MACSEC(setting), TRUE);
     return NM_SETTING_MACSEC_GET_PRIVATE(setting)->send_sci;
+}
+
+/**
+ * nm_setting_macsec_get_offload:
+ * @setting: the #NMSettingMacsec
+ *
+ * Returns: the #NMSettingMacsec:offload property of the setting
+ *
+ * Since: 1.46
+ **/
+NMSettingMacsecOffload
+nm_setting_macsec_get_offload(NMSettingMacsec *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_MACSEC(setting), NM_SETTING_MACSEC_OFFLOAD_DEFAULT);
+
+    return NM_SETTING_MACSEC_GET_PRIVATE(setting)->offload;
 }
 
 static GPtrArray *
@@ -596,6 +614,35 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
                                                NM_SETTING_PARAM_NONE,
                                                NMSettingMacsecPrivate,
                                                send_sci);
+
+    /**
+     * NMSettingMacsec:offload:
+     *
+     * Specifies the MACsec offload mode.
+     *
+     * %NM_SETTING_MACSEC_OFFLOAD_OFF disables MACsec offload.
+     *
+     * %NM_SETTING_MACSEC_OFFLOAD_PHY and %NM_SETTING_MACSEC_OFFLOAD_MAC request offload
+     * respectively to the PHY or to the MAC; if the selected mode is not available, the
+     * connection will fail.
+     *
+     * %NM_SETTING_MACSEC_OFFLOAD_DEFAULT uses the global default value specified in
+     * NetworkManager configuration; if no global default is defined, the built-in
+     * default is %NM_SETTING_MACSEC_OFFLOAD_OFF.
+     *
+     * Since: 1.46
+     **/
+    _nm_setting_property_define_direct_enum(properties_override,
+                                            obj_properties,
+                                            NM_SETTING_MACSEC_OFFLOAD,
+                                            PROP_OFFLOAD,
+                                            NM_TYPE_SETTING_MACSEC_OFFLOAD,
+                                            NM_SETTING_MACSEC_OFFLOAD_DEFAULT,
+                                            NM_SETTING_PARAM_INFERRABLE
+                                                | NM_SETTING_PARAM_FUZZY_IGNORE,
+                                            NULL,
+                                            NMSettingMacsecPrivate,
+                                            offload);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
