@@ -1824,6 +1824,14 @@
                   nmcli-description="Select the eswitch mode of the device. Currently it&apos;s only supported for PCI PF devices, and only if the eswitch device is managed from the same PCI address than the PF. If set to &quot;preserve&quot; (-1) (default) the eswitch mode won&apos;t be modified by NetworkManager."
                   format="choice (NMSriovEswitchMode)"
                   values="preserve (-1), legacy (0), switchdev (1)" />
+        <property name="eswitch-inline-mode"
+                  nmcli-description="Select the eswitch inline-mode of the device. Some HWs need the VF driver to put part of the packet headers on the TX descriptor so the e-switch can do proper matching and steering. Currently it&apos;s only supported for PCI PF devices, and only if the eswitch device is managed from the same PCI address than the PF. If set to &quot;preserve&quot; (-1) (default) the eswitch inline-mode won&apos;t be modified by NetworkManager."
+                  format="choice (NMSriovEswitchInlineMode)"
+                  values="preserve (-1), none (0), link (1), network (2), transport (3)" />
+        <property name="eswitch-encap-mode"
+                  nmcli-description="Select the eswitch encapsulation support. Currently it&apos;s only supported for PCI PF devices, and only if the eswitch device is managed from the same PCI address than the PF. If set to &quot;preserve&quot; (-1) (default) the eswitch encap-mode won&apos;t be modified by NetworkManager."
+                  format="choice (NMSriovEswitchEncapMode)"
+                  values="preserve (-1), none (0), basic (1)" />
     </setting>
     <setting name="tc" >
         <property name="qdiscs"
