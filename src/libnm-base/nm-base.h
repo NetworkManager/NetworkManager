@@ -277,6 +277,13 @@ typedef enum {
                          | _NM_VLAN_FLAG_LOOSE_BINDING | _NM_VLAN_FLAG_MVRP,
 } _NMVlanFlags;
 
+typedef enum {
+    /* Mirrors libnm's NMSriovEswitchMode */
+    _NM_SRIOV_ESWITCH_MODE_PRESERVE  = -1,
+    _NM_SRIOV_ESWITCH_MODE_LEGACY    = 0,
+    _NM_SRIOV_ESWITCH_MODE_SWITCHDEV = 1,
+} _NMSriovEswitchMode;
+
 /*****************************************************************************/
 
 typedef enum {

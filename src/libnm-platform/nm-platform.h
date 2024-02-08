@@ -1174,6 +1174,7 @@ typedef struct {
                                         int                     ifindex,
                                         guint                   num_vfs,
                                         NMOptionBool            autoprobe,
+                                        _NMSriovEswitchMode     eswitch_mode,
                                         NMPlatformAsyncCallback callback,
                                         gpointer                callback_data,
                                         GCancellable           *cancellable);
@@ -2037,6 +2038,7 @@ void nm_platform_link_set_sriov_params_async(NMPlatform             *self,
                                              int                     ifindex,
                                              guint                   num_vfs,
                                              NMOptionBool            autoprobe,
+                                             _NMSriovEswitchMode     eswitch_mode,
                                              NMPlatformAsyncCallback callback,
                                              gpointer                callback_data,
                                              GCancellable           *cancellable);

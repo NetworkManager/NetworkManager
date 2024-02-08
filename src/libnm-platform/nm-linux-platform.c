@@ -41,6 +41,7 @@
 #include "libnm-platform/nm-netlink.h"
 #include "libnm-platform/nm-platform-utils.h"
 #include "libnm-platform/nmp-netns.h"
+#include "libnm-platform/devlink/nm-devlink.h"
 #include "libnm-platform/wifi/nm-wifi-utils-wext.h"
 #include "libnm-platform/wifi/nm-wifi-utils.h"
 #include "libnm-platform/wpan/nm-wpan-utils.h"
@@ -8900,10 +8901,12 @@ link_set_sriov_params_async(NMPlatform             *platform,
                             int                     ifindex,
                             guint                   num_vfs,
                             NMOptionBool            autoprobe,
+                            _NMSriovEswitchMode     eswitch_mode,
                             NMPlatformAsyncCallback callback,
                             gpointer                data,
                             GCancellable           *cancellable)
 {
+    NMLinuxPlatformPrivate     *priv  = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
     nm_auto_pop_netns NMPNetns *netns = NULL;
     gs_free_error GError       *error = NULL;
     nm_auto_close int           dirfd = -1;
@@ -8914,6 +8917,8 @@ link_set_sriov_params_async(NMPlatform             *platform,
     gpointer                    packed;
     const char                 *values[3];
     char                        buf[64];
+    gs_free NMDevlink          *devlink = NULL;
+    int                         current_eswitch_mode;
 
     g_return_if_fail(callback || !data);
     g_return_if_fail(cancellable);
@@ -8925,6 +8930,8 @@ link_set_sriov_params_async(NMPlatform             *platform,
                             "couldn't change namespace");
         goto out_idle;
     }
+
+    devlink = nm_devlink_new(platform, priv->sk_genl_sync, ifindex);
 
     dirfd = nm_platform_sysctl_open_netdir(platform, ifindex, ifname);
     if (!dirfd) {
@@ -8957,6 +8964,7 @@ link_set_sriov_params_async(NMPlatform             *platform,
         0,
         G_MAXUINT,
         -1);
+
     current_autoprobe = nm_platform_sysctl_get_int_checked(
         platform,
         NMP_SYSCTL_PATHID_NETDIR_A(dirfd, ifname, "device/sriov_drivers_autoprobe"),
@@ -8964,15 +8972,26 @@ link_set_sriov_params_async(NMPlatform             *platform,
         0,
         1,
         -1);
-
     if (current_autoprobe == -1 && errno == ENOENT) {
         /* older kernel versions don't have this sysctl. Assume the value is
          * "1". */
         current_autoprobe = 1;
     }
 
+    current_eswitch_mode = nm_devlink_get_eswitch_mode(devlink, &error);
+    if (current_eswitch_mode < 0) {
+        /* We can proceed if eswith-mode is "preserve", otherwise propagate the error */
+        if (eswitch_mode != _NM_SRIOV_ESWITCH_MODE_PRESERVE)
+            goto out_idle;
+
+        _LOGD("%s", error->message);
+        g_clear_error(&error);
+    }
+
     if (current_num == num_vfs
-        && (autoprobe == NM_OPTION_BOOL_DEFAULT || current_autoprobe == autoprobe))
+        && (autoprobe == NM_OPTION_BOOL_DEFAULT || current_autoprobe == autoprobe)
+        && (eswitch_mode == _NM_SRIOV_ESWITCH_MODE_PRESERVE
+            || current_eswitch_mode == eswitch_mode))
         goto out_idle;
 
     if (NM_IN_SET(autoprobe, NM_OPTION_BOOL_TRUE, NM_OPTION_BOOL_FALSE)
@@ -8988,6 +9007,11 @@ link_set_sriov_params_async(NMPlatform             *platform,
                     (int) autoprobe,
                     nm_strerror_native(errno));
         goto out_idle;
+    }
+
+    if (eswitch_mode != _NM_SRIOV_ESWITCH_MODE_PRESERVE && current_eswitch_mode != eswitch_mode) {
+        if (!nm_devlink_set_eswitch_mode(devlink, (enum devlink_eswitch_mode) eswitch_mode, &error))
+            goto out_idle;
     }
 
     if (current_num == 0 && num_vfs == 0)
