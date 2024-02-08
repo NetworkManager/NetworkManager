@@ -1424,6 +1424,8 @@ test_software_detect(gconstpointer user_data)
         lnk_bridge.mcast_query_interval          = 12000;
         lnk_bridge.mcast_query_response_interval = 5200;
         lnk_bridge.mcast_startup_query_interval  = 3000;
+        lnk_bridge.vlan_filtering                = FALSE;
+        lnk_bridge.default_pvid                  = 1;
 
         if (!nmtstp_link_bridge_add(NULL, ext, DEVICE_NAME, &lnk_bridge))
             g_error("Failed adding Bridge interface");
