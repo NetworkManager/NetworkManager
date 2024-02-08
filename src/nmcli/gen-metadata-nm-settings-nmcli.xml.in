@@ -1548,6 +1548,10 @@
                   nmcli-description="Specifies whether the SCI (Secure Channel Identifier) is included in every packet."
                   format="boolean"
                   values="true/yes/on, false/no/off" />
+        <property name="offload"
+                  nmcli-description="Specifies the MACsec offload mode. &quot;off&quot; (0) disables MACsec offload. &quot;phy&quot; (1) and &quot;mac&quot; (2) request offload respectively to the PHY or to the MAC; if the selected mode is not available, the connection will fail. &quot;default&quot; (-1) uses the global default value specified in NetworkManager configuration; if no global default is defined, the built-in default is &quot;off&quot; (0)."
+                  format="choice (NMSettingMacsecOffload)"
+                  values="default (-1), off (0), phy (1), mac (2)" />
     </setting>
     <setting name="macvlan" >
         <property name="parent"

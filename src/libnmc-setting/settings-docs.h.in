@@ -243,6 +243,7 @@
 #define DESCRIBE_DOC_NM_SETTING_MACSEC_MKA_CAK_FLAGS N_("Flags indicating how to handle the \"mka-cak\" property.")
 #define DESCRIBE_DOC_NM_SETTING_MACSEC_MKA_CKN N_("The pre-shared CKN (Connectivity-association Key Name) for MACsec Key Agreement. Must be a string of hexadecimal characters with a even length between 2 and 64.")
 #define DESCRIBE_DOC_NM_SETTING_MACSEC_MODE N_("Specifies how the CAK (Connectivity Association Key) for MKA (MACsec Key Agreement) is obtained.")
+#define DESCRIBE_DOC_NM_SETTING_MACSEC_OFFLOAD N_("Specifies the MACsec offload mode. \"off\" (0) disables MACsec offload. \"phy\" (1) and \"mac\" (2) request offload respectively to the PHY or to the MAC; if the selected mode is not available, the connection will fail. \"default\" (-1) uses the global default value specified in NetworkManager configuration; if no global default is defined, the built-in default is \"off\" (0).")
 #define DESCRIBE_DOC_NM_SETTING_MACSEC_PARENT N_("If given, specifies the parent interface name or parent connection UUID from which this MACSEC interface should be created.  If this property is not specified, the connection must contain an \"802-3-ethernet\" setting with a \"mac-address\" property.")
 #define DESCRIBE_DOC_NM_SETTING_MACSEC_PORT N_("The port component of the SCI (Secure Channel Identifier), between 1 and 65534.")
 #define DESCRIBE_DOC_NM_SETTING_MACSEC_SEND_SCI N_("Specifies whether the SCI (Secure Channel Identifier) is included in every packet.")
