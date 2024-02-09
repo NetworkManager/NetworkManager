@@ -33,6 +33,30 @@ Overview of changes since NetworkManager-1.44
   performance cost. Also, D-Bus updates for addresses/routes are now rate
   limited to 3 per second.
 * cloud-setup: enable more sandboxing options in systemd service file.
+* nmcli: show WiFi bandwidth.
+* Internal improvements and bugfixes.
+* Man page now show the format and accepted values of all properties.
+* Added the 'dns-change' dispatcher event.
+* Show WiFi devices capability to work on the 6GHz band.
+* Allow to set dhcp-client-id to none.
+* Support configuring ethtool channels property to configure NIC multiqueue.
+* Don't attempt to use IPv6 if it's disabled in kernel.
+* Fix handling of OVS interfaces with netdev datapath and cloned MAC.
+* Support for old systemd has been droped, at least systemd v200 is required.
+* Support Ethtool EEE (Energy Efficient Ethernet) settings.
+* Add options to prevent edns0 and trust-ad being automatically added to DNS
+  configuration.
+* Implement fwmark property for IP tunnels
+* Add support to HSR/PRP interfaces
+* Deprecated connection.* properties master, slave-type, autoconnect-slaves
+* Allow configuring static routes also when addresses is empty.
+* VPN: accept pref-src for IPv6 routes from VPN plugins.
+* nmcli: show global metered state.
+* Support modifying the DSCP header field for DHCP packets, and change the
+  default to CS0.
+* Enable IPv4 DAD (Duplicate Address Detection) by default.
+* Documentation improvements.
+* Many internal improvements and bug fixes.
 
 =============================================
 NetworkManager-1.44
