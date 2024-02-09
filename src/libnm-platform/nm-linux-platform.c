@@ -1530,6 +1530,8 @@ _parse_lnk_bridge(const char *kind, struct nlattr *info_data)
         [IFLA_BR_MCAST_QUERY_INTVL]          = {.type = NLA_U64},
         [IFLA_BR_MCAST_QUERY_RESPONSE_INTVL] = {.type = NLA_U64},
         [IFLA_BR_MCAST_STARTUP_QUERY_INTVL]  = {.type = NLA_U64},
+        [IFLA_BR_VLAN_FILTERING]             = {.type = NLA_U8},
+        [IFLA_BR_VLAN_DEFAULT_PVID]          = {.type = NLA_U16},
     };
     NMPlatformLnkBridge *props;
     struct nlattr       *tb[G_N_ELEMENTS(policy)];
@@ -1600,6 +1602,10 @@ _parse_lnk_bridge(const char *kind, struct nlattr *info_data)
         props->mcast_query_response_interval = nla_get_u64(tb[IFLA_BR_MCAST_QUERY_RESPONSE_INTVL]);
     if (tb[IFLA_BR_MCAST_STARTUP_QUERY_INTVL])
         props->mcast_startup_query_interval = nla_get_u64(tb[IFLA_BR_MCAST_STARTUP_QUERY_INTVL]);
+    if (tb[IFLA_BR_VLAN_FILTERING])
+        props->vlan_filtering = !!nla_get_u8(tb[IFLA_BR_VLAN_FILTERING]);
+    if (tb[IFLA_BR_VLAN_DEFAULT_PVID])
+        props->default_pvid = nla_get_u16(tb[IFLA_BR_VLAN_DEFAULT_PVID]);
 
     return obj;
 }
