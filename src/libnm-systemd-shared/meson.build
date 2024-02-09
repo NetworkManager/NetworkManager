@@ -58,6 +58,7 @@ libnm_systemd_shared = static_library(
     top_inc,
     src_inc,
   ],
+  c_args: libnm_systemd_common_cflags,
   dependencies: glib_dep,
 )
 

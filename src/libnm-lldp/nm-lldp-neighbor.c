@@ -648,8 +648,9 @@ nm_lldp_neighbor_tlv_get_oui(NMLldpNeighbor *n, uint8_t oui[static 3], uint8_t *
     int            r;
 
     g_return_val_if_fail(n, -EINVAL);
-    g_return_val_if_fail(oui, -EINVAL);
     g_return_val_if_fail(subtype, -EINVAL);
+
+    nm_assert(oui);
 
     r = nm_lldp_neighbor_tlv_is_type(n, NM_LLDP_TYPE_PRIVATE);
     if (r < 0)
