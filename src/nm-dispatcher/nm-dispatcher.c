@@ -412,7 +412,7 @@ script_watch_cb(GPid pid, int status, gpointer user_data)
         script->result = DISPATCH_RESULT_SUCCESS;
     } else {
         status_desc   = nm_utils_get_process_exit_status_desc(status);
-        script->error = g_strdup_printf("Script '%s' %s.", script->script, status_desc);
+        script->error = g_strdup_printf("Script '%s' %s", script->script, status_desc);
     }
 
     if (script->result == DISPATCH_RESULT_SUCCESS) {
@@ -447,7 +447,7 @@ again:
             goto again;
     }
 
-    script->error  = g_strdup_printf("Script '%s' timed out.", script->script);
+    script->error  = g_strdup_printf("Script '%s' timed out", script->script);
     script->result = DISPATCH_RESULT_TIMEOUT;
 
     g_spawn_close_pid(script->pid);
@@ -466,19 +466,19 @@ check_permissions(struct stat *s, const char **out_error_msg)
 
     /* Only accept files owned by root */
     if (s->st_uid != 0) {
-        *out_error_msg = "not owned by root.";
+        *out_error_msg = "not owned by root";
         return FALSE;
     }
 
     /* Only accept files not writable by group or other, and not SUID */
     if (s->st_mode & (S_IWGRP | S_IWOTH | S_ISUID)) {
-        *out_error_msg = "writable by group or other, or set-UID.";
+        *out_error_msg = "writable by group or other, or set-UID";
         return FALSE;
     }
 
     /* Only accept files executable by the owner */
     if (!(s->st_mode & S_IXUSR)) {
-        *out_error_msg = "not executable by owner.";
+        *out_error_msg = "not executable by owner";
         return FALSE;
     }
 
