@@ -39,7 +39,7 @@ static gboolean
 bridge_connection_type_filter(GType connection_type, gpointer user_data)
 {
     return (connection_type == NM_TYPE_SETTING_WIRED || connection_type == NM_TYPE_SETTING_WIRELESS
-            || connection_type == NM_TYPE_SETTING_VLAN);
+            || connection_type == NM_TYPE_SETTING_VLAN || connection_type == NM_TYPE_SETTING_BOND);
 }
 
 static void
