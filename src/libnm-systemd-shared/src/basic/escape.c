@@ -184,7 +184,7 @@ int cunescape_one(const char *p, size_t length, char32_t *ret, bool *eight_bit, 
         }
 
         case 'u': {
-                /* C++11 style 16bit unicode */
+                /* C++11 style 16-bit unicode */
 
                 int a[4];
                 size_t i;
@@ -211,7 +211,7 @@ int cunescape_one(const char *p, size_t length, char32_t *ret, bool *eight_bit, 
         }
 
         case 'U': {
-                /* C++11 style 32bit unicode */
+                /* C++11 style 32-bit unicode */
 
                 int a[8];
                 size_t i;
@@ -466,6 +466,33 @@ char* octescape(const char *s, size_t len) {
                         *(t++) = '0' + (u >> 6);
                         *(t++) = '0' + ((u >> 3) & 7);
                         *(t++) = '0' + (u & 7);
+                } else
+                        *(t++) = u;
+        }
+
+        *t = 0;
+        return buf;
+}
+
+char* decescape(const char *s, const char *bad, size_t len) {
+        char *buf, *t;
+
+        /* Escapes all chars in bad, in addition to \ and " chars, in \nnn decimal style escaping. */
+
+        assert(s || len == 0);
+
+        t = buf = new(char, len * 4 + 1);
+        if (!buf)
+                return NULL;
+
+        for (size_t i = 0; i < len; i++) {
+                uint8_t u = (uint8_t) s[i];
+
+                if (u < ' ' || u >= 127 || IN_SET(u, '\\', '"') || strchr(bad, u)) {
+                        *(t++) = '\\';
+                        *(t++) = '0' + (u / 100);
+                        *(t++) = '0' + ((u / 10) % 10);
+                        *(t++) = '0' + (u % 10);
                 } else
                         *(t++) = u;
         }

@@ -36,7 +36,7 @@ void path_hash_func(const char *q, struct siphash *state) {
 
         /* if path is absolute, add one "/" to the hash. */
         if (path_is_absolute(q))
-                siphash24_compress("/", 1, state);
+                siphash24_compress_byte('/', state);
 
         for (;;) {
                 const char *e;
@@ -71,7 +71,7 @@ DEFINE_HASH_OPS_FULL(path_hash_ops_free_free,
 #endif /* NM_IGNORED */
 
 void trivial_hash_func(const void *p, struct siphash *state) {
-        siphash24_compress(&p, sizeof(p), state);
+        siphash24_compress_typesafe(p, state);
 }
 
 int trivial_compare_func(const void *a, const void *b) {
@@ -97,7 +97,7 @@ const struct hash_ops trivial_hash_ops_free_free = {
 };
 
 void uint64_hash_func(const uint64_t *p, struct siphash *state) {
-        siphash24_compress(p, sizeof(uint64_t), state);
+        siphash24_compress_typesafe(*p, state);
 }
 
 int uint64_compare_func(const uint64_t *a, const uint64_t *b) {
@@ -109,7 +109,7 @@ DEFINE_HASH_OPS(uint64_hash_ops, uint64_t, uint64_hash_func, uint64_compare_func
 #if 0 /* NM_IGNORED */
 #if SIZEOF_DEV_T != 8
 void devt_hash_func(const dev_t *p, struct siphash *state) {
-        siphash24_compress(p, sizeof(dev_t), state);
+        siphash24_compress_typesafe(*p, state);
 }
 #endif
 

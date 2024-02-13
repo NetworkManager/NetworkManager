@@ -7,7 +7,9 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include "errno-util.h"
 #include "io-util.h"
+#include "iovec-util.h"
 #include "string-util.h"
 #include "time-util.h"
 
@@ -58,8 +60,7 @@ ssize_t loop_read(int fd, void *buf, size_t nbytes, bool do_poll) {
 
         assert(fd >= 0);
 
-        /* If called with nbytes == 0, let's call read() at least
-         * once, to validate the operation */
+        /* If called with nbytes == 0, let's call read() at least once, to validate the operation */
 
         if (nbytes > (size_t) SSIZE_MAX)
                 return -EINVAL;
@@ -111,13 +112,29 @@ int loop_read_exact(int fd, void *buf, size_t nbytes, bool do_poll) {
 }
 
 #if 0 /* NM_IGNORED */
-int loop_write(int fd, const void *buf, size_t nbytes, bool do_poll) {
-        const uint8_t *p = ASSERT_PTR(buf);
+int loop_write_full(int fd, const void *buf, size_t nbytes, usec_t timeout) {
+        const uint8_t *p;
+        usec_t end;
+        int r;
 
         assert(fd >= 0);
+        assert(buf || nbytes == 0);
 
-        if (_unlikely_(nbytes > (size_t) SSIZE_MAX))
-                return -EINVAL;
+        if (nbytes == 0) {
+                static const dummy_t dummy[0];
+                assert_cc(sizeof(dummy) == 0);
+                p = (const void*) dummy; /* Some valid pointer, in case NULL was specified */
+        } else {
+                if (nbytes == SIZE_MAX)
+                        nbytes = strlen(buf);
+                else if (_unlikely_(nbytes > (size_t) SSIZE_MAX))
+                        return -EINVAL;
+
+                p = buf;
+        }
+
+        /* When timeout is 0 or USEC_INFINITY this is not used. But we initialize it to a sensible value. */
+        end = timestamp_is_set(timeout) ? usec_add(now(CLOCK_MONOTONIC), timeout) : USEC_INFINITY;
 
         do {
                 ssize_t k;
@@ -127,16 +144,31 @@ int loop_write(int fd, const void *buf, size_t nbytes, bool do_poll) {
                         if (errno == EINTR)
                                 continue;
 
-                        if (errno == EAGAIN && do_poll) {
-                                /* We knowingly ignore any return value here,
-                                 * and expect that any error/EOF is reported
-                                 * via write() */
+                        if (errno != EAGAIN || timeout == 0)
+                                return -errno;
 
-                                (void) fd_wait_for_event(fd, POLLOUT, USEC_INFINITY);
-                                continue;
+                        usec_t wait_for;
+
+                        if (timeout == USEC_INFINITY)
+                                wait_for = USEC_INFINITY;
+                        else {
+                                usec_t t = now(CLOCK_MONOTONIC);
+                                if (t >= end)
+                                        return -ETIME;
+
+                                wait_for = usec_sub_unsigned(end, t);
                         }
 
-                        return -errno;
+                        r = fd_wait_for_event(fd, POLLOUT, wait_for);
+                        if (timeout == USEC_INFINITY || ERRNO_IS_NEG_TRANSIENT(r))
+                                /* If timeout == USEC_INFINITY we knowingly ignore any return value
+                                 * here, and expect that any error/EOF is reported via write() */
+                                continue;
+                        if (r < 0)
+                                return r;
+                        if (r == 0)
+                                return -ETIME;
+                        continue;
                 }
 
                 if (_unlikely_(nbytes > 0 && k == 0)) /* Can't really happen */
@@ -260,7 +292,7 @@ ssize_t sparse_write(int fd, const void *p, size_t sz, size_t run_length) {
                                         return -EIO;
                         }
 
-                        if (lseek(fd, n, SEEK_CUR) == (off_t) -1)
+                        if (lseek(fd, n, SEEK_CUR) < 0)
                                 return -errno;
 
                         q += n;
@@ -280,103 +312,5 @@ ssize_t sparse_write(int fd, const void *p, size_t sz, size_t run_length) {
         }
 
         return q - (const uint8_t*) p;
-}
-
-char* set_iovec_string_field(struct iovec *iovec, size_t *n_iovec, const char *field, const char *value) {
-        char *x;
-
-        x = strjoin(field, value);
-        if (x)
-                iovec[(*n_iovec)++] = IOVEC_MAKE_STRING(x);
-        return x;
-}
-
-char* set_iovec_string_field_free(struct iovec *iovec, size_t *n_iovec, const char *field, char *value) {
-        char *x;
-
-        x = set_iovec_string_field(iovec, n_iovec, field, value);
-        free(value);
-        return x;
-}
-
-struct iovec_wrapper *iovw_new(void) {
-        return malloc0(sizeof(struct iovec_wrapper));
-}
-
-void iovw_free_contents(struct iovec_wrapper *iovw, bool free_vectors) {
-        if (free_vectors)
-                for (size_t i = 0; i < iovw->count; i++)
-                        free(iovw->iovec[i].iov_base);
-
-        iovw->iovec = mfree(iovw->iovec);
-        iovw->count = 0;
-}
-
-struct iovec_wrapper *iovw_free_free(struct iovec_wrapper *iovw) {
-        iovw_free_contents(iovw, true);
-
-        return mfree(iovw);
-}
-
-struct iovec_wrapper *iovw_free(struct iovec_wrapper *iovw) {
-        iovw_free_contents(iovw, false);
-
-        return mfree(iovw);
-}
-
-int iovw_put(struct iovec_wrapper *iovw, void *data, size_t len) {
-        if (iovw->count >= IOV_MAX)
-                return -E2BIG;
-
-        if (!GREEDY_REALLOC(iovw->iovec, iovw->count + 1))
-                return -ENOMEM;
-
-        iovw->iovec[iovw->count++] = IOVEC_MAKE(data, len);
-        return 0;
-}
-
-int iovw_put_string_field(struct iovec_wrapper *iovw, const char *field, const char *value) {
-        _cleanup_free_ char *x = NULL;
-        int r;
-
-        x = strjoin(field, value);
-        if (!x)
-                return -ENOMEM;
-
-        r = iovw_put(iovw, x, strlen(x));
-        if (r >= 0)
-                TAKE_PTR(x);
-
-        return r;
-}
-
-int iovw_put_string_field_free(struct iovec_wrapper *iovw, const char *field, char *value) {
-        _cleanup_free_ _unused_ char *free_ptr = value;
-
-        return iovw_put_string_field(iovw, field, value);
-}
-
-void iovw_rebase(struct iovec_wrapper *iovw, char *old, char *new) {
-        for (size_t i = 0; i < iovw->count; i++)
-                iovw->iovec[i].iov_base = (char *)iovw->iovec[i].iov_base - old + new;
-}
-
-size_t iovw_size(struct iovec_wrapper *iovw) {
-        size_t n = 0;
-
-        for (size_t i = 0; i < iovw->count; i++)
-                n += iovw->iovec[i].iov_len;
-
-        return n;
-}
-
-void iovec_array_free(struct iovec *iov, size_t n) {
-        if (!iov)
-                return;
-
-        for (size_t i = 0; i < n; i++)
-                free(iov[i].iov_base);
-
-        free(iov);
 }
 #endif /* NM_IGNORED */

@@ -14,7 +14,7 @@
 
 /* Note: on GCC "no_sanitize_address" is a function attribute only, on llvm it may also be applied to global
  * variables. We define a specific macro which knows this. Note that on GCC we don't need this decorator so much, since
- * our primary usecase for this attribute is registration structures placed in named ELF sections which shall not be
+ * our primary use case for this attribute is registration structures placed in named ELF sections which shall not be
  * padded, but GCC doesn't pad those anyway if AddressSanitizer is enabled. */
 #if HAS_FEATURE_ADDRESS_SANITIZER && defined(__clang__)
 #define _variable_no_sanitize_address_ __attribute__((__no_sanitize_address__))
@@ -84,7 +84,7 @@
 #define REENABLE_WARNING
 #endif
 
-/* automake test harness */
+/* test harness */
 #define EXIT_TEST_SKIP 77
 
 /* builtins */
@@ -95,6 +95,13 @@
 #else
 #error "neither int nor long are four bytes long?!?"
 #endif
+
+static inline uint64_t u64_multiply_safe(uint64_t a, uint64_t b) {
+        if (_unlikely_(a != 0 && b > (UINT64_MAX / a)))
+                return 0; /* overflow */
+
+        return a * b;
+}
 
 /* align to next higher power-of-2 (except for: 0 => 0, overflow => 0) */
 static inline unsigned long ALIGN_POWER2(unsigned long u) {
@@ -198,7 +205,7 @@ static inline int __coverity_check_and_return__(int condition) {
 /* We override the glibc assert() here. */
 #undef assert
 #ifdef NDEBUG
-#define assert(expr) do {} while (false)
+#define assert(expr) ({ if (!(expr)) __builtin_unreachable(); })
 #else
 #define assert(expr) assert_message_se(expr, #expr)
 #endif
@@ -304,12 +311,6 @@ static inline int __coverity_check_and_return__(int condition) {
 /* Pointers range from NULL to POINTER_MAX */
 #define POINTER_MAX ((void*) UINTPTR_MAX)
 
-/* Iterates through a specified list of pointers. Accepts NULL pointers, but uses POINTER_MAX as internal marker for EOL. */
-#define FOREACH_POINTER(p, x, ...)                                                       \
-        for (typeof(p) *_l = (typeof(p)[]) { ({ p = x; }), ##__VA_ARGS__, POINTER_MAX }; \
-             p != (typeof(p)) POINTER_MAX;                                               \
-             p = *(++_l))
-
 #define _FOREACH_ARRAY(i, array, num, m, end)                           \
         for (typeof(array[0]) *i = (array), *end = ({                   \
                                 typeof(num) m = (num);                  \
@@ -318,31 +319,6 @@ static inline int __coverity_check_and_return__(int condition) {
 
 #define FOREACH_ARRAY(i, array, num)                                    \
         _FOREACH_ARRAY(i, array, num, UNIQ_T(m, UNIQ), UNIQ_T(end, UNIQ))
-
-#define DEFINE_TRIVIAL_DESTRUCTOR(name, type, func)             \
-        static inline void name(type *p) {                      \
-                func(p);                                        \
-        }
-
-/* When func() returns the void value (NULL, -1, …) of the appropriate type */
-#define DEFINE_TRIVIAL_CLEANUP_FUNC(type, func)                 \
-        static inline void func##p(type *p) {                   \
-                if (*p)                                         \
-                        *p = func(*p);                          \
-        }
-
-/* When func() doesn't return the appropriate type, set variable to empty afterwards.
- * The func() may be provided by a dynamically loaded shared library, hence add an assertion. */
-#define DEFINE_TRIVIAL_CLEANUP_FUNC_FULL(type, func, empty)     \
-        static inline void func##p(type *p) {                   \
-                if (*p != (empty)) {                            \
-                        DISABLE_WARNING_ADDRESS;                \
-                        assert(func);                           \
-                        REENABLE_WARNING;                       \
-                        func(*p);                               \
-                        *p = (empty);                           \
-                }                                               \
-        }
 
 #define _DEFINE_TRIVIAL_REF_FUNC(type, name, scope)             \
         scope type *name##_ref(type *p) {                       \
@@ -443,13 +419,13 @@ assert_cc(sizeof(dummy_t) == 0);
                 _q && _q > (base) ? &_q[-1] : NULL;      \
         })
 
-/* Iterate through each variadic arg. All must be the same type as 'entry' or must be implicitly
+/* Iterate through each argument passed. All must be the same type as 'entry' or must be implicitly
  * convertible. The iteration variable 'entry' must already be defined. */
-#define VA_ARGS_FOREACH(entry, ...)                                     \
-        _VA_ARGS_FOREACH(entry, UNIQ_T(_entries_, UNIQ), UNIQ_T(_current_, UNIQ), ##__VA_ARGS__)
-#define _VA_ARGS_FOREACH(entry, _entries_, _current_, ...)         \
-        for (typeof(entry) _entries_[] = { __VA_ARGS__ }, *_current_ = _entries_; \
-             ((long)(_current_ - _entries_) < (long)ELEMENTSOF(_entries_)) && ({ entry = *_current_; true; }); \
+#define FOREACH_ARGUMENT(entry, ...)                                     \
+        _FOREACH_ARGUMENT(entry, UNIQ_T(_entries_, UNIQ), UNIQ_T(_current_, UNIQ), UNIQ_T(_va_sentinel_, UNIQ), ##__VA_ARGS__)
+#define _FOREACH_ARGUMENT(entry, _entries_, _current_, _va_sentinel_, ...)      \
+        for (typeof(entry) _va_sentinel_[1] = {}, _entries_[] = { __VA_ARGS__ __VA_OPT__(,) _va_sentinel_[0] }, *_current_ = _entries_; \
+             ((long)(_current_ - _entries_) < (long)(ELEMENTSOF(_entries_) - 1)) && ({ entry = *_current_; true; }); \
              _current_++)
 
 #include "log.h"

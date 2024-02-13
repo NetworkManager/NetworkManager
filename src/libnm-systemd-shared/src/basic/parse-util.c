@@ -47,6 +47,24 @@ int parse_boolean(const char *v) {
 }
 
 #if 0 /* NM_IGNORED */
+int parse_tristate_full(const char *v, const char *third, int *ret) {
+        int r;
+
+        if (isempty(v) || streq_ptr(v, third)) { /* Empty string is always taken as the third/invalid/auto state */
+                if (ret)
+                        *ret = -1;
+        } else {
+                r = parse_boolean(v);
+                if (r < 0)
+                        return r;
+
+                if (ret)
+                        *ret = r;
+        }
+
+        return 0;
+}
+
 int parse_pid(const char *s, pid_t* ret_pid) {
         unsigned long ul = 0;
         pid_t pid;
@@ -110,8 +128,7 @@ int parse_ifindex(const char *s) {
 
 #if 0 /* NM_IGNORED */
 int parse_mtu(int family, const char *s, uint32_t *ret) {
-        uint64_t u;
-        size_t m;
+        uint64_t u, m;
         int r;
 
         r = parse_size(s, 1024, &u);
@@ -121,10 +138,16 @@ int parse_mtu(int family, const char *s, uint32_t *ret) {
         if (u > UINT32_MAX)
                 return -ERANGE;
 
-        if (family == AF_INET6)
+        switch (family) {
+        case AF_INET:
+                m = IPV4_MIN_MTU; /* This is 68 */
+                break;
+        case AF_INET6:
                 m = IPV6_MIN_MTU; /* This is 1280 */
-        else
-                m = IPV4_MIN_MTU; /* For all other protocols, including 'unspecified' we assume the IPv4 minimal MTU */
+                break;
+        default:
+                m = 0;
+        }
 
         if (u < m)
                 return -ERANGE;
@@ -431,6 +454,21 @@ int safe_atou_full(const char *s, unsigned base, unsigned *ret_u) {
         return 0;
 }
 
+int safe_atou_bounded(const char *s, unsigned min, unsigned max, unsigned *ret) {
+        unsigned v;
+        int r;
+
+        r = safe_atou(s, &v);
+        if (r < 0)
+                return r;
+
+        if (v < min || v > max)
+                return -ERANGE;
+
+        *ret = v;
+        return 0;
+}
+
 int safe_atoi(const char *s, int *ret_i) {
         unsigned base = 0;
         char *x = NULL;
@@ -660,7 +698,7 @@ int parse_ip_port(const char *s, uint16_t *ret) {
         return 0;
 }
 
-int parse_ip_port_range(const char *s, uint16_t *low, uint16_t *high) {
+int parse_ip_port_range(const char *s, uint16_t *low, uint16_t *high, bool allow_zero) {
         unsigned l, h;
         int r;
 
@@ -668,7 +706,10 @@ int parse_ip_port_range(const char *s, uint16_t *low, uint16_t *high) {
         if (r < 0)
                 return r;
 
-        if (l <= 0 || l > 65535 || h <= 0 || h > 65535)
+        if (l > 65535 || h > 65535)
+                return -EINVAL;
+
+        if (!allow_zero && (l == 0 || h == 0))
                 return -EINVAL;
 
         if (h < l)
@@ -753,5 +794,24 @@ int parse_loadavg_fixed_point(const char *s, loadavg_t *ret) {
                 return r;
 
         return store_loadavg_fixed_point(i, f, ret);
+}
+
+/* Limitations are described in https://www.netfilter.org/projects/nftables/manpage.html and
+ * https://bugzilla.netfilter.org/show_bug.cgi?id=1175 */
+bool nft_identifier_valid(const char *id) {
+        if (!id)
+                return false;
+
+        size_t len = strlen(id);
+        if (len == 0 || len > 31)
+                return false;
+
+        if (!ascii_isalpha(id[0]))
+                return false;
+
+        for (size_t i = 1; i < len; i++)
+                if (!ascii_isalpha(id[i]) && !ascii_isdigit(id[i]) && !IN_SET(id[i], '/', '\\', '_', '.'))
+                        return false;
+        return true;
 }
 #endif /* NM_IGNORED */

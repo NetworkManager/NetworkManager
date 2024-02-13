@@ -86,7 +86,6 @@ sd_notify(int unset_environment, const char *state)
 
 #include "sd-id128.h"
 #include "sparse-endian.h"
-#include "async.h"
 
 #endif /* (NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_SYSTEMD */
 

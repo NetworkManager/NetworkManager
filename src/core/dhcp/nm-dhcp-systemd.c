@@ -67,6 +67,15 @@ G_DEFINE_TYPE(NMDhcpSystemd, nm_dhcp_systemd, NM_TYPE_DHCP_CLIENT)
 
 /*****************************************************************************/
 
+static guint32
+lifetime_to_uint32(guint64 lft)
+{
+    if (lft == G_MAXUINT64)
+        return G_MAXUINT32;
+
+    return lft / 1000000;
+}
+
 static NML3ConfigData *
 lease_to_ip6_config(NMDhcpSystemd *self, sd_dhcp6_lease *lease, gint32 ts, GError **error)
 {
@@ -100,18 +109,19 @@ lease_to_ip6_config(NMDhcpSystemd *self, sd_dhcp6_lease *lease, gint32 ts, GErro
 
     if (!config->v6.info_only) {
         gboolean has_any_addresses = FALSE;
-        uint32_t lft_pref;
-        uint32_t lft_valid;
+        uint64_t lft_pref;
+        uint64_t lft_valid;
 
-        sd_dhcp6_lease_reset_address_iter(lease);
+        sd_dhcp6_lease_address_iterator_reset(lease);
         nm_gstring_prepare(&str);
-        while (sd_dhcp6_lease_get_address(lease, &tmp_addr, &lft_pref, &lft_valid) >= 0) {
-            const NMPlatformIP6Address address = {
+        while (sd_dhcp6_lease_get_address(lease, &tmp_addr) >= 0
+               && sd_dhcp6_lease_get_address_lifetime(lease, &lft_pref, &lft_valid) >= 0) {
+            NMPlatformIP6Address address = {
                 .plen        = 128,
                 .address     = tmp_addr,
                 .timestamp   = ts,
-                .lifetime    = lft_valid,
-                .preferred   = lft_pref,
+                .lifetime    = lifetime_to_uint32(lft_valid),
+                .preferred   = lifetime_to_uint32(lft_pref),
                 .addr_source = NM_IP_CONFIG_SOURCE_DHCP,
             };
 
@@ -121,6 +131,7 @@ lease_to_ip6_config(NMDhcpSystemd *self, sd_dhcp6_lease *lease, gint32 ts, GErro
             g_string_append(nm_gstring_add_space_delimiter(str), addr_str);
 
             has_any_addresses = TRUE;
+            sd_dhcp6_lease_address_iterator_next(lease);
         }
 
         if (str->len) {
@@ -160,11 +171,12 @@ lease_to_ip6_config(NMDhcpSystemd *self, sd_dhcp6_lease *lease, gint32 ts, GErro
         uint8_t         prefix_len;
 
         nm_gstring_prepare(&str);
-        sd_dhcp6_lease_reset_pd_prefix_iter(lease);
-        while (!sd_dhcp6_lease_get_pd(lease, &prefix, &prefix_len, NULL, NULL)) {
+        sd_dhcp6_lease_pd_iterator_reset(lease);
+        while (!sd_dhcp6_lease_get_pd_prefix(lease, &prefix, &prefix_len)) {
             nm_gstring_add_space_delimiter(str);
             nm_inet6_ntop(&prefix, addr_str);
             g_string_append_printf(str, "%s/%u", addr_str, prefix_len);
+            sd_dhcp6_lease_pd_iterator_next(lease);
         }
         if (str->len > 0) {
             nm_dhcp_option_add_option(options,
@@ -235,6 +247,8 @@ bound6_handle(NMDhcpSystemd *self)
     gs_free_error GError                   *error  = NULL;
     NMPlatformIP6Address                    prefix = {0};
     sd_dhcp6_lease                         *lease  = NULL;
+    guint64                                 lft_valid;
+    guint64                                 lft_pref;
 
     if (sd_dhcp6_client_get_lease(priv->client6, &lease) < 0 || !lease) {
         _LOGW(" no lease!");
@@ -254,14 +268,14 @@ bound6_handle(NMDhcpSystemd *self)
 
     _nm_dhcp_client_notify(NM_DHCP_CLIENT(self), NM_DHCP_CLIENT_EVENT_TYPE_BOUND, l3cd);
 
-    sd_dhcp6_lease_reset_pd_prefix_iter(lease);
-    while (!sd_dhcp6_lease_get_pd(lease,
-                                  &prefix.address,
-                                  &prefix.plen,
-                                  &prefix.preferred,
-                                  &prefix.lifetime)) {
+    sd_dhcp6_lease_pd_iterator_reset(lease);
+    while (!sd_dhcp6_lease_get_pd_prefix(lease, &prefix.address, &prefix.plen)
+           && !sd_dhcp6_lease_get_pd_lifetime(lease, &lft_pref, &lft_valid)) {
+        prefix.preferred = lifetime_to_uint32(lft_pref);
+        prefix.lifetime  = lifetime_to_uint32(lft_valid);
         prefix.timestamp = ts;
         nm_dhcp_client_emit_ipv6_prefix_delegated(NM_DHCP_CLIENT(self), &prefix);
+        sd_dhcp6_lease_pd_iterator_next(lease);
     }
 }
 
@@ -339,10 +353,10 @@ ip6_start(NMDhcpClient *client, const struct in6_addr *ll_addr, GError **error)
         return FALSE;
     }
 
-    r = sd_dhcp6_client_set_duid(sd_client,
-                                 unaligned_read_be16(&duid_arr[0]),
-                                 &duid_arr[2],
-                                 duid_len - 2);
+    r = sd_dhcp6_client_set_duid_raw(sd_client,
+                                     unaligned_read_be16(&duid_arr[0]),
+                                     &duid_arr[2],
+                                     duid_len - 2);
     if (r < 0) {
         nm_utils_error_set_errno(error, r, "failed to set DUID: %s");
         return FALSE;

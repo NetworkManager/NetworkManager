@@ -12,9 +12,12 @@
 #include "memory-util-fundamental.h"
 
 size_t page_size(void) _pure_;
-#define PAGE_ALIGN(l) ALIGN_TO((l), page_size())
-#define PAGE_ALIGN_DOWN(l) ((l) & ~(page_size() - 1))
-#define PAGE_OFFSET(l) ((l) & (page_size() - 1))
+#define PAGE_ALIGN(l)          ALIGN_TO(l, page_size())
+#define PAGE_ALIGN_U64(l)      ALIGN_TO_U64(l, page_size())
+#define PAGE_ALIGN_DOWN(l)     ALIGN_DOWN(l, page_size())
+#define PAGE_ALIGN_DOWN_U64(l) ALIGN_DOWN_U64(l, page_size())
+#define PAGE_OFFSET(l)         ALIGN_OFFSET(l, page_size())
+#define PAGE_OFFSET_U64(l)     ALIGN_OFFSET_U64(l, page_size())
 
 /* Normal memcpy() requires src to be nonnull. We do nothing if n is 0. */
 static inline void *memcpy_safe(void *dst, const void *src, size_t n) {
@@ -46,13 +49,6 @@ static inline int memcmp_nn(const void *s1, size_t n1, const void *s2, size_t n2
         return memcmp_safe(s1, s2, MIN(n1, n2))
             ?: CMP(n1, n2);
 }
-
-#define memzero(x,l)                                            \
-        ({                                                      \
-                size_t _l_ = (l);                               \
-                if (_l_ > 0)                                    \
-                        memset(x, 0, _l_);                      \
-        })
 
 #define zero(x) (memzero(&(x), sizeof(x)))
 
@@ -112,36 +108,5 @@ static inline void erase_char(char *p) {
         explicit_bzero_safe(p, sizeof(char));
 }
 
-/* An automatic _cleanup_-like logic for destroy arrays (i.e. pointers + size) when leaving scope */
-typedef struct ArrayCleanup {
-        void **parray;
-        size_t *pn;
-        free_array_func_t pfunc;
-} ArrayCleanup;
-
-static inline void array_cleanup(const ArrayCleanup *c) {
-        assert(c);
-
-        assert(!c->parray == !c->pn);
-
-        if (!c->parray)
-                return;
-
-        if (*c->parray) {
-                assert(c->pfunc);
-                c->pfunc(*c->parray, *c->pn);
-                *c->parray = NULL;
-        }
-
-        *c->pn = 0;
-}
-
-#define CLEANUP_ARRAY(array, n, func)                                   \
-        _cleanup_(array_cleanup) _unused_ const ArrayCleanup CONCATENATE(_cleanup_array_, UNIQ) = { \
-                .parray = (void**) &(array),                            \
-                .pn = &(n),                                             \
-                .pfunc = (free_array_func_t) ({                         \
-                                void (*_f)(typeof(array[0]) *a, size_t b) = func; \
-                                _f;                                     \
-                        }),                                             \
-        }
+/* Makes a copy of the buffer with reversed order of bytes */
+void *memdup_reverse(const void *mem, size_t size);
