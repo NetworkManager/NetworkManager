@@ -8955,10 +8955,9 @@ sriov_set_autoprobe(NMPlatform  *platform,
 #define _SRIOV_ASYNC_MAX_STEPS 4
 
 typedef struct _SriovAsyncState {
-    NMPlatform         *platform;
-    int                 ifindex;
-    guint               num_vfs;
-    _NMSriovEswitchMode eswitch_mode;
+    NMPlatform           *platform;
+    int                   ifindex;
+    NMPlatformSriovParams sriov_params;
     void (*steps[_SRIOV_ASYNC_MAX_STEPS])(struct _SriovAsyncState *);
     int                     current_step;
     NMPlatformAsyncCallback callback;
@@ -9074,17 +9073,20 @@ sriov_async_step1_destroy_vfs(SriovAsyncState *async_state)
 static void
 sriov_async_step2_set_eswitch_mode(SriovAsyncState *async_state)
 {
-    NMPlatform               *platform     = async_state->platform;
-    NMLinuxPlatformPrivate   *priv         = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
-    gs_free NMDevlink        *devlink      = NULL;
-    gs_free_error GError     *error        = NULL;
-    NMDevlinkEswitchParams    eswitch_params;
+    NMPlatform             *platform       = async_state->platform;
+    NMLinuxPlatformPrivate *priv           = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+    gs_free NMDevlink      *devlink        = NULL;
+    gs_free_error GError   *error          = NULL;
+    NMDevlinkEswitchParams  eswitch_params = {
+         .mode        = async_state->sriov_params.eswitch_mode,
+         .inline_mode = async_state->sriov_params.eswitch_inline_mode,
+         .encap_mode  = async_state->sriov_params.eswitch_encap_mode,
+    };
 
-    _LOGD("setting eswitch-mode to '%d'", (int) async_state->eswitch_mode);
-
-    eswitch_params.mode        = (_NMSriovEswitchMode) async_state->eswitch_mode;
-    eswitch_params.inline_mode = _NM_SRIOV_ESWITCH_INLINE_MODE_PRESERVE;
-    eswitch_params.encap_mode  = _NM_SRIOV_ESWITCH_ENCAP_MODE_PRESERVE;
+    _LOGD("setting eswitch params (mode=%d, inline-mode=%d, encap-mode=%d)",
+          (int) eswitch_params.mode,
+          (int) eswitch_params.inline_mode,
+          (int) eswitch_params.encap_mode);
 
     /* We set eswitch mode as a sriov_async step because it's in the middle of
      * other steps that are async. However, this step itself is synchronous. */
@@ -9101,9 +9103,9 @@ static void
 sriov_async_step3_create_vfs(SriovAsyncState *async_state)
 {
     NMPlatform *platform = async_state->platform;
-    const char *val      = nm_sprintf_bufa(32, "%u", async_state->num_vfs);
+    const char *val      = nm_sprintf_bufa(32, "%u", async_state->sriov_params.num_vfs);
 
-    _LOGD("setting sriov_numvfs to %u", async_state->num_vfs);
+    _LOGD("setting sriov_numvfs to %u", async_state->sriov_params.num_vfs);
 
     sriov_async_set_num_vfs(async_state, val);
 }
@@ -9112,6 +9114,41 @@ static void
 sriov_async_step_finish_ok(SriovAsyncState *async_state)
 {
     sriov_async_finish_err(async_state, NULL);
+}
+
+static int
+sriov_eswitch_get_needs_change(SriovAsyncState *async_state,
+                               gboolean        *out_needs_change,
+                               GError         **error)
+{
+    NMPlatform               *platform    = async_state->platform;
+    NMLinuxPlatformPrivate   *priv        = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+    _NMSriovEswitchMode       mode        = async_state->sriov_params.eswitch_mode;
+    _NMSriovEswitchInlineMode inline_mode = async_state->sriov_params.eswitch_inline_mode;
+    _NMSriovEswitchEncapMode  encap_mode  = async_state->sriov_params.eswitch_encap_mode;
+    NMDevlinkEswitchParams    current_params;
+    gs_free NMDevlink        *devlink = NULL;
+
+    nm_assert(out_needs_change);
+
+    if (mode == _NM_SRIOV_ESWITCH_MODE_PRESERVE
+        && inline_mode == _NM_SRIOV_ESWITCH_INLINE_MODE_PRESERVE
+        && encap_mode == _NM_SRIOV_ESWITCH_ENCAP_MODE_PRESERVE) {
+        *out_needs_change = FALSE;
+        return 0;
+    }
+
+    devlink = nm_devlink_new(platform, priv->sk_genl_sync, async_state->ifindex);
+
+    if (!nm_devlink_get_eswitch_params(devlink, &current_params, error))
+        return -1;
+
+    *out_needs_change = (mode != _NM_SRIOV_ESWITCH_MODE_PRESERVE && mode != current_params.mode)
+                        || (inline_mode != _NM_SRIOV_ESWITCH_INLINE_MODE_PRESERVE
+                            && inline_mode != current_params.inline_mode)
+                        || (encap_mode != _NM_SRIOV_ESWITCH_ENCAP_MODE_PRESERVE
+                            && encap_mode != current_params.encap_mode);
+    return 0;
 }
 
 /*
@@ -9123,24 +9160,19 @@ sriov_async_step_finish_ok(SriovAsyncState *async_state)
 static void
 link_set_sriov_params_async(NMPlatform             *platform,
                             int                     ifindex,
-                            guint                   num_vfs,
-                            NMOptionBool            autoprobe,
-                            _NMSriovEswitchMode     eswitch_mode,
+                            NMPlatformSriovParams   sriov_params,
                             NMPlatformAsyncCallback callback,
                             gpointer                data,
                             GCancellable           *cancellable)
 {
     SriovAsyncState            *async_state;
-    NMLinuxPlatformPrivate     *priv  = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
     nm_auto_pop_netns NMPNetns *netns = NULL;
     gs_free_error GError       *error = NULL;
     nm_auto_close int           dirfd = -1;
     char                        ifname[IFNAMSIZ];
     int                         max_vfs;
     int                         current_num_vfs;
-    int                         current_eswitch_mode = _NM_SRIOV_ESWITCH_MODE_PRESERVE;
-    NMDevlinkEswitchParams      eswitch_params;
-    gboolean                    need_change_eswitch_mode;
+    gboolean                    need_change_eswitch_params;
     gboolean                    need_change_vfs;
     gboolean                    need_destroy_vfs;
     gboolean                    need_create_vfs;
@@ -9152,7 +9184,7 @@ link_set_sriov_params_async(NMPlatform             *platform,
     async_state               = g_new0(SriovAsyncState, 1);
     async_state->platform     = g_object_ref(platform);
     async_state->ifindex      = ifindex;
-    async_state->eswitch_mode = eswitch_mode;
+    async_state->sriov_params = sriov_params;
     async_state->current_step = -1;
     async_state->callback     = callback;
     async_state->data         = data;
@@ -9190,28 +9222,21 @@ link_set_sriov_params_async(NMPlatform             *platform,
         return;
     }
 
-    if (num_vfs > max_vfs) {
-        _LOGW("link: device %d only supports %u VFs (requested %u)", ifindex, max_vfs, num_vfs);
+    if (sriov_params.num_vfs > max_vfs) {
+        _LOGW("link: device %d only supports %u VFs (requested %u)",
+              ifindex,
+              max_vfs,
+              sriov_params.num_vfs);
         _LOGW("link: reducing num_vfs to %u for device %d", max_vfs, ifindex);
-        num_vfs = max_vfs;
+        sriov_params.num_vfs              = max_vfs;
+        async_state->sriov_params.num_vfs = max_vfs;
     }
-
-    async_state->num_vfs = num_vfs;
 
     /* Setting autoprobe goes first, we can do it synchronously */
-    if (num_vfs > 0 && !sriov_set_autoprobe(platform, dirfd, ifname, autoprobe, &error)) {
+    if (sriov_params.num_vfs > 0
+        && !sriov_set_autoprobe(platform, dirfd, ifname, sriov_params.autoprobe, &error)) {
         sriov_async_finish_err(async_state, g_steal_pointer(&error));
         return;
-    }
-
-    if (eswitch_mode != _NM_SRIOV_ESWITCH_MODE_PRESERVE) {
-        gs_free NMDevlink *devlink = nm_devlink_new(platform, priv->sk_genl_sync, ifindex);
-
-        if (!nm_devlink_get_eswitch_params(devlink, &eswitch_params, &error)) {
-            sriov_async_finish_err(async_state, g_steal_pointer(&error));
-            return;
-        }
-        current_eswitch_mode = eswitch_params.mode;
     }
 
     /* Decide what actions we must do. Note that we might need to destroy the VFs even
@@ -9223,16 +9248,18 @@ link_set_sriov_params_async(NMPlatform             *platform,
      *   3. Create VFs
      *   4. Invoke caller's callback
      */
-    need_change_eswitch_mode =
-        eswitch_mode != _NM_SRIOV_ESWITCH_MODE_PRESERVE && current_eswitch_mode != eswitch_mode;
-    need_change_vfs  = num_vfs != current_num_vfs;
-    need_destroy_vfs = current_num_vfs > 0 && (need_change_eswitch_mode || need_change_vfs);
-    need_create_vfs  = (current_num_vfs == 0 || need_destroy_vfs) && num_vfs > 0;
+    if (sriov_eswitch_get_needs_change(async_state, &need_change_eswitch_params, &error) < 0) {
+        sriov_async_finish_err(async_state, g_steal_pointer(&error));
+        return;
+    }
+    need_change_vfs  = sriov_params.num_vfs != current_num_vfs;
+    need_destroy_vfs = current_num_vfs > 0 && (need_change_eswitch_params || need_change_vfs);
+    need_create_vfs  = (current_num_vfs == 0 || need_destroy_vfs) && sriov_params.num_vfs > 0;
 
     i = 0;
     if (need_destroy_vfs)
         async_state->steps[i++] = sriov_async_step1_destroy_vfs;
-    if (need_change_eswitch_mode)
+    if (need_change_eswitch_params)
         async_state->steps[i++] = sriov_async_step2_set_eswitch_mode;
     if (need_create_vfs)
         async_state->steps[i++] = sriov_async_step3_create_vfs;
