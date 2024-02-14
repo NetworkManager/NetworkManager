@@ -9076,16 +9076,20 @@ sriov_async_step2_set_eswitch_mode(SriovAsyncState *async_state)
 {
     NMPlatform               *platform     = async_state->platform;
     NMLinuxPlatformPrivate   *priv         = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
-    enum devlink_eswitch_mode eswitch_mode = (enum devlink_eswitch_mode) async_state->eswitch_mode;
     gs_free NMDevlink        *devlink      = NULL;
     gs_free_error GError     *error        = NULL;
+    NMDevlinkEswitchParams    eswitch_params;
 
-    _LOGD("setting eswitch-mode to '%d'", (int) eswitch_mode);
+    _LOGD("setting eswitch-mode to '%d'", (int) async_state->eswitch_mode);
+
+    eswitch_params.mode        = (_NMSriovEswitchMode) async_state->eswitch_mode;
+    eswitch_params.inline_mode = _NM_SRIOV_ESWITCH_INLINE_MODE_PRESERVE;
+    eswitch_params.encap_mode  = _NM_SRIOV_ESWITCH_ENCAP_MODE_PRESERVE;
 
     /* We set eswitch mode as a sriov_async step because it's in the middle of
      * other steps that are async. However, this step itself is synchronous. */
     devlink = nm_devlink_new(platform, priv->sk_genl_sync, async_state->ifindex);
-    if (!nm_devlink_set_eswitch_mode(devlink, eswitch_mode, &error)) {
+    if (!nm_devlink_set_eswitch_params(devlink, eswitch_params, &error)) {
         sriov_async_finish_err(async_state, g_steal_pointer(&error));
         return;
     }
@@ -9135,6 +9139,7 @@ link_set_sriov_params_async(NMPlatform             *platform,
     int                         max_vfs;
     int                         current_num_vfs;
     int                         current_eswitch_mode = _NM_SRIOV_ESWITCH_MODE_PRESERVE;
+    NMDevlinkEswitchParams      eswitch_params;
     gboolean                    need_change_eswitch_mode;
     gboolean                    need_change_vfs;
     gboolean                    need_destroy_vfs;
@@ -9202,11 +9207,11 @@ link_set_sriov_params_async(NMPlatform             *platform,
     if (eswitch_mode != _NM_SRIOV_ESWITCH_MODE_PRESERVE) {
         gs_free NMDevlink *devlink = nm_devlink_new(platform, priv->sk_genl_sync, ifindex);
 
-        current_eswitch_mode = nm_devlink_get_eswitch_mode(devlink, &error);
-        if (current_eswitch_mode < 0) {
+        if (!nm_devlink_get_eswitch_params(devlink, &eswitch_params, &error)) {
             sriov_async_finish_err(async_state, g_steal_pointer(&error));
             return;
         }
+        current_eswitch_mode = eswitch_params.mode;
     }
 
     /* Decide what actions we must do. Note that we might need to destroy the VFs even

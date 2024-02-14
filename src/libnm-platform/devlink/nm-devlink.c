@@ -58,7 +58,7 @@ struct _NMDevlink {
 NMDevlink *
 nm_devlink_new(NMPlatform *platform, struct nl_sock *genl_sock_sync, int ifindex)
 {
-    NMDevlink *self      = g_new(NMDevlink, 1);
+    NMDevlink *self = g_new(NMDevlink, 1);
 
     self->plat           = platform;
     self->genl_sock_sync = genl_sock_sync;
@@ -230,81 +230,41 @@ static int
 devlink_parse_eswitch_mode(const struct nl_msg *msg, void *data)
 {
     static const struct nla_policy eswitch_policy[] = {
-        [DEVLINK_ATTR_ESWITCH_MODE] = {.type = NLA_U16},
+        [DEVLINK_ATTR_ESWITCH_MODE]        = {.type = NLA_U16},
+        [DEVLINK_ATTR_ESWITCH_INLINE_MODE] = {.type = NLA_U8},
+        [DEVLINK_ATTR_ESWITCH_ENCAP_MODE]  = {.type = NLA_U8},
     };
-    enum devlink_eswitch_mode *eswitch_mode = data;
-    struct genlmsghdr         *gnlh         = nlmsg_data(nlmsg_hdr(msg));
-    struct nlattr             *tb[G_N_ELEMENTS(eswitch_policy)];
+    NMDevlinkEswitchParams *params = data;
+    struct genlmsghdr      *gnlh   = nlmsg_data(nlmsg_hdr(msg));
+    struct nlattr          *tb[G_N_ELEMENTS(eswitch_policy)];
 
     if (nla_parse_arr(tb, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), eswitch_policy) < 0)
         return NL_SKIP;
 
-    if (!tb[DEVLINK_ATTR_ESWITCH_MODE])
+    if (!tb[DEVLINK_ATTR_ESWITCH_MODE] || !tb[DEVLINK_ATTR_ESWITCH_INLINE_MODE]
+        || !tb[DEVLINK_ATTR_ESWITCH_ENCAP_MODE])
         return NL_SKIP;
 
-    *eswitch_mode = nla_get_u16(tb[DEVLINK_ATTR_ESWITCH_MODE]);
+    params->mode       = (_NMSriovEswitchMode) nla_get_u16(tb[DEVLINK_ATTR_ESWITCH_MODE]);
+    params->encap_mode = (_NMSriovEswitchEncapMode) nla_get_u8(tb[DEVLINK_ATTR_ESWITCH_ENCAP_MODE]);
+    params->inline_mode =
+        (_NMSriovEswitchInlineMode) nla_get_u8(tb[DEVLINK_ATTR_ESWITCH_INLINE_MODE]);
     return NL_OK;
 }
 
 /*
- * nm_devlink_get_eswitch_mode:
+ * nm_devlink_get_eswitch_params:
  * @self: the #NMDevlink
+ * @out_params: the eswitch parameters read via Devlink
  * @error: the error location
  *
- * Get the eswitch mode of the device related to the #NMDevlink instance. Note
- * that this might be unsupported by the device (see nm_devlink_get_dev()).
- *
- * Returns: the eswitch mode of the device, or <0 in case of error
- */
-int
-nm_devlink_get_eswitch_mode(NMDevlink *self, GError **error)
-{
-    nm_auto_nlmsg struct nl_msg *msg  = NULL;
-    gs_free char                *bus  = NULL;
-    gs_free char                *addr = NULL;
-    enum devlink_eswitch_mode    eswitch_mode;
-    gs_free char                *err_msg = NULL;
-    int                          rc;
-
-    if (!nm_devlink_get_dev_identifier(self, &bus, &addr, error))
-        return -1;
-
-    msg = devlink_alloc_msg(self, DEVLINK_CMD_ESWITCH_GET, 0);
-    NLA_PUT_STRING(msg, DEVLINK_ATTR_BUS_NAME, bus);
-    NLA_PUT_STRING(msg, DEVLINK_ATTR_DEV_NAME, addr);
-
-    rc = devlink_send_and_recv(self, msg, devlink_parse_eswitch_mode, &eswitch_mode, &err_msg);
-    if (rc < 0) {
-        g_set_error(error,
-                    NM_UTILS_ERROR,
-                    NM_UTILS_ERROR_UNKNOWN,
-                    "devlink: get-eswitch-mode: failed (%d) %s",
-                    rc,
-                    err_msg);
-        return rc;
-    }
-
-    _LOGD("get-eswitch-mode: success");
-
-    return (int) eswitch_mode;
-
-nla_put_failure:
-    g_return_val_if_reached(-1);
-}
-
-/*
- * nm_devlink_set_eswitch_mode:
- * @self: the #NMDevlink
- * @mode: the eswitch mode to set
- * @error: the error location
- *
- * Set the eswitch mode of the device related to the #NMDevlink instance. Note
+ * Get the eswitch configuration of the device related to the #NMDevlink instance. Note
  * that this might be unsupported by the device (see nm_devlink_get_dev()).
  *
  * Returns: FALSE in case of error, TRUE otherwise
  */
 gboolean
-nm_devlink_set_eswitch_mode(NMDevlink *self, enum devlink_eswitch_mode mode, GError **error)
+nm_devlink_get_eswitch_params(NMDevlink *self, NMDevlinkEswitchParams *out_params, GError **error)
 {
     nm_auto_nlmsg struct nl_msg *msg     = NULL;
     gs_free char                *bus     = NULL;
@@ -312,26 +272,87 @@ nm_devlink_set_eswitch_mode(NMDevlink *self, enum devlink_eswitch_mode mode, GEr
     gs_free char                *err_msg = NULL;
     int                          rc;
 
+    nm_assert(out_params);
+
+    if (!nm_devlink_get_dev_identifier(self, &bus, &addr, error))
+        return FALSE;
+
+    msg = devlink_alloc_msg(self, DEVLINK_CMD_ESWITCH_GET, 0);
+    NLA_PUT_STRING(msg, DEVLINK_ATTR_BUS_NAME, bus);
+    NLA_PUT_STRING(msg, DEVLINK_ATTR_DEV_NAME, addr);
+
+    rc = devlink_send_and_recv(self, msg, devlink_parse_eswitch_mode, out_params, &err_msg);
+    if (rc < 0) {
+        g_set_error(error,
+                    NM_UTILS_ERROR,
+                    NM_UTILS_ERROR_UNKNOWN,
+                    "devlink: eswitch get: failed (%d) %s",
+                    rc,
+                    err_msg);
+        return FALSE;
+    }
+
+    _LOGD("eswitch get: success");
+
+    return TRUE;
+
+nla_put_failure:
+    g_return_val_if_reached(FALSE);
+}
+
+/*
+ * nm_devlink_set_eswitch_params:
+ * @self: the #NMDevlink
+ * @params: the eswitch parameters to set
+ * @error: the error location
+ *
+ * Set the eswitch configuration of the device related to the #NMDevlink instance. Note
+ * that this might be unsupported by the device (see nm_devlink_get_dev()).
+ *
+ * If any of the eswitch parameters is set to "preserve" it won't be modified.
+ *
+ * Returns: FALSE in case of error, TRUE otherwise
+ */
+gboolean
+nm_devlink_set_eswitch_params(NMDevlink *self, NMDevlinkEswitchParams params, GError **error)
+{
+    nm_auto_nlmsg struct nl_msg *msg     = NULL;
+    gs_free char                *bus     = NULL;
+    gs_free char                *addr    = NULL;
+    gs_free char                *err_msg = NULL;
+    int                          rc;
+
+    if (params.mode == _NM_SRIOV_ESWITCH_MODE_PRESERVE
+        && params.inline_mode == _NM_SRIOV_ESWITCH_INLINE_MODE_PRESERVE
+        && params.encap_mode == _NM_SRIOV_ESWITCH_ENCAP_MODE_PRESERVE)
+        return TRUE;
+
     if (!nm_devlink_get_dev_identifier(self, &bus, &addr, error))
         return FALSE;
 
     msg = devlink_alloc_msg(self, DEVLINK_CMD_ESWITCH_SET, 0);
     NLA_PUT_STRING(msg, DEVLINK_ATTR_BUS_NAME, bus);
     NLA_PUT_STRING(msg, DEVLINK_ATTR_DEV_NAME, addr);
-    NLA_PUT_U16(msg, DEVLINK_ATTR_ESWITCH_MODE, mode);
+
+    if (params.mode != _NM_SRIOV_ESWITCH_MODE_PRESERVE)
+        NLA_PUT_U16(msg, DEVLINK_ATTR_ESWITCH_MODE, params.mode);
+    if (params.inline_mode != _NM_SRIOV_ESWITCH_INLINE_MODE_PRESERVE)
+        NLA_PUT_U8(msg, DEVLINK_ATTR_ESWITCH_INLINE_MODE, params.inline_mode);
+    if (params.encap_mode != _NM_SRIOV_ESWITCH_ENCAP_MODE_PRESERVE)
+        NLA_PUT_U8(msg, DEVLINK_ATTR_ESWITCH_ENCAP_MODE, params.encap_mode);
 
     rc = devlink_send_and_recv(self, msg, NULL, NULL, &err_msg);
     if (rc < 0) {
         g_set_error(error,
                     NM_UTILS_ERROR,
                     NM_UTILS_ERROR_UNKNOWN,
-                    "devlink: set-eswitch-mode: failed (%d) %s",
+                    "devlink: eswitch set: failed (%d) %s",
                     rc,
                     err_msg);
         return FALSE;
     }
 
-    _LOGD("set-eswitch-mode: success");
+    _LOGD("eswitch set: success");
 
     return TRUE;
 
