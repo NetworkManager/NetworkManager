@@ -685,7 +685,7 @@ popd
 if [[ $LOCAL != 0 ]]; then
     rm -rf ./.makerepo.git/
     mv "$DIRNAME/.git" ./.makerepo.git/
-    $FEDPKG $DIST local
+    $FEDPKG $DIST local -- --noclean
     mv ./.makerepo.git/ "$DIRNAME/.git"
     pushd "$DIRNAME"
         git checkout -- .gitignore
