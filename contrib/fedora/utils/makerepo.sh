@@ -408,6 +408,8 @@ pushd "$DIRNAME"
         git remote add origin "https://github.com/firewalld/firewalld.git"
     elif [[ "$BUILD_TYPE" == "nftables" ]]; then
         git remote add origin "git://git.netfilter.org/nftables"
+    elif [[ "$BUILD_TYPE" == "libnetfilter_log" ]]; then
+        git remote add origin "https://git.netfilter.org/$BUILD_TYPE"
     fi
     LOCAL_MIRROR_URL="$(LANG=C git remote -v | sed -n 's/^origin\t*\([^\t].*\) (fetch)/\1/p')"
     LOCAL_MIRROR="$(get_local_mirror "$LOCAL_MIRROR_URL")"
@@ -526,6 +528,10 @@ cc304f05edab6c408a0f061eb1a104f9f06b8587  86ef789876b65c61751ce854835b91d4  init
 
 # systemd
 903dd65b5eb63257393955cb79777beb8c71afc1  SHA512 (systemd-253-rc1.tar.gz) = aaf0a6bf21bbc50a42015c9cb17f69d1aaf6cab6cabfba5140a94212fb864e38d638dace9a70447f62b4d2a817a0d3bd6f4ae8d9b3c2e741cdeb1cb332f70b65
+
+# libnetfilter_log
+97866a0a7482ca518bad39536c7c667bfb9604b2  2a4bb0654ae675a52d2e8d1c06090b94  libnetfilter_log-1.0.1.tar.bz2
+b0e4be94c0b8f68d4e912402b93a130063c34e17  SHA512 (libnetfilter_log-1.0.2.tar.bz2) = 6b33718b1dd7f4504bceae14001da3a652cec46a6725a5dee83a7b55028cfa8e768cba917f968a5d5b60fd9ff04edf6040ef271a68e5fb65858bf73f4f9ccf23
 EOF
 )"
             OLDIFS="$IFS"
@@ -583,7 +589,7 @@ EOF
     if [[ "$REVERT_COUNT" == "" || $REVERT_COUNT -gt 0 ]]; then
 
         # parse the list of patches
-        IFS=$'\n' read -rd '' -a PATCH_LIST <<<"$(sed -n 's/^Patch\([0-9]\+\): \+\(.*\)$/\1 \2/p' ../"$SPEC" | sort -n)"
+        IFS=$'\n' read -rd '' -a PATCH_LIST <<<"$(sed -n 's/^Patch\([0-9]\+\):[ 	]\+\(.*\)$/\1 \2/p' ../"$SPEC" | sort -n)"
 
         if [[ "$BUILD_TYPE" == "NetworkManager" ]]; then
             if containsElement idx "123 rh1085015-applet-translations.patch" "${PATCH_LIST[@]}"; then
