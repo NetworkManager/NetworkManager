@@ -408,6 +408,8 @@ pushd "$DIRNAME"
         git remote add origin "https://github.com/firewalld/firewalld.git"
     elif [[ "$BUILD_TYPE" == "nftables" ]]; then
         git remote add origin "git://git.netfilter.org/nftables"
+    elif [[ "$BUILD_TYPE" == "ulogd" ]]; then
+        git remote add origin "https://git.netfilter.org/ulogd2"
     elif [[ "$BUILD_TYPE" == "libnetfilter_log" ]]; then
         git remote add origin "https://git.netfilter.org/$BUILD_TYPE"
     fi
@@ -532,6 +534,9 @@ cc304f05edab6c408a0f061eb1a104f9f06b8587  86ef789876b65c61751ce854835b91d4  init
 # libnetfilter_log
 97866a0a7482ca518bad39536c7c667bfb9604b2  2a4bb0654ae675a52d2e8d1c06090b94  libnetfilter_log-1.0.1.tar.bz2
 b0e4be94c0b8f68d4e912402b93a130063c34e17  SHA512 (libnetfilter_log-1.0.2.tar.bz2) = 6b33718b1dd7f4504bceae14001da3a652cec46a6725a5dee83a7b55028cfa8e768cba917f968a5d5b60fd9ff04edf6040ef271a68e5fb65858bf73f4f9ccf23
+
+# ulogd
+79aa980f2df9dda0c097e8f883a62f414b9e5138  SHA512 (ulogd-2.0.8.tar.bz2) = 9f99f6f35bad5da4559d788dc3ba3dae17d4ae972737cae3313ecf68f08eaf5f55514fce6f30503437e4158fd30a06438b9249d5d20f6343964cbf690f87309d
 EOF
 )"
             OLDIFS="$IFS"
