@@ -171,7 +171,7 @@ err_cb_handler(const struct sockaddr_nl *nla, const struct nlmsgerr *err, void *
     *result = err->error;
     nlmsg_parse_error(nlmsg_undata(err), &extack_msg);
 
-    _LOGT("error response (%d) %s", err->error, extack_msg ?: nm_strerror(err->error));
+    _LOGT("error response (%d - %s)", err->error, extack_msg ?: nm_strerror(err->error));
 
     if (err_msg)
         *err_msg = g_strdup(extack_msg ?: nm_strerror(err->error));
@@ -212,7 +212,7 @@ devlink_send_and_recv(NMDevlink     *self,
     while (cb_result == CB_RESULT_PENDING) {
         nle = nl_recvmsgs(self->genl_sock_sync, &cb);
         if (nle < 0 && nle != -EAGAIN) {
-            _LOGW("nl_recvmsgs() error: (%d) %s", nle, nm_strerror(nle));
+            _LOGW("nl_recvmsgs() error (%d - %s)", nle, nm_strerror(nle));
             break;
         }
     }
@@ -286,13 +286,13 @@ nm_devlink_get_eswitch_params(NMDevlink *self, NMDevlinkEswitchParams *out_param
         g_set_error(error,
                     NM_UTILS_ERROR,
                     NM_UTILS_ERROR_UNKNOWN,
-                    "devlink: eswitch get: failed (%d) %s",
+                    "devlink: eswitch get failed (%d - %s)",
                     rc,
                     err_msg);
         return FALSE;
     }
 
-    _LOGD("eswitch get: success");
+    _LOGD("eswitch get success");
 
     return TRUE;
 
@@ -346,13 +346,13 @@ nm_devlink_set_eswitch_params(NMDevlink *self, NMDevlinkEswitchParams params, GE
         g_set_error(error,
                     NM_UTILS_ERROR,
                     NM_UTILS_ERROR_UNKNOWN,
-                    "devlink: eswitch set: failed (%d) %s",
+                    "devlink: eswitch set failed (%d - %s)",
                     rc,
                     err_msg);
         return FALSE;
     }
 
-    _LOGD("eswitch set: success");
+    _LOGD("eswitch set success");
 
     return TRUE;
 
