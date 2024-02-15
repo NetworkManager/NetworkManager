@@ -877,8 +877,7 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
                                                 private_struct_type,                         \
                                                 private_struct_field,                        \
                                                 ... /* extra NMSettInfoProperty fields */)   \
-    G_STMT_START                                                                             \
-    {                                                                                        \
+    ({                                                                                       \
         GParamSpec *_param_spec;                                                             \
                                                                                              \
         G_STATIC_ASSERT(!NM_FLAGS_ANY((param_flags), ~(NM_SETTING_PARAM_FUZZY_IGNORE)));     \
@@ -900,8 +899,7 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
                                                                       private_struct_type,   \
                                                                       private_struct_field), \
                                      __VA_ARGS__);                                           \
-    }                                                                                        \
-    G_STMT_END
+    })
 
 /*****************************************************************************/
 
