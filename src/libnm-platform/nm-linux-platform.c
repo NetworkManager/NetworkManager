@@ -9218,8 +9218,9 @@ link_set_sriov_params_async(NMPlatform             *platform,
 
     max_vfs = sriov_read_sysctl_uint(platform, dirfd, ifname, "sriov_totalvfs", &error);
     if (max_vfs < 0) {
-        sriov_async_finish_err(async_state, g_steal_pointer(&error));
-        return;
+        _LOGD("link: can't read max VFs (%s)", error->message);
+        g_clear_error(&error);
+        max_vfs = sriov_params.num_vfs; /* Try to create all */
     }
 
     if (sriov_params.num_vfs > max_vfs) {
