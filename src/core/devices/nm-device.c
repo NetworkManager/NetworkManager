@@ -10587,7 +10587,16 @@ _dev_ipdhcpx_notify(NMDhcpClient *client, const NMDhcpClientNotifyData *notify_d
     case NM_DHCP_CLIENT_NOTIFY_TYPE_LEASE_UPDATE:
 
         if (!notify_data->lease_update.l3cd) {
+            const NML3ConfigData *dhcp_l3cd = priv->l3cds[L3_CONFIG_DATA_TYPE_DHCP_X(IS_IPv4)].d;
+
             _LOGT_ipdhcp(addr_family, "lease lost");
+            if (dhcp_l3cd
+                && nm_l3cfg_remove_config(
+                    priv->l3cfg,
+                    _dev_l3_config_data_tag_get(priv, L3_CONFIG_DATA_TYPE_DHCP_X(IS_IPv4)),
+                    dhcp_l3cd)) {
+                _dev_l3_cfg_commit(self, FALSE);
+            }
             goto lease_update_out;
         }
 
