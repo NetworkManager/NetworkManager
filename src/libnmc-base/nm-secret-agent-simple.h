@@ -23,6 +23,7 @@ typedef struct {
     const char             *vpn_type;
     bool                    is_secret : 1;
     bool                    no_prompt_entry_id : 1;
+    bool                    force_echo : 1;
 } NMSecretAgentSimpleSecret;
 
 #define NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRETS "vpn.secrets."

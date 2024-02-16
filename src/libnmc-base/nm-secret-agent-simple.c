@@ -170,6 +170,7 @@ _secret_real_new_plain(NMSecretAgentSecretType secret_type,
         .base.entry_id    = g_strdup_printf("%s.%s", nm_setting_get_name(setting), property),
         .base.value       = g_steal_pointer(&value),
         .base.is_secret   = (secret_type != NM_SECRET_AGENT_SECRET_TYPE_PROPERTY),
+        .base.force_echo  = FALSE,
         .setting          = g_object_ref(setting),
         .property         = g_strdup(property),
     };
@@ -180,7 +181,8 @@ static NMSecretAgentSimpleSecret *
 _secret_real_new_vpn_secret(const char *pretty_name,
                             NMSetting  *setting,
                             const char *property,
-                            const char *vpn_type)
+                            const char *vpn_type,
+                            gboolean    force_echo)
 {
     SecretReal *real;
     const char *value;
@@ -197,11 +199,12 @@ _secret_real_new_vpn_secret(const char *pretty_name,
         .base.pretty_name = g_strdup(pretty_name),
         .base.entry_id =
             g_strdup_printf("%s%s", NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRETS, property),
-        .base.value     = g_strdup(value),
-        .base.is_secret = TRUE,
-        .base.vpn_type  = g_strdup(vpn_type),
-        .setting        = g_object_ref(setting),
-        .property       = g_strdup(property),
+        .base.value      = g_strdup(value),
+        .base.is_secret  = TRUE,
+        .base.force_echo = force_echo,
+        .base.vpn_type   = g_strdup(vpn_type),
+        .setting         = g_object_ref(setting),
+        .property        = g_strdup(property),
     };
     return &real->base;
 }
@@ -227,6 +230,7 @@ _secret_real_new_wireguard_peer_psk(NMSettingWireGuard *s_wg,
         .base.value              = g_strdup(preshared_key),
         .base.is_secret          = TRUE,
         .base.no_prompt_entry_id = TRUE,
+        .base.force_echo         = FALSE,
         .setting                 = NM_SETTING(g_object_ref(s_wg)),
         .property                = g_strdup(public_key),
     };
@@ -388,7 +392,8 @@ static void
 add_vpn_secret_helper(GPtrArray    *secrets,
                       NMSettingVpn *s_vpn,
                       const char   *name,
-                      const char   *ui_name)
+                      const char   *ui_name,
+                      gboolean      force_echo)
 {
     NMSecretAgentSimpleSecret *secret;
     NMSettingSecretFlags       flags;
@@ -399,7 +404,8 @@ add_vpn_secret_helper(GPtrArray    *secrets,
         secret = _secret_real_new_vpn_secret(ui_name,
                                              NM_SETTING(s_vpn),
                                              name,
-                                             nm_setting_vpn_get_service_type(s_vpn));
+                                             nm_setting_vpn_get_service_type(s_vpn),
+                                             force_echo);
 
         /* Check for duplicates */
         for (i = 0; i < secrets->len; i++) {
@@ -408,6 +414,8 @@ add_vpn_secret_helper(GPtrArray    *secrets,
             if (s->secret_type == secret->secret_type && nm_streq0(s->vpn_type, secret->vpn_type)
                 && nm_streq0(s->entry_id, secret->entry_id)) {
                 _secret_real_free(secret);
+                if (!force_echo)
+                    s->force_echo = FALSE;
                 return;
             }
         }
@@ -416,8 +424,6 @@ add_vpn_secret_helper(GPtrArray    *secrets,
     }
 }
 
-#define VPN_MSG_TAG "x-vpn-message:"
-
 static gboolean
 add_vpn_secrets(RequestData *request, GPtrArray *secrets, char **msg)
 {
@@ -425,23 +431,44 @@ add_vpn_secrets(RequestData *request, GPtrArray *secrets, char **msg)
     const NmcVpnPasswordName *p;
     const char               *vpn_msg = NULL;
     char                    **iter;
+    char                     *secret_name;
+    bool                      is_challenge = FALSE;
+    bool                      force_echo;
 
     /* If hints are given, then always ask for what the hints require */
     if (request->hints) {
         for (iter = request->hints; *iter; iter++) {
-            if (!vpn_msg && g_str_has_prefix(*iter, VPN_MSG_TAG))
-                vpn_msg = &(*iter)[NM_STRLEN(VPN_MSG_TAG)];
-            else
-                add_vpn_secret_helper(secrets, s_vpn, *iter, *iter);
+            if (!vpn_msg && NM_STR_HAS_PREFIX(*iter, NM_SECRET_TAG_VPN_MSG)) {
+                vpn_msg = &(*iter)[NM_STRLEN(NM_SECRET_TAG_VPN_MSG)];
+            } else {
+                if (NM_STR_HAS_PREFIX(*iter, NM_SECRET_TAG_DYNAMIC_CHALLENGE)) {
+                    secret_name  = &(*iter)[NM_STRLEN(NM_SECRET_TAG_DYNAMIC_CHALLENGE)];
+                    is_challenge = TRUE;
+                    force_echo   = FALSE;
+                } else if (NM_STR_HAS_PREFIX(*iter, NM_SECRET_TAG_DYNAMIC_CHALLENGE_ECHO)) {
+                    secret_name  = &(*iter)[NM_STRLEN(NM_SECRET_TAG_DYNAMIC_CHALLENGE_ECHO)];
+                    is_challenge = TRUE;
+                    force_echo   = TRUE;
+                } else {
+                    secret_name = *iter;
+                    force_echo  = FALSE;
+                }
+
+                add_vpn_secret_helper(secrets, s_vpn, secret_name, secret_name, force_echo);
+            }
         }
     }
 
     NM_SET_OUT(msg, g_strdup(vpn_msg));
 
+    /* If we are in the 2nd step of a 2FA authentication, don't ask again for the default secrets */
+    if (is_challenge)
+        return TRUE;
+
     /* Now add what client thinks might be required, because hints may be empty or incomplete */
     p = nm_vpn_get_secret_names(nm_setting_vpn_get_service_type(s_vpn));
     while (p && p->name) {
-        add_vpn_secret_helper(secrets, s_vpn, p->name, _(p->ui_name));
+        add_vpn_secret_helper(secrets, s_vpn, p->name, _(p->ui_name), FALSE);
         p++;
     }
 
@@ -596,6 +623,7 @@ _auth_dialog_exited(GPid pid, int status, gpointer user_data)
 
     for (i = 1; groups[i]; i++) {
         gs_free char *pretty_name = NULL;
+        gboolean      force_echo;
 
         if (!g_key_file_get_boolean(keyfile, groups[i], "IsSecret", NULL))
             continue;
@@ -603,11 +631,14 @@ _auth_dialog_exited(GPid pid, int status, gpointer user_data)
             continue;
 
         pretty_name = g_key_file_get_string(keyfile, groups[i], "Label", NULL);
+        force_echo  = g_key_file_get_boolean(keyfile, groups[i], "ForceEcho", NULL);
+
         g_ptr_array_add(secrets,
                         _secret_real_new_vpn_secret(pretty_name,
                                                     NM_SETTING(s_vpn),
                                                     groups[i],
-                                                    nm_setting_vpn_get_service_type(s_vpn)));
+                                                    nm_setting_vpn_get_service_type(s_vpn),
+                                                    force_echo));
     }
 
 out:
