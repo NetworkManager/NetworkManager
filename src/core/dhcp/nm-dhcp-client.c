@@ -899,6 +899,12 @@ _nm_dhcp_client_notify(NMDhcpClient         *self,
 
     l3_cfg_notify_check_connected(self);
 
+    if (!priv->l3cd_curr) {
+        /* When the lease is lost, any cached ACD information is no longer relevant.
+         * Remove it so that it doesn't interfere with a new lease we might get. */
+        _acd_state_reset(self, TRUE, TRUE);
+    }
+
     _emit_notify(self,
                  NM_DHCP_CLIENT_NOTIFY_TYPE_LEASE_UPDATE,
                  .lease_update = {
