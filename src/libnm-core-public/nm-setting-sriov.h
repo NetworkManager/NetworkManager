@@ -66,6 +66,7 @@ typedef enum {
  */
 typedef enum {
     NM_SRIOV_ESWITCH_MODE_PRESERVE  = -1,
+    NM_SRIOV_ESWITCH_MODE_UNKNOWN   = -1, /*< skip >*/
     NM_SRIOV_ESWITCH_MODE_LEGACY    = 0,
     NM_SRIOV_ESWITCH_MODE_SWITCHDEV = 1,
 } NMSriovEswitchMode;
@@ -82,6 +83,7 @@ typedef enum {
  */
 typedef enum {
     NM_SRIOV_ESWITCH_INLINE_MODE_PRESERVE  = -1,
+    NM_SRIOV_ESWITCH_INLINE_MODE_UNKNOWN   = -1, /*< skip >*/
     NM_SRIOV_ESWITCH_INLINE_MODE_NONE      = 0,
     NM_SRIOV_ESWITCH_INLINE_MODE_LINK      = 1,
     NM_SRIOV_ESWITCH_INLINE_MODE_NETWORK   = 2,
@@ -98,6 +100,7 @@ typedef enum {
  */
 typedef enum {
     NM_SRIOV_ESWITCH_ENCAP_MODE_PRESERVE = -1,
+    NM_SRIOV_ESWITCH_ENCAP_MODE_UNKNOWN  = -1, /*< skip >*/
     NM_SRIOV_ESWITCH_ENCAP_MODE_NONE     = 0,
     NM_SRIOV_ESWITCH_ENCAP_MODE_BASIC    = 1,
 } NMSriovEswitchEncapMode;

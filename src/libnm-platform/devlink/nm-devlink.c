@@ -237,18 +237,22 @@ devlink_parse_eswitch_mode(const struct nl_msg *msg, void *data)
     NMDevlinkEswitchParams *params = data;
     struct genlmsghdr      *gnlh   = nlmsg_data(nlmsg_hdr(msg));
     struct nlattr          *tb[G_N_ELEMENTS(eswitch_policy)];
+    struct nlattr          *nla;
 
     if (nla_parse_arr(tb, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), eswitch_policy) < 0)
         return NL_SKIP;
 
-    if (!tb[DEVLINK_ATTR_ESWITCH_MODE] || !tb[DEVLINK_ATTR_ESWITCH_INLINE_MODE]
-        || !tb[DEVLINK_ATTR_ESWITCH_ENCAP_MODE])
-        return NL_SKIP;
+    nla          = tb[DEVLINK_ATTR_ESWITCH_MODE];
+    params->mode = nla ? (_NMSriovEswitchMode) nla_get_u16(nla) : _NM_SRIOV_ESWITCH_MODE_UNKNOWN;
 
-    params->mode       = (_NMSriovEswitchMode) nla_get_u16(tb[DEVLINK_ATTR_ESWITCH_MODE]);
-    params->encap_mode = (_NMSriovEswitchEncapMode) nla_get_u8(tb[DEVLINK_ATTR_ESWITCH_ENCAP_MODE]);
+    nla = tb[DEVLINK_ATTR_ESWITCH_INLINE_MODE];
     params->inline_mode =
-        (_NMSriovEswitchInlineMode) nla_get_u8(tb[DEVLINK_ATTR_ESWITCH_INLINE_MODE]);
+        nla ? (_NMSriovEswitchInlineMode) nla_get_u8(nla) : _NM_SRIOV_ESWITCH_INLINE_MODE_UNKNOWN;
+
+    nla = tb[DEVLINK_ATTR_ESWITCH_ENCAP_MODE];
+    params->encap_mode =
+        nla ? (_NMSriovEswitchEncapMode) nla_get_u8(nla) : _NM_SRIOV_ESWITCH_ENCAP_MODE_UNKNOWN;
+
     return NL_OK;
 }
 
