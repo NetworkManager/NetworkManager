@@ -11,6 +11,7 @@ project(
   default_options: [
     'buildtype=debugoptimized',
     'c_std=gnu11',
+    'warning_level=2' # value "2" will add "-Wall" and "-Wextra" to the compiler flags
   ],
   meson_version: '>= 0.47.2',
 )
@@ -173,8 +174,6 @@ if enable_lto
 endif
 
 common_flags += cc.get_supported_arguments([
-  '-Wall',
-  '-Wextra',
   '-Wcast-align=strict',
   '-Wdeclaration-after-statement',
   '-Wfloat-equal',
