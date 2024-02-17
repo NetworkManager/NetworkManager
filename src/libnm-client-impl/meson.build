@@ -166,13 +166,13 @@ if enable_introspection
     install: true,
   )
 
-  gi_typelib_path = run_command('printenv', 'GI_TYPELIB_PATH').stdout()
+  gi_typelib_path = run_command('printenv', 'GI_TYPELIB_PATH', check: false).stdout()
   if gi_typelib_path != ''
     gi_typelib_path = ':' + gi_typelib_path
   endif
   gi_typelib_path = meson.current_build_dir() + gi_typelib_path
 
-  ld_library_path = run_command('printenv', 'LD_LIBRARY_PATH').stdout()
+  ld_library_path = run_command('printenv', 'LD_LIBRARY_PATH', check: false).stdout()
   if ld_library_path != ''
     ld_library_path = ':' + ld_library_path
   endif

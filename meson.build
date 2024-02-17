@@ -254,7 +254,7 @@ config_h.set10('WITH_JANSSON', jansson_dep.found())
 jansson_msg = 'no'
 if jansson_dep.found()
   jansson_libdir = jansson_dep.get_pkgconfig_variable('libdir')
-  res = run_command(find_program('eu-readelf', 'readelf'), '-d', join_paths(jansson_libdir, 'libjansson.so'))
+  res = run_command(find_program('eu-readelf', 'readelf'), '-d', join_paths(jansson_libdir, 'libjansson.so'), check: false)
   jansson_soname = ''
   foreach line: res.stdout().split('\n')
     if line.strip().contains('SONAME')
@@ -296,7 +296,7 @@ config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_MIGRATE_IFCFG_RH', config_migrate_if
 
 enable_ifupdown = get_option('ifupdown')
 if enable_ifupdown == 'auto'
-  enable_ifupdown = (run_command('test', '-e', '/etc/debian_version').returncode() == 0)
+  enable_ifupdown = (run_command('test', '-e', '/etc/debian_version', check: false).returncode() == 0)
 else
   enable_ifupdown = (enable_ifupdown != 'false')
 endif
@@ -514,7 +514,7 @@ polkit_agent_helper_1_path = get_option('polkit_agent_helper_1')
 foreach p : [ '/usr/libexec/polkit-agent-helper-1',
               '/usr/lib/polkit-1/polkit-agent-helper-1',
               '/usr/lib/policykit-1/polkit-agent-helper-1' ]
-  if polkit_agent_helper_1_path == '' and run_command('test', '-f', p).returncode() == 0
+  if polkit_agent_helper_1_path == '' and run_command('test', '-f', p, check: false).returncode() == 0
     polkit_agent_helper_1_path = p
   endif
 endforeach
