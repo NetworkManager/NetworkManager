@@ -1717,6 +1717,7 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                                             NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST,
                                             PROP_MAC_ADDRESS_BLACKLIST,
                                             NM_SETTING_PARAM_FUZZY_IGNORE,
+                                            NULL,
                                             NMSettingWirelessPrivate,
                                             mac_address_blacklist,
                                             .direct_set_strv_normalize_hwaddr = TRUE,
