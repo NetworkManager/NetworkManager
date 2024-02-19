@@ -774,8 +774,8 @@ check_connection_compatible(NMDevice     *device,
             return FALSE;
         }
 
-        /* Check for MAC address blacklist */
-        mac_blacklist = nm_setting_wireless_get_mac_address_blacklist(s_wireless);
+        /* Check for MAC address denylist */
+        mac_blacklist = nm_setting_wireless_get_mac_address_denylist(s_wireless);
         for (i = 0; mac_blacklist[i]; i++) {
             nm_assert(nm_utils_hwaddr_valid(mac_blacklist[i], ETH_ALEN));
 
