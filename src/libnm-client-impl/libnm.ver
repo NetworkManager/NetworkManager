@@ -1984,4 +1984,11 @@ global:
 	nm_setting_connection_down_on_poweroff_get_type;
 	nm_setting_connection_get_down_on_poweroff;
 	nm_setting_ip_config_get_dhcp_send_release;
+	nm_setting_wireless_add_mac_denylist_item;
+	nm_setting_wireless_clear_mac_denylist_items;
+	nm_setting_wireless_get_mac_address_denylist;
+	nm_setting_wireless_get_mac_denylist_item;
+	nm_setting_wireless_get_num_mac_denylist_items;
+	nm_setting_wireless_remove_mac_denylist_item;
+	nm_setting_wireless_remove_mac_denylist_item_by_value;
 } libnm_1_46_0;

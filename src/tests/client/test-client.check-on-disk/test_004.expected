@@ -103,7 +103,7 @@ connection.wait-activation-delay:       -1
 802-11-wireless.mac-address:            --
 802-11-wireless.cloned-mac-address:     --
 802-11-wireless.generate-mac-address-mask:--
-802-11-wireless.mac-address-blacklist:  --
+802-11-wireless.mac-address-denylist:   --
 802-11-wireless.mac-address-randomization:default
 802-11-wireless.mtu:                    auto
 802-11-wireless.seen-bssids:            --
@@ -224,7 +224,7 @@ connection.wait-activation-delay:       -1
 802-11-wireless.mac-address:            --
 802-11-wireless.cloned-mac-address:     --
 802-11-wireless.generate-mac-address-mask:--
-802-11-wireless.mac-address-blacklist:  --
+802-11-wireless.mac-address-denylist:   --
 802-11-wireless.mac-address-randomization:default
 802-11-wireless.mtu:                    automatyczne
 802-11-wireless.seen-bssids:            --

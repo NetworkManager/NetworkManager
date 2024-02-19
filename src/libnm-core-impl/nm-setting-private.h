@@ -422,6 +422,13 @@ _nm_setting_connection_autoconnect_ports_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_
 gboolean
 _nm_setting_connection_autoconnect_slaves_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil);
 
+gboolean _nm_setting_wireless_mac_denylist_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil);
+
+GVariant *_nm_setting_wireless_mac_denylist_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil);
+
+gboolean
+_nm_setting_wireless_mac_blacklist_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil);
+
 GVariant *_nm_setting_to_dbus(NMSetting                              *setting,
                               NMConnection                           *connection,
                               NMConnectionSerializationFlags          flags,
