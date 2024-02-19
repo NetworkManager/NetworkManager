@@ -672,8 +672,7 @@ nmc_connection_check_deprecated(NMConnection *c)
     const char                *type;
 
     type = nm_connection_get_connection_type(c);
-
-    if (strcmp(type, NM_SETTING_WIMAX_SETTING_NAME) == 0)
+    if (nm_streq0(type, NM_SETTING_WIMAX_SETTING_NAME))
         return _("WiMax is no longer supported");
 
     s_wsec = nm_connection_get_setting_wireless_security(c);
