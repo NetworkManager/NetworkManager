@@ -993,6 +993,14 @@ typedef struct {
     guint8  public_key[NMP_WIREGUARD_PUBLIC_KEY_LEN];
 } _nm_alignas(NMPlatformObject) NMPlatformLnkWireGuard;
 
+typedef struct {
+    guint                     num_vfs;
+    NMOptionBool              autoprobe;
+    _NMSriovEswitchMode       eswitch_mode;
+    _NMSriovEswitchInlineMode eswitch_inline_mode;
+    _NMSriovEswitchEncapMode  eswitch_encap_mode;
+} NMPlatformSriovParams;
+
 typedef enum {
     NM_PLATFORM_WIREGUARD_CHANGE_FLAG_NONE            = 0,
     NM_PLATFORM_WIREGUARD_CHANGE_FLAG_REPLACE_PEERS   = (1LL << 0),
@@ -1084,6 +1092,7 @@ nm_platform_kernel_support_get(NMPlatformKernelSupportType type)
 }
 
 typedef enum {
+    NMP_GENL_FAMILY_TYPE_DEVLINK,
     NMP_GENL_FAMILY_TYPE_ETHTOOL,
     NMP_GENL_FAMILY_TYPE_MPTCP_PM,
     NMP_GENL_FAMILY_TYPE_NL80211,
@@ -1171,8 +1180,7 @@ typedef struct {
     gboolean (*link_set_name)(NMPlatform *self, int ifindex, const char *name);
     void (*link_set_sriov_params_async)(NMPlatform             *self,
                                         int                     ifindex,
-                                        guint                   num_vfs,
-                                        NMOptionBool            autoprobe,
+                                        NMPlatformSriovParams   sriov_params,
                                         NMPlatformAsyncCallback callback,
                                         gpointer                callback_data,
                                         GCancellable           *cancellable);
@@ -2034,8 +2042,7 @@ gboolean nm_platform_link_set_name(NMPlatform *self, int ifindex, const char *na
 
 void nm_platform_link_set_sriov_params_async(NMPlatform             *self,
                                              int                     ifindex,
-                                             guint                   num_vfs,
-                                             NMOptionBool            autoprobe,
+                                             NMPlatformSriovParams   sriov_params,
                                              NMPlatformAsyncCallback callback,
                                              gpointer                callback_data,
                                              GCancellable           *cancellable);

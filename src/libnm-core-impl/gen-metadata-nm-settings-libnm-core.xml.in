@@ -2198,6 +2198,18 @@
                   dbus-type="i"
                   gprop-type="NMTernary"
                   />
+        <property name="eswitch-encap-mode"
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
+        <property name="eswitch-inline-mode"
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
+        <property name="eswitch-mode"
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="total-vfs"
                   dbus-type="u"
                   gprop-type="guint"

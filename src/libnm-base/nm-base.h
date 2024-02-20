@@ -277,6 +277,35 @@ typedef enum {
                          | _NM_VLAN_FLAG_LOOSE_BINDING | _NM_VLAN_FLAG_MVRP,
 } _NMVlanFlags;
 
+typedef enum {
+    /* Mirrors libnm's NMSriovEswitchMode.
+     * Values >= 0 mirror kernel's enum devlink_eswitch_mode. */
+    _NM_SRIOV_ESWITCH_MODE_PRESERVE  = -1,
+    _NM_SRIOV_ESWITCH_MODE_UNKNOWN   = -1, /*< skip >*/
+    _NM_SRIOV_ESWITCH_MODE_LEGACY    = 0,
+    _NM_SRIOV_ESWITCH_MODE_SWITCHDEV = 1,
+} _NMSriovEswitchMode;
+
+typedef enum {
+    /* Mirrors libnm's NMSriovEswitchInlineMode.
+     * Values >= 0 mirror kernel's enum devlink_eswitch_inline_mode. */
+    _NM_SRIOV_ESWITCH_INLINE_MODE_PRESERVE  = -1,
+    _NM_SRIOV_ESWITCH_INLINE_MODE_UNKNOWN   = -1, /*< skip >*/
+    _NM_SRIOV_ESWITCH_INLINE_MODE_NONE      = 0,
+    _NM_SRIOV_ESWITCH_INLINE_MODE_LINK      = 1,
+    _NM_SRIOV_ESWITCH_INLINE_MODE_NETWORK   = 2,
+    _NM_SRIOV_ESWITCH_INLINE_MODE_TRANSPORT = 3,
+} _NMSriovEswitchInlineMode;
+
+typedef enum {
+    /* Mirrors libnm's NMSriovEswitchEncapMode.
+     * Values >= 0 mirror kernel's enum devlink_eswitch_encap_mode. */
+    _NM_SRIOV_ESWITCH_ENCAP_MODE_PRESERVE = -1,
+    _NM_SRIOV_ESWITCH_ENCAP_MODE_UNKNOWN  = -1, /*< skip >*/
+    _NM_SRIOV_ESWITCH_ENCAP_MODE_NONE     = 0,
+    _NM_SRIOV_ESWITCH_ENCAP_MODE_BASIC    = 1,
+} _NMSriovEswitchEncapMode;
+
 /*****************************************************************************/
 
 typedef enum {

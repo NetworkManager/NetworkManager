@@ -452,6 +452,10 @@ _nm_platform_kernel_support_init(NMPlatformKernelSupportType type, int value)
 /*****************************************************************************/
 
 const NMPGenlFamilyInfo nmp_genl_family_infos[_NMP_GENL_FAMILY_TYPE_NUM] = {
+    [NMP_GENL_FAMILY_TYPE_DEVLINK] =
+        {
+            .name = "devlink",
+        },
     [NMP_GENL_FAMILY_TYPE_ETHTOOL] =
         {
             .name = "ethtool",
@@ -2018,8 +2022,7 @@ nm_platform_link_supports_sriov(NMPlatform *self, int ifindex)
 void
 nm_platform_link_set_sriov_params_async(NMPlatform             *self,
                                         int                     ifindex,
-                                        guint                   num_vfs,
-                                        NMOptionBool            autoprobe,
+                                        NMPlatformSriovParams   sriov_params,
                                         NMPlatformAsyncCallback callback,
                                         gpointer                callback_data,
                                         GCancellable           *cancellable)
@@ -2028,11 +2031,17 @@ nm_platform_link_set_sriov_params_async(NMPlatform             *self,
 
     g_return_if_fail(ifindex > 0);
 
-    _LOG3D("link: setting %u total VFs and autoprobe %d", num_vfs, (int) autoprobe);
+    _LOG3D("link: setting SR-IOV params (numvfs=%u, autoprobe=%d, eswitch mode=%d inline-mode=%d "
+           "encap-mode=%d)",
+           sriov_params.num_vfs,
+           (int) sriov_params.autoprobe,
+           (int) sriov_params.eswitch_mode,
+           (int) sriov_params.eswitch_inline_mode,
+           (int) sriov_params.eswitch_encap_mode);
+
     klass->link_set_sriov_params_async(self,
                                        ifindex,
-                                       num_vfs,
-                                       autoprobe,
+                                       sriov_params,
                                        callback,
                                        callback_data,
                                        cancellable);
