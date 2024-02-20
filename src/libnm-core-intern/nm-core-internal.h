@@ -800,7 +800,13 @@ struct _NMSettInfoProperty {
                                const NMSettInfoProperty *property_info,
                                NMSetting                *setting,
                                const char               *src);
-    } direct_set_fcn;
+
+        /* We implement %NM_VALUE_TYPE_ENUM properties as integer GObject properties
+        * because using real enum triggers glib assertions when passing newer values to
+        * clients with old libnm. This defines the enum type that the direct_property of
+        * type %NM_VALUE_TYPE_ENUM will use. */
+        GType enum_gtype;
+    } direct_data;
 
     /* For direct properties, this is the param_spec that also should be
      * notified on changes. */

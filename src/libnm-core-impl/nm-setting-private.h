@@ -904,6 +904,13 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
 
 /*****************************************************************************/
 
+/* Define a direct property of type enum, but using `int` as type in the underlying
+ * GObject property. This is the preferred way to define enum properties because using
+ * real enums it is not possible to maintain backwards compatibility with clients
+ * using an old libnm (glib asserts against new values of the enum not being valid).
+ * The main difference from define_direct_real_enum is that this will accept any
+ * integer value, and we'll check that it's valid in #NMSetting::verify, as doing
+ * 'verify' is optional for clients. */
 #define _nm_setting_property_define_direct_enum(properties_override,                             \
                                                 obj_properties,                                  \
                                                 prop_name,                                       \
@@ -924,6 +931,58 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
                           ~(NM_SETTING_PARAM_REAPPLY_IMMEDIATELY | NM_SETTING_PARAM_FUZZY_IGNORE \
                             | NM_SETTING_PARAM_INFERRABLE)));                                    \
                                                                                                  \
+        nm_assert(G_TYPE_IS_ENUM(gtype_enum));                                                   \
+                                                                                                 \
+        _param_spec = g_param_spec_int("" prop_name "",                                          \
+                                       "",                                                       \
+                                       "",                                                       \
+                                       G_MININT32,                                               \
+                                       G_MAXINT32,                                               \
+                                       (default_value),                                          \
+                                       G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY               \
+                                           | G_PARAM_STATIC_STRINGS | (param_flags));            \
+                                                                                                 \
+        (obj_properties)[(prop_id)] = _param_spec;                                               \
+        _property_type              = (property_type) ?: &nm_sett_info_propert_type_direct_enum; \
+                                                                                                 \
+        _nm_properties_override_gobj(                                                            \
+            (properties_override),                                                               \
+            _param_spec,                                                                         \
+            _property_type,                                                                      \
+            .direct_offset =                                                                     \
+                NM_STRUCT_OFFSET_ENSURE_TYPE(int, private_struct_type, private_struct_field),    \
+            .direct_data.enum_gtype = (gtype_enum),                                              \
+            __VA_ARGS__);                                                                        \
+    })
+
+/*****************************************************************************/
+
+/* Define an enum property using real enums in the GObject, not integers. Note that
+ * this is not backwards compatible because clients with old libnm will reject
+ * newer values of the enum. Generally you want to use define_direct_enum and use this
+ * one only for properties that already existed as real enums */
+#define _nm_setting_property_define_direct_real_enum(properties_override,                        \
+                                                     obj_properties,                             \
+                                                     prop_name,                                  \
+                                                     prop_id,                                    \
+                                                     gtype_enum,                                 \
+                                                     default_value,                              \
+                                                     param_flags,                                \
+                                                     property_type,                              \
+                                                     private_struct_type,                        \
+                                                     private_struct_field,                       \
+                                                     ... /* extra NMSettInfoProperty fields */)  \
+    ({                                                                                           \
+        GParamSpec                  *_param_spec;                                                \
+        const NMSettInfoPropertType *_property_type;                                             \
+                                                                                                 \
+        G_STATIC_ASSERT(                                                                         \
+            !NM_FLAGS_ANY((param_flags),                                                         \
+                          ~(NM_SETTING_PARAM_REAPPLY_IMMEDIATELY | NM_SETTING_PARAM_FUZZY_IGNORE \
+                            | NM_SETTING_PARAM_INFERRABLE)));                                    \
+                                                                                                 \
+        nm_assert(G_TYPE_IS_ENUM(gtype_enum));                                                   \
+                                                                                                 \
         _param_spec = g_param_spec_enum("" prop_name "",                                         \
                                         "",                                                      \
                                         "",                                                      \
@@ -941,7 +1000,22 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
             _property_type,                                                                      \
             .direct_offset =                                                                     \
                 NM_STRUCT_OFFSET_ENSURE_TYPE(int, private_struct_type, private_struct_field),    \
+            .direct_data.enum_gtype = (gtype_enum),                                              \
             __VA_ARGS__);                                                                        \
+    })
+
+/*****************************************************************************/
+
+#define _nm_setting_property_is_valid_direct_enum(property_info)                               \
+    ({                                                                                         \
+        const NMSettInfoProperty *_property_info = (property_info);                            \
+        NMValueType               direct_nmtype  = _property_info->property_type->direct_type; \
+        GType                     direct_gtype   = _property_info->direct_data.enum_gtype;     \
+        GParamSpec               *spec           = _property_info->param_spec;                 \
+        GType                     spec_gtype     = spec ? spec->value_type : G_TYPE_INVALID;   \
+                                                                                               \
+        direct_nmtype == NM_VALUE_TYPE_ENUM &&direct_gtype &&G_TYPE_IS_ENUM(direct_gtype)      \
+            && NM_IN_SET(spec_gtype, G_TYPE_INT, direct_gtype);                                \
     })
 
 /*****************************************************************************/
@@ -954,17 +1028,17 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
                                                         private_struct_type,  \
                                                         private_struct_field, \
                                                         ...)                  \
-    _nm_setting_property_define_direct_enum((properties_override),            \
-                                            (obj_properties),                 \
-                                            prop_name,                        \
-                                            (prop_id),                        \
-                                            NM_TYPE_TERNARY,                  \
-                                            NM_TERNARY_DEFAULT,               \
-                                            (param_flags),                    \
-                                            NULL,                             \
-                                            private_struct_type,              \
-                                            private_struct_field,             \
-                                            __VA_ARGS__)
+    _nm_setting_property_define_direct_real_enum((properties_override),       \
+                                                 (obj_properties),            \
+                                                 prop_name,                   \
+                                                 (prop_id),                   \
+                                                 NM_TYPE_TERNARY,             \
+                                                 NM_TERNARY_DEFAULT,          \
+                                                 (param_flags),               \
+                                                 NULL,                        \
+                                                 private_struct_type,         \
+                                                 private_struct_field,        \
+                                                 __VA_ARGS__)
 
 /*****************************************************************************/
 

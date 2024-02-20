@@ -255,6 +255,9 @@ void nm_setting_option_clear_by_name(NMSetting *setting, NMUtilsPredicateStr pre
 const GVariantType *nm_setting_get_dbus_property_type(NMSetting  *setting,
                                                       const char *property_name);
 
+NM_AVAILABLE_IN_1_46
+GType nm_setting_get_enum_property_type(GType setting_type, const char *property_name);
+
 /*****************************************************************************/
 
 typedef struct _NMRange NMRange;

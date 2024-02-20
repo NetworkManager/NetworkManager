@@ -941,16 +941,16 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * example: IPV6_PRIVACY=rfc3041 IPV6_PRIVACY_PREFER_PUBLIC_IP=yes
      * ---end---
      */
-    _nm_setting_property_define_direct_enum(properties_override,
-                                            obj_properties,
-                                            NM_SETTING_IP6_CONFIG_IP6_PRIVACY,
-                                            PROP_IP6_PRIVACY,
-                                            NM_TYPE_SETTING_IP6_CONFIG_PRIVACY,
-                                            NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
-                                            NM_SETTING_PARAM_NONE,
-                                            NULL,
-                                            NMSettingIP6ConfigPrivate,
-                                            ip6_privacy);
+    _nm_setting_property_define_direct_real_enum(properties_override,
+                                                 obj_properties,
+                                                 NM_SETTING_IP6_CONFIG_IP6_PRIVACY,
+                                                 PROP_IP6_PRIVACY,
+                                                 NM_TYPE_SETTING_IP6_CONFIG_PRIVACY,
+                                                 NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
+                                                 NM_SETTING_PARAM_NONE,
+                                                 NULL,
+                                                 NMSettingIP6ConfigPrivate,
+                                                 ip6_privacy);
 
     /**
      * NMSettingIP6Config:addr-gen-mode:
@@ -1215,7 +1215,7 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingIP6ConfigPrivate,
                                               dhcp_pd_hint,
-                                              .direct_set_fcn.set_string =
+                                              .direct_data.set_string =
                                                   _set_string_fcn_dhcp_pd_hint,
                                               .direct_string_allow_empty = TRUE);
 
