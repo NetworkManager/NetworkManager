@@ -183,6 +183,7 @@ test-*.trs
 
 /src/nm-online/nm-online
 
+/m4/build-to-host.m4
 /m4/codeset.m4
 /m4/gettext.m4
 /m4/glibc2.m4
