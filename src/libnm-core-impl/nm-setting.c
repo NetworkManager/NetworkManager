@@ -682,10 +682,10 @@ _property_direct_set_string(const NMSettInfoSetting  *sett_info,
                + (!!property_info->direct_string_is_refstr)
                + (property_info->direct_set_string_mac_address_len > 0)
                + (property_info->direct_set_string_ip_address_addr_family != 0))
-              <= (property_info->direct_set_fcn.set_string ? 0 : 1));
+              <= (property_info->direct_data.set_string ? 0 : 1));
 
-    if (property_info->direct_set_fcn.set_string) {
-        return property_info->direct_set_fcn.set_string(sett_info, property_info, setting, src);
+    if (property_info->direct_data.set_string) {
+        return property_info->direct_data.set_string(sett_info, property_info, setting, src);
     }
 
     dst = _nm_setting_get_private_field(setting, sett_info, property_info);
@@ -805,7 +805,13 @@ _nm_setting_property_get_property_direct(GObject    *object,
     {
         const int *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
 
-        g_value_set_enum(value, *p_val);
+        nm_assert(_nm_setting_property_is_valid_direct_enum(property_info));
+
+        if (G_TYPE_IS_ENUM(pspec->value_type))
+            g_value_set_enum(value, *p_val);
+        else
+            g_value_set_int(value, *p_val);
+
         return;
     }
     case NM_VALUE_TYPE_FLAGS:
@@ -940,7 +946,13 @@ _nm_setting_property_set_property_direct(GObject      *object,
         int *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
         int  v;
 
-        v = g_value_get_enum(value);
+        nm_assert(_nm_setting_property_is_valid_direct_enum(property_info));
+
+        if (G_TYPE_IS_ENUM(pspec->value_type))
+            v = g_value_get_enum(value);
+        else
+            v = g_value_get_int(value);
+
         if (*p_val == v)
             return;
         *p_val = v;
@@ -1076,7 +1088,13 @@ _init_direct(NMSetting *setting)
             int *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
             int  def_val;
 
-            def_val = NM_G_PARAM_SPEC_GET_DEFAULT_ENUM(property_info->param_spec);
+            nm_assert(_nm_setting_property_is_valid_direct_enum(property_info));
+
+            if (G_TYPE_IS_ENUM(property_info->param_spec->value_type))
+                def_val = NM_G_PARAM_SPEC_GET_DEFAULT_ENUM(property_info->param_spec);
+            else
+                def_val = NM_G_PARAM_SPEC_GET_DEFAULT_INT(property_info->param_spec);
+
             nm_assert(NM_IN_SET(*p_val, 0, property_info->direct_is_aliased_field ? def_val : 0));
             *p_val = def_val;
             break;
@@ -1234,10 +1252,22 @@ _nm_setting_property_to_dbus_fcn_direct(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_
     {
         int val;
 
+        nm_assert(_nm_setting_property_is_valid_direct_enum(property_info));
+
         val = *((int *) _nm_setting_get_private_field(setting, sett_info, property_info));
-        if (!property_info->to_dbus_including_default
-            && val == NM_G_PARAM_SPEC_GET_DEFAULT_ENUM(property_info->param_spec))
-            return NULL;
+
+        if (!property_info->to_dbus_including_default) {
+            int default_value;
+
+            if (G_TYPE_IS_ENUM(property_info->param_spec->value_type))
+                default_value = NM_G_PARAM_SPEC_GET_DEFAULT_ENUM(property_info->param_spec);
+            else
+                default_value = NM_G_PARAM_SPEC_GET_DEFAULT_INT(property_info->param_spec);
+
+            if (val == default_value)
+                return NULL;
+        }
+
         return nm_g_variant_maybe_singleton_i(val);
     }
     case NM_VALUE_TYPE_FLAGS:
@@ -1413,7 +1443,10 @@ _nm_setting_property_from_dbus_fcn_direct(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS 
         GVariant                       *_value         = (value);                      \
         gboolean                        _success       = FALSE;                        \
                                                                                        \
-        nm_assert(_property_info->param_spec->value_type == _gtype);                   \
+        nm_assert(_property_info->param_spec->value_type == _gtype                     \
+                  || (_property_info->property_type->direct_type == NM_VALUE_TYPE_ENUM \
+                      && _property_info->direct_data.enum_gtype == _gtype));           \
+                                                                                       \
         if (_property_info->property_type->from_dbus_direct_allow_transform) {         \
             nm_auto_unset_gvalue GValue _gvalue = G_VALUE_INIT;                        \
                                                                                        \
@@ -1564,21 +1597,20 @@ _nm_setting_property_from_dbus_fcn_direct(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS 
     }
     case NM_VALUE_TYPE_ENUM:
     {
-        const GParamSpecEnum *param_spec;
-        int                  *p_val;
-        int                   v;
+        int *p_val;
+        int  v;
 
-        param_spec = NM_G_PARAM_SPEC_CAST_ENUM(property_info->param_spec);
+        nm_assert(_nm_setting_property_is_valid_direct_enum(property_info));
 
         if (g_variant_is_of_type(value, G_VARIANT_TYPE_INT32)) {
             G_STATIC_ASSERT(sizeof(int) >= sizeof(gint32));
             v = g_variant_get_int32(value);
         } else {
-            if (!_variant_get_value_transform(property_info,
-                                              value,
-                                              G_TYPE_FROM_CLASS(param_spec->enum_class),
-                                              g_value_get_flags,
-                                              &v))
+            GType gtype = G_TYPE_IS_ENUM(property_info->param_spec->value_type)
+                              ? property_info->param_spec->value_type
+                              : G_TYPE_INT;
+
+            if (!_variant_get_value_transform(property_info, value, gtype, g_value_get_flags, &v))
                 goto out_error_wrong_dbus_type;
         }
 
@@ -1586,8 +1618,18 @@ _nm_setting_property_from_dbus_fcn_direct(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS 
         if (*p_val == v)
             goto out_unchanged;
 
-        if (!g_enum_get_value(param_spec->enum_class, v))
-            goto out_error_param_spec_validation;
+        /* To avoid that clients with old libnm fails setting a newer value received
+         * from the daemon, do not validate here if the value is within range or not.
+         * Instead, do it in 'verify' that the client can ignore.
+         * However, some properties are implemented as real enums, mostly those that
+         * were originally implemented as such. Maintain the old behaviour on them. */
+        if (G_TYPE_IS_ENUM(property_info->param_spec->value_type)) {
+            const GParamSpecEnum *enum_spec = NM_G_PARAM_SPEC_CAST_ENUM(property_info->param_spec);
+
+            if (!g_enum_get_value(enum_spec->enum_class, v))
+                goto out_error_param_spec_validation;
+        }
+
         *p_val = v;
         goto out_notify;
     }
@@ -2422,7 +2464,6 @@ _verify_properties(NMSetting *setting, GError **error)
         case NM_VALUE_TYPE_BOOL:
         case NM_VALUE_TYPE_BYTES:
         case NM_VALUE_TYPE_STRV:
-        case NM_VALUE_TYPE_ENUM:
         case NM_VALUE_TYPE_FLAGS:
         case NM_VALUE_TYPE_INT32:
         case NM_VALUE_TYPE_INT64:
@@ -2430,6 +2471,37 @@ _verify_properties(NMSetting *setting, GError **error)
         case NM_VALUE_TYPE_UINT32:
         case NM_VALUE_TYPE_UINT64:
             break;
+        case NM_VALUE_TYPE_ENUM:
+        {
+            nm_auto_unref_gtypeclass GEnumClass *enum_class = NULL;
+            int                                 *val;
+
+            nm_assert(_nm_setting_property_is_valid_direct_enum(property_info));
+
+            enum_class = g_type_class_ref(property_info->direct_data.enum_gtype);
+            val        = _nm_setting_get_private_field(setting, sett_info, property_info);
+
+            /* We validate here that the value is within the range of the enum, and not
+             * in the GObject property and/or DBus setters. This way, clients using an
+             * old libnm can accept new values added later to the enum, because clients
+             * are not required to 'verify' */
+            if (!g_enum_get_value(enum_class, *val)) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("invalid value %d, expected %d-%d"),
+                            *val,
+                            enum_class->minimum,
+                            enum_class->maximum);
+                g_prefix_error(error,
+                               "%s.%s: ",
+                               klass->setting_info->setting_name,
+                               property_info->name);
+                return FALSE;
+            }
+
+            return TRUE;
+        }
         case NM_VALUE_TYPE_STRING:
         {
             const char *val;
@@ -4442,6 +4514,43 @@ nm_range_from_str(const char *str, GError **error)
         end = start;
 
     return nm_range_new(start, end);
+}
+
+/**
+ * nm_setting_get_enum_property_type:
+ * @setting_type: the GType of the NMSetting instance
+ * @property_name: the name of the property
+ *
+ * Get the type of the enum that defines the values that the property accepts. It is only
+ * useful for properties configured to accept values from certain enum type, otherwise
+ * it will return %G_TYPE_INVALID. Note that flags (children of G_TYPE_FLAGS) are also
+ * considered enums.
+ *
+ * Note that the GObject property might be implemented as an integer, actually, and not
+ * as enum. Find out what underlying type is used, checking the #GParamSpec, before
+ * setting the GObject property.
+ *
+ * Returns: the enum's GType, or %G_TYPE_INVALID if the property is not of enum type
+ *
+ * Since: 1.46
+ */
+GType
+nm_setting_get_enum_property_type(GType setting_type, const char *property_name)
+{
+    nm_auto_unref_gtypeclass NMSettingClass *setting_class = g_type_class_ref(setting_type);
+    const NMSettInfoProperty                *property_info;
+    GParamSpec                              *spec;
+
+    g_return_val_if_fail(NM_IS_SETTING_CLASS(setting_class), G_TYPE_INVALID);
+
+    property_info = _nm_setting_class_get_property_info(setting_class, property_name);
+    spec          = property_info->param_spec;
+
+    if (spec && (G_TYPE_IS_ENUM(spec->value_type) || G_TYPE_IS_FLAGS(spec->value_type)))
+        return property_info->param_spec->value_type;
+    if (property_info->property_type->direct_type == NM_VALUE_TYPE_ENUM)
+        return property_info->direct_data.enum_gtype;
+    return G_TYPE_INVALID;
 }
 
 /*****************************************************************************/
