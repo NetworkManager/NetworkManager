@@ -6,6 +6,7 @@
 
 #include "sd-id128.h"
 
+#include "errno-util.h"
 #include "hash-funcs.h"
 #include "macro.h"
 
@@ -19,6 +20,8 @@ typedef enum Id128Flag {
         ID128_SYNC_ON_WRITE = 1 << 2, /* Sync the file after write. Used only when writing an ID. */
         ID128_REFUSE_NULL   = 1 << 3, /* Refuse all zero ID with -ENOMEDIUM. */
 } Id128Flag;
+
+int id128_from_string_nonzero(const char *s, sd_id128_t *ret);
 
 int id128_read_fd(int fd, Id128Flag f, sd_id128_t *ret);
 int id128_read_at(int dir_fd, const char *path, Id128Flag f, sd_id128_t *ret);
@@ -44,9 +47,12 @@ sd_id128_t id128_make_v4_uuid(sd_id128_t id);
 
 int id128_get_product(sd_id128_t *ret);
 
+sd_id128_t id128_digest(const void *data, size_t size);
+
 /* A helper to check for the three relevant cases of "machine ID not initialized" */
-#define ERRNO_IS_MACHINE_ID_UNSET(r)            \
-        IN_SET(abs(r),                          \
-               ENOENT,                          \
-               ENOMEDIUM,                       \
-               ENOPKG)
+#define ERRNO_IS_NEG_MACHINE_ID_UNSET(r)        \
+        IN_SET(r,                               \
+               -ENOENT,                         \
+               -ENOMEDIUM,                      \
+               -ENOPKG)
+_DEFINE_ABS_WRAPPER(MACHINE_ID_UNSET);
