@@ -2655,7 +2655,7 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *   when this connection is activated.
      * ---end---
      */
-    prop_idx = _nm_setting_property_define_direct_enum(
+    prop_idx = _nm_setting_property_define_direct_real_enum(
         properties_override,
         obj_properties,
         NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES,
@@ -2776,16 +2776,16 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * example: CONNECTION_METERED=yes
      * ---end---
      */
-    _nm_setting_property_define_direct_enum(properties_override,
-                                            obj_properties,
-                                            NM_SETTING_CONNECTION_METERED,
-                                            PROP_METERED,
-                                            NM_TYPE_METERED,
-                                            NM_METERED_UNKNOWN,
-                                            NM_SETTING_PARAM_REAPPLY_IMMEDIATELY,
-                                            NULL,
-                                            NMSettingConnectionPrivate,
-                                            metered);
+    _nm_setting_property_define_direct_real_enum(properties_override,
+                                                 obj_properties,
+                                                 NM_SETTING_CONNECTION_METERED,
+                                                 PROP_METERED,
+                                                 NM_TYPE_METERED,
+                                                 NM_METERED_UNKNOWN,
+                                                 NM_SETTING_PARAM_REAPPLY_IMMEDIATELY,
+                                                 NULL,
+                                                 NMSettingConnectionPrivate,
+                                                 metered);
 
     /**
      * NMSettingConnection:lldp:

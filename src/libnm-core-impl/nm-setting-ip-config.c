@@ -6139,14 +6139,16 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
         obj_properties[PROP_AUTO_ROUTE_EXT_GW],
         &nm_sett_info_propert_type_direct_enum,
         .direct_offset =
-            NM_STRUCT_OFFSET_ENSURE_TYPE(int, NMSettingIPConfigPrivate, auto_route_ext_gw));
+            NM_STRUCT_OFFSET_ENSURE_TYPE(int, NMSettingIPConfigPrivate, auto_route_ext_gw),
+        .direct_data.enum_gtype = NM_TYPE_TERNARY);
 
     _nm_properties_override_gobj(
         properties_override,
         obj_properties[PROP_REPLACE_LOCAL_RULE],
         &nm_sett_info_propert_type_direct_enum,
         .direct_offset =
-            NM_STRUCT_OFFSET_ENSURE_TYPE(int, NMSettingIPConfigPrivate, replace_local_rule));
+            NM_STRUCT_OFFSET_ENSURE_TYPE(int, NMSettingIPConfigPrivate, replace_local_rule),
+        .direct_data.enum_gtype = NM_TYPE_TERNARY);
 
     _nm_properties_override_gobj(
         properties_override,

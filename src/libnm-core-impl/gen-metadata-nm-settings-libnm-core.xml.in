@@ -769,7 +769,7 @@
                   />
         <property name="autoconnect-ports"
                   dbus-type="i"
-                  gprop-type="NMTernary"
+                  gprop-type="gint"
                   />
         <property name="autoconnect-priority"
                   dbus-type="i"

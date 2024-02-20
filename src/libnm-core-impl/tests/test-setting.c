@@ -4565,7 +4565,7 @@ test_setting_metadata(void)
             GArray                   *property_types_data;
             guint                     prop_idx_val;
             gboolean                  can_set_including_default = FALSE;
-            gboolean                  can_have_direct_set_fcn   = FALSE;
+            gboolean                  can_have_direct_data      = FALSE;
             int                       n_special_options;
 
             g_assert(sip->name);
@@ -4662,18 +4662,35 @@ test_setting_metadata(void)
 
                 can_set_including_default = TRUE;
             } else if (sip->property_type->direct_type == NM_VALUE_TYPE_ENUM) {
-                const GParamSpecEnum *pspec;
+                nm_auto_unref_gtypeclass GEnumClass *enum_class = NULL;
+                int                                  default_value;
 
+                g_assert(_nm_setting_property_is_valid_direct_enum(sip));
+                g_assert(G_TYPE_IS_ENUM(sip->direct_data.enum_gtype));
                 g_assert(g_variant_type_equal(sip->property_type->dbus_type, "i"));
                 g_assert(sip->param_spec);
-                g_assert(g_type_is_a(sip->param_spec->value_type, G_TYPE_ENUM));
-                g_assert(sip->param_spec->value_type != G_TYPE_ENUM);
 
-                pspec = NM_G_PARAM_SPEC_CAST_ENUM(sip->param_spec);
-                g_assert(G_TYPE_FROM_CLASS(pspec->enum_class) == sip->param_spec->value_type);
-                g_assert(g_enum_get_value(pspec->enum_class, pspec->default_value));
+                if (G_TYPE_IS_ENUM(sip->param_spec->value_type)) {
+                    const GParamSpecEnum *pspec = NM_G_PARAM_SPEC_CAST_ENUM(sip->param_spec);
+
+                    g_assert(sip->param_spec->value_type != G_TYPE_ENUM);
+                    g_assert(G_TYPE_FROM_CLASS(pspec->enum_class) == sip->param_spec->value_type);
+                    g_assert(sip->param_spec->value_type == sip->direct_data.enum_gtype);
+
+                    default_value = pspec->default_value;
+                } else if (sip->param_spec->value_type == G_TYPE_INT) {
+                    const GParamSpecInt *pspec = NM_G_PARAM_SPEC_CAST_INT(sip->param_spec);
+
+                    default_value = pspec->default_value;
+                } else {
+                    g_assert_not_reached();
+                }
+
+                enum_class = g_type_class_ref(sip->direct_data.enum_gtype);
+                g_assert(g_enum_get_value(enum_class, default_value));
 
                 can_set_including_default = TRUE;
+                can_have_direct_data      = TRUE;
             } else if (sip->property_type->direct_type == NM_VALUE_TYPE_FLAGS) {
                 const GParamSpecFlags *pspec;
 
@@ -4703,7 +4720,7 @@ test_setting_metadata(void)
                                        INFINIBAND_ALEN));
                 } else {
                     g_assert(g_variant_type_equal(sip->property_type->dbus_type, "s"));
-                    can_have_direct_set_fcn = TRUE;
+                    can_have_direct_data = TRUE;
                 }
                 g_assert(sip->param_spec);
                 g_assert(sip->param_spec->value_type == G_TYPE_STRING);
@@ -4744,8 +4761,8 @@ test_setting_metadata(void)
                 g_assert(sip->property_type->direct_type == NM_VALUE_TYPE_STRING);
             }
 
-            if (!can_have_direct_set_fcn)
-                g_assert(!sip->direct_set_fcn.set_string);
+            if (!can_have_direct_data)
+                g_assert(!sip->direct_data.set_string);
 
             if (sip->property_type->direct_type == NM_VALUE_TYPE_NONE)
                 g_assert(!sip->direct_also_notify);
