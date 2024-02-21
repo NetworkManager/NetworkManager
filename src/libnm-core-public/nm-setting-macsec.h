@@ -35,6 +35,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_MACSEC_PORT          "port"
 #define NM_SETTING_MACSEC_VALIDATION    "validation"
 #define NM_SETTING_MACSEC_SEND_SCI      "send-sci"
+#define NM_SETTING_MACSEC_OFFLOAD       "offload"
 
 typedef struct _NMSettingMacsecClass NMSettingMacsecClass;
 
@@ -77,6 +78,24 @@ typedef enum {
 /* Deprecated. The CKN can be between 2 and 64 characters. */
 #define NM_SETTING_MACSEC_MKA_CKN_LENGTH 64
 
+/**
+ * NMSettingMacsecOffload:
+ * @NM_SETTING_MACSEC_OFFLOAD_DEFAULT: use the global default; disable if not defined
+ * @NM_SETTING_MACSEC_OFFLOAD_OFF: disable offload
+ * @NM_SETTING_MACSEC_OFFLOAD_PHY: request offload to the PHY
+ * @NM_SETTING_MACSEC_OFFLOAD_MAC: request offload to the MAC
+ *
+ * These flags control the MACsec offload mode.
+ *
+ * Since: 1.46
+ **/
+typedef enum {
+    NM_SETTING_MACSEC_OFFLOAD_DEFAULT = -1,
+    NM_SETTING_MACSEC_OFFLOAD_OFF     = 0,
+    NM_SETTING_MACSEC_OFFLOAD_PHY     = 1,
+    NM_SETTING_MACSEC_OFFLOAD_MAC     = 2,
+} NMSettingMacsecOffload;
+
 NM_AVAILABLE_IN_1_6
 GType nm_setting_macsec_get_type(void);
 NM_AVAILABLE_IN_1_6
@@ -100,6 +119,8 @@ NM_AVAILABLE_IN_1_6
 NMSettingMacsecValidation nm_setting_macsec_get_validation(NMSettingMacsec *setting);
 NM_AVAILABLE_IN_1_12
 gboolean nm_setting_macsec_get_send_sci(NMSettingMacsec *setting);
+NM_AVAILABLE_IN_1_46
+NMSettingMacsecOffload nm_setting_macsec_get_offload(NMSettingMacsec *setting);
 
 G_END_DECLS
 

@@ -396,14 +396,16 @@ again:
 }
 
 gboolean
-nm_supplicant_config_add_setting_macsec(NMSupplicantConfig *self,
-                                        NMSettingMacsec    *setting,
-                                        GError            **error)
+nm_supplicant_config_add_setting_macsec(NMSupplicantConfig    *self,
+                                        NMSettingMacsec       *setting,
+                                        NMSettingMacsecOffload offload,
+                                        GError               **error)
 {
     const char *value;
     char        buf[32];
     int         port;
     gsize       key_len;
+    const char *offload_str = NULL;
 
     g_return_val_if_fail(NM_IS_SUPPLICANT_CONFIG(self), FALSE);
     g_return_val_if_fail(setting != NULL, FALSE);
@@ -470,6 +472,28 @@ nm_supplicant_config_add_setting_macsec(NMSupplicantConfig *self,
                                              value,
                                              error))
             return FALSE;
+    }
+
+    switch (offload) {
+    case NM_SETTING_MACSEC_OFFLOAD_OFF:
+        /* This is the default in wpa_supplicant. Don't set the option,
+         * so that if user doesn't enable offload, the connection still
+         * works with previous versions of the supplicant.
+         */
+        break;
+    case NM_SETTING_MACSEC_OFFLOAD_PHY:
+        offload_str = "1";
+        break;
+    case NM_SETTING_MACSEC_OFFLOAD_MAC:
+        offload_str = "2";
+        break;
+    case NM_SETTING_MACSEC_OFFLOAD_DEFAULT:
+        nm_assert_not_reached();
+        break;
+    }
+    if (offload_str
+        && !nm_supplicant_config_add_option(self, "macsec_offload", offload_str, -1, NULL, error)) {
+        return FALSE;
     }
 
     return TRUE;

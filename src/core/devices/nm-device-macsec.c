@@ -10,6 +10,7 @@
 #include <linux/if_ether.h>
 
 #include "nm-act-request.h"
+#include "nm-config.h"
 #include "nm-device-private.h"
 #include "libnm-platform/nm-platform.h"
 #include "nm-device-factory.h"
@@ -190,6 +191,7 @@ build_supplicant_config(NMDeviceMacsec *self, GError **error)
     NMConnection                       *connection;
     const char                         *con_uuid;
     guint32                             mtu;
+    int                                 offload;
 
     connection = nm_device_get_applied_connection(NM_DEVICE(self));
 
@@ -205,7 +207,20 @@ build_supplicant_config(NMDeviceMacsec *self, GError **error)
 
     g_return_val_if_fail(s_macsec, NULL);
 
-    if (!nm_supplicant_config_add_setting_macsec(config, s_macsec, error)) {
+    offload = nm_setting_macsec_get_offload(s_macsec);
+    if (offload == NM_SETTING_MACSEC_OFFLOAD_DEFAULT) {
+        offload = nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
+                                                              NM_CON_DEFAULT("macsec.offload"),
+                                                              NM_DEVICE(self),
+                                                              NM_SETTING_MACSEC_OFFLOAD_OFF,
+                                                              NM_SETTING_MACSEC_OFFLOAD_MAC,
+                                                              NM_SETTING_MACSEC_OFFLOAD_OFF);
+    }
+
+    if (!nm_supplicant_config_add_setting_macsec(config,
+                                                 s_macsec,
+                                                 (NMSettingMacsecOffload) offload,
+                                                 error)) {
         g_prefix_error(error, "macsec-setting: ");
         return NULL;
     }
