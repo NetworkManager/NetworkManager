@@ -2280,6 +2280,7 @@ _assert_xgress_qos_mappings_impl(int ifindex, gboolean is_ingress_map, int n_ent
     g_assert_cmpint(plink->ifindex, ==, ifindex);
     g_assert(lnk);
     g_assert(&lnk->lnk_vlan == nm_platform_link_get_lnk_vlan(NM_PLATFORM_GET, ifindex, NULL));
+    g_assert(FALSE);
 
     if (nmtst_is_debug())
         nmtstp_run_command_check("ip -d link show %s", plink->name);
