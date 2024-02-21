@@ -68,9 +68,10 @@ gboolean nm_supplicant_config_add_setting_8021x(NMSupplicantConfig *self,
                                                 gboolean            wired,
                                                 GError            **error);
 
-gboolean nm_supplicant_config_add_setting_macsec(NMSupplicantConfig *self,
-                                                 NMSettingMacsec    *setting,
-                                                 GError            **error);
+gboolean nm_supplicant_config_add_setting_macsec(NMSupplicantConfig    *self,
+                                                 NMSettingMacsec       *setting,
+                                                 NMSettingMacsecOffload offload,
+                                                 GError               **error);
 
 gboolean nm_supplicant_config_enable_pmf_akm(NMSupplicantConfig *self, GError **error);
 
