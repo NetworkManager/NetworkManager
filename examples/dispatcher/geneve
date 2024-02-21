@@ -1,0 +1,116 @@
+#!/bin/sh
+# NetworkManager device handler for geneve interfaces.
+#
+# Put this script in "/etc/NetworkManager/dispatcher.d/device" and
+# create a generic connection with:
+#
+#   nmcli connection add type generic \
+#                        con-name geneve1 \
+#                        ifname geneve1 \
+#                        generic.device-handler geneve \
+#                        connection.autoconnect no
+#
+# Then add the following parameters at the bottom of file
+# /etc/NetworkManager/system-connections/geneve1 , and do a "nmcli
+# connection reload".
+#
+#   [user]
+#   geneve.remote=172.25.14.15
+#   geneve.vni=5555
+#   geneve.dstport=6082
+#
+# Now, when activating connection "geneve1", NetworkManager calls this
+# script to create the device according to parameters in the user
+# settings, and then performs IP configuration on it.
+#
+# This script will use the following properties from the [user] setting:
+#
+#  - geneve.remote     (required)
+#  - geneve.vni        (required)
+#  - geneve.ttl
+#  - geneve.dstport
+#
+# See the GENEVE section of "man ip-link" for more details.
+
+ifname=$1
+action=$2
+
+require()
+{
+    if ! command -v "$1" > /dev/null ; then
+        echo "ERROR='$1' is not installed"
+        exit 1
+    fi
+}
+
+get_iplink_param()
+{
+    ip -j -d link show "$1" | jq -r .[0].linkinfo.info_data."$2"
+}
+
+require jq
+
+if [ "$action" = device-add ]; then
+    # Create the interface here and then write a line to stdout
+    # containing "IFINDEX=" followed by the ifindex of the interface
+    # just created, so that NetworkManager can manage it and configure
+    # IPs on the interface. The name of the returned ifindex must be
+    # the same as "$ifname".
+
+    vni=$CONNECTION_USER_GENEVE__VNI
+    remote=$CONNECTION_USER_GENEVE__REMOTE
+    ttl=$CONNECTION_USER_GENEVE__TTL
+    dstport=$CONNECTION_USER_GENEVE__DSTPORT
+
+    if [ -z "$vni" ] || [ -z "$remote" ]; then
+        echo "ERROR=Missing VNI or remote"
+        exit 2
+    fi
+
+    if [ -d /sys/class/net/"$ifname" ]; then
+        # If the interface already exists, reuse it after checking
+        # that the parameters are compatible.
+        # NOTE: it's not strictly necessary to handle an already
+        # existing interface, but if the script doesn't, it won't be
+        # possible to re-activate the connection when it's up.
+
+        if [ "$vni" != "$(get_iplink_param "$ifname" id)" ]; then
+            echo "ERROR=The link already exists with different VNI"
+            exit 3
+        fi
+        if [ "$remote" != "$(get_iplink_param "$ifname" remote)" ]; then
+            echo "ERROR=The link already exists with different remote"
+            exit 3
+        fi
+        if [ -n "$ttl" ] && [ "$ttl" != "$(get_iplink_param "$ifname" ttl)" ]; then
+            echo "ERROR=The link already exists with different TTL"
+            exit 3
+        fi
+        if [ -n "$dstport" ] && [ "$dstport" != "$(get_iplink_param "$ifname" port)" ]; then
+            echo "ERROR=The link already exists with different dstport"
+            exit 3
+        fi
+        echo IFINDEX="$(cat /sys/class/net/"$ifname"/ifindex)"
+        exit 0
+    fi
+
+    # The interface doesn't exist, create it
+
+    if ! err=$(ip link add "$ifname" type geneve vni "$vni" remote "$remote" \
+         ${tos:+tos "$tos"} \
+         ${ttl:+ttl "$ttl"} \
+         ${dstport:+dstport "$dstport"} 2>&1); then
+        echo "ERROR=Failed creating the interface: $err"
+        exit 4
+    fi
+
+    echo IFINDEX="$(cat /sys/class/net/"$ifname"/ifindex)"
+    exit 0
+elif [ "$action" = device-delete ]; then
+    # NM automatically deletes the link on deactivation,
+    # it's not necessary to do it here. The "device-delete"
+    # action can be used to perform additional operations.
+    exit 0
+fi
+
+exit 5

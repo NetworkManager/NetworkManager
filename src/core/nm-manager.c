@@ -4168,8 +4168,11 @@ platform_link_added(NMManager                     *self,
         gboolean              compatible = TRUE;
         gs_free_error GError *error      = NULL;
 
-        if (nm_device_get_link_type(candidate) != plink->type)
+        if (nm_device_get_device_type(candidate) == NM_DEVICE_TYPE_GENERIC) {
+            /* generic devices are compatible with all link types */
+        } else if (nm_device_get_link_type(candidate) != plink->type) {
             continue;
+        }
 
         if (!nm_streq(nm_device_get_iface(candidate), plink->name))
             continue;
@@ -4213,8 +4216,12 @@ platform_link_added(NMManager                     *self,
     }
 
 add:
-    /* Try registered device factories */
-    factory = nm_device_factory_manager_find_factory_for_link_type(plink->type);
+    if (dev_state && dev_state->generic_sw) {
+        factory = nm_device_factory_get_generic_factory();
+    } else {
+        /* Try registered device factories */
+        factory = nm_device_factory_manager_find_factory_for_link_type(plink->type);
+    }
     if (factory) {
         gboolean              ignore = FALSE;
         gs_free_error GError *error  = NULL;
@@ -7860,7 +7867,10 @@ nm_manager_write_device_state(NMManager *self, NMDevice *device, int *out_ifinde
                                       route_metric_default_aspired,
                                       route_metric_default_effective,
                                       nm_device_get_dhcp_config(device, AF_INET),
-                                      nm_device_get_dhcp_config(device, AF_INET6)))
+                                      nm_device_get_dhcp_config(device, AF_INET6),
+                                      nm_device_is_software(device)
+                                          && nm_device_get_device_type(device)
+                                                 == NM_DEVICE_TYPE_GENERIC))
         return FALSE;
 
     NM_SET_OUT(out_ifindex, ifindex);

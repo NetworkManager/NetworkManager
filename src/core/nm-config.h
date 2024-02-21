@@ -176,6 +176,8 @@ struct _NMConfigDeviceStateData {
     /* whether the device was nm-owned (0/1) or -1 for
      * non-software devices. */
     NMTernary nm_owned : 3;
+    /* whether the device is a generic one created by NM */
+    bool generic_sw : 1;
 };
 
 NMConfigDeviceStateData *nm_config_device_state_load(int ifindex);
@@ -188,7 +190,8 @@ gboolean                 nm_config_device_state_write(int                       
                                                       guint32                        route_metric_default_aspired,
                                                       guint32                        route_metric_default_effective,
                                                       NMDhcpConfig                  *dhcp4_config,
-                                                      NMDhcpConfig                  *dhcp6_config);
+                                                      NMDhcpConfig                  *dhcp6_config,
+                                                      gboolean                       generic);
 
 void nm_config_device_state_prune_stale(GHashTable *preserve_ifindexes,
                                         NMPlatform *preserve_in_platform);
