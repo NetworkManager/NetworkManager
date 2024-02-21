@@ -20,6 +20,7 @@
 #include "libnm-core-aux-extern/nm-dispatcher-api.h"
 #include "libnm-glib-aux/nm-dbus-aux.h"
 #include "libnm-glib-aux/nm-io-utils.h"
+#include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-glib-aux/nm-time-utils.h"
 #include "nm-dispatcher-utils.h"
 
@@ -75,6 +76,10 @@ typedef struct {
     gboolean       dispatched;
     GSource       *watch_source;
     GSource       *timeout_source;
+
+    int      stdout_fd;
+    GSource *stdout_source;
+    NMStrBuf stdout_buffer;
 } ScriptInfo;
 
 struct Request {
@@ -85,6 +90,8 @@ struct Request {
     char                  *iface;
     char                 **envp;
     gboolean               debug;
+    gboolean               is_action2;
+    gboolean               is_device_handler;
 
     GPtrArray *scripts; /* list of ScriptInfo */
     guint      idx;
@@ -192,6 +199,12 @@ script_info_free(gpointer ptr)
 {
     ScriptInfo *info = ptr;
 
+    nm_assert(info->pid == -1);
+    nm_assert(info->stdout_fd == -1);
+    nm_assert(!info->stdout_source);
+    nm_assert(!info->timeout_source);
+    nm_assert(!info->watch_source);
+
     g_free(info->script);
     g_free(info->error);
     g_slice_free(ScriptInfo, info);
@@ -280,6 +293,108 @@ next_request(Request *request)
     return TRUE;
 }
 
+static GVariant *
+build_result_options(char *stdout)
+{
+    gs_unref_hashtable GHashTable *hash = NULL;
+    GHashTableIter                 iter;
+    gs_strfreev char             **lines = NULL;
+    GVariantBuilder                builder_opts;
+    GVariantBuilder                builder_out_dict;
+    guint                          i;
+    char                          *eq;
+    char                          *key;
+    char                          *value;
+
+    lines = g_strsplit(stdout, "\n", 65);
+
+    for (i = 0; lines[i] && i < 64; i++) {
+        eq = strchr(lines[i], '=');
+        if (!eq)
+            continue;
+        *eq = '\0';
+
+        if (!NM_STRCHAR_ALL(lines[i],
+                            ch,
+                            (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || ch == '_'))
+            continue;
+
+        if (!hash) {
+            hash = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_free);
+        }
+
+        g_hash_table_insert(hash, g_strdup(lines[i]), g_strdup(eq + 1));
+    }
+
+    g_variant_builder_init(&builder_out_dict, G_VARIANT_TYPE("a{ss}"));
+    if (hash) {
+        g_hash_table_iter_init(&iter, hash);
+        while (g_hash_table_iter_next(&iter, (gpointer *) &key, (gpointer *) &value)) {
+            gs_free char *to_free = NULL;
+
+            g_variant_builder_add(&builder_out_dict,
+                                  "{ss}",
+                                  key,
+                                  nm_utils_buf_utf8safe_escape(value,
+                                                               -1,
+                                                               NM_UTILS_STR_UTF8_SAFE_FLAG_NONE,
+                                                               &to_free));
+        }
+    }
+
+    g_variant_builder_init(&builder_opts, G_VARIANT_TYPE("a{sv}"));
+    g_variant_builder_add(&builder_opts,
+                          "{sv}",
+                          "output_dict",
+                          g_variant_builder_end(&builder_out_dict));
+
+    return g_variant_builder_end(&builder_opts);
+}
+
+static void
+request_dbus_method_return(Request *request)
+{
+    GVariantBuilder results;
+    guint           i;
+
+    if (request->is_action2) {
+        g_variant_builder_init(&results, G_VARIANT_TYPE("a(susa{sv})"));
+    } else {
+        g_variant_builder_init(&results, G_VARIANT_TYPE("a(sus)"));
+    }
+
+    for (i = 0; i < request->scripts->len; i++) {
+        ScriptInfo   *script  = g_ptr_array_index(request->scripts, i);
+        GVariant     *options = NULL;
+        gs_free char *stdout  = NULL;
+
+        if (request->is_device_handler) {
+            stdout  = nm_str_buf_finalize(&script->stdout_buffer, NULL);
+            options = build_result_options(stdout);
+        }
+
+        if (request->is_action2) {
+            g_variant_builder_add(&results,
+                                  "(sus@a{sv})",
+                                  script->script,
+                                  script->result,
+                                  script->error ?: "",
+                                  options ?: nm_g_variant_singleton_aLsvI());
+        } else {
+            g_variant_builder_add(&results,
+                                  "(sus)",
+                                  script->script,
+                                  script->result,
+                                  script->error ?: "");
+        }
+    }
+
+    g_dbus_method_invocation_return_value(request->context,
+                                          request->is_action2
+                                              ? g_variant_new("(a(susa{sv}))", &results)
+                                              : g_variant_new("(a(sus))", &results));
+}
+
 /**
  * complete_request:
  * @request: the request
@@ -292,29 +407,13 @@ next_request(Request *request)
 static void
 complete_request(Request *request)
 {
-    GVariantBuilder results;
-    GVariant       *ret;
-    guint           i;
-
     nm_assert(request);
 
     /* Are there still pending scripts? Then do nothing (for now). */
     if (request->num_scripts_done < request->scripts->len)
         return;
 
-    g_variant_builder_init(&results, G_VARIANT_TYPE("a(sus)"));
-    for (i = 0; i < request->scripts->len; i++) {
-        ScriptInfo *script = g_ptr_array_index(request->scripts, i);
-
-        g_variant_builder_add(&results,
-                              "(sus)",
-                              script->script,
-                              script->result,
-                              script->error ?: "");
-    }
-
-    ret = g_variant_new("(a(sus))", &results);
-    g_dbus_method_invocation_return_value(request->context, ret);
+    request_dbus_method_return(request);
 
     _LOG_R_T(request, "completed (%u scripts)", request->scripts->len);
 
@@ -333,10 +432,17 @@ complete_request(Request *request)
 static void
 complete_script(ScriptInfo *script)
 {
-    Request *request;
-    gboolean wait = script->wait;
+    Request *request = script->request;
+    gboolean wait    = script->wait;
 
-    request = script->request;
+    if (script->pid != -1 || script->stdout_fd != -1) {
+        /* Wait that process has terminated and stdout is closed */
+        return;
+    }
+
+    script->request->num_scripts_done++;
+    if (!script->wait)
+        script->request->num_scripts_nowait--;
 
     if (wait) {
         /* for "wait" scripts, try to schedule the next blocking script.
@@ -404,26 +510,23 @@ script_watch_cb(GPid pid, int status, gpointer user_data)
 
     nm_clear_g_source_inst(&script->watch_source);
     nm_clear_g_source_inst(&script->timeout_source);
-    script->request->num_scripts_done++;
-    if (!script->wait)
-        script->request->num_scripts_nowait--;
 
     if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
         script->result = DISPATCH_RESULT_SUCCESS;
     } else {
-        status_desc   = nm_utils_get_process_exit_status_desc(status);
-        script->error = g_strdup_printf("Script '%s' %s.", script->script, status_desc);
+        status_desc = nm_utils_get_process_exit_status_desc(status);
+        nm_clear_g_free(&script->error);
+        script->error = g_strdup_printf("Script '%s' %s", script->script, status_desc);
     }
 
     if (script->result == DISPATCH_RESULT_SUCCESS) {
-        _LOG_S_T(script, "complete");
+        _LOG_S_T(script, "complete: process succeeded");
     } else {
         script->result = DISPATCH_RESULT_FAILED;
-        _LOG_S_W(script, "complete: failed with %s", script->error);
+        _LOG_S_W(script, "complete: process failed with %s", script->error);
     }
 
-    g_spawn_close_pid(script->pid);
-
+    script->pid = -1;
     complete_script(script);
 }
 
@@ -434,9 +537,8 @@ script_timeout_cb(gpointer user_data)
 
     nm_clear_g_source_inst(&script->timeout_source);
     nm_clear_g_source_inst(&script->watch_source);
-    script->request->num_scripts_done++;
-    if (!script->wait)
-        script->request->num_scripts_nowait--;
+    nm_clear_g_source_inst(&script->stdout_source);
+    nm_clear_fd(&script->stdout_fd);
 
     _LOG_S_W(script, "complete: timeout (kill script)");
 
@@ -447,11 +549,10 @@ again:
             goto again;
     }
 
-    script->error  = g_strdup_printf("Script '%s' timed out.", script->script);
+    script->error  = g_strdup_printf("Script '%s' timed out", script->script);
     script->result = DISPATCH_RESULT_TIMEOUT;
 
-    g_spawn_close_pid(script->pid);
-
+    script->pid = -1;
     complete_script(script);
 
     return G_SOURCE_CONTINUE;
@@ -466,19 +567,19 @@ check_permissions(struct stat *s, const char **out_error_msg)
 
     /* Only accept files owned by root */
     if (s->st_uid != 0) {
-        *out_error_msg = "not owned by root.";
+        *out_error_msg = "not owned by root";
         return FALSE;
     }
 
     /* Only accept files not writable by group or other, and not SUID */
     if (s->st_mode & (S_IWGRP | S_IWOTH | S_ISUID)) {
-        *out_error_msg = "writable by group or other, or set-UID.";
+        *out_error_msg = "writable by group or other, or set-UID";
         return FALSE;
     }
 
     /* Only accept files executable by the owner */
     if (!(s->st_mode & S_IXUSR)) {
-        *out_error_msg = "not executable by owner.";
+        *out_error_msg = "not executable by owner";
         return FALSE;
     }
 
@@ -515,11 +616,45 @@ check_filename(const char *file_name)
 #define SCRIPT_TIMEOUT 600 /* 10 minutes */
 
 static gboolean
+script_have_data(int fd, GIOCondition condition, gpointer user_data)
+{
+    ScriptInfo *script = user_data;
+    gssize      n_read;
+
+    n_read = nm_utils_fd_read(fd, &script->stdout_buffer);
+
+    if (n_read == -EAGAIN) {
+        return G_SOURCE_CONTINUE;
+    } else if (n_read > 0) {
+        if (script->stdout_buffer.len < 8 * 1024)
+            return G_SOURCE_CONTINUE;
+        /* Don't allow the buffer to grow indefinitely. */
+        _LOG_S_W(script, "complete: ignoring script stdout exceeding 8KiB");
+        nm_str_buf_set_size(&script->stdout_buffer, 8 * 1024, FALSE, FALSE);
+    } else if (n_read == 0) {
+        _LOG_S_T(script, "complete: stdout closed");
+    } else {
+        _LOG_S_T(script,
+                 "complete: reading stdout failed with %d (%s)",
+                 (int) n_read,
+                 nm_strerror_native((int) -n_read));
+    }
+
+    nm_clear_g_source_inst(&script->stdout_source);
+    nm_clear_fd(&script->stdout_fd);
+
+    complete_script(script);
+
+    return G_SOURCE_CONTINUE;
+}
+
+static gboolean
 script_dispatch(ScriptInfo *script)
 {
     gs_free_error GError *error = NULL;
     char                 *argv[4];
-    Request              *request = script->request;
+    Request              *request           = script->request;
+    gboolean              is_device_handler = script->request->is_device_handler;
 
     if (script->dispatched)
         return FALSE;
@@ -536,14 +671,17 @@ script_dispatch(ScriptInfo *script)
 
     _LOG_S_T(script, "run script%s", script->wait ? "" : " (no-wait)");
 
-    if (!g_spawn_async("/",
-                       argv,
-                       request->envp,
-                       G_SPAWN_DO_NOT_REAP_CHILD,
-                       NULL,
-                       NULL,
-                       &script->pid,
-                       &error)) {
+    if (!g_spawn_async_with_pipes("/",
+                                  argv,
+                                  request->envp,
+                                  G_SPAWN_CLOEXEC_PIPES | G_SPAWN_DO_NOT_REAP_CHILD,
+                                  NULL,
+                                  NULL,
+                                  &script->pid,
+                                  NULL,
+                                  is_device_handler ? &script->stdout_fd : NULL,
+                                  NULL,
+                                  &error)) {
         _LOG_S_W(script, "complete: failed to execute script: %s", error->message);
         script->result = DISPATCH_RESULT_EXEC_FAILED;
         script->error  = g_strdup(error->message);
@@ -556,6 +694,19 @@ script_dispatch(ScriptInfo *script)
         nm_g_timeout_add_seconds_source(SCRIPT_TIMEOUT, script_timeout_cb, script);
     if (!script->wait)
         request->num_scripts_nowait++;
+
+    if (is_device_handler) {
+        /* Watch process stdout */
+        nm_io_fcntl_setfl_update_nonblock(script->stdout_fd);
+        script->stdout_source = nm_g_unix_fd_source_new(script->stdout_fd,
+                                                        G_IO_IN | G_IO_ERR | G_IO_HUP,
+                                                        G_PRIORITY_DEFAULT,
+                                                        script_have_data,
+                                                        script,
+                                                        NULL);
+        g_source_attach(script->stdout_source, NULL);
+    }
+
     return TRUE;
 }
 
@@ -593,6 +744,31 @@ _compare_basenames(gconstpointer a, gconstpointer b)
     return 0;
 }
 
+static gboolean
+check_file(Request *request, const char *path)
+{
+    gs_free char *link_target = NULL;
+    const char   *err_msg     = NULL;
+    struct stat   st;
+    int           err;
+
+    link_target = g_file_read_link(path, NULL);
+    if (nm_streq0(link_target, "/dev/null"))
+        return FALSE;
+
+    err = stat(path, &st);
+    if (err) {
+        return FALSE;
+    } else if (!S_ISREG(st.st_mode) || st.st_size == 0) {
+        /* silently skip. */
+        return FALSE;
+    } else if (!check_permissions(&st, &err_msg)) {
+        _LOG_R_W(request, "find-scripts: Cannot execute '%s': %s", path, err_msg);
+        return FALSE;
+    }
+    return TRUE;
+}
+
 static void
 _find_scripts(Request *request, GHashTable *scripts, const char *base, const char *subdir)
 {
@@ -625,7 +801,7 @@ _find_scripts(Request *request, GHashTable *scripts, const char *base, const cha
 }
 
 static GSList *
-find_scripts(Request *request)
+find_scripts(Request *request, const char *device_handler)
 {
     gs_unref_hashtable GHashTable *scripts     = NULL;
     GSList                        *script_list = NULL;
@@ -634,6 +810,33 @@ find_scripts(Request *request)
     char                          *path;
     char                          *filename;
 
+    if (request->is_device_handler) {
+        const char *const dirs[] = {NMCONFDIR, NMLIBDIR};
+        guint             i;
+
+        nm_assert(device_handler);
+
+        for (i = 0; i < G_N_ELEMENTS(dirs); i++) {
+            gs_free char *full_name = NULL;
+
+            full_name = g_build_filename(dirs[i], "dispatcher.d", "device", device_handler, NULL);
+            if (check_file(request, full_name)) {
+                script_list = g_slist_prepend(script_list, g_steal_pointer(&full_name));
+                return script_list;
+            }
+        }
+
+        _LOG_R_W(request,
+                 "find-scripts: no device-handler script found with name \"%s\"",
+                 device_handler);
+        return NULL;
+    }
+
+    nm_assert(!device_handler);
+
+    /* Use a hash-table to deduplicate scripts with same name from /etc and /usr */
+    scripts = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_free);
+
     if (NM_IN_STRSET(request->action, NMD_ACTION_PRE_UP, NMD_ACTION_VPN_PRE_UP))
         subdir = "pre-up.d";
     else if (NM_IN_STRSET(request->action, NMD_ACTION_PRE_DOWN, NMD_ACTION_VPN_PRE_DOWN))
@@ -641,33 +844,13 @@ find_scripts(Request *request)
     else
         subdir = NULL;
 
-    scripts = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_free);
-
     _find_scripts(request, scripts, NMLIBDIR, subdir);
     _find_scripts(request, scripts, NMCONFDIR, subdir);
 
     g_hash_table_iter_init(&iter, scripts);
     while (g_hash_table_iter_next(&iter, (gpointer *) &filename, (gpointer *) &path)) {
-        gs_free char *link_target = NULL;
-        const char   *err_msg     = NULL;
-        struct stat   st;
-        int           err;
-
-        link_target = g_file_read_link(path, NULL);
-        if (nm_streq0(link_target, "/dev/null"))
-            continue;
-
-        err = stat(path, &st);
-        if (err)
-            _LOG_R_W(request, "find-scripts: Failed to stat '%s': %d", path, err);
-        else if (!S_ISREG(st.st_mode) || st.st_size == 0) {
-            /* silently skip. */
-        } else if (!check_permissions(&st, &err_msg))
-            _LOG_R_W(request, "find-scripts: Cannot execute '%s': %s", path, err_msg);
-        else {
-            /* success */
+        if (check_file(request, path)) {
             script_list = g_slist_prepend(script_list, g_strdup(path));
-            continue;
         }
     }
 
@@ -703,8 +886,29 @@ script_must_wait(const char *path)
     return TRUE;
 }
 
+static char *
+get_device_handler(GVariant *connection)
+{
+    gs_unref_variant GVariant *generic_setting = NULL;
+    const char                *device_handler  = NULL;
+
+    generic_setting = g_variant_lookup_value(connection,
+                                             NM_SETTING_GENERIC_SETTING_NAME,
+                                             NM_VARIANT_TYPE_SETTING);
+    if (generic_setting) {
+        if (g_variant_lookup(generic_setting,
+                             NM_SETTING_GENERIC_DEVICE_HANDLER,
+                             "&s",
+                             &device_handler)) {
+            return g_strdup(device_handler);
+        }
+    }
+
+    return NULL;
+}
+
 static void
-_handle_action(GDBusMethodInvocation *invocation, GVariant *parameters)
+_handle_action(GDBusMethodInvocation *invocation, GVariant *parameters, gboolean is_action2)
 {
     const char                *action;
     gs_unref_variant GVariant *connection              = NULL;
@@ -717,9 +921,11 @@ _handle_action(GDBusMethodInvocation *invocation, GVariant *parameters)
     gs_unref_variant GVariant *device_dhcp6_config     = NULL;
     const char                *connectivity_state;
     const char                *vpn_ip_iface;
+    gs_free char              *device_handler       = NULL;
     gs_unref_variant GVariant *vpn_proxy_properties = NULL;
     gs_unref_variant GVariant *vpn_ip4_config       = NULL;
     gs_unref_variant GVariant *vpn_ip6_config       = NULL;
+    gs_unref_variant GVariant *options              = NULL;
     gboolean                   debug;
     GSList                    *sorted_scripts = NULL;
     GSList                    *iter;
@@ -728,45 +934,86 @@ _handle_action(GDBusMethodInvocation *invocation, GVariant *parameters)
     guint                      i, num_nowait = 0;
     const char                *error_message = NULL;
 
-    g_variant_get(parameters,
-                  "("
-                  "&s"         /* action */
-                  "@a{sa{sv}}" /* connection */
-                  "@a{sv}"     /* connection_properties */
-                  "@a{sv}"     /* device_properties */
-                  "@a{sv}"     /* device_proxy_properties */
-                  "@a{sv}"     /* device_ip4_config */
-                  "@a{sv}"     /* device_ip6_config */
-                  "@a{sv}"     /* device_dhcp4_config */
-                  "@a{sv}"     /* device_dhcp6_config */
-                  "&s"         /* connectivity_state */
-                  "&s"         /* vpn_ip_iface */
-                  "@a{sv}"     /* vpn_proxy_properties */
-                  "@a{sv}"     /* vpn_ip4_config */
-                  "@a{sv}"     /* vpn_ip6_config */
-                  "b"          /* debug */
-                  ")",
-                  &action,
-                  &connection,
-                  &connection_properties,
-                  &device_properties,
-                  &device_proxy_properties,
-                  &device_ip4_config,
-                  &device_ip6_config,
-                  &device_dhcp4_config,
-                  &device_dhcp6_config,
-                  &connectivity_state,
-                  &vpn_ip_iface,
-                  &vpn_proxy_properties,
-                  &vpn_ip4_config,
-                  &vpn_ip6_config,
-                  &debug);
+    if (is_action2) {
+        g_variant_get(parameters,
+                      "("
+                      "&s"         /* action */
+                      "@a{sa{sv}}" /* connection */
+                      "@a{sv}"     /* connection_properties */
+                      "@a{sv}"     /* device_properties */
+                      "@a{sv}"     /* device_proxy_properties */
+                      "@a{sv}"     /* device_ip4_config */
+                      "@a{sv}"     /* device_ip6_config */
+                      "@a{sv}"     /* device_dhcp4_config */
+                      "@a{sv}"     /* device_dhcp6_config */
+                      "&s"         /* connectivity_state */
+                      "&s"         /* vpn_ip_iface */
+                      "@a{sv}"     /* vpn_proxy_properties */
+                      "@a{sv}"     /* vpn_ip4_config */
+                      "@a{sv}"     /* vpn_ip6_config */
+                      "b"          /* debug */
+                      "@a{sv}"     /* options */
+                      ")",
+                      &action,
+                      &connection,
+                      &connection_properties,
+                      &device_properties,
+                      &device_proxy_properties,
+                      &device_ip4_config,
+                      &device_ip6_config,
+                      &device_dhcp4_config,
+                      &device_dhcp6_config,
+                      &connectivity_state,
+                      &vpn_ip_iface,
+                      &vpn_proxy_properties,
+                      &vpn_ip4_config,
+                      &vpn_ip6_config,
+                      &debug,
+                      &options);
+    } else {
+        g_variant_get(parameters,
+                      "("
+                      "&s"         /* action */
+                      "@a{sa{sv}}" /* connection */
+                      "@a{sv}"     /* connection_properties */
+                      "@a{sv}"     /* device_properties */
+                      "@a{sv}"     /* device_proxy_properties */
+                      "@a{sv}"     /* device_ip4_config */
+                      "@a{sv}"     /* device_ip6_config */
+                      "@a{sv}"     /* device_dhcp4_config */
+                      "@a{sv}"     /* device_dhcp6_config */
+                      "&s"         /* connectivity_state */
+                      "&s"         /* vpn_ip_iface */
+                      "@a{sv}"     /* vpn_proxy_properties */
+                      "@a{sv}"     /* vpn_ip4_config */
+                      "@a{sv}"     /* vpn_ip6_config */
+                      "b"          /* debug */
+                      ")",
+                      &action,
+                      &connection,
+                      &connection_properties,
+                      &device_properties,
+                      &device_proxy_properties,
+                      &device_ip4_config,
+                      &device_ip6_config,
+                      &device_dhcp4_config,
+                      &device_dhcp6_config,
+                      &connectivity_state,
+                      &vpn_ip_iface,
+                      &vpn_proxy_properties,
+                      &vpn_ip4_config,
+                      &vpn_ip6_config,
+                      &debug);
+    }
 
     request             = g_slice_new0(Request);
     request->request_id = ++gl.request_id_counter;
     request->debug      = debug || gl.log_verbose;
     request->context    = invocation;
     request->action     = g_strdup(action);
+    request->is_action2 = is_action2;
+    request->is_device_handler =
+        NM_IN_STRSET(action, NMD_ACTION_DEVICE_ADD, NMD_ACTION_DEVICE_DELETE);
 
     request->envp = nm_dispatcher_utils_construct_envp(action,
                                                        connection,
@@ -784,37 +1031,42 @@ _handle_action(GDBusMethodInvocation *invocation, GVariant *parameters)
                                                        vpn_ip6_config,
                                                        &request->iface,
                                                        &error_message);
+    if (!error_message) {
+        if (request->is_device_handler) {
+            device_handler = get_device_handler(connection);
+        }
 
-    request->scripts = g_ptr_array_new_full(5, script_info_free);
+        request->scripts = g_ptr_array_new_full(5, script_info_free);
 
-    sorted_scripts = find_scripts(request);
-    for (iter = sorted_scripts; iter; iter = g_slist_next(iter)) {
-        ScriptInfo *s;
+        sorted_scripts = find_scripts(request, device_handler);
+        for (iter = sorted_scripts; iter; iter = g_slist_next(iter)) {
+            ScriptInfo *s;
 
-        s          = g_slice_new0(ScriptInfo);
-        s->request = request;
-        s->script  = iter->data;
-        s->wait    = script_must_wait(s->script);
-        g_ptr_array_add(request->scripts, s);
+            s                = g_slice_new0(ScriptInfo);
+            s->request       = request;
+            s->script        = iter->data;
+            s->wait          = script_must_wait(s->script);
+            s->stdout_fd     = -1;
+            s->pid           = -1;
+            s->stdout_buffer = NM_STR_BUF_INIT(0, FALSE);
+            g_ptr_array_add(request->scripts, s);
+        }
+        g_slist_free(sorted_scripts);
+
+        _LOG_R_D(request, "new request (%u scripts)", request->scripts->len);
+        if (_LOG_R_T_enabled(request) && request->envp) {
+            for (p = request->envp; *p; p++)
+                _LOG_R_T(request, "environment: %s", *p);
+        }
     }
-    g_slist_free(sorted_scripts);
 
-    _LOG_R_D(request, "new request (%u scripts)", request->scripts->len);
-    if (_LOG_R_T_enabled(request) && request->envp) {
-        for (p = request->envp; *p; p++)
-            _LOG_R_T(request, "environment: %s", *p);
-    }
-
-    if (error_message || request->scripts->len == 0) {
-        GVariant *results;
-
+    if (request->scripts->len == 0) {
         if (error_message)
             _LOG_R_W(request, "completed: invalid request: %s", error_message);
         else
             _LOG_R_D(request, "completed: no scripts");
 
-        results = g_variant_new_array(G_VARIANT_TYPE("(sus)"), NULL, 0);
-        g_dbus_method_invocation_return_value(invocation, g_variant_new("(@a(sus))", results));
+        request_dbus_method_return(request);
         request->num_scripts_done = request->scripts->len;
         request_free(request);
         return;
@@ -905,8 +1157,12 @@ _bus_method_call(GDBusConnection       *connection,
         return;
     }
     if (nm_streq(interface_name, NM_DISPATCHER_DBUS_INTERFACE)) {
+        if (nm_streq(method_name, "Action2")) {
+            _handle_action(invocation, parameters, TRUE);
+            return;
+        }
         if (nm_streq(method_name, "Action")) {
-            _handle_action(invocation, parameters);
+            _handle_action(invocation, parameters, FALSE);
             return;
         }
         if (nm_streq(method_name, "Ping")) {
@@ -947,7 +1203,28 @@ static GDBusInterfaceInfo *const interface_info = NM_DEFINE_GDBUS_INTERFACE_INFO
                 NM_DEFINE_GDBUS_ARG_INFO("vpn_ip6_config", "a{sv}"),
                 NM_DEFINE_GDBUS_ARG_INFO("debug", "b"), ),
             .out_args =
-                NM_DEFINE_GDBUS_ARG_INFOS(NM_DEFINE_GDBUS_ARG_INFO("results", "a(sus)"), ), ), ), );
+                NM_DEFINE_GDBUS_ARG_INFOS(NM_DEFINE_GDBUS_ARG_INFO("results", "a(sus)"), ), ),
+        NM_DEFINE_GDBUS_METHOD_INFO(
+            "Action2",
+            .in_args = NM_DEFINE_GDBUS_ARG_INFOS(
+                NM_DEFINE_GDBUS_ARG_INFO("action", "s"),
+                NM_DEFINE_GDBUS_ARG_INFO("connection", "a{sa{sv}}"),
+                NM_DEFINE_GDBUS_ARG_INFO("connection_properties", "a{sv}"),
+                NM_DEFINE_GDBUS_ARG_INFO("device_properties", "a{sv}"),
+                NM_DEFINE_GDBUS_ARG_INFO("device_proxy_properties", "a{sv}"),
+                NM_DEFINE_GDBUS_ARG_INFO("device_ip4_config", "a{sv}"),
+                NM_DEFINE_GDBUS_ARG_INFO("device_ip6_config", "a{sv}"),
+                NM_DEFINE_GDBUS_ARG_INFO("device_dhcp4_config", "a{sv}"),
+                NM_DEFINE_GDBUS_ARG_INFO("device_dhcp6_config", "a{sv}"),
+                NM_DEFINE_GDBUS_ARG_INFO("connectivity_state", "s"),
+                NM_DEFINE_GDBUS_ARG_INFO("vpn_ip_iface", "s"),
+                NM_DEFINE_GDBUS_ARG_INFO("vpn_proxy_properties", "a{sv}"),
+                NM_DEFINE_GDBUS_ARG_INFO("vpn_ip4_config", "a{sv}"),
+                NM_DEFINE_GDBUS_ARG_INFO("vpn_ip6_config", "a{sv}"),
+                NM_DEFINE_GDBUS_ARG_INFO("debug", "b"),
+                NM_DEFINE_GDBUS_ARG_INFO("options", "a{sv}"), ),
+            .out_args = NM_DEFINE_GDBUS_ARG_INFOS(
+                NM_DEFINE_GDBUS_ARG_INFO("results", "a(susa{sv})"), ), ), ), );
 
 static gboolean
 _bus_register_service(void)

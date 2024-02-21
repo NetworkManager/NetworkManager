@@ -127,7 +127,9 @@ NM_UTILS_LOOKUP_STR_DEFINE(
     NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_STATE_REASON_IP_METHOD_UNSUPPORTED, "ip-method-unsupported"),
     NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_STATE_REASON_SRIOV_CONFIGURATION_FAILED,
                              "sriov-configuration-failed"),
-    NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_STATE_REASON_PEER_NOT_FOUND, "peer-not-found"), );
+    NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_STATE_REASON_PEER_NOT_FOUND, "peer-not-found"),
+    NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_STATE_REASON_DEVICE_HANDLER_FAILED,
+                             "device-handler-failed"), );
 
 NM_UTILS_LOOKUP_STR_DEFINE(nm_device_mtu_source_to_string,
                            NMDeviceMtuSource,

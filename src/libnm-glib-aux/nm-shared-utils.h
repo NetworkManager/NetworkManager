@@ -3551,4 +3551,9 @@ void nm_utils_poll(int                               poll_timeout_ms,
 
 gboolean nm_utils_poll_finish(GAsyncResult *result, gpointer *probe_user_data, GError **error);
 
+/*****************************************************************************/
+
+void     nm_utils_env_var_encode_name(const char *key, GString *str_buffer);
+gboolean nm_utils_env_var_decode_name(const char *name, GString *str_buffer);
+
 #endif /* __NM_SHARED_UTILS_H__ */
