@@ -36,8 +36,8 @@ Overview of changes since NetworkManager-1.44
 * Support Ethtool EEE (Energy Efficient Ethernet) settings.
 * Add options to prevent edns0 and trust-ad being automatically added to DNS
   configuration.
-* Implement fwmark property for IP tunnels
-* Add support to HSR/PRP interfaces
+* Implement fwmark property for IP tunnels.
+* Add support to HSR/PRP interfaces.
 * Deprecated connection.* properties master, slave-type, autoconnect-slaves
 * Allow configuring static routes also when addresses is empty.
 * VPN: accept pref-src for IPv6 routes from VPN plugins.
@@ -45,6 +45,12 @@ Overview of changes since NetworkManager-1.44
 * Support modifying the DSCP header field for DHCP packets, and change the
   default to CS0.
 * Enable IPv4 DAD (Duplicate Address Detection) by default.
+* vpn: support 2FA authentication from VPN plugins.
+* nmtui: allow adding a bond as bridge port.
+* sriov: add support to configure the NIC's eswitch settings via Devlink.
+* ndisc: fix IPv6 address lifetimes computation.
+* Support the MACsec offload mode.
+* Support creating generic devices via external "device-handler" dispatcher.
 * Documentation improvements.
 * Many internal improvements and bug fixes.
 
