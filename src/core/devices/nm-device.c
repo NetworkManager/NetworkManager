@@ -2270,6 +2270,7 @@ _prop_get_ipv4_dhcp_vendor_class_identifier(NMDevice *self, NMSettingIP4Config *
 static NMSettingIP6ConfigPrivacy
 _prop_get_ipv6_ip6_privacy(NMDevice *self)
 {
+    NMDevicePrivate          *priv = NM_DEVICE_GET_PRIVATE(self);
     NMSettingIP6ConfigPrivacy ip6_privacy;
     NMConnection             *connection;
 
@@ -2303,16 +2304,14 @@ _prop_get_ipv6_ip6_privacy(NMDevice *self)
     if (!nm_device_get_ip_ifindex(self))
         return NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
 
-    /* 3.) No valid default-value configured. Fallback to reading sysctl.
-     *
-     * Instead of reading static config files in /etc, just read the current sysctl value.
-     * This works as NM only writes to "/proc/sys/net/ipv6/conf/IFNAME/use_tempaddr", but leaves
-     * the "default" entry untouched. */
-    ip6_privacy = nm_platform_sysctl_get_int32(
-        nm_device_get_platform(self),
-        NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv6/conf/default/use_tempaddr"),
-        NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
-    return _ip6_privacy_clamp(ip6_privacy);
+    /* 3.) No valid default value configured. Fall back to the original value
+     * from before NM started. */
+    return _ip6_privacy_clamp(_nm_utils_ascii_str_to_int64(
+        g_hash_table_lookup(priv->ip6_saved_properties, "use_tempaddr"),
+        10,
+        G_MININT32,
+        G_MAXINT32,
+        NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN));
 }
 
 static NMSettingIP6ConfigAddrGenMode

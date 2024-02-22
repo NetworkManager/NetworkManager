@@ -1023,8 +1023,9 @@ ipv6.ip6-privacy=0
         </varlistentry>
         <varlistentry>
           <term><varname>ipv6.ip6-privacy</varname></term>
-          <listitem><para>If <literal>ipv6.ip6-privacy</literal> is unset, use the content of
-            "/proc/sys/net/ipv6/conf/default/use_tempaddr" as last fallback.
+          <listitem><para>If <literal>ipv6.ip6-privacy</literal> is unset, fall back to the original
+            value of "/proc/sys/net/ipv6/conf/&lt;iface&gt;/use_tempaddr" from before NetworkManager
+            started.
           </para></listitem>
         </varlistentry>
         <varlistentry>

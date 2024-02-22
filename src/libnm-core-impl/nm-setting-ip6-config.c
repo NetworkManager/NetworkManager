@@ -921,11 +921,11 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * 0: disabled, 1: enabled (prefer public address), 2: enabled (prefer temporary
      * addresses).
      *
-     * Having a per-connection setting set to "-1" (unknown) means fallback to
-     * global configuration "ipv6.ip6-privacy".
-     *
-     * If also global configuration is unspecified or set to "-1", fallback to read
-     * "/proc/sys/net/ipv6/conf/default/use_tempaddr".
+     * If set to "-1" (unknown) for a connection, the value is taken from the
+     * global "ipv6.ip6-privacy" setting. If the global setting is unspecified
+     * or also set to "-1", the value is set from the original value of
+     * "/proc/sys/net/ipv6/conf/<iface>/use_tempaddr" from before NetworkManager
+     * started.
      *
      * Note that this setting is distinct from the Stable Privacy addresses
      * that can be enabled with the "addr-gen-mode" property's "stable-privacy"
