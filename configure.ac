@@ -7,8 +7,8 @@ dnl  - add corresponding NM_VERSION_x_y_z macros in
 dnl    "shared/nm-version-macros.h.in"
 dnl  - update number in meson.build
 m4_define([nm_major_version], [1])
-m4_define([nm_minor_version], [46])
-m4_define([nm_micro_version], [0])
+m4_define([nm_minor_version], [47])
+m4_define([nm_micro_version], [1])
 m4_define([nm_version],
           [nm_major_version.nm_minor_version.nm_micro_version])
 
@@ -1157,7 +1157,12 @@ fi
 
 NM_COMPILER_WARNINGS(AM_CFLAGS, ${more_warnings_default})
 
-NM_COMPILER_WARNING_FLAG(LIBSYSTEMD_NM_CFLAGS, "-Wno-gnu-variable-sized-type-not-at-end")
+for w in \
+    -Wno-nonnull-compare \
+    -Wno-calloc-transposed-args \
+    ; do
+    NM_COMPILER_WARNING_FLAG(LIBSYSTEMD_NM_CFLAGS, "$w")
+done
 AC_SUBST(LIBSYSTEMD_NM_CFLAGS)
 
 CC_CHECK_FLAGS_APPEND([with_cflags], [CFLAGS], [\

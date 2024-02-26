@@ -92,7 +92,7 @@ int utf8_encoded_to_unichar(const char *str, char32_t *ret_unichar) {
         switch (len) {
         case 1:
                 *ret_unichar = (char32_t)str[0];
-                return 0;
+                return 1;
         case 2:
                 unichar = str[0] & 0x1f;
                 break;
@@ -121,15 +121,14 @@ int utf8_encoded_to_unichar(const char *str, char32_t *ret_unichar) {
         }
 
         *ret_unichar = unichar;
-
-        return 0;
+        return len;
 }
 
 bool utf8_is_printable_newline(const char* str, size_t length, bool allow_newline) {
         assert(str);
 
         for (const char *p = str; length > 0;) {
-                int encoded_len, r;
+                int encoded_len;
                 char32_t val;
 
                 encoded_len = utf8_encoded_valid_unichar(p, length);
@@ -137,8 +136,7 @@ bool utf8_is_printable_newline(const char* str, size_t length, bool allow_newlin
                         return false;
                 assert(encoded_len > 0 && (size_t) encoded_len <= length);
 
-                r = utf8_encoded_to_unichar(p, &val);
-                if (r < 0 ||
+                if (utf8_encoded_to_unichar(p, &val) < 0 ||
                     unichar_is_control(val) ||
                     (!allow_newline && val == '\n'))
                         return false;
@@ -398,11 +396,23 @@ char *utf16_to_utf8(const char16_t *s, size_t length /* bytes! */) {
         const uint8_t *f;
         char *r, *t;
 
+        if (length == 0)
+                return new0(char, 1);
+
         assert(s);
+
+        if (length == SIZE_MAX) {
+                length = char16_strlen(s);
+
+                if (length > SIZE_MAX/2)
+                        return NULL; /* overflow */
+
+                length *= 2;
+        }
 
         /* Input length is in bytes, i.e. the shortest possible character takes 2 bytes. Each unicode character may
          * take up to 4 bytes in UTF-8. Let's also account for a trailing NUL byte. */
-        if (length * 2 < length)
+        if (length > (SIZE_MAX - 1) / 2)
                 return NULL; /* overflow */
 
         r = new(char, length * 2 + 1);
@@ -472,7 +482,16 @@ char16_t *utf8_to_utf16(const char *s, size_t length) {
         char16_t *n, *p;
         int r;
 
+        if (length == 0)
+                return new0(char16_t, 1);
+
         assert(s);
+
+        if (length == SIZE_MAX)
+                length = strlen(s);
+
+        if (length > SIZE_MAX - 1)
+                return NULL; /* overflow */
 
         n = new(char16_t, length + 1);
         if (!n)

@@ -116,6 +116,7 @@ _metagen_general_status_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
     gboolean            v_bool;
     NMState             state;
     NMConnectivityState connectivity;
+    NMMetered           metered;
 
     switch (info->info_type) {
     case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_RUNNING:
@@ -170,6 +171,11 @@ _metagen_general_status_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
     case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WIMAX:
         /* deprecated fields. Don't return anything. */
         return NULL;
+    case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_METERED:
+        metered = nm_client_get_metered(nmc->client);
+        NMC_HANDLE_COLOR(NM_META_COLOR_NONE);
+        value = nmc_device_metered_to_string(metered);
+        goto translate_and_out;
     default:
         break;
     }
@@ -206,12 +212,13 @@ static const NmcMetaGenericInfo
         _METAGEN_GENERAL_STATUS(NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WWAN, "WWAN"),
         _METAGEN_GENERAL_STATUS(NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WIMAX_HW, "WIMAX-HW"),
         _METAGEN_GENERAL_STATUS(NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WIMAX, "WIMAX"),
+        _METAGEN_GENERAL_STATUS(NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_METERED, "METERED"),
 };
 #define NMC_FIELDS_NM_STATUS_ALL \
-    "RUNNING,VERSION,STATE,STARTUP,CONNECTIVITY,NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN"
+    "RUNNING,VERSION,STATE,STARTUP,CONNECTIVITY,NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN,METERED"
 #define NMC_FIELDS_NM_STATUS_SWITCH "NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN"
 #define NMC_FIELDS_NM_STATUS_RADIO  "WIFI-HW,WIFI,WWAN-HW,WWAN"
-#define NMC_FIELDS_NM_STATUS_COMMON "STATE,CONNECTIVITY,WIFI-HW,WIFI,WWAN-HW,WWAN"
+#define NMC_FIELDS_NM_STATUS_COMMON "STATE,CONNECTIVITY,WIFI-HW,WIFI,WWAN-HW,WWAN,METERED"
 #define NMC_FIELDS_NM_NETWORKING    "NETWORKING"
 #define NMC_FIELDS_NM_WIFI          "WIFI"
 #define NMC_FIELDS_NM_WWAN          "WWAN"

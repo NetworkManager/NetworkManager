@@ -87,12 +87,9 @@ int dns_label_unescape(const char **name, char *dest, size_t sz, DNSLabelFlags f
                                         ((unsigned) (n[1] - '0') * 10) +
                                         ((unsigned) (n[2] - '0'));
 
-                                /* Don't allow anything that doesn't
-                                 * fit in 8bit. Note that we do allow
-                                 * control characters, as some servers
-                                 * (e.g. cloudflare) are happy to
-                                 * generate labels with them
-                                 * inside. */
+                                /* Don't allow anything that doesn't fit in 8 bits. Note that we do allow
+                                 * control characters, as some servers (e.g. cloudflare) are happy to
+                                 * generate labels with them inside. */
                                 if (k > 255)
                                         return -EINVAL;
 
@@ -213,7 +210,7 @@ int dns_label_escape(const char *p, size_t l, char *dest, size_t sz) {
         char *q;
 
         /* DNS labels must be between 1 and 63 characters long. A
-         * zero-length label does not exist. See RFC 2182, Section
+         * zero-length label does not exist. See RFC 2181, Section
          * 11. */
 
         if (l <= 0 || l > DNS_LABEL_MAX)
@@ -302,14 +299,14 @@ int dns_label_escape_new(const char *p, size_t l, char **ret) {
 int dns_label_apply_idna(const char *encoded, size_t encoded_size, char *decoded, size_t decoded_max) {
         _cleanup_free_ uint32_t *input = NULL;
         size_t input_size, l;
-        bool contains_8bit = false;
+        bool contains_8_bit = false;
         char buffer[DNS_LABEL_MAX+1];
         int r;
 
         assert(encoded);
         assert(decoded);
 
-        /* Converts an U-label into an A-label */
+        /* Converts a U-label into an A-label */
 
         r = dlopen_idn();
         if (r < 0)
@@ -320,9 +317,9 @@ int dns_label_apply_idna(const char *encoded, size_t encoded_size, char *decoded
 
         for (const char *p = encoded; p < encoded + encoded_size; p++)
                 if ((uint8_t) *p > 127)
-                        contains_8bit = true;
+                        contains_8_bit = true;
 
-        if (!contains_8bit) {
+        if (!contains_8_bit) {
                 if (encoded_size > DNS_LABEL_MAX)
                         return -EINVAL;
 
@@ -361,7 +358,7 @@ int dns_label_undo_idna(const char *encoded, size_t encoded_size, char *decoded,
         size_t w;
         int r;
 
-        /* To be invoked after unescaping. Converts an A-label into an U-label. */
+        /* To be invoked after unescaping. Converts an A-label into a U-label. */
 
         assert(encoded);
         assert(decoded);
@@ -419,7 +416,7 @@ int dns_name_concat(const char *a, const char *b, DNSLabelFlags flags, char **_r
                 goto finish;
 
         for (;;) {
-                char label[DNS_LABEL_MAX];
+                char label[DNS_LABEL_MAX+1];
 
                 r = dns_label_unescape(&p, label, sizeof label, flags);
                 if (r < 0)
@@ -517,7 +514,7 @@ int dns_name_compare_func(const char *a, const char *b) {
         y = b + strlen(b);
 
         for (;;) {
-                char la[DNS_LABEL_MAX], lb[DNS_LABEL_MAX];
+                char la[DNS_LABEL_MAX+1], lb[DNS_LABEL_MAX+1];
 
                 if (x == NULL && y == NULL)
                         return 0;
@@ -553,7 +550,7 @@ int dns_name_equal(const char *x, const char *y) {
         assert(y);
 
         for (;;) {
-                char la[DNS_LABEL_MAX], lb[DNS_LABEL_MAX];
+                char la[DNS_LABEL_MAX+1], lb[DNS_LABEL_MAX+1];
 
                 r = dns_label_unescape(&x, la, sizeof la, 0);
                 if (r < 0)
@@ -584,7 +581,7 @@ int dns_name_endswith(const char *name, const char *suffix) {
         s = suffix;
 
         for (;;) {
-                char ln[DNS_LABEL_MAX], ls[DNS_LABEL_MAX];
+                char ln[DNS_LABEL_MAX+1], ls[DNS_LABEL_MAX+1];
 
                 r = dns_label_unescape(&n, ln, sizeof ln, 0);
                 if (r < 0)
@@ -622,7 +619,7 @@ int dns_name_startswith(const char *name, const char *prefix) {
         p = prefix;
 
         for (;;) {
-                char ln[DNS_LABEL_MAX], lp[DNS_LABEL_MAX];
+                char ln[DNS_LABEL_MAX+1], lp[DNS_LABEL_MAX+1];
 
                 r = dns_label_unescape(&p, lp, sizeof lp, 0);
                 if (r < 0)
@@ -654,7 +651,7 @@ int dns_name_change_suffix(const char *name, const char *old_suffix, const char 
         s = old_suffix;
 
         for (;;) {
-                char ln[DNS_LABEL_MAX], ls[DNS_LABEL_MAX];
+                char ln[DNS_LABEL_MAX+1], ls[DNS_LABEL_MAX+1];
 
                 if (!saved_before)
                         saved_before = n;
@@ -941,7 +938,7 @@ bool dns_srv_type_is_valid(const char *name) {
                 return false;
 
         for (;;) {
-                char label[DNS_LABEL_MAX];
+                char label[DNS_LABEL_MAX+1];
 
                 /* This more or less implements RFC 6335, Section 5.1 */
 
@@ -1239,7 +1236,7 @@ int dns_name_common_suffix(const char *a, const char *b, const char **ret) {
                 return m;
 
         for (;;) {
-                char la[DNS_LABEL_MAX], lb[DNS_LABEL_MAX];
+                char la[DNS_LABEL_MAX+1], lb[DNS_LABEL_MAX+1];
                 const char *x, *y;
 
                 if (k >= n || k >= m) {
@@ -1340,7 +1337,7 @@ int dns_name_apply_idna(const char *name, char **ret) {
         assert(ret);
 
         for (;;) {
-                char label[DNS_LABEL_MAX];
+                char label[DNS_LABEL_MAX+1];
 
                 r = dns_label_unescape(&name, label, sizeof label, 0);
                 if (r < 0)
@@ -1423,6 +1420,10 @@ bool dns_name_dont_resolve(const char *name) {
 
         /* Never respond to some of the domains listed in RFC6761 */
         if (dns_name_endswith(name, "invalid") > 0)
+                return true;
+
+        /* Never respond to some of the domains listed in RFC9476 */
+        if (dns_name_endswith(name, "alt") > 0)
                 return true;
 
         return false;

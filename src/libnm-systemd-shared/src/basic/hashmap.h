@@ -398,12 +398,28 @@ static inline char** ordered_hashmap_get_strv(OrderedHashmap *h) {
         return _hashmap_get_strv(HASHMAP_BASE(h));
 }
 
+int _hashmap_dump_sorted(HashmapBase *h, void ***ret, size_t *ret_n);
+static inline int hashmap_dump_sorted(Hashmap *h, void ***ret, size_t *ret_n) {
+        return _hashmap_dump_sorted(HASHMAP_BASE(h), ret, ret_n);
+}
+static inline int ordered_hashmap_dump_sorted(OrderedHashmap *h, void ***ret, size_t *ret_n) {
+        return _hashmap_dump_sorted(HASHMAP_BASE(h), ret, ret_n);
+}
+static inline int set_dump_sorted(Set *h, void ***ret, size_t *ret_n) {
+        return _hashmap_dump_sorted(HASHMAP_BASE(h), ret, ret_n);
+}
+
 /*
  * Hashmaps are iterated in unpredictable order.
  * OrderedHashmaps are an exception to this. They are iterated in the order
  * the entries were inserted.
  * It is safe to remove the current entry.
  */
+#define _HASHMAP_BASE_FOREACH(e, h, i) \
+        for (Iterator i = ITERATOR_FIRST; _hashmap_iterate((h), &i, (void**)&(e), NULL); )
+#define HASHMAP_BASE_FOREACH(e, h) \
+        _HASHMAP_BASE_FOREACH(e, h, UNIQ_T(i, UNIQ))
+
 #define _HASHMAP_FOREACH(e, h, i) \
         for (Iterator i = ITERATOR_FIRST; hashmap_iterate((h), &i, (void**)&(e), NULL); )
 #define HASHMAP_FOREACH(e, h) \
@@ -413,6 +429,11 @@ static inline char** ordered_hashmap_get_strv(OrderedHashmap *h) {
         for (Iterator i = ITERATOR_FIRST; ordered_hashmap_iterate((h), &i, (void**)&(e), NULL); )
 #define ORDERED_HASHMAP_FOREACH(e, h) \
         _ORDERED_HASHMAP_FOREACH(e, h, UNIQ_T(i, UNIQ))
+
+#define _HASHMAP_BASE_FOREACH_KEY(e, k, h, i) \
+        for (Iterator i = ITERATOR_FIRST; _hashmap_iterate((h), &i, (void**)&(e), (const void**) &(k)); )
+#define HASHMAP_BASE_FOREACH_KEY(e, k, h) \
+        _HASHMAP_BASE_FOREACH_KEY(e, k, h, UNIQ_T(i, UNIQ))
 
 #define _HASHMAP_FOREACH_KEY(e, k, h, i) \
         for (Iterator i = ITERATOR_FIRST; hashmap_iterate((h), &i, (void**)&(e), (const void**) &(k)); )

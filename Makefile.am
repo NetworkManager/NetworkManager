@@ -2353,7 +2353,6 @@ src_libnm_systemd_shared_libnm_systemd_shared_la_SOURCES = \
 	src/libnm-systemd-shared/sd-adapt-shared/mkdir.h \
 	src/libnm-systemd-shared/sd-adapt-shared/mountpoint-util.h \
 	src/libnm-systemd-shared/sd-adapt-shared/namespace-util.h \
-	src/libnm-systemd-shared/sd-adapt-shared/netif-util.h \
 	src/libnm-systemd-shared/sd-adapt-shared/nm-sd-adapt-shared.h \
 	src/libnm-systemd-shared/sd-adapt-shared/nulstr-util.h \
 	src/libnm-systemd-shared/sd-adapt-shared/os-util.h \
@@ -2368,7 +2367,9 @@ src_libnm_systemd_shared_libnm_systemd_shared_la_SOURCES = \
 	src/libnm-systemd-shared/sd-adapt-shared/virt.h \
 	src/libnm-systemd-shared/src/basic/alloc-util.c \
 	src/libnm-systemd-shared/src/basic/alloc-util.h \
-	src/libnm-systemd-shared/src/basic/async.h \
+	src/libnm-systemd-shared/src/basic/arphrd-util.h \
+	src/libnm-systemd-shared/src/basic/btrfs.c \
+	src/libnm-systemd-shared/src/basic/btrfs.h \
 	src/libnm-systemd-shared/src/basic/cgroup-util.h \
 	src/libnm-systemd-shared/src/basic/constants.h \
 	src/libnm-systemd-shared/src/basic/dns-def.h \
@@ -2407,6 +2408,7 @@ src_libnm_systemd_shared_libnm_systemd_shared_la_SOURCES = \
 	src/libnm-systemd-shared/src/basic/inotify-util.h \
 	src/libnm-systemd-shared/src/basic/io-util.c \
 	src/libnm-systemd-shared/src/basic/io-util.h \
+	src/libnm-systemd-shared/src/basic/iovec-util.h \
 	src/libnm-systemd-shared/src/basic/label.c \
 	src/libnm-systemd-shared/src/basic/label.h \
 	src/libnm-systemd-shared/src/basic/list.h \
@@ -2426,6 +2428,7 @@ src_libnm_systemd_shared_libnm_systemd_shared_la_SOURCES = \
 	src/libnm-systemd-shared/src/basic/missing_syscall.h \
 	src/libnm-systemd-shared/src/basic/missing_threads.h \
 	src/libnm-systemd-shared/src/basic/missing_type.h \
+	src/libnm-systemd-shared/src/basic/namespace-util.h \
 	src/libnm-systemd-shared/src/basic/ordered-set.c \
 	src/libnm-systemd-shared/src/basic/ordered-set.h \
 	src/libnm-systemd-shared/src/basic/origin-id.h \
@@ -2433,6 +2436,7 @@ src_libnm_systemd_shared_libnm_systemd_shared_la_SOURCES = \
 	src/libnm-systemd-shared/src/basic/parse-util.h \
 	src/libnm-systemd-shared/src/basic/path-util.c \
 	src/libnm-systemd-shared/src/basic/path-util.h \
+	src/libnm-systemd-shared/src/basic/pidref.h \
 	src/libnm-systemd-shared/src/basic/prioq.c \
 	src/libnm-systemd-shared/src/basic/prioq.h \
 	src/libnm-systemd-shared/src/basic/process-util.c \
@@ -2512,14 +2516,17 @@ src_libnm_systemd_core_libnm_systemd_core_la_SOURCES = \
 	src/libnm-systemd-core/sd-adapt-core/condition.h \
 	src/libnm-systemd-core/sd-adapt-core/conf-parser.h \
 	src/libnm-systemd-core/sd-adapt-core/khash.h \
+	src/libnm-systemd-core/sd-adapt-core/netif-util.c \
+	src/libnm-systemd-core/sd-adapt-core/netif-util.h \
 	src/libnm-systemd-core/sd-adapt-core/network-util.h \
 	src/libnm-systemd-core/sd-adapt-core/nm-sd-adapt-core.c \
 	src/libnm-systemd-core/sd-adapt-core/nm-sd-adapt-core.h \
 	src/libnm-systemd-core/sd-adapt-core/sd-daemon.h \
 	src/libnm-systemd-core/sd-adapt-core/sd-messages.h \
 	src/libnm-systemd-core/sd-adapt-core/udev-util.h \
-	src/libnm-systemd-core/src/libsystemd-network/dhcp-identifier.c \
-	src/libnm-systemd-core/src/libsystemd-network/dhcp-identifier.h \
+	src/libnm-systemd-core/src/libsystemd-network/sd-dhcp-duid.c \
+	src/libnm-systemd-core/src/libsystemd-network/dhcp-duid-internal.h \
+	src/libnm-systemd-core/src/libsystemd-network/dhcp6-client-internal.h \
 	src/libnm-systemd-core/src/libsystemd-network/dhcp6-internal.h \
 	src/libnm-systemd-core/src/libsystemd-network/dhcp6-lease-internal.h \
 	src/libnm-systemd-core/src/libsystemd-network/dhcp6-network.c \
@@ -2541,9 +2548,11 @@ src_libnm_systemd_core_libnm_systemd_core_la_SOURCES = \
 	src/libnm-systemd-core/src/libsystemd/sd-id128/sd-id128.c \
 	src/libnm-systemd-core/src/systemd/_sd-common.h \
 	src/libnm-systemd-core/src/systemd/sd-device.h \
+	src/libnm-systemd-core/src/systemd/sd-dhcp-duid.h \
 	src/libnm-systemd-core/src/systemd/sd-dhcp6-client.h \
 	src/libnm-systemd-core/src/systemd/sd-dhcp6-lease.h \
 	src/libnm-systemd-core/src/systemd/sd-dhcp6-option.h \
+	src/libnm-systemd-core/src/systemd/sd-dhcp6-protocol.h \
 	src/libnm-systemd-core/src/systemd/sd-event.h \
 	src/libnm-systemd-core/src/systemd/sd-id128.h \
 	src/libnm-systemd-core/src/systemd/sd-ndisc.h \

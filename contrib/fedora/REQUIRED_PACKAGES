@@ -63,6 +63,7 @@ install \
     gtk-doc \
     iptables \
     jansson-devel \
+    jq \
     libcurl-devel \
     libndp-devel \
     libselinux-devel \

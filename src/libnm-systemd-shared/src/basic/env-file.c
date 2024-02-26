@@ -127,7 +127,7 @@ static int parse_env_file_internal(
                                 state = VALUE;
 
                                 if (!GREEDY_REALLOC(value, n_value+2))
-                                        return  -ENOMEM;
+                                        return -ENOMEM;
 
                                 value[n_value++] = c;
                         }
@@ -245,7 +245,13 @@ static int parse_env_file_internal(
                         break;
 
                 case COMMENT_ESCAPE:
-                        state = COMMENT;
+                        log_debug("The line which doesn't begin with \";\" or \"#\", but follows a comment" \
+                                  " line trailing with escape is now treated as a non comment line since v254.");
+                        if (strchr(NEWLINE, c)) {
+                                state = PRE_KEY;
+                                line++;
+                        } else
+                                state = COMMENT;
                         break;
                 }
         }
@@ -522,6 +528,7 @@ static int merge_env_file_push(
 
         char ***env = ASSERT_PTR(userdata);
         char *expanded_value;
+        int r;
 
         assert(key);
 
@@ -536,12 +543,12 @@ static int merge_env_file_push(
                 return 0;
         }
 
-        expanded_value = replace_env(value, *env,
-                                     REPLACE_ENV_USE_ENVIRONMENT|
-                                     REPLACE_ENV_ALLOW_BRACELESS|
-                                     REPLACE_ENV_ALLOW_EXTENDED);
-        if (!expanded_value)
-                return -ENOMEM;
+        r = replace_env(value,
+                        *env,
+                        REPLACE_ENV_USE_ENVIRONMENT|REPLACE_ENV_ALLOW_BRACELESS|REPLACE_ENV_ALLOW_EXTENDED,
+                        &expanded_value);
+        if (r < 0)
+                return log_error_errno(r, "%s:%u: Failed to expand variable '%s': %m", strna(filename), line, value);
 
         free_and_replace(value, expanded_value);
 
@@ -599,7 +606,7 @@ static void write_env_var(FILE *f, const char *v) {
         fputc_unlocked('\n', f);
 }
 
-int write_env_file_at(int dir_fd, const char *fname, char **l) {
+int write_env_file(int dir_fd, const char *fname, char **headers, char **l) {
         _cleanup_fclose_ FILE *f = NULL;
         _cleanup_free_ char *p = NULL;
         int r;
@@ -612,6 +619,12 @@ int write_env_file_at(int dir_fd, const char *fname, char **l) {
                 return r;
 
         (void) fchmod_umask(fileno(f), 0644);
+
+        STRV_FOREACH(i, headers) {
+                assert(isempty(*i) || startswith(*i, "#"));
+                fputs_unlocked(*i, f);
+                fputc_unlocked('\n', f);
+        }
 
         STRV_FOREACH(i, l)
                 write_env_var(f, *i);
@@ -626,5 +639,13 @@ int write_env_file_at(int dir_fd, const char *fname, char **l) {
 
         (void) unlinkat(dir_fd, p, 0);
         return r;
+}
+
+int write_vconsole_conf(int dir_fd, const char *fname, char **l) {
+        char **headers = STRV_MAKE(
+                "# Written by systemd-localed(8) or systemd-firstboot(1), read by systemd-localed",
+                "# and systemd-vconsole-setup(8). Use localectl(1) to update this file.");
+
+        return write_env_file(dir_fd, fname, headers, l);
 }
 #endif /* NM_IGNORED */

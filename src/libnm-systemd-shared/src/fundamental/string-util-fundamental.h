@@ -59,8 +59,8 @@ static inline size_t strlen_ptr(const sd_char *s) {
 
 sd_char *startswith(const sd_char *s, const sd_char *prefix) _pure_;
 sd_char *startswith_no_case(const sd_char *s, const sd_char *prefix) _pure_;
-sd_char *endswith(const sd_char *s, const sd_char *postfix) _pure_;
-sd_char *endswith_no_case(const sd_char *s, const sd_char *postfix) _pure_;
+sd_char *endswith(const sd_char *s, const sd_char *suffix) _pure_;
+sd_char *endswith_no_case(const sd_char *s, const sd_char *suffix) _pure_;
 
 static inline bool isempty(const sd_char *a) {
         return !a || a[0] == '\0';
@@ -72,6 +72,10 @@ static inline const sd_char *strempty(const sd_char *s) {
 
 static inline const sd_char *yes_no(bool b) {
         return b ? STR_C("yes") : STR_C("no");
+}
+
+static inline const sd_char *on_off(bool b) {
+        return b ? STR_C("on") : STR_C("off");
 }
 
 static inline const sd_char* comparison_operator(int result) {

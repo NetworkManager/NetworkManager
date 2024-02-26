@@ -25,7 +25,7 @@ bool emoji_enabled(void) {
         return cached_emoji_enabled;
 }
 
-const char *special_glyph(SpecialGlyph code) {
+const char *special_glyph_full(SpecialGlyph code, bool force_utf) {
 
         /* A list of a number of interesting unicode glyphs we can use to decorate our output. It's probably wise to be
          * conservative here, and primarily stick to the glyphs defined in the eurlatgr font, so that display still
@@ -54,11 +54,12 @@ const char *special_glyph(SpecialGlyph code) {
                         [SPECIAL_GLYPH_CROSS_MARK]              = "-",
                         [SPECIAL_GLYPH_LIGHT_SHADE]             = "-",
                         [SPECIAL_GLYPH_DARK_SHADE]              = "X",
+                        [SPECIAL_GLYPH_FULL_BLOCK]              = "#",
                         [SPECIAL_GLYPH_SIGMA]                   = "S",
-                        [SPECIAL_GLYPH_ARROW_LEFT]              = "<-",
-                        [SPECIAL_GLYPH_ARROW_RIGHT]             = "->",
                         [SPECIAL_GLYPH_ARROW_UP]                = "^",
                         [SPECIAL_GLYPH_ARROW_DOWN]              = "v",
+                        [SPECIAL_GLYPH_ARROW_LEFT]              = "<-",
+                        [SPECIAL_GLYPH_ARROW_RIGHT]             = "->",
                         [SPECIAL_GLYPH_ELLIPSIS]                = "...",
                         [SPECIAL_GLYPH_EXTERNAL_LINK]           = "[LNK]",
                         [SPECIAL_GLYPH_ECSTATIC_SMILEY]         = ":-]",
@@ -73,6 +74,7 @@ const char *special_glyph(SpecialGlyph code) {
                         [SPECIAL_GLYPH_RECYCLING]               = "~",
                         [SPECIAL_GLYPH_DOWNLOAD]                = "\\",
                         [SPECIAL_GLYPH_SPARKLES]                = "*",
+                        [SPECIAL_GLYPH_LOW_BATTERY]             = "!",
                         [SPECIAL_GLYPH_WARNING_SIGN]            = "!",
                 },
 
@@ -98,6 +100,7 @@ const char *special_glyph(SpecialGlyph code) {
                         [SPECIAL_GLYPH_CROSS_MARK]              = u8"✗",        /* actually called: BALLOT X */
                         [SPECIAL_GLYPH_LIGHT_SHADE]             = u8"░",
                         [SPECIAL_GLYPH_DARK_SHADE]              = u8"▒",
+                        [SPECIAL_GLYPH_FULL_BLOCK]              = u8"█",
                         [SPECIAL_GLYPH_SIGMA]                   = u8"Σ",
                         [SPECIAL_GLYPH_ARROW_UP]                = u8"↑",       /* actually called: UPWARDS ARROW */
                         [SPECIAL_GLYPH_ARROW_DOWN]              = u8"↓",       /* actually called: DOWNWARDS ARROW */
@@ -131,7 +134,10 @@ const char *special_glyph(SpecialGlyph code) {
                         [SPECIAL_GLYPH_RECYCLING]               = u8"♻️",        /* actually called: UNIVERSAL RECYCLNG SYMBOL */
                         [SPECIAL_GLYPH_DOWNLOAD]                = u8"⤵️",        /* actually called: RIGHT ARROW CURVING DOWN */
                         [SPECIAL_GLYPH_SPARKLES]                = u8"✨",
+                        [SPECIAL_GLYPH_LOW_BATTERY]             = u8"🪫",
                         [SPECIAL_GLYPH_WARNING_SIGN]            = u8"⚠️",
+                        [SPECIAL_GLYPH_COMPUTER_DISK]           = u8"💽",
+                        [SPECIAL_GLYPH_WORLD]                   = u8"🌍",
                 },
         };
 
@@ -139,5 +145,5 @@ const char *special_glyph(SpecialGlyph code) {
                 return NULL;
 
         assert(code < _SPECIAL_GLYPH_MAX);
-        return draw_table[code >= _SPECIAL_GLYPH_FIRST_EMOJI ? emoji_enabled() : is_locale_utf8()][code];
+        return draw_table[force_utf || (code >= _SPECIAL_GLYPH_FIRST_EMOJI ? emoji_enabled() : is_locale_utf8())][code];
 }

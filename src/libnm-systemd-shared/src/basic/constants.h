@@ -59,22 +59,13 @@
 #define NOTIFY_FD_MAX 768
 #define NOTIFY_BUFFER_MAX PIPE_BUF
 
-#if HAVE_SPLIT_USR
-#  define _CONF_PATHS_SPLIT_USR_NULSTR(n) "/lib/" n "\0"
-#  define _CONF_PATHS_SPLIT_USR(n) , "/lib/" n
-#else
-#  define _CONF_PATHS_SPLIT_USR_NULSTR(n)
-#  define _CONF_PATHS_SPLIT_USR(n)
-#endif
-
 /* Return a nulstr for a standard cascade of configuration paths, suitable to pass to
  * conf_files_list_nulstr() to implement drop-in directories for extending configuration files. */
 #define CONF_PATHS_NULSTR(n)                    \
         "/etc/" n "\0"                          \
         "/run/" n "\0"                          \
         "/usr/local/lib/" n "\0"                \
-        "/usr/lib/" n "\0"                      \
-        _CONF_PATHS_SPLIT_USR_NULSTR(n)
+        "/usr/lib/" n "\0"
 
 #define CONF_PATHS_USR(n)                       \
         "/etc/" n,                              \
@@ -83,8 +74,7 @@
         "/usr/lib/" n
 
 #define CONF_PATHS(n)                           \
-        CONF_PATHS_USR(n)                       \
-        _CONF_PATHS_SPLIT_USR(n)
+        CONF_PATHS_USR(n)
 
 #define CONF_PATHS_USR_STRV(n)                  \
         STRV_MAKE(CONF_PATHS_USR(n))
@@ -99,14 +89,9 @@
  * in containers so that our children inherit that. */
 #define DEFAULT_RLIMIT_MEMLOCK (1024ULL*1024ULL*8ULL)
 
-#define PLYMOUTH_SOCKET {                                       \
-                .un.sun_family = AF_UNIX,                       \
-                .un.sun_path = "\0/org/freedesktop/plymouthd",  \
-        }
-
 /* Path where PID1 listens for varlink subscriptions from systemd-oomd to notify of changes in ManagedOOM settings. */
-#define VARLINK_ADDR_PATH_MANAGED_OOM_SYSTEM "/run/systemd/io.system.ManagedOOM"
+#define VARLINK_ADDR_PATH_MANAGED_OOM_SYSTEM "/run/systemd/io.systemd.ManagedOOM"
 /* Path where systemd-oomd listens for varlink connections from user managers to report changes in ManagedOOM settings. */
-#define VARLINK_ADDR_PATH_MANAGED_OOM_USER "/run/systemd/oom/io.system.ManagedOOM"
+#define VARLINK_ADDR_PATH_MANAGED_OOM_USER "/run/systemd/oom/io.systemd.ManagedOOM"
 
 #define KERNEL_BASELINE_VERSION "4.15"

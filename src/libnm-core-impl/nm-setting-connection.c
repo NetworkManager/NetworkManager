@@ -2852,11 +2852,12 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * for the connection, "no" (0) disable mDNS for the interface, "resolve"
      * (1) do not register hostname but allow resolving of mDNS host names
      * and "default" (-1) to allow lookup of a global default in NetworkManager.conf.
-     * If unspecified, "default" ultimately depends on the DNS plugin (which
-     * for systemd-resolved currently means "no").
+     * If unspecified, "default" ultimately depends on the DNS plugin.
      *
      * This feature requires a plugin which supports mDNS. Otherwise, the
-     * setting has no effect. One such plugin is dns-systemd-resolved.
+     * setting has no effect. Currently the only supported DNS plugin is
+     * systemd-resolved. For systemd-resolved, the default is configurable via
+     * MulticastDNS= setting in resolved.conf.
      *
      * Since: 1.12
      **/

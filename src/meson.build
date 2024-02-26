@@ -69,6 +69,15 @@ libn_dhcp4 = static_library(
 
 ###############################################################################
 
+libnm_systemd_common_cflags = [ ]
+
+libnm_systemd_common_cflags += cc.get_supported_arguments([
+  '-Wno-nonnull-compare',
+  '-Wno-calloc-transposed-args',
+])
+
+###############################################################################
+
 subdir('libnm-std-aux')
 subdir('libnm-glib-aux')
 subdir('libnm-log-null')

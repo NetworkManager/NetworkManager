@@ -5,6 +5,8 @@
 
 #include "sd-event.h"
 
+#include "pidref.h"
+
 int event_reset_time(
                 sd_event *e,
                 sd_event_source **s,
@@ -32,3 +34,7 @@ static inline int event_source_disable(sd_event_source *s) {
 }
 
 int event_add_time_change(sd_event *e, sd_event_source **ret, sd_event_io_handler_t callback, void *userdata);
+
+#if 0 /* NM_IGNORED */
+int event_add_child_pidref(sd_event *e, sd_event_source **s, const PidRef *pid, int options, sd_event_child_handler_t callback, void *userdata);
+#endif /* NM_IGNORED */
