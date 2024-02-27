@@ -5,14 +5,13 @@
 # Josef Andersson <l10nl18nsweja@gmail.com>, 2014, 2015, 2017.
 # Anders Jonsson <anders.jonsson@norsjovallen.se>, 2015, 2016, 2017.
 # Luna Jernberg <lunajernberg@gnome.org>, 2022, 2023, 2024.
-
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: https://gitlab.freedesktop.org/NetworkManager/"
 "NetworkManager/issues\n"
-"POT-Creation-Date: 2024-02-07 15:26+0000\n"
-"PO-Revision-Date: 2024-02-08 08:46+0100\n"
+"POT-Creation-Date: 2024-02-24 03:27+0000\n"
+"PO-Revision-Date: 2024-02-24 08:05+0100\n"
 "Last-Translator: Luna Jernberg <lunajernberg@gnome.org>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
 "Language: sv\n"
@@ -200,7 +199,7 @@ msgid "%s %u"
 msgstr "%s %u"
 
 #: src/core/devices/adsl/nm-device-adsl.c:118
-#: src/libnmc-setting/nm-meta-setting-desc.c:8656
+#: src/libnmc-setting/nm-meta-setting-desc.c:8652
 msgid "ADSL connection"
 msgstr "ADSL-anslutning"
 
@@ -278,7 +277,7 @@ msgid "Wired connection %d"
 msgstr "Trådbunden anslutning %d"
 
 #: src/core/devices/nm-device-ethernet.c:1641
-#: src/libnmc-setting/nm-meta-setting-desc.c:8698
+#: src/libnmc-setting/nm-meta-setting-desc.c:8694
 msgid "Veth connection"
 msgstr "Veth-anslutning"
 
@@ -291,7 +290,7 @@ msgid "Wired connection"
 msgstr "Trådbunden anslutning"
 
 #: src/core/devices/nm-device-infiniband.c:160
-#: src/libnmc-setting/nm-meta-setting-desc.c:8671
+#: src/libnmc-setting/nm-meta-setting-desc.c:8667
 msgid "InfiniBand connection"
 msgstr "InfiniBand-anslutning"
 
@@ -312,17 +311,17 @@ msgid "TUN connection"
 msgstr "TUN-anslutning"
 
 #: src/core/devices/nm-device-vlan.c:380
-#: src/libnmc-setting/nm-meta-setting-desc.c:8699
+#: src/libnmc-setting/nm-meta-setting-desc.c:8695
 msgid "VLAN connection"
 msgstr "VLAN-anslutning"
 
 #: src/core/devices/nm-device-vrf.c:185
-#: src/libnmc-setting/nm-meta-setting-desc.c:8701
+#: src/libnmc-setting/nm-meta-setting-desc.c:8697
 msgid "VRF connection"
 msgstr "VRF-anslutning"
 
 #: src/core/devices/nm-device-vxlan.c:385
-#: src/libnmc-setting/nm-meta-setting-desc.c:8702
+#: src/libnmc-setting/nm-meta-setting-desc.c:8698
 msgid "VXLAN connection"
 msgstr "VXLAN-anslutning"
 
@@ -576,8 +575,8 @@ msgid "Could not daemonize: %s [error %u]\n"
 msgstr "Kunde inte bli demon: %s [fel %u]\n"
 
 #: src/core/nm-config.c:544 src/libnm-core-impl/nm-setting-ovs-bridge.c:187
-#: src/libnmc-setting/nm-meta-setting-desc.c:2188
-#: src/libnmc-setting/nm-meta-setting-desc.c:4334
+#: src/libnmc-setting/nm-meta-setting-desc.c:2163
+#: src/libnmc-setting/nm-meta-setting-desc.c:4309
 #, c-format
 msgid "'%s' is not valid"
 msgstr "”%s” är inte giltigt"
@@ -643,25 +642,25 @@ msgstr "Flaggor för Nätverkshanteraren"
 msgid "Show NetworkManager options"
 msgstr "Visa Nätverkshanterarens flaggor"
 
-#: src/core/nm-manager.c:6886 src/libnmc-setting/nm-meta-setting-desc.c:8700
+#: src/core/nm-manager.c:6893 src/libnmc-setting/nm-meta-setting-desc.c:8696
 msgid "VPN connection"
 msgstr "VPN-anslutning"
 
 #: src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5650
 #: src/libnm-client-impl/nm-device.c:1781
-#: src/libnm-core-impl/nm-connection.c:3237 src/nmtui/nm-editor-utils.c:196
+#: src/libnm-core-impl/nm-connection.c:3244 src/nmtui/nm-editor-utils.c:196
 msgid "Bond"
 msgstr "Kombinera"
 
 #: src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5721
 #: src/libnm-client-impl/nm-device.c:1783
-#: src/libnm-core-impl/nm-connection.c:3239 src/nmtui/nm-editor-utils.c:214
+#: src/libnm-core-impl/nm-connection.c:3246 src/nmtui/nm-editor-utils.c:214
 msgid "Team"
 msgstr "Grupp"
 
 #: src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:6058
 #: src/libnm-client-impl/nm-device.c:1785
-#: src/libnm-core-impl/nm-connection.c:3241 src/nmtui/nm-editor-utils.c:205
+#: src/libnm-core-impl/nm-connection.c:3248 src/nmtui/nm-editor-utils.c:205
 msgid "Bridge"
 msgstr "Brygga"
 
@@ -942,12 +941,12 @@ msgid "Mobile Broadband"
 msgstr "Mobilt bredband"
 
 #: src/libnm-client-impl/nm-device.c:1779
-#: src/libnm-core-impl/nm-connection.c:3245 src/nmtui/nm-editor-utils.c:169
+#: src/libnm-core-impl/nm-connection.c:3252 src/nmtui/nm-editor-utils.c:169
 msgid "InfiniBand"
 msgstr "InfiniBand"
 
 #: src/libnm-client-impl/nm-device.c:1787
-#: src/libnm-core-impl/nm-connection.c:3243 src/nmtui/nm-editor-utils.c:223
+#: src/libnm-core-impl/nm-connection.c:3250 src/nmtui/nm-editor-utils.c:223
 #: src/nmtui/nmt-page-vlan.c:57
 msgid "VLAN"
 msgstr "VLAN"
@@ -998,7 +997,7 @@ msgid "6LoWPAN"
 msgstr "6LoWPAN"
 
 #: src/libnm-client-impl/nm-device.c:1811
-#: src/libnm-core-impl/nm-connection.c:3251 src/nmtui/nm-editor-utils.c:271
+#: src/libnm-core-impl/nm-connection.c:3258 src/nmtui/nm-editor-utils.c:271
 #: src/nmtui/nmt-page-wireguard.c:57
 msgid "WireGuard"
 msgstr "WireGuard"
@@ -1022,7 +1021,7 @@ msgstr "HSR"
 #. TRANSLATORS: Unknown reason for a device state change (NMDeviceStateReason)
 #. TRANSLATORS: Unknown reason for a connection state change (NMActiveConnectionStateReason)
 #: src/libnm-client-impl/nm-device.c:1826 src/libnmc-base/nm-client-utils.c:352
-#: src/libnmc-base/nm-client-utils.c:473 src/nmcli/utils.c:1841
+#: src/libnmc-base/nm-client-utils.c:475 src/nmcli/utils.c:1841
 msgid "Unknown"
 msgstr "Okänd"
 
@@ -1250,11 +1249,11 @@ msgstr "oväntat uuid %s istället för %s"
 msgid "property is missing"
 msgstr "egenskapen saknas"
 
-#: src/libnm-core-impl/nm-connection.c:3249
+#: src/libnm-core-impl/nm-connection.c:3256
 msgid "IP Tunnel"
 msgstr "IP-tunnel"
 
-#: src/libnm-core-impl/nm-connection.c:3253
+#: src/libnm-core-impl/nm-connection.c:3260
 msgid "TUN/TAP"
 msgstr "TUN/TAP"
 
@@ -1340,7 +1339,7 @@ msgid "ignoring invalid DNS server IPv%c address '%s'"
 msgstr "ignorerar ogiltig DNS-server IPv%c-adress ”%s”"
 
 #: src/libnm-core-impl/nm-keyfile.c:1177
-#: src/libnmc-setting/nm-meta-setting-desc.c:1678
+#: src/libnmc-setting/nm-meta-setting-desc.c:1653
 #, c-format
 msgid "invalid option '%s', use one of [%s]"
 msgstr "ogiltig flagga ”%s”, använd en av [%s]"
@@ -1503,7 +1502,7 @@ msgid "property is not specified"
 msgstr "egenskapen är inte angiven"
 
 #: src/libnm-core-impl/nm-setting-6lowpan.c:104
-#: src/libnm-core-impl/nm-setting-macsec.c:315
+#: src/libnm-core-impl/nm-setting-macsec.c:333
 #: src/libnm-core-impl/nm-setting-vlan.c:625
 #, c-format
 msgid "'%s' value doesn't match '%s=%s'"
@@ -1511,7 +1510,7 @@ msgstr "”%s”-värde matchar inte ”%s=%s”"
 
 #: src/libnm-core-impl/nm-setting-6lowpan.c:120
 #: src/libnm-core-impl/nm-setting-ip-tunnel.c:378
-#: src/libnm-core-impl/nm-setting-macsec.c:331
+#: src/libnm-core-impl/nm-setting-macsec.c:349
 #: src/libnm-core-impl/nm-setting-macvlan.c:138
 #: src/libnm-core-impl/nm-setting-vlan.c:641
 #: src/libnm-core-impl/nm-setting-vxlan.c:377
@@ -1590,7 +1589,7 @@ msgstr "lösenordet stöds ej när certifikat inte på ett PKCS#11-token"
 #: src/libnm-core-impl/nm-setting-wimax.c:107
 #: src/libnm-core-impl/nm-setting-wireless-security.c:968
 #: src/libnm-core-impl/nm-setting-wireless-security.c:996
-#: src/libnm-core-impl/nm-setting.c:2552
+#: src/libnm-core-impl/nm-setting.c:2624
 msgid "property is empty"
 msgstr "egenskap är tom"
 
@@ -2099,12 +2098,12 @@ msgid "Invalid routing metric '%s'"
 msgstr "Ogiltigt ruttmätvärde ”%s”"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:1339
-#: src/libnm-core-impl/nm-setting-sriov.c:400
+#: src/libnm-core-impl/nm-setting-sriov.c:410
 msgid "unknown attribute"
 msgstr "okänt attribut"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:1349
-#: src/libnm-core-impl/nm-setting-sriov.c:410
+#: src/libnm-core-impl/nm-setting-sriov.c:420
 #, c-format
 msgid "invalid attribute type '%s'"
 msgstr "ogiltig attributstyp ”%s”"
@@ -2517,40 +2516,40 @@ msgstr "ipv6-metod \"%s\" stöds inte för loopback"
 msgid "a loopback profile cannot be a port"
 msgstr "en loopback-profil kan inte vara en port"
 
-#: src/libnm-core-impl/nm-setting-macsec.c:249
+#: src/libnm-core-impl/nm-setting-macsec.c:267
 msgid "the key is empty"
 msgstr "nyckeln är tom"
 
-#: src/libnm-core-impl/nm-setting-macsec.c:259
+#: src/libnm-core-impl/nm-setting-macsec.c:277
 #, c-format
 msgid "the key must be %d characters"
 msgstr "nyckeln måste vara %d tecken"
 
-#: src/libnm-core-impl/nm-setting-macsec.c:269
+#: src/libnm-core-impl/nm-setting-macsec.c:287
 msgid "the key must have an even number of characters between 2 and 64"
 msgstr "nyckeln måste ha ett jämnt antal tecken mellan 2 och 64"
 
-#: src/libnm-core-impl/nm-setting-macsec.c:278
+#: src/libnm-core-impl/nm-setting-macsec.c:296
 msgid "the key contains non-hexadecimal characters"
 msgstr "nyckeln innehåller icke-hexadecimala siffror"
 
-#: src/libnm-core-impl/nm-setting-macsec.c:347
+#: src/libnm-core-impl/nm-setting-macsec.c:365
 #: src/libnm-core-impl/nm-setting-macvlan.c:154
 #: src/libnm-core-impl/nm-setting-vlan.c:654
 #, c-format
 msgid "property is not specified and neither is '%s:%s'"
 msgstr "egenskapen är inte angiven och det är inte heller ”%s:%s”"
 
-#: src/libnm-core-impl/nm-setting-macsec.c:378
+#: src/libnm-core-impl/nm-setting-macsec.c:396
 #, c-format
 msgid "EAP key management requires '%s' setting presence"
 msgstr "EAP-nyckelhantering kräver en ”%s”-inställning"
 
-#: src/libnm-core-impl/nm-setting-macsec.c:387
+#: src/libnm-core-impl/nm-setting-macsec.c:405
 msgid "must be either psk (0) or eap (1)"
 msgstr "måste antingen vara psk(0) eller eap(1)"
 
-#: src/libnm-core-impl/nm-setting-macsec.c:398
+#: src/libnm-core-impl/nm-setting-macsec.c:416
 msgid "only valid for psk mode"
 msgstr "endast giltig för psk-läge"
 
@@ -2761,34 +2760,34 @@ msgstr "skriptet är inte giltig utf8"
 msgid "the script lacks FindProxyForURL function"
 msgstr "skriptet saknar funktionen för FindProxyForURL"
 
-#: src/libnm-core-impl/nm-setting-sriov.c:422
+#: src/libnm-core-impl/nm-setting-sriov.c:432
 #: src/libnm-core-impl/nm-setting-wired.c:809
 #: src/libnm-core-impl/nm-setting-wired.c:825
 #: src/libnm-core-impl/nm-setting-wired.c:899
 #: src/libnm-core-impl/nm-setting-wired.c:958
 #: src/libnm-core-impl/nm-setting-wireless.c:1059
 #: src/libnm-core-impl/nm-setting-wireless.c:1079
-#: src/libnmc-setting/nm-meta-setting-desc.c:4283
+#: src/libnmc-setting/nm-meta-setting-desc.c:4258
 #, c-format
 msgid "'%s' is not a valid MAC address"
 msgstr "”%s” är inte en giltig MAC-adress"
 
-#: src/libnm-core-impl/nm-setting-sriov.c:1045
+#: src/libnm-core-impl/nm-setting-sriov.c:1103
 #, c-format
 msgid "VF with index %u, but the total number of VFs is %u"
 msgstr "VF med index %u, men det totala antalet VF är %u"
 
-#: src/libnm-core-impl/nm-setting-sriov.c:1059
+#: src/libnm-core-impl/nm-setting-sriov.c:1117
 #, c-format
 msgid "invalid VF %u: %s"
 msgstr "ogiltig VF %u: %s"
 
-#: src/libnm-core-impl/nm-setting-sriov.c:1073
+#: src/libnm-core-impl/nm-setting-sriov.c:1131
 #, c-format
 msgid "duplicate VF index %u"
 msgstr "dubblerat VF-index %u"
 
-#: src/libnm-core-impl/nm-setting-sriov.c:1097
+#: src/libnm-core-impl/nm-setting-sriov.c:1155
 #, c-format
 msgid "VFs %d and %d are not sorted by ascending index"
 msgstr "VF %d och %d är ej sorterade med sjunkande index"
@@ -2909,7 +2908,7 @@ msgid "setting contained a secret with an empty name"
 msgstr "inställning innehåller en hemlighet med ett tomt namn"
 
 #: src/libnm-core-impl/nm-setting-vpn.c:651
-#: src/libnm-core-impl/nm-setting.c:3503
+#: src/libnm-core-impl/nm-setting.c:3575
 msgid "not a secret property"
 msgstr "inte en hemlig egenskap"
 
@@ -3151,41 +3150,46 @@ msgstr "sida måste vara mellan %d och %d"
 msgid "channel must not be between %d and %d"
 msgstr "kanal måste vara mellan %d och %d"
 
-#: src/libnm-core-impl/nm-setting.c:1730 src/libnm-core-impl/nm-setting.c:1770
-#: src/libnm-core-impl/nm-setting.c:2081
+#: src/libnm-core-impl/nm-setting.c:1772 src/libnm-core-impl/nm-setting.c:1812
+#: src/libnm-core-impl/nm-setting.c:2123
 #, c-format
 msgid "can't set property of type '%s' from value of type '%s'"
 msgstr "kan inte sätta egenskap för typen ”%s” från värdet av typen ”%s”"
 
-#: src/libnm-core-impl/nm-setting.c:1746
+#: src/libnm-core-impl/nm-setting.c:1788
 #, c-format
 msgid "value of type '%s' is invalid or out of range for property '%s'"
 msgstr ""
 "värdet av typen '%s' är ogiltigt eller utanför intervallet för egenskap '%s'"
 
-#: src/libnm-core-impl/nm-setting.c:1791
+#: src/libnm-core-impl/nm-setting.c:1833
 #, c-format
 msgid "can not set property: %s"
 msgstr "kan inte sätta egenskap: %s"
 
-#: src/libnm-core-impl/nm-setting.c:2020
+#: src/libnm-core-impl/nm-setting.c:2062
 msgid "duplicate property"
 msgstr "duplicerad egenskap"
 
-#: src/libnm-core-impl/nm-setting.c:2040
+#: src/libnm-core-impl/nm-setting.c:2082
 msgid "unknown property"
 msgstr "okänd egenskap"
 
-#: src/libnm-core-impl/nm-setting.c:2114 src/libnm-core-impl/nm-setting.c:2196
+#: src/libnm-core-impl/nm-setting.c:2156 src/libnm-core-impl/nm-setting.c:2238
 #, c-format
 msgid "failed to set property: %s"
 msgstr "misslyckades med att sätta egenskap: %s"
 
-#: src/libnm-core-impl/nm-setting.c:2465
+#: src/libnm-core-impl/nm-setting.c:2513
+#, c-format
+msgid "invalid value %d, expected %d-%d"
+msgstr "ogiltigt värde för %d' förväntade sig %d-%d"
+
+#: src/libnm-core-impl/nm-setting.c:2537
 msgid "cannot be empty"
 msgstr "får inte vara tomt"
 
-#: src/libnm-core-impl/nm-setting.c:3400
+#: src/libnm-core-impl/nm-setting.c:3472
 msgid "secret not found"
 msgstr "hemlighet inte funnen"
 
@@ -4078,10 +4082,10 @@ msgstr "”%s” inte bland [%s]"
 
 #: src/libnmc-base/nm-client-utils.c:291 src/libnmc-base/nm-client-utils.c:305
 #: src/libnmc-base/nm-client-utils.c:341 src/libnmc-base/nm-client-utils.c:346
-#: src/libnmc-setting/nm-meta-setting-desc.c:1842
-#: src/libnmc-setting/nm-meta-setting-desc.c:1873
-#: src/libnmc-setting/nm-meta-setting-desc.c:2882
-#: src/libnmc-setting/nm-meta-setting-desc.c:2940 src/nmcli/common.c:1611
+#: src/libnmc-setting/nm-meta-setting-desc.c:1817
+#: src/libnmc-setting/nm-meta-setting-desc.c:1848
+#: src/libnmc-setting/nm-meta-setting-desc.c:2857
+#: src/libnmc-setting/nm-meta-setting-desc.c:2915 src/nmcli/common.c:1611
 #: src/nmcli/connections.c:79 src/nmcli/connections.c:89
 #: src/nmcli/devices.c:485 src/nmcli/devices.c:592 src/nmcli/devices.c:598
 #: src/nmcli/devices.c:604 src/nmcli/general.c:30 src/nmcli/general.c:85
@@ -4153,7 +4157,7 @@ msgstr "inaktiverar (externt)"
 
 #: src/libnmc-base/nm-client-utils.c:342
 #: src/libnmc-setting/nm-meta-setting-desc.c:875
-#: src/libnmc-setting/nm-meta-setting-desc.c:2874 src/nmcli/connections.c:5576
+#: src/libnmc-setting/nm-meta-setting-desc.c:2849 src/nmcli/connections.c:5576
 #: src/nmcli/connections.c:7554 src/nmcli/connections.c:7555
 #: src/nmcli/devices.c:591 src/nmcli/devices.c:597 src/nmcli/devices.c:603
 #: src/nmcli/devices.c:1427 src/nmcli/general.c:92 src/nmcli/utils.h:317
@@ -4162,7 +4166,7 @@ msgstr "ja"
 
 #: src/libnmc-base/nm-client-utils.c:343
 #: src/libnmc-setting/nm-meta-setting-desc.c:875
-#: src/libnmc-setting/nm-meta-setting-desc.c:2877 src/nmcli/connections.c:5575
+#: src/libnmc-setting/nm-meta-setting-desc.c:2852 src/nmcli/connections.c:5575
 #: src/nmcli/connections.c:7554 src/nmcli/connections.c:7555
 #: src/nmcli/devices.c:591 src/nmcli/devices.c:597 src/nmcli/devices.c:603
 #: src/nmcli/devices.c:1427 src/nmcli/general.c:93 src/nmcli/utils.h:317
@@ -4454,91 +4458,95 @@ msgstr "Misslyckades med att konfigurera SR-IOV-parametrar"
 msgid "The Wi-Fi P2P peer could not be found"
 msgstr "Wi-Fi P2P peer kunde inte hittas"
 
-#: src/libnmc-base/nm-client-utils.c:474
+#: src/libnmc-base/nm-client-utils.c:469
+msgid "The device handler dispatcher returned an error"
+msgstr "Enhetshanterarens samordnare returnerade ett fel"
+
+#: src/libnmc-base/nm-client-utils.c:476
 msgid "Unknown reason"
 msgstr "Okänd anledning"
 
-#: src/libnmc-base/nm-client-utils.c:476
+#: src/libnmc-base/nm-client-utils.c:478
 msgid "The connection was disconnected"
 msgstr "Anslutningen kopplades från"
 
-#: src/libnmc-base/nm-client-utils.c:478
+#: src/libnmc-base/nm-client-utils.c:480
 msgid "Disconnected by user"
 msgstr "Frånkopplad av användaren"
 
-#: src/libnmc-base/nm-client-utils.c:480
+#: src/libnmc-base/nm-client-utils.c:482
 msgid "The base network connection was interrupted"
 msgstr "Basnätverksanslutningen avbröts"
 
-#: src/libnmc-base/nm-client-utils.c:482
+#: src/libnmc-base/nm-client-utils.c:484
 msgid "The VPN service stopped unexpectedly"
 msgstr "VPN-tjänsten stoppades oväntat"
 
-#: src/libnmc-base/nm-client-utils.c:484
+#: src/libnmc-base/nm-client-utils.c:486
 msgid "The VPN service returned invalid configuration"
 msgstr "VPN-tjänsten returnerade en ogiltig konfiguration"
 
-#: src/libnmc-base/nm-client-utils.c:486
+#: src/libnmc-base/nm-client-utils.c:488
 msgid "The connection attempt timed out"
 msgstr "Anslutningsförsöket översteg tidsgränsen"
 
-#: src/libnmc-base/nm-client-utils.c:488
+#: src/libnmc-base/nm-client-utils.c:490
 msgid "The VPN service did not start in time"
 msgstr "VPN-tjänsten startade inte i tid"
 
-#: src/libnmc-base/nm-client-utils.c:490
+#: src/libnmc-base/nm-client-utils.c:492
 msgid "The VPN service failed to start"
 msgstr "VPN-tjänsten misslyckades med att starta"
 
-#: src/libnmc-base/nm-client-utils.c:491
+#: src/libnmc-base/nm-client-utils.c:493
 msgid "No valid secrets"
 msgstr "Inga giltiga hemligheter"
 
-#: src/libnmc-base/nm-client-utils.c:492
+#: src/libnmc-base/nm-client-utils.c:494
 msgid "Invalid secrets"
 msgstr "Ogiltiga hemligheter"
 
-#: src/libnmc-base/nm-client-utils.c:494
+#: src/libnmc-base/nm-client-utils.c:496
 msgid "The connection was removed"
 msgstr "Anslutningen togs bort"
 
-#: src/libnmc-base/nm-client-utils.c:496
+#: src/libnmc-base/nm-client-utils.c:498
 msgid "Master connection failed"
 msgstr "Huvudanslutningen misslyckades"
 
-#: src/libnmc-base/nm-client-utils.c:498
+#: src/libnmc-base/nm-client-utils.c:500
 msgid "Could not create a software link"
 msgstr "Kunde inte skapa en programvarulänk"
 
-#: src/libnmc-base/nm-client-utils.c:500
+#: src/libnmc-base/nm-client-utils.c:502
 msgid "The device disappeared"
 msgstr "Enheten försvann"
 
-#: src/libnmc-base/nm-client-utils.c:826
+#: src/libnmc-base/nm-client-utils.c:828
 msgid "missing colon for \"<setting>.<property>:<secret>\" format"
 msgstr "saknar kolon för \"<setting>.<property>:<secret>\" format"
 
-#: src/libnmc-base/nm-client-utils.c:843
+#: src/libnmc-base/nm-client-utils.c:845
 msgid "missing dot for \"<setting>.<property>:<secret>\" format"
 msgstr "saknar punkt för \"<setting>.<property>:<secret>\" format"
 
-#: src/libnmc-base/nm-client-utils.c:849
+#: src/libnmc-base/nm-client-utils.c:851
 msgid "missing setting for \"<setting>.<property>:<secret>\" format"
 msgstr "saknar inställning för \"<setting>.<property>:<secret>\" format"
 
-#: src/libnmc-base/nm-client-utils.c:860
+#: src/libnmc-base/nm-client-utils.c:862
 msgid "missing property for \"<setting>.<property>:<secret>\" format"
 msgstr "saknas egenskap för formatet \"<setting>.<property>:<secret>\""
 
-#: src/libnmc-base/nm-client-utils.c:870
+#: src/libnmc-base/nm-client-utils.c:872
 msgid "invalid setting name"
 msgstr "ogiltigt inställningsnamn"
 
-#: src/libnmc-base/nm-client-utils.c:884
+#: src/libnmc-base/nm-client-utils.c:886
 msgid "property name is not UTF-8"
 msgstr "egenskapsnamn är inte UTF-8"
 
-#: src/libnmc-base/nm-client-utils.c:901 src/libnmc-base/nm-client-utils.c:907
+#: src/libnmc-base/nm-client-utils.c:903 src/libnmc-base/nm-client-utils.c:909
 msgid "secret is not UTF-8"
 msgstr "hemlighet är inte UTF-8"
 
@@ -4552,27 +4560,27 @@ msgstr "Kunde inte hitta något sessions-ID för uid %d"
 msgid "Could not retrieve session id: %s"
 msgstr "Kunde inte hämta sessions-id: %s"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:222
+#: src/libnmc-base/nm-secret-agent-simple.c:225
 #, c-format
 msgid "Preshared-key for %s"
 msgstr "Fördelad-nyckel för %s"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:270
-#: src/libnmc-base/nm-secret-agent-simple.c:357
-#: src/libnmc-setting/nm-meta-setting-desc.c:5200
+#: src/libnmc-base/nm-secret-agent-simple.c:274
+#: src/libnmc-base/nm-secret-agent-simple.c:361
+#: src/libnmc-setting/nm-meta-setting-desc.c:5175
 #: src/nmtui/nmt-8021x-fields.c:182 src/nmtui/nmt-8021x-fields.c:353
 #: src/nmtui/nmt-8021x-fields.c:457 src/nmtui/nmt-page-dsl.c:51
 #: src/nmtui/nmt-page-wifi.c:345
 msgid "Username"
 msgstr "Användarnamn"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:275
-#: src/libnmc-base/nm-secret-agent-simple.c:312
-#: src/libnmc-base/nm-secret-agent-simple.c:335
-#: src/libnmc-base/nm-secret-agent-simple.c:367
-#: src/libnmc-base/nm-secret-agent-simple.c:917
-#: src/libnmc-base/nm-secret-agent-simple.c:952
-#: src/libnmc-base/nm-secret-agent-simple.c:979
+#: src/libnmc-base/nm-secret-agent-simple.c:279
+#: src/libnmc-base/nm-secret-agent-simple.c:316
+#: src/libnmc-base/nm-secret-agent-simple.c:339
+#: src/libnmc-base/nm-secret-agent-simple.c:371
+#: src/libnmc-base/nm-secret-agent-simple.c:948
+#: src/libnmc-base/nm-secret-agent-simple.c:983
+#: src/libnmc-base/nm-secret-agent-simple.c:1010
 #: src/libnmc-base/nm-vpn-helpers.c:144 src/libnmc-base/nm-vpn-helpers.c:148
 #: src/libnmc-base/nm-vpn-helpers.c:154 src/libnmc-base/nm-vpn-helpers.c:159
 #: src/nmcli/devices.c:4736 src/nmtui/nmt-8021x-fields.c:195
@@ -4582,46 +4590,46 @@ msgstr "Användarnamn"
 msgid "Password"
 msgstr "Lösenord"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:284
+#: src/libnmc-base/nm-secret-agent-simple.c:288
 #: src/nmtui/nmt-8021x-fields.c:204
 msgid "Identity"
 msgstr "Identitet"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:289
+#: src/libnmc-base/nm-secret-agent-simple.c:293
 msgid "Private key password"
 msgstr "Lösenord för privat nyckel"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:325 src/nmtui/nmt-page-wifi.c:298
+#: src/libnmc-base/nm-secret-agent-simple.c:329 src/nmtui/nmt-page-wifi.c:298
 msgid "Key"
 msgstr "Nyckel"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:362 src/nmtui/nmt-page-dsl.c:67
+#: src/libnmc-base/nm-secret-agent-simple.c:366 src/nmtui/nmt-page-dsl.c:67
 msgid "Service"
 msgstr "Tjänst"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:473
+#: src/libnmc-base/nm-secret-agent-simple.c:500
 msgid "WireGuard private-key"
 msgstr "Wireguard privat nyckel"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:512
+#: src/libnmc-base/nm-secret-agent-simple.c:539
 #, c-format
 msgid "Secrets are required to connect WireGuard VPN '%s'"
 msgstr "Hemligheter krävs för att ansluta WireGuard VPN '%s'"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:620
-#: src/libnmc-base/nm-secret-agent-simple.c:913
-#: src/libnmc-base/nm-secret-agent-simple.c:948
-#: src/libnmc-base/nm-secret-agent-simple.c:975
-#: src/libnmc-base/nm-secret-agent-simple.c:994
+#: src/libnmc-base/nm-secret-agent-simple.c:651
+#: src/libnmc-base/nm-secret-agent-simple.c:944
+#: src/libnmc-base/nm-secret-agent-simple.c:979
+#: src/libnmc-base/nm-secret-agent-simple.c:1006
+#: src/libnmc-base/nm-secret-agent-simple.c:1025
 #, c-format
 msgid "A password is required to connect to '%s'."
 msgstr "Ett lösenord krävs för att ansluta till ”%s”."
 
-#: src/libnmc-base/nm-secret-agent-simple.c:878
+#: src/libnmc-base/nm-secret-agent-simple.c:909
 msgid "Authentication required by wireless network"
 msgstr "Autentisering krävs av trådlösa nätverket"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:880
+#: src/libnmc-base/nm-secret-agent-simple.c:911
 #, c-format
 msgid ""
 "Passwords or encryption keys are required to access the wireless network "
@@ -4630,65 +4638,65 @@ msgstr ""
 "Lösenord eller krypteringsnycklar krävs för åtkomst till trådlösa nätverket "
 "”%s”."
 
-#: src/libnmc-base/nm-secret-agent-simple.c:886
+#: src/libnmc-base/nm-secret-agent-simple.c:917
 msgid "Wired 802.1X authentication"
 msgstr "Trådbunden 802.1X-autentisering"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:887
+#: src/libnmc-base/nm-secret-agent-simple.c:918
 #, c-format
 msgid "Secrets are required to access the wired network '%s'"
 msgstr "Hemligheter krävs för åtkomst till trådbundna nätverket ”%s”"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:893
+#: src/libnmc-base/nm-secret-agent-simple.c:924
 msgid "DSL authentication"
 msgstr "DSL-autentisering"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:894
+#: src/libnmc-base/nm-secret-agent-simple.c:925
 #, c-format
 msgid "Secrets are required for the DSL connection '%s'"
 msgstr "Hemligheter krävs för DSL-anslutning ”%s”"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:903
+#: src/libnmc-base/nm-secret-agent-simple.c:934
 msgid "PIN code required"
 msgstr "PIN-kod krävs"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:904
+#: src/libnmc-base/nm-secret-agent-simple.c:935
 msgid "PIN code is needed for the mobile broadband device"
 msgstr "Det krävs PIN-kod för den mobila bredbandsenheten"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:907
+#: src/libnmc-base/nm-secret-agent-simple.c:938
 msgid "PIN"
 msgstr "PIN"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:912
-#: src/libnmc-base/nm-secret-agent-simple.c:947
-#: src/libnmc-base/nm-secret-agent-simple.c:974
+#: src/libnmc-base/nm-secret-agent-simple.c:943
+#: src/libnmc-base/nm-secret-agent-simple.c:978
+#: src/libnmc-base/nm-secret-agent-simple.c:1005
 msgid "Mobile broadband network password"
 msgstr "Nätverkslösenord för mobilt bredband"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:925
+#: src/libnmc-base/nm-secret-agent-simple.c:956
 #, c-format
 msgid "Secrets are required to access the MACsec network '%s'"
 msgstr "Hemligheter krävs för åtkomst till MACsec-nätverket ”%s”"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:929
+#: src/libnmc-base/nm-secret-agent-simple.c:960
 msgid "MACsec PSK authentication"
 msgstr "MACsec PSK-autentisering"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:931
-#: src/libnmc-setting/nm-meta-setting-desc.c:6905
+#: src/libnmc-base/nm-secret-agent-simple.c:962
+#: src/libnmc-setting/nm-meta-setting-desc.c:6889
 msgid "MKA CAK"
 msgstr "MKA CAK"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:936
+#: src/libnmc-base/nm-secret-agent-simple.c:967
 msgid "MACsec EAP authentication"
 msgstr "MACsec EAP-autentisering"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:941
+#: src/libnmc-base/nm-secret-agent-simple.c:972
 msgid "WireGuard VPN secret"
 msgstr "WireGuard VPN hemlighet"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:984
+#: src/libnmc-base/nm-secret-agent-simple.c:1015
 msgid "VPN password required"
 msgstr "VPN-lösenord krävs"
 
@@ -4838,123 +4846,123 @@ msgstr "gruppkonfigurationsfilen ”%s” innehåller ogiltig utf-8"
 msgid "auto"
 msgstr "auto"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1193
+#: src/libnmc-setting/nm-meta-setting-desc.c:1179
 #, c-format
 msgid "%s (%s)"
 msgstr "%s (%s)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1447
-#: src/libnmc-setting/nm-meta-setting-desc.c:1455
-#: src/libnmc-setting/nm-meta-setting-desc.c:4513
+#: src/libnmc-setting/nm-meta-setting-desc.c:1435
+#: src/libnmc-setting/nm-meta-setting-desc.c:1443
+#: src/libnmc-setting/nm-meta-setting-desc.c:4488
 msgid "'%s' is out of range [%"
 msgstr "”%s” är utanför intervallet [%"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1463
+#: src/libnmc-setting/nm-meta-setting-desc.c:1451
 #, c-format
 msgid "'%s' is not a valid number"
 msgstr "”%s” är inte ett giltigt nummer"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1519
+#: src/libnmc-setting/nm-meta-setting-desc.c:1507
 #, c-format
 msgid "'%s' is out of range [0, %u]"
 msgstr "”%s” är utanför intervallet [0, %u]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1570
+#: src/libnmc-setting/nm-meta-setting-desc.c:1558
 #, c-format
 msgid "'%s' is not a valid Ethernet MAC"
 msgstr "”%s” är inte en giltig Ethernet MAC"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1672
+#: src/libnmc-setting/nm-meta-setting-desc.c:1647
 #, c-format
 msgid "invalid option '%s', use a combination of [%s]"
 msgstr "ogiltig flagga ”%s”, använd en kombination av [%s]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1809
+#: src/libnmc-setting/nm-meta-setting-desc.c:1784
 #, c-format
 msgid "%d (key)"
 msgstr "%d (nyckel)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1811
+#: src/libnmc-setting/nm-meta-setting-desc.c:1786
 #, c-format
 msgid "%d (passphrase)"
 msgstr "%d (lösenfras)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1814
+#: src/libnmc-setting/nm-meta-setting-desc.c:1789
 #, c-format
 msgid "%d (unknown)"
 msgstr "%d (okänt)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1827
+#: src/libnmc-setting/nm-meta-setting-desc.c:1802
 msgid "0 (NONE)"
 msgstr "0 (INGEN)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1833
+#: src/libnmc-setting/nm-meta-setting-desc.c:1808
 msgid "REORDER_HEADERS, "
 msgstr "REORDER_HEADERS, "
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1835
+#: src/libnmc-setting/nm-meta-setting-desc.c:1810
 msgid "GVRP, "
 msgstr "GVRP, "
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1837
+#: src/libnmc-setting/nm-meta-setting-desc.c:1812
 msgid "LOOSE_BINDING, "
 msgstr "LOOSE_BINDING, "
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1839
+#: src/libnmc-setting/nm-meta-setting-desc.c:1814
 msgid "MVRP, "
 msgstr "MVRP, "
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1860
+#: src/libnmc-setting/nm-meta-setting-desc.c:1835
 msgid "0 (none)"
 msgstr "0 (ingen)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1866
+#: src/libnmc-setting/nm-meta-setting-desc.c:1841
 msgid "agent-owned, "
 msgstr "agent-owned, "
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1868
+#: src/libnmc-setting/nm-meta-setting-desc.c:1843
 msgid "not saved, "
 msgstr "inte sparad, "
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1870
+#: src/libnmc-setting/nm-meta-setting-desc.c:1845
 msgid "not required, "
 msgstr "krävs ej, "
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2075
+#: src/libnmc-setting/nm-meta-setting-desc.c:2050
 #, c-format
 msgid "'%s' is not valid; use <option>=<value>"
 msgstr "”%s” är inte giltigt; använd <flagga>=<värde>"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2085
+#: src/libnmc-setting/nm-meta-setting-desc.c:2060
 #, c-format
 msgid "cannot set empty \"%s\" option"
 msgstr "kan inte ställa in det tomma alternativet \"%s\""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2146
+#: src/libnmc-setting/nm-meta-setting-desc.c:2121
 #, c-format
 msgid "'%u' flags are not valid; use combination of %s"
 msgstr "”%u”-flaggor är inte giltiga; använd en kombination av %s"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2166
+#: src/libnmc-setting/nm-meta-setting-desc.c:2141
 #, c-format
 msgid "'%s' is not a valid number (or out of range)"
 msgstr "”%s” är inte ett giltigt nummer (eller utanför intervallet)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2266
+#: src/libnmc-setting/nm-meta-setting-desc.c:2241
 #, c-format
 msgid "invalid IPv4 or subnet \"%s\""
 msgstr "ogiltig IPv4 eller subnät ”%s”"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2297
+#: src/libnmc-setting/nm-meta-setting-desc.c:2272
 msgid "not a valid hex-string"
 msgstr "inte en giltig hex-sträng"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2315
+#: src/libnmc-setting/nm-meta-setting-desc.c:2290
 #, c-format
 msgid "'%s' is not a valid hex character"
 msgstr "”%s” är inte ett giltigt hextecken"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2403
+#: src/libnmc-setting/nm-meta-setting-desc.c:2378
 msgid ""
 "too many arguments. Please only specify a private key file and optionally a "
 "password"
@@ -4962,12 +4970,12 @@ msgstr ""
 "för många argument. Ange endast en privat nyckelfil och eventuellt ett "
 "lösenord"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2520
+#: src/libnmc-setting/nm-meta-setting-desc.c:2495
 #, c-format
 msgid "failed to set bond option \"%s\""
 msgstr "misslyckades med att sätta bond alternativ: \"%s\""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2568
+#: src/libnmc-setting/nm-meta-setting-desc.c:2543
 #, c-format
 msgid ""
 "Enter a list of bonding options formatted as:\n"
@@ -4998,119 +5006,119 @@ msgstr ""
 "\n"
 "Exempel: mode=2,miimon=120\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2675
+#: src/libnmc-setting/nm-meta-setting-desc.c:2650
 msgid "Can not change the connection type"
 msgstr "Det går inte att ändra anslutningstypen"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2756
+#: src/libnmc-setting/nm-meta-setting-desc.c:2731
 #, c-format
 msgid "invalid permission \"%s\""
 msgstr "ogiltig behörighet \"%s\""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2856
+#: src/libnmc-setting/nm-meta-setting-desc.c:2831
 #, c-format
 msgid "the value '%s' is not a valid UUID"
 msgstr "värdet ”%s” är inte ett giltigt UUID"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2927
+#: src/libnmc-setting/nm-meta-setting-desc.c:2902
 msgid "0 (disabled)"
 msgstr "0 (inaktiverad)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2933
+#: src/libnmc-setting/nm-meta-setting-desc.c:2908
 msgid "enabled, "
 msgstr "aktiverad, "
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2935
+#: src/libnmc-setting/nm-meta-setting-desc.c:2910
 msgid "advertise, "
 msgstr "ropa ut, "
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2937
+#: src/libnmc-setting/nm-meta-setting-desc.c:2912
 msgid "willing, "
 msgstr "villig, "
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3026
+#: src/libnmc-setting/nm-meta-setting-desc.c:3001
 #, c-format
 msgid "'%s' is not a valid DCB flag"
 msgstr "”%s” är inte en giltig DCB-flagga"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3054
+#: src/libnmc-setting/nm-meta-setting-desc.c:3029
 msgid "must contain 8 comma-separated numbers"
 msgstr "måste innehålla 8 kommaseparerade siffror"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3069
+#: src/libnmc-setting/nm-meta-setting-desc.c:3044
 #, c-format
 msgid "'%s' not a number between 0 and %u (inclusive) or %u"
 msgstr "”%s” inte en siffra mellan 0 och %u (inklusive) eller %u"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3076
+#: src/libnmc-setting/nm-meta-setting-desc.c:3051
 #, c-format
 msgid "'%s' not a number between 0 and %u (inclusive)"
 msgstr "”%s” inte en siffra mellan 0 och %u (inklusive)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3102
+#: src/libnmc-setting/nm-meta-setting-desc.c:3077
 #, c-format
 msgid "changes will have no effect until '%s' includes 1 (enabled)"
 msgstr ""
 "ändringar kommer inte att slå igenom förrän ”%s” inkluderar 1 (aktiverad)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3134
+#: src/libnmc-setting/nm-meta-setting-desc.c:3109
 #, c-format
 msgid "bandwidth percentages must total 100%%"
 msgstr "summan för bandbreddsprocenten måste vara 100%%"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3234
-#: src/libnmc-setting/nm-meta-setting-desc.c:3243
+#: src/libnmc-setting/nm-meta-setting-desc.c:3209
+#: src/libnmc-setting/nm-meta-setting-desc.c:3218
 msgid "SIM operator ID must be a 5 or 6 number MCCMNC code"
 msgstr "SIM-operatörs-ID måste vara en 5- eller 6-siffrig MCCMNC-kod"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3266
+#: src/libnmc-setting/nm-meta-setting-desc.c:3241
 #, c-format
 msgid "'%s' is not a valid IBoIP P_Key"
 msgstr "”%s” är inte en giltig IBoIP P_Key"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3290
+#: src/libnmc-setting/nm-meta-setting-desc.c:3265
 msgid "default"
 msgstr "standard"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3561
+#: src/libnmc-setting/nm-meta-setting-desc.c:3536
 #, c-format
 msgid "invalid gateway address '%s'"
 msgstr "ogiltig gateway-adress ”%s”"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3713
+#: src/libnmc-setting/nm-meta-setting-desc.c:3688
 #, c-format
 msgid "'%s' is not a valid channel; use <1-13>"
 msgstr "”%s” är inte en giltig kanal; använd <1-13>"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3807
+#: src/libnmc-setting/nm-meta-setting-desc.c:3782
 msgid "The valid syntax is: vf [attribute=value]... [,vf [attribute=value]...]"
 msgstr "Giltig syntax är: vf [attribut=värde]... [,vf [attribut=värde]...]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3833
-#: src/libnmc-setting/nm-meta-setting-desc.c:3946
+#: src/libnmc-setting/nm-meta-setting-desc.c:3808
+#: src/libnmc-setting/nm-meta-setting-desc.c:3921
 msgid ""
 "The valid syntax is: '[root | parent <handle>] [handle <handle>] <kind>'"
 msgstr "Giltig syntax är: '[root | parent <handle>] [handle <handle>] <kind>'"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3860
+#: src/libnmc-setting/nm-meta-setting-desc.c:3835
 msgid "The valid syntax is: '<value>' or '<start>-<end>"
 msgstr "Den giltiga syntaxen är: '<value>' eller '<start>-<end>"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3890
+#: src/libnmc-setting/nm-meta-setting-desc.c:3865
 msgid "The valid syntax is: '<vid>[-<vid>] [pvid] [untagged]'"
 msgstr "Giltig syntax är: '<vid>[-<vid>] [pvid] [untagged]'"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4092
+#: src/libnmc-setting/nm-meta-setting-desc.c:4067
 #, c-format
 msgid "invalid priority map '%s'"
 msgstr "ogiltig prioritetshash ”%s”"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4185
+#: src/libnmc-setting/nm-meta-setting-desc.c:4160
 #, c-format
 msgid "'%s' is not valid; 2 or 3 strings should be provided"
 msgstr "”%s” är ogiltig; Två eller tre strängar ska anges"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4224
+#: src/libnmc-setting/nm-meta-setting-desc.c:4199
 #, c-format
 msgid ""
 "Enter a list of S/390 options formatted as:\n"
@@ -5121,17 +5129,17 @@ msgstr ""
 "  option = <värde>, option = <värde>,…\n"
 "Giltiga val är: %s\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4258
+#: src/libnmc-setting/nm-meta-setting-desc.c:4233
 #, c-format
 msgid "'%s' is not a valid channel"
 msgstr "”%s” är inte en giltig kanal"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4266
+#: src/libnmc-setting/nm-meta-setting-desc.c:4241
 #, c-format
 msgid "'%ld' is not a valid channel"
 msgstr "”%ld” är en ogiltig kanal"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4347
+#: src/libnmc-setting/nm-meta-setting-desc.c:4322
 #, c-format
 msgid ""
 "'%s' not compatible with %s '%s', please change the key or set the right %s "
@@ -5139,70 +5147,70 @@ msgid ""
 msgstr ""
 "”%s” är inte kompatibel med %s ”%s”, ändra nyckeln eller sätt rätt %s först."
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4363
+#: src/libnmc-setting/nm-meta-setting-desc.c:4338
 #, c-format
 msgid "WEP key is guessed to be of %s"
 msgstr "WEP-nyckeln kan gissningsvis vara %s"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4370
+#: src/libnmc-setting/nm-meta-setting-desc.c:4345
 #, c-format
 msgid "WEP key index set to '%d'"
 msgstr "index för WEP-nyckel satt till ”%d”"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4446
+#: src/libnmc-setting/nm-meta-setting-desc.c:4421
 #, c-format
 msgid "'%s' is not compatible with '%s' type, please change or delete the key."
 msgstr "”%s” är inte kompatibel med ”%s”-typ, ändra eller ta bort nyckeln."
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4483 src/nmcli/utils.h:323
+#: src/libnmc-setting/nm-meta-setting-desc.c:4458 src/nmcli/utils.h:323
 msgid "on"
 msgstr "på"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4483 src/nmcli/utils.h:323
+#: src/libnmc-setting/nm-meta-setting-desc.c:4458 src/nmcli/utils.h:323
 msgid "off"
 msgstr "av"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4531
+#: src/libnmc-setting/nm-meta-setting-desc.c:4506
 #, c-format
 msgid "'%s' is not valid; use 'on', 'off', or 'ignore'"
 msgstr "”%s” är inte giltig; använd ”on”, ”off” eller ”ignore”"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4604
+#: src/libnmc-setting/nm-meta-setting-desc.c:4579
 msgid "Bonding primary interface"
 msgstr "Bonding primärt gränssnitt"
 
 #. this is a virtual property, only needed during "ask" mode.
-#: src/libnmc-setting/nm-meta-setting-desc.c:4612
+#: src/libnmc-setting/nm-meta-setting-desc.c:4587
 msgid "Bonding monitoring mode"
 msgstr "Övervakningsläge för kombinering"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4621
+#: src/libnmc-setting/nm-meta-setting-desc.c:4596
 msgid "Bonding miimon"
 msgstr "Bonding-miimon"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4630
+#: src/libnmc-setting/nm-meta-setting-desc.c:4605
 msgid "Bonding downdelay"
 msgstr "Nerfördröjning för bondning"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4639
+#: src/libnmc-setting/nm-meta-setting-desc.c:4614
 msgid "Bonding updelay"
 msgstr "Uppfördröjning för bondning"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4648
+#: src/libnmc-setting/nm-meta-setting-desc.c:4623
 msgid "Bonding arp-interval"
 msgstr "ARP-intervall för bonding"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4657
+#: src/libnmc-setting/nm-meta-setting-desc.c:4632
 msgid "Bonding arp-ip-target"
 msgstr "ARP-ip-mål för bondning"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4666
+#: src/libnmc-setting/nm-meta-setting-desc.c:4641
 msgid "LACP rate (slow/fast)"
 msgstr "LACP-hastighet (långsam/snabb)"
 
 #. macro that returns @func as const (guint32(*)(NMSetting*)) type, but checks
 #. * that the actual type is (guint32(*)(type *)).
-#: src/libnmc-setting/nm-meta-setting-desc.c:4857
+#: src/libnmc-setting/nm-meta-setting-desc.c:4832
 msgid ""
 "nmcli can accepts both direct JSON configuration data and a file name "
 "containing the configuration. In the latter case the file is read and the "
@@ -5220,7 +5228,7 @@ msgstr ""
 "\"roundrobin\"}, \"ports\": {\"eth1\": {}, \"eth2\": {}} }\n"
 "          set team.config /etc/my-team.conf\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4865
+#: src/libnmc-setting/nm-meta-setting-desc.c:4840
 msgid ""
 "Enter a list of link watchers formatted as dictionaries where the keys are "
 "teamd properties. Dictionary pairs are in the form: key=value and pairs are "
@@ -5269,11 +5277,11 @@ msgstr ""
 "   name=arp_ping source-host=172.16.1.1 target-host=172.16.1.254, "
 "name=ethtool delay-up=3\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4914
+#: src/libnmc-setting/nm-meta-setting-desc.c:4889
 msgid "IEEE 802.15.4 (WPAN) parent device or connection UUID"
 msgstr "Överordnad IEEE 802.15.4 (WPAN)-enhet eller anslutnings-UUID"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4951
+#: src/libnmc-setting/nm-meta-setting-desc.c:4926
 msgid ""
 "Enter file path to CA certificate (optionally prefixed with file://).\n"
 "  [file://]<file path>\n"
@@ -5285,7 +5293,7 @@ msgstr ""
 "Observera att nmcli inte stödjer att ange certifikat som rå blob-data.\n"
 "Exempel: /home/cimrman/cacert.crt\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4994
+#: src/libnmc-setting/nm-meta-setting-desc.c:4969
 msgid ""
 "Enter file path to client certificate (optionally prefixed with file://).\n"
 "  [file://]<file path>\n"
@@ -5297,7 +5305,7 @@ msgstr ""
 "Observera att nmcli inte stödjer att ange certifikat som rå blob-data.\n"
 "Exempel: /home/cimrman/jara.crt\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5051
+#: src/libnmc-setting/nm-meta-setting-desc.c:5026
 msgid ""
 "Enter file path to CA certificate for inner authentication (optionally "
 "prefixed\n"
@@ -5313,7 +5321,7 @@ msgstr ""
 "Observera att nmcli inte stödjer att ange certifikat som rå blob-data.\n"
 "Exempel: /home/cimrman/ca-zweite-phase.crt\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5099
+#: src/libnmc-setting/nm-meta-setting-desc.c:5074
 msgid ""
 "Enter file path to client certificate for inner authentication (optionally "
 "prefixed\n"
@@ -5329,7 +5337,7 @@ msgstr ""
 "Observera att nmcli inte stödjer att ange certifikat som rå blob-data.\n"
 "Exempel:  /home/cimrman/jara-zweite-phase.crt\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5126
+#: src/libnmc-setting/nm-meta-setting-desc.c:5101
 msgid ""
 "Enter bytes as a list of hexadecimal values.\n"
 "Two formats are accepted:\n"
@@ -5351,8 +5359,8 @@ msgstr ""
 "Exempel: ab0455a6ea3a74C2\n"
 "          ab 4 55 0xa6 ea 3a 74 C2\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5143
-#: src/libnmc-setting/nm-meta-setting-desc.c:5161
+#: src/libnmc-setting/nm-meta-setting-desc.c:5118
+#: src/libnmc-setting/nm-meta-setting-desc.c:5136
 msgid ""
 "Enter path to a private key and the key password (if not set yet):\n"
 "  [file://]<file path> [<password>]\n"
@@ -5365,91 +5373,91 @@ msgstr ""
 "Observera att nmcli inte stödjer att ange privat nyckel som rå blob-data.\n"
 "Exempel: /home/cimrman/jara-priv-key Dardanely\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5206
-#: src/libnmc-setting/nm-meta-setting-desc.c:5509
-#: src/libnmc-setting/nm-meta-setting-desc.c:6036
-#: src/libnmc-setting/nm-meta-setting-desc.c:7266
+#: src/libnmc-setting/nm-meta-setting-desc.c:5181
+#: src/libnmc-setting/nm-meta-setting-desc.c:5484
+#: src/libnmc-setting/nm-meta-setting-desc.c:6020
+#: src/libnmc-setting/nm-meta-setting-desc.c:7253
 msgid "Password [none]"
 msgstr "Lösenord [inget]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5252
+#: src/libnmc-setting/nm-meta-setting-desc.c:5227
 msgid "Bluetooth device address"
 msgstr "Adress för Bluetooth-enhet"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5301
+#: src/libnmc-setting/nm-meta-setting-desc.c:5276
 #: src/nmtui/nmt-page-bond-port.c:51
 msgid "Queue ID"
 msgstr "Kö-ID"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5307
+#: src/libnmc-setting/nm-meta-setting-desc.c:5282
 msgid "Port Priority"
 msgstr "Port-prioritet"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5319
-#: src/libnmc-setting/nm-meta-setting-desc.c:6147
-#: src/libnmc-setting/nm-meta-setting-desc.c:7999
-#: src/libnmc-setting/nm-meta-setting-desc.c:8037
-#: src/libnmc-setting/nm-meta-setting-desc.c:8219
-#: src/libnmc-setting/nm-meta-setting-desc.c:8466
+#: src/libnmc-setting/nm-meta-setting-desc.c:5294
+#: src/libnmc-setting/nm-meta-setting-desc.c:6131
+#: src/libnmc-setting/nm-meta-setting-desc.c:7995
+#: src/libnmc-setting/nm-meta-setting-desc.c:8033
+#: src/libnmc-setting/nm-meta-setting-desc.c:8215
+#: src/libnmc-setting/nm-meta-setting-desc.c:8462
 msgid "MAC [none]"
 msgstr "MAC [ingen]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5325
+#: src/libnmc-setting/nm-meta-setting-desc.c:5300
 msgid "Enable STP"
 msgstr "Aktivera STP"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5331
+#: src/libnmc-setting/nm-meta-setting-desc.c:5306
 msgid "STP priority"
 msgstr "STP-prioritet"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5337
+#: src/libnmc-setting/nm-meta-setting-desc.c:5312
 #: src/nmtui/nmt-page-bridge.c:120
 msgid "Forward delay"
 msgstr "Framåtfördröjning"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5343
+#: src/libnmc-setting/nm-meta-setting-desc.c:5318
 #: src/nmtui/nmt-page-bridge.c:134
 msgid "Hello time"
 msgstr "Hallåtid"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5349
+#: src/libnmc-setting/nm-meta-setting-desc.c:5324
 #: src/nmtui/nmt-page-bridge.c:148
 msgid "Max age"
 msgstr "Max ålder"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5355
+#: src/libnmc-setting/nm-meta-setting-desc.c:5330
 msgid "MAC address ageing time"
 msgstr "Livstid för MAC-adress"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5365
+#: src/libnmc-setting/nm-meta-setting-desc.c:5340
 #: src/nmtui/nmt-page-bridge.c:156
 msgid "Group forward mask"
 msgstr "Gruppvidarebefordrad mask"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5407
+#: src/libnmc-setting/nm-meta-setting-desc.c:5382
 #: src/nmtui/nmt-page-bridge.c:79
 msgid "Enable IGMP snooping"
 msgstr "Aktivera IGMP-avlyssning"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5465
+#: src/libnmc-setting/nm-meta-setting-desc.c:5440
 msgid "Bridge port priority"
 msgstr "Prioritet för bryggport"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5471
+#: src/libnmc-setting/nm-meta-setting-desc.c:5446
 msgid "Bridge port STP path cost"
 msgstr "STP-sökvägskostnad för bryggport"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5477
+#: src/libnmc-setting/nm-meta-setting-desc.c:5452
 msgid "Hairpin"
 msgstr "Hårnål"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5503
-#: src/libnmc-setting/nm-meta-setting-desc.c:6030
-#: src/libnmc-setting/nm-meta-setting-desc.c:7844
+#: src/libnmc-setting/nm-meta-setting-desc.c:5478
+#: src/libnmc-setting/nm-meta-setting-desc.c:6014
+#: src/libnmc-setting/nm-meta-setting-desc.c:7840
 msgid "Username [none]"
 msgstr "Användarnamn [inget]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5608
+#: src/libnmc-setting/nm-meta-setting-desc.c:5583
 msgid ""
 "Enter a list of user permissions. This is a list of user names formatted "
 "as:\n"
@@ -5465,11 +5473,11 @@ msgstr ""
 "\n"
 "Exempel: anders maria sebastian\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5637
+#: src/libnmc-setting/nm-meta-setting-desc.c:5612
 msgid "Controller"
 msgstr "Styrenhet"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5693
+#: src/libnmc-setting/nm-meta-setting-desc.c:5668
 msgid ""
 "Enter secondary connections that should be activated when this connection "
 "is\n"
@@ -5490,7 +5498,7 @@ msgstr ""
 "\n"
 "Exempel: private-openvpn, fe6ba5d8-c2fc-4aae-b2e3-97efddd8d9a7\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5717
+#: src/libnmc-setting/nm-meta-setting-desc.c:5692
 msgid ""
 "Enter a value which indicates whether the connection is subject to a data\n"
 "quota, usage costs or other limitations. Accepted options are:\n"
@@ -5506,41 +5514,41 @@ msgstr ""
 "”unknown” för att låta Nätverkshanteraren välja ett värde enligt någon "
 "heuristik\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6046
+#: src/libnmc-setting/nm-meta-setting-desc.c:6030
 msgid "APN"
 msgstr "APN"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6100
+#: src/libnmc-setting/nm-meta-setting-desc.c:6084
 msgid "hsr port1"
 msgstr "hsr port1"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6107
+#: src/libnmc-setting/nm-meta-setting-desc.c:6091
 msgid "hsr port2"
 msgstr "hsr port2"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6113
+#: src/libnmc-setting/nm-meta-setting-desc.c:6097
 msgid "hsr multicast spec"
 msgstr "hsr multicast-specifikationer"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6156
-#: src/libnmc-setting/nm-meta-setting-desc.c:6812
-#: src/libnmc-setting/nm-meta-setting-desc.c:8069
-#: src/libnmc-setting/nm-meta-setting-desc.c:8266
+#: src/libnmc-setting/nm-meta-setting-desc.c:6140
+#: src/libnmc-setting/nm-meta-setting-desc.c:6796
+#: src/libnmc-setting/nm-meta-setting-desc.c:8065
+#: src/libnmc-setting/nm-meta-setting-desc.c:8262
 #: src/nmtui/nmt-page-ethernet.c:124 src/nmtui/nmt-page-infiniband.c:81
 #: src/nmtui/nmt-page-ip-tunnel.c:178 src/nmtui/nmt-page-vlan.c:100
 #: src/nmtui/nmt-page-wifi.c:395 src/nmtui/nmt-page-wireguard.c:85
 msgid "MTU"
 msgstr "MTU"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6175
+#: src/libnmc-setting/nm-meta-setting-desc.c:6159
 msgid "P_KEY [none]"
 msgstr "P_KEY [ingen]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6193
+#: src/libnmc-setting/nm-meta-setting-desc.c:6177
 msgid "Parent interface [none]"
 msgstr "Överordnat gränssnitt [inget]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6222
+#: src/libnmc-setting/nm-meta-setting-desc.c:6206
 msgid ""
 "Enter a list of IPv4 addresses of DNS servers.\n"
 "\n"
@@ -5550,11 +5558,11 @@ msgstr ""
 "\n"
 "Exempel: 8.8.8.8, 8.8.4.4\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6272
+#: src/libnmc-setting/nm-meta-setting-desc.c:6256
 msgid "IPv4 address (IP[/plen]) [none]"
 msgstr "IPv4-adress (IP[/plen]) [ingen]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6274
+#: src/libnmc-setting/nm-meta-setting-desc.c:6258
 msgid ""
 "Enter a list of IPv4 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -5568,11 +5576,11 @@ msgstr ""
 "\n"
 "Exempel: 192.168.1.5/24 192.168.1.1, 10.0.0.11/24\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6293
+#: src/libnmc-setting/nm-meta-setting-desc.c:6277
 msgid "IPv4 gateway [none]"
 msgstr "IPv4-gateway [ingen]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6302
+#: src/libnmc-setting/nm-meta-setting-desc.c:6286
 msgid ""
 "Enter a list of IPv4 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -5595,7 +5603,7 @@ msgstr ""
 "Exempel: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
 "          10.1.2.0/24\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6342
+#: src/libnmc-setting/nm-meta-setting-desc.c:6326
 msgid ""
 "Enter a list of IPv4 routing rules formatted as:\n"
 "  priority [prio] [from [src]] [to [dst]], ,...\n"
@@ -5605,7 +5613,7 @@ msgstr ""
 "priority [prio] [from [src]] [to [dst]], ,...\n"
 "\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6486
+#: src/libnmc-setting/nm-meta-setting-desc.c:6470
 msgid ""
 "Enter a list of IPv6 addresses of DNS servers.  If the IPv6 configuration "
 "method is 'auto' these DNS servers are appended to those (if any) returned "
@@ -5625,11 +5633,11 @@ msgstr ""
 "\n"
 "Exempel: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6542
+#: src/libnmc-setting/nm-meta-setting-desc.c:6526
 msgid "IPv6 address (IP[/plen]) [none]"
 msgstr "IPv6-adress (IP[/plen]) [ingen]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6544
+#: src/libnmc-setting/nm-meta-setting-desc.c:6528
 msgid ""
 "Enter a list of IPv6 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -5644,11 +5652,11 @@ msgstr ""
 "Exempel: 2607:f0d0:1002:51::4/64 2607:f0d0:1002:51::1, "
 "1050:0:0:0:5:600:300c:326b\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6563
+#: src/libnmc-setting/nm-meta-setting-desc.c:6547
 msgid "IPv6 gateway [none]"
 msgstr "IPv6-gateway [ingen]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6572
+#: src/libnmc-setting/nm-meta-setting-desc.c:6556
 msgid ""
 "Enter a list of IPv6 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -5672,7 +5680,7 @@ msgstr ""
 "db8:beef::3 2\n"
 "          abbe::/64 55\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6612
+#: src/libnmc-setting/nm-meta-setting-desc.c:6596
 msgid ""
 "Enter a list of IPv6 routing rules formatted as:\n"
 "  priority [prio] [from [src]] [to [dst]], ,...\n"
@@ -5682,170 +5690,170 @@ msgstr ""
 "  priority [prio] [from [src]] [to [dst]], ,...\n"
 "\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6749
-#: src/libnmc-setting/nm-meta-setting-desc.c:7899
+#: src/libnmc-setting/nm-meta-setting-desc.c:6733
+#: src/libnmc-setting/nm-meta-setting-desc.c:7895
 msgid "Parent device [none]"
 msgstr "Överordnad enhet [ingen]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6755
+#: src/libnmc-setting/nm-meta-setting-desc.c:6739
 msgid "Local endpoint [none]"
 msgstr "Lokal ändpunkt [ingen]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6762
-#: src/libnmc-setting/nm-meta-setting-desc.c:7918
+#: src/libnmc-setting/nm-meta-setting-desc.c:6746
+#: src/libnmc-setting/nm-meta-setting-desc.c:7914
 msgid "Remote"
 msgstr "Fjärrplats"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6878
+#: src/libnmc-setting/nm-meta-setting-desc.c:6862
 msgid "MACsec parent device or connection UUID"
 msgstr "Överordnad MACVLAN-enhet eller anslutnings-UUID"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6899
+#: src/libnmc-setting/nm-meta-setting-desc.c:6883
 msgid "Enable encryption"
 msgstr "Aktivera kryptering"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6915
+#: src/libnmc-setting/nm-meta-setting-desc.c:6899
 msgid "MKA_CKN"
 msgstr "MKA_CKN"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6921
+#: src/libnmc-setting/nm-meta-setting-desc.c:6905
 #: src/nmtui/nmt-page-macsec.c:170
 msgid "SCI port"
 msgstr "SCI-port"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6947
+#: src/libnmc-setting/nm-meta-setting-desc.c:6934
 msgid "MACVLAN parent device or connection UUID"
 msgstr "Överordnad MACVLAN-enhet eller anslutnings-UUID"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6968
+#: src/libnmc-setting/nm-meta-setting-desc.c:6955
 msgid "Tap"
 msgstr "Tap"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7039
-#: src/libnmc-setting/nm-meta-setting-desc.c:8179 src/nmtui/nmt-page-wifi.c:216
+#: src/libnmc-setting/nm-meta-setting-desc.c:7026
+#: src/libnmc-setting/nm-meta-setting-desc.c:8175 src/nmtui/nmt-page-wifi.c:216
 msgid "SSID"
 msgstr "SSID"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7049
+#: src/libnmc-setting/nm-meta-setting-desc.c:7036
 msgid "OLPC Mesh channel"
 msgstr "OLPC-meshkanal"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7059
+#: src/libnmc-setting/nm-meta-setting-desc.c:7046
 msgid "DHCP anycast MAC address [none]"
 msgstr "DHCP-anycast MAC-adress [ingen]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7247
+#: src/libnmc-setting/nm-meta-setting-desc.c:7234
 msgid "PPPoE parent device"
 msgstr "Överordnad PPPoE-enhet"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7253
+#: src/libnmc-setting/nm-meta-setting-desc.c:7240
 msgid "Service [none]"
 msgstr "Tjänst [ingen]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7260
+#: src/libnmc-setting/nm-meta-setting-desc.c:7247
 msgid "PPPoE username"
 msgstr "PPPoE-användarnamn"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7296
+#: src/libnmc-setting/nm-meta-setting-desc.c:7283
 msgid "Browser only"
 msgstr "Webbläsare endast"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7302
+#: src/libnmc-setting/nm-meta-setting-desc.c:7289
 msgid "PAC URL"
 msgstr "PAC URL"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7308
+#: src/libnmc-setting/nm-meta-setting-desc.c:7295
 msgid "PAC script"
 msgstr "PAC-skript"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7432
-#: src/libnmc-setting/nm-meta-setting-desc.c:7621
+#: src/libnmc-setting/nm-meta-setting-desc.c:7428
+#: src/libnmc-setting/nm-meta-setting-desc.c:7617
 msgid "Team JSON configuration [none]"
 msgstr "JSON-konfiguration för grupp [ingen]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7724
+#: src/libnmc-setting/nm-meta-setting-desc.c:7720
 msgid "User ID [none]"
 msgstr "Användar-ID [inget]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7730
+#: src/libnmc-setting/nm-meta-setting-desc.c:7726
 msgid "Group ID [none]"
 msgstr "Grupp-ID [inget]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7736
+#: src/libnmc-setting/nm-meta-setting-desc.c:7732
 msgid "Enable PI"
 msgstr "Aktivera PI"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7742
+#: src/libnmc-setting/nm-meta-setting-desc.c:7738
 msgid "Enable VNET header"
 msgstr "Aktivera VNET-huvud"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7748
+#: src/libnmc-setting/nm-meta-setting-desc.c:7744
 msgid "Enable multi queue"
 msgstr "Aktivera multikö"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7761
+#: src/libnmc-setting/nm-meta-setting-desc.c:7757
 msgid "veth peer"
 msgstr "veth peer"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7774
+#: src/libnmc-setting/nm-meta-setting-desc.c:7770
 msgid "VLAN parent device or connection UUID"
 msgstr "Överordnad VLAN-enhet eller anslutnings-UUID"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7781
+#: src/libnmc-setting/nm-meta-setting-desc.c:7777
 msgid "VLAN ID (<0-4094>)"
 msgstr "VLAN-ID (<0-4094>)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7787
+#: src/libnmc-setting/nm-meta-setting-desc.c:7783
 msgid "VLAN flags (<0-7>) [none]"
 msgstr "VLAN-flaggor (<0-7>) [inga]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7803
+#: src/libnmc-setting/nm-meta-setting-desc.c:7799
 msgid "Ingress priority maps [none]"
 msgstr "Inträdesprioritetshash [ingen]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7814
+#: src/libnmc-setting/nm-meta-setting-desc.c:7810
 msgid "Egress priority maps [none]"
 msgstr "Utträdesprioritetshash [ingen]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7886
+#: src/libnmc-setting/nm-meta-setting-desc.c:7882
 msgid "Table"
 msgstr "Tabell"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7906
+#: src/libnmc-setting/nm-meta-setting-desc.c:7902
 msgid "VXLAN ID"
 msgstr "VXLAN-ID"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7912
+#: src/libnmc-setting/nm-meta-setting-desc.c:7908
 msgid "Local address [none]"
 msgstr "Lokal adress [ingen]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7924
+#: src/libnmc-setting/nm-meta-setting-desc.c:7920
 msgid "Minimum source port"
 msgstr "Lägsta källport"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7930
+#: src/libnmc-setting/nm-meta-setting-desc.c:7926
 msgid "Maximum source port"
 msgstr "Högsta källport"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7936
+#: src/libnmc-setting/nm-meta-setting-desc.c:7932
 msgid "Destination port"
 msgstr "Destinationsport"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7976
+#: src/libnmc-setting/nm-meta-setting-desc.c:7972
 #: src/nmtui/nmt-wireguard-peer-editor.c:78
 msgid "Peer"
 msgstr "Peer"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8006
+#: src/libnmc-setting/nm-meta-setting-desc.c:8002
 msgid "WiMAX NSP name"
 msgstr "WiMAX NSP-namn"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8043
-#: src/libnmc-setting/nm-meta-setting-desc.c:8224
+#: src/libnmc-setting/nm-meta-setting-desc.c:8039
+#: src/libnmc-setting/nm-meta-setting-desc.c:8220
 msgid "Cloned MAC [none]"
 msgstr "Klonad MAC [ingen]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8077
+#: src/libnmc-setting/nm-meta-setting-desc.c:8073
 msgid ""
 "Enter a list of subchannels (comma or space separated).\n"
 "\n"
@@ -5855,7 +5863,7 @@ msgstr ""
 "\n"
 "Exempel: 0.0.0e20 0.0.0e21 0.0.0e22\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8415
+#: src/libnmc-setting/nm-meta-setting-desc.c:8411
 msgid ""
 "Enter the type of WEP keys. The accepted values are: 0 or unknown, 1 or key, "
 "and 2 or passphrase.\n"
@@ -5863,220 +5871,220 @@ msgstr ""
 "Ange typ på WEP-nycklarna. Accepterade värden är: 0 eller okänd, 1 eller "
 "nyckel, 2 eller lösenfras.\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8474
+#: src/libnmc-setting/nm-meta-setting-desc.c:8470
 msgid "Short address (<0x0000-0xffff>)"
 msgstr "Kort adress (<0x0000-0xffff>)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8490
+#: src/libnmc-setting/nm-meta-setting-desc.c:8486
 msgid "PAN Identifier (<0x0000-0xffff>)"
 msgstr "PAN-identifierare (<0x0000-0xffff>)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8505
+#: src/libnmc-setting/nm-meta-setting-desc.c:8501
 msgid "Page (<default|0-31>)"
 msgstr "Sida (<standardvärde|0-31>)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8519
+#: src/libnmc-setting/nm-meta-setting-desc.c:8515
 msgid "Channel (<default|0-26>)"
 msgstr "Kanal(<standardvärde|0-26>)"
 
 #. ***************************************************************************
-#: src/libnmc-setting/nm-meta-setting-desc.c:8654
+#: src/libnmc-setting/nm-meta-setting-desc.c:8650
 msgid "6LOWPAN settings"
 msgstr "6LOWPAN-inställningar"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8655
+#: src/libnmc-setting/nm-meta-setting-desc.c:8651
 msgid "802-1x settings"
 msgstr "802-1x-inställningar"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8657
+#: src/libnmc-setting/nm-meta-setting-desc.c:8653
 msgid "bluetooth connection"
 msgstr "bluetoothanslutning"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8658
+#: src/libnmc-setting/nm-meta-setting-desc.c:8654
 msgid "Bond device"
 msgstr "Kombineringsenhet"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8659
+#: src/libnmc-setting/nm-meta-setting-desc.c:8655
 msgid "Bond port"
 msgstr "Bondport"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8660
+#: src/libnmc-setting/nm-meta-setting-desc.c:8656
 msgid "Bridge device"
 msgstr "Bryggenhet"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8661
+#: src/libnmc-setting/nm-meta-setting-desc.c:8657
 msgid "Bridge port"
 msgstr "Bryggport"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8662
+#: src/libnmc-setting/nm-meta-setting-desc.c:8658
 msgid "CDMA mobile broadband connection"
 msgstr "CDMA-mobil bredbandsanslutning"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8663
+#: src/libnmc-setting/nm-meta-setting-desc.c:8659
 msgid "General settings"
 msgstr "Allmänna inställningar"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8664
+#: src/libnmc-setting/nm-meta-setting-desc.c:8660
 msgid "DCB settings"
 msgstr "DCB-inställningar"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8665
+#: src/libnmc-setting/nm-meta-setting-desc.c:8661
 msgid "Dummy settings"
 msgstr "Attrappinställningar"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8666
+#: src/libnmc-setting/nm-meta-setting-desc.c:8662
 msgid "Ethtool settings"
 msgstr "Ethtool-inställningar"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8667
+#: src/libnmc-setting/nm-meta-setting-desc.c:8663
 msgid "Generic settings"
 msgstr "Generella inställningar"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8668
+#: src/libnmc-setting/nm-meta-setting-desc.c:8664
 msgid "GSM mobile broadband connection"
 msgstr "GSM-mobil bredbandsanslutning"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8669
+#: src/libnmc-setting/nm-meta-setting-desc.c:8665
 msgid "Hostname settings"
 msgstr "Värdnamnsinställningar"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8670
+#: src/libnmc-setting/nm-meta-setting-desc.c:8666
 msgid "HSR settings"
 msgstr "HSR inställningar"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8672
+#: src/libnmc-setting/nm-meta-setting-desc.c:8668
 msgid "IPv4 protocol"
 msgstr "IPv4-protokoll"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8673
+#: src/libnmc-setting/nm-meta-setting-desc.c:8669
 msgid "IPv6 protocol"
 msgstr "IPv6-protokoll"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8674
+#: src/libnmc-setting/nm-meta-setting-desc.c:8670
 msgid "IP-tunnel settings"
 msgstr "IP-tunnelinställningar"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8675
+#: src/libnmc-setting/nm-meta-setting-desc.c:8671
 msgid "Link settings"
 msgstr "Länk inställningar"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8676
+#: src/libnmc-setting/nm-meta-setting-desc.c:8672
 msgid "Loopback settings"
 msgstr "Loopback inställningar"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8677
+#: src/libnmc-setting/nm-meta-setting-desc.c:8673
 msgid "MACsec connection"
 msgstr "MACsec-anslutning"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8678
+#: src/libnmc-setting/nm-meta-setting-desc.c:8674
 msgid "macvlan connection"
 msgstr "macvlan-anslutning"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8679
+#: src/libnmc-setting/nm-meta-setting-desc.c:8675
 msgid "Match"
 msgstr "Matchning"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8680
+#: src/libnmc-setting/nm-meta-setting-desc.c:8676
 msgid "OLPC Mesh connection"
 msgstr "OLPC-meshanslutning"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8681
+#: src/libnmc-setting/nm-meta-setting-desc.c:8677
 msgid "Open vSwitch bridge settings"
 msgstr "Inställningar för Open vSwitch-brygga"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8682
+#: src/libnmc-setting/nm-meta-setting-desc.c:8678
 msgid "Open vSwitch DPDK interface settings"
 msgstr "Inställningar för Open vSwitch DPDK-gränssnitt"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8683
+#: src/libnmc-setting/nm-meta-setting-desc.c:8679
 msgid "OVS Other Config"
 msgstr "OVS annan konfiguration"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8684
+#: src/libnmc-setting/nm-meta-setting-desc.c:8680
 msgid "OVS External IDs"
 msgstr "OVS externa ID"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8685
+#: src/libnmc-setting/nm-meta-setting-desc.c:8681
 msgid "Open vSwitch interface settings"
 msgstr "Inställningar för Open vSwitch-gränssnitt"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8686
+#: src/libnmc-setting/nm-meta-setting-desc.c:8682
 msgid "Open vSwitch patch interface settings"
 msgstr "Open vSwitch-patch-gränssnittsinställningar"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8687
+#: src/libnmc-setting/nm-meta-setting-desc.c:8683
 msgid "Open vSwitch port settings"
 msgstr "Inställningar för Open vSwitch-port"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8688
+#: src/libnmc-setting/nm-meta-setting-desc.c:8684
 msgid "PPP settings"
 msgstr "PPP-tunnelinställningar"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8689
+#: src/libnmc-setting/nm-meta-setting-desc.c:8685
 msgid "PPPoE"
 msgstr "PPPoE"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8690
+#: src/libnmc-setting/nm-meta-setting-desc.c:8686
 msgid "Proxy"
 msgstr "Proxy"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8691
+#: src/libnmc-setting/nm-meta-setting-desc.c:8687
 msgid "Serial settings"
 msgstr "Seriella inställningar"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8692
+#: src/libnmc-setting/nm-meta-setting-desc.c:8688
 msgid "SR-IOV settings"
 msgstr "SR-IOV-inställningar"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8693
+#: src/libnmc-setting/nm-meta-setting-desc.c:8689
 msgid "Traffic controls"
 msgstr "Trafikkontroller"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8694
+#: src/libnmc-setting/nm-meta-setting-desc.c:8690
 msgid "Team device"
 msgstr "Gruppenhet"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8695
+#: src/libnmc-setting/nm-meta-setting-desc.c:8691
 msgid "Team port"
 msgstr "Grupport"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8696
+#: src/libnmc-setting/nm-meta-setting-desc.c:8692
 msgid "Tun device"
 msgstr "TUN-enhet"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8697
+#: src/libnmc-setting/nm-meta-setting-desc.c:8693
 msgid "User settings"
 msgstr "Användarinställningar"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8703
+#: src/libnmc-setting/nm-meta-setting-desc.c:8699
 msgid "Wi-Fi P2P connection"
 msgstr "Wi-Fi-P2P anslutning"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8704
+#: src/libnmc-setting/nm-meta-setting-desc.c:8700
 msgid "WiMAX connection"
 msgstr "WiMAX-anslutning"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8705
+#: src/libnmc-setting/nm-meta-setting-desc.c:8701
 msgid "Wired Ethernet"
 msgstr "Trådbundet Ethernet"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8706
+#: src/libnmc-setting/nm-meta-setting-desc.c:8702
 msgid "WireGuard VPN settings"
 msgstr "WireGuard VPN-inställningar"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8707
+#: src/libnmc-setting/nm-meta-setting-desc.c:8703
 msgid "Wi-Fi connection"
 msgstr "Trådlös anslutning"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8708
+#: src/libnmc-setting/nm-meta-setting-desc.c:8704
 msgid "Wi-Fi security settings"
 msgstr "Säkerhetsinställningar för trådlöst nätverk"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8709
+#: src/libnmc-setting/nm-meta-setting-desc.c:8705
 msgid "WPAN settings"
 msgstr "WPAN-tunnelinställningar"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9138
+#: src/libnmc-setting/nm-meta-setting-desc.c:9134
 msgid "name"
 msgstr "namn"
 
@@ -6848,8 +6856,8 @@ msgstr ""
 #: src/libnmc-setting/settings-docs.h.in:52
 #: src/libnmc-setting/settings-docs.h.in:84
 #: src/libnmc-setting/settings-docs.h.in:126
-#: src/libnmc-setting/settings-docs.h.in:153
-#: src/libnmc-setting/settings-docs.h.in:300
+#: src/libnmc-setting/settings-docs.h.in:154
+#: src/libnmc-setting/settings-docs.h.in:302
 msgid "Flags indicating how to handle the \"password\" property."
 msgstr "Flaggor vilka indikerar hur egenskapen ”password” ska hanteras."
 
@@ -7178,7 +7186,7 @@ msgid "PIN used for EAP authentication methods."
 msgstr "PIN används för EAP-autentiseringsmetoder."
 
 #: src/libnmc-setting/settings-docs.h.in:76
-#: src/libnmc-setting/settings-docs.h.in:155
+#: src/libnmc-setting/settings-docs.h.in:156
 msgid "Flags indicating how to handle the \"pin\" property."
 msgstr "Flaggor vilka indikerar hur egenskapen ”pin” ska hanteras."
 
@@ -7574,8 +7582,8 @@ msgstr ""
 "åtskilda av ett bindestreck."
 
 #: src/libnmc-setting/settings-docs.h.in:123
-#: src/libnmc-setting/settings-docs.h.in:149
-#: src/libnmc-setting/settings-docs.h.in:160
+#: src/libnmc-setting/settings-docs.h.in:150
+#: src/libnmc-setting/settings-docs.h.in:161
 msgid ""
 "If non-zero, only transmit packets of the specified size or smaller, "
 "breaking larger packets up into multiple frames."
@@ -7594,7 +7602,7 @@ msgstr ""
 "när det krävs."
 
 #: src/libnmc-setting/settings-docs.h.in:125
-#: src/libnmc-setting/settings-docs.h.in:152
+#: src/libnmc-setting/settings-docs.h.in:153
 msgid ""
 "The password used to authenticate with the network, if required.  Many "
 "providers do not require a password, or accept any password.  But if a "
@@ -7605,7 +7613,7 @@ msgstr ""
 "ett lösenord krävs specificeras det här."
 
 #: src/libnmc-setting/settings-docs.h.in:127
-#: src/libnmc-setting/settings-docs.h.in:158
+#: src/libnmc-setting/settings-docs.h.in:159
 msgid ""
 "The username used to authenticate with the network, if required.  Many "
 "providers do not require a username, or accept any username.  But if a "
@@ -7770,6 +7778,26 @@ msgstr ""
 
 #: src/libnmc-setting/settings-docs.h.in:143
 msgid ""
+"Name of the device handler that will be invoked to add and delete the device "
+"for this connection. The name can only contain ASCII alphanumeric characters "
+"and '-', '_', '.'. It cannot start with '.'. See the NetworkManager-"
+"dispatcher(8) man page for more details about how to write the device "
+"handler. By setting this property the generic connection becomes "
+"\"virtual\", meaning that it can be activated without an existing device; "
+"the device will be created at the time the connection is started by invoking "
+"the device-handler."
+msgstr ""
+"Namnet på enhetshanteraren som kommer att anropas för att lägga till och ta "
+"bort enheten för den här anslutningen. Namnet får bara innehålla "
+"alfanumeriska ASCII-tecken och '-', '_', '.'. Det kan inte börja med '.'. Se "
+"manualsidan för NetworkManager-dispatcher(8) för mer information om hur man "
+"skriver enhetshanteraren. Genom att ställa in den här egenskapen blir den "
+"generiska anslutningen \"virtuell\", vilket betyder att den kan aktiveras "
+"utan en befintlig enhet; enheten kommer att skapas vid den tidpunkt då "
+"anslutningen startas genom att anropa enhetshanteraren."
+
+#: src/libnmc-setting/settings-docs.h.in:144
+msgid ""
 "The GPRS Access Point Name specifying the APN used when establishing a data "
 "session with the GSM-based network.  The APN often determines how the user "
 "will be billed for their network usage and whether the user has access to "
@@ -7791,7 +7819,7 @@ msgstr ""
 "uttryckligen ställas in på den tomma strängen för att förhindra det och "
 "använder ingen APN."
 
-#: src/libnmc-setting/settings-docs.h.in:144
+#: src/libnmc-setting/settings-docs.h.in:145
 msgid ""
 "When TRUE, the settings such as APN, username, or password will default to "
 "values that match the network the modem will register to in the Mobile "
@@ -7801,7 +7829,7 @@ msgstr ""
 "standard till värden som matchar nätverket som modemet kommer att registrera "
 "sig på i leverantörens databas för mobilt bredband."
 
-#: src/libnmc-setting/settings-docs.h.in:145
+#: src/libnmc-setting/settings-docs.h.in:146
 msgid ""
 "The device unique identifier (as given by the WWAN management service) which "
 "this connection applies to.  If given, the connection will only apply to the "
@@ -7811,7 +7839,7 @@ msgstr ""
 "denna anslutning tillämpas till. Om given kommer anslutningen endast att "
 "gälla specificerad enhet."
 
-#: src/libnmc-setting/settings-docs.h.in:146
+#: src/libnmc-setting/settings-docs.h.in:147
 msgid ""
 "When TRUE, only connections to the home network will be allowed. Connections "
 "to roaming networks will not be made."
@@ -7819,7 +7847,7 @@ msgstr ""
 "Om TRUE tillåts endast anslutningar till hemmanätverk. Anslutningar till "
 "roaming-nätverk sker ej."
 
-#: src/libnmc-setting/settings-docs.h.in:147
+#: src/libnmc-setting/settings-docs.h.in:148
 msgid ""
 "For LTE modems, this sets the APN for the initial EPS bearer that is set up "
 "when attaching to the network.  Setting this parameter implies initial-eps-"
@@ -7829,7 +7857,7 @@ msgstr ""
 "ställs in vid anslutning till nätverket. Att ställa in denna parameter "
 "innebär att initial-eps-bearer-configure är TRUE."
 
-#: src/libnmc-setting/settings-docs.h.in:148
+#: src/libnmc-setting/settings-docs.h.in:149
 msgid ""
 "For LTE modems, this setting determines whether the initial EPS bearer shall "
 "be configured when bringing up the connection.  It is inferred TRUE if "
@@ -7839,7 +7867,7 @@ msgstr ""
 "konfigureras när anslutningen tas fram. Det antas TRUE om initial-eps-bearer-"
 "apn är inställd."
 
-#: src/libnmc-setting/settings-docs.h.in:150
+#: src/libnmc-setting/settings-docs.h.in:151
 msgid ""
 "The Network ID (GSM LAI format, ie MCC-MNC) to force specific network "
 "registration.  If the Network ID is specified, NetworkManager will attempt "
@@ -7854,7 +7882,7 @@ msgstr ""
 "enheten inte utför roam när direkt roaming-kontroll av enheten inte är "
 "möjligt."
 
-#: src/libnmc-setting/settings-docs.h.in:151
+#: src/libnmc-setting/settings-docs.h.in:152
 msgid ""
 "Legacy setting that used to help establishing PPP data sessions for GSM-"
 "based modems."
@@ -7862,7 +7890,7 @@ msgstr ""
 "Föråldrad inställning som användes för att skapa PPP-datasessioner för GSM-"
 "baserade modem."
 
-#: src/libnmc-setting/settings-docs.h.in:154
+#: src/libnmc-setting/settings-docs.h.in:155
 msgid ""
 "If the SIM is locked with a PIN it must be unlocked before any other "
 "operations are requested.  Specify the PIN here to allow operation of the "
@@ -7871,7 +7899,7 @@ msgstr ""
 "Om SIM-kortet är låst med PIN-kod måste det låsas upp före varje åtgärd som "
 "begärs. Specificera PIN här för att tillåta åtgärder för enheten."
 
-#: src/libnmc-setting/settings-docs.h.in:156
+#: src/libnmc-setting/settings-docs.h.in:157
 msgid ""
 "The SIM card unique identifier (as given by the WWAN management service) "
 "which this connection applies to.  If given, the connection will apply to "
@@ -7883,7 +7911,7 @@ msgstr ""
 "tillämpas på alla enheter som också tillåts av ”device-id” vilket innehåller "
 "ett SIM-kort matchande den givna identifieraren."
 
-#: src/libnmc-setting/settings-docs.h.in:157
+#: src/libnmc-setting/settings-docs.h.in:158
 msgid ""
 "A MCC/MNC string like \"310260\" or \"21601\" identifying the specific "
 "mobile network operator which this connection applies to.  If given, the "
@@ -7896,7 +7924,7 @@ msgstr ""
 "”device-id” och ”sim-id” vilka innehåller ett SIM-kort provisionerat av den "
 "givna operatören."
 
-#: src/libnmc-setting/settings-docs.h.in:159
+#: src/libnmc-setting/settings-docs.h.in:160
 msgid ""
 "If specified, this connection will only apply to the IPoIB device whose "
 "permanent MAC address matches. This property does not change the MAC address "
@@ -7906,7 +7934,7 @@ msgstr ""
 "vars permanenta MAC-adress matchar. Denna egenskap kommer inte att ändra MAC-"
 "adressen för enheten (d.v.s. MAC-förfalskning)."
 
-#: src/libnmc-setting/settings-docs.h.in:161
+#: src/libnmc-setting/settings-docs.h.in:162
 msgid ""
 "The InfiniBand p-key to use for this device. A value of -1 means to use the "
 "default p-key (aka \"the p-key at index 0\"). Otherwise, it is a 16-bit "
@@ -7929,7 +7957,7 @@ msgstr ""
 "Vanligtvis skulle användaren vilja konfigurera en p-nyckel för fullständigt "
 "medlemskap med flaggan 0x8000."
 
-#: src/libnmc-setting/settings-docs.h.in:162
+#: src/libnmc-setting/settings-docs.h.in:163
 msgid ""
 "The interface name of the parent device of this device. Normally NULL, but "
 "if the \"p_key\" property is set, then you must specify the base device by "
@@ -7939,13 +7967,13 @@ msgstr ""
 "egenskapen ”p_key” är satt så måste du ange basenheten genom att ange denna "
 "egenskap eller ”mac-address”."
 
-#: src/libnmc-setting/settings-docs.h.in:163
+#: src/libnmc-setting/settings-docs.h.in:164
 msgid ""
 "The IP-over-InfiniBand transport mode. Either \"datagram\" or \"connected\"."
 msgstr ""
 "Transportläge för IP-over-InfiniBand. Antingen ”datagram” eller ”connected”."
 
-#: src/libnmc-setting/settings-docs.h.in:164
+#: src/libnmc-setting/settings-docs.h.in:165
 msgid ""
 "A list of IPv4 addresses and their prefix length. Multiple addresses can be "
 "separated by comma. For example \"192.168.1.5/24, 10.1.0.5/24\". The "
@@ -7957,8 +7985,8 @@ msgstr ""
 "Adresserna listas i minskande prioritet, vilket betyder att den första "
 "adressen kommer att vara den primära adressen."
 
-#: src/libnmc-setting/settings-docs.h.in:165
-#: src/libnmc-setting/settings-docs.h.in:196
+#: src/libnmc-setting/settings-docs.h.in:166
+#: src/libnmc-setting/settings-docs.h.in:197
 msgid ""
 "VPN connections will default to add the route automatically unless this "
 "setting is set to FALSE. For other connection types, adding such an "
@@ -7970,8 +7998,8 @@ msgstr ""
 "stöds för närvarande inte att lägga till en sådan automatisk rutt och att "
 "ställa in detta på TRUE har ingen effekt."
 
-#: src/libnmc-setting/settings-docs.h.in:166
-#: src/libnmc-setting/settings-docs.h.in:197
+#: src/libnmc-setting/settings-docs.h.in:167
+#: src/libnmc-setting/settings-docs.h.in:198
 msgid ""
 "Maximum timeout in milliseconds used to check for the presence of duplicate "
 "IP addresses on the network.  If an address conflict is detected, the "
@@ -7993,7 +8021,7 @@ msgstr ""
 "för randomisering enligt RFC 5227 och så att den faktiska varaktigheten kan "
 "vara mellan halva och hela tiden som anges i den här egenskapen."
 
-#: src/libnmc-setting/settings-docs.h.in:167
+#: src/libnmc-setting/settings-docs.h.in:168
 msgid ""
 "A string sent to the DHCP server to identify the local machine which the "
 "DHCP server may use to customize the DHCP lease and options. When the "
@@ -8052,8 +8080,8 @@ msgstr ""
 "en från sin konfigurationsfil om den finns, eller kommer inte att skicka "
 "något klient-id på annat sätt."
 
-#: src/libnmc-setting/settings-docs.h.in:168
-#: src/libnmc-setting/settings-docs.h.in:198
+#: src/libnmc-setting/settings-docs.h.in:169
+#: src/libnmc-setting/settings-docs.h.in:199
 msgid ""
 "Specifies the value for the DSCP field (traffic class) of the IP header. "
 "When empty, the global default value is used; if no global default is "
@@ -8067,7 +8095,7 @@ msgstr ""
 "\"CS6\". Egenskapen är för närvarande endast giltig för IPv4, och den stöds "
 "endast av den \"interna\" DHCP-plugin."
 
-#: src/libnmc-setting/settings-docs.h.in:169
+#: src/libnmc-setting/settings-docs.h.in:170
 msgid ""
 "If the \"dhcp-send-hostname\" property is TRUE, then the specified FQDN will "
 "be sent to the DHCP server when acquiring a lease. This property and \"dhcp-"
@@ -8077,8 +8105,8 @@ msgstr ""
 "skickas till DHCP-servern vid lån. Denna egenskap och ”dhcp-hostname” kan "
 "inte kombineras."
 
-#: src/libnmc-setting/settings-docs.h.in:170
-#: src/libnmc-setting/settings-docs.h.in:200
+#: src/libnmc-setting/settings-docs.h.in:171
+#: src/libnmc-setting/settings-docs.h.in:201
 msgid ""
 "If the \"dhcp-send-hostname\" property is TRUE, then the specified name will "
 "be sent to the DHCP server when acquiring a lease. This property and \"dhcp-"
@@ -8088,8 +8116,8 @@ msgstr ""
 "att skickas till DHCP-servern vid lån. Denna egenskap och ”dhcp-fqdn” kan "
 "inte kombineras."
 
-#: src/libnmc-setting/settings-docs.h.in:171
-#: src/libnmc-setting/settings-docs.h.in:201
+#: src/libnmc-setting/settings-docs.h.in:172
+#: src/libnmc-setting/settings-docs.h.in:202
 msgid ""
 "Flags for the DHCP hostname and FQDN. Currently, this property only includes "
 "flags to control the FQDN flags set in the DHCP FQDN option. Supported FQDN "
@@ -8118,8 +8146,8 @@ msgstr ""
 "är \"ingen\" (0x0), så skickas standard FQDN-flaggor som beskrivs ovan i "
 "DHCP-förfrågningarna."
 
-#: src/libnmc-setting/settings-docs.h.in:172
-#: src/libnmc-setting/settings-docs.h.in:202
+#: src/libnmc-setting/settings-docs.h.in:173
+#: src/libnmc-setting/settings-docs.h.in:203
 msgid ""
 "A string containing the \"Identity Association Identifier\" (IAID) used by "
 "the DHCP client. The string can be a 32-bit number (either decimal, "
@@ -8157,8 +8185,8 @@ msgstr ""
 "IAID från MAC-adressen. Den faktiskt använda DHCPv6 IAID för ett för "
 "närvarande aktiverat gränssnitt exponeras i leasinginformationen för enheten."
 
-#: src/libnmc-setting/settings-docs.h.in:173
-#: src/libnmc-setting/settings-docs.h.in:204
+#: src/libnmc-setting/settings-docs.h.in:174
+#: src/libnmc-setting/settings-docs.h.in:205
 msgid ""
 "Array of servers from which DHCP offers must be rejected. This property is "
 "useful to avoid getting a lease from misconfigured or rogue servers. For "
@@ -8173,8 +8201,8 @@ msgstr ""
 "\"192.168.122.0/24\"). Den här egenskapen är för närvarande inte "
 "implementerad för DHCPv6."
 
-#: src/libnmc-setting/settings-docs.h.in:174
-#: src/libnmc-setting/settings-docs.h.in:205
+#: src/libnmc-setting/settings-docs.h.in:175
+#: src/libnmc-setting/settings-docs.h.in:206
 msgid ""
 "If TRUE, a hostname is sent to the DHCP server when acquiring a lease. Some "
 "DHCP servers use this hostname to update DNS databases, essentially "
@@ -8187,8 +8215,8 @@ msgstr ""
 "princip ett statiskt värdnamn till datorn. Om egenskapen ”dhcp-hostname” är "
 "NULL och egenskapen är TRUE kan det lagrade värdnamnet sändas."
 
-#: src/libnmc-setting/settings-docs.h.in:175
-#: src/libnmc-setting/settings-docs.h.in:206
+#: src/libnmc-setting/settings-docs.h.in:176
+#: src/libnmc-setting/settings-docs.h.in:207
 msgid ""
 "A timeout for a DHCP transaction in seconds. If zero (the default), a "
 "globally configured default is used. If still unspecified, a device specific "
@@ -8200,7 +8228,7 @@ msgstr ""
 "en enhetsspecifik timeout (vanligtvis 45 sekunder). Ställ in på 2147483647 "
 "(MAXINT32) för oändlighet."
 
-#: src/libnmc-setting/settings-docs.h.in:176
+#: src/libnmc-setting/settings-docs.h.in:177
 msgid ""
 "The Vendor Class Identifier DHCP option (60). Special characters in the data "
 "string may be escaped using C-style escapes, nevertheless this property "
@@ -8214,8 +8242,8 @@ msgstr ""
 "global anslutningsstandard. Om det fortfarande är ospecificerat skickas inte "
 "DHCP-alternativet till servern."
 
-#: src/libnmc-setting/settings-docs.h.in:177
-#: src/libnmc-setting/settings-docs.h.in:207
+#: src/libnmc-setting/settings-docs.h.in:178
+#: src/libnmc-setting/settings-docs.h.in:208
 msgid ""
 "Array of IP addresses of DNS servers. For DoT (DNS over TLS), the SNI server "
 "name can be specified by appending \"#example.com\" to the IP address of the "
@@ -8226,7 +8254,7 @@ msgstr ""
 "för DNS-servern. Detta har för närvarande endast effekt när man använder "
 "systemd-resolved."
 
-#: src/libnmc-setting/settings-docs.h.in:178
+#: src/libnmc-setting/settings-docs.h.in:179
 msgid ""
 "DNS options for /etc/resolv.conf as described in resolv.conf(5) manual. The "
 "currently supported options are \"attempts\", \"debug\", \"edns0\", "
@@ -8259,8 +8287,8 @@ msgstr ""
 "ad\" till automatiskt. De giltiga \"ipv4.dns-options\" och \"ipv6.dns-"
 "options\" slås samman."
 
-#: src/libnmc-setting/settings-docs.h.in:179
-#: src/libnmc-setting/settings-docs.h.in:209
+#: src/libnmc-setting/settings-docs.h.in:180
+#: src/libnmc-setting/settings-docs.h.in:210
 msgid ""
 "DNS servers priority. The relative priority for DNS servers specified by "
 "this setting.  A lower numerical value is better (higher priority). Negative "
@@ -8337,8 +8365,8 @@ msgstr ""
 "läckor genom att korrekt konfigurera DNS-prioriteter och sökdomäner, så att "
 "endast namnservrar för det önskade gränssnittet konfigureras."
 
-#: src/libnmc-setting/settings-docs.h.in:180
-#: src/libnmc-setting/settings-docs.h.in:210
+#: src/libnmc-setting/settings-docs.h.in:181
+#: src/libnmc-setting/settings-docs.h.in:211
 msgid ""
 "List of DNS search domains. Domains starting with a tilde ('~') are "
 "considered 'routing' domains and are used only to decide the interface over "
@@ -8367,8 +8395,8 @@ msgstr ""
 "om inga DNS-sökningar är konfigurerade kommer reservalternativet att "
 "härledas från domänen från DHCP (alternativ 15)."
 
-#: src/libnmc-setting/settings-docs.h.in:181
-#: src/libnmc-setting/settings-docs.h.in:211
+#: src/libnmc-setting/settings-docs.h.in:182
+#: src/libnmc-setting/settings-docs.h.in:212
 msgid ""
 "The gateway associated with this configuration. This is only meaningful if "
 "\"addresses\" is also set. Setting the gateway causes NetworkManager to "
@@ -8388,8 +8416,8 @@ msgstr ""
 "routing som NetworkManager konfigurerar för WireGuard-gränssnitt, så "
 "vanligtvis ska den inte ställas in i så fall. Se \"ip4-auto-default-route\"."
 
-#: src/libnmc-setting/settings-docs.h.in:182
-#: src/libnmc-setting/settings-docs.h.in:212
+#: src/libnmc-setting/settings-docs.h.in:183
+#: src/libnmc-setting/settings-docs.h.in:213
 msgid ""
 "When \"method\" is set to \"auto\" and this property to TRUE, automatically "
 "configured name servers and search domains are ignored and only name servers "
@@ -8401,8 +8429,8 @@ msgstr ""
 "namnservrar och sökdomäner som anges i \"dns\" och \"dns-search\"-"
 "egenskaperna, om några, är används."
 
-#: src/libnmc-setting/settings-docs.h.in:183
-#: src/libnmc-setting/settings-docs.h.in:213
+#: src/libnmc-setting/settings-docs.h.in:184
+#: src/libnmc-setting/settings-docs.h.in:214
 msgid ""
 "When \"method\" is set to \"auto\" and this property to TRUE, automatically "
 "configured routes are ignored and only routes specified in the \"routes\" "
@@ -8412,7 +8440,7 @@ msgstr ""
 "automatiskt konfigurerade rutter att ignoreras och endast rutter "
 "specificerade i egenskapen ”router” används, om några."
 
-#: src/libnmc-setting/settings-docs.h.in:184
+#: src/libnmc-setting/settings-docs.h.in:185
 msgid ""
 "Enable and disable the IPv4 link-local configuration independently of the "
 "ipv4.method configuration. This allows a link-local address (169.254.x.y/16) "
@@ -8432,8 +8460,8 @@ msgstr ""
 "till \"auto\". Observera att om \"ipv4.method\" är \"inaktiverad\", så är "
 "länklokaladressering alltid inaktiverad också. Standard är \"default\"."
 
-#: src/libnmc-setting/settings-docs.h.in:185
-#: src/libnmc-setting/settings-docs.h.in:215
+#: src/libnmc-setting/settings-docs.h.in:186
+#: src/libnmc-setting/settings-docs.h.in:216
 msgid ""
 "If TRUE, allow overall network configuration to proceed even if the "
 "configuration specified by this property times out.  Note that at least one "
@@ -8450,12 +8478,12 @@ msgstr ""
 "nätverkskonfigurationen lyckas om IPv4-konfigurationen misslyckas men IPv6-"
 "konfigurationen lyckas."
 
-#: src/libnmc-setting/settings-docs.h.in:186
+#: src/libnmc-setting/settings-docs.h.in:187
 msgid "The IPv4 connection method."
 msgstr "IPv4-anslutningsmetoden."
 
-#: src/libnmc-setting/settings-docs.h.in:187
-#: src/libnmc-setting/settings-docs.h.in:218
+#: src/libnmc-setting/settings-docs.h.in:188
+#: src/libnmc-setting/settings-docs.h.in:219
 msgid ""
 "If TRUE, this connection will never be the default connection for this IP "
 "type, meaning it will never be assigned the default route by NetworkManager."
@@ -8464,8 +8492,8 @@ msgstr ""
 "IP-typ, vilket betyder att den inte kommer att tilldelas standardrutt av "
 "Nätverkshanteraren."
 
-#: src/libnmc-setting/settings-docs.h.in:188
-#: src/libnmc-setting/settings-docs.h.in:220
+#: src/libnmc-setting/settings-docs.h.in:189
+#: src/libnmc-setting/settings-docs.h.in:221
 msgid ""
 "Connections will default to keep the autogenerated priority 0 local rule "
 "unless this setting is set to TRUE."
@@ -8473,8 +8501,8 @@ msgstr ""
 "Anslutningar kommer som standard att behålla den autogenererade prioritet 0 "
 "lokala regeln om inte denna inställning är satt till TRUE."
 
-#: src/libnmc-setting/settings-docs.h.in:189
-#: src/libnmc-setting/settings-docs.h.in:221
+#: src/libnmc-setting/settings-docs.h.in:190
+#: src/libnmc-setting/settings-docs.h.in:222
 msgid ""
 "The minimum time interval in milliseconds for which dynamic IP configuration "
 "should be tried before the connection succeeds. This property is useful for "
@@ -8501,8 +8529,8 @@ msgstr ""
 "standardvärdet (antingen konfiguration ipvx.required-timeout override eller "
 "noll)."
 
-#: src/libnmc-setting/settings-docs.h.in:190
-#: src/libnmc-setting/settings-docs.h.in:222
+#: src/libnmc-setting/settings-docs.h.in:191
+#: src/libnmc-setting/settings-docs.h.in:223
 msgid ""
 "The default metric for routes that don't explicitly specify a metric. The "
 "default value -1 means that the metric is chosen automatically based on the "
@@ -8521,8 +8549,8 @@ msgstr ""
 "betyder alltså att sätta den till 1024. För IPv4 är 0 ett vanligt värde för "
 "mätvärdet."
 
-#: src/libnmc-setting/settings-docs.h.in:191
-#: src/libnmc-setting/settings-docs.h.in:223
+#: src/libnmc-setting/settings-docs.h.in:192
+#: src/libnmc-setting/settings-docs.h.in:224
 msgid ""
 "Enable policy routing (source routing) and set the routing table used when "
 "adding routes. This affects all routes, including device-routes, IPv4LL, "
@@ -8553,7 +8581,7 @@ msgstr ""
 "förutom huvudtabellen. Detta är för att bibehålla bakåtkompatibilitet för "
 "användare som hanterar ruttabeller utanför Nätverkshanteraren."
 
-#: src/libnmc-setting/settings-docs.h.in:192
+#: src/libnmc-setting/settings-docs.h.in:193
 msgid ""
 "A list of IPv4 destination addresses, prefix length, optional IPv4 next hop "
 "addresses, optional route metric, optional attribute. The valid syntax is: "
@@ -8565,12 +8593,12 @@ msgstr ""
 "är: \"ip[/prefix] [next-hop] [metric] [attribut=val]...[,ip[/prefix]...]\". "
 "Till exempel \"192.0.2.0/24 10.1.1.1 77, 198.51.100.0/24\"."
 
-#: src/libnmc-setting/settings-docs.h.in:193
-#: src/libnmc-setting/settings-docs.h.in:225
+#: src/libnmc-setting/settings-docs.h.in:194
+#: src/libnmc-setting/settings-docs.h.in:226
 msgid "A comma separated list of routing rules for policy routing."
 msgstr "En kommaseparerad lista med routingregler för policyrouting."
 
-#: src/libnmc-setting/settings-docs.h.in:194
+#: src/libnmc-setting/settings-docs.h.in:195
 msgid ""
 "Configure method for creating the IPv6 interface identifer of addresses with "
 "RFC4862 IPv6 Stateless Address Autoconfiguration and Link Local addresses. "
@@ -8624,7 +8652,7 @@ msgstr ""
 "konfigurerats av \"ip6-privacy\"-egenskapen och den påverkar inte de "
 "tillfälliga adresserna som konfigurerats med det här alternativet."
 
-#: src/libnmc-setting/settings-docs.h.in:195
+#: src/libnmc-setting/settings-docs.h.in:196
 msgid ""
 "A list of IPv6 addresses and their prefix length. Multiple addresses can be "
 "separated by comma. For example \"2001:db8:85a3::8a2e:370:7334/64, 2001:"
@@ -8638,7 +8666,7 @@ msgstr ""
 "betyder att den första adressen kommer att vara den primära adressen. Detta "
 "kan göra skillnad med val av IPv6-källadress (RFC 6724, avsnitt 5)."
 
-#: src/libnmc-setting/settings-docs.h.in:199
+#: src/libnmc-setting/settings-docs.h.in:200
 msgid ""
 "A string containing the DHCPv6 Unique Identifier (DUID) used by the dhcp "
 "client to identify itself to DHCPv6 servers (RFC 3315). The DUID is carried "
@@ -8692,7 +8720,7 @@ msgstr ""
 "det globala värdet för ”ipv6.dhcp-duid”. Om inget globalt värde "
 "tillhandahålls används standardvärdet ”lease”."
 
-#: src/libnmc-setting/settings-docs.h.in:203
+#: src/libnmc-setting/settings-docs.h.in:204
 msgid ""
 "A IPv6 address followed by a slash and a prefix length. If set, the value is "
 "sent to the DHCPv6 server as hint indicating the prefix delegation (IA_PD) "
@@ -8705,7 +8733,7 @@ msgstr ""
 "prefixlängd utan prefix, ställ in adressdelen till nolladressen (till "
 "exempel \"::/60\")."
 
-#: src/libnmc-setting/settings-docs.h.in:208
+#: src/libnmc-setting/settings-docs.h.in:209
 msgid ""
 "DNS options for /etc/resolv.conf as described in resolv.conf(5) manual. The "
 "currently supported options are \"attempts\", \"debug\", \"edns0\", "
@@ -8740,7 +8768,7 @@ msgstr ""
 "ad\" till automatiskt. De giltiga \"ipv4.dns-options\" och \"ipv6.dns-"
 "options\" slås samman."
 
-#: src/libnmc-setting/settings-docs.h.in:214
+#: src/libnmc-setting/settings-docs.h.in:215
 msgid ""
 "Configure IPv6 Privacy Extensions for SLAAC, described in RFC4941.  If "
 "enabled, it makes the kernel generate a temporary IPv6 address in addition "
@@ -8770,11 +8798,11 @@ msgstr ""
 "inställningen ”stable-privacy” för egenskapen ”addr-gen-mode” som ett annat "
 "sätt att undvika värdspårning med IPv6-adresser."
 
-#: src/libnmc-setting/settings-docs.h.in:216
+#: src/libnmc-setting/settings-docs.h.in:217
 msgid "The IPv6 connection method."
 msgstr "IPv6-anslutningsmetoden."
 
-#: src/libnmc-setting/settings-docs.h.in:217
+#: src/libnmc-setting/settings-docs.h.in:218
 msgid ""
 "Maximum transmission unit size, in bytes. If zero (the default), the MTU is "
 "set automatically from router advertisements or is left equal to the link-"
@@ -8786,7 +8814,7 @@ msgstr ""
 "Om det är större än länkskiktets MTU, eller större än noll men mindre än den "
 "lägsta IPv6 MTU på 1280, har detta värde ingen effekt."
 
-#: src/libnmc-setting/settings-docs.h.in:219
+#: src/libnmc-setting/settings-docs.h.in:220
 msgid ""
 "A timeout for waiting Router Advertisements in seconds. If zero (the "
 "default), a globally configured default is used. If still unspecified, the "
@@ -8798,11 +8826,11 @@ msgstr ""
 "ospecificerat beror timeouten på enhetens sysctl-inställningar. Ställ in på "
 "2147483647 (MAXINT32) för oändlighet."
 
-#: src/libnmc-setting/settings-docs.h.in:224
+#: src/libnmc-setting/settings-docs.h.in:225
 msgid "Array of IP routes."
 msgstr "Vektor av IP-rutter."
 
-#: src/libnmc-setting/settings-docs.h.in:226
+#: src/libnmc-setting/settings-docs.h.in:227
 msgid ""
 "Configure the token for draft-chown-6man-tokenised-ipv6-identifiers-02 IPv6 "
 "tokenized interface identifiers. Useful with eui64 addr-gen-mode. When set, "
@@ -8816,7 +8844,7 @@ msgstr ""
 "för hårdvaruadressen. Detta gäller endast adresser från tillståndslös "
 "autokonfiguration, inte lokala IPv6-länkadresser."
 
-#: src/libnmc-setting/settings-docs.h.in:227
+#: src/libnmc-setting/settings-docs.h.in:228
 msgid ""
 "How many additional levels of encapsulation are permitted to be prepended to "
 "packets. This property applies only to IPv6 tunnels. To disable this option, "
@@ -8826,7 +8854,7 @@ msgstr ""
 "här egenskapen gäller endast IPv6-tunnlar. För att inaktivera det här "
 "alternativet, lägg till 0x1 (ip6-ign-encap-limit) till ip-tunnelflaggor."
 
-#: src/libnmc-setting/settings-docs.h.in:228
+#: src/libnmc-setting/settings-docs.h.in:229
 msgid ""
 "Tunnel flags. Currently, the following values are supported: 0x1 (ip6-ign-"
 "encap-limit), 0x2 (ip6-use-orig-tclass), 0x4 (ip6-use-orig-flowlabel), 0x8 "
@@ -8838,7 +8866,7 @@ msgstr ""
 "mip6-dev), 0x10 (ip6-rcv-dscp-copy) och 0x20 (ip6-use-orig-fwmark). De är "
 "endast giltiga för IPv6-tunnlar."
 
-#: src/libnmc-setting/settings-docs.h.in:229
+#: src/libnmc-setting/settings-docs.h.in:230
 msgid ""
 "The flow label to assign to tunnel packets. This property applies only to "
 "IPv6 tunnels."
@@ -8846,7 +8874,7 @@ msgstr ""
 "Flödesetiketten att tilldela tunnelpaket till. Egenskapen gäller bara IPv6-"
 "tunnlar."
 
-#: src/libnmc-setting/settings-docs.h.in:230
+#: src/libnmc-setting/settings-docs.h.in:231
 msgid ""
 "The fwmark value to assign to tunnel packets. This property can be set to a "
 "non zero value only on VTI and VTI6 tunnels."
@@ -8854,7 +8882,7 @@ msgstr ""
 "Fwmark-värdet att tilldela tunnelpaket. Den här egenskapen kan endast "
 "ställas in på ett värde som inte är noll på VTI- och VTI6-tunnlar."
 
-#: src/libnmc-setting/settings-docs.h.in:231
+#: src/libnmc-setting/settings-docs.h.in:232
 msgid ""
 "The key used for tunnel input packets; the property is valid only for "
 "certain tunnel modes (GRE, IP6GRE). If empty, no key is used."
@@ -8862,7 +8890,7 @@ msgstr ""
 "Nyckel använd för tunnelindatapaket; egenskapen är giltig endast för "
 "specifika tunnellägen (GRE, IP6GRE). Om tom används ingen nyckel."
 
-#: src/libnmc-setting/settings-docs.h.in:232
+#: src/libnmc-setting/settings-docs.h.in:233
 msgid ""
 "The local endpoint of the tunnel; the value can be empty, otherwise it must "
 "contain an IPv4 or IPv6 address."
@@ -8870,7 +8898,7 @@ msgstr ""
 "Lokal ändpunkt för tunneln; värdet kan vara tomt, annars måste det innehålla "
 "en IPv4- eller IPv6-adress."
 
-#: src/libnmc-setting/settings-docs.h.in:233
+#: src/libnmc-setting/settings-docs.h.in:234
 msgid ""
 "The tunneling mode. Valid values: ipip (1), gre (2), sit (3), isatap (4), "
 "vti (5), ip6ip6 (6), ipip6 (7), ip6gre (8), vti6 (9), gretap (10) and "
@@ -8879,7 +8907,7 @@ msgstr ""
 "Tunnelläge. Giltiga värden: ipip (1), gre (2), sit (3), isatap (4), vti (5), "
 "ip6ip6 (6), ipip6 (7), ip6gre (8), vti6 (9), gretap (10) och ip6gretap (11)"
 
-#: src/libnmc-setting/settings-docs.h.in:234
+#: src/libnmc-setting/settings-docs.h.in:235
 msgid ""
 "If non-zero, only transmit packets of the specified size or smaller, "
 "breaking larger packets up into multiple fragments."
@@ -8887,7 +8915,7 @@ msgstr ""
 "Om nollskilt, överför endast paket av angiven storlek eller mindre, och bryt "
 "upp större paket i mindre delar."
 
-#: src/libnmc-setting/settings-docs.h.in:235
+#: src/libnmc-setting/settings-docs.h.in:236
 msgid ""
 "The key used for tunnel output packets; the property is valid only for "
 "certain tunnel modes (GRE, IP6GRE). If empty, no key is used."
@@ -8895,7 +8923,7 @@ msgstr ""
 "Nyckeln använd för tunnelutdatapaket; egenskapen är endast giltig för vissa "
 "speciella tunnellägen (GRE, IP6GRE). Om tomt används ingen nyckel."
 
-#: src/libnmc-setting/settings-docs.h.in:236
+#: src/libnmc-setting/settings-docs.h.in:237
 msgid ""
 "If given, specifies the parent interface name or parent connection UUID the "
 "new device will be bound to so that tunneled packets will only be routed via "
@@ -8905,11 +8933,11 @@ msgstr ""
 "anslutnings-UUID som den nya enheten kommer att bindas till så att tunnlade "
 "paket endast tar rutten via det gränssnittet."
 
-#: src/libnmc-setting/settings-docs.h.in:237
+#: src/libnmc-setting/settings-docs.h.in:238
 msgid "Whether to enable Path MTU Discovery on this tunnel."
 msgstr "Huruvida Path MTU Discovery ska aktiveras för denna tunnel."
 
-#: src/libnmc-setting/settings-docs.h.in:238
+#: src/libnmc-setting/settings-docs.h.in:239
 msgid ""
 "The remote endpoint of the tunnel; the value must contain an IPv4 or IPv6 "
 "address."
@@ -8917,7 +8945,7 @@ msgstr ""
 "Fjärrändpunkten för tunneln; värdet måste innehålla en IPv4- eller IPv6-"
 "adress."
 
-#: src/libnmc-setting/settings-docs.h.in:239
+#: src/libnmc-setting/settings-docs.h.in:240
 msgid ""
 "The type of service (IPv4) or traffic class (IPv6) field to be set on "
 "tunneled packets."
@@ -8925,7 +8953,7 @@ msgstr ""
 "Typen av fält för tjänst (IPv4) eller trafikklass (IPv6) att sätta på "
 "tunnlade paket."
 
-#: src/libnmc-setting/settings-docs.h.in:240
+#: src/libnmc-setting/settings-docs.h.in:241
 msgid ""
 "The TTL to assign to tunneled packets. 0 is a special value meaning that "
 "packets inherit the TTL value."
@@ -8933,11 +8961,11 @@ msgstr ""
 "TTL att tilldela till tunnlade paket. 0 är ett speciellt värde som betyder "
 "att paket ärver TTL-värdet."
 
-#: src/libnmc-setting/settings-docs.h.in:241
+#: src/libnmc-setting/settings-docs.h.in:242
 msgid "Whether the transmitted traffic must be encrypted."
 msgstr "Huruvida den överförda trafiken måste vara krypterad."
 
-#: src/libnmc-setting/settings-docs.h.in:242
+#: src/libnmc-setting/settings-docs.h.in:243
 msgid ""
 "The pre-shared CAK (Connectivity Association Key) for MACsec Key Agreement. "
 "Must be a string of 32 hexadecimal characters."
@@ -8945,11 +8973,11 @@ msgstr ""
 "Det fördelade CAK (Connectivity Association Key) för MACsec-"
 "nyckelöverenskommelse. Måste vara en sträng med 32 hexadecimala tecken."
 
-#: src/libnmc-setting/settings-docs.h.in:243
+#: src/libnmc-setting/settings-docs.h.in:244
 msgid "Flags indicating how to handle the \"mka-cak\" property."
 msgstr "Flaggor vilka indikerar hur egenskapen ”mka-cak” ska hanteras."
 
-#: src/libnmc-setting/settings-docs.h.in:244
+#: src/libnmc-setting/settings-docs.h.in:245
 msgid ""
 "The pre-shared CKN (Connectivity-association Key Name) for MACsec Key "
 "Agreement. Must be a string of hexadecimal characters with a even length "
@@ -8959,7 +8987,7 @@ msgstr ""
 "nyckelöverenskommelse. Måste vara en sträng med hexadecimala tecken med en "
 "jämn längd mellan 2 och 64."
 
-#: src/libnmc-setting/settings-docs.h.in:245
+#: src/libnmc-setting/settings-docs.h.in:246
 msgid ""
 "Specifies how the CAK (Connectivity Association Key) for MKA (MACsec Key "
 "Agreement) is obtained."
@@ -8967,7 +8995,23 @@ msgstr ""
 "Specificerar hur CAK (Connectivity Association Key) för MKA (MACsec-"
 "nyckelöverenskommelse) erhålls."
 
-#: src/libnmc-setting/settings-docs.h.in:246
+#: src/libnmc-setting/settings-docs.h.in:247
+msgid ""
+"Specifies the MACsec offload mode. \"off\" (0) disables MACsec offload. "
+"\"phy\" (1) and \"mac\" (2) request offload respectively to the PHY or to "
+"the MAC; if the selected mode is not available, the connection will fail. "
+"\"default\" (-1) uses the global default value specified in NetworkManager "
+"configuration; if no global default is defined, the built-in default is "
+"\"off\" (0)."
+msgstr ""
+"Specificerar MACsec-avlastningsläge. \"off\" (0) inaktiverar MACsec-"
+"avlastning. \"phy\" (1) och \"mac\" (2) begär avlastning till PHY respektive "
+"till MAC; om det valda läget inte är tillgängligt kommer anslutningen att "
+"misslyckas. \"default\" (-1) använder det globala standardvärdet som anges i "
+"NetworkManager-konfigurationen; om ingen global standard är definierad är "
+"den inbyggda standardinställningen \"av\" (0)."
+
+#: src/libnmc-setting/settings-docs.h.in:248
 msgid ""
 "If given, specifies the parent interface name or parent connection UUID from "
 "which this MACSEC interface should be created.  If this property is not "
@@ -8979,14 +9023,14 @@ msgstr ""
 "är angiven måste anslutningen innehålla en inställning ”802-3-ethernet” med "
 "egenskapen ”mac-address”."
 
-#: src/libnmc-setting/settings-docs.h.in:247
+#: src/libnmc-setting/settings-docs.h.in:249
 msgid ""
 "The port component of the SCI (Secure Channel Identifier), between 1 and "
 "65534."
 msgstr ""
 "Portkomponenten för SCI (Secure Channel Identifier), mellan 1 och 65534."
 
-#: src/libnmc-setting/settings-docs.h.in:248
+#: src/libnmc-setting/settings-docs.h.in:250
 msgid ""
 "Specifies whether the SCI (Secure Channel Identifier) is included in every "
 "packet."
@@ -8994,11 +9038,11 @@ msgstr ""
 "Specificerar huruvida SCI (Secure Channel Identifier) inkluderas i varje "
 "paket."
 
-#: src/libnmc-setting/settings-docs.h.in:249
+#: src/libnmc-setting/settings-docs.h.in:251
 msgid "Specifies the validation mode for incoming frames."
 msgstr "Specificerar valideringsläge för inkommande ramar."
 
-#: src/libnmc-setting/settings-docs.h.in:250
+#: src/libnmc-setting/settings-docs.h.in:252
 msgid ""
 "The macvlan mode, which specifies the communication mechanism between "
 "multiple macvlans on the same lower device."
@@ -9006,7 +9050,7 @@ msgstr ""
 "Macvlan-läge som specificerar kommunikationsmekanismen mellan flera macvlan "
 "på samma lägre enhet."
 
-#: src/libnmc-setting/settings-docs.h.in:251
+#: src/libnmc-setting/settings-docs.h.in:253
 msgid ""
 "If given, specifies the parent interface name or parent connection UUID from "
 "which this MAC-VLAN interface should be created.  If this property is not "
@@ -9018,15 +9062,15 @@ msgstr ""
 "inte är angiven måste anslutningen innehålla en inställning ”802-3-ethernet” "
 "med egenskapen ”mac-address”."
 
-#: src/libnmc-setting/settings-docs.h.in:252
+#: src/libnmc-setting/settings-docs.h.in:254
 msgid "Whether the interface should be put in promiscuous mode."
 msgstr "Huruvida gränssnittet ska vara i promiskuöst läge."
 
-#: src/libnmc-setting/settings-docs.h.in:253
+#: src/libnmc-setting/settings-docs.h.in:255
 msgid "Whether the interface should be a MACVTAP."
 msgstr "Huruvida gränssnittet ska vara MACVTAP."
 
-#: src/libnmc-setting/settings-docs.h.in:254
+#: src/libnmc-setting/settings-docs.h.in:256
 msgid ""
 "A list of driver names to match. Each element is a shell wildcard pattern. "
 "See NMSettingMatch:interface-name for how special characters '|', '&', '!' "
@@ -9038,7 +9082,7 @@ msgstr ""
 "'|', '&', '!' och '\\' används för valfria och obligatoriska matchningar och "
 "invertering av mönstret."
 
-#: src/libnmc-setting/settings-docs.h.in:255
+#: src/libnmc-setting/settings-docs.h.in:257
 msgid ""
 "A list of interface names to match. Each element is a shell wildcard "
 "pattern. An element can be prefixed with a pipe symbol (|) or an ampersand "
@@ -9069,7 +9113,7 @@ msgstr ""
 "mönstret. Till exempel är \"&\\!a\" en obligatorisk matchning för "
 "bokstavligen \"!a\"."
 
-#: src/libnmc-setting/settings-docs.h.in:256
+#: src/libnmc-setting/settings-docs.h.in:258
 msgid ""
 "A list of kernel command line arguments to match. This may be used to check "
 "whether a specific kernel command line option is set (or unset, if prefixed "
@@ -9092,7 +9136,7 @@ msgstr ""
 "specialtecken '|', '&', '!' och '\\' används för valfria och obligatoriska "
 "matchningar och invertering av matchningen."
 
-#: src/libnmc-setting/settings-docs.h.in:257
+#: src/libnmc-setting/settings-docs.h.in:259
 msgid ""
 "A list of paths to match against the ID_PATH udev property of devices. "
 "ID_PATH represents the topological persistent path of a device. It typically "
@@ -9119,11 +9163,11 @@ msgstr ""
 "'|', '&', '!' och '\\' används för valfria och obligatoriska matchningar och "
 "invertering av mönstret."
 
-#: src/libnmc-setting/settings-docs.h.in:258
+#: src/libnmc-setting/settings-docs.h.in:260
 msgid "Channel on which the mesh network to join is located."
 msgstr "Kanalen på vilken meshnätverket att ansluta till finns."
 
-#: src/libnmc-setting/settings-docs.h.in:259
+#: src/libnmc-setting/settings-docs.h.in:261
 msgid ""
 "Anycast DHCP MAC address used when requesting an IP address via DHCP. The "
 "specific anycast address used determines which DHCP server class answers the "
@@ -9134,35 +9178,35 @@ msgstr ""
 "svarar på begäran. Detta är för närvarande endast implementerat av dhclient "
 "DHCP-plugin."
 
-#: src/libnmc-setting/settings-docs.h.in:260
+#: src/libnmc-setting/settings-docs.h.in:262
 msgid "SSID of the mesh network to join."
 msgstr "SSID för meshnätverket att ansluta till."
 
-#: src/libnmc-setting/settings-docs.h.in:261
+#: src/libnmc-setting/settings-docs.h.in:263
 msgid "The data path type. One of \"system\", \"netdev\" or empty."
 msgstr "Datasökvägstypen. En av \"system\", \"netdev\" eller tom."
 
-#: src/libnmc-setting/settings-docs.h.in:262
+#: src/libnmc-setting/settings-docs.h.in:264
 msgid "The bridge failure mode. One of \"secure\", \"standalone\" or empty."
 msgstr "Felläget för brygga. En av \"secure\", \"standalone\" eller tomt."
 
-#: src/libnmc-setting/settings-docs.h.in:263
+#: src/libnmc-setting/settings-docs.h.in:265
 msgid "Enable or disable multicast snooping."
 msgstr "Aktivera eller inaktivera multicast-avlyssning."
 
-#: src/libnmc-setting/settings-docs.h.in:264
+#: src/libnmc-setting/settings-docs.h.in:266
 msgid "Enable or disable RSTP."
 msgstr "Aktivera eller inaktivera RSTP."
 
-#: src/libnmc-setting/settings-docs.h.in:265
+#: src/libnmc-setting/settings-docs.h.in:267
 msgid "Enable or disable STP."
 msgstr "Aktivera eller inaktivera STP."
 
-#: src/libnmc-setting/settings-docs.h.in:266
+#: src/libnmc-setting/settings-docs.h.in:268
 msgid "Open vSwitch DPDK device arguments."
 msgstr "Open vSwitch DPDK-enhetsargument."
 
-#: src/libnmc-setting/settings-docs.h.in:267
+#: src/libnmc-setting/settings-docs.h.in:269
 msgid ""
 "Open vSwitch DPDK number of rx queues. Defaults to zero which means to leave "
 "the parameter in OVS unspecified and effectively configures one queue."
@@ -9171,7 +9215,7 @@ msgstr ""
 "innebär att parametern i OVS ska vara ospecificerad och konfigurerar "
 "effektivt en kö."
 
-#: src/libnmc-setting/settings-docs.h.in:268
+#: src/libnmc-setting/settings-docs.h.in:270
 msgid ""
 "The rx queue size (number of rx descriptors) for DPDK ports. Must be zero or "
 "a power of 2 between 1 and 4096, and supported by the hardware. Defaults to "
@@ -9183,7 +9227,7 @@ msgstr ""
 "Standardinställningen är noll vilket innebär att parametern i OVS ska vara "
 "ospecificerad och konfigurerar effektivt 2048 deskriptorer."
 
-#: src/libnmc-setting/settings-docs.h.in:269
+#: src/libnmc-setting/settings-docs.h.in:271
 msgid ""
 "The tx queue size (number of tx descriptors) for DPDK ports. Must be zero or "
 "a power of 2 between 1 and 4096, and supported by the hardware. Defaults to "
@@ -9195,7 +9239,7 @@ msgstr ""
 "Standardinställningen är noll vilket innebär att parametern i OVS ska vara "
 "ospecificerad och konfigurerar effektivt 2048 deskriptorer."
 
-#: src/libnmc-setting/settings-docs.h.in:270
+#: src/libnmc-setting/settings-docs.h.in:272
 msgid ""
 "Open vSwitch openflow port number. Defaults to zero which means that port "
 "number will not be specified and it will be chosen randomly by ovs. OpenFlow "
@@ -9209,7 +9253,7 @@ msgstr ""
 "OpenFlow-bearbetning och resten av nätverket. OpenFlow-switchar ansluter "
 "logiskt till varandra via deras OpenFlow-portar."
 
-#: src/libnmc-setting/settings-docs.h.in:271
+#: src/libnmc-setting/settings-docs.h.in:273
 msgid ""
 "The interface type. Either \"internal\", \"system\", \"patch\", \"dpdk\", or "
 "empty."
@@ -9217,7 +9261,7 @@ msgstr ""
 "Gränssnittstypen. Antingen \"internal\" \"system\", \"patch\", \"dpdk\", "
 "eller tom."
 
-#: src/libnmc-setting/settings-docs.h.in:272
+#: src/libnmc-setting/settings-docs.h.in:274
 msgid ""
 "Specifies the name of the interface for the other side of the patch. The "
 "patch on the other side must also set this interface as peer."
@@ -9225,31 +9269,31 @@ msgstr ""
 "Anger namnet på gränssnittet för den andra sidan av patchen. Patchen på "
 "andra sidan måste också ställa in detta gränssnitt som peer."
 
-#: src/libnmc-setting/settings-docs.h.in:273
+#: src/libnmc-setting/settings-docs.h.in:275
 msgid "The time port must be inactive in order to be considered down."
 msgstr "Tiden som porten måste vara inaktiv för att anses vara nere."
 
-#: src/libnmc-setting/settings-docs.h.in:274
+#: src/libnmc-setting/settings-docs.h.in:276
 msgid ""
 "Bonding mode. One of \"active-backup\", \"balance-slb\", or \"balance-tcp\"."
 msgstr ""
 "Kombineringsläge. Ett av \"active-backup\", \"balance-slb\" eller \"balance-"
 "tcp\"."
 
-#: src/libnmc-setting/settings-docs.h.in:275
+#: src/libnmc-setting/settings-docs.h.in:277
 msgid "The time port must be active before it starts forwarding traffic."
 msgstr ""
 "Tiden som porten måste vara aktiv innan den börjar vidarebefordra trafik."
 
-#: src/libnmc-setting/settings-docs.h.in:276
+#: src/libnmc-setting/settings-docs.h.in:278
 msgid "LACP mode. One of \"active\", \"off\", or \"passive\"."
 msgstr "LACP-läget. En av \"active\", \"off\" eller \"passive\"."
 
-#: src/libnmc-setting/settings-docs.h.in:277
+#: src/libnmc-setting/settings-docs.h.in:279
 msgid "The VLAN tag in the range 0-4095."
 msgstr "VLAN-taggen i intervallet 0-4095."
 
-#: src/libnmc-setting/settings-docs.h.in:278
+#: src/libnmc-setting/settings-docs.h.in:280
 msgid ""
 "A list of VLAN ranges that this port trunks. The property is valid only for "
 "ports with mode \"trunk\", \"native-tagged\", or \"native-untagged port\". "
@@ -9259,7 +9303,7 @@ msgstr ""
 "giltig för portar med läge \"trunk\", \"native-tagged\" eller \"native-"
 "untagged port\". Om den är tom, trunkar porten alla VLAN."
 
-#: src/libnmc-setting/settings-docs.h.in:279
+#: src/libnmc-setting/settings-docs.h.in:281
 msgid ""
 "The VLAN mode. One of \"access\", \"native-tagged\", \"native-untagged\", "
 "\"trunk\", \"dot1q-tunnel\" or unset."
@@ -9267,7 +9311,7 @@ msgstr ""
 "VLAN-läge. En av \"access\", \"native-tagged\", \"native-untagged\", "
 "\"trunk\", \"dot1q-tunnel\" eller inte satt."
 
-#: src/libnmc-setting/settings-docs.h.in:280
+#: src/libnmc-setting/settings-docs.h.in:282
 msgid ""
 "If non-zero, instruct pppd to set the serial port to the specified "
 "baudrate.  This value should normally be left as 0 to automatically choose "
@@ -9277,7 +9321,7 @@ msgstr ""
 "baudhastigheten. Detta värde bör normalt lämnas som 0 för att automatiskt "
 "välja hastighet."
 
-#: src/libnmc-setting/settings-docs.h.in:281
+#: src/libnmc-setting/settings-docs.h.in:283
 msgid ""
 "If TRUE, specify that pppd should set the serial port to use hardware flow "
 "control with RTS and CTS signals.  This value should normally be set to "
@@ -9287,7 +9331,7 @@ msgstr ""
 "hårdvaruflödeskontroll med RTS- och CTS-signaler. Detta värde ska normalt "
 "vara FALSE."
 
-#: src/libnmc-setting/settings-docs.h.in:282
+#: src/libnmc-setting/settings-docs.h.in:284
 msgid ""
 "If non-zero, instruct pppd to presume the connection to the peer has failed "
 "if the specified number of LCP echo-requests go unanswered by the peer.  The "
@@ -9299,7 +9343,7 @@ msgstr ""
 "jämliken. Egenskapen ”lcp-echo-interval” måste också sättas till ett icke-"
 "nollvärde om denna egenskap används."
 
-#: src/libnmc-setting/settings-docs.h.in:283
+#: src/libnmc-setting/settings-docs.h.in:285
 msgid ""
 "If non-zero, instruct pppd to send an LCP echo-request frame to the peer "
 "every n seconds (where n is the specified value).  Note that some PPP peers "
@@ -9311,7 +9355,7 @@ msgstr ""
 "jämlikar kommer att svara på ekobegäran och en del inte, och det är inte "
 "möjligt att automatiskt upptäcka detta."
 
-#: src/libnmc-setting/settings-docs.h.in:284
+#: src/libnmc-setting/settings-docs.h.in:286
 msgid ""
 "If TRUE, stateful MPPE is used.  See pppd documentation for more information "
 "on stateful MPPE."
@@ -9319,7 +9363,7 @@ msgstr ""
 "Om TRUE används MPPE med tillstånd. Se dokumentationen för pppd för mer "
 "information om MPPE med tillstånd."
 
-#: src/libnmc-setting/settings-docs.h.in:285
+#: src/libnmc-setting/settings-docs.h.in:287
 msgid ""
 "If non-zero, instruct pppd to request that the peer send packets no larger "
 "than the specified size.  If non-zero, the MRU should be between 128 and "
@@ -9329,18 +9373,18 @@ msgstr ""
 "är större än den specificerade storleken. Om icke-noll ska MRU vara mellan "
 "128 och 16384."
 
-#: src/libnmc-setting/settings-docs.h.in:286
+#: src/libnmc-setting/settings-docs.h.in:288
 msgid ""
 "If non-zero, instruct pppd to send packets no larger than the specified size."
 msgstr ""
 "Om icke-noll, instruera pppd att skicka paket inte större än den "
 "specificerade storleken."
 
-#: src/libnmc-setting/settings-docs.h.in:287
+#: src/libnmc-setting/settings-docs.h.in:289
 msgid "If TRUE, Van Jacobsen TCP header compression will not be requested."
 msgstr "Om TRUE begärs ej Van Jacobsen TCP-huvudkomprimering."
 
-#: src/libnmc-setting/settings-docs.h.in:288
+#: src/libnmc-setting/settings-docs.h.in:290
 msgid ""
 "If TRUE, do not require the other side (usually the PPP server) to "
 "authenticate itself to the client.  If FALSE, require authentication from "
@@ -9350,35 +9394,35 @@ msgstr ""
 "sig till klienten. Om FALSE, kräv autentisering från fjärrsidan. I de flesta "
 "fall bör detta sättas till TRUE."
 
-#: src/libnmc-setting/settings-docs.h.in:289
+#: src/libnmc-setting/settings-docs.h.in:291
 msgid "If TRUE, BSD compression will not be requested."
 msgstr "Om TRUE kommer BSD-datakomprimering att begäras."
 
-#: src/libnmc-setting/settings-docs.h.in:290
+#: src/libnmc-setting/settings-docs.h.in:292
 msgid "If TRUE, \"deflate\" compression will not be requested."
 msgstr "Om TRUE kommer inte ”deflate”-datakomprimering att begäras."
 
-#: src/libnmc-setting/settings-docs.h.in:291
+#: src/libnmc-setting/settings-docs.h.in:293
 msgid "If TRUE, the CHAP authentication method will not be used."
 msgstr "Om TRUE kommer autentiseringsmetoden CHAP inte att användas."
 
-#: src/libnmc-setting/settings-docs.h.in:292
+#: src/libnmc-setting/settings-docs.h.in:294
 msgid "If TRUE, the EAP authentication method will not be used."
 msgstr "Om TRUE kommer autentiseringsmetoden EAP inte att användas."
 
-#: src/libnmc-setting/settings-docs.h.in:293
+#: src/libnmc-setting/settings-docs.h.in:295
 msgid "If TRUE, the MSCHAP authentication method will not be used."
 msgstr "Om TRUE kommer autentiseringsmetoden MSCHAP inte att användas."
 
-#: src/libnmc-setting/settings-docs.h.in:294
+#: src/libnmc-setting/settings-docs.h.in:296
 msgid "If TRUE, the MSCHAPv2 authentication method will not be used."
 msgstr "Om TRUE kommer autentiseringsmetoden MSCHAPv2 inte att användas."
 
-#: src/libnmc-setting/settings-docs.h.in:295
+#: src/libnmc-setting/settings-docs.h.in:297
 msgid "If TRUE, the PAP authentication method will not be used."
 msgstr "Om TRUE kommer autentiseringsmetoden PAP inte att användas."
 
-#: src/libnmc-setting/settings-docs.h.in:296
+#: src/libnmc-setting/settings-docs.h.in:298
 msgid ""
 "If TRUE, MPPE (Microsoft Point-to-Point Encryption) will be required for the "
 "PPP session.  If either 64-bit or 128-bit MPPE is not available the session "
@@ -9389,7 +9433,7 @@ msgstr ""
 "sessionen att misslyckas. Observera att MPPE inte används på mobila "
 "bredbandsanslutningar."
 
-#: src/libnmc-setting/settings-docs.h.in:297
+#: src/libnmc-setting/settings-docs.h.in:299
 msgid ""
 "If TRUE, 128-bit MPPE (Microsoft Point-to-Point Encryption) will be required "
 "for the PPP session, and the \"require-mppe\" property must also be set to "
@@ -9399,7 +9443,7 @@ msgstr ""
 "sessionen och egenskapen ”require-mppe” måste också sättas till TRUE.  Om "
 "128-bit MPPE inte är tillgängligt kommer sessionen att misslyckas."
 
-#: src/libnmc-setting/settings-docs.h.in:298
+#: src/libnmc-setting/settings-docs.h.in:300
 msgid ""
 "If given, specifies the parent interface name on which this PPPoE connection "
 "should be created.  If this property is not specified, the connection is "
@@ -9411,11 +9455,11 @@ msgstr ""
 "anslutningen på gränssnittet angivet i ”interface-name” i "
 "NMSettingConnection."
 
-#: src/libnmc-setting/settings-docs.h.in:299
+#: src/libnmc-setting/settings-docs.h.in:301
 msgid "Password used to authenticate with the PPPoE service."
 msgstr "Lösenord använt för att autentisera med PPPoE-tjänsten."
 
-#: src/libnmc-setting/settings-docs.h.in:301
+#: src/libnmc-setting/settings-docs.h.in:303
 msgid ""
 "If specified, instruct PPPoE to only initiate sessions with access "
 "concentrators that provide the specified service.  For most providers, this "
@@ -9427,19 +9471,19 @@ msgstr ""
 "leverantörer ska detta vara tomt. Det krävs endast om det finns flera "
 "åtkomstkoncentrationer eller en specifik tjänst krävs."
 
-#: src/libnmc-setting/settings-docs.h.in:302
+#: src/libnmc-setting/settings-docs.h.in:304
 msgid "Username used to authenticate with the PPPoE service."
 msgstr "Användarnamn som används för att autentisera mot PPPoE-tjänsten."
 
-#: src/libnmc-setting/settings-docs.h.in:303
+#: src/libnmc-setting/settings-docs.h.in:305
 msgid "Whether the proxy configuration is for browser only."
 msgstr "Huruvida proxykonfigurationen endast är för webbläsare."
 
-#: src/libnmc-setting/settings-docs.h.in:304
+#: src/libnmc-setting/settings-docs.h.in:306
 msgid "Method for proxy configuration, Default is \"none\" (0)"
 msgstr "Metod för proxykonfiguration, standard är \"ingen\" (0)"
 
-#: src/libnmc-setting/settings-docs.h.in:305
+#: src/libnmc-setting/settings-docs.h.in:307
 msgid ""
 "The PAC script. In the profile this must be an UTF-8 encoded javascript code "
 "that defines a FindProxyForURL() function. When setting the property in "
@@ -9453,11 +9497,11 @@ msgstr ""
 "innehållet i filen och ställa in skriptet. Prefixen \"file://\" och \"js://"
 "\" stöds för att explicit skilja mellan de två."
 
-#: src/libnmc-setting/settings-docs.h.in:306
+#: src/libnmc-setting/settings-docs.h.in:308
 msgid "PAC URL for obtaining PAC file."
 msgstr "PAC-URL för att erhålla PAC-fil."
 
-#: src/libnmc-setting/settings-docs.h.in:307
+#: src/libnmc-setting/settings-docs.h.in:309
 msgid ""
 "Speed to use for communication over the serial port.  Note that this value "
 "usually has no effect for mobile broadband modems as they generally ignore "
@@ -9468,20 +9512,20 @@ msgstr ""
 "eftersom de allmänt ignorerar hastighetsinställningar och använder högsta "
 "tillgängliga hastighet."
 
-#: src/libnmc-setting/settings-docs.h.in:308
+#: src/libnmc-setting/settings-docs.h.in:310
 msgid "Byte-width of the serial communication. The 8 in \"8n1\" for example."
 msgstr "Bytebredd för den seriella kommunikationen. Till exempel 8 i ”8n1”."
 
-#: src/libnmc-setting/settings-docs.h.in:309
+#: src/libnmc-setting/settings-docs.h.in:311
 msgid "Parity setting of the serial port."
 msgstr "Paritetsinställning för serieporten."
 
-#: src/libnmc-setting/settings-docs.h.in:310
+#: src/libnmc-setting/settings-docs.h.in:312
 msgid "Time to delay between each byte sent to the modem, in microseconds."
 msgstr ""
 "Tid att vänta mellan varje byte som skickas till modemet, i mikrosekunder."
 
-#: src/libnmc-setting/settings-docs.h.in:311
+#: src/libnmc-setting/settings-docs.h.in:313
 msgid ""
 "Number of stop bits for communication on the serial port.  Either 1 or 2. "
 "The 1 in \"8n1\" for example."
@@ -9489,7 +9533,7 @@ msgstr ""
 "Antal stopp-bitar för kommunikation på serieporten. Antingen 1 eller 2. "
 "Exempelvis 1 i ”8n1”."
 
-#: src/libnmc-setting/settings-docs.h.in:312
+#: src/libnmc-setting/settings-docs.h.in:314
 msgid ""
 "Whether to autoprobe virtual functions by a compatible driver. If set to "
 "\"true\" (1), the kernel will try to bind VFs to a compatible driver and if "
@@ -9508,7 +9552,47 @@ msgstr ""
 "\"default\" (-1), används den globala standarden; om den globala standarden "
 "är ospecificerad antas den vara \"sant\" (1)."
 
-#: src/libnmc-setting/settings-docs.h.in:313
+#: src/libnmc-setting/settings-docs.h.in:315
+msgid ""
+"Select the eswitch encapsulation support. Currently it's only supported for "
+"PCI PF devices, and only if the eswitch device is managed from the same PCI "
+"address than the PF. If set to \"preserve\" (-1) (default) the eswitch encap-"
+"mode won't be modified by NetworkManager."
+msgstr ""
+"Välj stöd för inkapsling av eswitch. För närvarande stöds det bara för PCI "
+"PF-enheter, och endast om eswitch-enheten hanteras från samma PCI-adress som "
+"PF. Om inställt på \"preserve\" (-1) (standard) kommer eswitch encap-läget "
+"inte att ändras av NetworkManager."
+
+#: src/libnmc-setting/settings-docs.h.in:316
+msgid ""
+"Select the eswitch inline-mode of the device. Some HWs need the VF driver to "
+"put part of the packet headers on the TX descriptor so the e-switch can do "
+"proper matching and steering. Currently it's only supported for PCI PF "
+"devices, and only if the eswitch device is managed from the same PCI address "
+"than the PF. If set to \"preserve\" (-1) (default) the eswitch inline-mode "
+"won't be modified by NetworkManager."
+msgstr ""
+"Välj inline-läge för enheten. Viss hårdvara behöver VF-drivrutinen för att "
+"sätta en del av pakethuvudena på TX-deskriptorn så att e-switchen kan göra "
+"korrekt matchning och styrning. För närvarande stöds det bara för PCI PF-"
+"enheter, och endast om eswitch-enheten hanteras från samma PCI-adress som "
+"PF. Om inställt på \"preserve\" (-1) (standard) kommer eswitch-inline-läget "
+"inte att ändras av NetworkManager."
+
+#: src/libnmc-setting/settings-docs.h.in:317
+msgid ""
+"Select the eswitch mode of the device. Currently it's only supported for PCI "
+"PF devices, and only if the eswitch device is managed from the same PCI "
+"address than the PF. If set to \"preserve\" (-1) (default) the eswitch mode "
+"won't be modified by NetworkManager."
+msgstr ""
+"Välj enhetens växlingsläge. För närvarande stöds det bara för PCI PF-"
+"enheter, och endast om eswitch-enheten hanteras från samma PCI-adress som "
+"PF. Om inställt på \"preserve\" (-1) (standard) kommer eswitch-läget inte "
+"att ändras av NetworkManager."
+
+#: src/libnmc-setting/settings-docs.h.in:318
 msgid ""
 "The total number of virtual functions to create. Note that when the sriov "
 "setting is present NetworkManager enforces the number of virtual functions "
@@ -9522,7 +9606,7 @@ msgstr ""
 "och återställer det vid avaktivering. För att förhindra ändringar av SR-IOV-"
 "parametrar, lägg inte till en sriov-inställning till anslutningen."
 
-#: src/libnmc-setting/settings-docs.h.in:314
+#: src/libnmc-setting/settings-docs.h.in:319
 msgid ""
 "Array of virtual function descriptors. Each VF descriptor is a dictionary "
 "mapping attribute names to GVariant values. The 'index' entry is mandatory "
@@ -9546,7 +9630,7 @@ msgstr ""
 "varje deskriptor har formen \"ID[.PRIORITY[.PROTO]]\". PROTO kan vara "
 "antingen 'q' för 802.1Q (standard) eller 'ad' för 802.1ad."
 
-#: src/libnmc-setting/settings-docs.h.in:315
+#: src/libnmc-setting/settings-docs.h.in:320
 msgid ""
 "Array of TC queueing disciplines. When the \"tc\" setting is present, qdiscs "
 "from this property are applied upon activation. If the property is empty, "
@@ -9561,7 +9645,7 @@ msgstr ""
 "kärnan enligt \"net.core.default_qdisc\" sysctl. Om \"tc\"-inställningen "
 "inte finns, rör NetworkManager inte qdiscs som finns i gränssnittet."
 
-#: src/libnmc-setting/settings-docs.h.in:316
+#: src/libnmc-setting/settings-docs.h.in:321
 msgid ""
 "Array of TC traffic filters. When the \"tc\" setting is present, filters "
 "from this property are applied upon activation. If the property is empty, "
@@ -9573,7 +9657,7 @@ msgstr ""
 "NetworkManager bort alla filter. Om \"tc\"-inställningen inte finns, rör "
 "NetworkManager inte filtren som finns på gränssnittet."
 
-#: src/libnmc-setting/settings-docs.h.in:317
+#: src/libnmc-setting/settings-docs.h.in:322
 msgid ""
 "The JSON configuration for the team network interface.  The property should "
 "contain raw JSON configuration data suitable for teamd, because the value is "
@@ -9585,8 +9669,8 @@ msgstr ""
 "till teamd. Om ej specificerat används standardkonfigurationen. Se man teamd."
 "conf för formatdetaljerna."
 
-#: src/libnmc-setting/settings-docs.h.in:318
-#: src/libnmc-setting/settings-docs.h.in:336
+#: src/libnmc-setting/settings-docs.h.in:323
+#: src/libnmc-setting/settings-docs.h.in:341
 msgid ""
 "Link watchers configuration for the connection: each link watcher is defined "
 "by a dictionary, whose keys depend upon the selected link watcher. Available "
@@ -9606,23 +9690,23 @@ msgstr ""
 "'source-host', 'validate-active', 'validate-incative', 'send-always'. Se "
 "teamd.conf man för fler detaljer."
 
-#: src/libnmc-setting/settings-docs.h.in:319
+#: src/libnmc-setting/settings-docs.h.in:324
 msgid "Corresponds to the teamd mcast_rejoin.count."
 msgstr "Motsvarar teamd mcast_rejoin.count."
 
-#: src/libnmc-setting/settings-docs.h.in:320
+#: src/libnmc-setting/settings-docs.h.in:325
 msgid "Corresponds to the teamd mcast_rejoin.interval."
 msgstr "Motsvarar teamd mcast_rejoin.interval."
 
-#: src/libnmc-setting/settings-docs.h.in:321
+#: src/libnmc-setting/settings-docs.h.in:326
 msgid "Corresponds to the teamd notify_peers.count."
 msgstr "Motsvarar teamd notify_peers.count."
 
-#: src/libnmc-setting/settings-docs.h.in:322
+#: src/libnmc-setting/settings-docs.h.in:327
 msgid "Corresponds to the teamd notify_peers.interval."
 msgstr "Motsvarar teamd notify_peers.interval."
 
-#: src/libnmc-setting/settings-docs.h.in:323
+#: src/libnmc-setting/settings-docs.h.in:328
 msgid ""
 "Corresponds to the teamd runner.name. Permitted values are: \"roundrobin\", "
 "\"broadcast\", \"activebackup\", \"loadbalance\", \"lacp\", \"random\"."
@@ -9630,43 +9714,43 @@ msgstr ""
 "Motsvarar teamet runner.name. Tillåtna värden är: \"roundrobin\", "
 "\"broadcast\", \"activebackup\", \"loadbalance\", \"lacp\", \"random\"."
 
-#: src/libnmc-setting/settings-docs.h.in:324
+#: src/libnmc-setting/settings-docs.h.in:329
 msgid "Corresponds to the teamd runner.active."
 msgstr "Motsvarar teamd runner.active."
 
-#: src/libnmc-setting/settings-docs.h.in:325
+#: src/libnmc-setting/settings-docs.h.in:330
 msgid "Corresponds to the teamd runner.agg_select_policy."
 msgstr "Motsvarar teamd runner.agg_select_policy."
 
-#: src/libnmc-setting/settings-docs.h.in:326
+#: src/libnmc-setting/settings-docs.h.in:331
 msgid "Corresponds to the teamd runner.fast_rate."
 msgstr "Motsvarar teamd runner.fast_rate."
 
-#: src/libnmc-setting/settings-docs.h.in:327
+#: src/libnmc-setting/settings-docs.h.in:332
 msgid "Corresponds to the teamd runner.hwaddr_policy."
 msgstr "Motsvarar teamd runner.hwaddr_policy."
 
-#: src/libnmc-setting/settings-docs.h.in:328
+#: src/libnmc-setting/settings-docs.h.in:333
 msgid "Corresponds to the teamd runner.min_ports."
 msgstr "Motsvarar teamd runner.min_ports."
 
-#: src/libnmc-setting/settings-docs.h.in:329
+#: src/libnmc-setting/settings-docs.h.in:334
 msgid "Corresponds to the teamd runner.sys_prio."
 msgstr "Motsvarar teamd runner.sys_prio."
 
-#: src/libnmc-setting/settings-docs.h.in:330
+#: src/libnmc-setting/settings-docs.h.in:335
 msgid "Corresponds to the teamd runner.tx_balancer.name."
 msgstr "Motsvarar teamd runner.tx_balancer.name."
 
-#: src/libnmc-setting/settings-docs.h.in:331
+#: src/libnmc-setting/settings-docs.h.in:336
 msgid "Corresponds to the teamd runner.tx_balancer.interval."
 msgstr "Motsvarar teamd runner.tx_balancer.interval."
 
-#: src/libnmc-setting/settings-docs.h.in:332
+#: src/libnmc-setting/settings-docs.h.in:337
 msgid "Corresponds to the teamd runner.tx_hash."
 msgstr "Motsvarar teamd runner.tx_hash."
 
-#: src/libnmc-setting/settings-docs.h.in:333
+#: src/libnmc-setting/settings-docs.h.in:338
 msgid ""
 "The JSON configuration for the team port. The property should contain raw "
 "JSON configuration data suitable for teamd, because the value is passed "
@@ -9678,19 +9762,19 @@ msgstr ""
 "teamd. Om ej specificerat används standardkonfigurationen. Se man teamd.conf "
 "för formatdetaljerna."
 
-#: src/libnmc-setting/settings-docs.h.in:334
+#: src/libnmc-setting/settings-docs.h.in:339
 msgid "Corresponds to the teamd ports.PORTIFNAME.lacp_key."
 msgstr "Motsvarar teamd ports.PORTIFNAME.lacp_key."
 
-#: src/libnmc-setting/settings-docs.h.in:335
+#: src/libnmc-setting/settings-docs.h.in:340
 msgid "Corresponds to the teamd ports.PORTIFNAME.lacp_prio."
 msgstr "Motsvarar teamd ports.PORTIFNAME.lacp_prio."
 
-#: src/libnmc-setting/settings-docs.h.in:337
+#: src/libnmc-setting/settings-docs.h.in:342
 msgid "Corresponds to the teamd ports.PORTIFNAME.prio."
 msgstr "Motsvarar teamd ports.PORTIFNAME.prio."
 
-#: src/libnmc-setting/settings-docs.h.in:338
+#: src/libnmc-setting/settings-docs.h.in:343
 msgid ""
 "Corresponds to the teamd ports.PORTIFNAME.queue_id. When set to -1 means the "
 "parameter is skipped from the json config."
@@ -9698,17 +9782,17 @@ msgstr ""
 "Motsvarar teamd ports.PORTIFNAME.queue_id. Om satt till -1 betyder det att "
 "parametern utelämnas från json-konfigurationen."
 
-#: src/libnmc-setting/settings-docs.h.in:339
+#: src/libnmc-setting/settings-docs.h.in:344
 msgid "Corresponds to the teamd ports.PORTIFNAME.sticky."
 msgstr "Motsvarar teamd ports.PORTIFNAME.sticky."
 
-#: src/libnmc-setting/settings-docs.h.in:340
+#: src/libnmc-setting/settings-docs.h.in:345
 msgid ""
 "The group ID which will own the device. If set to NULL everyone will be able "
 "to use the device."
 msgstr "Grupp-ID som äger enheten. Om satt till NULL kan alla använda enheten."
 
-#: src/libnmc-setting/settings-docs.h.in:341
+#: src/libnmc-setting/settings-docs.h.in:346
 msgid ""
 "The operating mode of the virtual device. Allowed values are \"tun\" (1) to "
 "create a layer 3 device and \"tap\" (2) to create an Ethernet-like layer 2 "
@@ -9718,7 +9802,7 @@ msgstr ""
 "att skapa en lager 3-enhet och \"tryck\" (2) för att skapa en Ethernet-"
 "liknande lager 2 en."
 
-#: src/libnmc-setting/settings-docs.h.in:342
+#: src/libnmc-setting/settings-docs.h.in:347
 msgid ""
 "If the property is set to TRUE, the interface will support multiple file "
 "descriptors (queues) to parallelize packet sending or receiving. Otherwise, "
@@ -9728,7 +9812,7 @@ msgstr ""
 "fildeskriptorer (köer) för att parallellisera paketskickande eller "
 "mottagande. Annars kommer gränssnittet endast att stödja en enda kö."
 
-#: src/libnmc-setting/settings-docs.h.in:343
+#: src/libnmc-setting/settings-docs.h.in:348
 msgid ""
 "The user ID which will own the device. If set to NULL everyone will be able "
 "to use the device."
@@ -9736,7 +9820,7 @@ msgstr ""
 "Användar-ID som kommer att äga enheten. Om satt till NULL kan alla använda "
 "enheten."
 
-#: src/libnmc-setting/settings-docs.h.in:344
+#: src/libnmc-setting/settings-docs.h.in:349
 msgid ""
 "If TRUE the interface will prepend a 4 byte header describing the physical "
 "interface to the packets."
@@ -9744,7 +9828,7 @@ msgstr ""
 "Om TRUE kommer gränssnittet att prefixa ett huvud på 4 byte som beskriver "
 "det fysiska gränssnittet för paketen."
 
-#: src/libnmc-setting/settings-docs.h.in:345
+#: src/libnmc-setting/settings-docs.h.in:350
 msgid ""
 "If TRUE the IFF_VNET_HDR the tunnel packets will include a virtio network "
 "header."
@@ -9752,7 +9836,7 @@ msgstr ""
 "Om TRUE kommer IFF_VNET_HDR-tunnelpaketen att inkludera ett virtio-"
 "nätverkshuvud."
 
-#: src/libnmc-setting/settings-docs.h.in:346
+#: src/libnmc-setting/settings-docs.h.in:351
 msgid ""
 "A dictionary of key/value pairs with user data. This data is ignored by "
 "NetworkManager and can be used at the users discretion. The keys only "
@@ -9764,7 +9848,7 @@ msgstr ""
 "stöder bara strikt ascii-format, men värden kan vara godtyckliga UTF8-"
 "strängar upp till en specifik längd."
 
-#: src/libnmc-setting/settings-docs.h.in:347
+#: src/libnmc-setting/settings-docs.h.in:352
 msgid ""
 "For outgoing packets, a list of mappings from Linux SKB priorities to 802.1p "
 "priorities.  The mapping is given in the format \"from:to\" where both "
@@ -9774,7 +9858,7 @@ msgstr ""
 "802.1p-prioriteter. Mappningen ges i formatet ”från:till” där både ”från” "
 "och ”till” är teckenlösa heltal, t.e.x. ”7:3”."
 
-#: src/libnmc-setting/settings-docs.h.in:348
+#: src/libnmc-setting/settings-docs.h.in:353
 msgid ""
 "One or more flags which control the behavior and features of the VLAN "
 "interface.  Flags include \"reorder-headers\" (0x1) (reordering of output "
@@ -9795,7 +9879,7 @@ msgstr ""
 "standardvärdet i D-Bus API att vara 0 och en saknad egenskap på D-Bus anses "
 "fortfarande vara 0."
 
-#: src/libnmc-setting/settings-docs.h.in:349
+#: src/libnmc-setting/settings-docs.h.in:354
 msgid ""
 "The VLAN identifier that the interface created by this connection should be "
 "assigned. The valid range is from 0 to 4094, without the reserved id 4095."
@@ -9804,7 +9888,7 @@ msgstr ""
 "tilldelas. Det giltiga intervallet är från 0 till 4094 utan det reserverade "
 "id-värdet 4095."
 
-#: src/libnmc-setting/settings-docs.h.in:350
+#: src/libnmc-setting/settings-docs.h.in:355
 msgid ""
 "For incoming packets, a list of mappings from 802.1p priorities to Linux SKB "
 "priorities.  The mapping is given in the format \"from:to\" where both "
@@ -9814,7 +9898,7 @@ msgstr ""
 "Linux SKB-prioriteter. Mappningen ges i formatet ”från:till” där både ”från” "
 "och ”till” är teckenlösa heltal, t.e.x. ”7:3”."
 
-#: src/libnmc-setting/settings-docs.h.in:351
+#: src/libnmc-setting/settings-docs.h.in:356
 msgid ""
 "If given, specifies the parent interface name or parent connection UUID from "
 "which this VLAN interface should be created.  If this property is not "
@@ -9826,7 +9910,7 @@ msgstr ""
 "angiven måste anslutningen innehålla en inställning ”802-3-ethernet” med "
 "egenskapen ”mac-address”."
 
-#: src/libnmc-setting/settings-docs.h.in:352
+#: src/libnmc-setting/settings-docs.h.in:357
 msgid ""
 "Specifies the VLAN protocol to use for encapsulation. Supported values are: "
 "'802.1Q', '802.1ad'. If not specified the default value is '802.1Q'."
@@ -9834,7 +9918,7 @@ msgstr ""
 "Specificerar VLAN-protokollet som ska användas för inkapsling. Värden som "
 "stöds är: '802.1Q', '802.1ad'. Om det inte anges är standardvärdet '802.1Q'."
 
-#: src/libnmc-setting/settings-docs.h.in:353
+#: src/libnmc-setting/settings-docs.h.in:358
 msgid ""
 "Dictionary of key/value pairs of VPN plugin specific data.  Both keys and "
 "values must be strings."
@@ -9842,7 +9926,7 @@ msgstr ""
 "Lexikon för nyckel/värdepar av VPN-insticksmodulspecifik data. Både nycklar "
 "och värden måste vara strängar."
 
-#: src/libnmc-setting/settings-docs.h.in:354
+#: src/libnmc-setting/settings-docs.h.in:359
 msgid ""
 "If the VPN service supports persistence, and this property is TRUE, the VPN "
 "will attempt to stay connected across link changes and outages, until "
@@ -9852,7 +9936,7 @@ msgstr ""
 "servern att försöka att fortsätta vara ansluten över länkändringar och "
 "avbrott, tills den explicit kopplas från."
 
-#: src/libnmc-setting/settings-docs.h.in:355
+#: src/libnmc-setting/settings-docs.h.in:360
 msgid ""
 "Dictionary of key/value pairs of VPN plugin specific secrets like passwords "
 "or private keys.  Both keys and values must be strings."
@@ -9861,7 +9945,7 @@ msgstr ""
 "som lösenord eller privata nycklar. Både nycklar och värden måste vara "
 "strängar."
 
-#: src/libnmc-setting/settings-docs.h.in:356
+#: src/libnmc-setting/settings-docs.h.in:361
 msgid ""
 "D-Bus service name of the VPN plugin that this setting uses to connect to "
 "its network.  i.e. org.freedesktop.NetworkManager.vpnc for the vpnc plugin."
@@ -9870,7 +9954,7 @@ msgstr ""
 "ansluta till dess nätverk, dvs org.freedesktop.NetworkManager.vpnc för vpnc-"
 "insticket."
 
-#: src/libnmc-setting/settings-docs.h.in:357
+#: src/libnmc-setting/settings-docs.h.in:362
 msgid ""
 "Timeout for the VPN service to establish the connection. Some services may "
 "take quite a long time to connect. Value of 0 means a default timeout, which "
@@ -9882,7 +9966,7 @@ msgstr ""
 "standardtidsgräns, vilken är 60 sekunder (om inte åsidosatt av vpn.timeout i "
 "konfigurationsfilen). Värden större än noll betyder tidsgräns i sekunder."
 
-#: src/libnmc-setting/settings-docs.h.in:358
+#: src/libnmc-setting/settings-docs.h.in:363
 msgid ""
 "If the VPN connection requires a user name for authentication, that name "
 "should be provided here.  If the connection is available to more than one "
@@ -9897,15 +9981,15 @@ msgstr ""
 "tom. Om denna egenskap är tom kommer Nätverkshanteraren automatiskt att ge "
 "användarnamnet för användaren som begärs av VPN-anslutningen."
 
-#: src/libnmc-setting/settings-docs.h.in:359
+#: src/libnmc-setting/settings-docs.h.in:364
 msgid "The routing table for this VRF."
 msgstr "Routingtabellen för denna VRF."
 
-#: src/libnmc-setting/settings-docs.h.in:360
+#: src/libnmc-setting/settings-docs.h.in:365
 msgid "Specifies the lifetime in seconds of FDB entries learnt by the kernel."
 msgstr "Specificerar livstiden för FDB-poster lärda av kärnan i sekunder."
 
-#: src/libnmc-setting/settings-docs.h.in:361
+#: src/libnmc-setting/settings-docs.h.in:366
 msgid ""
 "Specifies the UDP destination port to communicate to the remote VXLAN tunnel "
 "endpoint."
@@ -9913,22 +9997,22 @@ msgstr ""
 "Specificerar UDP-destinationsport att kommunicera med mot fjärr-VXLAN-"
 "tunnelslutpunkten."
 
-#: src/libnmc-setting/settings-docs.h.in:362
+#: src/libnmc-setting/settings-docs.h.in:367
 msgid ""
 "Specifies the VXLAN Network Identifier (or VXLAN Segment Identifier) to use."
 msgstr ""
 "Specificerar VXLAN-nätverksidentifierare (eller VXLAN-segmentidentifierare) "
 "att använda."
 
-#: src/libnmc-setting/settings-docs.h.in:363
+#: src/libnmc-setting/settings-docs.h.in:368
 msgid "Specifies whether netlink LL ADDR miss notifications are generated."
 msgstr "Specificerar huruvida netlink LL ADDR miss-aviseringar genereras."
 
-#: src/libnmc-setting/settings-docs.h.in:364
+#: src/libnmc-setting/settings-docs.h.in:369
 msgid "Specifies whether netlink IP ADDR miss notifications are generated."
 msgstr "Specificerar huruvida netlink IP ADDR miss-aviseringar genereras."
 
-#: src/libnmc-setting/settings-docs.h.in:365
+#: src/libnmc-setting/settings-docs.h.in:370
 msgid ""
 "Specifies whether unknown source link layer addresses and IP addresses are "
 "entered into the VXLAN device forwarding database."
@@ -9936,7 +10020,7 @@ msgstr ""
 "Huruvida okända källänklageradresser och IP-adresser är angivna i VXLAN-"
 "enhetens databas för vidarebefordran."
 
-#: src/libnmc-setting/settings-docs.h.in:366
+#: src/libnmc-setting/settings-docs.h.in:371
 msgid ""
 "Specifies the maximum number of FDB entries. A value of zero means that the "
 "kernel will store unlimited entries."
@@ -9944,20 +10028,20 @@ msgstr ""
 "Högsta antal FDB-poster. Ett nollvärde betyder att kärnan kommer att lagra "
 "obegränsat antal poster."
 
-#: src/libnmc-setting/settings-docs.h.in:367
+#: src/libnmc-setting/settings-docs.h.in:372
 msgid "If given, specifies the source IP address to use in outgoing packets."
 msgstr "Om angiven, IP-källadressen att använda i utgående paket."
 
-#: src/libnmc-setting/settings-docs.h.in:368
+#: src/libnmc-setting/settings-docs.h.in:373
 msgid ""
 "If given, specifies the parent interface name or parent connection UUID."
 msgstr "Om angiven, föräldragränssnittet eller föräldraanslutningens UUID."
 
-#: src/libnmc-setting/settings-docs.h.in:369
+#: src/libnmc-setting/settings-docs.h.in:374
 msgid "Specifies whether ARP proxy is turned on."
 msgstr "Huruvida ARP-proxy är påslaget."
 
-#: src/libnmc-setting/settings-docs.h.in:370
+#: src/libnmc-setting/settings-docs.h.in:375
 msgid ""
 "Specifies the unicast destination IP address to use in outgoing packets when "
 "the destination link layer address is not known in the VXLAN device "
@@ -9967,11 +10051,11 @@ msgstr ""
 "destinationens länklageradress är okänd i VXLAN-enhetens "
 "vidarebefordansdatabas, eller IP-adressen för multicast att gå med i."
 
-#: src/libnmc-setting/settings-docs.h.in:371
+#: src/libnmc-setting/settings-docs.h.in:376
 msgid "Specifies whether route short circuit is turned on."
 msgstr "Huruvida short circuit för rutter är påslaget."
 
-#: src/libnmc-setting/settings-docs.h.in:372
+#: src/libnmc-setting/settings-docs.h.in:377
 msgid ""
 "Specifies the maximum UDP source port to communicate to the remote VXLAN "
 "tunnel endpoint."
@@ -9979,7 +10063,7 @@ msgstr ""
 "Den högsta UDP-källporten att kommunicera med slutpunkten för VXLAN-"
 "fjärrtunneln."
 
-#: src/libnmc-setting/settings-docs.h.in:373
+#: src/libnmc-setting/settings-docs.h.in:378
 msgid ""
 "Specifies the minimum UDP source port to communicate to the remote VXLAN "
 "tunnel endpoint."
@@ -9987,15 +10071,15 @@ msgstr ""
 "Den lägsta UDP-källporten att kommunicera med slutpunkten för VXLAN-"
 "fjärrtunneln."
 
-#: src/libnmc-setting/settings-docs.h.in:374
+#: src/libnmc-setting/settings-docs.h.in:379
 msgid "Specifies the TOS value to use in outgoing packets."
 msgstr "Värdet för TOS i utgående paket."
 
-#: src/libnmc-setting/settings-docs.h.in:375
+#: src/libnmc-setting/settings-docs.h.in:380
 msgid "Specifies the time-to-live value to use in outgoing packets."
 msgstr "Värdet för time-to-live i utgående paket."
 
-#: src/libnmc-setting/settings-docs.h.in:376
+#: src/libnmc-setting/settings-docs.h.in:381
 msgid ""
 "The P2P device that should be connected to. Currently, this is the only way "
 "to create or join a group."
@@ -10003,7 +10087,7 @@ msgstr ""
 "P2P-enheten som ska anslutas till. För närvarande är detta det enda sättet "
 "att skapa eller gå med i en grupp."
 
-#: src/libnmc-setting/settings-docs.h.in:377
+#: src/libnmc-setting/settings-docs.h.in:382
 msgid ""
 "The Wi-Fi Display (WFD) Information Elements (IEs) to set. Wi-Fi Display "
 "requires a protocol specific information element to be set in certain Wi-Fi "
@@ -10017,7 +10101,7 @@ msgstr ""
 "connection. This setting is only useful when implementing a Wi-Fi Display "
 "client."
 
-#: src/libnmc-setting/settings-docs.h.in:378
+#: src/libnmc-setting/settings-docs.h.in:383
 msgid ""
 "Flags indicating which mode of WPS is to be used. There's little point in "
 "changing the default setting as NetworkManager will automatically determine "
@@ -10027,7 +10111,7 @@ msgstr ""
 "mening med att ändra standardinställningen eftersom NetworkManager "
 "automatiskt avgör den bästa metoden att använda."
 
-#: src/libnmc-setting/settings-docs.h.in:379
+#: src/libnmc-setting/settings-docs.h.in:384
 msgid ""
 "If specified, this connection will only apply to the WiMAX device whose MAC "
 "address matches. This property does not change the MAC address of the device "
@@ -10037,7 +10121,7 @@ msgstr ""
 "enhet vars MAC-adress matchar. Den här egenskapen ändrar inte enhetens MAC-"
 "adress (känd som MAC-spoofing)."
 
-#: src/libnmc-setting/settings-docs.h.in:380
+#: src/libnmc-setting/settings-docs.h.in:385
 msgid ""
 "Network Service Provider (NSP) name of the WiMAX network this connection "
 "should use."
@@ -10045,7 +10129,7 @@ msgstr ""
 "Nätverkstjänstleverantörens (NSP) namn på WiMAX-nätverket som denna "
 "anslutning ska använda."
 
-#: src/libnmc-setting/settings-docs.h.in:381
+#: src/libnmc-setting/settings-docs.h.in:386
 msgid ""
 "When TRUE, setup the interface to accept packets for all MAC addresses. This "
 "is enabling the kernel interface flag IFF_PROMISC. When FALSE, the interface "
@@ -10057,7 +10141,7 @@ msgstr ""
 "accepterar gränssnittet endast paketen med gränssnittets destinations mac-"
 "adress eller broadcast."
 
-#: src/libnmc-setting/settings-docs.h.in:382
+#: src/libnmc-setting/settings-docs.h.in:387
 msgid ""
 "When TRUE, enforce auto-negotiation of speed and duplex mode. If \"speed\" "
 "and \"duplex\" properties are both specified, only that single mode will be "
@@ -10075,7 +10159,7 @@ msgstr ""
 "obligatoriskt. Om FALSE bör egenskaperna ”speed” och ”duplex” båda anges, "
 "annars uteblir länkkonfigurationen."
 
-#: src/libnmc-setting/settings-docs.h.in:383
+#: src/libnmc-setting/settings-docs.h.in:388
 msgid ""
 "If specified, request that the device use this MAC address instead. This is "
 "known as MAC cloning or spoofing. Beside explicitly specifying a MAC "
@@ -10106,7 +10190,7 @@ msgstr ""
 "fält uttryckt som ”assigned-mac-address” eller det föråldrade ”cloned-mac-"
 "address”."
 
-#: src/libnmc-setting/settings-docs.h.in:384
+#: src/libnmc-setting/settings-docs.h.in:389
 msgid ""
 "When a value is set, either \"half\" or \"full\", configures the device to "
 "use the specified duplex mode. If \"auto-negotiate\" is \"yes\" the "
@@ -10133,8 +10217,8 @@ msgstr ""
 "satt tillsammans med egenskapen ”speed”. Innan specifikation av ett duplex-"
 "läge, försäkra dig om att din enhet stöder det."
 
-#: src/libnmc-setting/settings-docs.h.in:385
-#: src/libnmc-setting/settings-docs.h.in:409
+#: src/libnmc-setting/settings-docs.h.in:390
+#: src/libnmc-setting/settings-docs.h.in:414
 msgid ""
 "With \"cloned-mac-address\" setting \"random\" or \"stable\", by default all "
 "bits of the MAC address are scrambled and a locally-administered, unicast "
@@ -10184,7 +10268,7 @@ msgstr ""
 "att skapa en helt omkastad MAC-adress, slumpmässigt globalt eller lokalt "
 "administrerad."
 
-#: src/libnmc-setting/settings-docs.h.in:386
+#: src/libnmc-setting/settings-docs.h.in:391
 msgid ""
 "If specified, this connection will only apply to the Ethernet device whose "
 "permanent MAC address matches. This property does not change the MAC address "
@@ -10194,7 +10278,7 @@ msgstr ""
 "vars permanenta MAC-adress matchar. Denna egenskap kommer inte att ändra MAC-"
 "adressen för enheten (d.v.s. MAC-förfalskning)."
 
-#: src/libnmc-setting/settings-docs.h.in:387
+#: src/libnmc-setting/settings-docs.h.in:392
 msgid ""
 "If specified, this connection will never apply to the Ethernet device whose "
 "permanent MAC address matches an address in the list.  Each MAC address is "
@@ -10205,9 +10289,9 @@ msgstr ""
 "adress är i standardnotation med hexadecimala siffror och kolon "
 "(00:11:22:33:44:55)."
 
-#: src/libnmc-setting/settings-docs.h.in:388
-#: src/libnmc-setting/settings-docs.h.in:415
-#: src/libnmc-setting/settings-docs.h.in:461
+#: src/libnmc-setting/settings-docs.h.in:393
+#: src/libnmc-setting/settings-docs.h.in:420
+#: src/libnmc-setting/settings-docs.h.in:466
 msgid ""
 "If non-zero, only transmit packets of the specified size or smaller, "
 "breaking larger packets up into multiple Ethernet frames."
@@ -10215,7 +10299,7 @@ msgstr ""
 "Om nollskilt, överför endast paket av angiven storlek och mindre, större "
 "paket delas upp i flera Ethernet-ramar."
 
-#: src/libnmc-setting/settings-docs.h.in:389
+#: src/libnmc-setting/settings-docs.h.in:394
 msgid ""
 "Specific port type to use if the device supports multiple attachment "
 "methods.  One of \"tp\" (Twisted Pair), \"aui\" (Attachment Unit Interface), "
@@ -10227,7 +10311,7 @@ msgstr ""
 "Ethernet) eller ”mii” (Media Independent Interface). Om enheten endast "
 "stöder en porttyp ignoreras denna inställning."
 
-#: src/libnmc-setting/settings-docs.h.in:390
+#: src/libnmc-setting/settings-docs.h.in:395
 msgid ""
 "s390 network device type; one of \"qeth\", \"lcs\", or \"ctc\", representing "
 "the different types of virtual network devices available on s390 systems."
@@ -10236,7 +10320,7 @@ msgstr ""
 "olika typerna av virtuella nätverksenheter som finns tillgängliga på s390-"
 "system."
 
-#: src/libnmc-setting/settings-docs.h.in:391
+#: src/libnmc-setting/settings-docs.h.in:396
 msgid ""
 "Dictionary of key/value pairs of s390-specific device options.  Both keys "
 "and values must be strings.  Allowed keys include \"portno\", \"layer2\", "
@@ -10253,7 +10337,7 @@ msgstr ""
 "en udev-regel som analyserar denna information och tillämpar den på "
 "gränssnittet."
 
-#: src/libnmc-setting/settings-docs.h.in:392
+#: src/libnmc-setting/settings-docs.h.in:397
 msgid ""
 "Identifies specific subchannels that this network device uses for "
 "communication with z/VM or s390 host.  Like the \"mac-address\" property for "
@@ -10269,7 +10353,7 @@ msgstr ""
 "subkanaler. Listan bör innehålla precis 3 strängar och varje sträng kan "
 "endast bestå av hexadecimala tecken och punkttecknet (.)."
 
-#: src/libnmc-setting/settings-docs.h.in:393
+#: src/libnmc-setting/settings-docs.h.in:398
 msgid ""
 "When a value greater than 0 is set, configures the device to use the "
 "specified speed. If \"auto-negotiate\" is \"yes\" the specified speed will "
@@ -10296,7 +10380,7 @@ msgstr ""
 "tillsammans med egenskapen \"duplex\" när den inte är noll. Innan du anger "
 "ett hastighetsvärde, se till att din enhet stöder det."
 
-#: src/libnmc-setting/settings-docs.h.in:394
+#: src/libnmc-setting/settings-docs.h.in:399
 msgid ""
 "The NMSettingWiredWakeOnLan options to enable. Not all devices support all "
 "options. May be any combination of \"phy\" (0x2), \"unicast\" (0x4), "
@@ -10311,7 +10395,7 @@ msgstr ""
 "att använda globala inställningar) och \"ignorera\" (0x8000) (för att "
 "inaktivera hantering av Wake-on-LAN i NetworkManager)."
 
-#: src/libnmc-setting/settings-docs.h.in:395
+#: src/libnmc-setting/settings-docs.h.in:400
 msgid ""
 "If specified, the password used with magic-packet-based Wake-on-LAN, "
 "represented as an Ethernet MAC address.  If NULL, no password will be "
@@ -10321,7 +10405,7 @@ msgstr ""
 "representeras som en Ethernet-MAC-adress. Om NULL kommer inget lösenord att "
 "krävas."
 
-#: src/libnmc-setting/settings-docs.h.in:396
+#: src/libnmc-setting/settings-docs.h.in:401
 msgid ""
 "The use of fwmark is optional and is by default off. Setting it to 0 "
 "disables it. Otherwise, it is a 32-bit fwmark for outgoing packets. Note "
@@ -10333,7 +10417,7 @@ msgstr ""
 "paket. Observera att \"ip4-auto-default-route\" eller \"ip6-auto-default-"
 "route\" aktiverat, innebär att man automatiskt väljer ett fwmark."
 
-#: src/libnmc-setting/settings-docs.h.in:397
+#: src/libnmc-setting/settings-docs.h.in:402
 msgid ""
 "Whether to enable special handling of the IPv4 default route. If enabled, "
 "the IPv4 default route from wireguard.peer-routes will be placed to a "
@@ -10366,11 +10450,11 @@ msgstr ""
 "vanligtvis inte nödvändigt att aktivera detta explicit. Du kan dock "
 "inaktivera den om du vill konfigurera din egen routing och regler."
 
-#: src/libnmc-setting/settings-docs.h.in:398
+#: src/libnmc-setting/settings-docs.h.in:403
 msgid "Like ip4-auto-default-route, but for the IPv6 default route."
 msgstr "Som ip4-auto-default-route, men för IPv6-standardrutten."
 
-#: src/libnmc-setting/settings-docs.h.in:399
+#: src/libnmc-setting/settings-docs.h.in:404
 msgid ""
 "The listen-port. If listen-port is not specified, the port will be chosen "
 "randomly when the interface comes up."
@@ -10378,7 +10462,7 @@ msgstr ""
 "Lyssningsporten. Om lyssningsport inte är specificerad kommer porten att "
 "väljas slumpmässigt när gränssnittet kommer upp."
 
-#: src/libnmc-setting/settings-docs.h.in:400
+#: src/libnmc-setting/settings-docs.h.in:405
 msgid ""
 "If non-zero, only transmit packets of the specified size or smaller, "
 "breaking larger packets up into multiple fragments. If zero a default MTU is "
@@ -10390,7 +10474,7 @@ msgstr ""
 "Observera att i motsats till wg-quicks MTU-inställning, tar detta inte "
 "hänsyn till de aktuella rutterna vid aktiveringstillfället."
 
-#: src/libnmc-setting/settings-docs.h.in:401
+#: src/libnmc-setting/settings-docs.h.in:406
 msgid ""
 "Whether to automatically add routes for the AllowedIPs ranges of the peers. "
 "If TRUE (the default), NetworkManager will automatically add routes in the "
@@ -10412,15 +10496,15 @@ msgstr ""
 "never-default eller ipv6.never-default-inställning är aktiverad, kommer peer-"
 "rutten för denna peer inte att läggas till automatiskt."
 
-#: src/libnmc-setting/settings-docs.h.in:402
+#: src/libnmc-setting/settings-docs.h.in:407
 msgid "The 256 bit private-key in base64 encoding."
 msgstr "Den 256 bitars privata nyckeln i base64-kodning."
 
-#: src/libnmc-setting/settings-docs.h.in:403
+#: src/libnmc-setting/settings-docs.h.in:408
 msgid "Flags indicating how to handle the \"private-key\" property."
 msgstr "Flaggor som indikerar hur egenskapen \"private-key\" ska hanteras."
 
-#: src/libnmc-setting/settings-docs.h.in:404
+#: src/libnmc-setting/settings-docs.h.in:409
 msgid ""
 "Configures AP isolation, which prevents communication between wireless "
 "devices connected to this AP. This property can be set to a value different "
@@ -10444,7 +10528,7 @@ msgstr ""
 "När den är inställd på \"default\" (-1), används den globala standarden; om "
 "den globala standarden är ospecificerad antas den vara \"false\" (0)."
 
-#: src/libnmc-setting/settings-docs.h.in:405
+#: src/libnmc-setting/settings-docs.h.in:410
 msgid ""
 "802.11 frequency band of the network.  One of \"a\" for 5GHz 802.11a or "
 "\"bg\" for 2.4GHz 802.11.  This will lock associations to the Wi-Fi network "
@@ -10460,7 +10544,7 @@ msgstr ""
 "är kompatibla. Denna inställning beror på specifika drivrutinsförmågor och "
 "fungerar kanske inte med alla enheter."
 
-#: src/libnmc-setting/settings-docs.h.in:406
+#: src/libnmc-setting/settings-docs.h.in:411
 msgid ""
 "If specified, directs the device to only associate with the given access "
 "point.  This capability is highly driver dependent and not supported by all "
@@ -10477,7 +10561,7 @@ msgstr ""
 "förhindra roaming och även inaktivera bakgrundsskanning. Det kan vara "
 "användbart om det bara finns en åtkomstpunkt för SSID."
 
-#: src/libnmc-setting/settings-docs.h.in:407
+#: src/libnmc-setting/settings-docs.h.in:412
 msgid ""
 "Wireless channel to use for the Wi-Fi connection.  The device will only join "
 "(or create for Ad-Hoc networks) a Wi-Fi network on the specified channel.  "
@@ -10489,7 +10573,7 @@ msgstr ""
 "Eftersom kanalnumren överlappar mellan band kommer denna egenskap också att "
 "kräva att egenskapen ”band” är angiven."
 
-#: src/libnmc-setting/settings-docs.h.in:408
+#: src/libnmc-setting/settings-docs.h.in:413
 msgid ""
 "If specified, request that the device use this MAC address instead. This is "
 "known as MAC cloning or spoofing. Beside explicitly specifying a MAC "
@@ -10522,7 +10606,7 @@ msgstr ""
 "detta fält som \"assigned-mac-address\" eller det föråldrade \"cloned-mac-"
 "address\"."
 
-#: src/libnmc-setting/settings-docs.h.in:410
+#: src/libnmc-setting/settings-docs.h.in:415
 msgid ""
 "If TRUE, indicates that the network is a non-broadcasting network that hides "
 "its SSID. This works both in infrastructure and AP mode. In infrastructure "
@@ -10545,7 +10629,7 @@ msgstr ""
 "infrastrukturläge) eller klientstationer (i AP-läge) då explicita skanningar "
 "är specifikt igenkännbara."
 
-#: src/libnmc-setting/settings-docs.h.in:411
+#: src/libnmc-setting/settings-docs.h.in:416
 msgid ""
 "If specified, this connection will only apply to the Wi-Fi device whose "
 "permanent MAC address matches. This property does not change the MAC address "
@@ -10555,7 +10639,7 @@ msgstr ""
 "vars permanenta MAC-adress matchar. Denna egenskap kommer inte att ändra MAC-"
 "adressen för enheten (d.v.s. MAC-förfalskning)."
 
-#: src/libnmc-setting/settings-docs.h.in:412
+#: src/libnmc-setting/settings-docs.h.in:417
 msgid ""
 "A list of permanent MAC addresses of Wi-Fi devices to which this connection "
 "should never apply.  Each MAC address should be given in the standard hex-"
@@ -10565,7 +10649,7 @@ msgstr ""
 "aldrig ska ske. Varje MAC-adress ska anges i standardnotationen hexsiffror "
 "och kolon (t.ex. \"00:11:22:33:44:55\")."
 
-#: src/libnmc-setting/settings-docs.h.in:413
+#: src/libnmc-setting/settings-docs.h.in:418
 msgid ""
 "One of \"default\" (0) (never randomize unless the user has set a global "
 "default to randomize and the supplicant supports randomization),  "
@@ -10577,7 +10661,7 @@ msgstr ""
 "\"never\" (1) (randomisera aldrig MAC-adressen) eller \"always\" (2) "
 "( randomisera alltid MAC-adressen)."
 
-#: src/libnmc-setting/settings-docs.h.in:414
+#: src/libnmc-setting/settings-docs.h.in:419
 msgid ""
 "Wi-Fi network mode; one of \"infrastructure\", \"mesh\", \"adhoc\" or "
 "\"ap\".  If blank, infrastructure is assumed."
@@ -10585,7 +10669,7 @@ msgstr ""
 "Wi-Fi-nätverksläge; en av \"infrastructure\", \"mesh\", \"adhoc\" eller "
 "\"ap\". Om tomt, antas infrastructure."
 
-#: src/libnmc-setting/settings-docs.h.in:416
+#: src/libnmc-setting/settings-docs.h.in:421
 msgid ""
 "One of \"disable\" (2) (disable Wi-Fi power saving), \"enable\" (3) (enable "
 "Wi-Fi power saving), \"ignore\" (1) (don't touch currently configure "
@@ -10597,12 +10681,12 @@ msgstr ""
 "konfigureringsinställning) eller \"default \" (0) (använd det globalt "
 "konfigurerade värdet). Alla andra värden är reserverade."
 
-#: src/libnmc-setting/settings-docs.h.in:417
-#: src/libnmc-setting/settings-docs.h.in:420
+#: src/libnmc-setting/settings-docs.h.in:422
+#: src/libnmc-setting/settings-docs.h.in:425
 msgid "This property is not implemented and has no effect."
 msgstr "Den här egenskapen är inte implementerad och har ingen effekt."
 
-#: src/libnmc-setting/settings-docs.h.in:418
+#: src/libnmc-setting/settings-docs.h.in:423
 msgid ""
 "A list of BSSIDs (each BSSID formatted as a MAC address like "
 "\"00:11:22:33:44:55\") that have been detected as part of the Wi-Fi "
@@ -10622,11 +10706,11 @@ msgstr ""
 "NetworkManager automatiskt in de sedda BSSID:n och spårar dem internt i "
 "filen \"/var/lib/NetworkManager/seen-bssids\"."
 
-#: src/libnmc-setting/settings-docs.h.in:419
+#: src/libnmc-setting/settings-docs.h.in:424
 msgid "SSID of the Wi-Fi network. Must be specified."
 msgstr "SSID för det trådlösa nätverket. Måste anges."
 
-#: src/libnmc-setting/settings-docs.h.in:421
+#: src/libnmc-setting/settings-docs.h.in:426
 msgid ""
 "The NMSettingWirelessWakeOnWLan options to enable. Not all devices support "
 "all options. May be any combination of \"any\" (0x2), \"disconnect\" (0x4), "
@@ -10644,7 +10728,7 @@ msgstr ""
 "(för att använda globala inställningar) och \"ignore\" (0x8000) (för att "
 "inaktivera hantering av Wake-on-LAN i NetworkManager)."
 
-#: src/libnmc-setting/settings-docs.h.in:422
+#: src/libnmc-setting/settings-docs.h.in:427
 msgid ""
 "When WEP is used (ie, key-mgmt = \"none\" or \"ieee8021x\") indicate the "
 "802.11 authentication algorithm required by the AP here.  One of \"open\" "
@@ -10659,7 +10743,7 @@ msgstr ""
 "och auth-alg = \"leap\") måste egenskaperna \"leap-username\" och \"leap-"
 "password\" specificeras."
 
-#: src/libnmc-setting/settings-docs.h.in:423
+#: src/libnmc-setting/settings-docs.h.in:428
 msgid ""
 "Indicates whether Fast Initial Link Setup (802.11ai) must be enabled for the "
 "connection.  One of \"default\" (0) (use global default value), "
@@ -10676,7 +10760,7 @@ msgstr ""
 "\"default\" (0) och ingen global standard är inställd, kommer FILS att vara "
 "valfritt aktiverat."
 
-#: src/libnmc-setting/settings-docs.h.in:424
+#: src/libnmc-setting/settings-docs.h.in:429
 msgid ""
 "A list of group/broadcast encryption algorithms which prevents connections "
 "to Wi-Fi networks that do not utilize one of the algorithms in the list.  "
@@ -10688,7 +10772,7 @@ msgstr ""
 "listan. För högsta kompatibilitet, lämna denna egenskap tom. Varje "
 "listelement kan vara en av \"wep40\", \"wep104\", \"tkip\" eller \"ccmp\"."
 
-#: src/libnmc-setting/settings-docs.h.in:425
+#: src/libnmc-setting/settings-docs.h.in:430
 msgid ""
 "Key management used for the connection. One of \"none\" (WEP or no password "
 "protection), \"ieee8021x\" (Dynamic WEP), \"owe\" (Opportunistic Wireless "
@@ -10704,7 +10788,7 @@ msgstr ""
 "b-192\" (endast WPA3-företag). Den här egenskapen måste ställas in för alla "
 "Wi-Fi-anslutningar som använder säkerhet."
 
-#: src/libnmc-setting/settings-docs.h.in:426
+#: src/libnmc-setting/settings-docs.h.in:431
 msgid ""
 "The login password for legacy LEAP connections (ie, key-mgmt = \"ieee8021x\" "
 "and auth-alg = \"leap\")."
@@ -10712,11 +10796,11 @@ msgstr ""
 "Inloggningslösenordet för föråldrade LEAP-anslutningar (d.v.s. key-mgmt = "
 "\"ieee8021x\" och auth-alg = \"leap\")."
 
-#: src/libnmc-setting/settings-docs.h.in:427
+#: src/libnmc-setting/settings-docs.h.in:432
 msgid "Flags indicating how to handle the \"leap-password\" property."
 msgstr "Flaggor vilka indikerar hur egenskapen ”leap-password” ska hanteras."
 
-#: src/libnmc-setting/settings-docs.h.in:428
+#: src/libnmc-setting/settings-docs.h.in:433
 msgid ""
 "The login username for legacy LEAP connections (ie, key-mgmt = \"ieee8021x\" "
 "and auth-alg = \"leap\")."
@@ -10724,7 +10808,7 @@ msgstr ""
 "Inloggningsanvändarnamnet för föråldrade LEAP-anslutningar (d.v.s. key-mgmt "
 "= \"ieee8021x\" och auth-alg = \"leap\")."
 
-#: src/libnmc-setting/settings-docs.h.in:429
+#: src/libnmc-setting/settings-docs.h.in:434
 msgid ""
 "A list of pairwise encryption algorithms which prevents connections to Wi-Fi "
 "networks that do not utilize one of the algorithms in the list. For maximum "
@@ -10736,7 +10820,7 @@ msgstr ""
 "kompatibilitet, lämna egenskapen tom. Varje listelement kan vara en av "
 "”tkip” eller ”ccmp”."
 
-#: src/libnmc-setting/settings-docs.h.in:430
+#: src/libnmc-setting/settings-docs.h.in:435
 msgid ""
 "Indicates whether Protected Management Frames (802.11w) must be enabled for "
 "the connection.  One of \"default\" (0) (use global default value), "
@@ -10753,7 +10837,7 @@ msgstr ""
 "\"default\" (0) och ingen global standard är inställd, kommer PMF att vara "
 "valfritt aktiverat."
 
-#: src/libnmc-setting/settings-docs.h.in:431
+#: src/libnmc-setting/settings-docs.h.in:436
 msgid ""
 "List of strings specifying the allowed WPA protocol versions to use. Each "
 "element may be one \"wpa\" (allow WPA) or \"rsn\" (allow WPA2/RSN).  If not "
@@ -10763,7 +10847,7 @@ msgstr ""
 "använda. Varje element kan vara ”wpa” (tillåt WPA) eller ”rsn” (tillåt WPA2/"
 "RSN). Om inte specificerat är både WPA- och RSN-anslutningar tillåtna."
 
-#: src/libnmc-setting/settings-docs.h.in:432
+#: src/libnmc-setting/settings-docs.h.in:437
 msgid ""
 "Pre-Shared-Key for WPA networks. For WPA-PSK, it's either an ASCII "
 "passphrase of 8 to 63 characters that is (as specified in the 802.11i "
@@ -10777,11 +10861,11 @@ msgstr ""
 "tecken. WPA3-Personliga nätverk använder en lösenordsfras av valfri längd "
 "för SAE-autentisering."
 
-#: src/libnmc-setting/settings-docs.h.in:433
+#: src/libnmc-setting/settings-docs.h.in:438
 msgid "Flags indicating how to handle the \"psk\" property."
 msgstr "Flaggor vilka indikerar hur egenskapen ”psk” ska hanteras."
 
-#: src/libnmc-setting/settings-docs.h.in:434
+#: src/libnmc-setting/settings-docs.h.in:439
 msgid ""
 "Flags indicating how to handle the \"wep-key0\", \"wep-key1\", \"wep-key2\", "
 "and \"wep-key3\" properties."
@@ -10789,7 +10873,7 @@ msgstr ""
 "Flaggor vilka indikerar hur egenskaperna \"wep-key0\", \"wep-key1\", \"wep-"
 "key2\" och \"wep-key3\" ska hanteras."
 
-#: src/libnmc-setting/settings-docs.h.in:435
+#: src/libnmc-setting/settings-docs.h.in:440
 msgid ""
 "Controls the interpretation of WEP keys.  Allowed values are \"key\" (1), in "
 "which case the key is either a 10- or 26-character hexadecimal string, or a "
@@ -10803,7 +10887,7 @@ msgstr ""
 "vilket fall lösenfrasen tillhandahålls som en sträng och kommer att hashas "
 "med hjälp av de-facto MD5-metoden för att härleda den faktiska WEP-nyckeln."
 
-#: src/libnmc-setting/settings-docs.h.in:436
+#: src/libnmc-setting/settings-docs.h.in:441
 msgid ""
 "Index 0 WEP key.  This is the WEP key used in most networks.  See the \"wep-"
 "key-type\" property for a description of how this key is interpreted."
@@ -10811,7 +10895,7 @@ msgstr ""
 "WEP-nyckel för index 0. Detta är WEP-nyckeln använd i de flesta nätverk. Se "
 "egenskapen ”wep-key-type” för en beskrivning över hur denna nyckel tolkas."
 
-#: src/libnmc-setting/settings-docs.h.in:437
+#: src/libnmc-setting/settings-docs.h.in:442
 msgid ""
 "Index 1 WEP key.  This WEP index is not used by most networks.  See the "
 "\"wep-key-type\" property for a description of how this key is interpreted."
@@ -10819,7 +10903,7 @@ msgstr ""
 "WEP-nyckel för index 1. Denna WEP-nyckel används inte i de flesta nätverk. "
 "Se egenskapen ”wep-key-type” för en beskrivning över hur denna nyckel tolkas."
 
-#: src/libnmc-setting/settings-docs.h.in:438
+#: src/libnmc-setting/settings-docs.h.in:443
 msgid ""
 "Index 2 WEP key.  This WEP index is not used by most networks.  See the "
 "\"wep-key-type\" property for a description of how this key is interpreted."
@@ -10827,7 +10911,7 @@ msgstr ""
 "WEP-nyckel för index 2. Denna WEP-nyckel används inte i de flesta nätverk. "
 "Se egenskapen ”wep-key-type” för en beskrivning över hur denna nyckel tolkas."
 
-#: src/libnmc-setting/settings-docs.h.in:439
+#: src/libnmc-setting/settings-docs.h.in:444
 msgid ""
 "Index 3 WEP key.  This WEP index is not used by most networks.  See the "
 "\"wep-key-type\" property for a description of how this key is interpreted."
@@ -10835,7 +10919,7 @@ msgstr ""
 "WEP-nyckel för index 3. Denna WEP-nyckel används inte i de flesta nätverk. "
 "Se egenskapen ”wep-key-type” för en beskrivning över hur denna nyckel tolkas."
 
-#: src/libnmc-setting/settings-docs.h.in:440
+#: src/libnmc-setting/settings-docs.h.in:445
 msgid ""
 "When static WEP is used (ie, key-mgmt = \"none\") and a non-default WEP key "
 "index is used by the AP, put that WEP key index here.  Valid values are 0 "
@@ -10847,7 +10931,7 @@ msgstr ""
 "Giltiga värden är 0 (standardnyckel) till 3. Observera att en del "
 "konsumentaccesspunkter (som Linksys WRT54G) namnger nycklarna 1-4."
 
-#: src/libnmc-setting/settings-docs.h.in:441
+#: src/libnmc-setting/settings-docs.h.in:446
 msgid ""
 "Flags indicating which mode of WPS is to be used if any. There's little "
 "point in changing the default setting as NetworkManager will automatically "
@@ -10861,7 +10945,7 @@ msgstr ""
 "accesspunktens egenskaper. WPS kan inaktiveras genom att ställa in denna "
 "egenskap till värdet 1."
 
-#: src/libnmc-setting/settings-docs.h.in:442
+#: src/libnmc-setting/settings-docs.h.in:447
 msgid ""
 "IEEE 802.15.4 channel. A positive integer or -1, meaning \"do not set, use "
 "whatever the device is already set to\"."
@@ -10869,7 +10953,7 @@ msgstr ""
 "IEEE 802.15.4-kanal. En positivt heltalsvärde, eller -1 som betyder ”ange "
 "ej, använd enhetens befintliga värde”."
 
-#: src/libnmc-setting/settings-docs.h.in:443
+#: src/libnmc-setting/settings-docs.h.in:448
 msgid ""
 "If specified, this connection will only apply to the IEEE 802.15.4 (WPAN) "
 "MAC layer device whose permanent MAC address matches."
@@ -10877,7 +10961,7 @@ msgstr ""
 "Om angivet kommer denna anslutning endast att tillämpas på IEEE 802.15.4 "
 "(WPAN) MAC-enheten vars permanenta MAC-adress matchar."
 
-#: src/libnmc-setting/settings-docs.h.in:444
+#: src/libnmc-setting/settings-docs.h.in:449
 msgid ""
 "IEEE 802.15.4 channel page. A positive integer or -1, meaning \"do not set, "
 "use whatever the device is already set to\"."
@@ -10885,15 +10969,15 @@ msgstr ""
 "IEEE 802.15.4-kanalsida. En positivt heltalsvärde, eller -1 som betyder "
 "”ange inte, använd enhetens befintliga värde”."
 
-#: src/libnmc-setting/settings-docs.h.in:445
+#: src/libnmc-setting/settings-docs.h.in:450
 msgid "IEEE 802.15.4 Personal Area Network (PAN) identifier."
 msgstr "IEEE 802.15.4 Personal Area Network (PAN)-identifierare."
 
-#: src/libnmc-setting/settings-docs.h.in:446
+#: src/libnmc-setting/settings-docs.h.in:451
 msgid "Short IEEE 802.15.4 address to be used within a restricted environment."
 msgstr "Kort IEEE 802.15.4-adress att användas inom en begränsad miljö."
 
-#: src/libnmc-setting/settings-docs.h.in:447
+#: src/libnmc-setting/settings-docs.h.in:452
 msgid ""
 "The port priority for bond active port re-selection during failover. A "
 "higher number means a higher priority in selection. The primary port has the "
@@ -10905,7 +10989,7 @@ msgstr ""
 "prioritet. Det här alternativet är endast kompatibelt med lägena aktiv "
 "säkerhetskopiering, balans-tlb och balans-alb lägen."
 
-#: src/libnmc-setting/settings-docs.h.in:448
+#: src/libnmc-setting/settings-docs.h.in:453
 msgid ""
 "The queue ID of this bond port. The maximum value of queue ID is the number "
 "of TX queues currently active in device."
@@ -10913,7 +10997,7 @@ msgstr ""
 "Kö-ID för denna bondport. Det maximala värdet för kö-ID är antalet "
 "sändningsköer som för närvarande är aktiva i enheten."
 
-#: src/libnmc-setting/settings-docs.h.in:449
+#: src/libnmc-setting/settings-docs.h.in:454
 msgid ""
 "Whether the system hostname can be determined from DHCP on this connection. "
 "When set to \"default\" (-1), the value from global configuration is used. "
@@ -10925,7 +11009,7 @@ msgstr ""
 "konfiguration. Om egenskapen inte har ett värde i den globala "
 "konfigurationen, antar NetworkManager att värdet är \"true\" (1)."
 
-#: src/libnmc-setting/settings-docs.h.in:450
+#: src/libnmc-setting/settings-docs.h.in:455
 msgid ""
 "Whether the system hostname can be determined from reverse DNS lookup of "
 "addresses on this device. When set to \"default\" (-1), the value from "
@@ -10937,7 +11021,7 @@ msgstr ""
 "används värdet från global konfiguration. Om egenskapen inte har ett värde i "
 "den globala konfigurationen, antar NetworkManager att värdet är \"true\" (1)."
 
-#: src/libnmc-setting/settings-docs.h.in:451
+#: src/libnmc-setting/settings-docs.h.in:456
 msgid ""
 "If set to \"true\" (1), NetworkManager attempts to get the hostname via "
 "DHCPv4/DHCPv6 or reverse DNS lookup on this device only when the device has "
@@ -10955,7 +11039,7 @@ msgstr ""
 "värdet från global konfiguration. Om egenskapen inte har ett värde i den "
 "globala konfigurationen, antar NetworkManager att värdet är \"false\" (0)."
 
-#: src/libnmc-setting/settings-docs.h.in:452
+#: src/libnmc-setting/settings-docs.h.in:457
 msgid ""
 "The relative priority of this connection to determine the system hostname. A "
 "lower numerical value is better (higher priority).  A connection with higher "
@@ -10979,24 +11063,24 @@ msgstr ""
 "endast anslutningar med det lägsta prioritetsvärdet att användas för att "
 "bestämma värdnamnet."
 
-#: src/libnmc-setting/settings-docs.h.in:453
+#: src/libnmc-setting/settings-docs.h.in:458
 msgid "The last byte of supervision address."
 msgstr "Den sista byten i övervakningsadressen."
 
-#: src/libnmc-setting/settings-docs.h.in:454
+#: src/libnmc-setting/settings-docs.h.in:459
 msgid "The port1 interface name of the HSR. This property is mandatory."
 msgstr "Port1-gränssnittsnamnet för HSR. Denna egenskap är obligatorisk."
 
-#: src/libnmc-setting/settings-docs.h.in:455
+#: src/libnmc-setting/settings-docs.h.in:460
 msgid "The port2 interface name of the HSR. This property is mandatory."
 msgstr "Port2-gränssnittsnamnet för HSR. Denna egenskap är obligatorisk."
 
-#: src/libnmc-setting/settings-docs.h.in:456
+#: src/libnmc-setting/settings-docs.h.in:461
 msgid "The protocol used by the interface, whether it is PRP or HSR."
 msgstr ""
 "Protokollet som används av gränssnittet, oavsett om det är PRP eller HSR."
 
-#: src/libnmc-setting/settings-docs.h.in:457
+#: src/libnmc-setting/settings-docs.h.in:462
 msgid ""
 "The maximum size of a packet built by the Generic Receive Offload stack for "
 "this device. The value must be between 0 and 4294967295. When set to -1, the "
@@ -11006,7 +11090,7 @@ msgstr ""
 "stacken för den här enheten. Värdet måste vara mellan 0 och 4294967295. När "
 "det är satt till -1 bevaras det befintliga värdet."
 
-#: src/libnmc-setting/settings-docs.h.in:458
+#: src/libnmc-setting/settings-docs.h.in:463
 msgid ""
 "The maximum segments of a Generic Segment Offload packet the device should "
 "accept. The value must be between 0 and 4294967295. When set to -1, the "
@@ -11016,7 +11100,7 @@ msgstr ""
 "acceptera. Värdet måste vara mellan 0 och 4294967295. När det är satt till "
 "-1 bevaras det befintliga värdet."
 
-#: src/libnmc-setting/settings-docs.h.in:459
+#: src/libnmc-setting/settings-docs.h.in:464
 msgid ""
 "The maximum size of a Generic Segment Offload packet the device should "
 "accept. The value must be between 0 and 4294967295. When set to -1, the "
@@ -11026,7 +11110,7 @@ msgstr ""
 "acceptera. Värdet måste vara mellan 0 och 4294967295. När det är satt till "
 "-1 bevaras det befintliga värdet."
 
-#: src/libnmc-setting/settings-docs.h.in:460
+#: src/libnmc-setting/settings-docs.h.in:465
 msgid ""
 "The size of the transmit queue for the device, in number of packets. The "
 "value must be between 0 and 4294967295. When set to -1, the existing value "
@@ -11036,11 +11120,11 @@ msgstr ""
 "mellan 0 och 4294967295. När det är satt till -1 bevaras det befintliga "
 "värdet."
 
-#: src/libnmc-setting/settings-docs.h.in:462
+#: src/libnmc-setting/settings-docs.h.in:467
 msgid "A dictionary of key/value pairs with external-ids for OVS."
 msgstr "En ordbok över nyckel/värdepar med externa ID för OVS."
 
-#: src/libnmc-setting/settings-docs.h.in:463
+#: src/libnmc-setting/settings-docs.h.in:468
 msgid ""
 "A dictionary of key/value pairs with other_config settings for OVS. See also "
 "\"other_config\" in the \"ovs-vswitchd.conf.db\" manual for the keys that "
@@ -11050,7 +11134,7 @@ msgstr ""
 "även \"other_config\" i manualen \"ovs-vswitchd.conf.db\" för nycklar som "
 "OVS stöder."
 
-#: src/libnmc-setting/settings-docs.h.in:464
+#: src/libnmc-setting/settings-docs.h.in:469
 msgid ""
 "This property specifies the peer interface name of the veth. This property "
 "is mandatory."
@@ -11342,15 +11426,15 @@ msgstr "VPN frånkopplad"
 msgid "Error: Error writing connection: %s"
 msgstr "Fel: Det gick inte att skriva anslutning: %s"
 
-#: src/nmcli/connections.c:677
+#: src/nmcli/connections.c:676
 msgid "WiMax is no longer supported"
 msgstr "WiMax stöds inte längre"
 
-#: src/nmcli/connections.c:683
+#: src/nmcli/connections.c:682
 msgid "WEP encryption is known to be insecure"
 msgstr "WEP-kryptering är känt för att vara osäker"
 
-#: src/nmcli/connections.c:765
+#: src/nmcli/connections.c:764
 msgid "never"
 msgstr "aldrig"
 
