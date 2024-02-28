@@ -2173,6 +2173,7 @@ device_state_changed(NMDevice           *device,
                                                                           TRUE);
             }
         }
+        _LOGW(LOGD_DEVICE, "---- %s:%d : connection on device %p", __func__, __LINE__, nm_device_get_applied_connection(device));
         ip6_remove_device_prefix_delegations(self, device);
         break;
     case NM_DEVICE_STATE_DISCONNECTED:

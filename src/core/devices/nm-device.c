@@ -16576,6 +16576,9 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
             _LOGT(LOGD_DEVICE, "stable-id: clear");
     }
 
+
+    _LOGW(LOGD_DEVICE, "---- %s:%d : connection on device %p", __func__, __LINE__, nm_device_get_applied_connection(self));
+
     /* Handle the new state here; but anything that could trigger
      * another state change should be done below.
      */
@@ -16746,6 +16749,7 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
         }
 
         nm_pacrunner_manager_remove_clear(&priv->pacrunner_conf_id);
+        _LOGW(LOGD_DEVICE, "---- %s:%d : connection on device %p", __func__, __LINE__, nm_device_get_applied_connection(self));
         break;
     case NM_DEVICE_STATE_DISCONNECTED:
         if (priv->queued_act_request && !priv->queued_act_request_is_waiting_for_carrier) {
