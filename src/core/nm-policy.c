@@ -294,12 +294,14 @@ ip6_remove_device_prefix_delegations(NMPolicy *self, NMDevice *device)
     NMPolicyPrivate     *priv       = NM_POLICY_GET_PRIVATE(self);
     IP6PrefixDelegation *delegation = NULL;
     guint                i;
+    _LOGW(LOGD_DEVICE, "---- %s:%d : connection on device %p", __func__, __LINE__, nm_device_get_applied_connection(device));
 
     for (i = 0; i < priv->ip6_prefix_delegations->len; i++) {
         delegation = &nm_g_array_index(priv->ip6_prefix_delegations, IP6PrefixDelegation, i);
-        if (delegation->device == device)
+        if (delegation->device == device) {
+            _LOGW(LOGD_DEVICE, "---- %s:%d : connection on deviceee %p", __func__, __LINE__, nm_device_get_applied_connection(device));
             g_array_remove_index_fast(priv->ip6_prefix_delegations, i);
-        _LOGW(LOGD_DEVICE, "---- %s:%d : connection on deviceee %p", __func__, __LINE__, nm_device_get_applied_connection(device));
+        }
     }
     _LOGW(LOGD_DEVICE, "---- %s:%d : connection on device %p", __func__, __LINE__, nm_device_get_applied_connection(device));
 }
