@@ -15971,7 +15971,7 @@ nm_device_add_pending_action(NMDevice *self, const char *action, gboolean assert
     gssize           idx;
 
     g_return_val_if_fail(action, FALSE);
-
+    _LOGW(LOGD_DEVICE, "---- %s:%d : connection on device %p", __func__, __LINE__, nm_device_get_applied_connection(self));
     idx = nm_strv_find_binary_search(priv->pending_actions.arr, priv->pending_actions.len, action);
     if (idx >= 0) {
         if (assert_not_yet_pending) {

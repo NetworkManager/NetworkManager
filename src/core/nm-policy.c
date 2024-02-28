@@ -154,6 +154,7 @@ _clear_ip6_subnet(gpointer key, gpointer value, gpointer user_data)
     NMPlatformIP6Address *subnet = value;
     NMDevice *device = nm_manager_get_device_by_ifindex(NM_MANAGER_GET, GPOINTER_TO_INT(key));
 
+    _LOGW(LOGD_DEVICE, "---- %s:%d : connection on device %p", __func__, __LINE__, nm_device_get_applied_connection(device));
     if (device) {
         /* We can not remove a subnet we already started announcing.
          * Just un-prefer it. */
@@ -168,7 +169,6 @@ clear_ip6_prefix_delegation(gpointer data)
 {
     IP6PrefixDelegation *delegation = data;
     char                 sbuf[NM_INET_ADDRSTRLEN];
-
     _LOGD(LOGD_IP6,
           "ipv6-pd: undelegating prefix %s/%d",
           nm_inet6_ntop(&delegation->prefix.address, sbuf),
