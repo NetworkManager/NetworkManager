@@ -169,6 +169,7 @@ clear_ip6_prefix_delegation(gpointer data)
 {
     IP6PrefixDelegation *delegation = data;
     char                 sbuf[NM_INET_ADDRSTRLEN];
+
     _LOGD(LOGD_IP6,
           "ipv6-pd: undelegating prefix %s/%d",
           nm_inet6_ntop(&delegation->prefix.address, sbuf),
@@ -298,7 +299,9 @@ ip6_remove_device_prefix_delegations(NMPolicy *self, NMDevice *device)
         delegation = &nm_g_array_index(priv->ip6_prefix_delegations, IP6PrefixDelegation, i);
         if (delegation->device == device)
             g_array_remove_index_fast(priv->ip6_prefix_delegations, i);
+        _LOGW(LOGD_DEVICE, "---- %s:%d : connection on deviceee %p", __func__, __LINE__, nm_device_get_applied_connection(device));
     }
+    _LOGW(LOGD_DEVICE, "---- %s:%d : connection on device %p", __func__, __LINE__, nm_device_get_applied_connection(device));
 }
 
 static void
@@ -2175,6 +2178,7 @@ device_state_changed(NMDevice           *device,
         }
         _LOGW(LOGD_DEVICE, "---- %s:%d : connection on device %p", __func__, __LINE__, nm_device_get_applied_connection(device));
         ip6_remove_device_prefix_delegations(self, device);
+        _LOGW(LOGD_DEVICE, "---- %s:%d : connection on device %p", __func__, __LINE__, nm_device_get_applied_connection(device));
         break;
     case NM_DEVICE_STATE_DISCONNECTED:
         g_signal_handlers_disconnect_by_func(device, device_dns_lookup_done, self);
@@ -2240,7 +2244,7 @@ device_state_changed(NMDevice           *device,
     default:
         break;
     }
-
+    _LOGW(LOGD_DEVICE, "---- %s:%d : connection on device %p", __func__, __LINE__, nm_device_get_applied_connection(device));
     check_activating_active_connections(self);
 }
 
