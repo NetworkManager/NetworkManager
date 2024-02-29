@@ -1810,7 +1810,17 @@ class TestNmcli(unittest.TestCase):
         )
         self.call_nmcli(["connection", "mod", "con-xx1", "ipv6.gateway", "::99"])
         self.call_nmcli(["connection", "mod", "con-xx1", "802.abc", ""])
-        self.call_nmcli(["connection", "mod", "con-xx1", "802-11-wireless.band", "a"])
+        self.call_nmcli(
+            [
+                "connection",
+                "mod",
+                "con-xx1",
+                "802-11-wireless.band",
+                "a",
+                "802-11-wireless.mac-address-denylist",
+                "aA:Bb:cC:dd:EE:f",
+            ]
+        )
         self.call_nmcli(
             [
                 "connection",
