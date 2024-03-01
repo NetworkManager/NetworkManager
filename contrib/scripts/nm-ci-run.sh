@@ -191,24 +191,26 @@ run_autotools() {
             \
             #end
 
-        make -j 6
-        make install
+        if [ "$CONFIGURE_ONLY" != 1 ]; then
+            make -j 6
+            make install
 
-        export NM_TEST_CLIENT_CHECK_L10N=1
+            export NM_TEST_CLIENT_CHECK_L10N=1
 
-        if ! make check -j 6 -k ; then
-            _print_test_logs "first-test"
-            echo ">>>> RUN SECOND TEST (start)"
-            NMTST_DEBUG="debug,TRACE,no-expect-message" make check -k || :
-            echo ">>>> RUN SECOND TEST (done)"
-            _print_test_logs "second-test"
-            die "autotools test failed"
-        fi
+            if ! make check -j 6 -k ; then
+                _print_test_logs "first-test"
+                echo ">>>> RUN SECOND TEST (start)"
+                NMTST_DEBUG="debug,TRACE,no-expect-message" make check -k || :
+                echo ">>>> RUN SECOND TEST (done)"
+                _print_test_logs "second-test"
+                die "autotools test failed"
+            fi
 
-        if _with_valgrind; then
-            if ! NMTST_USE_VALGRIND=1 make check -j 3 -k ; then
-                _print_test_logs "(valgrind test)"
-                die "autotools+valgrind test failed"
+            if _with_valgrind; then
+                if ! NMTST_USE_VALGRIND=1 make check -j 3 -k ; then
+                    _print_test_logs "(valgrind test)"
+                    die "autotools+valgrind test failed"
+                fi
             fi
         fi
     popd
@@ -222,7 +224,7 @@ run_meson() {
     else
         _WITH_WERROR_VAL=""
     fi
-    meson build \
+    meson setup build \
         \
         -Dprefix="$PWD/INST" \
         \
@@ -262,21 +264,23 @@ run_meson() {
 
     export NM_TEST_CLIENT_CHECK_L10N=1
 
-    ninja -C build -v
-    ninja -C build install
+    if [ "$CONFIGURE_ONLY" != 1 ]; then
+        ninja -C build -v
+        ninja -C build install
 
-    if ! meson test -C build -v --print-errorlogs ; then
-        echo ">>>> RUN SECOND TEST (start)"
-        NMTST_DEBUG="debug,TRACE,no-expect-message" \
-           meson test -C build -v --print-errorlogs || :
-        echo ">>>> RUN SECOND TEST (done)"
-        die "meson test failed"
-    fi
+        if ! meson test -C build -v --print-errorlogs ; then
+            echo ">>>> RUN SECOND TEST (start)"
+            NMTST_DEBUG="debug,TRACE,no-expect-message" \
+            meson test -C build -v --print-errorlogs || :
+            echo ">>>> RUN SECOND TEST (done)"
+            die "meson test failed"
+        fi
 
-    if _with_valgrind; then
-        if ! NMTST_USE_VALGRIND=1 meson test -C build -v --print-errorlogs ; then
-            _print_test_logs "(valgrind test)"
-            die "meson+valgrind test failed"
+        if _with_valgrind; then
+            if ! NMTST_USE_VALGRIND=1 meson test -C build -v --print-errorlogs ; then
+                _print_test_logs "(valgrind test)"
+                die "meson+valgrind test failed"
+            fi
         fi
     fi
 }

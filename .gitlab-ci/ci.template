@@ -157,6 +157,8 @@ t_{{distro.name}}:{{version}}:
         - meson+clang
         - rpm+autotools
         - rpm+meson
+        - tarball+autotools
+        - tarball+meson
         - tarball
         - subtree
 {% endif %}

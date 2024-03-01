@@ -63,6 +63,8 @@ check_run_assert() {
         meson+clang
         rpm+autotools
         rpm+meson
+        tarball+autotools
+        tarball+meson
         tarball
         subtree
 
@@ -126,6 +128,42 @@ if check_run_clean tarball && [ "$NM_BUILD_TARBALL" = 1 ]; then
     mv ./contrib/fedora/rpm/latest/SRPMS/NetworkManager-1*.src.rpm "$ARTIFACT_DIR/"
     do_clean
 fi
+
+if check_run_clean tarball+autotools; then
+    BUILD_TYPE=autotools CC=gcc WITH_DOCS=1 CONFIGURE_ONLY=1 contrib/scripts/nm-ci-run.sh
+    pushd ./build
+        # dist & build with autotools
+        make distcheck -j$(nproc)
+
+        # build with meson
+        DISTSRC="./distsrc-$RANDOM"
+        mkdir $DISTSRC
+        tar xvf ./NetworkManager-1*.tar.xz -C $DISTSRC --strip-components=1
+        pushd $DISTSRC
+            BUILD_TYPE=meson CC=gcc WITH_DOCS=1 ../../contrib/scripts/nm-ci-run.sh
+        popd
+    popd
+    do_clean
+fi
+
+if check_run_clean tarball+meson; then
+    BUILD_TYPE=meson CC=gcc WITH_DOCS=1 CONFIGURE_ONLY=1 contrib/scripts/nm-ci-run.sh
+    pushd ./build
+        # dist with meson
+        meson dist
+
+        # build with autotools
+        DISTSRC="./distsrc-$RANDOM"
+        mkdir $DISTSRC
+        tar xvf ./meson-dist/NetworkManager-1*.tar.xz -C $DISTSRC --strip-components=1
+        pushd $DISTSRC
+            BUILD_TYPE=autotools CC=gcc WITH_DOCS=1 ../../contrib/scripts/nm-ci-run.sh
+        popd
+        rm -rf $DISTSRC
+    popd
+    do_clean
+fi
+
 
 ###############################################################################
 

@@ -45,9 +45,11 @@ def show(c, ts=None):
             "  timeout: %u seconds%s"
             % (
                 rt,
-                ""
-                if ts is None
-                else (" (circa %s sec left)" % ((cr + (rt * 1000) - ts) / 1000.0)),
+                (
+                    ""
+                    if ts is None
+                    else (" (circa %s sec left)" % ((cr + (rt * 1000) - ts) / 1000.0))
+                ),
             )
         )
     print(

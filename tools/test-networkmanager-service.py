@@ -2329,12 +2329,16 @@ class IP4Config(ExportedObj):
                 a = {
                     "dest": Util.random_ip(seed, net="192.168.0.0/16")[0],
                     "prefix": Util.random_int(seed, 17, 32),
-                    "next-hop": None
-                    if (Util.random_int(seed) % 3 == 0)
-                    else Util.random_ip(seed, net="192.168.0.0/16")[0],
-                    "metric": -1
-                    if (Util.random_int(seed) % 3 == 0)
-                    else Util.random_int(seed, 0, 0xFFFFFFFF),
+                    "next-hop": (
+                        None
+                        if (Util.random_int(seed) % 3 == 0)
+                        else Util.random_ip(seed, net="192.168.0.0/16")[0]
+                    ),
+                    "metric": (
+                        -1
+                        if (Util.random_int(seed) % 3 == 0)
+                        else Util.random_int(seed, 0, 0xFFFFFFFF)
+                    ),
                 }
                 routes.append(a)
 
@@ -2527,12 +2531,16 @@ class IP6Config(ExportedObj):
                 a = {
                     "dest": Util.random_ip(seed, net="2001:a::/64")[0],
                     "prefix": Util.random_int(seed, 65, 128),
-                    "next-hop": None
-                    if (Util.random_int(seed) % 3 == 0)
-                    else Util.random_ip(seed, net="2001:a::/64")[0],
-                    "metric": -1
-                    if (Util.random_int(seed) % 3 == 0)
-                    else Util.random_int(seed, 0, 0xFFFFFFFF),
+                    "next-hop": (
+                        None
+                        if (Util.random_int(seed) % 3 == 0)
+                        else Util.random_ip(seed, net="2001:a::/64")[0]
+                    ),
+                    "metric": (
+                        -1
+                        if (Util.random_int(seed) % 3 == 0)
+                        else Util.random_int(seed, 0, 0xFFFFFFFF)
+                    ),
                 }
                 routes.append(a)
 
