@@ -154,7 +154,7 @@ _clear_ip6_subnet(gpointer key, gpointer value, gpointer user_data)
     NMPlatformIP6Address *subnet = value;
     NMDevice *device = nm_manager_get_device_by_ifindex(NM_MANAGER_GET, GPOINTER_TO_INT(key));
 
-    _LOGW(LOGD_DEVICE, "---- %s:%d : connection on device %p", __func__, __LINE__, nm_device_get_applied_connection(device));
+    _LOGW(LOGD_DEVICE, "---- %s:%d : connection on device %p, the device is %p", __func__, __LINE__, nm_device_get_applied_connection(device), device);
     if (device) {
         /* We can not remove a subnet we already started announcing.
          * Just un-prefer it. */
@@ -299,7 +299,7 @@ ip6_remove_device_prefix_delegations(NMPolicy *self, NMDevice *device)
     for (i = 0; i < priv->ip6_prefix_delegations->len; i++) {
         delegation = &nm_g_array_index(priv->ip6_prefix_delegations, IP6PrefixDelegation, i);
         if (delegation->device == device) {
-            _LOGW(LOGD_DEVICE, "---- %s:%d : connection on deviceee %p", __func__, __LINE__, nm_device_get_applied_connection(device));
+            _LOGW(LOGD_DEVICE, "---- %s:%d : connection on deviceee %p, the device is %p", __func__, __LINE__, nm_device_get_applied_connection(device), device);
             g_array_remove_index_fast(priv->ip6_prefix_delegations, i);
         }
     }
