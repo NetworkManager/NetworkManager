@@ -22,12 +22,29 @@ TimeoutStartSec=600
 # CAP_DAC_OVERRIDE: required to open /run/openvswitch/db.sock socket.
 CapabilityBoundingSet=CAP_NET_ADMIN CAP_DAC_OVERRIDE CAP_NET_RAW CAP_NET_BIND_SERVICE CAP_SETGID CAP_SETUID CAP_SYS_MODULE CAP_AUDIT_WRITE CAP_KILL CAP_SYS_CHROOT
 
-ProtectSystem=true
-ProtectHome=read-only
-
 # We require file descriptors for DHCP etc. When activating many interfaces,
 # the default limit of 1024 is easily reached.
 LimitNOFILE=65536
+
+# Systemd sandbox
+DevicePolicy=closed
+KeyringMode=private
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+NoNewPrivileges=yes
+PrivateDevices=no
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectHome=read-only
+ProtectHostname=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectProc=invisible
+ProtectSystem=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+SystemCallArchitectures=native
 
 [Install]
 WantedBy=multi-user.target
