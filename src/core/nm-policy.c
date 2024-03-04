@@ -155,11 +155,12 @@ _clear_ip6_subnet(gpointer key, gpointer value, gpointer user_data)
     NMDevice *device = nm_manager_get_device_by_ifindex(NM_MANAGER_GET, GPOINTER_TO_INT(key));
 
     _LOGW(LOGD_DEVICE,
-          "---- %s:%d : connection on device %p, the device is %p",
+          "---- %s:%d : connection on device %p, the device is %p, the subnet is %p",
           __func__,
           __LINE__,
           nm_device_get_applied_connection(device),
-          device);
+          device,
+          subnet);
     if (device) {
         /* We can not remove a subnet we already started announcing.
          * Just un-prefer it. */
@@ -321,6 +322,11 @@ ip6_remove_device_prefix_delegations(NMPolicy *self, NMDevice *device)
         } else {
             subnet = g_hash_table_lookup(delegation->subnets, GINT_TO_POINTER(ifindex));
             if (subnet) {
+                _LOGW(LOGD_DEVICE,
+                      "---- %s:%d : down link subnet removed, the subnet is %p",
+                      __func__,
+                      __LINE__,
+                      subnet);
                 g_hash_table_remove(delegation->subnets, subnet);
             }
         }
