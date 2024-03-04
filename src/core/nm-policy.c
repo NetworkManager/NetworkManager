@@ -154,7 +154,12 @@ _clear_ip6_subnet(gpointer key, gpointer value, gpointer user_data)
     NMPlatformIP6Address *subnet = value;
     NMDevice *device = nm_manager_get_device_by_ifindex(NM_MANAGER_GET, GPOINTER_TO_INT(key));
 
-    _LOGW(LOGD_DEVICE, "---- %s:%d : connection on device %p, the device is %p", __func__, __LINE__, nm_device_get_applied_connection(device), device);
+    _LOGW(LOGD_DEVICE,
+          "---- %s:%d : connection on device %p, the device is %p",
+          __func__,
+          __LINE__,
+          nm_device_get_applied_connection(device),
+          device);
     if (device) {
         /* We can not remove a subnet we already started announcing.
          * Just un-prefer it. */
@@ -291,19 +296,40 @@ ip6_subnet_from_device(NMPolicy *self, NMDevice *from_device, NMDevice *device)
 static void
 ip6_remove_device_prefix_delegations(NMPolicy *self, NMDevice *device)
 {
-    NMPolicyPrivate     *priv       = NM_POLICY_GET_PRIVATE(self);
-    IP6PrefixDelegation *delegation = NULL;
-    guint                i;
-    _LOGW(LOGD_DEVICE, "---- %s:%d : connection on device %p", __func__, __LINE__, nm_device_get_applied_connection(device));
+    NMPolicyPrivate      *priv       = NM_POLICY_GET_PRIVATE(self);
+    IP6PrefixDelegation  *delegation = NULL;
+    NMPlatformIP6Address *subnet;
+    int                   ifindex = nm_device_get_ifindex(device);
+    guint                 i;
+    _LOGW(LOGD_DEVICE,
+          "---- %s:%d : connection on device %p",
+          __func__,
+          __LINE__,
+          nm_device_get_applied_connection(device));
 
     for (i = 0; i < priv->ip6_prefix_delegations->len; i++) {
         delegation = &nm_g_array_index(priv->ip6_prefix_delegations, IP6PrefixDelegation, i);
+
         if (delegation->device == device) {
-            _LOGW(LOGD_DEVICE, "---- %s:%d : connection on deviceee %p, the device is %p", __func__, __LINE__, nm_device_get_applied_connection(device), device);
+            _LOGW(LOGD_DEVICE,
+                  "---- %s:%d : connection on deviceee %p, the device is %p",
+                  __func__,
+                  __LINE__,
+                  nm_device_get_applied_connection(device),
+                  device);
             g_array_remove_index_fast(priv->ip6_prefix_delegations, i);
+        } else {
+            subnet = g_hash_table_lookup(delegation->subnets, GINT_TO_POINTER(ifindex));
+            if (subnet) {
+                g_hash_table_remove(delegation->subnets, subnet);
+            }
         }
     }
-    _LOGW(LOGD_DEVICE, "---- %s:%d : connection on device %p", __func__, __LINE__, nm_device_get_applied_connection(device));
+    _LOGW(LOGD_DEVICE,
+          "---- %s:%d : connection on device %p",
+          __func__,
+          __LINE__,
+          nm_device_get_applied_connection(device));
 }
 
 static void
@@ -2178,9 +2204,17 @@ device_state_changed(NMDevice           *device,
                                                                           TRUE);
             }
         }
-        _LOGW(LOGD_DEVICE, "---- %s:%d : connection on device %p", __func__, __LINE__, nm_device_get_applied_connection(device));
+        _LOGW(LOGD_DEVICE,
+              "---- %s:%d : connection on device %p",
+              __func__,
+              __LINE__,
+              nm_device_get_applied_connection(device));
         ip6_remove_device_prefix_delegations(self, device);
-        _LOGW(LOGD_DEVICE, "---- %s:%d : connection on device %p", __func__, __LINE__, nm_device_get_applied_connection(device));
+        _LOGW(LOGD_DEVICE,
+              "---- %s:%d : connection on device %p",
+              __func__,
+              __LINE__,
+              nm_device_get_applied_connection(device));
         break;
     case NM_DEVICE_STATE_DISCONNECTED:
         g_signal_handlers_disconnect_by_func(device, device_dns_lookup_done, self);
@@ -2246,7 +2280,11 @@ device_state_changed(NMDevice           *device,
     default:
         break;
     }
-    _LOGW(LOGD_DEVICE, "---- %s:%d : connection on device %p", __func__, __LINE__, nm_device_get_applied_connection(device));
+    _LOGW(LOGD_DEVICE,
+          "---- %s:%d : connection on device %p",
+          __func__,
+          __LINE__,
+          nm_device_get_applied_connection(device));
     check_activating_active_connections(self);
 }
 
