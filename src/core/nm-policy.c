@@ -330,7 +330,18 @@ ip6_remove_device_prefix_delegations(NMPolicy *self, NMDevice *device)
                       nm_device_get_applied_connection(device),
                       device,
                       subnet);
-                g_hash_table_remove(delegation->subnets, subnet);
+                if (!g_hash_table_remove(delegation->subnets, subnet)) {
+                    _LOGW(LOGD_DEVICE,
+                          "---- %s:%d : down link subnet removed, connection on device %p, the "
+                          "device "
+                          "is %p, the subnet is %p faillllllll",
+                          __func__,
+                          __LINE__,
+                          nm_device_get_applied_connection(device),
+                          device,
+                          subnet);
+                    subnet->preferred = 0;
+                }
             }
         }
     }
