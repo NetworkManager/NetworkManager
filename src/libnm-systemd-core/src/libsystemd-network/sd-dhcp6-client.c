@@ -7,7 +7,9 @@
 
 #include <errno.h>
 #include <sys/ioctl.h>
+#ifdef __GLIBC__
 #include <linux/if_arp.h>
+#endif
 #include <linux/if_infiniband.h>
 
 #include "sd-dhcp6-client.h"

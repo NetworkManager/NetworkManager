@@ -1319,6 +1319,7 @@ bool streq_skip_trailing_chars(const char *s1, const char *s2, const char *ok) {
 
         return in_charset(s1, ok) && in_charset(s2, ok);
 }
+#endif /* NM_IGNORED */
 
 char *string_replace_char(char *str, char old_char, char new_char) {
         assert(str);
@@ -1331,7 +1332,6 @@ char *string_replace_char(char *str, char old_char, char new_char) {
 
         return str;
 }
-#endif /* NM_IGNORED */
 
 int make_cstring(const char *s, size_t n, MakeCStringMode mode, char **ret) {
         char *b;
@@ -1376,7 +1376,6 @@ int make_cstring(const char *s, size_t n, MakeCStringMode mode, char **ret) {
         return 0;
 }
 
-#if 0 /* NM_IGNORED */
 size_t strspn_from_end(const char *str, const char *accept) {
         size_t n = 0;
 
@@ -1392,6 +1391,7 @@ size_t strspn_from_end(const char *str, const char *accept) {
         return n;
 }
 
+#if 0 /* NM_IGNORED */
 char *strdupspn(const char *a, const char *accept) {
         if (isempty(a) || isempty(accept))
                 return strdup("");

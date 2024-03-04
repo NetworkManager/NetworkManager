@@ -6,6 +6,7 @@ libnm_systemd_shared = static_library(
     'nm-sd-utils-shared.c',
     'src/basic/alloc-util.c',
     'src/basic/btrfs.c',
+    'src/basic/devnum-util.c',
     'src/basic/env-file.c',
     'src/basic/env-util.c',
     'src/basic/escape.c',
