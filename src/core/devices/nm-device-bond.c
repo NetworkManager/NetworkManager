@@ -224,7 +224,7 @@ controller_update_port_connection(NMDevice     *self,
                                   GError      **error)
 {
     NMSettingBondPort    *s_port;
-    int                   ifindex_port       = nm_device_get_ifindex(port);
+    int                   ifindex_port = nm_device_get_ifindex(port);
     const NMPlatformLink *pllink;
 
     g_return_val_if_fail(ifindex_port > 0, FALSE);

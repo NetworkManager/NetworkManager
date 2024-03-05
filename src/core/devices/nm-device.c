@@ -10713,25 +10713,32 @@ nm_device_needs_ip6_subnet(NMDevice *self)
 void
 nm_device_use_ip6_subnet(NMDevice *self, const NMPlatformIP6Address *subnet)
 {
-    nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
-    char                                    sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
-    NMPlatformIP6Address                    address;
+    NMConnection *connection = nm_device_get_applied_connection(self);
 
-    l3cd = nm_device_create_l3_config_data(self, NM_IP_CONFIG_SOURCE_SHARED);
+    if (connection) {
+        NMSettingIPConfig *s_ip6 = nm_connection_get_setting_ip6_config(connection);
 
-    /* Assign a ::1 address in the subnet for us. */
-    address = *subnet;
-    address.address.s6_addr32[3] |= htonl(1);
+        if (nm_streq(nm_setting_ip_config_get_method(s_ip6), NM_SETTING_IP6_CONFIG_METHOD_SHARED)) {
+            nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
+            char                                    sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+            NMPlatformIP6Address                    address;
+            l3cd = nm_device_create_l3_config_data(self, NM_IP_CONFIG_SOURCE_SHARED);
 
-    nm_l3_config_data_add_address_6(l3cd, &address);
+            /* Assign a ::1 address in the subnet for us. */
+            address = *subnet;
+            address.address.s6_addr32[3] |= htonl(1);
 
-    _LOGD(LOGD_IP6,
-          "ipv6-pd: using %s",
-          nm_platform_ip6_address_to_string(&address, sbuf, sizeof(sbuf)));
+            nm_l3_config_data_add_address_6(l3cd, &address);
 
-    _dev_l3_register_l3cds_set_one(self, L3_CONFIG_DATA_TYPE_PD_6, l3cd, FALSE);
-    _dev_l3_cfg_commit(self, TRUE);
-    _dev_ipac6_ndisc_set_router_config(self);
+            _LOGD(LOGD_IP6,
+                  "ipv6-pd: using %s",
+                  nm_platform_ip6_address_to_string(&address, sbuf, sizeof(sbuf)));
+
+            _dev_l3_register_l3cds_set_one(self, L3_CONFIG_DATA_TYPE_PD_6, l3cd, FALSE);
+            _dev_l3_cfg_commit(self, TRUE);
+            _dev_ipac6_ndisc_set_router_config(self);
+        }
+    }
 }
 
 /*
