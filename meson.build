@@ -427,10 +427,8 @@ if suspend_resume == 'auto'
     suspend_resume = 'systemd'
   elif libelogind_dep.found()
     suspend_resume = 'elogind'
-  elif session_tracking_consolekit
-    suspend_resume = 'consolekit'
   else
-    suspend_resume = 'upower'
+    suspend_resume = 'consolekit'
   endif
 endif
 
@@ -449,8 +447,6 @@ elif suspend_resume == 'elogind'
   config_h.set('SUSPEND_RESUME_ELOGIND', true)
 elif suspend_resume == 'consolekit'
   config_h.set('SUSPEND_RESUME_CONSOLEKIT', true)
-elif suspend_resume == 'upower'
-  config_h.set('SUSPEND_RESUME_UPOWER', true)
 else
   error('bug')
 endif

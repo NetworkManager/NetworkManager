@@ -171,7 +171,7 @@ libNetworkManager = static_library(
     'nm-policy.c',
     'nm-rfkill-manager.c',
     'nm-session-monitor.c',
-    'nm-sleep-monitor.c',
+    'nm-power-monitor.c',
     'nm-priv-helper-call.c',
   ),
   dependencies: nm_deps,

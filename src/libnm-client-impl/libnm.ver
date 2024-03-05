@@ -1958,6 +1958,7 @@ global:
 	nm_ethtool_optname_is_eee;
 	nm_setting_connection_get_autoconnect_ports;
 	nm_setting_connection_get_controller;
+	nm_setting_connection_get_down_on_poweroff;
 	nm_setting_connection_get_port_type;
 	nm_setting_generic_get_device_handler;
 	nm_setting_get_enum_property_type;
@@ -1977,3 +1978,9 @@ global:
 	nm_sriov_eswitch_inline_mode_get_type;
 	nm_sriov_eswitch_mode_get_type;
 } libnm_1_44_0;
+
+libnm_1_48_0 {
+global:
+	nm_setting_connection_down_on_poweroff_get_type;
+	nm_setting_connection_get_down_on_poweroff;
+} libnm_1_46_0;

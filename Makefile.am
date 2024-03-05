@@ -2813,8 +2813,8 @@ src_core_libNetworkManager_la_SOURCES = \
 	src/core/nm-priv-helper-call.h \
 	src/core/nm-keep-alive.c \
 	src/core/nm-keep-alive.h \
-	src/core/nm-sleep-monitor.c \
-	src/core/nm-sleep-monitor.h \
+	src/core/nm-power-monitor.c \
+	src/core/nm-power-monitor.h \
 	src/core/nm-types.h \
 	\
 	$(NULL)

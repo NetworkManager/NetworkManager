@@ -73,7 +73,8 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingConnection,
                              PROP_AUTH_RETRIES,
                              PROP_WAIT_DEVICE_TIMEOUT,
                              PROP_MUD_URL,
-                             PROP_WAIT_ACTIVATION_DELAY, );
+                             PROP_WAIT_ACTIVATION_DELAY,
+                             PROP_DOWN_ON_POWEROFF, );
 
 typedef struct {
     GArray     *permissions;
@@ -89,6 +90,7 @@ typedef struct {
     char       *mud_url;
     guint64     timestamp;
     int         autoconnect_ports;
+    int         down_on_poweroff;
     int         metered;
     gint32      autoconnect_priority;
     gint32      autoconnect_retries;
@@ -826,6 +828,26 @@ nm_setting_connection_get_wait_activation_delay(NMSettingConnection *setting)
     g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), -1);
 
     return NM_SETTING_CONNECTION_GET_PRIVATE(setting)->wait_activation_delay;
+}
+
+/**
+ * nm_setting_connection_get_down_on_poweroff:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns the %NM_SETTING_CONNECTION_DOWN_ON_POWEROFF property.
+ *
+ * Returns: whether the connection will be brought down before the system
+ * is powered off.
+ *
+ * Since: 1.48
+ */
+NMSettingConnectionDownOnPoweroff
+nm_setting_connection_get_down_on_poweroff(NMSettingConnection *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting),
+                         NM_SETTING_CONNECTION_DOWN_ON_POWEROFF_DEFAULT);
+
+    return NM_SETTING_CONNECTION_GET_PRIVATE(setting)->down_on_poweroff;
 }
 
 /**
@@ -3157,6 +3179,29 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                              NM_SETTING_PARAM_NONE,
                                              NMSettingConnectionPrivate,
                                              wait_activation_delay);
+
+    /**
+     * NMSettingConnection:down-on-poweroff:
+     *
+     *
+     * Whether the connection will be brought down before the system is powered
+     * off.  The default value is %NM_SETTING_CONNECTION_DOWN_ON_POWEROFF_DEFAULT. When
+     * the default value is specified, then the global value from
+     * NetworkManager configuration is looked up, if not set, it is considered
+     * as %NM_SETTING_CONNECTION_DOWN_ON_POWEROFF_NO.
+     *
+     * Since: 1.48
+     **/
+    _nm_setting_property_define_direct_enum(properties_override,
+                                            obj_properties,
+                                            NM_SETTING_CONNECTION_DOWN_ON_POWEROFF,
+                                            PROP_DOWN_ON_POWEROFF,
+                                            NM_TYPE_SETTING_CONNECTION_DOWN_ON_POWEROFF,
+                                            NM_SETTING_CONNECTION_DOWN_ON_POWEROFF_DEFAULT,
+                                            NM_SETTING_PARAM_NONE,
+                                            NULL,
+                                            NMSettingConnectionPrivate,
+                                            down_on_poweroff);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
