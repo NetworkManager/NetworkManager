@@ -219,6 +219,7 @@ int path_make_relative_parent(const char *from_child, const char *to, char **ret
 
         return path_make_relative(from, to, ret);
 }
+#endif /* NM_IGNORED */
 
 char* path_startswith_strv(const char *p, char **set) {
         STRV_FOREACH(s, set) {
@@ -232,6 +233,7 @@ char* path_startswith_strv(const char *p, char **set) {
         return NULL;
 }
 
+#if 0 /* NM_IGNORED */
 int path_strv_make_absolute_cwd(char **l) {
         int r;
 

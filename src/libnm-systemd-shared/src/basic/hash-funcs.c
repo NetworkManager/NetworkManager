@@ -22,7 +22,6 @@ DEFINE_HASH_OPS_FULL(string_hash_ops_free_strv_free,
                      char, string_hash_func, string_compare_func, free,
                      char*, strv_free);
 
-#if 0 /* NM_IGNORED */
 void path_hash_func(const char *q, struct siphash *state) {
         bool add_slash = false;
 
@@ -68,7 +67,6 @@ DEFINE_HASH_OPS_WITH_KEY_DESTRUCTOR(path_hash_ops_free,
 DEFINE_HASH_OPS_FULL(path_hash_ops_free_free,
                      char, path_hash_func, path_compare, free,
                      void, free);
-#endif /* NM_IGNORED */
 
 void trivial_hash_func(const void *p, struct siphash *state) {
         siphash24_compress_typesafe(p, state);

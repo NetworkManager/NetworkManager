@@ -2371,7 +2371,10 @@ src_libnm_systemd_shared_libnm_systemd_shared_la_SOURCES = \
 	src/libnm-systemd-shared/src/basic/btrfs.c \
 	src/libnm-systemd-shared/src/basic/btrfs.h \
 	src/libnm-systemd-shared/src/basic/cgroup-util.h \
+	src/libnm-systemd-shared/src/basic/chase.h \
 	src/libnm-systemd-shared/src/basic/constants.h \
+	src/libnm-systemd-shared/src/basic/devnum-util.c \
+	src/libnm-systemd-shared/src/basic/devnum-util.h \
 	src/libnm-systemd-shared/src/basic/dns-def.h \
 	src/libnm-systemd-shared/src/basic/env-file.c \
 	src/libnm-systemd-shared/src/basic/env-file.h \
@@ -2538,7 +2541,11 @@ src_libnm_systemd_core_libnm_systemd_core_la_SOURCES = \
 	src/libnm-systemd-core/src/libsystemd-network/network-common.h \
 	src/libnm-systemd-core/src/libsystemd-network/sd-dhcp6-client.c \
 	src/libnm-systemd-core/src/libsystemd-network/sd-dhcp6-lease.c \
+	src/libnm-systemd-core/src/libsystemd/sd-device/device-internal.h \
+	src/libnm-systemd-core/src/libsystemd/sd-device/device-private.c \
+	src/libnm-systemd-core/src/libsystemd/sd-device/device-private.h \
 	src/libnm-systemd-core/src/libsystemd/sd-device/device-util.h \
+	src/libnm-systemd-core/src/libsystemd/sd-device/sd-device.c \
 	src/libnm-systemd-core/src/libsystemd/sd-event/event-source.h \
 	src/libnm-systemd-core/src/libsystemd/sd-event/event-util.c \
 	src/libnm-systemd-core/src/libsystemd/sd-event/event-util.h \

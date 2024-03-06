@@ -3,7 +3,9 @@
 #include "nm-sd-adapt-core.h"
 
 #include <linux/if.h>
+#ifdef __GLIBC__
 #include <linux/if_arp.h>
+#endif
 
 #include "arphrd-util.h"
 #include "device-util.h"
