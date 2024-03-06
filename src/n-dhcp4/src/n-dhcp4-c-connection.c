@@ -1031,13 +1031,13 @@ static int n_dhcp4_c_connection_send_request(NDhcp4CConnection *connection,
         case N_DHCP4_C_MESSAGE_REBOOT:
         case N_DHCP4_C_MESSAGE_REBIND:
         case N_DHCP4_C_MESSAGE_RENEW:
+        case N_DHCP4_C_MESSAGE_DECLINE:
+        case N_DHCP4_C_MESSAGE_RELEASE:
                 request->userdata.base_time = timestamp;
                 n_dhcp4_outgoing_set_xid(request, n_dhcp4_client_probe_config_get_random(connection->probe_config));
 
                 break;
         case N_DHCP4_C_MESSAGE_SELECT:
-        case N_DHCP4_C_MESSAGE_DECLINE:
-        case N_DHCP4_C_MESSAGE_RELEASE:
                 break;
         default:
                 c_assert(0);

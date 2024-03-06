@@ -464,6 +464,10 @@ stop(NMDhcpClient *client, gboolean release)
     if (!priv->client6)
         return;
 
+    r = sd_dhcp6_client_set_send_release(priv->client6, release);
+    if (r)
+        _LOGT("dhcp-client6: failed setting send-release");
+
     sd_dhcp6_client_set_callback(priv->client6, NULL, NULL);
     r = sd_dhcp6_client_stop(priv->client6);
     if (r)
