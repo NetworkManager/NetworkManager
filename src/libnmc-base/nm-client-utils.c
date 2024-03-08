@@ -466,7 +466,34 @@ NM_UTILS_LOOKUP_STR_DEFINE(
     NM_UTILS_LOOKUP_ITEM(NM_DEVICE_STATE_REASON_PEER_NOT_FOUND,
                          N_("The Wi-Fi P2P peer could not be found")),
     NM_UTILS_LOOKUP_ITEM(NM_DEVICE_STATE_REASON_DEVICE_HANDLER_FAILED,
-                         N_("The device handler dispatcher returned an error")), );
+                         N_("The device handler dispatcher returned an error")),
+    NM_UTILS_LOOKUP_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_SLEEPING,
+                         N_("The device is unmanaged because networking is disabled "
+                            "or the system is suspended")),
+    NM_UTILS_LOOKUP_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_QUITTING,
+                         N_("The device is unmanaged because NetworkManager is quitting")),
+    NM_UTILS_LOOKUP_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_LINK_NOT_INIT,
+                         N_("The device is unmanaged because the link is not initialized by udev")),
+    NM_UTILS_LOOKUP_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_USER_EXPLICIT,
+                         N_("The device is unmanaged by explicit user decision (e.g. 'nmcli device "
+                            "set $DEV managed no'")),
+    NM_UTILS_LOOKUP_ITEM(
+        NM_DEVICE_STATE_REASON_UNMANAGED_USER_SETTINGS,
+        N_("The device is unmanaged by user decision via settings plugin "
+           "(\"unmanaged-devices\" for keyfile or \"NM_CONTROLLED=no\" for ifcfg-rh)")),
+    NM_UTILS_LOOKUP_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_USER_CONF,
+                         N_("The device is unmanaged by user decision in NetworkManager.conf "
+                            "('unmanaged' in a [device*] section")),
+    NM_UTILS_LOOKUP_ITEM(
+        NM_DEVICE_STATE_REASON_UNMANAGED_BY_DEFAULT,
+        N_("The device is unmanaged because the device type is unmanaged by default")),
+    NM_UTILS_LOOKUP_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_USER_UDEV,
+                         N_("The device is unmanaged via udev rule")),
+    NM_UTILS_LOOKUP_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_EXTERNAL_DOWN,
+                         N_("The device is unmanaged because it is an external device and is "
+                            "unconfigured (down or without addresses)")),
+
+);
 
 NM_UTILS_LOOKUP_STR_DEFINE(
     nm_active_connection_state_reason_to_string,

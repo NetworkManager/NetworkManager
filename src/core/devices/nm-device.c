@@ -15008,8 +15008,39 @@ _unmanaged_flags2str(NMUnmanagedFlags flags, NMUnmanagedFlags mask, char *buf, g
     return buf;
 }
 
+static NMDeviceStateReason
+unmanaged_flags_to_reason(NMUnmanagedFlags flags)
+{
+    /* Even if there are multiple flags, we can only return one reason.
+     * Return the most important reason.
+     */
+    if (NM_FLAGS_HAS(flags, NM_UNMANAGED_SLEEPING))
+        return NM_DEVICE_STATE_REASON_UNMANAGED_SLEEPING;
+    if (NM_FLAGS_HAS(flags, NM_UNMANAGED_QUITTING))
+        return NM_DEVICE_STATE_REASON_UNMANAGED_QUITTING;
+    if (NM_FLAGS_HAS(flags, NM_UNMANAGED_USER_SETTINGS))
+        return NM_DEVICE_STATE_REASON_UNMANAGED_USER_SETTINGS;
+    if (NM_FLAGS_HAS(flags, NM_UNMANAGED_PLATFORM_INIT))
+        return NM_DEVICE_STATE_REASON_UNMANAGED_LINK_NOT_INIT;
+    if (NM_FLAGS_HAS(flags, NM_UNMANAGED_USER_UDEV))
+        return NM_DEVICE_STATE_REASON_UNMANAGED_USER_UDEV;
+    if (NM_FLAGS_HAS(flags, NM_UNMANAGED_USER_EXPLICIT))
+        return NM_DEVICE_STATE_REASON_UNMANAGED_USER_EXPLICIT;
+    if (NM_FLAGS_HAS(flags, NM_UNMANAGED_USER_CONF))
+        return NM_DEVICE_STATE_REASON_UNMANAGED_USER_CONF;
+    if (NM_FLAGS_HAS(flags, NM_UNMANAGED_BY_DEFAULT))
+        return NM_DEVICE_STATE_REASON_UNMANAGED_BY_DEFAULT;
+    if (NM_FLAGS_HAS(flags, NM_UNMANAGED_EXTERNAL_DOWN))
+        return NM_DEVICE_STATE_REASON_UNMANAGED_EXTERNAL_DOWN;
+
+    return NM_DEVICE_STATE_REASON_NOW_UNMANAGED;
+}
+
 static gboolean
-_get_managed_by_flags(NMUnmanagedFlags flags, NMUnmanagedFlags mask, gboolean for_user_request)
+_get_managed_by_flags(NMUnmanagedFlags     flags,
+                      NMUnmanagedFlags     mask,
+                      gboolean             for_user_request,
+                      NMDeviceStateReason *unmanaged_reason)
 {
     /* Evaluate the managed state based on the unmanaged flags.
      *
@@ -15028,7 +15059,7 @@ _get_managed_by_flags(NMUnmanagedFlags flags, NMUnmanagedFlags mask, gboolean fo
          *
          * Effectively, this check is redundant, as the code below already
          * already ensures that. Still, express this invariant explicitly here. */
-        if (_get_managed_by_flags(flags, mask, FALSE))
+        if (_get_managed_by_flags(flags, mask, FALSE, unmanaged_reason))
             return TRUE;
 
         /* A for-user-request, is effectively the same as pretending
@@ -15071,7 +15102,12 @@ _get_managed_by_flags(NMUnmanagedFlags flags, NMUnmanagedFlags mask, gboolean fo
                    | NM_UNMANAGED_EXTERNAL_DOWN);
     }
 
-    return flags == NM_UNMANAGED_NONE;
+    if (flags == NM_UNMANAGED_NONE) {
+        return TRUE;
+    } else {
+        NM_SET_OUT(unmanaged_reason, unmanaged_flags_to_reason(flags));
+        return FALSE;
+    }
 }
 
 /**
@@ -15100,7 +15136,10 @@ nm_device_get_managed(NMDevice *self, gboolean for_user_request)
 
     priv = NM_DEVICE_GET_PRIVATE(self);
 
-    return _get_managed_by_flags(priv->unmanaged_flags, priv->unmanaged_mask, for_user_request);
+    return _get_managed_by_flags(priv->unmanaged_flags,
+                                 priv->unmanaged_mask,
+                                 for_user_request,
+                                 NULL);
 }
 
 /**
@@ -15239,9 +15278,9 @@ _set_unmanaged_flags(NMDevice           *self,
           (priv->unmanaged_flags | priv->unmanaged_mask) ? "=" : "",
           (guint) priv->unmanaged_flags,
           (guint) priv->unmanaged_mask,
-          (_get_managed_by_flags(priv->unmanaged_flags, priv->unmanaged_mask, FALSE)
+          (_get_managed_by_flags(priv->unmanaged_flags, priv->unmanaged_mask, FALSE, NULL)
                ? "managed"
-               : (_get_managed_by_flags(priv->unmanaged_flags, priv->unmanaged_mask, TRUE)
+               : (_get_managed_by_flags(priv->unmanaged_flags, priv->unmanaged_mask, TRUE, NULL)
                       ? "manageable"
                       : "unmanaged")),
           priv->real ? "" : "/unrealized",
@@ -15260,6 +15299,9 @@ _set_unmanaged_flags(NMDevice           *self,
     if (transition_state) {
         new_state = was_managed ? NM_DEVICE_STATE_UNMANAGED : NM_DEVICE_STATE_UNAVAILABLE;
         if (new_state == NM_DEVICE_STATE_UNMANAGED) {
+            /* In state UNMANAGED, the reason always depends on current flags, not on what
+             * the caller passed. */
+            _get_managed_by_flags(priv->unmanaged_flags, priv->unmanaged_mask, FALSE, &reason);
             _cancel_activation(self);
         } else {
             /* The assume check should happen before the device transitions to
@@ -15274,6 +15316,13 @@ _set_unmanaged_flags(NMDevice           *self,
             nm_device_state_changed(self, new_state, reason);
         else
             nm_device_queue_state(self, new_state, reason);
+    } else {
+        /* No state change, but possibly update the reason in UNMANAGED */
+        if (!_get_managed_by_flags(priv->unmanaged_flags, priv->unmanaged_mask, FALSE, &reason)
+            && reason != priv->state_reason) {
+            priv->state_reason = reason;
+            _notify(self, PROP_STATE_REASON);
+        }
     }
 }
 

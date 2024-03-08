@@ -612,6 +612,25 @@ typedef enum {
  * @NM_DEVICE_STATE_REASON_PEER_NOT_FOUND: The Wi-Fi P2P peer could not be found
  * @NM_DEVICE_STATE_REASON_DEVICE_HANDLER_FAILED: The device handler dispatcher returned an
  *   error. Since: 1.46
+ * @NM_DEVICE_STATE_REASON_UNMANAGED_BY_DEFAULT: The device is unmanaged because the device type
+ *   is unmanaged by default. Since: 1.48
+ * @NM_DEVICE_STATE_REASON_UNMANAGED_EXTERNAL_DOWN: The device is unmanaged because it is an
+ *   external device and is unconfigured (down or without addresses). Since: 1.48
+ * @NM_DEVICE_STATE_REASON_UNMANAGED_LINK_NOT_INIT: The device is unmanaged because the link is
+ *   not initialized by udev. Since: 1.48
+ * @NM_DEVICE_STATE_REASON_UNMANAGED_QUITTING: The device is unmanaged because NetworkManager is
+ *   quitting. Since: 1.48
+ * @NM_DEVICE_STATE_REASON_UNMANAGED_SLEEPING: The device is unmanaged because networking is
+ *   disabled or the system is suspended. Since: 1.48
+ * @NM_DEVICE_STATE_REASON_UNMANAGED_USER_CONF: The device is unmanaged by user decision in
+ *   NetworkManager.conf ('unmanaged' in a [device*] section). Since: 1.48
+ * @NM_DEVICE_STATE_REASON_UNMANAGED_USER_EXPLICIT: The device is unmanaged by explicit user
+ *   decision (e.g. 'nmcli device set $DEV managed no'). Since: 1.48
+ * @NM_DEVICE_STATE_REASON_UNMANAGED_USER_SETTINGS: The device is unmanaged by user decision
+ *   via settings plugin ('unmanaged-devices' for keyfile or 'NM_CONTROLLED=no' for ifcfg-rh).
+ *   Since: 1.48
+ * @NM_DEVICE_STATE_REASON_UNMANAGED_USER_UDEV: The device is unmanaged via udev rule. Since: 1.48
+
  *
  * Device state change reason codes
  */
@@ -685,6 +704,15 @@ typedef enum {
     NM_DEVICE_STATE_REASON_SRIOV_CONFIGURATION_FAILED     = 66,
     NM_DEVICE_STATE_REASON_PEER_NOT_FOUND                 = 67,
     NM_DEVICE_STATE_REASON_DEVICE_HANDLER_FAILED          = 68,
+    NM_DEVICE_STATE_REASON_UNMANAGED_BY_DEFAULT           = 69,
+    NM_DEVICE_STATE_REASON_UNMANAGED_EXTERNAL_DOWN        = 70,
+    NM_DEVICE_STATE_REASON_UNMANAGED_LINK_NOT_INIT        = 71,
+    NM_DEVICE_STATE_REASON_UNMANAGED_QUITTING             = 72,
+    NM_DEVICE_STATE_REASON_UNMANAGED_SLEEPING             = 73,
+    NM_DEVICE_STATE_REASON_UNMANAGED_USER_CONF            = 74,
+    NM_DEVICE_STATE_REASON_UNMANAGED_USER_EXPLICIT        = 75,
+    NM_DEVICE_STATE_REASON_UNMANAGED_USER_SETTINGS        = 76,
+    NM_DEVICE_STATE_REASON_UNMANAGED_USER_UDEV            = 77,
 } NMDeviceStateReason;
 
 /**

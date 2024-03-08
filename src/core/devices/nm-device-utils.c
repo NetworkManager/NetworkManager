@@ -128,8 +128,20 @@ NM_UTILS_LOOKUP_STR_DEFINE(
     NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_STATE_REASON_SRIOV_CONFIGURATION_FAILED,
                              "sriov-configuration-failed"),
     NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_STATE_REASON_PEER_NOT_FOUND, "peer-not-found"),
-    NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_STATE_REASON_DEVICE_HANDLER_FAILED,
-                             "device-handler-failed"), );
+    NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_STATE_REASON_DEVICE_HANDLER_FAILED, "device-handler-failed"),
+    NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_BY_DEFAULT, "unmanaged-by-default"),
+    NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_EXTERNAL_DOWN,
+                             "unmanaged-external-down"),
+    NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_LINK_NOT_INIT,
+                             "unmanaged-link-not-init"),
+    NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_QUITTING, "unmanaged-quitting"),
+    NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_SLEEPING, "unmanaged-sleeping"),
+    NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_USER_CONF, "unmanaged-user-conf"),
+    NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_USER_EXPLICIT,
+                             "unmanaged-user-explicit"),
+    NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_USER_SETTINGS,
+                             "unmanaged-user-settings"),
+    NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_USER_UDEV, "unmanaged-user-udev"), );
 
 NM_UTILS_LOOKUP_STR_DEFINE(nm_device_mtu_source_to_string,
                            NMDeviceMtuSource,
