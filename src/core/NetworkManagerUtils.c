@@ -702,8 +702,8 @@ check_connection_controller(NMConnection *orig, NMConnection *candidate, GHashTa
 
     s_con_orig      = nm_connection_get_setting_connection(orig);
     s_con_cand      = nm_connection_get_setting_connection(candidate);
-    orig_controller = nm_setting_connection_get_master(s_con_orig);
-    cand_controller = nm_setting_connection_get_master(s_con_cand);
+    orig_controller = nm_setting_connection_get_controller(s_con_orig);
+    cand_controller = nm_setting_connection_get_controller(s_con_cand);
 
     /* A generated connection uses the UUID to specify the controller. Accept
      * candidates that specify as controller an interface name matching that

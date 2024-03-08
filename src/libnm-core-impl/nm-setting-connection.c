@@ -715,7 +715,7 @@ nm_setting_connection_get_zone(NMSettingConnection *setting)
  * Returns: interface name of the master device or UUID of the master
  * connection.
  *
- * Deprecated: 1.46. Use nm_setting_connection_get_controller() instead which
+ * Deprecated: 1.46. Use nm_setting_connection_get_master() instead which
  * is just an alias.
  */
 const char *

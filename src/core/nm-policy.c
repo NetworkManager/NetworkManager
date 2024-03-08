@@ -1805,7 +1805,7 @@ unblock_autoconnect_for_ports(NMPolicy   *self,
 
         s_slave_con =
             nm_settings_connection_get_setting(sett_conn, NM_META_SETTING_TYPE_CONNECTION);
-        slave_master = nm_setting_connection_get_master(s_slave_con);
+        slave_master = nm_setting_connection_get_controller(s_slave_con);
         if (!slave_master)
             continue;
 

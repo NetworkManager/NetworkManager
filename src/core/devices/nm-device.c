@@ -9207,7 +9207,7 @@ nm_device_generate_connection(NMDevice *self,
         && NM_IN_STRSET(ip6_method,
                         NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
                         NM_SETTING_IP6_CONFIG_METHOD_DISABLED)
-        && !nm_setting_connection_get_master(NM_SETTING_CONNECTION(s_con))
+        && !nm_setting_connection_get_controller(NM_SETTING_CONNECTION(s_con))
         && c_list_is_empty(&priv->slaves)) {
         NM_SET_OUT(out_maybe_later, TRUE);
         g_set_error_literal(
@@ -9223,7 +9223,7 @@ nm_device_generate_connection(NMDevice *self,
      */
     if (nm_streq0(ip4_method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)
         && nm_streq0(ip6_method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL)
-        && !nm_setting_connection_get_master(NM_SETTING_CONNECTION(s_con))
+        && !nm_setting_connection_get_controller(NM_SETTING_CONNECTION(s_con))
         && c_list_is_empty(&priv->slaves)
         && !nm_config_data_get_assume_ipv6ll_only(NM_CONFIG_GET_DATA, self)) {
         _LOGD(LOGD_DEVICE,
@@ -11333,7 +11333,7 @@ connection_requires_carrier(NMConnection *connection)
     /* We can progress to IP_CONFIG now, so that we're enslaved.
      * That may actually cause carrier to go up and thus continue activation. */
     s_con = nm_connection_get_setting_connection(connection);
-    if (nm_setting_connection_get_master(s_con))
+    if (nm_setting_connection_get_controller(s_con))
         return FALSE;
 
     ip4_carrier_wanted = connection_ip_method_requires_carrier(connection, AF_INET, &ip4_used);

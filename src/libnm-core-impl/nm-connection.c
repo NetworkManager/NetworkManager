@@ -1093,7 +1093,7 @@ _normalize_connection_slave_type(NMConnection *self)
 
     if (!s_con)
         return FALSE;
-    if (!nm_setting_connection_get_master(s_con))
+    if (!nm_setting_connection_get_controller(s_con))
         return FALSE;
 
     slave_type = nm_setting_connection_get_port_type(s_con);
@@ -1175,7 +1175,7 @@ _supports_addr_family(NMConnection *self, int family)
         && (nm_streq0(nm_setting_connection_get_port_type(s_con), NM_SETTING_VRF_SETTING_NAME)))
         return TRUE;
 
-    return !nm_setting_connection_get_master(nm_connection_get_setting_connection(self));
+    return !nm_setting_connection_get_controller(nm_connection_get_setting_connection(self));
 }
 
 static gboolean

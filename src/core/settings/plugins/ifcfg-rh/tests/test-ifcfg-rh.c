@@ -2230,7 +2230,7 @@ test_clear_master(void)
 
     s_con = nmtst_connection_assert_setting(connection, NM_TYPE_SETTING_CONNECTION);
 
-    g_assert_cmpstr(nm_setting_connection_get_master(s_con), ==, "br0");
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, "br0");
     g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, "bridge");
 
     /* 2. write the connection to a new file */
@@ -2247,7 +2247,7 @@ test_clear_master(void)
                  NULL,
                  NULL);
 
-    g_assert_cmpstr(nm_setting_connection_get_master(s_con), ==, NULL);
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, NULL);
     g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NULL);
 
     nmtst_assert_connection_verifies_after_normalization(connection, 0, 0);
@@ -7668,7 +7668,7 @@ test_read_bridge_component(void)
                                        NULL);
 
     s_con = nmtst_connection_assert_setting(connection, NM_TYPE_SETTING_CONNECTION);
-    g_assert_cmpstr(nm_setting_connection_get_master(s_con), ==, "br0");
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, "br0");
     g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NM_SETTING_BRIDGE_SETTING_NAME);
 
     s_port = nmtst_connection_assert_setting(connection, NM_TYPE_SETTING_BRIDGE_PORT);
@@ -8260,7 +8260,7 @@ test_read_bond_slave(void)
 
     s_con = nmtst_connection_assert_setting(connection, NM_TYPE_SETTING_CONNECTION);
 
-    g_assert_cmpstr(nm_setting_connection_get_master(s_con), ==, "bond0");
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, "bond0");
 
     g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NM_SETTING_BOND_SETTING_NAME);
 }
@@ -8317,7 +8317,7 @@ test_read_bond_port(void)
         _connection_from_file(TEST_IFCFG_DIR "/ifcfg-test-bond-port", NULL, TYPE_ETHERNET, NULL);
 
     s_con = nmtst_connection_assert_setting(connection, NM_TYPE_SETTING_CONNECTION);
-    g_assert_cmpstr(nm_setting_connection_get_master(s_con), ==, "bond99");
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, "bond99");
     g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NM_SETTING_BOND_SETTING_NAME);
 
     s_port = nmtst_connection_assert_setting(connection, NM_TYPE_SETTING_BOND_PORT);
@@ -8556,7 +8556,7 @@ test_read_bond_slave_ib(void)
 
     s_con = nmtst_connection_assert_setting(connection, NM_TYPE_SETTING_CONNECTION);
 
-    g_assert_cmpstr(nm_setting_connection_get_master(s_con), ==, "bond0");
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, "bond0");
     g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NM_SETTING_BOND_SETTING_NAME);
 }
 
@@ -9096,7 +9096,7 @@ test_read_team_port(gconstpointer user_data)
     g_assert_cmpstr(nm_setting_connection_get_connection_type(s_con),
                     ==,
                     NM_SETTING_WIRED_SETTING_NAME);
-    g_assert_cmpstr(nm_setting_connection_get_master(s_con), ==, "team0");
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, "team0");
 
     s_team_port = nmtst_connection_assert_setting(connection, NM_TYPE_SETTING_TEAM_PORT);
     g_assert_cmpstr(nm_setting_team_port_get_config(s_team_port), ==, expected_config);
@@ -9224,7 +9224,7 @@ test_read_team_port_empty_config(void)
     g_assert_cmpstr(nm_setting_connection_get_connection_type(s_con),
                     ==,
                     NM_SETTING_WIRED_SETTING_NAME);
-    g_assert_cmpstr(nm_setting_connection_get_master(s_con), ==, "team0");
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, "team0");
 
     /* Normalization adds a team-port setting */
     s_team_port = nmtst_connection_assert_setting(connection, NM_TYPE_SETTING_TEAM_PORT);

@@ -446,7 +446,7 @@ _set_applied_connection_take(NMActiveConnection *self, NMConnection *applied_con
     /* we determine whether the connection is a master/slave, based solely
      * on the connection properties itself. */
     s_con = nm_connection_get_setting_connection(priv->applied_connection);
-    if (nm_setting_connection_get_master(s_con))
+    if (nm_setting_connection_get_controller(s_con))
         flags_val |= NM_ACTIVATION_STATE_FLAG_IS_SLAVE;
 
     if (_nm_connection_type_is_master(nm_setting_connection_get_connection_type(s_con)))

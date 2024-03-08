@@ -616,7 +616,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
                 slave_type = nm_setting_connection_get_port_type(s_con);
                 if (!g_strcmp0(slave_type, NM_SETTING_VLAN_SETTING_NAME))
-                    master = nm_setting_connection_get_master(s_con);
+                    master = nm_setting_connection_get_controller(s_con);
 
                 if (master && g_strcmp0(priv->parent, master) != 0) {
                     g_set_error(error,

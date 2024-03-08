@@ -1032,7 +1032,7 @@ test_bond(void)
                     NM_SETTING_WIRED_SETTING_NAME);
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "eth0");
     g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NM_SETTING_BOND_SETTING_NAME);
-    g_assert_cmpstr(nm_setting_connection_get_master(s_con), ==, master_uuid);
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, master_uuid);
     g_assert_cmpint(nm_setting_connection_get_multi_connect(s_con),
                     ==,
                     NM_CONNECTION_MULTI_CONNECT_SINGLE);
@@ -1048,7 +1048,7 @@ test_bond(void)
                     NM_SETTING_WIRED_SETTING_NAME);
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "eth1");
     g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NM_SETTING_BOND_SETTING_NAME);
-    g_assert_cmpstr(nm_setting_connection_get_master(s_con), ==, master_uuid);
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, master_uuid);
     g_assert_cmpint(nm_setting_connection_get_multi_connect(s_con),
                     ==,
                     NM_CONNECTION_MULTI_CONNECT_SINGLE);
@@ -1130,7 +1130,7 @@ test_bond_ip(void)
                     NM_SETTING_WIRED_SETTING_NAME);
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "eth0");
     g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NM_SETTING_BOND_SETTING_NAME);
-    g_assert_cmpstr(nm_setting_connection_get_master(s_con), ==, master_uuid);
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, master_uuid);
     g_assert_cmpint(nm_setting_connection_get_multi_connect(s_con),
                     ==,
                     NM_CONNECTION_MULTI_CONNECT_SINGLE);
@@ -1146,7 +1146,7 @@ test_bond_ip(void)
                     NM_SETTING_WIRED_SETTING_NAME);
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "eth1");
     g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NM_SETTING_BOND_SETTING_NAME);
-    g_assert_cmpstr(nm_setting_connection_get_master(s_con), ==, master_uuid);
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, master_uuid);
     g_assert_cmpint(nm_setting_connection_get_multi_connect(s_con),
                     ==,
                     NM_CONNECTION_MULTI_CONNECT_SINGLE);
@@ -1209,7 +1209,7 @@ test_bond_default(void)
                     NM_SETTING_WIRED_SETTING_NAME);
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "eth0");
     g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NM_SETTING_BOND_SETTING_NAME);
-    g_assert_cmpstr(nm_setting_connection_get_master(s_con), ==, master_uuid);
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, master_uuid);
     g_assert_cmpint(nm_setting_connection_get_multi_connect(s_con),
                     ==,
                     NM_CONNECTION_MULTI_CONNECT_SINGLE);
@@ -1285,7 +1285,7 @@ test_bridge(void)
                     NM_SETTING_WIRED_SETTING_NAME);
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "eth0");
     g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NM_SETTING_BRIDGE_SETTING_NAME);
-    g_assert_cmpstr(nm_setting_connection_get_master(s_con), ==, master_uuid);
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, master_uuid);
     g_assert_cmpint(nm_setting_connection_get_multi_connect(s_con),
                     ==,
                     NM_CONNECTION_MULTI_CONNECT_SINGLE);
@@ -1301,7 +1301,7 @@ test_bridge(void)
                     NM_SETTING_WIRED_SETTING_NAME);
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "eth1");
     g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NM_SETTING_BRIDGE_SETTING_NAME);
-    g_assert_cmpstr(nm_setting_connection_get_master(s_con), ==, master_uuid);
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, master_uuid);
     g_assert_cmpint(nm_setting_connection_get_multi_connect(s_con),
                     ==,
                     NM_CONNECTION_MULTI_CONNECT_SINGLE);
@@ -1362,7 +1362,7 @@ test_bridge_default(void)
                     NM_SETTING_WIRED_SETTING_NAME);
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "eth0");
     g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NM_SETTING_BRIDGE_SETTING_NAME);
-    g_assert_cmpstr(nm_setting_connection_get_master(s_con), ==, master_uuid);
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, master_uuid);
     g_assert_cmpint(nm_setting_connection_get_multi_connect(s_con),
                     ==,
                     NM_CONNECTION_MULTI_CONNECT_SINGLE);
@@ -1430,7 +1430,7 @@ test_bridge_ip(void)
         g_assert_cmpstr(nm_setting_connection_get_port_type(s_con),
                         ==,
                         NM_SETTING_BRIDGE_SETTING_NAME);
-        g_assert_cmpstr(nm_setting_connection_get_master(s_con), ==, master_uuid);
+        g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, master_uuid);
         g_assert_cmpint(nm_setting_connection_get_multi_connect(s_con),
                         ==,
                         NM_CONNECTION_MULTI_CONNECT_SINGLE);
@@ -1494,7 +1494,7 @@ test_team(void)
                     NM_SETTING_WIRED_SETTING_NAME);
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "eth0");
     g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NM_SETTING_TEAM_SETTING_NAME);
-    g_assert_cmpstr(nm_setting_connection_get_master(s_con), ==, master_uuid);
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, master_uuid);
     g_assert_cmpint(nm_setting_connection_get_multi_connect(s_con),
                     ==,
                     NM_CONNECTION_MULTI_CONNECT_SINGLE);
@@ -1510,7 +1510,7 @@ test_team(void)
                     NM_SETTING_WIRED_SETTING_NAME);
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "eth1");
     g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NM_SETTING_TEAM_SETTING_NAME);
-    g_assert_cmpstr(nm_setting_connection_get_master(s_con), ==, master_uuid);
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, master_uuid);
     g_assert_cmpint(nm_setting_connection_get_multi_connect(s_con),
                     ==,
                     NM_CONNECTION_MULTI_CONNECT_SINGLE);

@@ -58,7 +58,7 @@ edit_connection_list_filter(NmtEditConnectionList *list,
     s_con = nm_connection_get_setting_connection(connection);
     g_return_val_if_fail(s_con != NULL, FALSE);
 
-    controller = nm_setting_connection_get_master(s_con);
+    controller = nm_setting_connection_get_controller(s_con);
     if (!controller)
         return TRUE;
     port_type = nm_setting_connection_get_port_type(s_con);
@@ -525,7 +525,7 @@ nmt_remove_connection(NMRemoteConnection *connection)
     for (i = 0; i < all_conns->len; i++) {
         port       = all_conns->pdata[i];
         s_con      = nm_connection_get_setting_connection(NM_CONNECTION(port));
-        controller = nm_setting_connection_get_master(s_con);
+        controller = nm_setting_connection_get_controller(s_con);
         if (controller) {
             if (!g_strcmp0(controller, uuid) || !g_strcmp0(controller, iface))
                 ports = g_slist_prepend(ports, g_object_ref(port));

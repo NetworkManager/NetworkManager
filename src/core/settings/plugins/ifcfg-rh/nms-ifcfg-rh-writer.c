@@ -2247,7 +2247,7 @@ write_connection_setting(NMSettingConnection *s_con, shvarFile *ifcfg, const cha
     mud_url = nm_setting_connection_get_mud_url(s_con);
     svSetValue(ifcfg, "MUD_URL", mud_url);
 
-    master = nm_setting_connection_get_master(s_con);
+    master = nm_setting_connection_get_controller(s_con);
     if (master) {
         /* The reader prefers the *_UUID variants, however we still try to resolve
          * it into an interface name, so that legacy tooling is not confused. */

@@ -107,7 +107,7 @@ nmt_port_list_connection_filter(NmtEditConnectionList *list,
     if (g_strcmp0(port_type, priv->controller_type) != 0)
         return FALSE;
 
-    controller = nm_setting_connection_get_master(s_con);
+    controller = nm_setting_connection_get_controller(s_con);
     if (!controller)
         return FALSE;
 
