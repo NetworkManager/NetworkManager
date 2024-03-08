@@ -66,7 +66,7 @@
 
 #define NM_DEVICE_TYPE_DESC          "type-desc"          /* Internal only */
 #define NM_DEVICE_IFINDEX            "ifindex"            /* Internal only */
-#define NM_DEVICE_MASTER             "master"             /* Internal only */
+#define NM_DEVICE_CONTROLLER         "controller"         /* Internal only */
 #define NM_DEVICE_HAS_PENDING_ACTION "has-pending-action" /* Internal only */
 
 /* Internal signals */
@@ -186,9 +186,9 @@ typedef struct _NMDeviceClass {
      * a delta in the MTU allowed value due the encapsulation overhead */
     guint16 mtu_parent_delta;
 
-    /* Whether the device type is a master-type. This depends purely on the
+    /* Whether the device type is a controller-type. This depends purely on the
      * type (NMDeviceClass), not the actual device instance. */
-    bool is_master : 1;
+    bool is_controller : 1;
 
     /* Force setting the MTU actually means first setting the MTU
      * to (desired_MTU-1) and then setting the desired_MTU
@@ -502,11 +502,11 @@ gboolean  nm_device_parent_notify_changed(NMDevice *self,
 const char *nm_device_parent_find_for_connection(NMDevice   *self,
                                                  const char *current_setting_parent);
 
-/* Master */
-gboolean nm_device_is_master(NMDevice *dev);
+/* Controller */
+gboolean nm_device_is_controller(NMDevice *dev);
 
-/* Slave */
-NMDevice *nm_device_get_master(NMDevice *dev);
+/* Port */
+NMDevice *nm_device_get_controller(NMDevice *dev);
 
 NMActRequest          *nm_device_get_act_request(NMDevice *dev);
 NMSettingsConnection  *nm_device_get_settings_connection(NMDevice *dev);

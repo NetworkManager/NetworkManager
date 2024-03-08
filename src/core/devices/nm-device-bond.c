@@ -922,7 +922,7 @@ deactivate(NMDevice *device)
 static void
 nm_device_bond_init(NMDeviceBond *self)
 {
-    nm_assert(nm_device_is_master(NM_DEVICE(self)));
+    nm_assert(nm_device_is_controller(NM_DEVICE(self)));
 }
 
 static const NMDBusInterfaceInfoExtended interface_info_device_bond = {
@@ -958,7 +958,7 @@ nm_device_bond_class_init(NMDeviceBondClass *klass)
     device_class->connection_type_check_compatible = NM_SETTING_BOND_SETTING_NAME;
     device_class->link_types                       = NM_DEVICE_DEFINE_LINK_TYPES(NM_LINK_TYPE_BOND);
 
-    device_class->is_master                = TRUE;
+    device_class->is_controller            = TRUE;
     device_class->get_generic_capabilities = get_generic_capabilities;
     device_class->complete_connection      = complete_connection;
 

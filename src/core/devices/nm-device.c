@@ -371,7 +371,6 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMDevice,
                              PROP_IFINDEX,
                              PROP_AVAILABLE_CONNECTIONS,
                              PROP_PHYSICAL_PORT_ID,
-                             PROP_MASTER,
                              PROP_PARENT,
                              PROP_HW_ADDRESS,
                              PROP_PERM_HW_ADDRESS,
@@ -386,7 +385,8 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMDevice,
                              PROP_IP4_CONNECTIVITY,
                              PROP_IP6_CONNECTIVITY,
                              PROP_INTERFACE_FLAGS,
-                             PROP_PORTS, );
+                             PROP_PORTS,
+                             PROP_CONTROLLER, );
 
 typedef struct _NMDevicePrivate {
     guint device_link_changed_id;
@@ -707,10 +707,10 @@ typedef struct _NMDevicePrivate {
         NMPlatformLinkChangeFlags flags;
     } link_props_state;
 
-    /* master interface for bridge/bond/team slave */
-    NMDevice *master;
-    gulong    master_ready_id;
-    int       master_ifindex;
+    /* controller interface for bridge/bond/team slave */
+    NMDevice *controller;
+    gulong    controller_ready_id;
+    int       controller_ifindex;
 
     /* slave management */
     CList slaves; /* list of SlaveInfo */
@@ -1523,11 +1523,12 @@ _prop_get_ipvx_route_table(NMDevice *self, int addr_family)
     if (route_table == 0u && connection
         && (s_con = nm_connection_get_setting_connection(connection))
         && (nm_streq0(nm_setting_connection_get_port_type(s_con), NM_SETTING_VRF_SETTING_NAME)
-            && priv->master && nm_device_get_device_type(priv->master) == NM_DEVICE_TYPE_VRF)) {
+            && priv->controller
+            && nm_device_get_device_type(priv->controller) == NM_DEVICE_TYPE_VRF)) {
         const NMPlatformLnkVrf *lnk;
 
         lnk = nm_platform_link_get_lnk_vrf(nm_device_get_platform(self),
-                                           nm_device_get_ifindex(priv->master),
+                                           nm_device_get_ifindex(priv->controller),
                                            NULL);
 
         if (lnk)
@@ -6676,14 +6677,14 @@ nm_device_master_enslave_slave(NMDevice *self, NMDevice *slave, NMConnection *co
 static void
 detach_port_cb(NMDevice *self, GError *error, gpointer user_data)
 {
-    nm_auto_unref_object NMDevice *slave      = user_data;
-    NMDevicePrivate               *slave_priv = NM_DEVICE_GET_PRIVATE(slave);
+    nm_auto_unref_object NMDevice *slave     = user_data;
+    NMDevicePrivate               *port_priv = NM_DEVICE_GET_PRIVATE(slave);
 
-    nm_assert(slave_priv->port_detach_count > 0);
+    nm_assert(port_priv->port_detach_count > 0);
 
-    if (--slave_priv->port_detach_count == 0) {
-        if (slave_priv->state == NM_DEVICE_STATE_DEACTIVATING) {
-            deactivate_ready(slave, slave_priv->port_detach_reason);
+    if (--port_priv->port_detach_count == 0) {
+        if (port_priv->state == NM_DEVICE_STATE_DEACTIVATING) {
+            deactivate_ready(slave, port_priv->port_detach_reason);
         }
     }
 }
@@ -6708,7 +6709,7 @@ nm_device_master_release_slave(NMDevice           *self,
                                NMDeviceStateReason reason)
 {
     NMDevicePrivate          *priv;
-    NMDevicePrivate          *slave_priv;
+    NMDevicePrivate          *port_priv;
     SlaveInfo                *info;
     gs_unref_object NMDevice *self_free  = NULL;
     gs_unref_object NMDevice *slave_free = NULL;
@@ -6735,10 +6736,10 @@ nm_device_master_release_slave(NMDevice           *self,
     if (!info)
         g_return_if_reached();
 
-    priv       = NM_DEVICE_GET_PRIVATE(self);
-    slave_priv = NM_DEVICE_GET_PRIVATE(slave);
+    priv      = NM_DEVICE_GET_PRIVATE(self);
+    port_priv = NM_DEVICE_GET_PRIVATE(slave);
 
-    g_return_if_fail(self == slave_priv->master);
+    g_return_if_fail(self == port_priv->controller);
     nm_assert(slave == info->slave);
     nm_clear_g_cancellable(&info->cancellable);
 
@@ -6754,8 +6755,8 @@ nm_device_master_release_slave(NMDevice           *self,
                                                      detach_port_cb,
                                                      g_object_ref(slave));
         if (ret == NM_TERNARY_DEFAULT) {
-            slave_priv->port_detach_count++;
-            slave_priv->port_detach_reason = reason;
+            port_priv->port_detach_count++;
+            port_priv->port_detach_reason = reason;
         }
     }
 
@@ -6763,9 +6764,9 @@ nm_device_master_release_slave(NMDevice           *self,
     nm_device_slave_notify_release(slave, reason, release_type);
 
     /* keep both alive until the end of the function.
-     * Transfers ownership from slave_priv->master.  */
-    nm_assert(self == slave_priv->master);
-    self_free = g_steal_pointer(&slave_priv->master);
+     * Transfers ownership from port_priv->controller.  */
+    nm_assert(self == port_priv->controller);
+    self_free = g_steal_pointer(&port_priv->controller);
 
     nm_assert(slave == info->slave);
     slave_free = g_steal_pointer(&info->slave);
@@ -6900,7 +6901,7 @@ carrier_changed(NMDevice *self, gboolean carrier)
     if (priv->ignore_carrier && !carrier)
         return;
 
-    if (nm_device_is_master(self)) {
+    if (nm_device_is_controller(self)) {
         if (carrier) {
             /* If needed, also resume IP configuration that is
              * waiting for carrier. */
@@ -7069,7 +7070,7 @@ device_recheck_slave_status(NMDevice *self, const NMPlatformLink *plink)
         plink_master            = nm_platform_link_get(nm_device_get_platform(self), plink->master);
         plink_master_keep_alive = nmp_object_ref(NMP_OBJECT_UP_CAST(plink_master));
     } else {
-        if (priv->master_ifindex == 0)
+        if (priv->controller_ifindex == 0)
             goto out;
         master       = NULL;
         plink_master = NULL;
@@ -7082,17 +7083,17 @@ device_recheck_slave_status(NMDevice *self, const NMPlatformLink *plink)
         goto out;
     }
 
-    priv->master_ifindex = plink->master;
+    priv->controller_ifindex = plink->master;
 
-    if (priv->master) {
-        if (plink->master > 0 && plink->master == nm_device_get_ifindex(priv->master)) {
+    if (priv->controller) {
+        if (plink->master > 0 && plink->master == nm_device_get_ifindex(priv->controller)) {
             /* call add-slave again. We expect @self already to be added to
              * the master, but this also triggers a recheck-assume. */
-            nm_device_master_add_slave(priv->master, self, FALSE);
+            nm_device_master_add_slave(priv->controller, self, FALSE);
             goto out;
         }
 
-        nm_device_master_release_slave(priv->master,
+        nm_device_master_release_slave(priv->controller,
                                        self,
                                        RELEASE_SLAVE_TYPE_NO_CONFIG,
                                        NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
@@ -7133,9 +7134,9 @@ device_ifindex_changed_cb(NMManager *manager, NMDevice *device_changed, NMDevice
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
-    g_return_if_fail(priv->master_ifindex > 0);
+    g_return_if_fail(priv->controller_ifindex > 0);
 
-    if (priv->master_ifindex != nm_device_get_ifindex(device_changed))
+    if (priv->controller_ifindex != nm_device_get_ifindex(device_changed))
         return;
 
     _LOGD(LOGD_DEVICE,
@@ -8157,7 +8158,7 @@ nm_device_unrealize(NMDevice *self, gboolean remove_resources, GError **error)
     if (nm_clear_g_free(&priv->ip_iface_))
         update_prop_ip_iface(self);
 
-    priv->master_ifindex = 0;
+    priv->controller_ifindex = 0;
 
     _set_mtu(self, 0);
 
@@ -8394,7 +8395,7 @@ static gboolean
 nm_device_master_add_slave(NMDevice *self, NMDevice *slave, gboolean configure)
 {
     NMDevicePrivate *priv;
-    NMDevicePrivate *slave_priv;
+    NMDevicePrivate *port_priv;
     SlaveInfo       *info;
     gboolean         changed = FALSE;
 
@@ -8402,8 +8403,8 @@ nm_device_master_add_slave(NMDevice *self, NMDevice *slave, gboolean configure)
     g_return_val_if_fail(NM_IS_DEVICE(slave), FALSE);
     g_return_val_if_fail(NM_DEVICE_GET_CLASS(self)->attach_port, FALSE);
 
-    priv       = NM_DEVICE_GET_PRIVATE(self);
-    slave_priv = NM_DEVICE_GET_PRIVATE(slave);
+    priv      = NM_DEVICE_GET_PRIVATE(self);
+    port_priv = NM_DEVICE_GET_PRIVATE(slave);
 
     info = find_slave_info(self, slave);
 
@@ -8417,8 +8418,8 @@ nm_device_master_add_slave(NMDevice *self, NMDevice *slave, gboolean configure)
         g_return_val_if_fail(nm_device_get_state(slave) >= NM_DEVICE_STATE_DISCONNECTED, FALSE);
 
     if (!info) {
-        g_return_val_if_fail(!slave_priv->master, FALSE);
-        g_return_val_if_fail(!slave_priv->is_enslaved, FALSE);
+        g_return_val_if_fail(!port_priv->controller, FALSE);
+        g_return_val_if_fail(!port_priv->is_enslaved, FALSE);
 
         info            = g_slice_new0(SlaveInfo);
         info->slave     = g_object_ref(slave);
@@ -8426,25 +8427,25 @@ nm_device_master_add_slave(NMDevice *self, NMDevice *slave, gboolean configure)
         info->watch_id =
             g_signal_connect(slave, NM_DEVICE_STATE_CHANGED, G_CALLBACK(slave_state_changed), self);
         c_list_link_tail(&priv->slaves, &info->lst_slave);
-        slave_priv->master = g_object_ref(self);
+        port_priv->controller = g_object_ref(self);
 
         _active_connection_set_state_flags(self, NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES);
 
         /* no need to emit
          *
-         *   _notify (slave, PROP_MASTER);
+         *   _notify (slave, PROP_CONTROLLER);
          *
-         * because slave_priv->is_enslaved is not true, thus the value
+         * because port_priv->is_enslaved is not true, thus the value
          * didn't change yet. */
 
-        g_warn_if_fail(!NM_FLAGS_HAS(slave_priv->unmanaged_mask, NM_UNMANAGED_IS_SLAVE));
+        g_warn_if_fail(!NM_FLAGS_HAS(port_priv->unmanaged_mask, NM_UNMANAGED_IS_SLAVE));
         nm_device_set_unmanaged_by_flags(slave,
                                          NM_UNMANAGED_IS_SLAVE,
                                          NM_UNMAN_FLAG_OP_SET_MANAGED,
                                          NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
         changed = TRUE;
     } else
-        g_return_val_if_fail(slave_priv->master == self, FALSE);
+        g_return_val_if_fail(port_priv->controller == self, FALSE);
 
     nm_device_queue_recheck_assume(self);
     nm_device_queue_recheck_assume(slave);
@@ -8525,38 +8526,40 @@ nm_device_master_release_slaves_all(NMDevice *self)
 }
 
 /**
- * nm_device_is_master:
+ * nm_device_is_controller:
  * @self: the device
  *
- * Returns: %TRUE if the device can have slaves
+ * Returns: %TRUE if the device can have ports
  */
 gboolean
-nm_device_is_master(NMDevice *self)
+nm_device_is_controller(NMDevice *self)
 {
     g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
 
-    return NM_DEVICE_GET_CLASS(self)->is_master;
+    return NM_DEVICE_GET_CLASS(self)->is_controller;
 }
 
 /**
- * nm_device_get_master:
+ * nm_device_get_controller:
  * @self: the device
  *
- * If @self has been enslaved by another device, this returns that
+ * If @self has been set as port by another device, this returns that
  * device. Otherwise, it returns %NULL. (In particular, note that if
- * @self is in the process of activating as a slave, but has not yet
- * been enslaved by its master, this will return %NULL.)
+ * @self is in the process of activating as a port, but has not yet
+ * been set as port by its controller, this will return %NULL.)
  *
- * Returns: (transfer none): @self's master, or %NULL
+ * Returns: (transfer none): @self's controller, or %NULL
+ *
+ * Since: 1.48
  */
 NMDevice *
-nm_device_get_master(NMDevice *self)
+nm_device_get_controller(NMDevice *self)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
     if (priv->is_enslaved) {
-        g_return_val_if_fail(priv->master, NULL);
-        return priv->master;
+        g_return_val_if_fail(priv->controller, NULL);
+        return priv->controller;
     }
     return NULL;
 }
@@ -8576,7 +8579,7 @@ nm_device_slave_notify_enslave(NMDevice *self, gboolean success)
     NMConnection    *connection = nm_device_get_applied_connection(self);
     gboolean         activating = (priv->state == NM_DEVICE_STATE_IP_CONFIG);
 
-    g_return_if_fail(priv->master);
+    g_return_if_fail(priv->controller);
 
     if (!priv->is_enslaved) {
         if (success) {
@@ -8585,14 +8588,15 @@ nm_device_slave_notify_enslave(NMDevice *self, gboolean success)
                       "Activation: connection '%s' enslaved, continuing activation",
                       nm_connection_get_id(connection));
             } else
-                _LOGI(LOGD_DEVICE, "enslaved to %s", nm_device_get_iface(priv->master));
+                _LOGI(LOGD_DEVICE, "enslaved to %s", nm_device_get_iface(priv->controller));
 
             priv->is_enslaved = TRUE;
 
-            _notify(self, PROP_MASTER);
+            _notify(priv->controller, PROP_CONTROLLER);
 
-            nm_clear_pointer(&NM_DEVICE_GET_PRIVATE(priv->master)->ports_variant, g_variant_unref);
-            nm_gobject_notify_together(priv->master, PROP_PORTS, PROP_SLAVES);
+            nm_clear_pointer(&NM_DEVICE_GET_PRIVATE(priv->controller)->ports_variant,
+                             g_variant_unref);
+            nm_gobject_notify_together(priv->controller, PROP_PORTS, PROP_SLAVES);
         } else if (activating) {
             _LOGW(LOGD_DEVICE,
                   "Activation: connection '%s' could not be enslaved",
@@ -8629,7 +8633,7 @@ nm_device_slave_notify_release(NMDevice           *self,
     NMConnection    *connection = nm_device_get_applied_connection(self);
     const char      *master_status;
 
-    g_return_if_fail(priv->master);
+    g_return_if_fail(priv->controller);
 
     if (!priv->is_enslaved && release_type == RELEASE_SLAVE_TYPE_NO_CONFIG)
         return;
@@ -8661,14 +8665,14 @@ nm_device_slave_notify_release(NMDevice           *self,
         _cancel_activation(self);
         nm_device_queue_state(self, NM_DEVICE_STATE_DEACTIVATING, reason);
     } else
-        _LOGI(LOGD_DEVICE, "released from master device %s", nm_device_get_iface(priv->master));
+        _LOGI(LOGD_DEVICE, "released from master device %s", nm_device_get_iface(priv->controller));
 
     priv->is_enslaved = FALSE;
 
-    _notify(self, PROP_MASTER);
+    _notify(priv->controller, PROP_CONTROLLER);
 
-    nm_clear_pointer(&NM_DEVICE_GET_PRIVATE(priv->master)->ports_variant, g_variant_unref);
-    nm_gobject_notify_together(priv->master, PROP_PORTS, PROP_SLAVES);
+    nm_clear_pointer(&NM_DEVICE_GET_PRIVATE(priv->controller)->ports_variant, g_variant_unref);
+    nm_gobject_notify_together(priv->controller, PROP_PORTS, PROP_SLAVES);
 }
 
 /**
@@ -8692,10 +8696,10 @@ nm_device_removed(NMDevice *self, gboolean unconfigure_ip_config)
     _dev_ipdhcpx_cleanup(self, AF_INET6, TRUE, FALSE);
 
     priv = NM_DEVICE_GET_PRIVATE(self);
-    if (priv->master) {
+    if (priv->controller) {
         /* this is called when something externally messes with the slave or during shut-down.
          * Release the slave from master, but don't touch the device. */
-        nm_device_master_release_slave(priv->master,
+        nm_device_master_release_slave(priv->controller,
                                        self,
                                        RELEASE_SLAVE_TYPE_NO_CONFIG,
                                        NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
@@ -8728,7 +8732,7 @@ is_available(NMDevice *self, NMDeviceCheckDevAvailableFlags flags)
         return TRUE;
 
     /* master types are always available even without carrier. */
-    if (nm_device_is_master(self))
+    if (nm_device_is_controller(self))
         return TRUE;
 
     return FALSE;
@@ -8768,7 +8772,7 @@ gboolean
 nm_device_ignore_carrier_by_default(NMDevice *self)
 {
     /* master types ignore-carrier by default. */
-    return nm_device_is_master(self);
+    return nm_device_is_controller(self);
 }
 
 gboolean
@@ -9492,7 +9496,7 @@ nm_device_check_slave_connection_compatible(NMDevice *self, NMConnection *slave)
     g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
     g_return_val_if_fail(NM_IS_CONNECTION(slave), FALSE);
 
-    if (!nm_device_is_master(self))
+    if (!nm_device_is_controller(self))
         return FALSE;
 
     /* All masters should have connection type set */
@@ -9799,8 +9803,8 @@ master_ready(NMDevice *self, NMActiveConnection *active)
 
     _LOGD(LOGD_DEVICE, "master connection ready; master device %s", nm_device_get_iface(master));
 
-    if (priv->master && priv->master != master)
-        nm_device_master_release_slave(priv->master,
+    if (priv->controller && priv->controller != master)
+        nm_device_master_release_slave(priv->controller,
                                        self,
                                        RELEASE_SLAVE_TYPE_NO_CONFIG,
                                        NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
@@ -10080,9 +10084,9 @@ activate_stage1_device_prepare(NMDevice *self)
         }
         /* If the master connection is ready for slaves, attach ourselves */
         if (!nm_active_connection_get_master_ready(active)) {
-            if (priv->master_ready_id == 0) {
+            if (priv->controller_ready_id == 0) {
                 _LOGD(LOGD_DEVICE, "waiting for master connection to become ready");
-                priv->master_ready_id =
+                priv->controller_ready_id =
                     g_signal_connect(active,
                                      "notify::" NM_ACTIVE_CONNECTION_INT_MASTER_READY,
                                      G_CALLBACK(master_ready_cb),
@@ -10091,11 +10095,11 @@ activate_stage1_device_prepare(NMDevice *self)
             return;
         }
     }
-    nm_clear_g_signal_handler(priv->act_request.obj, &priv->master_ready_id);
+    nm_clear_g_signal_handler(priv->act_request.obj, &priv->controller_ready_id);
     if (master)
         master_ready(self, active);
-    else if (priv->master) {
-        nm_device_master_release_slave(priv->master,
+    else if (priv->controller) {
+        nm_device_master_release_slave(priv->controller,
                                        self,
                                        RELEASE_SLAVE_TYPE_CONFIG_FORCE,
                                        NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
@@ -11795,12 +11799,12 @@ _set_mtu(NMDevice *self, guint32 mtu)
     priv->mtu = mtu;
     _notify(self, PROP_MTU);
 
-    if (priv->master) {
+    if (priv->controller) {
         /* changing the MTU of a slave, might require the master to reset
          * its MTU. Note that the master usually cannot set a MTU larger
          * then the slave's. Hence, when the slave increases the MTU,
          * master might want to retry setting the MTU. */
-        nm_device_commit_mtu(priv->master);
+        nm_device_commit_mtu(priv->controller);
     }
 }
 
@@ -12563,7 +12567,7 @@ activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family, const
     ip_ifindex = nm_device_get_ip_ifindex(self);
 
     if (connection_ip_method_requires_carrier(connection, addr_family, NULL)
-        && nm_device_is_master(self) && !priv->carrier) {
+        && nm_device_is_controller(self) && !priv->carrier) {
         if (!priv->ip_data_x[IS_IPv4].wait_for_carrier) {
             _LOGT_ip(addr_family, "waiting until carrier is on");
             priv->ip_data_x[IS_IPv4].wait_for_carrier = TRUE;
@@ -12575,7 +12579,7 @@ activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family, const
         priv->ip_data_x[IS_IPv4].wait_for_carrier = FALSE;
     }
 
-    if (nm_device_is_master(self) && ip_requires_slaves(self, addr_family)) {
+    if (nm_device_is_controller(self) && ip_requires_slaves(self, addr_family)) {
         /* If the master has no ready slaves, and depends on slaves for
          * a successful IP configuration attempt, then postpone IP addressing.
          */
@@ -12622,7 +12626,7 @@ activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family, const
         } else if (nm_streq(method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
             if (!priv->ip_data_x[IS_IPv4].is_ignore) {
                 priv->ip_data_x[IS_IPv4].is_ignore = TRUE;
-                if (priv->master) {
+                if (priv->controller) {
                     /* If a device only has an IPv6 link-local address,
                      * we don't generate an assumed connection. Therefore,
                      * when a new slave connection (without IP configuration)
@@ -15800,7 +15804,7 @@ check_connection_available(NMDevice                      *self,
         return TRUE;
     }
 
-    if (nm_device_is_master(self)) {
+    if (nm_device_is_controller(self)) {
         /* master types are always available even without carrier.
          * Making connection non-available would un-enslave slaves which
          * is not desired. */
@@ -16191,12 +16195,12 @@ _cleanup_generic_post(NMDevice *self, NMDeviceStateReason reason, CleanupType cl
         nm_active_connection_set_default(NM_ACTIVE_CONNECTION(priv->act_request.obj),
                                          AF_INET,
                                          FALSE);
-        nm_clear_g_signal_handler(priv->act_request.obj, &priv->master_ready_id);
+        nm_clear_g_signal_handler(priv->act_request.obj, &priv->controller_ready_id);
         act_request_set(self, NULL);
     }
 
     if (cleanup_type == CLEANUP_TYPE_DECONFIGURE
-        && ((reason == NM_DEVICE_STATE_REASON_CARRIER && nm_device_is_master(self))
+        && ((reason == NM_DEVICE_STATE_REASON_CARRIER && nm_device_is_controller(self))
             || !NM_IN_SET(reason,
                           NM_DEVICE_STATE_REASON_NOW_MANAGED,
                           NM_DEVICE_STATE_REASON_CARRIER))) {
@@ -16280,9 +16284,9 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
         nm_platform_ip4_dev_route_blacklist_set(nm_device_get_platform(self), ifindex, NULL);
 
     /* slave: mark no longer enslaved */
-    if (priv->master && priv->ifindex > 0
+    if (priv->controller && priv->ifindex > 0
         && nm_platform_link_get_master(nm_device_get_platform(self), priv->ifindex) <= 0) {
-        nm_device_master_release_slave(priv->master,
+        nm_device_master_release_slave(priv->controller,
                                        self,
                                        RELEASE_SLAVE_TYPE_NO_CONFIG,
                                        NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
@@ -18314,8 +18318,8 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_PHYSICAL_PORT_ID:
         g_value_set_string(value, priv->physical_port_id);
         break;
-    case PROP_MASTER:
-        g_value_set_object(value, nm_device_get_master(self));
+    case PROP_CONTROLLER:
+        g_value_set_object(value, nm_device_get_controller(self));
         break;
     case PROP_PARENT:
         g_value_set_string(value, nm_dbus_track_obj_path_get(&priv->parent_device));
@@ -18633,7 +18637,7 @@ dispose(GObject *object)
 
     _cleanup_generic_post(self, NM_DEVICE_STATE_REASON_NONE, CLEANUP_TYPE_KEEP);
 
-    nm_assert(priv->master_ready_id == 0);
+    nm_assert(priv->controller_ready_id == 0);
 
     g_hash_table_remove_all(priv->ip6_saved_properties);
 
@@ -19083,11 +19087,12 @@ nm_device_class_init(NMDeviceClass *klass)
                             "",
                             NULL,
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-    obj_properties[PROP_MASTER] = g_param_spec_object(NM_DEVICE_MASTER,
-                                                      "",
-                                                      "",
-                                                      NM_TYPE_DEVICE,
-                                                      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_CONTROLLER] =
+        g_param_spec_object(NM_DEVICE_CONTROLLER,
+                            "",
+                            "",
+                            NM_TYPE_DEVICE,
+                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
     obj_properties[PROP_PARENT] = g_param_spec_string(NM_DEVICE_PARENT,
                                                       "",
                                                       "",

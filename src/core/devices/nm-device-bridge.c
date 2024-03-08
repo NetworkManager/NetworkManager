@@ -1159,7 +1159,7 @@ reapply_connection(NMDevice *device, NMConnection *con_old, NMConnection *con_ne
 static void
 nm_device_bridge_init(NMDeviceBridge *self)
 {
-    nm_assert(nm_device_is_master(NM_DEVICE(self)));
+    nm_assert(nm_device_is_controller(NM_DEVICE(self)));
 }
 
 static const NMDBusInterfaceInfoExtended interface_info_device_bridge = {
@@ -1194,7 +1194,7 @@ nm_device_bridge_class_init(NMDeviceBridgeClass *klass)
     device_class->connection_type_supported = NM_SETTING_BRIDGE_SETTING_NAME;
     device_class->link_types                = NM_DEVICE_DEFINE_LINK_TYPES(NM_LINK_TYPE_BRIDGE);
 
-    device_class->is_master                   = TRUE;
+    device_class->is_controller               = TRUE;
     device_class->mtu_force_set               = TRUE;
     device_class->get_generic_capabilities    = get_generic_capabilities;
     device_class->check_connection_compatible = check_connection_compatible;

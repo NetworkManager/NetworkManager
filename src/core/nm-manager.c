@@ -1936,7 +1936,7 @@ find_device_by_iface(NMManager    *self,
         if (connection && !nm_device_check_connection_compatible(candidate, connection, TRUE, NULL))
             continue;
         if (slave) {
-            if (!nm_device_is_master(candidate))
+            if (!nm_device_is_controller(candidate))
                 continue;
             if (!nm_device_check_slave_connection_compatible(candidate, slave))
                 continue;

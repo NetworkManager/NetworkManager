@@ -329,7 +329,7 @@ nm_device_vrf_class_init(NMDeviceVrfClass *klass)
 
     device_class->connection_type_supported        = NM_SETTING_VRF_SETTING_NAME;
     device_class->connection_type_check_compatible = NM_SETTING_VRF_SETTING_NAME;
-    device_class->is_master                        = TRUE;
+    device_class->is_controller                    = TRUE;
     device_class->link_types                       = NM_DEVICE_DEFINE_LINK_TYPES(NM_LINK_TYPE_VRF);
 
     device_class->attach_port                 = attach_port;

@@ -650,7 +650,7 @@ device_master_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
 
     if (NM_ACTIVE_CONNECTION(nm_device_get_act_request(device)) != self)
         return;
-    if (!nm_device_get_master(device))
+    if (!nm_device_get_controller(device))
         return;
     if (!nm_active_connection_get_master(self))
         return;
@@ -712,7 +712,7 @@ nm_active_connection_set_device(NMActiveConnection *self, NMDevice *device)
 
         g_signal_connect(device, NM_DEVICE_STATE_CHANGED, G_CALLBACK(device_state_changed), self);
         g_signal_connect(device,
-                         "notify::" NM_DEVICE_MASTER,
+                         "notify::" NM_DEVICE_CONTROLLER,
                          G_CALLBACK(device_master_changed),
                          self);
         g_signal_connect(device,
