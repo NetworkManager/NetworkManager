@@ -45,8 +45,8 @@
 #define NM_ACTIVE_CONNECTION_INT_APPLIED_CONNECTION  "int-applied-connection"
 #define NM_ACTIVE_CONNECTION_INT_DEVICE              "int-device"
 #define NM_ACTIVE_CONNECTION_INT_SUBJECT             "int-subject"
-#define NM_ACTIVE_CONNECTION_INT_MASTER              "int-master"
-#define NM_ACTIVE_CONNECTION_INT_MASTER_READY        "int-master-ready"
+#define NM_ACTIVE_CONNECTION_INT_CONTROLLER          "int-controller"
+#define NM_ACTIVE_CONNECTION_INT_CONTROLLER_READY    "int-controller-ready"
 #define NM_ACTIVE_CONNECTION_INT_ACTIVATION_TYPE     "int-activation-type"
 #define NM_ACTIVE_CONNECTION_INT_ACTIVATION_REASON   "int-activation-reason"
 
@@ -170,11 +170,11 @@ NMAuthSubject *nm_active_connection_get_subject(NMActiveConnection *self);
 
 gboolean nm_active_connection_get_user_requested(NMActiveConnection *self);
 
-NMActiveConnection *nm_active_connection_get_master(NMActiveConnection *self);
+NMActiveConnection *nm_active_connection_get_controller(NMActiveConnection *self);
 
-gboolean nm_active_connection_get_master_ready(NMActiveConnection *self);
+gboolean nm_active_connection_get_controller_ready(NMActiveConnection *self);
 
-void nm_active_connection_set_master(NMActiveConnection *self, NMActiveConnection *master);
+void nm_active_connection_set_controller(NMActiveConnection *self, NMActiveConnection *controller);
 
 void nm_active_connection_set_parent(NMActiveConnection *self, NMActiveConnection *parent);
 

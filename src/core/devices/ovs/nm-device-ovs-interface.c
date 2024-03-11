@@ -355,12 +355,12 @@ ovs_interface_is_netdev_datapath(NMDeviceOvsInterface *self)
         return FALSE;
 
     /* get ovs-port active-connection */
-    ac = nm_active_connection_get_master(ac);
+    ac = nm_active_connection_get_controller(ac);
     if (!ac)
         return FALSE;
 
     /* get ovs-bridge active-connection */
-    ac = nm_active_connection_get_master(ac);
+    ac = nm_active_connection_get_controller(ac);
     if (!ac)
         return FALSE;
 

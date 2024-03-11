@@ -160,7 +160,7 @@ attach_port(NMDevice                  *device,
         return TRUE;
 
     ac_port   = NM_ACTIVE_CONNECTION(nm_device_get_act_request(device));
-    ac_bridge = nm_active_connection_get_master(ac_port);
+    ac_bridge = nm_active_connection_get_controller(ac_port);
     if (!ac_bridge) {
         _LOGW(LOGD_DEVICE,
               "can't attach %s: bridge active-connection not found",

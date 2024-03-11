@@ -3727,7 +3727,7 @@ _dev_ip_state_check(NMDevice *self, int addr_family)
     }
 
     if (priv->ip_data_x[IS_IPv4].state == NM_DEVICE_IP_STATE_PENDING
-        && nm_active_connection_get_master(NM_ACTIVE_CONNECTION(priv->act_request.obj))
+        && nm_active_connection_get_controller(NM_ACTIVE_CONNECTION(priv->act_request.obj))
         && !priv->is_enslaved) {
         /* Don't progress into IP_CHECK or SECONDARIES if we're waiting for the
          * master to enslave us. */
@@ -9794,10 +9794,10 @@ master_ready(NMDevice *self, NMActiveConnection *active)
     NMActiveConnection *master_connection;
     NMDevice           *master;
 
-    /* Notify a master device that it has a new slave */
-    nm_assert(nm_active_connection_get_master_ready(active));
+    /* Notify a controller device that it has a new port */
+    nm_assert(nm_active_connection_get_controller_ready(active));
 
-    master_connection = nm_active_connection_get_master(active);
+    master_connection = nm_active_connection_get_controller(active);
 
     master = nm_active_connection_get_device(master_connection);
 
@@ -9820,7 +9820,7 @@ master_ready_cb(NMActiveConnection *active, GParamSpec *pspec, NMDevice *self)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
-    nm_assert(nm_active_connection_get_master_ready(active));
+    nm_assert(nm_active_connection_get_controller_ready(active));
 
     if (priv->state == NM_DEVICE_STATE_PREPARE)
         nm_device_activate_schedule_stage1_device_prepare(self, FALSE);
@@ -10067,7 +10067,7 @@ activate_stage1_device_prepare(NMDevice *self)
     }
 
     active = NM_ACTIVE_CONNECTION(priv->act_request.obj);
-    master = nm_active_connection_get_master(active);
+    master = nm_active_connection_get_controller(active);
     if (master) {
         if (nm_active_connection_get_state(master) >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING) {
             NMDevice           *master_device  = nm_active_connection_get_device(master);
@@ -10082,13 +10082,13 @@ activate_stage1_device_prepare(NMDevice *self)
             nm_device_state_changed(self, NM_DEVICE_STATE_FAILED, failure_reason);
             return;
         }
-        /* If the master connection is ready for slaves, attach ourselves */
-        if (!nm_active_connection_get_master_ready(active)) {
+        /* If the controller connection is ready for ports, attach ourselves */
+        if (!nm_active_connection_get_controller_ready(active)) {
             if (priv->controller_ready_id == 0) {
-                _LOGD(LOGD_DEVICE, "waiting for master connection to become ready");
+                _LOGD(LOGD_DEVICE, "waiting for controller connection to become ready");
                 priv->controller_ready_id =
                     g_signal_connect(active,
-                                     "notify::" NM_ACTIVE_CONNECTION_INT_MASTER_READY,
+                                     "notify::" NM_ACTIVE_CONNECTION_INT_CONTROLLER_READY,
                                      G_CALLBACK(master_ready_cb),
                                      self);
             }

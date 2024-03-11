@@ -3777,7 +3777,7 @@ recheck_assume_connection(NMManager *self, NMDevice *device)
                         &master_ac,
                         NULL)
             && master_ac)
-            nm_active_connection_set_master(active, master_ac);
+            nm_active_connection_set_controller(active, master_ac);
 
         active_connection_add(self, active);
         nm_device_queue_activation(device, NM_ACT_REQUEST(active));
@@ -5924,7 +5924,7 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
                                              NM_DEVICE_STATE_REASON_USER_REQUESTED);
         }
 
-        nm_active_connection_set_master(active, master_ac);
+        nm_active_connection_set_controller(active, master_ac);
         _LOGD(LOGD_CORE,
               "Activation of '%s' depends on active connection %p %s",
               nm_settings_connection_get_id(sett_conn),
