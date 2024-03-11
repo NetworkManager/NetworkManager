@@ -4219,7 +4219,7 @@ _l3_commit_ndisc_params(NML3Cfg *self, NML3CfgCommitType commit_type)
     if (l3cd) {
         reachable_set = nm_l3_config_data_get_ndisc_reachable_time_msec(l3cd, &reachable);
         retrans_set   = nm_l3_config_data_get_ndisc_retrans_timer_msec(l3cd, &retrans);
-        hop_limit     = nm_l3_config_data_get_ndisc_hop_limit(l3cd, &hop_limit);
+        hop_limit_set = nm_l3_config_data_get_ndisc_hop_limit(l3cd, &hop_limit);
     }
     ifname = nm_l3cfg_get_ifname(self, TRUE);
 
