@@ -2751,6 +2751,7 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                             NM_SETTING_CONNECTION_SECONDARIES,
                                             PROP_SECONDARIES,
                                             NM_SETTING_PARAM_FUZZY_IGNORE,
+                                            NULL,
                                             NMSettingConnectionPrivate,
                                             secondaries);
 

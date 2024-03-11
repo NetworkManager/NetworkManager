@@ -58,6 +58,9 @@
         <property name="mac-address-blacklist"
                   nmcli-description="A list of permanent MAC addresses of Wi-Fi devices to which this connection should never apply.  Each MAC address should be given in the standard hex-digits-and-colons notation (eg &quot;00:11:22:33:44:55&quot;)."
                   format="list of MAC addresses" />
+        <property name="mac-address-denylist"
+                  nmcli-description="A list of permanent MAC addresses of Wi-Fi devices to which this connection should never apply.  Each MAC address should be given in the standard hex-digits-and-colons notation (eg &quot;00:11:22:33:44:55&quot;)."
+                  format="list of MAC addresses" />
         <property name="mac-address-randomization"
                   nmcli-description="One of &quot;default&quot; (0) (never randomize unless the user has set a global default to randomize and the supplicant supports randomization),  &quot;never&quot; (1) (never randomize the MAC address), or &quot;always&quot; (2) (always randomize the MAC address)."
                   format="choice (NMSettingMacRandomization)"

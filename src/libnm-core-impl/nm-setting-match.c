@@ -739,6 +739,7 @@ nm_setting_match_class_init(NMSettingMatchClass *klass)
                                             NM_SETTING_MATCH_INTERFACE_NAME,
                                             PROP_INTERFACE_NAME,
                                             NM_SETTING_PARAM_FUZZY_IGNORE,
+                                            NULL,
                                             NMSettingMatch,
                                             interface_name);
 
@@ -764,6 +765,7 @@ nm_setting_match_class_init(NMSettingMatchClass *klass)
                                             NM_SETTING_MATCH_KERNEL_COMMAND_LINE,
                                             PROP_KERNEL_COMMAND_LINE,
                                             NM_SETTING_PARAM_FUZZY_IGNORE,
+                                            NULL,
                                             NMSettingMatch,
                                             kernel_command_line);
 
@@ -783,6 +785,7 @@ nm_setting_match_class_init(NMSettingMatchClass *klass)
                                             NM_SETTING_MATCH_DRIVER,
                                             PROP_DRIVER,
                                             NM_SETTING_PARAM_FUZZY_IGNORE,
+                                            NULL,
                                             NMSettingMatch,
                                             driver);
 
@@ -824,6 +827,7 @@ nm_setting_match_class_init(NMSettingMatchClass *klass)
                                             NM_SETTING_MATCH_PATH,
                                             PROP_PATH,
                                             NM_SETTING_PARAM_FUZZY_IGNORE,
+                                            NULL,
                                             NMSettingMatch,
                                             path);
 

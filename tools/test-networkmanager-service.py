@@ -31,6 +31,34 @@ _DEFAULT_ARG = object()
 ###############################################################################
 
 
+class AliasedProperty:
+    def __init__(self, old_name, new_name):
+        self.old_name = old_name
+        self.new_name = new_name
+
+
+ALIASED_PROPERTIES = {
+    NM.SETTING_CONNECTION_SETTING_NAME: [
+        AliasedProperty(
+            NM.SETTING_CONNECTION_MASTER,
+            "controller",  # NM.SETTING_CONNECTION_CONTROLLER
+        ),
+        AliasedProperty(
+            NM.SETTING_CONNECTION_SLAVE_TYPE,
+            "port-type",  # NM.SETTING_CONNECTION_PORT_TYPE
+        ),
+        AliasedProperty(NM.SETTING_CONNECTION_AUTOCONNECT_SLAVES, "autoconnect-ports"),
+    ],
+    NM.SETTING_WIRELESS_SETTING_NAME: [
+        AliasedProperty(
+            NM.SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST, "mac-address-denylist"
+        )
+    ],
+}
+
+###############################################################################
+
+
 class Global:
     pass
 
@@ -2118,6 +2146,13 @@ class Connection(ExportedObj):
         out_signature="a{sv}",
     )
     def Update2(self, con_hash, flags, args):
+        for setting_name in ALIASED_PROPERTIES.keys():
+            if setting_name in con_hash:
+                setting = con_hash[setting_name]
+                for pty in ALIASED_PROPERTIES[setting_name]:
+                    if pty.new_name in setting and pty.old_name in setting:
+                        del setting[pty.new_name]
+
         self.update_connection(con_hash, True)
         return []
 

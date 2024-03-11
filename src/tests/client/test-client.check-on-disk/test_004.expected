@@ -48,9 +48,9 @@ stderr: 116 bytes
 Error: invalid or not allowed setting '802': '802' is ambiguous: 802-11-wireless, 802-11-wireless-security, 802-1x.
 
 <<<
-size: 135
+size: 189
 location: src/tests/client/test-client.py:test_004()/6
-cmd: $NMCLI connection mod con-xx1 802-11-wireless.band a
+cmd: $NMCLI connection mod con-xx1 802-11-wireless.band a 802-11-wireless.mac-address-denylist aA:Bb:cC:dd:EE:f
 lang: C
 returncode: 0
 size: 241
@@ -58,12 +58,12 @@ location: src/tests/client/test-client.py:test_004()/7
 cmd: $NMCLI connection mod con-xx1 ipv4.addresses 192.168.77.5/24 ipv4.routes '2.3.4.5/32 192.168.77.1' ipv6.addresses 1:2:3:4::6/64 ipv6.routes 1:2:3:4:5:6::5/128
 lang: C
 returncode: 0
-size: 5421
+size: 5494
 location: src/tests/client/test-client.py:test_004()/8
 cmd: $NMCLI con s con-xx1
 lang: C
 returncode: 0
-stdout: 5290 bytes
+stdout: 5363 bytes
 >>>
 connection.id:                          con-xx1
 connection.uuid:                        UUID-con-xx1-REPLACED-REPLACED-REPLA
@@ -103,7 +103,8 @@ connection.wait-activation-delay:       -1
 802-11-wireless.mac-address:            --
 802-11-wireless.cloned-mac-address:     --
 802-11-wireless.generate-mac-address-mask:--
-802-11-wireless.mac-address-blacklist:  --
+802-11-wireless.mac-address-blacklist:  AA:BB:CC:DD:EE:0F
+802-11-wireless.mac-address-denylist:   AA:BB:CC:DD:EE:0F
 802-11-wireless.mac-address-randomization:default
 802-11-wireless.mtu:                    auto
 802-11-wireless.seen-bssids:            --
@@ -179,12 +180,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 5456
+size: 5529
 location: src/tests/client/test-client.py:test_004()/9
 cmd: $NMCLI con s con-xx1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5315 bytes
+stdout: 5388 bytes
 >>>
 connection.id:                          con-xx1
 connection.uuid:                        UUID-con-xx1-REPLACED-REPLACED-REPLA
@@ -224,7 +225,8 @@ connection.wait-activation-delay:       -1
 802-11-wireless.mac-address:            --
 802-11-wireless.cloned-mac-address:     --
 802-11-wireless.generate-mac-address-mask:--
-802-11-wireless.mac-address-blacklist:  --
+802-11-wireless.mac-address-blacklist:  AA:BB:CC:DD:EE:0F
+802-11-wireless.mac-address-denylist:   AA:BB:CC:DD:EE:0F
 802-11-wireless.mac-address-randomization:default
 802-11-wireless.mtu:                    automatyczne
 802-11-wireless.seen-bssids:            --
