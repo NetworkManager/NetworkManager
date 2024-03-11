@@ -53,20 +53,20 @@ typedef struct {
         guint              len;
         guint              n_alloc;
     } s390_options;
-    GArray *mac_address_blacklist;
-    char  **s390_subchannels;
-    char   *port;
-    char   *duplex;
-    char   *device_mac_address;
-    char   *cloned_mac_address;
-    char   *generate_mac_address_mask;
-    char   *s390_nettype;
-    char   *wol_password;
-    int     accept_all_mac_addresses;
-    guint32 wake_on_lan;
-    guint32 speed;
-    guint32 mtu;
-    bool    auto_negotiate;
+    char      **s390_subchannels;
+    char       *port;
+    char       *duplex;
+    char       *device_mac_address;
+    char       *cloned_mac_address;
+    char       *generate_mac_address_mask;
+    char       *s390_nettype;
+    char       *wol_password;
+    NMValueStrv mac_address_blacklist;
+    int         accept_all_mac_addresses;
+    guint32     wake_on_lan;
+    guint32     speed;
+    guint32     mtu;
+    bool        auto_negotiate;
 } NMSettingWiredPrivate;
 
 /**
@@ -285,12 +285,11 @@ nm_setting_wired_get_generate_mac_address_mask(NMSettingWired *setting)
 const char *const *
 nm_setting_wired_get_mac_address_blacklist(NMSettingWired *setting)
 {
-    NMSettingWiredPrivate *priv;
-
     g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), NULL);
 
-    priv = NM_SETTING_WIRED_GET_PRIVATE(setting);
-    return nm_g_array_data(priv->mac_address_blacklist);
+    return nm_strvarray_get_strv_notnull(
+        NM_SETTING_WIRED_GET_PRIVATE(setting)->mac_address_blacklist.arr,
+        NULL);
 }
 
 /**
@@ -304,7 +303,7 @@ nm_setting_wired_get_num_mac_blacklist_items(NMSettingWired *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), 0);
 
-    return NM_SETTING_WIRED_GET_PRIVATE(setting)->mac_address_blacklist->len;
+    return nm_g_array_len(NM_SETTING_WIRED_GET_PRIVATE(setting)->mac_address_blacklist.arr);
 }
 
 /**
@@ -320,19 +319,11 @@ nm_setting_wired_get_num_mac_blacklist_items(NMSettingWired *setting)
 const char *
 nm_setting_wired_get_mac_blacklist_item(NMSettingWired *setting, guint32 idx)
 {
-    NMSettingWiredPrivate *priv;
-
     g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), NULL);
 
-    priv = NM_SETTING_WIRED_GET_PRIVATE(setting);
-
-    if (idx == priv->mac_address_blacklist->len) {
-        return NULL;
-    }
-
-    g_return_val_if_fail(idx < priv->mac_address_blacklist->len, NULL);
-
-    return nm_g_array_index(priv->mac_address_blacklist, const char *, idx);
+    return nm_strvarray_get_idxnull_or_greturn(
+        NM_SETTING_WIRED_GET_PRIVATE(setting)->mac_address_blacklist.arr,
+        idx);
 }
 
 /**
@@ -349,24 +340,27 @@ gboolean
 nm_setting_wired_add_mac_blacklist_item(NMSettingWired *setting, const char *mac)
 {
     NMSettingWiredPrivate *priv;
+    guint8                 mac_bin[ETH_ALEN];
     const char            *candidate;
-    int                    i;
+    guint                  i;
+    guint                  len;
 
     g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), FALSE);
     g_return_val_if_fail(mac != NULL, FALSE);
 
-    if (!nm_utils_hwaddr_valid(mac, ETH_ALEN))
+    if (!_nm_utils_hwaddr_aton_exact(mac, mac_bin, ETH_ALEN))
         return FALSE;
 
     priv = NM_SETTING_WIRED_GET_PRIVATE(setting);
-    for (i = 0; i < priv->mac_address_blacklist->len; i++) {
-        candidate = nm_g_array_index(priv->mac_address_blacklist, char *, i);
-        if (nm_utils_hwaddr_matches(mac, -1, candidate, -1))
+    len  = nm_g_array_len(priv->mac_address_blacklist.arr);
+    for (i = 0; i < len; i++) {
+        candidate = nm_g_array_index(priv->mac_address_blacklist.arr, char *, i);
+        if (nm_utils_hwaddr_matches(mac_bin, ETH_ALEN, candidate, -1))
             return FALSE;
     }
 
-    mac = nm_utils_hwaddr_canonical(mac, ETH_ALEN);
-    g_array_append_val(priv->mac_address_blacklist, mac);
+    nm_g_array_append_simple(nm_strvarray_ensure(&priv->mac_address_blacklist.arr),
+                             nm_utils_hwaddr_ntoa(mac_bin, ETH_ALEN));
     _notify(setting, PROP_MAC_ADDRESS_BLACKLIST);
     return TRUE;
 }
@@ -386,9 +380,13 @@ nm_setting_wired_remove_mac_blacklist_item(NMSettingWired *setting, guint32 idx)
     g_return_if_fail(NM_IS_SETTING_WIRED(setting));
 
     priv = NM_SETTING_WIRED_GET_PRIVATE(setting);
-    g_return_if_fail(idx < priv->mac_address_blacklist->len);
+    if (!priv->mac_address_blacklist.arr) {
+        return;
+    }
 
-    g_array_remove_index(priv->mac_address_blacklist, idx);
+    g_return_if_fail(idx < priv->mac_address_blacklist.arr->len);
+
+    g_array_remove_index(priv->mac_address_blacklist.arr, idx);
     _notify(setting, PROP_MAC_ADDRESS_BLACKLIST);
 }
 
@@ -406,21 +404,28 @@ gboolean
 nm_setting_wired_remove_mac_blacklist_item_by_value(NMSettingWired *setting, const char *mac)
 {
     NMSettingWiredPrivate *priv;
+    guint8                 mac_bin[ETH_ALEN];
     const char            *candidate;
-    int                    i;
+    guint                  i;
 
     g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), FALSE);
     g_return_val_if_fail(mac != NULL, FALSE);
 
+    if (!_nm_utils_hwaddr_aton_exact(mac, mac_bin, ETH_ALEN))
+        return FALSE;
+
     priv = NM_SETTING_WIRED_GET_PRIVATE(setting);
-    for (i = 0; i < priv->mac_address_blacklist->len; i++) {
-        candidate = nm_g_array_index(priv->mac_address_blacklist, char *, i);
-        if (nm_utils_hwaddr_matches(mac, -1, candidate, -1)) {
-            g_array_remove_index(priv->mac_address_blacklist, i);
-            _notify(setting, PROP_MAC_ADDRESS_BLACKLIST);
-            return TRUE;
+    if (priv->mac_address_blacklist.arr) {
+        for (i = 0; i < priv->mac_address_blacklist.arr->len; i++) {
+            candidate = nm_g_array_index(priv->mac_address_blacklist.arr, char *, i);
+            if (nm_utils_hwaddr_matches(mac_bin, ETH_ALEN, candidate, -1)) {
+                g_array_remove_index(priv->mac_address_blacklist.arr, i);
+                _notify(setting, PROP_MAC_ADDRESS_BLACKLIST);
+                return TRUE;
+            }
         }
     }
+
     return FALSE;
 }
 
@@ -435,8 +440,8 @@ nm_setting_wired_clear_mac_blacklist_items(NMSettingWired *setting)
 {
     g_return_if_fail(NM_IS_SETTING_WIRED(setting));
 
-    g_array_set_size(NM_SETTING_WIRED_GET_PRIVATE(setting)->mac_address_blacklist, 0);
-    _notify(setting, PROP_MAC_ADDRESS_BLACKLIST);
+    if (nm_strvarray_clear(&NM_SETTING_WIRED_GET_PRIVATE(setting)->mac_address_blacklist.arr))
+        _notify(setting, PROP_MAC_ADDRESS_BLACKLIST);
 }
 
 /**
@@ -815,20 +820,22 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         return FALSE;
     }
 
-    for (i = 0; i < priv->mac_address_blacklist->len; i++) {
-        const char *mac = nm_g_array_index(priv->mac_address_blacklist, const char *, i);
+    if (priv->mac_address_blacklist.arr) {
+        for (i = 0; i < priv->mac_address_blacklist.arr->len; i++) {
+            const char *mac = nm_g_array_index(priv->mac_address_blacklist.arr, const char *, i);
 
-        if (!nm_utils_hwaddr_valid(mac, ETH_ALEN)) {
-            g_set_error(error,
-                        NM_CONNECTION_ERROR,
-                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                        _("'%s' is not a valid MAC address"),
-                        mac);
-            g_prefix_error(error,
-                           "%s.%s: ",
-                           NM_SETTING_WIRED_SETTING_NAME,
-                           NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST);
-            return FALSE;
+            if (!nm_utils_hwaddr_valid(mac, ETH_ALEN)) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("'%s' is not a valid MAC address"),
+                            mac);
+                g_prefix_error(error,
+                               "%s.%s: ",
+                               NM_SETTING_WIRED_SETTING_NAME,
+                               NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST);
+                return FALSE;
+            }
         }
     }
 
@@ -993,14 +1000,6 @@ compare_fcn_cloned_mac_address(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil)
 /*****************************************************************************/
 
 static void
-clear_blacklist_item(char **item_p)
-{
-    g_free(*item_p);
-}
-
-/*****************************************************************************/
-
-static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
     NMSettingWired        *setting = NM_SETTING_WIRED(object);
@@ -1011,9 +1010,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     switch (prop_id) {
     case PROP_CLONED_MAC_ADDRESS:
         g_value_set_string(value, nm_setting_wired_get_cloned_mac_address(setting));
-        break;
-    case PROP_MAC_ADDRESS_BLACKLIST:
-        g_value_set_boxed(value, nm_g_array_data(priv->mac_address_blacklist));
         break;
     case PROP_S390_SUBCHANNELS:
         g_value_set_boxed(value, priv->s390_subchannels);
@@ -1037,26 +1033,12 @@ static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
     NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE(object);
-    const char *const     *blacklist;
-    const char            *mac;
 
     switch (prop_id) {
     case PROP_CLONED_MAC_ADDRESS:
         g_free(priv->cloned_mac_address);
         priv->cloned_mac_address =
             _nm_utils_hwaddr_canonical_or_invalid(g_value_get_string(value), ETH_ALEN);
-        break;
-    case PROP_MAC_ADDRESS_BLACKLIST:
-        blacklist = g_value_get_boxed(value);
-        g_array_set_size(priv->mac_address_blacklist, 0);
-        if (blacklist && *blacklist) {
-            guint i;
-
-            for (i = 0; blacklist[i]; i++) {
-                mac = _nm_utils_hwaddr_canonical_or_invalid(blacklist[i], ETH_ALEN);
-                g_array_append_val(priv->mac_address_blacklist, mac);
-            }
-        }
         break;
     case PROP_S390_SUBCHANNELS:
         if (priv->s390_subchannels)
@@ -1135,13 +1117,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
 
 static void
 nm_setting_wired_init(NMSettingWired *setting)
-{
-    NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE(setting);
-
-    /* We use GArray rather than GPtrArray so it will automatically be NULL-terminated */
-    priv->mac_address_blacklist = g_array_new(TRUE, FALSE, sizeof(char *));
-    g_array_set_clear_func(priv->mac_address_blacklist, (GDestroyNotify) clear_blacklist_item);
-}
+{}
 
 /**
  * nm_setting_wired_new:
@@ -1164,7 +1140,6 @@ finalize(GObject *object)
     _s390_options_clear(priv);
 
     g_free(priv->cloned_mac_address);
-    g_array_unref(priv->mac_address_blacklist);
     g_strfreev(priv->s390_subchannels);
 
     G_OBJECT_CLASS(nm_setting_wired_parent_class)->finalize(object);
@@ -1486,11 +1461,16 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * example: HWADDR_BLACKLIST="00:22:68:11:69:08 00:11:22:11:44:55"
      * ---end---
      */
-    _nm_setting_property_define_gprop_strv_oldstyle(properties_override,
-                                                    obj_properties,
-                                                    NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST,
-                                                    PROP_MAC_ADDRESS_BLACKLIST,
-                                                    NM_SETTING_PARAM_FUZZY_IGNORE);
+    _nm_setting_property_define_direct_strv(properties_override,
+                                            obj_properties,
+                                            NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST,
+                                            PROP_MAC_ADDRESS_BLACKLIST,
+                                            NM_SETTING_PARAM_FUZZY_IGNORE,
+                                            NULL,
+                                            NMSettingWiredPrivate,
+                                            mac_address_blacklist,
+                                            .direct_set_strv_normalize_hwaddr = TRUE,
+                                            .direct_strv_not_null             = TRUE);
 
     /**
      * NMSettingWired:mtu:
