@@ -370,7 +370,7 @@ check_connection_compatible(NMDevice     *device,
     if (s_wired) {
         const char        *mac, *perm_hw_addr;
         gboolean           try_mac = TRUE;
-        const char *const *mac_blacklist;
+        const char *const *mac_denylist;
         int                i;
 
         if (!match_subchans(self, s_wired, &try_mac)) {
@@ -390,17 +390,17 @@ check_connection_compatible(NMDevice     *device,
                 return FALSE;
             }
 
-            /* Check for MAC address blacklist */
-            mac_blacklist = nm_setting_wired_get_mac_address_blacklist(s_wired);
-            for (i = 0; mac_blacklist[i]; i++) {
-                if (!nm_utils_hwaddr_valid(mac_blacklist[i], ETH_ALEN)) {
+            /* Check for MAC address denylist */
+            mac_denylist = nm_setting_wired_get_mac_address_denylist(s_wired);
+            for (i = 0; mac_denylist[i]; i++) {
+                if (!nm_utils_hwaddr_valid(mac_denylist[i], ETH_ALEN)) {
                     nm_utils_error_set_literal(error,
                                                NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
                                                "invalid MAC in blacklist");
                     return FALSE;
                 }
 
-                if (nm_utils_hwaddr_matches(mac_blacklist[i], -1, perm_hw_addr, -1)) {
+                if (nm_utils_hwaddr_matches(mac_denylist[i], -1, perm_hw_addr, -1)) {
                     nm_utils_error_set_literal(error,
                                                NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
                                                "permanent MAC address of device blacklisted");
