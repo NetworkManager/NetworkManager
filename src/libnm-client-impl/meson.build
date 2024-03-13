@@ -158,7 +158,6 @@ if enable_introspection
     namespace: 'NM',
     identifier_prefix: nm_id_prefix,
     symbol_prefix: nm_id_prefix.to_lower(),
-    header: 'NetworkManager.h',
     export_packages: libnm_name,
     extra_args: [
       '-DNETWORKMANAGER_COMPILATION',
