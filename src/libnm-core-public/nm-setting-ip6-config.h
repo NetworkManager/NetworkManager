@@ -30,6 +30,10 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_IP6_CONFIG_IP6_PRIVACY "ip6-privacy"
 
+#define NM_SETTING_IP6_CONFIG_TEMP_VALID_LIFETIME "temp-valid-lifetime"
+
+#define NM_SETTING_IP6_CONFIG_TEMP_PREFERRED_LIFETIME "temp-preferred-lifetime"
+
 #define NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE "addr-gen-mode"
 
 #define NM_SETTING_IP6_CONFIG_TOKEN "token"
@@ -156,6 +160,10 @@ GType nm_setting_ip6_config_get_type(void);
 NMSetting *nm_setting_ip6_config_new(void);
 
 NMSettingIP6ConfigPrivacy nm_setting_ip6_config_get_ip6_privacy(NMSettingIP6Config *setting);
+NM_AVAILABLE_IN_1_48
+gint32 nm_setting_ip6_config_get_temp_valid_lifetime(NMSettingIP6Config *setting);
+NM_AVAILABLE_IN_1_48
+gint32 nm_setting_ip6_config_get_temp_preferred_lifetime(NMSettingIP6Config *setting);
 NM_AVAILABLE_IN_1_2
 NMSettingIP6ConfigAddrGenMode nm_setting_ip6_config_get_addr_gen_mode(NMSettingIP6Config *setting);
 NM_AVAILABLE_IN_1_4

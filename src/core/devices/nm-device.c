@@ -95,6 +95,9 @@
 #define CARRIER_WAIT_TIME_MS             6000
 #define CARRIER_WAIT_TIME_AFTER_MTU_MSEC 10000
 
+#define SECONDS_PER_WEEK 604800
+#define SECONDS_PER_DAY  86400
+
 #define NM_DEVICE_AUTH_RETRIES_UNSET    -1
 #define NM_DEVICE_AUTH_RETRIES_INFINITY -2
 #define NM_DEVICE_AUTH_RETRIES_DEFAULT  3
@@ -2312,6 +2315,92 @@ _prop_get_ipv6_ip6_privacy(NMDevice *self)
         G_MININT32,
         G_MAXINT32,
         NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN));
+}
+
+static gint32
+_prop_get_ipv6_temp_valid_lifetime(NMDevice *self)
+{
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+    gint32           temp_valid_lifetime;
+    NMConnection    *connection;
+
+    g_return_val_if_fail(self, 0);
+
+    /* 1.) First look at the per-connection setting. If it is not 0 (unknown), use it. */
+    connection = nm_device_get_applied_connection(self);
+    if (connection) {
+        NMSettingIPConfig *s_ip6 = nm_connection_get_setting_ip6_config(connection);
+
+        if (s_ip6) {
+            temp_valid_lifetime =
+                nm_setting_ip6_config_get_temp_valid_lifetime(NM_SETTING_IP6_CONFIG(s_ip6));
+            if (temp_valid_lifetime)
+                return temp_valid_lifetime;
+        }
+    }
+
+    /* 2.) Use the default value from the configuration. */
+    temp_valid_lifetime =
+        nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
+                                                    NM_CON_DEFAULT("ipv6.temp-valid-lifetime"),
+                                                    self,
+                                                    0,
+                                                    G_MAXINT32,
+                                                    0);
+    if (temp_valid_lifetime)
+        return temp_valid_lifetime;
+
+    /* 3.) No valid default value configured. Fall back to the original value
+     * from before NM started. */
+    return _nm_utils_ascii_str_to_int64(
+        g_hash_table_lookup(priv->ip6_saved_properties, "temp_valid_lft"),
+        10,
+        0,
+        G_MAXINT32,
+        SECONDS_PER_WEEK /* final hardcoded fallback: 1 week */);
+}
+
+static gint32
+_prop_get_ipv6_temp_preferred_lifetime(NMDevice *self)
+{
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+    gint32           temp_preferred_lifetime;
+    NMConnection    *connection;
+
+    g_return_val_if_fail(self, 0);
+
+    /* 1.) First look at the per-connection setting. If it is not 0 (unknown), use it. */
+    connection = nm_device_get_applied_connection(self);
+    if (connection) {
+        NMSettingIPConfig *s_ip6 = nm_connection_get_setting_ip6_config(connection);
+
+        if (s_ip6) {
+            temp_preferred_lifetime =
+                nm_setting_ip6_config_get_temp_preferred_lifetime(NM_SETTING_IP6_CONFIG(s_ip6));
+            if (temp_preferred_lifetime)
+                return temp_preferred_lifetime;
+        }
+    }
+
+    /* 2.) Use the default value from the configuration. */
+    temp_preferred_lifetime =
+        nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
+                                                    NM_CON_DEFAULT("ipv6.temp-preferred-lifetime"),
+                                                    self,
+                                                    0,
+                                                    G_MAXINT32,
+                                                    0);
+    if (temp_preferred_lifetime)
+        return temp_preferred_lifetime;
+
+    /* 3.) No valid default value configured. Fall back to the original value
+     * from before NM started. */
+    return _nm_utils_ascii_str_to_int64(
+        g_hash_table_lookup(priv->ip6_saved_properties, "temp_prefered_lft"),
+        10,
+        0,
+        G_MAXINT32,
+        SECONDS_PER_DAY /* final hardcoded fallback: 1 day */);
 }
 
 static NMSettingIP6ConfigAddrGenMode
@@ -12425,6 +12514,8 @@ _dev_sysctl_save_ip6_properties(NMDevice *self)
         "disable_ipv6",
         "hop_limit",
         "use_tempaddr",
+        "temp_valid_lft",
+        "temp_prefered_lft",
     };
     NMDevicePrivate *priv     = NM_DEVICE_GET_PRIVATE(self);
     NMPlatform      *platform = nm_device_get_platform(self);
@@ -12523,6 +12614,17 @@ _dev_addrgenmode6_set(NMDevice *self, guint8 addr_gen_mode)
             priv->addrgenmode6_data.previous_mode_val = addr_gen_mode;
         }
     }
+
+    nm_device_sysctl_ip_conf_set(
+        self,
+        AF_INET6,
+        "temp_valid_lft",
+        nm_sprintf_buf(sbuf, "%u", (unsigned) _prop_get_ipv6_temp_valid_lifetime(self)));
+    nm_device_sysctl_ip_conf_set(
+        self,
+        AF_INET6,
+        "temp_prefered_lft",
+        nm_sprintf_buf(sbuf, "%u", (unsigned) _prop_get_ipv6_temp_preferred_lifetime(self)));
 
     if (addr_gen_mode == NM_IN6_ADDR_GEN_MODE_NONE) {
         gs_free char *value = NULL;
