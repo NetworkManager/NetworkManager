@@ -13,6 +13,7 @@
 #include "nm-core-utils.h"
 #include "nm-dbus-interface.h"
 #include "devices/nm-device.h"
+#include "nm-config.h"
 #include "nm-manager.h"
 #include "settings/nm-settings.h"
 #include "settings/nm-settings-connection.h"
@@ -55,6 +56,8 @@ struct _NMCheckpointPrivate {
 
     NMCheckpointTimeoutCallback timeout_cb;
     gpointer                    timeout_data;
+
+    NMGlobalDnsConfig *global_dns_config;
 };
 
 struct _NMCheckpointClass {
@@ -491,6 +494,17 @@ next_dev:
             }
         }
     }
+    if (NM_FLAGS_HAS(priv->flags, NM_CHECKPOINT_CREATE_FLAG_TRACK_INTERNAL_GLOBAL_DNS)
+        && priv->global_dns_config) {
+        gs_free_error GError *error = NULL;
+        NMConfig             *config;
+
+        config = nm_manager_get_config(priv->manager);
+        nm_assert(config);
+        if (!nm_config_set_global_dns(config, priv->global_dns_config, &error)) {
+            _LOGE("set global DNS failed with error: %s", error->message);
+        }
+    }
 
     return g_variant_new("(a{su})", &builder);
 }
@@ -742,6 +756,19 @@ nm_checkpoint_new(NMManager              *manager,
                                             NM_MANAGER_DEVICE_REMOVED,
                                             G_CALLBACK(_device_removed),
                                             self);
+    if (NM_FLAGS_HAS(flags, NM_CHECKPOINT_CREATE_FLAG_TRACK_INTERNAL_GLOBAL_DNS)) {
+        NMConfigData      *config_data;
+        NMGlobalDnsConfig *dns_config = NULL;
+
+        config_data = nm_config_get_data(nm_manager_get_config(manager));
+        if (config_data) {
+            dns_config = nm_config_data_get_global_dns_config(config_data);
+            if (!dns_config || nm_global_dns_config_is_internal(dns_config)) {
+                priv->global_dns_config = nm_global_dns_config_clone(dns_config);
+            }
+        }
+    }
+
     return self;
 }
 
@@ -756,6 +783,7 @@ dispose(GObject *object)
     nm_clear_pointer(&priv->devices, g_hash_table_unref);
     nm_clear_pointer(&priv->connection_uuids, g_hash_table_unref);
     nm_clear_pointer(&priv->removed_devices, g_ptr_array_unref);
+    nm_global_dns_config_free(priv->global_dns_config);
 
     nm_clear_g_signal_handler(priv->manager, &priv->dev_removed_id);
     g_clear_object(&priv->manager);

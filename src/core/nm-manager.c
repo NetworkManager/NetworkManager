@@ -8484,7 +8484,8 @@ impl_manager_checkpoint_create(NMDBusObject                      *obj,
                                      | NM_CHECKPOINT_CREATE_FLAG_DELETE_NEW_CONNECTIONS
                                      | NM_CHECKPOINT_CREATE_FLAG_DISCONNECT_NEW_DEVICES
                                      | NM_CHECKPOINT_CREATE_FLAG_ALLOW_OVERLAPPING
-                                     | NM_CHECKPOINT_CREATE_FLAG_NO_PRESERVE_EXTERNAL_PORTS)))) {
+                                     | NM_CHECKPOINT_CREATE_FLAG_NO_PRESERVE_EXTERNAL_PORTS
+                                     | NM_CHECKPOINT_CREATE_FLAG_TRACK_INTERNAL_GLOBAL_DNS)))) {
         g_dbus_method_invocation_return_error_literal(invocation,
                                                       NM_MANAGER_ERROR,
                                                       NM_MANAGER_ERROR_INVALID_ARGUMENTS,
@@ -9789,4 +9790,12 @@ nm_manager_class_init(NMManagerClass *manager_class)
                                                    G_TYPE_NONE,
                                                    1,
                                                    NM_TYPE_DEVICE);
+}
+
+NMConfig *
+nm_manager_get_config(NMManager *self)
+{
+    NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE(self);
+
+    return priv->config;
 }
