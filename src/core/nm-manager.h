@@ -10,6 +10,7 @@
 #include "settings/nm-settings-connection.h"
 #include "c-list/src/c-list.h"
 #include "nm-dbus-manager.h"
+#include "nm-config-data.h"
 
 #define NM_TYPE_MANAGER            (nm_manager_get_type())
 #define NM_MANAGER(obj)            (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_MANAGER, NMManager))
@@ -218,5 +219,7 @@ void nm_manager_device_auth_request(NMManager                     *self,
                                     gpointer                       user_data);
 
 void nm_manager_unblock_failed_ovs_interfaces(NMManager *self);
+
+NMConfig *nm_manager_get_config(NMManager *self);
 
 #endif /* __NETWORKMANAGER_MANAGER_H__ */

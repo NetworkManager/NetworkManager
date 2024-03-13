@@ -2354,3 +2354,50 @@ nm_config_data_class_init(NMConfigDataClass *config_class)
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }
+
+static NMGlobalDnsDomain *
+nm_global_dns_domain_clone(NMGlobalDnsDomain *old_domain)
+{
+    if (old_domain) {
+        NMGlobalDnsDomain *new_domain = g_malloc0(sizeof(NMGlobalDnsDomain));
+        new_domain->name              = g_strdup(old_domain->name);
+        new_domain->servers           = (char **) nm_strv_dup(old_domain->servers, -1, TRUE);
+        new_domain->options           = (char **) nm_strv_dup(old_domain->options, -1, TRUE);
+        return new_domain;
+    } else {
+        return NULL;
+    }
+}
+
+NMGlobalDnsConfig *
+nm_global_dns_config_clone(NMGlobalDnsConfig *old_dns_config)
+{
+    NMGlobalDnsConfig *new_dns_config;
+    gpointer           key, value;
+    NMGlobalDnsDomain *old_domain;
+    GHashTableIter     iter;
+
+    new_dns_config           = g_malloc0(sizeof(NMGlobalDnsConfig));
+    new_dns_config->internal = TRUE;
+
+    if (old_dns_config) {
+        new_dns_config->internal = old_dns_config->internal;
+        new_dns_config->searches = nm_strv_dup(old_dns_config->searches, -1, TRUE);
+        new_dns_config->options  = nm_strv_dup(old_dns_config->options, -1, TRUE);
+        new_dns_config->domains  = g_hash_table_new_full(nm_str_hash,
+                                                        g_str_equal,
+                                                        g_free,
+                                                        (GDestroyNotify) global_dns_domain_free);
+        if (old_dns_config->domains) {
+            g_hash_table_iter_init(&iter, old_dns_config->domains);
+            while (g_hash_table_iter_next(&iter, &key, &value)) {
+                old_domain = value;
+                g_hash_table_insert(new_dns_config->domains,
+                                    g_strdup(key),
+                                    nm_global_dns_domain_clone(old_domain));
+            }
+        }
+        global_dns_config_seal_domains(new_dns_config);
+    }
+    return new_dns_config;
+}
