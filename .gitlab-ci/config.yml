@@ -26,23 +26,11 @@ distributions:
   - name: fedora
     tier: 2
     versions:
-      - '37'
       - '38'
       - '40'
-  - name: fedora
-    tier: 3
-    versions:
-      - '30'
-      - '31'
-      - '32'
-      - '33'
-      - '34'
-      - '35'
-      - '36'
   - name: ubuntu
     tier: 2
     versions:
-      - '18.04'
       - '20.04'
       - '22.04'
       - 'devel'
@@ -56,7 +44,6 @@ distributions:
   - name: debian
     tier: 3
     versions:
-      - '9'
       - 'testing'
   - name: centos
     tier: 2
