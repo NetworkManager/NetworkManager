@@ -280,7 +280,8 @@ int                nm_global_dns_config_cmp(const NMGlobalDnsConfig *a,
                                             const NMGlobalDnsConfig *b,
                                             gboolean                 check_internal);
 void nm_global_dns_config_update_checksum(const NMGlobalDnsConfig *dns_config, GChecksum *sum);
-void nm_global_dns_config_free(NMGlobalDnsConfig *dns_config);
+NMGlobalDnsConfig *nm_global_dns_config_clone(NMGlobalDnsConfig *dns_config);
+void               nm_global_dns_config_free(NMGlobalDnsConfig *dns_config);
 
 NMGlobalDnsConfig *nm_global_dns_config_from_dbus(const GValue *value, GError **error);
 void               nm_global_dns_config_to_dbus(const NMGlobalDnsConfig *dns_config, GValue *value);
