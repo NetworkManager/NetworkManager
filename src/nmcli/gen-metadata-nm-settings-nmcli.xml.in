@@ -363,6 +363,9 @@
         <property name="mac-address-blacklist"
                   nmcli-description="If specified, this connection will never apply to the Ethernet device whose permanent MAC address matches an address in the list.  Each MAC address is in the standard hex-digits-and-colons notation (00:11:22:33:44:55)."
                   format="list of MAC addresses" />
+        <property name="mac-address-denylist"
+                  nmcli-description="If specified, this connection will never apply to the Ethernet device whose permanent MAC address matches an address in the list.  Each MAC address is in the standard hex-digits-and-colons notation (00:11:22:33:44:55)."
+                  format="list of MAC addresses" />
         <property name="mtu"
                   alias="mtu"
                   nmcli-description="If non-zero, only transmit packets of the specified size or smaller, breaking larger packets up into multiple Ethernet frames."

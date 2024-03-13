@@ -54,6 +54,9 @@ ALIASED_PROPERTIES = {
             NM.SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST, "mac-address-denylist"
         )
     ],
+    NM.SETTING_WIRED_SETTING_NAME: [
+        AliasedProperty(NM.SETTING_WIRED_MAC_ADDRESS_BLACKLIST, "mac-address-denylist")
+    ],
 }
 
 ###############################################################################

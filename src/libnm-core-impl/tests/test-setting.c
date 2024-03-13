@@ -4734,7 +4734,8 @@ test_setting_metadata(void)
                 g_assert(g_variant_type_equal(sip->property_type->dbus_type, "as"));
                 g_assert(NM_IN_SET(sip->property_type->to_dbus_fcn,
                                    _nm_setting_property_to_dbus_fcn_direct,
-                                   _nm_setting_wireless_mac_denylist_to_dbus));
+                                   _nm_setting_wireless_mac_denylist_to_dbus,
+                                   _nm_setting_wired_mac_denylist_to_dbus));
                 g_assert(sip->param_spec);
                 g_assert(sip->param_spec->value_type == G_TYPE_STRV);
             } else
