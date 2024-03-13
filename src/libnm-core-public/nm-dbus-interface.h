@@ -991,6 +991,11 @@ typedef enum {
  *   With this flag, the rollback detaches all external ports.
  *   This only has an effect for bridge ports. Before 1.38, this was the default
  *   behavior. Since: 1.38.
+ * @NM_CHECKPOINT_CREATE_FLAG_TRACK_INTERNAL_GLOBAL_DNS: during rollback,
+ *   by default changes to global DNS via D-BUS interface are preserved.
+ *   With this flag, the rollback reverts the global DNS changes made via D-Bus
+ *   interface. Global DNS defined in [global-dns] section of
+ *   NetworkManager.conf is not impacted by this flag. Since: 1.48.
  *
  * The flags for CheckpointCreate call
  *
@@ -1003,6 +1008,7 @@ typedef enum /*< flags >*/ {
     NM_CHECKPOINT_CREATE_FLAG_DISCONNECT_NEW_DEVICES     = 0x04,
     NM_CHECKPOINT_CREATE_FLAG_ALLOW_OVERLAPPING          = 0x08,
     NM_CHECKPOINT_CREATE_FLAG_NO_PRESERVE_EXTERNAL_PORTS = 0x10,
+    NM_CHECKPOINT_CREATE_FLAG_TRACK_INTERNAL_GLOBAL_DNS  = 0x20,
 } NMCheckpointCreateFlags;
 
 /**
