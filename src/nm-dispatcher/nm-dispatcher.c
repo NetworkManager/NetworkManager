@@ -306,6 +306,9 @@ build_result_options(char *stdout)
     char                          *key;
     char                          *value;
 
+    if (!stdout)
+        return NULL;
+
     lines = g_strsplit(stdout, "\n", 65);
 
     for (i = 0; lines[i] && i < 64; i++) {
