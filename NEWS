@@ -1,4 +1,15 @@
 ===============================================
+NetworkManager-1.44.4
+Overview of changes since NetworkManager-1.44.2
+===============================================
+
+* Add the 'dns-change' dispatcher event.
+* Various fixed related to IPv4 duplicate address detection.
+* Fix support for OVS netdev datapath
+* Fix handling of IPv6 hop limit
+* Other fixes.
+
+===============================================
 NetworkManager-1.44.2
 Overview of changes since NetworkManager-1.44.0
 ===============================================
