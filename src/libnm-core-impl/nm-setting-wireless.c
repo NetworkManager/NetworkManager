@@ -551,7 +551,6 @@ nm_setting_wireless_add_mac_denylist_item(NMSettingWireless *setting, const char
             return FALSE;
     }
 
-    mac = nm_utils_hwaddr_canonical(mac, ETH_ALEN);
     nm_g_array_append_simple(nm_strvarray_ensure(&priv->mac_address_denylist.arr),
                              nm_utils_hwaddr_ntoa(mac_bin, ETH_ALEN));
     _notify(setting, PROP_MAC_ADDRESS_DENYLIST);
