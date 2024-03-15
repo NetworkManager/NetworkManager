@@ -550,6 +550,7 @@ gboolean nm_device_check_connection_compatible(NMDevice     *device,
                                                GError      **error);
 
 gboolean nm_device_check_slave_connection_compatible(NMDevice *device, NMConnection *connection);
+gboolean nm_device_can_be_parent(NMDevice *device);
 
 gboolean nm_device_can_assume_connections(NMDevice *self);
 gboolean nm_device_unmanage_on_quit(NMDevice *self);
