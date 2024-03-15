@@ -9508,6 +9508,17 @@ nm_device_check_slave_connection_compatible(NMDevice *self, NMConnection *slave)
     return nm_streq(connection_type, slave_type);
 }
 
+gboolean
+nm_device_can_be_parent(NMDevice *self)
+{
+    NMDeviceType device_type = nm_device_get_device_type(self);
+
+    if ((device_type == NM_DEVICE_TYPE_OVS_BRIDGE) || (device_type == NM_DEVICE_TYPE_OVS_PORT))
+        return FALSE;
+    else
+        return TRUE;
+}
+
 /**
  * nm_device_can_assume_connections:
  * @self: #NMDevice instance
