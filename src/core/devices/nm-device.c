@@ -28,7 +28,6 @@
 #include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-glib-aux/nm-dedup-multi.h"
 #include "libnm-glib-aux/nm-random-utils.h"
-#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
 #include "libnm-base/nm-ethtool-base.h"
 #include "libnm-core-aux-intern/nm-common-macros.h"
@@ -799,15 +798,8 @@ static void _dev_ipac6_ndisc_set_router_config(NMDevice *self);
 
 static guint32 _dev_default_route_metric_penalty_get(NMDevice *self, int addr_family);
 
-static guint32 _prop_get_ipv4_dad_timeout(NMDevice *self);
-
 static void   _carrier_wait_check_queued_act_request(NMDevice *self);
 static gint64 _get_carrier_wait_ms(NMDevice *self);
-
-static GBytes *_prop_get_ipv6_dhcp_duid(NMDevice     *self,
-                                        NMConnection *connection,
-                                        GBytes       *hwaddr,
-                                        gboolean     *out_enforce);
 
 static const char *_activation_func_to_string(ActivationHandleFunc func);
 
@@ -1007,6 +999,12 @@ _ip6_privacy_clamp(NMSettingIP6ConfigPrivacy use_tempaddr)
 }
 
 /*****************************************************************************/
+
+/*
+ * All _prop_get_<setting>_<property>() helpers should be in nm-device-utils.c.
+ * However, the following helpers need access to device internals and need to
+ * stay here.
+ */
 
 static const char *
 _prop_get_connection_stable_id(NMDevice          *self,
@@ -1323,157 +1321,6 @@ out_good:
 }
 
 static guint32
-_prop_get_ipv6_ra_timeout(NMDevice *self)
-{
-    NMConnection *connection;
-    gint32        timeout;
-
-    G_STATIC_ASSERT_EXPR(NM_RA_TIMEOUT_DEFAULT == 0);
-    G_STATIC_ASSERT_EXPR(NM_RA_TIMEOUT_INFINITY == G_MAXINT32);
-
-    connection = nm_device_get_applied_connection(self);
-
-    timeout = nm_setting_ip6_config_get_ra_timeout(
-        NM_SETTING_IP6_CONFIG(nm_connection_get_setting_ip6_config(connection)));
-    if (timeout > 0)
-        return timeout;
-    nm_assert(timeout == 0);
-
-    return nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
-                                                       NM_CON_DEFAULT("ipv6.ra-timeout"),
-                                                       self,
-                                                       0,
-                                                       G_MAXINT32,
-                                                       0);
-}
-
-static NMSettingConnectionMdns
-_prop_get_connection_mdns(NMDevice *self)
-{
-    NMConnection           *connection;
-    NMSettingConnectionMdns mdns = NM_SETTING_CONNECTION_MDNS_DEFAULT;
-
-    g_return_val_if_fail(NM_IS_DEVICE(self), NM_SETTING_CONNECTION_MDNS_DEFAULT);
-
-    connection = nm_device_get_applied_connection(self);
-    if (connection)
-        mdns = nm_setting_connection_get_mdns(nm_connection_get_setting_connection(connection));
-    if (mdns != NM_SETTING_CONNECTION_MDNS_DEFAULT)
-        return mdns;
-
-    return nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
-                                                       NM_CON_DEFAULT("connection.mdns"),
-                                                       self,
-                                                       NM_SETTING_CONNECTION_MDNS_NO,
-                                                       NM_SETTING_CONNECTION_MDNS_YES,
-                                                       NM_SETTING_CONNECTION_MDNS_DEFAULT);
-}
-
-static NMSettingConnectionLlmnr
-_prop_get_connection_llmnr(NMDevice *self)
-{
-    NMConnection            *connection;
-    NMSettingConnectionLlmnr llmnr = NM_SETTING_CONNECTION_LLMNR_DEFAULT;
-
-    g_return_val_if_fail(NM_IS_DEVICE(self), NM_SETTING_CONNECTION_LLMNR_DEFAULT);
-
-    connection = nm_device_get_applied_connection(self);
-    if (connection)
-        llmnr = nm_setting_connection_get_llmnr(nm_connection_get_setting_connection(connection));
-    if (llmnr != NM_SETTING_CONNECTION_LLMNR_DEFAULT)
-        return llmnr;
-
-    return nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
-                                                       NM_CON_DEFAULT("connection.llmnr"),
-                                                       self,
-                                                       NM_SETTING_CONNECTION_LLMNR_NO,
-                                                       NM_SETTING_CONNECTION_LLMNR_YES,
-                                                       NM_SETTING_CONNECTION_LLMNR_DEFAULT);
-}
-
-static NMSettingConnectionDnsOverTls
-_prop_get_connection_dns_over_tls(NMDevice *self)
-{
-    NMConnection                 *connection;
-    NMSettingConnectionDnsOverTls dns_over_tls = NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT;
-
-    g_return_val_if_fail(NM_IS_DEVICE(self), NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT);
-
-    connection = nm_device_get_applied_connection(self);
-    if (connection)
-        dns_over_tls = nm_setting_connection_get_dns_over_tls(
-            nm_connection_get_setting_connection(connection));
-    if (dns_over_tls != NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT)
-        return dns_over_tls;
-
-    return nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
-                                                       NM_CON_DEFAULT("connection.dns-over-tls"),
-                                                       self,
-                                                       NM_SETTING_CONNECTION_DNS_OVER_TLS_NO,
-                                                       NM_SETTING_CONNECTION_DNS_OVER_TLS_YES,
-                                                       NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT);
-}
-
-static NMMptcpFlags
-_prop_get_connection_mptcp_flags(NMDevice *self)
-{
-    NMConnection *connection;
-    NMMptcpFlags  mptcp_flags = NM_MPTCP_FLAGS_NONE;
-
-    g_return_val_if_fail(NM_IS_DEVICE(self), NM_MPTCP_FLAGS_DISABLED);
-
-    connection = nm_device_get_applied_connection(self);
-    if (connection) {
-        mptcp_flags =
-            nm_setting_connection_get_mptcp_flags(nm_connection_get_setting_connection(connection));
-    }
-
-    if (mptcp_flags == NM_MPTCP_FLAGS_NONE) {
-        guint64 v;
-
-        v = nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
-                                                        NM_CON_DEFAULT("connection.mptcp-flags"),
-                                                        self,
-                                                        0,
-                                                        G_MAXINT64,
-                                                        NM_MPTCP_FLAGS_NONE);
-        if (v != NM_MPTCP_FLAGS_NONE) {
-            /* We silently ignore all invalid flags (and will normalize them away below). */
-            mptcp_flags = (NMMptcpFlags) v;
-            if (mptcp_flags == NM_MPTCP_FLAGS_NONE)
-                mptcp_flags = NM_MPTCP_FLAGS_ENABLED;
-        }
-    }
-
-    if (mptcp_flags == NM_MPTCP_FLAGS_NONE)
-        mptcp_flags = _NM_MPTCP_FLAGS_DEFAULT;
-
-    mptcp_flags = nm_mptcp_flags_normalize(mptcp_flags);
-
-    if (!NM_FLAGS_HAS(mptcp_flags, NM_MPTCP_FLAGS_DISABLED)) {
-        if (!NM_FLAGS_HAS(mptcp_flags, NM_MPTCP_FLAGS_ALSO_WITHOUT_SYSCTL)) {
-            guint32 v;
-
-            /* If enabled, but without "also-without-sysctl", then MPTCP is still
-             * disabled, if the sysctl says so...
-             *
-             * We evaluate this here. The point is that the decision is then cached
-             * until deactivation/reapply. The user can toggle the sysctl any time,
-             * but we only pick it up at certain moments (now). */
-            v = nm_platform_sysctl_get_int32(
-                nm_device_get_platform(self),
-                NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/mptcp/enabled"),
-                -1);
-            if (v <= 0)
-                mptcp_flags = NM_MPTCP_FLAGS_DISABLED;
-        } else
-            mptcp_flags = NM_FLAGS_UNSET(mptcp_flags, NM_MPTCP_FLAGS_ALSO_WITHOUT_SYSCTL);
-    }
-
-    return mptcp_flags;
-}
-
-static guint32
 _prop_get_ipvx_route_table(NMDevice *self, int addr_family)
 {
     NMDevicePrivate     *priv = NM_DEVICE_GET_PRIVATE(self);
@@ -1561,109 +1408,6 @@ _prop_get_ipvx_route_table(NMDevice *self, int addr_family)
     return route_table;
 }
 
-static gboolean
-_prop_get_connection_lldp(NMDevice *self)
-{
-    NMConnection           *connection;
-    NMSettingConnection    *s_con;
-    NMSettingConnectionLldp lldp = NM_SETTING_CONNECTION_LLDP_DEFAULT;
-
-    connection = nm_device_get_applied_connection(self);
-    g_return_val_if_fail(connection, FALSE);
-
-    s_con = nm_connection_get_setting_connection(connection);
-    g_return_val_if_fail(s_con, FALSE);
-
-    lldp = nm_setting_connection_get_lldp(s_con);
-    if (lldp == NM_SETTING_CONNECTION_LLDP_DEFAULT) {
-        lldp = nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
-                                                           NM_CON_DEFAULT("connection.lldp"),
-                                                           self,
-                                                           NM_SETTING_CONNECTION_LLDP_DEFAULT,
-                                                           NM_SETTING_CONNECTION_LLDP_ENABLE_RX,
-                                                           NM_SETTING_CONNECTION_LLDP_DEFAULT);
-        if (lldp == NM_SETTING_CONNECTION_LLDP_DEFAULT)
-            lldp = NM_SETTING_CONNECTION_LLDP_DISABLE;
-    }
-    return lldp == NM_SETTING_CONNECTION_LLDP_ENABLE_RX;
-}
-
-static NMSettingIP4LinkLocal
-_prop_get_ipv4_link_local(NMDevice *self)
-{
-    NMSettingIP4Config   *s_ip4;
-    NMSettingIP4LinkLocal link_local;
-
-    s_ip4 = nm_device_get_applied_setting(self, NM_TYPE_SETTING_IP4_CONFIG);
-    if (!s_ip4)
-        return NM_SETTING_IP4_LL_DISABLED;
-
-    if (NM_IS_DEVICE_LOOPBACK(self))
-        return NM_SETTING_IP4_LL_DISABLED;
-
-    link_local = nm_setting_ip4_config_get_link_local(s_ip4);
-
-    if (link_local == NM_SETTING_IP4_LL_DEFAULT) {
-        /* For connections without a ipv4.link-local property configured the global configuration
-           might defines the default value for ipv4.link-local. */
-        link_local = nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
-                                                                 NM_CON_DEFAULT("ipv4.link-local"),
-                                                                 self,
-                                                                 NM_SETTING_IP4_LL_AUTO,
-                                                                 NM_SETTING_IP4_LL_ENABLED,
-                                                                 NM_SETTING_IP4_LL_DEFAULT);
-        if (link_local == NM_SETTING_IP4_LL_DEFAULT) {
-            /* If there is no global configuration for ipv4.link-local assume auto */
-            link_local = NM_SETTING_IP4_LL_AUTO;
-        } else if (link_local == NM_SETTING_IP4_LL_ENABLED
-                   && nm_streq(nm_setting_ip_config_get_method((NMSettingIPConfig *) s_ip4),
-                               NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
-            /* ipv4.method=disabled has higher priority than the global ipv4.link-local=enabled */
-            link_local = NM_SETTING_IP4_LL_DISABLED;
-        } else if (link_local == NM_SETTING_IP4_LL_DISABLED
-                   && nm_streq(nm_setting_ip_config_get_method((NMSettingIPConfig *) s_ip4),
-                               NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)) {
-            /* ipv4.method=link-local has higher priority than the global ipv4.link-local=disabled */
-            link_local = NM_SETTING_IP4_LL_ENABLED;
-        }
-    }
-
-    if (link_local == NM_SETTING_IP4_LL_AUTO) {
-        link_local = nm_streq(nm_setting_ip_config_get_method((NMSettingIPConfig *) s_ip4),
-                              NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)
-                         ? NM_SETTING_IP4_LL_ENABLED
-                         : NM_SETTING_IP4_LL_DISABLED;
-    }
-
-    return link_local;
-}
-
-static guint32
-_prop_get_ipv4_dad_timeout(NMDevice *self)
-{
-    NMConnection      *connection;
-    NMSettingIPConfig *s_ip4   = NULL;
-    int                timeout = -1;
-
-    connection = nm_device_get_applied_connection(self);
-    if (connection)
-        s_ip4 = nm_connection_get_setting_ip4_config(connection);
-    if (s_ip4)
-        timeout = nm_setting_ip_config_get_dad_timeout(s_ip4);
-
-    nm_assert(timeout >= -1 && timeout <= NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX);
-
-    if (timeout >= 0)
-        return timeout;
-
-    return nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
-                                                       NM_CON_DEFAULT("ipv4.dad-timeout"),
-                                                       self,
-                                                       0,
-                                                       NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX,
-                                                       200);
-}
-
 static guint32
 _prop_get_ipvx_dhcp_timeout(NMDevice *self, int addr_family)
 {
@@ -1712,88 +1456,10 @@ out:
     return timeout;
 }
 
-static guint32
-_prop_get_ipvx_dns_priority(NMDevice *self, int addr_family)
-{
-    NMConnection      *connection;
-    NMSettingIPConfig *s_ip;
-    int                prio = 0;
-
-    connection = nm_device_get_applied_connection(self);
-    s_ip       = nm_connection_get_setting_ip_config(connection, addr_family);
-    if (s_ip)
-        prio = nm_setting_ip_config_get_dns_priority(s_ip);
-
-    if (prio == 0) {
-        prio = nm_config_data_get_connection_default_int64(
-            NM_CONFIG_GET_DATA,
-            NM_IS_IPv4(addr_family) ? NM_CON_DEFAULT("ipv4.dns-priority")
-                                    : NM_CON_DEFAULT("ipv6.dns-priority"),
-            self,
-            G_MININT32,
-            G_MAXINT32,
-            0);
-        if (prio == 0) {
-            prio = nm_device_is_vpn(self) ? NM_DNS_PRIORITY_DEFAULT_VPN
-                                          : NM_DNS_PRIORITY_DEFAULT_NORMAL;
-        }
-    }
-
-    nm_assert(prio != 0);
-    return prio;
-}
-
-static guint32
-_prop_get_ipvx_required_timeout(NMDevice *self, int addr_family)
-{
-    NMConnection      *connection;
-    NMSettingIPConfig *s_ip;
-    int                timeout;
-
-    nm_assert(NM_IS_DEVICE(self));
-    nm_assert_addr_family(addr_family);
-
-    connection = nm_device_get_applied_connection(self);
-    if (!connection)
-        return 0;
-
-    s_ip = nm_connection_get_setting_ip_config(connection, addr_family);
-    if (!s_ip)
-        return 0;
-
-    timeout = nm_setting_ip_config_get_required_timeout(s_ip);
-    nm_assert(timeout >= -1);
-
-    if (timeout > -1)
-        return (guint32) timeout;
-
-    return nm_config_data_get_connection_default_int64(
-        NM_CONFIG_GET_DATA,
-        NM_IS_IPv4(addr_family) ? NM_CON_DEFAULT("ipv4.required-timeout")
-                                : NM_CON_DEFAULT("ipv6.required-timeout"),
-        self,
-        0,
-        G_MAXINT32,
-        0);
-}
-
-static gboolean
-_prop_get_ipvx_may_fail(NMDevice *self, int addr_family)
-{
-    NMConnection      *connection;
-    NMSettingIPConfig *s_ip = NULL;
-
-    connection = nm_device_get_applied_connection(self);
-    if (connection)
-        s_ip = nm_connection_get_setting_ip_config(connection, addr_family);
-
-    return !s_ip || nm_setting_ip_config_get_may_fail(s_ip);
-}
-
 static gboolean
 _prop_get_ipvx_may_fail_cached(NMDevice *self, int addr_family, NMTernary *cache)
 {
-    return _CACHED_BOOL(cache, _prop_get_ipvx_may_fail(self, addr_family));
+    return _CACHED_BOOL(cache, nm_device_prop_get_ipvx_may_fail(self, addr_family));
 }
 
 /**
@@ -1944,82 +1610,6 @@ out_good:
     }
     NM_SET_OUT(out_is_explicit, is_explicit);
     return iaid;
-}
-
-static NMDhcpHostnameFlags
-_prop_get_ipvx_dhcp_hostname_flags(NMDevice *self, int addr_family)
-{
-    NMConnection         *connection;
-    NMSettingIPConfig    *s_ip;
-    NMDhcpHostnameFlags   flags;
-    gs_free_error GError *error = NULL;
-
-    g_return_val_if_fail(NM_IS_DEVICE(self), NM_DHCP_HOSTNAME_FLAG_NONE);
-
-    connection = nm_device_get_applied_connection(self);
-    s_ip       = nm_connection_get_setting_ip_config(connection, addr_family);
-    g_return_val_if_fail(s_ip, NM_DHCP_HOSTNAME_FLAG_NONE);
-
-    if (!nm_setting_ip_config_get_dhcp_send_hostname(s_ip))
-        return NM_DHCP_HOSTNAME_FLAG_NONE;
-
-    flags = nm_setting_ip_config_get_dhcp_hostname_flags(s_ip);
-    if (flags != NM_DHCP_HOSTNAME_FLAG_NONE)
-        return flags;
-
-    flags = nm_config_data_get_connection_default_int64(
-        NM_CONFIG_GET_DATA,
-        NM_IS_IPv4(addr_family) ? NM_CON_DEFAULT("ipv4.dhcp-hostname-flags")
-                                : NM_CON_DEFAULT("ipv6.dhcp-hostname-flags"),
-        self,
-        0,
-        NM_DHCP_HOSTNAME_FLAG_FQDN_CLEAR_FLAGS,
-        0);
-
-    if (!_nm_utils_validate_dhcp_hostname_flags(flags, addr_family, &error)) {
-        _LOGW(LOGD_DEVICE,
-              "invalid global default value 0x%x for ipv%c.%s: %s",
-              (guint) flags,
-              nm_utils_addr_family_to_char(addr_family),
-              NM_SETTING_IP_CONFIG_DHCP_HOSTNAME_FLAGS,
-              error->message);
-        flags = NM_DHCP_HOSTNAME_FLAG_NONE;
-    }
-
-    if (flags != NM_DHCP_HOSTNAME_FLAG_NONE)
-        return flags;
-
-    if (NM_IS_IPv4(addr_family))
-        return NM_DHCP_HOSTNAME_FLAGS_FQDN_DEFAULT_IP4;
-    else
-        return NM_DHCP_HOSTNAME_FLAGS_FQDN_DEFAULT_IP6;
-}
-
-static const char *
-_prop_get_connection_mud_url(NMDevice *self, NMSettingConnection *s_con)
-{
-    const char *mud_url;
-    const char *s;
-
-    mud_url = nm_setting_connection_get_mud_url(s_con);
-
-    if (mud_url) {
-        if (nm_streq(mud_url, NM_CONNECTION_MUD_URL_NONE))
-            return NULL;
-        return mud_url;
-    }
-
-    s = nm_config_data_get_connection_default(NM_CONFIG_GET_DATA,
-                                              NM_CON_DEFAULT("connection.mud-url"),
-                                              self);
-    if (s) {
-        if (nm_streq(s, NM_CONNECTION_MUD_URL_NONE))
-            return NULL;
-        if (nm_sd_http_url_is_valid_https(s))
-            return s;
-    }
-
-    return NULL;
 }
 
 static GBytes *
@@ -2185,88 +1775,6 @@ out_good:
     return result;
 }
 
-static guint8
-_prop_get_ipv4_dhcp_dscp(NMDevice *self, gboolean *out_dscp_explicit)
-{
-    gs_free_error GError *error = NULL;
-    NMConnection         *connection;
-    NMSettingIPConfig    *s_ip;
-    const char           *str;
-
-    connection = nm_device_get_applied_connection(self);
-    s_ip       = nm_connection_get_setting_ip_config(connection, AF_INET);
-    g_return_val_if_fail(s_ip, 0);
-
-    NM_SET_OUT(out_dscp_explicit, TRUE);
-
-    str = nm_setting_ip_config_get_dhcp_dscp(s_ip);
-    if (str) {
-        nm_assert(nm_utils_validate_dhcp_dscp(str, NULL));
-    } else {
-        str = nm_config_data_get_connection_default(NM_CONFIG_GET_DATA,
-                                                    NM_CON_DEFAULT("ipv4.dhcp-dscp"),
-                                                    self);
-        if (!str || !str[0]) {
-            str = "CS0";
-            NM_SET_OUT(out_dscp_explicit, FALSE);
-        } else if (!nm_utils_validate_dhcp_dscp(str, &error)) {
-            _LOGW(LOGD_DEVICE,
-                  "invalid global default value '%s' for ipv4.%s: %s",
-                  str,
-                  NM_SETTING_IP_CONFIG_DHCP_DSCP,
-                  error->message);
-            str = "CS0";
-            NM_SET_OUT(out_dscp_explicit, FALSE);
-        }
-    }
-
-    if (nm_streq(str, "CS0")) {
-        return 0;
-    } else if (nm_streq(str, "CS6")) {
-        return 0x30;
-    } else if (nm_streq(str, "CS4")) {
-        return 0x20;
-    };
-
-    return nm_assert_unreachable_val(0);
-}
-
-static GBytes *
-_prop_get_ipv4_dhcp_vendor_class_identifier(NMDevice *self, NMSettingIP4Config *s_ip4)
-{
-    gs_free char *to_free = NULL;
-    const char   *conn_prop;
-    GBytes       *bytes = NULL;
-    const char   *bin;
-    gsize         len;
-
-    conn_prop = nm_setting_ip4_config_get_dhcp_vendor_class_identifier(s_ip4);
-
-    if (!conn_prop) {
-        /* set in NetworkManager.conf ? */
-        conn_prop = nm_config_data_get_connection_default(
-            NM_CONFIG_GET_DATA,
-            NM_CON_DEFAULT("ipv4.dhcp-vendor-class-identifier"),
-            self);
-
-        if (conn_prop && !nm_utils_validate_dhcp4_vendor_class_id(conn_prop, NULL))
-            conn_prop = NULL;
-    }
-
-    if (conn_prop) {
-        bin = nm_utils_buf_utf8safe_unescape(conn_prop,
-                                             NM_UTILS_STR_UTF8_SAFE_FLAG_NONE,
-                                             &len,
-                                             (gpointer *) &to_free);
-        if (to_free)
-            bytes = g_bytes_new_take(g_steal_pointer(&to_free), len);
-        else
-            bytes = g_bytes_new(bin, len);
-    }
-
-    return bytes;
-}
-
 static NMSettingIP6ConfigPrivacy
 _prop_get_ipv6_ip6_privacy(NMDevice *self)
 {
@@ -2313,120 +1821,6 @@ _prop_get_ipv6_ip6_privacy(NMDevice *self)
         NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv6/conf/default/use_tempaddr"),
         NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
     return _ip6_privacy_clamp(ip6_privacy);
-}
-
-static NMSettingIP6ConfigAddrGenMode
-_prop_get_ipv6_addr_gen_mode(NMDevice *self)
-{
-    NMSettingIP6ConfigAddrGenMode addr_gen_mode;
-    NMSettingIP6Config           *s_ip6;
-    gint64                        c;
-
-    g_return_val_if_fail(self, NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY);
-
-    s_ip6 = nm_device_get_applied_setting(self, NM_TYPE_SETTING_IP6_CONFIG);
-    if (s_ip6) {
-        addr_gen_mode = nm_setting_ip6_config_get_addr_gen_mode(s_ip6);
-        if (NM_IN_SET(addr_gen_mode,
-                      NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
-                      NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY))
-            return addr_gen_mode;
-    } else
-        addr_gen_mode = NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT;
-
-    nm_assert(NM_IN_SET(addr_gen_mode,
-                        NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT_OR_EUI64,
-                        NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT));
-
-    c = nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
-                                                    NM_CON_DEFAULT("ipv6.addr-gen-mode"),
-                                                    self,
-                                                    NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
-                                                    NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT,
-                                                    -1);
-    if (c != -1)
-        addr_gen_mode = c;
-
-    if (addr_gen_mode == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT)
-        addr_gen_mode = NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY;
-    else if (addr_gen_mode == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT_OR_EUI64)
-        addr_gen_mode = NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64;
-
-    nm_assert(NM_IN_SET(addr_gen_mode,
-                        NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
-                        NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY));
-
-    return addr_gen_mode;
-}
-
-static const char *
-_prop_get_x_cloned_mac_address(NMDevice *self, NMConnection *connection, gboolean is_wifi)
-{
-    NMSetting  *setting;
-    const char *addr = NULL;
-
-    setting = nm_connection_get_setting(connection,
-                                        is_wifi ? NM_TYPE_SETTING_WIRELESS : NM_TYPE_SETTING_WIRED);
-    if (setting) {
-        addr = is_wifi ? nm_setting_wireless_get_cloned_mac_address((NMSettingWireless *) setting)
-                       : nm_setting_wired_get_cloned_mac_address((NMSettingWired *) setting);
-    }
-
-    if (!addr) {
-        const char *a;
-
-        a = nm_config_data_get_connection_default(
-            NM_CONFIG_GET_DATA,
-            is_wifi ? NM_CON_DEFAULT("wifi.cloned-mac-address")
-                    : NM_CON_DEFAULT("ethernet.cloned-mac-address"),
-            self);
-
-        addr = NM_CLONED_MAC_PRESERVE;
-
-        if (!a) {
-            if (is_wifi) {
-                NMSettingMacRandomization v;
-
-                /* for backward compatibility, read the deprecated wifi.mac-address-randomization setting. */
-                v = nm_config_data_get_connection_default_int64(
-                    NM_CONFIG_GET_DATA,
-                    NM_CON_DEFAULT("wifi.mac-address-randomization"),
-                    self,
-                    NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
-                    NM_SETTING_MAC_RANDOMIZATION_ALWAYS,
-                    NM_SETTING_MAC_RANDOMIZATION_DEFAULT);
-                if (v == NM_SETTING_MAC_RANDOMIZATION_ALWAYS)
-                    addr = NM_CLONED_MAC_RANDOM;
-            }
-        } else if (NM_CLONED_MAC_IS_SPECIAL(a, is_wifi) || nm_utils_hwaddr_valid(a, ETH_ALEN))
-            addr = a;
-    }
-
-    return addr;
-}
-
-static const char *
-_prop_get_x_generate_mac_address_mask(NMDevice *self, NMConnection *connection, gboolean is_wifi)
-{
-    NMSetting  *setting;
-    const char *value;
-
-    setting = nm_connection_get_setting(connection,
-                                        is_wifi ? NM_TYPE_SETTING_WIRELESS : NM_TYPE_SETTING_WIRED);
-    if (setting) {
-        value =
-            is_wifi
-                ? nm_setting_wireless_get_generate_mac_address_mask((NMSettingWireless *) setting)
-                : nm_setting_wired_get_generate_mac_address_mask((NMSettingWired *) setting);
-        if (value)
-            return value;
-    }
-
-    return nm_config_data_get_connection_default(
-        NM_CONFIG_GET_DATA,
-        is_wifi ? NM_CON_DEFAULT("wifi.generate-mac-address-mask")
-                : NM_CON_DEFAULT("ethernet.generate-mac-address-mask"),
-        self);
 }
 
 /*****************************************************************************/
@@ -3241,11 +2635,11 @@ nm_device_create_l3_config_data_from_connection(NMDevice *self, NMConnection *co
 
     l3cd =
         nm_l3_config_data_new_from_connection(nm_device_get_multi_index(self), ifindex, connection);
-    nm_l3_config_data_set_mdns(l3cd, _prop_get_connection_mdns(self));
-    nm_l3_config_data_set_llmnr(l3cd, _prop_get_connection_llmnr(self));
-    nm_l3_config_data_set_dns_over_tls(l3cd, _prop_get_connection_dns_over_tls(self));
+    nm_l3_config_data_set_mdns(l3cd, nm_device_prop_get_connection_mdns(self));
+    nm_l3_config_data_set_llmnr(l3cd, nm_device_prop_get_connection_llmnr(self));
+    nm_l3_config_data_set_dns_over_tls(l3cd, nm_device_prop_get_connection_dns_over_tls(self));
     nm_l3_config_data_set_ip6_privacy(l3cd, _prop_get_ipv6_ip6_privacy(self));
-    nm_l3_config_data_set_mptcp_flags(l3cd, _prop_get_connection_mptcp_flags(self));
+    nm_l3_config_data_set_mptcp_flags(l3cd, nm_device_prop_get_connection_mptcp_flags(self));
     return l3cd;
 }
 
@@ -3569,7 +2963,7 @@ _dev_ip_state_req_timeout_schedule(NMDevice *self, int addr_family)
 
     nm_assert(!priv->ip_data_x[IS_IPv4].req_timeout_source);
 
-    timeout_msec = _prop_get_ipvx_required_timeout(self, addr_family);
+    timeout_msec = nm_device_prop_get_ipvx_required_timeout(self, addr_family);
     if (timeout_msec == 0) {
         _LOGD_ip(addr_family, "required-timeout: disabled");
         return;
@@ -4158,7 +3552,7 @@ _dev_l3_get_config_settings(NMDevice             *self,
     case L3_CONFIG_DATA_TYPE_AC_6:
     case L3_CONFIG_DATA_TYPE_DHCP_6:
     case L3_CONFIG_DATA_TYPE_DEVIP_6:
-        *out_acd_timeout_msec = _prop_get_ipv4_dad_timeout(self);
+        *out_acd_timeout_msec = nm_device_prop_get_ipv4_dad_timeout(self);
         goto after_acd_timeout;
 
     case L3_CONFIG_DATA_TYPE_DHCP_4:
@@ -4253,8 +3647,8 @@ _dev_l3_register_l3cds_add_config(NMDevice *self, L3ConfigDataType l3cd_type)
                                nm_device_get_route_metric(self, AF_INET6),
                                _dev_default_route_metric_penalty_get(self, AF_INET),
                                _dev_default_route_metric_penalty_get(self, AF_INET6),
-                               _prop_get_ipvx_dns_priority(self, AF_INET),
-                               _prop_get_ipvx_dns_priority(self, AF_INET6),
+                               nm_device_prop_get_ipvx_dns_priority(self, AF_INET),
+                               nm_device_prop_get_ipvx_dns_priority(self, AF_INET6),
                                acd_defend_type,
                                acd_timeout_msec,
                                NM_L3CFG_CONFIG_FLAGS_NONE,
@@ -10150,7 +9544,7 @@ lldp_setup(NMDevice *self, NMTernary enabled)
     if (ifindex <= 0)
         enabled = FALSE;
     else if (enabled == NM_TERNARY_DEFAULT)
-        enabled = _prop_get_connection_lldp(self);
+        enabled = nm_device_prop_get_connection_lldp(self);
 
     if (priv->lldp_listener) {
         if (!enabled || nm_lldp_listener_get_ifindex(priv->lldp_listener) != ifindex) {
@@ -10525,7 +9919,7 @@ _dev_ipll4_start(NMDevice *self)
 
     _dev_ipllx_set_state(self, AF_INET, NM_DEVICE_IP_STATE_PENDING);
 
-    timeout_msec = _prop_get_ipv4_dad_timeout(self);
+    timeout_msec = nm_device_prop_get_ipv4_dad_timeout(self);
     if (timeout_msec == 0)
         timeout_msec = NM_ACD_TIMEOUT_RFC5227_MSEC;
 
@@ -10999,7 +10393,6 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
     const int              IS_IPv4 = NM_IS_IPv4(addr_family);
     NMDevicePrivate       *priv    = NM_DEVICE_GET_PRIVATE(self);
     NMConnection          *connection;
-    NMSettingConnection   *s_con;
     NMSettingIPConfig     *s_ip;
     const NML3ConfigData  *previous_lease;
     gs_unref_bytes GBytes *hwaddr       = NULL;
@@ -11033,9 +10426,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
         goto out_fail;
     }
 
-    s_con = nm_connection_get_setting_connection(connection);
-    s_ip  = nm_connection_get_setting_ip_config(connection, addr_family);
-    nm_assert(s_con);
+    s_ip = nm_connection_get_setting_ip_config(connection, addr_family);
     nm_assert(s_ip);
 
     ifindex = 0;
@@ -11088,10 +10479,10 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
         gboolean               dscp_explicit = FALSE;
 
         client_id = _prop_get_ipv4_dhcp_client_id(self, connection, hwaddr, &send_client_id);
-        dscp      = _prop_get_ipv4_dhcp_dscp(self, &dscp_explicit);
+        dscp      = nm_device_prop_get_ipv4_dhcp_dscp(self, &dscp_explicit);
 
         vendor_class_identifier =
-            _prop_get_ipv4_dhcp_vendor_class_identifier(self, NM_SETTING_IP4_CONFIG(s_ip));
+            nm_device_prop_get_ipv4_dhcp_vendor_class_identifier(self, NM_SETTING_IP4_CONFIG(s_ip));
         reject_servers = nm_setting_ip_config_get_dhcp_reject_servers(s_ip, NULL);
 
         bcast_hwaddr = nmp_link_address_get_as_bytes(&pllink->l_broadcast);
@@ -11114,9 +10505,9 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
             .bcast_hwaddr            = bcast_hwaddr,
             .send_hostname           = nm_setting_ip_config_get_dhcp_send_hostname(s_ip),
             .hostname                = hostname,
-            .hostname_flags          = _prop_get_ipvx_dhcp_hostname_flags(self, AF_INET),
+            .hostname_flags          = nm_device_prop_get_ipvx_dhcp_hostname_flags(self, AF_INET),
             .client_id               = client_id,
-            .mud_url                 = _prop_get_connection_mud_url(self, s_con),
+            .mud_url                 = nm_device_prop_get_connection_mud_url(self),
             .timeout                 = no_lease_timeout_sec,
             .anycast_address         = _device_get_dhcp_anycast_address(self),
             .vendor_class_identifier = vendor_class_identifier,
@@ -11125,7 +10516,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
             .v4 =
                 {
                     .request_broadcast = request_broadcast,
-                    .acd_timeout_msec  = _prop_get_ipv4_dad_timeout(self),
+                    .acd_timeout_msec  = nm_device_prop_get_ipv4_dad_timeout(self),
                     .send_client_id    = send_client_id,
                     .dscp              = dscp,
                     .dscp_explicit     = dscp_explicit,
@@ -11153,9 +10544,9 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
             .uuid            = nm_connection_get_uuid(connection),
             .send_hostname   = nm_setting_ip_config_get_dhcp_send_hostname(s_ip),
             .hostname        = nm_setting_ip_config_get_dhcp_hostname(s_ip),
-            .hostname_flags  = _prop_get_ipvx_dhcp_hostname_flags(self, AF_INET6),
+            .hostname_flags  = nm_device_prop_get_ipvx_dhcp_hostname_flags(self, AF_INET6),
             .client_id       = duid,
-            .mud_url         = _prop_get_connection_mud_url(self, s_con),
+            .mud_url         = nm_device_prop_get_connection_mud_url(self),
             .timeout         = no_lease_timeout_sec,
             .anycast_address = _device_get_dhcp_anycast_address(self),
             .v6 =
@@ -11633,7 +11024,8 @@ _dev_ipll6_start(NMDevice *self)
 
     assume = nm_device_sys_iface_state_is_external_or_assume(self);
 
-    if (_prop_get_ipv6_addr_gen_mode(self) == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY) {
+    if (nm_device_prop_get_ipv6_addr_gen_mode(self)
+        == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY) {
         NMUtilsStableType stable_type;
         const char       *stable_id;
 
@@ -12304,7 +11696,7 @@ _dev_ipac6_start(NMDevice *self)
     if (node_type == NM_NDISC_NODE_TYPE_ROUTER)
         ra_timeout = 0u;
     else {
-        ra_timeout = _prop_get_ipv6_ra_timeout(self);
+        ra_timeout = nm_device_prop_get_ipv6_ra_timeout(self);
         if (ra_timeout == 0u)
             ra_timeout = default_ra_timeout;
     }
@@ -12317,7 +11709,7 @@ _dev_ipac6_start(NMDevice *self)
             .ifname                       = nm_device_get_ip_iface(self),
             .stable_type                  = stable_type,
             .network_id                   = stable_id,
-            .addr_gen_mode                = _prop_get_ipv6_addr_gen_mode(self),
+            .addr_gen_mode                = nm_device_prop_get_ipv6_addr_gen_mode(self),
             .node_type                    = node_type,
             .max_addresses                = max_addresses,
             .router_solicitations         = router_solicitations,
@@ -12618,7 +12010,7 @@ activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family, const
         goto out_devip;
 
     if (IS_IPv4) {
-        if (_prop_get_ipv4_link_local(self) == NM_SETTING_IP4_LL_ENABLED)
+        if (nm_device_prop_get_ipv4_link_local(self) == NM_SETTING_IP4_LL_ENABLED)
             _dev_ipll4_start(self);
 
         if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_AUTO))
@@ -17522,7 +16914,7 @@ _hw_addr_get_cloned(NMDevice     *self,
     if (!connection)
         g_return_val_if_reached(FALSE);
 
-    addr_setting = _prop_get_x_cloned_mac_address(self, connection, is_wifi);
+    addr_setting = nm_device_prop_get_x_cloned_mac_address(self, connection, is_wifi);
 
     addr = addr_setting;
 
@@ -17564,7 +16956,7 @@ _hw_addr_get_cloned(NMDevice     *self,
         }
         hw_addr_generated = nm_utils_hw_addr_gen_random_eth(
             nm_device_get_initial_hw_address(self),
-            _prop_get_x_generate_mac_address_mask(self, connection, is_wifi));
+            nm_device_prop_get_x_generate_mac_address_mask(self, connection, is_wifi));
         if (!hw_addr_generated) {
             g_set_error(error,
                         NM_DEVICE_ERROR,
@@ -17616,7 +17008,7 @@ _hw_addr_get_cloned(NMDevice     *self,
             stable_id,
             nm_device_get_ip_iface(self),
             nm_device_get_initial_hw_address(self),
-            _prop_get_x_generate_mac_address_mask(self, connection, is_wifi));
+            nm_device_prop_get_x_generate_mac_address_mask(self, connection, is_wifi));
         if (!hw_addr_generated) {
             g_set_error(error,
                         NM_DEVICE_ERROR,

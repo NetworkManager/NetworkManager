@@ -3,6 +3,9 @@
 #ifndef __DEVICES_NM_DEVICE_UTILS_H__
 #define __DEVICES_NM_DEVICE_UTILS_H__
 
+#include "nm-setting-connection.h"
+#include "nm-setting-ip4-config.h"
+
 /*****************************************************************************/
 
 const char *nm_device_state_to_string(NMDeviceState state);
@@ -91,5 +94,30 @@ void nm_device_resolve_address(int                 addr_family,
                                gpointer            cb_data);
 
 char *nm_device_resolve_address_finish(GAsyncResult *result, GError **error);
+
+/*****************************************************************************/
+
+NMSettingConnectionDnsOverTls nm_device_prop_get_connection_dns_over_tls(NMDevice *self);
+gboolean                      nm_device_prop_get_connection_lldp(NMDevice *self);
+NMSettingConnectionLlmnr      nm_device_prop_get_connection_llmnr(NMDevice *self);
+NMSettingConnectionMdns       nm_device_prop_get_connection_mdns(NMDevice *self);
+NMMptcpFlags                  nm_device_prop_get_connection_mptcp_flags(NMDevice *self);
+const char                   *nm_device_prop_get_connection_mud_url(NMDevice *self);
+guint32                       nm_device_prop_get_ipv4_dad_timeout(NMDevice *self);
+guint8                        nm_device_prop_get_ipv4_dhcp_dscp(NMDevice *self, gboolean *out_exp);
+GBytes                       *nm_device_prop_get_ipv4_dhcp_vendor_class_identifier(NMDevice           *self,
+                                                                                   NMSettingIP4Config *s_ip4);
+NMSettingIP4LinkLocal         nm_device_prop_get_ipv4_link_local(NMDevice *self);
+guint32                       nm_device_prop_get_ipv6_ra_timeout(NMDevice *self);
+NMSettingIP6ConfigAddrGenMode nm_device_prop_get_ipv6_addr_gen_mode(NMDevice *self);
+NMDhcpHostnameFlags           nm_device_prop_get_ipvx_dhcp_hostname_flags(NMDevice *self, int af);
+guint32                       nm_device_prop_get_ipvx_dns_priority(NMDevice *self, int af);
+gboolean                      nm_device_prop_get_ipvx_may_fail(NMDevice *self, int af);
+guint32                       nm_device_prop_get_ipvx_required_timeout(NMDevice *self, int af);
+const char                   *nm_device_prop_get_x_generate_mac_address_mask(NMDevice     *self,
+                                                                             NMConnection *connection,
+                                                                             gboolean      is_wifi);
+const char *
+nm_device_prop_get_x_cloned_mac_address(NMDevice *self, NMConnection *connection, gboolean is_wifi);
 
 #endif /* __DEVICES_NM_DEVICE_UTILS_H__ */
