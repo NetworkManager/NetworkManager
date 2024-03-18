@@ -1811,6 +1811,9 @@ nm_supplicant_config_add_setting_8021x(NMSupplicantConfig *self,
     value = nm_setting_802_1x_get_anonymous_identity(setting);
     if (!add_string_val(self, value, "anonymous_identity", FALSE, NULL, error))
         return FALSE;
+    value = nm_setting_802_1x_get_openssl_ciphers(setting);
+    if (value && !add_string_val(self, value, "openssl_ciphers", FALSE, NULL, error))
+        return FALSE;
 
     return TRUE;
 }

@@ -93,6 +93,7 @@ static const struct Opt opt_table[] = {
     OPT_BYTES("mka_cak", 65536),
     OPT_BYTES("mka_ckn", 65536),
     OPT_BYTES("nai", 0),
+    OPT_BYTES("openssl_ciphers", 0),
     OPT_INT("owe_only", 0, 1),
     OPT_BYTES("pac_file", 0),
     OPT_KEYWORD("pairwise", NM_MAKE_STRV("CCMP", "TKIP", "GCMP-256", "NONE", )),

@@ -327,6 +327,9 @@
                   nmcli-description="A timeout for the authentication. Zero means the global default; if the global default is not set, the authentication timeout is 25 seconds."
                   format="integer"
                   values="0 - 2147483647" />
+        <property name="openssl-ciphers"
+                  nmcli-description="Define openssl_ciphers for wpa_supplicant. Openssl sometimes moves ciphers among SECLEVELs, thus compiled-in default value in wpa_supplicant (as modified by some linux distributions) sometimes prevents to connect to old servers that do not support new protocols."
+                  format="string" />
     </setting>
     <setting name="802-3-ethernet"
              alias="ethernet" >
