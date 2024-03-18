@@ -162,17 +162,18 @@ complete_one(gpointer key, gpointer value, gpointer user_data)
         last = prefix;
 
     if ((!*last && !strchr(name, '.')) || matches(last, name)) {
-        if (option != prefix) {
+        if (!nm_streq0(option, prefix)) {
             /* value prefix was not a standalone argument,
              * it was part of --option=<value> argument.
              * Repeat the part leading to "=". */
-            nmc_print("%s=", option);
+            nmc_print("%s\n", option);
+        } else {
+            nmc_print("%.*s%s%s\n",
+                    (int) (last - prefix),
+                    prefix,
+                    name,
+                    strcmp(last, name) == 0 ? "," : "");
         }
-        nmc_print("%.*s%s%s\n",
-                  (int) (last - prefix),
-                  prefix,
-                  name,
-                  strcmp(last, name) == 0 ? "," : "");
     }
 }
 
@@ -224,13 +225,14 @@ complete_option_with_value(const char *option, const char *prefix, ...)
     va_start(args, prefix);
     while ((candidate = va_arg(args, const char *))) {
         if (!*prefix || matches(prefix, candidate)) {
-            if (option != prefix) {
+            if (!nm_streq0(option, prefix)) {
                 /* value prefix was not a standalone argument,
                  * it was part of --option=<value> argument.
                  * Repeat the part leading to "=". */
-                nmc_print("%s=", option);
+                nmc_print("%s%s\n", option, candidate + strlen(prefix));
+            } else {
+                nmc_print("%s\n", candidate);
             }
-            nmc_print("%s\n", candidate);
         }
     }
     va_end(args);
