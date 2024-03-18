@@ -8,6 +8,9 @@ subject to change and not guaranteed to be compatible with
 the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
+* Support changing the OpenSSL ciphers for 802.1X authentication via
+  connection property "802-1x.openssl-ciphers".
+
 =============================================
 NetworkManager-1.46
 Overview of changes since NetworkManager-1.44
