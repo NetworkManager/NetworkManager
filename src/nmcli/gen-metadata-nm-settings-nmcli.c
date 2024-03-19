@@ -117,14 +117,12 @@ get_ethtool_format(const NMMetaPropertyInfo *prop_info)
     case NM_ETHTOOL_TYPE_CHANNELS:
     case NM_ETHTOOL_TYPE_COALESCE:
     case NM_ETHTOOL_TYPE_RING:
+    case NM_ETHTOOL_TYPE_FEC:
         return g_strdup("integer");
     case NM_ETHTOOL_TYPE_FEATURE:
     case NM_ETHTOOL_TYPE_PAUSE:
     case NM_ETHTOOL_TYPE_EEE:
         return g_strdup("ternary");
-    // NM_ETHTOOL_TYPE_FEC is not using NM_META_PROPERTY_TYPE_FORMAT_ETHTOOL,
-    // hence unreachable.
-    case NM_ETHTOOL_TYPE_FEC:
     case NM_ETHTOOL_TYPE_UNKNOWN:
         nm_assert_not_reached();
     };
@@ -324,15 +322,13 @@ append_ethtool_valid_values(const NMMetaPropertyInfo *prop_info, GPtrArray *vali
     case NM_ETHTOOL_TYPE_CHANNELS:
     case NM_ETHTOOL_TYPE_COALESCE:
     case NM_ETHTOOL_TYPE_RING:
+    case NM_ETHTOOL_TYPE_FEC:
         g_ptr_array_add(valid_values, g_strdup_printf("0 - %u", G_MAXUINT32));
         break;
     case NM_ETHTOOL_TYPE_FEATURE:
     case NM_ETHTOOL_TYPE_PAUSE:
     case NM_ETHTOOL_TYPE_EEE:
         append_vals(valid_values, "on", "off", "ignore");
-        break;
-    case NM_ETHTOOL_TYPE_FEC:
-        append_enum_valid_values(prop_info, valid_values);
         break;
     case NM_ETHTOOL_TYPE_UNKNOWN:
         nm_assert_not_reached();

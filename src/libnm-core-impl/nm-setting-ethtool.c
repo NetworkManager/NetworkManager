@@ -129,7 +129,7 @@ nm_ethtool_optname_is_pause(const char *optname)
  *
  * Returns: %TRUE, if @optname is valid
  *
- * Since: 1.32
+ * Since: 1.48
  */
 gboolean
 nm_ethtool_optname_is_fec(const char *optname)

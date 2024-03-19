@@ -4441,6 +4441,7 @@ _get_fcn_ethtool(ARGS_GET_FCN)
     case NM_ETHTOOL_TYPE_CHANNELS:
     case NM_ETHTOOL_TYPE_COALESCE:
     case NM_ETHTOOL_TYPE_RING:
+    case NM_ETHTOOL_TYPE_FEC:
         if (!nm_setting_option_get_uint32(setting, nm_ethtool_data[ethtool_id]->optname, &u32)) {
             NM_SET_OUT(out_is_default, TRUE);
             return NULL;
@@ -4459,8 +4460,6 @@ _get_fcn_ethtool(ARGS_GET_FCN)
         if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
             s = gettext(s);
         return s;
-    // NM_ETHTOOL_TYPE_FEC is not using `_pt_ethtool`, hence unreachable here
-    case NM_ETHTOOL_TYPE_FEC:
     case NM_ETHTOOL_TYPE_UNKNOWN:
         nm_assert_not_reached();
     }
@@ -4482,6 +4481,7 @@ _set_fcn_ethtool(ARGS_SET_FCN)
     case NM_ETHTOOL_TYPE_CHANNELS:
     case NM_ETHTOOL_TYPE_COALESCE:
     case NM_ETHTOOL_TYPE_RING:
+    case NM_ETHTOOL_TYPE_FEC:
         i64 = _nm_utils_ascii_str_to_int64(value, 10, 0, G_MAXUINT32, -1);
         if (i64 == -1) {
             nm_utils_error_set(
@@ -4514,8 +4514,6 @@ _set_fcn_ethtool(ARGS_SET_FCN)
 
         nm_setting_option_set_boolean(setting, nm_ethtool_data[ethtool_id]->optname, !!t);
         return TRUE;
-    // NM_ETHTOOL_TYPE_FEC is not using `_pt_ethtool`, hence unreachable here
-    case NM_ETHTOOL_TYPE_FEC:
     case NM_ETHTOOL_TYPE_UNKNOWN:
         nm_assert_not_reached();
     }
@@ -5992,42 +5990,7 @@ static const NMMetaPropertyInfo *const property_infos_ETHTOOL[] = {
     PROPERTY_INFO_ETHTOOL (CHANNELS_TX),
     PROPERTY_INFO_ETHTOOL (CHANNELS_OTHER),
     PROPERTY_INFO_ETHTOOL (CHANNELS_COMBINED),
-//    PROPERTY_INFO_WITH_DESC (NM_ETHTOOL_OPTNAME_FEC,
-    PROPERTY_INFO(NM_ETHTOOL_OPTNAME_FEC, "TODO doc",
-                   .property_type = &_pt_gobject_enum,
-                   .property_typ_data = DEFINE_PROPERTY_TYP_DATA
-                        (
-                            PROPERTY_TYP_DATA_SUBTYPE
-                            (gobject_enum,
-                             .get_gtype = nm_ethtool_fec_get_type,
-                             .value_infos =  ENUM_VALUE_INFOS
-                                (
-                                    {
-                                        .value = NM_ETHTOOL_FEC_AUTO,
-                                        .nick = "auto",
-                                    },
-                                    {
-                                        .value = NM_ETHTOOL_FEC_OFF,
-                                        .nick = "off",
-                                    },
-                                    {
-                                        .value = NM_ETHTOOL_FEC_RS,
-                                        .nick = "rs",
-                                    },
-                                    {
-                                        .value = NM_ETHTOOL_FEC_BASER,
-                                        .nick = "baser",
-                                    },
-                                    {
-                                        .value = NM_ETHTOOL_FEC_LLRS,
-                                        .nick = "llrs",
-                                    },
-                                 ),
-                             ),
-                            .typ_flags = NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_TEXT
-                                       | NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT,
-                         ),
-                   ),
+    PROPERTY_INFO_ETHTOOL (FEC),
     NULL,
 };
 
