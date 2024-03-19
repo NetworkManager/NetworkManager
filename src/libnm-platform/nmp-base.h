@@ -4,6 +4,7 @@
 #define __NMP_FWD_H__
 
 #include "libnm-base/nm-base.h"
+#include <linux/ethtool.h>
 
 /*****************************************************************************/
 

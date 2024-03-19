@@ -1340,6 +1340,10 @@
                   dbus-type="u"
                   is-setting-option="1"
                   />
+        <property name="fec"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
     </setting>
     <setting name="generic"
              gtype="NMSettingGeneric"

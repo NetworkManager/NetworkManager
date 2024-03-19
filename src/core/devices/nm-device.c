@@ -305,6 +305,7 @@ typedef struct {
     NMEthtoolPauseState    *pause;
     NMEthtoolChannelsState *channels;
     NMEthtoolEEEState      *eee;
+    NMEthtoolFec            fec;
 } EthtoolState;
 
 typedef enum {
@@ -2450,6 +2451,25 @@ _ethtool_features_reset(NMDevice *self, NMPlatform *platform, EthtoolState *etht
         _LOGD(LOGD_DEVICE, "ethtool: offload features successfully reset");
 }
 
+static inline _NMEthtoolFec
+_NM_ETHTOOL_FEC_CAST(NMEthtoolFec v)
+{
+    return (_NMEthtoolFec) v;
+}
+
+static void
+_ethtool_fec_reset(NMDevice *self, NMPlatform *platform, EthtoolState *ethtool_state)
+{
+    gs_free NMEthtoolFeatureStates *features = NULL;
+
+    if (!nm_platform_ethtool_set_fec(platform,
+                                     ethtool_state->ifindex,
+                                     _NM_ETHTOOL_FEC_CAST(NM_ETHTOOL_FEC_AUTO)))
+        _LOGW(LOGD_DEVICE, "ethtool: failure resetting FEC");
+    else
+        _LOGD(LOGD_DEVICE, "ethtool: FEC reset to auto");
+}
+
 static void
 _ethtool_features_set(NMDevice         *self,
                       NMPlatform       *platform,
@@ -2479,6 +2499,26 @@ _ethtool_features_set(NMDevice         *self,
         _LOGD(LOGD_DEVICE, "ethtool: offload features successfully set");
 
     ethtool_state->features = g_steal_pointer(&features);
+}
+
+static void
+_ethtool_fec_set(NMDevice         *self,
+                 NMPlatform       *platform,
+                 EthtoolState     *ethtool_state,
+                 NMSettingEthtool *s_ethtool)
+{
+    NMEthtoolFec fec_mode = ethtool_state->fec;
+
+    if (fec_mode == NM_ETHTOOL_FEC_NONE) {
+        return;
+    }
+
+    if (!nm_platform_ethtool_set_fec(platform,
+                                     ethtool_state->ifindex,
+                                     _NM_ETHTOOL_FEC_CAST(fec_mode)))
+        _LOGW(LOGD_DEVICE, "ethtool: failure setting FEC %d", fec_mode);
+    else
+        _LOGD(LOGD_DEVICE, "ethtool: FEC %d successfully set", fec_mode);
 }
 
 static void
@@ -2962,6 +3002,7 @@ _ethtool_state_reset(NMDevice *self)
     _ethtool_pause_reset(self, platform, ethtool_state);
     _ethtool_channels_reset(self, platform, ethtool_state);
     _ethtool_eee_reset(self, platform, ethtool_state);
+    _ethtool_fec_reset(self, platform, ethtool_state);
 }
 
 static void
@@ -2998,6 +3039,7 @@ _ethtool_state_set(NMDevice *self)
     _ethtool_pause_set(self, platform, ethtool_state, s_ethtool);
     _ethtool_channels_set(self, platform, ethtool_state, s_ethtool);
     _ethtool_eee_set(self, platform, ethtool_state, s_ethtool);
+    _ethtool_fec_set(self, platform, ethtool_state, s_ethtool);
 
     if (ethtool_state->features || ethtool_state->coalesce || ethtool_state->ring
         || ethtool_state->pause || ethtool_state->channels || ethtool_state->eee)

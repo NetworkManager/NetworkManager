@@ -2615,6 +2615,8 @@ gboolean nm_platform_ethtool_set_channels(NMPlatform                   *self,
                                           int                           ifindex,
                                           const NMEthtoolChannelsState *channels);
 
+gboolean nm_platform_ethtool_set_fec(NMPlatform *self, int ifindex, const _NMEthtoolFec fec);
+
 gboolean
 nm_platform_ethtool_get_link_pause(NMPlatform *self, int ifindex, NMEthtoolPauseState *pause);
 

@@ -6,6 +6,8 @@
 #ifndef __NM_LIBNM_BASE_H__
 #define __NM_LIBNM_BASE_H__
 
+#include <linux/ethtool.h>
+
 /*****************************************************************************/
 
 /* this must be the same as NM_UTILS_HWADDR_LEN_MAX from libnm. */
@@ -135,7 +137,11 @@ typedef enum {
     NM_ETHTOOL_ID_CHANNELS_COMBINED,
     _NM_ETHTOOL_ID_CHANNELS_LAST = NM_ETHTOOL_ID_CHANNELS_COMBINED,
 
-    _NM_ETHTOOL_ID_LAST = _NM_ETHTOOL_ID_CHANNELS_LAST,
+    _NM_ETHTOOL_ID_FEC_FIRST = _NM_ETHTOOL_ID_CHANNELS_LAST + 1,
+    NM_ETHTOOL_ID_FEC        = _NM_ETHTOOL_ID_FEC_FIRST,
+    _NM_ETHTOOL_ID_FEC_LAST  = NM_ETHTOOL_ID_FEC,
+
+    _NM_ETHTOOL_ID_LAST = _NM_ETHTOOL_ID_FEC_LAST,
 
     _NM_ETHTOOL_ID_COALESCE_NUM =
         (_NM_ETHTOOL_ID_COALESCE_LAST - _NM_ETHTOOL_ID_COALESCE_FIRST + 1),
@@ -158,6 +164,7 @@ typedef enum {
     NM_ETHTOOL_TYPE_PAUSE,
     NM_ETHTOOL_TYPE_CHANNELS,
     NM_ETHTOOL_TYPE_EEE,
+    NM_ETHTOOL_TYPE_FEC,
 } NMEthtoolType;
 
 /****************************************************************************/
@@ -197,6 +204,22 @@ nm_ethtool_id_is_eee(NMEthtoolID id)
 {
     return id >= _NM_ETHTOOL_ID_EEE_FIRST && id <= _NM_ETHTOOL_ID_EEE_LAST;
 }
+
+static inline gboolean
+nm_ethtool_id_is_fec(NMEthtoolID id)
+{
+    return id == NM_ETHTOOL_ID_FEC;
+}
+
+typedef enum {
+    // Mirrors libnm's NMEthtoolFec.
+    _NM_ETHTOOL_FEC_NONE  = ETHTOOL_FEC_NONE,
+    _NM_ETHTOOL_FEC_AUTO  = ETHTOOL_FEC_AUTO,
+    _NM_ETHTOOL_FEC_OFF   = ETHTOOL_FEC_OFF,
+    _NM_ETHTOOL_FEC_RS    = ETHTOOL_FEC_RS,
+    _NM_ETHTOOL_FEC_BASER = ETHTOOL_FEC_BASER,
+    _NM_ETHTOOL_FEC_LLRS  = ETHTOOL_FEC_LLRS,
+} _NMEthtoolFec;
 
 /*****************************************************************************/
 

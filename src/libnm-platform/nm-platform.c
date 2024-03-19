@@ -3570,6 +3570,16 @@ nm_platform_ethtool_set_features(
 }
 
 gboolean
+nm_platform_ethtool_set_fec(NMPlatform *self, int ifindex, const _NMEthtoolFec fec)
+{
+    _CHECK_SELF_NETNS(self, klass, netns, FALSE);
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+
+    return nmp_utils_ethtool_set_fec(ifindex, fec);
+}
+
+gboolean
 nm_platform_ethtool_get_link_coalesce(NMPlatform             *self,
                                       int                     ifindex,
                                       NMEthtoolCoalesceState *coalesce)

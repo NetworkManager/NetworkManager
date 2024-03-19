@@ -121,6 +121,21 @@ nm_ethtool_optname_is_pause(const char *optname)
 {
     return optname && nm_ethtool_id_is_pause(nm_ethtool_id_get_by_name(optname));
 }
+/**
+ * nm_ethtool_optname_is_fec:
+ * @optname: (nullable): the option name to check
+ *
+ * Checks whether @optname is a valid option name for a fec setting.
+ *
+ * Returns: %TRUE, if @optname is valid
+ *
+ * Since: 1.32
+ */
+gboolean
+nm_ethtool_optname_is_fec(const char *optname)
+{
+    return optname && nm_ethtool_id_is_fec(nm_ethtool_id_get_by_name(optname));
+}
 
 /*****************************************************************************/
 

@@ -1818,6 +1818,24 @@ nmp_utils_ethtool_set_wake_on_lan(int                      ifindex,
     return _ethtool_call_once(ifindex, &wol_info, sizeof(wol_info)) >= 0;
 }
 
+gboolean
+nmp_utils_ethtool_set_fec(int ifindex, const _NMEthtoolFec fec)
+{
+    struct ethtool_fecparam fec_param = {
+        .cmd = ETHTOOL_SFECPARAM,
+        .fec = (uint32_t) fec,
+    };
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+
+    if (fec == _NM_ETHTOOL_FEC_NONE)
+        return TRUE;
+
+    nm_log_dbg(LOGD_PLATFORM, "ethtool[%d]: setting FEC options 0x%x", ifindex, fec);
+
+    return _ethtool_call_once(ifindex, &fec_param, sizeof(fec_param)) >= 0;
+}
+
 /******************************************************************************
  * mii
  *****************************************************************************/
