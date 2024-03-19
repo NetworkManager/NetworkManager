@@ -124,6 +124,15 @@ typedef struct {
     bool enabled : 1;
 } NMEthtoolEEEState;
 
+typedef enum {
+    NM_ETHTOOL_FEC_NONE  = ETHTOOL_FEC_NONE,
+    NM_ETHTOOL_FEC_AUTO  = ETHTOOL_FEC_AUTO,
+    NM_ETHTOOL_FEC_OFF   = ETHTOOL_FEC_OFF,
+    NM_ETHTOOL_FEC_RS    = ETHTOOL_FEC_RS,
+    NM_ETHTOOL_FEC_BASER = ETHTOOL_FEC_BASER,
+    NM_ETHTOOL_FEC_LLRS  = ETHTOOL_FEC_LLRS,
+} NMEthtoolFec;
+
 /*****************************************************************************/
 
 typedef struct _NMPNetns                 NMPNetns;

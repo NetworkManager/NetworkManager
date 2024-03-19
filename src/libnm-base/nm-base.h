@@ -211,16 +211,6 @@ nm_ethtool_id_is_fec(NMEthtoolID id)
     return id == NM_ETHTOOL_ID_FEC;
 }
 
-typedef enum {
-    // Mirrors libnm's NMEthtoolFec.
-    _NM_ETHTOOL_FEC_NONE  = ETHTOOL_FEC_NONE,
-    _NM_ETHTOOL_FEC_AUTO  = ETHTOOL_FEC_AUTO,
-    _NM_ETHTOOL_FEC_OFF   = ETHTOOL_FEC_OFF,
-    _NM_ETHTOOL_FEC_RS    = ETHTOOL_FEC_RS,
-    _NM_ETHTOOL_FEC_BASER = ETHTOOL_FEC_BASER,
-    _NM_ETHTOOL_FEC_LLRS  = ETHTOOL_FEC_LLRS,
-} _NMEthtoolFec;
-
 /*****************************************************************************/
 
 typedef enum {

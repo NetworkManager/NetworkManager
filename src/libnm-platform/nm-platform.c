@@ -3570,7 +3570,7 @@ nm_platform_ethtool_set_features(
 }
 
 gboolean
-nm_platform_ethtool_set_fec(NMPlatform *self, int ifindex, const _NMEthtoolFec fec)
+nm_platform_ethtool_set_fec(NMPlatform *self, int ifindex, const NMEthtoolFec fec)
 {
     _CHECK_SELF_NETNS(self, klass, netns, FALSE);
 

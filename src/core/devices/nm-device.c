@@ -2451,20 +2451,12 @@ _ethtool_features_reset(NMDevice *self, NMPlatform *platform, EthtoolState *etht
         _LOGD(LOGD_DEVICE, "ethtool: offload features successfully reset");
 }
 
-static inline _NMEthtoolFec
-_NM_ETHTOOL_FEC_CAST(NMEthtoolFec v)
-{
-    return (_NMEthtoolFec) v;
-}
-
 static void
 _ethtool_fec_reset(NMDevice *self, NMPlatform *platform, EthtoolState *ethtool_state)
 {
     gs_free NMEthtoolFeatureStates *features = NULL;
 
-    if (!nm_platform_ethtool_set_fec(platform,
-                                     ethtool_state->ifindex,
-                                     _NM_ETHTOOL_FEC_CAST(NM_ETHTOOL_FEC_AUTO)))
+    if (!nm_platform_ethtool_set_fec(platform, ethtool_state->ifindex, NM_ETHTOOL_FEC_AUTO))
         _LOGW(LOGD_DEVICE, "ethtool: failure resetting FEC");
     else
         _LOGD(LOGD_DEVICE, "ethtool: FEC reset to auto");
@@ -2513,9 +2505,7 @@ _ethtool_fec_set(NMDevice         *self,
         return;
     }
 
-    if (!nm_platform_ethtool_set_fec(platform,
-                                     ethtool_state->ifindex,
-                                     _NM_ETHTOOL_FEC_CAST(fec_mode)))
+    if (!nm_platform_ethtool_set_fec(platform, ethtool_state->ifindex, fec_mode))
         _LOGW(LOGD_DEVICE, "ethtool: failure setting FEC %d", fec_mode);
     else
         _LOGD(LOGD_DEVICE, "ethtool: FEC %d successfully set", fec_mode);

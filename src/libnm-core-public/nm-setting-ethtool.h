@@ -11,32 +11,8 @@
 #endif
 
 #include "nm-setting.h"
-#include <linux/ethtool.h>
 
 G_BEGIN_DECLS
-
-/**
- * NMEthtoolFec:
- * @NM_ETHTOOL_FEC_NONE: Internal use only
- * @NM_ETHTOOL_FEC_AUTO: Select default/best FEC mode automatically
- * @NM_ETHTOOL_FEC_OFF: No FEC Mode
- * @NM_ETHTOOL_FEC_RS: Reed-Solomon FEC Mode
- * @NM_ETHTOOL_FEC_BASER: Base-R/Reed-Solomon FEC Mode
- * @NM_ETHTOOL_FEC_LLRS: Low Latency Reed Solomon FEC Mode
- *
- * #NMEthtoolFec describe ethtool Forward Error Correction(FEC) encoding modes.
- * FQDN.
- *
- * Since: 1.48
- */
-typedef enum /*< flags >*/ {
-    NM_ETHTOOL_FEC_NONE  = ETHTOOL_FEC_NONE,
-    NM_ETHTOOL_FEC_AUTO  = ETHTOOL_FEC_AUTO,
-    NM_ETHTOOL_FEC_OFF   = ETHTOOL_FEC_OFF,
-    NM_ETHTOOL_FEC_RS    = ETHTOOL_FEC_RS,
-    NM_ETHTOOL_FEC_BASER = ETHTOOL_FEC_BASER,
-    NM_ETHTOOL_FEC_LLRS  = ETHTOOL_FEC_LLRS,
-} NMEthtoolFec;
 
 NM_AVAILABLE_IN_1_20
 gboolean nm_ethtool_optname_is_feature(const char *optname);

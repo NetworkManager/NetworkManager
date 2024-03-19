@@ -1819,7 +1819,7 @@ nmp_utils_ethtool_set_wake_on_lan(int                      ifindex,
 }
 
 gboolean
-nmp_utils_ethtool_set_fec(int ifindex, const _NMEthtoolFec fec)
+nmp_utils_ethtool_set_fec(int ifindex, const NMEthtoolFec fec)
 {
     struct ethtool_fecparam fec_param = {
         .cmd = ETHTOOL_SFECPARAM,
@@ -1828,7 +1828,7 @@ nmp_utils_ethtool_set_fec(int ifindex, const _NMEthtoolFec fec)
 
     g_return_val_if_fail(ifindex > 0, FALSE);
 
-    if (fec == _NM_ETHTOOL_FEC_NONE)
+    if (fec == NM_ETHTOOL_FEC_NONE)
         return TRUE;
 
     nm_log_dbg(LOGD_PLATFORM, "ethtool[%d]: setting FEC options 0x%x", ifindex, fec);
