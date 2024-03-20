@@ -2359,10 +2359,15 @@ _prop_get_ipv6_addr_gen_mode(NMDevice *self)
 }
 
 static const char *
-_prop_get_x_cloned_mac_address(NMDevice *self, NMConnection *connection, gboolean is_wifi)
+_prop_get_x_cloned_mac_address(NMDevice     *self,
+                               NMConnection *connection,
+                               gboolean      is_wifi,
+                               gboolean     *out_is_default_special)
 {
     NMSetting  *setting;
     const char *addr = NULL;
+
+    NM_SET_OUT(out_is_default_special, FALSE);
 
     setting = nm_connection_get_setting(connection,
                                         is_wifi ? NM_TYPE_SETTING_WIRELESS : NM_TYPE_SETTING_WIRED);
@@ -2394,11 +2399,17 @@ _prop_get_x_cloned_mac_address(NMDevice *self, NMConnection *connection, gboolea
                     NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
                     NM_SETTING_MAC_RANDOMIZATION_ALWAYS,
                     NM_SETTING_MAC_RANDOMIZATION_DEFAULT);
-                if (v == NM_SETTING_MAC_RANDOMIZATION_ALWAYS)
+                if (v == NM_SETTING_MAC_RANDOMIZATION_ALWAYS) {
                     addr = NM_CLONED_MAC_RANDOM;
+                    NM_SET_OUT(out_is_default_special, TRUE);
+                }
             }
-        } else if (NM_CLONED_MAC_IS_SPECIAL(a, is_wifi) || nm_utils_hwaddr_valid(a, ETH_ALEN))
+        } else if (NM_CLONED_MAC_IS_SPECIAL(a, is_wifi)) {
             addr = a;
+            NM_SET_OUT(out_is_default_special, TRUE);
+        } else if (nm_utils_hwaddr_valid(a, ETH_ALEN)) {
+            addr = a;
+        }
     }
 
     return addr;
@@ -17442,6 +17453,8 @@ nm_device_hw_addr_set(NMDevice *self, const char *addr, const char *detail, gboo
  * @hwaddr: (out): the cloned MAC address to set on interface
  * @hwaddr_type: (out): the type of address to set
  * @hwaddr_detail: (out): the detail (origin) of address to set
+ * @is_default_special (out): if %TRUE, the cloned MAC comes from
+ *   global default configuration and is a special keyword
  * @error: on return, an error or %NULL
  *
  * Computes the MAC to be set on a interface. On success, one of the
@@ -17462,6 +17475,7 @@ _hw_addr_get_cloned(NMDevice     *self,
                     char        **hwaddr,
                     HwAddrType   *hwaddr_type,
                     const char  **hwaddr_detail,
+                    gboolean     *is_default_special,
                     GError      **error)
 {
     NMDevicePrivate *priv;
@@ -17480,7 +17494,7 @@ _hw_addr_get_cloned(NMDevice     *self,
     if (!connection)
         g_return_val_if_reached(FALSE);
 
-    addr_setting = _prop_get_x_cloned_mac_address(self, connection, is_wifi);
+    addr_setting = _prop_get_x_cloned_mac_address(self, connection, is_wifi, is_default_special);
 
     addr = addr_setting;
 
@@ -17616,7 +17630,7 @@ nm_device_hw_addr_get_cloned(NMDevice     *self,
                              gboolean     *preserve,
                              GError      **error)
 {
-    if (!_hw_addr_get_cloned(self, connection, is_wifi, preserve, hwaddr, NULL, NULL, error))
+    if (!_hw_addr_get_cloned(self, connection, is_wifi, preserve, hwaddr, NULL, NULL, NULL, error))
         return FALSE;
 
     return TRUE;
@@ -17626,11 +17640,13 @@ gboolean
 nm_device_hw_addr_set_cloned(NMDevice *self, NMConnection *connection, gboolean is_wifi)
 {
     NMDevicePrivate      *priv;
-    gboolean              preserve = FALSE;
-    gs_free char         *hwaddr   = NULL;
-    const char           *detail   = NULL;
-    HwAddrType            type     = HW_ADDR_TYPE_UNSET;
-    gs_free_error GError *error    = NULL;
+    gboolean              preserve           = FALSE;
+    gs_free char         *hwaddr             = NULL;
+    const char           *detail             = NULL;
+    HwAddrType            type               = HW_ADDR_TYPE_UNSET;
+    gs_free_error GError *error              = NULL;
+    gboolean              is_default_special = FALSE;
+    gboolean              ret;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
     priv = NM_DEVICE_GET_PRIVATE(self);
@@ -17642,6 +17658,7 @@ nm_device_hw_addr_set_cloned(NMDevice *self, NMConnection *connection, gboolean 
                              &hwaddr,
                              &type,
                              &detail,
+                             &is_default_special,
                              &error)) {
         _LOGW(LOGD_DEVICE, "set-hw-addr: %s", error->message);
         return FALSE;
@@ -17651,8 +17668,22 @@ nm_device_hw_addr_set_cloned(NMDevice *self, NMConnection *connection, gboolean 
         return nm_device_hw_addr_reset(self, detail);
 
     if (hwaddr) {
+        ret = _hw_addr_set(self, hwaddr, "set-cloned", detail);
+        if (!ret && is_default_special) {
+            /* If the distro sets a global special value for the cloned MAC (for
+             * example, "stable-ssid") and the driver doesn't support changing the
+             * MAC, all activations will fail on the interface unless users know
+             * that they need to change the cloned MAC. Be more tolerant to errors
+             * in case the MAC is global and special.
+             */
+            _LOGE(LOGD_DEVICE,
+                  "ignore error changing the MAC address to globally configured value \"%s\","
+                  "the device does not support it",
+                  detail);
+            return TRUE;
+        }
         priv->hw_addr_type = type;
-        return _hw_addr_set(self, hwaddr, "set-cloned", detail);
+        return ret;
     }
 
     return TRUE;
