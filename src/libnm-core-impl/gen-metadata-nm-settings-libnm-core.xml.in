@@ -496,6 +496,11 @@
                   gprop-type="gchararray"
                   />
         <property name="mac-address-blacklist"
+                  is-deprecated="1"
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
+        <property name="mac-address-denylist"
                   dbus-type="as"
                   gprop-type="GStrv"
                   />

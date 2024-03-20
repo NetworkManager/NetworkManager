@@ -195,7 +195,7 @@ connection_compatible(NMDevice *device, NMConnection *connection, GError **error
     if (s_wired) {
         const char        *perm_addr, *s_mac;
         gboolean           try_mac = TRUE;
-        const char *const *mac_blacklist;
+        const char *const *mac_denylist;
         int                i;
 
         /* Check s390 subchannels */
@@ -232,20 +232,20 @@ connection_compatible(NMDevice *device, NMConnection *connection, GError **error
                 return FALSE;
             }
 
-            /* Check for MAC address blacklist */
-            mac_blacklist = nm_setting_wired_get_mac_address_blacklist(s_wired);
-            for (i = 0; mac_blacklist[i]; i++) {
-                if (!nm_utils_hwaddr_valid(mac_blacklist[i], ETH_ALEN)) {
+            /* Check for MAC address denylist */
+            mac_denylist = nm_setting_wired_get_mac_address_denylist(s_wired);
+            for (i = 0; mac_denylist[i]; i++) {
+                if (!nm_utils_hwaddr_valid(mac_denylist[i], ETH_ALEN)) {
                     g_warn_if_reached();
                     g_set_error(error,
                                 NM_DEVICE_ERROR,
                                 NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
                                 _("Invalid MAC in the blacklist: %s."),
-                                mac_blacklist[i]);
+                                mac_denylist[i]);
                     return FALSE;
                 }
 
-                if (nm_utils_hwaddr_matches(mac_blacklist[i], -1, perm_addr, -1)) {
+                if (nm_utils_hwaddr_matches(mac_denylist[i], -1, perm_addr, -1)) {
                     g_set_error(error,
                                 NM_DEVICE_ERROR,
                                 NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,

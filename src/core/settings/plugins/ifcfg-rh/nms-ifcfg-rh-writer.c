@@ -1142,7 +1142,7 @@ write_wired_setting_impl(NMSettingWired *s_wired, shvarFile *ifcfg, gboolean is_
                   "GENERATE_MAC_ADDRESS_MASK",
                   nm_setting_wired_get_generate_mac_address_mask(s_wired));
 
-    macaddr_blacklist = nm_setting_wired_get_mac_address_blacklist(s_wired);
+    macaddr_blacklist = nm_setting_wired_get_mac_address_denylist(s_wired);
     if (macaddr_blacklist[0]) {
         gs_free char *blacklist_str = NULL;
 

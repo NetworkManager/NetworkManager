@@ -73,6 +73,7 @@ typedef enum /*< flags >*/ {
 #define NM_SETTING_WIRED_CLONED_MAC_ADDRESS        "cloned-mac-address"
 #define NM_SETTING_WIRED_GENERATE_MAC_ADDRESS_MASK "generate-mac-address-mask"
 #define NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST     "mac-address-blacklist"
+#define NM_SETTING_WIRED_MAC_ADDRESS_DENYLIST      "mac-address-denylist"
 #define NM_SETTING_WIRED_MTU                       "mtu"
 #define NM_SETTING_WIRED_S390_SUBCHANNELS          "s390-subchannels"
 #define NM_SETTING_WIRED_S390_NETTYPE              "s390-nettype"
@@ -99,14 +100,30 @@ NMTernary nm_setting_wired_get_accept_all_mac_addresses(NMSettingWired *setting)
 NM_AVAILABLE_IN_1_4
 const char *nm_setting_wired_get_generate_mac_address_mask(NMSettingWired *setting);
 
+NM_DEPRECATED_IN_1_48
 const char *const *nm_setting_wired_get_mac_address_blacklist(NMSettingWired *setting);
-guint32            nm_setting_wired_get_num_mac_blacklist_items(NMSettingWired *setting);
-const char        *nm_setting_wired_get_mac_blacklist_item(NMSettingWired *setting, guint32 idx);
+NM_DEPRECATED_IN_1_48
+guint32 nm_setting_wired_get_num_mac_blacklist_items(NMSettingWired *setting);
+NM_DEPRECATED_IN_1_48
+const char *nm_setting_wired_get_mac_blacklist_item(NMSettingWired *setting, guint32 idx);
+NM_DEPRECATED_IN_1_48
 gboolean nm_setting_wired_add_mac_blacklist_item(NMSettingWired *setting, const char *mac);
-void     nm_setting_wired_remove_mac_blacklist_item(NMSettingWired *setting, guint32 idx);
+NM_DEPRECATED_IN_1_48
+void nm_setting_wired_remove_mac_blacklist_item(NMSettingWired *setting, guint32 idx);
+NM_DEPRECATED_IN_1_48
 gboolean nm_setting_wired_remove_mac_blacklist_item_by_value(NMSettingWired *setting,
                                                              const char     *mac);
-void     nm_setting_wired_clear_mac_blacklist_items(NMSettingWired *setting);
+NM_DEPRECATED_IN_1_48
+void nm_setting_wired_clear_mac_blacklist_items(NMSettingWired *setting);
+
+const char *const *nm_setting_wired_get_mac_address_denylist(NMSettingWired *setting);
+guint32            nm_setting_wired_get_num_mac_denylist_items(NMSettingWired *setting);
+const char        *nm_setting_wired_get_mac_denylist_item(NMSettingWired *setting, guint32 idx);
+gboolean           nm_setting_wired_add_mac_denylist_item(NMSettingWired *setting, const char *mac);
+void               nm_setting_wired_remove_mac_denylist_item(NMSettingWired *setting, guint32 idx);
+gboolean           nm_setting_wired_remove_mac_denylist_item_by_value(NMSettingWired *setting,
+                                                                      const char     *mac);
+void               nm_setting_wired_clear_mac_denylist_items(NMSettingWired *setting);
 
 guint32 nm_setting_wired_get_mtu(NMSettingWired *setting);
 

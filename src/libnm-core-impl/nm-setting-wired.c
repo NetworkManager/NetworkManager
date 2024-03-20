@@ -39,6 +39,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingWired,
                              PROP_CLONED_MAC_ADDRESS,
                              PROP_GENERATE_MAC_ADDRESS_MASK,
                              PROP_MAC_ADDRESS_BLACKLIST,
+                             PROP_MAC_ADDRESS_DENYLIST,
                              PROP_MTU,
                              PROP_S390_SUBCHANNELS,
                              PROP_S390_NETTYPE,
@@ -53,20 +54,20 @@ typedef struct {
         guint              len;
         guint              n_alloc;
     } s390_options;
-    GArray *mac_address_blacklist;
-    char  **s390_subchannels;
-    char   *port;
-    char   *duplex;
-    char   *device_mac_address;
-    char   *cloned_mac_address;
-    char   *generate_mac_address_mask;
-    char   *s390_nettype;
-    char   *wol_password;
-    int     accept_all_mac_addresses;
-    guint32 wake_on_lan;
-    guint32 speed;
-    guint32 mtu;
-    bool    auto_negotiate;
+    char      **s390_subchannels;
+    char       *port;
+    char       *duplex;
+    char       *device_mac_address;
+    char       *cloned_mac_address;
+    char       *generate_mac_address_mask;
+    char       *s390_nettype;
+    char       *wol_password;
+    NMValueStrv mac_address_denylist;
+    int         accept_all_mac_addresses;
+    guint32     wake_on_lan;
+    guint32     speed;
+    guint32     mtu;
+    bool        auto_negotiate;
 } NMSettingWiredPrivate;
 
 /**
@@ -277,20 +278,197 @@ nm_setting_wired_get_generate_mac_address_mask(NMSettingWired *setting)
 }
 
 /**
+ * nm_setting_wired_get_mac_address_denylist:
+ * @setting: the #NMSettingWired
+ *
+ * Returns: the #NMSettingWired:mac-address-denylist property of the setting
+ * 
+ * Since: 1.48
+ **/
+const char *const *
+nm_setting_wired_get_mac_address_denylist(NMSettingWired *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), NULL);
+
+    return nm_strvarray_get_strv_notnull(
+        NM_SETTING_WIRED_GET_PRIVATE(setting)->mac_address_denylist.arr,
+        NULL);
+}
+
+/**
+ * nm_setting_wired_get_num_mac_denylist_items:
+ * @setting: the #NMSettingWired
+ *
+ * Returns: the number of denylisted MAC addresses
+ * 
+ * Since: 1.48
+ **/
+guint
+nm_setting_wired_get_num_mac_denylist_items(NMSettingWired *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), 0);
+
+    return nm_g_array_len(NM_SETTING_WIRED_GET_PRIVATE(setting)->mac_address_denylist.arr);
+}
+
+/**
+ * nm_setting_wired_get_mac_denylist_item:
+ * @setting: the #NMSettingWired
+ * @idx: the zero-based index of the MAC address entry
+ *
+ * Returns: the denylisted MAC address string (hex-digits-and-colons notation)
+ * at index @idx
+ * 
+ * Since: 1.48
+ **/
+const char *
+nm_setting_wired_get_mac_denylist_item(NMSettingWired *setting, guint idx)
+{
+    g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), NULL);
+
+    return nm_strvarray_get_idxnull_or_greturn(
+        NM_SETTING_WIRED_GET_PRIVATE(setting)->mac_address_denylist.arr,
+        idx);
+}
+
+/**
+ * nm_setting_wired_add_mac_denylist_item:
+ * @setting: the #NMSettingWired
+ * @mac: the MAC address string (hex-digits-and-colons notation) to denylist
+ *
+ * Adds a new MAC address to the #NMSettingWired:mac-address-denylist property.
+ *
+ * Returns: %TRUE if the MAC address was added; %FALSE if the MAC address
+ * is invalid or was already present
+ * 
+ * Since: 1.48
+ **/
+gboolean
+nm_setting_wired_add_mac_denylist_item(NMSettingWired *setting, const char *mac)
+{
+    NMSettingWiredPrivate *priv;
+    guint8                 mac_bin[ETH_ALEN];
+    const char            *candidate;
+    guint                  i;
+    guint                  len;
+
+    g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), FALSE);
+    g_return_val_if_fail(mac != NULL, FALSE);
+
+    if (!_nm_utils_hwaddr_aton_exact(mac, mac_bin, ETH_ALEN))
+        return FALSE;
+
+    priv = NM_SETTING_WIRED_GET_PRIVATE(setting);
+    len  = nm_g_array_len(priv->mac_address_denylist.arr);
+    for (i = 0; i < len; i++) {
+        candidate = nm_g_array_index(priv->mac_address_denylist.arr, char *, i);
+        if (nm_utils_hwaddr_matches(mac_bin, ETH_ALEN, candidate, -1))
+            return FALSE;
+    }
+
+    nm_g_array_append_simple(nm_strvarray_ensure(&priv->mac_address_denylist.arr),
+                             nm_utils_hwaddr_ntoa(mac_bin, ETH_ALEN));
+    _notify(setting, PROP_MAC_ADDRESS_DENYLIST);
+    return TRUE;
+}
+
+/**
+ * nm_setting_wired_remove_mac_denylist_item:
+ * @setting: the #NMSettingWired
+ * @idx: index number of the MAC address
+ *
+ * Removes the MAC address at index @idx from the denylist.
+ * 
+ * Since: 1.48
+ **/
+void
+nm_setting_wired_remove_mac_denylist_item(NMSettingWired *setting, guint idx)
+{
+    NMSettingWiredPrivate *priv;
+
+    g_return_if_fail(NM_IS_SETTING_WIRED(setting));
+
+    priv = NM_SETTING_WIRED_GET_PRIVATE(setting);
+    if (!priv->mac_address_denylist.arr) {
+        return;
+    }
+
+    g_return_if_fail(idx < priv->mac_address_denylist.arr->len);
+
+    g_array_remove_index(priv->mac_address_denylist.arr, idx);
+    _notify(setting, PROP_MAC_ADDRESS_DENYLIST);
+}
+
+/**
+ * nm_setting_wired_remove_mac_denylist_item_by_value:
+ * @setting: the #NMSettingWired
+ * @mac: the MAC address string (hex-digits-and-colons notation) to remove from
+ * the denylist
+ *
+ * Removes the MAC address @mac from the denylist.
+ *
+ * Returns: %TRUE if the MAC address was found and removed; %FALSE if it was not.
+ * 
+ * Since: 1.48
+ **/
+gboolean
+nm_setting_wired_remove_mac_denylist_item_by_value(NMSettingWired *setting, const char *mac)
+{
+    NMSettingWiredPrivate *priv;
+    guint8                 mac_bin[ETH_ALEN];
+    const char            *candidate;
+    guint                  i;
+
+    g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), FALSE);
+    g_return_val_if_fail(mac != NULL, FALSE);
+
+    if (!_nm_utils_hwaddr_aton_exact(mac, mac_bin, ETH_ALEN))
+        return FALSE;
+
+    priv = NM_SETTING_WIRED_GET_PRIVATE(setting);
+    if (priv->mac_address_denylist.arr) {
+        for (i = 0; i < priv->mac_address_denylist.arr->len; i++) {
+            candidate = nm_g_array_index(priv->mac_address_denylist.arr, char *, i);
+            if (nm_utils_hwaddr_matches(mac_bin, ETH_ALEN, candidate, -1)) {
+                g_array_remove_index(priv->mac_address_denylist.arr, i);
+                _notify(setting, PROP_MAC_ADDRESS_DENYLIST);
+                return TRUE;
+            }
+        }
+    }
+
+    return FALSE;
+}
+
+/**
+ * nm_setting_wired_clear_mac_denylist_items:
+ * @setting: the #NMSettingWired
+ *
+ * Removes all denylisted MAC addresses.
+ * 
+ * Since: 1.48
+ **/
+void
+nm_setting_wired_clear_mac_denylist_items(NMSettingWired *setting)
+{
+    g_return_if_fail(NM_IS_SETTING_WIRED(setting));
+
+    if (nm_strvarray_clear(&NM_SETTING_WIRED_GET_PRIVATE(setting)->mac_address_denylist.arr))
+        _notify(setting, PROP_MAC_ADDRESS_DENYLIST);
+}
+
+/**
  * nm_setting_wired_get_mac_address_blacklist:
  * @setting: the #NMSettingWired
  *
  * Returns: the #NMSettingWired:mac-address-blacklist property of the setting
+ *
+ * Deprecated: 1.48. Use nm_setting_wired_get_mac_address_denylist() instead.
  **/
 const char *const *
 nm_setting_wired_get_mac_address_blacklist(NMSettingWired *setting)
 {
-    NMSettingWiredPrivate *priv;
-
-    g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), NULL);
-
-    priv = NM_SETTING_WIRED_GET_PRIVATE(setting);
-    return nm_g_array_data(priv->mac_address_blacklist);
+    return nm_setting_wired_get_mac_address_denylist(setting);
 }
 
 /**
@@ -298,13 +476,13 @@ nm_setting_wired_get_mac_address_blacklist(NMSettingWired *setting)
  * @setting: the #NMSettingWired
  *
  * Returns: the number of blacklisted MAC addresses
+ *
+ * Deprecated: 1.48. Use nm_setting_wired_get_num_mac_denylist_items() instead.
  **/
 guint32
 nm_setting_wired_get_num_mac_blacklist_items(NMSettingWired *setting)
 {
-    g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), 0);
-
-    return NM_SETTING_WIRED_GET_PRIVATE(setting)->mac_address_blacklist->len;
+    return nm_setting_wired_get_num_mac_denylist_items(setting);
 }
 
 /**
@@ -312,27 +490,17 @@ nm_setting_wired_get_num_mac_blacklist_items(NMSettingWired *setting)
  * @setting: the #NMSettingWired
  * @idx: the zero-based index of the MAC address entry
  *
- * Since 1.46, access at index "len" is allowed and returns NULL.
+ * Since 1.48, access at index "len" is allowed and returns NULL.
  *
  * Returns: the blacklisted MAC address string (hex-digits-and-colons notation)
  * at index @idx
+ *
+ * Deprecated: 1.48. Use nm_setting_wired_get_mac_denylist_item() instead.
  **/
 const char *
 nm_setting_wired_get_mac_blacklist_item(NMSettingWired *setting, guint32 idx)
 {
-    NMSettingWiredPrivate *priv;
-
-    g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), NULL);
-
-    priv = NM_SETTING_WIRED_GET_PRIVATE(setting);
-
-    if (idx == priv->mac_address_blacklist->len) {
-        return NULL;
-    }
-
-    g_return_val_if_fail(idx < priv->mac_address_blacklist->len, NULL);
-
-    return nm_g_array_index(priv->mac_address_blacklist, const char *, idx);
+    return nm_setting_wired_get_mac_denylist_item(setting, idx);
 }
 
 /**
@@ -344,31 +512,13 @@ nm_setting_wired_get_mac_blacklist_item(NMSettingWired *setting, guint32 idx)
  *
  * Returns: %TRUE if the MAC address was added; %FALSE if the MAC address
  * is invalid or was already present
+ *
+ * Deprecated: 1.48. Use nm_setting_wired_add_mac_denylist_item() instead.
  **/
 gboolean
 nm_setting_wired_add_mac_blacklist_item(NMSettingWired *setting, const char *mac)
 {
-    NMSettingWiredPrivate *priv;
-    const char            *candidate;
-    int                    i;
-
-    g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), FALSE);
-    g_return_val_if_fail(mac != NULL, FALSE);
-
-    if (!nm_utils_hwaddr_valid(mac, ETH_ALEN))
-        return FALSE;
-
-    priv = NM_SETTING_WIRED_GET_PRIVATE(setting);
-    for (i = 0; i < priv->mac_address_blacklist->len; i++) {
-        candidate = nm_g_array_index(priv->mac_address_blacklist, char *, i);
-        if (nm_utils_hwaddr_matches(mac, -1, candidate, -1))
-            return FALSE;
-    }
-
-    mac = nm_utils_hwaddr_canonical(mac, ETH_ALEN);
-    g_array_append_val(priv->mac_address_blacklist, mac);
-    _notify(setting, PROP_MAC_ADDRESS_BLACKLIST);
-    return TRUE;
+    return nm_setting_wired_add_mac_denylist_item(setting, mac);
 }
 
 /**
@@ -377,19 +527,13 @@ nm_setting_wired_add_mac_blacklist_item(NMSettingWired *setting, const char *mac
  * @idx: index number of the MAC address
  *
  * Removes the MAC address at index @idx from the blacklist.
+ *
+ * Deprecated: 1.48. Use nm_setting_wired_remove_mac_denylist_item() instead.
  **/
 void
 nm_setting_wired_remove_mac_blacklist_item(NMSettingWired *setting, guint32 idx)
 {
-    NMSettingWiredPrivate *priv;
-
-    g_return_if_fail(NM_IS_SETTING_WIRED(setting));
-
-    priv = NM_SETTING_WIRED_GET_PRIVATE(setting);
-    g_return_if_fail(idx < priv->mac_address_blacklist->len);
-
-    g_array_remove_index(priv->mac_address_blacklist, idx);
-    _notify(setting, PROP_MAC_ADDRESS_BLACKLIST);
+    return nm_setting_wired_remove_mac_denylist_item(setting, idx);
 }
 
 /**
@@ -401,27 +545,13 @@ nm_setting_wired_remove_mac_blacklist_item(NMSettingWired *setting, guint32 idx)
  * Removes the MAC address @mac from the blacklist.
  *
  * Returns: %TRUE if the MAC address was found and removed; %FALSE if it was not.
+ *
+ * Deprecated: 1.48. Use nm_setting_wired_remove_mac_denylist_item_by_value() instead.
  **/
 gboolean
 nm_setting_wired_remove_mac_blacklist_item_by_value(NMSettingWired *setting, const char *mac)
 {
-    NMSettingWiredPrivate *priv;
-    const char            *candidate;
-    int                    i;
-
-    g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), FALSE);
-    g_return_val_if_fail(mac != NULL, FALSE);
-
-    priv = NM_SETTING_WIRED_GET_PRIVATE(setting);
-    for (i = 0; i < priv->mac_address_blacklist->len; i++) {
-        candidate = nm_g_array_index(priv->mac_address_blacklist, char *, i);
-        if (!nm_utils_hwaddr_matches(mac, -1, candidate, -1)) {
-            g_array_remove_index(priv->mac_address_blacklist, i);
-            _notify(setting, PROP_MAC_ADDRESS_BLACKLIST);
-            return TRUE;
-        }
-    }
-    return FALSE;
+    return nm_setting_wired_remove_mac_denylist_item_by_value(setting, mac);
 }
 
 /**
@@ -429,14 +559,68 @@ nm_setting_wired_remove_mac_blacklist_item_by_value(NMSettingWired *setting, con
  * @setting: the #NMSettingWired
  *
  * Removes all blacklisted MAC addresses.
+ *
+ * Deprecated: 1.48. Use nm_setting_wired_clear_mac_denylist_items() instead.
  **/
 void
 nm_setting_wired_clear_mac_blacklist_items(NMSettingWired *setting)
 {
-    g_return_if_fail(NM_IS_SETTING_WIRED(setting));
+    return nm_setting_wired_clear_mac_denylist_items(setting);
+}
 
-    g_array_set_size(NM_SETTING_WIRED_GET_PRIVATE(setting)->mac_address_blacklist, 0);
-    _notify(setting, PROP_MAC_ADDRESS_BLACKLIST);
+gboolean
+_nm_setting_wired_mac_blacklist_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+{
+    const gchar **mac_blacklist;
+
+    if (!_nm_setting_use_legacy_property(setting,
+                                         connection_dict,
+                                         NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST,
+                                         NM_SETTING_WIRED_MAC_ADDRESS_DENYLIST)) {
+        *out_is_modified = FALSE;
+        return TRUE;
+    }
+    mac_blacklist = g_variant_get_strv(value, NULL);
+
+    g_object_set(setting, NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST, mac_blacklist, NULL);
+    return TRUE;
+}
+
+gboolean
+_nm_setting_wired_mac_denylist_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+{
+    const gchar **mac_denylist;
+
+    if (!_nm_setting_use_legacy_property(setting,
+                                         connection_dict,
+                                         NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST,
+                                         NM_SETTING_WIRED_MAC_ADDRESS_DENYLIST)) {
+        *out_is_modified = FALSE;
+        return TRUE;
+    }
+    mac_denylist = g_variant_get_strv(value, NULL);
+
+    g_object_set(setting, NM_SETTING_WIRED_MAC_ADDRESS_DENYLIST, mac_denylist, NULL);
+    return TRUE;
+}
+
+GVariant *
+_nm_setting_wired_mac_denylist_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+{
+    const char *const *mac_denylist;
+    /* FIXME: `mac-address-denylist` is an alias of `mac-address-blacklist` property.
+     * Serializing the property to the clients would break them as they won't
+     * be able to drop it if they are not aware of the existance of
+     * `mac-address-denylist`. In order to give them time to adapt their code,
+     * NetworkManager is not serializing `mac-address-denylist` on DBus.
+     */
+    if (_nm_utils_is_manager_process) {
+        return NULL;
+    }
+
+    mac_denylist = nm_setting_wired_get_mac_address_denylist(NM_SETTING_WIRED(setting));
+
+    return g_variant_new_strv(mac_denylist, -1);
 }
 
 /**
@@ -815,20 +999,22 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         return FALSE;
     }
 
-    for (i = 0; i < priv->mac_address_blacklist->len; i++) {
-        const char *mac = nm_g_array_index(priv->mac_address_blacklist, const char *, i);
+    if (priv->mac_address_denylist.arr) {
+        for (i = 0; i < priv->mac_address_denylist.arr->len; i++) {
+            const char *mac = nm_g_array_index(priv->mac_address_denylist.arr, const char *, i);
 
-        if (!nm_utils_hwaddr_valid(mac, ETH_ALEN)) {
-            g_set_error(error,
-                        NM_CONNECTION_ERROR,
-                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                        _("'%s' is not a valid MAC address"),
-                        mac);
-            g_prefix_error(error,
-                           "%s.%s: ",
-                           NM_SETTING_WIRED_SETTING_NAME,
-                           NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST);
-            return FALSE;
+            if (!nm_utils_hwaddr_valid(mac, ETH_ALEN)) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("'%s' is not a valid MAC address"),
+                            mac);
+                g_prefix_error(error,
+                               "%s.%s: ",
+                               NM_SETTING_WIRED_SETTING_NAME,
+                               NM_SETTING_WIRED_MAC_ADDRESS_DENYLIST);
+                return FALSE;
+            }
         }
     }
 
@@ -993,14 +1179,6 @@ compare_fcn_cloned_mac_address(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil)
 /*****************************************************************************/
 
 static void
-clear_blacklist_item(char **item_p)
-{
-    g_free(*item_p);
-}
-
-/*****************************************************************************/
-
-static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
     NMSettingWired        *setting = NM_SETTING_WIRED(object);
@@ -1011,9 +1189,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     switch (prop_id) {
     case PROP_CLONED_MAC_ADDRESS:
         g_value_set_string(value, nm_setting_wired_get_cloned_mac_address(setting));
-        break;
-    case PROP_MAC_ADDRESS_BLACKLIST:
-        g_value_set_boxed(value, nm_g_array_data(priv->mac_address_blacklist));
         break;
     case PROP_S390_SUBCHANNELS:
         g_value_set_boxed(value, priv->s390_subchannels);
@@ -1037,26 +1212,12 @@ static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
     NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE(object);
-    const char *const     *blacklist;
-    const char            *mac;
 
     switch (prop_id) {
     case PROP_CLONED_MAC_ADDRESS:
         g_free(priv->cloned_mac_address);
         priv->cloned_mac_address =
             _nm_utils_hwaddr_canonical_or_invalid(g_value_get_string(value), ETH_ALEN);
-        break;
-    case PROP_MAC_ADDRESS_BLACKLIST:
-        blacklist = g_value_get_boxed(value);
-        g_array_set_size(priv->mac_address_blacklist, 0);
-        if (blacklist && *blacklist) {
-            guint i;
-
-            for (i = 0; blacklist[i]; i++) {
-                mac = _nm_utils_hwaddr_canonical_or_invalid(blacklist[i], ETH_ALEN);
-                g_array_append_val(priv->mac_address_blacklist, mac);
-            }
-        }
         break;
     case PROP_S390_SUBCHANNELS:
         if (priv->s390_subchannels)
@@ -1135,13 +1296,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
 
 static void
 nm_setting_wired_init(NMSettingWired *setting)
-{
-    NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE(setting);
-
-    /* We use GArray rather than GPtrArray so it will automatically be NULL-terminated */
-    priv->mac_address_blacklist = g_array_new(TRUE, FALSE, sizeof(char *));
-    g_array_set_clear_func(priv->mac_address_blacklist, (GDestroyNotify) clear_blacklist_item);
-}
+{}
 
 /**
  * nm_setting_wired_new:
@@ -1164,7 +1319,6 @@ finalize(GObject *object)
     _s390_options_clear(priv);
 
     g_free(priv->cloned_mac_address);
-    g_array_unref(priv->mac_address_blacklist);
     g_strfreev(priv->s390_subchannels);
 
     G_OBJECT_CLASS(nm_setting_wired_parent_class)->finalize(object);
@@ -1176,6 +1330,7 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
     GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
     GArray         *properties_override = _nm_sett_info_property_override_create_array();
+    guint           prop_idx;
 
     object_class->get_property = get_property;
     object_class->set_property = set_property;
@@ -1486,11 +1641,67 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * example: HWADDR_BLACKLIST="00:22:68:11:69:08 00:11:22:11:44:55"
      * ---end---
      */
-    _nm_setting_property_define_gprop_strv_oldstyle(properties_override,
-                                                    obj_properties,
-                                                    NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST,
-                                                    PROP_MAC_ADDRESS_BLACKLIST,
-                                                    NM_SETTING_PARAM_FUZZY_IGNORE);
+    prop_idx = _nm_setting_property_define_direct_strv(
+        properties_override,
+        obj_properties,
+        NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST,
+        PROP_MAC_ADDRESS_BLACKLIST,
+        NM_SETTING_PARAM_FUZZY_IGNORE,
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING_ARRAY,
+                                       .direct_type = NM_VALUE_TYPE_STRV,
+                                       .compare_fcn = _nm_setting_property_compare_fcn_direct,
+                                       .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_direct,
+                                       .from_dbus_fcn =
+                                           _nm_setting_wired_mac_blacklist_from_dbus, ),
+        NMSettingWiredPrivate,
+        mac_address_denylist,
+        .direct_set_strv_normalize_hwaddr = TRUE,
+        .direct_strv_not_null             = TRUE,
+        .direct_is_aliased_field          = TRUE,
+        .is_deprecated                    = TRUE);
+
+    /**
+     * NMSettingWired:mac-address-denylist:
+     *
+     * If specified, this connection will never apply to the Ethernet device
+     * whose permanent MAC address matches an address in the list.  Each MAC
+     * address is in the standard hex-digits-and-colons notation
+     * (00:11:22:33:44:55).
+     **/
+    /* ---keyfile---
+     * property: mac-address-denylist
+     * format: list of MACs (separated with semicolons)
+     * description: MAC address denylist.
+     * example: mac-address-denylist= 00:22:68:12:79:A6;00:22:68:12:79:78
+     * ---end---
+     */
+    /* ---ifcfg-rh---
+     * property: mac-address-denylist
+     * variable: HWADDR_BLACKLIST(+)
+     * description: It denies usage of the connection for any device whose address
+     *   is listed.
+     * example: HWADDR_BLACKLIST="00:22:68:11:69:08 00:11:22:11:44:55"
+     * ---end---
+     */
+    _nm_setting_property_define_direct_strv(
+        properties_override,
+        obj_properties,
+        NM_SETTING_WIRED_MAC_ADDRESS_DENYLIST,
+        PROP_MAC_ADDRESS_DENYLIST,
+        NM_SETTING_PARAM_FUZZY_IGNORE,
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING_ARRAY,
+                                       .direct_type   = NM_VALUE_TYPE_STRV,
+                                       .compare_fcn   = _nm_setting_property_compare_fcn_direct,
+                                       .to_dbus_fcn   = _nm_setting_wired_mac_denylist_to_dbus,
+                                       .from_dbus_fcn = _nm_setting_wired_mac_denylist_from_dbus, ),
+        NMSettingWiredPrivate,
+        mac_address_denylist,
+        .direct_set_strv_normalize_hwaddr = TRUE,
+        .direct_strv_not_null             = TRUE,
+        .direct_also_notify               = obj_properties[PROP_MAC_ADDRESS_BLACKLIST], );
+
+    nm_g_array_index(properties_override, NMSettInfoProperty, prop_idx).direct_also_notify =
+        obj_properties[PROP_MAC_ADDRESS_DENYLIST];
 
     /**
      * NMSettingWired:mtu:

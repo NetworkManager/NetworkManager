@@ -1212,7 +1212,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     auto
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -1332,7 +1332,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     automatyczne
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -1472,7 +1472,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     auto
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -1605,7 +1605,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     automatyczne
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -2224,7 +2224,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     auto
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -2344,7 +2344,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     automatyczne
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -2488,7 +2488,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     auto
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -2635,7 +2635,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     automatyczne
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -3290,7 +3290,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     auto
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -3437,7 +3437,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     automatyczne
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -3584,7 +3584,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     auto
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -3717,7 +3717,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     automatyczne
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -4060,7 +4060,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     auto
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -4207,7 +4207,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     automatyczne
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -4354,7 +4354,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     auto
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -4487,7 +4487,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     automatyczne
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -4850,7 +4850,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     auto
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -5013,7 +5013,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     automatyczne
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -5176,7 +5176,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     auto
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -5321,7 +5321,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     automatyczne
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -5716,7 +5716,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     auto
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -5879,7 +5879,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     automatyczne
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -6042,7 +6042,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     auto
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -6187,7 +6187,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     automatyczne
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -6514,12 +6514,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL:gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
 
 <<<
-size: 3558
+size: 3557
 location: src/tests/client/test-client.py:test_003()/124
 cmd: $NMCLI --terse con s ethernet
 lang: C
 returncode: 0
-stdout: 3416 bytes
+stdout: 3415 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -6558,7 +6558,7 @@ connection.wait-activation-delay:-1
 802-3-ethernet.mac-address:
 802-3-ethernet.cloned-mac-address:
 802-3-ethernet.generate-mac-address-mask:
-802-3-ethernet.mac-address-blacklist:
+802-3-ethernet.mac-address-denylist:
 802-3-ethernet.mtu:auto
 802-3-ethernet.s390-subchannels:
 802-3-ethernet.s390-nettype:
@@ -6661,12 +6661,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3568
+size: 3567
 location: src/tests/client/test-client.py:test_003()/125
 cmd: $NMCLI --terse con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3416 bytes
+stdout: 3415 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -6705,7 +6705,7 @@ connection.wait-activation-delay:-1
 802-3-ethernet.mac-address:
 802-3-ethernet.cloned-mac-address:
 802-3-ethernet.generate-mac-address-mask:
-802-3-ethernet.mac-address-blacklist:
+802-3-ethernet.mac-address-denylist:
 802-3-ethernet.mtu:auto
 802-3-ethernet.s390-subchannels:
 802-3-ethernet.s390-nettype:
@@ -6808,12 +6808,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3208
+size: 3207
 location: src/tests/client/test-client.py:test_003()/126
 cmd: $NMCLI --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 3026 bytes
+stdout: 3025 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -6852,7 +6852,7 @@ connection.wait-activation-delay:-1
 802-3-ethernet.mac-address:
 802-3-ethernet.cloned-mac-address:
 802-3-ethernet.generate-mac-address-mask:
-802-3-ethernet.mac-address-blacklist:
+802-3-ethernet.mac-address-denylist:
 802-3-ethernet.mtu:auto
 802-3-ethernet.s390-subchannels:
 802-3-ethernet.s390-nettype:
@@ -6941,12 +6941,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3218
+size: 3217
 location: src/tests/client/test-client.py:test_003()/127
 cmd: $NMCLI --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3026 bytes
+stdout: 3025 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -6985,7 +6985,7 @@ connection.wait-activation-delay:-1
 802-3-ethernet.mac-address:
 802-3-ethernet.cloned-mac-address:
 802-3-ethernet.generate-mac-address-mask:
-802-3-ethernet.mac-address-blacklist:
+802-3-ethernet.mac-address-denylist:
 802-3-ethernet.mtu:auto
 802-3-ethernet.s390-subchannels:
 802-3-ethernet.s390-nettype:
@@ -7280,12 +7280,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL:gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
 
 <<<
-size: 3570
+size: 3569
 location: src/tests/client/test-client.py:test_003()/134
 cmd: $NMCLI --terse --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 3416 bytes
+stdout: 3415 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -7324,7 +7324,7 @@ connection.wait-activation-delay:-1
 802-3-ethernet.mac-address:
 802-3-ethernet.cloned-mac-address:
 802-3-ethernet.generate-mac-address-mask:
-802-3-ethernet.mac-address-blacklist:
+802-3-ethernet.mac-address-denylist:
 802-3-ethernet.mtu:auto
 802-3-ethernet.s390-subchannels:
 802-3-ethernet.s390-nettype:
@@ -7427,12 +7427,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3580
+size: 3579
 location: src/tests/client/test-client.py:test_003()/135
 cmd: $NMCLI --terse --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3416 bytes
+stdout: 3415 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -7471,7 +7471,7 @@ connection.wait-activation-delay:-1
 802-3-ethernet.mac-address:
 802-3-ethernet.cloned-mac-address:
 802-3-ethernet.generate-mac-address-mask:
-802-3-ethernet.mac-address-blacklist:
+802-3-ethernet.mac-address-denylist:
 802-3-ethernet.mtu:auto
 802-3-ethernet.s390-subchannels:
 802-3-ethernet.s390-nettype:
@@ -7574,12 +7574,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3220
+size: 3219
 location: src/tests/client/test-client.py:test_003()/136
 cmd: $NMCLI --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 3026 bytes
+stdout: 3025 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -7618,7 +7618,7 @@ connection.wait-activation-delay:-1
 802-3-ethernet.mac-address:
 802-3-ethernet.cloned-mac-address:
 802-3-ethernet.generate-mac-address-mask:
-802-3-ethernet.mac-address-blacklist:
+802-3-ethernet.mac-address-denylist:
 802-3-ethernet.mtu:auto
 802-3-ethernet.s390-subchannels:
 802-3-ethernet.s390-nettype:
@@ -7707,12 +7707,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3230
+size: 3229
 location: src/tests/client/test-client.py:test_003()/137
 cmd: $NMCLI --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3026 bytes
+stdout: 3025 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -7751,7 +7751,7 @@ connection.wait-activation-delay:-1
 802-3-ethernet.mac-address:
 802-3-ethernet.cloned-mac-address:
 802-3-ethernet.generate-mac-address-mask:
-802-3-ethernet.mac-address-blacklist:
+802-3-ethernet.mac-address-denylist:
 802-3-ethernet.mtu:auto
 802-3-ethernet.s390-subchannels:
 802-3-ethernet.s390-nettype:
@@ -8050,18 +8050,18 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 4485
+size: 4483
 location: src/tests/client/test-client.py:test_003()/144
 cmd: $NMCLI --mode tabular con s ethernet
 lang: C
 returncode: 0
-stdout: 4336 bytes
+stdout: 4334 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
-802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                    -1 (default)             
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-denylist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+802-3-ethernet  --    0      --      no              --           --                  --                         --                    auto  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
@@ -8081,18 +8081,18 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 4535
+size: 4533
 location: src/tests/client/test-client.py:test_003()/145
 cmd: $NMCLI --mode tabular con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4376 bytes
+stdout: 4374 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
-802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                    -1 (default)             
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-denylist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+802-3-ethernet  --    0      --      nie             --           --                  --                         --                    automatyczne  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
@@ -8112,18 +8112,18 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 4023
+size: 4021
 location: src/tests/client/test-client.py:test_003()/146
 cmd: $NMCLI --mode tabular c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 3834 bytes
+stdout: 3832 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
-802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                    -1 (default)             
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-denylist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+802-3-ethernet  --    0      --      no              --           --                  --                         --                    auto  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
@@ -8139,18 +8139,18 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 4071
+size: 4069
 location: src/tests/client/test-client.py:test_003()/147
 cmd: $NMCLI --mode tabular c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3872 bytes
+stdout: 3870 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
-802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                    -1 (default)             
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-denylist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+802-3-ethernet  --    0      --      nie             --           --                  --                         --                    automatyczne  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
@@ -8302,18 +8302,18 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 4497
+size: 4495
 location: src/tests/client/test-client.py:test_003()/154
 cmd: $NMCLI --mode tabular --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 4336 bytes
+stdout: 4334 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
-802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                    -1 (default)             
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-denylist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+802-3-ethernet  --    0      --      no              --           --                  --                         --                    auto  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
@@ -8333,18 +8333,18 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 4547
+size: 4545
 location: src/tests/client/test-client.py:test_003()/155
 cmd: $NMCLI --mode tabular --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4376 bytes
+stdout: 4374 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
-802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                    -1 (default)             
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-denylist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+802-3-ethernet  --    0      --      nie             --           --                  --                         --                    automatyczne  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
@@ -8364,18 +8364,18 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 4035
+size: 4033
 location: src/tests/client/test-client.py:test_003()/156
 cmd: $NMCLI --mode tabular --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 3834 bytes
+stdout: 3832 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
-802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                    -1 (default)             
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-denylist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+802-3-ethernet  --    0      --      no              --           --                  --                         --                    auto  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
@@ -8391,18 +8391,18 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 4083
+size: 4081
 location: src/tests/client/test-client.py:test_003()/157
 cmd: $NMCLI --mode tabular --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3872 bytes
+stdout: 3870 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
-802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                    -1 (default)             
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-denylist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+802-3-ethernet  --    0      --      nie             --           --                  --                         --                    automatyczne  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
@@ -8570,12 +8570,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 7199
+size: 7196
 location: src/tests/client/test-client.py:test_003()/164
 cmd: $NMCLI --mode tabular --pretty con s ethernet
 lang: C
 returncode: 0
-stdout: 7041 bytes
+stdout: 7038 bytes
 >>>
 =========================================
   Connection profile details (ethernet)
@@ -8584,9 +8584,9 @@ name        id        uuid                                  stable-id  type     
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                    -1 (default)             
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-denylist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+802-3-ethernet  --    0      --      no              --           --                  --                         --                    auto  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -8617,12 +8617,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 7329
+size: 7326
 location: src/tests/client/test-client.py:test_003()/165
 cmd: $NMCLI --mode tabular --pretty con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 7161 bytes
+stdout: 7158 bytes
 >>>
 ===========================================
   Szczegóły profilu połączenia (ethernet)
@@ -8631,9 +8631,9 @@ name        id        uuid                                  stable-id  type     
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                    -1 (default)             
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-denylist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+802-3-ethernet  --    0      --      nie             --           --                  --                         --                    automatyczne  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -8664,12 +8664,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 6281
+size: 6278
 location: src/tests/client/test-client.py:test_003()/166
 cmd: $NMCLI --mode tabular --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 6083 bytes
+stdout: 6080 bytes
 >>>
 =========================================
   Connection profile details (ethernet)
@@ -8678,9 +8678,9 @@ name        id        uuid                                  stable-id  type     
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                    -1 (default)             
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-denylist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+802-3-ethernet  --    0      --      no              --           --                  --                         --                    auto  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -8703,12 +8703,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 6383
+size: 6380
 location: src/tests/client/test-client.py:test_003()/167
 cmd: $NMCLI --mode tabular --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6175 bytes
+stdout: 6172 bytes
 >>>
 ===========================================
   Szczegóły profilu połączenia (ethernet)
@@ -8717,9 +8717,9 @@ name        id        uuid                                  stable-id  type     
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                    -1 (default)             
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-denylist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+802-3-ethernet  --    0      --      nie             --           --                  --                         --                    automatyczne  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -8918,12 +8918,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 7211
+size: 7208
 location: src/tests/client/test-client.py:test_003()/174
 cmd: $NMCLI --mode tabular --pretty --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 7041 bytes
+stdout: 7038 bytes
 >>>
 =========================================
   Connection profile details (ethernet)
@@ -8932,9 +8932,9 @@ name        id        uuid                                  stable-id  type     
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                    -1 (default)             
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-denylist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+802-3-ethernet  --    0      --      no              --           --                  --                         --                    auto  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -8965,12 +8965,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 7341
+size: 7338
 location: src/tests/client/test-client.py:test_003()/175
 cmd: $NMCLI --mode tabular --pretty --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 7161 bytes
+stdout: 7158 bytes
 >>>
 ===========================================
   Szczegóły profilu połączenia (ethernet)
@@ -8979,9 +8979,9 @@ name        id        uuid                                  stable-id  type     
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                    -1 (default)             
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-denylist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+802-3-ethernet  --    0      --      nie             --           --                  --                         --                    automatyczne  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -9012,12 +9012,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 6293
+size: 6290
 location: src/tests/client/test-client.py:test_003()/176
 cmd: $NMCLI --mode tabular --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 6083 bytes
+stdout: 6080 bytes
 >>>
 =========================================
   Connection profile details (ethernet)
@@ -9026,9 +9026,9 @@ name        id        uuid                                  stable-id  type     
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                    -1 (default)             
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-denylist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+802-3-ethernet  --    0      --      no              --           --                  --                         --                    auto  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -9051,12 +9051,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 6395
+size: 6392
 location: src/tests/client/test-client.py:test_003()/177
 cmd: $NMCLI --mode tabular --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6175 bytes
+stdout: 6172 bytes
 >>>
 ===========================================
   Szczegóły profilu połączenia (ethernet)
@@ -9065,9 +9065,9 @@ name        id        uuid                                  stable-id  type     
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                    -1 (default)             
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-denylist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+802-3-ethernet  --    0      --      nie             --           --                  --                         --                    automatyczne  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -9822,7 +9822,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     auto
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -9969,7 +9969,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     automatyczne
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -10116,7 +10116,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     auto
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -10249,7 +10249,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     automatyczne
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -10796,7 +10796,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     auto
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -10943,7 +10943,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     automatyczne
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -11090,7 +11090,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     auto
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -11223,7 +11223,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     automatyczne
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -11812,7 +11812,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     auto
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -11975,7 +11975,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     automatyczne
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -12138,7 +12138,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     auto
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -12283,7 +12283,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     automatyczne
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -12904,7 +12904,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     auto
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -13067,7 +13067,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     automatyczne
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -13230,7 +13230,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     auto
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -13375,7 +13375,7 @@ connection.wait-activation-delay:       -1
 802-3-ethernet.mac-address:             --
 802-3-ethernet.cloned-mac-address:      --
 802-3-ethernet.generate-mac-address-mask:--
-802-3-ethernet.mac-address-blacklist:   --
+802-3-ethernet.mac-address-denylist:    --
 802-3-ethernet.mtu:                     automatyczne
 802-3-ethernet.s390-subchannels:        --
 802-3-ethernet.s390-nettype:            --
@@ -13910,12 +13910,12 @@ UUID:UUID-con-xx1-REPLACED-REPLACED-REPLA
 TYPE:802-3-ethernet
 
 <<<
-size: 3575
+size: 3574
 location: src/tests/client/test-client.py:test_003()/244
 cmd: $NMCLI --mode multiline --terse con s ethernet
 lang: C
 returncode: 0
-stdout: 3416 bytes
+stdout: 3415 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -13954,7 +13954,7 @@ connection.wait-activation-delay:-1
 802-3-ethernet.mac-address:
 802-3-ethernet.cloned-mac-address:
 802-3-ethernet.generate-mac-address-mask:
-802-3-ethernet.mac-address-blacklist:
+802-3-ethernet.mac-address-denylist:
 802-3-ethernet.mtu:auto
 802-3-ethernet.s390-subchannels:
 802-3-ethernet.s390-nettype:
@@ -14057,12 +14057,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3585
+size: 3584
 location: src/tests/client/test-client.py:test_003()/245
 cmd: $NMCLI --mode multiline --terse con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3416 bytes
+stdout: 3415 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -14101,7 +14101,7 @@ connection.wait-activation-delay:-1
 802-3-ethernet.mac-address:
 802-3-ethernet.cloned-mac-address:
 802-3-ethernet.generate-mac-address-mask:
-802-3-ethernet.mac-address-blacklist:
+802-3-ethernet.mac-address-denylist:
 802-3-ethernet.mtu:auto
 802-3-ethernet.s390-subchannels:
 802-3-ethernet.s390-nettype:
@@ -14204,12 +14204,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3225
+size: 3224
 location: src/tests/client/test-client.py:test_003()/246
 cmd: $NMCLI --mode multiline --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 3026 bytes
+stdout: 3025 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -14248,7 +14248,7 @@ connection.wait-activation-delay:-1
 802-3-ethernet.mac-address:
 802-3-ethernet.cloned-mac-address:
 802-3-ethernet.generate-mac-address-mask:
-802-3-ethernet.mac-address-blacklist:
+802-3-ethernet.mac-address-denylist:
 802-3-ethernet.mtu:auto
 802-3-ethernet.s390-subchannels:
 802-3-ethernet.s390-nettype:
@@ -14337,12 +14337,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3235
+size: 3234
 location: src/tests/client/test-client.py:test_003()/247
 cmd: $NMCLI --mode multiline --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3026 bytes
+stdout: 3025 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -14381,7 +14381,7 @@ connection.wait-activation-delay:-1
 802-3-ethernet.mac-address:
 802-3-ethernet.cloned-mac-address:
 802-3-ethernet.generate-mac-address-mask:
-802-3-ethernet.mac-address-blacklist:
+802-3-ethernet.mac-address-denylist:
 802-3-ethernet.mtu:auto
 802-3-ethernet.s390-subchannels:
 802-3-ethernet.s390-nettype:
@@ -14884,12 +14884,12 @@ UUID:UUID-con-xx1-REPLACED-REPLACED-REPLA
 TYPE:802-3-ethernet
 
 <<<
-size: 3587
+size: 3586
 location: src/tests/client/test-client.py:test_003()/254
 cmd: $NMCLI --mode multiline --terse --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 3416 bytes
+stdout: 3415 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -14928,7 +14928,7 @@ connection.wait-activation-delay:-1
 802-3-ethernet.mac-address:
 802-3-ethernet.cloned-mac-address:
 802-3-ethernet.generate-mac-address-mask:
-802-3-ethernet.mac-address-blacklist:
+802-3-ethernet.mac-address-denylist:
 802-3-ethernet.mtu:auto
 802-3-ethernet.s390-subchannels:
 802-3-ethernet.s390-nettype:
@@ -15031,12 +15031,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3597
+size: 3596
 location: src/tests/client/test-client.py:test_003()/255
 cmd: $NMCLI --mode multiline --terse --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3416 bytes
+stdout: 3415 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -15075,7 +15075,7 @@ connection.wait-activation-delay:-1
 802-3-ethernet.mac-address:
 802-3-ethernet.cloned-mac-address:
 802-3-ethernet.generate-mac-address-mask:
-802-3-ethernet.mac-address-blacklist:
+802-3-ethernet.mac-address-denylist:
 802-3-ethernet.mtu:auto
 802-3-ethernet.s390-subchannels:
 802-3-ethernet.s390-nettype:
@@ -15178,12 +15178,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3237
+size: 3236
 location: src/tests/client/test-client.py:test_003()/256
 cmd: $NMCLI --mode multiline --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 3026 bytes
+stdout: 3025 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -15222,7 +15222,7 @@ connection.wait-activation-delay:-1
 802-3-ethernet.mac-address:
 802-3-ethernet.cloned-mac-address:
 802-3-ethernet.generate-mac-address-mask:
-802-3-ethernet.mac-address-blacklist:
+802-3-ethernet.mac-address-denylist:
 802-3-ethernet.mtu:auto
 802-3-ethernet.s390-subchannels:
 802-3-ethernet.s390-nettype:
@@ -15311,12 +15311,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3247
+size: 3246
 location: src/tests/client/test-client.py:test_003()/257
 cmd: $NMCLI --mode multiline --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3026 bytes
+stdout: 3025 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -15355,7 +15355,7 @@ connection.wait-activation-delay:-1
 802-3-ethernet.mac-address:
 802-3-ethernet.cloned-mac-address:
 802-3-ethernet.generate-mac-address-mask:
-802-3-ethernet.mac-address-blacklist:
+802-3-ethernet.mac-address-denylist:
 802-3-ethernet.mtu:auto
 802-3-ethernet.s390-subchannels:
 802-3-ethernet.s390-nettype:

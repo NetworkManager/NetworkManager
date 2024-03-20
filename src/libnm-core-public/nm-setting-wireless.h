@@ -169,20 +169,20 @@ const char *nm_setting_wireless_get_cloned_mac_address(NMSettingWireless *settin
 NM_AVAILABLE_IN_1_4
 const char *nm_setting_wireless_get_generate_mac_address_mask(NMSettingWireless *setting);
 
-_NM_DEPRECATED_INCLUSIVE_LANGUAGE_1_48
+NM_DEPRECATED_IN_1_48
 const char *const *nm_setting_wireless_get_mac_address_blacklist(NMSettingWireless *setting);
-_NM_DEPRECATED_INCLUSIVE_LANGUAGE_1_48
+NM_DEPRECATED_IN_1_48
 guint32 nm_setting_wireless_get_num_mac_blacklist_items(NMSettingWireless *setting);
-_NM_DEPRECATED_INCLUSIVE_LANGUAGE_1_48
+NM_DEPRECATED_IN_1_48
 const char *nm_setting_wireless_get_mac_blacklist_item(NMSettingWireless *setting, guint32 idx);
-_NM_DEPRECATED_INCLUSIVE_LANGUAGE_1_48
+NM_DEPRECATED_IN_1_48
 gboolean nm_setting_wireless_add_mac_blacklist_item(NMSettingWireless *setting, const char *mac);
-_NM_DEPRECATED_INCLUSIVE_LANGUAGE_1_48
+NM_DEPRECATED_IN_1_48
 void nm_setting_wireless_remove_mac_blacklist_item(NMSettingWireless *setting, guint32 idx);
-_NM_DEPRECATED_INCLUSIVE_LANGUAGE_1_48
-gboolean nm_setting_wireless_remove_mac_blacklist_item_by_value(
-    NMSettingWireless                                 *setting,
-    _NM_DEPRECATED_INCLUSIVE_LANGUAGE_1_48 const char *mac);
+NM_DEPRECATED_IN_1_48
+gboolean nm_setting_wireless_remove_mac_blacklist_item_by_value(NMSettingWireless *setting,
+                                                                const char        *mac);
+NM_DEPRECATED_IN_1_48
 void nm_setting_wireless_clear_mac_blacklist_items(NMSettingWireless *setting);
 
 const char *const *nm_setting_wireless_get_mac_address_denylist(NMSettingWireless *setting);
