@@ -17,3 +17,4 @@ before opening the merge request. In particular, check that:
  - [ ] the source is properly formatted
  - [ ] any relevant documentation is up to date
  - [ ] you have added unit tests if applicable
+ - [ ] the NEWS file is updated when the change deserves to be mentioned, for example for new features, behavior changes, API deprecations, etc.
