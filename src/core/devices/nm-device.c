@@ -2360,10 +2360,15 @@ _prop_get_ipv6_addr_gen_mode(NMDevice *self)
 }
 
 static const char *
-_prop_get_x_cloned_mac_address(NMDevice *self, NMConnection *connection, gboolean is_wifi)
+_prop_get_x_cloned_mac_address(NMDevice     *self,
+                               NMConnection *connection,
+                               gboolean      is_wifi,
+                               gboolean     *out_is_default)
 {
     NMSetting  *setting;
     const char *addr = NULL;
+
+    NM_SET_OUT(out_is_default, FALSE);
 
     setting = nm_connection_get_setting(connection,
                                         is_wifi ? NM_TYPE_SETTING_WIRELESS : NM_TYPE_SETTING_WIRED);
@@ -2395,11 +2400,15 @@ _prop_get_x_cloned_mac_address(NMDevice *self, NMConnection *connection, gboolea
                     NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
                     NM_SETTING_MAC_RANDOMIZATION_ALWAYS,
                     NM_SETTING_MAC_RANDOMIZATION_DEFAULT);
-                if (v == NM_SETTING_MAC_RANDOMIZATION_ALWAYS)
+                if (v == NM_SETTING_MAC_RANDOMIZATION_ALWAYS) {
                     addr = NM_CLONED_MAC_RANDOM;
+                    NM_SET_OUT(out_is_default, TRUE);
+                }
             }
-        } else if (NM_CLONED_MAC_IS_SPECIAL(a, is_wifi) || nm_utils_hwaddr_valid(a, ETH_ALEN))
+        } else if (NM_CLONED_MAC_IS_SPECIAL(a, is_wifi) || nm_utils_hwaddr_valid(a, ETH_ALEN)) {
             addr = a;
+            NM_SET_OUT(out_is_default, TRUE);
+        }
     }
 
     return addr;
@@ -17504,6 +17513,7 @@ _hw_addr_get_cloned(NMDevice     *self,
                     char        **hwaddr,
                     HwAddrType   *hwaddr_type,
                     const char  **hwaddr_detail,
+                    gboolean     *out_is_default,
                     GError      **error)
 {
     NMDevicePrivate *priv;
@@ -17522,7 +17532,7 @@ _hw_addr_get_cloned(NMDevice     *self,
     if (!connection)
         g_return_val_if_reached(FALSE);
 
-    addr_setting = _prop_get_x_cloned_mac_address(self, connection, is_wifi);
+    addr_setting = _prop_get_x_cloned_mac_address(self, connection, is_wifi, out_is_default);
 
     addr = addr_setting;
 
@@ -17658,7 +17668,7 @@ nm_device_hw_addr_get_cloned(NMDevice     *self,
                              gboolean     *preserve,
                              GError      **error)
 {
-    if (!_hw_addr_get_cloned(self, connection, is_wifi, preserve, hwaddr, NULL, NULL, error))
+    if (!_hw_addr_get_cloned(self, connection, is_wifi, preserve, hwaddr, NULL, NULL, NULL, error))
         return FALSE;
 
     return TRUE;
@@ -17668,11 +17678,13 @@ gboolean
 nm_device_hw_addr_set_cloned(NMDevice *self, NMConnection *connection, gboolean is_wifi)
 {
     NMDevicePrivate      *priv;
-    gboolean              preserve = FALSE;
-    gs_free char         *hwaddr   = NULL;
-    const char           *detail   = NULL;
-    HwAddrType            type     = HW_ADDR_TYPE_UNSET;
-    gs_free_error GError *error    = NULL;
+    gboolean              preserve   = FALSE;
+    gs_free char         *hwaddr     = NULL;
+    const char           *detail     = NULL;
+    HwAddrType            type       = HW_ADDR_TYPE_UNSET;
+    gs_free_error GError *error      = NULL;
+    gboolean              is_default = FALSE;
+    gboolean              ret;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
     priv = NM_DEVICE_GET_PRIVATE(self);
@@ -17684,6 +17696,7 @@ nm_device_hw_addr_set_cloned(NMDevice *self, NMConnection *connection, gboolean 
                              &hwaddr,
                              &type,
                              &detail,
+                             &is_default,
                              &error)) {
         _LOGW(LOGD_DEVICE, "set-hw-addr: %s", error->message);
         return FALSE;
@@ -17693,8 +17706,19 @@ nm_device_hw_addr_set_cloned(NMDevice *self, NMConnection *connection, gboolean 
         return nm_device_hw_addr_reset(self, detail);
 
     if (hwaddr) {
+        ret = _hw_addr_set(self, hwaddr, "set-cloned", detail);
+        if (!ret && is_wifi && is_default) {
+            /* Some WiFi drivers don't support changing the MAC address. If the cloned
+             * MAC is via a global default (typically, via a distro-wide configuration
+             * snippet), we don't want to fail the activation; just log a big warning.
+             */
+            _LOGW(LOGD_DEVICE,
+                  "ignore error changing the MAC address to global config value, due to "
+                  "possibly broken WiFi driver");
+            return TRUE;
+        }
         priv->hw_addr_type = type;
-        return _hw_addr_set(self, hwaddr, "set-cloned", detail);
+        return ret;
     }
 
     return TRUE;
