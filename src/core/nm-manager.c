@@ -4438,9 +4438,24 @@ platform_query_devices(NMManager *self)
     links        = nm_platform_link_get_all(priv->platform);
     if (!links)
         return;
+
     for (i = 0; i < links->len; i++) {
-        const NMPlatformLink          *link = NMP_OBJECT_CAST_LINK(links->pdata[i]);
+        const NMPlatformLink          *elem = NMP_OBJECT_CAST_LINK(links->pdata[i]);
+        const NMPlatformLink          *link;
         const NMConfigDeviceStateData *dev_state;
+
+        /*
+         * @links is an immutable snapshot of the platform links captured before
+         * the loop was started. It's possible that in the meantime, while
+         * processing netlink events in platform_link_added(), a link was
+         * renamed.  If that happens, we have 2 different views of the same
+         * ifindex: the one from @links and the one from platform. This can
+         * cause race conditions; make sure to use the latest known version of
+         * the link.
+         */
+        link = nm_platform_link_get(priv->platform, elem->ifindex);
+        if (!link)
+            continue;
 
         dev_state = nm_config_device_state_get(priv->config, link->ifindex);
         platform_link_added(self,
