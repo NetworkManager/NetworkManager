@@ -58,12 +58,12 @@ location: src/tests/client/test-client.py:test_004()/7
 cmd: $NMCLI connection mod con-xx1 ipv4.addresses 192.168.77.5/24 ipv4.routes '2.3.4.5/32 192.168.77.1' ipv6.addresses 1:2:3:4::6/64 ipv6.routes 1:2:3:4:5:6::5/128
 lang: C
 returncode: 0
-size: 5494
+size: 5578
 location: src/tests/client/test-client.py:test_004()/8
 cmd: $NMCLI con s con-xx1
 lang: C
 returncode: 0
-stdout: 5363 bytes
+stdout: 5447 bytes
 >>>
 connection.id:                          con-xx1
 connection.uuid:                        UUID-con-xx1-REPLACED-REPLACED-REPLA
@@ -162,6 +162,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -180,12 +182,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 5529
+size: 5613
 location: src/tests/client/test-client.py:test_004()/9
 cmd: $NMCLI con s con-xx1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5388 bytes
+stdout: 5472 bytes
 >>>
 connection.id:                          con-xx1
 connection.uuid:                        UUID-con-xx1-REPLACED-REPLACED-REPLA
@@ -284,6 +286,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -338,12 +342,12 @@ con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  vpn       --
 con-xx1    UUID-con-xx1-REPLACED-REPLACED-REPLA  wifi      --     
 
 <<<
-size: 4919
+size: 5003
 location: src/tests/client/test-client.py:test_004()/13
 cmd: $NMCLI con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4785 bytes
+stdout: 4869 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -425,6 +429,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -449,12 +455,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 4946
+size: 5030
 location: src/tests/client/test-client.py:test_004()/14
 cmd: $NMCLI con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4802 bytes
+stdout: 4886 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -536,6 +542,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -632,12 +640,12 @@ con-xx1    UUID-con-xx1-REPLACED-REPLACED-REPLA  wifi      wlan0
 con-1      5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  --     
 
 <<<
-size: 6047
+size: 6131
 location: src/tests/client/test-client.py:test_004()/21
 cmd: $NMCLI con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5913 bytes
+stdout: 5997 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -719,6 +727,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -764,12 +774,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 6080
+size: 6164
 location: src/tests/client/test-client.py:test_004()/22
 cmd: $NMCLI con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5936 bytes
+stdout: 6020 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -851,6 +861,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -1004,12 +1016,12 @@ con-xx1    UUID-con-xx1-REPLACED-REPLACED-REPLA  wifi      0          never     
 con-1      5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/1  no      --      --         --                                                  --     /etc/NetworkManager/system-connections/con-1     
 
 <<<
-size: 6053
+size: 6137
 location: src/tests/client/test-client.py:test_004()/27
 cmd: $NMCLI con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5919 bytes
+stdout: 6003 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -1091,6 +1103,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -1136,12 +1150,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 6090
+size: 6174
 location: src/tests/client/test-client.py:test_004()/28
 cmd: $NMCLI con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5946 bytes
+stdout: 6030 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -1223,6 +1237,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -1268,12 +1284,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 6053
+size: 6137
 location: src/tests/client/test-client.py:test_004()/29
 cmd: $NMCLI con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5919 bytes
+stdout: 6003 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -1355,6 +1371,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -1400,12 +1418,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 6090
+size: 6174
 location: src/tests/client/test-client.py:test_004()/30
 cmd: $NMCLI con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5946 bytes
+stdout: 6030 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -1487,6 +1505,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -1532,12 +1552,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4926
+size: 5010
 location: src/tests/client/test-client.py:test_004()/31
 cmd: $NMCLI -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4785 bytes
+stdout: 4869 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -1619,6 +1639,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -1643,12 +1665,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 4953
+size: 5037
 location: src/tests/client/test-client.py:test_004()/32
 cmd: $NMCLI -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4802 bytes
+stdout: 4886 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -1730,6 +1752,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -4364,12 +4388,12 @@ connection.type:                        802-11-wireless
 connection.interface-name:              --
 
 <<<
-size: 6065
+size: 6149
 location: src/tests/client/test-client.py:test_004()/77
 cmd: $NMCLI --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5919 bytes
+stdout: 6003 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -4451,6 +4475,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -4496,12 +4522,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 6102
+size: 6186
 location: src/tests/client/test-client.py:test_004()/78
 cmd: $NMCLI --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5946 bytes
+stdout: 6030 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -4583,6 +4609,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -4628,12 +4656,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 6065
+size: 6149
 location: src/tests/client/test-client.py:test_004()/79
 cmd: $NMCLI --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5919 bytes
+stdout: 6003 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -4715,6 +4743,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -4760,12 +4790,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 6102
+size: 6186
 location: src/tests/client/test-client.py:test_004()/80
 cmd: $NMCLI --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5946 bytes
+stdout: 6030 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -4847,6 +4877,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -4892,12 +4924,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4938
+size: 5022
 location: src/tests/client/test-client.py:test_004()/81
 cmd: $NMCLI --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4785 bytes
+stdout: 4869 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -4979,6 +5011,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -5003,12 +5037,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 4965
+size: 5049
 location: src/tests/client/test-client.py:test_004()/82
 cmd: $NMCLI --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4802 bytes
+stdout: 4886 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -5090,6 +5124,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -7724,12 +7760,12 @@ connection.type:                        802-11-wireless
 connection.interface-name:              --
 
 <<<
-size: 7074
+size: 7158
 location: src/tests/client/test-client.py:test_004()/127
 cmd: $NMCLI --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6930 bytes
+stdout: 7014 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -7816,6 +7852,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -7869,12 +7907,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 7124
+size: 7208
 location: src/tests/client/test-client.py:test_004()/128
 cmd: $NMCLI --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6970 bytes
+stdout: 7054 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -7961,6 +7999,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -8014,12 +8054,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 7074
+size: 7158
 location: src/tests/client/test-client.py:test_004()/129
 cmd: $NMCLI --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6930 bytes
+stdout: 7014 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -8106,6 +8146,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -8159,12 +8201,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 7124
+size: 7208
 location: src/tests/client/test-client.py:test_004()/130
 cmd: $NMCLI --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6970 bytes
+stdout: 7054 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -8251,6 +8293,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -8304,12 +8348,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5555
+size: 5639
 location: src/tests/client/test-client.py:test_004()/131
 cmd: $NMCLI --pretty -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5404 bytes
+stdout: 5488 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -8396,6 +8440,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -8423,12 +8469,12 @@ proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 
 <<<
-size: 5587
+size: 5671
 location: src/tests/client/test-client.py:test_004()/132
 cmd: $NMCLI --pretty -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5426 bytes
+stdout: 5510 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -8515,6 +8561,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -11756,12 +11804,12 @@ connection.interface-name:              --
 -------------------------------------------------------------------------------
 
 <<<
-size: 7086
+size: 7170
 location: src/tests/client/test-client.py:test_004()/177
 cmd: $NMCLI --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6930 bytes
+stdout: 7014 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -11848,6 +11896,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -11901,12 +11951,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 7136
+size: 7220
 location: src/tests/client/test-client.py:test_004()/178
 cmd: $NMCLI --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6970 bytes
+stdout: 7054 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -11993,6 +12043,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -12046,12 +12098,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 7086
+size: 7170
 location: src/tests/client/test-client.py:test_004()/179
 cmd: $NMCLI --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6930 bytes
+stdout: 7014 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -12138,6 +12190,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -12191,12 +12245,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 7136
+size: 7220
 location: src/tests/client/test-client.py:test_004()/180
 cmd: $NMCLI --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6970 bytes
+stdout: 7054 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -12283,6 +12337,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -12336,12 +12392,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5567
+size: 5651
 location: src/tests/client/test-client.py:test_004()/181
 cmd: $NMCLI --pretty --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5404 bytes
+stdout: 5488 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -12428,6 +12484,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -12455,12 +12513,12 @@ proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 
 <<<
-size: 5599
+size: 5683
 location: src/tests/client/test-client.py:test_004()/182
 cmd: $NMCLI --pretty --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5426 bytes
+stdout: 5510 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -12547,6 +12605,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -15788,12 +15848,12 @@ connection.interface-name:              --
 -------------------------------------------------------------------------------
 
 <<<
-size: 3047
+size: 3105
 location: src/tests/client/test-client.py:test_004()/227
 cmd: $NMCLI --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2904 bytes
+stdout: 2962 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -15875,6 +15935,8 @@ ipv6.never-default:no
 ipv6.may-fail:yes
 ipv6.required-timeout:-1
 ipv6.ip6-privacy:-1
+ipv6.temp-valid-lifetime:0
+ipv6.temp-preferred-lifetime:0
 ipv6.addr-gen-mode:default
 ipv6.ra-timeout:0
 ipv6.mtu:auto
@@ -15920,12 +15982,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 3057
+size: 3115
 location: src/tests/client/test-client.py:test_004()/228
 cmd: $NMCLI --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2904 bytes
+stdout: 2962 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -16007,6 +16069,8 @@ ipv6.never-default:no
 ipv6.may-fail:yes
 ipv6.required-timeout:-1
 ipv6.ip6-privacy:-1
+ipv6.temp-valid-lifetime:0
+ipv6.temp-preferred-lifetime:0
 ipv6.addr-gen-mode:default
 ipv6.ra-timeout:0
 ipv6.mtu:auto
@@ -16052,12 +16116,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 3047
+size: 3105
 location: src/tests/client/test-client.py:test_004()/229
 cmd: $NMCLI --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2904 bytes
+stdout: 2962 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -16139,6 +16203,8 @@ ipv6.never-default:no
 ipv6.may-fail:yes
 ipv6.required-timeout:-1
 ipv6.ip6-privacy:-1
+ipv6.temp-valid-lifetime:0
+ipv6.temp-preferred-lifetime:0
 ipv6.addr-gen-mode:default
 ipv6.ra-timeout:0
 ipv6.mtu:auto
@@ -16184,12 +16250,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 3057
+size: 3115
 location: src/tests/client/test-client.py:test_004()/230
 cmd: $NMCLI --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2904 bytes
+stdout: 2962 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -16271,6 +16337,8 @@ ipv6.never-default:no
 ipv6.may-fail:yes
 ipv6.required-timeout:-1
 ipv6.ip6-privacy:-1
+ipv6.temp-valid-lifetime:0
+ipv6.temp-preferred-lifetime:0
 ipv6.addr-gen-mode:default
 ipv6.ra-timeout:0
 ipv6.mtu:auto
@@ -16316,12 +16384,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2472
+size: 2530
 location: src/tests/client/test-client.py:test_004()/231
 cmd: $NMCLI --terse -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2322 bytes
+stdout: 2380 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -16403,6 +16471,8 @@ ipv6.never-default:no
 ipv6.may-fail:yes
 ipv6.required-timeout:-1
 ipv6.ip6-privacy:-1
+ipv6.temp-valid-lifetime:0
+ipv6.temp-preferred-lifetime:0
 ipv6.addr-gen-mode:default
 ipv6.ra-timeout:0
 ipv6.mtu:auto
@@ -16427,12 +16497,12 @@ proxy.pac-url:
 proxy.pac-script:
 
 <<<
-size: 2482
+size: 2540
 location: src/tests/client/test-client.py:test_004()/232
 cmd: $NMCLI --terse -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2322 bytes
+stdout: 2380 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -16514,6 +16584,8 @@ ipv6.never-default:no
 ipv6.may-fail:yes
 ipv6.required-timeout:-1
 ipv6.ip6-privacy:-1
+ipv6.temp-valid-lifetime:0
+ipv6.temp-preferred-lifetime:0
 ipv6.addr-gen-mode:default
 ipv6.ra-timeout:0
 ipv6.mtu:auto
@@ -19118,12 +19190,12 @@ connection.type:802-11-wireless
 connection.interface-name:
 
 <<<
-size: 3059
+size: 3117
 location: src/tests/client/test-client.py:test_004()/277
 cmd: $NMCLI --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2904 bytes
+stdout: 2962 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -19205,6 +19277,8 @@ ipv6.never-default:no
 ipv6.may-fail:yes
 ipv6.required-timeout:-1
 ipv6.ip6-privacy:-1
+ipv6.temp-valid-lifetime:0
+ipv6.temp-preferred-lifetime:0
 ipv6.addr-gen-mode:default
 ipv6.ra-timeout:0
 ipv6.mtu:auto
@@ -19250,12 +19324,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 3069
+size: 3127
 location: src/tests/client/test-client.py:test_004()/278
 cmd: $NMCLI --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2904 bytes
+stdout: 2962 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -19337,6 +19411,8 @@ ipv6.never-default:no
 ipv6.may-fail:yes
 ipv6.required-timeout:-1
 ipv6.ip6-privacy:-1
+ipv6.temp-valid-lifetime:0
+ipv6.temp-preferred-lifetime:0
 ipv6.addr-gen-mode:default
 ipv6.ra-timeout:0
 ipv6.mtu:auto
@@ -19382,12 +19458,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 3059
+size: 3117
 location: src/tests/client/test-client.py:test_004()/279
 cmd: $NMCLI --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2904 bytes
+stdout: 2962 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -19469,6 +19545,8 @@ ipv6.never-default:no
 ipv6.may-fail:yes
 ipv6.required-timeout:-1
 ipv6.ip6-privacy:-1
+ipv6.temp-valid-lifetime:0
+ipv6.temp-preferred-lifetime:0
 ipv6.addr-gen-mode:default
 ipv6.ra-timeout:0
 ipv6.mtu:auto
@@ -19514,12 +19592,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 3069
+size: 3127
 location: src/tests/client/test-client.py:test_004()/280
 cmd: $NMCLI --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2904 bytes
+stdout: 2962 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -19601,6 +19679,8 @@ ipv6.never-default:no
 ipv6.may-fail:yes
 ipv6.required-timeout:-1
 ipv6.ip6-privacy:-1
+ipv6.temp-valid-lifetime:0
+ipv6.temp-preferred-lifetime:0
 ipv6.addr-gen-mode:default
 ipv6.ra-timeout:0
 ipv6.mtu:auto
@@ -19646,12 +19726,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2484
+size: 2542
 location: src/tests/client/test-client.py:test_004()/281
 cmd: $NMCLI --terse --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2322 bytes
+stdout: 2380 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -19733,6 +19813,8 @@ ipv6.never-default:no
 ipv6.may-fail:yes
 ipv6.required-timeout:-1
 ipv6.ip6-privacy:-1
+ipv6.temp-valid-lifetime:0
+ipv6.temp-preferred-lifetime:0
 ipv6.addr-gen-mode:default
 ipv6.ra-timeout:0
 ipv6.mtu:auto
@@ -19757,12 +19839,12 @@ proxy.pac-url:
 proxy.pac-script:
 
 <<<
-size: 2494
+size: 2552
 location: src/tests/client/test-client.py:test_004()/282
 cmd: $NMCLI --terse --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2322 bytes
+stdout: 2380 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -19844,6 +19926,8 @@ ipv6.never-default:no
 ipv6.may-fail:yes
 ipv6.required-timeout:-1
 ipv6.ip6-privacy:-1
+ipv6.temp-valid-lifetime:0
+ipv6.temp-preferred-lifetime:0
 ipv6.addr-gen-mode:default
 ipv6.ra-timeout:0
 ipv6.mtu:auto
@@ -22448,12 +22532,12 @@ connection.type:802-11-wireless
 connection.interface-name:
 
 <<<
-size: 3974
+size: 4066
 location: src/tests/client/test-client.py:test_004()/327
 cmd: $NMCLI --mode tabular con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3824 bytes
+stdout: 3916 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -22461,8 +22545,8 @@ connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (unknown)  default        0 (default)  auto  --            --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (unknown)  0                    0                        default        0 (default)  auto  --            --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
@@ -22477,12 +22561,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4013
+size: 4105
 location: src/tests/client/test-client.py:test_004()/328
 cmd: $NMCLI --mode tabular con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3853 bytes
+stdout: 3945 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -22490,8 +22574,8 @@ connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (unknown)  default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (unknown)  0                    0                        default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
@@ -22506,12 +22590,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3974
+size: 4066
 location: src/tests/client/test-client.py:test_004()/329
 cmd: $NMCLI --mode tabular con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3824 bytes
+stdout: 3916 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -22519,8 +22603,8 @@ connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (unknown)  default        0 (default)  auto  --            --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (unknown)  0                    0                        default        0 (default)  auto  --            --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
@@ -22535,12 +22619,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4013
+size: 4105
 location: src/tests/client/test-client.py:test_004()/330
 cmd: $NMCLI --mode tabular con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3853 bytes
+stdout: 3945 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -22548,8 +22632,8 @@ connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (unknown)  default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (unknown)  0                    0                        default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
@@ -22564,12 +22648,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3222
+size: 3314
 location: src/tests/client/test-client.py:test_004()/331
 cmd: $NMCLI --mode tabular -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3065 bytes
+stdout: 3157 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -22577,8 +22661,8 @@ connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (unknown)  default        0 (default)  auto  --            --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (unknown)  0                    0                        default        0 (default)  auto  --            --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
@@ -22588,12 +22672,12 @@ proxy  none    no            --       --
 
 
 <<<
-size: 3250
+size: 3342
 location: src/tests/client/test-client.py:test_004()/332
 cmd: $NMCLI --mode tabular -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3083 bytes
+stdout: 3175 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -22601,8 +22685,8 @@ connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (unknown)  default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (unknown)  0                    0                        default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
@@ -24102,12 +24186,12 @@ interface-name
 
 
 <<<
-size: 3986
+size: 4078
 location: src/tests/client/test-client.py:test_004()/377
 cmd: $NMCLI --mode tabular --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3824 bytes
+stdout: 3916 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -24115,8 +24199,8 @@ connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (unknown)  default        0 (default)  auto  --            --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (unknown)  0                    0                        default        0 (default)  auto  --            --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
@@ -24131,12 +24215,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4025
+size: 4117
 location: src/tests/client/test-client.py:test_004()/378
 cmd: $NMCLI --mode tabular --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3853 bytes
+stdout: 3945 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -24144,8 +24228,8 @@ connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (unknown)  default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (unknown)  0                    0                        default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
@@ -24160,12 +24244,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3986
+size: 4078
 location: src/tests/client/test-client.py:test_004()/379
 cmd: $NMCLI --mode tabular --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3824 bytes
+stdout: 3916 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -24173,8 +24257,8 @@ connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (unknown)  default        0 (default)  auto  --            --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (unknown)  0                    0                        default        0 (default)  auto  --            --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
@@ -24189,12 +24273,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4025
+size: 4117
 location: src/tests/client/test-client.py:test_004()/380
 cmd: $NMCLI --mode tabular --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3853 bytes
+stdout: 3945 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -24202,8 +24286,8 @@ connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (unknown)  default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (unknown)  0                    0                        default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
@@ -24218,12 +24302,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3234
+size: 3326
 location: src/tests/client/test-client.py:test_004()/381
 cmd: $NMCLI --mode tabular --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3065 bytes
+stdout: 3157 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -24231,8 +24315,8 @@ connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (unknown)  default        0 (default)  auto  --            --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (unknown)  0                    0                        default        0 (default)  auto  --            --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
@@ -24242,12 +24326,12 @@ proxy  none    no            --       --
 
 
 <<<
-size: 3262
+size: 3354
 location: src/tests/client/test-client.py:test_004()/382
 cmd: $NMCLI --mode tabular --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3083 bytes
+stdout: 3175 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -24255,8 +24339,8 @@ connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (unknown)  default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (unknown)  0                    0                        default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
@@ -25756,12 +25840,12 @@ interface-name
 
 
 <<<
-size: 6231
+size: 6369
 location: src/tests/client/test-client.py:test_004()/427
 cmd: $NMCLI --mode tabular --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6072 bytes
+stdout: 6210 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
@@ -25774,9 +25858,9 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (unknown)  default        0 (default)  auto  --            --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (unknown)  0                    0                        default        0 (default)  auto  --            --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -25798,12 +25882,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 6317
+size: 6455
 location: src/tests/client/test-client.py:test_004()/428
 cmd: $NMCLI --mode tabular --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6148 bytes
+stdout: 6286 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
@@ -25816,9 +25900,9 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (unknown)  default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (unknown)  0                    0                        default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -25840,12 +25924,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 6231
+size: 6369
 location: src/tests/client/test-client.py:test_004()/429
 cmd: $NMCLI --mode tabular --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6072 bytes
+stdout: 6210 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
@@ -25858,9 +25942,9 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (unknown)  default        0 (default)  auto  --            --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (unknown)  0                    0                        default        0 (default)  auto  --            --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -25882,12 +25966,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 6317
+size: 6455
 location: src/tests/client/test-client.py:test_004()/430
 cmd: $NMCLI --mode tabular --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6148 bytes
+stdout: 6286 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
@@ -25900,9 +25984,9 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (unknown)  default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (unknown)  0                    0                        default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -25924,12 +26008,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4893
+size: 5031
 location: src/tests/client/test-client.py:test_004()/431
 cmd: $NMCLI --mode tabular --pretty -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4727 bytes
+stdout: 4865 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
@@ -25942,9 +26026,9 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (unknown)  default        0 (default)  auto  --            --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (unknown)  0                    0                        default        0 (default)  auto  --            --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -25956,12 +26040,12 @@ proxy  none    no            --       --
 
 
 <<<
-size: 4940
+size: 5078
 location: src/tests/client/test-client.py:test_004()/432
 cmd: $NMCLI --mode tabular --pretty -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4764 bytes
+stdout: 4902 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
@@ -25974,9 +26058,9 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (unknown)  default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (unknown)  0                    0                        default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -28064,12 +28148,12 @@ interface-name
 
 
 <<<
-size: 6243
+size: 6381
 location: src/tests/client/test-client.py:test_004()/477
 cmd: $NMCLI --mode tabular --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6072 bytes
+stdout: 6210 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
@@ -28082,9 +28166,9 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (unknown)  default        0 (default)  auto  --            --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (unknown)  0                    0                        default        0 (default)  auto  --            --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -28106,12 +28190,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 6329
+size: 6467
 location: src/tests/client/test-client.py:test_004()/478
 cmd: $NMCLI --mode tabular --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6148 bytes
+stdout: 6286 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
@@ -28124,9 +28208,9 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (unknown)  default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (unknown)  0                    0                        default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -28148,12 +28232,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 6243
+size: 6381
 location: src/tests/client/test-client.py:test_004()/479
 cmd: $NMCLI --mode tabular --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6072 bytes
+stdout: 6210 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
@@ -28166,9 +28250,9 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (unknown)  default        0 (default)  auto  --            --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (unknown)  0                    0                        default        0 (default)  auto  --            --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -28190,12 +28274,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 6329
+size: 6467
 location: src/tests/client/test-client.py:test_004()/480
 cmd: $NMCLI --mode tabular --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6148 bytes
+stdout: 6286 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
@@ -28208,9 +28292,9 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (unknown)  default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (unknown)  0                    0                        default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -28232,12 +28316,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4905
+size: 5043
 location: src/tests/client/test-client.py:test_004()/481
 cmd: $NMCLI --mode tabular --pretty --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4727 bytes
+stdout: 4865 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
@@ -28250,9 +28334,9 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (unknown)  default        0 (default)  auto  --            --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (unknown)  0                    0                        default        0 (default)  auto  --            --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -28264,12 +28348,12 @@ proxy  none    no            --       --
 
 
 <<<
-size: 4952
+size: 5090
 location: src/tests/client/test-client.py:test_004()/482
 cmd: $NMCLI --mode tabular --pretty --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4764 bytes
+stdout: 4902 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
@@ -28282,9 +28366,9 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (unknown)  default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (unknown)  0                    0                        default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
 
 name  service-type                            user-name  data                                   secrets   persistent  timeout 
 -------------------------------------------------------------------------------------------------------------------------------
@@ -30372,94 +30456,94 @@ interface-name
 
 
 <<<
-size: 855
+size: 859
 location: src/tests/client/test-client.py:test_004()/527
 cmd: $NMCLI --mode tabular --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 698 bytes
+stdout: 702 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:::::::-1:-1:-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::::0::::-1:0::-1:-1:no:no::::0:yes:::0x0:no:yes:-1:-1::0::-1
-ipv6:auto::::0::::-1:0::-1:-1:no:no:no:yes:-1:-1:default:0:auto::::0:yes::0x0:-1:
+ipv6:auto::::0::::-1:0::-1:-1:no:no:no:yes:-1:-1:0:0:default:0:auto::::0:yes::0x0:-1:
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 865
+size: 869
 location: src/tests/client/test-client.py:test_004()/528
 cmd: $NMCLI --mode tabular --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 698 bytes
+stdout: 702 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:::::::-1:-1:-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::::0::::-1:0::-1:-1:no:no::::0:yes:::0x0:no:yes:-1:-1::0::-1
-ipv6:auto::::0::::-1:0::-1:-1:no:no:no:yes:-1:-1:default:0:auto::::0:yes::0x0:-1:
+ipv6:auto::::0::::-1:0::-1:-1:no:no:no:yes:-1:-1:0:0:default:0:auto::::0:yes::0x0:-1:
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 855
+size: 859
 location: src/tests/client/test-client.py:test_004()/529
 cmd: $NMCLI --mode tabular --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 698 bytes
+stdout: 702 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:::::::-1:-1:-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::::0::::-1:0::-1:-1:no:no::::0:yes:::0x0:no:yes:-1:-1::0::-1
-ipv6:auto::::0::::-1:0::-1:-1:no:no:no:yes:-1:-1:default:0:auto::::0:yes::0x0:-1:
+ipv6:auto::::0::::-1:0::-1:-1:no:no:no:yes:-1:-1:0:0:default:0:auto::::0:yes::0x0:-1:
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 865
+size: 869
 location: src/tests/client/test-client.py:test_004()/530
 cmd: $NMCLI --mode tabular --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 698 bytes
+stdout: 702 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:::::::-1:-1:-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::::0::::-1:0::-1:-1:no:no::::0:yes:::0x0:no:yes:-1:-1::0::-1
-ipv6:auto::::0::::-1:0::-1:-1:no:no:no:yes:-1:-1:default:0:auto::::0:yes::0x0:-1:
+ipv6:auto::::0::::-1:0::-1:-1:no:no:no:yes:-1:-1:0:0:default:0:auto::::0:yes::0x0:-1:
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 562
+size: 566
 location: src/tests/client/test-client.py:test_004()/531
 cmd: $NMCLI --mode tabular --terse -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 398 bytes
+stdout: 402 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:::::::-1:-1:-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::::0::::-1:0::-1:-1:no:no::::0:yes:::0x0:no:yes:-1:-1::0::-1
-ipv6:auto::::0::::-1:0::-1:-1:no:no:no:yes:-1:-1:default:0:auto::::0:yes::0x0:-1:
+ipv6:auto::::0::::-1:0::-1:-1:no:no:no:yes:-1:-1:0:0:default:0:auto::::0:yes::0x0:-1:
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 
 <<<
-size: 572
+size: 576
 location: src/tests/client/test-client.py:test_004()/532
 cmd: $NMCLI --mode tabular --terse -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 398 bytes
+stdout: 402 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:::::::-1:-1:-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::::0::::-1:0::-1:-1:no:no::::0:yes:::0x0:no:yes:-1:-1::0::-1
-ipv6:auto::::0::::-1:0::-1:-1:no:no:no:yes:-1:-1:default:0:auto::::0:yes::0x0:-1:
+ipv6:auto::::0::::-1:0::-1:-1:no:no:no:yes:-1:-1:0:0:default:0:auto::::0:yes::0x0:-1:
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 
@@ -31310,94 +31394,94 @@ UUID-con-xx1-REPLACED-REPLACED-REPLA
 
 
 <<<
-size: 867
+size: 871
 location: src/tests/client/test-client.py:test_004()/577
 cmd: $NMCLI --mode tabular --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 698 bytes
+stdout: 702 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:::::::-1:-1:-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::::0::::-1:0::-1:-1:no:no::::0:yes:::0x0:no:yes:-1:-1::0::-1
-ipv6:auto::::0::::-1:0::-1:-1:no:no:no:yes:-1:-1:default:0:auto::::0:yes::0x0:-1:
+ipv6:auto::::0::::-1:0::-1:-1:no:no:no:yes:-1:-1:0:0:default:0:auto::::0:yes::0x0:-1:
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 877
+size: 881
 location: src/tests/client/test-client.py:test_004()/578
 cmd: $NMCLI --mode tabular --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 698 bytes
+stdout: 702 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:::::::-1:-1:-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::::0::::-1:0::-1:-1:no:no::::0:yes:::0x0:no:yes:-1:-1::0::-1
-ipv6:auto::::0::::-1:0::-1:-1:no:no:no:yes:-1:-1:default:0:auto::::0:yes::0x0:-1:
+ipv6:auto::::0::::-1:0::-1:-1:no:no:no:yes:-1:-1:0:0:default:0:auto::::0:yes::0x0:-1:
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 867
+size: 871
 location: src/tests/client/test-client.py:test_004()/579
 cmd: $NMCLI --mode tabular --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 698 bytes
+stdout: 702 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:::::::-1:-1:-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::::0::::-1:0::-1:-1:no:no::::0:yes:::0x0:no:yes:-1:-1::0::-1
-ipv6:auto::::0::::-1:0::-1:-1:no:no:no:yes:-1:-1:default:0:auto::::0:yes::0x0:-1:
+ipv6:auto::::0::::-1:0::-1:-1:no:no:no:yes:-1:-1:0:0:default:0:auto::::0:yes::0x0:-1:
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 877
+size: 881
 location: src/tests/client/test-client.py:test_004()/580
 cmd: $NMCLI --mode tabular --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 698 bytes
+stdout: 702 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:::::::-1:-1:-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::::0::::-1:0::-1:-1:no:no::::0:yes:::0x0:no:yes:-1:-1::0::-1
-ipv6:auto::::0::::-1:0::-1:-1:no:no:no:yes:-1:-1:default:0:auto::::0:yes::0x0:-1:
+ipv6:auto::::0::::-1:0::-1:-1:no:no:no:yes:-1:-1:0:0:default:0:auto::::0:yes::0x0:-1:
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 574
+size: 578
 location: src/tests/client/test-client.py:test_004()/581
 cmd: $NMCLI --mode tabular --terse --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 398 bytes
+stdout: 402 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:::::::-1:-1:-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::::0::::-1:0::-1:-1:no:no::::0:yes:::0x0:no:yes:-1:-1::0::-1
-ipv6:auto::::0::::-1:0::-1:-1:no:no:no:yes:-1:-1:default:0:auto::::0:yes::0x0:-1:
+ipv6:auto::::0::::-1:0::-1:-1:no:no:no:yes:-1:-1:0:0:default:0:auto::::0:yes::0x0:-1:
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 
 <<<
-size: 584
+size: 588
 location: src/tests/client/test-client.py:test_004()/582
 cmd: $NMCLI --mode tabular --terse --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 398 bytes
+stdout: 402 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:::::::-1:-1:-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::::0::::-1:0::-1:-1:no:no::::0:yes:::0x0:no:yes:-1:-1::0::-1
-ipv6:auto::::0::::-1:0::-1:-1:no:no:no:yes:-1:-1:default:0:auto::::0:yes::0x0:-1:
+ipv6:auto::::0::::-1:0::-1:-1:no:no:no:yes:-1:-1:0:0:default:0:auto::::0:yes::0x0:-1:
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 
@@ -32248,12 +32332,12 @@ UUID-con-xx1-REPLACED-REPLACED-REPLA
 
 
 <<<
-size: 6071
+size: 6155
 location: src/tests/client/test-client.py:test_004()/627
 cmd: $NMCLI --mode multiline con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5919 bytes
+stdout: 6003 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -32335,6 +32419,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -32380,12 +32466,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 6108
+size: 6192
 location: src/tests/client/test-client.py:test_004()/628
 cmd: $NMCLI --mode multiline con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5946 bytes
+stdout: 6030 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -32467,6 +32553,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -32512,12 +32600,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 6071
+size: 6155
 location: src/tests/client/test-client.py:test_004()/629
 cmd: $NMCLI --mode multiline con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5919 bytes
+stdout: 6003 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -32599,6 +32687,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -32644,12 +32734,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 6108
+size: 6192
 location: src/tests/client/test-client.py:test_004()/630
 cmd: $NMCLI --mode multiline con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5946 bytes
+stdout: 6030 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -32731,6 +32821,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -32776,12 +32868,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4944
+size: 5028
 location: src/tests/client/test-client.py:test_004()/631
 cmd: $NMCLI --mode multiline -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4785 bytes
+stdout: 4869 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -32863,6 +32955,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -32887,12 +32981,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 4971
+size: 5055
 location: src/tests/client/test-client.py:test_004()/632
 cmd: $NMCLI --mode multiline -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4802 bytes
+stdout: 4886 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -32974,6 +33068,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -36118,12 +36214,12 @@ connection.type:                        802-11-wireless
 connection.interface-name:              --
 
 <<<
-size: 6083
+size: 6167
 location: src/tests/client/test-client.py:test_004()/677
 cmd: $NMCLI --mode multiline --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5919 bytes
+stdout: 6003 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -36205,6 +36301,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -36250,12 +36348,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 6120
+size: 6204
 location: src/tests/client/test-client.py:test_004()/678
 cmd: $NMCLI --mode multiline --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5946 bytes
+stdout: 6030 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -36337,6 +36435,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -36382,12 +36482,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 6083
+size: 6167
 location: src/tests/client/test-client.py:test_004()/679
 cmd: $NMCLI --mode multiline --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5919 bytes
+stdout: 6003 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -36469,6 +36569,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -36514,12 +36616,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 6120
+size: 6204
 location: src/tests/client/test-client.py:test_004()/680
 cmd: $NMCLI --mode multiline --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5946 bytes
+stdout: 6030 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -36601,6 +36703,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -36646,12 +36750,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4956
+size: 5040
 location: src/tests/client/test-client.py:test_004()/681
 cmd: $NMCLI --mode multiline --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4785 bytes
+stdout: 4869 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -36733,6 +36837,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -36757,12 +36863,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 4983
+size: 5067
 location: src/tests/client/test-client.py:test_004()/682
 cmd: $NMCLI --mode multiline --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4802 bytes
+stdout: 4886 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -36844,6 +36950,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -39988,12 +40096,12 @@ connection.type:                        802-11-wireless
 connection.interface-name:              --
 
 <<<
-size: 7091
+size: 7175
 location: src/tests/client/test-client.py:test_004()/727
 cmd: $NMCLI --mode multiline --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6930 bytes
+stdout: 7014 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -40080,6 +40188,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -40133,12 +40243,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 7141
+size: 7225
 location: src/tests/client/test-client.py:test_004()/728
 cmd: $NMCLI --mode multiline --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6970 bytes
+stdout: 7054 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -40225,6 +40335,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -40278,12 +40390,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 7091
+size: 7175
 location: src/tests/client/test-client.py:test_004()/729
 cmd: $NMCLI --mode multiline --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6930 bytes
+stdout: 7014 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -40370,6 +40482,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -40423,12 +40537,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 7141
+size: 7225
 location: src/tests/client/test-client.py:test_004()/730
 cmd: $NMCLI --mode multiline --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6970 bytes
+stdout: 7054 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -40515,6 +40629,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -40568,12 +40684,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5572
+size: 5656
 location: src/tests/client/test-client.py:test_004()/731
 cmd: $NMCLI --mode multiline --pretty -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5404 bytes
+stdout: 5488 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -40660,6 +40776,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -40687,12 +40805,12 @@ proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 
 <<<
-size: 5604
+size: 5688
 location: src/tests/client/test-client.py:test_004()/732
 cmd: $NMCLI --mode multiline --pretty -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5426 bytes
+stdout: 5510 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -40779,6 +40897,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -44560,12 +44680,12 @@ connection.interface-name:              --
 -------------------------------------------------------------------------------
 
 <<<
-size: 7103
+size: 7187
 location: src/tests/client/test-client.py:test_004()/777
 cmd: $NMCLI --mode multiline --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6930 bytes
+stdout: 7014 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -44652,6 +44772,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -44705,12 +44827,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 7153
+size: 7237
 location: src/tests/client/test-client.py:test_004()/778
 cmd: $NMCLI --mode multiline --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6970 bytes
+stdout: 7054 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -44797,6 +44919,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -44850,12 +44974,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 7103
+size: 7187
 location: src/tests/client/test-client.py:test_004()/779
 cmd: $NMCLI --mode multiline --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6930 bytes
+stdout: 7014 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -44942,6 +45066,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -44995,12 +45121,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 7153
+size: 7237
 location: src/tests/client/test-client.py:test_004()/780
 cmd: $NMCLI --mode multiline --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6970 bytes
+stdout: 7054 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -45087,6 +45213,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -45140,12 +45268,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5584
+size: 5668
 location: src/tests/client/test-client.py:test_004()/781
 cmd: $NMCLI --mode multiline --pretty --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5404 bytes
+stdout: 5488 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -45232,6 +45360,8 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               auto
@@ -45259,12 +45389,12 @@ proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 
 <<<
-size: 5616
+size: 5700
 location: src/tests/client/test-client.py:test_004()/782
 cmd: $NMCLI --mode multiline --pretty --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5426 bytes
+stdout: 5510 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -45351,6 +45481,8 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.required-timeout:                  -1 (default)
 ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.temp-valid-lifetime:               0
+ipv6.temp-preferred-lifetime:           0
 ipv6.addr-gen-mode:                     default
 ipv6.ra-timeout:                        0 (default)
 ipv6.mtu:                               automatyczne
@@ -49132,12 +49264,12 @@ connection.interface-name:              --
 -------------------------------------------------------------------------------
 
 <<<
-size: 3064
+size: 3122
 location: src/tests/client/test-client.py:test_004()/827
 cmd: $NMCLI --mode multiline --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2904 bytes
+stdout: 2962 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -49219,6 +49351,8 @@ ipv6.never-default:no
 ipv6.may-fail:yes
 ipv6.required-timeout:-1
 ipv6.ip6-privacy:-1
+ipv6.temp-valid-lifetime:0
+ipv6.temp-preferred-lifetime:0
 ipv6.addr-gen-mode:default
 ipv6.ra-timeout:0
 ipv6.mtu:auto
@@ -49264,12 +49398,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 3074
+size: 3132
 location: src/tests/client/test-client.py:test_004()/828
 cmd: $NMCLI --mode multiline --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2904 bytes
+stdout: 2962 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -49351,6 +49485,8 @@ ipv6.never-default:no
 ipv6.may-fail:yes
 ipv6.required-timeout:-1
 ipv6.ip6-privacy:-1
+ipv6.temp-valid-lifetime:0
+ipv6.temp-preferred-lifetime:0
 ipv6.addr-gen-mode:default
 ipv6.ra-timeout:0
 ipv6.mtu:auto
@@ -49396,12 +49532,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 3064
+size: 3122
 location: src/tests/client/test-client.py:test_004()/829
 cmd: $NMCLI --mode multiline --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2904 bytes
+stdout: 2962 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -49483,6 +49619,8 @@ ipv6.never-default:no
 ipv6.may-fail:yes
 ipv6.required-timeout:-1
 ipv6.ip6-privacy:-1
+ipv6.temp-valid-lifetime:0
+ipv6.temp-preferred-lifetime:0
 ipv6.addr-gen-mode:default
 ipv6.ra-timeout:0
 ipv6.mtu:auto
@@ -49528,12 +49666,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 3074
+size: 3132
 location: src/tests/client/test-client.py:test_004()/830
 cmd: $NMCLI --mode multiline --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2904 bytes
+stdout: 2962 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -49615,6 +49753,8 @@ ipv6.never-default:no
 ipv6.may-fail:yes
 ipv6.required-timeout:-1
 ipv6.ip6-privacy:-1
+ipv6.temp-valid-lifetime:0
+ipv6.temp-preferred-lifetime:0
 ipv6.addr-gen-mode:default
 ipv6.ra-timeout:0
 ipv6.mtu:auto
@@ -49660,12 +49800,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2489
+size: 2547
 location: src/tests/client/test-client.py:test_004()/831
 cmd: $NMCLI --mode multiline --terse -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2322 bytes
+stdout: 2380 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -49747,6 +49887,8 @@ ipv6.never-default:no
 ipv6.may-fail:yes
 ipv6.required-timeout:-1
 ipv6.ip6-privacy:-1
+ipv6.temp-valid-lifetime:0
+ipv6.temp-preferred-lifetime:0
 ipv6.addr-gen-mode:default
 ipv6.ra-timeout:0
 ipv6.mtu:auto
@@ -49771,12 +49913,12 @@ proxy.pac-url:
 proxy.pac-script:
 
 <<<
-size: 2499
+size: 2557
 location: src/tests/client/test-client.py:test_004()/832
 cmd: $NMCLI --mode multiline --terse -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2322 bytes
+stdout: 2380 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -49858,6 +50000,8 @@ ipv6.never-default:no
 ipv6.may-fail:yes
 ipv6.required-timeout:-1
 ipv6.ip6-privacy:-1
+ipv6.temp-valid-lifetime:0
+ipv6.temp-preferred-lifetime:0
 ipv6.addr-gen-mode:default
 ipv6.ra-timeout:0
 ipv6.mtu:auto
@@ -53002,12 +53146,12 @@ connection.type:802-11-wireless
 connection.interface-name:
 
 <<<
-size: 3076
+size: 3134
 location: src/tests/client/test-client.py:test_004()/877
 cmd: $NMCLI --mode multiline --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2904 bytes
+stdout: 2962 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -53089,6 +53233,8 @@ ipv6.never-default:no
 ipv6.may-fail:yes
 ipv6.required-timeout:-1
 ipv6.ip6-privacy:-1
+ipv6.temp-valid-lifetime:0
+ipv6.temp-preferred-lifetime:0
 ipv6.addr-gen-mode:default
 ipv6.ra-timeout:0
 ipv6.mtu:auto
@@ -53134,12 +53280,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 3086
+size: 3144
 location: src/tests/client/test-client.py:test_004()/878
 cmd: $NMCLI --mode multiline --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2904 bytes
+stdout: 2962 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -53221,6 +53367,8 @@ ipv6.never-default:no
 ipv6.may-fail:yes
 ipv6.required-timeout:-1
 ipv6.ip6-privacy:-1
+ipv6.temp-valid-lifetime:0
+ipv6.temp-preferred-lifetime:0
 ipv6.addr-gen-mode:default
 ipv6.ra-timeout:0
 ipv6.mtu:auto
@@ -53266,12 +53414,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 3076
+size: 3134
 location: src/tests/client/test-client.py:test_004()/879
 cmd: $NMCLI --mode multiline --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2904 bytes
+stdout: 2962 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -53353,6 +53501,8 @@ ipv6.never-default:no
 ipv6.may-fail:yes
 ipv6.required-timeout:-1
 ipv6.ip6-privacy:-1
+ipv6.temp-valid-lifetime:0
+ipv6.temp-preferred-lifetime:0
 ipv6.addr-gen-mode:default
 ipv6.ra-timeout:0
 ipv6.mtu:auto
@@ -53398,12 +53548,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 3086
+size: 3144
 location: src/tests/client/test-client.py:test_004()/880
 cmd: $NMCLI --mode multiline --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2904 bytes
+stdout: 2962 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -53485,6 +53635,8 @@ ipv6.never-default:no
 ipv6.may-fail:yes
 ipv6.required-timeout:-1
 ipv6.ip6-privacy:-1
+ipv6.temp-valid-lifetime:0
+ipv6.temp-preferred-lifetime:0
 ipv6.addr-gen-mode:default
 ipv6.ra-timeout:0
 ipv6.mtu:auto
@@ -53530,12 +53682,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2501
+size: 2559
 location: src/tests/client/test-client.py:test_004()/881
 cmd: $NMCLI --mode multiline --terse --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2322 bytes
+stdout: 2380 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -53617,6 +53769,8 @@ ipv6.never-default:no
 ipv6.may-fail:yes
 ipv6.required-timeout:-1
 ipv6.ip6-privacy:-1
+ipv6.temp-valid-lifetime:0
+ipv6.temp-preferred-lifetime:0
 ipv6.addr-gen-mode:default
 ipv6.ra-timeout:0
 ipv6.mtu:auto
@@ -53641,12 +53795,12 @@ proxy.pac-url:
 proxy.pac-script:
 
 <<<
-size: 2511
+size: 2569
 location: src/tests/client/test-client.py:test_004()/882
 cmd: $NMCLI --mode multiline --terse --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2322 bytes
+stdout: 2380 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -53728,6 +53882,8 @@ ipv6.never-default:no
 ipv6.may-fail:yes
 ipv6.required-timeout:-1
 ipv6.ip6-privacy:-1
+ipv6.temp-valid-lifetime:0
+ipv6.temp-preferred-lifetime:0
 ipv6.addr-gen-mode:default
 ipv6.ra-timeout:0
 ipv6.mtu:auto

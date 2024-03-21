@@ -6664,6 +6664,12 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
             ),
         ),
     ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_IP6_CONFIG_TEMP_VALID_LIFETIME,
+        .property_type =                &_pt_gobject_int,
+    ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_IP6_CONFIG_TEMP_PREFERRED_LIFETIME,
+        .property_type =                &_pt_gobject_int,
+    ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
         .property_type =                &_pt_gobject_enum,
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA (

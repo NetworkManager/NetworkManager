@@ -1848,6 +1848,14 @@
         <property name="routing-rules"
                   dbus-type="aa{sv}"
                   />
+        <property name="temp-preferred-lifetime"
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
+        <property name="temp-valid-lifetime"
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="token"
                   dbus-type="s"
                   gprop-type="gchararray"
