@@ -192,7 +192,7 @@ run_autotools() {
             #end
 
         if [ "$CONFIGURE_ONLY" != 1 ]; then
-            make -j 6
+            make -j 6 --debug=b
             make install
 
             export NM_TEST_CLIENT_CHECK_L10N=1
