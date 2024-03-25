@@ -48,8 +48,11 @@
 %global systemd_units_cloud_setup nm-cloud-setup.service nm-cloud-setup.timer
 
 ###############################################################################
-
-%bcond_with meson
+%if 0%{?fedora} >= 39
+%bcond_without meson
+%else
+%bcond_with    meson
+%endif
 %bcond_without adsl
 %bcond_without bluetooth
 %bcond_without wwan
