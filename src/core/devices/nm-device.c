@@ -2279,6 +2279,8 @@ _prop_get_ipv6_ip6_privacy(NMDevice *self)
 
     g_return_val_if_fail(self, NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
 
+    _LOGE(LOGD_CORE, " ---- %s", __func__);
+
     /* 1.) First look at the per-connection setting. If it is not -1 (unknown),
      * use it. */
     connection = nm_device_get_applied_connection(self);
@@ -2288,8 +2290,10 @@ _prop_get_ipv6_ip6_privacy(NMDevice *self)
         if (s_ip6) {
             ip6_privacy = nm_setting_ip6_config_get_ip6_privacy(NM_SETTING_IP6_CONFIG(s_ip6));
             ip6_privacy = _ip6_privacy_clamp(ip6_privacy);
-            if (ip6_privacy != NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
+            if (ip6_privacy != NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN) {
+                _LOGE(LOGD_CORE, " ---- %s: %d from connection", __func__, ip6_privacy);
                 return ip6_privacy;
+            }
         }
     }
 
@@ -2301,20 +2305,28 @@ _prop_get_ipv6_ip6_privacy(NMDevice *self)
                                                     NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
                                                     NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
                                                     NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
-    if (ip6_privacy != NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
+    if (ip6_privacy != NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN) {
+        _LOGE(LOGD_CORE, " ---- %s: %d from config", __func__, ip6_privacy);
         return ip6_privacy;
+    }
 
-    if (!nm_device_get_ip_ifindex(self))
+    if (!nm_device_get_ip_ifindex(self)) {
+        _LOGE(LOGD_CORE, " ---- %s: %d no ifindex", __func__, NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
         return NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
+    }
 
     /* 3.) No valid default value configured. Fall back to the original value
      * from before NM started. */
-    return _ip6_privacy_clamp(_nm_utils_ascii_str_to_int64(
+    ip6_privacy = _ip6_privacy_clamp(_nm_utils_ascii_str_to_int64(
         g_hash_table_lookup(priv->ip6_saved_properties, "use_tempaddr"),
         10,
         G_MININT32,
         G_MAXINT32,
         NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN));
+
+    _LOGE(LOGD_CORE, " ---- %s: %d from saved properties", __func__, ip6_privacy);
+
+    return ip6_privacy;
 }
 
 static gint32
@@ -5059,6 +5071,7 @@ _set_ip_ifindex(NMDevice *self, int ifindex, const char *ifname)
             nm_platform_link_change_flags(platform, priv->ip_ifindex, IFF_UP, TRUE);
     }
 
+    _LOGE(LOGD_CORE, " ---- %s: delete ip6 saved properties", __func__);
     /* We don't care about any saved values from the old iface */
     g_hash_table_remove_all(priv->ip6_saved_properties);
 }
@@ -6952,6 +6965,7 @@ nm_device_update_dynamic_ip_setup(NMDevice *self, const char *reason)
 
     _LOGD(LOGD_DEVICE, "restarting dynamic IP configuration (%s)", reason);
 
+    _LOGE(LOGD_CORE, " ---- %s: delete ip6 saved properties", __func__);
     g_hash_table_remove_all(priv->ip6_saved_properties);
 
     if (priv->ipdhcp_data_4.state != NM_DEVICE_IP_STATE_NONE)
@@ -12533,6 +12547,7 @@ _dev_sysctl_save_ip6_properties(NMDevice *self)
         value =
             nm_platform_sysctl_ip_conf_get(platform, AF_INET6, ifname, ip6_properties_to_save[i]);
         if (value) {
+            _LOGI(LOGD_CORE, " ---- save ip6 property: %s -> %s", ip6_properties_to_save[i], value);
             g_hash_table_insert(priv->ip6_saved_properties,
                                 (char *) ip6_properties_to_save[i],
                                 value);
@@ -12547,6 +12562,8 @@ _dev_sysctl_restore_ip6_properties(NMDevice *self)
     GHashTableIter   iter;
     gpointer         key;
     gpointer         value;
+
+    _LOGE(LOGD_CORE, " ---- %s", __func__);
 
     g_hash_table_iter_init(&iter, priv->ip6_saved_properties);
     while (g_hash_table_iter_next(&iter, &key, &value))
