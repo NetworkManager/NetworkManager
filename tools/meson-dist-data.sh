@@ -21,7 +21,6 @@ fi
 
 ensure_var_path "MESON_DIST_ROOT"
 ensure_var_path "MESON_BUILD_ROOT"
-ensure_var_path "MESON_SOURCE_ROOT"
 
 ninja -C "$MESON_BUILD_ROOT" all libnm-doc NetworkManager-doc
 
