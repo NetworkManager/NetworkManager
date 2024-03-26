@@ -46,7 +46,7 @@ nm_lldp_network_bind_raw_socket(int ifindex)
 
     assert(ifindex > 0);
 
-    fd = socket(AF_PACKET, SOCK_RAW | SOCK_CLOEXEC | SOCK_NONBLOCK, htobe16(NM_ETHERTYPE_LLDP));
+    fd = socket(AF_PACKET, SOCK_RAW | SOCK_CLOEXEC | SOCK_NONBLOCK, htobe16(ETH_P_ALL));
     if (fd < 0)
         return -errno;
 
