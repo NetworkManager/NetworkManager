@@ -509,3 +509,19 @@
    fun:inet_pton
    ...
 }
+{
+   _liblzma_5_6_0
+   Memcheck:Addr8
+   obj:/usr/lib/x86_64-linux-gnu/liblzma.so.5.6.0
+   obj:/usr/lib/x86_64-linux-gnu/liblzma.so.5.6.0
+   obj:*
+   obj:/usr/lib/x86_64-linux-gnu/liblz4.so.1.9.4
+   obj:*
+   obj:*
+   fun:elf_machine_rela
+   fun:elf_dynamic_do_Rela
+   fun:_dl_relocate_object
+   obj:*
+   obj:*
+   obj:*
+}
