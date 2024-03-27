@@ -961,14 +961,17 @@ test(
 subdir('examples/C/glib')
 
 enable_qt = get_option('qt')
-if enable_qt
-  add_languages('cpp')
+if enable_qt != 'false'
+  qt_core_dep = dependency('QtCore', version: '>= 4', required: enable_qt == 'yes')
+  qt_dbus_dep = dependency('QtDBus', required: enable_qt == 'yes')
+  qt_network_dep = dependency('QtNetwork', required: enable_qt == 'yes')
 
-  qt_core_dep = dependency('QtCore', version: '>= 4')
-  qt_dbus_dep = dependency('QtDBus')
-  qt_network_dep = dependency('QtNetwork')
-
-  subdir('examples/C/qt')
+  # If enable_qt=='yes' we have all the dependencies. If it's 'auto', skip
+  # building the Qt examples if any dependency is missing.
+  if qt_core_dep.found() and qt_dbus_dep.found() and qt_network_dep.found()
+    add_languages('cpp')
+    subdir('examples/C/qt')
+  endif
 endif
 
 if enable_docs
