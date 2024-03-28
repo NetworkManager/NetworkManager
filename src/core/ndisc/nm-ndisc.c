@@ -1853,6 +1853,7 @@ _config_init(NMNDiscConfig *config, const NMNDiscConfig *src)
     g_return_if_fail(
         NM_IN_SET(config->node_type, NM_NDISC_NODE_TYPE_HOST, NM_NDISC_NODE_TYPE_ROUTER));
     g_return_if_fail(NM_IN_SET(config->ip6_privacy,
+                               NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
                                NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED,
                                NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR,
                                NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR));
