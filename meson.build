@@ -77,7 +77,7 @@ pkg = import('pkgconfig')
 source_root = meson.current_source_dir()
 build_root = meson.current_build_dir()
 
-po_dir = join_paths(meson.source_root(), 'po')
+po_dir = source_root / 'po'
 
 top_inc = include_directories('.')
 

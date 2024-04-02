@@ -50,9 +50,9 @@ if enable_introspection
     'check-local-libnm-gir',
     python,
     args: [
-      join_paths(meson.source_root(), 'src', 'libnm-client-impl', 'tests', 'test-gir.py'),
+      join_paths(source_root, 'src', 'libnm-client-impl', 'tests', 'test-gir.py'),
       '--gir', libnm_gir[0],
-      '--ver', join_paths(meson.source_root(), 'src', 'libnm-client-impl', 'libnm.ver'),
+      '--ver', join_paths(source_root, 'src', 'libnm-client-impl', 'libnm.ver'),
     ],
   )
 endif
