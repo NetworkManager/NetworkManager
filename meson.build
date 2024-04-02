@@ -13,7 +13,7 @@ project(
     'c_std=gnu11',
     'warning_level=2' # value "2" will add "-Wall" and "-Wextra" to the compiler flags
   ],
-  meson_version: '>= 0.47.2',
+  meson_version: '>= 0.51.0',
 )
 
 nm_name = meson.project_name()
