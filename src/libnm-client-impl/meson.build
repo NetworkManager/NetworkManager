@@ -190,7 +190,7 @@ if enable_introspection
       input: [gen_infos_cmd, libnm_gir[0]] + libnm_core_settings_sources,
       output: 'nm-property-infos-' + name + '.xml',
       command: [
-        python.path(),
+        python_path,
         gen_infos_cmd,
         name,
         '@OUTPUT@',
@@ -206,7 +206,7 @@ if enable_introspection
         'env',
         'GI_TYPELIB_PATH=' + gi_typelib_path,
         'LD_LIBRARY_PATH=' + ld_library_path,
-        python.path(),
+        python_path,
         gen_gir_cmd,
         '--lib-path', meson.current_build_dir(),
         '--gir', libnm_gir[0],
