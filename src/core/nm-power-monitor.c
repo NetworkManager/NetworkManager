@@ -354,8 +354,7 @@ nm_power_monitor_class_init(NMPowerMonitorClass *klass)
                                      0,
                                      NULL,
                                      NULL,
-                                     g_cclosure_marshal_VOID__BOOLEAN,
+                                     NULL,
                                      G_TYPE_NONE,
-                                     1,
-                                     G_TYPE_BOOLEAN);
+                                     0);
 }
