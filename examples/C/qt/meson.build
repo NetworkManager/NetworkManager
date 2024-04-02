@@ -8,7 +8,7 @@ examples = [
 
 moc = find_program('moc-qt4', required: false)
 if not moc.found()
-  moc = qt_core_dep.get_pkgconfig_variable('moc_location')
+  moc = qt_core_dep.get_variable(pkgconfig: 'moc_location')
 endif
 
 example = 'monitor-nm-running'
