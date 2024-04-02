@@ -62,7 +62,7 @@ foreach man: mans
 endforeach
 
 if enable_introspection
-  merge_cmd = join_paths(meson.source_root(), 'tools', 'generate-docs-nm-settings-docs-merge.py')
+  merge_cmd = files(source_root / 'tools' / 'generate-docs-nm-settings-docs-merge.py')
 
   name = 'dbus'
   nm_settings_docs_xml_dbus = custom_target(

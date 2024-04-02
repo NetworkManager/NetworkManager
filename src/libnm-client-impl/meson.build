@@ -177,8 +177,8 @@ if enable_introspection
   endif
   ld_library_path = meson.current_build_dir() + ld_library_path
 
-  gen_infos_cmd = join_paths(meson.source_root(), 'tools', 'generate-docs-nm-property-infos.py')
-  gen_gir_cmd = join_paths(meson.source_root(), 'tools', 'generate-docs-nm-settings-docs-gir.py')
+  gen_infos_cmd = files(source_root / 'tools' / 'generate-docs-nm-property-infos.py')
+  gen_gir_cmd = files(source_root / 'tools' / 'generate-docs-nm-settings-docs-gir.py')
 
   names = [ 'dbus', 'nmcli', 'keyfile' ]
   if enable_ifcfg_rh
