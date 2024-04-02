@@ -875,8 +875,8 @@ test_args = [
   '--launch-dbus=auto',
 ]
 
-py3 = import('python3')
-python = py3.find_python()
+python_mod = import('python')
+python = python_mod.find_installation('python3', required: false)
 
 if python.found()
   config_h.set_quoted('TEST_NM_PYTHON', python.path())
