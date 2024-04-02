@@ -15,6 +15,7 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   visible in nmcli via "nmcli -f all device show $DEV".
 * Deprecated 802-11-wireless and 802-11-wired property 'mac-address-blacklist'
   and introduced the 'mac-address-denylist' property.
+* Fix detection of 6 GHz band capability for WiFi devices
 
 =============================================
 NetworkManager-1.46
