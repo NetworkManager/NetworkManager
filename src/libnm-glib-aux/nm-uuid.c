@@ -434,7 +434,7 @@ nm_uuid_generate_from_strings_strv(NMUuidType         uuid_type,
 {
     nm_auto_str_buf NMStrBuf str = NM_STR_BUF_INIT_A(NM_UTILS_GET_NEXT_REALLOC_SIZE_232, TRUE);
     gsize                    slen;
-    const char              *s;
+    const char              *s = NULL;
 
     if (len >= 0) {
         gboolean has_nulls = FALSE;
