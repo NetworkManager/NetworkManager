@@ -253,7 +253,7 @@ config_h.set10('WITH_JANSSON', jansson_dep.found())
 
 jansson_msg = 'no'
 if jansson_dep.found()
-  jansson_libdir = jansson_dep.get_pkgconfig_variable('libdir')
+  jansson_libdir = jansson_dep.get_variable(pkgconfig: 'libdir')
   res = run_command(find_program('eu-readelf', 'readelf'), '-d', join_paths(jansson_libdir, 'libjansson.so'), check: false)
   jansson_soname = ''
   foreach line: res.stdout().split('\n')
@@ -362,7 +362,7 @@ install_systemdunitdir = (systemd_systemdsystemunitdir != 'no')
 
 if install_systemdunitdir and systemd_systemdsystemunitdir == ''
   assert(systemd_dep.found(), 'systemd required but not found, please provide a valid systemd user unit dir or disable it')
-  systemd_systemdsystemunitdir = systemd_dep.get_pkgconfig_variable('systemdsystemunitdir', define_variable: ['rootprefix', nm_prefix])
+  systemd_systemdsystemunitdir = systemd_dep.get_variable(pkgconfig: 'systemdsystemunitdir', pkgconfig_define: ['rootprefix', nm_prefix])
 endif
 
 enable_systemd_journal = get_option('systemd_journal')
@@ -495,7 +495,7 @@ endif
 enable_polkit = get_option('polkit')
 if enable_polkit
   # FIXME: policydir should be relative to `datadir`, not `prefix`. Fixed in https://gitlab.freedesktop.org/polkit/polkit/merge_requests/2
-  polkit_gobject_policydir = dependency('polkit-gobject-1').get_pkgconfig_variable('policydir', define_variable: ['prefix', nm_prefix])
+  polkit_gobject_policydir = dependency('polkit-gobject-1').get_variable(pkgconfig: 'policydir', pkgconfig_define: ['prefix', nm_prefix])
 endif
 
 config_auth_polkit_default = get_option('config_auth_polkit_default')
@@ -545,11 +545,11 @@ endif
 dbus_conf_dir = get_option('dbus_conf_dir')
 if dbus_conf_dir == ''
   assert(dbus_dep.found(), 'D-Bus required but not found, please provide a valid system bus config dir')
-  dbus_conf_dir = join_paths(dbus_dep.get_pkgconfig_variable('datarootdir', define_variable: ['prefix', nm_prefix]), 'dbus-1', 'system.d')
+  dbus_conf_dir = join_paths(dbus_dep.get_variable(pkgconfig: 'datarootdir', pkgconfig_define: ['prefix', nm_prefix]), 'dbus-1', 'system.d')
 endif
 
-dbus_interfaces_dir = dbus_dep.get_pkgconfig_variable('interfaces_dir',  define_variable: ['datadir', nm_datadir])
-dbus_system_bus_services_dir = dbus_dep.get_pkgconfig_variable('system_bus_services_dir', define_variable: ['datadir', nm_datadir])
+dbus_interfaces_dir = dbus_dep.get_variable(pkgconfig: 'interfaces_dir',  pkgconfig_define: ['datadir', nm_datadir])
+dbus_system_bus_services_dir = dbus_dep.get_variable(pkgconfig: 'system_bus_services_dir', pkgconfig_define: ['datadir', nm_datadir])
 
 enable_firewalld_zone = get_option('firewalld_zone')
 config_h.set10('WITH_FIREWALLD_ZONE', enable_firewalld_zone)
@@ -591,7 +591,7 @@ if enable_modem_manager
 
   mobile_broadband_provider_info_database = get_option('mobile_broadband_provider_info_database')
   if mobile_broadband_provider_info_database == ''
-    mobile_broadband_provider_info_database = dependency('mobile-broadband-provider-info').get_pkgconfig_variable('database')
+    mobile_broadband_provider_info_database = dependency('mobile-broadband-provider-info').get_variable(pkgconfig: 'database')
   endif
   config_h.set_quoted('MOBILE_BROADBAND_PROVIDER_INFO_DATABASE', mobile_broadband_provider_info_database)
 endif
