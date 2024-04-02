@@ -170,7 +170,7 @@ prepare_for_sleep_cb(GDBusProxy *proxy, gboolean is_about_to_suspend, gpointer d
 }
 
 static void
-prepare_for_shutdown_cb(GDBusProxy *proxy, gpointer data)
+prepare_for_shutdown_cb(GDBusProxy *proxy, gboolean is_about_to_shutdown, gpointer data)
 {
     shutdown_signal(data);
 }
