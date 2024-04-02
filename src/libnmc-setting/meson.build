@@ -9,7 +9,7 @@ if enable_docs
     input: [merge_cmd, nm_settings_docs_xml_gir['nmcli'], nm_property_infos_xml['nmcli']],
     output: 'settings-docs-input.xml',
     command: [
-      python.path(),
+      python_path,
       merge_cmd,
       '@OUTPUT@',
       nm_property_infos_xml['nmcli'],
@@ -23,7 +23,7 @@ if enable_docs
     input: [gen_cmd, settings_docs_input_xml],
     output: 'settings-docs.h',
     command: [
-      python.path(),
+      python_path,
       gen_cmd,
       '--output', '@OUTPUT@',
       '--xml', settings_docs_input_xml

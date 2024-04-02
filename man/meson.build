@@ -70,7 +70,7 @@ if enable_introspection
     input: [merge_cmd, nm_property_infos_xml[name], nm_settings_docs_xml_gir[name]],
     output: 'nm-settings-docs-' + name + '.xml',
     command: [
-      python.path(),
+      python_path,
       merge_cmd,
       '@OUTPUT@',
       nm_property_infos_xml[name],
@@ -84,7 +84,7 @@ if enable_introspection
     input: [merge_cmd, nm_property_infos_xml[name], gen_metadata_nm_settings_nmcli_xml, nm_settings_docs_xml_gir[name]],
     output: 'nm-settings-docs-' + name + '.xml',
     command: [
-      python.path(),
+      python_path,
       merge_cmd,
       '@OUTPUT@',
       '--only-properties-from',

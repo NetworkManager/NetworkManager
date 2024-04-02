@@ -571,7 +571,11 @@ if enable_ppp
   if pppd_path == ''
     pppd = find_program('pppd', '/sbin/pppd', '/usr/sbin/pppd', required: false)
     assert(pppd.found(), 'pppd required but not found, please provide a valid pppd path or use -Dppp=false to disable it')
-    pppd_path = pppd.path()
+    if meson.version().version_compare('>= 0.55')
+      pppd_path = pppd.full_path()
+    else
+      pppd_path = pppd.path()
+    endif
   endif
 
   config_h.set_quoted('PPPD_PATH', pppd_path)
@@ -625,7 +629,11 @@ foreach client : [ 'dhclient', 'dhcpcd', 'dhcpcanon' ]
                                  '/usr/local/sbin/' + client,
                                  required : false)
       if client_prog.found()
-        client_path = client_prog.path()
+        if meson.version().version_compare('>= 0.55')
+          client_path = client_prog.full_path()
+        else
+          client_path = client_prog.path()
+        endif
       else
         client_path = '/usr/sbin/' + client
         message('@0@ not found, assume path @1@'.format(client, client_path))
@@ -667,7 +675,11 @@ foreach prog_name : ['resolvconf', 'netconfig']
                           '/usr/local/sbin/' + prog_name,
                           required : false)
       if prog.found()
-        prog_path = prog.path()
+        if meson.version().version_compare('>= 0.55')
+          prog_path = prog.full_path()
+        else
+          prog_path = prog.path()
+        endif
       else
         prog_enable = false
       endif
@@ -705,7 +717,11 @@ foreach prog : progs
       search_paths += (path + '/' + prog[0])
     endforeach
     exe = find_program(search_paths, required : false)
-    path = exe.found() ? exe.path() : prog[2]
+    if meson.version().version_compare('>= 0.55')
+      path = exe.found() ? exe.full_path() : prog[2]
+    else
+      path = exe.found() ? exe.path() : prog[2]
+    endif
   endif
   name = prog[0].to_upper() + '_PATH'
   config_h.set_quoted(name, path)
@@ -864,13 +880,18 @@ if enable_valgrind
   if valgrind_suppressions_path == ''
     valgrind_suppressions_path = join_paths(source_root, 'valgrind.suppressions')
   endif
+  if meson.version().version_compare('>= 0.55')
+    valgrind_path = valgrind.full_path()
+  else
+    valgrind_path = valgrind.path()
+  endif
 endif
 
 test_args = [
   '--called-from-make',
   build_root,
   '',
-  enable_valgrind ? valgrind.path() : '',
+  enable_valgrind ? valgrind_path : '',
   enable_valgrind ? valgrind_suppressions_path : '',
   '--launch-dbus=auto',
 ]
@@ -879,7 +900,12 @@ python_mod = import('python')
 python = python_mod.find_installation('python3', required: false)
 
 if python.found()
-  config_h.set_quoted('TEST_NM_PYTHON', python.path())
+  if meson.version().version_compare('>= 0.55')
+    python_path = python.full_path()
+  else
+    python_path = python.path()
+  endif
+  config_h.set_quoted('TEST_NM_PYTHON', python_path)
 endif
 
 data_conf = configuration_data()
@@ -1113,7 +1139,7 @@ output += '  more-logging: ' + more_logging.to_string() + '\n'
 output += '  warning-level: ' + get_option('warning_level') + '\n'
 output += '  valgrind: ' + enable_valgrind.to_string()
 if enable_valgrind
-  output += ' ' + valgrind.path()
+  output += ' ' + valgrind_path
 endif
 output += '\n'
 output += '  code coverage: ' + get_option('b_coverage').to_string() + '\n'
