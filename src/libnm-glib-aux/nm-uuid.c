@@ -436,7 +436,7 @@ nm_uuid_generate_from_strings_strv(NMUuidType         uuid_type,
     gsize                    slen;
     const char              *s;
 
-    if (len >= 0) {
+    if (len > 0) {
         gboolean has_nulls = FALSE;
         gssize   i;
 
@@ -471,7 +471,7 @@ nm_uuid_generate_from_strings_strv(NMUuidType         uuid_type,
          * in the other cases). */
         slen = 1;
         s    = "x";
-    } else if (!strv[0]) {
+    } else if (!strv[0] || len == 0) {
         slen = 0;
         s    = "";
     } else if (!strv[1]) {
