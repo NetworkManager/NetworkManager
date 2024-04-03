@@ -124,7 +124,7 @@ check_run_clean rpm+meson     && test $IS_FEDORA = 1                   && ./cont
 
 if check_run_clean tarball && [ "$NM_BUILD_TARBALL" = 1 ]; then
     SIGN_SOURCE=0 ./contrib/fedora/rpm/build_clean.sh -r
-    mv ./NetworkManager-1*.tar.xz "$ARTIFACT_DIR/"
+    mv ./build/meson-dist/NetworkManager-1*.tar.xz "$ARTIFACT_DIR/"
     mv ./contrib/fedora/rpm/latest/SRPMS/NetworkManager-1*.src.rpm "$ARTIFACT_DIR/"
     do_clean
 fi
