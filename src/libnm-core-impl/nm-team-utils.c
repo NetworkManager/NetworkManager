@@ -2809,16 +2809,8 @@ NMTeamSetting *
 nm_team_setting_new(gboolean is_port, const char *js_str)
 {
     NMTeamSetting *self;
-    gsize          l;
 
-    G_STATIC_ASSERT_EXPR(sizeof(*self) == sizeof(self->_data_priv));
-    G_STATIC_ASSERT_EXPR(
-        sizeof(*self)
-        == NM_MAX(nm_offsetofend(NMTeamSetting, d.master), nm_offsetofend(NMTeamSetting, d.port)));
-
-    l = is_port ? nm_offsetofend(NMTeamSetting, d.port) : nm_offsetofend(NMTeamSetting, d.master);
-
-    self = g_malloc0(l);
+    self = g_malloc0(sizeof(NMTeamSetting));
 
     self->_data_priv.is_port                 = is_port;
     self->_data_priv.strict_validated        = TRUE;
