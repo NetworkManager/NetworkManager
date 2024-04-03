@@ -415,8 +415,7 @@ nm_uuid_generate_from_string_str(const char   *s,
  *   case the result is different from an empty array.
  * @len: if negative, @strv is a NULL terminated array. Otherwise,
  *   it is the length of the strv array. In the latter case it may
- *   also contain NULL strings. The result hashes differently depending
- *   on whether we have a NULL terminated strv array or given length.
+ *   also contain NULL strings.
  *
  * Returns a @uuid_type UUID based on the concatenated C strings.
  * It does not simply concatenate them, but also includes the
@@ -478,7 +477,7 @@ nm_uuid_generate_from_strings_strv(NMUuidType         uuid_type,
         slen = strlen(strv[0]) + 1u;
         s    = strv[0];
     } else {
-        /* We concatenate the NUL termiated string, including the NUL
+        /* We concatenate the NUL terminated string, including the NUL
          * character. This way, ("a","a"), ("aa"), ("aa","") all hash
          * differently. */
         for (; strv[0]; strv++)
