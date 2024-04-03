@@ -21,7 +21,8 @@ usage() {
     echo "  -g|--git: create tarball from current git HEAD (skips make dist)"
     echo "  -Q|--quick: only create the distribution tarball, without running checks"
     echo "  -N|--no-dist: skip creating the source tarball if you already did \`make dist\`"
-    echo "  -m|--meson: use meson to create the source tarball"
+    echo "  -m|--meson: (default) use meson to create the source tarball"
+    echo "  -A|--autotools: use autotools to create the source tarball"
     echo "  -w|--with \$OPTION: pass --with \$OPTION to rpmbuild. For example --with debug"
     echo "  -W|--without \$OPTION: pass --without \$OPTION to rpmbuild. For example --without debug"
     echo "  -s|--snapshot TEXT: use TEXT as the snapshot version for the new package (overwrites \$NM_BUILD_SNAPSHOT environment)"
@@ -99,8 +100,12 @@ while [[ $# -gt 0 ]]; do
             SOURCE_FROM_GIT=1
             ;;
         -m|--meson)
+            [ "$USE_AUTOTOOLS" = 1 ] && die "conflicting argument: $A when building with autotools is requested";
             USE_MESON=1
-            WITH_LIST=("${WITH_LIST[@]}" "--with" "meson")
+            ;;
+        -A|--autotools)
+            [ "$USE_MESON" = 1 ] && die "conflicting argument: $A when building with meson is explicitly requested";
+            USE_AUTOTOOLS=1
             ;;
         -Q|--quick)
             QUICK=1
@@ -198,7 +203,7 @@ get_version_meson() {
 }
 
 if [[ $NO_DIST != 1 ]]; then
-    if [[ $USE_MESON = 1 ]]; then
+    if [[ $USE_AUTOTOOLS != 1 ]]; then
             meson setup "$GITDIR/build" \
                 --prefix=/usr \
                 --bindir=/usr/bin \
@@ -279,6 +284,10 @@ fi
 
 if [[ "$ADD_WITH_TEST" == 1 ]]; then
     WITH_LIST=("${WITH_LIST[@]}" "--with" "test")
+fi
+
+if [[ "$USE_AUTOTOOLS" != 1 ]]; then
+    WITH_LIST=("${WITH_LIST[@]}" "--with" "meson")
 fi
 
 export SOURCE_FROM_GIT
