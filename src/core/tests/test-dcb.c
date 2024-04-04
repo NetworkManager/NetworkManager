@@ -11,7 +11,7 @@
 
 typedef struct {
     guint       num;
-    const char *cmds[];
+    const char *cmds[16];
 } DcbExpected;
 
 static gboolean
