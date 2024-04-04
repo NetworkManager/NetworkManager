@@ -149,8 +149,8 @@ fi
 if check_run_clean tarball+meson; then
     BUILD_TYPE=meson CC=gcc WITH_DOCS=1 CONFIGURE_ONLY=1 contrib/scripts/nm-ci-run.sh
     pushd ./build
-        # dist with meson
-        meson dist
+        # dist with meson/ninja
+        ninja dist
 
         # build with autotools
         DISTSRC="./distsrc-$RANDOM"

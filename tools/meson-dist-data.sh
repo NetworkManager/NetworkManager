@@ -13,10 +13,6 @@ ensure_var_path() {
   fi
 }
 
-copy_from_build() {
-    cp -Tr "$MESON_BUILD_ROOT/$1" "$MESON_DIST_ROOT/$1"
-}
-
 if [ "$MESON_BUILD_ROOT" = "" ]; then
     if [ "$1" = "--build-root" ]; then
         MESON_BUILD_ROOT="$2"
@@ -25,11 +21,9 @@ fi
 
 ensure_var_path "MESON_DIST_ROOT"
 ensure_var_path "MESON_BUILD_ROOT"
-ensure_var_path "MESON_SOURCE_ROOT"
 
 ninja -C "$MESON_BUILD_ROOT" all libnm-doc NetworkManager-doc
 
-mkdir -p "$MESON_DIST_ROOT/docs/"
-copy_from_build /docs/api/
-copy_from_build /docs/libnm/
-copy_from_build /man/
+cp -Tr "$MESON_BUILD_ROOT/docs/api/html" "$MESON_DIST_ROOT/docs/api/html"
+cp -Tr "$MESON_BUILD_ROOT/docs/libnm/html" "$MESON_DIST_ROOT/docs/libnm/html"
+cp "$MESON_BUILD_ROOT/man/"*.[1-8] "$MESON_DIST_ROOT/man"
