@@ -63,6 +63,7 @@ if [[ "$INSTALL_DEPENDENCIES" == yes ]]; then
       libudev-devel \
       libuuid-devel \
       make \
+      meson \
       mobile-broadband-provider-info-devel \
       newt-devel \
       nss-devel \
