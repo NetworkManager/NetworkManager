@@ -83,12 +83,6 @@ G_DEFINE_TYPE(NMPowerMonitor, nm_power_monitor, G_TYPE_OBJECT);
 
 /*****************************************************************************/
 
-static void sleep_signal(NMPowerMonitor *self, gboolean is_about_to_suspend);
-
-static void shutdown_signal(NMPowerMonitor *self);
-
-/*****************************************************************************/
-
 static void
 drop_inhibitor(NMPowerMonitor *self, gboolean force)
 {
@@ -164,18 +158,6 @@ take_inhibitor(NMPowerMonitor *self)
 }
 
 static void
-prepare_for_sleep_cb(GDBusProxy *proxy, gboolean is_about_to_suspend, gpointer data)
-{
-    sleep_signal(data, is_about_to_suspend);
-}
-
-static void
-prepare_for_shutdown_cb(GDBusProxy *proxy, gpointer data)
-{
-    shutdown_signal(data);
-}
-
-static void
 name_owner_cb(GObject *object, GParamSpec *pspec, gpointer user_data)
 {
     GDBusProxy     *proxy = G_DBUS_PROXY(object);
@@ -193,7 +175,7 @@ name_owner_cb(GObject *object, GParamSpec *pspec, gpointer user_data)
 }
 
 static void
-sleep_signal(NMPowerMonitor *self, gboolean is_about_to_suspend)
+prepare_for_sleep_cb(GDBusProxy *proxy, gboolean is_about_to_suspend, NMPowerMonitor *self)
 {
     g_return_if_fail(NM_IS_POWER_MONITOR(self));
 
@@ -209,7 +191,7 @@ sleep_signal(NMPowerMonitor *self, gboolean is_about_to_suspend)
 }
 
 static void
-shutdown_signal(NMPowerMonitor *self)
+prepare_for_shutdown_cb(GDBusProxy *proxy, gboolean is_about_to_shutdown, NMPowerMonitor *self)
 {
     g_return_if_fail(NM_IS_POWER_MONITOR(self));
 
@@ -372,8 +354,7 @@ nm_power_monitor_class_init(NMPowerMonitorClass *klass)
                                      0,
                                      NULL,
                                      NULL,
-                                     g_cclosure_marshal_VOID__BOOLEAN,
+                                     NULL,
                                      G_TYPE_NONE,
-                                     1,
-                                     G_TYPE_BOOLEAN);
+                                     0);
 }

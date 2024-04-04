@@ -7488,7 +7488,7 @@ shutdown_cb(NMPowerMonitor *monitor, gpointer user_data)
         NMSettingConnection *s_con;
         gboolean             take_down = FALSE;
 
-        s_con = nm_device_get_applied_setting(device, NM_META_SETTING_TYPE_CONNECTION);
+        s_con = nm_device_get_applied_setting(device, NM_TYPE_SETTING_CONNECTION);
         if (!s_con)
             continue;
 
