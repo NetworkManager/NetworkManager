@@ -13,7 +13,7 @@ project(
     'c_std=gnu11',
     'warning_level=2' # value "2" will add "-Wall" and "-Wextra" to the compiler flags
   ],
-  meson_version: '>= 0.47.2',
+  meson_version: '>= 0.51.0',
 )
 
 nm_name = meson.project_name()
@@ -77,7 +77,7 @@ pkg = import('pkgconfig')
 source_root = meson.current_source_dir()
 build_root = meson.current_build_dir()
 
-po_dir = join_paths(meson.source_root(), 'po')
+po_dir = source_root / 'po'
 
 top_inc = include_directories('.')
 
@@ -253,7 +253,7 @@ config_h.set10('WITH_JANSSON', jansson_dep.found())
 
 jansson_msg = 'no'
 if jansson_dep.found()
-  jansson_libdir = jansson_dep.get_pkgconfig_variable('libdir')
+  jansson_libdir = jansson_dep.get_variable(pkgconfig: 'libdir')
   res = run_command(find_program('eu-readelf', 'readelf'), '-d', join_paths(jansson_libdir, 'libjansson.so'), check: false)
   jansson_soname = ''
   foreach line: res.stdout().split('\n')
@@ -362,7 +362,7 @@ install_systemdunitdir = (systemd_systemdsystemunitdir != 'no')
 
 if install_systemdunitdir and systemd_systemdsystemunitdir == ''
   assert(systemd_dep.found(), 'systemd required but not found, please provide a valid systemd user unit dir or disable it')
-  systemd_systemdsystemunitdir = systemd_dep.get_pkgconfig_variable('systemdsystemunitdir', define_variable: ['rootprefix', nm_prefix])
+  systemd_systemdsystemunitdir = systemd_dep.get_variable(pkgconfig: 'systemdsystemunitdir', pkgconfig_define: ['rootprefix', nm_prefix])
 endif
 
 enable_systemd_journal = get_option('systemd_journal')
@@ -495,7 +495,7 @@ endif
 enable_polkit = get_option('polkit')
 if enable_polkit
   # FIXME: policydir should be relative to `datadir`, not `prefix`. Fixed in https://gitlab.freedesktop.org/polkit/polkit/merge_requests/2
-  polkit_gobject_policydir = dependency('polkit-gobject-1').get_pkgconfig_variable('policydir', define_variable: ['prefix', nm_prefix])
+  polkit_gobject_policydir = dependency('polkit-gobject-1').get_variable(pkgconfig: 'policydir', pkgconfig_define: ['prefix', nm_prefix])
 endif
 
 config_auth_polkit_default = get_option('config_auth_polkit_default')
@@ -545,11 +545,11 @@ endif
 dbus_conf_dir = get_option('dbus_conf_dir')
 if dbus_conf_dir == ''
   assert(dbus_dep.found(), 'D-Bus required but not found, please provide a valid system bus config dir')
-  dbus_conf_dir = join_paths(dbus_dep.get_pkgconfig_variable('datarootdir', define_variable: ['prefix', nm_prefix]), 'dbus-1', 'system.d')
+  dbus_conf_dir = join_paths(dbus_dep.get_variable(pkgconfig: 'datarootdir', pkgconfig_define: ['prefix', nm_prefix]), 'dbus-1', 'system.d')
 endif
 
-dbus_interfaces_dir = dbus_dep.get_pkgconfig_variable('interfaces_dir',  define_variable: ['datadir', nm_datadir])
-dbus_system_bus_services_dir = dbus_dep.get_pkgconfig_variable('system_bus_services_dir', define_variable: ['datadir', nm_datadir])
+dbus_interfaces_dir = dbus_dep.get_variable(pkgconfig: 'interfaces_dir',  pkgconfig_define: ['datadir', nm_datadir])
+dbus_system_bus_services_dir = dbus_dep.get_variable(pkgconfig: 'system_bus_services_dir', pkgconfig_define: ['datadir', nm_datadir])
 
 enable_firewalld_zone = get_option('firewalld_zone')
 config_h.set10('WITH_FIREWALLD_ZONE', enable_firewalld_zone)
@@ -571,7 +571,11 @@ if enable_ppp
   if pppd_path == ''
     pppd = find_program('pppd', '/sbin/pppd', '/usr/sbin/pppd', required: false)
     assert(pppd.found(), 'pppd required but not found, please provide a valid pppd path or use -Dppp=false to disable it')
-    pppd_path = pppd.path()
+    if meson.version().version_compare('>= 0.55')
+      pppd_path = pppd.full_path()
+    else
+      pppd_path = pppd.path()
+    endif
   endif
 
   config_h.set_quoted('PPPD_PATH', pppd_path)
@@ -591,7 +595,7 @@ if enable_modem_manager
 
   mobile_broadband_provider_info_database = get_option('mobile_broadband_provider_info_database')
   if mobile_broadband_provider_info_database == ''
-    mobile_broadband_provider_info_database = dependency('mobile-broadband-provider-info').get_pkgconfig_variable('database')
+    mobile_broadband_provider_info_database = dependency('mobile-broadband-provider-info').get_variable(pkgconfig: 'database')
   endif
   config_h.set_quoted('MOBILE_BROADBAND_PROVIDER_INFO_DATABASE', mobile_broadband_provider_info_database)
 endif
@@ -625,7 +629,11 @@ foreach client : [ 'dhclient', 'dhcpcd', 'dhcpcanon' ]
                                  '/usr/local/sbin/' + client,
                                  required : false)
       if client_prog.found()
-        client_path = client_prog.path()
+        if meson.version().version_compare('>= 0.55')
+          client_path = client_prog.full_path()
+        else
+          client_path = client_prog.path()
+        endif
       else
         client_path = '/usr/sbin/' + client
         message('@0@ not found, assume path @1@'.format(client, client_path))
@@ -667,7 +675,11 @@ foreach prog_name : ['resolvconf', 'netconfig']
                           '/usr/local/sbin/' + prog_name,
                           required : false)
       if prog.found()
-        prog_path = prog.path()
+        if meson.version().version_compare('>= 0.55')
+          prog_path = prog.full_path()
+        else
+          prog_path = prog.path()
+        endif
       else
         prog_enable = false
       endif
@@ -705,7 +717,11 @@ foreach prog : progs
       search_paths += (path + '/' + prog[0])
     endforeach
     exe = find_program(search_paths, required : false)
-    path = exe.found() ? exe.path() : prog[2]
+    if meson.version().version_compare('>= 0.55')
+      path = exe.found() ? exe.full_path() : prog[2]
+    else
+      path = exe.found() ? exe.path() : prog[2]
+    endif
   endif
   name = prog[0].to_upper() + '_PATH'
   config_h.set_quoted(name, path)
@@ -864,22 +880,32 @@ if enable_valgrind
   if valgrind_suppressions_path == ''
     valgrind_suppressions_path = join_paths(source_root, 'valgrind.suppressions')
   endif
+  if meson.version().version_compare('>= 0.55')
+    valgrind_path = valgrind.full_path()
+  else
+    valgrind_path = valgrind.path()
+  endif
 endif
 
 test_args = [
   '--called-from-make',
   build_root,
   '',
-  enable_valgrind ? valgrind.path() : '',
+  enable_valgrind ? valgrind_path : '',
   enable_valgrind ? valgrind_suppressions_path : '',
   '--launch-dbus=auto',
 ]
 
-py3 = import('python3')
-python = py3.find_python()
+python_mod = import('python')
+python = python_mod.find_installation('python3', required: false)
 
 if python.found()
-  config_h.set_quoted('TEST_NM_PYTHON', python.path())
+  if meson.version().version_compare('>= 0.55')
+    python_path = python.full_path()
+  else
+    python_path = python.path()
+  endif
+  config_h.set_quoted('TEST_NM_PYTHON', python_path)
 endif
 
 data_conf = configuration_data()
@@ -976,7 +1002,6 @@ endif
 
 if enable_docs
   assert(enable_introspection, '-Ddocs=true requires -Dintrospection=true')
-  assert(meson.version().version_compare('>= 0.49.0'), '-Ddocs requires meson >= 0.49')
   subdir('man')
   subdir('docs')
   meson.add_dist_script(
@@ -1113,7 +1138,7 @@ output += '  more-logging: ' + more_logging.to_string() + '\n'
 output += '  warning-level: ' + get_option('warning_level') + '\n'
 output += '  valgrind: ' + enable_valgrind.to_string()
 if enable_valgrind
-  output += ' ' + valgrind.path()
+  output += ' ' + valgrind_path
 endif
 output += '\n'
 output += '  code coverage: ' + get_option('b_coverage').to_string() + '\n'

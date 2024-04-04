@@ -4,7 +4,7 @@ wwan_inc = include_directories('.')
 
 linker_script = join_paths(meson.current_source_dir(), 'libnm-wwan.ver')
 
-libnm_wwan = shared_module(
+libnm_wwan = shared_library(
   'nm-wwan',
   sources: files(
   'nm-service-providers.c',
@@ -21,6 +21,7 @@ libnm_wwan = shared_module(
   link_depends: linker_script,
   install: true,
   install_dir: nm_plugindir,
+  override_options: ['b_lundef=false'],
 )
 
 libnm_wwan_dep = declare_dependency(

@@ -6,7 +6,7 @@ test(
   args: [
     build_root,
     source_root,
-    python.path(),
+    python_path,
     '--',
     'TestNmcli',
   ],
@@ -23,7 +23,7 @@ if enable_nm_cloud_setup
     args: [
       build_root,
       source_root,
-      python.path(),
+      python_path,
       '--',
       'TestNmCloudSetup',
     ],

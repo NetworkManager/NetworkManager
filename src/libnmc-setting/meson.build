@@ -3,13 +3,13 @@
 if enable_docs
   assert(enable_introspection, '-Ddocs=true requires -Dintrospection=true')
 
-  merge_cmd = join_paths(meson.source_root(), 'tools', 'generate-docs-nm-settings-docs-merge.py')
+  merge_cmd = files(source_root / 'tools' / 'generate-docs-nm-settings-docs-merge.py')
   settings_docs_input_xml = custom_target(
     'settings-docs-input.xml',
     input: [merge_cmd, nm_settings_docs_xml_gir['nmcli'], nm_property_infos_xml['nmcli']],
     output: 'settings-docs-input.xml',
     command: [
-      python.path(),
+      python_path,
       merge_cmd,
       '@OUTPUT@',
       nm_property_infos_xml['nmcli'],
@@ -17,13 +17,13 @@ if enable_docs
     ],
   )
 
-  gen_cmd = join_paths(meson.source_root(), 'tools', 'generate-docs-settings-docs.py')
+  gen_cmd = files(source_root / 'tools' / 'generate-docs-settings-docs.py')
   settings_docs_source = custom_target(
     'settings-docs.h',
     input: [gen_cmd, settings_docs_input_xml],
     output: 'settings-docs.h',
     command: [
-      python.path(),
+      python_path,
       gen_cmd,
       '--output', '@OUTPUT@',
       '--xml', settings_docs_input_xml

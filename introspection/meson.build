@@ -80,14 +80,8 @@ foreach iface: ifaces
   endif
 
   content_files += dbus_iface_xml_path
-
-  # res is an array only since 0.46. Documentation won't work with
-  # older versions
-  if meson.version().version_compare('>= 0.46.0')
-    introspection_files += [ [res[2], dbus_iface_xml_path] ]
-    headers += res[1]
-  endif
-
+  introspection_files += [ [res[2], dbus_iface_xml_path] ]
+  headers += res[1]
 endforeach
 
 install_data(
