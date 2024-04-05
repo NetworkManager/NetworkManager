@@ -964,8 +964,8 @@ nm_g_variant_equal(GVariant *a, GVariant *b)
 
 /* check if @flags has exactly one flag (@check) set. You should call this
  * only with @check being a compile time constant and a power of two. */
-#define NM_FLAGS_HAS(flags, check)                                       \
-    (G_STATIC_ASSERT_EXPR((check) > 0 && ((check) & ((check) -1)) == 0), \
+#define NM_FLAGS_HAS(flags, check)                                        \
+    (G_STATIC_ASSERT_EXPR((check) > 0 && ((check) & ((check) - 1)) == 0), \
      NM_FLAGS_ANY((flags), (check)))
 
 #define NM_FLAGS_ANY(flags, check) (((flags) & (check)) != 0)
@@ -1695,7 +1695,7 @@ nm_decode_version(guint version, guint *major, guint *minor, guint *micro)
 
 /*****************************************************************************/
 
-#define NM_PID_T_INVAL ((pid_t) -1)
+#define NM_PID_T_INVAL ((pid_t) - 1)
 
 /*****************************************************************************/
 

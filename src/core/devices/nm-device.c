@@ -15693,7 +15693,7 @@ nm_device_update_firewall_zone(NMDevice *self)
 void
 nm_device_update_metered(NMDevice *self)
 {
-#define NM_METERED_INVALID ((NMMetered) -1)
+#define NM_METERED_INVALID ((NMMetered) - 1)
     NMDevicePrivate     *priv = NM_DEVICE_GET_PRIVATE(self);
     NMSettingConnection *setting;
     NMMetered            conn_value, value = NM_METERED_INVALID;

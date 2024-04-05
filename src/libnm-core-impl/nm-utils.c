@@ -506,7 +506,8 @@ nmtst_system_encodings_get(void)
 
 /*****************************************************************************/
 
-static void __attribute__((constructor)) _nm_utils_init(void)
+static void __attribute__((constructor))
+_nm_utils_init(void)
 {
     static int initialized = 0;
 

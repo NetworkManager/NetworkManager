@@ -47,11 +47,11 @@
 
 static const NMCryptoCipherInfo cipher_infos[] = {
 #define _CI(_cipher, _name, _digest_len, _real_iv_len) \
-    [(_cipher) -1] = {.cipher      = _cipher,          \
-                      .name        = ""_name           \
-                                     "",               \
-                      .digest_len  = _digest_len,      \
-                      .real_iv_len = _real_iv_len}
+    [(_cipher) - 1] = {.cipher      = _cipher,         \
+                       .name        = ""_name          \
+                                      "",              \
+                       .digest_len  = _digest_len,     \
+                       .real_iv_len = _real_iv_len}
     _CI(NM_CRYPTO_CIPHER_DES_EDE3_CBC, "DES-EDE3-CBC", 24, 8),
     _CI(NM_CRYPTO_CIPHER_DES_CBC, "DES-CBC", 8, 8),
     _CI(NM_CRYPTO_CIPHER_AES_128_CBC, "AES-128-CBC", 16, 16),

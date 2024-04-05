@@ -121,7 +121,8 @@ _nm_singleton_instance_weak_cb(gpointer data, GObject *where_the_object_was)
     _singletons = g_slist_remove(_singletons, where_the_object_was);
 }
 
-static void __attribute__((destructor)) _nm_singleton_instance_destroy(void)
+static void __attribute__((destructor))
+_nm_singleton_instance_destroy(void)
 {
     _singletons_shutdown = TRUE;
 
