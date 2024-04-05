@@ -2001,6 +2001,16 @@ global:
 	nm_setting_wireless_remove_mac_denylist_item;
 	nm_setting_wireless_remove_mac_denylist_item_by_value;
 	nm_setting_802_1x_get_openssl_ciphers;
+
+	nm_setting_gsm_get_initial_eps_username;
+	nm_setting_gsm_get_initial_eps_password;
+	nm_setting_ppp_get_initial_eps_noauth;	
+	nm_setting_ppp_get_initial_eps_refuse_eap;
+	nm_setting_ppp_get_initial_eps_refuse_pap;
+	nm_setting_ppp_get_initial_eps_refuse_chap;
+	nm_setting_ppp_get_initial_eps_refuse_mschap;
+	nm_setting_ppp_get_initial_eps_refuse_mschapv2;
+	
 } libnm_1_46_0;
 
 libnm_1_50_0 {

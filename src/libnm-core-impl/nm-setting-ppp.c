@@ -28,6 +28,12 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_NOAUTH,
                                   PROP_REFUSE_CHAP,
                                   PROP_REFUSE_MSCHAP,
                                   PROP_REFUSE_MSCHAPV2,
+                                  PROP_INITIAL_EPS_NOAUTH,
+                                  PROP_INITIAL_EPS_REFUSE_EAP,
+                                  PROP_INITIAL_EPS_REFUSE_PAP,
+                                  PROP_INITIAL_EPS_REFUSE_CHAP,
+                                  PROP_INITIAL_EPS_REFUSE_MSCHAP,
+                                  PROP_INITIAL_EPS_REFUSE_MSCHAPV2,
                                   PROP_NOBSDCOMP,
                                   PROP_NODEFLATE,
                                   PROP_NO_VJ_COMP,
@@ -53,6 +59,12 @@ typedef struct {
     bool    refuse_chap;
     bool    refuse_mschap;
     bool    refuse_mschapv2;
+    bool    initial_eps_noauth;
+    bool    initial_eps_refuse_eap;
+    bool    initial_eps_refuse_pap;
+    bool    initial_eps_refuse_chap;
+    bool    initial_eps_refuse_mschap;
+    bool    initial_eps_refuse_mschapv2;
     bool    nobsdcomp;
     bool    nodeflate;
     bool    no_vj_comp;
@@ -164,6 +176,90 @@ nm_setting_ppp_get_refuse_mschapv2(NMSettingPpp *setting)
     g_return_val_if_fail(NM_IS_SETTING_PPP(setting), FALSE);
 
     return NM_SETTING_PPP_GET_PRIVATE(setting)->refuse_mschapv2;
+}
+
+/**
+ * nm_setting_ppp_get_initial_eps_noauth:
+ * @setting: the #NMSettingPpp
+ *
+ * Returns: For LTE modems, the #NMSettingPpp:initial-eps-noauth property of the setting
+ **/
+gboolean
+nm_setting_ppp_get_initial_eps_noauth(NMSettingPpp *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_PPP(setting), FALSE);
+
+    return NM_SETTING_PPP_GET_PRIVATE(setting)->initial_eps_noauth;
+}
+
+/**
+ * nm_setting_ppp_get_initial_eps_refuse_eap:
+ * @setting: the #NMSettingPpp
+ *
+ * Returns: For LTE modems, the #NMSettingPpp:initial-eps-refuse-eap property of the setting
+ **/
+gboolean
+nm_setting_ppp_get_initial_eps_refuse_eap(NMSettingPpp *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_PPP(setting), FALSE);
+
+    return NM_SETTING_PPP_GET_PRIVATE(setting)->initial_eps_refuse_eap;
+}
+
+/**
+ * nm_setting_ppp_get_initial_eps_refuse_pap:
+ * @setting: the #NMSettingPpp
+ *
+ * Returns: For LTE modems, the #NMSettingPpp:initial-eps-refuse-pap property of the setting
+ **/
+gboolean
+nm_setting_ppp_get_initial_eps_refuse_pap(NMSettingPpp *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_PPP(setting), FALSE);
+
+    return NM_SETTING_PPP_GET_PRIVATE(setting)->initial_eps_refuse_pap;
+}
+
+/**
+ * nm_setting_ppp_get_initial_eps_refuse_chap:
+ * @setting: the #NMSettingPpp
+ *
+ * Returns: For LTE modems, the #NMSettingPpp:initial-eps-refuse-chap property of the setting
+ **/
+gboolean
+nm_setting_ppp_get_initial_eps_refuse_chap(NMSettingPpp *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_PPP(setting), FALSE);
+
+    return NM_SETTING_PPP_GET_PRIVATE(setting)->initial_eps_refuse_chap;
+}
+
+/**
+ * nm_setting_ppp_get_initial_eps_refuse_mschap:
+ * @setting: the #NMSettingPpp
+ *
+ * Returns: For LTE modems, the #NMSettingPpp:initial-eps-refuse-mschap property of the setting
+ **/
+gboolean
+nm_setting_ppp_get_initial_eps_refuse_mschap(NMSettingPpp *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_PPP(setting), FALSE);
+
+    return NM_SETTING_PPP_GET_PRIVATE(setting)->initial_eps_refuse_mschap;
+}
+
+/**
+ * nm_setting_ppp_get_initial_eps_refuse_mschapv2:
+ * @setting: the #NMSettingPpp
+ *
+ * Returns: For LTE modems, the #NMSettingPpp:initial-eps-refuse-mschapv2 property of the setting
+ **/
+gboolean
+nm_setting_ppp_get_initial_eps_refuse_mschapv2(NMSettingPpp *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_PPP(setting), FALSE);
+
+    return NM_SETTING_PPP_GET_PRIVATE(setting)->initial_eps_refuse_mschapv2;
 }
 
 /**
@@ -489,6 +585,99 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
                                                NM_SETTING_PARAM_NONE,
                                                NMSettingPppPrivate,
                                                refuse_mschapv2);
+
+    /**
+     * NMSettingPpp:initial-eps-bearer-noauth:
+     *
+     * For LTE modems, this sets NOAUTH authentication method for the initial EPS bearer that is set
+     * up when attaching to the network.
+     * If %TRUE, do not require the other side (usually the PPP server) to
+     * authenticate itself to the client.  If %FALSE, require authentication
+     * from the remote side.  In almost all cases, this should be %TRUE.
+     **/
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_PPP_INITIAL_EPS_BEARER_NOAUTH,
+                                               PROP_INITIAL_EPS_NOAUTH,
+                                               TRUE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingPppPrivate,
+                                               initial_eps_noauth);
+
+    /**
+     * NMSettingPpp:initial-eps-bearer-refuse-eap:
+     *
+     * For LTE modems, this disables EAP authentication method for the initial EPS bearer that is set
+     * up when attaching to the network.
+     **/
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_PPP_INITIAL_EPS_BEARER_REFUSE_EAP,
+                                               PROP_INITIAL_EPS_REFUSE_EAP,
+                                               FALSE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingPppPrivate,
+                                               initial_eps_refuse_eap);
+
+    /**
+     * NMSettingPpp:initial-eps-bearer-refuse-pap:
+     *
+     * For LTE modems, this disables PAP authentication method for the initial EPS bearer that is set
+     * up when attaching to the network.
+     **/
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_PPP_INITIAL_EPS_BEARER_REFUSE_PAP,
+                                               PROP_INITIAL_EPS_REFUSE_PAP,
+                                               FALSE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingPppPrivate,
+                                               initial_eps_refuse_pap);
+
+    /**
+     * NMSettingPpp:initial-eps-bearer-refuse-chap:
+     *
+     * For LTE modems, this disables CHAP authentication method for the initial EPS bearer that is set
+     * up when attaching to the network.
+     **/
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_PPP_INITIAL_EPS_BEARER_REFUSE_CHAP,
+                                               PROP_INITIAL_EPS_REFUSE_CHAP,
+                                               FALSE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingPppPrivate,
+                                               initial_eps_refuse_chap);
+
+    /**
+     * NMSettingPpp:initial-eps-bearer-refuse-mschap:
+     *
+     * For LTE modems, this disables MSCHAP authentication method for the initial EPS bearer that is set
+     * up when attaching to the network.
+     **/
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_PPP_INITIAL_EPS_BEARER_REFUSE_MSCHAP,
+                                               PROP_INITIAL_EPS_REFUSE_MSCHAP,
+                                               FALSE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingPppPrivate,
+                                               initial_eps_refuse_mschap);
+
+    /**
+     * NMSettingPpp:initial-eps-bearer-refuse-mschapv2:
+     *
+     * For LTE modems, this disables MSCHAPV2 authentication method for the initial EPS bearer that is set
+     * up when attaching to the network.
+     **/
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_PPP_INITIAL_EPS_BEARER_REFUSE_MSCHAPV2,
+                                               PROP_INITIAL_EPS_REFUSE_MSCHAPV2,
+                                               FALSE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingPppPrivate,
+                                               initial_eps_refuse_mschapv2);
 
     /**
      * NMSettingPpp:nobsdcomp:

@@ -26,21 +26,24 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_GSM_SETTING_NAME "gsm"
 
-#define NM_SETTING_GSM_AUTO_CONFIG                  "auto-config"
-#define NM_SETTING_GSM_USERNAME                     "username"
-#define NM_SETTING_GSM_PASSWORD                     "password"
-#define NM_SETTING_GSM_PASSWORD_FLAGS               "password-flags"
-#define NM_SETTING_GSM_APN                          "apn"
-#define NM_SETTING_GSM_NETWORK_ID                   "network-id"
-#define NM_SETTING_GSM_PIN                          "pin"
-#define NM_SETTING_GSM_PIN_FLAGS                    "pin-flags"
-#define NM_SETTING_GSM_HOME_ONLY                    "home-only"
-#define NM_SETTING_GSM_DEVICE_ID                    "device-id"
-#define NM_SETTING_GSM_SIM_ID                       "sim-id"
-#define NM_SETTING_GSM_SIM_OPERATOR_ID              "sim-operator-id"
-#define NM_SETTING_GSM_MTU                          "mtu"
-#define NM_SETTING_GSM_INITIAL_EPS_BEARER_CONFIGURE "initial-eps-bearer-configure"
-#define NM_SETTING_GSM_INITIAL_EPS_BEARER_APN       "initial-eps-bearer-apn"
+#define NM_SETTING_GSM_AUTO_CONFIG                       "auto-config"
+#define NM_SETTING_GSM_USERNAME                          "username"
+#define NM_SETTING_GSM_PASSWORD                          "password"
+#define NM_SETTING_GSM_PASSWORD_FLAGS                    "password-flags"
+#define NM_SETTING_GSM_APN                               "apn"
+#define NM_SETTING_GSM_NETWORK_ID                        "network-id"
+#define NM_SETTING_GSM_PIN                               "pin"
+#define NM_SETTING_GSM_PIN_FLAGS                         "pin-flags"
+#define NM_SETTING_GSM_HOME_ONLY                         "home-only"
+#define NM_SETTING_GSM_DEVICE_ID                         "device-id"
+#define NM_SETTING_GSM_SIM_ID                            "sim-id"
+#define NM_SETTING_GSM_SIM_OPERATOR_ID                   "sim-operator-id"
+#define NM_SETTING_GSM_MTU                               "mtu"
+#define NM_SETTING_GSM_INITIAL_EPS_BEARER_CONFIGURE      "initial-eps-bearer-configure"
+#define NM_SETTING_GSM_INITIAL_EPS_BEARER_APN            "initial-eps-bearer-apn"
+#define NM_SETTING_GSM_INITIAL_EPS_BEARER_USERNAME       "initial-eps-bearer-username"
+#define NM_SETTING_GSM_INITIAL_EPS_BEARER_PASSWORD       "initial-eps-bearer-password"
+#define NM_SETTING_GSM_INITIAL_EPS_BEARER_PASSWORD_FLAGS "initial-eps-bearer-password-flags"
 
 /* Deprecated */
 #define NM_SETTING_GSM_NUMBER "number"
@@ -73,6 +76,10 @@ NM_AVAILABLE_IN_1_44
 gboolean nm_setting_gsm_get_initial_eps_config(NMSettingGsm *setting);
 NM_AVAILABLE_IN_1_44
 const char *nm_setting_gsm_get_initial_eps_apn(NMSettingGsm *setting);
+NM_AVAILABLE_IN_1_50
+const char *nm_setting_gsm_get_initial_eps_username(NMSettingGsm *setting);
+NM_AVAILABLE_IN_1_50
+const char *nm_setting_gsm_get_initial_eps_password(NMSettingGsm *setting);
 
 NM_DEPRECATED_IN_1_16
 const char *nm_setting_gsm_get_number(NMSettingGsm *setting);

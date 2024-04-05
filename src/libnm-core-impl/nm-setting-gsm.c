@@ -38,7 +38,10 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_AUTO_CONFIG,
                                   PROP_SIM_OPERATOR_ID,
                                   PROP_MTU,
                                   PROP_INITIAL_EPS_CONFIG,
-                                  PROP_INITIAL_EPS_APN, );
+                                  PROP_INITIAL_EPS_APN,
+                                  PROP_INITIAL_EPS_USERNAME,
+                                  PROP_INITIAL_EPS_PASSWORD,
+                                  PROP_INITIAL_EPS_PASSWORD_FLAGS, );
 
 typedef struct {
     char   *number;
@@ -51,7 +54,10 @@ typedef struct {
     char   *network_id;
     char   *pin;
     char   *initial_eps_apn;
+    char   *initial_eps_username;
+    char   *initial_eps_password;
     guint   password_flags;
+    guint   initial_eps_password_flags;
     guint   pin_flags;
     guint32 mtu;
     bool    auto_config;
@@ -317,6 +323,34 @@ nm_setting_gsm_get_initial_eps_apn(NMSettingGsm *setting)
     g_return_val_if_fail(NM_IS_SETTING_GSM(setting), NULL);
 
     return NM_SETTING_GSM_GET_PRIVATE(setting)->initial_eps_apn;
+}
+
+/**
+ * nm_setting_gsm_get_initial_eps_username:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: the #NMSettingGsm:initial-eps-bearer-username property of the setting
+ **/
+const char *
+nm_setting_gsm_get_initial_eps_username(NMSettingGsm *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_GSM(setting), NULL);
+
+    return NM_SETTING_GSM_GET_PRIVATE(setting)->initial_eps_username;
+}
+
+/**
+ * nm_setting_gsm_get_initial_eps_password:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: the #NMSettingGsm:initial-eps-bearer-password property of the setting
+ **/
+const char *
+nm_setting_gsm_get_initial_eps_password(NMSettingGsm *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_GSM(setting), NULL);
+
+    return NM_SETTING_GSM_GET_PRIVATE(setting)->initial_eps_password;
 }
 
 static gboolean
@@ -846,6 +880,51 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
                                               NMSettingGsmPrivate,
                                               initial_eps_apn,
                                               .direct_string_allow_empty = TRUE);
+
+    /**
+     * NMSettingGsm:initial-eps-bearer-username:
+     *
+     * For LTE modems, this sets the username for the initial EPS bearer that is set
+     * up when attaching to the network.  Setting this parameter implies
+     * initial-eps-bearer-configure to be TRUE.
+     **/
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_GSM_INITIAL_EPS_BEARER_USERNAME,
+                                              PROP_INITIAL_EPS_USERNAME,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingGsmPrivate,
+                                              initial_eps_username,
+                                              .direct_string_allow_empty = TRUE);
+
+    /**
+     * NMSettingGsm:initial-eps-bearer-password:
+     *
+     * For LTE modems, this sets the password for the initial EPS bearer that is set
+     * up when attaching to the network.  Setting this parameter implies
+     * initial-eps-bearer-configure to be TRUE.
+     **/
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_GSM_INITIAL_EPS_BEARER_PASSWORD,
+                                              PROP_INITIAL_EPS_PASSWORD,
+                                              NM_SETTING_PARAM_SECRET,
+                                              NMSettingGsmPrivate,
+                                              initial_eps_password,
+                                              .direct_string_allow_empty = TRUE);
+
+    /**
+     * NMSettingGsm:initial-eps-bearer-password-flags:
+     *
+     * Flags indicating how to handle the #NMSettingGsm:initial-eps-bearer-password property.
+     **/
+    _nm_setting_property_define_direct_secret_flags(
+        properties_override,
+        obj_properties,
+        NM_SETTING_GSM_INITIAL_EPS_BEARER_PASSWORD_FLAGS,
+        PROP_INITIAL_EPS_PASSWORD_FLAGS,
+        NMSettingGsmPrivate,
+        initial_eps_password_flags);
 
     /* Ignore incoming deprecated properties */
     _nm_properties_override_dbus(properties_override,
