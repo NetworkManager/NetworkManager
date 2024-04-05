@@ -668,6 +668,8 @@ connect_context_step(NMModemBroadband *self)
             NMSettingGsm *s_gsm     = nm_connection_get_setting_gsm(ctx->connection);
             const char   *apn       = nm_setting_gsm_get_initial_eps_apn(s_gsm);
             gboolean      do_config = nm_setting_gsm_get_initial_eps_config(s_gsm);
+            const char   *username  = nm_setting_gsm_get_initial_eps_username(s_gsm);
+            const char   *password  = nm_setting_gsm_get_initial_eps_password(s_gsm);
 
             /* assume do_config is true if an APN is set */
             if (apn || do_config) {
@@ -690,9 +692,28 @@ connect_context_step(NMModemBroadband *self)
                     /* do nothing */
                     break;
                 }
-                if (apn)
-                    mm_bearer_properties_set_apn(config, apn);
+                if (apn) {
+                    MMBearerAllowedAuth allowed_auth = MM_BEARER_ALLOWED_AUTH_UNKNOWN;
 
+                    mm_bearer_properties_set_apn(config, apn);
+                    mm_bearer_properties_set_user(config, username);
+                    mm_bearer_properties_set_password(config, password);
+
+                    if (nm_setting_gsm_get_initial_eps_noauth(s_gsm))
+                        allowed_auth |= MM_BEARER_ALLOWED_AUTH_NONE;
+                    if (!nm_setting_gsm_get_initial_eps_refuse_pap(s_gsm))
+                        allowed_auth |= MM_BEARER_ALLOWED_AUTH_PAP;
+                    if (!nm_setting_gsm_get_initial_eps_refuse_chap(s_gsm))
+                        allowed_auth |= MM_BEARER_ALLOWED_AUTH_CHAP;
+                    if (!nm_setting_gsm_get_initial_eps_refuse_mschap(s_gsm))
+                        allowed_auth |= MM_BEARER_ALLOWED_AUTH_MSCHAP;
+                    if (!nm_setting_gsm_get_initial_eps_refuse_mschapv2(s_gsm))
+                        allowed_auth |= MM_BEARER_ALLOWED_AUTH_MSCHAPV2;
+                    if (!nm_setting_gsm_get_initial_eps_refuse_eap(s_gsm))
+                        allowed_auth |= MM_BEARER_ALLOWED_AUTH_EAP;
+
+                    mm_bearer_properties_set_allowed_auth(config, allowed_auth);
+                }
                 /*
                  * Setting the initial EPS bearer settings is a no-op in
                  * ModemManager if the desired configuration is already active.

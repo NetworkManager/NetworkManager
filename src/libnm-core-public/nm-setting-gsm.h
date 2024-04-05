@@ -26,21 +26,30 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_GSM_SETTING_NAME "gsm"
 
-#define NM_SETTING_GSM_AUTO_CONFIG                  "auto-config"
-#define NM_SETTING_GSM_USERNAME                     "username"
-#define NM_SETTING_GSM_PASSWORD                     "password"
-#define NM_SETTING_GSM_PASSWORD_FLAGS               "password-flags"
-#define NM_SETTING_GSM_APN                          "apn"
-#define NM_SETTING_GSM_NETWORK_ID                   "network-id"
-#define NM_SETTING_GSM_PIN                          "pin"
-#define NM_SETTING_GSM_PIN_FLAGS                    "pin-flags"
-#define NM_SETTING_GSM_HOME_ONLY                    "home-only"
-#define NM_SETTING_GSM_DEVICE_ID                    "device-id"
-#define NM_SETTING_GSM_SIM_ID                       "sim-id"
-#define NM_SETTING_GSM_SIM_OPERATOR_ID              "sim-operator-id"
-#define NM_SETTING_GSM_MTU                          "mtu"
-#define NM_SETTING_GSM_INITIAL_EPS_BEARER_CONFIGURE "initial-eps-bearer-configure"
-#define NM_SETTING_GSM_INITIAL_EPS_BEARER_APN       "initial-eps-bearer-apn"
+#define NM_SETTING_GSM_AUTO_CONFIG                        "auto-config"
+#define NM_SETTING_GSM_USERNAME                           "username"
+#define NM_SETTING_GSM_PASSWORD                           "password"
+#define NM_SETTING_GSM_PASSWORD_FLAGS                     "password-flags"
+#define NM_SETTING_GSM_APN                                "apn"
+#define NM_SETTING_GSM_NETWORK_ID                         "network-id"
+#define NM_SETTING_GSM_PIN                                "pin"
+#define NM_SETTING_GSM_PIN_FLAGS                          "pin-flags"
+#define NM_SETTING_GSM_HOME_ONLY                          "home-only"
+#define NM_SETTING_GSM_DEVICE_ID                          "device-id"
+#define NM_SETTING_GSM_SIM_ID                             "sim-id"
+#define NM_SETTING_GSM_SIM_OPERATOR_ID                    "sim-operator-id"
+#define NM_SETTING_GSM_MTU                                "mtu"
+#define NM_SETTING_GSM_INITIAL_EPS_BEARER_CONFIGURE       "initial-eps-bearer-configure"
+#define NM_SETTING_GSM_INITIAL_EPS_BEARER_APN             "initial-eps-bearer-apn"
+#define NM_SETTING_GSM_INITIAL_EPS_BEARER_USERNAME        "initial-eps-bearer-username"
+#define NM_SETTING_GSM_INITIAL_EPS_BEARER_PASSWORD        "initial-eps-bearer-password"
+#define NM_SETTING_GSM_INITIAL_EPS_BEARER_PASSWORD_FLAGS  "initial-eps-bearer-password-flags"
+#define NM_SETTING_GSM_INITIAL_EPS_BEARER_NOAUTH          "initial-eps-bearer-noauth"
+#define NM_SETTING_GSM_INITIAL_EPS_BEARER_REFUSE_EAP      "initial-eps-bearer-refuse-eap"
+#define NM_SETTING_GSM_INITIAL_EPS_BEARER_REFUSE_PAP      "initial-eps-bearer-refuse-pap"
+#define NM_SETTING_GSM_INITIAL_EPS_BEARER_REFUSE_CHAP     "initial-eps-bearer-refuse-chap"
+#define NM_SETTING_GSM_INITIAL_EPS_BEARER_REFUSE_MSCHAP   "initial-eps-bearer-refuse-mschap"
+#define NM_SETTING_GSM_INITIAL_EPS_BEARER_REFUSE_MSCHAPV2 "initial-eps-bearer-refuse-mschapv2"
 
 /* Deprecated */
 #define NM_SETTING_GSM_NUMBER "number"
@@ -73,6 +82,22 @@ NM_AVAILABLE_IN_1_44
 gboolean nm_setting_gsm_get_initial_eps_config(NMSettingGsm *setting);
 NM_AVAILABLE_IN_1_44
 const char *nm_setting_gsm_get_initial_eps_apn(NMSettingGsm *setting);
+NM_AVAILABLE_IN_1_52
+const char *nm_setting_gsm_get_initial_eps_username(NMSettingGsm *setting);
+NM_AVAILABLE_IN_1_52
+const char *nm_setting_gsm_get_initial_eps_password(NMSettingGsm *setting);
+NM_AVAILABLE_IN_1_52
+gboolean nm_setting_gsm_get_initial_eps_noauth(NMSettingGsm *setting);
+NM_AVAILABLE_IN_1_52
+gboolean nm_setting_gsm_get_initial_eps_refuse_eap(NMSettingGsm *setting);
+NM_AVAILABLE_IN_1_52
+gboolean nm_setting_gsm_get_initial_eps_refuse_pap(NMSettingGsm *setting);
+NM_AVAILABLE_IN_1_52
+gboolean nm_setting_gsm_get_initial_eps_refuse_chap(NMSettingGsm *setting);
+NM_AVAILABLE_IN_1_52
+gboolean nm_setting_gsm_get_initial_eps_refuse_mschap(NMSettingGsm *setting);
+NM_AVAILABLE_IN_1_52
+gboolean nm_setting_gsm_get_initial_eps_refuse_mschapv2(NMSettingGsm *setting);
 
 NM_DEPRECATED_IN_1_16
 const char *nm_setting_gsm_get_number(NMSettingGsm *setting);

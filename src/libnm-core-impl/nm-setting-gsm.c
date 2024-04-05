@@ -38,7 +38,16 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_AUTO_CONFIG,
                                   PROP_SIM_OPERATOR_ID,
                                   PROP_MTU,
                                   PROP_INITIAL_EPS_CONFIG,
-                                  PROP_INITIAL_EPS_APN, );
+                                  PROP_INITIAL_EPS_APN,
+                                  PROP_INITIAL_EPS_USERNAME,
+                                  PROP_INITIAL_EPS_PASSWORD,
+                                  PROP_INITIAL_EPS_PASSWORD_FLAGS,
+                                  PROP_INITIAL_EPS_NOAUTH,
+                                  PROP_INITIAL_EPS_REFUSE_EAP,
+                                  PROP_INITIAL_EPS_REFUSE_PAP,
+                                  PROP_INITIAL_EPS_REFUSE_CHAP,
+                                  PROP_INITIAL_EPS_REFUSE_MSCHAP,
+                                  PROP_INITIAL_EPS_REFUSE_MSCHAPV2, );
 
 typedef struct {
     char   *number;
@@ -51,7 +60,16 @@ typedef struct {
     char   *network_id;
     char   *pin;
     char   *initial_eps_apn;
+    char   *initial_eps_username;
+    char   *initial_eps_password;
+    bool    initial_eps_noauth;
+    bool    initial_eps_refuse_eap;
+    bool    initial_eps_refuse_pap;
+    bool    initial_eps_refuse_chap;
+    bool    initial_eps_refuse_mschap;
+    bool    initial_eps_refuse_mschapv2;
     guint   password_flags;
+    guint   initial_eps_password_flags;
     guint   pin_flags;
     guint32 mtu;
     bool    auto_config;
@@ -317,6 +335,134 @@ nm_setting_gsm_get_initial_eps_apn(NMSettingGsm *setting)
     g_return_val_if_fail(NM_IS_SETTING_GSM(setting), NULL);
 
     return NM_SETTING_GSM_GET_PRIVATE(setting)->initial_eps_apn;
+}
+
+/**
+ * nm_setting_gsm_get_initial_eps_username:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: the #NMSettingGsm:initial-eps-bearer-username property of the setting
+ *
+ * Since: 1.52
+ **/
+const char *
+nm_setting_gsm_get_initial_eps_username(NMSettingGsm *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_GSM(setting), NULL);
+
+    return NM_SETTING_GSM_GET_PRIVATE(setting)->initial_eps_username;
+}
+
+/**
+ * nm_setting_gsm_get_initial_eps_password:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: the #NMSettingGsm:initial-eps-bearer-password property of the setting
+ *
+ * Since: 1.52
+ **/
+const char *
+nm_setting_gsm_get_initial_eps_password(NMSettingGsm *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_GSM(setting), NULL);
+
+    return NM_SETTING_GSM_GET_PRIVATE(setting)->initial_eps_password;
+}
+
+/**
+ * nm_setting_gsm_get_initial_eps_noauth:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: For LTE modems, the #NMSettingGsm:initial-eps-noauth property of the setting
+ *
+ * Since: 1.52
+ **/
+gboolean
+nm_setting_gsm_get_initial_eps_noauth(NMSettingGsm *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_GSM(setting), FALSE);
+
+    return NM_SETTING_GSM_GET_PRIVATE(setting)->initial_eps_noauth;
+}
+
+/**
+ * nm_setting_gsm_get_initial_eps_refuse_eap:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: For LTE modems, the #NMSettingGsm:initial-eps-refuse-eap property of the setting
+ *
+ * Since: 1.52
+ **/
+gboolean
+nm_setting_gsm_get_initial_eps_refuse_eap(NMSettingGsm *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_GSM(setting), FALSE);
+
+    return NM_SETTING_GSM_GET_PRIVATE(setting)->initial_eps_refuse_eap;
+}
+
+/**
+ * nm_setting_gsm_get_initial_eps_refuse_pap:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: For LTE modems, the #NMSettingGsm:initial-eps-refuse-pap property of the setting
+ *
+ * Since: 1.52
+ **/
+gboolean
+nm_setting_gsm_get_initial_eps_refuse_pap(NMSettingGsm *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_GSM(setting), FALSE);
+
+    return NM_SETTING_GSM_GET_PRIVATE(setting)->initial_eps_refuse_pap;
+}
+
+/**
+ * nm_setting_gsm_get_initial_eps_refuse_chap:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: For LTE modems, the #NMSettingGsm:initial-eps-refuse-chap property of the setting
+ *
+ * Since: 1.52
+ **/
+gboolean
+nm_setting_gsm_get_initial_eps_refuse_chap(NMSettingGsm *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_GSM(setting), FALSE);
+
+    return NM_SETTING_GSM_GET_PRIVATE(setting)->initial_eps_refuse_chap;
+}
+
+/**
+ * nm_setting_gsm_get_initial_eps_refuse_mschap:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: For LTE modems, the #NMSettingGsm:initial-eps-refuse-mschap property of the setting
+ *
+ * Since: 1.52
+ **/
+gboolean
+nm_setting_gsm_get_initial_eps_refuse_mschap(NMSettingGsm *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_GSM(setting), FALSE);
+
+    return NM_SETTING_GSM_GET_PRIVATE(setting)->initial_eps_refuse_mschap;
+}
+
+/**
+ * nm_setting_gsm_get_initial_eps_refuse_mschapv2:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: For LTE modems, the #NMSettingGsm:initial-eps-refuse-mschapv2 property of the setting
+ *
+ * Since: 1.52
+ **/
+gboolean
+nm_setting_gsm_get_initial_eps_refuse_mschapv2(NMSettingGsm *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_GSM(setting), FALSE);
+
+    return NM_SETTING_GSM_GET_PRIVATE(setting)->initial_eps_refuse_mschapv2;
 }
 
 static gboolean
@@ -846,6 +992,162 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
                                               NMSettingGsmPrivate,
                                               initial_eps_apn,
                                               .direct_string_allow_empty = TRUE);
+
+    /**
+     * NMSettingGsm:initial-eps-bearer-username:
+     *
+     * For LTE modems, this sets the username for the initial EPS bearer that is set
+     * up when attaching to the network.  Setting this parameter implies
+     * initial-eps-bearer-configure to be TRUE.
+     *
+     * Since: 1.52
+     **/
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_GSM_INITIAL_EPS_BEARER_USERNAME,
+                                              PROP_INITIAL_EPS_USERNAME,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingGsmPrivate,
+                                              initial_eps_username,
+                                              .direct_string_allow_empty = TRUE);
+
+    /**
+     * NMSettingGsm:initial-eps-bearer-password:
+     *
+     * For LTE modems, this sets the password for the initial EPS bearer that is set
+     * up when attaching to the network.  Setting this parameter implies
+     * initial-eps-bearer-configure to be TRUE.
+     *
+     * Since: 1.52
+     **/
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_GSM_INITIAL_EPS_BEARER_PASSWORD,
+                                              PROP_INITIAL_EPS_PASSWORD,
+                                              NM_SETTING_PARAM_SECRET,
+                                              NMSettingGsmPrivate,
+                                              initial_eps_password,
+                                              .direct_string_allow_empty = TRUE);
+
+    /**
+     * NMSettingGsm:initial-eps-bearer-password-flags:
+     *
+     * Flags indicating how to handle the #NMSettingGsm:initial-eps-bearer-password property.
+     *
+     * Since: 1.52
+     **/
+    _nm_setting_property_define_direct_secret_flags(
+        properties_override,
+        obj_properties,
+        NM_SETTING_GSM_INITIAL_EPS_BEARER_PASSWORD_FLAGS,
+        PROP_INITIAL_EPS_PASSWORD_FLAGS,
+        NMSettingGsmPrivate,
+        initial_eps_password_flags);
+
+    /**
+     * NMSettingGsm:initial-eps-bearer-noauth:
+     *
+     * For LTE modems, this sets NOAUTH authentication method for the initial EPS bearer that is set
+     * up when attaching to the network.
+     * If %TRUE, do not require the other side to authenticate itself to the client.
+     * If %FALSE, require authentication from the remote side.  In almost all cases,
+     * this should be %TRUE.
+     *
+     * Since: 1.52
+     **/
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_GSM_INITIAL_EPS_BEARER_NOAUTH,
+                                               PROP_INITIAL_EPS_NOAUTH,
+                                               TRUE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingGsmPrivate,
+                                               initial_eps_noauth);
+
+    /**
+     * NMSettingGsm:initial-eps-bearer-refuse-eap:
+     *
+     * For LTE modems, this disables EAP authentication method for the initial EPS bearer that is set
+     * up when attaching to the network.
+     *
+     * Since: 1.52
+     **/
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_GSM_INITIAL_EPS_BEARER_REFUSE_EAP,
+                                               PROP_INITIAL_EPS_REFUSE_EAP,
+                                               FALSE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingGsmPrivate,
+                                               initial_eps_refuse_eap);
+
+    /**
+     * NMSettingGsm:initial-eps-bearer-refuse-pap:
+     *
+     * For LTE modems, this disables PAP authentication method for the initial EPS bearer that is set
+     * up when attaching to the network.
+     *
+     * Since: 1.52
+     **/
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_GSM_INITIAL_EPS_BEARER_REFUSE_PAP,
+                                               PROP_INITIAL_EPS_REFUSE_PAP,
+                                               FALSE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingGsmPrivate,
+                                               initial_eps_refuse_pap);
+
+    /**
+     * NMSettingGsm:initial-eps-bearer-refuse-chap:
+     *
+     * For LTE modems, this disables CHAP authentication method for the initial EPS bearer that is set
+     * up when attaching to the network.
+     *
+     * Since: 1.52
+     **/
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_GSM_INITIAL_EPS_BEARER_REFUSE_CHAP,
+                                               PROP_INITIAL_EPS_REFUSE_CHAP,
+                                               FALSE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingGsmPrivate,
+                                               initial_eps_refuse_chap);
+
+    /**
+     * NMSettingGsm:initial-eps-bearer-refuse-mschap:
+     *
+     * For LTE modems, this disables MSCHAP authentication method for the initial EPS bearer that is set
+     * up when attaching to the network.
+     *
+     * Since: 1.52
+     **/
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_GSM_INITIAL_EPS_BEARER_REFUSE_MSCHAP,
+                                               PROP_INITIAL_EPS_REFUSE_MSCHAP,
+                                               FALSE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingGsmPrivate,
+                                               initial_eps_refuse_mschap);
+
+    /**
+     * NMSettingGsm:initial-eps-bearer-refuse-mschapv2:
+     *
+     * For LTE modems, this disables MSCHAPV2 authentication method for the initial EPS bearer that is set
+     * up when attaching to the network.
+     *
+     * Since: 1.52
+     **/
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_GSM_INITIAL_EPS_BEARER_REFUSE_MSCHAPV2,
+                                               PROP_INITIAL_EPS_REFUSE_MSCHAPV2,
+                                               FALSE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingGsmPrivate,
+                                               initial_eps_refuse_mschapv2);
 
     /* Ignore incoming deprecated properties */
     _nm_properties_override_dbus(properties_override,
