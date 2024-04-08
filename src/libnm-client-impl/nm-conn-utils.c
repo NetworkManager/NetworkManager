@@ -194,8 +194,8 @@ nm_conn_wireguard_import(const char *filename, GError **error)
      * This code here instead generates a NetworkManager connection profile so that
      * NetworkManager will apply a similar configuration when later activating the profile. */
 
-#define _TABLE_AUTO ((gint64) -1)
-#define _TABLE_OFF  ((gint64) -2)
+#define _TABLE_AUTO ((gint64) - 1)
+#define _TABLE_OFF  ((gint64) - 2)
 
     data_table = _TABLE_AUTO;
 

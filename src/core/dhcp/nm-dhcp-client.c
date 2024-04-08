@@ -824,9 +824,10 @@ _nm_dhcp_client_notify(NMDhcpClient         *self,
 
     _acd_check_lease(self, &acd_state);
 
-    options = priv->l3cd_next ? nm_dhcp_lease_get_options(
-                  nm_l3_config_data_get_dhcp_lease(priv->l3cd_next, priv->config.addr_family))
-                              : NULL;
+    options = priv->l3cd_next
+                  ? nm_dhcp_lease_get_options(
+                        nm_l3_config_data_get_dhcp_lease(priv->l3cd_next, priv->config.addr_family))
+                  : NULL;
 
     if (_LOGI_ENABLED()) {
         const char *req_str =

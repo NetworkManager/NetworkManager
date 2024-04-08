@@ -18,39 +18,57 @@ base_types:
 
 # The list of all distributions we want to create job for.
 distributions:
+  # TIER 1: CI run for all MRs.
+  # The first tier:1 in the list is used to build the pages and check-{tree,patch}.
   - name: fedora
-    # The first tier:1 in the list is used to build the pages and check-{tree,patch}
     tier: 1
     versions:
-      - '39'
-  - name: fedora
+      - '40'
+      - rawhide
+  - name: centos
+    tier: 1
+    versions:
+      - 'stream9'
+
+  # TIER 2: distribution versions that will or might use the current NM version.
+  # Run when doing a release.
+  - name: debian
     tier: 2
     versions:
-      - '38'
-      - '40'
+      - sid
+      - testing
   - name: ubuntu
     tier: 2
     versions:
-      - '20.04'
-      - '22.04'
-      - 'devel'
-      - 'rolling'
-  - name: debian
+      - devel
+  - name: alpine
     tier: 2
     versions:
-      - '10'
-      - '11'
-      - 'sid'
+      - edge
+  
+  # TIER 3: distribution versions not in EOL but don't use the current NM version.
+  # Run when doing a release, but a failure won't be blocking for the release.
+  - name: fedora
+    tier: 3
+    versions:
+      - '39'
+  - name: ubuntu
+    tier: 3
+    versions:
+      - '20.04'
+      - '22.04'
+      - '24.04'
+      - 'rolling' # latest non-LTS
   - name: debian
     tier: 3
     versions:
-      - 'testing'
+      - 'stable'
+      - 'oldstable'
   - name: centos
-    tier: 2
+    tier: 3
     versions:
       - 'stream8'
-      - 'stream9'
   - name: alpine
-    tier: 2
+    tier: 3
     versions:
       - 'latest'

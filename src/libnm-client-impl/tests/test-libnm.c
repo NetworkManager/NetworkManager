@@ -2397,10 +2397,10 @@ _do_read_vpn_details_impl1(const char              *file,
 
         g_print(">>>> n_read=%zd;  \"%s\"",
                 n_read,
-                n_read > 0 ? (
-                    ss = nm_utils_buf_utf8safe_escape_cp(read_buf,
-                                                         n_read,
-                                                         NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL))
+                n_read > 0 ? (ss = nm_utils_buf_utf8safe_escape_cp(
+                                  read_buf,
+                                  n_read,
+                                  NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL))
                            : "");
     }
 

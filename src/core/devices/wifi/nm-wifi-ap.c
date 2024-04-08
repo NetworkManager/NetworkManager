@@ -719,13 +719,14 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         g_value_set_uchar(value, priv->strength);
         break;
     case PROP_LAST_SEEN:
-        g_value_set_int(value,
-                        priv->last_seen_msec != G_MININT64 ? (int) NM_MAX(
-                            nm_utils_monotonic_timestamp_as_boottime(priv->last_seen_msec,
-                                                                     NM_UTILS_NSEC_PER_MSEC)
-                                / 1000,
-                            1)
-                                                           : -1);
+        g_value_set_int(
+            value,
+            priv->last_seen_msec != G_MININT64
+                ? (int) NM_MAX(nm_utils_monotonic_timestamp_as_boottime(priv->last_seen_msec,
+                                                                        NM_UTILS_NSEC_PER_MSEC)
+                                   / 1000,
+                               1)
+                : -1);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);

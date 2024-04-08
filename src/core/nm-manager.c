@@ -9045,9 +9045,10 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_CHECKPOINTS:
         g_value_take_boxed(
             value,
-            priv->checkpoint_mgr ? nm_strv_make_deep_copied(
-                nm_checkpoint_manager_get_checkpoint_paths(priv->checkpoint_mgr, NULL))
-                                 : NULL);
+            priv->checkpoint_mgr
+                ? nm_strv_make_deep_copied(
+                      nm_checkpoint_manager_get_checkpoint_paths(priv->checkpoint_mgr, NULL))
+                : NULL);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);

@@ -1023,7 +1023,7 @@ _test_connection_invalid_find_connections(gpointer element, gpointer needle, gpo
     G_STMT_START                                                                          \
     {                                                                                     \
         g_assert_cmpint(idx[i], >=, 0);                                                   \
-        g_assert(path##i &&*path##i);                                                     \
+        g_assert(path##i && *path##i);                                                    \
         g_assert(NM_IS_REMOTE_CONNECTION(connections->pdata[idx[i]]));                    \
         g_assert_cmpstr(nm_connection_get_path(connections->pdata[idx[i]]), ==, path##i); \
     }                                                                                     \
