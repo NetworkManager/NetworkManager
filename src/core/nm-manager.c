@@ -1915,7 +1915,8 @@ find_device_by_ip_iface(NMManager *self, const char *iface)
  * is given, this function will only return master devices and will ensure
  * @slave, when activated, can be a slave of the returned master device.  If
  * @connection is given, this function will only consider devices that are
- * compatible with @connection.
+ * compatible with @connection. If @child is given, this function will only
+ * return parent device.
  *
  * Returns: the matching #NMDevice
  */
@@ -1923,7 +1924,8 @@ static NMDevice *
 find_device_by_iface(NMManager    *self,
                      const char   *iface,
                      NMConnection *connection,
-                     NMConnection *slave)
+                     NMConnection *slave,
+                     NMConnection *child)
 {
     NMManagerPrivate *priv     = NM_MANAGER_GET_PRIVATE(self);
     NMDevice         *fallback = NULL;
@@ -1942,6 +1944,8 @@ find_device_by_iface(NMManager    *self,
             if (!nm_device_check_slave_connection_compatible(candidate, slave))
                 continue;
         }
+        if (child && !nm_device_can_be_parent(candidate))
+            continue;
 
         if (nm_device_is_real(candidate))
             return candidate;
@@ -2406,7 +2410,7 @@ find_parent_device_for_connection(NMManager       *self,
     NM_SET_OUT(out_parent_spec, parent_name);
 
     /* Try as an interface name of a parent device */
-    parent = find_device_by_iface(self, parent_name, NULL, NULL);
+    parent = find_device_by_iface(self, parent_name, NULL, NULL, connection);
     if (parent)
         return parent;
 
@@ -5016,7 +5020,7 @@ find_master(NMManager             *self,
     }
 
     if (!master_connection) {
-        master_device = find_device_by_iface(self, master, NULL, connection);
+        master_device = find_device_by_iface(self, master, NULL, connection, NULL);
         if (!master_device) {
             g_set_error(error,
                         NM_MANAGER_ERROR,
@@ -6472,7 +6476,7 @@ validate_activation_request(NMManager             *self,
             if (!iface)
                 return NULL;
 
-            device = find_device_by_iface(self, iface, connection, NULL);
+            device = find_device_by_iface(self, iface, connection, NULL, NULL);
             if (!device) {
                 g_set_error_literal(error,
                                     NM_MANAGER_ERROR,
