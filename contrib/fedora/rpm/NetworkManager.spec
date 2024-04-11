@@ -618,6 +618,9 @@ Preferably use nmcli instead.
 %build
 %if %{with meson}
 %meson \
+%if 0%(?_jobs) >= 1
+	-j %(_jobs) \
+%endif
 	-Db_ndebug=false \
 	--warnlevel 2 \
 %if %{with test}

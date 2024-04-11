@@ -17,6 +17,7 @@ usage() {
     echo "Options:"
     echo "  -f|--force: force build, even if working directory is not clean and has local modifications"
     echo "  -c|--clean: run \`git-clean -fdx :/\` before build"
+    echo "  -j|--jobs <JOBS>: limit the number of concurrent jobs running parallelly"
     echo "  -S|--srpm: only build the SRPM"
     echo "  -g|--git: create tarball from current git HEAD (skips make dist)"
     echo "  -Q|--quick: only create the distribution tarball, without running checks"
@@ -57,6 +58,7 @@ WITH_LIST=()
 SOURCE_FROM_GIT=0
 SNAPSHOT="$NM_BUILD_SNAPSHOT"
 DO_RELEASE=0
+MAX_JOBS=
 unset BCOND_DEFAULT_DEBUG
 unset BCOND_DEFAULT_LTO
 unset BCOND_DEFAULT_TEST
@@ -84,6 +86,11 @@ while [[ $# -gt 0 ]]; do
             ;;
         -c|--clean)
             GIT_CLEAN=1
+            ;;
+        -j|--jobs)
+            [[ $# -gt 0 ]] || die "Missing argument to $A"
+            export MAX_JOBS="$1"
+            shift
             ;;
         -S|--srpm)
             BUILDTYPE=SRPM
@@ -270,9 +277,9 @@ if [[ $NO_DIST != 1 ]]; then
             \
             || die "Error autogen.sh"
         if [[ $QUICK == 1 ]]; then
-            make dist -j 7 || die "Error make dist"
+            make dist -j ${MAX_JOBS:-7} || die "Error make dist"
         else
-            make distcheck -j 7 || die "Error make distcheck"
+            make distcheck -j ${MAX_JOBS:-7} || die "Error make distcheck"
         fi
     fi
 fi
@@ -281,9 +288,15 @@ if [[ "$ADD_WITH_TEST" == 1 ]]; then
     WITH_LIST=("${WITH_LIST[@]}" "--with" "test")
 fi
 
+NM_RPMBUILD_ARGS="${WITH_LIST[@]}"
+
+if [[ "$MAX_JOBS" != "" ]]; then
+    NM_RPMBUILD_ARGS="$NM_RPMBUILD_ARGS --define '_jobs $MAX_JOBS'"
+fi
+
+export NM_RPMBUILD_ARGS
 export SOURCE_FROM_GIT
 export BUILDTYPE
-export NM_RPMBUILD_ARGS="${WITH_LIST[@]}"
 export SNAPSHOT
 export DO_RELEASE
 export BCOND_DEFAULT_DEBUG="$BCOND_DEFAULT_DEBUG"

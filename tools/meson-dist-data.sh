@@ -22,7 +22,12 @@ fi
 ensure_var_path "MESON_DIST_ROOT"
 ensure_var_path "MESON_BUILD_ROOT"
 
-ninja -C "$MESON_BUILD_ROOT" all libnm-doc NetworkManager-doc
+MAX_JOBS_ARG=
+if [[ "$MAX_JOBS" != "" ]]; then
+    MAX_JOBS_ARG="-j$MAX_JOBS"
+fi
+
+ninja -C "$MESON_BUILD_ROOT" $MAX_JOBS_ARG all libnm-doc NetworkManager-doc
 
 cp -Tr "$MESON_BUILD_ROOT/docs/api/html" "$MESON_DIST_ROOT/docs/api/html"
 cp -Tr "$MESON_BUILD_ROOT/docs/libnm/html" "$MESON_DIST_ROOT/docs/libnm/html"
