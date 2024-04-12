@@ -1167,20 +1167,8 @@ stage3_ip_config_start(NMModem *modem, int addr_family, NMModemIPMethod ip_metho
                             NM_DEVICE_ERROR_INVALID_CONNECTION,
                             "(%s) retrieving IPv6 configuration failed: no address given",
                             nm_modem_get_uid(NM_MODEM(self)));
+                goto out;
             }
-            goto out;
-        }
-
-        address = (NMPlatformIP6Address){};
-
-        if (!inet_pton(AF_INET6, address_string, &address.address)) {
-            g_set_error(&error,
-                        NM_DEVICE_ERROR,
-                        NM_DEVICE_ERROR_INVALID_CONNECTION,
-                        "(%s) retrieving IPv6 configuration failed: invalid address given '%s'",
-                        nm_modem_get_uid(NM_MODEM(self)),
-                        address_string);
-            goto out;
         }
 
         data_port = mm_bearer_get_interface(self->_priv.bearer);
@@ -1204,19 +1192,33 @@ stage3_ip_config_start(NMModem *modem, int addr_family, NMModemIPMethod ip_metho
                                      NM_IP_CONFIG_SOURCE_WWAN);
         do_auto = TRUE;
 
-        address.plen = mm_bearer_ip_config_get_prefix(self->_priv.ipv6_config);
-        if (address.plen <= 128) {
-            if (IN6_IS_ADDR_LINKLOCAL(&address.address)) {
-                nm_utils_ipv6_interface_identifier_get_from_addr(&iid_data, &address.address);
-                iid = &iid_data;
-            } else
-                do_auto = FALSE;
-            nm_l3_config_data_add_address_6(l3cd, &address);
+        if (address_string) {
+            address = (NMPlatformIP6Address){};
+
+            if (!inet_pton(AF_INET6, address_string, &address.address)) {
+                g_set_error(&error,
+                            NM_DEVICE_ERROR,
+                            NM_DEVICE_ERROR_INVALID_CONNECTION,
+                            "(%s) retrieving IPv6 configuration failed: invalid address given '%s'",
+                            nm_modem_get_uid(NM_MODEM(self)),
+                            address_string);
+                goto out;
+            }
+
+            address.plen = mm_bearer_ip_config_get_prefix(self->_priv.ipv6_config);
+            if (address.plen <= 128) {
+                if (IN6_IS_ADDR_LINKLOCAL(&address.address)) {
+                    nm_utils_ipv6_interface_identifier_get_from_addr(&iid_data, &address.address);
+                    iid = &iid_data;
+                } else
+                    do_auto = FALSE;
+                nm_l3_config_data_add_address_6(l3cd, &address);
+            }
+
+            _LOGI("  address %s", nm_platform_ip6_address_to_string(&address, sbuf, sizeof(sbuf)));
         }
 
-        _LOGI("  address %s (slaac %s)",
-              nm_platform_ip6_address_to_string(&address, sbuf, sizeof(sbuf)),
-              do_auto ? "enabled" : "disabled");
+        _LOGI("  slaac %s", do_auto ? "enabled" : "disabled");
 
         gw_string = mm_bearer_ip_config_get_gateway(self->_priv.ipv6_config);
         if (gw_string) {
