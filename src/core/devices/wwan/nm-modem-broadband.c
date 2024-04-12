@@ -1155,6 +1155,8 @@ stage3_ip_config_start(NMModem *modem, int addr_family, NMModemIPMethod ip_metho
 #endif
     } else {
         NMPlatformIP6Address address;
+        NMPlatformIP6Address gw;
+        const char          *gw_string;
 
         address_string = mm_bearer_ip_config_get_address(self->_priv.ipv6_config);
         if (!address_string) {
@@ -1216,29 +1218,29 @@ stage3_ip_config_start(NMModem *modem, int addr_family, NMModemIPMethod ip_metho
               nm_platform_ip6_address_to_string(&address, sbuf, sizeof(sbuf)),
               do_auto ? "enabled" : "disabled");
 
-        address_string = mm_bearer_ip_config_get_gateway(self->_priv.ipv6_config);
-        if (address_string) {
-            if (inet_pton(AF_INET6, address_string, &address.address) != 1) {
+        gw_string = mm_bearer_ip_config_get_gateway(self->_priv.ipv6_config);
+        if (gw_string) {
+            if (inet_pton(AF_INET6, gw_string, &gw.address) != 1) {
                 g_set_error(&error,
                             NM_DEVICE_ERROR,
                             NM_DEVICE_ERROR_INVALID_CONNECTION,
                             "(%s) retrieving IPv6 configuration failed: invalid gateway given '%s'",
                             nm_modem_get_uid(NM_MODEM(self)),
-                            address_string);
+                            gw_string);
                 goto out;
             }
 
             {
                 const NMPlatformIP6Route r = {
                     .rt_source     = NM_IP_CONFIG_SOURCE_WWAN,
-                    .gateway       = address.address,
+                    .gateway       = gw.address,
                     .table_any     = TRUE,
                     .table_coerced = 0,
                     .metric_any    = TRUE,
                     .metric        = 0,
                 };
 
-                _LOGI("  gateway %s", address_string);
+                _LOGI("  gateway %s", gw_string);
                 nm_l3_config_data_add_route_6(l3cd, &r);
             }
         } else if (ip_method == NM_MODEM_IP_METHOD_STATIC) {
