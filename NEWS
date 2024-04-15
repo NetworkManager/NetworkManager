@@ -15,6 +15,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   visible in nmcli via "nmcli -f all device show $DEV".
 * Deprecated 802-11-wireless and 802-11-wired property 'mac-address-blacklist'
   and introduced the 'mac-address-denylist' property.
+* Properly restore in-memory connection profiles during the rollback
+  of a checkpoint.
 * Fix detection of 6 GHz band capability for WiFi devices
 * Allow IPv6 SLAAC and static IPv6 DNS server assignment for modem broadband
   when IPv6 device address was not explicitly passed on by ModemManager
