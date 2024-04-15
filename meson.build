@@ -43,9 +43,17 @@ nm_libexecdir = join_paths(nm_prefix, get_option('libexecdir'))
 nm_localedir = join_paths(nm_prefix, get_option('localedir'))
 nm_localstatedir = join_paths(nm_prefix, get_option('localstatedir'))
 nm_mandir = join_paths(nm_prefix, get_option('mandir'))
-nm_runstatedir = join_paths(nm_localstatedir, 'run')
 nm_sbindir = join_paths(nm_prefix, get_option('sbindir'))
 nm_sysconfdir = join_paths(nm_prefix, get_option('sysconfdir'))
+
+nm_runstatedir = get_option('runtime_dir')
+if nm_runstatedir == ''
+  if get_option('prefix') == '/usr'
+    nm_runstatedir = '/run'
+  else
+    nm_runstatedir = join_paths(nm_localstatedir, 'run')
+  endif
+endif
 
 nm_pkgsbindir = join_paths(nm_sbindir, nm_name)
 nm_pkgconfdir = join_paths(nm_sysconfdir, nm_name)

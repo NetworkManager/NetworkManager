@@ -4,6 +4,7 @@ option('system_ca_path', type: 'string', value: '/etc/ssl/certs', description: '
 option('udev_dir', type: 'string', value: '', description: 'Absolute path of the udev base directory. Set to \'no\' not to install the udev rule')
 option('dbus_conf_dir', type: 'string', value: '', description: 'where D-Bus system.d directory is')
 option('kernel_firmware_dir', type: 'string', value: '/lib/firmware', description: 'where kernel firmware directory is (default is /lib/firmware)')
+option('runtime_dir', type: 'string', value: '', description: 'Directory for transient runtime state [default: LOCALSTATEDIR/run or /run]')
 option('iptables', type: 'string', value: '', description: 'path to iptables')
 option('nft', type: 'string', value: '', description: 'path to nft')
 option('dnsmasq', type: 'string', value: '', description: 'path to dnsmasq')
