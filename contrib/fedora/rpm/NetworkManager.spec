@@ -56,7 +56,11 @@
 %bcond_without adsl
 %bcond_without bluetooth
 %bcond_without wwan
+%if 0%{?rhel} >= 10
+%bcond_with team
+%else
 %bcond_without team
+%endif
 %bcond_without wifi
 %bcond_without ovs
 %bcond_without ppp
