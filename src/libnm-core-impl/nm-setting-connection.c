@@ -2665,9 +2665,9 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * If -1 (default) is set, global connection.autoconnect-slaves is read to
      * determine the real value. If it is default as well, this fallbacks to 0.
      *
-     * Since: 1.2
-     *
      * Deprecated 1.46. Use #NMSettingConnection:autoconnect-ports instead, this is just an alias.
+     *
+     * Since: 1.2
      **/
     /* ---ifcfg-rh---
      * property: autoconnect-slaves
