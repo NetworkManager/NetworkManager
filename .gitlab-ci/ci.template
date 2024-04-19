@@ -16,7 +16,7 @@
 
 
 # see https://docs.gitlab.com/ee/ci/yaml/#includefile
-.templates_sha: &template_sha 184ca628f89f3193c249b4e34e45afee2773a833
+.templates_sha: &template_sha 98b1218f146a1ec96d65e3ce0041f9a6ec5cb5e6
 
 {# Group distros by their common (name,) tuples.#}
 {% set distro_groups = [] %}
@@ -43,6 +43,8 @@ include:
     ref: *template_sha
     file: '/templates/{{distro_group.name}}.yml'
 {% endfor %}
+  - project: 'freedesktop/ci-templates'
+    file: '/templates/ci-fairy.yml'
 
 stages:
   - prep
@@ -113,8 +115,11 @@ tier{{distro.tier}}:{{distro.name}}:{{version}}@prep:
     FDO_DISTRIBUTION_VERSION: '{{version}}'
     FDO_DISTRIBUTION_TAG: ${{distro.name.upper()}}_TAG
     FDO_DISTRIBUTION_EXEC: ${{distro.name.upper()}}_EXEC
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
 {% if distro.tier > 1 %}
-  when: manual
+      when: manual
+      allow_failure: true
 {% endif %}
 {% endfor %}
 {% endfor %}
@@ -173,6 +178,8 @@ t_{{distro.name}}:{{version}}:
     {% endif %}
   needs:
     - "tier{{distro.tier}}:{{distro.name}}:{{version}}@prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
 {% endfor %}
 {% endfor %}
 
@@ -190,6 +197,8 @@ check-patch:
     FDO_DISTRIBUTION_TAG: ${{default_distro.name.upper()}}_TAG
   needs:
     - "tier{{default_distro.tier}}:{{default_distro.name}}:{{default_distro.versions[0]}}@prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
   stage: tier1
   script:
     - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh
@@ -203,6 +212,8 @@ check-tree:
     FDO_DISTRIBUTION_TAG: ${{default_distro.name.upper()}}_TAG
   needs:
     - "tier{{default_distro.tier}}:{{default_distro.name}}:{{default_distro.versions[0]}}@prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
   stage: tier1
   script:
     - date '+%Y%m%d-%H%M%S'; clang-format --version
@@ -221,8 +232,10 @@ pages:
     expire_in: 20 days
     paths:
       - public
-  only:
-    - main
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'schedule'
+      when: never
+    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == 'main'
   dependencies:
     - "t_{{default_distro.name}}:{{default_distro.versions[0]}}: [autotools+gcc+docs+valgrind]"
   needs:
@@ -237,9 +250,22 @@ triage:issues:
   only:
     - schedules
 
+# Clean the generated images periodically to get updated snapshots of the distribution images.
+# Create an scheduled pipeline to run it, passing an AUTHFILE environment variable of type
+# 'File' with an authentication token with API access level.
+clean-images:
+  extends:
+    - .fdo.ci-fairy
+  stage: prep
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+  script:
+    - ci-fairy -v --authfile $AUTHFILE delete-image --project NetworkManager/NetworkManager --all
+
 # Have detached MR pipeline (https://docs.gitlab.com/ee/ci/pipelines/merge_request_pipelines.html)
 # https://gitlab.freedesktop.org/freedesktop/freedesktop/-/issues/540#what-it-means-for-me-a-maintainer-of-a-project-part-of-gitlabfreedesktoporg
 workflow:
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
     - if: $CI_PIPELINE_SOURCE == 'push'
+    - if: $CI_PIPELINE_SOURCE == 'schedule'
