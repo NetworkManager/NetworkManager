@@ -774,7 +774,6 @@ supplicant_group_iface_is_ready(NMDeviceWifiP2P *self)
         return;
     }
 
-    _set_is_waiting_for_supplicant(self, FALSE);
     check_group_iface_ready(self);
 }
 
@@ -875,7 +874,6 @@ supplicant_iface_group_started_cb(NMSupplicantInterface *iface,
 
     state = nm_supplicant_interface_get_state(priv->group_iface);
     if (state == NM_SUPPLICANT_INTERFACE_STATE_STARTING) {
-        _set_is_waiting_for_supplicant(self, TRUE);
         return;
     }
 
