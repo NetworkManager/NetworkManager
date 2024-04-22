@@ -54,6 +54,7 @@ typedef struct {
     guint peer_missing_id;
 
     bool is_waiting_for_supplicant : 1;
+    bool enabled : 1;
 } NMDeviceWifiP2PPrivate;
 
 struct _NMDeviceWifiP2P {
@@ -1120,6 +1121,28 @@ impl_device_wifi_p2p_stop_find(NMDBusObject                      *obj,
                            NULL);
 }
 
+static gboolean
+get_enabled(NMDevice *device)
+{
+    return NM_DEVICE_WIFI_P2P_GET_PRIVATE(device)->enabled;
+}
+
+static void
+set_enabled(NMDevice *device, gboolean enabled)
+{
+    NMDeviceWifiP2P        *self = NM_DEVICE_WIFI_P2P(device);
+    NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE(self);
+
+    enabled = !!enabled;
+
+    if (priv->enabled == enabled)
+        return;
+
+    priv->enabled = enabled;
+
+    _LOGD(LOGD_DEVICE | LOGD_WIFI, "device now %s", enabled ? "enabled" : "disabled");
+}
+
 /*****************************************************************************/
 
 NMSupplicantInterface *
@@ -1336,6 +1359,8 @@ nm_device_wifi_p2p_class_init(NMDeviceWifiP2PClass *klass)
     device_class->get_configured_mtu        = get_configured_mtu;
     device_class->get_auto_ip_config_method = get_auto_ip_config_method;
     device_class->act_stage3_ip_config      = act_stage3_ip_config;
+    device_class->set_enabled               = set_enabled;
+    device_class->get_enabled               = get_enabled;
 
     device_class->deactivate        = deactivate;
     device_class->unmanaged_on_quit = unmanaged_on_quit;
