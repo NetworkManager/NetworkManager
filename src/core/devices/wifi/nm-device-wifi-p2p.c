@@ -916,7 +916,7 @@ supplicant_interfaces_release(NMDeviceWifiP2P *self, gboolean set_is_waiting)
 
     supplicant_group_interface_release(self);
 
-    if (set_is_waiting)
+    if (set_is_waiting && priv->enabled)
         _set_is_waiting_for_supplicant(self, TRUE);
 }
 
@@ -947,9 +947,10 @@ device_state_changed(NMDevice           *device,
     case NM_DEVICE_STATE_UNMANAGED:
         break;
     case NM_DEVICE_STATE_UNAVAILABLE:
-        if (!priv->mgmt_iface
-            || !nm_supplicant_interface_state_is_operational(
-                nm_supplicant_interface_get_state(priv->mgmt_iface)))
+        if (priv->enabled
+            && (!priv->mgmt_iface
+                || !nm_supplicant_interface_state_is_operational(
+                    nm_supplicant_interface_get_state(priv->mgmt_iface))))
             _set_is_waiting_for_supplicant(self, TRUE);
         break;
     case NM_DEVICE_STATE_NEED_AUTH:
@@ -1141,6 +1142,10 @@ set_enabled(NMDevice *device, gboolean enabled)
     priv->enabled = enabled;
 
     _LOGD(LOGD_DEVICE | LOGD_WIFI, "device now %s", enabled ? "enabled" : "disabled");
+
+    if (!enabled) {
+        _set_is_waiting_for_supplicant(self, FALSE);
+    }
 }
 
 /*****************************************************************************/
@@ -1193,10 +1198,12 @@ done:
     nm_device_queue_recheck_available(NM_DEVICE(self),
                                       NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
                                       NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
-    _set_is_waiting_for_supplicant(self,
-                                   !priv->mgmt_iface
-                                       || !nm_supplicant_interface_state_is_operational(
-                                           nm_supplicant_interface_get_state(priv->mgmt_iface)));
+    _set_is_waiting_for_supplicant(
+        self,
+        priv->enabled
+            && (!priv->mgmt_iface
+                || !nm_supplicant_interface_state_is_operational(
+                    nm_supplicant_interface_get_state(priv->mgmt_iface))));
 }
 
 void
