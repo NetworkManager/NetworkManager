@@ -197,17 +197,11 @@ you can look at [this](contrib/fedora/REQUIRED_PACKAGES)
 script and [here](contrib/debian/REQUIRED_PACKAGES)
 is a script for Debian/Ubuntu.
 
-Both meson and autotools are supported. You may choose whatever you prefer.
-For autotools the common steps are
+meson is the recommended way for building NetworkManager. You can configure
+the build environment using the `meson setup` command:
 
 ```
-./autogen.sh $CONFIGURE_OPTIONS
-make -j 8
-# optional: sudo make install
-```
-and for meson it's
-```
-meson build $CONFIGURE_OPTIONS
+meson setup build/ $CONFIGURE_OPTIONS
 ninja -C build
 # optional: sudo meson install -C build
 ```
@@ -215,6 +209,13 @@ ninja -C build
 Beware to set the correct `$CONFIGURE_OPTIONS`. In particular, you may
 not want the default installation prefix and not overwrite files in
 `/usr`.
+
+To specify options when setting up the meson environment, the `-D` argument
+is used, like: `meson setup build -Ddocs=true`.
+
+To get a list of all possible configuration options, you can use `meson configure`.
+
+For additional usage, refer to the meson manual.
 
 ### Fedora
 
