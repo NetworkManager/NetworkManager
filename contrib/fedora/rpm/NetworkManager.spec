@@ -56,7 +56,11 @@
 %bcond_without adsl
 %bcond_without bluetooth
 %bcond_without wwan
+%if 0%{?rhel} >= 10
+%bcond_with team
+%else
 %bcond_without team
+%endif
 %bcond_without wifi
 %bcond_without ovs
 %bcond_without ppp
@@ -161,13 +165,18 @@
 %global config_plugins_default_ifcfg_rh 1
 %endif
 
-%if 0%{?fedora} >= 36 || 0%{?rhel} >= 10
+%if 0%{?rhel} >= 10
+%global with_ifcfg_rh 0
+%global split_ifcfg_rh 0
+%elif 0%{?fedora} >= 36
+%global with_ifcfg_rh 1
 %global split_ifcfg_rh 1
 %else
+%global with_ifcfg_rh 1
 %global split_ifcfg_rh 0
 %endif
 
-%if (0%{?fedora} >= 36 && 0%{?fedora} < 39) || 0%{?rhel} >= 9
+%if (0%{?fedora} >= 36 && 0%{?fedora} < 39) || 0%{?rhel} == 9
 %global ifcfg_warning 1
 %else
 %global ifcfg_warning 0
@@ -543,6 +552,7 @@ This package is intended to be installed by default for server
 deployments.
 
 
+%if %{?with_ifcfg_rh}
 %package dispatcher-routing-rules
 Summary: NetworkManager dispatcher file for advanced routing rules
 Group: System Environment/Base
@@ -557,6 +567,7 @@ Obsoletes: %{name}-config-routing-rules < 1:1.31.0
 This adds a NetworkManager dispatcher file to support networking
 configurations using "/etc/sysconfig/network-scripts/rule-NAME" files
 (eg, to do policy-based routing).
+%endif
 
 
 %if %{with nmtui}
@@ -600,6 +611,7 @@ like Aliyun, Azure, EC2, GCP are supported.
 %endif
 
 
+%if %{?with_ifcfg_rh}
 %package initscripts-updown
 Summary: Legacy ifup/ifdown scripts for NetworkManager that replace initscripts (network-scripts)
 Group: System Environment/Base
@@ -612,7 +624,7 @@ Obsoletes: NetworkManager < %{obsoletes_initscripts_updown}
 Installs alternative ifup/ifdown scripts that talk to NetworkManager.
 This is only for backward compatibility with initscripts (network-scripts).
 Preferably use nmcli instead.
-
+%endif
 
 %prep
 %autosetup -p1 -n NetworkManager-%{real_version}
@@ -726,7 +738,11 @@ Preferably use nmcli instead.
 	-Ddbus_conf_dir=%{dbus_sys_dir} \
 	-Dtests=yes \
 	-Dvalgrind=no \
+%if %{?with_ifcfg_rh}
 	-Difcfg_rh=true \
+%else
+	-Difcfg_rh=false \
+%endif
 	-Difupdown=false \
 %if %{with ppp}
 	-Dppp=true \
@@ -874,7 +890,11 @@ autoreconf --install --force
 	--enable-more-warnings=yes \
 %endif
 	--with-valgrind=no \
+%if %{?with_ifcfg_rh}
 	--enable-ifcfg-rh=yes \
+%else
+        --enable-ifcfg-rh=no \
+%endif
 	--enable-ifupdown=no \
 %if %{with ppp}
 	--enable-ppp=yes \
@@ -936,9 +956,11 @@ cp %{SOURCE8} %{buildroot}%{_sysconfdir}/sysconfig/network-scripts
 cp %{SOURCE9} %{buildroot}%{_sysconfdir}/sysconfig/network-scripts/readme-ifcfg-rh.txt
 %endif
 
+%if %{?with_ifcfg_rh}
 cp examples/dispatcher/10-ifcfg-rh-routes.sh %{buildroot}%{nmlibdir}/dispatcher.d/
 ln -s ../no-wait.d/10-ifcfg-rh-routes.sh %{buildroot}%{nmlibdir}/dispatcher.d/pre-up.d/
 ln -s ../10-ifcfg-rh-routes.sh %{buildroot}%{nmlibdir}/dispatcher.d/no-wait.d/
+%endif
 
 %find_lang %{name}
 
@@ -954,9 +976,10 @@ mkdir -p %{buildroot}%{_prefix}/src/debug/NetworkManager-%{real_version}
 cp valgrind.suppressions %{buildroot}%{_prefix}/src/debug/NetworkManager-%{real_version}
 %endif
 
+%if %{?with_ifcfg_rh}
 touch %{buildroot}%{_sbindir}/ifup
 touch %{buildroot}%{_sbindir}/ifdown
-
+%endif
 
 %check
 %if %{with meson}
@@ -999,6 +1022,7 @@ fi
 %systemd_post %{systemd_units}
 
 
+%if %{?with_ifcfg_rh}
 %post initscripts-updown
 if [ -f %{_sbindir}/ifup -a ! -L %{_sbindir}/ifup ]; then
     # initscripts package too old, won't let us set an alternative
@@ -1007,6 +1031,7 @@ else
     /usr/sbin/update-alternatives --install %{_sbindir}/ifup ifup %{_libexecdir}/nm-ifup 50 \
         --slave %{_sbindir}/ifdown ifdown %{_libexecdir}/nm-ifdown
 fi
+%endif
 
 
 %if %{with nm_cloud_setup}
@@ -1026,10 +1051,12 @@ fi
 %systemd_preun NetworkManager-wait-online.service NetworkManager-dispatcher.service nm-priv-helper.service
 
 
+%if %{?with_ifcfg_rh}
 %preun initscripts-updown
 if [ $1 -eq 0 ]; then
     /usr/sbin/update-alternatives --remove ifup %{_libexecdir}/nm-ifup >/dev/null 2>&1 || :
 fi
+%endif
 
 
 %if %{with nm_cloud_setup}
@@ -1064,7 +1091,7 @@ fi
 %{dbus_sys_dir}/org.freedesktop.NetworkManager.conf
 %{dbus_sys_dir}/nm-dispatcher.conf
 %{dbus_sys_dir}/nm-priv-helper.conf
-%if 0%{?split_ifcfg_rh} == 0
+%if %{?with_ifcfg_rh} && 0%{?split_ifcfg_rh} == 0
 %{dbus_sys_dir}/nm-ifcfg-rh.conf
 %endif
 %{_sbindir}/%{name}
@@ -1092,7 +1119,7 @@ fi
 %{_libexecdir}/nm-priv-helper
 %dir %{_libdir}/%{name}
 %dir %{nmplugindir}
-%if 0%{?split_ifcfg_rh} == 0
+%if %{?with_ifcfg_rh} && 0%{?split_ifcfg_rh} == 0
 %{nmplugindir}/libnm-settings-plugin-ifcfg-rh.so
 %endif
 %if %{with nmtui}
@@ -1114,7 +1141,9 @@ fi
 %{_mandir}/man8/NetworkManager-dispatcher.8*
 %{_mandir}/man8/NetworkManager-wait-online.service.8*
 %dir %{_localstatedir}/lib/NetworkManager
+%if %{?with_ifcfg_rh}
 %dir %{_sysconfdir}/sysconfig/network-scripts
+%endif
 %{_datadir}/dbus-1/system-services/org.freedesktop.nm_dispatcher.service
 %{_datadir}/dbus-1/system-services/org.freedesktop.nm_priv_helper.service
 %{_datadir}/polkit-1/actions/*.policy
@@ -1229,11 +1258,12 @@ fi
 %{nmlibdir}/conf.d/00-server.conf
 
 
+%if %{?with_ifcfg_rh}
 %files dispatcher-routing-rules
 %{nmlibdir}/dispatcher.d/10-ifcfg-rh-routes.sh
 %{nmlibdir}/dispatcher.d/no-wait.d/10-ifcfg-rh-routes.sh
 %{nmlibdir}/dispatcher.d/pre-up.d/10-ifcfg-rh-routes.sh
-
+%endif
 
 %if %{with nmtui}
 %files tui
@@ -1264,11 +1294,13 @@ fi
 %endif
 
 
+%if %{?with_ifcfg_rh}
 %files initscripts-updown
 %{_libexecdir}/nm-ifup
 %ghost %attr(755, root, root) %{_sbindir}/ifup
 %{_libexecdir}/nm-ifdown
 %ghost %attr(755, root, root) %{_sbindir}/ifdown
+%endif
 
 
 %changelog
