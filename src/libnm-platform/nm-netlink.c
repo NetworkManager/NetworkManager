@@ -4,6 +4,7 @@
  */
 
 #include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
+#include "libnm-glib-aux/nm-random-utils.h"
 
 #include "nm-netlink.h"
 
@@ -1105,7 +1106,7 @@ nl_socket_new(struct nl_sock **out_sk,
 {
     nm_auto_nlsock struct nl_sock *sk = NULL;
     nm_auto_close int              fd = -1;
-    time_t                         t;
+    unsigned                       seq_init;
     int                            err;
     int                            nmerr;
     socklen_t                      addrlen;
@@ -1121,7 +1122,7 @@ nl_socket_new(struct nl_sock **out_sk,
     if (fd < 0)
         return -nm_errno_from_native(errno);
 
-    t = time(NULL);
+    nm_random_get_bytes(&seq_init, sizeof(seq_init));
 
     sk  = g_slice_new(struct nl_sock);
     *sk = (struct nl_sock){
@@ -1138,8 +1139,8 @@ nl_socket_new(struct nl_sock **out_sk,
                 .nl_family = AF_NETLINK,
                 .nl_groups = 0,
             },
-        .s_seq_expect = t,
-        .s_seq_next   = t,
+        .s_seq_expect = seq_init,
+        .s_seq_next   = seq_init,
         .s_bufsize    = 0,
         .s_msg_peek   = !NM_FLAGS_HAS(flags, NL_SOCKET_FLAGS_DISABLE_MSG_PEEK),
         .s_auto_ack   = TRUE,
