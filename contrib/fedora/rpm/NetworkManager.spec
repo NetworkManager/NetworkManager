@@ -48,7 +48,7 @@
 %global systemd_units_cloud_setup nm-cloud-setup.service nm-cloud-setup.timer
 
 ###############################################################################
-%if 0%{?fedora} > 40
+%if 0%{?fedora} > 40 || 0%{?rhel} >= 10
 %bcond_without meson
 %else
 %bcond_with    meson
