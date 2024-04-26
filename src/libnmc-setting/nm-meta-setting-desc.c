@@ -4922,11 +4922,6 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
         .property_type =                &_pt_gobject_string,
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_CA_CERT,
-        .describe_message =
-            N_("Enter file path to CA certificate (optionally prefixed with file://).\n"
-               "  [file://]<file path>\n"
-               "Note that nmcli does not support specifying certificates as raw blob data.\n"
-               "Example: /home/cimrman/cacert.crt\n"),
         .property_type =                &_pt_cert_8021x,
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (cert_8021x,
             .scheme_type =              NM_SETTING_802_1X_SCHEME_TYPE_CA_CERT,
@@ -4965,11 +4960,6 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
         .property_type =                &_pt_gobject_string,
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_CLIENT_CERT,
-        .describe_message =
-            N_("Enter file path to client certificate (optionally prefixed with file://).\n"
-               "  [file://]<file path>\n"
-               "Note that nmcli does not support specifying certificates as raw blob data.\n"
-               "Example: /home/cimrman/jara.crt\n"),
         .property_type =                &_pt_cert_8021x,
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (cert_8021x,
             .scheme_type =              NM_SETTING_802_1X_SCHEME_TYPE_CLIENT_CERT,
@@ -5022,12 +5012,6 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PHASE2_CA_CERT,
-        .describe_message =
-            N_("Enter file path to CA certificate for inner authentication (optionally prefixed\n"
-               "with file://).\n"
-               "  [file://]<file path>\n"
-               "Note that nmcli does not support specifying certificates as raw blob data.\n"
-               "Example: /home/cimrman/ca-zweite-phase.crt\n"),
         .property_type =                &_pt_cert_8021x,
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (cert_8021x,
             .scheme_type =              NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CA_CERT,
@@ -5070,12 +5054,6 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
         .property_type =                &_pt_gobject_string,
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
-        .describe_message =
-            N_("Enter file path to client certificate for inner authentication (optionally prefixed\n"
-               "with file://).\n"
-               "  [file://]<file path>\n"
-               "Note that nmcli does not support specifying certificates as raw blob data.\n"
-               "Example: /home/cimrman/jara-zweite-phase.crt\n"),
         .property_type =                &_pt_cert_8021x,
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (cert_8021x,
             .scheme_type =              NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CLIENT_CERT,
@@ -5114,11 +5092,6 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
         .property_type =                &_pt_gobject_secret_flags,
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PRIVATE_KEY,
-        .describe_message =
-            N_("Enter path to a private key and the key password (if not set yet):\n"
-               "  [file://]<file path> [<password>]\n"
-               "Note that nmcli does not support specifying private key as raw blob data.\n"
-               "Example: /home/cimrman/jara-priv-key Dardanely\n"),
         .property_type =                &_pt_cert_8021x,
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (cert_8021x,
             .scheme_type =              NM_SETTING_802_1X_SCHEME_TYPE_PRIVATE_KEY,
@@ -5132,11 +5105,6 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
         .property_type =                &_pt_gobject_secret_flags,
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
-        .describe_message =
-            N_("Enter path to a private key and the key password (if not set yet):\n"
-               "  [file://]<file path> [<password>]\n"
-               "Note that nmcli does not support specifying private key as raw blob data.\n"
-               "Example: /home/cimrman/jara-priv-key Dardanely\n"),
         .property_type =                &_pt_cert_8021x,
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (cert_8021x,
             .scheme_type =              NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_PRIVATE_KEY,
