@@ -7772,17 +7772,42 @@ _nl_msg_new_dump_rtnl(NMPObjectType obj_type, int preferred_addr_family)
             g_return_val_if_reached(NULL);
     } break;
     case NMP_OBJECT_TYPE_LINK:
+    {
+        struct ifinfomsg ifm = {};
+
+        if (nlmsg_append_struct(nlmsg, &ifm) < 0)
+            g_return_val_if_reached(NULL);
+        break;
+    }
     case NMP_OBJECT_TYPE_IP4_ADDRESS:
     case NMP_OBJECT_TYPE_IP6_ADDRESS:
-    case NMP_OBJECT_TYPE_IP4_ROUTE:
-    case NMP_OBJECT_TYPE_IP6_ROUTE:
-    case NMP_OBJECT_TYPE_ROUTING_RULE:
     {
-        const struct rtgenmsg gmsg = {
-            .rtgen_family = preferred_addr_family,
+        struct ifaddrmsg ifm = {
+            .ifa_family = preferred_addr_family,
         };
 
-        if (nlmsg_append_struct(nlmsg, &gmsg) < 0)
+        if (nlmsg_append_struct(nlmsg, &ifm) < 0)
+            g_return_val_if_reached(NULL);
+        break;
+    }
+    case NMP_OBJECT_TYPE_IP4_ROUTE:
+    case NMP_OBJECT_TYPE_IP6_ROUTE:
+    {
+        struct rtmsg rtm = {
+            .rtm_family = preferred_addr_family,
+        };
+
+        if (nlmsg_append_struct(nlmsg, &rtm) < 0)
+            g_return_val_if_reached(NULL);
+        break;
+    }
+    case NMP_OBJECT_TYPE_ROUTING_RULE:
+    {
+        struct fib_rule_hdr frh = {
+            .family = preferred_addr_family,
+        };
+
+        if (nlmsg_append_struct(nlmsg, &frh) < 0)
             g_return_val_if_reached(NULL);
     } break;
     default:
@@ -10295,7 +10320,7 @@ ip_route_get(NMPlatform   *platform,
             .r.rtm_family  = addr_family,
             .r.rtm_tos     = 0,
             .r.rtm_dst_len = IS_IPv4 ? 32 : 128,
-            .r.rtm_flags   = IPS_IPv4 ? RTM_F_LOOKUP_TABLE : 0,
+            .r.rtm_flags   = IS_IPv4 ? RTM_F_LOOKUP_TABLE : 0,
         };
 
         nm_clear_pointer(&route, nmp_object_unref);
