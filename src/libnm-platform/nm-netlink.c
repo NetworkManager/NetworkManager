@@ -1152,6 +1152,7 @@ nl_socket_new(struct nl_sock **out_sk,
 
     i_val = 1;
     (void) setsockopt(sk->s_fd, SOL_NETLINK, NETLINK_EXT_ACK, &i_val, sizeof(i_val));
+    (void) setsockopt(sk->s_fd, SOL_NETLINK, NETLINK_GET_STRICT_CHK, &i_val, sizeof(i_val));
 
     if (NM_FLAGS_HAS(flags, NL_SOCKET_FLAGS_PASSCRED)) {
         err = nl_socket_set_passcred(sk, 1);
