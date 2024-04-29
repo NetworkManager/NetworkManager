@@ -918,7 +918,8 @@ autoreconf --install --force
 	--with-resolvconf=no \
 	--with-netconfig=no \
 	--with-config-dns-rc-manager-default=%{dns_rc_manager_default} \
-	--with-config-logging-backend-default=%{logging_backend_default}
+	--with-config-logging-backend-default=%{logging_backend_default} \
+	--disable-autotools-deprecation
 
 %make_build
 

@@ -8,6 +8,11 @@ subject to change and not guaranteed to be compatible with
 the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
+* Building with autotools is now deprecated and will be completely removed
+  in the next development cycle. We recommend using meson to build
+  NetworkManager -- for basic setup, see the CONTRIBUTING.md file.
+  To ignore this deprecation and still build with Autotools, you can specify
+  the '--disable-autotools-deprecation' argument when configuring.
 * Support changing the OpenSSL ciphers for 802.1X authentication via
   connection property "802-1x.openssl-ciphers".
 * The reason why a device is unmanaged is now properly set in the
