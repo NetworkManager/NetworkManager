@@ -337,6 +337,11 @@ struct _ifla_vf_vlan_info {
 #define BRIDGE_VLAN_INFO_RANGE_END   (1 << 4) /* VLAN is end of vlan range */
 #endif
 
+/* Appeared in kernel 4.2 dated August 2015 */
+#ifndef RTM_F_LOOKUP_TABLE
+#define RTM_F_LOOKUP_TABLE 0x1000 /* set rtm_table to FIB lookup result */
+#endif
+
 /*****************************************************************************/
 
 #define PSCHED_TIME_UNITS_PER_SEC 1000000
@@ -10290,7 +10295,7 @@ ip_route_get(NMPlatform   *platform,
             .r.rtm_family  = addr_family,
             .r.rtm_tos     = 0,
             .r.rtm_dst_len = IS_IPv4 ? 32 : 128,
-            .r.rtm_flags   = 0x1000 /* RTM_F_LOOKUP_TABLE */,
+            .r.rtm_flags   = IPS_IPv4 ? RTM_F_LOOKUP_TABLE : 0,
         };
 
         nm_clear_pointer(&route, nmp_object_unref);
