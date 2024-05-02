@@ -402,4 +402,8 @@ void _nm_settings_connection_emit_signal_updated_internal(
 
 void _nm_settings_connection_cleanup_after_remove(NMSettingsConnection *self);
 
+/*****************************************************************************/
+
+char *nm_settings_connection_persist_mode_to_string(NMSettingsConnectionPersistMode mode);
+
 #endif /* __NETWORKMANAGER_SETTINGS_CONNECTION_H__ */
