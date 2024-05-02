@@ -2988,6 +2988,13 @@ nmp_cache_update_netlink_route(NMPCache         *cache,
          * Since we don't cache all routes (see "route_is_alive"), we cannot know
          * with certainty which route was replaced.
          *
+         * For example, the kernel might have 3 similar routes (same WEAK_ID), one
+         * of which is not tracked by us so we don't have it into the cache. If we
+         * receive a route replace message, we don't know to what of the 3 routes
+         * it affects (one of the 3 we don't even know that exists). Moreover, if
+         * we only have one route on cache, we don't know if the replace is for a
+         * different one that we don't track.
+         *
          * Even if we would cache *all* routes (which we cannot, if kernel adds new
          * routing features that modify the known nmp_object_id_equal()), it would
          * be hard to find the right route that was replaced. Well, probably we
@@ -3002,15 +3009,14 @@ nmp_cache_update_netlink_route(NMPCache         *cache,
          * [2] https://bugzilla.redhat.com/show_bug.cgi?id=1337860
          *
          * We need to resync.
+         *
+         * However, a resync is expensive. Think of a routing daemon that updates
+         * hundreds of routes per second, the performance penalty is huge. We can
+         * optimize it: if we don't have any matching route on cache (by WEAK_ID),
+         * we don't have anything to replace and we don't need a full resync, but
+         * only to add or discard the new route as usual.
          */
-        if (NMP_OBJECT_GET_TYPE(obj_hand_over) == NMP_OBJECT_TYPE_IP4_ROUTE
-            && !nmp_cache_lookup_all(cache, NMP_CACHE_ID_TYPE_ROUTES_BY_WEAK_ID, obj_hand_over)) {
-            /* For IPv4, we can do a small optimization. We skip the resync, if we have
-             * no conflicting routes (by weak-id).
-             *
-             * This optimization does not work for IPv6 (maybe should be fixed).
-             */
-        } else {
+        if (nmp_cache_lookup_all(cache, NMP_CACHE_ID_TYPE_ROUTES_BY_WEAK_ID, obj_hand_over)) {
             entry_replace   = NULL;
             resync_required = TRUE;
             goto out;

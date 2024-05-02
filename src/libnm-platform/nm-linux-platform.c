@@ -3903,6 +3903,34 @@ _new_from_nl_addr(const struct nlmsghdr *nlh, gboolean id_only)
     return g_steal_pointer(&obj);
 }
 
+static gboolean
+ip_route_is_tracked(guint8 proto, guint8 type)
+{
+    if (proto > RTPROT_STATIC && !NM_IN_SET(proto, RTPROT_DHCP, RTPROT_RA)) {
+        /* We ignore certain rtm_protocol, because NetworkManager would only ever
+         * configure certain protocols. Other routes are not configured by NetworkManager
+         * and we don't track them in the platform cache.
+         *
+         * This is to help with the performance overhead of a huge number of
+         * routes, for example with the bird BGP software, that adds routes
+         * with RTPROT_BIRD protocol. */
+        return FALSE;
+    }
+
+    if (!NM_IN_SET(type,
+                   RTN_UNICAST,
+                   RTN_LOCAL,
+                   RTN_BLACKHOLE,
+                   RTN_UNREACHABLE,
+                   RTN_PROHIBIT,
+                   RTN_THROW)) {
+        /* Certain route types are ignored and not placed into the cache. */
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
 /* Copied and heavily modified from libnl3's rtnl_route_parse() and parse_multipath(). */
 static NMPObject *
 _new_from_nl_route(const struct nlmsghdr *nlh, gboolean id_only, ParseNlmsgIter *parse_nlmsg_iter)
@@ -3962,6 +3990,16 @@ _new_from_nl_route(const struct nlmsghdr *nlh, gboolean id_only, ParseNlmsgIter 
     /*****************************************************************
      * only handle ~supported~ routes.
      *****************************************************************/
+
+    /* If it's a route that we don't need to track, abort here to avoid unnecessary
+     * memory allocations to create the nmp_object. However, if the message has the
+     * NLM_F_REPLACE flag, it might be replacing a route that we were tracking so we
+     * have to stop tracking it. That means that we have to process all messages with
+     * NLM_F_REPLACE. See nmp_cache_update_netlink_route().
+     */
+    if (!ip_route_is_tracked(rtm->rtm_protocol, rtm->rtm_type)
+        && !(nlh->nlmsg_flags & NLM_F_REPLACE))
+        return NULL;
 
     addr_family = rtm->rtm_family;
 
@@ -5519,39 +5557,18 @@ ip_route_get_lock_flag(const NMPlatformIPRoute *route)
 static gboolean
 ip_route_is_alive(const NMPlatformIPRoute *route)
 {
-    guint8 prot;
+    guint8 proto, type;
 
     nm_assert(route);
     nm_assert(route->rt_source >= NM_IP_CONFIG_SOURCE_RTPROT_UNSPEC
               && route->rt_source <= _NM_IP_CONFIG_SOURCE_RTPROT_LAST);
 
-    prot = route->rt_source - 1;
+    proto = route->rt_source - 1;
+    type  = nm_platform_route_type_uncoerce(route->type_coerced);
 
-    nm_assert(nmp_utils_ip_config_source_from_rtprot(prot) == route->rt_source);
+    nm_assert(nmp_utils_ip_config_source_from_rtprot(proto) == route->rt_source);
 
-    if (prot > RTPROT_STATIC && !NM_IN_SET(prot, RTPROT_DHCP, RTPROT_RA)) {
-        /* We ignore certain rtm_protocol, because NetworkManager would only ever
-         * configure certain protocols. Other routes are not configured by NetworkManager
-         * and we don't track them in the platform cache.
-         *
-         * This is to help with the performance overhead of a huge number of
-         * routes, for example with the bird BGP software, that adds routes
-         * with RTPROT_BIRD protocol. */
-        return FALSE;
-    }
-
-    if (!NM_IN_SET(nm_platform_route_type_uncoerce(route->type_coerced),
-                   RTN_UNICAST,
-                   RTN_LOCAL,
-                   RTN_BLACKHOLE,
-                   RTN_UNREACHABLE,
-                   RTN_PROHIBIT,
-                   RTN_THROW)) {
-        /* Certain route types are ignored and not placed into the cache. */
-        return FALSE;
-    }
-
-    return TRUE;
+    return ip_route_is_tracked(proto, type);
 }
 
 /* Copied and modified from libnl3's build_route_msg() and rtnl_route_build_msg(). */

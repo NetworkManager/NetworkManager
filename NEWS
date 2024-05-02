@@ -18,6 +18,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Fix detection of 6 GHz band capability for WiFi devices
 * Allow IPv6 SLAAC and static IPv6 DNS server assignment for modem broadband
   when IPv6 device address was not explicitly passed on by ModemManager
+* Fix a performance issue that was leading to 100% CPU usage by NetworkManager
+  if external programs were doing a big amount of routes updates.
 
 =============================================
 NetworkManager-1.46
