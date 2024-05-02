@@ -59,11 +59,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-81dd13f55ef0'
-  CENTOS_TAG:  'tag-844c9af59d0e'
-  DEBIAN_TAG:  'tag-29bac6f208bb'
-  FEDORA_TAG:  'tag-844c9af59d0e'
-  UBUNTU_TAG:  'tag-29bac6f208bb'
+  ALPINE_TAG:  'tag-29ef9f73ce6e'
+  CENTOS_TAG:  'tag-db8e32949a26'
+  DEBIAN_TAG:  'tag-67262330bdf8'
+  FEDORA_TAG:  'tag-db8e32949a26'
+  UBUNTU_TAG:  'tag-67262330bdf8'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
@@ -654,14 +654,14 @@ pages:
   needs:
     - "t_fedora:40: [autotools+gcc+docs+valgrind]"
 
-triage:issues:
-  stage: triage
-  image: ruby:2.7
-  script:
-    - gem install gitlab-triage
-    - gitlab-triage -d --token $API_TOKEN --source-id $SOURCE_ID
-  only:
-    - schedules
+# triage:issues:
+#   stage: triage
+#   image: ruby:2.7
+#   script:
+#     - gem install gitlab-triage
+#     - gitlab-triage -d --token $API_TOKEN --source-id $SOURCE_ID
+#   only:
+#     - schedules
 
 # Clean the generated images periodically to get updated snapshots of the distribution images.
 # Create an scheduled pipeline to run it, passing an AUTHFILE environment variable of type

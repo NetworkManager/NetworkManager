@@ -241,14 +241,14 @@ pages:
   needs:
     - "t_{{default_distro.name}}:{{default_distro.versions[0]}}: [autotools+gcc+docs+valgrind]"
 
-triage:issues:
-  stage: triage
-  image: ruby:2.7
-  script:
-    - gem install gitlab-triage
-    - gitlab-triage -d --token $API_TOKEN --source-id $SOURCE_ID
-  only:
-    - schedules
+# triage:issues:
+#   stage: triage
+#   image: ruby:2.7
+#   script:
+#     - gem install gitlab-triage
+#     - gitlab-triage -d --token $API_TOKEN --source-id $SOURCE_ID
+#   only:
+#     - schedules
 
 # Clean the generated images periodically to get updated snapshots of the distribution images.
 # Create an scheduled pipeline to run it, passing an AUTHFILE environment variable of type
