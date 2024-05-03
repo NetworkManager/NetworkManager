@@ -531,13 +531,13 @@ build_tag() {
 
     ./contrib/fedora/rpm/build_clean.sh -r || die "build release failed"
 
-    test -f "./$RELEASE_FILE" \
-    || die "release file \"./$RELEASE_FILE\" not found"
+    test -f "./build/meson-dist/$RELEASE_FILE" \
+    || die "release file \"./build/meson-dist/$RELEASE_FILE\" not found"
 
-    cp "./$RELEASE_FILE" /tmp/ || die "failed to copy release tarball to /tmp"
+    cp "./build/meson-dist/$RELEASE_FILE" /tmp/ || die "failed to copy release tarball to /tmp"
 
-    if test -f "./$RELEASE_FILE.sig" ; then
-        cp "./$RELEASE_FILE.sig" /tmp/ || die "failed to copy signature for tarball to /tmp"
+    if test -f "./build/meson-dist/$RELEASE_FILE.sig" ; then
+        cp "./build/meson-dist/$RELEASE_FILE.sig" /tmp/ || die "failed to copy signature for tarball to /tmp"
     fi
 
     git clean -fdx
