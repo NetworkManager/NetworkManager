@@ -514,6 +514,7 @@ else
         --with-netconfig=no \
         --with-config-dns-rc-manager-default="$P_DNS_RC_MANAGER_DEFAULT" \
         --with-config-logging-backend-default="$P_LOGGING_BACKEND_DEFAULT" \
+        --disable-autotools-deprecation \
         ;
 fi
 
