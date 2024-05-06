@@ -22,6 +22,11 @@ Overview of changes since NetworkManager-1.46
   when IPv6 device address was not explicitly passed on by ModemManager
 * Fix a performance issue that was leading to 100% CPU usage by NetworkManager
   if external programs were doing a big amount of routes updates.
+* Patch-level development releases (i.e. 1.48.1-dev) won't be used anymore.
+  From now on, all the patch releases whithin a stable branch will be normal
+  releases, like 1.48.0, 1.48.1, 1.48.2, 1.48.3 and so on.
+  Odd numbers in the minor version number still indicates if it's a development
+  branch like 1.49 or a stable one like 1.48.
 
 =============================================
 NetworkManager-1.46
