@@ -272,6 +272,7 @@ if [[ $NO_DIST != 1 ]]; then
             \
             --with-iptables=/usr/sbin/iptables \
             --with-nft=/usr/sbin/nft \
+            --disable-autotools-deprecation \
             \
             || die "Error autogen.sh"
         if [[ $QUICK == 1 ]]; then

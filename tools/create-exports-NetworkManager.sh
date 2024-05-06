@@ -26,7 +26,8 @@ _build() {
                  --with-modem-manager-1 \
                  --with-ofono \
                  --with-more-asserts \
-                 --with-more-logging
+                 --with-more-logging \
+                 --disable-autotools-deprecation
     make -j20
 }
 
