@@ -188,6 +188,7 @@ run_autotools() {
             \
             --enable-ifcfg-rh=yes \
             --enable-ifupdown=yes \
+            --disable-autotools-deprecation \
             \
             #end
 
