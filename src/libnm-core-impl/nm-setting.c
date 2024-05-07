@@ -3745,6 +3745,7 @@ nm_setting_to_string(NMSetting *setting)
         value_str = g_variant_print(value, FALSE);
 
         g_string_append_printf(string, "\t%s : %s\n", name, value_str);
+        g_variant_unref(child);
     }
 
     return g_string_free(string, FALSE);
