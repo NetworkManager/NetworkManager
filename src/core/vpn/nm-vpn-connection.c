@@ -1433,6 +1433,10 @@ _check_complete(NMVpnConnection *self, gboolean success)
     l3cd = nm_l3_config_data_new_from_connection(nm_netns_get_multi_idx(priv->netns),
                                                  nm_vpn_connection_get_ip_ifindex(self, TRUE),
                                                  connection);
+
+    nm_l3_config_data_set_allow_routes_without_address(l3cd, AF_INET, TRUE);
+    nm_l3_config_data_set_allow_routes_without_address(l3cd, AF_INET6, TRUE);
+
     _l3cfg_l3cd_set(self, L3CD_TYPE_STATIC, l3cd);
 
     _l3cfg_l3cd_gw_extern_update(self);
