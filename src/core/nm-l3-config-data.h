@@ -557,6 +557,10 @@ gboolean nm_l3_config_data_set_ip6_privacy(NML3ConfigData           *self,
 gboolean nm_l3_config_data_get_allow_routes_without_address(const NML3ConfigData *self,
                                                             int                   addr_family);
 
+void nm_l3_config_data_set_allow_routes_without_address(NML3ConfigData *self,
+                                                        int             addr_family,
+                                                        gboolean        value);
+
 NMProxyConfigMethod nm_l3_config_data_get_proxy_method(const NML3ConfigData *self);
 
 gboolean nm_l3_config_data_set_proxy_method(NML3ConfigData *self, NMProxyConfigMethod value);

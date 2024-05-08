@@ -1950,6 +1950,21 @@ nm_l3_config_data_get_allow_routes_without_address(const NML3ConfigData *self, i
     }
 }
 
+void
+nm_l3_config_data_set_allow_routes_without_address(NML3ConfigData *self,
+                                                   int             addr_family,
+                                                   gboolean        value)
+{
+    const int IS_IPv4 = NM_IS_IPv4(addr_family);
+
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
+    if (IS_IPv4) {
+        self->allow_routes_without_address_4 = value;
+    } else {
+        self->allow_routes_without_address_6 = value;
+    }
+}
+
 NMProxyConfigMethod
 nm_l3_config_data_get_proxy_method(const NML3ConfigData *self)
 {
