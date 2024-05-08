@@ -1023,23 +1023,20 @@ ipv6.ip6-privacy=0
         </varlistentry>
         <varlistentry>
           <term><varname>ipv6.ip6-privacy</varname></term>
-          <listitem><para>If <literal>ipv6.ip6-privacy</literal> is unset, fall back to the original
-            value of "/proc/sys/net/ipv6/conf/&lt;iface&gt;/use_tempaddr" from before NetworkManager
-            started.
+          <listitem><para>If <literal>ipv6.ip6-privacy</literal> is unset, use the content of
+            "/proc/sys/net/ipv6/conf/default/use_tempaddr" as last fallback.
           </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>ipv6.temp-valid-lifetime</varname></term>
-          <listitem><para>If <literal>ipv6.temp-valid-lifetime</literal> is unset, fall back to the
-            original value of "/proc/sys/net/ipv6/conf/&lt;iface&gt;/temp_valid_lft" from before
-            NetworkManager started.
+          <listitem><para>If <literal>ipv6.temp-valid-lifetime</literal> is unset, use the
+            content of "/proc/sys/net/ipv6/conf/default/temp_valid_lft" as last fallback.
           </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>ipv6.temp-preferred-lifetime</varname></term>
-          <listitem><para>If <literal>ipv6.temp-preferred-lifetime</literal> is unset, fall back to
-            the original value of "/proc/sys/net/ipv6/conf/&lt;iface&gt;/temp_prefered_lft" from
-            before NetworkManager started.
+          <listitem><para>If <literal>ipv6.temp-preferred-lifetime</literal> is unset, use
+            the content of "/proc/sys/net/ipv6/conf/default/temp_prefered_lft" as last fallback.
           </para></listitem>
         </varlistentry>
         <varlistentry>
