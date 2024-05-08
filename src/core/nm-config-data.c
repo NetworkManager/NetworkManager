@@ -849,7 +849,7 @@ nm_config_data_log(const NMConfigData  *self,
                     /* We require that the default values are grouped by their "group".
                      * That is, all default values for a certain "group" are close to
                      * each other in the list. Assert for that. */
-                    for (g2 = g + 1; g2 < groups_full->len; g2++) {
+                    for (g2 = g + 1; g2 < G_N_ELEMENTS(default_values); g2++) {
                         nm_assert(!nm_streq(default_values[g - 1].group, default_values[g2].group));
                     }
                 }
