@@ -211,7 +211,7 @@ check-tree:
     - date '+%Y%m%d-%H%M%S'; git ls-files -z -- 'po/*.po' | xargs -0 -n1 msgfmt -vc
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-code-format.sh -n
     - date '+%Y%m%d-%H%M%S'; ci-fairy generate-template && git diff --exit-code
-    - date '+%Y%m%d-%H%M%S'; ./autogen.sh && [ "$(LANG=C make -C po update-po 2>&1 1>/dev/null | grep -c 'warning:')" = 0 ]
+    - date '+%Y%m%d-%H%M%S'; ./autogen.sh --disable-autotools-deprecation && [ "$(LANG=C make -C po update-po 2>&1 1>/dev/null | grep -c 'warning:')" = 0 ]
 
 pages:
   stage: deploy

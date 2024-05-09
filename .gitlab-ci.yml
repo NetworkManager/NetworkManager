@@ -57,11 +57,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-ec0f564800e3'
-  CENTOS_TAG:  'tag-b114f45d4a4e'
-  DEBIAN_TAG:  'tag-318ea804326f'
-  FEDORA_TAG:  'tag-b114f45d4a4e'
-  UBUNTU_TAG:  'tag-318ea804326f'
+  ALPINE_TAG:  'tag-ed94fd969369'
+  CENTOS_TAG:  'tag-dc93a9c129f8'
+  DEBIAN_TAG:  'tag-3766b6cf1e7d'
+  FEDORA_TAG:  'tag-dc93a9c129f8'
+  UBUNTU_TAG:  'tag-3766b6cf1e7d'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
@@ -552,7 +552,7 @@ check-tree:
     - date '+%Y%m%d-%H%M%S'; git ls-files -z -- 'po/*.po' | xargs -0 -n1 msgfmt -vc
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-code-format.sh -n
     - date '+%Y%m%d-%H%M%S'; ci-fairy generate-template && git diff --exit-code
-    - date '+%Y%m%d-%H%M%S'; ./autogen.sh && [ "$(LANG=C make -C po update-po 2>&1 1>/dev/null | grep -c 'warning:')" = 0 ]
+    - date '+%Y%m%d-%H%M%S'; ./autogen.sh --disable-autotools-deprecation && [ "$(LANG=C make -C po update-po 2>&1 1>/dev/null | grep -c 'warning:')" = 0 ]
 
 pages:
   stage: deploy

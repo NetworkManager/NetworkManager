@@ -16,6 +16,20 @@ AC_INIT([NetworkManager], [nm_version],
         [http://bugzilla.gnome.org/enter_bug.cgi?product=NetworkManager],
         [NetworkManager])
 
+deprecation_message() {
+    echo "Building with Autotools is deprecated; meson is the recommended way to build NetworkManager."
+    echo "To learn more, see the CONTRIBUTING.md file."
+    echo "To ignore this, pass '--disable-autotools-deprecation' when configuring."
+    exit 1
+}
+
+AC_ARG_ENABLE([autotools-deprecation],
+    AS_HELP_STRING([--disable-autotools-deprecation],
+                   [Building with autotools is deprecated, passing this argument overrides this error.]),
+    [ test "$enableval" != "no" && deprecation_message ],
+    [ deprecation_message ]
+)
+
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([build-aux])

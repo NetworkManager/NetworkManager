@@ -159,6 +159,7 @@ DISTCHECK_CONFIGURE_FLAGS = \
 	--enable-ifcfg-rh \
 	--enable-ifupdown \
 	--disable-dependency-tracking \
+	--disable-autotools-deprecation \
 	$(NULL)
 
 dist-configure-check:
