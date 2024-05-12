@@ -8634,7 +8634,7 @@ msgstr "Список, через запятую, правил маршрутиз
 
 #: src/libnmc-setting/settings-docs.h.in:191
 msgid ""
-"Configure method for creating the IPv6 interface identifer of addresses with "
+"Configure method for creating the IPv6 interface identifier of addresses with "
 "RFC4862 IPv6 Stateless Address Autoconfiguration and Link Local addresses. "
 "The permitted values are: \"eui64\" (0), \"stable-privacy\" (1), "
 "\"default\" (3) or \"default-or-eui64\" (2). If the property is set to "
