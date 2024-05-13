@@ -2161,7 +2161,7 @@ write_connection_setting(NMSettingConnection *s_con, shvarFile *ifcfg, const cha
 {
     guint32                       n, i;
     nm_auto_free_gstring GString *str = NULL;
-    const char                   *master, *master_iface = NULL, *type;
+    const char                   *controller, *controller_iface = NULL, *type;
     int                           vint;
     gint32                        vint32;
     NMSettingConnectionMdns       mdns;
@@ -2191,7 +2191,7 @@ write_connection_setting(NMSettingConnection *s_con, shvarFile *ifcfg, const cha
     vint = nm_setting_connection_get_multi_connect(s_con);
     svSetValueInt64_cond(ifcfg, "MULTI_CONNECT", vint != NM_CONNECTION_MULTI_CONNECT_DEFAULT, vint);
 
-    /* Only save the value for master connections */
+    /* Only save the value for controller connections */
     type = nm_setting_connection_get_connection_type(s_con);
     if (_nm_connection_type_is_master(type)) {
         NMSettingConnectionAutoconnectSlaves autoconnect_slaves;
@@ -2251,50 +2251,50 @@ write_connection_setting(NMSettingConnection *s_con, shvarFile *ifcfg, const cha
     mud_url = nm_setting_connection_get_mud_url(s_con);
     svSetValue(ifcfg, "MUD_URL", mud_url);
 
-    master = nm_setting_connection_get_controller(s_con);
-    if (master) {
+    controller = nm_setting_connection_get_controller(s_con);
+    if (controller) {
         /* The reader prefers the *_UUID variants, however we still try to resolve
          * it into an interface name, so that legacy tooling is not confused. */
         if (!nm_utils_get_testing()) {
             /* This is conditional for easier testing. */
-            master_iface = nm_manager_iface_for_uuid(NM_MANAGER_GET, master);
+            controller_iface = nm_manager_iface_for_uuid(NM_MANAGER_GET, controller);
         }
-        if (!master_iface) {
-            master_iface = master;
-            master       = NULL;
+        if (!controller_iface) {
+            controller_iface = controller;
+            controller       = NULL;
         }
 
         if (nm_streq0(nm_setting_connection_get_port_type(s_con), NM_SETTING_BOND_SETTING_NAME)) {
-            svSetValueStr(ifcfg, "MASTER_UUID", master);
-            svSetValueStr(ifcfg, "MASTER", master_iface);
+            svSetValueStr(ifcfg, "MASTER_UUID", controller);
+            svSetValueStr(ifcfg, "MASTER", controller_iface);
             svSetValueStr(ifcfg, "SLAVE", "yes");
         } else if (nm_streq0(nm_setting_connection_get_port_type(s_con),
                              NM_SETTING_BRIDGE_SETTING_NAME)) {
-            svSetValueStr(ifcfg, "BRIDGE_UUID", master);
-            svSetValueStr(ifcfg, "BRIDGE", master_iface);
+            svSetValueStr(ifcfg, "BRIDGE_UUID", controller);
+            svSetValueStr(ifcfg, "BRIDGE", controller_iface);
         } else if (nm_streq0(nm_setting_connection_get_port_type(s_con),
                              NM_SETTING_TEAM_SETTING_NAME)) {
-            svSetValueStr(ifcfg, "TEAM_MASTER_UUID", master);
-            svSetValueStr(ifcfg, "TEAM_MASTER", master_iface);
+            svSetValueStr(ifcfg, "TEAM_MASTER_UUID", controller);
+            svSetValueStr(ifcfg, "TEAM_MASTER", controller_iface);
             if (NM_IN_STRSET(type, NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_VLAN_SETTING_NAME))
                 svUnsetValue(ifcfg, "TYPE");
         } else if (nm_streq0(nm_setting_connection_get_port_type(s_con),
                              NM_SETTING_OVS_PORT_SETTING_NAME)) {
-            svSetValueStr(ifcfg, "OVS_PORT_UUID", master);
-            svSetValueStr(ifcfg, "OVS_PORT", master_iface);
+            svSetValueStr(ifcfg, "OVS_PORT_UUID", controller);
+            svSetValueStr(ifcfg, "OVS_PORT", controller_iface);
         } else if (nm_streq0(nm_setting_connection_get_port_type(s_con),
                              NM_SETTING_VRF_SETTING_NAME)) {
-            svSetValueStr(ifcfg, "VRF_UUID", master);
-            svSetValueStr(ifcfg, "VRF", master_iface);
+            svSetValueStr(ifcfg, "VRF_UUID", controller);
+            svSetValueStr(ifcfg, "VRF", controller_iface);
         } else {
-            _LOGW("don't know how to set master for a %s slave",
+            _LOGW("don't know how to set controller for a %s slave",
                   nm_setting_connection_get_port_type(s_con));
         }
     }
 
     if (nm_streq0(type, NM_SETTING_TEAM_SETTING_NAME))
         svSetValueStr(ifcfg, "DEVICETYPE", TYPE_TEAM);
-    else if (master_iface
+    else if (controller_iface
              && nm_streq0(nm_setting_connection_get_port_type(s_con), NM_SETTING_TEAM_SETTING_NAME))
         svSetValueStr(ifcfg, "DEVICETYPE", TYPE_TEAM_PORT);
 

@@ -2212,7 +2212,7 @@ test_read_dns_options(void)
 }
 
 static void
-test_clear_master(void)
+test_clear_controller(void)
 {
     nmtst_auto_unlinkfile char   *testfile   = NULL;
     gs_free char                 *keyfile    = NULL;
@@ -2239,7 +2239,7 @@ test_clear_master(void)
                            TEST_IFCFG_DIR "/ifcfg-System_test-bridge-component-a.cexpected",
                            &testfile);
 
-    /* 3. clear master and slave-type */
+    /* 3. clear controller and slave-type */
     g_object_set(s_con,
                  NM_SETTING_CONNECTION_MASTER,
                  NULL,
@@ -8990,7 +8990,7 @@ test_write_fcoe_mode(gconstpointer user_data)
 }
 
 static void
-test_read_team_master(gconstpointer user_data)
+test_read_team_controller(gconstpointer user_data)
 {
     const char *const             PATH_NAME  = user_data;
     gs_unref_object NMConnection *connection = NULL;
@@ -9013,7 +9013,7 @@ test_read_team_master(gconstpointer user_data)
 }
 
 static void
-test_read_team_master_invalid(gconstpointer user_data)
+test_read_team_controller_invalid(gconstpointer user_data)
 {
     const char *const             PATH_NAME  = user_data;
     gs_free_error GError         *error      = NULL;
@@ -9029,7 +9029,7 @@ test_read_team_master_invalid(gconstpointer user_data)
 }
 
 static void
-test_write_team_master(void)
+test_write_team_controller(void)
 {
     nmtst_auto_unlinkfile char   *testfile   = NULL;
     gs_unref_object NMConnection *connection = NULL;
@@ -9252,7 +9252,7 @@ test_team_reread_slave(void)
                                              "type=vlan\n"
                                              "autoconnect=false\n"
                                              "interface-name=enp31s0f1-142\n"
-                                             "master=team142\n"
+                                             "controller=team142\n"
                                              "permissions=\n"
                                              "slave-type=team\n"
                                              "\n"
@@ -10534,7 +10534,7 @@ main(int argc, char **argv)
                          test_write_wired_static_ip6_only_gw);
     g_test_add_func(TPATH "ip6/disabled", test_write_ip6_disabled);
     g_test_add_func(TPATH "read-dns-options", test_read_dns_options);
-    g_test_add_func(TPATH "clear-master", test_clear_master);
+    g_test_add_func(TPATH "clear-controller", test_clear_controller);
 
     nmtst_add_test_func(TPATH "read-static",
                         test_read_wired_static,
@@ -10892,33 +10892,33 @@ main(int argc, char **argv)
                          (gpointer) NM_SETTING_DCB_FCOE_MODE_VN2VN,
                          test_write_fcoe_mode);
 
-    g_test_add_func(TPATH "bond/read-master", test_read_bond_main);
-    g_test_add_func(TPATH "bond/read-master-eth-type", test_read_bond_eth_type);
+    g_test_add_func(TPATH "bond/read-controller", test_read_bond_main);
+    g_test_add_func(TPATH "bond/read-controller-eth-type", test_read_bond_eth_type);
     g_test_add_func(TPATH "bond/read-slave", test_read_bond_slave);
     g_test_add_func(TPATH "bond/read-slave-ib", test_read_bond_slave_ib);
-    g_test_add_func(TPATH "bond/write-master", test_write_bond_main);
+    g_test_add_func(TPATH "bond/write-controller", test_write_bond_main);
     g_test_add_func(TPATH "bond/write-slave", test_write_bond_slave);
     g_test_add_func(TPATH "bond/write-slave-ib", test_write_bond_slave_ib);
     g_test_add_func(TPATH "bond/bonding-opts-numeric-mode", test_read_bond_opts_mode_numeric);
     g_test_add_func(TPATH "bond/read-bond-port", test_read_bond_port);
     g_test_add_func(TPATH "bond/write-bond-port", test_write_bond_port);
 
-    g_test_add_func(TPATH "bridge/read-master", test_read_bridge_main);
-    g_test_add_func(TPATH "bridge/write-master", test_write_bridge_main);
+    g_test_add_func(TPATH "bridge/read-controller", test_read_bridge_main);
+    g_test_add_func(TPATH "bridge/write-controller", test_write_bridge_main);
     g_test_add_func(TPATH "bridge/read-component", test_read_bridge_component);
     g_test_add_func(TPATH "bridge/write-component", test_write_bridge_component);
     g_test_add_func(TPATH "bridge/read-missing-stp", test_read_bridge_missing_stp);
 
-    g_test_add_data_func(TPATH "team/read-master-1",
-                         TEST_IFCFG_DIR "/ifcfg-test-team-master-1",
-                         test_read_team_master);
-    g_test_add_data_func(TPATH "team/read-master-2",
-                         TEST_IFCFG_DIR "/ifcfg-test-team-master-2",
-                         test_read_team_master);
-    g_test_add_data_func(TPATH "team/read-master-invalid",
-                         TEST_IFCFG_DIR "/ifcfg-test-team-master-invalid",
-                         test_read_team_master_invalid);
-    g_test_add_func(TPATH "team/write-master", test_write_team_master);
+    g_test_add_data_func(TPATH "team/read-controller-1",
+                         TEST_IFCFG_DIR "/ifcfg-test-team-controller-1",
+                         test_read_team_controller);
+    g_test_add_data_func(TPATH "team/read-controller-2",
+                         TEST_IFCFG_DIR "/ifcfg-test-team-controller-2",
+                         test_read_team_controller);
+    g_test_add_data_func(TPATH "team/read-controller-invalid",
+                         TEST_IFCFG_DIR "/ifcfg-test-team-controller-invalid",
+                         test_read_team_controller_invalid);
+    g_test_add_func(TPATH "team/write-controller", test_write_team_controller);
     g_test_add_data_func(TPATH "team/read-port-1",
                          TEST_IFCFG_DIR "/ifcfg-test-team-port-1",
                          test_read_team_port);
