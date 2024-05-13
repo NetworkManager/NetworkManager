@@ -163,44 +163,89 @@ echo "HEAD is $(git rev-parse HEAD)"
 
 # enable randomization for unit-tests.
 export NMTST_SEED_RAND=
+LAST_TAG=$(git describe | cut -d "." -f 2)
+
+if [ "$LAST_TAG" -lt "47" ]; then
+    export USE_AUTOTOOLS=1
+fi
 
 if [[ "$DO_TEST_BUILD" == yes ]]; then
-    NOCONFIGURE=yes ./autogen.sh
 
-    ./configure \
-        PYTHON="${PYTHON}" \
-        --enable-maintainer-mode \
-        --enable-more-warnings=error \
-        --prefix=/opt/test \
-        --sysconfdir=/etc \
-        --enable-gtk-doc \
-        --enable-more-asserts \
-        --with-more-asserts=100 \
-        --enable-more-logging \
-        --enable-compile-warnings=yes\
-        --with-valgrind=no \
-        --enable-concheck \
-        --enable-ifcfg-rh \
-        --enable-ifcfg-suse \
-        --enable-ifupdown \
-        --enable-ifnet \
-        --enable-vala=yes \
-        --enable-polkit=yes \
-        --with-nmtui=yes \
-        --with-modem-manager-1 \
-        --with-suspend-resume=systemd \
-        --enable-teamdctl=yes \
-        --enable-tests=root \
-        --with-netconfig=/path/does/not/exist/netconfig \
-        --with-resolvconf=/path/does/not/exist/resolvconf \
-        --with-crypto=nss \
-        --with-session-tracking=systemd \
-        --with-consolekit=yes \
-        --with-systemd-logind=yes \
-        --with-consolekit=yes
+    if [[ $USE_AUTOTOOLS != 1 ]]; then
+        meson setup "./build" \
+            -Dwarning_level=2 \
+            --prefix=/opt/test \
+            --sysconfdir=/etc \
+            -Ddocs=true \
+            -Dmore_asserts=all \
+            -Dmore_logging=true \
+            -Dintrospection=true \
+            -Dvalgrind=true \
+            -Dconcheck=true \
+            -Difcfg_rh=true \
+            -Difupdown=true \
+            -Dvapi=true \
+            -Dpolkit=true \
+            -Dnmtui=true \
+            -Dmodem_manager=true \
+            -Dsuspend_resume=systemd \
+            -Dteamdctl=true \
+            -Dtests=root \
+            -Dnetconfig=no \
+            -Dresolvconf=no \
+            -Dcrypto=nss \
+            -Dsession_tracking=systemd \
+            -Dconsole_kit=true \
+            -Dsystemd_logind=true \
+            -Dconfig_logging_backend_default=syslog \
+            -Dconfig_wifi_backend_default=wpa_supplicant \
+            -Dlibaudit=yes-disabled-by-default \
+            -Dnm_cloud_setup=true \
+            -Dconfig_dhcp_default=internal \
+            -Dconfig_dns_rc_manager_default=auto \
+            -Diptables=/usr/sbin/iptables \
+            -Dnft=/usr/bin/nft
 
-    make -j20
-    make check -k
+	ninja -C ./build
+	ninja test -C ./build
+    else
+        NOCONFIGURE=yes ./autogen.sh
+
+        ./configure \
+            PYTHON="${PYTHON}" \
+            --enable-maintainer-mode \
+            --enable-more-warnings=error \
+            --prefix=/opt/test \
+            --sysconfdir=/etc \
+            --enable-gtk-doc \
+            --enable-more-asserts \
+            --with-more-asserts=100 \
+            --enable-more-logging \
+            --enable-compile-warnings=yes \
+            --with-valgrind=no \
+            --enable-concheck \
+            --enable-ifcfg-rh \
+            --enable-ifcfg-suse \
+            --enable-ifupdown \
+            --enable-ifnet \
+            --enable-vala=yes \
+            --enable-polkit=yes \
+            --with-nmtui=yes \
+            --with-modem-manager-1 \
+            --with-suspend-resume=systemd \
+            --enable-teamdctl=yes \
+            --enable-tests=root \
+            --with-netconfig=/path/does/not/exist/netconfig \
+            --with-resolvconf=/path/does/not/exist/resolvconf \
+            --with-crypto=nss \
+            --with-session-tracking=systemd \
+            --with-consolekit=yes \
+            --with-systemd-logind=yes \
+            --with-consolekit=yes
+
+        make -j20
+        make check -k
+    fi
 fi
 
 if [[ "$DO_TEST_PACKAGE" == yes || "$DO_INSTALL" == yes ]]; then
