@@ -50,6 +50,7 @@ typedef struct _NMActiveConnectionPrivate {
 
     NMAuthSubject      *subject;
     NMActiveConnection *controller;
+    NMDevice           *controller_dev;
 
     NMActiveConnection *parent;
 
@@ -826,6 +827,31 @@ master_state_cb(NMActiveConnection *master, GParamSpec *pspec, gpointer user_dat
     }
 }
 
+static void
+controller_dev_state_cb(NMDevice           *controller_dev,
+                        NMDeviceState       new_state,
+                        NMDeviceState       old_state,
+                        NMDeviceStateReason reason,
+                        gpointer            user_data)
+{
+    NMActiveConnection        *self = NM_ACTIVE_CONNECTION(user_data);
+    NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
+    NMActRequest              *controller_act_request;
+    NMActiveConnection        *controller_ac;
+
+    if (new_state >= NM_DEVICE_STATE_PREPARE && new_state <= NM_DEVICE_STATE_ACTIVATED) {
+        controller_act_request = nm_device_get_act_request(controller_dev);
+        if (controller_act_request) {
+            controller_ac = NM_ACTIVE_CONNECTION(controller_act_request);
+            g_signal_handlers_disconnect_by_func(controller_dev,
+                                                 G_CALLBACK(controller_dev_state_cb),
+                                                 self);
+            g_clear_object(&priv->controller_dev);
+            nm_active_connection_set_controller(self, controller_ac);
+        }
+    }
+}
+
 /**
  * nm_active_connection_set_controller:
  * @self: the #NMActiveConnection
@@ -865,6 +891,36 @@ nm_active_connection_set_controller(NMActiveConnection *self, NMActiveConnection
                      self);
 
     check_controller_ready(self);
+}
+
+void
+nm_active_connection_set_controller_dev(NMActiveConnection *self, NMDevice *controller_dev)
+{
+    NMActiveConnectionPrivate *priv;
+
+    g_return_if_fail(NM_IS_ACTIVE_CONNECTION(self));
+    g_return_if_fail(NM_IS_DEVICE(controller_dev));
+
+    priv = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
+
+    /* Controller device is write-once, and must be set before exporting the object */
+    g_return_if_fail(priv->controller_dev == NULL);
+    g_return_if_fail(!nm_dbus_object_is_exported(NM_DBUS_OBJECT(self)));
+    if (priv->device) {
+        g_return_if_fail(priv->device != controller_dev);
+    }
+
+    _LOGD("set controller device %p, %s(%s), state %s",
+          controller_dev,
+          nm_device_get_iface(controller_dev),
+          nm_device_get_type_desc(controller_dev),
+          nm_device_state_to_string(nm_device_get_state(controller_dev)));
+
+    priv->controller_dev = g_object_ref(controller_dev);
+    g_signal_connect(priv->controller_dev,
+                     NM_DEVICE_STATE_CHANGED,
+                     G_CALLBACK(controller_dev_state_cb),
+                     self);
 }
 
 NMActivationType
@@ -1533,7 +1589,13 @@ dispose(GObject *object)
     if (priv->controller) {
         g_signal_handlers_disconnect_by_func(priv->controller, G_CALLBACK(master_state_cb), self);
     }
+    if (priv->controller_dev) {
+        g_signal_handlers_disconnect_by_func(priv->controller_dev,
+                                             G_CALLBACK(controller_dev_state_cb),
+                                             self);
+    }
     g_clear_object(&priv->controller);
+    g_clear_object(&priv->controller_dev);
 
     if (priv->parent)
         unwatch_parent(self, TRUE);
