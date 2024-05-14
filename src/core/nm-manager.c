@@ -5943,7 +5943,20 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
                                              NM_DEVICE_STATE_REASON_USER_REQUESTED);
         }
 
-        nm_active_connection_set_master(active, master_ac);
+        /* If controller NMActiveConnection is deactivating, we should wait on
+         * controller's NMDevice to have new NMActiveConnection after
+         * controller device state change to between NM_DEVICE_STATE_PREPARE and
+         * NM_DEVICE_STATE_ACTIVATED.
+         */
+        if ((nm_active_connection_get_state(master_ac) >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING)
+            && master_device
+            && (nm_device_get_state_reason(master_device)
+                == NM_DEVICE_STATE_REASON_NEW_ACTIVATION)) {
+            nm_active_connection_set_controller_dev(active, master_device);
+        } else {
+            nm_active_connection_set_master(active, master_ac);
+        }
+
         _LOGD(LOGD_CORE,
               "Activation of '%s' depends on active connection %p %s",
               nm_settings_connection_get_id(sett_conn),
