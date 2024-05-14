@@ -16670,6 +16670,14 @@ nm_device_get_state(NMDevice *self)
     return NM_DEVICE_GET_PRIVATE(self)->state;
 }
 
+NMDeviceStateReason
+nm_device_get_state_reason(NMDevice *self)
+{
+    g_return_val_if_fail(NM_IS_DEVICE(self), NM_DEVICE_STATE_REASON_NONE);
+
+    return NM_DEVICE_GET_PRIVATE(self)->state_reason;
+}
+
 /*****************************************************************************/
 
 /**
