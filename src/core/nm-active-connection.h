@@ -174,6 +174,7 @@ NMActiveConnection *nm_active_connection_get_master(NMActiveConnection *self);
 gboolean nm_active_connection_get_master_ready(NMActiveConnection *self);
 
 void nm_active_connection_set_master(NMActiveConnection *self, NMActiveConnection *master);
+void nm_active_connection_set_controller_dev(NMActiveConnection *self, NMDevice *controller_dev);
 
 void nm_active_connection_set_parent(NMActiveConnection *self, NMActiveConnection *parent);
 

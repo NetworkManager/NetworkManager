@@ -545,7 +545,8 @@ int      nm_device_spec_match_list_full(NMDevice *self, const GSList *specs, int
 gboolean nm_device_is_activating(NMDevice *dev);
 gboolean nm_device_autoconnect_allowed(NMDevice *self);
 
-NMDeviceState nm_device_get_state(NMDevice *device);
+NMDeviceState       nm_device_get_state(NMDevice *device);
+NMDeviceStateReason nm_device_get_state_reason(NMDevice *device);
 
 gboolean nm_device_get_enabled(NMDevice *device);
 
