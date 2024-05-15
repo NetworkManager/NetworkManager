@@ -2002,3 +2002,9 @@ global:
 	nm_setting_wireless_remove_mac_denylist_item_by_value;
 	nm_setting_802_1x_get_openssl_ciphers;
 } libnm_1_46_0;
+
+libnm_1_50_0 {
+global:
+	nm_setting_ip_config_dhcp_use_routes_get_type;
+	nm_setting_ip_config_get_dhcp_use_routes;
+} libnm_1_48_0;

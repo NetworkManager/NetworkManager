@@ -340,6 +340,7 @@ char *nm_ip_routing_rule_to_string(const NMIPRoutingRule       *self,
 #define NM_SETTING_IP_CONFIG_REQUIRED_TIMEOUT    "required-timeout"
 #define NM_SETTING_IP_CONFIG_DHCP_IAID           "dhcp-iaid"
 #define NM_SETTING_IP_CONFIG_DHCP_REJECT_SERVERS "dhcp-reject-servers"
+#define NM_SETTING_IP_CONFIG_DHCP_USE_ROUTES     "dhcp-use-routes"
 #define NM_SETTING_IP_CONFIG_AUTO_ROUTE_EXT_GW   "auto-route-ext-gw"
 #define NM_SETTING_IP_CONFIG_REPLACE_LOCAL_RULE  "replace-local-rule"
 #define NM_SETTING_IP_CONFIG_DHCP_SEND_RELEASE   "dhcp-send-release"
@@ -409,6 +410,26 @@ typedef enum /*< flags >*/ {
     NM_DHCP_HOSTNAME_FLAG_FQDN_CLEAR_FLAGS = 0x8,
 
 } NMDhcpHostnameFlags;
+
+/**
+ * NMSettingIPConfigDhcpUseRoutes:
+ * @NM_SETTING_IP_CONFIG_DHCP_USE_ROUTES_DEFAULT: use the default value
+ * @NM_SETTING_IP_CONFIG_DHCP_USE_ROUTES_YES: use routes from DHCP
+ * @NM_SETTING_IP_CONFIG_DHCP_USE_ROUTES_NO: ignore routes from DHCP
+ * @NM_SETTING_IP_CONFIG_DHCP_USE_ROUTES_GATEWAY: only use routes that specify
+ *   a default gateway
+ *
+ * #NMSettingIPConfigDhcpUseRoutes specifies whether to use the routes provided
+ * via DHCP. It is currently implemented only for IPv4.
+ *
+ * Since: 1.50
+ */
+typedef enum {
+    NM_SETTING_IP_CONFIG_DHCP_USE_ROUTES_DEFAULT = 0,
+    NM_SETTING_IP_CONFIG_DHCP_USE_ROUTES_YES     = 1,
+    NM_SETTING_IP_CONFIG_DHCP_USE_ROUTES_NO      = 2,
+    NM_SETTING_IP_CONFIG_DHCP_USE_ROUTES_GATEWAY = 3,
+} NMSettingIPConfigDhcpUseRoutes;
 
 GType nm_setting_ip_config_get_type(void);
 
@@ -506,6 +527,8 @@ NM_AVAILABLE_IN_1_28
 void nm_setting_ip_config_remove_dhcp_reject_server(NMSettingIPConfig *setting, guint idx);
 NM_AVAILABLE_IN_1_28
 void nm_setting_ip_config_clear_dhcp_reject_servers(NMSettingIPConfig *setting);
+NM_AVAILABLE_IN_1_50
+NMSettingIPConfigDhcpUseRoutes nm_setting_ip_config_get_dhcp_use_routes(NMSettingIPConfig *setting);
 NM_AVAILABLE_IN_1_42
 NMTernary nm_setting_ip_config_get_auto_route_ext_gw(NMSettingIPConfig *setting);
 NM_AVAILABLE_IN_1_44
