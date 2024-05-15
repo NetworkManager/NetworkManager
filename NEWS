@@ -10,6 +10,7 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 * Support matching a OVS system interface by MAC address.
 * Add a timeout option to connectivity checking.
+* Support configuring veth interfaces in nmtui.
 
 =============================================
 NetworkManager-1.48
