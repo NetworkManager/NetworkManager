@@ -2,7 +2,6 @@
 NetworkManager-1.50
 Overview of changes since NetworkManager-1.48
 =============================================
-
 This is a snapshot of NetworkManager development. The API is
 subject to change and not guaranteed to be compatible with
 the later release.
@@ -26,6 +25,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Support reapplying the VLANs on bridge ports.
 * Fix crash caused by malformed LLDP package if debug log is enabled
 * Retry hostname resolution when it fails
+* Add a new "ipv4.dhcp-use-routes" property that specifies whether
+  routes received via DHCP must be used or not.
 
 =============================================
 NetworkManager-1.48

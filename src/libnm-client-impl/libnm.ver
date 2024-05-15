@@ -2005,6 +2005,8 @@ global:
 
 libnm_1_50_0 {
 global:
+	nm_setting_ip_config_dhcp_use_routes_get_type;
+	nm_setting_ip_config_get_dhcp_use_routes;
 	nm_setting_wireless_channel_width_get_type;
 	nm_setting_wireless_get_channel_width;
 } libnm_1_48_0;
