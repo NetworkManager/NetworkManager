@@ -149,8 +149,9 @@ P_NOBUILD="${NOBUILD-0}"
 
 P_DEBUG="${DEBUG-1}"
 
-P_BUILD_TYPE="${BUILD_TYPE-}"
+P_BUILD_TYPE="${BUILD_TYPE-meson}"
 P_MESON_BUILDDIR="${MESON_BUILDDIR-./build}"
+[ -n "$MESON_BUILDDIR" ] && P_MESON_BUILDDIR_FORCE=1
 P_CFLAGS="${CFLAGS-}"
 P_CC="${CC-$((! command -v gcc && command -v clang) &>/dev/null && echo clang || echo gcc)}"
 
@@ -307,16 +308,6 @@ else
     P_CFLAGS="-g -O2 -fexceptions${P_CFLAGS:+ }$P_CFLAGS"
 fi
 
-if [ -z "$P_BUILD_TYPE" ] ; then
-    if [ -d "$P_MESON_BUILDDIR" -a ! -f ./configure ] ; then
-        P_BUILD_TYPE=meson
-    elif [ ! -d "$P_MESON_BUILDDIR" -a -f ./configure ] ; then
-        P_BUILD_TYPE=autotools
-    else
-        P_BUILD_TYPE=autotools
-    fi
-fi
-
 while [[ $# -gt 0 ]] ; do
     A="$1"
     shift
@@ -324,6 +315,7 @@ while [[ $# -gt 0 ]] ; do
         --meson|-m)
             P_BUILD_TYPE=meson
             P_MESON_BUILDDIR="$1"
+            P_MESON_BUILDDIR_FORCE=1
             shift
             ;;
         --autotools|-a)
@@ -345,6 +337,14 @@ while [[ $# -gt 0 ]] ; do
             ;;
     esac
 done
+
+if [ "$P_BUILD_TYPE" = meson -a "$P_MESON_BUILDDIR_FORCE" != 1 ]; then
+    if [ -d "$P_MESON_BUILDDIR" ]; then
+        echo "Build directory '$P_MESON_BUILDDIR' chosen by default, but it exists and will be overwritten." \
+             "If you really want that, pass '--meson \"$P_MESON_BUILDDIR\"'." >&2
+        exit 1
+    fi
+fi
 
 vars_with_vals
 
