@@ -312,7 +312,7 @@ if [ -z "$P_BUILD_TYPE" ] ; then
     elif [ ! -d ./build -a -f ./configure ] ; then
         P_BUILD_TYPE=autotools
     else
-        P_BUILD_TYPE=autotools
+        P_BUILD_TYPE=meson
     fi
 fi
 
