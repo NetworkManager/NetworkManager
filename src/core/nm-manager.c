@@ -7960,6 +7960,7 @@ nm_manager_write_device_state_all(NMManager *self)
     NMManagerPrivate              *priv               = NM_MANAGER_GET_PRIVATE(self);
     gs_unref_hashtable GHashTable *preserve_ifindexes = NULL;
     NMDevice                      *device;
+    NMActiveConnection            *ac;
 
     preserve_ifindexes = g_hash_table_new(nm_direct_hash, NULL);
 
@@ -7969,6 +7970,14 @@ nm_manager_write_device_state_all(NMManager *self)
         if (nm_manager_write_device_state(self, device, &ifindex)) {
             g_hash_table_add(preserve_ifindexes, GINT_TO_POINTER(ifindex));
         }
+    }
+
+    /* Save to disk the timestamps of active connections as if we were bringing them down.
+     * Otherwise they will be wrong on next start and affect the activation order.
+     */
+    c_list_for_each_entry (ac, &priv->active_connections_lst_head, active_connections_lst) {
+        NMSettingsConnection *sett = nm_active_connection_get_settings_connection(ac);
+        nm_settings_connection_update_timestamp(sett, (guint64) time(NULL));
     }
 
     nm_config_device_state_prune_stale(preserve_ifindexes, NULL);
