@@ -195,8 +195,7 @@ if [[ "$DO_TEST_BUILD" == yes ]]; then
             -Dresolvconf=no \
             -Dcrypto=nss \
             -Dsession_tracking=systemd \
-            -Dconsole_kit=true \
-            -Dsystemd_logind=true \
+            -Dsession_tracking_consolekit=true \
             -Dconfig_logging_backend_default=syslog \
             -Dconfig_wifi_backend_default=wpa_supplicant \
             -Dlibaudit=yes-disabled-by-default \
