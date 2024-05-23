@@ -89,6 +89,7 @@ src/libnm-core-impl/nm-setting-cdma.c
 src/libnm-core-impl/nm-setting-connection.c
 src/libnm-core-impl/nm-setting-dcb.c
 src/libnm-core-impl/nm-setting-ethtool.c
+src/libnm-core-impl/nm-setting-generic.c
 src/libnm-core-impl/nm-setting-gsm.c
 src/libnm-core-impl/nm-setting-hsr.c
 src/libnm-core-impl/nm-setting-infiniband.c
