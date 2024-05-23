@@ -492,7 +492,7 @@ no-auto-default=*
             files without preserving their contents.
           </para>
           <para>
-            The path can also be overriden by pointing to a specific
+            The path can also be overridden by pointing to a specific
             existing and writable directory.  On the other hand setting
             this to an empty string or any other value disables the
             profile conversion mechanism.

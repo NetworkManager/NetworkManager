@@ -1097,7 +1097,7 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * property: addr-gen-mode
      * format: one of "eui64" (0), "stable-privacy" (1), "default" (3) or "default-or-eui64" (2)
      * description: Configure method for creating the
-     * IPv6 interface identifer of addresses with RFC4862 IPv6 Stateless
+     * IPv6 interface identifier of addresses with RFC4862 IPv6 Stateless
      * Address Autoconfiguration and Link Local addresses.
      *
      * The permitted values are: "eui64" (0), "stable-privacy" (1), "default"
