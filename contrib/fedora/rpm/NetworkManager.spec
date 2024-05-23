@@ -26,6 +26,9 @@
 %global obsoletes_ppp_plugin         1:1.5.3
 %global obsoletes_initscripts_updown 1:1.36.0-0.6
 %global obsoletes_ifcfg_rh           1:1.36.2
+%global obsoletes_team               1:1.47.5-3
+%global obsoletes_initscripts_ifcfg_rh  1:1.47.5-3
+%global obsoletes_dispatcher_routing_rules  1:1.47.5-3
 
 %global nmlibdir %{_prefix}/lib/%{name}
 %global nmplugindir %{_libdir}/%{name}/%{version}-%{release}
@@ -259,11 +262,22 @@ Obsoletes: NetworkManager < %{obsoletes_ifcfg_rh}
 Requires: wpa_supplicant >= 1:1.1
 %endif
 
+%if 0%{?rhel} && 0%{?rhel} >= 10
+Obsoletes: NetworkManager-team < %{obsoletes_team}
+Obsoletes: NetworkManager-initscripts-ifcfg-rh < %{obsoletes_initscripts_ifcfg_rh}
+Obsoletes: NetworkManager-dispatcher-routing-rules < %{obsoletes_dispatcher_routing_rules}
+%endif
+
 Conflicts: NetworkManager-vpnc < 1:0.7.0.99-1
 Conflicts: NetworkManager-openvpn < 1:0.7.0.99-1
 Conflicts: NetworkManager-pptp < 1:0.7.0.99-1
 Conflicts: NetworkManager-openconnect < 0:0.7.0.99-1
 Conflicts: kde-plasma-networkmanagement < 1:0.9-0.49.20110527git.nm09
+%if 0%{?rhel} && 0%{?rhel} >= 10
+Conflicts: NetworkManager-team <= 1:1.47.5-3
+Conflicts: NetworkManager-initscripts-ifcfg-rh <= 1:1.47.5-3
+Conflicts: NetworkManager-dispatcher-routing-rules <= 1:1.47.5-3
+%endif
 
 BuildRequires: make
 BuildRequires: gcc
