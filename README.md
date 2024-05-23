@@ -133,7 +133,12 @@ Report bugs or feature request in our [issue tracker](https://gitlab.freedesktop
 See [Report issues](https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/blob/main/CONTRIBUTING.md?ref_type=heads#report-issues)
 for details about how to do it.
 
-To get involved, see [CONTRIBUTING.md](CONTRIBUTING.md)
+
+Contribute
+----------
+
+To get involved, see [CONTRIBUTING.md](CONTRIBUTING.md) to find different ways
+to contribute.
 
 
 License

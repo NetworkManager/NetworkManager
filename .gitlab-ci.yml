@@ -59,11 +59,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-4cf5505b3b7d'
-  CENTOS_TAG:  'tag-f78e39f6e045'
-  DEBIAN_TAG:  'tag-f7bdc50d0819'
-  FEDORA_TAG:  'tag-f78e39f6e045'
-  UBUNTU_TAG:  'tag-f7bdc50d0819'
+  ALPINE_TAG:  'tag-ec99bc32ed7f'
+  CENTOS_TAG:  'tag-a76c3f2e9d0f'
+  DEBIAN_TAG:  'tag-3f6892bcd503'
+  FEDORA_TAG:  'tag-a76c3f2e9d0f'
+  UBUNTU_TAG:  'tag-3f6892bcd503'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
@@ -628,14 +628,16 @@ pages:
   needs:
     - "t_fedora:40: [meson+gcc+docs+valgrind]"
 
-# triage:issues:
-#   stage: triage
-#   image: ruby:2.7
-#   script:
-#     - gem install gitlab-triage
-#     - gitlab-triage -d --token $API_TOKEN --source-id $SOURCE_ID
-#   only:
-#     - schedules
+triage:issues:
+  stage: triage
+  image: ruby:3
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $SCHEDULED_PIPELINE_NAME == "daily"
+  tags:
+    - placeholder-job  # The job mostly waits on network requests, so use only one CPU: https://gitlab.freedesktop.org/freedesktop/freedesktop/-/issues/1358#note_2457416
+  script:
+    - gem install gitlab-triage
+    - gitlab-triage --debug --token $API_TOKEN --source-id $CI_PROJECT_ID
 
 # Clean the generated images periodically to get updated snapshots of the distribution images.
 # Create an scheduled pipeline to run it, passing an AUTHFILE environment variable of type
@@ -645,7 +647,7 @@ clean-images:
     - .fdo.ci-fairy
   stage: prep
   rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $SCHEDULED_PIPELINE_NAME == "weekly"
   script:
     - ci-fairy -v --authfile $AUTHFILE delete-image --project NetworkManager/NetworkManager --all
 
@@ -654,7 +656,7 @@ clean-images:
 workflow:
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_PIPELINE_SOURCE == 'schedule'
     - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
       when: never
     - if: $CI_COMMIT_BRANCH
-    - if: $CI_PIPELINE_SOURCE == 'schedule'
