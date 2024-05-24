@@ -8339,6 +8339,9 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_AP_ISOLATION,
         .property_type =                &_pt_gobject_ternary,
     ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_CHANNEL_WIDTH,
+        .property_type =                &_pt_gobject_enum,
+    ),
     NULL
 };
 

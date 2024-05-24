@@ -44,7 +44,8 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingWireless,
                              PROP_POWERSAVE,
                              PROP_MAC_ADDRESS_RANDOMIZATION,
                              PROP_WAKE_ON_WLAN,
-                             PROP_AP_ISOLATION, );
+                             PROP_AP_ISOLATION,
+                             PROP_CHANNEL_WIDTH, );
 
 typedef struct {
     GBytes     *ssid;
@@ -57,6 +58,7 @@ typedef struct {
     char       *generate_mac_address_mask;
     NMValueStrv mac_address_denylist;
     int         ap_isolation;
+    int         channel_width;
     guint32     mac_address_randomization;
     guint32     channel;
     guint32     rate;
@@ -1012,6 +1014,24 @@ nm_setting_wireless_get_ap_isolation(NMSettingWireless *setting)
     return NM_SETTING_WIRELESS_GET_PRIVATE(setting)->ap_isolation;
 }
 
+/**
+ * nm_setting_wireless_get_channel_width:
+ * @setting: the #NMSettingWireless
+ *
+ * Returns the #NMSettingWireless:channel-width property.
+ *
+ * Returns: the channel width
+ *
+ * Since: 1.50
+ */
+NMSettingWirelessChannelWidth
+nm_setting_wireless_get_channel_width(NMSettingWireless *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_WIRELESS(setting), NM_SETTING_WIRELESS_CHANNEL_WIDTH_AUTO);
+
+    return NM_SETTING_WIRELESS_GET_PRIVATE(setting)->channel_width;
+}
+
 /*****************************************************************************/
 
 void
@@ -1315,6 +1335,45 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                        NM_SETTING_WIRELESS_SETTING_NAME,
                        NM_SETTING_WIRELESS_AP_ISOLATION);
         return FALSE;
+    }
+
+    if (priv->channel_width != NM_SETTING_WIRELESS_CHANNEL_WIDTH_AUTO) {
+        if (!nm_streq0(priv->mode, NM_SETTING_WIRELESS_MODE_AP)) {
+            g_set_error_literal(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                _("a specific channel width can be set only in AP mode"));
+            g_prefix_error(error,
+                           "%s.%s: ",
+                           NM_SETTING_WIRELESS_SETTING_NAME,
+                           NM_SETTING_WIRELESS_CHANNEL_WIDTH);
+            return FALSE;
+        }
+        if (!priv->channel) {
+            g_set_error_literal(
+                error,
+                NM_CONNECTION_ERROR,
+                NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                _("a specific channel width can be set only together with a fixed channel"));
+            g_prefix_error(error,
+                           "%s.%s: ",
+                           NM_SETTING_WIRELESS_SETTING_NAME,
+                           NM_SETTING_WIRELESS_CHANNEL_WIDTH);
+            return FALSE;
+        }
+
+        if (priv->channel_width == NM_SETTING_WIRELESS_CHANNEL_WIDTH_80MHZ
+            && !nm_streq0(priv->band, "a")) {
+            g_set_error_literal(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                _("80MHz channels are only supported in the 5GHz band"));
+            g_prefix_error(error,
+                           "%s.%s: ",
+                           NM_SETTING_WIRELESS_SETTING_NAME,
+                           NM_SETTING_WIRELESS_CHANNEL_WIDTH);
+            return FALSE;
+        }
     }
 
     /* from here on, check for NM_SETTING_VERIFY_NORMALIZABLE conditions. */
@@ -2186,6 +2245,36 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                                                     NM_SETTING_PARAM_FUZZY_IGNORE,
                                                     NMSettingWirelessPrivate,
                                                     ap_isolation);
+
+    /**
+     * NMSettingWireless:channel-width:
+     *
+     * Specifies width of the wireless channel in Access Point (AP) mode.
+     *
+     * When set to %NM_SETTING_WIRELESS_CHANNEL_WIDTH_AUTO (the default), the
+     * channel width is automatically determined. At the moment, this means that
+     * the safest (smallest) width is chosen.
+     *
+     * If the value is not %NM_SETTING_WIRELESS_CHANNEL_WIDTH_AUTO, then the
+     * 'channel' property must also be set. When using the 2.4GHz band, the width
+     * can be at most 40MHz.
+     *
+     * This property can be set to a value different from
+     * %NM_SETTING_WIRELESS_CHANNEL_WIDTH_AUTO only when the interface is configured
+     * in AP mode.
+     *
+     * Since: 1.50
+     **/
+    _nm_setting_property_define_direct_enum(properties_override,
+                                            obj_properties,
+                                            NM_SETTING_WIRELESS_CHANNEL_WIDTH,
+                                            PROP_CHANNEL_WIDTH,
+                                            NM_TYPE_SETTING_WIRELESS_CHANNEL_WIDTH,
+                                            NM_SETTING_WIRELESS_CHANNEL_WIDTH_AUTO,
+                                            NM_SETTING_PARAM_NONE,
+                                            NULL,
+                                            NMSettingWirelessPrivate,
+                                            channel_width);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

@@ -85,6 +85,10 @@
                   dbus-type="u"
                   gprop-type="guint"
                   />
+        <property name="channel-width"
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="cloned-mac-address"
                   dbus-type="ay"
                   dbus-deprecated="1"
