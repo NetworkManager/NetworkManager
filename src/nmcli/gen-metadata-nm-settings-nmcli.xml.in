@@ -89,6 +89,10 @@
                   nmcli-description="Configures AP isolation, which prevents communication between wireless devices connected to this AP. This property can be set to a value different from &quot;default&quot; (-1) only when the interface is configured in AP mode. If set to &quot;true&quot; (1), devices are not able to communicate with each other. This increases security because it protects devices against attacks from other clients in the network. At the same time, it prevents devices to access resources on the same wireless networks as file shares, printers, etc. If set to &quot;false&quot; (0), devices can talk to each other. When set to &quot;default&quot; (-1), the global default is used; in case the global default is unspecified it is assumed to be &quot;false&quot; (0)."
                   format="ternary"
                   values="true/yes/on, false/no/off, default/unknown" />
+        <property name="channel-width"
+                  nmcli-description="Specifies width of the wireless channel in Access Point (AP) mode. When set to &quot;auto&quot; (0) (the default), the channel width is automatically determined. At the moment, this means that the safest (smallest) width is chosen. If the value is not &quot;auto&quot; (0), then the &apos;channel&apos; property must also be set. When using the 2.4GHz band, the width can be at most 40MHz. This property can be set to a value different from &quot;auto&quot; (0) only when the interface is configured in AP mode."
+                  format="choice (NMSettingWirelessChannelWidth)"
+                  values="auto (0), 20mhz (20), 40mhz (40), 80mhz (80)" />
     </setting>
     <setting name="802-11-wireless-security"
              alias="wifi-sec" >

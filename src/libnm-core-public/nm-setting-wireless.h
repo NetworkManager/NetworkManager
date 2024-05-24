@@ -92,6 +92,7 @@ typedef enum /*< flags >*/ {
 #define NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION "mac-address-randomization"
 #define NM_SETTING_WIRELESS_WAKE_ON_WLAN              "wake-on-wlan"
 #define NM_SETTING_WIRELESS_AP_ISOLATION              "ap-isolation"
+#define NM_SETTING_WIRELESS_CHANNEL_WIDTH             "channel-width"
 
 /**
  * NM_SETTING_WIRELESS_MODE_ADHOC:
@@ -144,6 +145,24 @@ typedef enum {
     _NM_SETTING_WIRELESS_POWERSAVE_NUM,                                          /*< skip >*/
     NM_SETTING_WIRELESS_POWERSAVE_LAST = _NM_SETTING_WIRELESS_POWERSAVE_NUM - 1, /*< skip >*/
 } NMSettingWirelessPowersave;
+
+/**
+ * NMSettingWirelessChannelWidth:
+ * @NM_SETTING_WIRELESS_CHANNEL_WIDTH_AUTO: automatically determine the width
+ * @NM_SETTING_WIRELESS_CHANNEL_WIDTH_20MHZ: use a 20MHz channel width
+ * @NM_SETTING_WIRELESS_CHANNEL_WIDTH_40MHZ: use a 40MHz channel width
+ * @NM_SETTING_WIRELESS_CHANNEL_WIDTH_80MHZ: use a 80MHz channel width
+ *
+ * Indicates the wireless channel width.
+ *
+ * Since: 1.50
+ **/
+typedef enum {
+    NM_SETTING_WIRELESS_CHANNEL_WIDTH_AUTO  = 0,
+    NM_SETTING_WIRELESS_CHANNEL_WIDTH_20MHZ = 20,
+    NM_SETTING_WIRELESS_CHANNEL_WIDTH_40MHZ = 40,
+    NM_SETTING_WIRELESS_CHANNEL_WIDTH_80MHZ = 80,
+} NMSettingWirelessChannelWidth;
 
 typedef struct _NMSettingWirelessClass NMSettingWirelessClass;
 
@@ -220,6 +239,9 @@ NMSettingWirelessWakeOnWLan nm_setting_wireless_get_wake_on_wlan(NMSettingWirele
 
 NM_AVAILABLE_IN_1_28
 NMTernary nm_setting_wireless_get_ap_isolation(NMSettingWireless *setting);
+
+NM_AVAILABLE_IN_1_50
+NMSettingWirelessChannelWidth nm_setting_wireless_get_channel_width(NMSettingWireless *setting);
 
 G_END_DECLS
 
