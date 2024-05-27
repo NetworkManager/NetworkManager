@@ -25,21 +25,21 @@ typedef enum {
 
     _NM_TEAM_ATTRIBUTE_START = 3,
 
-    NM_TEAM_ATTRIBUTE_MASTER_NOTIFY_PEERS_COUNT = _NM_TEAM_ATTRIBUTE_START,
-    NM_TEAM_ATTRIBUTE_MASTER_NOTIFY_PEERS_INTERVAL,
-    NM_TEAM_ATTRIBUTE_MASTER_MCAST_REJOIN_COUNT,
-    NM_TEAM_ATTRIBUTE_MASTER_MCAST_REJOIN_INTERVAL,
-    NM_TEAM_ATTRIBUTE_MASTER_RUNNER,
-    NM_TEAM_ATTRIBUTE_MASTER_RUNNER_HWADDR_POLICY,
-    NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_HASH,
-    NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_BALANCER,
-    NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_BALANCER_INTERVAL,
-    NM_TEAM_ATTRIBUTE_MASTER_RUNNER_ACTIVE,
-    NM_TEAM_ATTRIBUTE_MASTER_RUNNER_FAST_RATE,
-    NM_TEAM_ATTRIBUTE_MASTER_RUNNER_SYS_PRIO,
-    NM_TEAM_ATTRIBUTE_MASTER_RUNNER_MIN_PORTS,
-    NM_TEAM_ATTRIBUTE_MASTER_RUNNER_AGG_SELECT_POLICY,
-    _NM_TEAM_ATTRIBUTE_MASTER_NUM,
+    NM_TEAM_ATTRIBUTE_CONTROLLER_NOTIFY_PEERS_COUNT = _NM_TEAM_ATTRIBUTE_START,
+    NM_TEAM_ATTRIBUTE_CONTROLLER_NOTIFY_PEERS_INTERVAL,
+    NM_TEAM_ATTRIBUTE_CONTROLLER_MCAST_REJOIN_COUNT,
+    NM_TEAM_ATTRIBUTE_CONTROLLER_MCAST_REJOIN_INTERVAL,
+    NM_TEAM_ATTRIBUTE_CONTROLLER_RUNNER,
+    NM_TEAM_ATTRIBUTE_CONTROLLER_RUNNER_HWADDR_POLICY,
+    NM_TEAM_ATTRIBUTE_CONTROLLER_RUNNER_TX_HASH,
+    NM_TEAM_ATTRIBUTE_CONTROLLER_RUNNER_TX_BALANCER,
+    NM_TEAM_ATTRIBUTE_CONTROLLER_RUNNER_TX_BALANCER_INTERVAL,
+    NM_TEAM_ATTRIBUTE_CONTROLLER_RUNNER_ACTIVE,
+    NM_TEAM_ATTRIBUTE_CONTROLLER_RUNNER_FAST_RATE,
+    NM_TEAM_ATTRIBUTE_CONTROLLER_RUNNER_SYS_PRIO,
+    NM_TEAM_ATTRIBUTE_CONTROLLER_RUNNER_MIN_PORTS,
+    NM_TEAM_ATTRIBUTE_CONTROLLER_RUNNER_AGG_SELECT_POLICY,
+    _NM_TEAM_ATTRIBUTE_CONTROLLER_NUM,
 
     NM_TEAM_ATTRIBUTE_PORT_QUEUE_ID = _NM_TEAM_ATTRIBUTE_START,
     NM_TEAM_ATTRIBUTE_PORT_PRIO,
@@ -49,7 +49,7 @@ typedef enum {
     _NM_TEAM_ATTRIBUTE_PORT_NUM,
 
     _NM_TEAM_ATTRIBUTE_NUM =
-        NM_MAX_CONST(_NM_TEAM_ATTRIBUTE_MASTER_NUM, _NM_TEAM_ATTRIBUTE_PORT_NUM),
+        NM_MAX_CONST(_NM_TEAM_ATTRIBUTE_CONTROLLER_NUM, _NM_TEAM_ATTRIBUTE_PORT_NUM),
 
 } NMTeamAttribute;
 
@@ -101,7 +101,7 @@ struct _NMTeamSettingData {
             gint32           runner_tx_balancer_interval;
             bool             runner_active;
             bool             runner_fast_rate;
-        } master;
+        } controller;
         struct {
             gint32 queue_id;
             gint32 prio;
@@ -216,13 +216,14 @@ guint32 nm_team_setting_value_link_watchers_set_list(NMTeamSetting              
 
 /*****************************************************************************/
 
-guint32 nm_team_setting_value_master_runner_tx_hash_add(NMTeamSetting *self, const char *txhash);
+guint32 nm_team_setting_value_controller_runner_tx_hash_add(NMTeamSetting *self,
+                                                            const char    *txhash);
 
-guint32 nm_team_setting_value_master_runner_tx_hash_remove(NMTeamSetting *self, guint idx);
+guint32 nm_team_setting_value_controller_runner_tx_hash_remove(NMTeamSetting *self, guint idx);
 
-guint32 nm_team_setting_value_master_runner_tx_hash_set_list(NMTeamSetting     *self,
-                                                             const char *const *arr,
-                                                             guint              len);
+guint32 nm_team_setting_value_controller_runner_tx_hash_set_list(NMTeamSetting     *self,
+                                                                 const char *const *arr,
+                                                                 guint              len);
 
 /*****************************************************************************/
 

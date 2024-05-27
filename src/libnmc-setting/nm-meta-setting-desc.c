@@ -2763,7 +2763,7 @@ _multilist_remove_by_value_fcn_connection_permissions(NMSetting *setting, const 
 }
 
 static const char *const *
-_complete_fcn_connection_master(ARGS_COMPLETE_FCN)
+_complete_fcn_connection_controller(ARGS_COMPLETE_FCN)
 {
     NMRemoteConnection *const *connections = NULL;
     guint                      len         = 0;
@@ -5584,7 +5584,7 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
         .property_type = DEFINE_PROPERTY_TYPE (
             .get_fcn =                  _get_fcn_gobject,
             .set_fcn =                  _set_fcn_gobject_string,
-            .complete_fcn =             _complete_fcn_connection_master,
+            .complete_fcn =             _complete_fcn_connection_controller,
             .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
@@ -5596,7 +5596,7 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
         .property_type = DEFINE_PROPERTY_TYPE (
             .get_fcn =                  _get_fcn_gobject,
             .set_fcn =                  _set_fcn_gobject_string,
-            .complete_fcn =             _complete_fcn_connection_master,
+            .complete_fcn =             _complete_fcn_connection_controller,
             .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),

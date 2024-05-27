@@ -223,28 +223,28 @@ void link_del_ip4(Link *link, const struct in_addr *addr, unsigned int prefix) {
 }
 
 /**
- * link_set_master() - change the bridge master of an interface
- * @link:                       link to operate on
- * @if_master:                  bridge to set as master
+ * link_set_controller() - change the bridge controller of an interface
+ * @link:                  link to operate on
+ * @if_controller:         bridge to set as controller 
  *
- * This sets @if_master as the new master bridge of @link. The specified bridge
+ * This sets @if_controller as the new controller bridge of @link. The specified bridge
  * must be in the same network namespace as @link.
  */
-void link_set_master(Link *link, int if_master) {
+void link_set_controller(Link *link, int if_controller) {
         int oldns;
 
         netns_get(&oldns);
         {
-                char *p, ifname_master[IF_NAMESIZE + 1] = {}, ifname[IF_NAMESIZE + 1] = {};
+                char *p, ifname_controller[IF_NAMESIZE + 1] = {}, ifname[IF_NAMESIZE + 1] = {};
                 int r;
 
                 netns_set(link->netns);
 
                 p = if_indextoname(link->ifindex, ifname);
                 c_assert(p);
-                p = if_indextoname(if_master, ifname_master);
+                p = if_indextoname(if_controller, ifname_controller);
                 c_assert(p);
-                r = asprintf(&p, "ip link set %s master %s", ifname, ifname_master);
+                r = asprintf(&p, "ip link set %s master %s", ifname, ifname_controller);
                 c_assert(r > 0);
                 r = system(p);
                 c_assert(r == 0);

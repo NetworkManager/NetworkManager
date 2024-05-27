@@ -1,4 +1,4 @@
 [connection]
 type=802-3-ethernet
-master=br0
+controller=br0
 slave-type=bridge

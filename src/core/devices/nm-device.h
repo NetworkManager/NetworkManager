@@ -375,10 +375,10 @@ typedef struct _NMDeviceClass {
     /* Update the connection with currently configured L2 settings */
     void (*update_connection)(NMDevice *device, NMConnection *connection);
 
-    gboolean (*master_update_slave_connection)(NMDevice     *self,
-                                               NMDevice     *slave,
-                                               NMConnection *connection,
-                                               GError      **error);
+    gboolean (*controller_update_slave_connection)(NMDevice     *self,
+                                                   NMDevice     *slave,
+                                                   NMConnection *connection,
+                                                   GError      **error);
 
     /* Attachs a port asynchronously. Returns TRUE/FALSE on immediate
      * success/error; in such cases, the callback is not invoked. If the
@@ -526,14 +526,14 @@ gboolean nm_device_is_available(NMDevice *dev, NMDeviceCheckDevAvailableFlags fl
 gboolean nm_device_has_carrier(NMDevice *dev);
 
 NMConnection *nm_device_generate_connection(NMDevice *self,
-                                            NMDevice *master,
+                                            NMDevice *controller,
                                             gboolean *out_maybe_later,
                                             GError  **error);
 
-gboolean nm_device_master_update_slave_connection(NMDevice     *master,
-                                                  NMDevice     *slave,
-                                                  NMConnection *connection,
-                                                  GError      **error);
+gboolean nm_device_controller_update_slave_connection(NMDevice     *controller,
+                                                      NMDevice     *slave,
+                                                      NMConnection *connection,
+                                                      GError      **error);
 
 gboolean
 nm_device_can_auto_connect(NMDevice *self, NMSettingsConnection *sett_conn, char **specific_object);

@@ -975,7 +975,7 @@ test_bond(void)
     NMSettingBond                 *s_bond;
     NMSettingWired                *s_wired;
     NMIPRoute                     *ip_route;
-    const char                    *master_uuid;
+    const char                    *controller_uuid;
 
     connections = _parse_cons(ARGV);
     g_assert_cmpint(g_hash_table_size(connections), ==, 3);
@@ -986,8 +986,8 @@ test_bond(void)
                     ==,
                     NM_SETTING_BOND_SETTING_NAME);
     g_assert_cmpstr(nm_connection_get_id(connection), ==, "bong0");
-    master_uuid = nm_connection_get_uuid(connection);
-    g_assert(master_uuid);
+    controller_uuid = nm_connection_get_uuid(connection);
+    g_assert(controller_uuid);
 
     s_wired = nm_connection_get_setting_wired(connection);
     g_assert(s_wired);
@@ -1032,7 +1032,7 @@ test_bond(void)
                     NM_SETTING_WIRED_SETTING_NAME);
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "eth0");
     g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NM_SETTING_BOND_SETTING_NAME);
-    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, master_uuid);
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, controller_uuid);
     g_assert_cmpint(nm_setting_connection_get_multi_connect(s_con),
                     ==,
                     NM_CONNECTION_MULTI_CONNECT_SINGLE);
@@ -1048,7 +1048,7 @@ test_bond(void)
                     NM_SETTING_WIRED_SETTING_NAME);
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "eth1");
     g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NM_SETTING_BOND_SETTING_NAME);
-    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, master_uuid);
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, controller_uuid);
     g_assert_cmpint(nm_setting_connection_get_multi_connect(s_con),
                     ==,
                     NM_CONNECTION_MULTI_CONNECT_SINGLE);
@@ -1069,7 +1069,7 @@ test_bond_ip(void)
     NMSettingWired      *s_wired;
     NMSettingBond       *s_bond;
     NMIPAddress         *ip_addr;
-    const char          *master_uuid;
+    const char          *controller_uuid;
 
     connections = _parse_cons(ARGV);
     g_assert_cmpint(g_hash_table_size(connections), ==, 3);
@@ -1080,8 +1080,8 @@ test_bond_ip(void)
                     ==,
                     NM_SETTING_BOND_SETTING_NAME);
     g_assert_cmpstr(nm_connection_get_id(connection), ==, "bond0");
-    master_uuid = nm_connection_get_uuid(connection);
-    g_assert(master_uuid);
+    controller_uuid = nm_connection_get_uuid(connection);
+    g_assert(controller_uuid);
 
     s_wired = nm_connection_get_setting_wired(connection);
     g_assert(s_wired);
@@ -1130,7 +1130,7 @@ test_bond_ip(void)
                     NM_SETTING_WIRED_SETTING_NAME);
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "eth0");
     g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NM_SETTING_BOND_SETTING_NAME);
-    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, master_uuid);
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, controller_uuid);
     g_assert_cmpint(nm_setting_connection_get_multi_connect(s_con),
                     ==,
                     NM_CONNECTION_MULTI_CONNECT_SINGLE);
@@ -1146,7 +1146,7 @@ test_bond_ip(void)
                     NM_SETTING_WIRED_SETTING_NAME);
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "eth1");
     g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NM_SETTING_BOND_SETTING_NAME);
-    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, master_uuid);
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, controller_uuid);
     g_assert_cmpint(nm_setting_connection_get_multi_connect(s_con),
                     ==,
                     NM_CONNECTION_MULTI_CONNECT_SINGLE);
@@ -1162,7 +1162,7 @@ test_bond_default(void)
     NMSettingIPConfig             *s_ip4;
     NMSettingIPConfig             *s_ip6;
     NMSettingBond                 *s_bond;
-    const char                    *master_uuid;
+    const char                    *controller_uuid;
 
     connections = _parse_cons(ARGV);
     g_assert_cmpint(g_hash_table_size(connections), ==, 2);
@@ -1174,8 +1174,8 @@ test_bond_default(void)
                     ==,
                     NM_SETTING_BOND_SETTING_NAME);
     g_assert_cmpstr(nm_connection_get_id(connection), ==, "bond0");
-    master_uuid = nm_connection_get_uuid(connection);
-    g_assert(master_uuid);
+    controller_uuid = nm_connection_get_uuid(connection);
+    g_assert(controller_uuid);
 
     s_ip4 = nm_connection_get_setting_ip4_config(connection);
     g_assert(s_ip4);
@@ -1209,7 +1209,7 @@ test_bond_default(void)
                     NM_SETTING_WIRED_SETTING_NAME);
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "eth0");
     g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NM_SETTING_BOND_SETTING_NAME);
-    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, master_uuid);
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, controller_uuid);
     g_assert_cmpint(nm_setting_connection_get_multi_connect(s_con),
                     ==,
                     NM_CONNECTION_MULTI_CONNECT_SINGLE);
@@ -1228,7 +1228,7 @@ test_bridge(void)
     NMSettingIPConfig             *s_ip6;
     NMSettingBridge               *s_bridge;
     NMIPRoute                     *ip_route;
-    const char                    *master_uuid;
+    const char                    *controller_uuid;
 
     connections = _parse_cons(ARGV);
     g_assert_cmpint(g_hash_table_size(connections), ==, 3);
@@ -1239,8 +1239,8 @@ test_bridge(void)
                     ==,
                     NM_SETTING_BRIDGE_SETTING_NAME);
     g_assert_cmpstr(nm_connection_get_id(connection), ==, "bridge0");
-    master_uuid = nm_connection_get_uuid(connection);
-    g_assert(master_uuid);
+    controller_uuid = nm_connection_get_uuid(connection);
+    g_assert(controller_uuid);
 
     s_ip4 = nm_connection_get_setting_ip4_config(connection);
     g_assert(s_ip4);
@@ -1285,7 +1285,7 @@ test_bridge(void)
                     NM_SETTING_WIRED_SETTING_NAME);
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "eth0");
     g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NM_SETTING_BRIDGE_SETTING_NAME);
-    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, master_uuid);
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, controller_uuid);
     g_assert_cmpint(nm_setting_connection_get_multi_connect(s_con),
                     ==,
                     NM_CONNECTION_MULTI_CONNECT_SINGLE);
@@ -1301,7 +1301,7 @@ test_bridge(void)
                     NM_SETTING_WIRED_SETTING_NAME);
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "eth1");
     g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NM_SETTING_BRIDGE_SETTING_NAME);
-    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, master_uuid);
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, controller_uuid);
     g_assert_cmpint(nm_setting_connection_get_multi_connect(s_con),
                     ==,
                     NM_CONNECTION_MULTI_CONNECT_SINGLE);
@@ -1317,7 +1317,7 @@ test_bridge_default(void)
     NMSettingIPConfig             *s_ip4;
     NMSettingIPConfig             *s_ip6;
     NMSettingBridge               *s_bridge;
-    const char                    *master_uuid;
+    const char                    *controller_uuid;
 
     connections = _parse_cons(ARGV);
     g_assert_cmpint(g_hash_table_size(connections), ==, 2);
@@ -1329,8 +1329,8 @@ test_bridge_default(void)
                     ==,
                     NM_SETTING_BRIDGE_SETTING_NAME);
     g_assert_cmpstr(nm_connection_get_id(connection), ==, "br0");
-    master_uuid = nm_connection_get_uuid(connection);
-    g_assert(master_uuid);
+    controller_uuid = nm_connection_get_uuid(connection);
+    g_assert(controller_uuid);
 
     s_ip4 = nm_connection_get_setting_ip4_config(connection);
     g_assert(s_ip4);
@@ -1362,7 +1362,7 @@ test_bridge_default(void)
                     NM_SETTING_WIRED_SETTING_NAME);
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "eth0");
     g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NM_SETTING_BRIDGE_SETTING_NAME);
-    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, master_uuid);
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, controller_uuid);
     g_assert_cmpint(nm_setting_connection_get_multi_connect(s_con),
                     ==,
                     NM_CONNECTION_MULTI_CONNECT_SINGLE);
@@ -1381,7 +1381,7 @@ test_bridge_ip(void)
     NMSettingIPConfig   *s_ip6;
     NMSettingWired      *s_wired;
     NMSettingBridge     *s_bridge;
-    const char          *master_uuid;
+    const char          *controller_uuid;
     guint                i;
 
     connections = _parse_cons(ARGV);
@@ -1393,8 +1393,8 @@ test_bridge_ip(void)
                     ==,
                     NM_SETTING_BRIDGE_SETTING_NAME);
     g_assert_cmpstr(nm_connection_get_id(connection), ==, "bridge123");
-    master_uuid = nm_connection_get_uuid(connection);
-    g_assert(master_uuid);
+    controller_uuid = nm_connection_get_uuid(connection);
+    g_assert(controller_uuid);
 
     s_wired = nm_connection_get_setting_wired(connection);
     g_assert(s_wired);
@@ -1430,7 +1430,7 @@ test_bridge_ip(void)
         g_assert_cmpstr(nm_setting_connection_get_port_type(s_con),
                         ==,
                         NM_SETTING_BRIDGE_SETTING_NAME);
-        g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, master_uuid);
+        g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, controller_uuid);
         g_assert_cmpint(nm_setting_connection_get_multi_connect(s_con),
                         ==,
                         NM_CONNECTION_MULTI_CONNECT_SINGLE);
@@ -1447,7 +1447,7 @@ test_team(void)
     NMSettingIPConfig             *s_ip4;
     NMSettingIPConfig             *s_ip6;
     NMSettingTeam                 *s_team;
-    const char                    *master_uuid;
+    const char                    *controller_uuid;
 
     connections = _parse_cons(ARGV);
     g_assert_cmpint(g_hash_table_size(connections), ==, 3);
@@ -1458,8 +1458,8 @@ test_team(void)
                     ==,
                     NM_SETTING_TEAM_SETTING_NAME);
     g_assert_cmpstr(nm_connection_get_id(connection), ==, "team0");
-    master_uuid = nm_connection_get_uuid(connection);
-    g_assert(master_uuid);
+    controller_uuid = nm_connection_get_uuid(connection);
+    g_assert(controller_uuid);
 
     s_ip4 = nm_connection_get_setting_ip4_config(connection);
     g_assert(s_ip4);
@@ -1494,7 +1494,7 @@ test_team(void)
                     NM_SETTING_WIRED_SETTING_NAME);
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "eth0");
     g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NM_SETTING_TEAM_SETTING_NAME);
-    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, master_uuid);
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, controller_uuid);
     g_assert_cmpint(nm_setting_connection_get_multi_connect(s_con),
                     ==,
                     NM_CONNECTION_MULTI_CONNECT_SINGLE);
@@ -1510,7 +1510,7 @@ test_team(void)
                     NM_SETTING_WIRED_SETTING_NAME);
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "eth1");
     g_assert_cmpstr(nm_setting_connection_get_port_type(s_con), ==, NM_SETTING_TEAM_SETTING_NAME);
-    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, master_uuid);
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, controller_uuid);
     g_assert_cmpint(nm_setting_connection_get_multi_connect(s_con),
                     ==,
                     NM_CONNECTION_MULTI_CONNECT_SINGLE);

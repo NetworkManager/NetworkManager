@@ -762,12 +762,12 @@ const NmcMetaGenericInfo *const nmc_fields_dev_wimax_list[] = {
 #define NMC_FIELDS_DEV_WIMAX_LIST_COMMON       "NSP,SIGNAL,TYPE,DEVICE,ACTIVE"
 #define NMC_FIELDS_DEV_WIMAX_LIST_FOR_DEV_LIST "NAME," NMC_FIELDS_DEV_WIMAX_LIST_COMMON
 
-const NmcMetaGenericInfo *const nmc_fields_dev_show_master_prop[] = {
+const NmcMetaGenericInfo *const nmc_fields_dev_show_controller_prop[] = {
     NMC_META_GENERIC("NAME"),   /* 0 */
     NMC_META_GENERIC("SLAVES"), /* 1 */
     NULL,
 };
-#define NMC_FIELDS_DEV_SHOW_MASTER_PROP_COMMON "NAME,SLAVES"
+#define NMC_FIELDS_DEV_SHOW_CONTROLLER_PROP_COMMON "NAME,SLAVES"
 
 const NmcMetaGenericInfo *const nmc_fields_dev_show_team_prop[] = {
     NMC_META_GENERIC("NAME"),   /* 0 */
@@ -802,18 +802,18 @@ const NmcMetaGenericInfo *const nmc_fields_dev_show_sections[] = {
     NMC_META_GENERIC_WITH_NESTED("WIRED-PROPERTIES",
                                  metagen_device_detail_wired_properties), /* 5 */
     NMC_META_GENERIC_WITH_NESTED("WIMAX-PROPERTIES",
-                                 metagen_device_detail_wimax_properties),           /* 6 */
-    NMC_META_GENERIC_WITH_NESTED("NSP", nmc_fields_dev_wimax_list + 1),             /* 7 */
-    NMC_META_GENERIC_WITH_NESTED("IP4", metagen_ip4_config),                        /* 8 */
-    NMC_META_GENERIC_WITH_NESTED("DHCP4", metagen_dhcp_config),                     /* 9 */
-    NMC_META_GENERIC_WITH_NESTED("IP6", metagen_ip6_config),                        /* 10 */
-    NMC_META_GENERIC_WITH_NESTED("DHCP6", metagen_dhcp_config),                     /* 11 */
-    NMC_META_GENERIC_WITH_NESTED("BOND", nmc_fields_dev_show_master_prop + 1),      /* 12 */
-    NMC_META_GENERIC_WITH_NESTED("TEAM", nmc_fields_dev_show_team_prop + 1),        /* 13 */
-    NMC_META_GENERIC_WITH_NESTED("BRIDGE", nmc_fields_dev_show_master_prop + 1),    /* 14 */
-    NMC_META_GENERIC_WITH_NESTED("VLAN", nmc_fields_dev_show_vlan_prop + 1),        /* 15 */
-    NMC_META_GENERIC_WITH_NESTED("BLUETOOTH", nmc_fields_dev_show_bluetooth + 1),   /* 16 */
-    NMC_META_GENERIC_WITH_NESTED("CONNECTIONS", metagen_device_detail_connections), /* 17 */
+                                 metagen_device_detail_wimax_properties),            /* 6 */
+    NMC_META_GENERIC_WITH_NESTED("NSP", nmc_fields_dev_wimax_list + 1),              /* 7 */
+    NMC_META_GENERIC_WITH_NESTED("IP4", metagen_ip4_config),                         /* 8 */
+    NMC_META_GENERIC_WITH_NESTED("DHCP4", metagen_dhcp_config),                      /* 9 */
+    NMC_META_GENERIC_WITH_NESTED("IP6", metagen_ip6_config),                         /* 10 */
+    NMC_META_GENERIC_WITH_NESTED("DHCP6", metagen_dhcp_config),                      /* 11 */
+    NMC_META_GENERIC_WITH_NESTED("BOND", nmc_fields_dev_show_controller_prop + 1),   /* 12 */
+    NMC_META_GENERIC_WITH_NESTED("TEAM", nmc_fields_dev_show_team_prop + 1),         /* 13 */
+    NMC_META_GENERIC_WITH_NESTED("BRIDGE", nmc_fields_dev_show_controller_prop + 1), /* 14 */
+    NMC_META_GENERIC_WITH_NESTED("VLAN", nmc_fields_dev_show_vlan_prop + 1),         /* 15 */
+    NMC_META_GENERIC_WITH_NESTED("BLUETOOTH", nmc_fields_dev_show_bluetooth + 1),    /* 16 */
+    NMC_META_GENERIC_WITH_NESTED("CONNECTIONS", metagen_device_detail_connections),  /* 17 */
     NULL,
 };
 #define NMC_FIELDS_DEV_SHOW_SECTIONS_COMMON                                 \
@@ -1511,7 +1511,7 @@ print_bond_bridge_info(NMDevice   *device,
     if (ports_str->len > 0)
         g_string_truncate(ports_str, ports_str->len - 1); /* Chop off last space */
 
-    tmpl        = (const NMMetaAbstractInfo *const *) nmc_fields_dev_show_master_prop;
+    tmpl        = (const NMMetaAbstractInfo *const *) nmc_fields_dev_show_controller_prop;
     out_indices = parse_output_fields(one_field, tmpl, FALSE, NULL, NULL);
     arr         = nmc_dup_fields_array(tmpl, NMC_OF_FLAG_FIELD_NAMES);
     g_ptr_array_add(out.output_data, arr);

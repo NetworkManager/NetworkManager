@@ -161,6 +161,10 @@ typedef enum _nm_packed {
 #define __IFLA_TUN_MAX               10
 #define IFLA_TUN_MAX                 (__IFLA_TUN_MAX - 1)
 
+#define IFLA_CONTROLLER IFLA_MASTER
+
+#define BRIDGE_FLAGS_CONTROLLER BRIDGE_FLAGS_MASTER
+
 G_STATIC_ASSERT(RTA_MAX == (__RTA_MAX - 1));
 #define RTA_PREF 20
 #undef RTA_MAX
@@ -432,7 +436,7 @@ typedef enum _nm_packed {
     DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL = 1 << 12,
     DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_GENL = 1 << 13,
     DELAYED_ACTION_TYPE_REFRESH_LINK           = 1 << 14,
-    DELAYED_ACTION_TYPE_MASTER_CONNECTED       = 1 << 15,
+    DELAYED_ACTION_TYPE_CONTROLLER_CONNECTED   = 1 << 15,
 
     __DELAYED_ACTION_TYPE_MAX,
 
@@ -559,7 +563,7 @@ typedef struct {
          * by type. */
         int refresh_all_in_progress[_REFRESH_ALL_TYPE_NUM];
 
-        GPtrArray *list_master_connected;
+        GPtrArray *list_controller_connected;
         GPtrArray *list_refresh_link;
         union {
             struct {
@@ -3377,7 +3381,7 @@ _new_from_nl_link(NMPlatform            *platform,
         [IFLA_GRO_MAX_SIZE]  = {.type = NLA_U32},
         [IFLA_LINK]          = {.type = NLA_U32},
         [IFLA_WEIGHT]        = {.type = NLA_U32},
-        [IFLA_MASTER]        = {.type = NLA_U32},
+        [IFLA_CONTROLLER]    = {.type = NLA_U32},
         [IFLA_OPERSTATE]     = {.type = NLA_U8},
         [IFLA_LINKMODE]      = {.type = NLA_U8},
         [IFLA_LINKINFO]      = {.type = NLA_NESTED},
@@ -3577,8 +3581,8 @@ _new_from_nl_link(NMPlatform            *platform,
                                         &link_cached,
                                         &obj->link.kind);
 
-    if (tb[IFLA_MASTER])
-        obj->link.master = nla_get_u32(tb[IFLA_MASTER]);
+    if (tb[IFLA_CONTROLLER])
+        obj->link.controller = nla_get_u32(tb[IFLA_CONTROLLER]);
 
     if (tb[IFLA_LINK]) {
         if (!tb[IFLA_LINK_NETNSID])
@@ -6781,7 +6785,7 @@ static NM_UTILS_LOOKUP_STR_DEFINE(
     NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_GENL_FAMILIES,
                              "refresh-all-genl-families"),
     NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_LINK, "refresh-link"),
-    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_MASTER_CONNECTED, "master-connected"),
+    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_CONTROLLER_CONNECTED, "controller-connected"),
     NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_READ_RTNL, "read-rtnl"),
     NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_READ_GENL, "read-genl"),
     NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL, "wait-for-response-rtnl"),
@@ -6809,8 +6813,8 @@ delayed_action_to_string_full(DelayedActionType action_type,
     nm_strbuf_append_str(&buf, &buf_size, delayed_action_to_string(action_type));
 
     switch (action_type) {
-    case DELAYED_ACTION_TYPE_MASTER_CONNECTED:
-        nm_strbuf_append(&buf, &buf_size, " (master-ifindex %d)", GPOINTER_TO_INT(user_data));
+    case DELAYED_ACTION_TYPE_CONTROLLER_CONNECTED:
+        nm_strbuf_append(&buf, &buf_size, " (controller-ifindex %d)", GPOINTER_TO_INT(user_data));
         break;
     case DELAYED_ACTION_TYPE_REFRESH_LINK:
         nm_strbuf_append(&buf, &buf_size, " (ifindex %d)", GPOINTER_TO_INT(user_data));
@@ -6991,16 +6995,16 @@ delayed_action_wait_for_nl_response_complete_all(NMPlatform             *platfor
 /*****************************************************************************/
 
 static void
-delayed_action_handle_MASTER_CONNECTED(NMPlatform *platform, int master_ifindex)
+delayed_action_handle_CONTROLLER_CONNECTED(NMPlatform *platform, int controller_ifindex)
 {
     nm_auto_nmpobj const NMPObject *obj_old = NULL;
     nm_auto_nmpobj const NMPObject *obj_new = NULL;
     NMPCacheOpsType                 cache_op;
 
-    cache_op = nmp_cache_update_link_master_connected(nm_platform_get_cache(platform),
-                                                      master_ifindex,
-                                                      &obj_old,
-                                                      &obj_new);
+    cache_op = nmp_cache_update_link_controller_connected(nm_platform_get_cache(platform),
+                                                          controller_ifindex,
+                                                          &obj_old,
+                                                          &obj_new);
     if (cache_op == NMP_CACHE_OPS_UNCHANGED)
         return;
     cache_on_change(platform, cache_op, obj_old, obj_new);
@@ -7042,27 +7046,27 @@ delayed_action_handle_one(NMPlatform *platform)
     if (priv->delayed_action.flags == DELAYED_ACTION_TYPE_NONE)
         return FALSE;
 
-    /* First process DELAYED_ACTION_TYPE_MASTER_CONNECTED actions.
+    /* First process DELAYED_ACTION_TYPE_CONTROLLER_CONNECTED actions.
      * This type of action is entirely cache-internal and is here to resolve a
      * cache inconsistency. It should be fixed right away. */
-    if (NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_MASTER_CONNECTED)) {
-        nm_assert(priv->delayed_action.list_master_connected->len > 0);
+    if (NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_CONTROLLER_CONNECTED)) {
+        nm_assert(priv->delayed_action.list_controller_connected->len > 0);
 
-        user_data = priv->delayed_action.list_master_connected->pdata[0];
-        g_ptr_array_remove_index_fast(priv->delayed_action.list_master_connected, 0);
-        if (priv->delayed_action.list_master_connected->len == 0)
-            priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_MASTER_CONNECTED;
+        user_data = priv->delayed_action.list_controller_connected->pdata[0];
+        g_ptr_array_remove_index_fast(priv->delayed_action.list_controller_connected, 0);
+        if (priv->delayed_action.list_controller_connected->len == 0)
+            priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_CONTROLLER_CONNECTED;
         nm_assert(nm_utils_ptrarray_find_first(
-                      (gconstpointer *) priv->delayed_action.list_master_connected->pdata,
-                      priv->delayed_action.list_master_connected->len,
+                      (gconstpointer *) priv->delayed_action.list_controller_connected->pdata,
+                      priv->delayed_action.list_controller_connected->len,
                       user_data)
                   < 0);
 
-        _LOGt_delayed_action(DELAYED_ACTION_TYPE_MASTER_CONNECTED, user_data, "handle");
-        delayed_action_handle_MASTER_CONNECTED(platform, GPOINTER_TO_INT(user_data));
+        _LOGt_delayed_action(DELAYED_ACTION_TYPE_CONTROLLER_CONNECTED, user_data, "handle");
+        delayed_action_handle_CONTROLLER_CONNECTED(platform, GPOINTER_TO_INT(user_data));
         return TRUE;
     }
-    nm_assert(priv->delayed_action.list_master_connected->len == 0);
+    nm_assert(priv->delayed_action.list_controller_connected->len == 0);
 
     /* Next we prefer read-genl/read-rtnl, because the buffer size is limited and we want to process events
      * from netlink early. */
@@ -7178,13 +7182,13 @@ delayed_action_schedule(NMPlatform *platform, DelayedActionType action_type, gpo
             < 0)
             g_ptr_array_add(priv->delayed_action.list_refresh_link, user_data);
         break;
-    case DELAYED_ACTION_TYPE_MASTER_CONNECTED:
+    case DELAYED_ACTION_TYPE_CONTROLLER_CONNECTED:
         if (nm_utils_ptrarray_find_first(
-                (gconstpointer *) priv->delayed_action.list_master_connected->pdata,
-                priv->delayed_action.list_master_connected->len,
+                (gconstpointer *) priv->delayed_action.list_controller_connected->pdata,
+                priv->delayed_action.list_controller_connected->len,
                 user_data)
             < 0)
-            g_ptr_array_add(priv->delayed_action.list_master_connected, user_data);
+            g_ptr_array_add(priv->delayed_action.list_controller_connected, user_data);
         break;
     case DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL:
         g_array_append_vals(priv->delayed_action.list_wait_for_response_rtnl, user_data, 1);
@@ -7198,7 +7202,7 @@ delayed_action_schedule(NMPlatform *platform, DelayedActionType action_type, gpo
         nm_assert(!user_data);
         nm_assert(!NM_FLAGS_ANY(action_type,
                                 DELAYED_ACTION_TYPE_REFRESH_LINK
-                                    | DELAYED_ACTION_TYPE_MASTER_CONNECTED
+                                    | DELAYED_ACTION_TYPE_CONTROLLER_CONNECTED
                                     | DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL
                                     | DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_GENL));
         break;
@@ -7365,30 +7369,30 @@ cache_on_change(NMPlatform      *platform,
     switch (klass->obj_type) {
     case NMP_OBJECT_TYPE_LINK:
     {
-        /* check whether changing a slave link can cause a master link (bridge or bond) to go up/down */
+        /* check whether changing a slave link can cause a controller link (bridge or bond) to go up/down */
         if (obj_old
             && nmp_cache_link_connected_needs_toggle_by_ifindex(cache,
-                                                                obj_old->link.master,
+                                                                obj_old->link.controller,
                                                                 obj_new,
                                                                 obj_old))
             delayed_action_schedule(platform,
-                                    DELAYED_ACTION_TYPE_MASTER_CONNECTED,
-                                    GINT_TO_POINTER(obj_old->link.master));
-        if (obj_new && (!obj_old || obj_old->link.master != obj_new->link.master)
+                                    DELAYED_ACTION_TYPE_CONTROLLER_CONNECTED,
+                                    GINT_TO_POINTER(obj_old->link.controller));
+        if (obj_new && (!obj_old || obj_old->link.controller != obj_new->link.controller)
             && nmp_cache_link_connected_needs_toggle_by_ifindex(cache,
-                                                                obj_new->link.master,
+                                                                obj_new->link.controller,
                                                                 obj_new,
                                                                 obj_old))
             delayed_action_schedule(platform,
-                                    DELAYED_ACTION_TYPE_MASTER_CONNECTED,
-                                    GINT_TO_POINTER(obj_new->link.master));
+                                    DELAYED_ACTION_TYPE_CONTROLLER_CONNECTED,
+                                    GINT_TO_POINTER(obj_new->link.controller));
     }
         {
-            /* check whether we are about to change a master link that needs toggling connected state. */
+            /* check whether we are about to change a controller link that needs toggling connected state. */
             if (obj_new /* <-- nonsensical, make coverity happy */
                 && nmp_cache_link_connected_needs_toggle(cache, obj_new, obj_new, obj_old))
                 delayed_action_schedule(platform,
-                                        DELAYED_ACTION_TYPE_MASTER_CONNECTED,
+                                        DELAYED_ACTION_TYPE_CONTROLLER_CONNECTED,
                                         GINT_TO_POINTER(obj_new->link.ifindex));
         }
         {
@@ -7527,16 +7531,16 @@ cache_on_change(NMPlatform      *platform,
             }
         }
         {
-            /* on enslave/release, we also refresh the master. */
+            /* on enslave/release, we also refresh the controller. */
             int      ifindex1 = 0, ifindex2 = 0;
-            gboolean changed_master, changed_connected;
+            gboolean changed_controller, changed_connected;
 
-            changed_master =
-                (obj_new && obj_new->_link.netlink.is_in_netlink && obj_new->link.master > 0
-                     ? obj_new->link.master
+            changed_controller =
+                (obj_new && obj_new->_link.netlink.is_in_netlink && obj_new->link.controller > 0
+                     ? obj_new->link.controller
                      : 0)
-                != (obj_old && obj_old->_link.netlink.is_in_netlink && obj_old->link.master > 0
-                        ? obj_old->link.master
+                != (obj_old && obj_old->_link.netlink.is_in_netlink && obj_old->link.controller > 0
+                        ? obj_old->link.controller
                         : 0);
             changed_connected = (obj_new && obj_new->_link.netlink.is_in_netlink
                                      ? NM_FLAGS_HAS(obj_new->link.n_ifi_flags, IFF_LOWER_UP)
@@ -7545,15 +7549,15 @@ cache_on_change(NMPlatform      *platform,
                                         ? NM_FLAGS_HAS(obj_old->link.n_ifi_flags, IFF_LOWER_UP)
                                         : 2);
 
-            if (changed_master || changed_connected) {
-                ifindex1 =
-                    (obj_old && obj_old->_link.netlink.is_in_netlink && obj_old->link.master > 0)
-                        ? obj_old->link.master
-                        : 0;
-                ifindex2 =
-                    (obj_new && obj_new->_link.netlink.is_in_netlink && obj_new->link.master > 0)
-                        ? obj_new->link.master
-                        : 0;
+            if (changed_controller || changed_connected) {
+                ifindex1 = (obj_old && obj_old->_link.netlink.is_in_netlink
+                            && obj_old->link.controller > 0)
+                               ? obj_old->link.controller
+                               : 0;
+                ifindex2 = (obj_new && obj_new->_link.netlink.is_in_netlink
+                            && obj_new->link.controller > 0)
+                               ? obj_new->link.controller
+                               : 0;
 
                 if (ifindex1 > 0)
                     delayed_action_schedule(platform,
@@ -8664,13 +8668,13 @@ link_add(NMPlatform            *platform,
 
     if (type == NM_LINK_TYPE_BOND) {
         /* When the kernel loads the bond module, either via explicit modprobe
-         * or automatically in response to creating a bond master, it will also
+         * or automatically in response to creating a bond controller, it will also
          * create a 'bond0' interface.  Since the bond we're about to create may
          * or may not be named 'bond0' prevent potential confusion about a bond
          * that the user didn't want by telling the bonding module not to create
          * bond0 automatically.
          */
-        if (!g_file_test("/sys/class/net/bonding_masters", G_FILE_TEST_EXISTS))
+        if (!g_file_test("/sys/class/net/bonding_controllers", G_FILE_TEST_EXISTS))
             (void) nmp_utils_modprobe(NULL, TRUE, "bonding", "max_bonds=0", NULL);
     }
 
@@ -9494,7 +9498,7 @@ nla_put_failure:
 static gboolean
 link_set_bridge_vlans(NMPlatform                        *platform,
                       int                                ifindex,
-                      gboolean                           on_master,
+                      gboolean                           on_controller,
                       const NMPlatformBridgeVlan *const *vlans)
 {
     nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
@@ -9516,7 +9520,9 @@ link_set_bridge_vlans(NMPlatform                        *platform,
     if (!(list = nla_nest_start(nlmsg, IFLA_AF_SPEC)))
         goto nla_put_failure;
 
-    NLA_PUT_U16(nlmsg, IFLA_BRIDGE_FLAGS, on_master ? BRIDGE_FLAGS_MASTER : BRIDGE_FLAGS_SELF);
+    NLA_PUT_U16(nlmsg,
+                IFLA_BRIDGE_FLAGS,
+                on_controller ? BRIDGE_FLAGS_CONTROLLER : BRIDGE_FLAGS_SELF);
 
     if (vlans) {
         /* Add VLANs */
@@ -9821,7 +9827,7 @@ link_vlan_change(NMPlatform             *platform,
 }
 
 static gboolean
-link_enslave(NMPlatform *platform, int master, int slave)
+link_enslave(NMPlatform *platform, int controller, int slave)
 {
     nm_auto_nlmsg struct nl_msg *nlmsg   = NULL;
     int                          ifindex = slave;
@@ -9830,7 +9836,7 @@ link_enslave(NMPlatform *platform, int master, int slave)
     if (!nlmsg)
         return FALSE;
 
-    NLA_PUT_U32(nlmsg, IFLA_MASTER, master);
+    NLA_PUT_U32(nlmsg, IFLA_CONTROLLER, controller);
 
     return (do_change_link(platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL) >= 0);
 nla_put_failure:
@@ -9838,7 +9844,7 @@ nla_put_failure:
 }
 
 static gboolean
-link_release(NMPlatform *platform, int master, int slave)
+link_release(NMPlatform *platform, int controller, int slave)
 {
     return link_enslave(platform, 0, slave);
 }
@@ -10070,7 +10076,7 @@ link_can_assume(NMPlatform *platform, int ifindex)
     if (!NM_FLAGS_HAS(link->link.n_ifi_flags, IFF_UP))
         return FALSE;
 
-    if (link->link.master > 0)
+    if (link->link.controller > 0)
         return TRUE;
 
     nmp_lookup_init_object_by_ifindex(&lookup, NMP_OBJECT_TYPE_IP4_ADDRESS, ifindex);
@@ -11605,8 +11611,8 @@ nm_linux_platform_init(NMLinuxPlatform *self)
     c_list_init(&priv->sysctl_clear_cache_lst);
     c_list_init(&priv->sysctl_list);
 
-    priv->delayed_action.list_master_connected = g_ptr_array_new();
-    priv->delayed_action.list_refresh_link     = g_ptr_array_new();
+    priv->delayed_action.list_controller_connected = g_ptr_array_new();
+    priv->delayed_action.list_refresh_link         = g_ptr_array_new();
     priv->delayed_action.list_wait_for_response_rtnl =
         g_array_new(FALSE, TRUE, sizeof(DelayedActionWaitForNlResponseData));
     priv->delayed_action.list_wait_for_response_genl =
@@ -11819,7 +11825,7 @@ dispose(GObject *object)
                                                      WAIT_FOR_NL_RESPONSE_RESULT_FAILED_DISPOSING);
 
     priv->delayed_action.flags = DELAYED_ACTION_TYPE_NONE;
-    g_ptr_array_set_size(priv->delayed_action.list_master_connected, 0);
+    g_ptr_array_set_size(priv->delayed_action.list_controller_connected, 0);
     g_ptr_array_set_size(priv->delayed_action.list_refresh_link, 0);
 
     G_OBJECT_CLASS(nm_linux_platform_parent_class)->dispose(object);
@@ -11830,7 +11836,7 @@ finalize(GObject *object)
 {
     NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(object);
 
-    g_ptr_array_unref(priv->delayed_action.list_master_connected);
+    g_ptr_array_unref(priv->delayed_action.list_controller_connected);
     g_ptr_array_unref(priv->delayed_action.list_refresh_link);
     g_array_unref(priv->delayed_action.list_wait_for_response_rtnl);
     g_array_unref(priv->delayed_action.list_wait_for_response_genl);

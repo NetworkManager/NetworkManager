@@ -198,7 +198,7 @@ struct _NMPlatformLink {
     /* NMPlatform initializes this field with a static string. */
     const char *driver;
 
-    int master;
+    int controller;
 
     /* rtnl_link_get_link(), IFLA_LINK.
      * If IFLA_LINK_NETNSID indicates that the parent is in another namespace,
@@ -244,7 +244,7 @@ struct _NMPlatformLink {
     /* IFLA_INFO_SLAVE_KIND */
     NMPortKind port_kind;
 
-    /* @connected is mostly identical to (@n_ifi_flags & IFF_UP). Except for bridge/bond masters,
+    /* @connected is mostly identical to (@n_ifi_flags & IFF_UP). Except for bridge/bond controllers,
      * where we coerce the link as disconnect if it has no slaves. */
     bool connected : 1;
 
@@ -1187,7 +1187,7 @@ typedef struct {
     gboolean (*link_set_sriov_vfs)(NMPlatform *self, int ifindex, const NMPlatformVF *const *vfs);
     gboolean (*link_set_bridge_vlans)(NMPlatform                        *self,
                                       int                                ifindex,
-                                      gboolean                           on_master,
+                                      gboolean                           on_controller,
                                       const NMPlatformBridgeVlan *const *vlans);
     gboolean (*link_set_bridge_info)(NMPlatform                            *self,
                                      int                                    ifindex,
@@ -1206,8 +1206,8 @@ typedef struct {
     gboolean (*link_supports_vlans)(NMPlatform *self, int ifindex);
     gboolean (*link_supports_sriov)(NMPlatform *self, int ifindex);
 
-    gboolean (*link_enslave)(NMPlatform *self, int master, int slave);
-    gboolean (*link_release)(NMPlatform *self, int master, int slave);
+    gboolean (*link_enslave)(NMPlatform *self, int controller, int slave);
+    gboolean (*link_release)(NMPlatform *self, int controller, int slave);
 
     gboolean (*link_can_assume)(NMPlatform *self, int ifindex);
 
@@ -1973,7 +1973,7 @@ int         nm_platform_link_get_inet6_addr_gen_mode(NMPlatform *self, int ifind
 
 gconstpointer nm_platform_link_get_address(NMPlatform *self, int ifindex, size_t *length);
 
-int nm_platform_link_get_master(NMPlatform *self, int slave);
+int nm_platform_link_get_controller(NMPlatform *self, int slave);
 
 gboolean nm_platform_link_can_assume(NMPlatform *self, int ifindex);
 
@@ -2051,7 +2051,7 @@ gboolean
 nm_platform_link_set_sriov_vfs(NMPlatform *self, int ifindex, const NMPlatformVF *const *vfs);
 gboolean nm_platform_link_set_bridge_vlans(NMPlatform                        *self,
                                            int                                ifindex,
-                                           gboolean                           on_master,
+                                           gboolean                           on_controller,
                                            const NMPlatformBridgeVlan *const *vlans);
 gboolean nm_platform_link_set_bridge_info(NMPlatform                            *self,
                                           int                                    ifindex,
@@ -2070,14 +2070,14 @@ gboolean nm_platform_link_supports_carrier_detect(NMPlatform *self, int ifindex)
 gboolean nm_platform_link_supports_vlans(NMPlatform *self, int ifindex);
 gboolean nm_platform_link_supports_sriov(NMPlatform *self, int ifindex);
 
-gboolean nm_platform_link_enslave(NMPlatform *self, int master, int slave);
-gboolean nm_platform_link_release(NMPlatform *self, int master, int slave);
+gboolean nm_platform_link_enslave(NMPlatform *self, int controller, int slave);
+gboolean nm_platform_link_release(NMPlatform *self, int controller, int slave);
 
-gboolean nm_platform_sysctl_master_set_option(NMPlatform *self,
-                                              int         ifindex,
-                                              const char *option,
-                                              const char *value);
-char    *nm_platform_sysctl_master_get_option(NMPlatform *self, int ifindex, const char *option);
+gboolean nm_platform_sysctl_controller_set_option(NMPlatform *self,
+                                                  int         ifindex,
+                                                  const char *option,
+                                                  const char *value);
+char *nm_platform_sysctl_controller_get_option(NMPlatform *self, int ifindex, const char *option);
 gboolean nm_platform_sysctl_slave_set_option(NMPlatform *self,
                                              int         ifindex,
                                              const char *option,
@@ -2569,7 +2569,7 @@ void nm_platform_mptcp_addr_hash_update(const NMPlatformMptcpAddr *obj, NMHashSt
 guint    nm_platform_mptcp_addr_index_addr_cmp(gconstpointer data);
 gboolean nm_platform_mptcp_addr_index_addr_equal(gconstpointer data_a, gconstpointer data_b);
 
-#define NM_PLATFORM_LINK_FLAGS2STR_MAX_LEN ((gsize) 162)
+#define NM_PLATFORM_LINK_FLAGS2STR_MAX_LEN ((gsize) 166)
 
 gboolean nm_platform_ethtool_set_wake_on_lan(NMPlatform              *self,
                                              int                      ifindex,

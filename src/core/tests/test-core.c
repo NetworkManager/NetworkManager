@@ -303,7 +303,7 @@ test_nm_utils_log_connection_diff(void)
                  NM_SETTING_CONNECTION_ID,
                  "id2",
                  NM_SETTING_CONNECTION_CONTROLLER,
-                 "master2",
+                 "controller2",
                  NULL);
     nm_utils_log_connection_diff(connection,
                                  connection2,

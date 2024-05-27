@@ -608,24 +608,24 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
     if (priv->parent) {
         if (nm_utils_is_uuid(priv->parent)) {
-            /* If we have an NMSettingConnection:master with slave-type="vlan",
+            /* If we have an NMSettingConnection:controller with slave-type="vlan",
              * then it must be the same UUID.
              */
             if (s_con) {
-                const char *master = NULL, *slave_type = NULL;
+                const char *controller = NULL, *slave_type = NULL;
 
                 slave_type = nm_setting_connection_get_port_type(s_con);
                 if (!g_strcmp0(slave_type, NM_SETTING_VLAN_SETTING_NAME))
-                    master = nm_setting_connection_get_controller(s_con);
+                    controller = nm_setting_connection_get_controller(s_con);
 
-                if (master && g_strcmp0(priv->parent, master) != 0) {
+                if (controller && g_strcmp0(priv->parent, controller) != 0) {
                     g_set_error(error,
                                 NM_CONNECTION_ERROR,
                                 NM_CONNECTION_ERROR_INVALID_PROPERTY,
                                 _("'%s' value doesn't match '%s=%s'"),
                                 priv->parent,
                                 NM_SETTING_CONNECTION_CONTROLLER,
-                                master);
+                                controller);
                     g_prefix_error(error,
                                    "%s.%s: ",
                                    NM_SETTING_VLAN_SETTING_NAME,
@@ -908,7 +908,7 @@ nm_setting_vlan_class_init(NMSettingVlanClass *klass)
      * interface.  Flags include %NM_VLAN_FLAG_REORDER_HEADERS (reordering of
      * output packet headers), %NM_VLAN_FLAG_GVRP (use of the GVRP protocol),
      * and %NM_VLAN_FLAG_LOOSE_BINDING (loose binding of the interface to its
-     * master device's operating state). %NM_VLAN_FLAG_MVRP (use of the MVRP
+     * controller device's operating state). %NM_VLAN_FLAG_MVRP (use of the MVRP
      * protocol).
      *
      * The default value of this property is NM_VLAN_FLAG_REORDER_HEADERS,

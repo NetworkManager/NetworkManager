@@ -22,7 +22,7 @@ typedef enum {
     NM_PPP_STATUS_TERMINATE    = 9,
     NM_PPP_STATUS_DISCONNECT   = 10,
     NM_PPP_STATUS_HOLDOFF      = 11,
-    NM_PPP_STATUS_MASTER       = 12,
+    NM_PPP_STATUS_CONTROLLER   = 12,
 
     /* these states are internal and not announced by the pppd plugin. */
     NM_PPP_STATUS_INTERN_UNKNOWN = 20,

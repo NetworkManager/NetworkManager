@@ -290,17 +290,17 @@ check_if_bond_slave(shvarFile *ifcfg, NMSettingConnection *s_con)
 {
     gs_free char *value = NULL;
     const char   *v;
-    const char   *master;
+    const char   *controller;
 
     v = svGetValueStr(ifcfg, "MASTER_UUID", &value);
     if (!v)
         v = svGetValueStr(ifcfg, "MASTER", &value);
 
     if (v) {
-        master = nm_setting_connection_get_controller(s_con);
-        if (master) {
+        controller = nm_setting_connection_get_controller(s_con);
+        if (controller) {
             PARSE_WARNING("Already configured as slave of %s. Ignoring MASTER{_UUID}=\"%s\"",
-                          master,
+                          controller,
                           v);
             return;
         }
@@ -323,7 +323,7 @@ check_if_team_slave(shvarFile *ifcfg, NMSettingConnection *s_con)
 {
     gs_free char *value = NULL;
     const char   *v;
-    const char   *master;
+    const char   *controller;
 
     v = svGetValueStr(ifcfg, "TEAM_MASTER_UUID", &value);
     if (!v)
@@ -331,10 +331,10 @@ check_if_team_slave(shvarFile *ifcfg, NMSettingConnection *s_con)
     if (!v)
         return;
 
-    master = nm_setting_connection_get_controller(s_con);
-    if (master) {
+    controller = nm_setting_connection_get_controller(s_con);
+    if (controller) {
         PARSE_WARNING("Already configured as slave of %s. Ignoring TEAM_MASTER{_UUID}=\"%s\"",
-                      master,
+                      controller,
                       v);
         return;
     }
@@ -6683,7 +6683,7 @@ connection_from_file_full(const char *filename,
         gs_free char *bond_options = NULL;
 
         if (svGetValueStr(main_ifcfg, "BONDING_OPTS", &bond_options)) {
-            /* initscripts consider these as bond masters */
+            /* initscripts consider these as bond controllers */
             g_free(type);
             type = g_strdup(TYPE_BOND);
         }

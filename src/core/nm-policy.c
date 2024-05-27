@@ -1844,9 +1844,9 @@ unblock_autoconnect_for_children(NMPolicy   *self,
 
 static void
 unblock_autoconnect_for_ports(NMPolicy   *self,
-                              const char *master_device,
-                              const char *master_uuid_settings,
-                              const char *master_uuid_applied,
+                              const char *controller_device,
+                              const char *controller_uuid_settings,
+                              const char *controller_uuid_applied,
                               gboolean    reset_devcon_autoconnect)
 {
     NMPolicyPrivate             *priv = NM_POLICY_GET_PRIVATE(self);
@@ -1857,11 +1857,11 @@ unblock_autoconnect_for_ports(NMPolicy   *self,
     _LOGT(LOGD_CORE,
           "block-autoconnect: unblocking port profiles for controller ifname=%s%s%s, uuid=%s%s%s"
           "%s%s%s",
-          NM_PRINT_FMT_QUOTE_STRING(master_device),
-          NM_PRINT_FMT_QUOTE_STRING(master_uuid_settings),
-          NM_PRINT_FMT_QUOTED(master_uuid_applied,
+          NM_PRINT_FMT_QUOTE_STRING(controller_device),
+          NM_PRINT_FMT_QUOTE_STRING(controller_uuid_settings),
+          NM_PRINT_FMT_QUOTED(controller_uuid_applied,
                               ", applied-uuid=\"",
-                              master_uuid_applied,
+                              controller_uuid_applied,
                               "\"",
                               ""));
 
@@ -1870,15 +1870,18 @@ unblock_autoconnect_for_ports(NMPolicy   *self,
     for (i = 0; connections[i]; i++) {
         NMSettingsConnection *sett_conn = connections[i];
         NMSettingConnection  *s_slave_con;
-        const char           *slave_master;
+        const char           *slave_controller;
 
         s_slave_con =
             nm_settings_connection_get_setting(sett_conn, NM_META_SETTING_TYPE_CONNECTION);
-        slave_master = nm_setting_connection_get_controller(s_slave_con);
-        if (!slave_master)
+        slave_controller = nm_setting_connection_get_controller(s_slave_con);
+        if (!slave_controller)
             continue;
 
-        if (!NM_IN_STRSET(slave_master, master_device, master_uuid_applied, master_uuid_settings))
+        if (!NM_IN_STRSET(slave_controller,
+                          controller_device,
+                          controller_uuid_applied,
+                          controller_uuid_settings))
             continue;
 
         if (reset_devcon_autoconnect) {
@@ -1905,8 +1908,8 @@ unblock_autoconnect_for_ports(NMPolicy   *self,
 static void
 unblock_autoconnect_for_ports_for_sett_conn(NMPolicy *self, NMSettingsConnection *sett_conn)
 {
-    const char          *master_device;
-    const char          *master_uuid_settings;
+    const char          *controller_device;
+    const char          *controller_uuid_settings;
     NMSettingConnection *s_con;
 
     nm_assert(NM_IS_POLICY(self));
@@ -1916,10 +1919,10 @@ unblock_autoconnect_for_ports_for_sett_conn(NMPolicy *self, NMSettingsConnection
 
     nm_assert(NM_IS_SETTING_CONNECTION(s_con));
 
-    master_uuid_settings = nm_setting_connection_get_uuid(s_con);
-    master_device        = nm_setting_connection_get_interface_name(s_con);
+    controller_uuid_settings = nm_setting_connection_get_uuid(s_con);
+    controller_device        = nm_setting_connection_get_interface_name(s_con);
 
-    unblock_autoconnect_for_ports(self, master_device, master_uuid_settings, NULL, TRUE);
+    unblock_autoconnect_for_ports(self, controller_device, controller_uuid_settings, NULL, TRUE);
 }
 
 static void

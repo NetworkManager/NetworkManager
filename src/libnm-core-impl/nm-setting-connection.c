@@ -712,7 +712,7 @@ nm_setting_connection_get_zone(NMSettingConnection *setting)
  *
  * Returns the #NMSettingConnection:master property of the connection.
  *
- * Returns: interface name of the master device or UUID of the master
+ * Returns: interface name of the controller device or UUID of the controller
  * connection.
  *
  * Deprecated: 1.46. Use nm_setting_connection_get_master() instead which
@@ -2531,14 +2531,14 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
     /**
      * NMSettingConnection:master:
      *
-     * Interface name of the master device or UUID of the master connection.
+     * Interface name of the controller device or UUID of the controller connection.
      *
      * Deprecated 1.46. Use #NMSettingConnection:controller instead, this is just an alias.
      **/
     /* ---ifcfg-rh---
      * property: master
      * variable: MASTER, MASTER_UUID, TEAM_MASTER, TEAM_MASTER_UUID, BRIDGE, BRIDGE_UUID
-     * description: Reference to master connection. The variable used depends on
+     * description: Reference to controller connection. The variable used depends on
      *   the connection type and the value. In general, if the *_UUID variant is present,
      *   the variant without *_UUID is ignored. NetworkManager attempts to write both
      *   for compatibility with legacy tooling.
@@ -2589,7 +2589,7 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
     /**
      * NMSettingConnection:slave-type:
      *
-     * Setting name of the device type of this slave's master connection (eg,
+     * Setting name of the device type of this slave's controller connection (eg,
      * %NM_SETTING_BOND_SETTING_NAME), or %NULL if this connection is not a
      * slave.
      *
@@ -2657,7 +2657,7 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Whether or not slaves of this connection should be automatically brought up
      * when NetworkManager activates this connection. This only has a real effect
-     * for master connections. The properties #NMSettingConnection:autoconnect,
+     * for controller connections. The properties #NMSettingConnection:autoconnect,
      * #NMSettingConnection:autoconnect-priority and #NMSettingConnection:autoconnect-retries
      * are unrelated to this setting.
      * The permitted values are: 0: leave slave connections untouched,

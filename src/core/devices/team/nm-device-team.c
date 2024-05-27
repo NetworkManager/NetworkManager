@@ -238,10 +238,10 @@ update_connection(NMDevice *device, NMConnection *connection)
 /*****************************************************************************/
 
 static gboolean
-master_update_slave_connection(NMDevice     *device,
-                               NMDevice     *slave,
-                               NMConnection *connection,
-                               GError      **error)
+controller_update_slave_connection(NMDevice     *device,
+                                   NMDevice     *slave,
+                                   NMConnection *connection,
+                                   GError      **error)
 {
     NMDeviceTeam         *self = NM_DEVICE_TEAM(device);
     NMSettingTeamPort    *s_port;
@@ -256,14 +256,15 @@ master_update_slave_connection(NMDevice     *device,
 
     tdc = _tdc_connect_new(self, iface, &connect_error);
     if (!tdc) {
-        g_set_error(error,
-                    NM_DEVICE_ERROR,
-                    NM_DEVICE_ERROR_FAILED,
-                    "update slave connection for slave '%s' failed to connect to teamd for master "
-                    "%s (%s)",
-                    iface_slave,
-                    iface,
-                    connect_error->message);
+        g_set_error(
+            error,
+            NM_DEVICE_ERROR,
+            NM_DEVICE_ERROR_FAILED,
+            "update slave connection for slave '%s' failed to connect to teamd for controller "
+            "%s (%s)",
+            iface_slave,
+            iface,
+            connect_error->message);
         return FALSE;
     }
 
@@ -276,7 +277,7 @@ master_update_slave_connection(NMDevice     *device,
                     NM_DEVICE_ERROR,
                     NM_DEVICE_ERROR_FAILED,
                     "update slave connection for slave '%s' failed to get configuration from teamd "
-                    "master %s (err=%d)",
+                    "controller %s (err=%d)",
                     iface_slave,
                     iface,
                     err);
@@ -858,7 +859,7 @@ attach_port(NMDevice                  *device,
     const char          *port_iface = nm_device_get_ip_iface(port);
     NMSettingTeamPort   *s_team_port;
 
-    nm_device_master_check_slave_physical_port(device, port, LOGD_TEAM);
+    nm_device_controller_check_slave_physical_port(device, port, LOGD_TEAM);
 
     if (configure) {
         nm_device_take_down(port, TRUE);
@@ -974,7 +975,7 @@ create_and_realize(NMDevice              *device,
         g_set_error(error,
                     NM_DEVICE_ERROR,
                     NM_DEVICE_ERROR_CREATION_FAILED,
-                    "Failed to create team master interface '%s' for '%s': %s",
+                    "Failed to create team controller interface '%s' for '%s': %s",
                     iface,
                     nm_connection_get_id(connection),
                     nm_strerror(r));
@@ -1127,12 +1128,12 @@ nm_device_team_class_init(NMDeviceTeamClass *klass)
     device_class->connection_type_check_compatible = NM_SETTING_TEAM_SETTING_NAME;
     device_class->link_types                       = NM_DEVICE_DEFINE_LINK_TYPES(NM_LINK_TYPE_TEAM);
 
-    device_class->is_controller                  = TRUE;
-    device_class->create_and_realize             = create_and_realize;
-    device_class->get_generic_capabilities       = get_generic_capabilities;
-    device_class->complete_connection            = complete_connection;
-    device_class->update_connection              = update_connection;
-    device_class->master_update_slave_connection = master_update_slave_connection;
+    device_class->is_controller                      = TRUE;
+    device_class->create_and_realize                 = create_and_realize;
+    device_class->get_generic_capabilities           = get_generic_capabilities;
+    device_class->complete_connection                = complete_connection;
+    device_class->update_connection                  = update_connection;
+    device_class->controller_update_slave_connection = controller_update_slave_connection;
 
     device_class->act_stage1_prepare_also_for_external_or_assume = TRUE;
     device_class->act_stage1_prepare                             = act_stage1_prepare;

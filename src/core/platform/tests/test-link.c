@@ -261,7 +261,7 @@ test_port(int controller, int port_type, SignalData *controller_changed)
     /* Attach port */
     link_changed->ifindex = ifindex_port;
     g_assert(nm_platform_link_enslave(NM_PLATFORM_GET, controller, ifindex_port));
-    g_assert_cmpint(nm_platform_link_get_master(NM_PLATFORM_GET, ifindex_port), ==, controller);
+    g_assert_cmpint(nm_platform_link_get_controller(NM_PLATFORM_GET, ifindex_port), ==, controller);
 
     accept_signals(link_changed, 1, 3);
     accept_signals(controller_changed, 0, 2);
@@ -424,7 +424,7 @@ test_port(int controller, int port_type, SignalData *controller_changed)
     ensure_no_signal(link_changed);
     ensure_no_signal(link_removed);
     g_assert(nm_platform_link_release(NM_PLATFORM_GET, controller, ifindex_port));
-    g_assert_cmpint(nm_platform_link_get_master(NM_PLATFORM_GET, ifindex_port), ==, 0);
+    g_assert_cmpint(nm_platform_link_get_controller(NM_PLATFORM_GET, ifindex_port), ==, 0);
     if (link_changed->received_count > 0) {
         accept_signals(link_added, 0, 1);
         accept_signals(link_changed, 1, 5);
@@ -517,28 +517,29 @@ test_software(NMLinkType link_type, const char *link_typename)
     g_assert(nm_platform_link_uses_arp(NM_PLATFORM_GET, ifindex));
     accept_signal(link_changed);
 
-    /* Set master option */
+    /* Set controller option */
     if (nmtstp_is_root_test()) {
         switch (link_type) {
         case NM_LINK_TYPE_BRIDGE:
             if (nmtstp_is_sysfs_writable()) {
-                g_assert(nm_platform_sysctl_master_set_option(NM_PLATFORM_GET,
-                                                              ifindex,
-                                                              "forward_delay",
-                                                              "628"));
-                value =
-                    nm_platform_sysctl_master_get_option(NM_PLATFORM_GET, ifindex, "forward_delay");
+                g_assert(nm_platform_sysctl_controller_set_option(NM_PLATFORM_GET,
+                                                                  ifindex,
+                                                                  "forward_delay",
+                                                                  "628"));
+                value = nm_platform_sysctl_controller_get_option(NM_PLATFORM_GET,
+                                                                 ifindex,
+                                                                 "forward_delay");
                 g_assert_cmpstr(value, ==, "628");
                 g_free(value);
             }
             break;
         case NM_LINK_TYPE_BOND:
             if (nmtstp_is_sysfs_writable()) {
-                g_assert(nm_platform_sysctl_master_set_option(NM_PLATFORM_GET,
-                                                              ifindex,
-                                                              "mode",
-                                                              "active-backup"));
-                value = nm_platform_sysctl_master_get_option(NM_PLATFORM_GET, ifindex, "mode");
+                g_assert(nm_platform_sysctl_controller_set_option(NM_PLATFORM_GET,
+                                                                  ifindex,
+                                                                  "mode",
+                                                                  "active-backup"));
+                value = nm_platform_sysctl_controller_get_option(NM_PLATFORM_GET, ifindex, "mode");
                 /* When reading back, the output looks slightly different. */
                 g_assert(g_str_has_prefix(value, "active-backup"));
                 g_free(value);
@@ -2908,7 +2909,7 @@ test_nl_bugs_spuroius_newlink(void)
         pllink = nm_platform_link_get(NM_PLATFORM_GET, ifindex_dummy0);
         g_assert(pllink);
         g_assert(!nm_platform_link_get_permanent_address(NM_PLATFORM_GET, pllink, &hw_perm_addr));
-        if (pllink->master == ifindex_bond0)
+        if (pllink->controller == ifindex_bond0)
             break;
     });
 
@@ -2965,7 +2966,7 @@ test_nl_bugs_spuroius_dellink(void)
         pllink = nm_platform_link_get(NM_PLATFORM_GET, ifindex_dummy0);
         g_assert(pllink);
         g_assert(!nm_platform_link_get_permanent_address(NM_PLATFORM_GET, pllink, &hw_perm_addr));
-        if (pllink->master == ifindex_bridge0)
+        if (pllink->controller == ifindex_bridge0)
             break;
     });
 

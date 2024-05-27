@@ -589,11 +589,11 @@ link_changed(NMPlatform         *platform,
             ip6_address_delete(platform, device->obj->link.ifindex, device->ip6_lladdr, 64);
     }
 
-    if (device->obj->link.master) {
-        NMFakePlatformLink *master;
+    if (device->obj->link.controller) {
+        NMFakePlatformLink *controller;
 
-        master = link_get(platform, device->obj->link.master);
-        link_set_obj(platform, master, NULL);
+        controller = link_get(platform, device->obj->link.controller);
+        link_set_obj(platform, controller, NULL);
     }
 }
 
@@ -736,20 +736,20 @@ link_change(NMPlatform                   *platform,
 }
 
 static gboolean
-link_enslave(NMPlatform *platform, int master, int slave)
+link_enslave(NMPlatform *platform, int controller, int slave)
 {
-    NMFakePlatformLink *device        = link_get(platform, slave);
-    NMFakePlatformLink *master_device = link_get(platform, master);
+    NMFakePlatformLink *device            = link_get(platform, slave);
+    NMFakePlatformLink *controller_device = link_get(platform, controller);
 
     g_return_val_if_fail(device, FALSE);
-    g_return_val_if_fail(master_device, FALSE);
+    g_return_val_if_fail(controller_device, FALSE);
 
-    if (device->obj->link.master != master) {
+    if (device->obj->link.controller != controller) {
         nm_auto_nmpobj NMPObject *obj_tmp = NULL;
 
-        obj_tmp              = nmp_object_clone(device->obj, FALSE);
-        obj_tmp->link.master = master;
-        if (NM_IN_SET(master_device->obj->link.type, NM_LINK_TYPE_BOND, NM_LINK_TYPE_TEAM))
+        obj_tmp                  = nmp_object_clone(device->obj, FALSE);
+        obj_tmp->link.controller = controller;
+        if (NM_IN_SET(controller_device->obj->link.type, NM_LINK_TYPE_BOND, NM_LINK_TYPE_TEAM))
             obj_tmp->link.n_ifi_flags = NM_FLAGS_SET(device->obj->link.n_ifi_flags, IFF_UP);
         link_set_obj(platform, device, obj_tmp);
     }
@@ -758,20 +758,20 @@ link_enslave(NMPlatform *platform, int master, int slave)
 }
 
 static gboolean
-link_release(NMPlatform *platform, int master_idx, int slave_idx)
+link_release(NMPlatform *platform, int controller_idx, int slave_idx)
 {
-    NMFakePlatformLink       *master  = link_get(platform, master_idx);
-    NMFakePlatformLink       *slave   = link_get(platform, slave_idx);
-    nm_auto_nmpobj NMPObject *obj_tmp = NULL;
+    NMFakePlatformLink       *controller = link_get(platform, controller_idx);
+    NMFakePlatformLink       *slave      = link_get(platform, slave_idx);
+    nm_auto_nmpobj NMPObject *obj_tmp    = NULL;
 
-    g_return_val_if_fail(master, FALSE);
+    g_return_val_if_fail(controller, FALSE);
     g_return_val_if_fail(slave, FALSE);
 
-    if (slave->obj->link.master != master->obj->link.ifindex)
+    if (slave->obj->link.controller != controller->obj->link.ifindex)
         return FALSE;
 
-    obj_tmp              = nmp_object_clone(slave->obj, FALSE);
-    obj_tmp->link.master = 0;
+    obj_tmp                  = nmp_object_clone(slave->obj, FALSE);
+    obj_tmp->link.controller = 0;
     link_set_obj(platform, slave, obj_tmp);
     return TRUE;
 }
