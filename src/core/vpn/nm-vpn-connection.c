@@ -1433,6 +1433,10 @@ _check_complete(NMVpnConnection *self, gboolean success)
     l3cd = nm_l3_config_data_new_from_connection(nm_netns_get_multi_idx(priv->netns),
                                                  nm_vpn_connection_get_ip_ifindex(self, TRUE),
                                                  connection);
+
+    nm_l3_config_data_set_allow_routes_without_address(l3cd, AF_INET, TRUE);
+    nm_l3_config_data_set_allow_routes_without_address(l3cd, AF_INET6, TRUE);
+
     _l3cfg_l3cd_set(self, L3CD_TYPE_STATIC, l3cd);
 
     _l3cfg_l3cd_gw_extern_update(self);
@@ -1988,6 +1992,12 @@ _dbus_signal_ip_config_cb(NMVpnConnection *self, int addr_family, GVariant *dict
 
     nm_l3_config_data_set_dns_priority(l3cd, AF_INET, NM_DNS_PRIORITY_DEFAULT_VPN);
 
+    _vardict_to_addr(addr_family,
+                     dict,
+                     IS_IPv4 ? NM_VPN_PLUGIN_IP4_CONFIG_INT_GATEWAY
+                             : NM_VPN_PLUGIN_IP6_CONFIG_INT_GATEWAY,
+                     &priv->ip_data_x[IS_IPv4].gw_internal);
+
     if (IS_IPv4) {
         address.a4 = (NMPlatformIP4Address){
             .plen = 24,
@@ -1998,16 +2008,17 @@ _dbus_signal_ip_config_cb(NMVpnConnection *self, int addr_family, GVariant *dict
         };
     }
 
-    _vardict_to_addr(addr_family,
-                     dict,
-                     IS_IPv4 ? NM_VPN_PLUGIN_IP4_CONFIG_INT_GATEWAY
-                             : NM_VPN_PLUGIN_IP6_CONFIG_INT_GATEWAY,
-                     &priv->ip_data_x[IS_IPv4].gw_internal);
-
-    _vardict_to_addr(addr_family,
-                     dict,
-                     IS_IPv4 ? NM_VPN_PLUGIN_IP4_CONFIG_ADDRESS : NM_VPN_PLUGIN_IP6_CONFIG_ADDRESS,
-                     address.ax.address_ptr);
+    if (_vardict_to_addr(addr_family,
+                         dict,
+                         IS_IPv4 ? NM_VPN_PLUGIN_IP4_CONFIG_ADDRESS
+                                 : NM_VPN_PLUGIN_IP6_CONFIG_ADDRESS,
+                         address.ax.address_ptr)
+        && nm_ip_addr_is_null(addr_family, &address.ax.address_ptr)) {
+        _LOGW("invalid IP%c config received: address is zero",
+              nm_utils_addr_family_to_char(addr_family));
+        _check_complete(self, FALSE);
+        return;
+    }
 
     if (!_vardict_to_addr(addr_family,
                           dict,
@@ -2024,15 +2035,18 @@ _dbus_signal_ip_config_cb(NMVpnConnection *self, int addr_family, GVariant *dict
                          &u32))
         address.ax.plen = u32;
 
-    if (address.ax.plen > 0 && address.ax.plen <= (IS_IPv4 ? 32 : 128)
-        && !nm_ip_addr_is_null(addr_family, &address.ax.address_ptr)) {
-        address.ax.addr_source = NM_IP_CONFIG_SOURCE_VPN;
-        nm_l3_config_data_add_address(l3cd, addr_family, NULL, &address.ax);
-    } else {
-        _LOGW("invalid IP%c config received: no valid IP address/prefix",
-              nm_utils_addr_family_to_char(addr_family));
+    if (!nm_ip_addr_is_null(addr_family, &address.ax.address_ptr)
+        && (address.ax.plen == 0 || address.ax.plen > (IS_IPv4 ? 32 : 128))) {
+        _LOGW("invalid IP%c config received: invalid prefix %u",
+              nm_utils_addr_family_to_char(addr_family),
+              address.ax.plen);
         _check_complete(self, FALSE);
         return;
+    }
+
+    if (!nm_ip_addr_is_null(addr_family, &address.ax.address_ptr)) {
+        address.ax.addr_source = NM_IP_CONFIG_SOURCE_VPN;
+        nm_l3_config_data_add_address(l3cd, addr_family, NULL, &address.ax);
     }
 
     if (IS_IPv4) {
