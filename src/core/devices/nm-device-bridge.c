@@ -311,7 +311,7 @@ typedef struct {
 
 #define OPTION_TYPE_TOFROM(to, fro) .to_sysfs = (to), .from_sysfs = (fro)
 
-static const Option master_options[] = {
+static const Option controller_options[] = {
     OPTION(NM_SETTING_BRIDGE_STP, /* this must stay as the first item */
            "stp_state",
            OPTION_TYPE_BOOL(NM_BRIDGE_STP_DEF), ),
@@ -487,12 +487,12 @@ update_connection(NMDevice *device, NMConnection *connection)
     gs_free char    *stp = NULL;
     int              stp_value;
 
-    option = master_options;
+    option = controller_options;
     nm_assert(nm_streq(option->sysname, "stp_state"));
 
-    stp = nm_platform_sysctl_master_get_option(nm_device_get_platform(device),
-                                               ifindex,
-                                               option->sysname);
+    stp = nm_platform_sysctl_controller_get_option(nm_device_get_platform(device),
+                                                   ifindex,
+                                                   option->sysname);
     stp_value =
         _nm_utils_ascii_str_to_int64(stp, 10, option->nm_min, option->nm_max, option->nm_default);
     g_object_set(s_bridge, option->name, stp_value, NULL);
@@ -503,9 +503,9 @@ update_connection(NMDevice *device, NMConnection *connection)
         gs_free char               *str   = NULL;
         GParamSpec                 *pspec;
 
-        str   = nm_platform_sysctl_master_get_option(nm_device_get_platform(device),
-                                                   ifindex,
-                                                   option->sysname);
+        str   = nm_platform_sysctl_controller_get_option(nm_device_get_platform(device),
+                                                       ifindex,
+                                                       option->sysname);
         pspec = g_object_class_find_property(G_OBJECT_GET_CLASS(s_bridge), option->name);
 
         if (!stp_value && option->only_with_stp)
@@ -575,10 +575,10 @@ out:
 }
 
 static gboolean
-master_update_slave_connection(NMDevice     *device,
-                               NMDevice     *slave,
-                               NMConnection *connection,
-                               GError      **error)
+controller_update_slave_connection(NMDevice     *device,
+                                   NMDevice     *slave,
+                                   NMConnection *connection,
+                                   GError      **error)
 {
     NMSettingConnection  *s_con;
     NMSettingBridgePort  *s_port;
@@ -917,7 +917,7 @@ attach_port(NMDevice                  *device,
             gpointer                   user_data)
 {
     NMDeviceBridge      *self = NM_DEVICE_BRIDGE(device);
-    NMConnection        *master_connection;
+    NMConnection        *controller_connection;
     NMSettingBridge     *s_bridge;
     NMSettingBridgePort *s_port;
 
@@ -927,9 +927,9 @@ attach_port(NMDevice                  *device,
                                       nm_device_get_ip_ifindex(port)))
             return FALSE;
 
-        master_connection = nm_device_get_applied_connection(device);
-        nm_assert(master_connection);
-        s_bridge = nm_connection_get_setting_bridge(master_connection);
+        controller_connection = nm_device_get_applied_connection(device);
+        nm_assert(controller_connection);
+        s_bridge = nm_connection_get_setting_bridge(controller_connection);
         nm_assert(s_bridge);
         s_port = nm_connection_get_setting_bridge_port(connection);
 
@@ -1199,8 +1199,8 @@ nm_device_bridge_class_init(NMDeviceBridgeClass *klass)
     device_class->check_connection_available  = check_connection_available;
     device_class->complete_connection         = complete_connection;
 
-    device_class->update_connection              = update_connection;
-    device_class->master_update_slave_connection = master_update_slave_connection;
+    device_class->update_connection                  = update_connection;
+    device_class->controller_update_slave_connection = controller_update_slave_connection;
 
     device_class->create_and_realize                     = create_and_realize;
     device_class->act_stage1_prepare_set_hwaddr_ethernet = TRUE;

@@ -1893,7 +1893,7 @@ _nm_connection_verify(NMConnection *connection, GError **error)
                                     _("setting is required for non-slave connections"));
                 g_prefix_error(&normalizable_error, "%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
-                /* having a master without IP config was not a verify() error, accept
+                /* having a controller without IP config was not a verify() error, accept
                  * it for backward compatibility. */
                 normalizable_error_type = NM_SETTING_VERIFY_NORMALIZABLE;
             }
@@ -1918,7 +1918,7 @@ _nm_connection_verify(NMConnection *connection, GError **error)
                                     _("setting is required for non-slave connections"));
                 g_prefix_error(&normalizable_error, "%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME);
 
-                /* having a master without IP config was not a verify() error, accept
+                /* having a controller without IP config was not a verify() error, accept
                  * it for backward compatibility. */
                 normalizable_error_type = NM_SETTING_VERIFY_NORMALIZABLE;
             }
@@ -1943,7 +1943,7 @@ _nm_connection_verify(NMConnection *connection, GError **error)
                                     _("setting is required for non-slave connections"));
                 g_prefix_error(&normalizable_error, "%s: ", NM_SETTING_PROXY_SETTING_NAME);
 
-                /* having a master without proxy config was not a verify() error, accept
+                /* having a controller without proxy config was not a verify() error, accept
                  * it for backward compatibility. */
                 normalizable_error_type = NM_SETTING_VERIFY_NORMALIZABLE;
             }

@@ -58,10 +58,11 @@ void nm_device_activate_schedule_stage3_ip_config(NMDevice *device, gboolean do_
 
 void nm_device_recheck_available_connections(NMDevice *device);
 
-void
-nm_device_master_check_slave_physical_port(NMDevice *self, NMDevice *slave, NMLogDomain log_domain);
+void nm_device_controller_check_slave_physical_port(NMDevice   *self,
+                                                    NMDevice   *slave,
+                                                    NMLogDomain log_domain);
 
-void nm_device_master_release_slaves_all(NMDevice *self);
+void nm_device_controller_release_slaves_all(NMDevice *self);
 
 void nm_device_set_carrier(NMDevice *self, gboolean carrier);
 

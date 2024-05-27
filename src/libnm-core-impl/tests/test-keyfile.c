@@ -857,7 +857,7 @@ test_bridge_port_vlans(void)
                                                   "id=t\n"
                                                   "type=dummy\n"
                                                   "interface-name=dummy1\n"
-                                                  "master=br0\n"
+                                                  "controller=br0\n"
                                                   "slave-type=bridge\n"
                                                   "\n"
                                                   "[bridge-port]\n"

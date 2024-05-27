@@ -219,7 +219,7 @@ no-auto-default=*
             if specified (See <xref linkend="ignore-carrier"/>).
             Otherwise, it is a list of matches to specify for which device
             carrier should be ignored. See <xref linkend="device-spec"/> for the
-            syntax how to specify a device. Note that master types like
+            syntax how to specify a device. Note that controller types like
             bond, bridge, and team ignore carrier by default. You can however
             revert that default using the "except:" specifier (or better,
             use the per-device setting instead of the deprecated setting).

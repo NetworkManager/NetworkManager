@@ -87,24 +87,24 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     }
 
     if (nm_utils_is_uuid(priv->parent)) {
-        /* If we have an NMSettingConnection:master with slave-type="6lowpan",
+        /* If we have an NMSettingConnection:controller with slave-type="6lowpan",
          * then it must be the same UUID.
          */
         if (s_con) {
-            const char *master = NULL, *slave_type = NULL;
+            const char *controller = NULL, *slave_type = NULL;
 
             slave_type = nm_setting_connection_get_port_type(s_con);
             if (!g_strcmp0(slave_type, NM_SETTING_6LOWPAN_SETTING_NAME))
-                master = nm_setting_connection_get_controller(s_con);
+                controller = nm_setting_connection_get_controller(s_con);
 
-            if (master && g_strcmp0(priv->parent, master) != 0) {
+            if (controller && g_strcmp0(priv->parent, controller) != 0) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
                             _("'%s' value doesn't match '%s=%s'"),
                             priv->parent,
                             NM_SETTING_CONNECTION_CONTROLLER,
-                            master);
+                            controller);
                 g_prefix_error(error,
                                "%s.%s: ",
                                NM_SETTING_6LOWPAN_SETTING_NAME,

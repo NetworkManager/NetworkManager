@@ -157,12 +157,12 @@ static NM_UTILS_FLAGS2STR_DEFINE(
     _state_flags_to_string,
     NMActivationStateFlags,
     NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_NONE, "none"),
-    NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_IS_MASTER, "is-master"),
+    NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_IS_MASTER, "is-controller"),
     NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_IS_SLAVE, "is-slave"),
     NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_LAYER2_READY, "layer2-ready"),
     NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_IP4_READY, "ip4-ready"),
     NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_IP6_READY, "ip6-ready"),
-    NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES, "master-has-slaves"),
+    NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES, "controller-has-slaves"),
     NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY,
                        "lifetime-bound-to-profile-visibility"),
     NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_EXTERNAL, "external"), );
@@ -444,13 +444,13 @@ _set_applied_connection_take(NMActiveConnection *self, NMConnection *applied_con
     priv->applied_connection = applied_connection;
     nm_connection_clear_secrets(priv->applied_connection);
 
-    /* we determine whether the connection is a master/slave, based solely
+    /* we determine whether the connection is a controller/slave, based solely
      * on the connection properties itself. */
     s_con = nm_connection_get_setting_connection(priv->applied_connection);
     if (nm_setting_connection_get_controller(s_con))
         flags_val |= NM_ACTIVATION_STATE_FLAG_IS_SLAVE;
 
-    if (_nm_connection_type_is_master(nm_setting_connection_get_connection_type(s_con)))
+    if (_nm_connection_type_is_controller(nm_setting_connection_get_connection_type(s_con)))
         flags_val |= NM_ACTIVATION_STATE_FLAG_IS_MASTER;
 
     nm_active_connection_set_state_flags_full(self,
@@ -642,12 +642,12 @@ device_state_changed(NMDevice           *device,
 }
 
 static void
-device_master_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
+device_controller_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
 {
     NMDevice               *device = NM_DEVICE(object);
     NMActiveConnection     *self   = NM_ACTIVE_CONNECTION(user_data);
-    NMActiveConnection     *master;
-    NMActiveConnectionState master_state;
+    NMActiveConnection     *controller;
+    NMActiveConnectionState controller_state;
 
     if (NM_ACTIVE_CONNECTION(nm_device_get_act_request(device)) != self)
         return;
@@ -655,14 +655,14 @@ device_master_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
         return;
     if (!nm_active_connection_get_controller(self))
         return;
-    g_signal_handlers_disconnect_by_func(device, G_CALLBACK(device_master_changed), self);
+    g_signal_handlers_disconnect_by_func(device, G_CALLBACK(device_controller_changed), self);
 
-    master       = nm_active_connection_get_controller(self);
-    master_state = nm_active_connection_get_state(master);
-    if (master_state >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING) {
-        /* Master failed before attaching the slave */
-        if (NM_ACTIVE_CONNECTION_GET_CLASS(self)->master_failed)
-            NM_ACTIVE_CONNECTION_GET_CLASS(self)->master_failed(self);
+    controller       = nm_active_connection_get_controller(self);
+    controller_state = nm_active_connection_get_state(controller);
+    if (controller_state >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING) {
+        /* Controller failed before attaching the port */
+        if (NM_ACTIVE_CONNECTION_GET_CLASS(self)->controller_failed)
+            NM_ACTIVE_CONNECTION_GET_CLASS(self)->controller_failed(self);
     }
 }
 
@@ -704,7 +704,7 @@ nm_active_connection_set_device(NMActiveConnection *self, NMDevice *device)
     _device_cleanup(self);
 
     if (device) {
-        /* Device obviously can't be its own master */
+        /* Device obviously can't be its own controller */
         g_return_val_if_fail(!priv->controller
                                  || device != nm_active_connection_get_device(priv->controller),
                              FALSE);
@@ -714,7 +714,7 @@ nm_active_connection_set_device(NMActiveConnection *self, NMDevice *device)
         g_signal_connect(device, NM_DEVICE_STATE_CHANGED, G_CALLBACK(device_state_changed), self);
         g_signal_connect(device,
                          "notify::" NM_DEVICE_CONTROLLER,
-                         G_CALLBACK(device_master_changed),
+                         G_CALLBACK(device_controller_changed),
                          self);
         g_signal_connect(device,
                          "notify::" NM_DEVICE_METERED,
@@ -777,8 +777,8 @@ check_controller_ready(NMActiveConnection *self)
     gboolean                   signalling = FALSE;
 
     /* ActiveConnetions don't enter the ACTIVATING state until they have a
-     * NMDevice in PREPARE or higher states, so the master active connection's
-     * device will be ready to accept slaves when the master is in ACTIVATING
+     * NMDevice in PREPARE or higher states, so the controller active connection's
+     * device will be ready to accept slaves when the controller is in ACTIVATING
      * or higher states.
      */
     if (!priv->controller_ready && priv->controller
@@ -812,18 +812,18 @@ check_controller_ready(NMActiveConnection *self)
 }
 
 static void
-master_state_cb(NMActiveConnection *master, GParamSpec *pspec, gpointer user_data)
+controller_state_cb(NMActiveConnection *controller, GParamSpec *pspec, gpointer user_data)
 {
-    NMActiveConnection        *self         = NM_ACTIVE_CONNECTION(user_data);
-    NMActiveConnectionPrivate *priv         = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
-    NMActiveConnectionState    master_state = nm_active_connection_get_state(master);
+    NMActiveConnection        *self             = NM_ACTIVE_CONNECTION(user_data);
+    NMActiveConnectionPrivate *priv             = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
+    NMActiveConnectionState    controller_state = nm_active_connection_get_state(controller);
 
     check_controller_ready(self);
 
-    if (master_state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATING && !priv->controller_ready) {
-        /* Master disconnected before the slave was added */
-        if (NM_ACTIVE_CONNECTION_GET_CLASS(self)->master_failed)
-            NM_ACTIVE_CONNECTION_GET_CLASS(self)->master_failed(self);
+    if (controller_state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATING && !priv->controller_ready) {
+        /* Controller disconnected before the port was added */
+        if (NM_ACTIVE_CONNECTION_GET_CLASS(self)->controller_failed)
+            NM_ACTIVE_CONNECTION_GET_CLASS(self)->controller_failed(self);
     }
 }
 
@@ -880,7 +880,7 @@ nm_active_connection_set_controller(NMActiveConnection *self, NMActiveConnection
     }
 
     if (priv->device) {
-        /* Note, the master ActiveConnection may not yet have a device */
+        /* Note, the controller ActiveConnection may not yet have a device */
         g_return_if_fail(priv->device != nm_active_connection_get_device(controller));
     }
 
@@ -895,7 +895,7 @@ nm_active_connection_set_controller(NMActiveConnection *self, NMActiveConnection
 
     g_signal_connect(priv->controller,
                      "notify::" NM_ACTIVE_CONNECTION_STATE,
-                     G_CALLBACK(master_state_cb),
+                     G_CALLBACK(controller_state_cb),
                      self);
 
     check_controller_ready(self);
@@ -1323,7 +1323,9 @@ _device_cleanup(NMActiveConnection *self)
 
     if (priv->device) {
         g_signal_handlers_disconnect_by_func(priv->device, G_CALLBACK(device_state_changed), self);
-        g_signal_handlers_disconnect_by_func(priv->device, G_CALLBACK(device_master_changed), self);
+        g_signal_handlers_disconnect_by_func(priv->device,
+                                             G_CALLBACK(device_controller_changed),
+                                             self);
         g_signal_handlers_disconnect_by_func(priv->device,
                                              G_CALLBACK(device_metered_changed),
                                              self);
@@ -1345,7 +1347,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     NMActiveConnection        *self = NM_ACTIVE_CONNECTION(object);
     NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
     char                     **strv;
-    NMDevice                  *master_device = NULL;
+    NMDevice                  *controller_device = NULL;
 
     switch (prop_id) {
     /* note that while priv->settings_connection.obj might not be set initially,
@@ -1418,8 +1420,8 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_CONTROLLER:
     case PROP_MASTER:
         if (priv->controller)
-            master_device = nm_active_connection_get_device(priv->controller);
-        nm_dbus_utils_g_value_set_object_path(value, master_device);
+            controller_device = nm_active_connection_get_device(priv->controller);
+        nm_dbus_utils_g_value_set_object_path(value, controller_device);
         break;
     case PROP_INT_SUBJECT:
         g_value_set_object(value, priv->subject);
@@ -1600,7 +1602,9 @@ dispose(GObject *object)
     _device_cleanup(self);
 
     if (priv->controller) {
-        g_signal_handlers_disconnect_by_func(priv->controller, G_CALLBACK(master_state_cb), self);
+        g_signal_handlers_disconnect_by_func(priv->controller,
+                                             G_CALLBACK(controller_state_cb),
+                                             self);
     }
     if (priv->controller_dev) {
         g_signal_handlers_disconnect_by_func(priv->controller_dev,

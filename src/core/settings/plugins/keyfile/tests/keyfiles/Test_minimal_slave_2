@@ -1,5 +1,5 @@
 [connection]
-master=br0
+controller=br0
 
 [802-3-ethernet]
 

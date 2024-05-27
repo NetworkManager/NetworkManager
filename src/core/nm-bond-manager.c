@@ -696,7 +696,7 @@ _reconfigure_check(NMBondManager *self, gboolean reapply)
     /* Find all the connected ports that are IFF_RUNNING. */
     pl_links_head_entry = nm_platform_lookup_obj_type(self->platform, NMP_OBJECT_TYPE_LINK);
     nmp_cache_iter_for_each_link (&pliter, pl_links_head_entry, &plink_port) {
-        if (plink_port->master != self->ifindex)
+        if (plink_port->controller != self->ifindex)
             continue;
         if (!NM_FLAGS_HAS(plink_port->n_ifi_flags, IFF_RUNNING))
             continue;
@@ -814,7 +814,7 @@ _link_changed_cb(NMPlatform           *platform,
     if (ifindex == self->ifindex)
         goto schedule;
 
-    if (plink->master == self->ifindex)
+    if (plink->controller == self->ifindex)
         goto schedule;
 
     if (g_hash_table_contains(self->previous_ifindexes, GINT_TO_POINTER(ifindex)))

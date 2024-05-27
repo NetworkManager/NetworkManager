@@ -173,7 +173,7 @@ id=MainBridge                                id=br-port-1
 uuid=171ae855-a0ab-42b6-bd0c-60f5812eea9d    uuid=d6e8ae98-71f8-4b3d-9d2d-2e26048fe794
 interface-name=MainBridge                    interface-name=em1
 type=bridge                                  type=ethernet
-                                             master=MainBridge
+                                             controller=MainBridge
 [bridge]                                     slave-type=bridge
 interface-name=MainBridge
             </programlisting>

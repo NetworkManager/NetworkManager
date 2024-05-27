@@ -3083,7 +3083,7 @@ nm_l3_config_data_new_from_platform(NMDedupMultiIndex        *multi_idx,
     nm_assert(ifindex > 0);
 
     /* Slaves have no IP configuration */
-    if (nm_platform_link_get_master(platform, ifindex) > 0)
+    if (nm_platform_link_get_controller(platform, ifindex) > 0)
         return NULL;
 
     self = nm_l3_config_data_new(multi_idx, ifindex, NM_IP_CONFIG_SOURCE_KERNEL);

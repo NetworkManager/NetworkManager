@@ -155,12 +155,12 @@ typedef enum {
 #define _NM_LINK_TYPE_SW_LAST NM_LINK_TYPE_WIREGUARD
 
 /* Software types with slaves */
-#define _NM_LINK_TYPE_SW_MASTER_FIRST NM_LINK_TYPE_BRIDGE
+#define _NM_LINK_TYPE_SW_CONTROLLER_FIRST NM_LINK_TYPE_BRIDGE
     NM_LINK_TYPE_BRIDGE,
     NM_LINK_TYPE_BOND,
     NM_LINK_TYPE_HSR,
     NM_LINK_TYPE_TEAM,
-#define _NM_LINK_TYPE_SW_MASTER_LAST NM_LINK_TYPE_TEAM
+#define _NM_LINK_TYPE_SW_CONTROLLER_LAST NM_LINK_TYPE_TEAM
 
 #define _NM_LINK_TYPE_REAL_LAST NM_LINK_TYPE_TEAM
 
@@ -171,15 +171,16 @@ typedef enum {
 static inline gboolean
 nm_link_type_is_software(NMLinkType link_type)
 {
-    G_STATIC_ASSERT(_NM_LINK_TYPE_SW_LAST + 1 == _NM_LINK_TYPE_SW_MASTER_FIRST);
+    G_STATIC_ASSERT(_NM_LINK_TYPE_SW_LAST + 1 == _NM_LINK_TYPE_SW_CONTROLLER_FIRST);
 
-    return link_type >= _NM_LINK_TYPE_SW_FIRST && link_type <= _NM_LINK_TYPE_SW_MASTER_LAST;
+    return link_type >= _NM_LINK_TYPE_SW_FIRST && link_type <= _NM_LINK_TYPE_SW_CONTROLLER_LAST;
 }
 
 static inline gboolean
 nm_link_type_supports_slaves(NMLinkType link_type)
 {
-    return link_type >= _NM_LINK_TYPE_SW_MASTER_FIRST && link_type <= _NM_LINK_TYPE_SW_MASTER_LAST;
+    return link_type >= _NM_LINK_TYPE_SW_CONTROLLER_FIRST
+           && link_type <= _NM_LINK_TYPE_SW_CONTROLLER_LAST;
 }
 
 /*****************************************************************************/

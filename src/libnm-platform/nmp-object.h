@@ -952,13 +952,13 @@ const NMPObject *nmp_cache_lookup_link_full(const NMPCache  *cache,
                                             NMPObjectMatchFn match_fn,
                                             gpointer         user_data);
 
-gboolean         nmp_cache_link_connected_for_slave(int ifindex_master, const NMPObject *slave);
+gboolean         nmp_cache_link_connected_for_slave(int ifindex_controller, const NMPObject *slave);
 gboolean         nmp_cache_link_connected_needs_toggle(const NMPCache  *cache,
-                                                       const NMPObject *master,
+                                                       const NMPObject *controller,
                                                        const NMPObject *potential_slave,
                                                        const NMPObject *ignore_slave);
-const NMPObject *nmp_cache_link_connected_needs_toggle_by_ifindex(const NMPCache  *cache,
-                                                                  int              master_ifindex,
+const NMPObject *nmp_cache_link_connected_needs_toggle_by_ifindex(const NMPCache *cache,
+                                                                  int controller_ifindex,
                                                                   const NMPObject *potential_slave,
                                                                   const NMPObject *ignore_slave);
 
@@ -994,10 +994,10 @@ NMPCacheOpsType nmp_cache_update_link_udev(NMPCache           *cache,
                                            struct udev_device *udevice,
                                            const NMPObject   **out_obj_old,
                                            const NMPObject   **out_obj_new);
-NMPCacheOpsType nmp_cache_update_link_master_connected(NMPCache         *cache,
-                                                       int               ifindex,
-                                                       const NMPObject **out_obj_old,
-                                                       const NMPObject **out_obj_new);
+NMPCacheOpsType nmp_cache_update_link_controller_connected(NMPCache         *cache,
+                                                           int               ifindex,
+                                                           const NMPObject **out_obj_old,
+                                                           const NMPObject **out_obj_new);
 
 static inline const NMDedupMultiEntry *
 nmp_cache_reresolve_main_entry(NMPCache                *cache,

@@ -222,7 +222,7 @@ attach_port(NMDevice                  *device,
     gboolean     success    = TRUE;
     const char  *port_iface = nm_device_get_ip_iface(port);
 
-    nm_device_master_check_slave_physical_port(device, port, LOGD_DEVICE);
+    nm_device_controller_check_slave_physical_port(device, port, LOGD_DEVICE);
 
     if (configure) {
         nm_device_take_down(port, TRUE);

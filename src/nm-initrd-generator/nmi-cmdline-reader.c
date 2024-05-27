@@ -866,25 +866,28 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
 }
 
 static void
-reader_parse_master(Reader *reader, char *argument, const char *type_name, const char *default_name)
+reader_parse_controller(Reader     *reader,
+                        char       *argument,
+                        const char *type_name,
+                        const char *default_name)
 {
     NMConnection        *connection;
     NMSettingConnection *s_con;
-    gs_free char        *master_to_free = NULL;
-    const char          *master;
+    gs_free char        *controller_to_free = NULL;
+    const char          *controller;
     char                *slaves;
     const char          *slave;
     char                *opts;
     const char          *mtu = NULL;
 
-    master = get_word(&argument, ':');
-    if (!master)
-        master = master_to_free = g_strdup_printf("%s0", default_name ?: type_name);
+    controller = get_word(&argument, ':');
+    if (!controller)
+        controller = controller_to_free = g_strdup_printf("%s0", default_name ?: type_name);
     slaves = get_word(&argument, ':');
 
-    connection = reader_get_connection(reader, master, type_name, TRUE);
+    connection = reader_get_connection(reader, controller, type_name, TRUE);
     s_con      = nm_connection_get_setting_connection(connection);
-    master     = nm_setting_connection_get_uuid(s_con);
+    controller = nm_setting_connection_get_uuid(s_con);
 
     if (nm_streq(type_name, NM_SETTING_BRIDGE_SETTING_NAME)) {
         NMSettingBridge *s_bridge = nm_connection_get_setting_bridge(connection);
@@ -931,7 +934,7 @@ reader_parse_master(Reader *reader, char *argument, const char *type_name, const
                      NM_SETTING_CONNECTION_PORT_TYPE,
                      type_name,
                      NM_SETTING_CONNECTION_CONTROLLER,
-                     master,
+                     controller,
                      NULL);
     } while (slaves && *slaves != '\0');
 
@@ -1468,11 +1471,11 @@ nmi_cmdline_reader_parse(const char        *etc_connections_dir,
                 routes = g_ptr_array_new_with_free_func(g_free);
             g_ptr_array_add(routes, g_strdup(argument));
         } else if (nm_streq(tag, "bridge"))
-            reader_parse_master(reader, argument, NM_SETTING_BRIDGE_SETTING_NAME, "br");
+            reader_parse_controller(reader, argument, NM_SETTING_BRIDGE_SETTING_NAME, "br");
         else if (nm_streq(tag, "bond"))
-            reader_parse_master(reader, argument, NM_SETTING_BOND_SETTING_NAME, NULL);
+            reader_parse_controller(reader, argument, NM_SETTING_BOND_SETTING_NAME, NULL);
         else if (nm_streq(tag, "team"))
-            reader_parse_master(reader, argument, NM_SETTING_TEAM_SETTING_NAME, NULL);
+            reader_parse_controller(reader, argument, NM_SETTING_TEAM_SETTING_NAME, NULL);
         else if (nm_streq(tag, "vlan"))
             reader_parse_vlan(reader, argument);
         else if (nm_streq(tag, "ib.pkey"))

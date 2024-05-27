@@ -121,7 +121,7 @@ _set_bond_attr(NMDevice *device, const char *attr, const char *value)
         /* kernel does not allow setting ad_actor_system to "00:00:00:00:00:00". We would thus
          * log an EINVAL error. Avoid that... at least, if the value is already "00:00:00:00:00:00". */
         cur_val =
-            nm_platform_sysctl_master_get_option(nm_device_get_platform(device), ifindex, attr);
+            nm_platform_sysctl_controller_get_option(nm_device_get_platform(device), ifindex, attr);
         if (nm_streq0(cur_val, NM_BOND_AD_ACTOR_SYSTEM_DEFAULT))
             return TRUE;
 
@@ -129,8 +129,10 @@ _set_bond_attr(NMDevice *device, const char *attr, const char *value)
          * That will fail, and we will log a warning. There is nothing else to do. */
     }
 
-    ret =
-        nm_platform_sysctl_master_set_option(nm_device_get_platform(device), ifindex, attr, value);
+    ret = nm_platform_sysctl_controller_set_option(nm_device_get_platform(device),
+                                                   ifindex,
+                                                   attr,
+                                                   value);
     if (!ret)
         _LOGW(LOGD_PLATFORM, "failed to set bonding attribute '%s' to '%s'", attr, value);
     return ret;
@@ -187,8 +189,9 @@ update_connection(NMDevice *device, NMConnection *connection)
                          NM_SETTING_BOND_OPTION_BALANCE_SLB))
             continue;
 
-        value =
-            nm_platform_sysctl_master_get_option(nm_device_get_platform(device), ifindex, option);
+        value = nm_platform_sysctl_controller_get_option(nm_device_get_platform(device),
+                                                         ifindex,
+                                                         option);
 
         if (value && _nm_setting_bond_get_option_type(s_bond, option) == NM_BOND_OPTION_TYPE_BOTH) {
             p = strchr(value, ' ');
@@ -349,9 +352,10 @@ set_bond_arp_ip_targets(NMDevice *device, NMSettingBond *s_bond)
     gs_free char *cur_arp_ip_target = NULL;
 
     /* ARP targets: clear and initialize the list */
-    cur_arp_ip_target = nm_platform_sysctl_master_get_option(nm_device_get_platform(device),
-                                                             ifindex,
-                                                             NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
+    cur_arp_ip_target =
+        nm_platform_sysctl_controller_get_option(nm_device_get_platform(device),
+                                                 ifindex,
+                                                 NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
     set_arp_targets(
         device,
         cur_arp_ip_target,
@@ -699,7 +703,7 @@ attach_port(NMDevice                  *device,
     NMDeviceBond      *self = NM_DEVICE_BOND(device);
     NMSettingBondPort *s_port;
 
-    nm_device_master_check_slave_physical_port(device, port, LOGD_BOND);
+    nm_device_controller_check_slave_physical_port(device, port, LOGD_BOND);
 
     if (configure) {
         gboolean success;
@@ -962,8 +966,8 @@ nm_device_bond_class_init(NMDeviceBondClass *klass)
     device_class->get_generic_capabilities = get_generic_capabilities;
     device_class->complete_connection      = complete_connection;
 
-    device_class->update_connection              = update_connection;
-    device_class->master_update_slave_connection = controller_update_port_connection;
+    device_class->update_connection                  = update_connection;
+    device_class->controller_update_slave_connection = controller_update_port_connection;
 
     device_class->create_and_realize                             = create_and_realize;
     device_class->act_stage1_prepare                             = act_stage1_prepare;

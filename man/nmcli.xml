@@ -1031,7 +1031,7 @@
               sort |
               awk '
                 /^(bond|bridge|team)-slave$/ {
-                    printf "            <listitem><para><literal>%s</literal> (deprecated for ethernet with master)</para></listitem>\n", $0;
+                    printf "            <listitem><para><literal>%s</literal> (deprecated for ethernet with controller)</para></listitem>\n", $0;
                     next;
                 }
                 /^(wifi|ethernet|olpc-mash)$/ {
@@ -1059,9 +1059,9 @@
             <listitem><para><literal>adsl</literal></para></listitem>
             <listitem><para><literal>bluetooth</literal></para></listitem>
             <listitem><para><literal>bond</literal></para></listitem>
-            <listitem><para><literal>bond-slave</literal> (deprecated for ethernet with master)</para></listitem>
+            <listitem><para><literal>bond-slave</literal> (deprecated for ethernet with controller)</para></listitem>
             <listitem><para><literal>bridge</literal></para></listitem>
-            <listitem><para><literal>bridge-slave</literal> (deprecated for ethernet with master)</para></listitem>
+            <listitem><para><literal>bridge-slave</literal> (deprecated for ethernet with controller)</para></listitem>
             <listitem><para><literal>cdma</literal></para></listitem>
             <listitem><para><literal>dummy</literal></para></listitem>
             <listitem><para><literal>generic</literal></para></listitem>
@@ -1078,7 +1078,7 @@
             <listitem><para><literal>ovs-port</literal></para></listitem>
             <listitem><para><literal>pppoe</literal></para></listitem>
             <listitem><para><literal>team</literal></para></listitem>
-            <listitem><para><literal>team-slave</literal> (deprecated for ethernet with master)</para></listitem>
+            <listitem><para><literal>team-slave</literal> (deprecated for ethernet with controller)</para></listitem>
             <listitem><para><literal>tun</literal></para></listitem>
             <listitem><para><literal>veth</literal></para></listitem>
             <listitem><para><literal>vlan</literal></para></listitem>
