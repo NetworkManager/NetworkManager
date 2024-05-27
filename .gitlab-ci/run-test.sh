@@ -40,7 +40,7 @@ uname -a
 meson --version
 
 ! command -v dpkg &>/dev/null || dpkg -l
-! command -v yum  &>/dev/null || yum list installed
+! command -v dnf  &>/dev/null || dnf list --installed
 ! command -v apk  &>/dev/null || apk -v info
 
 # We have a unit test that check that `ci-fairy generate-template`
