@@ -26,9 +26,6 @@
 %global obsoletes_ppp_plugin         1:1.5.3
 %global obsoletes_initscripts_updown 1:1.36.0-0.6
 %global obsoletes_ifcfg_rh           1:1.36.2
-%global obsoletes_team               1:1.47.5-3
-%global obsoletes_initscripts_ifcfg_rh  1:1.47.5-3
-%global obsoletes_dispatcher_routing_rules  1:1.47.5-3
 
 %global nmlibdir %{_prefix}/lib/%{name}
 %global nmplugindir %{_libdir}/%{name}/%{version}-%{release}
@@ -263,9 +260,9 @@ Requires: wpa_supplicant >= 1:1.1
 %endif
 
 %if 0%{?rhel} && 0%{?rhel} >= 10
-Obsoletes: NetworkManager-team < %{obsoletes_team}
-Obsoletes: NetworkManager-initscripts-ifcfg-rh < %{obsoletes_initscripts_ifcfg_rh}
-Obsoletes: NetworkManager-dispatcher-routing-rules < %{obsoletes_dispatcher_routing_rules}
+Obsoletes: NetworkManager-team < 1:1.47.5-3
+Obsoletes: NetworkManager-initscripts-ifcfg-rh < 1:1.47.5-3
+Obsoletes: NetworkManager-dispatcher-routing-rules < 1:1.47.5-3
 %endif
 
 Conflicts: NetworkManager-vpnc < 1:0.7.0.99-1
