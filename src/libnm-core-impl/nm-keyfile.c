@@ -548,6 +548,36 @@ openconnect_fix_secret_flags(NMSetting *setting)
     nm_setting_set_secret_flags(NM_SETTING(s_vpn), NM_OPENCONNECT_KEY_CERTSIGS, flags, NULL);
 }
 
+#define NM_DBUS_SERVICE_OPENVPN           "org.freedesktop.NetworkManager.openvpn"
+#define NM_OPENVPN_KEY_CHALLENGE_RESPONSE "challenge-response"
+
+static void
+openvpn_fix_secret_flags(NMSetting *setting)
+{
+    NMSettingVpn *s_vpn;
+
+    /* Huge hack.  2FA dynamic challenge was working already, but with some
+     * caveats like being stored in the connection profile overriding the
+     * password. It was fixed by adding a "challenge-response" secret, but
+     * "challenge-response-flags" is only added when the profile is
+     * created or modified. As this is a change that should work out of the box
+     * for already existing profiles, fix it here.
+     */
+
+    if (!NM_IS_SETTING_VPN(setting))
+        return;
+
+    s_vpn = NM_SETTING_VPN(setting);
+
+    if (!nm_streq0(nm_setting_vpn_get_service_type(s_vpn), NM_DBUS_SERVICE_OPENVPN))
+        return;
+
+    nm_setting_set_secret_flags(NM_SETTING(s_vpn),
+                                NM_OPENVPN_KEY_CHALLENGE_RESPONSE,
+                                NM_SETTING_SECRET_FLAG_NOT_SAVED,
+                                NULL);
+}
+
 /*****************************************************************************/
 
 #define IP_ADDRESS_CHARS "0123456789abcdefABCDEF:.%"
@@ -1341,6 +1371,7 @@ read_hash_of_string(KeyfileReaderInfo *info,
             }
         }
         openconnect_fix_secret_flags(setting);
+        openvpn_fix_secret_flags(setting);
         return;
     }
 
