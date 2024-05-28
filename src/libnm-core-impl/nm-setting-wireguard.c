@@ -2218,6 +2218,8 @@ for_each_secret(NMSetting                     *setting,
         while (g_variant_iter_next(peer_iter, "{&sv}", &key, &val)) {
             _nm_unused gs_unref_variant GVariant *val_free = val;
 
+            _nm_setting_secret_fix_hint_tag(setting, &key);
+
             if (nm_streq(key, NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY)) {
                 if (!preshared_key && g_variant_is_of_type(val, G_VARIANT_TYPE_STRING))
                     preshared_key = g_variant_ref(val);

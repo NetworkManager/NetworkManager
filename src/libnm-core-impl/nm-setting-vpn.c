@@ -704,6 +704,8 @@ for_each_secret(NMSetting                     *setting,
     while (g_variant_iter_next(&vpn_secrets_iter, "{&s&s}", &vpn_secret_name, &secret)) {
         NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 
+        _nm_setting_secret_fix_hint_tag(setting, &vpn_secret_name);
+
         /* we ignore the return value of get_secret_flags. The function may determine
          * that this is not a secret, based on having not secret-flags and no secrets.
          * But we have the secret at hand. We know it would be a valid secret, if we

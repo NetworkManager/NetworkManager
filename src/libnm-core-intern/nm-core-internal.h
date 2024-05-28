@@ -122,6 +122,8 @@ _nm_setting_secret_flags_valid(NMSettingSecretFlags flags)
     return !NM_FLAGS_ANY(flags, ~NM_SETTING_SECRET_FLAG_ALL);
 }
 
+gboolean _nm_setting_secret_fix_hint_tag(NMSetting *setting, const char **secret_name);
+
 /*****************************************************************************/
 
 const char *

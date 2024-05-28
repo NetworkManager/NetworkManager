@@ -3559,6 +3559,8 @@ for_each_secret(NMSetting                     *setting,
 {
     NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 
+    _nm_setting_secret_fix_hint_tag(setting, &secret_name);
+
     if (!nm_setting_get_secret_flags(setting, secret_name, &secret_flags, NULL)) {
         if (!remove_non_secrets)
             g_variant_builder_add(setting_builder, "{sv}", secret_name, val);
@@ -3566,6 +3568,37 @@ for_each_secret(NMSetting                     *setting,
     }
     if (callback(secret_flags, callback_data))
         g_variant_builder_add(setting_builder, "{sv}", secret_name, val);
+}
+
+gboolean
+_nm_setting_secret_fix_hint_tag(NMSetting *setting, const char **secret_name)
+{
+    /* Secret agents should remove tags like "x-dynamic-challenge:" from the secret name,
+     * but old agents might have  not adapted yet. If that happens, do the work here:
+     * remove the tag and set the flags that are implied by that tag. */
+
+    NMSettingSecretFlags flags_to_add = NM_SETTING_SECRET_FLAG_NONE;
+    gboolean             ret          = FALSE;
+
+    if (g_str_has_prefix(*secret_name, NM_SECRET_TAG_DYNAMIC_CHALLENGE)) {
+        *secret_name += NM_STRLEN(NM_SECRET_TAG_DYNAMIC_CHALLENGE);
+        flags_to_add |= NM_SETTING_SECRET_FLAG_NOT_SAVED;
+        ret = TRUE;
+    } else if (g_str_has_prefix(*secret_name, NM_SECRET_TAG_DYNAMIC_CHALLENGE_ECHO)) {
+        *secret_name += NM_STRLEN(NM_SECRET_TAG_DYNAMIC_CHALLENGE_ECHO);
+        flags_to_add |= NM_SETTING_SECRET_FLAG_NOT_SAVED;
+        ret = TRUE;
+    }
+
+    if (flags_to_add) {
+        NMSettingSecretFlags current_flags = NM_SETTING_SECRET_FLAG_NONE;
+
+        nm_setting_get_secret_flags(setting, *secret_name, &current_flags, NULL);
+        current_flags |= flags_to_add;
+        nm_setting_set_secret_flags(setting, *secret_name, current_flags, NULL);
+    }
+
+    return ret;
 }
 
 static void
