@@ -700,9 +700,10 @@ nms_ifcfg_rh_utils_is_numbered_tag_impl(const char *key,
 
 /*****************************************************************************/
 
-#define _KEY_TYPE(key, flags)                                                            \
-    {                                                                                    \
-        .key_name = "" key "", .key_flags = ((NMS_IFCFG_KEY_TYPE_WELL_KNOWN) | (flags)), \
+#define _KEY_TYPE(key, flags)                                     \
+    {                                                             \
+        .key_name  = "" key "",                                   \
+        .key_flags = ((NMS_IFCFG_KEY_TYPE_WELL_KNOWN) | (flags)), \
     }
 
 const NMSIfcfgKeyTypeInfo nms_ifcfg_well_known_keys[] = {

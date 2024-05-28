@@ -57,9 +57,11 @@ _test_fixup_string(const TestFixupData *data, guint n_data, char *(*func)(const 
     }
 }
 
-#define T_DATA(_desc, _expected)                                \
-    {                                                           \
-        .desc = _desc, .expected = _expected, .line = __LINE__, \
+#define T_DATA(_desc, _expected) \
+    {                            \
+        .desc     = _desc,       \
+        .expected = _expected,   \
+        .line     = __LINE__,    \
     }
 
 static void

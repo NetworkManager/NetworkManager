@@ -379,11 +379,10 @@ typedef struct {
 } NMLDBusMetaProperty;
 
 #define NML_DBUS_META_PROPERTY_INIT(v_dbus_property_name, v_dbus_type, v_obj_properties_idx, ...) \
-    {                                                                                             \
-        .dbus_property_name = "" v_dbus_property_name "",                                         \
-        .dbus_type          = NM_G_VARIANT_TYPE("" v_dbus_type ""),                               \
-        .obj_properties_idx = v_obj_properties_idx, ##__VA_ARGS__                                 \
-    }
+    {.dbus_property_name = "" v_dbus_property_name "",                                            \
+     .dbus_type          = NM_G_VARIANT_TYPE("" v_dbus_type ""),                                  \
+     .obj_properties_idx = v_obj_properties_idx,                                                  \
+     ##__VA_ARGS__}
 
 #define _NML_DBUS_META_PROPERTY_INIT_DEFAULT(v_dbus_type,          \
                                              v_exp_type,           \
@@ -568,10 +567,10 @@ struct _NMLDBusMetaIface {
         (sizeof((const NMLDBusMetaProperty[]){__VA_ARGS__}) / sizeof(NMLDBusMetaProperty))
 
 #define NML_DBUS_META_IFACE_INIT(v_dbus_iface_name, v_get_type_fcn, v_interface_prio, ...) \
-    {                                                                                      \
-        .dbus_iface_name = "" v_dbus_iface_name "", .get_type_fcn = v_get_type_fcn,        \
-        .interface_prio = v_interface_prio, ##__VA_ARGS__                                  \
-    }
+    {.dbus_iface_name = "" v_dbus_iface_name "",                                           \
+     .get_type_fcn    = v_get_type_fcn,                                                    \
+     .interface_prio  = v_interface_prio,                                                  \
+     ##__VA_ARGS__}
 
 #define NML_DBUS_META_IFACE_INIT_PROP(v_dbus_iface_name, v_get_type_fcn, v_interface_prio, ...) \
     NML_DBUS_META_IFACE_INIT(v_dbus_iface_name,                                                 \

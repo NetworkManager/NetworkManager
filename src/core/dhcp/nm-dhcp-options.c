@@ -11,9 +11,11 @@
 
 /*****************************************************************************/
 
-#define REQ(_num, _name, _include)                                                         \
-    {                                                                                      \
-        .name = NM_DHCP_OPTION_REQPREFIX ""_name, .option_num = _num, .include = _include, \
+#define REQ(_num, _name, _include)                      \
+    {                                                   \
+        .name       = NM_DHCP_OPTION_REQPREFIX ""_name, \
+        .option_num = _num,                             \
+        .include    = _include,                         \
     }
 
 const NMDhcpOption _nm_dhcp_option_dhcp4_options[] = {
