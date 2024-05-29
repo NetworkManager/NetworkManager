@@ -156,13 +156,9 @@ t_{{distro.name}}:{{version}}:
   parallel:
     matrix:
       - NM_TEST_SELECT_RUN:
-        - autotools+gcc+docs+valgrind
         - meson+gcc+docs+valgrind
-        - autotools+clang
         - meson+clang
-        - rpm+autotools
         - rpm+meson
-        - tarball+autotools
         - tarball+meson
         - tarball
         - subtree
@@ -237,9 +233,9 @@ pages:
       when: never
     - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == 'main'
   dependencies:
-    - "t_{{default_distro.name}}:{{default_distro.versions[0]}}: [autotools+gcc+docs+valgrind]"
+    - "t_{{default_distro.name}}:{{default_distro.versions[0]}}: [meson+gcc+docs+valgrind]"
   needs:
-    - "t_{{default_distro.name}}:{{default_distro.versions[0]}}: [autotools+gcc+docs+valgrind]"
+    - "t_{{default_distro.name}}:{{default_distro.versions[0]}}: [meson+gcc+docs+valgrind]"
 
 # triage:issues:
 #   stage: triage
