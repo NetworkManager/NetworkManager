@@ -183,9 +183,9 @@
 %endif
 
 %if 0%{?fedora} >= 39
-%global ifcfg_migrate 1
+%bcond_without ifcfg_migrate
 %else
-%global ifcfg_migrate 0
+%bcond_with ifcfg_migrate
 %endif
 
 %if 0%{?fedora}
@@ -775,7 +775,7 @@ Preferably use nmcli instead.
 %if %{with default_ifcfg_rh}
 	-Dconfig_plugins_default=ifcfg-rh \
 %endif
-%if %{?ifcfg_migrate}
+%if %{with ifcfg_migrate}
 	-Dconfig_migrate_ifcfg_rh_default=true \
 %endif
 	-Dresolvconf=no \
@@ -927,7 +927,7 @@ autoreconf --install --force
 %if %{with default_ifcfg_rh}
 	--with-config-plugins-default=ifcfg-rh \
 %endif
-%if %{?ifcfg_migrate}
+%if %{with ifcfg_migrate}
 	--with-config-migrate-ifcfg-rh-default=yes \
 %endif
 	--with-resolvconf=no \
@@ -968,7 +968,7 @@ cp %{SOURCE6} %{buildroot}%{nmlibdir}/conf.d/
 %if %{with ifcfg_warning}
 cp %{SOURCE8} %{buildroot}%{_sysconfdir}/sysconfig/network-scripts
 %endif
-%if 0%{?ifcfg_migrate}
+%if %{with ifcfg_migrate}
 cp %{SOURCE9} %{buildroot}%{_sysconfdir}/sysconfig/network-scripts/readme-ifcfg-rh.txt
 %endif
 
@@ -1174,7 +1174,7 @@ fi
 %{_unitdir}/nm-priv-helper.service
 %dir %{_datadir}/doc/NetworkManager/examples
 %{_datadir}/doc/NetworkManager/examples/server.conf
-%if %{with ifcfg_warning} || 0%{?ifcfg_migrate}
+%if %{with ifcfg_warning} || %{with ifcfg_migrate}
 %{_sysconfdir}/sysconfig/network-scripts/readme-ifcfg-rh.txt
 %endif
 %doc NEWS AUTHORS README.md CONTRIBUTING.md
