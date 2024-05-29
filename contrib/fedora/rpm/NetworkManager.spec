@@ -167,13 +167,13 @@
 
 %if 0%{?rhel} >= 10
 %bcond_with ifcfg_rh
-%global split_ifcfg_rh 0
+%bcond_with split_ifcfg_rh
 %elif 0%{?fedora} >= 36
 %bcond_without ifcfg_rh
-%global split_ifcfg_rh 1
+%bcond_without split_ifcfg_rh
 %else
 %bcond_without ifcfg_rh
-%global split_ifcfg_rh 0
+%bcond_with split_ifcfg_rh
 %endif
 
 %if (0%{?fedora} >= 36 && 0%{?fedora} < 39) || 0%{?rhel} == 9
@@ -250,7 +250,7 @@ Obsoletes: NetworkManager-wimax < 1:1.2
 Suggests: NetworkManager-initscripts-updown
 %endif
 Obsoletes: NetworkManager < %{obsoletes_initscripts_updown}
-%if 0%{?split_ifcfg_rh}
+%if %{with split_ifcfg_rh}
 Obsoletes: NetworkManager < %{obsoletes_ifcfg_rh}
 %endif
 
@@ -571,7 +571,7 @@ deployments.
 %package dispatcher-routing-rules
 Summary: NetworkManager dispatcher file for advanced routing rules
 Group: System Environment/Base
-%if 0%{?split_ifcfg_rh}
+%if %{with split_ifcfg_rh}
 Requires: %{name}-initscripts-ifcfg-rh
 %endif
 BuildArch: noarch
@@ -599,7 +599,7 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 %endif
 
 
-%if 0%{?split_ifcfg_rh}
+%if %{with split_ifcfg_rh}
 %package initscripts-ifcfg-rh
 Summary: NetworkManager plugin for reading and writing connections in ifcfg-rh format
 Group: System Environment/Base
@@ -1107,7 +1107,7 @@ fi
 %{dbus_sys_dir}/org.freedesktop.NetworkManager.conf
 %{dbus_sys_dir}/nm-dispatcher.conf
 %{dbus_sys_dir}/nm-priv-helper.conf
-%if %{with ifcfg_rh} && 0%{?split_ifcfg_rh} == 0
+%if %{with ifcfg_rh} && %{without split_ifcfg_rh}
 %{dbus_sys_dir}/nm-ifcfg-rh.conf
 %endif
 %{_sbindir}/%{name}
@@ -1135,7 +1135,7 @@ fi
 %{_libexecdir}/nm-priv-helper
 %dir %{_libdir}/%{name}
 %dir %{nmplugindir}
-%if %{with ifcfg_rh} && 0%{?split_ifcfg_rh} == 0
+%if %{with ifcfg_rh} && %{without split_ifcfg_rh}
 %{nmplugindir}/libnm-settings-plugin-ifcfg-rh.so
 %endif
 %if %{with nmtui}
@@ -1291,7 +1291,7 @@ fi
 %endif
 
 
-%if 0%{?split_ifcfg_rh}
+%if %{with split_ifcfg_rh}
 %files initscripts-ifcfg-rh
 %{nmplugindir}/libnm-settings-plugin-ifcfg-rh.so
 %{dbus_sys_dir}/nm-ifcfg-rh.conf
