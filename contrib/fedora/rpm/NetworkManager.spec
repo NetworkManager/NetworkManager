@@ -160,9 +160,9 @@
 %endif
 
 %if 0%{?fedora} >= 33 || 0%{?rhel} >= 9
-%global config_plugins_default_ifcfg_rh 0
+%bcond_with default_ifcfg_rh
 %else
-%global config_plugins_default_ifcfg_rh 1
+%bcond_without default_ifcfg_rh
 %endif
 
 %if 0%{?rhel} >= 10
@@ -772,7 +772,7 @@ Preferably use nmcli instead.
 	-Dfirewalld_zone=false \
 %endif
 	-Ddist_version=%{version}-%{release} \
-%if %{?config_plugins_default_ifcfg_rh}
+%if %{with default_ifcfg_rh}
 	-Dconfig_plugins_default=ifcfg-rh \
 %endif
 %if %{?ifcfg_migrate}
@@ -924,7 +924,7 @@ autoreconf --install --force
 	--enable-firewalld-zone=no \
 %endif
 	--with-dist-version=%{version}-%{release} \
-%if %{?config_plugins_default_ifcfg_rh}
+%if %{with default_ifcfg_rh}
 	--with-config-plugins-default=ifcfg-rh \
 %endif
 %if %{?ifcfg_migrate}
