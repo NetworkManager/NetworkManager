@@ -177,9 +177,9 @@
 %endif
 
 %if (0%{?fedora} >= 36 && 0%{?fedora} < 39) || 0%{?rhel} == 9
-%global ifcfg_warning 1
+%bcond_without ifcfg_warning
 %else
-%global ifcfg_warning 0
+%bcond_with ifcfg_warning
 %endif
 
 %if 0%{?fedora} >= 39
@@ -965,7 +965,7 @@ cp %{SOURCE7} %{buildroot}%{_sysctldir}
 cp %{SOURCE6} %{buildroot}%{nmlibdir}/conf.d/
 %endif
 
-%if 0%{?ifcfg_warning}
+%if %{with ifcfg_warning}
 cp %{SOURCE8} %{buildroot}%{_sysconfdir}/sysconfig/network-scripts
 %endif
 %if 0%{?ifcfg_migrate}
@@ -1174,7 +1174,7 @@ fi
 %{_unitdir}/nm-priv-helper.service
 %dir %{_datadir}/doc/NetworkManager/examples
 %{_datadir}/doc/NetworkManager/examples/server.conf
-%if 0%{?ifcfg_warning} || 0%{?ifcfg_migrate}
+%if %{with ifcfg_warning} || 0%{?ifcfg_migrate}
 %{_sysconfdir}/sysconfig/network-scripts/readme-ifcfg-rh.txt
 %endif
 %doc NEWS AUTHORS README.md CONTRIBUTING.md
