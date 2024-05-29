@@ -641,6 +641,7 @@ This is only for backward compatibility with initscripts (network-scripts).
 Preferably use nmcli instead.
 %endif
 
+
 %prep
 %autosetup -p1 -n NetworkManager-%{real_version}
 
@@ -908,7 +909,7 @@ autoreconf --install --force
 %if %{with ifcfg_rh}
 	--enable-ifcfg-rh=yes \
 %else
-        --enable-ifcfg-rh=no \
+	--enable-ifcfg-rh=no \
 %endif
 	--enable-ifupdown=no \
 %if %{with ppp}
@@ -996,6 +997,7 @@ cp valgrind.suppressions %{buildroot}%{_prefix}/src/debug/NetworkManager-%{real_
 touch %{buildroot}%{_sbindir}/ifup
 touch %{buildroot}%{_sbindir}/ifdown
 %endif
+
 
 %check
 %if %{with meson}
@@ -1280,6 +1282,7 @@ fi
 %{nmlibdir}/dispatcher.d/no-wait.d/10-ifcfg-rh-routes.sh
 %{nmlibdir}/dispatcher.d/pre-up.d/10-ifcfg-rh-routes.sh
 %endif
+
 
 %if %{with nmtui}
 %files tui
