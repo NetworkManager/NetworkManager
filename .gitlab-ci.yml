@@ -59,11 +59,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-63a17fe29587'
-  CENTOS_TAG:  'tag-f02bd5ca818e'
-  DEBIAN_TAG:  'tag-7818bbf1d226'
-  FEDORA_TAG:  'tag-f02bd5ca818e'
-  UBUNTU_TAG:  'tag-7818bbf1d226'
+  ALPINE_TAG:  'tag-4cf5505b3b7d'
+  CENTOS_TAG:  'tag-f78e39f6e045'
+  DEBIAN_TAG:  'tag-f7bdc50d0819'
+  FEDORA_TAG:  'tag-f78e39f6e045'
+  UBUNTU_TAG:  'tag-f7bdc50d0819'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
@@ -111,19 +111,7 @@ tier1:fedora:40@prep:
   rules:
     - if: $CI_PIPELINE_SOURCE != 'schedule'
 
-tier1:fedora:rawhide@prep:
-  extends:
-    - .fdo.container-build@fedora
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: 'rawhide'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-    FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
-  rules:
-    - if: $CI_PIPELINE_SOURCE != 'schedule'
-
-tier1:centos:stream9@prep:
+tier2:centos:stream9@prep:
   extends:
     - .fdo.container-build@centos
   stage: prep
@@ -134,6 +122,22 @@ tier1:centos:stream9@prep:
     FDO_DISTRIBUTION_EXEC: $CENTOS_EXEC
   rules:
     - if: $CI_PIPELINE_SOURCE != 'schedule'
+      when: manual
+      allow_failure: true
+
+tier2:fedora:rawhide@prep:
+  extends:
+    - .fdo.container-build@fedora
+  stage: prep
+  variables:
+    GIT_STRATEGY: none
+    FDO_DISTRIBUTION_VERSION: 'rawhide'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+    FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
+      when: manual
+      allow_failure: true
 
 tier2:debian:sid@prep:
   extends:
@@ -356,49 +360,31 @@ t_fedora:40:
   rules:
     - if: $CI_PIPELINE_SOURCE != 'schedule'
 
-t_fedora:rawhide:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@fedora
-    - .nm_artifacts
-  stage: tier1
-  parallel:
-    matrix:
-      - NM_TEST_SELECT_RUN:
-        - meson+gcc+docs+valgrind
-        - meson+clang
-        - rpm+meson
-        - tarball+meson
-        - tarball
-        - subtree
-  variables:
-    FDO_DISTRIBUTION_VERSION: 'rawhide'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-  needs:
-    - "tier1:fedora:rawhide@prep"
-  rules:
-    - if: $CI_PIPELINE_SOURCE != 'schedule'
-
 t_centos:stream9:
   extends:
     - .build@template
     - .fdo.distribution-image@centos
     - .nm_artifacts_debug
-  stage: tier1
-  parallel:
-    matrix:
-      - NM_TEST_SELECT_RUN:
-        - meson+gcc+docs+valgrind
-        - meson+clang
-        - rpm+meson
-        - tarball+meson
-        - tarball
-        - subtree
+  stage: tier2
   variables:
     FDO_DISTRIBUTION_VERSION: 'stream9'
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
   needs:
-    - "tier1:centos:stream9@prep"
+    - "tier2:centos:stream9@prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
+
+t_fedora:rawhide:
+  extends:
+    - .build@template
+    - .fdo.distribution-image@fedora
+    - .nm_artifacts_debug
+  stage: tier2
+  variables:
+    FDO_DISTRIBUTION_VERSION: 'rawhide'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+  needs:
+    - "tier2:fedora:rawhide@prep"
   rules:
     - if: $CI_PIPELINE_SOURCE != 'schedule'
 

@@ -24,14 +24,17 @@ distributions:
     tier: 1
     versions:
       - '40'
-      - rawhide
-  - name: centos
-    tier: 1
-    versions:
-      - 'stream9'
 
   # TIER 2: distribution versions that will or might use the current NM version.
   # Run when doing a release.
+  - name: centos
+    tier: 2
+    versions:
+      - 'stream9'
+  - name: fedora
+    tier: 2
+    versions:
+      - rawhide
   - name: debian
     tier: 2
     versions:
