@@ -59,10 +59,8 @@ typedef struct {
 
 } IPTunnelModInfo;
 
-#define INF(_module_name, _iftype, _ifname, ...)                                           \
-    {                                                                                      \
-        .module_name = ""_module_name, .iftype = _iftype, .ifname = ""_ifname, __VA_ARGS__ \
-    }
+#define INF(_module_name, _iftype, _ifname, ...) \
+    {.module_name = ""_module_name, .iftype = _iftype, .ifname = ""_ifname, __VA_ARGS__}
 
 static const IPTunnelModInfo ip_tunnel_mod_infos[] = {
     INF("ip_gre", NM_LINK_TYPE_GRE, "gre0"),

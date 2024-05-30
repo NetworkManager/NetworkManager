@@ -2002,7 +2002,8 @@ _vt_dedup_obj_clone(const NMDedupMultiObj *obj)
 
 #define DEDUP_MULTI_OBJ_CLASS_INIT()                                                       \
     {                                                                                      \
-        .obj_clone = _vt_dedup_obj_clone, .obj_destroy = _vt_dedup_obj_destroy,            \
+        .obj_clone   = _vt_dedup_obj_clone,                                                \
+        .obj_destroy = _vt_dedup_obj_destroy,                                              \
         .obj_full_hash_update =                                                            \
             (void (*)(const NMDedupMultiObj *obj, NMHashState *h)) nmp_object_hash_update, \
         .obj_full_equal = (gboolean(*)(const NMDedupMultiObj *obj_a,                       \
