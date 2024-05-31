@@ -704,9 +704,16 @@ lldp_neighbor_to_variant(LldpNeighbor *neigh)
 
 /*****************************************************************************/
 
+static void
+nmtst_lldp_event_handler(NMLldpRX *lldp, NMLldpRXEvent event, NMLldpNeighbor *n, void *user_data)
+{
+    g_assert_not_reached();
+}
+
 GVariant *
 nmtst_lldp_parse_from_raw(const guint8 *raw_data, gsize raw_len)
 {
+    nm_auto(nm_lldp_rx_unrefp) NMLldpRX             *lldp_rx     = NULL;
     nm_auto(nm_lldp_neighbor_unrefp) NMLldpNeighbor *neighbor_nm = NULL;
     nm_auto(lldp_neighbor_freep) LldpNeighbor       *neigh       = NULL;
     GVariant                                        *variant;
@@ -714,7 +721,13 @@ nmtst_lldp_parse_from_raw(const guint8 *raw_data, gsize raw_len)
     g_assert(raw_data);
     g_assert(raw_len > 0);
 
-    neighbor_nm = nm_lldp_neighbor_new_from_raw(raw_data, raw_len);
+    lldp_rx = nm_lldp_rx_new(&((NMLldpRXConfig){
+        .ifindex       = 1,
+        .neighbors_max = MAX_NEIGHBORS,
+        .callback      = nmtst_lldp_event_handler,
+    }));
+
+    neighbor_nm = nm_lldp_neighbor_new_from_raw(lldp_rx, raw_data, raw_len);
     g_assert(neighbor_nm);
 
     neigh = lldp_neighbor_new(neighbor_nm);
