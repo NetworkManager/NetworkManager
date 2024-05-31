@@ -34,7 +34,7 @@ struct _NMLldpRX {
         NMLldpRX        *_lldp_rx = (lldp_rx);                                   \
                                                                                  \
         if (_NMLOG2_ENABLED(_level)) {                                           \
-            _nm_log(level,                                                       \
+            _nm_log(_level,                                                      \
                     _NMLOG2_DOMAIN,                                              \
                     0,                                                           \
                     _lldp_rx->config.log_ifname,                                 \
