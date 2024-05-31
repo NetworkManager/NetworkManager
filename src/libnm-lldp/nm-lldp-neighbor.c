@@ -65,6 +65,7 @@ parse_string(NMLldpRX *lldp_rx, char **s, const void *q, size_t n)
     const char *p = q;
     char       *k;
 
+    nm_assert(lldp_rx);
     nm_assert(s);
     nm_assert(p || n == 0);
 
@@ -99,31 +100,33 @@ parse_string(NMLldpRX *lldp_rx, char **s, const void *q, size_t n)
 }
 
 int
-nm_lldp_neighbor_parse(NMLldpNeighbor *n)
+nm_lldp_neighbor_parse(NMLldpRX *lldp_rx, NMLldpNeighbor *n)
 {
     struct ether_header h;
     const uint8_t      *p;
     size_t              left;
     int                 r;
 
+    nm_assert(lldp_rx);
     nm_assert(n);
+    nm_assert(!n->lldp_rx);
 
     if (n->raw_size < sizeof(struct ether_header)) {
-        _LOG2D(n->lldp_rx, "Received truncated packet, ignoring.");
+        _LOG2D(lldp_rx, "Received truncated packet, ignoring.");
         return -NME_UNSPEC;
     }
 
     memcpy(&h, NM_LLDP_NEIGHBOR_RAW(n), sizeof(h));
 
     if (h.ether_type != htobe16(NM_ETHERTYPE_LLDP)) {
-        _LOG2D(n->lldp_rx, "Received packet with wrong type, ignoring.");
+        _LOG2D(lldp_rx, "Received packet with wrong type, ignoring.");
         return -NME_UNSPEC;
     }
 
     if (h.ether_dhost[0] != 0x01 || h.ether_dhost[1] != 0x80 || h.ether_dhost[2] != 0xc2
         || h.ether_dhost[3] != 0x00 || h.ether_dhost[4] != 0x00
         || !NM_IN_SET(h.ether_dhost[5], 0x00, 0x03, 0x0e)) {
-        _LOG2D(n->lldp_rx, "Received packet with wrong destination address, ignoring.");
+        _LOG2D(lldp_rx, "Received packet with wrong destination address, ignoring.");
         return -NME_UNSPEC;
     }
 
@@ -138,7 +141,7 @@ nm_lldp_neighbor_parse(NMLldpNeighbor *n)
         uint16_t length;
 
         if (left < 2) {
-            _LOG2D(n->lldp_rx, "TLV lacks header, ignoring.");
+            _LOG2D(lldp_rx, "TLV lacks header, ignoring.");
             return -NME_UNSPEC;
         }
 
@@ -147,14 +150,14 @@ nm_lldp_neighbor_parse(NMLldpNeighbor *n)
         p += 2, left -= 2;
 
         if (left < length) {
-            _LOG2D(n->lldp_rx, "TLV truncated, ignoring datagram.");
+            _LOG2D(lldp_rx, "TLV truncated, ignoring datagram.");
             return -NME_UNSPEC;
         }
 
         switch (type) {
         case NM_LLDP_TYPE_END:
             if (length != 0) {
-                _LOG2D(n->lldp_rx, "End marker TLV not zero-sized, ignoring datagram.");
+                _LOG2D(lldp_rx, "End marker TLV not zero-sized, ignoring datagram.");
                 return -NME_UNSPEC;
             }
 
@@ -166,12 +169,12 @@ nm_lldp_neighbor_parse(NMLldpNeighbor *n)
         case NM_LLDP_TYPE_CHASSIS_ID:
             if (length < 2 || length > 256) {
                 /* includes the chassis subtype, hence one extra byte */
-                _LOG2D(n->lldp_rx, "Chassis ID field size out of range, ignoring datagram.");
+                _LOG2D(lldp_rx, "Chassis ID field size out of range, ignoring datagram.");
                 return -NME_UNSPEC;
             }
 
             if (n->id.chassis_id) {
-                _LOG2D(n->lldp_rx, "Duplicate chassis ID field, ignoring datagram.");
+                _LOG2D(lldp_rx, "Duplicate chassis ID field, ignoring datagram.");
                 return -NME_UNSPEC;
             }
 
@@ -182,12 +185,12 @@ nm_lldp_neighbor_parse(NMLldpNeighbor *n)
         case NM_LLDP_TYPE_PORT_ID:
             if (length < 2 || length > 256) {
                 /* includes the port subtype, hence one extra byte */
-                _LOG2D(n->lldp_rx, "Port ID field size out of range, ignoring datagram.");
+                _LOG2D(lldp_rx, "Port ID field size out of range, ignoring datagram.");
                 return -NME_UNSPEC;
             }
 
             if (n->id.port_id) {
-                _LOG2D(n->lldp_rx, "Duplicate port ID field, ignoring datagram.");
+                _LOG2D(lldp_rx, "Duplicate port ID field, ignoring datagram.");
                 return -NME_UNSPEC;
             }
 
@@ -197,12 +200,12 @@ nm_lldp_neighbor_parse(NMLldpNeighbor *n)
 
         case NM_LLDP_TYPE_TTL:
             if (length != 2) {
-                _LOG2D(n->lldp_rx, "TTL field has wrong size, ignoring datagram.");
+                _LOG2D(lldp_rx, "TTL field has wrong size, ignoring datagram.");
                 return -NME_UNSPEC;
             }
 
             if (n->has_ttl) {
-                _LOG2D(n->lldp_rx, "Duplicate TTL field, ignoring datagram.");
+                _LOG2D(lldp_rx, "Duplicate TTL field, ignoring datagram.");
                 return -NME_UNSPEC;
             }
 
@@ -211,26 +214,26 @@ nm_lldp_neighbor_parse(NMLldpNeighbor *n)
             break;
 
         case NM_LLDP_TYPE_PORT_DESCRIPTION:
-            r = parse_string(n->lldp_rx, &n->port_description, p, length);
+            r = parse_string(lldp_rx, &n->port_description, p, length);
             if (r < 0)
                 return r;
             break;
 
         case NM_LLDP_TYPE_SYSTEM_NAME:
-            r = parse_string(n->lldp_rx, &n->system_name, p, length);
+            r = parse_string(lldp_rx, &n->system_name, p, length);
             if (r < 0)
                 return r;
             break;
 
         case NM_LLDP_TYPE_SYSTEM_DESCRIPTION:
-            r = parse_string(n->lldp_rx, &n->system_description, p, length);
+            r = parse_string(lldp_rx, &n->system_description, p, length);
             if (r < 0)
                 return r;
             break;
 
         case NM_LLDP_TYPE_SYSTEM_CAPABILITIES:
             if (length != 4) {
-                _LOG2D(n->lldp_rx, "System capabilities field has wrong size.");
+                _LOG2D(lldp_rx, "System capabilities field has wrong size.");
                 return -NME_UNSPEC;
             }
 
@@ -241,13 +244,13 @@ nm_lldp_neighbor_parse(NMLldpNeighbor *n)
 
         case NM_LLDP_TYPE_PRIVATE:
             if (length < 4) {
-                _LOG2D(n->lldp_rx, "Found private TLV that is too short, ignoring.");
+                _LOG2D(lldp_rx, "Found private TLV that is too short, ignoring.");
                 return -NME_UNSPEC;
             }
 
             /* RFC 8520: MUD URL */
             if (memcmp(p, NM_LLDP_OUI_IANA_MUD, sizeof(NM_LLDP_OUI_IANA_MUD)) == 0) {
-                r = parse_string(n->lldp_rx,
+                r = parse_string(lldp_rx,
                                  &n->mud_url,
                                  p + sizeof(NM_LLDP_OUI_IANA_MUD),
                                  length - sizeof(NM_LLDP_OUI_IANA_MUD));
@@ -262,7 +265,7 @@ nm_lldp_neighbor_parse(NMLldpNeighbor *n)
 
 end_marker:
     if (!n->id.chassis_id || !n->id.port_id || !n->has_ttl) {
-        _LOG2D(n->lldp_rx, "One or more mandatory TLV missing in datagram. Ignoring.");
+        _LOG2D(lldp_rx, "One or more mandatory TLV missing in datagram. Ignoring.");
         return -NME_UNSPEC;
     }
 
@@ -741,7 +744,7 @@ nm_lldp_neighbor_new(size_t raw_size)
 }
 
 NMLldpNeighbor *
-nm_lldp_neighbor_new_from_raw(const void *raw, size_t raw_size)
+nm_lldp_neighbor_new_from_raw(NMLldpRX *lldp_rx, const void *raw, size_t raw_size)
 {
     nm_auto(nm_lldp_neighbor_unrefp) NMLldpNeighbor *n = NULL;
     int                                              r;
@@ -752,7 +755,7 @@ nm_lldp_neighbor_new_from_raw(const void *raw, size_t raw_size)
 
     nm_memcpy(NM_LLDP_NEIGHBOR_RAW(n), raw, raw_size);
 
-    r = nm_lldp_neighbor_parse(n);
+    r = nm_lldp_neighbor_parse(lldp_rx, n);
     if (r < 0)
         return NULL;
 

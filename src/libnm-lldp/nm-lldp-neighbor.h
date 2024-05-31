@@ -75,11 +75,13 @@ NM_LLDP_NEIGHBOR_TLV_DATA(const NMLldpNeighbor *n)
     return ((uint8_t *) NM_LLDP_NEIGHBOR_RAW(n)) + n->rindex + 2;
 }
 
+struct _NMLldpRX;
+
 int nm_lldp_neighbor_prioq_compare_func(const void *a, const void *b);
 
 void            nm_lldp_neighbor_unlink(NMLldpNeighbor *n);
 NMLldpNeighbor *nm_lldp_neighbor_new(size_t raw_size);
-int             nm_lldp_neighbor_parse(NMLldpNeighbor *n);
+int             nm_lldp_neighbor_parse(struct _NMLldpRX *lldp_rx, NMLldpNeighbor *n);
 void            nm_lldp_neighbor_start_ttl(NMLldpNeighbor *n);
 
 #endif /* __NM_LLDP_NEIGHBOR_H__ */
