@@ -30,7 +30,7 @@ vars_with_vals() {
 }
 
 usage() {
-    echo "$ $0 [-m|--meson] [-a|--autotools] [-s|--show] [-B|--no-build] [-h|--help]"
+    echo "$ $0 [-m|--meson <builddir>] [-a|--autotools] [-s|--show] [-B|--no-build] [-h|--help]"
     echo ""
     echo "Configure NetworkManager in a way that is similar to when building"
     echo "RPMs of NetworkManager for Fedora/RHEL. The effect is that \`make install\`"
@@ -149,7 +149,9 @@ P_NOBUILD="${NOBUILD-0}"
 
 P_DEBUG="${DEBUG-1}"
 
-P_BUILD_TYPE="${BUILD_TYPE-}"
+P_BUILD_TYPE="${BUILD_TYPE-meson}"
+P_MESON_BUILDDIR="${MESON_BUILDDIR-./build}"
+[ -n "$MESON_BUILDDIR" ] && P_MESON_BUILDDIR_FORCE=1
 P_CFLAGS="${CFLAGS-}"
 P_CC="${CC-$((! command -v gcc && command -v clang) &>/dev/null && echo clang || echo gcc)}"
 
@@ -306,22 +308,15 @@ else
     P_CFLAGS="-g -O2 -fexceptions${P_CFLAGS:+ }$P_CFLAGS"
 fi
 
-if [ -z "$P_BUILD_TYPE" ] ; then
-    if [ -d ./build -a ! -f ./configure ] ; then
-        P_BUILD_TYPE=meson
-    elif [ ! -d ./build -a -f ./configure ] ; then
-        P_BUILD_TYPE=autotools
-    else
-        P_BUILD_TYPE=autotools
-    fi
-fi
-
 while [[ $# -gt 0 ]] ; do
     A="$1"
     shift
     case "$A" in
         --meson|-m)
             P_BUILD_TYPE=meson
+            P_MESON_BUILDDIR="$1"
+            P_MESON_BUILDDIR_FORCE=1
+            shift
             ;;
         --autotools|-a)
             P_BUILD_TYPE=autotools
@@ -343,11 +338,19 @@ while [[ $# -gt 0 ]] ; do
     esac
 done
 
+if [ "$P_BUILD_TYPE" = meson -a "$P_MESON_BUILDDIR_FORCE" != 1 ]; then
+    if [ -d "$P_MESON_BUILDDIR" ]; then
+        echo "Build directory '$P_MESON_BUILDDIR' chosen by default, but it exists and will be overwritten." \
+             "If you really want that, pass '--meson \"$P_MESON_BUILDDIR\"'." >&2
+        exit 1
+    fi
+fi
+
 vars_with_vals
 
 if [ "$P_BUILD_TYPE" == meson ] ; then
     MESON_RECONFIGURE=
-    if test -d "./build/" ; then
+    if test -d "$P_MESON_BUILDDIR" ; then
         MESON_RECONFIGURE="--reconfigure"
     fi
 
@@ -355,7 +358,8 @@ if [ "$P_BUILD_TYPE" == meson ] ; then
     env \
     CC="$P_CC" \
     CFLAGS="$P_CFLAGS" \
-    meson \
+    meson setup\
+        $MESON_RECONFIGURE \
         --buildtype=plain \
         --prefix="$D_PREFIX" \
         --libdir="$D_LIBDIR" \
@@ -372,11 +376,6 @@ if [ "$P_BUILD_TYPE" == meson ] ; then
         --sharedstatedir="$D_SHAREDSTATEDIR" \
         --wrap-mode=nodownload \
         --auto-features=enabled \
-        \
-        build \
-        \
-        $MESON_RECONFIGURE \
-        \
         -Db_ndebug=false \
         --warnlevel 2 \
         $(args_enable "$P_TEST" --werror) \
@@ -429,6 +428,8 @@ if [ "$P_BUILD_TYPE" == meson ] ; then
         -Dnetconfig=no \
         -Dconfig_dns_rc_manager_default="$P_DNS_RC_MANAGER_DEFAULT" \
         -Dconfig_logging_backend_default="$P_LOGGING_BACKEND_DEFAULT" \
+        \
+        "$P_MESON_BUILDDIR" \
         ;
 else
     if ! test -x ./configure ; then
@@ -520,7 +521,7 @@ fi
 
 if ! bool "$P_NOBUILD" ; then
     if [ "$P_BUILD_TYPE" == meson ] ; then
-        $SHOW_CMD ninja -C build
+        $SHOW_CMD ninja -C "$P_MESON_BUILDDIR"
     else
         $SHOW_CMD make -j 10
     fi
