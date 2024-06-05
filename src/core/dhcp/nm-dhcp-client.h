@@ -172,6 +172,9 @@ typedef struct {
             /* Whether to send or not the client identifier */
             bool send_client_id : 1;
 
+            /* Whether to use routes from the lease. Must be a value different
+             * from 'default'. */
+            NMSettingIPConfigDhcpUseRoutes use_routes;
         } v4;
         struct {
             /* If set, the DUID from the connection is used; otherwise

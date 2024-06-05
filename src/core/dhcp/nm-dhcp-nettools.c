@@ -385,11 +385,12 @@ lease_parse_address_list(NDhcp4ClientLease       *lease,
 }
 
 static void
-lease_parse_routes(NDhcp4ClientLease *lease,
-                   NML3ConfigData    *l3cd,
-                   in_addr_t          lease_address,
-                   GHashTable        *options,
-                   NMStrBuf          *sbuf)
+lease_parse_routes(NDhcp4ClientLease             *lease,
+                   NML3ConfigData                *l3cd,
+                   in_addr_t                      lease_address,
+                   GHashTable                    *options,
+                   NMStrBuf                      *sbuf,
+                   NMSettingIPConfigDhcpUseRoutes use_routes)
 {
     char          dest_str[NM_INET_ADDRSTRLEN];
     char          gateway_str[NM_INET_ADDRSTRLEN];
@@ -435,6 +436,11 @@ lease_parse_routes(NDhcp4ClientLease *lease,
                 /* Ignore private option if the standard one is present */
                 continue;
             }
+
+            if (use_routes == NM_SETTING_IP_CONFIG_DHCP_USE_ROUTES_NO)
+                continue;
+            if (use_routes == NM_SETTING_IP_CONFIG_DHCP_USE_ROUTES_GATEWAY && plen != 0)
+                continue;
 
             if (plen == 0) {
                 /* if there are multiple default routes, we add them with differing
@@ -488,6 +494,10 @@ lease_parse_routes(NDhcp4ClientLease *lease,
                 continue;
             }
 
+            if (use_routes == NM_SETTING_IP_CONFIG_DHCP_USE_ROUTES_NO
+                || use_routes == NM_SETTING_IP_CONFIG_DHCP_USE_ROUTES_GATEWAY)
+                continue;
+
             nm_l3_config_data_add_route_4(l3cd,
                                           &((const NMPlatformIP4Route){
                                               .rt_source     = NM_IP_CONFIG_SOURCE_DHCP,
@@ -527,6 +537,9 @@ lease_parse_routes(NDhcp4ClientLease *lease,
                  */
                 continue;
             }
+
+            if (use_routes == NM_SETTING_IP_CONFIG_DHCP_USE_ROUTES_NO)
+                continue;
 
             /* if there are multiple default routes, we add them with differing
              * metrics. */
@@ -614,6 +627,7 @@ static NML3ConfigData *
 lease_to_ip4_config(NMDhcpNettools *self, NDhcp4ClientLease *lease, GError **error)
 {
     const char                             *iface;
+    const NMDhcpClientConfig               *config;
     nm_auto_str_buf NMStrBuf                sbuf    = NM_STR_BUF_INIT(0, FALSE);
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd    = NULL;
     gs_unref_hashtable GHashTable          *options = NULL;
@@ -660,7 +674,8 @@ lease_to_ip4_config(NMDhcpNettools *self, NDhcp4ClientLease *lease, GError **err
                                           v_inaddr);
     }
 
-    lease_parse_routes(lease, l3cd, lease_address, options, &sbuf);
+    config = nm_dhcp_client_get_config(NM_DHCP_CLIENT(self));
+    lease_parse_routes(lease, l3cd, lease_address, options, &sbuf, config->v4.use_routes);
 
     lease_parse_address_list(lease,
                              l3cd,

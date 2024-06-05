@@ -1362,7 +1362,12 @@ nm_dhcp_client_start(NMDhcpClient *self, GError **error)
 
     IS_IPv4 = NM_IS_IPv4(priv->config.addr_family);
 
-    if (!IS_IPv4) {
+    if (IS_IPv4) {
+        nm_assert(NM_IN_SET(priv->config.v4.use_routes,
+                            NM_SETTING_IP_CONFIG_DHCP_USE_ROUTES_YES,
+                            NM_SETTING_IP_CONFIG_DHCP_USE_ROUTES_NO,
+                            NM_SETTING_IP_CONFIG_DHCP_USE_ROUTES_GATEWAY));
+    } else {
         addr = ipv6_lladdr_find(self);
         if (!addr) {
             _LOGD("waiting for IPv6LL address");
@@ -1730,7 +1735,8 @@ nm_dhcp_client_handle_event(gpointer               unused,
                     nm_l3cfg_get_multi_idx(priv->config.l3cfg),
                     nm_l3cfg_get_ifindex(priv->config.l3cfg),
                     priv->config.iface,
-                    str_options);
+                    str_options,
+                    priv->config.v4.use_routes);
             } else {
                 prefix = nm_dhcp_utils_ip6_prefix_from_options(str_options);
                 l3cd   = nm_dhcp_utils_ip6_config_from_options(

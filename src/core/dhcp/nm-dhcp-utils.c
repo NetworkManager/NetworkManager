@@ -30,6 +30,7 @@ ip4_process_dhcpcd_rfc3442_routes(const char     *iface,
                                   const char     *str,
                                   NML3ConfigData *l3cd,
                                   in_addr_t       address,
+                                  gboolean        only_gw,
                                   guint32        *out_gwaddr)
 {
     gs_free const char **routes = NULL;
@@ -77,6 +78,9 @@ ip4_process_dhcpcd_rfc3442_routes(const char     *iface,
                    *(r + 1));
             continue;
         }
+
+        if (only_gw && rt_cidr != 0)
+            continue;
 
         have_routes = TRUE;
         if (rt_cidr == 0 && rt_addr == 0) {
@@ -161,6 +165,7 @@ ip4_process_dhclient_rfc3442_routes(const char     *iface,
                                     const char     *str,
                                     NML3ConfigData *l3cd,
                                     in_addr_t       address,
+                                    gboolean        only_gw,
                                     guint32        *out_gwaddr)
 {
     gs_free const char **octets = NULL;
@@ -181,6 +186,9 @@ ip4_process_dhclient_rfc3442_routes(const char     *iface,
             _LOG2W(LOGD_DHCP4, iface, "ignoring invalid classless static routes");
             return have_routes;
         }
+
+        if (only_gw && route.plen != 0)
+            continue;
 
         have_routes = TRUE;
         if (!route.plen) {
@@ -217,7 +225,8 @@ ip4_process_classless_routes(const char     *iface,
                              GHashTable     *options,
                              NML3ConfigData *l3cd,
                              in_addr_t       address,
-                             guint32        *out_gwaddr)
+                             guint32        *out_gwaddr,
+                             gboolean        only_gw)
 {
     const char *str, *p;
 
@@ -271,10 +280,10 @@ ip4_process_classless_routes(const char     *iface,
 
     if (strchr(str, '/')) {
         /* dhcpcd format */
-        return ip4_process_dhcpcd_rfc3442_routes(iface, str, l3cd, address, out_gwaddr);
+        return ip4_process_dhcpcd_rfc3442_routes(iface, str, l3cd, address, only_gw, out_gwaddr);
     }
 
-    return ip4_process_dhclient_rfc3442_routes(iface, str, l3cd, address, out_gwaddr);
+    return ip4_process_dhclient_rfc3442_routes(iface, str, l3cd, address, only_gw, out_gwaddr);
 }
 
 static void
@@ -387,10 +396,11 @@ process_domain_search(int addr_family, const char *iface, const char *str, NML3C
 }
 
 NML3ConfigData *
-nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
-                                      int                ifindex,
-                                      const char        *iface,
-                                      GHashTable        *options)
+nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex             *multi_idx,
+                                      int                            ifindex,
+                                      const char                    *iface,
+                                      GHashTable                    *options,
+                                      NMSettingIPConfigDhcpUseRoutes use_routes)
 {
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
     guint32                                 tmp_addr;
@@ -436,8 +446,19 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
     /* Routes: if the server returns classless static routes, we MUST ignore
      * the 'static_routes' option.
      */
-    if (!ip4_process_classless_routes(iface, options, l3cd, address.address, &gateway))
-        process_classful_routes(iface, options, l3cd, address.address);
+    if (use_routes != NM_SETTING_IP_CONFIG_DHCP_USE_ROUTES_NO) {
+        gboolean only_gw = (use_routes == NM_SETTING_IP_CONFIG_DHCP_USE_ROUTES_GATEWAY);
+
+        if (!ip4_process_classless_routes(iface,
+                                          options,
+                                          l3cd,
+                                          address.address,
+                                          &gateway,
+                                          only_gw)) {
+            if (!only_gw)
+                process_classful_routes(iface, options, l3cd, address.address);
+        }
+    }
 
     if (gateway) {
         _LOG2I(LOGD_DHCP4, iface, "  gateway %s", nm_inet4_ntop(gateway, sbuf));
