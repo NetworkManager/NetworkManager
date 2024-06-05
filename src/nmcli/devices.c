@@ -2221,6 +2221,13 @@ add_and_activate_cb(GObject *client, GAsyncResult *result, gpointer user_data)
         return;
     }
 
+    if (nmc->secret_agent) {
+        NMRemoteConnection *connection = nm_active_connection_get_connection(active);
+
+        nm_secret_agent_simple_enable(nmc->secret_agent,
+                                      nm_connection_get_path(NM_CONNECTION(connection)));
+    }
+
     if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
         progress_id = g_timeout_add(120, progress_cb, info->device);
 
@@ -3662,8 +3669,7 @@ do_device_wifi_connect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *
     GByteArray        *bssid2_arr            = NULL;
     gs_free NMDevice **devices               = NULL;
     int                devices_idx;
-    char              *ssid_ask   = NULL;
-    char              *passwd_ask = NULL;
+    char              *ssid_ask = NULL;
     const GPtrArray   *avail_cons;
     gboolean           name_match = FALSE;
     int                i;
@@ -4021,29 +4027,15 @@ do_device_wifi_connect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *
         || (ap_rsn_flags != NM_802_11_AP_SEC_NONE
             && !NM_FLAGS_ANY(ap_rsn_flags,
                              NM_802_11_AP_SEC_KEY_MGMT_OWE | NM_802_11_AP_SEC_KEY_MGMT_OWE_TM))) {
-        const char                *con_password = NULL;
-        NMSettingWirelessSecurity *s_wsec       = NULL;
+        NMSettingWirelessSecurity *s_wsec = NULL;
 
-        if (connection) {
-            s_wsec = nm_connection_get_setting_wireless_security(connection);
-            if (s_wsec) {
-                if (ap_wpa_flags == NM_802_11_AP_SEC_NONE
-                    && ap_rsn_flags == NM_802_11_AP_SEC_NONE) {
-                    /* WEP */
-                    con_password = nm_setting_wireless_security_get_wep_key(s_wsec, 0);
-                } else if ((ap_wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
-                           || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
-                           || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_SAE)) {
-                    /* WPA PSK */
-                    con_password = nm_setting_wireless_security_get_psk(s_wsec);
-                }
-            }
-        }
-
-        /* Ask for missing password when one is expected and '--ask' is used */
-        if (!password && !con_password && nmc->ask) {
-            password = passwd_ask =
-                nmc_readline_echo(&nmc->nmc_config, nmc->nmc_config.show_secrets, _("Password: "));
+        /* Create secret agent */
+        nmc->secret_agent = nm_secret_agent_simple_new("nmcli-connect");
+        if (nmc->secret_agent) {
+            g_signal_connect(nmc->secret_agent,
+                             NM_SECRET_AGENT_SIMPLE_REQUEST_SECRETS,
+                             G_CALLBACK(nmc_secrets_requested),
+                             nmc);
         }
 
         if (password) {
@@ -4091,7 +4083,6 @@ finish:
     if (bssid2_arr)
         g_byte_array_free(bssid2_arr, TRUE);
     g_free(ssid_ask);
-    nm_free_secret(passwd_ask);
 }
 
 static GBytes *
