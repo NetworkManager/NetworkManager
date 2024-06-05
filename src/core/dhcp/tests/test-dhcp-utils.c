@@ -26,7 +26,11 @@ _ip4_config_from_options(int ifindex, const char *iface, GHashTable *options)
     nm_auto_unref_dedup_multi_index NMDedupMultiIndex *multi_idx = nm_dedup_multi_index_new();
     NML3ConfigData                                    *l3cd;
 
-    l3cd = nm_dhcp_utils_ip4_config_from_options(multi_idx, ifindex, iface, options);
+    l3cd = nm_dhcp_utils_ip4_config_from_options(multi_idx,
+                                                 ifindex,
+                                                 iface,
+                                                 options,
+                                                 NM_SETTING_IP_CONFIG_DHCP_USE_ROUTES_YES);
     g_assert(NM_IS_L3_CONFIG_DATA(l3cd));
     g_assert(!nm_l3_config_data_is_sealed(l3cd));
     if (nmtst_get_rand_bool())

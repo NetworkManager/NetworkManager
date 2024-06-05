@@ -192,6 +192,7 @@ nm_dhcp_manager_start_client(NMDhcpManager *self, NMDhcpClientConfig *config, GE
             g_return_val_if_reached(NULL);
         }
         nm_assert(g_bytes_get_size(config->hwaddr) == g_bytes_get_size(config->bcast_hwaddr));
+        nm_assert(config->v4.use_routes != NM_SETTING_IP_CONFIG_DHCP_USE_ROUTES_DEFAULT);
     }
 
     priv = NM_DHCP_MANAGER_GET_PRIVATE(self);

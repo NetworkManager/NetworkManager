@@ -10,10 +10,11 @@
 
 #include "nm-l3-config-data.h"
 
-NML3ConfigData *nm_dhcp_utils_ip4_config_from_options(struct _NMDedupMultiIndex *multi_idx,
-                                                      int                        ifindex,
-                                                      const char                *iface,
-                                                      GHashTable                *options);
+NML3ConfigData *nm_dhcp_utils_ip4_config_from_options(struct _NMDedupMultiIndex     *multi_idx,
+                                                      int                            ifindex,
+                                                      const char                    *iface,
+                                                      GHashTable                    *options,
+                                                      NMSettingIPConfigDhcpUseRoutes use_routes);
 
 NML3ConfigData *nm_dhcp_utils_ip6_config_from_options(struct _NMDedupMultiIndex *multi_idx,
                                                       int                        ifindex,

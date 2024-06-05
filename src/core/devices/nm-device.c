@@ -1998,6 +1998,27 @@ _prop_get_ipvx_dhcp_hostname_flags(NMDevice *self, int addr_family)
         return NM_DHCP_HOSTNAME_FLAGS_FQDN_DEFAULT_IP6;
 }
 
+static NMSettingIPConfigDhcpUseRoutes
+_prop_get_ipv4_dhcp_use_routes(NMDevice *self)
+{
+    NMConnection                  *connection;
+    NMSettingIPConfigDhcpUseRoutes val;
+
+    connection = nm_device_get_applied_connection(self);
+    val        = nm_setting_ip_config_get_dhcp_use_routes(
+        nm_connection_get_setting_ip_config(connection, AF_INET));
+
+    if (val != NM_SETTING_IP_CONFIG_DHCP_USE_ROUTES_DEFAULT)
+        return val;
+
+    return nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
+                                                       NM_CON_DEFAULT("ipv4.dhcp-use-routes"),
+                                                       self,
+                                                       NM_SETTING_IP_CONFIG_DHCP_USE_ROUTES_YES,
+                                                       NM_SETTING_IP_CONFIG_DHCP_USE_ROUTES_GATEWAY,
+                                                       NM_SETTING_IP_CONFIG_DHCP_USE_ROUTES_YES);
+}
+
 static const char *
 _prop_get_connection_mud_url(NMDevice *self, NMSettingConnection *s_con)
 {
@@ -11243,6 +11264,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
                     .send_client_id    = send_client_id,
                     .dscp              = dscp,
                     .dscp_explicit     = dscp_explicit,
+                    .use_routes        = _prop_get_ipv4_dhcp_use_routes(self),
                 },
             .previous_lease = priv->l3cds[L3_CONFIG_DATA_TYPE_DHCP_X(IS_IPv4)].d,
         };

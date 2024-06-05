@@ -964,6 +964,10 @@ ipv6.ip6-privacy=0
            the interface type is used.</para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>ipv4.dhcp-use-routes</varname></term>
+          <listitem><para> If left unspecified it defaults to 'yes'.</para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>ipv4.dhcp-vendor-class-identifier</varname></term>
           <listitem><para>If left unspecified, the default is to not send the DHCP option to the server.</para></listitem>
         </varlistentry>
