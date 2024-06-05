@@ -3527,6 +3527,21 @@ do_device_wifi_list(const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
         return;
     }
 
+    if (!nm_client_wireless_hardware_get_enabled(nmc->client)) {
+        nmc_print(_("Hint: \"nmcli radio\" shows the radio state.\n"));
+        g_string_printf(nmc->return_text,
+                        _("Error: Wi-Fi radio is disabled by airplane mode switch."));
+        nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+        return;
+    }
+
+    if (!nm_client_wireless_get_enabled(nmc->client)) {
+        nmc_print(_("Hint: \"nmcli radio wifi on\" enables the Wi-Fi radio.\n"));
+        g_string_printf(nmc->return_text, _("Error: Wi-Fi radio is disabled by software."));
+        nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+        return;
+    }
+
     scan_info  = g_slice_new(ScanInfo);
     *scan_info = (ScanInfo){
         .out_indices        = g_array_ref(out_indices),
