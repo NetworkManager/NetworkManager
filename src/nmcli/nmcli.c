@@ -1044,6 +1044,8 @@ main(int argc, char *argv[])
     if (process_command_line(&nm_cli, argc, argv))
         g_main_loop_run(loop);
 
+    nmc_cleanup_readline();
+
     if (nm_cli.complete) {
         /* Remove error statuses from command completion runs. */
         if (nm_cli.return_value < NMC_RESULT_COMPLETE_FILE)
