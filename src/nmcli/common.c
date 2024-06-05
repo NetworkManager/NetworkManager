@@ -824,7 +824,7 @@ static char    *rl_string;
 /**
  * nmc_cleanup_readline:
  *
- * Cleanup readline when nmcli is terminated with a signal.
+ * Cleanup readline when nmcli is terminated.
  * It makes sure the terminal is not garbled.
  */
 void
