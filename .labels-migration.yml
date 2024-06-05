@@ -1,0 +1,47 @@
+host_url: https://gitlab.freedesktop.org
+
+resource_rules:
+  issues:
+    rules:
+      - name: Set investigation if it was triaged
+        conditions:
+          state: opened
+          labels:
+            - '{triaged, bug, RFE}'
+        actions:
+          labels:
+            - workflow::investigation
+          remove_labels:
+            - triaged
+
+      - name: Set type of issue for bugs
+        conditions:
+          state: opened
+          labels:
+            - bug
+        actions:
+          labels:
+            - triaged::bug
+          remove_labels:
+            - bug
+      
+      - name: Set type of issue for RFEs
+        conditions:
+          state: opened
+          labels:
+            - RFE
+        actions:
+          labels:
+            - triaged::RFE
+          remove_labels:
+            - RFE
+      
+      - name: Remove labels not used anymore
+        conditions:
+          state: opened
+          labels:
+            - '{help-needed, work-in-progress}'
+        actions:
+          remove_labels:
+            - help-needed
+            - work-in-progress

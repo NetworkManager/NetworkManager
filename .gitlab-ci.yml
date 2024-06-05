@@ -59,11 +59,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-75ecbb5bcef4'
-  CENTOS_TAG:  'tag-0de3c2e2d9ed'
-  DEBIAN_TAG:  'tag-1ccef04c657b'
-  FEDORA_TAG:  'tag-0de3c2e2d9ed'
-  UBUNTU_TAG:  'tag-1ccef04c657b'
+  ALPINE_TAG:  'tag-50aefcd4346d'
+  CENTOS_TAG:  'tag-16f41fa4814a'
+  DEBIAN_TAG:  'tag-5f85698f8fae'
+  FEDORA_TAG:  'tag-16f41fa4814a'
+  UBUNTU_TAG:  'tag-5f85698f8fae'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
@@ -654,14 +654,14 @@ pages:
   needs:
     - "t_fedora:40: [autotools+gcc+docs+valgrind]"
 
-# triage:issues:
-#   stage: triage
-#   image: ruby:2.7
-#   script:
-#     - gem install gitlab-triage
-#     - gitlab-triage -d --token $API_TOKEN --source-id $SOURCE_ID
-#   only:
-#     - schedules
+triage:issues:
+  stage: triage
+  image: ruby:3
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $SCHEDULED_PIPELINE_NAME == "oneshot"
+  script:
+    - gem install gitlab-triage
+    - gitlab-triage --debug --token $API_TOKEN --source-id $CI_PROJECT_ID -f $CI_PROJECT_DIR/.labels-migration.yml
 
 # Clean the generated images periodically to get updated snapshots of the distribution images.
 # Create an scheduled pipeline to run it, passing an AUTHFILE environment variable of type
@@ -671,7 +671,7 @@ clean-images:
     - .fdo.ci-fairy
   stage: prep
   rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $SCHEDULED_PIPELINE_NAME == "weekly"
   script:
     - ci-fairy -v --authfile $AUTHFILE delete-image --project NetworkManager/NetworkManager --all
 
