@@ -907,9 +907,15 @@ request_secrets_from_ui(RequestData *request)
         ssid_utf8  = nm_utils_ssid_to_utf8(g_bytes_get_data(ssid, NULL), g_bytes_get_size(ssid));
 
         title = _("Authentication required by wireless network");
-        msg   = g_strdup_printf(
-            _("Passwords or encryption keys are required to access the wireless network '%s'."),
-            ssid_utf8);
+        if (request->flags & NM_SECRET_AGENT_GET_SECRETS_FLAG_WPS_PBC_ACTIVE) {
+            msg = g_strdup_printf(_("Push of the WPS button on the router or a password is "
+                                    "required to access the wireless network '%s'."),
+                                  ssid_utf8);
+        } else {
+            msg = g_strdup_printf(
+                _("Passwords or encryption keys are required to access the wireless network '%s'."),
+                ssid_utf8);
+        }
 
         if (!add_wireless_secrets(request, secrets))
             goto out_fail;
