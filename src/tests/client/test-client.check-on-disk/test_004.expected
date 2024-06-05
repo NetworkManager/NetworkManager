@@ -3616,32 +3616,32 @@ AP[3]  wlan0-ap-3  776C616E302D61702D33  9B:F6:B7:EC:97:76  Infrastruktura  1   
 AP[1]  wlan1-ap-4  776C616E312D61702D34  94:2B:E8:F6:D2:86  Infrastruktura  1     2412 MHz  54 Mb/s  40 MHz     48      **    WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan1   nie             /org/freedesktop/NetworkManager/AccessPoint/4 
 
 <<<
-size: 584
+size: 624
 location: src/tests/client/test-client.py:test_004()/57
 cmd: $NMCLI -f COMMON device wifi list
 lang: C
 returncode: 0
-stdout: 440 bytes
+stdout: 480 bytes
 >>>
-IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY  
-        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infra  1     54 Mbit/s  92      ****  WPA1 WPA2 
-        61:95:77:AC:1E:4C  wlan0-ap-1  Infra  1     54 Mbit/s  81      ****  WPA1      
-        9B:F6:B7:EC:97:76  wlan0-ap-3  Infra  1     54 Mbit/s  55      **    WPA3      
-        94:2B:E8:F6:D2:86  wlan1-ap-4  Infra  1     54 Mbit/s  48      **    WPA1 WPA2 
+IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY   DEVICE 
+        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infra  1     54 Mbit/s  92      ****  WPA1 WPA2  wlan0  
+        61:95:77:AC:1E:4C  wlan0-ap-1  Infra  1     54 Mbit/s  81      ****  WPA1       wlan0  
+        9B:F6:B7:EC:97:76  wlan0-ap-3  Infra  1     54 Mbit/s  55      **    WPA3       wlan0  
+        94:2B:E8:F6:D2:86  wlan1-ap-4  Infra  1     54 Mbit/s  48      **    WPA1 WPA2  wlan1  
 
 <<<
-size: 637
+size: 677
 location: src/tests/client/test-client.py:test_004()/58
 cmd: $NMCLI -f COMMON device wifi list
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 483 bytes
+stdout: 523 bytes
 >>>
-IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY  
-        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infrastruktura  1     54 Mb/s  92      ****  WPA1 WPA2 
-        61:95:77:AC:1E:4C  wlan0-ap-1  Infrastruktura  1     54 Mb/s  81      ****  WPA1      
-        9B:F6:B7:EC:97:76  wlan0-ap-3  Infrastruktura  1     54 Mb/s  55      **    WPA3      
-        94:2B:E8:F6:D2:86  wlan1-ap-4  Infrastruktura  1     54 Mb/s  48      **    WPA1 WPA2 
+IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY   DEVICE 
+        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infrastruktura  1     54 Mb/s  92      ****  WPA1 WPA2  wlan0  
+        61:95:77:AC:1E:4C  wlan0-ap-1  Infrastruktura  1     54 Mb/s  81      ****  WPA1       wlan0  
+        9B:F6:B7:EC:97:76  wlan0-ap-3  Infrastruktura  1     54 Mb/s  55      **    WPA3       wlan0  
+        94:2B:E8:F6:D2:86  wlan1-ap-4  Infrastruktura  1     54 Mb/s  48      **    WPA1 WPA2  wlan1  
 
 <<<
 size: 1675
@@ -3694,26 +3694,26 @@ NAME   SSID        SSID-HEX              BSSID              MODE            CHAN
 AP[1]  wlan0-ap-2  776C616E302D61702D32  C0:E2:BE:E8:EF:B6  Infrastruktura  1     2412 MHz  54 Mb/s  40 MHz     92      ****  WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan0   nie             /org/freedesktop/NetworkManager/AccessPoint/2 
 
 <<<
-size: 344
+size: 360
 location: src/tests/client/test-client.py:test_004()/63
 cmd: $NMCLI -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: C
 returncode: 0
-stdout: 176 bytes
+stdout: 192 bytes
 >>>
-IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY  
-        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infra  1     54 Mbit/s  92      ****  WPA1 WPA2 
+IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY   DEVICE 
+        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infra  1     54 Mbit/s  92      ****  WPA1 WPA2  wlan0  
 
 <<<
-size: 370
+size: 386
 location: src/tests/client/test-client.py:test_004()/64
 cmd: $NMCLI -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 192 bytes
+stdout: 208 bytes
 >>>
-IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY  
-        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infrastruktura  1     54 Mb/s  92      ****  WPA1 WPA2 
+IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY   DEVICE 
+        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infrastruktura  1     54 Mb/s  92      ****  WPA1 WPA2  wlan0  
 
 <<<
 size: 846
@@ -6952,32 +6952,32 @@ NAME   SSID        SSID-HEX              BSSID              MODE            CHAN
 [35mAP[1][0m  [35mwlan1-ap-4[0m  [35m776C616E312D61702D34[0m  [35m94:2B:E8:F6:D2:86[0m  [35mInfrastruktura[0m  [35m1[0m     [35m2412 MHz[0m  [35m54 Mb/s[0m  [35m40 MHz[0m     [35m48[0m      [35m**  [0m  [35mWPA1 WPA2[0m  [35mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m  [35mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m  [35mwlan1[0m   [35mnie[0m     [35m [0m       [35m/org/freedesktop/NetworkManager/AccessPoint/4[0m 
 
 <<<
-size: 921
+size: 997
 location: src/tests/client/test-client.py:test_004()/107
 cmd: $NMCLI --color yes -f COMMON device wifi list
 lang: C
 returncode: 0
-stdout: 764 bytes
+stdout: 840 bytes
 >>>
-IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY  
-[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfra[0m  [32m1[0m     [32m54 Mbit/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m 
-[32m [0m       [32m61:95:77:AC:1E:4C[0m  [32mwlan0-ap-1[0m  [32mInfra[0m  [32m1[0m     [32m54 Mbit/s[0m  [32m81[0m      [32m****[0m  [32mWPA1[0m      
-[35m [0m       [35m9B:F6:B7:EC:97:76[0m  [35mwlan0-ap-3[0m  [35mInfra[0m  [35m1[0m     [35m54 Mbit/s[0m  [35m55[0m      [35m**  [0m  [35mWPA3[0m      
-[35m [0m       [35m94:2B:E8:F6:D2:86[0m  [35mwlan1-ap-4[0m  [35mInfra[0m  [35m1[0m     [35m54 Mbit/s[0m  [35m48[0m      [35m**  [0m  [35mWPA1 WPA2[0m 
+IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY   DEVICE 
+[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfra[0m  [32m1[0m     [32m54 Mbit/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m  [32mwlan0[0m  
+[32m [0m       [32m61:95:77:AC:1E:4C[0m  [32mwlan0-ap-1[0m  [32mInfra[0m  [32m1[0m     [32m54 Mbit/s[0m  [32m81[0m      [32m****[0m  [32mWPA1[0m       [32mwlan0[0m  
+[35m [0m       [35m9B:F6:B7:EC:97:76[0m  [35mwlan0-ap-3[0m  [35mInfra[0m  [35m1[0m     [35m54 Mbit/s[0m  [35m55[0m      [35m**  [0m  [35mWPA3[0m       [35mwlan0[0m  
+[35m [0m       [35m94:2B:E8:F6:D2:86[0m  [35mwlan1-ap-4[0m  [35mInfra[0m  [35m1[0m     [35m54 Mbit/s[0m  [35m48[0m      [35m**  [0m  [35mWPA1 WPA2[0m  [35mwlan1[0m  
 
 <<<
-size: 974
+size: 1050
 location: src/tests/client/test-client.py:test_004()/108
 cmd: $NMCLI --color yes -f COMMON device wifi list
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 807 bytes
+stdout: 883 bytes
 >>>
-IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY  
-[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfrastruktura[0m  [32m1[0m     [32m54 Mb/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m 
-[32m [0m       [32m61:95:77:AC:1E:4C[0m  [32mwlan0-ap-1[0m  [32mInfrastruktura[0m  [32m1[0m     [32m54 Mb/s[0m  [32m81[0m      [32m****[0m  [32mWPA1[0m      
-[35m [0m       [35m9B:F6:B7:EC:97:76[0m  [35mwlan0-ap-3[0m  [35mInfrastruktura[0m  [35m1[0m     [35m54 Mb/s[0m  [35m55[0m      [35m**  [0m  [35mWPA3[0m      
-[35m [0m       [35m94:2B:E8:F6:D2:86[0m  [35mwlan1-ap-4[0m  [35mInfrastruktura[0m  [35m1[0m     [35m54 Mb/s[0m  [35m48[0m      [35m**  [0m  [35mWPA1 WPA2[0m 
+IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY   DEVICE 
+[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfrastruktura[0m  [32m1[0m     [32m54 Mb/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m  [32mwlan0[0m  
+[32m [0m       [32m61:95:77:AC:1E:4C[0m  [32mwlan0-ap-1[0m  [32mInfrastruktura[0m  [32m1[0m     [32m54 Mb/s[0m  [32m81[0m      [32m****[0m  [32mWPA1[0m       [32mwlan0[0m  
+[35m [0m       [35m9B:F6:B7:EC:97:76[0m  [35mwlan0-ap-3[0m  [35mInfrastruktura[0m  [35m1[0m     [35m54 Mb/s[0m  [35m55[0m      [35m**  [0m  [35mWPA3[0m       [35mwlan0[0m  
+[35m [0m       [35m94:2B:E8:F6:D2:86[0m  [35mwlan1-ap-4[0m  [35mInfrastruktura[0m  [35m1[0m     [35m54 Mb/s[0m  [35m48[0m      [35m**  [0m  [35mWPA1 WPA2[0m  [35mwlan1[0m  
 
 <<<
 size: 2300
@@ -7030,26 +7030,26 @@ NAME   SSID        SSID-HEX              BSSID              MODE            CHAN
 [32mAP[1][0m  [32mwlan0-ap-2[0m  [32m776C616E302D61702D32[0m  [32mC0:E2:BE:E8:EF:B6[0m  [32mInfrastruktura[0m  [32m1[0m     [32m2412 MHz[0m  [32m54 Mb/s[0m  [32m40 MHz[0m     [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m  [32mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m  [32mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m  [32mwlan0[0m   [32mnie[0m     [32m [0m       [32m/org/freedesktop/NetworkManager/AccessPoint/2[0m 
 
 <<<
-size: 438
+size: 463
 location: src/tests/client/test-client.py:test_004()/113
 cmd: $NMCLI --color yes -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: C
 returncode: 0
-stdout: 257 bytes
+stdout: 282 bytes
 >>>
-IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY  
-[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfra[0m  [32m1[0m     [32m54 Mbit/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m 
+IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY   DEVICE 
+[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfra[0m  [32m1[0m     [32m54 Mbit/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m  [32mwlan0[0m  
 
 <<<
-size: 464
+size: 489
 location: src/tests/client/test-client.py:test_004()/114
 cmd: $NMCLI --color yes -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 273 bytes
+stdout: 298 bytes
 >>>
-IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY  
-[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfrastruktura[0m  [32m1[0m     [32m54 Mb/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m 
+IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY   DEVICE 
+[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfrastruktura[0m  [32m1[0m     [32m54 Mb/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m  [32mwlan0[0m  
 
 <<<
 size: 1012
@@ -10734,40 +10734,40 @@ AP[3]  wlan0-ap-3  776C616E302D61702D33  9B:F6:B7:EC:97:76  Infrastruktura  1   
 AP[1]  wlan1-ap-4  776C616E312D61702D34  94:2B:E8:F6:D2:86  Infrastruktura  1     2412 MHz  54 Mb/s  40 MHz     48      **    WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan1   nie             /org/freedesktop/NetworkManager/AccessPoint/4 
 
 <<<
-size: 760
+size: 808
 location: src/tests/client/test-client.py:test_004()/157
 cmd: $NMCLI --pretty -f COMMON device wifi list
 lang: C
 returncode: 0
-stdout: 606 bytes
+stdout: 654 bytes
 >>>
 ===================
   Wi-Fi scan list
 ===================
-IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY  
------------------------------------------------------------------------------------------------------------
-        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infra  1     54 Mbit/s  92      ****  WPA1 WPA2 
-        61:95:77:AC:1E:4C  wlan0-ap-1  Infra  1     54 Mbit/s  81      ****  WPA1      
-        9B:F6:B7:EC:97:76  wlan0-ap-3  Infra  1     54 Mbit/s  55      **    WPA3      
-        94:2B:E8:F6:D2:86  wlan1-ap-4  Infra  1     54 Mbit/s  48      **    WPA1 WPA2 
+IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY   DEVICE 
+-------------------------------------------------------------------------------------------------------------------
+        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infra  1     54 Mbit/s  92      ****  WPA1 WPA2  wlan0  
+        61:95:77:AC:1E:4C  wlan0-ap-1  Infra  1     54 Mbit/s  81      ****  WPA1       wlan0  
+        9B:F6:B7:EC:97:76  wlan0-ap-3  Infra  1     54 Mbit/s  55      **    WPA3       wlan0  
+        94:2B:E8:F6:D2:86  wlan1-ap-4  Infra  1     54 Mbit/s  48      **    WPA1 WPA2  wlan1  
 
 <<<
-size: 872
+size: 920
 location: src/tests/client/test-client.py:test_004()/158
 cmd: $NMCLI --pretty -f COMMON device wifi list
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 708 bytes
+stdout: 756 bytes
 >>>
 ================================
   Lista skanowania sieci Wi-Fi
 ================================
-IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY  
--------------------------------------------------------------------------------------------------------------------------------
-        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infrastruktura  1     54 Mb/s  92      ****  WPA1 WPA2 
-        61:95:77:AC:1E:4C  wlan0-ap-1  Infrastruktura  1     54 Mb/s  81      ****  WPA1      
-        9B:F6:B7:EC:97:76  wlan0-ap-3  Infrastruktura  1     54 Mb/s  55      **    WPA3      
-        94:2B:E8:F6:D2:86  wlan1-ap-4  Infrastruktura  1     54 Mb/s  48      **    WPA1 WPA2 
+IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY   DEVICE 
+---------------------------------------------------------------------------------------------------------------------------------------
+        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infrastruktura  1     54 Mb/s  92      ****  WPA1 WPA2  wlan0  
+        61:95:77:AC:1E:4C  wlan0-ap-1  Infrastruktura  1     54 Mb/s  81      ****  WPA1       wlan0  
+        9B:F6:B7:EC:97:76  wlan0-ap-3  Infrastruktura  1     54 Mb/s  55      **    WPA3       wlan0  
+        94:2B:E8:F6:D2:86  wlan1-ap-4  Infrastruktura  1     54 Mb/s  48      **    WPA1 WPA2  wlan1  
 
 <<<
 size: 2047
@@ -10836,34 +10836,34 @@ NAME   SSID        SSID-HEX              BSSID              MODE            CHAN
 AP[1]  wlan0-ap-2  776C616E302D61702D32  C0:E2:BE:E8:EF:B6  Infrastruktura  1     2412 MHz  54 Mb/s  40 MHz     92      ****  WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan0   nie             /org/freedesktop/NetworkManager/AccessPoint/2 
 
 <<<
-size: 520
+size: 544
 location: src/tests/client/test-client.py:test_004()/163
 cmd: $NMCLI --pretty -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: C
 returncode: 0
-stdout: 342 bytes
+stdout: 366 bytes
 >>>
 ===================
   Wi-Fi scan list
 ===================
-IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY  
------------------------------------------------------------------------------------------------------------
-        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infra  1     54 Mbit/s  92      ****  WPA1 WPA2 
+IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY   DEVICE 
+-------------------------------------------------------------------------------------------------------------------
+        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infra  1     54 Mbit/s  92      ****  WPA1 WPA2  wlan0  
 
 <<<
-size: 605
+size: 629
 location: src/tests/client/test-client.py:test_004()/164
 cmd: $NMCLI --pretty -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 417 bytes
+stdout: 441 bytes
 >>>
 ================================
   Lista skanowania sieci Wi-Fi
 ================================
-IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY  
--------------------------------------------------------------------------------------------------------------------------------
-        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infrastruktura  1     54 Mb/s  92      ****  WPA1 WPA2 
+IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY   DEVICE 
+---------------------------------------------------------------------------------------------------------------------------------------
+        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infrastruktura  1     54 Mb/s  92      ****  WPA1 WPA2  wlan0  
 
 <<<
 size: 1218
@@ -14694,40 +14694,40 @@ NAME   SSID        SSID-HEX              BSSID              MODE            CHAN
 [35mAP[1][0m  [35mwlan1-ap-4[0m  [35m776C616E312D61702D34[0m  [35m94:2B:E8:F6:D2:86[0m  [35mInfrastruktura[0m  [35m1[0m     [35m2412 MHz[0m  [35m54 Mb/s[0m  [35m40 MHz[0m     [35m48[0m      [35m**  [0m  [35mWPA1 WPA2[0m  [35mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m  [35mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m  [35mwlan1[0m   [35mnie[0m     [35m [0m       [35m/org/freedesktop/NetworkManager/AccessPoint/4[0m 
 
 <<<
-size: 1096
+size: 1181
 location: src/tests/client/test-client.py:test_004()/207
 cmd: $NMCLI --pretty --color yes -f COMMON device wifi list
 lang: C
 returncode: 0
-stdout: 930 bytes
+stdout: 1014 bytes
 >>>
 ===================
   Wi-Fi scan list
 ===================
-IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY  
------------------------------------------------------------------------------------------------------------
-[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfra[0m  [32m1[0m     [32m54 Mbit/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m 
-[32m [0m       [32m61:95:77:AC:1E:4C[0m  [32mwlan0-ap-1[0m  [32mInfra[0m  [32m1[0m     [32m54 Mbit/s[0m  [32m81[0m      [32m****[0m  [32mWPA1[0m      
-[35m [0m       [35m9B:F6:B7:EC:97:76[0m  [35mwlan0-ap-3[0m  [35mInfra[0m  [35m1[0m     [35m54 Mbit/s[0m  [35m55[0m      [35m**  [0m  [35mWPA3[0m      
-[35m [0m       [35m94:2B:E8:F6:D2:86[0m  [35mwlan1-ap-4[0m  [35mInfra[0m  [35m1[0m     [35m54 Mbit/s[0m  [35m48[0m      [35m**  [0m  [35mWPA1 WPA2[0m 
+IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY   DEVICE 
+-------------------------------------------------------------------------------------------------------------------
+[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfra[0m  [32m1[0m     [32m54 Mbit/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m  [32mwlan0[0m  
+[32m [0m       [32m61:95:77:AC:1E:4C[0m  [32mwlan0-ap-1[0m  [32mInfra[0m  [32m1[0m     [32m54 Mbit/s[0m  [32m81[0m      [32m****[0m  [32mWPA1[0m       [32mwlan0[0m  
+[35m [0m       [35m9B:F6:B7:EC:97:76[0m  [35mwlan0-ap-3[0m  [35mInfra[0m  [35m1[0m     [35m54 Mbit/s[0m  [35m55[0m      [35m**  [0m  [35mWPA3[0m       [35mwlan0[0m  
+[35m [0m       [35m94:2B:E8:F6:D2:86[0m  [35mwlan1-ap-4[0m  [35mInfra[0m  [35m1[0m     [35m54 Mbit/s[0m  [35m48[0m      [35m**  [0m  [35mWPA1 WPA2[0m  [35mwlan1[0m  
 
 <<<
-size: 1209
+size: 1293
 location: src/tests/client/test-client.py:test_004()/208
 cmd: $NMCLI --pretty --color yes -f COMMON device wifi list
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1032 bytes
+stdout: 1116 bytes
 >>>
 ================================
   Lista skanowania sieci Wi-Fi
 ================================
-IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY  
--------------------------------------------------------------------------------------------------------------------------------
-[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfrastruktura[0m  [32m1[0m     [32m54 Mb/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m 
-[32m [0m       [32m61:95:77:AC:1E:4C[0m  [32mwlan0-ap-1[0m  [32mInfrastruktura[0m  [32m1[0m     [32m54 Mb/s[0m  [32m81[0m      [32m****[0m  [32mWPA1[0m      
-[35m [0m       [35m9B:F6:B7:EC:97:76[0m  [35mwlan0-ap-3[0m  [35mInfrastruktura[0m  [35m1[0m     [35m54 Mb/s[0m  [35m55[0m      [35m**  [0m  [35mWPA3[0m      
-[35m [0m       [35m94:2B:E8:F6:D2:86[0m  [35mwlan1-ap-4[0m  [35mInfrastruktura[0m  [35m1[0m     [35m54 Mb/s[0m  [35m48[0m      [35m**  [0m  [35mWPA1 WPA2[0m 
+IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY   DEVICE 
+---------------------------------------------------------------------------------------------------------------------------------------
+[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfrastruktura[0m  [32m1[0m     [32m54 Mb/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m  [32mwlan0[0m  
+[32m [0m       [32m61:95:77:AC:1E:4C[0m  [32mwlan0-ap-1[0m  [32mInfrastruktura[0m  [32m1[0m     [32m54 Mb/s[0m  [32m81[0m      [32m****[0m  [32mWPA1[0m       [32mwlan0[0m  
+[35m [0m       [35m9B:F6:B7:EC:97:76[0m  [35mwlan0-ap-3[0m  [35mInfrastruktura[0m  [35m1[0m     [35m54 Mb/s[0m  [35m55[0m      [35m**  [0m  [35mWPA3[0m       [35mwlan0[0m  
+[35m [0m       [35m94:2B:E8:F6:D2:86[0m  [35mwlan1-ap-4[0m  [35mInfrastruktura[0m  [35m1[0m     [35m54 Mb/s[0m  [35m48[0m      [35m**  [0m  [35mWPA1 WPA2[0m  [35mwlan1[0m  
 
 <<<
 size: 2671
@@ -14796,34 +14796,34 @@ NAME   SSID        SSID-HEX              BSSID              MODE            CHAN
 [32mAP[1][0m  [32mwlan0-ap-2[0m  [32m776C616E302D61702D32[0m  [32mC0:E2:BE:E8:EF:B6[0m  [32mInfrastruktura[0m  [32m1[0m     [32m2412 MHz[0m  [32m54 Mb/s[0m  [32m40 MHz[0m     [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m  [32mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m  [32mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m  [32mwlan0[0m   [32mnie[0m     [32m [0m       [32m/org/freedesktop/NetworkManager/AccessPoint/2[0m 
 
 <<<
-size: 613
+size: 646
 location: src/tests/client/test-client.py:test_004()/213
 cmd: $NMCLI --pretty --color yes -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: C
 returncode: 0
-stdout: 423 bytes
+stdout: 456 bytes
 >>>
 ===================
   Wi-Fi scan list
 ===================
-IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY  
------------------------------------------------------------------------------------------------------------
-[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfra[0m  [32m1[0m     [32m54 Mbit/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m 
+IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY   DEVICE 
+-------------------------------------------------------------------------------------------------------------------
+[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfra[0m  [32m1[0m     [32m54 Mbit/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m  [32mwlan0[0m  
 
 <<<
-size: 698
+size: 731
 location: src/tests/client/test-client.py:test_004()/214
 cmd: $NMCLI --pretty --color yes -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 498 bytes
+stdout: 531 bytes
 >>>
 ================================
   Lista skanowania sieci Wi-Fi
 ================================
-IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY  
--------------------------------------------------------------------------------------------------------------------------------
-[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfrastruktura[0m  [32m1[0m     [32m54 Mb/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m 
+IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY   DEVICE 
+---------------------------------------------------------------------------------------------------------------------------------------
+[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfrastruktura[0m  [32m1[0m     [32m54 Mb/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m  [32mwlan0[0m  
 
 <<<
 size: 1384
@@ -18200,30 +18200,30 @@ AP[3]:wlan0-ap-3:776C616E302D61702D33:9B\:F6\:B7\:EC\:97\:76:Infrastruktura:1:24
 AP[1]:wlan1-ap-4:776C616E312D61702D34:94\:2B\:E8\:F6\:D2\:86:Infrastruktura:1:2412 MHz:54 Mb/s:40 MHz:48:**  :WPA1 WPA2:pair_tkip pair_ccmp group_tkip group_ccmp psk:pair_tkip pair_ccmp group_tkip group_ccmp psk:wlan1:nie: :/org/freedesktop/NetworkManager/AccessPoint/4
 
 <<<
-size: 431
+size: 455
 location: src/tests/client/test-client.py:test_004()/257
 cmd: $NMCLI --terse -f COMMON device wifi list
 lang: C
 returncode: 0
-stdout: 278 bytes
+stdout: 302 bytes
 >>>
- :C0\:E2\:BE\:E8\:EF\:B6:wlan0-ap-2:Infra:1:54 Mbit/s:92:****:WPA1 WPA2
- :61\:95\:77\:AC\:1E\:4C:wlan0-ap-1:Infra:1:54 Mbit/s:81:****:WPA1
- :9B\:F6\:B7\:EC\:97\:76:wlan0-ap-3:Infra:1:54 Mbit/s:55:**  :WPA3
- :94\:2B\:E8\:F6\:D2\:86:wlan1-ap-4:Infra:1:54 Mbit/s:48:**  :WPA1 WPA2
+ :C0\:E2\:BE\:E8\:EF\:B6:wlan0-ap-2:Infra:1:54 Mbit/s:92:****:WPA1 WPA2:wlan0
+ :61\:95\:77\:AC\:1E\:4C:wlan0-ap-1:Infra:1:54 Mbit/s:81:****:WPA1:wlan0
+ :9B\:F6\:B7\:EC\:97\:76:wlan0-ap-3:Infra:1:54 Mbit/s:55:**  :WPA3:wlan0
+ :94\:2B\:E8\:F6\:D2\:86:wlan1-ap-4:Infra:1:54 Mbit/s:48:**  :WPA1 WPA2:wlan1
 
 <<<
-size: 477
+size: 501
 location: src/tests/client/test-client.py:test_004()/258
 cmd: $NMCLI --terse -f COMMON device wifi list
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 314 bytes
+stdout: 338 bytes
 >>>
- :C0\:E2\:BE\:E8\:EF\:B6:wlan0-ap-2:Infrastruktura:1:54 Mb/s:92:****:WPA1 WPA2
- :61\:95\:77\:AC\:1E\:4C:wlan0-ap-1:Infrastruktura:1:54 Mb/s:81:****:WPA1
- :9B\:F6\:B7\:EC\:97\:76:wlan0-ap-3:Infrastruktura:1:54 Mb/s:55:**  :WPA3
- :94\:2B\:E8\:F6\:D2\:86:wlan1-ap-4:Infrastruktura:1:54 Mb/s:48:**  :WPA1 WPA2
+ :C0\:E2\:BE\:E8\:EF\:B6:wlan0-ap-2:Infrastruktura:1:54 Mb/s:92:****:WPA1 WPA2:wlan0
+ :61\:95\:77\:AC\:1E\:4C:wlan0-ap-1:Infrastruktura:1:54 Mb/s:81:****:WPA1:wlan0
+ :9B\:F6\:B7\:EC\:97\:76:wlan0-ap-3:Infrastruktura:1:54 Mb/s:55:**  :WPA3:wlan0
+ :94\:2B\:E8\:F6\:D2\:86:wlan1-ap-4:Infrastruktura:1:54 Mb/s:48:**  :WPA1 WPA2:wlan1
 
 <<<
 size: 1195
@@ -18272,24 +18272,24 @@ stdout: 276 bytes
 AP[1]:wlan0-ap-2:776C616E302D61702D32:C0\:E2\:BE\:E8\:EF\:B6:Infrastruktura:1:2412 MHz:54 Mb/s:40 MHz:92:****:WPA1 WPA2:pair_tkip pair_ccmp group_tkip group_ccmp psk:pair_tkip pair_ccmp group_tkip group_ccmp psk:wlan0:nie: :/org/freedesktop/NetworkManager/AccessPoint/2
 
 <<<
-size: 248
+size: 254
 location: src/tests/client/test-client.py:test_004()/263
 cmd: $NMCLI --terse -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: C
 returncode: 0
-stdout: 72 bytes
+stdout: 78 bytes
 >>>
- :C0\:E2\:BE\:E8\:EF\:B6:wlan0-ap-2:Infra:1:54 Mbit/s:92:****:WPA1 WPA2
+ :C0\:E2\:BE\:E8\:EF\:B6:wlan0-ap-2:Infra:1:54 Mbit/s:92:****:WPA1 WPA2:wlan0
 
 <<<
-size: 267
+size: 273
 location: src/tests/client/test-client.py:test_004()/264
 cmd: $NMCLI --terse -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 81 bytes
+stdout: 87 bytes
 >>>
- :C0\:E2\:BE\:E8\:EF\:B6:wlan0-ap-2:Infrastruktura:1:54 Mb/s:92:****:WPA1 WPA2
+ :C0\:E2\:BE\:E8\:EF\:B6:wlan0-ap-2:Infrastruktura:1:54 Mb/s:92:****:WPA1 WPA2:wlan0
 
 <<<
 size: 542
@@ -21518,30 +21518,30 @@ stdout: 1664 bytes
 [35mAP[1][0m:[35mwlan1-ap-4[0m:[35m776C616E312D61702D34[0m:[35m94\:2B\:E8\:F6\:D2\:86[0m:[35mInfrastruktura[0m:[35m1[0m:[35m2412 MHz[0m:[35m54 Mb/s[0m:[35m40 MHz[0m:[35m48[0m:[35m**  [0m:[35mWPA1 WPA2[0m:[35mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m:[35mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m:[35mwlan1[0m:[35mnie[0m:[35m [0m:[35m/org/freedesktop/NetworkManager/AccessPoint/4[0m
 
 <<<
-size: 767
+size: 827
 location: src/tests/client/test-client.py:test_004()/307
 cmd: $NMCLI --terse --color yes -f COMMON device wifi list
 lang: C
 returncode: 0
-stdout: 602 bytes
+stdout: 662 bytes
 >>>
-[32m [0m:[32mC0\:E2\:BE\:E8\:EF\:B6[0m:[32mwlan0-ap-2[0m:[32mInfra[0m:[32m1[0m:[32m54 Mbit/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m
-[32m [0m:[32m61\:95\:77\:AC\:1E\:4C[0m:[32mwlan0-ap-1[0m:[32mInfra[0m:[32m1[0m:[32m54 Mbit/s[0m:[32m81[0m:[32m****[0m:[32mWPA1[0m
-[35m [0m:[35m9B\:F6\:B7\:EC\:97\:76[0m:[35mwlan0-ap-3[0m:[35mInfra[0m:[35m1[0m:[35m54 Mbit/s[0m:[35m55[0m:[35m**  [0m:[35mWPA3[0m
-[35m [0m:[35m94\:2B\:E8\:F6\:D2\:86[0m:[35mwlan1-ap-4[0m:[35mInfra[0m:[35m1[0m:[35m54 Mbit/s[0m:[35m48[0m:[35m**  [0m:[35mWPA1 WPA2[0m
+[32m [0m:[32mC0\:E2\:BE\:E8\:EF\:B6[0m:[32mwlan0-ap-2[0m:[32mInfra[0m:[32m1[0m:[32m54 Mbit/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m:[32mwlan0[0m
+[32m [0m:[32m61\:95\:77\:AC\:1E\:4C[0m:[32mwlan0-ap-1[0m:[32mInfra[0m:[32m1[0m:[32m54 Mbit/s[0m:[32m81[0m:[32m****[0m:[32mWPA1[0m:[32mwlan0[0m
+[35m [0m:[35m9B\:F6\:B7\:EC\:97\:76[0m:[35mwlan0-ap-3[0m:[35mInfra[0m:[35m1[0m:[35m54 Mbit/s[0m:[35m55[0m:[35m**  [0m:[35mWPA3[0m:[35mwlan0[0m
+[35m [0m:[35m94\:2B\:E8\:F6\:D2\:86[0m:[35mwlan1-ap-4[0m:[35mInfra[0m:[35m1[0m:[35m54 Mbit/s[0m:[35m48[0m:[35m**  [0m:[35mWPA1 WPA2[0m:[35mwlan1[0m
 
 <<<
-size: 813
+size: 873
 location: src/tests/client/test-client.py:test_004()/308
 cmd: $NMCLI --terse --color yes -f COMMON device wifi list
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 638 bytes
+stdout: 698 bytes
 >>>
-[32m [0m:[32mC0\:E2\:BE\:E8\:EF\:B6[0m:[32mwlan0-ap-2[0m:[32mInfrastruktura[0m:[32m1[0m:[32m54 Mb/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m
-[32m [0m:[32m61\:95\:77\:AC\:1E\:4C[0m:[32mwlan0-ap-1[0m:[32mInfrastruktura[0m:[32m1[0m:[32m54 Mb/s[0m:[32m81[0m:[32m****[0m:[32mWPA1[0m
-[35m [0m:[35m9B\:F6\:B7\:EC\:97\:76[0m:[35mwlan0-ap-3[0m:[35mInfrastruktura[0m:[35m1[0m:[35m54 Mb/s[0m:[35m55[0m:[35m**  [0m:[35mWPA3[0m
-[35m [0m:[35m94\:2B\:E8\:F6\:D2\:86[0m:[35mwlan1-ap-4[0m:[35mInfrastruktura[0m:[35m1[0m:[35m54 Mb/s[0m:[35m48[0m:[35m**  [0m:[35mWPA1 WPA2[0m
+[32m [0m:[32mC0\:E2\:BE\:E8\:EF\:B6[0m:[32mwlan0-ap-2[0m:[32mInfrastruktura[0m:[32m1[0m:[32m54 Mb/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m:[32mwlan0[0m
+[32m [0m:[32m61\:95\:77\:AC\:1E\:4C[0m:[32mwlan0-ap-1[0m:[32mInfrastruktura[0m:[32m1[0m:[32m54 Mb/s[0m:[32m81[0m:[32m****[0m:[32mWPA1[0m:[32mwlan0[0m
+[35m [0m:[35m9B\:F6\:B7\:EC\:97\:76[0m:[35mwlan0-ap-3[0m:[35mInfrastruktura[0m:[35m1[0m:[35m54 Mb/s[0m:[35m55[0m:[35m**  [0m:[35mWPA3[0m:[35mwlan0[0m
+[35m [0m:[35m94\:2B\:E8\:F6\:D2\:86[0m:[35mwlan1-ap-4[0m:[35mInfrastruktura[0m:[35m1[0m:[35m54 Mb/s[0m:[35m48[0m:[35m**  [0m:[35mWPA1 WPA2[0m:[35mwlan1[0m
 
 <<<
 size: 1820
@@ -21590,24 +21590,24 @@ stdout: 438 bytes
 [32mAP[1][0m:[32mwlan0-ap-2[0m:[32m776C616E302D61702D32[0m:[32mC0\:E2\:BE\:E8\:EF\:B6[0m:[32mInfrastruktura[0m:[32m1[0m:[32m2412 MHz[0m:[32m54 Mb/s[0m:[32m40 MHz[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m:[32mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m:[32mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m:[32mwlan0[0m:[32mnie[0m:[32m [0m:[32m/org/freedesktop/NetworkManager/AccessPoint/2[0m
 
 <<<
-size: 342
+size: 357
 location: src/tests/client/test-client.py:test_004()/313
 cmd: $NMCLI --terse --color yes -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: C
 returncode: 0
-stdout: 153 bytes
+stdout: 168 bytes
 >>>
-[32m [0m:[32mC0\:E2\:BE\:E8\:EF\:B6[0m:[32mwlan0-ap-2[0m:[32mInfra[0m:[32m1[0m:[32m54 Mbit/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m
+[32m [0m:[32mC0\:E2\:BE\:E8\:EF\:B6[0m:[32mwlan0-ap-2[0m:[32mInfra[0m:[32m1[0m:[32m54 Mbit/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m:[32mwlan0[0m
 
 <<<
-size: 361
+size: 376
 location: src/tests/client/test-client.py:test_004()/314
 cmd: $NMCLI --terse --color yes -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 162 bytes
+stdout: 177 bytes
 >>>
-[32m [0m:[32mC0\:E2\:BE\:E8\:EF\:B6[0m:[32mwlan0-ap-2[0m:[32mInfrastruktura[0m:[32m1[0m:[32m54 Mb/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m
+[32m [0m:[32mC0\:E2\:BE\:E8\:EF\:B6[0m:[32mwlan0-ap-2[0m:[32mInfrastruktura[0m:[32m1[0m:[32m54 Mb/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m:[32mwlan0[0m
 
 <<<
 size: 707
@@ -23392,32 +23392,32 @@ AP[3]  wlan0-ap-3  776C616E302D61702D33  9B:F6:B7:EC:97:76  Infrastruktura  1   
 AP[1]  wlan1-ap-4  776C616E312D61702D34  94:2B:E8:F6:D2:86  Infrastruktura  1     2412 MHz  54 Mb/s  40 MHz     48      **    WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan1   nie             /org/freedesktop/NetworkManager/AccessPoint/4 
 
 <<<
-size: 600
+size: 640
 location: src/tests/client/test-client.py:test_004()/357
 cmd: $NMCLI --mode tabular -f COMMON device wifi list
 lang: C
 returncode: 0
-stdout: 440 bytes
+stdout: 480 bytes
 >>>
-IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY  
-        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infra  1     54 Mbit/s  92      ****  WPA1 WPA2 
-        61:95:77:AC:1E:4C  wlan0-ap-1  Infra  1     54 Mbit/s  81      ****  WPA1      
-        9B:F6:B7:EC:97:76  wlan0-ap-3  Infra  1     54 Mbit/s  55      **    WPA3      
-        94:2B:E8:F6:D2:86  wlan1-ap-4  Infra  1     54 Mbit/s  48      **    WPA1 WPA2 
+IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY   DEVICE 
+        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infra  1     54 Mbit/s  92      ****  WPA1 WPA2  wlan0  
+        61:95:77:AC:1E:4C  wlan0-ap-1  Infra  1     54 Mbit/s  81      ****  WPA1       wlan0  
+        9B:F6:B7:EC:97:76  wlan0-ap-3  Infra  1     54 Mbit/s  55      **    WPA3       wlan0  
+        94:2B:E8:F6:D2:86  wlan1-ap-4  Infra  1     54 Mbit/s  48      **    WPA1 WPA2  wlan1  
 
 <<<
-size: 653
+size: 693
 location: src/tests/client/test-client.py:test_004()/358
 cmd: $NMCLI --mode tabular -f COMMON device wifi list
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 483 bytes
+stdout: 523 bytes
 >>>
-IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY  
-        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infrastruktura  1     54 Mb/s  92      ****  WPA1 WPA2 
-        61:95:77:AC:1E:4C  wlan0-ap-1  Infrastruktura  1     54 Mb/s  81      ****  WPA1      
-        9B:F6:B7:EC:97:76  wlan0-ap-3  Infrastruktura  1     54 Mb/s  55      **    WPA3      
-        94:2B:E8:F6:D2:86  wlan1-ap-4  Infrastruktura  1     54 Mb/s  48      **    WPA1 WPA2 
+IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY   DEVICE 
+        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infrastruktura  1     54 Mb/s  92      ****  WPA1 WPA2  wlan0  
+        61:95:77:AC:1E:4C  wlan0-ap-1  Infrastruktura  1     54 Mb/s  81      ****  WPA1       wlan0  
+        9B:F6:B7:EC:97:76  wlan0-ap-3  Infrastruktura  1     54 Mb/s  55      **    WPA3       wlan0  
+        94:2B:E8:F6:D2:86  wlan1-ap-4  Infrastruktura  1     54 Mb/s  48      **    WPA1 WPA2  wlan1  
 
 <<<
 size: 1691
@@ -23470,26 +23470,26 @@ NAME   SSID        SSID-HEX              BSSID              MODE            CHAN
 AP[1]  wlan0-ap-2  776C616E302D61702D32  C0:E2:BE:E8:EF:B6  Infrastruktura  1     2412 MHz  54 Mb/s  40 MHz     92      ****  WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan0   nie             /org/freedesktop/NetworkManager/AccessPoint/2 
 
 <<<
-size: 360
+size: 376
 location: src/tests/client/test-client.py:test_004()/363
 cmd: $NMCLI --mode tabular -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: C
 returncode: 0
-stdout: 176 bytes
+stdout: 192 bytes
 >>>
-IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY  
-        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infra  1     54 Mbit/s  92      ****  WPA1 WPA2 
+IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY   DEVICE 
+        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infra  1     54 Mbit/s  92      ****  WPA1 WPA2  wlan0  
 
 <<<
-size: 386
+size: 402
 location: src/tests/client/test-client.py:test_004()/364
 cmd: $NMCLI --mode tabular -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 192 bytes
+stdout: 208 bytes
 >>>
-IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY  
-        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infrastruktura  1     54 Mb/s  92      ****  WPA1 WPA2 
+IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY   DEVICE 
+        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infrastruktura  1     54 Mb/s  92      ****  WPA1 WPA2  wlan0  
 
 <<<
 size: 862
@@ -25010,32 +25010,32 @@ NAME   SSID        SSID-HEX              BSSID              MODE            CHAN
 [35mAP[1][0m  [35mwlan1-ap-4[0m  [35m776C616E312D61702D34[0m  [35m94:2B:E8:F6:D2:86[0m  [35mInfrastruktura[0m  [35m1[0m     [35m2412 MHz[0m  [35m54 Mb/s[0m  [35m40 MHz[0m     [35m48[0m      [35m**  [0m  [35mWPA1 WPA2[0m  [35mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m  [35mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m  [35mwlan1[0m   [35mnie[0m     [35m [0m       [35m/org/freedesktop/NetworkManager/AccessPoint/4[0m 
 
 <<<
-size: 936
+size: 1012
 location: src/tests/client/test-client.py:test_004()/407
 cmd: $NMCLI --mode tabular --color yes -f COMMON device wifi list
 lang: C
 returncode: 0
-stdout: 764 bytes
+stdout: 840 bytes
 >>>
-IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY  
-[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfra[0m  [32m1[0m     [32m54 Mbit/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m 
-[32m [0m       [32m61:95:77:AC:1E:4C[0m  [32mwlan0-ap-1[0m  [32mInfra[0m  [32m1[0m     [32m54 Mbit/s[0m  [32m81[0m      [32m****[0m  [32mWPA1[0m      
-[35m [0m       [35m9B:F6:B7:EC:97:76[0m  [35mwlan0-ap-3[0m  [35mInfra[0m  [35m1[0m     [35m54 Mbit/s[0m  [35m55[0m      [35m**  [0m  [35mWPA3[0m      
-[35m [0m       [35m94:2B:E8:F6:D2:86[0m  [35mwlan1-ap-4[0m  [35mInfra[0m  [35m1[0m     [35m54 Mbit/s[0m  [35m48[0m      [35m**  [0m  [35mWPA1 WPA2[0m 
+IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY   DEVICE 
+[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfra[0m  [32m1[0m     [32m54 Mbit/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m  [32mwlan0[0m  
+[32m [0m       [32m61:95:77:AC:1E:4C[0m  [32mwlan0-ap-1[0m  [32mInfra[0m  [32m1[0m     [32m54 Mbit/s[0m  [32m81[0m      [32m****[0m  [32mWPA1[0m       [32mwlan0[0m  
+[35m [0m       [35m9B:F6:B7:EC:97:76[0m  [35mwlan0-ap-3[0m  [35mInfra[0m  [35m1[0m     [35m54 Mbit/s[0m  [35m55[0m      [35m**  [0m  [35mWPA3[0m       [35mwlan0[0m  
+[35m [0m       [35m94:2B:E8:F6:D2:86[0m  [35mwlan1-ap-4[0m  [35mInfra[0m  [35m1[0m     [35m54 Mbit/s[0m  [35m48[0m      [35m**  [0m  [35mWPA1 WPA2[0m  [35mwlan1[0m  
 
 <<<
-size: 989
+size: 1065
 location: src/tests/client/test-client.py:test_004()/408
 cmd: $NMCLI --mode tabular --color yes -f COMMON device wifi list
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 807 bytes
+stdout: 883 bytes
 >>>
-IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY  
-[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfrastruktura[0m  [32m1[0m     [32m54 Mb/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m 
-[32m [0m       [32m61:95:77:AC:1E:4C[0m  [32mwlan0-ap-1[0m  [32mInfrastruktura[0m  [32m1[0m     [32m54 Mb/s[0m  [32m81[0m      [32m****[0m  [32mWPA1[0m      
-[35m [0m       [35m9B:F6:B7:EC:97:76[0m  [35mwlan0-ap-3[0m  [35mInfrastruktura[0m  [35m1[0m     [35m54 Mb/s[0m  [35m55[0m      [35m**  [0m  [35mWPA3[0m      
-[35m [0m       [35m94:2B:E8:F6:D2:86[0m  [35mwlan1-ap-4[0m  [35mInfrastruktura[0m  [35m1[0m     [35m54 Mb/s[0m  [35m48[0m      [35m**  [0m  [35mWPA1 WPA2[0m 
+IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY   DEVICE 
+[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfrastruktura[0m  [32m1[0m     [32m54 Mb/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m  [32mwlan0[0m  
+[32m [0m       [32m61:95:77:AC:1E:4C[0m  [32mwlan0-ap-1[0m  [32mInfrastruktura[0m  [32m1[0m     [32m54 Mb/s[0m  [32m81[0m      [32m****[0m  [32mWPA1[0m       [32mwlan0[0m  
+[35m [0m       [35m9B:F6:B7:EC:97:76[0m  [35mwlan0-ap-3[0m  [35mInfrastruktura[0m  [35m1[0m     [35m54 Mb/s[0m  [35m55[0m      [35m**  [0m  [35mWPA3[0m       [35mwlan0[0m  
+[35m [0m       [35m94:2B:E8:F6:D2:86[0m  [35mwlan1-ap-4[0m  [35mInfrastruktura[0m  [35m1[0m     [35m54 Mb/s[0m  [35m48[0m      [35m**  [0m  [35mWPA1 WPA2[0m  [35mwlan1[0m  
 
 <<<
 size: 2315
@@ -25088,26 +25088,26 @@ NAME   SSID        SSID-HEX              BSSID              MODE            CHAN
 [32mAP[1][0m  [32mwlan0-ap-2[0m  [32m776C616E302D61702D32[0m  [32mC0:E2:BE:E8:EF:B6[0m  [32mInfrastruktura[0m  [32m1[0m     [32m2412 MHz[0m  [32m54 Mb/s[0m  [32m40 MHz[0m     [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m  [32mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m  [32mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m  [32mwlan0[0m   [32mnie[0m     [32m [0m       [32m/org/freedesktop/NetworkManager/AccessPoint/2[0m 
 
 <<<
-size: 453
+size: 478
 location: src/tests/client/test-client.py:test_004()/413
 cmd: $NMCLI --mode tabular --color yes -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: C
 returncode: 0
-stdout: 257 bytes
+stdout: 282 bytes
 >>>
-IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY  
-[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfra[0m  [32m1[0m     [32m54 Mbit/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m 
+IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY   DEVICE 
+[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfra[0m  [32m1[0m     [32m54 Mbit/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m  [32mwlan0[0m  
 
 <<<
-size: 479
+size: 504
 location: src/tests/client/test-client.py:test_004()/414
 cmd: $NMCLI --mode tabular --color yes -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 273 bytes
+stdout: 298 bytes
 >>>
-IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY  
-[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfrastruktura[0m  [32m1[0m     [32m54 Mb/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m 
+IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY   DEVICE 
+[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfrastruktura[0m  [32m1[0m     [32m54 Mb/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m  [32mwlan0[0m  
 
 <<<
 size: 1027
@@ -27068,40 +27068,40 @@ AP[3]  wlan0-ap-3  776C616E302D61702D33  9B:F6:B7:EC:97:76  Infrastruktura  1   
 AP[1]  wlan1-ap-4  776C616E312D61702D34  94:2B:E8:F6:D2:86  Infrastruktura  1     2412 MHz  54 Mb/s  40 MHz     48      **    WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan1   nie             /org/freedesktop/NetworkManager/AccessPoint/4 
 
 <<<
-size: 775
+size: 823
 location: src/tests/client/test-client.py:test_004()/457
 cmd: $NMCLI --mode tabular --pretty -f COMMON device wifi list
 lang: C
 returncode: 0
-stdout: 606 bytes
+stdout: 654 bytes
 >>>
 ===================
   Wi-Fi scan list
 ===================
-IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY  
------------------------------------------------------------------------------------------------------------
-        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infra  1     54 Mbit/s  92      ****  WPA1 WPA2 
-        61:95:77:AC:1E:4C  wlan0-ap-1  Infra  1     54 Mbit/s  81      ****  WPA1      
-        9B:F6:B7:EC:97:76  wlan0-ap-3  Infra  1     54 Mbit/s  55      **    WPA3      
-        94:2B:E8:F6:D2:86  wlan1-ap-4  Infra  1     54 Mbit/s  48      **    WPA1 WPA2 
+IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY   DEVICE 
+-------------------------------------------------------------------------------------------------------------------
+        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infra  1     54 Mbit/s  92      ****  WPA1 WPA2  wlan0  
+        61:95:77:AC:1E:4C  wlan0-ap-1  Infra  1     54 Mbit/s  81      ****  WPA1       wlan0  
+        9B:F6:B7:EC:97:76  wlan0-ap-3  Infra  1     54 Mbit/s  55      **    WPA3       wlan0  
+        94:2B:E8:F6:D2:86  wlan1-ap-4  Infra  1     54 Mbit/s  48      **    WPA1 WPA2  wlan1  
 
 <<<
-size: 887
+size: 935
 location: src/tests/client/test-client.py:test_004()/458
 cmd: $NMCLI --mode tabular --pretty -f COMMON device wifi list
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 708 bytes
+stdout: 756 bytes
 >>>
 ================================
   Lista skanowania sieci Wi-Fi
 ================================
-IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY  
--------------------------------------------------------------------------------------------------------------------------------
-        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infrastruktura  1     54 Mb/s  92      ****  WPA1 WPA2 
-        61:95:77:AC:1E:4C  wlan0-ap-1  Infrastruktura  1     54 Mb/s  81      ****  WPA1      
-        9B:F6:B7:EC:97:76  wlan0-ap-3  Infrastruktura  1     54 Mb/s  55      **    WPA3      
-        94:2B:E8:F6:D2:86  wlan1-ap-4  Infrastruktura  1     54 Mb/s  48      **    WPA1 WPA2 
+IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY   DEVICE 
+---------------------------------------------------------------------------------------------------------------------------------------
+        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infrastruktura  1     54 Mb/s  92      ****  WPA1 WPA2  wlan0  
+        61:95:77:AC:1E:4C  wlan0-ap-1  Infrastruktura  1     54 Mb/s  81      ****  WPA1       wlan0  
+        9B:F6:B7:EC:97:76  wlan0-ap-3  Infrastruktura  1     54 Mb/s  55      **    WPA3       wlan0  
+        94:2B:E8:F6:D2:86  wlan1-ap-4  Infrastruktura  1     54 Mb/s  48      **    WPA1 WPA2  wlan1  
 
 <<<
 size: 2062
@@ -27170,34 +27170,34 @@ NAME   SSID        SSID-HEX              BSSID              MODE            CHAN
 AP[1]  wlan0-ap-2  776C616E302D61702D32  C0:E2:BE:E8:EF:B6  Infrastruktura  1     2412 MHz  54 Mb/s  40 MHz     92      ****  WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan0   nie             /org/freedesktop/NetworkManager/AccessPoint/2 
 
 <<<
-size: 535
+size: 559
 location: src/tests/client/test-client.py:test_004()/463
 cmd: $NMCLI --mode tabular --pretty -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: C
 returncode: 0
-stdout: 342 bytes
+stdout: 366 bytes
 >>>
 ===================
   Wi-Fi scan list
 ===================
-IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY  
------------------------------------------------------------------------------------------------------------
-        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infra  1     54 Mbit/s  92      ****  WPA1 WPA2 
+IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY   DEVICE 
+-------------------------------------------------------------------------------------------------------------------
+        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infra  1     54 Mbit/s  92      ****  WPA1 WPA2  wlan0  
 
 <<<
-size: 620
+size: 644
 location: src/tests/client/test-client.py:test_004()/464
 cmd: $NMCLI --mode tabular --pretty -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 417 bytes
+stdout: 441 bytes
 >>>
 ================================
   Lista skanowania sieci Wi-Fi
 ================================
-IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY  
--------------------------------------------------------------------------------------------------------------------------------
-        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infrastruktura  1     54 Mb/s  92      ****  WPA1 WPA2 
+IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY   DEVICE 
+---------------------------------------------------------------------------------------------------------------------------------------
+        C0:E2:BE:E8:EF:B6  wlan0-ap-2  Infrastruktura  1     54 Mb/s  92      ****  WPA1 WPA2  wlan0  
 
 <<<
 size: 1233
@@ -29292,40 +29292,40 @@ NAME   SSID        SSID-HEX              BSSID              MODE            CHAN
 [35mAP[1][0m  [35mwlan1-ap-4[0m  [35m776C616E312D61702D34[0m  [35m94:2B:E8:F6:D2:86[0m  [35mInfrastruktura[0m  [35m1[0m     [35m2412 MHz[0m  [35m54 Mb/s[0m  [35m40 MHz[0m     [35m48[0m      [35m**  [0m  [35mWPA1 WPA2[0m  [35mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m  [35mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m  [35mwlan1[0m   [35mnie[0m     [35m [0m       [35m/org/freedesktop/NetworkManager/AccessPoint/4[0m 
 
 <<<
-size: 1111
+size: 1196
 location: src/tests/client/test-client.py:test_004()/507
 cmd: $NMCLI --mode tabular --pretty --color yes -f COMMON device wifi list
 lang: C
 returncode: 0
-stdout: 930 bytes
+stdout: 1014 bytes
 >>>
 ===================
   Wi-Fi scan list
 ===================
-IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY  
------------------------------------------------------------------------------------------------------------
-[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfra[0m  [32m1[0m     [32m54 Mbit/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m 
-[32m [0m       [32m61:95:77:AC:1E:4C[0m  [32mwlan0-ap-1[0m  [32mInfra[0m  [32m1[0m     [32m54 Mbit/s[0m  [32m81[0m      [32m****[0m  [32mWPA1[0m      
-[35m [0m       [35m9B:F6:B7:EC:97:76[0m  [35mwlan0-ap-3[0m  [35mInfra[0m  [35m1[0m     [35m54 Mbit/s[0m  [35m55[0m      [35m**  [0m  [35mWPA3[0m      
-[35m [0m       [35m94:2B:E8:F6:D2:86[0m  [35mwlan1-ap-4[0m  [35mInfra[0m  [35m1[0m     [35m54 Mbit/s[0m  [35m48[0m      [35m**  [0m  [35mWPA1 WPA2[0m 
+IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY   DEVICE 
+-------------------------------------------------------------------------------------------------------------------
+[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfra[0m  [32m1[0m     [32m54 Mbit/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m  [32mwlan0[0m  
+[32m [0m       [32m61:95:77:AC:1E:4C[0m  [32mwlan0-ap-1[0m  [32mInfra[0m  [32m1[0m     [32m54 Mbit/s[0m  [32m81[0m      [32m****[0m  [32mWPA1[0m       [32mwlan0[0m  
+[35m [0m       [35m9B:F6:B7:EC:97:76[0m  [35mwlan0-ap-3[0m  [35mInfra[0m  [35m1[0m     [35m54 Mbit/s[0m  [35m55[0m      [35m**  [0m  [35mWPA3[0m       [35mwlan0[0m  
+[35m [0m       [35m94:2B:E8:F6:D2:86[0m  [35mwlan1-ap-4[0m  [35mInfra[0m  [35m1[0m     [35m54 Mbit/s[0m  [35m48[0m      [35m**  [0m  [35mWPA1 WPA2[0m  [35mwlan1[0m  
 
 <<<
-size: 1224
+size: 1308
 location: src/tests/client/test-client.py:test_004()/508
 cmd: $NMCLI --mode tabular --pretty --color yes -f COMMON device wifi list
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1032 bytes
+stdout: 1116 bytes
 >>>
 ================================
   Lista skanowania sieci Wi-Fi
 ================================
-IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY  
--------------------------------------------------------------------------------------------------------------------------------
-[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfrastruktura[0m  [32m1[0m     [32m54 Mb/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m 
-[32m [0m       [32m61:95:77:AC:1E:4C[0m  [32mwlan0-ap-1[0m  [32mInfrastruktura[0m  [32m1[0m     [32m54 Mb/s[0m  [32m81[0m      [32m****[0m  [32mWPA1[0m      
-[35m [0m       [35m9B:F6:B7:EC:97:76[0m  [35mwlan0-ap-3[0m  [35mInfrastruktura[0m  [35m1[0m     [35m54 Mb/s[0m  [35m55[0m      [35m**  [0m  [35mWPA3[0m      
-[35m [0m       [35m94:2B:E8:F6:D2:86[0m  [35mwlan1-ap-4[0m  [35mInfrastruktura[0m  [35m1[0m     [35m54 Mb/s[0m  [35m48[0m      [35m**  [0m  [35mWPA1 WPA2[0m 
+IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY   DEVICE 
+---------------------------------------------------------------------------------------------------------------------------------------
+[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfrastruktura[0m  [32m1[0m     [32m54 Mb/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m  [32mwlan0[0m  
+[32m [0m       [32m61:95:77:AC:1E:4C[0m  [32mwlan0-ap-1[0m  [32mInfrastruktura[0m  [32m1[0m     [32m54 Mb/s[0m  [32m81[0m      [32m****[0m  [32mWPA1[0m       [32mwlan0[0m  
+[35m [0m       [35m9B:F6:B7:EC:97:76[0m  [35mwlan0-ap-3[0m  [35mInfrastruktura[0m  [35m1[0m     [35m54 Mb/s[0m  [35m55[0m      [35m**  [0m  [35mWPA3[0m       [35mwlan0[0m  
+[35m [0m       [35m94:2B:E8:F6:D2:86[0m  [35mwlan1-ap-4[0m  [35mInfrastruktura[0m  [35m1[0m     [35m54 Mb/s[0m  [35m48[0m      [35m**  [0m  [35mWPA1 WPA2[0m  [35mwlan1[0m  
 
 <<<
 size: 2686
@@ -29394,34 +29394,34 @@ NAME   SSID        SSID-HEX              BSSID              MODE            CHAN
 [32mAP[1][0m  [32mwlan0-ap-2[0m  [32m776C616E302D61702D32[0m  [32mC0:E2:BE:E8:EF:B6[0m  [32mInfrastruktura[0m  [32m1[0m     [32m2412 MHz[0m  [32m54 Mb/s[0m  [32m40 MHz[0m     [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m  [32mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m  [32mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m  [32mwlan0[0m   [32mnie[0m     [32m [0m       [32m/org/freedesktop/NetworkManager/AccessPoint/2[0m 
 
 <<<
-size: 628
+size: 661
 location: src/tests/client/test-client.py:test_004()/513
 cmd: $NMCLI --mode tabular --pretty --color yes -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: C
 returncode: 0
-stdout: 423 bytes
+stdout: 456 bytes
 >>>
 ===================
   Wi-Fi scan list
 ===================
-IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY  
------------------------------------------------------------------------------------------------------------
-[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfra[0m  [32m1[0m     [32m54 Mbit/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m 
+IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY   DEVICE 
+-------------------------------------------------------------------------------------------------------------------
+[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfra[0m  [32m1[0m     [32m54 Mbit/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m  [32mwlan0[0m  
 
 <<<
-size: 713
+size: 746
 location: src/tests/client/test-client.py:test_004()/514
 cmd: $NMCLI --mode tabular --pretty --color yes -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 498 bytes
+stdout: 531 bytes
 >>>
 ================================
   Lista skanowania sieci Wi-Fi
 ================================
-IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY  
--------------------------------------------------------------------------------------------------------------------------------
-[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfrastruktura[0m  [32m1[0m     [32m54 Mb/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m 
+IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY   DEVICE 
+---------------------------------------------------------------------------------------------------------------------------------------
+[32m [0m       [32mC0:E2:BE:E8:EF:B6[0m  [32mwlan0-ap-2[0m  [32mInfrastruktura[0m  [32m1[0m     [32m54 Mb/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m  [32mwlan0[0m  
 
 <<<
 size: 1399
@@ -30540,30 +30540,30 @@ AP[3]:wlan0-ap-3:776C616E302D61702D33:9B\:F6\:B7\:EC\:97\:76:Infrastruktura:1:24
 AP[1]:wlan1-ap-4:776C616E312D61702D34:94\:2B\:E8\:F6\:D2\:86:Infrastruktura:1:2412 MHz:54 Mb/s:40 MHz:48:**  :WPA1 WPA2:pair_tkip pair_ccmp group_tkip group_ccmp psk:pair_tkip pair_ccmp group_tkip group_ccmp psk:wlan1:nie: :/org/freedesktop/NetworkManager/AccessPoint/4
 
 <<<
-size: 446
+size: 470
 location: src/tests/client/test-client.py:test_004()/557
 cmd: $NMCLI --mode tabular --terse -f COMMON device wifi list
 lang: C
 returncode: 0
-stdout: 278 bytes
+stdout: 302 bytes
 >>>
- :C0\:E2\:BE\:E8\:EF\:B6:wlan0-ap-2:Infra:1:54 Mbit/s:92:****:WPA1 WPA2
- :61\:95\:77\:AC\:1E\:4C:wlan0-ap-1:Infra:1:54 Mbit/s:81:****:WPA1
- :9B\:F6\:B7\:EC\:97\:76:wlan0-ap-3:Infra:1:54 Mbit/s:55:**  :WPA3
- :94\:2B\:E8\:F6\:D2\:86:wlan1-ap-4:Infra:1:54 Mbit/s:48:**  :WPA1 WPA2
+ :C0\:E2\:BE\:E8\:EF\:B6:wlan0-ap-2:Infra:1:54 Mbit/s:92:****:WPA1 WPA2:wlan0
+ :61\:95\:77\:AC\:1E\:4C:wlan0-ap-1:Infra:1:54 Mbit/s:81:****:WPA1:wlan0
+ :9B\:F6\:B7\:EC\:97\:76:wlan0-ap-3:Infra:1:54 Mbit/s:55:**  :WPA3:wlan0
+ :94\:2B\:E8\:F6\:D2\:86:wlan1-ap-4:Infra:1:54 Mbit/s:48:**  :WPA1 WPA2:wlan1
 
 <<<
-size: 492
+size: 516
 location: src/tests/client/test-client.py:test_004()/558
 cmd: $NMCLI --mode tabular --terse -f COMMON device wifi list
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 314 bytes
+stdout: 338 bytes
 >>>
- :C0\:E2\:BE\:E8\:EF\:B6:wlan0-ap-2:Infrastruktura:1:54 Mb/s:92:****:WPA1 WPA2
- :61\:95\:77\:AC\:1E\:4C:wlan0-ap-1:Infrastruktura:1:54 Mb/s:81:****:WPA1
- :9B\:F6\:B7\:EC\:97\:76:wlan0-ap-3:Infrastruktura:1:54 Mb/s:55:**  :WPA3
- :94\:2B\:E8\:F6\:D2\:86:wlan1-ap-4:Infrastruktura:1:54 Mb/s:48:**  :WPA1 WPA2
+ :C0\:E2\:BE\:E8\:EF\:B6:wlan0-ap-2:Infrastruktura:1:54 Mb/s:92:****:WPA1 WPA2:wlan0
+ :61\:95\:77\:AC\:1E\:4C:wlan0-ap-1:Infrastruktura:1:54 Mb/s:81:****:WPA1:wlan0
+ :9B\:F6\:B7\:EC\:97\:76:wlan0-ap-3:Infrastruktura:1:54 Mb/s:55:**  :WPA3:wlan0
+ :94\:2B\:E8\:F6\:D2\:86:wlan1-ap-4:Infrastruktura:1:54 Mb/s:48:**  :WPA1 WPA2:wlan1
 
 <<<
 size: 1210
@@ -30612,24 +30612,24 @@ stdout: 276 bytes
 AP[1]:wlan0-ap-2:776C616E302D61702D32:C0\:E2\:BE\:E8\:EF\:B6:Infrastruktura:1:2412 MHz:54 Mb/s:40 MHz:92:****:WPA1 WPA2:pair_tkip pair_ccmp group_tkip group_ccmp psk:pair_tkip pair_ccmp group_tkip group_ccmp psk:wlan0:nie: :/org/freedesktop/NetworkManager/AccessPoint/2
 
 <<<
-size: 263
+size: 269
 location: src/tests/client/test-client.py:test_004()/563
 cmd: $NMCLI --mode tabular --terse -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: C
 returncode: 0
-stdout: 72 bytes
+stdout: 78 bytes
 >>>
- :C0\:E2\:BE\:E8\:EF\:B6:wlan0-ap-2:Infra:1:54 Mbit/s:92:****:WPA1 WPA2
+ :C0\:E2\:BE\:E8\:EF\:B6:wlan0-ap-2:Infra:1:54 Mbit/s:92:****:WPA1 WPA2:wlan0
 
 <<<
-size: 282
+size: 288
 location: src/tests/client/test-client.py:test_004()/564
 cmd: $NMCLI --mode tabular --terse -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 81 bytes
+stdout: 87 bytes
 >>>
- :C0\:E2\:BE\:E8\:EF\:B6:wlan0-ap-2:Infrastruktura:1:54 Mb/s:92:****:WPA1 WPA2
+ :C0\:E2\:BE\:E8\:EF\:B6:wlan0-ap-2:Infrastruktura:1:54 Mb/s:92:****:WPA1 WPA2:wlan0
 
 <<<
 size: 557
@@ -31454,30 +31454,30 @@ stdout: 1664 bytes
 [35mAP[1][0m:[35mwlan1-ap-4[0m:[35m776C616E312D61702D34[0m:[35m94\:2B\:E8\:F6\:D2\:86[0m:[35mInfrastruktura[0m:[35m1[0m:[35m2412 MHz[0m:[35m54 Mb/s[0m:[35m40 MHz[0m:[35m48[0m:[35m**  [0m:[35mWPA1 WPA2[0m:[35mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m:[35mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m:[35mwlan1[0m:[35mnie[0m:[35m [0m:[35m/org/freedesktop/NetworkManager/AccessPoint/4[0m
 
 <<<
-size: 782
+size: 842
 location: src/tests/client/test-client.py:test_004()/607
 cmd: $NMCLI --mode tabular --terse --color yes -f COMMON device wifi list
 lang: C
 returncode: 0
-stdout: 602 bytes
+stdout: 662 bytes
 >>>
-[32m [0m:[32mC0\:E2\:BE\:E8\:EF\:B6[0m:[32mwlan0-ap-2[0m:[32mInfra[0m:[32m1[0m:[32m54 Mbit/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m
-[32m [0m:[32m61\:95\:77\:AC\:1E\:4C[0m:[32mwlan0-ap-1[0m:[32mInfra[0m:[32m1[0m:[32m54 Mbit/s[0m:[32m81[0m:[32m****[0m:[32mWPA1[0m
-[35m [0m:[35m9B\:F6\:B7\:EC\:97\:76[0m:[35mwlan0-ap-3[0m:[35mInfra[0m:[35m1[0m:[35m54 Mbit/s[0m:[35m55[0m:[35m**  [0m:[35mWPA3[0m
-[35m [0m:[35m94\:2B\:E8\:F6\:D2\:86[0m:[35mwlan1-ap-4[0m:[35mInfra[0m:[35m1[0m:[35m54 Mbit/s[0m:[35m48[0m:[35m**  [0m:[35mWPA1 WPA2[0m
+[32m [0m:[32mC0\:E2\:BE\:E8\:EF\:B6[0m:[32mwlan0-ap-2[0m:[32mInfra[0m:[32m1[0m:[32m54 Mbit/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m:[32mwlan0[0m
+[32m [0m:[32m61\:95\:77\:AC\:1E\:4C[0m:[32mwlan0-ap-1[0m:[32mInfra[0m:[32m1[0m:[32m54 Mbit/s[0m:[32m81[0m:[32m****[0m:[32mWPA1[0m:[32mwlan0[0m
+[35m [0m:[35m9B\:F6\:B7\:EC\:97\:76[0m:[35mwlan0-ap-3[0m:[35mInfra[0m:[35m1[0m:[35m54 Mbit/s[0m:[35m55[0m:[35m**  [0m:[35mWPA3[0m:[35mwlan0[0m
+[35m [0m:[35m94\:2B\:E8\:F6\:D2\:86[0m:[35mwlan1-ap-4[0m:[35mInfra[0m:[35m1[0m:[35m54 Mbit/s[0m:[35m48[0m:[35m**  [0m:[35mWPA1 WPA2[0m:[35mwlan1[0m
 
 <<<
-size: 828
+size: 888
 location: src/tests/client/test-client.py:test_004()/608
 cmd: $NMCLI --mode tabular --terse --color yes -f COMMON device wifi list
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 638 bytes
+stdout: 698 bytes
 >>>
-[32m [0m:[32mC0\:E2\:BE\:E8\:EF\:B6[0m:[32mwlan0-ap-2[0m:[32mInfrastruktura[0m:[32m1[0m:[32m54 Mb/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m
-[32m [0m:[32m61\:95\:77\:AC\:1E\:4C[0m:[32mwlan0-ap-1[0m:[32mInfrastruktura[0m:[32m1[0m:[32m54 Mb/s[0m:[32m81[0m:[32m****[0m:[32mWPA1[0m
-[35m [0m:[35m9B\:F6\:B7\:EC\:97\:76[0m:[35mwlan0-ap-3[0m:[35mInfrastruktura[0m:[35m1[0m:[35m54 Mb/s[0m:[35m55[0m:[35m**  [0m:[35mWPA3[0m
-[35m [0m:[35m94\:2B\:E8\:F6\:D2\:86[0m:[35mwlan1-ap-4[0m:[35mInfrastruktura[0m:[35m1[0m:[35m54 Mb/s[0m:[35m48[0m:[35m**  [0m:[35mWPA1 WPA2[0m
+[32m [0m:[32mC0\:E2\:BE\:E8\:EF\:B6[0m:[32mwlan0-ap-2[0m:[32mInfrastruktura[0m:[32m1[0m:[32m54 Mb/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m:[32mwlan0[0m
+[32m [0m:[32m61\:95\:77\:AC\:1E\:4C[0m:[32mwlan0-ap-1[0m:[32mInfrastruktura[0m:[32m1[0m:[32m54 Mb/s[0m:[32m81[0m:[32m****[0m:[32mWPA1[0m:[32mwlan0[0m
+[35m [0m:[35m9B\:F6\:B7\:EC\:97\:76[0m:[35mwlan0-ap-3[0m:[35mInfrastruktura[0m:[35m1[0m:[35m54 Mb/s[0m:[35m55[0m:[35m**  [0m:[35mWPA3[0m:[35mwlan0[0m
+[35m [0m:[35m94\:2B\:E8\:F6\:D2\:86[0m:[35mwlan1-ap-4[0m:[35mInfrastruktura[0m:[35m1[0m:[35m54 Mb/s[0m:[35m48[0m:[35m**  [0m:[35mWPA1 WPA2[0m:[35mwlan1[0m
 
 <<<
 size: 1835
@@ -31526,24 +31526,24 @@ stdout: 438 bytes
 [32mAP[1][0m:[32mwlan0-ap-2[0m:[32m776C616E302D61702D32[0m:[32mC0\:E2\:BE\:E8\:EF\:B6[0m:[32mInfrastruktura[0m:[32m1[0m:[32m2412 MHz[0m:[32m54 Mb/s[0m:[32m40 MHz[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m:[32mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m:[32mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m:[32mwlan0[0m:[32mnie[0m:[32m [0m:[32m/org/freedesktop/NetworkManager/AccessPoint/2[0m
 
 <<<
-size: 357
+size: 372
 location: src/tests/client/test-client.py:test_004()/613
 cmd: $NMCLI --mode tabular --terse --color yes -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: C
 returncode: 0
-stdout: 153 bytes
+stdout: 168 bytes
 >>>
-[32m [0m:[32mC0\:E2\:BE\:E8\:EF\:B6[0m:[32mwlan0-ap-2[0m:[32mInfra[0m:[32m1[0m:[32m54 Mbit/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m
+[32m [0m:[32mC0\:E2\:BE\:E8\:EF\:B6[0m:[32mwlan0-ap-2[0m:[32mInfra[0m:[32m1[0m:[32m54 Mbit/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m:[32mwlan0[0m
 
 <<<
-size: 376
+size: 391
 location: src/tests/client/test-client.py:test_004()/614
 cmd: $NMCLI --mode tabular --terse --color yes -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 162 bytes
+stdout: 177 bytes
 >>>
-[32m [0m:[32mC0\:E2\:BE\:E8\:EF\:B6[0m:[32mwlan0-ap-2[0m:[32mInfrastruktura[0m:[32m1[0m:[32m54 Mb/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m
+[32m [0m:[32mC0\:E2\:BE\:E8\:EF\:B6[0m:[32mwlan0-ap-2[0m:[32mInfrastruktura[0m:[32m1[0m:[32m54 Mb/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m:[32mwlan0[0m
 
 <<<
 size: 722
@@ -34614,12 +34614,12 @@ IN-USE:
 DBUS-PATH:                              /org/freedesktop/NetworkManager/AccessPoint/4
 
 <<<
-size: 1861
+size: 2045
 location: src/tests/client/test-client.py:test_004()/657
 cmd: $NMCLI --mode multiline -f COMMON device wifi list
 lang: C
 returncode: 0
-stdout: 1698 bytes
+stdout: 1882 bytes
 >>>
 IN-USE:                                  
 BSSID:                                  C0:E2:BE:E8:EF:B6
@@ -34630,6 +34630,7 @@ RATE:                                   54 Mbit/s
 SIGNAL:                                 92
 BARS:                                   ****
 SECURITY:                               WPA1 WPA2
+DEVICE:                                 wlan0
 IN-USE:                                  
 BSSID:                                  61:95:77:AC:1E:4C
 SSID:                                   wlan0-ap-1
@@ -34639,6 +34640,7 @@ RATE:                                   54 Mbit/s
 SIGNAL:                                 81
 BARS:                                   ****
 SECURITY:                               WPA1
+DEVICE:                                 wlan0
 IN-USE:                                  
 BSSID:                                  9B:F6:B7:EC:97:76
 SSID:                                   wlan0-ap-3
@@ -34648,6 +34650,7 @@ RATE:                                   54 Mbit/s
 SIGNAL:                                 55
 BARS:                                   **  
 SECURITY:                               WPA3
+DEVICE:                                 wlan0
 IN-USE:                                  
 BSSID:                                  94:2B:E8:F6:D2:86
 SSID:                                   wlan1-ap-4
@@ -34657,14 +34660,15 @@ RATE:                                   54 Mbit/s
 SIGNAL:                                 48
 BARS:                                   **  
 SECURITY:                               WPA1 WPA2
+DEVICE:                                 wlan1
 
 <<<
-size: 1907
+size: 2091
 location: src/tests/client/test-client.py:test_004()/658
 cmd: $NMCLI --mode multiline -f COMMON device wifi list
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1734 bytes
+stdout: 1918 bytes
 >>>
 IN-USE:                                  
 BSSID:                                  C0:E2:BE:E8:EF:B6
@@ -34675,6 +34679,7 @@ RATE:                                   54 Mb/s
 SIGNAL:                                 92
 BARS:                                   ****
 SECURITY:                               WPA1 WPA2
+DEVICE:                                 wlan0
 IN-USE:                                  
 BSSID:                                  61:95:77:AC:1E:4C
 SSID:                                   wlan0-ap-1
@@ -34684,6 +34689,7 @@ RATE:                                   54 Mb/s
 SIGNAL:                                 81
 BARS:                                   ****
 SECURITY:                               WPA1
+DEVICE:                                 wlan0
 IN-USE:                                  
 BSSID:                                  9B:F6:B7:EC:97:76
 SSID:                                   wlan0-ap-3
@@ -34693,6 +34699,7 @@ RATE:                                   54 Mb/s
 SIGNAL:                                 55
 BARS:                                   **  
 SECURITY:                               WPA3
+DEVICE:                                 wlan0
 IN-USE:                                  
 BSSID:                                  94:2B:E8:F6:D2:86
 SSID:                                   wlan1-ap-4
@@ -34702,6 +34709,7 @@ RATE:                                   54 Mb/s
 SIGNAL:                                 48
 BARS:                                   **  
 SECURITY:                               WPA1 WPA2
+DEVICE:                                 wlan1
 
 <<<
 size: 3905
@@ -34912,12 +34920,12 @@ IN-USE:
 DBUS-PATH:                              /org/freedesktop/NetworkManager/AccessPoint/2
 
 <<<
-size: 613
+size: 659
 location: src/tests/client/test-client.py:test_004()/663
 cmd: $NMCLI --mode multiline -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: C
 returncode: 0
-stdout: 427 bytes
+stdout: 473 bytes
 >>>
 IN-USE:                                  
 BSSID:                                  C0:E2:BE:E8:EF:B6
@@ -34928,14 +34936,15 @@ RATE:                                   54 Mbit/s
 SIGNAL:                                 92
 BARS:                                   ****
 SECURITY:                               WPA1 WPA2
+DEVICE:                                 wlan0
 
 <<<
-size: 632
+size: 678
 location: src/tests/client/test-client.py:test_004()/664
 cmd: $NMCLI --mode multiline -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 436 bytes
+stdout: 482 bytes
 >>>
 IN-USE:                                  
 BSSID:                                  C0:E2:BE:E8:EF:B6
@@ -34946,6 +34955,7 @@ RATE:                                   54 Mb/s
 SIGNAL:                                 92
 BARS:                                   ****
 SECURITY:                               WPA1 WPA2
+DEVICE:                                 wlan0
 
 <<<
 size: 1226
@@ -38472,12 +38482,12 @@ IN-USE:                                 [35m [0m
 DBUS-PATH:                              [35m/org/freedesktop/NetworkManager/AccessPoint/4[0m
 
 <<<
-size: 2197
+size: 2417
 location: src/tests/client/test-client.py:test_004()/707
 cmd: $NMCLI --mode multiline --color yes -f COMMON device wifi list
 lang: C
 returncode: 0
-stdout: 2022 bytes
+stdout: 2242 bytes
 >>>
 IN-USE:                                 [32m [0m
 BSSID:                                  [32mC0:E2:BE:E8:EF:B6[0m
@@ -38488,6 +38498,7 @@ RATE:                                   [32m54 Mbit/s[0m
 SIGNAL:                                 [32m92[0m
 BARS:                                   [32m****[0m
 SECURITY:                               [32mWPA1 WPA2[0m
+DEVICE:                                 [32mwlan0[0m
 IN-USE:                                 [32m [0m
 BSSID:                                  [32m61:95:77:AC:1E:4C[0m
 SSID:                                   [32mwlan0-ap-1[0m
@@ -38497,6 +38508,7 @@ RATE:                                   [32m54 Mbit/s[0m
 SIGNAL:                                 [32m81[0m
 BARS:                                   [32m****[0m
 SECURITY:                               [32mWPA1[0m
+DEVICE:                                 [32mwlan0[0m
 IN-USE:                                 [35m [0m
 BSSID:                                  [35m9B:F6:B7:EC:97:76[0m
 SSID:                                   [35mwlan0-ap-3[0m
@@ -38506,6 +38518,7 @@ RATE:                                   [35m54 Mbit/s[0m
 SIGNAL:                                 [35m55[0m
 BARS:                                   [35m**  [0m
 SECURITY:                               [35mWPA3[0m
+DEVICE:                                 [35mwlan0[0m
 IN-USE:                                 [35m [0m
 BSSID:                                  [35m94:2B:E8:F6:D2:86[0m
 SSID:                                   [35mwlan1-ap-4[0m
@@ -38515,14 +38528,15 @@ RATE:                                   [35m54 Mbit/s[0m
 SIGNAL:                                 [35m48[0m
 BARS:                                   [35m**  [0m
 SECURITY:                               [35mWPA1 WPA2[0m
+DEVICE:                                 [35mwlan1[0m
 
 <<<
-size: 2243
+size: 2463
 location: src/tests/client/test-client.py:test_004()/708
 cmd: $NMCLI --mode multiline --color yes -f COMMON device wifi list
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2058 bytes
+stdout: 2278 bytes
 >>>
 IN-USE:                                 [32m [0m
 BSSID:                                  [32mC0:E2:BE:E8:EF:B6[0m
@@ -38533,6 +38547,7 @@ RATE:                                   [32m54 Mb/s[0m
 SIGNAL:                                 [32m92[0m
 BARS:                                   [32m****[0m
 SECURITY:                               [32mWPA1 WPA2[0m
+DEVICE:                                 [32mwlan0[0m
 IN-USE:                                 [32m [0m
 BSSID:                                  [32m61:95:77:AC:1E:4C[0m
 SSID:                                   [32mwlan0-ap-1[0m
@@ -38542,6 +38557,7 @@ RATE:                                   [32m54 Mb/s[0m
 SIGNAL:                                 [32m81[0m
 BARS:                                   [32m****[0m
 SECURITY:                               [32mWPA1[0m
+DEVICE:                                 [32mwlan0[0m
 IN-USE:                                 [35m [0m
 BSSID:                                  [35m9B:F6:B7:EC:97:76[0m
 SSID:                                   [35mwlan0-ap-3[0m
@@ -38551,6 +38567,7 @@ RATE:                                   [35m54 Mb/s[0m
 SIGNAL:                                 [35m55[0m
 BARS:                                   [35m**  [0m
 SECURITY:                               [35mWPA3[0m
+DEVICE:                                 [35mwlan0[0m
 IN-USE:                                 [35m [0m
 BSSID:                                  [35m94:2B:E8:F6:D2:86[0m
 SSID:                                   [35mwlan1-ap-4[0m
@@ -38560,6 +38577,7 @@ RATE:                                   [35m54 Mb/s[0m
 SIGNAL:                                 [35m48[0m
 BARS:                                   [35m**  [0m
 SECURITY:                               [35mWPA1 WPA2[0m
+DEVICE:                                 [35mwlan1[0m
 
 <<<
 size: 4529
@@ -38770,12 +38788,12 @@ IN-USE:                                 [32m [0m
 DBUS-PATH:                              [32m/org/freedesktop/NetworkManager/AccessPoint/2[0m
 
 <<<
-size: 706
+size: 761
 location: src/tests/client/test-client.py:test_004()/713
 cmd: $NMCLI --mode multiline --color yes -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: C
 returncode: 0
-stdout: 508 bytes
+stdout: 563 bytes
 >>>
 IN-USE:                                 [32m [0m
 BSSID:                                  [32mC0:E2:BE:E8:EF:B6[0m
@@ -38786,14 +38804,15 @@ RATE:                                   [32m54 Mbit/s[0m
 SIGNAL:                                 [32m92[0m
 BARS:                                   [32m****[0m
 SECURITY:                               [32mWPA1 WPA2[0m
+DEVICE:                                 [32mwlan0[0m
 
 <<<
-size: 725
+size: 780
 location: src/tests/client/test-client.py:test_004()/714
 cmd: $NMCLI --mode multiline --color yes -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 517 bytes
+stdout: 572 bytes
 >>>
 IN-USE:                                 [32m [0m
 BSSID:                                  [32mC0:E2:BE:E8:EF:B6[0m
@@ -38804,6 +38823,7 @@ RATE:                                   [32m54 Mb/s[0m
 SIGNAL:                                 [32m92[0m
 BARS:                                   [32m****[0m
 SECURITY:                               [32mWPA1 WPA2[0m
+DEVICE:                                 [32mwlan0[0m
 
 <<<
 size: 1392
@@ -42806,12 +42826,12 @@ DBUS-PATH:                              /org/freedesktop/NetworkManager/AccessPo
 -------------------------------------------------------------------------------
 
 <<<
-size: 2398
+size: 2582
 location: src/tests/client/test-client.py:test_004()/757
 cmd: $NMCLI --mode multiline --pretty -f COMMON device wifi list
 lang: C
 returncode: 0
-stdout: 2226 bytes
+stdout: 2410 bytes
 >>>
 ===============================================================================
                                 Wi-Fi scan list
@@ -42825,6 +42845,7 @@ RATE:                                   54 Mbit/s
 SIGNAL:                                 92
 BARS:                                   ****
 SECURITY:                               WPA1 WPA2
+DEVICE:                                 wlan0
 -------------------------------------------------------------------------------
 IN-USE:                                  
 BSSID:                                  61:95:77:AC:1E:4C
@@ -42835,6 +42856,7 @@ RATE:                                   54 Mbit/s
 SIGNAL:                                 81
 BARS:                                   ****
 SECURITY:                               WPA1
+DEVICE:                                 wlan0
 -------------------------------------------------------------------------------
 IN-USE:                                  
 BSSID:                                  9B:F6:B7:EC:97:76
@@ -42845,6 +42867,7 @@ RATE:                                   54 Mbit/s
 SIGNAL:                                 55
 BARS:                                   **  
 SECURITY:                               WPA3
+DEVICE:                                 wlan0
 -------------------------------------------------------------------------------
 IN-USE:                                  
 BSSID:                                  94:2B:E8:F6:D2:86
@@ -42855,15 +42878,16 @@ RATE:                                   54 Mbit/s
 SIGNAL:                                 48
 BARS:                                   **  
 SECURITY:                               WPA1 WPA2
+DEVICE:                                 wlan1
 -------------------------------------------------------------------------------
 
 <<<
-size: 2450
+size: 2634
 location: src/tests/client/test-client.py:test_004()/758
 cmd: $NMCLI --mode multiline --pretty -f COMMON device wifi list
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2268 bytes
+stdout: 2452 bytes
 >>>
 ===============================================================================
                          Lista skanowania sieci Wi-Fi
@@ -42877,6 +42901,7 @@ RATE:                                   54 Mb/s
 SIGNAL:                                 92
 BARS:                                   ****
 SECURITY:                               WPA1 WPA2
+DEVICE:                                 wlan0
 -------------------------------------------------------------------------------
 IN-USE:                                  
 BSSID:                                  61:95:77:AC:1E:4C
@@ -42887,6 +42912,7 @@ RATE:                                   54 Mb/s
 SIGNAL:                                 81
 BARS:                                   ****
 SECURITY:                               WPA1
+DEVICE:                                 wlan0
 -------------------------------------------------------------------------------
 IN-USE:                                  
 BSSID:                                  9B:F6:B7:EC:97:76
@@ -42897,6 +42923,7 @@ RATE:                                   54 Mb/s
 SIGNAL:                                 55
 BARS:                                   **  
 SECURITY:                               WPA3
+DEVICE:                                 wlan0
 -------------------------------------------------------------------------------
 IN-USE:                                  
 BSSID:                                  94:2B:E8:F6:D2:86
@@ -42907,6 +42934,7 @@ RATE:                                   54 Mb/s
 SIGNAL:                                 48
 BARS:                                   **  
 SECURITY:                               WPA1 WPA2
+DEVICE:                                 wlan1
 -------------------------------------------------------------------------------
 
 <<<
@@ -43140,12 +43168,12 @@ DBUS-PATH:                              /org/freedesktop/NetworkManager/AccessPo
 -------------------------------------------------------------------------------
 
 <<<
-size: 910
+size: 956
 location: src/tests/client/test-client.py:test_004()/763
 cmd: $NMCLI --mode multiline --pretty -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: C
 returncode: 0
-stdout: 715 bytes
+stdout: 761 bytes
 >>>
 ===============================================================================
                                 Wi-Fi scan list
@@ -43159,15 +43187,16 @@ RATE:                                   54 Mbit/s
 SIGNAL:                                 92
 BARS:                                   ****
 SECURITY:                               WPA1 WPA2
+DEVICE:                                 wlan0
 -------------------------------------------------------------------------------
 
 <<<
-size: 935
+size: 981
 location: src/tests/client/test-client.py:test_004()/764
 cmd: $NMCLI --mode multiline --pretty -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 730 bytes
+stdout: 776 bytes
 >>>
 ===============================================================================
                          Lista skanowania sieci Wi-Fi
@@ -43181,6 +43210,7 @@ RATE:                                   54 Mb/s
 SIGNAL:                                 92
 BARS:                                   ****
 SECURITY:                               WPA1 WPA2
+DEVICE:                                 wlan0
 -------------------------------------------------------------------------------
 
 <<<
@@ -47330,12 +47360,12 @@ DBUS-PATH:                              [35m/org/freedesktop/NetworkManager/Acc
 -------------------------------------------------------------------------------
 
 <<<
-size: 2734
+size: 2954
 location: src/tests/client/test-client.py:test_004()/807
 cmd: $NMCLI --mode multiline --pretty --color yes -f COMMON device wifi list
 lang: C
 returncode: 0
-stdout: 2550 bytes
+stdout: 2770 bytes
 >>>
 ===============================================================================
                                 Wi-Fi scan list
@@ -47349,6 +47379,7 @@ RATE:                                   [32m54 Mbit/s[0m
 SIGNAL:                                 [32m92[0m
 BARS:                                   [32m****[0m
 SECURITY:                               [32mWPA1 WPA2[0m
+DEVICE:                                 [32mwlan0[0m
 -------------------------------------------------------------------------------
 IN-USE:                                 [32m [0m
 BSSID:                                  [32m61:95:77:AC:1E:4C[0m
@@ -47359,6 +47390,7 @@ RATE:                                   [32m54 Mbit/s[0m
 SIGNAL:                                 [32m81[0m
 BARS:                                   [32m****[0m
 SECURITY:                               [32mWPA1[0m
+DEVICE:                                 [32mwlan0[0m
 -------------------------------------------------------------------------------
 IN-USE:                                 [35m [0m
 BSSID:                                  [35m9B:F6:B7:EC:97:76[0m
@@ -47369,6 +47401,7 @@ RATE:                                   [35m54 Mbit/s[0m
 SIGNAL:                                 [35m55[0m
 BARS:                                   [35m**  [0m
 SECURITY:                               [35mWPA3[0m
+DEVICE:                                 [35mwlan0[0m
 -------------------------------------------------------------------------------
 IN-USE:                                 [35m [0m
 BSSID:                                  [35m94:2B:E8:F6:D2:86[0m
@@ -47379,15 +47412,16 @@ RATE:                                   [35m54 Mbit/s[0m
 SIGNAL:                                 [35m48[0m
 BARS:                                   [35m**  [0m
 SECURITY:                               [35mWPA1 WPA2[0m
+DEVICE:                                 [35mwlan1[0m
 -------------------------------------------------------------------------------
 
 <<<
-size: 2786
+size: 3006
 location: src/tests/client/test-client.py:test_004()/808
 cmd: $NMCLI --mode multiline --pretty --color yes -f COMMON device wifi list
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2592 bytes
+stdout: 2812 bytes
 >>>
 ===============================================================================
                          Lista skanowania sieci Wi-Fi
@@ -47401,6 +47435,7 @@ RATE:                                   [32m54 Mb/s[0m
 SIGNAL:                                 [32m92[0m
 BARS:                                   [32m****[0m
 SECURITY:                               [32mWPA1 WPA2[0m
+DEVICE:                                 [32mwlan0[0m
 -------------------------------------------------------------------------------
 IN-USE:                                 [32m [0m
 BSSID:                                  [32m61:95:77:AC:1E:4C[0m
@@ -47411,6 +47446,7 @@ RATE:                                   [32m54 Mb/s[0m
 SIGNAL:                                 [32m81[0m
 BARS:                                   [32m****[0m
 SECURITY:                               [32mWPA1[0m
+DEVICE:                                 [32mwlan0[0m
 -------------------------------------------------------------------------------
 IN-USE:                                 [35m [0m
 BSSID:                                  [35m9B:F6:B7:EC:97:76[0m
@@ -47421,6 +47457,7 @@ RATE:                                   [35m54 Mb/s[0m
 SIGNAL:                                 [35m55[0m
 BARS:                                   [35m**  [0m
 SECURITY:                               [35mWPA3[0m
+DEVICE:                                 [35mwlan0[0m
 -------------------------------------------------------------------------------
 IN-USE:                                 [35m [0m
 BSSID:                                  [35m94:2B:E8:F6:D2:86[0m
@@ -47431,6 +47468,7 @@ RATE:                                   [35m54 Mb/s[0m
 SIGNAL:                                 [35m48[0m
 BARS:                                   [35m**  [0m
 SECURITY:                               [35mWPA1 WPA2[0m
+DEVICE:                                 [35mwlan1[0m
 -------------------------------------------------------------------------------
 
 <<<
@@ -47664,12 +47702,12 @@ DBUS-PATH:                              [32m/org/freedesktop/NetworkManager/Acc
 -------------------------------------------------------------------------------
 
 <<<
-size: 1003
+size: 1058
 location: src/tests/client/test-client.py:test_004()/813
 cmd: $NMCLI --mode multiline --pretty --color yes -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: C
 returncode: 0
-stdout: 796 bytes
+stdout: 851 bytes
 >>>
 ===============================================================================
                                 Wi-Fi scan list
@@ -47683,15 +47721,16 @@ RATE:                                   [32m54 Mbit/s[0m
 SIGNAL:                                 [32m92[0m
 BARS:                                   [32m****[0m
 SECURITY:                               [32mWPA1 WPA2[0m
+DEVICE:                                 [32mwlan0[0m
 -------------------------------------------------------------------------------
 
 <<<
-size: 1028
+size: 1083
 location: src/tests/client/test-client.py:test_004()/814
 cmd: $NMCLI --mode multiline --pretty --color yes -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 811 bytes
+stdout: 866 bytes
 >>>
 ===============================================================================
                          Lista skanowania sieci Wi-Fi
@@ -47705,6 +47744,7 @@ RATE:                                   [32m54 Mb/s[0m
 SIGNAL:                                 [32m92[0m
 BARS:                                   [32m****[0m
 SECURITY:                               [32mWPA1 WPA2[0m
+DEVICE:                                 [32mwlan0[0m
 -------------------------------------------------------------------------------
 
 <<<
@@ -51378,12 +51418,12 @@ IN-USE:
 DBUS-PATH:/org/freedesktop/NetworkManager/AccessPoint/4
 
 <<<
-size: 644
+size: 696
 location: src/tests/client/test-client.py:test_004()/857
 cmd: $NMCLI --mode multiline --terse -f COMMON device wifi list
 lang: C
 returncode: 0
-stdout: 474 bytes
+stdout: 526 bytes
 >>>
 IN-USE: 
 BSSID:C0:E2:BE:E8:EF:B6
@@ -51394,6 +51434,7 @@ RATE:54 Mbit/s
 SIGNAL:92
 BARS:****
 SECURITY:WPA1 WPA2
+DEVICE:wlan0
 IN-USE: 
 BSSID:61:95:77:AC:1E:4C
 SSID:wlan0-ap-1
@@ -51403,6 +51444,7 @@ RATE:54 Mbit/s
 SIGNAL:81
 BARS:****
 SECURITY:WPA1
+DEVICE:wlan0
 IN-USE: 
 BSSID:9B:F6:B7:EC:97:76
 SSID:wlan0-ap-3
@@ -51412,6 +51454,7 @@ RATE:54 Mbit/s
 SIGNAL:55
 BARS:**  
 SECURITY:WPA3
+DEVICE:wlan0
 IN-USE: 
 BSSID:94:2B:E8:F6:D2:86
 SSID:wlan1-ap-4
@@ -51421,14 +51464,15 @@ RATE:54 Mbit/s
 SIGNAL:48
 BARS:**  
 SECURITY:WPA1 WPA2
+DEVICE:wlan1
 
 <<<
-size: 690
+size: 742
 location: src/tests/client/test-client.py:test_004()/858
 cmd: $NMCLI --mode multiline --terse -f COMMON device wifi list
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 510 bytes
+stdout: 562 bytes
 >>>
 IN-USE: 
 BSSID:C0:E2:BE:E8:EF:B6
@@ -51439,6 +51483,7 @@ RATE:54 Mb/s
 SIGNAL:92
 BARS:****
 SECURITY:WPA1 WPA2
+DEVICE:wlan0
 IN-USE: 
 BSSID:61:95:77:AC:1E:4C
 SSID:wlan0-ap-1
@@ -51448,6 +51493,7 @@ RATE:54 Mb/s
 SIGNAL:81
 BARS:****
 SECURITY:WPA1
+DEVICE:wlan0
 IN-USE: 
 BSSID:9B:F6:B7:EC:97:76
 SSID:wlan0-ap-3
@@ -51457,6 +51503,7 @@ RATE:54 Mb/s
 SIGNAL:55
 BARS:**  
 SECURITY:WPA3
+DEVICE:wlan0
 IN-USE: 
 BSSID:94:2B:E8:F6:D2:86
 SSID:wlan1-ap-4
@@ -51466,6 +51513,7 @@ RATE:54 Mb/s
 SIGNAL:48
 BARS:**  
 SECURITY:WPA1 WPA2
+DEVICE:wlan1
 
 <<<
 size: 1661
@@ -51676,12 +51724,12 @@ IN-USE:
 DBUS-PATH:/org/freedesktop/NetworkManager/AccessPoint/2
 
 <<<
-size: 315
+size: 328
 location: src/tests/client/test-client.py:test_004()/863
 cmd: $NMCLI --mode multiline --terse -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: C
 returncode: 0
-stdout: 121 bytes
+stdout: 134 bytes
 >>>
 IN-USE: 
 BSSID:C0:E2:BE:E8:EF:B6
@@ -51692,14 +51740,15 @@ RATE:54 Mbit/s
 SIGNAL:92
 BARS:****
 SECURITY:WPA1 WPA2
+DEVICE:wlan0
 
 <<<
-size: 334
+size: 347
 location: src/tests/client/test-client.py:test_004()/864
 cmd: $NMCLI --mode multiline --terse -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 130 bytes
+stdout: 143 bytes
 >>>
 IN-USE: 
 BSSID:C0:E2:BE:E8:EF:B6
@@ -51710,6 +51759,7 @@ RATE:54 Mb/s
 SIGNAL:92
 BARS:****
 SECURITY:WPA1 WPA2
+DEVICE:wlan0
 
 <<<
 size: 671
@@ -55236,12 +55286,12 @@ IN-USE:[35m [0m
 DBUS-PATH:[35m/org/freedesktop/NetworkManager/AccessPoint/4[0m
 
 <<<
-size: 980
+size: 1068
 location: src/tests/client/test-client.py:test_004()/907
 cmd: $NMCLI --mode multiline --terse --color yes -f COMMON device wifi list
 lang: C
 returncode: 0
-stdout: 798 bytes
+stdout: 886 bytes
 >>>
 IN-USE:[32m [0m
 BSSID:[32mC0:E2:BE:E8:EF:B6[0m
@@ -55252,6 +55302,7 @@ RATE:[32m54 Mbit/s[0m
 SIGNAL:[32m92[0m
 BARS:[32m****[0m
 SECURITY:[32mWPA1 WPA2[0m
+DEVICE:[32mwlan0[0m
 IN-USE:[32m [0m
 BSSID:[32m61:95:77:AC:1E:4C[0m
 SSID:[32mwlan0-ap-1[0m
@@ -55261,6 +55312,7 @@ RATE:[32m54 Mbit/s[0m
 SIGNAL:[32m81[0m
 BARS:[32m****[0m
 SECURITY:[32mWPA1[0m
+DEVICE:[32mwlan0[0m
 IN-USE:[35m [0m
 BSSID:[35m9B:F6:B7:EC:97:76[0m
 SSID:[35mwlan0-ap-3[0m
@@ -55270,6 +55322,7 @@ RATE:[35m54 Mbit/s[0m
 SIGNAL:[35m55[0m
 BARS:[35m**  [0m
 SECURITY:[35mWPA3[0m
+DEVICE:[35mwlan0[0m
 IN-USE:[35m [0m
 BSSID:[35m94:2B:E8:F6:D2:86[0m
 SSID:[35mwlan1-ap-4[0m
@@ -55279,14 +55332,15 @@ RATE:[35m54 Mbit/s[0m
 SIGNAL:[35m48[0m
 BARS:[35m**  [0m
 SECURITY:[35mWPA1 WPA2[0m
+DEVICE:[35mwlan1[0m
 
 <<<
-size: 1026
+size: 1114
 location: src/tests/client/test-client.py:test_004()/908
 cmd: $NMCLI --mode multiline --terse --color yes -f COMMON device wifi list
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 834 bytes
+stdout: 922 bytes
 >>>
 IN-USE:[32m [0m
 BSSID:[32mC0:E2:BE:E8:EF:B6[0m
@@ -55297,6 +55351,7 @@ RATE:[32m54 Mb/s[0m
 SIGNAL:[32m92[0m
 BARS:[32m****[0m
 SECURITY:[32mWPA1 WPA2[0m
+DEVICE:[32mwlan0[0m
 IN-USE:[32m [0m
 BSSID:[32m61:95:77:AC:1E:4C[0m
 SSID:[32mwlan0-ap-1[0m
@@ -55306,6 +55361,7 @@ RATE:[32m54 Mb/s[0m
 SIGNAL:[32m81[0m
 BARS:[32m****[0m
 SECURITY:[32mWPA1[0m
+DEVICE:[32mwlan0[0m
 IN-USE:[35m [0m
 BSSID:[35m9B:F6:B7:EC:97:76[0m
 SSID:[35mwlan0-ap-3[0m
@@ -55315,6 +55371,7 @@ RATE:[35m54 Mb/s[0m
 SIGNAL:[35m55[0m
 BARS:[35m**  [0m
 SECURITY:[35mWPA3[0m
+DEVICE:[35mwlan0[0m
 IN-USE:[35m [0m
 BSSID:[35m94:2B:E8:F6:D2:86[0m
 SSID:[35mwlan1-ap-4[0m
@@ -55324,6 +55381,7 @@ RATE:[35m54 Mb/s[0m
 SIGNAL:[35m48[0m
 BARS:[35m**  [0m
 SECURITY:[35mWPA1 WPA2[0m
+DEVICE:[35mwlan1[0m
 
 <<<
 size: 2285
@@ -55534,12 +55592,12 @@ IN-USE:[32m [0m
 DBUS-PATH:[32m/org/freedesktop/NetworkManager/AccessPoint/2[0m
 
 <<<
-size: 408
+size: 430
 location: src/tests/client/test-client.py:test_004()/913
 cmd: $NMCLI --mode multiline --terse --color yes -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: C
 returncode: 0
-stdout: 202 bytes
+stdout: 224 bytes
 >>>
 IN-USE:[32m [0m
 BSSID:[32mC0:E2:BE:E8:EF:B6[0m
@@ -55550,14 +55608,15 @@ RATE:[32m54 Mbit/s[0m
 SIGNAL:[32m92[0m
 BARS:[32m****[0m
 SECURITY:[32mWPA1 WPA2[0m
+DEVICE:[32mwlan0[0m
 
 <<<
-size: 427
+size: 449
 location: src/tests/client/test-client.py:test_004()/914
 cmd: $NMCLI --mode multiline --terse --color yes -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 211 bytes
+stdout: 233 bytes
 >>>
 IN-USE:[32m [0m
 BSSID:[32mC0:E2:BE:E8:EF:B6[0m
@@ -55568,6 +55627,7 @@ RATE:[32m54 Mb/s[0m
 SIGNAL:[32m92[0m
 BARS:[32m****[0m
 SECURITY:[32mWPA1 WPA2[0m
+DEVICE:[32mwlan0[0m
 
 <<<
 size: 836
