@@ -34,6 +34,8 @@ static void G_GNUC_PRINTF(3, 4)
                                prop_info->property_name,
                                (int) prop_info->property_type->doc_format,
                                msg);
+    va_end(vaargs);
+
     if (fatal)
         g_error("%s", msg_full);
     else
