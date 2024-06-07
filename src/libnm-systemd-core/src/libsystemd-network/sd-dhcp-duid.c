@@ -193,6 +193,7 @@ int sd_dhcp_duid_set_en(sd_dhcp_duid *duid) {
         return 0;
 }
 
+#if 0  /* NM_IGNORED */
 int sd_dhcp_duid_set_uuid(sd_dhcp_duid *duid) {
         sd_id128_t machine_id;
         int r;
@@ -209,6 +210,7 @@ int sd_dhcp_duid_set_uuid(sd_dhcp_duid *duid) {
         duid->size = offsetof(struct duid, uuid.uuid) + sizeof(machine_id);
         return 0;
 }
+#endif /* NM_IGNORED */
 
 int dhcp_duid_to_string_internal(uint16_t type, const void *data, size_t data_size, char **ret) {
         _cleanup_free_ char *p = NULL, *x = NULL;
