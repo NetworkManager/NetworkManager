@@ -1481,6 +1481,12 @@ managed=1
           default is 300 seconds.</para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>timeout</varname></term>
+          <listitem><para>Specified in seconds; controls how long
+          to wait for a response before connectivity is marked as
+          limited.  If missing, the default is 20 seconds.</para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>response</varname></term>
           <listitem><para>If set, controls what body content
           NetworkManager checks for when requesting the URI for

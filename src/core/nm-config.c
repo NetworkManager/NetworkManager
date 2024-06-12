@@ -871,6 +871,7 @@ static const ConfigGroup config_groups[] = {
         .group = NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY,
         .keys  = NM_MAKE_STRV(NM_CONFIG_KEYFILE_KEY_CONNECTIVITY_ENABLED,
                              NM_CONFIG_KEYFILE_KEY_CONNECTIVITY_INTERVAL,
+                             NM_CONFIG_KEYFILE_KEY_CONNECTIVITY_TIMEOUT,
                              NM_CONFIG_KEYFILE_KEY_CONNECTIVITY_RESPONSE,
                              NM_CONFIG_KEYFILE_KEY_CONNECTIVITY_URI, ),
     },

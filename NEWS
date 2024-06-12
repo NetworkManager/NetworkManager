@@ -9,6 +9,7 @@ the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 * Support matching a OVS system interface by MAC address.
+* Add a timeout option to connectivity checking.
 
 =============================================
 NetworkManager-1.48
