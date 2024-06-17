@@ -359,7 +359,8 @@ RUN chmod 700 /var/lib/NetworkManager
 RUN echo -n "nm-in-container-secret-key" > /var/lib/NetworkManager/secret_key
 RUN chmod 600 /var/lib/NetworkManager/secret_key
 
-RUN sed 's/.*RateLimitBurst=.*/RateLimitBurst=0/' /etc/systemd/journald.conf -i
+RUN mkdir -p /etc/systemd/journald.conf.d/ && \
+    echo "RateLimitBurst=0" > /etc/systemd/journald.conf.d/no-rate-limit.conf
 
 $RUN_LN_BASEDIR_NM
 $RUN_LN_SYMLINK_CMDS
