@@ -416,9 +416,18 @@ nmt_newt_edit_string(const char *data)
 
     len = data ? strlen(data) : 0;
     while (len) {
-        do
-            nwrote = write(fd, data, len);
-        while (nwrote == -1 && errno == EINTR);
+        nwrote = write(fd, data, len);
+
+        if (nwrote == -1) {
+            if (errno == EINTR) {
+                continue;
+            }
+
+            nmt_newt_message_dialog(_("Could not write to temporary file: %s"),
+                                    nm_strerror_native(errno));
+            nm_close(fd);
+            goto done;
+        }
 
         len -= nwrote;
         data += nwrote;
