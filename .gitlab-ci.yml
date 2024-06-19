@@ -49,6 +49,7 @@ stages:
   - tier3
   - deploy
   - triage
+  - coverity
 
 variables:
   FDO_UPSTREAM_REPO: NetworkManager/NetworkManager
@@ -59,11 +60,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-ec99bc32ed7f'
-  CENTOS_TAG:  'tag-a76c3f2e9d0f'
-  DEBIAN_TAG:  'tag-3f6892bcd503'
-  FEDORA_TAG:  'tag-a76c3f2e9d0f'
-  UBUNTU_TAG:  'tag-3f6892bcd503'
+  ALPINE_TAG:  'tag-f0b648c04526'
+  CENTOS_TAG:  'tag-c2d500e0391f'
+  DEBIAN_TAG:  'tag-7687baa06688'
+  FEDORA_TAG:  'tag-c2d500e0391f'
+  UBUNTU_TAG:  'tag-7687baa06688'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
@@ -638,6 +639,24 @@ triage:issues:
   script:
     - gem install gitlab-triage
     - gitlab-triage --debug --token $API_TOKEN --source-id $CI_PROJECT_ID
+
+coverity:
+  extends:
+    - .fdo.distribution-image@fedora
+  variables:
+    FDO_DISTRIBUTION_VERSION: '40'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+  stage: coverity
+  needs: []
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'schedule'
+  script:
+    - dnf install -y curl
+    - BUILD_TYPE=meson CC=gcc CONFIGURE_ONLY=1 contrib/scripts/nm-ci-run.sh
+    - cd build
+    - ../.gitlab-ci/coverity.sh download
+    - cov-analysis-linux64-*/bin/cov-build --dir cov-int ninja
+    - ../.gitlab-ci/coverity.sh upload
 
 # Clean the generated images periodically to get updated snapshots of the distribution images.
 # Create an scheduled pipeline to run it, passing an AUTHFILE environment variable of type

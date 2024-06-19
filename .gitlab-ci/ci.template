@@ -53,6 +53,7 @@ stages:
   - tier3
   - deploy
   - triage
+  - coverity
 
 variables:
   FDO_UPSTREAM_REPO: NetworkManager/NetworkManager
@@ -247,6 +248,24 @@ triage:issues:
   script:
     - gem install gitlab-triage
     - gitlab-triage --debug --token $API_TOKEN --source-id $CI_PROJECT_ID
+
+coverity:
+  extends:
+    - .fdo.distribution-image@fedora
+  variables:
+    FDO_DISTRIBUTION_VERSION: '40'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+  stage: coverity
+  needs: []
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'schedule'
+  script:
+    - dnf install -y curl
+    - BUILD_TYPE=meson CC=gcc CONFIGURE_ONLY=1 contrib/scripts/nm-ci-run.sh
+    - cd build
+    - ../.gitlab-ci/coverity.sh download
+    - cov-analysis-linux64-*/bin/cov-build --dir cov-int ninja
+    - ../.gitlab-ci/coverity.sh upload
 
 # Clean the generated images periodically to get updated snapshots of the distribution images.
 # Create an scheduled pipeline to run it, passing an AUTHFILE environment variable of type
