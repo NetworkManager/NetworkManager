@@ -11,6 +11,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Support matching a OVS system interface by MAC address.
 * Add a timeout option to connectivity checking.
 * Support configuring veth interfaces in nmtui.
+* When looking up the system hostname from the reverse DNS lookup of
+  addresses configured on interfaces, NetworkManager now takes into
+  account the content of /etc/hosts.
 
 =============================================
 NetworkManager-1.48
