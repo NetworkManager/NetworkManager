@@ -55,26 +55,31 @@ cmd_version(void)
 static int
 cmd_resolve_address(void)
 {
-    nm_auto_free char *address = NULL;
+    nm_auto_free char *address  = NULL;
+    nm_auto_free char *services = NULL;
     union {
         struct sockaddr_in  in;
         struct sockaddr_in6 in6;
     } sockaddr;
     socklen_t sockaddr_size;
     char      name[NI_MAXHOST];
+    char     *saveptr = NULL;
+    char     *service;
+    char     *str;
     int       ret;
 
     address = read_arg();
     if (!address)
         return RETURN_INVALID_ARGS;
 
-    if (more_args())
-        return RETURN_INVALID_ARGS;
+    services = read_arg();
+    if (!services) {
+        /* Called by an old NM version which doesn't support the 'services'
+         * argument. Use both services. */
+        services = strdup("dns,files");
+    }
 
     memset(&sockaddr, 0, sizeof(sockaddr));
-#if defined(__GLIBC__)
-    __nss_configure_lookup("hosts", "dns");
-#endif
 
     if (inet_pton(AF_INET, address, &sockaddr.in.sin_addr) == 1) {
         sockaddr.in.sin_family = AF_INET;
@@ -85,30 +90,51 @@ cmd_resolve_address(void)
     } else
         return RETURN_INVALID_ARGS;
 
-    ret = getnameinfo((struct sockaddr *) &sockaddr,
-                      sockaddr_size,
-                      name,
-                      sizeof(name),
-                      NULL,
-                      0,
-                      NI_NAMEREQD);
-    if (ret != 0) {
-        if (ret == EAI_SYSTEM) {
+    for (str = services; (service = strtok_r(str, ",", &saveptr)); str = NULL) {
+        if (!NM_IN_STRSET(service, "dns", "files")) {
+            fprintf(stderr, "Unsupported resolver service '%s'\n", service);
+            continue;
+        }
+
+#if defined(__GLIBC__)
+        __nss_configure_lookup("hosts", service);
+#endif
+
+        ret = getnameinfo((struct sockaddr *) &sockaddr,
+                          sockaddr_size,
+                          name,
+                          sizeof(name),
+                          NULL,
+                          0,
+                          NI_NAMEREQD);
+
+        if (ret == 0) {
+            printf("%s", name);
+            return RETURN_SUCCESS;
+        } else if (ret == EAI_SYSTEM) {
+            char buf[1024];
+            int  errsv = errno;
+
             fprintf(stderr,
-                    "getnameinfo() failed: %d (%s), system error: %d (%s)\n",
+                    "getnameinfo() via service '%s' failed: %d (%s), system error: %d (%s)\n",
+                    service,
                     ret,
                     gai_strerror(ret),
                     errno,
                     strerror(errno));
         } else {
-            fprintf(stderr, "getnameinfo() failed: %d (%s)\n", ret, gai_strerror(ret));
+            fprintf(stderr,
+                    "getnameinfo() via service '%s' failed: %d (%s)\n",
+                    service,
+                    ret,
+                    gai_strerror(ret));
         }
-        return RETURN_ERROR;
+#if !defined(__GLIBC__)
+        break;
+#endif
     }
 
-    printf("%s", name);
-
-    return RETURN_SUCCESS;
+    return RETURN_ERROR;
 }
 
 int
