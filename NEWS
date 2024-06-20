@@ -1,3 +1,10 @@
+===============================================
+NetworkManager-1.48.2
+Overview of changes since NetworkManager-1.48.0
+===============================================
+
+* Support matching a OVS system interface by MAC address.
+
 =============================================
 NetworkManager-1.48
 Overview of changes since NetworkManager-1.46
