@@ -461,7 +461,7 @@ ovsdb_call_method(NMOvsdb                  *self,
                    "new: add-interface bridge=%s port=%s interface=%s",
                    nm_connection_get_interface_name(call->payload.add_interface.bridge),
                    nm_connection_get_interface_name(call->payload.add_interface.port),
-                   nm_connection_get_interface_name(call->payload.add_interface.interface));
+                   nm_device_get_iface(call->payload.add_interface.interface_device));
         break;
     case OVSDB_DEL_INTERFACE:
         call->payload.del_interface.ifname = g_strdup(payload->del_interface.ifname);
@@ -945,7 +945,7 @@ _insert_interface(json_t       *params,
 
     row = json_pack("{s:s, s:s, s:o, s:o, s:o}",
                     "name",
-                    nm_connection_get_interface_name(interface),
+                    nm_device_get_iface(interface_device),
                     "type",
                     type ?: "",
                     "options",
@@ -1196,7 +1196,7 @@ _add_interface(NMOvsdb      *self,
 
     bridge_name        = nm_connection_get_interface_name(bridge);
     port_name          = nm_connection_get_interface_name(port);
-    interface_name     = nm_connection_get_interface_name(interface);
+    interface_name     = nm_device_get_iface(interface_device);
     interface_is_local = nm_streq0(bridge_name, interface_name);
 
     /* Determine cloned MAC addresses */
