@@ -3,8 +3,15 @@ NetworkManager-1.46.2
 Overview of changes since NetworkManager-1.46.0
 ===============================================
 
+* Fix handling of IPv6 hop limit.
 * Properly restore in-memory connection profiles during the rollback
   of a checkpoint.
+* Fix connection activation failures on Wi-Fi cards not supporting changing
+  the MAC address if the distro ships a special MAC by default.
+* Properly use of subnets on active IPv6 connections with method=shared.
+* Various addresses and routes handling fixed for VPNs.
+* Fix OpenVPN dynamic challenge handling (needs updated NetworkManager-openvpn).
+* Some minor bugfixes.
 
 =============================================
 NetworkManager-1.46
