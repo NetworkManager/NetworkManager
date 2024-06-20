@@ -12,6 +12,7 @@ Overview of changes since NetworkManager-1.46.0
 * Various addresses and routes handling fixed for VPNs.
 * Fix OpenVPN dynamic challenge handling (needs updated NetworkManager-openvpn).
 * Some minor bugfixes.
+* Support matching a OVS system interface by MAC address.
 
 =============================================
 NetworkManager-1.46
