@@ -68,9 +68,10 @@ typedef struct {
     char      ifname[IFNAMSIZ];
 } SocketHandle;
 
-#define SOCKET_HANDLE_INIT(_ifindex)     \
-    {                                    \
-        .fd = -1, .ifindex = (_ifindex), \
+#define SOCKET_HANDLE_INIT(_ifindex) \
+    {                                \
+        .fd      = -1,               \
+        .ifindex = (_ifindex),       \
     }
 
 static void
@@ -430,10 +431,11 @@ ethtool_get_stringset_index(SocketHandle *shandle, int stringset_id, const char 
 /*****************************************************************************/
 
 static const NMEthtoolFeatureInfo _ethtool_feature_infos[_NM_ETHTOOL_ID_FEATURE_NUM] = {
-#define ETHT_FEAT(eid, ...)                                        \
-    {                                                              \
-        .ethtool_id = eid, .n_kernel_names = NM_NARG(__VA_ARGS__), \
-        .kernel_names = ((const char *const[]){__VA_ARGS__}),      \
+#define ETHT_FEAT(eid, ...)                                     \
+    {                                                           \
+        .ethtool_id     = eid,                                  \
+        .n_kernel_names = NM_NARG(__VA_ARGS__),                 \
+        .kernel_names   = ((const char *const[]){__VA_ARGS__}), \
     }
 
     /* the order does only matter for one thing: if it happens that more than one NMEthtoolID

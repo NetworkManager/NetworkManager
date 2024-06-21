@@ -5943,7 +5943,20 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
                                              NM_DEVICE_STATE_REASON_USER_REQUESTED);
         }
 
-        nm_active_connection_set_controller(active, master_ac);
+        /* If controller NMActiveConnection is deactivating, we should wait on
+         * controller's NMDevice to have new NMActiveConnection after
+         * controller device state change to between NM_DEVICE_STATE_PREPARE and
+         * NM_DEVICE_STATE_ACTIVATED.
+         */
+        if ((nm_active_connection_get_state(master_ac) >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING)
+            && master_device
+            && (nm_device_get_state_reason(master_device)
+                == NM_DEVICE_STATE_REASON_NEW_ACTIVATION)) {
+            nm_active_connection_set_controller_dev(active, master_device);
+        } else {
+            nm_active_connection_set_controller(active, master_ac);
+        }
+
         _LOGD(LOGD_CORE,
               "Activation of '%s' depends on active connection %p %s",
               nm_settings_connection_get_id(sett_conn),
@@ -7947,6 +7960,7 @@ nm_manager_write_device_state_all(NMManager *self)
     NMManagerPrivate              *priv               = NM_MANAGER_GET_PRIVATE(self);
     gs_unref_hashtable GHashTable *preserve_ifindexes = NULL;
     NMDevice                      *device;
+    NMActiveConnection            *ac;
 
     preserve_ifindexes = g_hash_table_new(nm_direct_hash, NULL);
 
@@ -7956,6 +7970,14 @@ nm_manager_write_device_state_all(NMManager *self)
         if (nm_manager_write_device_state(self, device, &ifindex)) {
             g_hash_table_add(preserve_ifindexes, GINT_TO_POINTER(ifindex));
         }
+    }
+
+    /* Save to disk the timestamps of active connections as if we were bringing them down.
+     * Otherwise they will be wrong on next start and affect the activation order.
+     */
+    c_list_for_each_entry (ac, &priv->active_connections_lst_head, active_connections_lst) {
+        NMSettingsConnection *sett = nm_active_connection_get_settings_connection(ac);
+        nm_settings_connection_update_timestamp(sett, (guint64) time(NULL));
     }
 
     nm_config_device_state_prune_stale(preserve_ifindexes, NULL);

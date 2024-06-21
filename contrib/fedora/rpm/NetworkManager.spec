@@ -48,7 +48,7 @@
 %global systemd_units_cloud_setup nm-cloud-setup.service nm-cloud-setup.timer
 
 ###############################################################################
-%if 0%{?fedora} > 40
+%if 0%{?fedora} > 40 || 0%{?rhel} >= 10
 %bcond_without meson
 %else
 %bcond_with    meson
@@ -259,11 +259,26 @@ Obsoletes: NetworkManager < %{obsoletes_ifcfg_rh}
 Requires: wpa_supplicant >= 1:1.1
 %endif
 
+%if 0%{?rhel} && 0%{?rhel} >= 10
+%if 0%{without team}
+Obsoletes: NetworkManager-team < 1:1.47.5-3
+%endif
+Obsoletes: NetworkManager-initscripts-ifcfg-rh < 1:1.47.5-3
+Obsoletes: NetworkManager-dispatcher-routing-rules < 1:1.47.5-3
+%endif
+
 Conflicts: NetworkManager-vpnc < 1:0.7.0.99-1
 Conflicts: NetworkManager-openvpn < 1:0.7.0.99-1
 Conflicts: NetworkManager-pptp < 1:0.7.0.99-1
 Conflicts: NetworkManager-openconnect < 0:0.7.0.99-1
 Conflicts: kde-plasma-networkmanagement < 1:0.9-0.49.20110527git.nm09
+%if 0%{?rhel} && 0%{?rhel} >= 10
+%if 0%{without team}
+Conflicts: NetworkManager-team <= 1:1.47.5-3
+%endif
+Conflicts: NetworkManager-initscripts-ifcfg-rh <= 1:1.47.5-3
+Conflicts: NetworkManager-dispatcher-routing-rules <= 1:1.47.5-3
+%endif
 
 BuildRequires: make
 BuildRequires: gcc

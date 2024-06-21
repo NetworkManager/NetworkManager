@@ -54,6 +54,7 @@ typedef struct {
     guint peer_missing_id;
 
     bool is_waiting_for_supplicant : 1;
+    bool enabled : 1;
 } NMDeviceWifiP2PPrivate;
 
 struct _NMDeviceWifiP2P {
@@ -774,7 +775,6 @@ supplicant_group_iface_is_ready(NMDeviceWifiP2P *self)
         return;
     }
 
-    _set_is_waiting_for_supplicant(self, FALSE);
     check_group_iface_ready(self);
 }
 
@@ -875,7 +875,6 @@ supplicant_iface_group_started_cb(NMSupplicantInterface *iface,
 
     state = nm_supplicant_interface_get_state(priv->group_iface);
     if (state == NM_SUPPLICANT_INTERFACE_STATE_STARTING) {
-        _set_is_waiting_for_supplicant(self, TRUE);
         return;
     }
 
@@ -917,7 +916,7 @@ supplicant_interfaces_release(NMDeviceWifiP2P *self, gboolean set_is_waiting)
 
     supplicant_group_interface_release(self);
 
-    if (set_is_waiting)
+    if (set_is_waiting && priv->enabled)
         _set_is_waiting_for_supplicant(self, TRUE);
 }
 
@@ -948,9 +947,10 @@ device_state_changed(NMDevice           *device,
     case NM_DEVICE_STATE_UNMANAGED:
         break;
     case NM_DEVICE_STATE_UNAVAILABLE:
-        if (!priv->mgmt_iface
-            || !nm_supplicant_interface_state_is_operational(
-                nm_supplicant_interface_get_state(priv->mgmt_iface)))
+        if (priv->enabled
+            && (!priv->mgmt_iface
+                || !nm_supplicant_interface_state_is_operational(
+                    nm_supplicant_interface_get_state(priv->mgmt_iface))))
             _set_is_waiting_for_supplicant(self, TRUE);
         break;
     case NM_DEVICE_STATE_NEED_AUTH:
@@ -1122,6 +1122,32 @@ impl_device_wifi_p2p_stop_find(NMDBusObject                      *obj,
                            NULL);
 }
 
+static gboolean
+get_enabled(NMDevice *device)
+{
+    return NM_DEVICE_WIFI_P2P_GET_PRIVATE(device)->enabled;
+}
+
+static void
+set_enabled(NMDevice *device, gboolean enabled)
+{
+    NMDeviceWifiP2P        *self = NM_DEVICE_WIFI_P2P(device);
+    NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE(self);
+
+    enabled = !!enabled;
+
+    if (priv->enabled == enabled)
+        return;
+
+    priv->enabled = enabled;
+
+    _LOGD(LOGD_DEVICE | LOGD_WIFI, "device now %s", enabled ? "enabled" : "disabled");
+
+    if (!enabled) {
+        _set_is_waiting_for_supplicant(self, FALSE);
+    }
+}
+
 /*****************************************************************************/
 
 NMSupplicantInterface *
@@ -1172,10 +1198,12 @@ done:
     nm_device_queue_recheck_available(NM_DEVICE(self),
                                       NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
                                       NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
-    _set_is_waiting_for_supplicant(self,
-                                   !priv->mgmt_iface
-                                       || !nm_supplicant_interface_state_is_operational(
-                                           nm_supplicant_interface_get_state(priv->mgmt_iface)));
+    _set_is_waiting_for_supplicant(
+        self,
+        priv->enabled
+            && (!priv->mgmt_iface
+                || !nm_supplicant_interface_state_is_operational(
+                    nm_supplicant_interface_get_state(priv->mgmt_iface))));
 }
 
 void
@@ -1338,6 +1366,8 @@ nm_device_wifi_p2p_class_init(NMDeviceWifiP2PClass *klass)
     device_class->get_configured_mtu        = get_configured_mtu;
     device_class->get_auto_ip_config_method = get_auto_ip_config_method;
     device_class->act_stage3_ip_config      = act_stage3_ip_config;
+    device_class->set_enabled               = set_enabled;
+    device_class->get_enabled               = get_enabled;
 
     device_class->deactivate        = deactivate;
     device_class->unmanaged_on_quit = unmanaged_on_quit;

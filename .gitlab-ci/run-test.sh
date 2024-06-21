@@ -40,7 +40,7 @@ uname -a
 meson --version
 
 ! command -v dpkg &>/dev/null || dpkg -l
-! command -v yum  &>/dev/null || yum list installed
+! command -v dnf  &>/dev/null || dnf list --installed
 ! command -v apk  &>/dev/null || apk -v info
 
 # We have a unit test that check that `ci-fairy generate-template`
@@ -57,13 +57,9 @@ check_run_assert() {
 
     # These are the supported $NM_TEST_SELECT_RUN values.
     local _CHECK_RUN_LIST=(
-        autotools+gcc+docs+valgrind
         meson+gcc+docs+valgrind
-        autotools+clang
         meson+clang
-        rpm+autotools
         rpm+meson
-        tarball+autotools
         tarball+meson
         tarball
         subtree
@@ -110,17 +106,13 @@ check_run_clean() {
     return 0
 }
 
-if check_run_clean autotools+gcc+docs+valgrind ; then
-    BUILD_TYPE=autotools CC=gcc WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh
-    mv build/INST/share/gtk-doc/html "$ARTIFACT_DIR/docs-html"
+if check_run_clean meson+gcc+docs+valgrind ; then
+    BUILD_TYPE=meson CC=gcc WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh
+    mv INST/share/gtk-doc/html "$ARTIFACT_DIR/docs-html"
 fi
 
-check_run_clean meson+gcc+docs+valgrind && BUILD_TYPE=meson     CC=gcc   WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh
-check_run_clean autotools+clang         && BUILD_TYPE=autotools CC=clang WITH_DOCS=0                 contrib/scripts/nm-ci-run.sh
-check_run_clean meson+clang             && BUILD_TYPE=meson     CC=clang WITH_DOCS=0                 contrib/scripts/nm-ci-run.sh
-
-check_run_clean rpm+autotools && test $IS_FEDORA = 1 -o $IS_CENTOS = 1 && ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -W meson
-check_run_clean rpm+meson     && test $IS_FEDORA = 1                   && ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -w meson
+check_run_clean meson+clang && BUILD_TYPE=meson CC=clang WITH_DOCS=0 contrib/scripts/nm-ci-run.sh
+check_run_clean rpm+meson && test $IS_FEDORA = 1 && ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -w meson
 
 if check_run_clean tarball && [ "$NM_BUILD_TARBALL" = 1 ]; then
     SIGN_SOURCE=0 ./contrib/fedora/rpm/build_clean.sh -r
@@ -129,41 +121,7 @@ if check_run_clean tarball && [ "$NM_BUILD_TARBALL" = 1 ]; then
     do_clean
 fi
 
-if check_run_clean tarball+autotools; then
-    BUILD_TYPE=autotools CC=gcc WITH_DOCS=1 CONFIGURE_ONLY=1 contrib/scripts/nm-ci-run.sh
-    pushd ./build
-        # dist & build with autotools
-        make distcheck -j$(nproc)
-
-        # build with meson
-        DISTSRC="./distsrc-$RANDOM"
-        mkdir $DISTSRC
-        tar xvf ./NetworkManager-1*.tar.xz -C $DISTSRC --strip-components=1
-        pushd $DISTSRC
-            BUILD_TYPE=meson CC=gcc WITH_DOCS=1 ../../contrib/scripts/nm-ci-run.sh
-        popd
-    popd
-    do_clean
-fi
-
-if check_run_clean tarball+meson; then
-    BUILD_TYPE=meson CC=gcc WITH_DOCS=1 CONFIGURE_ONLY=1 contrib/scripts/nm-ci-run.sh
-    pushd ./build
-        # dist with meson/ninja
-        ninja dist
-
-        # build with autotools
-        DISTSRC="./distsrc-$RANDOM"
-        mkdir $DISTSRC
-        tar xvf ./meson-dist/NetworkManager-1*.tar.xz -C $DISTSRC --strip-components=1
-        pushd $DISTSRC
-            BUILD_TYPE=autotools CC=gcc WITH_DOCS=1 ../../contrib/scripts/nm-ci-run.sh
-        popd
-        rm -rf $DISTSRC
-    popd
-    do_clean
-fi
-
+check_run_clean tarball+meson && BUILD_TYPE=meson CC=gcc WITH_DOCS=1 CONFIGURE_ONLY=1 contrib/scripts/nm-ci-run.sh
 
 ###############################################################################
 
@@ -202,7 +160,7 @@ fi
 
 if [ "$NM_BUILD_TARBALL" = 1 ]; then
     do_clean
-    if check_run autotools+gcc+docs+valgrind ; then
+    if check_run meson+gcc+docs+valgrind ; then
         mv "$ARTIFACT_DIR/docs-html/" ./
     fi
     if check_run tarball ; then

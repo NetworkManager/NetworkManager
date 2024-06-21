@@ -3,21 +3,167 @@ host_url: https://gitlab.freedesktop.org
 resource_rules:
   issues:
     rules:
+      - name: Set initial workflow stage
+        conditions:
+          state: opened
+          forbidden_labels:
+            - workflow::triage
+            - workflow::investigation
+            - workflow::devel
+        actions:
+          labels:
+            - workflow::triage
+
+      - name: Ensure that only one workflow label is used (1/2)
+        conditions:
+          state: opened
+          labels:
+            - workflow::triage
+            - workflow::investigation
+          forbidden_labels:
+            - workflow::devel
+        actions:
+          remove_labels:
+            - workflow::triage
+
+      - name: Ensure that only one workflow label is used (1/2)
+        conditions:
+          state: opened
+          labels:
+            - workflow::{triage, investigation}
+            - workflow::devel
+        actions:
+          remove_labels:
+            - workflow::triage
+            - workflow::investigation
+
+      - name: Remove help-needed::* and unassigned labels on assigned issue
+        conditions:
+          state: opened
+          ruby: resource["assignees"].length > 0
+          labels:
+            - help-needed::{triage, investigation, devel}
+            - unassigned
+        actions:
+          remove_labels:
+            - help-needed::triage
+            - help-needed::investigation
+            - help-needed::devel
+            - unassigned
+
+      - name: Add help-needed::triage and unassigned labels on unassigned issues
+        conditions:
+          state: opened
+          ruby: resource["assignees"].length == 0
+          labels:
+            - workflow::triage
+          forbidden_labels:
+            - help-needed::triage
+            - unassigned
+        actions:
+          labels:
+            - help-needed::triage
+            - unassigned
+
+      - name: Remove wrong help-needed::* labels for issues on triage stage
+        conditions:
+          state: opened
+          labels:
+            - workflow::triage
+            - help-needed::{investigation, devel}
+        actions:
+          remove_labels:
+            - help-needed::investigation
+            - help-needed::devel
+
+      - name: Add help-needed::investigation and unassigned labels on unassigned issues
+        conditions:
+          state: opened
+          ruby: resource["assignees"].length == 0
+          labels:
+            - workflow::investigation
+          forbidden_labels:
+            - help-needed::investigation
+            - unassigned
+        actions:
+          labels:
+            - help-needed::investigation
+            - unassigned
+
+      - name: Remove wrong help-needed::* labels for issues on investigation stage
+        conditions:
+          state: opened
+          labels:
+            - workflow::investigation
+            - help-needed::{triage, devel}
+        actions:
+          remove_labels:
+            - help-needed::triage
+            - help-needed::devel
+
+      - name: Add help-needed::devel and unassigned labels on unassigned issues
+        conditions:
+          state: opened
+          ruby: resource["assignees"].length == 0
+          labels:
+            - workflow::devel
+          forbidden_labels:
+            - help-needed::devel
+            - unassigned
+        actions:
+          labels:
+            - help-needed::devel
+            - unassigned
+
+      - name: Remove wrong help-needed::* labels for issues on devel stage
+        conditions:
+          state: opened
+          labels:
+            - workflow::devel
+            - help-needed::{triage, investigation}
+        actions:
+          remove_labels:
+            - help-needed::triage
+            - help-needed::investigation
+      
+      - name: Remove triage::* labels if the issue is not triaged
+        conditions:
+          state: opened
+          labels:
+            - workflow::triage
+            - triaged::{bug, RFE}
+        actions:
+          remove_labels:
+            - triaged::bug
+            - triaged::RFE
+      
+      - name: Ensure that only one triaged::* label is used
+        conditions:
+          state: opened
+          labels:
+            - triaged::bug
+            - triaged::RFE
+        actions:
+          remove_labels:
+            - triaged::RFE
+
       - name: Mark issue as stale with no activity for 4 months
         conditions:
+          state: opened
           date:
             attribute: updated_at
             condition: older_than
             interval_type: months
             interval: 4
-          state: opened
           forbidden_labels:
             - stale
         actions:
-            comment: |
-                This issue has been inactive for 4 months and got stale. Contributions welcome to move it forward.
+            comment: >-
+              This issue has been inactive for 4 months and got stale.
+              Contributions welcome to move it forward.
             labels:
-                - stale
+              - stale
+
   merge_requests:
     rules:
       - name: Mark merge-request as stale after no activity for 2 months
@@ -31,7 +177,8 @@ resource_rules:
           forbidden_labels:
             - stale
         actions:
-            comment: |
-                This merge-request has been inactive for 2 months and got stale. Work is necessary to move it forward.
+            comment: >-
+              This merge-request has been inactive for 2 months and got stale.
+              Work is necessary to move it forward.
             labels:
-                - stale
+              - stale

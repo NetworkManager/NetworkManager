@@ -25,11 +25,12 @@ typedef struct {
     } _priv;
 } NMPrioq;
 
-#define NM_PRIOQ_ZERO             \
-    {                             \
-        ._priv = {                \
-            .compare_func = NULL, \
-        },                        \
+#define NM_PRIOQ_ZERO                 \
+    {                                 \
+        ._priv =                      \
+            {                         \
+                .compare_func = NULL, \
+            },                        \
     }
 
 void nm_prioq_init(NMPrioq *q, GCompareFunc compare_func);

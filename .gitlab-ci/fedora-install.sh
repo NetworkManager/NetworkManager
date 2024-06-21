@@ -5,6 +5,7 @@ set -ex
 IS_FEDORA=0
 IS_CENTOS=0
 CENTOS_VERSION=0
+FEDORA_VERSION=0
 grep -q '^NAME=.*\(CentOS\)' /etc/os-release && IS_CENTOS=1
 grep -q '^NAME=.*\(Fedora\)' /etc/os-release && IS_FEDORA=1
 if [ $IS_CENTOS = 1 ]; then
@@ -45,9 +46,22 @@ yum install -y glibc-langpack-pl ccache clang
 # to generate proper documentation.
 yum reinstall -y --setopt='tsflags=' glib2-doc
 
+if [ $IS_FEDORA = 1 ]; then
+    FEDORA_VERSION=$(cat /etc/os-release | grep '^VERSION_ID=' | sed s\/"VERSION_ID="\/\/)
+fi
+
 if command -v dnf &>/dev/null; then
     dnf install -y python3-dnf-plugins-core
-    dnf debuginfo-install -y glib2
+    # Fedora 41 migrated to DNF5 and the debuginfo-install plugin is not implemented yet
+    # therefore we need to enable the repo and install the debuginfo subpackage manually
+    if [ $FEDORA_VERSION -lt "41" ]; then
+        dnf debuginfo-install -y glib2
+    else
+        dnf install -y dnf5-plugins
+        dnf config-manager setopt fedora-debuginfo.enabled=1
+        dnf config-manager setopt rawhide-debuginfo.enabled=1 || true
+        dnf install -y glib2-debuginfo
+    fi
 else
     debuginfo-install -y glib2
 fi

@@ -2235,7 +2235,7 @@ _team_setting_verify_properties(const NMTeamSetting *self, GError **error)
                     g_set_error(error,
                                 NM_CONNECTION_ERROR,
                                 NM_CONNECTION_ERROR_INVALID_SETTING,
-                                _("value out or range"));
+                                _("value out of range"));
                     _team_setting_prefix_error_plain(self->d.is_port,
                                                      attr_data->property_name,
                                                      error);

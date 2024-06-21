@@ -14,7 +14,7 @@
 
 
 # see https://docs.gitlab.com/ee/ci/yaml/#includefile
-.templates_sha: &template_sha 184ca628f89f3193c249b4e34e45afee2773a833
+.templates_sha: &template_sha 98b1218f146a1ec96d65e3ce0041f9a6ec5cb5e6
 
 
 
@@ -39,6 +39,8 @@ include:
   - project: 'freedesktop/ci-templates'
     ref: *template_sha
     file: '/templates/ubuntu.yml'
+  - project: 'freedesktop/ci-templates'
+    file: '/templates/ci-fairy.yml'
 
 stages:
   - prep
@@ -57,11 +59,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-4e88b0485a0b'
-  CENTOS_TAG:  'tag-49333ce03178'
-  DEBIAN_TAG:  'tag-40fb807bf9e5'
-  FEDORA_TAG:  'tag-49333ce03178'
-  UBUNTU_TAG:  'tag-40fb807bf9e5'
+  ALPINE_TAG:  'tag-ec99bc32ed7f'
+  CENTOS_TAG:  'tag-a76c3f2e9d0f'
+  DEBIAN_TAG:  'tag-3f6892bcd503'
+  FEDORA_TAG:  'tag-a76c3f2e9d0f'
+  UBUNTU_TAG:  'tag-3f6892bcd503'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
@@ -106,18 +108,10 @@ tier1:fedora:40@prep:
     FDO_DISTRIBUTION_VERSION: '40'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
     FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
 
-tier1:fedora:rawhide@prep:
-  extends:
-    - .fdo.container-build@fedora
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: 'rawhide'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-    FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
-
-tier1:centos:stream9@prep:
+tier2:centos:stream9@prep:
   extends:
     - .fdo.container-build@centos
   stage: prep
@@ -126,6 +120,24 @@ tier1:centos:stream9@prep:
     FDO_DISTRIBUTION_VERSION: 'stream9'
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
     FDO_DISTRIBUTION_EXEC: $CENTOS_EXEC
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
+      when: manual
+      allow_failure: true
+
+tier2:fedora:rawhide@prep:
+  extends:
+    - .fdo.container-build@fedora
+  stage: prep
+  variables:
+    GIT_STRATEGY: none
+    FDO_DISTRIBUTION_VERSION: 'rawhide'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+    FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
+      when: manual
+      allow_failure: true
 
 tier2:debian:sid@prep:
   extends:
@@ -136,7 +148,10 @@ tier2:debian:sid@prep:
     FDO_DISTRIBUTION_VERSION: 'sid'
     FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
     FDO_DISTRIBUTION_EXEC: $DEBIAN_EXEC
-  when: manual
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
+      when: manual
+      allow_failure: true
 
 tier2:debian:testing@prep:
   extends:
@@ -147,7 +162,10 @@ tier2:debian:testing@prep:
     FDO_DISTRIBUTION_VERSION: 'testing'
     FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
     FDO_DISTRIBUTION_EXEC: $DEBIAN_EXEC
-  when: manual
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
+      when: manual
+      allow_failure: true
 
 tier2:ubuntu:devel@prep:
   extends:
@@ -158,7 +176,10 @@ tier2:ubuntu:devel@prep:
     FDO_DISTRIBUTION_VERSION: 'devel'
     FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
     FDO_DISTRIBUTION_EXEC: $UBUNTU_EXEC
-  when: manual
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
+      when: manual
+      allow_failure: true
 
 tier2:alpine:edge@prep:
   extends:
@@ -169,7 +190,10 @@ tier2:alpine:edge@prep:
     FDO_DISTRIBUTION_VERSION: 'edge'
     FDO_DISTRIBUTION_TAG: $ALPINE_TAG
     FDO_DISTRIBUTION_EXEC: $ALPINE_EXEC
-  when: manual
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
+      when: manual
+      allow_failure: true
 
 tier3:fedora:39@prep:
   extends:
@@ -180,7 +204,10 @@ tier3:fedora:39@prep:
     FDO_DISTRIBUTION_VERSION: '39'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
     FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
-  when: manual
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
+      when: manual
+      allow_failure: true
 
 tier3:ubuntu:20.04@prep:
   extends:
@@ -191,7 +218,10 @@ tier3:ubuntu:20.04@prep:
     FDO_DISTRIBUTION_VERSION: '20.04'
     FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
     FDO_DISTRIBUTION_EXEC: $UBUNTU_EXEC
-  when: manual
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
+      when: manual
+      allow_failure: true
 
 tier3:ubuntu:22.04@prep:
   extends:
@@ -202,7 +232,10 @@ tier3:ubuntu:22.04@prep:
     FDO_DISTRIBUTION_VERSION: '22.04'
     FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
     FDO_DISTRIBUTION_EXEC: $UBUNTU_EXEC
-  when: manual
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
+      when: manual
+      allow_failure: true
 
 tier3:ubuntu:24.04@prep:
   extends:
@@ -213,7 +246,10 @@ tier3:ubuntu:24.04@prep:
     FDO_DISTRIBUTION_VERSION: '24.04'
     FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
     FDO_DISTRIBUTION_EXEC: $UBUNTU_EXEC
-  when: manual
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
+      when: manual
+      allow_failure: true
 
 tier3:ubuntu:rolling@prep:
   extends:
@@ -224,7 +260,10 @@ tier3:ubuntu:rolling@prep:
     FDO_DISTRIBUTION_VERSION: 'rolling'
     FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
     FDO_DISTRIBUTION_EXEC: $UBUNTU_EXEC
-  when: manual
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
+      when: manual
+      allow_failure: true
 
 tier3:debian:stable@prep:
   extends:
@@ -235,7 +274,10 @@ tier3:debian:stable@prep:
     FDO_DISTRIBUTION_VERSION: 'stable'
     FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
     FDO_DISTRIBUTION_EXEC: $DEBIAN_EXEC
-  when: manual
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
+      when: manual
+      allow_failure: true
 
 tier3:debian:oldstable@prep:
   extends:
@@ -246,7 +288,10 @@ tier3:debian:oldstable@prep:
     FDO_DISTRIBUTION_VERSION: 'oldstable'
     FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
     FDO_DISTRIBUTION_EXEC: $DEBIAN_EXEC
-  when: manual
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
+      when: manual
+      allow_failure: true
 
 tier3:centos:stream8@prep:
   extends:
@@ -257,7 +302,10 @@ tier3:centos:stream8@prep:
     FDO_DISTRIBUTION_VERSION: 'stream8'
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
     FDO_DISTRIBUTION_EXEC: $CENTOS_EXEC
-  when: manual
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
+      when: manual
+      allow_failure: true
 
 tier3:alpine:latest@prep:
   extends:
@@ -268,7 +316,10 @@ tier3:alpine:latest@prep:
     FDO_DISTRIBUTION_VERSION: 'latest'
     FDO_DISTRIBUTION_TAG: $ALPINE_TAG
     FDO_DISTRIBUTION_EXEC: $ALPINE_EXEC
-  when: manual
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
+      when: manual
+      allow_failure: true
 
 #################################################################
 #                                                               #
@@ -295,13 +346,9 @@ t_fedora:40:
   parallel:
     matrix:
       - NM_TEST_SELECT_RUN:
-        - autotools+gcc+docs+valgrind
         - meson+gcc+docs+valgrind
-        - autotools+clang
         - meson+clang
-        - rpm+autotools
         - rpm+meson
-        - tarball+autotools
         - tarball+meson
         - tarball
         - subtree
@@ -310,56 +357,36 @@ t_fedora:40:
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
   needs:
     - "tier1:fedora:40@prep"
-
-t_fedora:rawhide:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@fedora
-    - .nm_artifacts
-  stage: tier1
-  parallel:
-    matrix:
-      - NM_TEST_SELECT_RUN:
-        - autotools+gcc+docs+valgrind
-        - meson+gcc+docs+valgrind
-        - autotools+clang
-        - meson+clang
-        - rpm+autotools
-        - rpm+meson
-        - tarball+autotools
-        - tarball+meson
-        - tarball
-        - subtree
-  variables:
-    FDO_DISTRIBUTION_VERSION: 'rawhide'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-  needs:
-    - "tier1:fedora:rawhide@prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
 
 t_centos:stream9:
   extends:
     - .build@template
     - .fdo.distribution-image@centos
     - .nm_artifacts_debug
-  stage: tier1
-  parallel:
-    matrix:
-      - NM_TEST_SELECT_RUN:
-        - autotools+gcc+docs+valgrind
-        - meson+gcc+docs+valgrind
-        - autotools+clang
-        - meson+clang
-        - rpm+autotools
-        - rpm+meson
-        - tarball+autotools
-        - tarball+meson
-        - tarball
-        - subtree
+  stage: tier2
   variables:
     FDO_DISTRIBUTION_VERSION: 'stream9'
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
   needs:
-    - "tier1:centos:stream9@prep"
+    - "tier2:centos:stream9@prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
+
+t_fedora:rawhide:
+  extends:
+    - .build@template
+    - .fdo.distribution-image@fedora
+    - .nm_artifacts_debug
+  stage: tier2
+  variables:
+    FDO_DISTRIBUTION_VERSION: 'rawhide'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+  needs:
+    - "tier2:fedora:rawhide@prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
 
 t_debian:sid:
   extends:
@@ -372,6 +399,8 @@ t_debian:sid:
     FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
   needs:
     - "tier2:debian:sid@prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
 
 t_debian:testing:
   extends:
@@ -384,6 +413,8 @@ t_debian:testing:
     FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
   needs:
     - "tier2:debian:testing@prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
 
 t_ubuntu:devel:
   extends:
@@ -396,6 +427,8 @@ t_ubuntu:devel:
     FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
   needs:
     - "tier2:ubuntu:devel@prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
 
 t_alpine:edge:
   extends:
@@ -408,6 +441,8 @@ t_alpine:edge:
     FDO_DISTRIBUTION_TAG: $ALPINE_TAG
   needs:
     - "tier2:alpine:edge@prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
 
 t_fedora:39:
   extends:
@@ -420,6 +455,8 @@ t_fedora:39:
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
   needs:
     - "tier3:fedora:39@prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
 
 t_ubuntu:20.04:
   extends:
@@ -432,6 +469,8 @@ t_ubuntu:20.04:
     FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
   needs:
     - "tier3:ubuntu:20.04@prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
 
 t_ubuntu:22.04:
   extends:
@@ -444,6 +483,8 @@ t_ubuntu:22.04:
     FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
   needs:
     - "tier3:ubuntu:22.04@prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
 
 t_ubuntu:24.04:
   extends:
@@ -456,6 +497,8 @@ t_ubuntu:24.04:
     FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
   needs:
     - "tier3:ubuntu:24.04@prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
 
 t_ubuntu:rolling:
   extends:
@@ -468,6 +511,8 @@ t_ubuntu:rolling:
     FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
   needs:
     - "tier3:ubuntu:rolling@prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
 
 t_debian:stable:
   extends:
@@ -480,6 +525,8 @@ t_debian:stable:
     FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
   needs:
     - "tier3:debian:stable@prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
 
 t_debian:oldstable:
   extends:
@@ -492,6 +539,8 @@ t_debian:oldstable:
     FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
   needs:
     - "tier3:debian:oldstable@prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
 
 t_centos:stream8:
   extends:
@@ -504,6 +553,8 @@ t_centos:stream8:
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
   needs:
     - "tier3:centos:stream8@prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
 
 t_alpine:latest:
   extends:
@@ -516,6 +567,8 @@ t_alpine:latest:
     FDO_DISTRIBUTION_TAG: $ALPINE_TAG
   needs:
     - "tier3:alpine:latest@prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
 
 #################################################################
 #                                                               #
@@ -531,6 +584,8 @@ check-patch:
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
   needs:
     - "tier1:fedora:40@prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
   stage: tier1
   script:
     - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh
@@ -544,6 +599,8 @@ check-tree:
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
   needs:
     - "tier1:fedora:40@prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
   stage: tier1
   script:
     - date '+%Y%m%d-%H%M%S'; clang-format --version
@@ -562,25 +619,44 @@ pages:
     expire_in: 20 days
     paths:
       - public
-  only:
-    - main
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'schedule'
+      when: never
+    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == 'main'
   dependencies:
-    - "t_fedora:40: [autotools+gcc+docs+valgrind]"
+    - "t_fedora:40: [meson+gcc+docs+valgrind]"
   needs:
-    - "t_fedora:40: [autotools+gcc+docs+valgrind]"
+    - "t_fedora:40: [meson+gcc+docs+valgrind]"
 
 triage:issues:
   stage: triage
-  image: ruby:2.7
+  image: ruby:3
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $SCHEDULED_PIPELINE_NAME == "daily"
+  tags:
+    - placeholder-job  # The job mostly waits on network requests, so use only one CPU: https://gitlab.freedesktop.org/freedesktop/freedesktop/-/issues/1358#note_2457416
   script:
     - gem install gitlab-triage
-    - gitlab-triage -d --token $API_TOKEN --source-id $SOURCE_ID
-  only:
-    - schedules
+    - gitlab-triage --debug --token $API_TOKEN --source-id $CI_PROJECT_ID
+
+# Clean the generated images periodically to get updated snapshots of the distribution images.
+# Create an scheduled pipeline to run it, passing an AUTHFILE environment variable of type
+# 'File' with an authentication token with API access level.
+clean-images:
+  extends:
+    - .fdo.ci-fairy
+  stage: prep
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $SCHEDULED_PIPELINE_NAME == "weekly"
+  script:
+    - ci-fairy -v --authfile $AUTHFILE delete-image --project NetworkManager/NetworkManager --all
 
 # Have detached MR pipeline (https://docs.gitlab.com/ee/ci/pipelines/merge_request_pipelines.html)
 # https://gitlab.freedesktop.org/freedesktop/freedesktop/-/issues/540#what-it-means-for-me-a-maintainer-of-a-project-part-of-gitlabfreedesktoporg
 workflow:
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-    - if: $CI_PIPELINE_SOURCE == 'push'
+    - if: $CI_PIPELINE_SOURCE == 'schedule'
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH

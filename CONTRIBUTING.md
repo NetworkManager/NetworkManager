@@ -33,8 +33,35 @@ and you still need to review them. You can also personally hand over the logfile
 to a NM developer to treat it confidential.
 
 
-Contribute
-----------
+Help with issues triage
+-----------------------
+
+The big amount of reported issues is difficult to handle by the small team of
+developers actively working on the project. Many bugs remain unfixed because
+there is no enough time to investigate them.
+
+Working on issues triage and investigation is a very useful help that many
+people can provide very effectively, even if they can't do the fix in the
+code afterwards.
+
+This is the kind of help that may facilitate other developers to prepare a fix:
+- Investigate if it's a real bug or if it's expected behaviour.
+- Provide information and context to explain why it is a bug and what the
+  expected behaviour would be.
+- Create reproducers.
+- Investigate where the failure might be in the code, even if you don't know
+  how to fix it.
+- In a general sense, provide any information that might be useful later.
+
+Find issues with the `help-needed::triage` and `help-needed::investigation`
+label in our [issue tracker](https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/issues)
+and help with them. Issues in "investigation" stage has been triaged, i.e.
+identified as a bug, but there is not enough information to start working on it
+yet.
+
+
+Contribute patches
+------------------
 
 Send patches to our repository at [gitlab.freedesktop.org](https://gitlab.freedesktop.org/NetworkManager/NetworkManager/).
 If you are willing to contribute, please read these guidelines first:
@@ -43,11 +70,8 @@ If you are willing to contribute, please read these guidelines first:
 
 - Work on any issue you want, but please put a comment to indicate that you are
   willing to work on it so others don't do the same work in parallel, or to
-  check whether anyone is already doing so.
-
-- Issues marked as `help-wanted` are those where the NetworkManager developers
-  are explicitly asking for contributors' help, probably due to lack of capacity
-  to work on it.
+  check whether anyone is already doing so. You can find issues waiting for a
+  developer to work on it searching for the `help-needed::devel` label.
 
 - Issues marked as `good-first-issue` indicate that they are probably quite
   simple fixes, well suited for first time contributors.

@@ -145,8 +145,6 @@ const char *nm_logging_all_domains_to_string(void);
 gboolean
 nm_logging_setup(const char *level, const char *domains, char **bad_domains, GError **error);
 
-void nm_logging_init_pre(const char *syslog_identifier, char *prefix_take);
-
 void nm_logging_init(const char *logging_backend, gboolean debug);
 
 gboolean nm_logging_syslog_enabled(void);
