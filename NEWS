@@ -1,9 +1,13 @@
 ===============================================
-NetworkManager-1.48.2
+NetworkManager-1.48.1
 Overview of changes since NetworkManager-1.48.0
 ===============================================
 
 * Support matching a OVS system interface by MAC address.
+* Fix port reactivation when the controller is reactivating.
+* Save connection timestamps when shutting down, so that the right
+  connection autoactivates after restart.
+* Fix handling of VPN secrets for 2-factor authentication.
 
 =============================================
 NetworkManager-1.48
