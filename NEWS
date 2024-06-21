@@ -8,6 +8,8 @@ subject to change and not guaranteed to be compatible with
 the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
+* Support matching a OVS system interface by MAC address.
+
 =============================================
 NetworkManager-1.48
 Overview of changes since NetworkManager-1.46
