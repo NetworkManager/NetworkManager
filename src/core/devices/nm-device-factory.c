@@ -183,7 +183,8 @@ nm_device_factory_class_init(NMDeviceFactoryClass *klass)
 static GHashTable *factories_by_link    = NULL;
 static GHashTable *factories_by_setting = NULL;
 
-static void __attribute__((destructor)) _cleanup(void)
+static void __attribute__((destructor))
+_cleanup(void)
 {
     nm_clear_pointer(&factories_by_link, g_hash_table_unref);
     nm_clear_pointer(&factories_by_setting, g_hash_table_unref);

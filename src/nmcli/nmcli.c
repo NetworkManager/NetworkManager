@@ -35,49 +35,50 @@
 #define NMCLI_VERSION VERSION
 #endif
 
-#define _NMC_COLOR_PALETTE_INIT()                              \
-    {                                                          \
-        .ansi_seq = {                                          \
-            [NM_META_COLOR_CONNECTION_ACTIVATED]     = "32",   \
-            [NM_META_COLOR_CONNECTION_ACTIVATING]    = "33",   \
-            [NM_META_COLOR_CONNECTION_DISCONNECTING] = "31",   \
-            [NM_META_COLOR_CONNECTION_INVISIBLE]     = "2",    \
-            [NM_META_COLOR_CONNECTION_EXTERNAL]      = "32;2", \
-            [NM_META_COLOR_CONNECTION_DEPRECATED]    = "2",    \
-            [NM_META_COLOR_CONNECTIVITY_FULL]        = "32",   \
-            [NM_META_COLOR_CONNECTIVITY_LIMITED]     = "33",   \
-            [NM_META_COLOR_CONNECTIVITY_NONE]        = "31",   \
-            [NM_META_COLOR_CONNECTIVITY_PORTAL]      = "33",   \
-            [NM_META_COLOR_DEVICE_ACTIVATED]         = "32",   \
-            [NM_META_COLOR_DEVICE_ACTIVATING]        = "33",   \
-            [NM_META_COLOR_DEVICE_DISCONNECTED]      = "31",   \
-            [NM_META_COLOR_DEVICE_FIRMWARE_MISSING]  = "31",   \
-            [NM_META_COLOR_DEVICE_PLUGIN_MISSING]    = "31",   \
-            [NM_META_COLOR_DEVICE_UNAVAILABLE]       = "2",    \
-            [NM_META_COLOR_DEVICE_DISABLED]          = "31",   \
-            [NM_META_COLOR_DEVICE_EXTERNAL]          = "32;2", \
-            [NM_META_COLOR_MANAGER_RUNNING]          = "32",   \
-            [NM_META_COLOR_MANAGER_STARTING]         = "33",   \
-            [NM_META_COLOR_MANAGER_STOPPED]          = "31",   \
-            [NM_META_COLOR_PERMISSION_AUTH]          = "33",   \
-            [NM_META_COLOR_PERMISSION_NO]            = "31",   \
-            [NM_META_COLOR_PERMISSION_YES]           = "32",   \
-            [NM_META_COLOR_STATE_ASLEEP]             = "31",   \
-            [NM_META_COLOR_STATE_CONNECTED_GLOBAL]   = "32",   \
-            [NM_META_COLOR_STATE_CONNECTED_LOCAL]    = "32",   \
-            [NM_META_COLOR_STATE_CONNECTED_SITE]     = "32",   \
-            [NM_META_COLOR_STATE_CONNECTING]         = "33",   \
-            [NM_META_COLOR_STATE_DISCONNECTED]       = "31",   \
-            [NM_META_COLOR_STATE_DISCONNECTING]      = "33",   \
-            [NM_META_COLOR_WIFI_SIGNAL_EXCELLENT]    = "32",   \
-            [NM_META_COLOR_WIFI_SIGNAL_FAIR]         = "35",   \
-            [NM_META_COLOR_WIFI_SIGNAL_GOOD]         = "33",   \
-            [NM_META_COLOR_WIFI_SIGNAL_POOR]         = "36",   \
-            [NM_META_COLOR_WIFI_SIGNAL_UNKNOWN]      = "2",    \
-            [NM_META_COLOR_WIFI_DEPRECATED]          = "2",    \
-            [NM_META_COLOR_ENABLED]                  = "32",   \
-            [NM_META_COLOR_DISABLED]                 = "31",   \
-        },                                                     \
+#define _NMC_COLOR_PALETTE_INIT()                                  \
+    {                                                              \
+        .ansi_seq =                                                \
+            {                                                      \
+                [NM_META_COLOR_CONNECTION_ACTIVATED]     = "32",   \
+                [NM_META_COLOR_CONNECTION_ACTIVATING]    = "33",   \
+                [NM_META_COLOR_CONNECTION_DISCONNECTING] = "31",   \
+                [NM_META_COLOR_CONNECTION_INVISIBLE]     = "2",    \
+                [NM_META_COLOR_CONNECTION_EXTERNAL]      = "32;2", \
+                [NM_META_COLOR_CONNECTION_DEPRECATED]    = "2",    \
+                [NM_META_COLOR_CONNECTIVITY_FULL]        = "32",   \
+                [NM_META_COLOR_CONNECTIVITY_LIMITED]     = "33",   \
+                [NM_META_COLOR_CONNECTIVITY_NONE]        = "31",   \
+                [NM_META_COLOR_CONNECTIVITY_PORTAL]      = "33",   \
+                [NM_META_COLOR_DEVICE_ACTIVATED]         = "32",   \
+                [NM_META_COLOR_DEVICE_ACTIVATING]        = "33",   \
+                [NM_META_COLOR_DEVICE_DISCONNECTED]      = "31",   \
+                [NM_META_COLOR_DEVICE_FIRMWARE_MISSING]  = "31",   \
+                [NM_META_COLOR_DEVICE_PLUGIN_MISSING]    = "31",   \
+                [NM_META_COLOR_DEVICE_UNAVAILABLE]       = "2",    \
+                [NM_META_COLOR_DEVICE_DISABLED]          = "31",   \
+                [NM_META_COLOR_DEVICE_EXTERNAL]          = "32;2", \
+                [NM_META_COLOR_MANAGER_RUNNING]          = "32",   \
+                [NM_META_COLOR_MANAGER_STARTING]         = "33",   \
+                [NM_META_COLOR_MANAGER_STOPPED]          = "31",   \
+                [NM_META_COLOR_PERMISSION_AUTH]          = "33",   \
+                [NM_META_COLOR_PERMISSION_NO]            = "31",   \
+                [NM_META_COLOR_PERMISSION_YES]           = "32",   \
+                [NM_META_COLOR_STATE_ASLEEP]             = "31",   \
+                [NM_META_COLOR_STATE_CONNECTED_GLOBAL]   = "32",   \
+                [NM_META_COLOR_STATE_CONNECTED_LOCAL]    = "32",   \
+                [NM_META_COLOR_STATE_CONNECTED_SITE]     = "32",   \
+                [NM_META_COLOR_STATE_CONNECTING]         = "33",   \
+                [NM_META_COLOR_STATE_DISCONNECTED]       = "31",   \
+                [NM_META_COLOR_STATE_DISCONNECTING]      = "33",   \
+                [NM_META_COLOR_WIFI_SIGNAL_EXCELLENT]    = "32",   \
+                [NM_META_COLOR_WIFI_SIGNAL_FAIR]         = "35",   \
+                [NM_META_COLOR_WIFI_SIGNAL_GOOD]         = "33",   \
+                [NM_META_COLOR_WIFI_SIGNAL_POOR]         = "36",   \
+                [NM_META_COLOR_WIFI_SIGNAL_UNKNOWN]      = "2",    \
+                [NM_META_COLOR_WIFI_DEPRECATED]          = "2",    \
+                [NM_META_COLOR_ENABLED]                  = "32",   \
+                [NM_META_COLOR_DISABLED]                 = "31",   \
+            },                                                     \
     }
 
 static NmCli nm_cli = {

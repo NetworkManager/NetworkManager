@@ -20,21 +20,30 @@ struct Opt {
 
 typedef gboolean (*validate_func)(const struct Opt *, const char *, const guint32);
 
-#define OPT_INT(_key, _int_low, _int_high)                                                      \
-    {                                                                                           \
-        .key = _key, .type = NM_SUPPL_OPT_TYPE_INT, .int_high = _int_high, .int_low = _int_low, \
+#define OPT_INT(_key, _int_low, _int_high) \
+    {                                      \
+        .key      = _key,                  \
+        .type     = NM_SUPPL_OPT_TYPE_INT, \
+        .int_high = _int_high,             \
+        .int_low  = _int_low,              \
     }
-#define OPT_BYTES(_key, _int_high)                                           \
-    {                                                                        \
-        .key = _key, .type = NM_SUPPL_OPT_TYPE_BYTES, .int_high = _int_high, \
+#define OPT_BYTES(_key, _int_high)           \
+    {                                        \
+        .key      = _key,                    \
+        .type     = NM_SUPPL_OPT_TYPE_BYTES, \
+        .int_high = _int_high,               \
     }
-#define OPT_UTF8(_key, _int_high)                                           \
-    {                                                                       \
-        .key = _key, .type = NM_SUPPL_OPT_TYPE_UTF8, .int_high = _int_high, \
+#define OPT_UTF8(_key, _int_high)           \
+    {                                       \
+        .key      = _key,                   \
+        .type     = NM_SUPPL_OPT_TYPE_UTF8, \
+        .int_high = _int_high,              \
     }
-#define OPT_KEYWORD(_key, _str_allowed)                                              \
-    {                                                                                \
-        .key = _key, .type = NM_SUPPL_OPT_TYPE_KEYWORD, .str_allowed = _str_allowed, \
+#define OPT_KEYWORD(_key, _str_allowed)           \
+    {                                             \
+        .key         = _key,                      \
+        .type        = NM_SUPPL_OPT_TYPE_KEYWORD, \
+        .str_allowed = _str_allowed,              \
     }
 
 static const struct Opt opt_table[] = {

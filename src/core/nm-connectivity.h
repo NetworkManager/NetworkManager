@@ -25,10 +25,10 @@ nm_connectivity_state_cmp(NMConnectivityState a, NMConnectivityState b)
 
 /*****************************************************************************/
 
-#define NM_CONNECTIVITY_ERROR     ((NMConnectivityState) -1)
-#define NM_CONNECTIVITY_FAKE      ((NMConnectivityState) -2)
-#define NM_CONNECTIVITY_CANCELLED ((NMConnectivityState) -3)
-#define NM_CONNECTIVITY_DISPOSING ((NMConnectivityState) -4)
+#define NM_CONNECTIVITY_ERROR     ((NMConnectivityState) - 1)
+#define NM_CONNECTIVITY_FAKE      ((NMConnectivityState) - 2)
+#define NM_CONNECTIVITY_CANCELLED ((NMConnectivityState) - 3)
+#define NM_CONNECTIVITY_DISPOSING ((NMConnectivityState) - 4)
 
 #define NM_TYPE_CONNECTIVITY (nm_connectivity_get_type())
 #define NM_CONNECTIVITY(obj) \

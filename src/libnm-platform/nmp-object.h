@@ -38,11 +38,12 @@ G_STATIC_ASSERT(sizeof(NMSockAddrUnion) == sizeof(((NMSockAddrUnion *) NULL)->in
 
 /* we initialize the largest union member, to ensure that all fields are initialized. */
 
-#define NM_SOCK_ADDR_UNION_INIT_UNSPEC \
-    {                                  \
-        .in6 = {                       \
-            .sin6_family = AF_UNSPEC,  \
-        },                             \
+#define NM_SOCK_ADDR_UNION_INIT_UNSPEC    \
+    {                                     \
+        .in6 =                            \
+            {                             \
+                .sin6_family = AF_UNSPEC, \
+            },                            \
     }
 
 int nm_sock_addr_union_cmp(const NMSockAddrUnion *a, const NMSockAddrUnion *b);
