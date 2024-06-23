@@ -258,16 +258,7 @@ modm_handle_name_owner_changed(MMManager *modem_manager, GParamSpec *pspec, NMMo
     /* Available! */
     g_free(name_owner);
 
-    /* Hack alert: GDBusObjectManagerClient won't signal neither 'object-added'
-     * nor 'object-removed' if it was created while there was no ModemManager in
-     * the bus. This hack avoids this issue until we get a GIO with the fix
-     * included... */
-    modm_clear_manager(self);
-    modm_ensure_manager(self);
-
-    /* Whenever GDBusObjectManagerClient is fixed, we can just do the following:
-     * modm_manager_available (self);
-     */
+    modm_manager_available(self);
 }
 
 static void
