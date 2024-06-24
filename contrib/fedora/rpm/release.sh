@@ -14,11 +14,12 @@
 #  - "rc"    : further release candidates on RC branch (e.g. from "nm-1-26" branch
 #              tag "1.26-rc2" with version number 1.25.91).
 #  - "major" : on stable branch do a major release (e.g. on "nm-1-26" branch
-#              release "1.26.0").
+#              release "1.26.0", followed by "1.26.1-dev").
 #              You should do a "major-post" release right a "major" release.
 #  - "major-post": after a "major" release, merge the release branch with main and
 #              do another devel snapshot on main (e.g. do "1.27.1-dev" release).
-#  - "minor" : on a stable branch do a minor release (e.g. "1.26.4" on "nm-1-26").
+#  - "minor" : on a stable branch do a minor release (e.g. "1.26.4" on "nm-1-26"
+#              branch and bump to "1.26.5-dev").
 #
 # Requisites:
 #
@@ -295,7 +296,8 @@ RC_VERSION=
 RELEASE_BRANCH=
 case "$RELEASE_MODE" in
     minor)
-        number_is_even "${VERSION_ARR[1]}" || die "cannot do minor release on top of version $VERSION_STR"
+        number_is_even "${VERSION_ARR[1]}" &&
+        number_is_odd  "${VERSION_ARR[2]}" || die "cannot do minor release on top of version $VERSION_STR"
         [ "$CUR_BRANCH" != main ] || die "cannot do a minor release on main"
         ;;
     devel)
@@ -429,13 +431,19 @@ case "$RELEASE_MODE" in
     minor)
         set_version_number "${VERSION_ARR[0]}" "${VERSION_ARR[1]}" $(("${VERSION_ARR[2]}" + 1))
         git commit -m "release: bump version to ${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 1))" -a || die "failed to commit release"
+        set_version_number "${VERSION_ARR[0]}" "${VERSION_ARR[1]}" $(("${VERSION_ARR[2]}" + 2))
+        git commit -m "release: bump version to ${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 2)) (development)" -a || die "failed to commit devel version bump"
 
         b="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 1))"
-        git tag -s -a -m "Tag $b" "$b" HEAD || die "failed to tag release"
+        git tag -s -a -m "Tag $b" "$b" HEAD~ || die "failed to tag release"
         BRANCHES+=("$b")
         CLEANUP_REFS+=("refs/tags/$b")
         BUILD_TAG="$b"
-        TAR_VERSION="$b"
+        b="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 2))"
+        git tag -s -a -m "Tag $b (development)" "$b-dev" HEAD || die "failed to tag devel version"
+        BRANCHES+=("$b-dev")
+        CLEANUP_REFS+=("refs/tags/$b-dev")
+        TAR_VERSION="$BUILD_TAG"
         ;;
     devel)
         set_version_number "${VERSION_ARR[0]}" "${VERSION_ARR[1]}" $(("${VERSION_ARR[2]}" + 1))
@@ -474,12 +482,20 @@ case "$RELEASE_MODE" in
         ;;
     major)
         b="${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 1)).0"
+        b2="${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 1)).1"
+
         set_version_number "${VERSION_ARR[0]}" "$((${VERSION_ARR[1]} + 1))" 0
         git commit -m "release: bump version to $b" -a || die "failed to commit major version bump"
-
         git tag -s -a -m "Tag $b" "$b" HEAD || die "failed to tag release"
         BRANCHES+=("$b")
         CLEANUP_REFS+=("refs/tags/$b")
+
+        set_version_number "${VERSION_ARR[0]}" "$((${VERSION_ARR[1]} + 1))" 1
+        git commit -m "release: bump version to $b2 (development)" -a || die "failed to commit another bump after major version bump"
+        git tag -s -a -m "Tag $b (development)" "$b2-dev" HEAD || die "failed to tag release"
+        BRANCHES+=("$b2-dev")
+        CLEANUP_REFS+=("refs/tags/$b2-dev")
+
         BUILD_TAG="$b"
         TAR_VERSION="$b"
         ;;
