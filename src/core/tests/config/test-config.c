@@ -167,6 +167,9 @@ test_config_simple(void)
     g_assert_cmpint(nm_config_data_get_connectivity_interval(nm_config_get_data_orig(config)),
                     ==,
                     100);
+    g_assert_cmpint(nm_config_data_get_connectivity_timeout(nm_config_get_data_orig(config)),
+                    ==,
+                    42);
 
     plugins = nm_config_data_get_plugins(nm_config_get_data_orig(config), FALSE);
     g_assert_cmpint(g_strv_length((char **) plugins), ==, 3);

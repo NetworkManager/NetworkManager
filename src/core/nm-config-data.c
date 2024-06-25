@@ -62,6 +62,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_CONFIG_MAIN_FILE,
                                   PROP_CONNECTIVITY_ENABLED,
                                   PROP_CONNECTIVITY_URI,
                                   PROP_CONNECTIVITY_INTERVAL,
+                                  PROP_CONNECTIVITY_TIMEOUT,
                                   PROP_CONNECTIVITY_RESPONSE,
                                   PROP_NO_AUTO_DEFAULT, );
 
@@ -86,6 +87,7 @@ typedef struct {
         char    *uri;
         char    *response;
         guint    interval;
+        guint    timeout;
     } connectivity;
 
     int autoconnect_retries_default;
@@ -302,6 +304,14 @@ nm_config_data_get_connectivity_interval(const NMConfigData *self)
     g_return_val_if_fail(self, 0);
 
     return NM_CONFIG_DATA_GET_PRIVATE(self)->connectivity.interval;
+}
+
+guint
+nm_config_data_get_connectivity_timeout(const NMConfigData *self)
+{
+    g_return_val_if_fail(self, 0);
+
+    return NM_CONFIG_DATA_GET_PRIVATE(self)->connectivity.timeout;
 }
 
 const char *
@@ -2006,6 +2016,8 @@ nm_config_data_diff(NMConfigData *old_data, NMConfigData *new_data)
             != nm_config_data_get_connectivity_enabled(new_data)
         || nm_config_data_get_connectivity_interval(old_data)
                != nm_config_data_get_connectivity_interval(new_data)
+        || nm_config_data_get_connectivity_timeout(old_data)
+               != nm_config_data_get_connectivity_timeout(new_data)
         || !nm_streq0(nm_config_data_get_connectivity_uri(old_data),
                       nm_config_data_get_connectivity_uri(new_data))
         || !nm_streq0(nm_config_data_get_connectivity_response(old_data),
@@ -2078,6 +2090,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         break;
     case PROP_CONNECTIVITY_INTERVAL:
         g_value_set_uint(value, nm_config_data_get_connectivity_interval(self));
+        break;
+    case PROP_CONNECTIVITY_TIMEOUT:
+        g_value_set_uint(value, nm_config_data_get_connectivity_timeout(self));
         break;
     case PROP_CONNECTIVITY_RESPONSE:
         g_value_set_string(value, nm_config_data_get_connectivity_response(self));
@@ -2219,6 +2234,15 @@ constructed(GObject *object)
                                      0,
                                      G_MAXUINT,
                                      NM_CONFIG_DEFAULT_CONNECTIVITY_INTERVAL);
+    g_free(str);
+
+    /* On missing or invalid config value, fallback to 20. */
+    str = g_key_file_get_string(priv->keyfile,
+                                NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY,
+                                NM_CONFIG_KEYFILE_KEY_CONNECTIVITY_TIMEOUT,
+                                NULL);
+    priv->connectivity.timeout =
+        _nm_utils_ascii_str_to_int64(str, 10, 0, G_MAXUINT, NM_CONFIG_DEFAULT_CONNECTIVITY_TIMEOUT);
     g_free(str);
 
     priv->dns_mode   = nm_strstrip(g_key_file_get_string(priv->keyfile,
@@ -2413,6 +2437,15 @@ nm_config_data_class_init(NMConfigDataClass *config_class)
 
     obj_properties[PROP_CONNECTIVITY_INTERVAL] =
         g_param_spec_uint(NM_CONFIG_DATA_CONNECTIVITY_INTERVAL,
+                          "",
+                          "",
+                          0,
+                          G_MAXUINT,
+                          0,
+                          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
+    obj_properties[PROP_CONNECTIVITY_TIMEOUT] =
+        g_param_spec_uint(NM_CONFIG_DATA_CONNECTIVITY_TIMEOUT,
                           "",
                           "",
                           0,

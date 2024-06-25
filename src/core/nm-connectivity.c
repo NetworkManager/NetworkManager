@@ -56,6 +56,7 @@ typedef struct {
     char *host;
     char *port;
     char *response;
+    guint timeout;
 } ConConfig;
 
 struct _NMConnectivityCheckHandle {
@@ -738,7 +739,9 @@ do_curl_request(NMConnectivityCheckHandle *cb_data, const char *hosts)
     cb_data->concheck.curl_mhandle    = mhandle;
     cb_data->concheck.curl_ehandle    = ehandle;
     cb_data->concheck.request_headers = curl_slist_append(NULL, "Connection: close");
-    cb_data->timeout_source           = nm_g_timeout_add_seconds_source(20, _timeout_cb, cb_data);
+    cb_data->timeout_source = nm_g_timeout_add_seconds_source(cb_data->concheck.con_config->timeout,
+                                                              _timeout_cb,
+                                                              cb_data);
 
     curl_multi_setopt(mhandle, CURLMOPT_SOCKETFUNCTION, multi_socket_cb);
     curl_multi_setopt(mhandle, CURLMOPT_SOCKETDATA, cb_data);
@@ -1226,6 +1229,7 @@ update_config(NMConnectivity *self, NMConfigData *config_data)
 {
     NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE(self);
     guint                  interval;
+    guint                  new_timeout;
     gboolean               enabled;
     gboolean               changed      = FALSE;
     const char            *cur_uri      = priv->con_config ? priv->con_config->uri : NULL;
@@ -1236,6 +1240,8 @@ update_config(NMConnectivity *self, NMConfigData *config_data)
     gboolean               new_host_port = FALSE;
     gs_free char          *new_host      = NULL;
     gs_free char          *new_port      = NULL;
+
+    new_timeout = nm_config_data_get_connectivity_timeout(config_data);
 
     new_uri = nm_config_data_get_connectivity_uri(config_data);
     if (!nm_streq0(new_uri, cur_uri)) {
@@ -1277,6 +1283,7 @@ update_config(NMConnectivity *self, NMConfigData *config_data)
         changed = TRUE;
 
     if (!priv->con_config || !nm_streq0(new_uri, priv->con_config->uri)
+        || new_timeout != priv->con_config->timeout
         || !nm_streq0(new_response, priv->con_config->response)) {
         if (!new_host_port) {
             new_host = priv->con_config ? g_strdup(priv->con_config->host) : NULL;
@@ -1290,6 +1297,7 @@ update_config(NMConnectivity *self, NMConfigData *config_data)
             .response  = g_strdup(new_response),
             .host      = g_steal_pointer(&new_host),
             .port      = g_steal_pointer(&new_port),
+            .timeout   = new_timeout,
         };
     }
     priv->uri_valid = new_uri_valid;
