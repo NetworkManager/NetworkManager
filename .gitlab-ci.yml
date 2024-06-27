@@ -60,11 +60,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-f0b648c04526'
-  CENTOS_TAG:  'tag-c2d500e0391f'
-  DEBIAN_TAG:  'tag-7687baa06688'
-  FEDORA_TAG:  'tag-c2d500e0391f'
-  UBUNTU_TAG:  'tag-7687baa06688'
+  ALPINE_TAG:  'tag-21203a6f1da4'
+  CENTOS_TAG:  'tag-15f80c990684'
+  DEBIAN_TAG:  'tag-1ce75d18715e'
+  FEDORA_TAG:  'tag-15f80c990684'
+  UBUNTU_TAG:  'tag-1ce75d18715e'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
@@ -649,7 +649,7 @@ coverity:
   stage: coverity
   needs: []
   rules:
-    - if: $CI_PIPELINE_SOURCE == 'schedule'
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $SCHEDULED_PIPELINE_NAME == "weekly"
   script:
     - dnf install -y curl
     - BUILD_TYPE=meson CC=gcc CONFIGURE_ONLY=1 contrib/scripts/nm-ci-run.sh

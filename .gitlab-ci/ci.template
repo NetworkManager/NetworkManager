@@ -258,7 +258,7 @@ coverity:
   stage: coverity
   needs: []
   rules:
-    - if: $CI_PIPELINE_SOURCE == 'schedule'
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $SCHEDULED_PIPELINE_NAME == "weekly"
   script:
     - dnf install -y curl
     - BUILD_TYPE=meson CC=gcc CONFIGURE_ONLY=1 contrib/scripts/nm-ci-run.sh
