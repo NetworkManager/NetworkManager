@@ -32,6 +32,7 @@ executable(
     'nmt-page-ppp.c',
     'nmt-page-team.c',
     'nmt-page-team-port.c',
+    'nmt-page-veth.c',
     'nmt-page-vlan.c',
     'nmt-page-wifi.c',
     'nmt-page-wireguard.c',
