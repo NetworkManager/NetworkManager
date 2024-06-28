@@ -299,13 +299,11 @@ typedef struct {
 } Option;
 
 #define OPTION(_name, _sysname, ...) \
-    {                                \
-        .name    = ""_name           \
-                   "",               \
-        .sysname = ""_sysname        \
-                   "",               \
-        __VA_ARGS__                  \
-    }
+    {.name    = ""_name              \
+                "",                  \
+     .sysname = ""_sysname           \
+                "",                  \
+     __VA_ARGS__}
 
 #define OPTION_TYPE_INT(min, max, def) .nm_min = (min), .nm_max = (max), .nm_default = (def)
 

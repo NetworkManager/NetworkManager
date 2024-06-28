@@ -470,10 +470,7 @@ void _nm_setting_class_commit(NMSettingClass             *setting_class,
 
 #define NM_SETT_INFO_SETT_DETAIL(...) (&((const NMSettInfoSettDetail){__VA_ARGS__}))
 
-#define NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(_dbus_type, ...) \
-    {                                                        \
-        .dbus_type = _dbus_type, __VA_ARGS__                 \
-    }
+#define NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(_dbus_type, ...) {.dbus_type = _dbus_type, __VA_ARGS__}
 
 #define NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(_dbus_type, ...)                                  \
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(_dbus_type,                                            \
@@ -741,7 +738,7 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
             !NM_FLAGS_ANY((param_flags),                                                          \
                           ~(NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_INFERRABLE)));       \
         G_STATIC_ASSERT((min_value) <= (default_value));                                          \
-        G_STATIC_ASSERT((default_value) == 0 || (default_value) -1u < (max_value));               \
+        G_STATIC_ASSERT((default_value) == 0 || (default_value) - 1u < (max_value));              \
         G_STATIC_ASSERT((max_value) <= G_MAXUINT64);                                              \
                                                                                                   \
         _param_spec = g_param_spec_uint64("" prop_name "",                                        \

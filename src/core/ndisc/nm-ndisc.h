@@ -40,7 +40,7 @@ typedef enum {
 
 const char *nm_ndisc_dhcp_level_to_string(NMNDiscDHCPLevel level);
 
-#define NM_NDISC_INFINITY_U32 ((uint32_t) -1)
+#define NM_NDISC_INFINITY_U32 ((uint32_t) - 1)
 
 /* It's important that this is G_MAXINT64, so that we can meaningfully do
  * MIN(e1, e2) to find the minimum expiry time (and properly handle if any

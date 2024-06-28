@@ -172,17 +172,17 @@ static const TeamAttrData team_attr_datas[] = {
 
 #define _VAL_INT32_RANGE(_default, _min, _max) \
     _VAL_INT32(_default), .has_range = TRUE,   \
-                          .range.r_int32 = {   \
-                              .min = _min,     \
-                              .max = _max,     \
+        .range.r_int32 = {                     \
+            .min = _min,                       \
+            .max = _max,                       \
     }
 
 #define _VAL_STRING() .default_val.v_string = NULL
 
-#define _VAL_STRING_RANGE(_valid_names)               \
-    _VAL_STRING(), .has_range = TRUE,                 \
-                   .range.r_string = {                \
-                       .valid_names = (_valid_names), \
+#define _VAL_STRING_RANGE(_valid_names)    \
+    _VAL_STRING(), .has_range = TRUE,      \
+        .range.r_string = {                \
+            .valid_names = (_valid_names), \
     }
 
 #define _VAL_UNSPEC() .default_val.v_string = (NULL)
@@ -1957,23 +1957,23 @@ _js_parse_locate_keys(const NMJsonVt *vt,
 
     nm_assert(vt);
 
-#define _handle(_self, _cur_key, _cur_val, _keys, _level, _found_keys, _out_unrecognized_content)  \
-    ({                                                                                             \
-        const TeamAttrData *_attr_data;                                                            \
-        gboolean            _handled = FALSE;                                                      \
-                                                                                                   \
-        (_keys)[(_level) -1] = (_cur_key);                                                         \
-        _attr_data           = _attr_data_find_by_json_key((_self)->d.is_port, (_keys), (_level)); \
-        if (_attr_data && _attr_data->js_keys_len == (_level)) {                                   \
-            if ((_found_keys)[_attr_data->team_attr])                                              \
-                *(_out_unrecognized_content) = TRUE;                                               \
-            (_found_keys)[_attr_data->team_attr] = (_cur_val);                                     \
-            _handled                             = TRUE;                                           \
-        } else if (!_attr_data || !nm_json_is_object((_cur_val))) {                                \
-            *(_out_unrecognized_content) = TRUE;                                                   \
-            _handled                     = TRUE;                                                   \
-        }                                                                                          \
-        _handled;                                                                                  \
+#define _handle(_self, _cur_key, _cur_val, _keys, _level, _found_keys, _out_unrecognized_content)   \
+    ({                                                                                              \
+        const TeamAttrData *_attr_data;                                                             \
+        gboolean            _handled = FALSE;                                                       \
+                                                                                                    \
+        (_keys)[(_level) - 1] = (_cur_key);                                                         \
+        _attr_data            = _attr_data_find_by_json_key((_self)->d.is_port, (_keys), (_level)); \
+        if (_attr_data && _attr_data->js_keys_len == (_level)) {                                    \
+            if ((_found_keys)[_attr_data->team_attr])                                               \
+                *(_out_unrecognized_content) = TRUE;                                                \
+            (_found_keys)[_attr_data->team_attr] = (_cur_val);                                      \
+            _handled                             = TRUE;                                            \
+        } else if (!_attr_data || !nm_json_is_object((_cur_val))) {                                 \
+            *(_out_unrecognized_content) = TRUE;                                                    \
+            _handled                     = TRUE;                                                    \
+        }                                                                                           \
+        _handled;                                                                                   \
     })
 
     nm_json_object_foreach (vt, root_js_obj, cur_key1, cur_val1) {

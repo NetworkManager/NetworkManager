@@ -1588,7 +1588,7 @@ dispose(GObject *object)
     if (priv->master) {
         g_signal_handlers_disconnect_by_func(priv->master, G_CALLBACK(master_state_cb), self);
     }
-    
+
     if (priv->controller_dev) {
         g_signal_handlers_disconnect_by_func(priv->controller_dev,
                                              G_CALLBACK(controller_dev_state_cb),

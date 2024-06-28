@@ -329,9 +329,10 @@ good:
 
 typedef const char *const StrvArray4Type[4];
 
-#define LL(l, ...)                               \
-    {                                            \
-        .name = l, .value = {__VA_ARGS__, NULL}, \
+#define LL(l, ...)                    \
+    {                                 \
+        .name  = l,                   \
+        .value = {__VA_ARGS__, NULL}, \
     }
 
 /* 5-letter language codes */
@@ -506,7 +507,8 @@ nmtst_system_encodings_get(void)
 
 /*****************************************************************************/
 
-static void __attribute__((constructor)) _nm_utils_init(void)
+static void __attribute__((constructor))
+_nm_utils_init(void)
 {
     static int initialized = 0;
 
