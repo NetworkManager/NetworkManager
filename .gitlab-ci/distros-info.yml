@@ -1,0 +1,131 @@
+# Fedora:
+#   cadence: every 6 months
+#   support: 13 months
+# Image aliases: latest, rawhide
+fedora:
+- version: rawhide
+  support: yes
+  nm: main
+- version: 40
+  support: 2025-05-13
+  nm: 1.46
+- version: 39
+  support: 2024-11-12
+  nm: 1.44
+
+# CentOS Stream
+centos:
+- version: stream9
+  support: 2027-05-31
+  nm: main
+- version: stream8
+  support: 2024-05-31  ## EOL
+  nm: 1.40
+
+# RHEL:
+# Even minor versions:
+#   cadence: every year
+#   support: 2 years EUS + 2 years SAP / Enhaced EUS
+# Odd minor versions:
+#   cadence: every year (every other 6 months than even versions)
+#   support: 6 months
+rhel:
+- version: 9.5
+  support: yes
+  nm: main
+- version: 9.4
+  support: 2026-04-30
+  extended-support: 2028-04-30
+  nm: 1.46
+- version: 9.2
+  support: 2025-05-31
+  extended-support: 2027-05-31
+  nm: 1.42
+- version: 8.10  # last RHEL 8 release, maintenaince support only
+  support: 2029-05-31
+  extended-support: no
+  nm: 1.40
+- version: 8.8
+  support: 2025-05-31
+  extended-support: 2027-05-31
+  nm: 1.40
+# SAP / Enhaced EUS only:
+- version: 9.0
+  support: 2024-05-31
+  extended-support: 2026-05-31
+  nm: 1.36
+- version: 8.6
+  support: 2024-05-31
+  extended-support: 2026-05-31
+  nm: 1.36
+
+# Ubuntu:
+# LTS:
+#   cadence: every 2 years
+#   support: 5 years LTS + 5 years extended security
+# non-LTS (rolling):
+#   cadence: every 6 months
+#   support: 9 months
+# Image aliases: latest (LTS), rolling (LTS or non-LTS), devel
+ubuntu:
+- version: devel
+  support: yes
+  nm: main
+- version: 24.04
+  name: focal
+  support: 2029-05-31
+  extended-support: 2034-04-25
+  nm: 1.46
+- version: 22.04
+  name: jammy
+  support: 2027-06-01
+  extended-support: 2032-04-21
+  nm: 1.36
+- version: 20.04
+  name: noble
+  support: 2025-05-29
+  extended-support: 2030-04-23
+  nm: 1.22
+
+# Debian:
+#   cadence: every 2 years
+#   support: 3 years + 2 years LTS
+# Images aliases: stable, oldstable, oldoldstable
+debian:
+- version: devel
+  support: yes
+  nm: main
+- version: sid
+  support: yes
+  nm: main
+- version: 12
+  name: bookworm
+  support: 2026-06-11
+  extended-support: 2028-06-30
+  nm: 1.42
+- version: 11
+  name: bullseye
+  support: 2024-08-15
+  extended-support: 2026-08-31
+  nm: 1.30
+
+# Alpine:
+#   cadence: every 6 months
+#   support: 2 years
+# Image aliases: latest, edge (development)
+alpine:
+- version: edge
+  support: yes
+  nm: main
+- version: 3.20
+  support: 2026-04-01
+  nm: 1.46
+- version: 3.19
+  support: 2025-11-01
+  nm: 1.44
+- version: 3.18
+  support: 2025-05-09
+  nm: 1.42
+- version: 3.17
+  support: 2024-11-22
+  nm: 1.40
