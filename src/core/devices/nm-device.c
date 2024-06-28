@@ -11053,7 +11053,7 @@ _dev_ipdhcpx_notify(NMDhcpClient *client, const NMDhcpClientNotifyData *notify_d
                     priv->l3cfg,
                     _dev_l3_config_data_tag_get(priv, L3_CONFIG_DATA_TYPE_DHCP_X(IS_IPv4)),
                     dhcp_l3cd)) {
-                _dev_l3_cfg_commit(self, FALSE);
+                _dev_l3_cfg_commit(self, TRUE);
             }
             goto lease_update_out;
         }
