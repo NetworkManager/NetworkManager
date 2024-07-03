@@ -1,0 +1,134 @@
+#!/bin/bash
+
+set -x
+
+###############################################################################
+# Script to create a RHCOS custom image containing a NetworkManager rpm from
+# a copr repository.
+#
+# In order to have a custom RHCOS image, we cannot modify the image itself but
+# we can add a custom layered image that includes all RHCOS functionality and
+# adds additional functionality to it.
+#
+# Requirements:
+# - A quay.io registry where you have push access.
+# - You must have your pull-secret in the same directory where the script is
+# being run. You can download your pull-secret from:
+# https://console.redhat.com/openshift/install/pull-secret
+#
+# In order to install this on nodes from a cluster that already exists it must
+# be done using MachineConfig operator. In essence the following YAML file
+# must be created.
+#
+# ```
+# apiVersion: machineconfiguration.openshift.io/v1
+# kind: MachineConfig
+# metadata:
+#   labels:
+#     machineconfiguration.openshift.io/role: <role>
+#   name: os-layer-custom-nm
+# spec:
+#   osImageURL: <registry>
+# ```
+#
+# Please, notice that the role and registry need to be set to your needs.
+#
+# Then, it can be applied by:
+#
+# $ oc create -f <yaml file>
+#
+# Finally, the machines will be ready once the field UPDATED has the True value
+# in the output of this command.
+#
+# $ oc get mcp
+#
+###############################################################################
+
+# Prints usage help
+script_usage() {
+	cat << EOF
+Usage:
+     -h|--help                       Display this help
+     --nm-copr                       Specify the NM stable release to take from Copr
+                                     to the RHCOS image. Default value is main
+                                     branch.
+     --base                          Specify the base image of RHCOS to be used.
+     --registry                      Specify registry to be used to push the image.
+     --tag                           Specify the tag to be used when pushing the image to the registry.
+                                     Default value is: latest
+EOF
+}
+
+# Parse the parameters
+parse_params() {
+    local param
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -h | --help)
+                script_usage
+                exit 0
+                ;;
+            --nm-copr)
+                nm_copr="$2"
+                shift
+                shift
+                ;;
+            --base)
+                base="$2"
+                shift
+                shift
+                ;;
+            --registry)
+                registry="$2"
+                shift
+                shift
+                ;;
+            --tag)
+                tag="$2"
+                shift
+                shift
+                ;;
+            *)
+                echo "Invalid parameter provided \"$1\""
+                exit 1
+        esac
+    done
+}
+
+# Generates the Containerfile needed for building the custom image
+generate_containerfile() {
+    cat << EOF > Containerfile
+FROM $base
+
+RUN curl -s https://copr.fedorainfracloud.org/coprs/networkmanager/NetworkManager-$nm_copr/repo/epel-9/networkmanager-NetworkManager-$nm_copr-epel-9.repo | tee /etc/yum.repos.d/networkmanager-$nm_copr.repo
+RUN rpm-ostree override replace --experimental --freeze --from repo='copr:copr.fedorainfracloud.org:networkmanager:NetworkManager-$nm_copr' \\
+    NetworkManager \\
+    NetworkManager-cloud-setup \\
+    NetworkManager-ovs \\
+    NetworkManager-team \\
+    NetworkManager-tui \\
+    NetworkManager-libnm && \\
+    rpm-ostree cleanup -m && \\
+    ostree container commit
+EOF
+}
+
+# Builds the custom image and push it to the registry
+build_and_push() {
+    podman build -t $registry:$tag . --authfile pull-secret
+    podman login quay.io
+    podman push $registry:$tag
+}
+
+main() {
+    # Define the defaults
+    tag="latest"
+
+    parse_params "$@"
+    generate_containerfile
+    build_and_push
+}
+
+main "$@"
+
+# vim: syntax=sh cc=80 tw=79 ts=4 sw=4 sts=4 et sr
