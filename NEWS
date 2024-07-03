@@ -26,6 +26,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Support reapplying the VLANs on bridge ports.
 * Fix crash caused by malformed LLDP package if debug log is enabled
 * Retry hostname resolution when it fails
+* Add new ipv4.link-local=fallback to set an IPv4 link-local address
+  when no other IPv4 is set.
 
 =============================================
 NetworkManager-1.48

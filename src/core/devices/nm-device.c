@@ -276,6 +276,7 @@ typedef struct {
             NML3IPv4LL             *ipv4ll;
             NML3IPv4LLRegistration *ipv4ll_registation;
             GSource                *timeout_source;
+            NMSettingIP4LinkLocal   mode;
         } v4;
         struct {
             NML3IPv6LL     *ipv6ll;
@@ -830,6 +831,7 @@ static void _set_mtu(NMDevice *self, guint32 mtu);
 static void _commit_mtu(NMDevice *self);
 static void _cancel_activation(NMDevice *self);
 
+static void _dev_ipll4_check_fallback(NMDevice *self, const NML3ConfigData *l3cd_new);
 static void _dev_ipll4_notify_event(NMDevice *self);
 
 static void _dev_ip_state_check(NMDevice *self, int addr_family);
@@ -1596,6 +1598,7 @@ _prop_get_ipv4_link_local(NMDevice *self)
 {
     NMSettingIP4Config   *s_ip4;
     NMSettingIP4LinkLocal link_local;
+    const char           *method;
 
     s_ip4 = nm_device_get_applied_setting(self, NM_TYPE_SETTING_IP4_CONFIG);
     if (!s_ip4)
@@ -1603,6 +1606,8 @@ _prop_get_ipv4_link_local(NMDevice *self)
 
     if (NM_IS_DEVICE_LOOPBACK(self))
         return NM_SETTING_IP4_LL_DISABLED;
+
+    method = nm_setting_ip_config_get_method((NMSettingIPConfig *) s_ip4);
 
     link_local = nm_setting_ip4_config_get_link_local(s_ip4);
 
@@ -1613,30 +1618,44 @@ _prop_get_ipv4_link_local(NMDevice *self)
                                                                  NM_CON_DEFAULT("ipv4.link-local"),
                                                                  self,
                                                                  NM_SETTING_IP4_LL_AUTO,
-                                                                 NM_SETTING_IP4_LL_ENABLED,
+                                                                 NM_SETTING_IP4_LL_FALLBACK,
                                                                  NM_SETTING_IP4_LL_DEFAULT);
         if (link_local == NM_SETTING_IP4_LL_DEFAULT) {
             /* If there is no global configuration for ipv4.link-local assume auto */
             link_local = NM_SETTING_IP4_LL_AUTO;
-        } else if (link_local == NM_SETTING_IP4_LL_ENABLED
-                   && nm_streq(nm_setting_ip_config_get_method((NMSettingIPConfig *) s_ip4),
-                               NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
-            /* ipv4.method=disabled has higher priority than the global ipv4.link-local=enabled */
+        } else if (NM_IN_SET(link_local, NM_SETTING_IP4_LL_ENABLED, NM_SETTING_IP4_LL_FALLBACK)
+                   && nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
+            /* ipv4.method=disabled has higher priority than the global
+             * ipv4.link-local=enabled / ipv4.link-local=fallback */
             link_local = NM_SETTING_IP4_LL_DISABLED;
         } else if (link_local == NM_SETTING_IP4_LL_DISABLED
-                   && nm_streq(nm_setting_ip_config_get_method((NMSettingIPConfig *) s_ip4),
-                               NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)) {
+                   && nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)) {
             /* ipv4.method=link-local has higher priority than the global ipv4.link-local=disabled */
             link_local = NM_SETTING_IP4_LL_ENABLED;
         }
     }
 
     if (link_local == NM_SETTING_IP4_LL_AUTO) {
-        link_local = nm_streq(nm_setting_ip_config_get_method((NMSettingIPConfig *) s_ip4),
-                              NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)
-                         ? NM_SETTING_IP4_LL_ENABLED
-                         : NM_SETTING_IP4_LL_DISABLED;
+        /* ipv4.link-local=auto means enabled for ipv4.method=link-local,
+         * and disabled for anything else */
+        if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)) {
+            link_local = NM_SETTING_IP4_LL_ENABLED;
+        } else {
+            link_local = NM_SETTING_IP4_LL_DISABLED;
+        }
     }
+
+    if (link_local == NM_SETTING_IP4_LL_FALLBACK
+        && nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)) {
+        /* ipv4.link-local=fallback with ipv4.method=link-local will
+         * always be on anyway, simplify logic */
+        link_local = NM_SETTING_IP4_LL_ENABLED;
+    }
+
+    nm_assert(NM_IN_SET(link_local,
+                        NM_SETTING_IP4_LL_DISABLED,
+                        NM_SETTING_IP4_LL_ENABLED,
+                        NM_SETTING_IP4_LL_FALLBACK));
 
     return link_local;
 }
@@ -4639,13 +4658,14 @@ _dev_l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, N
         const NML3ConfigData *l3cd;
         NMDeviceState         state = nm_device_get_state(self);
 
+        l3cd = nm_l3cfg_get_combined_l3cd(l3cfg, TRUE);
         if (state >= NM_DEVICE_STATE_IP_CONFIG && state < NM_DEVICE_STATE_DEACTIVATING) {
             /* FIXME(l3cfg): MTU handling should be moved to l3cfg. */
-            l3cd = nm_l3cfg_get_combined_l3cd(l3cfg, TRUE);
             if (l3cd)
                 priv->ip6_mtu = nm_l3_config_data_get_ip6_mtu(l3cd);
             _commit_mtu(self);
         }
+        _dev_ipll4_check_fallback(self, l3cd);
         return;
     }
     case NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT:
@@ -10648,6 +10668,25 @@ _dev_ipll4_start(NMDevice *self)
         nm_l3_ipv4ll_register_new(priv->ipll_data_4.v4.ipv4ll, timeout_msec);
 }
 
+static void
+_dev_ipll4_check_fallback(NMDevice *self, const NML3ConfigData *l3cd_new)
+{
+    gboolean         has_non_ll;
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+
+    if (!l3cd_new || priv->ipll_data_4.v4.mode != NM_SETTING_IP4_LL_FALLBACK) {
+        return;
+    }
+
+    has_non_ll = nm_l3_config_data_get_flags(l3cd_new) & NM_L3_CONFIG_DAT_FLAGS_HAS_IPV4_NON_LL;
+    _LOGT_ipll(AF_INET, "%s fallback", has_non_ll ? "cleanup" : "start");
+    if (has_non_ll) {
+        _dev_ipllx_cleanup(self, AF_INET);
+    } else {
+        _dev_ipll4_start(self);
+    }
+}
+
 /*****************************************************************************/
 
 static const char *
@@ -12747,7 +12786,8 @@ activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family, const
         goto out_devip;
 
     if (IS_IPv4) {
-        if (_prop_get_ipv4_link_local(self) == NM_SETTING_IP4_LL_ENABLED)
+        priv->ipll_data_4.v4.mode = _prop_get_ipv4_link_local(self);
+        if (priv->ipll_data_4.v4.mode == NM_SETTING_IP4_LL_ENABLED)
             _dev_ipll4_start(self);
 
         if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_AUTO))
@@ -13495,8 +13535,11 @@ _cleanup_ip_pre(NMDevice *self, int addr_family, CleanupType cleanup_type, gbool
 
     _dev_ipdhcpx_cleanup(self, addr_family, !preserve_dhcp || !keep_reapply, FALSE);
 
-    if (!IS_IPv4)
+    if (IS_IPv4) {
+        priv->ipll_data_4.v4.mode = NM_SETTING_IP4_LL_DISABLED;
+    } else {
         _dev_ipac6_cleanup(self);
+    }
 
     _dev_ipllx_cleanup(self, addr_family);
 
