@@ -11056,6 +11056,8 @@ _dev_ipdhcpx_notify(NMDhcpClient *client, const NMDhcpClientNotifyData *notify_d
             const NML3ConfigData *dhcp_l3cd = priv->l3cds[L3_CONFIG_DATA_TYPE_DHCP_X(IS_IPv4)].d;
 
             _LOGT_ipdhcp(addr_family, "lease lost");
+            _dev_ipdhcpx_set_state(self, addr_family, NM_DEVICE_IP_STATE_PENDING);
+            _dev_ip_state_check_async(self, addr_family);
             if (dhcp_l3cd
                 && nm_l3cfg_remove_config(
                     priv->l3cfg,
