@@ -3908,10 +3908,16 @@ _new_from_nl_addr(const struct nlmsghdr *nlh, gboolean id_only)
     return g_steal_pointer(&obj);
 }
 
+#define IP_ROUTE_TRACKED_PROTOCOLS                                                        \
+    RTPROT_UNSPEC, RTPROT_REDIRECT, RTPROT_KERNEL, RTPROT_BOOT, RTPROT_STATIC, RTPROT_RA, \
+        RTPROT_DHCP
+
+_nm_unused static const guint8 ip_route_tracked_protocols[] = {IP_ROUTE_TRACKED_PROTOCOLS};
+
 static gboolean
 ip_route_is_tracked(guint8 proto, guint8 type)
 {
-    if (proto > RTPROT_STATIC && !NM_IN_SET(proto, RTPROT_DHCP, RTPROT_RA)) {
+    if (!NM_IN_SET(proto, IP_ROUTE_TRACKED_PROTOCOLS)) {
         /* We ignore certain rtm_protocol, because NetworkManager would only ever
          * configure certain protocols. Other routes are not configured by NetworkManager
          * and we don't track them in the platform cache.
