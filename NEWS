@@ -14,6 +14,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * When looking up the system hostname from the reverse DNS lookup of
   addresses configured on interfaces, NetworkManager now takes into
   account the content of /etc/hosts.
+* Revert to using sysctl ipv6.conf.default for ip6-privacy
+* Allow specifying a system OVS interface by MAC address
+* ndisc: Support multiple gateways for a single network
 
 =============================================
 NetworkManager-1.48
