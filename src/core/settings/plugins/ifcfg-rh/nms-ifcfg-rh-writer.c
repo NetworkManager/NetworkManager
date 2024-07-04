@@ -2194,13 +2194,13 @@ write_connection_setting(NMSettingConnection *s_con, shvarFile *ifcfg, const cha
     /* Only save the value for controller connections */
     type = nm_setting_connection_get_connection_type(s_con);
     if (_nm_connection_type_is_controller(type)) {
-        NMSettingConnectionAutoconnectSlaves autoconnect_slaves;
-        autoconnect_slaves = nm_setting_connection_get_autoconnect_slaves(s_con);
+        NMTernary autoconnect_ports;
+        autoconnect_ports = nm_setting_connection_get_autoconnect_ports(s_con);
         svSetValueStr(ifcfg,
                       "AUTOCONNECT_SLAVES",
-                      autoconnect_slaves == NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_YES  ? "yes"
-                      : autoconnect_slaves == NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_NO ? "no"
-                                                                                          : NULL);
+                      autoconnect_ports == NM_TERNARY_TRUE    ? "yes"
+                      : autoconnect_ports == NM_TERNARY_FALSE ? "no"
+                                                              : NULL);
     }
     switch (nm_setting_connection_get_lldp(s_con)) {
     case NM_SETTING_CONNECTION_LLDP_ENABLE_RX:
@@ -2287,7 +2287,7 @@ write_connection_setting(NMSettingConnection *s_con, shvarFile *ifcfg, const cha
             svSetValueStr(ifcfg, "VRF_UUID", controller);
             svSetValueStr(ifcfg, "VRF", controller_iface);
         } else {
-            _LOGW("don't know how to set controller for a %s slave",
+            _LOGW("don't know how to set controller for a %s port",
                   nm_setting_connection_get_port_type(s_con));
         }
     }
@@ -3056,7 +3056,7 @@ write_ip4_aliases(NMConnection *connection, const char *base_ifcfg_path)
 
     s_ip4 = nm_connection_get_setting_ip4_config(connection);
     if (!s_ip4) {
-        /* slave-type: no alias files */
+        /* port-type: no alias files */
         return;
     }
 

@@ -87,14 +87,14 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     }
 
     if (nm_utils_is_uuid(priv->parent)) {
-        /* If we have an NMSettingConnection:controller with slave-type="6lowpan",
+        /* If we have an NMSettingConnection:controller with port-type="6lowpan",
          * then it must be the same UUID.
          */
         if (s_con) {
-            const char *controller = NULL, *slave_type = NULL;
+            const char *controller = NULL, *port_type = NULL;
 
-            slave_type = nm_setting_connection_get_port_type(s_con);
-            if (!g_strcmp0(slave_type, NM_SETTING_6LOWPAN_SETTING_NAME))
+            port_type = nm_setting_connection_get_port_type(s_con);
+            if (!g_strcmp0(port_type, NM_SETTING_6LOWPAN_SETTING_NAME))
                 controller = nm_setting_connection_get_controller(s_con);
 
             if (controller && g_strcmp0(priv->parent, controller) != 0) {

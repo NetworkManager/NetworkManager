@@ -3082,7 +3082,7 @@ nm_l3_config_data_new_from_platform(NMDedupMultiIndex        *multi_idx,
     nm_assert(NM_IS_PLATFORM(platform));
     nm_assert(ifindex > 0);
 
-    /* Slaves have no IP configuration */
+    /* Ports have no IP configuration */
     if (nm_platform_link_get_controller(platform, ifindex) > 0)
         return NULL;
 

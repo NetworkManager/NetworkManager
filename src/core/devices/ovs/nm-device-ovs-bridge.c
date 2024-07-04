@@ -49,7 +49,7 @@ create_and_realize(NMDevice              *device,
                    const NMPlatformLink **out_plink,
                    GError               **error)
 {
-    /* The actual backing resources will be created on enslavement by the port
+    /* The actual backing resources will be created on attachment by the port
      * when it can identify the port and the bridge. */
 
     return TRUE;

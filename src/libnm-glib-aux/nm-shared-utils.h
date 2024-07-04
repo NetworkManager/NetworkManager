@@ -154,7 +154,7 @@ typedef enum {
     NM_LINK_TYPE_WIREGUARD,
 #define _NM_LINK_TYPE_SW_LAST NM_LINK_TYPE_WIREGUARD
 
-/* Software types with slaves */
+/* Software types with ports */
 #define _NM_LINK_TYPE_SW_CONTROLLER_FIRST NM_LINK_TYPE_BRIDGE
     NM_LINK_TYPE_BRIDGE,
     NM_LINK_TYPE_BOND,
@@ -177,7 +177,7 @@ nm_link_type_is_software(NMLinkType link_type)
 }
 
 static inline gboolean
-nm_link_type_supports_slaves(NMLinkType link_type)
+nm_link_type_supports_ports(NMLinkType link_type)
 {
     return link_type >= _NM_LINK_TYPE_SW_CONTROLLER_FIRST
            && link_type <= _NM_LINK_TYPE_SW_CONTROLLER_LAST;

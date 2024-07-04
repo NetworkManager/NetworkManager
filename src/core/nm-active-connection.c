@@ -158,11 +158,11 @@ static NM_UTILS_FLAGS2STR_DEFINE(
     NMActivationStateFlags,
     NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_NONE, "none"),
     NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_IS_MASTER, "is-controller"),
-    NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_IS_SLAVE, "is-slave"),
+    NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_IS_SLAVE, "is-port"),
     NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_LAYER2_READY, "layer2-ready"),
     NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_IP4_READY, "ip4-ready"),
     NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_IP6_READY, "ip6-ready"),
-    NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES, "controller-has-slaves"),
+    NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES, "controller-has-ports"),
     NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY,
                        "lifetime-bound-to-profile-visibility"),
     NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_EXTERNAL, "external"), );
@@ -444,7 +444,7 @@ _set_applied_connection_take(NMActiveConnection *self, NMConnection *applied_con
     priv->applied_connection = applied_connection;
     nm_connection_clear_secrets(priv->applied_connection);
 
-    /* we determine whether the connection is a controller/slave, based solely
+    /* we determine whether the connection is a controller/port, based solely
      * on the connection properties itself. */
     s_con = nm_connection_get_setting_connection(priv->applied_connection);
     if (nm_setting_connection_get_controller(s_con))
@@ -778,7 +778,7 @@ check_controller_ready(NMActiveConnection *self)
 
     /* ActiveConnetions don't enter the ACTIVATING state until they have a
      * NMDevice in PREPARE or higher states, so the controller active connection's
-     * device will be ready to accept slaves when the controller is in ACTIVATING
+     * device will be ready to accept ports when the controller is in ACTIVATING
      * or higher states.
      */
     if (!priv->controller_ready && priv->controller

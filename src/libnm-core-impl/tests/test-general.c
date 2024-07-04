@@ -6231,12 +6231,12 @@ test_connection_normalize_type(void)
 }
 
 static void
-test_connection_normalize_slave_type_1(void)
+test_connection_normalize_port_type_1(void)
 {
     gs_unref_object NMConnection *con = NULL;
     NMSettingConnection          *s_con;
 
-    con = nmtst_create_minimal_connection("test_connection_normalize_slave_type_1",
+    con = nmtst_create_minimal_connection("test_connection_normalize_port_type_1",
                                           "cc4cd5df-45dc-483e-b291-6b76c2338ecb",
                                           NM_SETTING_WIRED_SETTING_NAME,
                                           &s_con);
@@ -6265,12 +6265,12 @@ test_connection_normalize_slave_type_1(void)
 }
 
 static void
-test_connection_normalize_slave_type_2(void)
+test_connection_normalize_port_type_2(void)
 {
     gs_unref_object NMConnection *con = NULL;
     NMSettingConnection          *s_con;
 
-    con = nmtst_create_minimal_connection("test_connection_normalize_slave_type_2",
+    con = nmtst_create_minimal_connection("test_connection_normalize_port_type_2",
                                           "40bea008-ca72-439a-946b-e65f827656f9",
                                           NM_SETTING_WIRED_SETTING_NAME,
                                           &s_con);
@@ -11717,10 +11717,10 @@ main(int argc, char **argv)
                     test_connection_normalize_virtual_iface_name);
     g_test_add_func("/core/general/test_connection_normalize_uuid", test_connection_normalize_uuid);
     g_test_add_func("/core/general/test_connection_normalize_type", test_connection_normalize_type);
-    g_test_add_func("/core/general/test_connection_normalize_slave_type_1",
-                    test_connection_normalize_slave_type_1);
-    g_test_add_func("/core/general/test_connection_normalize_slave_type_2",
-                    test_connection_normalize_slave_type_2);
+    g_test_add_func("/core/general/test_connection_normalize_port_type_1",
+                    test_connection_normalize_port_type_1);
+    g_test_add_func("/core/general/test_connection_normalize_port_type_2",
+                    test_connection_normalize_port_type_2);
     g_test_add_func("/core/general/test_connection_normalize_infiniband",
                     test_connection_normalize_infiniband);
     g_test_add_func("/core/general/test_connection_normalize_gateway_never_default",

@@ -1908,11 +1908,11 @@ find_device_by_ip_iface(NMManager *self, const char *iface)
  * @self: the #NMManager
  * @iface: the device interface to find
  * @connection: a connection to ensure the returned device is compatible with
- * @slave: a slave connection to ensure a controller is compatible with
+ * @port: a port connection to ensure a controller is compatible with
  *
- * Finds a device by interface name, preferring realized devices.  If @slave
+ * Finds a device by interface name, preferring realized devices.  If @port
  * is given, this function will only return controller devices and will ensure
- * @slave, when activated, can be a slave of the returned controller device.  If
+ * @port, when activated, can be a port of the returned controller device.  If
  * @connection is given, this function will only consider devices that are
  * compatible with @connection. If @child is given, this function will only
  * return parent device.
@@ -1923,7 +1923,7 @@ static NMDevice *
 find_device_by_iface(NMManager    *self,
                      const char   *iface,
                      NMConnection *connection,
-                     NMConnection *slave,
+                     NMConnection *port,
                      NMConnection *child)
 {
     NMManagerPrivate *priv     = NM_MANAGER_GET_PRIVATE(self);
@@ -1937,10 +1937,10 @@ find_device_by_iface(NMManager    *self,
             continue;
         if (connection && !nm_device_check_connection_compatible(candidate, connection, TRUE, NULL))
             continue;
-        if (slave) {
+        if (port) {
             if (!nm_device_is_controller(candidate))
                 continue;
-            if (!nm_device_check_slave_connection_compatible(candidate, slave))
+            if (!nm_device_check_port_connection_compatible(candidate, port))
                 continue;
         }
         if (child && !nm_device_can_be_parent(candidate))
@@ -2348,7 +2348,7 @@ remove_device(NMManager *self, NMDevice *device, gboolean quitting)
 
         _emit_device_added_removed(self, device, FALSE);
     } else {
-        /* unrealize() does not release a slave device from controller and
+        /* unrealize() does not release a port device from controller and
          * clear IP configurations, do it here */
         nm_device_removed(device, TRUE);
     }
@@ -3371,7 +3371,7 @@ get_existing_connection(NMManager *self, NMDevice *device, gboolean *out_generat
         int controller_ifindex = nm_platform_link_get_controller(priv->platform, ifindex);
 
         /* Check that the controller is activating before assuming a
-         * slave connection. However, ignore ovs-system/ovs-netdev controller as
+         * port connection. However, ignore ovs-system/ovs-netdev controller as
          * we never manage it.
          */
         if (controller_ifindex
@@ -3382,7 +3382,7 @@ get_existing_connection(NMManager *self, NMDevice *device, gboolean *out_generat
                 _LOG2D(LOGD_DEVICE,
                        device,
                        "assume: don't assume because "
-                       "cannot generate connection for slave before its controller (%s/%d)",
+                       "cannot generate connection for port before its controller (%s/%d)",
                        nm_platform_link_get_name(priv->platform, controller_ifindex),
                        controller_ifindex);
                 return NULL;
@@ -3391,7 +3391,7 @@ get_existing_connection(NMManager *self, NMDevice *device, gboolean *out_generat
                 _LOG2D(LOGD_DEVICE,
                        device,
                        "assume: don't assume because "
-                       "cannot generate connection for slave before controller %s activates",
+                       "cannot generate connection for port before controller %s activates",
                        nm_device_get_iface(controller));
                 return NULL;
             }
@@ -3771,7 +3771,7 @@ recheck_assume_connection(NMManager *self, NMDevice *device)
             return FALSE;
         }
 
-        /* If the device is a slave or VLAN, find the controller ActiveConnection */
+        /* If the device is a port or VLAN, find the controller ActiveConnection */
         controller_ac = NULL;
         if (find_controller(self,
                             nm_settings_connection_get_connection(sett_conn),
@@ -4863,14 +4863,14 @@ impl_manager_get_device_by_ip_iface(NMDBusObject                      *obj,
 }
 
 static gboolean
-is_compatible_with_slave(NMConnection *controller, NMConnection *slave)
+is_compatible_with_port(NMConnection *controller, NMConnection *port)
 {
     NMSettingConnection *s_con;
 
     g_return_val_if_fail(controller, FALSE);
-    g_return_val_if_fail(slave, FALSE);
+    g_return_val_if_fail(port, FALSE);
 
-    s_con = nm_connection_get_setting_connection(slave);
+    s_con = nm_connection_get_setting_connection(port);
     g_assert(s_con);
 
     return nm_connection_is_type(controller, nm_setting_connection_get_port_type(s_con));
@@ -4957,7 +4957,7 @@ find_controller(NMManager             *self,
         NMDevice     *device_candidate;
 
         if (nm_streq(nm_connection_get_uuid(controller_candidate), controller)) {
-            if (!is_compatible_with_slave(controller_candidate, connection)) {
+            if (!is_compatible_with_port(controller_candidate, connection)) {
                 g_set_error(error,
                             NM_MANAGER_ERROR,
                             NM_MANAGER_ERROR_DEPENDENCY_FAILED,
@@ -4978,7 +4978,7 @@ find_controller(NMManager             *self,
         } else if (nm_connection_get_interface_name(controller_candidate)
                    && nm_streq(nm_connection_get_interface_name(controller_candidate),
                                controller)) {
-            if (!is_compatible_with_slave(controller_candidate, connection))
+            if (!is_compatible_with_port(controller_candidate, connection))
                 continue;
 
             /* This might be good enough unless we find a better one (already active or UUID match) */
@@ -5134,8 +5134,8 @@ ensure_controller_active_connection(NMManager            *self,
          */
         g_assert(!controller_connection || controller_connection == device_connection);
         if (device_connection
-            && !is_compatible_with_slave(nm_settings_connection_get_connection(device_connection),
-                                         connection)) {
+            && !is_compatible_with_port(nm_settings_connection_get_connection(device_connection),
+                                        connection)) {
             g_set_error(error,
                         NM_MANAGER_ERROR,
                         NM_MANAGER_ERROR_DEPENDENCY_FAILED,
@@ -5177,10 +5177,10 @@ ensure_controller_active_connection(NMManager            *self,
                 NMSettingsConnection *candidate = connections[i];
                 NMConnection         *cand_conn = nm_settings_connection_get_connection(candidate);
 
-                /* Ensure eg bond/team slave and the candidate controller is a
+                /* Ensure eg bond/team port and the candidate controller is a
                  * bond/team controller
                  */
-                if (!is_compatible_with_slave(cand_conn, connection))
+                if (!is_compatible_with_port(cand_conn, connection))
                     continue;
 
                 if (nm_device_check_connection_available(
@@ -5271,37 +5271,37 @@ ensure_controller_active_connection(NMManager            *self,
 typedef struct {
     NMSettingsConnection *connection;
     NMDevice             *device;
-} SlaveConnectionInfo;
+} PortConnectionInfo;
 
 /**
- * find_slaves:
+ * find_ports:
  * @manager: #NMManager object
- * @sett_conn: the controller #NMSettingsConnection to find slave connections for
+ * @sett_conn: the controller #NMSettingsConnection to find port connections for
  * @device: the controller #NMDevice for the @sett_conn
- * @out_n_slaves: on return, the number of slaves found
+ * @out_n_ports: on return, the number of ports found
  *
- * Given an #NMSettingsConnection, attempts to find its slaves. If @sett_conn is not
- * controller, or has not any slaves, this will return %NULL.
+ * Given an #NMSettingsConnection, attempts to find its ports. If @sett_conn is not
+ * controller, or has not any ports, this will return %NULL.
  *
- * Returns: an array of #SlaveConnectionInfo for given controller @sett_conn, or %NULL
+ * Returns: an array of #PortConnectionInfo for given controller @sett_conn, or %NULL
  **/
-static SlaveConnectionInfo *
-find_slaves(NMManager            *manager,
-            NMSettingsConnection *sett_conn,
-            NMDevice             *device,
-            guint                *out_n_slaves,
-            gboolean              for_user_request)
+static PortConnectionInfo *
+find_ports(NMManager            *manager,
+           NMSettingsConnection *sett_conn,
+           NMDevice             *device,
+           guint                *out_n_ports,
+           gboolean              for_user_request)
 {
     NMManagerPrivate              *priv            = NM_MANAGER_GET_PRIVATE(manager);
     NMSettingsConnection *const   *all_connections = NULL;
     guint                          n_all_connections;
     guint                          i;
-    SlaveConnectionInfo           *slaves   = NULL;
-    guint                          n_slaves = 0;
+    PortConnectionInfo            *ports   = NULL;
+    guint                          n_ports = 0;
     NMSettingConnection           *s_con;
     gs_unref_hashtable GHashTable *devices = NULL;
 
-    nm_assert(out_n_slaves);
+    nm_assert(out_n_ports);
 
     s_con = nm_connection_get_setting_connection(nm_settings_connection_get_connection(sett_conn));
     g_return_val_if_fail(s_con, NULL);
@@ -5309,7 +5309,7 @@ find_slaves(NMManager            *manager,
     devices = g_hash_table_new(nm_direct_hash, NULL);
 
     /* Search through all connections, not only inactive ones, because
-     * even if a slave was already active, it might be deactivated during
+     * even if a port was already active, it might be deactivated during
      * controller reactivation.
      */
     all_connections =
@@ -5318,7 +5318,7 @@ find_slaves(NMManager            *manager,
     for (i = 0; i < n_all_connections; i++) {
         NMSettingsConnection *controller_connection = NULL;
         NMDevice             *controller_device     = NULL;
-        NMDevice             *slave_device;
+        NMDevice             *port_device;
         NMSettingsConnection *candidate = all_connections[i];
 
         find_controller(manager,
@@ -5330,38 +5330,38 @@ find_slaves(NMManager            *manager,
                         NULL);
         if ((controller_connection && controller_connection == sett_conn)
             || (controller_device && controller_device == device)) {
-            slave_device = nm_manager_get_best_device_for_connection(manager,
-                                                                     candidate,
-                                                                     NULL,
-                                                                     for_user_request,
-                                                                     devices,
-                                                                     NULL);
+            port_device = nm_manager_get_best_device_for_connection(manager,
+                                                                    candidate,
+                                                                    NULL,
+                                                                    for_user_request,
+                                                                    devices,
+                                                                    NULL);
 
-            if (!slaves) {
+            if (!ports) {
                 /* what we allocate is quite likely much too large. Don't bother, it is only
                  * a temporary buffer. */
-                slaves = g_new(SlaveConnectionInfo, n_all_connections);
+                ports = g_new(PortConnectionInfo, n_all_connections);
             }
 
-            nm_assert(n_slaves < n_all_connections);
-            slaves[n_slaves++] = (SlaveConnectionInfo){
+            nm_assert(n_ports < n_all_connections);
+            ports[n_ports++] = (PortConnectionInfo){
                 .connection = candidate,
-                .device     = slave_device,
+                .device     = port_device,
             };
 
-            if (slave_device)
-                g_hash_table_add(devices, slave_device);
+            if (port_device)
+                g_hash_table_add(devices, port_device);
         }
     }
 
-    *out_n_slaves = n_slaves;
+    *out_n_ports = n_ports;
 
-    /* Warning: returns NULL if n_slaves is zero. */
-    return slaves;
+    /* Warning: returns NULL if n_ports is zero. */
+    return ports;
 }
 
 static gboolean
-should_connect_slaves(NMConnection *connection, NMDevice *device)
+should_connect_ports(NMConnection *connection, NMDevice *device)
 {
     NMSettingConnection *s_con;
     NMTernary            val;
@@ -5390,12 +5390,12 @@ out:
 }
 
 static int
-compare_slaves(gconstpointer a, gconstpointer b)
+compare_ports(gconstpointer a, gconstpointer b)
 {
-    const SlaveConnectionInfo *a_info = a;
-    const SlaveConnectionInfo *b_info = b;
+    const PortConnectionInfo *a_info = a;
+    const PortConnectionInfo *b_info = b;
 
-    /* Slaves without a device at the end */
+    /* Ports without a device at the end */
     if (!a_info->device)
         return 1;
     if (!b_info->device)
@@ -5405,50 +5405,47 @@ compare_slaves(gconstpointer a, gconstpointer b)
 }
 
 static void
-autoconnect_slaves(NMManager            *self,
-                   NMSettingsConnection *controller_connection,
-                   NMDevice             *controller_device,
-                   NMAuthSubject        *subject,
-                   gboolean              for_user_request)
+autoconnect_ports(NMManager            *self,
+                  NMSettingsConnection *controller_connection,
+                  NMDevice             *controller_device,
+                  NMAuthSubject        *subject,
+                  gboolean              for_user_request)
 {
     GError *local_err = NULL;
 
-    if (should_connect_slaves(nm_settings_connection_get_connection(controller_connection),
-                              controller_device)) {
-        gs_free SlaveConnectionInfo *slaves = NULL;
-        guint                        i, n_slaves = 0;
-        gboolean                     bind_lifetime_to_profile_visibility;
+    if (should_connect_ports(nm_settings_connection_get_connection(controller_connection),
+                             controller_device)) {
+        gs_free PortConnectionInfo *ports = NULL;
+        guint                       i, n_ports = 0;
+        gboolean                    bind_lifetime_to_profile_visibility;
 
-        slaves = find_slaves(self,
-                             controller_connection,
-                             controller_device,
-                             &n_slaves,
-                             for_user_request);
-        if (n_slaves > 1) {
-            qsort(slaves, n_slaves, sizeof(slaves[0]), compare_slaves);
+        ports =
+            find_ports(self, controller_connection, controller_device, &n_ports, for_user_request);
+        if (n_ports > 1) {
+            qsort(ports, n_ports, sizeof(ports[0]), compare_ports);
         }
 
         bind_lifetime_to_profile_visibility =
-            n_slaves > 0
+            n_ports > 0
             && NM_FLAGS_HAS(nm_device_get_activation_state_flags(controller_device),
                             NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY);
 
-        for (i = 0; i < n_slaves; i++) {
-            SlaveConnectionInfo *slave = &slaves[i];
-            const char          *uuid;
+        for (i = 0; i < n_ports; i++) {
+            PortConnectionInfo *port = &ports[i];
+            const char         *uuid;
 
-            /* To avoid loops when autoconnecting slaves, we propagate
-             * the UUID of the initial connection down to slaves until
+            /* To avoid loops when autoconnecting ports, we propagate
+             * the UUID of the initial connection down to ports until
              * the same connection is found.
              */
             uuid = g_object_get_qdata(G_OBJECT(controller_connection), autoconnect_root_quark());
-            if (nm_streq0(nm_settings_connection_get_uuid(slave->connection), uuid)) {
+            if (nm_streq0(nm_settings_connection_get_uuid(port->connection), uuid)) {
                 _LOGI(LOGD_CORE,
-                      "will NOT activate slave connection '%s' (%s) as a dependency for controller "
+                      "will NOT activate port connection '%s' (%s) as a dependency for controller "
                       "'%s' (%s): "
                       "circular dependency detected",
-                      nm_settings_connection_get_id(slave->connection),
-                      nm_settings_connection_get_uuid(slave->connection),
+                      nm_settings_connection_get_id(port->connection),
+                      nm_settings_connection_get_uuid(port->connection),
                       nm_settings_connection_get_id(controller_connection),
                       nm_settings_connection_get_uuid(controller_connection));
                 continue;
@@ -5456,18 +5453,18 @@ autoconnect_slaves(NMManager            *self,
 
             if (!uuid)
                 uuid = nm_settings_connection_get_uuid(controller_connection);
-            g_object_set_qdata_full(G_OBJECT(slave->connection),
+            g_object_set_qdata_full(G_OBJECT(port->connection),
                                     autoconnect_root_quark(),
                                     g_strdup(uuid),
                                     g_free);
 
-            if (!slave->device) {
+            if (!port->device) {
                 _LOGD(LOGD_CORE,
-                      "will NOT activate slave connection '%s' (%s) as a dependency for controller "
+                      "will NOT activate port connection '%s' (%s) as a dependency for controller "
                       "'%s' (%s): "
                       "no compatible device found",
-                      nm_settings_connection_get_id(slave->connection),
-                      nm_settings_connection_get_uuid(slave->connection),
+                      nm_settings_connection_get_id(port->connection),
+                      nm_settings_connection_get_uuid(port->connection),
                       nm_settings_connection_get_id(controller_connection),
                       nm_settings_connection_get_uuid(controller_connection));
                 continue;
@@ -5475,28 +5472,28 @@ autoconnect_slaves(NMManager            *self,
 
             _LOGD(
                 LOGD_CORE,
-                "will activate slave connection '%s' (%s) as a dependency for controller '%s' (%s)",
-                nm_settings_connection_get_id(slave->connection),
-                nm_settings_connection_get_uuid(slave->connection),
+                "will activate port connection '%s' (%s) as a dependency for controller '%s' (%s)",
+                nm_settings_connection_get_id(port->connection),
+                nm_settings_connection_get_uuid(port->connection),
                 nm_settings_connection_get_id(controller_connection),
                 nm_settings_connection_get_uuid(controller_connection));
 
-            /* Schedule slave activation */
+            /* Schedule port activation */
             nm_manager_activate_connection(
                 self,
-                slave->connection,
+                port->connection,
                 NULL,
                 NULL,
-                slave->device,
+                port->device,
                 subject,
                 NM_ACTIVATION_TYPE_MANAGED,
-                NM_ACTIVATION_REASON_AUTOCONNECT_SLAVES,
+                NM_ACTIVATION_REASON_AUTOCONNECT_PORTS,
                 bind_lifetime_to_profile_visibility
                     ? NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY
                     : NM_ACTIVATION_STATE_FLAG_NONE,
                 &local_err);
             if (local_err) {
-                _LOGW(LOGD_CORE, "Slave connection activation failed: %s", local_err->message);
+                _LOGW(LOGD_CORE, "Port connection activation failed: %s", local_err->message);
                 g_clear_error(&local_err);
             }
         }
@@ -5905,9 +5902,9 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
                   nm_device_get_ip_iface(controller_device));
         }
 
-        /* Ensure eg bond slave and the candidate controller is a bond controller */
+        /* Ensure eg bond port and the candidate controller is a bond controller */
         if (controller_connection
-            && !is_compatible_with_slave(
+            && !is_compatible_with_port(
                 nm_settings_connection_get_connection(controller_connection),
                 applied)) {
             g_set_error(error,
@@ -5943,8 +5940,8 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
             }
         }
 
-        /* Now that we're activating a slave for that controller, make sure the controller just
-         * decides to go unmanaged while we're activating (perhaps because other slaves
+        /* Now that we're activating a port for that controller, make sure the controller just
+         * decides to go unmanaged while we're activating (perhaps because other ports
          * go away leaving him with no kids).
          */
         if (controller_device) {
@@ -5982,13 +5979,13 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
         }
     }
 
-    /* Check slaves for controller connection and possibly activate them */
-    autoconnect_slaves(self,
-                       sett_conn,
-                       device,
-                       nm_active_connection_get_subject(active),
-                       nm_active_connection_get_activation_reason(active)
-                           == NM_ACTIVATION_REASON_USER_REQUEST);
+    /* Check ports for controller connection and possibly activate them */
+    autoconnect_ports(self,
+                      sett_conn,
+                      device,
+                      nm_active_connection_get_subject(active),
+                      nm_active_connection_get_activation_reason(active)
+                          == NM_ACTIVATION_REASON_USER_REQUEST);
 
     multi_connect =
         _nm_connection_get_multi_connect(nm_settings_connection_get_connection(sett_conn));
@@ -5996,7 +5993,7 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
         || (multi_connect == NM_CONNECTION_MULTI_CONNECT_MANUAL_MULTIPLE
             && NM_IN_SET(nm_active_connection_get_activation_reason(active),
                          NM_ACTIVATION_REASON_ASSUME,
-                         NM_ACTIVATION_REASON_AUTOCONNECT_SLAVES,
+                         NM_ACTIVATION_REASON_AUTOCONNECT_PORTS,
                          NM_ACTIVATION_REASON_USER_REQUEST))) {
         /* the profile can be activated multiple times. Proceed. */
     } else {
@@ -6347,8 +6344,8 @@ nm_manager_activate_connection(NMManager             *self,
     /* Look for a active connection that's equivalent and is already pending authorization
      * and eventual activation. This is used to de-duplicate concurrent activations which would
      * otherwise race and cause the device to disconnect and reconnect repeatedly.
-     * In particular, this allows the controller and multiple slaves to concurrently auto-activate
-     * while all the slaves would use the same active-connection. */
+     * In particular, this allows the controller and multiple ports to concurrently auto-activate
+     * while all the ports would use the same active-connection. */
     c_list_for_each_entry (async_op_data, &priv->async_op_lst_head, async_op_lst) {
         if (async_op_data->async_op_type != ASYNC_OP_TYPE_AC_AUTH_ACTIVATE_INTERNAL)
             continue;

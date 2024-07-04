@@ -76,7 +76,7 @@ nm_device_bond_get_carrier(NMDeviceBond *device)
  * nm_device_bond_get_slaves:
  * @device: a #NMDeviceBond
  *
- * Gets the devices currently enslaved to @device.
+ * Gets the devices currently attached as port to @device.
  *
  * Returns: (element-type NMDevice): the #GPtrArray containing
  * #NMDevices that are slaves of @device. This is the internal
@@ -105,7 +105,7 @@ connection_compatible(NMDevice *device, NMConnection *connection, GError **error
         return FALSE;
     }
 
-    /* FIXME: check slaves? */
+    /* FIXME: check ports? */
 
     return TRUE;
 }
@@ -183,7 +183,7 @@ nm_device_bond_class_init(NMDeviceBondClass *klass)
     /**
      * NMDeviceBond:slaves: (type GPtrArray(NMDevice))
      *
-     * The devices enslaved to the bond device.
+     * The devices attached as port to the bond device.
      **/
     obj_properties[PROP_SLAVES] = g_param_spec_boxed(NM_DEVICE_BOND_SLAVES,
                                                      "",
@@ -193,5 +193,5 @@ nm_device_bond_class_init(NMDeviceBondClass *klass)
 
     _nml_dbus_meta_class_init_with_properties(object_class, &_nml_dbus_meta_iface_nm_device_bond);
 
-    device_class->slaves_param_spec = obj_properties[PROP_SLAVES];
+    device_class->ports_param_spec = obj_properties[PROP_SLAVES];
 }

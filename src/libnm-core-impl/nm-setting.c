@@ -138,22 +138,24 @@ _nm_setting_compare_priority(gconstpointer a, gconstpointer b)
 /*****************************************************************************/
 
 gboolean
-_nm_setting_slave_type_is_valid(const char *slave_type, const char **out_port_type)
+_nm_setting_port_type_is_valid(const char *port_setting_type, const char **out_port_type)
 {
     const char *port_type = NULL;
     gboolean    found     = TRUE;
 
-    if (!slave_type)
+    if (!port_setting_type)
         found = FALSE;
-    else if (NM_IN_STRSET(slave_type, NM_SETTING_BOND_SETTING_NAME, NM_SETTING_VRF_SETTING_NAME)) {
+    else if (NM_IN_STRSET(port_setting_type,
+                          NM_SETTING_BOND_SETTING_NAME,
+                          NM_SETTING_VRF_SETTING_NAME)) {
         /* pass */
-    } else if (nm_streq(slave_type, NM_SETTING_BRIDGE_SETTING_NAME))
+    } else if (nm_streq(port_setting_type, NM_SETTING_BRIDGE_SETTING_NAME))
         port_type = NM_SETTING_BRIDGE_PORT_SETTING_NAME;
-    else if (nm_streq(slave_type, NM_SETTING_OVS_BRIDGE_SETTING_NAME))
+    else if (nm_streq(port_setting_type, NM_SETTING_OVS_BRIDGE_SETTING_NAME))
         port_type = NM_SETTING_OVS_PORT_SETTING_NAME;
-    else if (nm_streq(slave_type, NM_SETTING_OVS_PORT_SETTING_NAME))
+    else if (nm_streq(port_setting_type, NM_SETTING_OVS_PORT_SETTING_NAME))
         port_type = NM_SETTING_OVS_INTERFACE_SETTING_NAME;
-    else if (nm_streq(slave_type, NM_SETTING_TEAM_SETTING_NAME))
+    else if (nm_streq(port_setting_type, NM_SETTING_TEAM_SETTING_NAME))
         port_type = NM_SETTING_TEAM_PORT_SETTING_NAME;
     else
         found = FALSE;

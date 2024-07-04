@@ -77,10 +77,10 @@ nm_device_team_get_carrier(NMDeviceTeam *device)
  * nm_device_team_get_slaves:
  * @device: a #NMDeviceTeam
  *
- * Gets the devices currently enslaved to @device.
+ * Gets the devices currently attach as port to @device.
  *
  * Returns: (element-type NMDevice): the #GPtrArray containing
- * #NMDevices that are slaves of @device. This is the internal
+ * #NMDevices that are ports of @device. This is the internal
  * copy used by the device, and must not be modified.
  *
  * Deprecated: 1.34: Use nm_device_get_ports() instead.
@@ -125,7 +125,7 @@ connection_compatible(NMDevice *device, NMConnection *connection, GError **error
         return FALSE;
     }
 
-    /* FIXME: check slaves? */
+    /* FIXME: check ports? */
 
     return TRUE;
 }
@@ -218,7 +218,7 @@ nm_device_team_class_init(NMDeviceTeamClass *klass)
     /**
      * NMDeviceTeam:slaves: (type GPtrArray(NMDevice))
      *
-     * The devices enslaved to the team device.
+     * The devices attached as port to the team device.
      **/
     obj_properties[PROP_SLAVES] = g_param_spec_boxed(NM_DEVICE_TEAM_SLAVES,
                                                      "",
@@ -241,5 +241,5 @@ nm_device_team_class_init(NMDeviceTeamClass *klass)
 
     _nml_dbus_meta_class_init_with_properties(object_class, &_nml_dbus_meta_iface_nm_device_team);
 
-    device_class->slaves_param_spec = obj_properties[PROP_SLAVES];
+    device_class->ports_param_spec = obj_properties[PROP_SLAVES];
 }

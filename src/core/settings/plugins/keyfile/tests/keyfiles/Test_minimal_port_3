@@ -1,4 +1,4 @@
 [connection]
 controller=br0
-slave-type=bridge
+port-type=bridge
 [802-3-ethernet]

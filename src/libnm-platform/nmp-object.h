@@ -952,15 +952,15 @@ const NMPObject *nmp_cache_lookup_link_full(const NMPCache  *cache,
                                             NMPObjectMatchFn match_fn,
                                             gpointer         user_data);
 
-gboolean         nmp_cache_link_connected_for_slave(int ifindex_controller, const NMPObject *slave);
+gboolean         nmp_cache_link_connected_for_port(int ifindex_controller, const NMPObject *port);
 gboolean         nmp_cache_link_connected_needs_toggle(const NMPCache  *cache,
                                                        const NMPObject *controller,
-                                                       const NMPObject *potential_slave,
-                                                       const NMPObject *ignore_slave);
+                                                       const NMPObject *potential_port,
+                                                       const NMPObject *ignore_port);
 const NMPObject *nmp_cache_link_connected_needs_toggle_by_ifindex(const NMPCache *cache,
                                                                   int controller_ifindex,
-                                                                  const NMPObject *potential_slave,
-                                                                  const NMPObject *ignore_slave);
+                                                                  const NMPObject *potential_port,
+                                                                  const NMPObject *ignore_port);
 
 gboolean nmp_cache_use_udev_get(const NMPCache *cache);
 

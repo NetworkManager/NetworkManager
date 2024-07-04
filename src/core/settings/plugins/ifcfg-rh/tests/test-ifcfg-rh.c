@@ -2221,7 +2221,7 @@ test_clear_controller(void)
     char                         *unmanaged = NULL;
     shvarFile                    *f;
 
-    /* 1. load the bridge slave connection from disk */
+    /* 1. load the bridge port connection from disk */
     connection = _connection_from_file(TEST_IFCFG_DIR "/ifcfg-test-bridge-component",
                                        NULL,
                                        TYPE_ETHERNET,
@@ -2239,7 +2239,7 @@ test_clear_controller(void)
                            TEST_IFCFG_DIR "/ifcfg-System_test-bridge-component-a.cexpected",
                            &testfile);
 
-    /* 3. clear controller and slave-type */
+    /* 3. clear controller and port-type */
     g_object_set(s_con,
                  NM_SETTING_CONNECTION_MASTER,
                  NULL,
@@ -8251,13 +8251,15 @@ test_write_bond_main(void)
 }
 
 static void
-test_read_bond_slave(void)
+test_read_bond_port(void)
 {
     gs_unref_object NMConnection *connection = NULL;
     NMSettingConnection          *s_con;
 
-    connection =
-        _connection_from_file(TEST_IFCFG_DIR "/ifcfg-test-bond-slave", NULL, TYPE_ETHERNET, NULL);
+    connection = _connection_from_file(TEST_IFCFG_DIR "/ifcfg-test-bond-port-bond0",
+                                       NULL,
+                                       TYPE_ETHERNET,
+                                       NULL);
     g_test_assert_expected_messages();
 
     s_con = nmtst_connection_assert_setting(connection, NM_TYPE_SETTING_CONNECTION);
@@ -8268,7 +8270,7 @@ test_read_bond_slave(void)
 }
 
 static void
-test_write_bond_slave(void)
+test_write_bond_port(void)
 {
     nmtst_auto_unlinkfile char   *testfile   = NULL;
     gs_unref_object NMConnection *connection = NULL;
@@ -8309,7 +8311,7 @@ test_write_bond_slave(void)
 }
 
 static void
-test_read_bond_port(void)
+test_read_bond_port_setting(void)
 {
     gs_unref_object NMConnection *connection = NULL;
     NMSettingConnection          *s_con      = NULL;
@@ -8327,7 +8329,7 @@ test_read_bond_port(void)
 }
 
 static void
-test_write_bond_port(void)
+test_write_bond_port_setting(void)
 {
     nmtst_auto_unlinkfile char   *testfile   = NULL;
     gs_unref_object NMConnection *connection = NULL;
@@ -8548,13 +8550,12 @@ test_write_infiniband(gconstpointer test_data)
 }
 
 static void
-test_read_bond_slave_ib(void)
+test_read_bond_port_ib(void)
 {
     gs_unref_object NMConnection *connection = NULL;
     NMSettingConnection          *s_con;
 
-    connection =
-        _connection_from_file(TEST_IFCFG_DIR "/ifcfg-test-bond-slave-ib", NULL, NULL, NULL);
+    connection = _connection_from_file(TEST_IFCFG_DIR "/ifcfg-test-bond-port-ib", NULL, NULL, NULL);
 
     s_con = nmtst_connection_assert_setting(connection, NM_TYPE_SETTING_CONNECTION);
 
@@ -8563,7 +8564,7 @@ test_read_bond_slave_ib(void)
 }
 
 static void
-test_write_bond_slave_ib(void)
+test_write_bond_port_ib(void)
 {
     nmtst_auto_unlinkfile char   *testfile   = NULL;
     gs_unref_object NMConnection *connection = NULL;
@@ -9236,7 +9237,7 @@ test_read_team_port_empty_config(void)
 }
 
 static void
-test_team_reread_slave(void)
+test_team_reread_port(void)
 {
     nmtst_auto_unlinkfile char   *testfile     = NULL;
     gs_unref_object NMConnection *connection_1 = NULL;
@@ -9247,14 +9248,14 @@ test_team_reread_slave(void)
 
     connection_1 =
         nmtst_create_connection_from_keyfile("[connection]\n"
-                                             "id=team-slave-enp31s0f1-142\n"
+                                             "id=team-port-enp31s0f1-142\n"
                                              "uuid=74f435bb-ede4-415a-9d48-f580b60eba04\n"
                                              "type=vlan\n"
                                              "autoconnect=false\n"
                                              "interface-name=enp31s0f1-142\n"
                                              "controller=team142\n"
                                              "permissions=\n"
-                                             "slave-type=team\n"
+                                             "port-type=team\n"
                                              "\n"
                                              "[vlan]\n"
                                              "egress-priority-map=\n"
@@ -9262,10 +9263,10 @@ test_team_reread_slave(void)
                                              "id=142\n"
                                              "ingress-priority-map=\n"
                                              "parent=enp31s0f1\n",
-                                             "/test_team_reread_slave");
+                                             "/test_team_reread_port");
 
     /* to double-check keyfile syntax, re-create the connection by hand. */
-    connection_2 = nmtst_create_minimal_connection("team-slave-enp31s0f1-142",
+    connection_2 = nmtst_create_minimal_connection("team-port-enp31s0f1-142",
                                                    "74f435bb-ede4-415a-9d48-f580b60eba04",
                                                    NM_SETTING_VLAN_SETTING_NAME,
                                                    &s_con);
@@ -9297,7 +9298,7 @@ test_team_reread_slave(void)
     _writer_new_connection_reread((nmtst_get_rand_uint32() % 2) ? connection_1 : connection_2,
                                   TEST_SCRATCH_DIR,
                                   &testfile,
-                                  TEST_IFCFG_DIR "/ifcfg-team-slave-enp31s0f1-142.cexpected",
+                                  TEST_IFCFG_DIR "/ifcfg-team-port-enp31s0f1-142.cexpected",
                                   &reread,
                                   &reread_same);
     _assert_reread_same((nmtst_get_rand_uint32() % 2) ? connection_1 : connection_2, reread);
@@ -10894,14 +10895,14 @@ main(int argc, char **argv)
 
     g_test_add_func(TPATH "bond/read-controller", test_read_bond_main);
     g_test_add_func(TPATH "bond/read-controller-eth-type", test_read_bond_eth_type);
-    g_test_add_func(TPATH "bond/read-slave", test_read_bond_slave);
-    g_test_add_func(TPATH "bond/read-slave-ib", test_read_bond_slave_ib);
+    g_test_add_func(TPATH "bond/read-port", test_read_bond_port);
+    g_test_add_func(TPATH "bond/read-port-ib", test_read_bond_port_ib);
     g_test_add_func(TPATH "bond/write-controller", test_write_bond_main);
-    g_test_add_func(TPATH "bond/write-slave", test_write_bond_slave);
-    g_test_add_func(TPATH "bond/write-slave-ib", test_write_bond_slave_ib);
+    g_test_add_func(TPATH "bond/write-port", test_write_bond_port);
+    g_test_add_func(TPATH "bond/write-port-ib", test_write_bond_port_ib);
     g_test_add_func(TPATH "bond/bonding-opts-numeric-mode", test_read_bond_opts_mode_numeric);
-    g_test_add_func(TPATH "bond/read-bond-port", test_read_bond_port);
-    g_test_add_func(TPATH "bond/write-bond-port", test_write_bond_port);
+    g_test_add_func(TPATH "bond/read-bond-port", test_read_bond_port_setting);
+    g_test_add_func(TPATH "bond/write-bond-port_setting", test_write_bond_port_setting);
 
     g_test_add_func(TPATH "bridge/read-controller", test_read_bridge_main);
     g_test_add_func(TPATH "bridge/write-controller", test_write_bridge_main);
@@ -10928,7 +10929,7 @@ main(int argc, char **argv)
     g_test_add_func(TPATH "team/write-port", test_write_team_port);
     g_test_add_func(TPATH "team/write-infiniband-port", test_write_team_infiniband_port);
     g_test_add_func(TPATH "team/read-port-empty-config", test_read_team_port_empty_config);
-    g_test_add_func(TPATH "team/reread-slave", test_team_reread_slave);
+    g_test_add_func(TPATH "team/reread-port", test_team_reread_port);
 
     g_test_add_func(TPATH "proxy/read-proxy-basic", test_read_proxy_basic);
     g_test_add_func(TPATH "proxy/write-proxy-basic", test_write_proxy_basic);
