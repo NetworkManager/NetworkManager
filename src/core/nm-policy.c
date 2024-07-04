@@ -1800,16 +1800,15 @@ unblock_autoconnect_for_ports(NMPolicy   *self,
     connections = nm_settings_get_connections(priv->settings, NULL);
     for (i = 0; connections[i]; i++) {
         NMSettingsConnection *sett_conn = connections[i];
-        NMSettingConnection  *s_slave_con;
-        const char           *slave_controller;
+        NMSettingConnection  *s_port_con;
+        const char           *port_controller;
 
-        s_slave_con =
-            nm_settings_connection_get_setting(sett_conn, NM_META_SETTING_TYPE_CONNECTION);
-        slave_controller = nm_setting_connection_get_controller(s_slave_con);
-        if (!slave_controller)
+        s_port_con = nm_settings_connection_get_setting(sett_conn, NM_META_SETTING_TYPE_CONNECTION);
+        port_controller = nm_setting_connection_get_controller(s_port_con);
+        if (!port_controller)
             continue;
 
-        if (!NM_IN_STRSET(slave_controller,
+        if (!NM_IN_STRSET(port_controller,
                           controller_device,
                           controller_uuid_applied,
                           controller_uuid_settings))

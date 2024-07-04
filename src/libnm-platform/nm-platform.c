@@ -1056,7 +1056,7 @@ nm_platform_link_get_all(NMPlatform *self)
         return NULL;
 
     /* first sort the links by their name. Below we will sort
-     * further by moving children/slaves to the end. */
+     * further by moving children/ports to the end. */
     g_ptr_array_sort(links, _link_get_all_presort);
 
     unseen = g_hash_table_new(nm_direct_hash, NULL);
@@ -1089,7 +1089,7 @@ nm_platform_link_get_all(NMPlatform *self)
     }
 #endif
 
-    /* Re-order the links list such that children/slaves come after all ancestors */
+    /* Re-order the links list such that children/ports come after all ancestors */
     nm_assert(g_hash_table_size(unseen) == links->len);
     nresult = links->len;
     result  = g_ptr_array_new_full(nresult, (GDestroyNotify) nmp_object_unref);
@@ -1713,7 +1713,7 @@ nm_platform_link_is_software(NMPlatform *self, int ifindex)
 }
 
 /**
- * nm_platform_link_supports_slaves:
+ * nm_platform_link_supports_ports:
  * @self: platform instance
  * @ifindex: Interface index.
  *
@@ -1721,9 +1721,9 @@ nm_platform_link_is_software(NMPlatform *self, int ifindex)
  * other interfaces.
  */
 gboolean
-nm_platform_link_supports_slaves(NMPlatform *self, int ifindex)
+nm_platform_link_supports_ports(NMPlatform *self, int ifindex)
 {
-    return nm_link_type_supports_slaves(nm_platform_link_get_type(self, ifindex));
+    return nm_link_type_supports_ports(nm_platform_link_get_type(self, ifindex));
 }
 
 /**
@@ -2377,15 +2377,15 @@ nm_platform_link_get_driver_info(NMPlatform *self,
 }
 
 /**
- * nm_platform_link_enslave:
+ * nm_platform_link_attach_port:
  * @self: platform instance
  * @controller: Interface index of the controller
- * @ifindex: Interface index of the slave
+ * @ifindex: Interface index of the port
  *
- * Enslave @ifindex to @controller.
+ * Enport @ifindex to @controller.
  */
 gboolean
-nm_platform_link_enslave(NMPlatform *self, int controller, int ifindex)
+nm_platform_link_attach_port(NMPlatform *self, int controller, int ifindex)
 {
     _CHECK_SELF(self, klass, FALSE);
 
@@ -2393,19 +2393,19 @@ nm_platform_link_enslave(NMPlatform *self, int controller, int ifindex)
     g_return_val_if_fail(ifindex > 0, FALSE);
 
     _LOG3D("link: enslaving to controller '%s'", nm_platform_link_get_name(self, controller));
-    return klass->link_enslave(self, controller, ifindex);
+    return klass->link_attach_port(self, controller, ifindex);
 }
 
 /**
- * nm_platform_link_release:
+ * nm_platform_link_release_port:
  * @self: platform instance
  * @controller: Interface index of the controller
- * @ifindex: Interface index of the slave
+ * @ifindex: Interface index of the port
  *
- * Release @slave from @controller.
+ * Release @port from @controller.
  */
 gboolean
-nm_platform_link_release(NMPlatform *self, int controller, int ifindex)
+nm_platform_link_release_port(NMPlatform *self, int controller, int ifindex)
 {
     _CHECK_SELF(self, klass, FALSE);
 
@@ -2419,22 +2419,22 @@ nm_platform_link_release(NMPlatform *self, int controller, int ifindex)
            ifindex,
            nm_platform_link_get_name(self, controller),
            controller);
-    return klass->link_release(self, controller, ifindex);
+    return klass->link_release_port(self, controller, ifindex);
 }
 
 /**
  * nm_platform_link_get_controller:
  * @self: platform instance
- * @slave: Interface index of the slave.
+ * @port: Interface index of the port.
  *
- * Returns: Interface index of the slave's controller.
+ * Returns: Interface index of the port's controller.
  */
 int
-nm_platform_link_get_controller(NMPlatform *self, int slave)
+nm_platform_link_get_controller(NMPlatform *self, int port)
 {
     const NMPlatformLink *pllink;
 
-    pllink = nm_platform_link_get(self, slave);
+    pllink = nm_platform_link_get(self, port);
     return pllink ? pllink->controller : 0;
 }
 
@@ -2866,9 +2866,9 @@ controller_category(NMPlatform *self, int controller)
 }
 
 static const char *
-slave_category(NMPlatform *self, int slave)
+port_category(NMPlatform *self, int port)
 {
-    int controller = nm_platform_link_get_controller(self, slave);
+    int controller = nm_platform_link_get_controller(self, port);
 
     if (controller <= 0)
         return NULL;
@@ -2877,7 +2877,7 @@ slave_category(NMPlatform *self, int slave)
     case NM_LINK_TYPE_BRIDGE:
         return "brport";
     case NM_LINK_TYPE_BOND:
-        return "bonding_slave";
+        return "bonding_port";
     default:
         return NULL;
     }
@@ -2910,10 +2910,10 @@ nm_platform_sysctl_controller_get_option(NMPlatform *self, int ifindex, const ch
 }
 
 gboolean
-nm_platform_sysctl_slave_set_option(NMPlatform *self,
-                                    int         ifindex,
-                                    const char *option,
-                                    const char *value)
+nm_platform_sysctl_port_set_option(NMPlatform *self,
+                                   int         ifindex,
+                                   const char *option,
+                                   const char *value)
 {
     _CHECK_SELF(self, klass, FALSE);
 
@@ -2921,18 +2921,18 @@ nm_platform_sysctl_slave_set_option(NMPlatform *self,
     g_return_val_if_fail(option, FALSE);
     g_return_val_if_fail(value, FALSE);
 
-    return link_set_option(self, ifindex, slave_category(self, ifindex), option, value);
+    return link_set_option(self, ifindex, port_category(self, ifindex), option, value);
 }
 
 char *
-nm_platform_sysctl_slave_get_option(NMPlatform *self, int ifindex, const char *option)
+nm_platform_sysctl_port_get_option(NMPlatform *self, int ifindex, const char *option)
 {
     _CHECK_SELF(self, klass, NULL);
 
     g_return_val_if_fail(ifindex > 0, FALSE);
     g_return_val_if_fail(option, FALSE);
 
-    return link_get_option(self, ifindex, slave_category(self, ifindex), option);
+    return link_get_option(self, ifindex, port_category(self, ifindex), option);
 }
 
 /*****************************************************************************/

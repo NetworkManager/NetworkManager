@@ -232,7 +232,7 @@ reader_get_connection(Reader     *reader,
 
         /*
          * If ifname was not given, we'll match the connection by type.
-         * If the type was not given either, then we're happy with any connection but slaves.
+         * If the type was not given either, then we're happy with any connection but ports.
          * This is so that things like "bond=bond0:eth1,eth2 nameserver=1.3.3.7 end up
          * slapping the nameserver to the most reasonable connection (bond0).
          */
@@ -875,15 +875,15 @@ reader_parse_controller(Reader     *reader,
     NMSettingConnection *s_con;
     gs_free char        *controller_to_free = NULL;
     const char          *controller;
-    char                *slaves;
-    const char          *slave;
+    char                *ports;
+    const char          *port;
     char                *opts;
     const char          *mtu = NULL;
 
     controller = get_word(&argument, ':');
     if (!controller)
         controller = controller_to_free = g_strdup_printf("%s0", default_name ?: type_name);
-    slaves = get_word(&argument, ':');
+    ports = get_word(&argument, ':');
 
     connection = reader_get_connection(reader, controller, type_name, TRUE);
     s_con      = nm_connection_get_setting_connection(connection);
@@ -924,11 +924,11 @@ reader_parse_controller(Reader     *reader,
         connection_set(connection, NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_MTU, mtu);
 
     do {
-        slave = get_word(&slaves, ',');
-        if (slave == NULL)
-            slave = "eth0";
+        port = get_word(&ports, ',');
+        if (port == NULL)
+            port = "eth0";
 
-        connection = reader_get_connection(reader, slave, NULL, TRUE);
+        connection = reader_get_connection(reader, port, NULL, TRUE);
         s_con      = nm_connection_get_setting_connection(connection);
         g_object_set(s_con,
                      NM_SETTING_CONNECTION_PORT_TYPE,
@@ -936,7 +936,7 @@ reader_parse_controller(Reader     *reader,
                      NM_SETTING_CONNECTION_CONTROLLER,
                      controller,
                      NULL);
-    } while (slaves && *slaves != '\0');
+    } while (ports && *ports != '\0');
 
     if (argument && *argument)
         _LOGW(LOGD_CORE, "Ignoring extra: '%s'.", argument);

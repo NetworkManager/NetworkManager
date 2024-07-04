@@ -2035,12 +2035,12 @@ nmp_cache_use_udev_get(const NMPCache *cache)
 /*****************************************************************************/
 
 gboolean
-nmp_cache_link_connected_for_slave(int ifindex_controller, const NMPObject *slave)
+nmp_cache_link_connected_for_port(int ifindex_controller, const NMPObject *port)
 {
-    nm_assert(NMP_OBJECT_GET_TYPE(slave) == NMP_OBJECT_TYPE_LINK);
+    nm_assert(NMP_OBJECT_GET_TYPE(port) == NMP_OBJECT_TYPE_LINK);
 
-    return ifindex_controller > 0 && slave->link.controller == ifindex_controller
-           && slave->link.connected && nmp_object_is_visible(slave);
+    return ifindex_controller > 0 && port->link.controller == ifindex_controller
+           && port->link.connected && nmp_object_is_visible(port);
 }
 
 /**
@@ -2048,27 +2048,27 @@ nmp_cache_link_connected_for_slave(int ifindex_controller, const NMPObject *slav
  * @cache: the platform cache
  * @controller: the link object, that is checked whether its connected property
  *   needs to be toggled.
- * @potential_slave: (nullable): an additional link object that is treated
+ * @potential_port: (nullable): an additional link object that is treated
  *   as if it was inside @cache. If given, it shaddows a link in the cache
  *   with the same ifindex.
- * @ignore_slave: (nullable): if set, the check will pretend that @ignore_slave
+ * @ignore_port: (nullable): if set, the check will pretend that @ignore_port
  *   is not in the cache.
  *
  * NMPlatformLink has two connected flags: (controller->link.flags&IFF_LOWER_UP) (as reported
  * from netlink) and controller->link.connected. For bond and bridge controller, kernel reports
- * those links as IFF_LOWER_UP if they have no slaves attached. We want to present instead
- * a combined @connected flag that shows controllers without slaves as down.
+ * those links as IFF_LOWER_UP if they have no ports attached. We want to present instead
+ * a combined @connected flag that shows controllers without ports as down.
  *
  * Check if the connected flag of @controller should be toggled according to the content
- * of @cache (including @potential_slave).
+ * of @cache (including @potential_port).
  *
  * Returns: %TRUE, if @controller->link.connected should be flipped/toggled.
  **/
 gboolean
 nmp_cache_link_connected_needs_toggle(const NMPCache  *cache,
                                       const NMPObject *controller,
-                                      const NMPObject *potential_slave,
-                                      const NMPObject *ignore_slave)
+                                      const NMPObject *potential_port,
+                                      const NMPObject *ignore_port)
 {
     gboolean is_lower_up = FALSE;
 
@@ -2078,15 +2078,15 @@ nmp_cache_link_connected_needs_toggle(const NMPCache  *cache,
         return FALSE;
 
     /* if native IFF_LOWER_UP is down, link.connected must also be down
-     * regardless of the slaves. */
+     * regardless of the ports. */
     if (!NM_FLAGS_HAS(controller->link.n_ifi_flags, IFF_LOWER_UP))
         return !!controller->link.connected;
 
-    if (potential_slave && NMP_OBJECT_GET_TYPE(potential_slave) != NMP_OBJECT_TYPE_LINK)
-        potential_slave = NULL;
+    if (potential_port && NMP_OBJECT_GET_TYPE(potential_port) != NMP_OBJECT_TYPE_LINK)
+        potential_port = NULL;
 
-    if (potential_slave
-        && nmp_cache_link_connected_for_slave(controller->link.ifindex, potential_slave))
+    if (potential_port
+        && nmp_cache_link_connected_for_port(controller->link.ifindex, potential_port))
         is_lower_up = TRUE;
     else {
         NMPLookup             lookup;
@@ -2099,9 +2099,9 @@ nmp_cache_link_connected_needs_toggle(const NMPCache  *cache,
             &link) {
             const NMPObject *obj = NMP_OBJECT_UP_CAST((NMPlatformObject *) link);
 
-            if ((!potential_slave || potential_slave->link.ifindex != link->ifindex)
-                && ignore_slave != obj
-                && nmp_cache_link_connected_for_slave(controller->link.ifindex, obj)) {
+            if ((!potential_port || potential_port->link.ifindex != link->ifindex)
+                && ignore_port != obj
+                && nmp_cache_link_connected_for_port(controller->link.ifindex, obj)) {
                 is_lower_up = TRUE;
                 break;
             }
@@ -2115,10 +2115,10 @@ nmp_cache_link_connected_needs_toggle(const NMPCache  *cache,
  * @cache:
  * @controller_ifindex: the ifindex of a potential controller that should be checked
  *   whether it needs toggling.
- * @potential_slave: (nullable): passed to nmp_cache_link_connected_needs_toggle().
- *   It considers @potential_slave as being inside the cache, replacing an existing
+ * @potential_port: (nullable): passed to nmp_cache_link_connected_needs_toggle().
+ *   It considers @potential_port as being inside the cache, replacing an existing
  *   link with the same ifindex.
- * @ignore_slave: (nullable): passed to nmp_cache_link_connected_needs_toggle().
+ * @ignore_port: (nullable): passed to nmp_cache_link_connected_needs_toggle().
  *
  * The flag obj->link.connected depends on the state of other links in the
  * @cache. See also nmp_cache_link_connected_needs_toggle(). Given an ifindex
@@ -2132,14 +2132,14 @@ nmp_cache_link_connected_needs_toggle(const NMPCache  *cache,
 const NMPObject *
 nmp_cache_link_connected_needs_toggle_by_ifindex(const NMPCache  *cache,
                                                  int              controller_ifindex,
-                                                 const NMPObject *potential_slave,
-                                                 const NMPObject *ignore_slave)
+                                                 const NMPObject *potential_port,
+                                                 const NMPObject *ignore_port)
 {
     const NMPObject *controller;
 
     if (controller_ifindex > 0) {
         controller = nmp_cache_lookup_link(cache, controller_ifindex);
-        if (nmp_cache_link_connected_needs_toggle(cache, controller, potential_slave, ignore_slave))
+        if (nmp_cache_link_connected_needs_toggle(cache, controller, potential_port, ignore_port))
             return controller;
     }
     return NULL;

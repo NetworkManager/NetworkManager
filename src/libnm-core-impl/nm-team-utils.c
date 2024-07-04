@@ -153,11 +153,11 @@ typedef struct {
     bool            has_range : 1;
 } TeamAttrData;
 
-#define TEAM_ATTR_IDX(_is_port, _team_attr)                                     \
-    (((!(_is_port) || (_team_attr) < _NM_TEAM_ATTRIBUTE_START)                  \
-          ? (int) (_team_attr)                                                  \
+#define TEAM_ATTR_IDX(_is_port, _team_attr)                                         \
+    (((!(_is_port) || (_team_attr) < _NM_TEAM_ATTRIBUTE_START)                      \
+          ? (int) (_team_attr)                                                      \
           : (((int) (_NM_TEAM_ATTRIBUTE_CONTROLLER_NUM - _NM_TEAM_ATTRIBUTE_START)) \
-             + ((int) (_team_attr))))                                           \
+             + ((int) (_team_attr))))                                               \
      - 1)
 
 #define TEAM_ATTR_IDX_CONFIG (TEAM_ATTR_IDX(FALSE, NM_TEAM_ATTRIBUTE_CONFIG))
@@ -2071,7 +2071,8 @@ _js_parse_unpack(const NMJsonVt *vt,
                 p_out_val->v_ptrarray             = link_watchers;
                 *out_ptr_array_link_watchers_free = link_watchers;
             }
-        } else if (!is_port && attr_data->team_attr == NM_TEAM_ATTRIBUTE_CONTROLLER_RUNNER_TX_HASH) {
+        } else if (!is_port
+                   && attr_data->team_attr == NM_TEAM_ATTRIBUTE_CONTROLLER_RUNNER_TX_HASH) {
             GPtrArray *strv = NULL;
 
             nm_assert(out_ptr_array_controller_runner_tx_hash_free
@@ -2260,7 +2261,8 @@ _team_setting_verify_properties(const NMTeamSetting *self, GError **error)
                 nm_assert_not_reached();
         }
 
-        if (!self->d.is_port && attr_data->team_attr == NM_TEAM_ATTRIBUTE_CONTROLLER_RUNNER_TX_HASH) {
+        if (!self->d.is_port
+            && attr_data->team_attr == NM_TEAM_ATTRIBUTE_CONTROLLER_RUNNER_TX_HASH) {
             if (self->d.controller.runner_tx_hash) {
                 for (i = 0; i < self->d.controller.runner_tx_hash->len; i++) {
                     const char *val = self->d.controller.runner_tx_hash->pdata[i];

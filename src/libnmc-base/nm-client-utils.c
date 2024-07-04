@@ -575,14 +575,14 @@ nmc_activation_get_effective_state(NMActiveConnection *active,
         }
         break;
     case NM_ACTIVE_CONNECTION_STATE_ACTIVATING:
-        /* activating controller connection does not automatically activate any slaves, so their
+        /* activating controller connection does not automatically activate any ports, so their
          * active connection state will not progress beyond ACTIVATING state.
          * Monitor the device instead. */
         if (device
             && (NM_IS_DEVICE_BOND(device) || NM_IS_DEVICE_TEAM(device)
                 || NM_IS_DEVICE_BRIDGE(device))
             && dev_state >= NM_DEVICE_STATE_IP_CONFIG && dev_state <= NM_DEVICE_STATE_ACTIVATED) {
-            *reason = "controller waiting for slaves";
+            *reason = "controller waiting for ports";
             return NM_ACTIVE_CONNECTION_STATE_ACTIVATED;
         }
         break;

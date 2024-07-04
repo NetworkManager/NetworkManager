@@ -76,10 +76,10 @@ nm_device_bridge_get_carrier(NMDeviceBridge *device)
  * nm_device_bridge_get_slaves:
  * @device: a #NMDeviceBridge
  *
- * Gets the devices currently enslaved to @device.
+ * Gets the devices currently attached as port to @device.
  *
  * Returns: (element-type NMDevice): the #GPtrArray containing
- * #NMDevices that are slaves of @device. This is the internal
+ * #NMDevices that are ports of @device. This is the internal
  * copy used by the device, and must not be modified.
  *
  * Deprecated: 1.34: Use nm_device_get_ports() instead.
@@ -188,7 +188,7 @@ nm_device_bridge_class_init(NMDeviceBridgeClass *klass)
     /**
      * NMDeviceBridge:slaves: (type GPtrArray(NMDevice))
      *
-     * The devices enslaved to the bridge device.
+     * The devices attached as port to the bridge device.
      **/
     obj_properties[PROP_SLAVES] = g_param_spec_boxed(NM_DEVICE_BRIDGE_SLAVES,
                                                      "",
@@ -198,5 +198,5 @@ nm_device_bridge_class_init(NMDeviceBridgeClass *klass)
 
     _nml_dbus_meta_class_init_with_properties(object_class, &_nml_dbus_meta_iface_nm_device_bridge);
 
-    device_class->slaves_param_spec = obj_properties[PROP_SLAVES];
+    device_class->ports_param_spec = obj_properties[PROP_SLAVES];
 }

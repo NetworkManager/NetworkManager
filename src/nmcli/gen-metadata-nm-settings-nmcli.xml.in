@@ -671,7 +671,7 @@
                   format="string" />
         <property name="slave-type"
                   alias="slave-type"
-                  nmcli-description="Setting name of the device type of this slave&apos;s controller connection (eg, &quot;bond&quot;), or NULL if this connection is not a slave. Deprecated 1.46. Use &quot;port-type&quot; instead, this is just an alias."
+                  nmcli-description="Setting name of the device type of this port&apos;s controller connection (eg, &quot;bond&quot;), or NULL if this connection is not a port. Deprecated 1.46. Use &quot;port-type&quot; instead, this is just an alias."
                   format="string"
                   values="bond, bridge, ovs-bridge, ovs-port, team, vrf" />
         <property name="port-type"
@@ -680,7 +680,7 @@
                   format="string"
                   values="bond, bridge, ovs-bridge, ovs-port, team, vrf" />
         <property name="autoconnect-slaves"
-                  nmcli-description="Whether or not slaves of this connection should be automatically brought up when NetworkManager activates this connection. This only has a real effect for controller connections. The properties &quot;autoconnect&quot;, &quot;autoconnect-priority&quot; and &quot;autoconnect-retries&quot; are unrelated to this setting. The permitted values are: 0: leave slave connections untouched, 1: activate all the slave connections with this connection, -1: default. If -1 (default) is set, global connection.autoconnect-slaves is read to determine the real value. If it is default as well, this fallbacks to 0. Deprecated 1.46. Use &quot;autoconnect-ports&quot; instead, this is just an alias."
+                  nmcli-description="Whether or not ports of this connection should be automatically brought up when NetworkManager activates this connection. This only has a real effect for controller connections. The properties &quot;autoconnect&quot;, &quot;autoconnect-priority&quot; and &quot;autoconnect-retries&quot; are unrelated to this setting. The permitted values are: 0: leave port connections untouched, 1: activate all the port connections with this connection, -1: default. If -1 (default) is set, global connection.autoconnect-slaves is read to determine the real value. If it is default as well, this fallbacks to 0. Deprecated 1.46. Use &quot;autoconnect-ports&quot; instead, this is just an alias."
                   format="choice (NMSettingConnectionAutoconnectSlaves)"
                   values="default (-1), no (0), yes (1)" />
         <property name="autoconnect-ports"

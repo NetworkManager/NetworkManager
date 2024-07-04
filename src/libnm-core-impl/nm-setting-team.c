@@ -592,7 +592,7 @@ nm_team_link_watcher_get_delay_down(const NMTeamLinkWatcher *watcher)
  * nm_team_link_watcher_get_init_wait:
  * @watcher: the #NMTeamLinkWatcher
  *
- * Gets the init_wait interval (in milliseconds) that the team slave should
+ * Gets the init_wait interval (in milliseconds) that the team port should
  * wait before sending the first packet to the target host.
  *
  * Since: 1.12
@@ -613,7 +613,7 @@ nm_team_link_watcher_get_init_wait(const NMTeamLinkWatcher *watcher)
  * nm_team_link_watcher_get_interval:
  * @watcher: the #NMTeamLinkWatcher
  *
- * Gets the interval (in milliseconds) that the team slave should wait between
+ * Gets the interval (in milliseconds) that the team port should wait between
  * sending two check packets to the target host.
  *
  * Since: 1.12
@@ -1781,9 +1781,10 @@ nm_setting_team_class_init(NMSettingTeamClass *klass)
                             "",
                             NULL,
                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-    _nm_properties_override_gobj(properties_override,
-                                 obj_properties[NM_TEAM_ATTRIBUTE_CONTROLLER_RUNNER_AGG_SELECT_POLICY],
-                                 &nm_sett_info_propert_type_team_s);
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[NM_TEAM_ATTRIBUTE_CONTROLLER_RUNNER_AGG_SELECT_POLICY],
+        &nm_sett_info_propert_type_team_s);
 
     /**
      * NMSettingTeam:link-watchers: (type GPtrArray(NMTeamLinkWatcher))

@@ -4904,7 +4904,7 @@ _nm_utils_dhcp_duid_valid(const char *duid, GBytes **out_duid_bin)
  * @other_type is a valid type for the parent of a VLAN.
  *
  * If @virtual_type is a "controller" type (eg, %NM_TYPE_SETTING_BRIDGE),
- * then this checks if @other_type is a valid type for a slave of that
+ * then this checks if @other_type is a valid type for a port of that
  * controller.
  *
  * Note that even if this returns %TRUE it is not guaranteed that

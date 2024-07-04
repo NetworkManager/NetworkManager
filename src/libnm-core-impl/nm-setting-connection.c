@@ -767,7 +767,7 @@ nm_setting_connection_get_port_type(NMSettingConnection *setting)
  *
  * Returns the #NMSettingConnection:slave-type property of the connection.
  *
- * Returns: the type of slave this connection is, if any
+ * Returns: the type of port this connection is, if any
  *
  * Deprecated: 1.46. Use nm_setting_connection_get_port_type() instead which
  * is just an alias.
@@ -782,9 +782,9 @@ nm_setting_connection_get_slave_type(NMSettingConnection *setting)
  * nm_setting_connection_is_slave_type:
  * @setting: the #NMSettingConnection
  * @type: the setting name (ie #NM_SETTING_BOND_SETTING_NAME) to be matched
- * against @setting's slave type
+ * against @setting's port type
  *
- * Returns: %TRUE if connection is of the given slave @type
+ * Returns: %TRUE if connection is of the given port @type
  *
  * Deprecated: 1.46.
  */
@@ -875,7 +875,7 @@ nm_setting_connection_get_autoconnect_ports(NMSettingConnection *setting)
  *
  * Returns the #NMSettingConnection:autoconnect-slaves property of the connection.
  *
- * Returns: whether slaves of the connection should be activated together
+ * Returns: whether ports of the connection should be activated together
  *          with the connection.
  *
  * Since: 1.2
@@ -1149,33 +1149,33 @@ _set_error_missing_base_setting(GError **error, const char *type)
 }
 
 gboolean
-_nm_connection_detect_slave_type_full(NMSettingConnection *s_con,
-                                      NMConnection        *connection,
-                                      const char         **out_slave_type,
-                                      const char         **out_normerr_slave_setting_type,
-                                      const char         **out_normerr_missing_slave_type,
-                                      const char         **out_normerr_missing_slave_type_port,
-                                      GError             **error)
+_nm_connection_detect_port_type_full(NMSettingConnection *s_con,
+                                     NMConnection        *connection,
+                                     const char         **out_port_type,
+                                     const char         **out_normerr_port_setting_type,
+                                     const char         **out_normerr_missing_port_type,
+                                     const char         **out_normerr_missing_port_type_port,
+                                     GError             **error)
 {
     NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE(s_con);
-    gboolean                    is_slave;
-    const char                 *slave_setting_type;
-    const char                 *slave_type;
-    const char                 *normerr_slave_setting_type      = NULL;
-    const char                 *normerr_missing_slave_type      = NULL;
-    const char                 *normerr_missing_slave_type_port = NULL;
+    gboolean                    is_port;
+    const char                 *port_setting_type;
+    const char                 *port_type;
+    const char                 *normerr_port_setting_type      = NULL;
+    const char                 *normerr_missing_port_type      = NULL;
+    const char                 *normerr_missing_port_type_port = NULL;
 
-    is_slave           = FALSE;
-    slave_setting_type = NULL;
-    slave_type         = priv->port_type;
-    if (slave_type) {
-        is_slave = _nm_setting_slave_type_is_valid(slave_type, &slave_setting_type);
-        if (!is_slave) {
+    is_port           = FALSE;
+    port_setting_type = NULL;
+    port_type         = priv->port_type;
+    if (port_type) {
+        is_port = _nm_setting_port_type_is_valid(port_type, &port_setting_type);
+        if (!is_port) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                        _("Unknown slave type '%s'"),
-                        slave_type);
+                        _("Unknown port type '%s'"),
+                        port_type);
             g_prefix_error(error,
                            "%s.%s: ",
                            NM_SETTING_CONNECTION_SETTING_NAME,
@@ -1184,7 +1184,7 @@ _nm_connection_detect_slave_type_full(NMSettingConnection *s_con,
         }
     }
 
-    if (is_slave) {
+    if (is_port) {
         if (!priv->controller) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
@@ -1197,18 +1197,17 @@ _nm_connection_detect_slave_type_full(NMSettingConnection *s_con,
                            NM_SETTING_CONNECTION_CONTROLLER);
             return FALSE;
         }
-        if (slave_setting_type && connection
-            && !nm_connection_get_setting_by_name(connection, slave_setting_type))
-            normerr_slave_setting_type = slave_setting_type;
+        if (port_setting_type && connection
+            && !nm_connection_get_setting_by_name(connection, port_setting_type))
+            normerr_port_setting_type = port_setting_type;
     } else {
-        nm_assert(!slave_type);
+        nm_assert(!port_type);
         if (priv->controller) {
             NMSetting *s_port;
 
-            if (connection
-                && (slave_type = _nm_connection_detect_slave_type(connection, &s_port))) {
-                normerr_missing_slave_type      = slave_type;
-                normerr_missing_slave_type_port = nm_setting_get_name(s_port);
+            if (connection && (port_type = _nm_connection_detect_port_type(connection, &s_port))) {
+                normerr_missing_port_type      = port_type;
+                normerr_missing_port_type_port = nm_setting_get_name(s_port);
             } else {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
@@ -1225,10 +1224,10 @@ _nm_connection_detect_slave_type_full(NMSettingConnection *s_con,
         }
     }
 
-    NM_SET_OUT(out_slave_type, slave_type);
-    NM_SET_OUT(out_normerr_slave_setting_type, normerr_slave_setting_type);
-    NM_SET_OUT(out_normerr_missing_slave_type, normerr_missing_slave_type);
-    NM_SET_OUT(out_normerr_missing_slave_type_port, normerr_missing_slave_type_port);
+    NM_SET_OUT(out_port_type, port_type);
+    NM_SET_OUT(out_normerr_port_setting_type, normerr_port_setting_type);
+    NM_SET_OUT(out_normerr_missing_port_type, normerr_missing_port_type);
+    NM_SET_OUT(out_normerr_missing_port_type_port, normerr_missing_port_type_port);
     return TRUE;
 }
 
@@ -1239,12 +1238,12 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     NMSettingConnectionPrivate *priv              = NM_SETTING_CONNECTION_GET_PRIVATE(self);
     NMSetting                  *normerr_base_type = NULL;
     const char                 *type;
-    const char                 *slave_type;
-    const char                 *normerr_slave_setting_type      = NULL;
-    const char                 *normerr_missing_slave_type      = NULL;
-    const char                 *normerr_missing_slave_type_port = NULL;
-    gboolean                    normerr_base_setting            = FALSE;
-    gboolean                    uuid_was_normalized             = FALSE;
+    const char                 *port_type;
+    const char                 *normerr_port_setting_type      = NULL;
+    const char                 *normerr_missing_port_type      = NULL;
+    const char                 *normerr_missing_port_type_port = NULL;
+    gboolean                    normerr_base_setting           = FALSE;
+    gboolean                    uuid_was_normalized            = FALSE;
 
     if (!priv->id) {
         g_set_error_literal(error,
@@ -1409,24 +1408,24 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     }
 after_interface_name:
 
-    if (!_nm_connection_detect_slave_type_full(self,
-                                               connection,
-                                               &slave_type,
-                                               &normerr_slave_setting_type,
-                                               &normerr_missing_slave_type,
-                                               &normerr_missing_slave_type_port,
-                                               error))
+    if (!_nm_connection_detect_port_type_full(self,
+                                              connection,
+                                              &port_type,
+                                              &normerr_port_setting_type,
+                                              &normerr_missing_port_type,
+                                              &normerr_missing_port_type_port,
+                                              error))
         return FALSE;
 
-    if (nm_streq(type, NM_SETTING_OVS_PORT_SETTING_NAME) && slave_type
-        && !nm_streq(slave_type, NM_SETTING_OVS_BRIDGE_SETTING_NAME)) {
+    if (nm_streq(type, NM_SETTING_OVS_PORT_SETTING_NAME) && port_type
+        && !nm_streq(port_type, NM_SETTING_OVS_BRIDGE_SETTING_NAME)) {
         g_set_error(error,
                     NM_CONNECTION_ERROR,
                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
-                    _("'%s' connections must be enslaved to '%s', not '%s'"),
+                    _("'%s' connections must be attached as port to '%s', not '%s'"),
                     NM_SETTING_OVS_PORT_SETTING_NAME,
                     NM_SETTING_OVS_BRIDGE_SETTING_NAME,
-                    slave_type);
+                    port_type);
         g_prefix_error(error,
                        "%s.%s: ",
                        NM_SETTING_CONNECTION_SETTING_NAME,
@@ -1643,27 +1642,27 @@ after_interface_name:
         return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
     }
 
-    if (normerr_slave_setting_type) {
+    if (normerr_port_setting_type) {
         g_set_error(error,
                     NM_CONNECTION_ERROR,
                     NM_CONNECTION_ERROR_MISSING_SETTING,
                     _("port-type '%s' requires a '%s' setting in the connection"),
                     priv->port_type,
-                    normerr_slave_setting_type);
-        g_prefix_error(error, "%s: ", normerr_slave_setting_type);
+                    normerr_port_setting_type);
+        g_prefix_error(error, "%s: ", normerr_port_setting_type);
         return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
     }
 
-    if (normerr_missing_slave_type) {
+    if (normerr_missing_port_type) {
         g_set_error(error,
                     NM_CONNECTION_ERROR,
                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
-                    _("Detect a slave connection with '%s' set and a port type '%s'. '%s' should "
+                    _("Detect a port connection with '%s' set and a port type '%s'. '%s' should "
                       "be set to '%s'"),
                     NM_SETTING_CONNECTION_CONTROLLER,
-                    normerr_missing_slave_type_port,
+                    normerr_missing_port_type_port,
                     NM_SETTING_CONNECTION_PORT_TYPE,
-                    normerr_missing_slave_type);
+                    normerr_missing_port_type);
         g_prefix_error(error,
                        "%s.%s: ",
                        NM_SETTING_CONNECTION_SETTING_NAME,
@@ -1684,7 +1683,7 @@ after_interface_name:
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_SETTING,
-                        _("A slave connection with '%s' set to '%s' cannot have a '%s' setting"),
+                        _("A port connection with '%s' set to '%s' cannot have a '%s' setting"),
                         NM_SETTING_CONNECTION_PORT_TYPE,
                         priv->port_type ?: "",
                         has_bridge_port ? NM_SETTING_BRIDGE_PORT_SETTING_NAME
@@ -2589,9 +2588,9 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
     /**
      * NMSettingConnection:slave-type:
      *
-     * Setting name of the device type of this slave's controller connection (eg,
+     * Setting name of the device type of this port's controller connection (eg,
      * %NM_SETTING_BOND_SETTING_NAME), or %NULL if this connection is not a
-     * slave.
+     * port.
      *
      * Deprecated 1.46. Use #NMSettingConnection:port-type instead, this is just an alias.
      **/
@@ -2655,13 +2654,13 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
     /**
      * NMSettingConnection:autoconnect-slaves:
      *
-     * Whether or not slaves of this connection should be automatically brought up
+     * Whether or not ports of this connection should be automatically brought up
      * when NetworkManager activates this connection. This only has a real effect
      * for controller connections. The properties #NMSettingConnection:autoconnect,
      * #NMSettingConnection:autoconnect-priority and #NMSettingConnection:autoconnect-retries
      * are unrelated to this setting.
-     * The permitted values are: 0: leave slave connections untouched,
-     * 1: activate all the slave connections with this connection, -1: default.
+     * The permitted values are: 0: leave port connections untouched,
+     * 1: activate all the port connections with this connection, -1: default.
      * If -1 (default) is set, global connection.autoconnect-slaves is read to
      * determine the real value. If it is default as well, this fallbacks to 0.
      *

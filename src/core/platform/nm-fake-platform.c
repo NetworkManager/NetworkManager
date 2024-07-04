@@ -199,14 +199,14 @@ link_add_prepare(NMPlatform *platform, NMFakePlatformLink *device, NMPObject *ob
         if (NM_FLAGS_HAS(obj_tmp->link.n_ifi_flags, IFF_UP)) {
             NMPLookup        lookup;
             NMDedupMultiIter iter;
-            const NMPObject *slave_candidate = NULL;
+            const NMPObject *port_candidate = NULL;
 
             nmp_cache_iter_for_each (
                 &iter,
                 nmp_cache_lookup(nm_platform_get_cache(platform),
                                  nmp_lookup_init_obj_type(&lookup, NMP_OBJECT_TYPE_LINK)),
-                &slave_candidate) {
-                if (nmp_cache_link_connected_for_slave(obj_tmp->link.ifindex, slave_candidate)) {
+                &port_candidate) {
+                if (nmp_cache_link_connected_for_port(obj_tmp->link.ifindex, port_candidate)) {
                     connected = TRUE;
                     break;
                 }
@@ -736,9 +736,9 @@ link_change(NMPlatform                   *platform,
 }
 
 static gboolean
-link_enslave(NMPlatform *platform, int controller, int slave)
+link_attach_port(NMPlatform *platform, int controller, int port)
 {
-    NMFakePlatformLink *device            = link_get(platform, slave);
+    NMFakePlatformLink *device            = link_get(platform, port);
     NMFakePlatformLink *controller_device = link_get(platform, controller);
 
     g_return_val_if_fail(device, FALSE);
@@ -758,21 +758,21 @@ link_enslave(NMPlatform *platform, int controller, int slave)
 }
 
 static gboolean
-link_release(NMPlatform *platform, int controller_idx, int slave_idx)
+link_release_port(NMPlatform *platform, int controller_idx, int port_idx)
 {
     NMFakePlatformLink       *controller = link_get(platform, controller_idx);
-    NMFakePlatformLink       *slave      = link_get(platform, slave_idx);
+    NMFakePlatformLink       *port       = link_get(platform, port_idx);
     nm_auto_nmpobj NMPObject *obj_tmp    = NULL;
 
     g_return_val_if_fail(controller, FALSE);
-    g_return_val_if_fail(slave, FALSE);
+    g_return_val_if_fail(port, FALSE);
 
-    if (slave->obj->link.controller != controller->obj->link.ifindex)
+    if (port->obj->link.controller != controller->obj->link.ifindex)
         return FALSE;
 
-    obj_tmp                  = nmp_object_clone(slave->obj, FALSE);
+    obj_tmp                  = nmp_object_clone(port->obj, FALSE);
     obj_tmp->link.controller = 0;
-    link_set_obj(platform, slave, obj_tmp);
+    link_set_obj(platform, port, obj_tmp);
     return TRUE;
 }
 
@@ -1438,8 +1438,8 @@ nm_fake_platform_class_init(NMFakePlatformClass *klass)
     platform_class->link_supports_vlans          = link_supports_vlans;
     platform_class->link_supports_sriov          = link_supports_sriov;
 
-    platform_class->link_enslave = link_enslave;
-    platform_class->link_release = link_release;
+    platform_class->link_attach_port  = link_attach_port;
+    platform_class->link_release_port = link_release_port;
 
     platform_class->link_vlan_change = link_vlan_change;
 

@@ -196,7 +196,7 @@ _nm_keyfile_read(GKeyFile            *keyfile,
         {
             NMSettingConnection *s_con;
 
-            /* a non-slave connection must have a proxy setting, but
+            /* a non-port connection must have a proxy setting, but
              * keyfile reader does not add that (unless a [proxy] section
              * is present. */
             s_con = nm_connection_get_setting_connection(con);
@@ -858,7 +858,7 @@ test_bridge_port_vlans(void)
                                                   "type=dummy\n"
                                                   "interface-name=dummy1\n"
                                                   "controller=br0\n"
-                                                  "slave-type=bridge\n"
+                                                  "port-type=bridge\n"
                                                   "\n"
                                                   "[bridge-port]\n"
                                                   "vlans=4094 pvid , 10-20 untagged\n"

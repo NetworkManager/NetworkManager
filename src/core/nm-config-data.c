@@ -374,7 +374,7 @@ nm_config_data_get_iwd_config_path(const NMConfigData *self)
 gboolean
 nm_config_data_get_ignore_carrier_for_port(const NMConfigData *self,
                                            const char         *controller,
-                                           const char         *slave_type)
+                                           const char         *port_type)
 {
     const char           *value;
     gboolean              has_match;
@@ -383,7 +383,7 @@ nm_config_data_get_ignore_carrier_for_port(const NMConfigData *self,
 
     g_return_val_if_fail(NM_IS_CONFIG_DATA(self), FALSE);
 
-    if (!controller || !slave_type)
+    if (!controller || !port_type)
         goto out_default;
 
     if (!nm_utils_ifname_valid_kernel(controller, NULL))
@@ -391,7 +391,7 @@ nm_config_data_get_ignore_carrier_for_port(const NMConfigData *self,
 
     match_data = (NMMatchSpecDeviceData){
         .interface_name = controller,
-        .device_type    = slave_type,
+        .device_type    = port_type,
     };
 
     value = _config_data_get_device_config(self,

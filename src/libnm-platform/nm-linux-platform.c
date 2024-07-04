@@ -108,6 +108,9 @@ typedef enum _nm_packed {
 
 /*****************************************************************************/
 
+#define IFLA_INFO_PORT_KIND IFLA_INFO_SLAVE_KIND
+#define IFLA_INFO_PORT_DATA IFLA_INFO_SLAVE_DATA
+
 #ifndef IFLA_PROMISCUITY
 #define IFLA_PROMISCUITY 30
 #endif
@@ -184,7 +187,10 @@ G_STATIC_ASSERT(RTA_MAX == (__RTA_MAX - 1));
 
 /*****************************************************************************/
 
-#define IFLA_BOND_SLAVE_PRIO 9
+#define IFLA_BOND_ACTIVE_PORT      IFLA_BOND_ACTIVE_SLAVE
+#define IFLA_BOND_PORT_PRIO        IFLA_BOND_SLAVE_PRIO
+#define IFLA_BOND_ALL_PORTS_ACTIVE IFLA_BOND_ALL_SLAVES_ACTIVE
+#define IFLA_BOND_PACKETS_PER_PORT IFLA_BOND_PACKETS_PER_SLAVE
 
 #define IFLA_BOND_PEER_NOTIF_DELAY 28
 #define IFLA_BOND_AD_LACP_ACTIVE   29
@@ -1622,7 +1628,7 @@ _parse_lnk_bond(const char *kind, struct nlattr *info_data)
 {
     static const struct nla_policy policy[] = {
         [IFLA_BOND_MODE]              = {.type = NLA_U8},
-        [IFLA_BOND_ACTIVE_SLAVE]      = {.type = NLA_U32},
+        [IFLA_BOND_ACTIVE_PORT]       = {.type = NLA_U32},
         [IFLA_BOND_MIIMON]            = {.type = NLA_U32},
         [IFLA_BOND_UPDELAY]           = {.type = NLA_U32},
         [IFLA_BOND_DOWNDELAY]         = {.type = NLA_U32},
@@ -1637,10 +1643,10 @@ _parse_lnk_bond(const char *kind, struct nlattr *info_data)
         [IFLA_BOND_XMIT_HASH_POLICY]  = {.type = NLA_U8},
         [IFLA_BOND_RESEND_IGMP]       = {.type = NLA_U32},
         [IFLA_BOND_NUM_PEER_NOTIF]    = {.type = NLA_U8},
-        [IFLA_BOND_ALL_SLAVES_ACTIVE] = {.type = NLA_U8},
+        [IFLA_BOND_ALL_PORTS_ACTIVE]  = {.type = NLA_U8},
         [IFLA_BOND_MIN_LINKS]         = {.type = NLA_U32},
         [IFLA_BOND_LP_INTERVAL]       = {.type = NLA_U32},
-        [IFLA_BOND_PACKETS_PER_SLAVE] = {.type = NLA_U32},
+        [IFLA_BOND_PACKETS_PER_PORT]  = {.type = NLA_U32},
         [IFLA_BOND_AD_LACP_RATE]      = {.type = NLA_U8},
         [IFLA_BOND_AD_SELECT]         = {.type = NLA_U8},
         [IFLA_BOND_AD_ACTOR_SYS_PRIO] = {.type = NLA_U16},
@@ -1736,16 +1742,16 @@ _parse_lnk_bond(const char *kind, struct nlattr *info_data)
     }
     if (tb[IFLA_BOND_NUM_PEER_NOTIF])
         props->num_grat_arp = nla_get_u8(tb[IFLA_BOND_NUM_PEER_NOTIF]);
-    if (tb[IFLA_BOND_ALL_SLAVES_ACTIVE])
-        props->all_ports_active = nla_get_u8(tb[IFLA_BOND_ALL_SLAVES_ACTIVE]);
+    if (tb[IFLA_BOND_ALL_PORTS_ACTIVE])
+        props->all_ports_active = nla_get_u8(tb[IFLA_BOND_ALL_PORTS_ACTIVE]);
     if (tb[IFLA_BOND_MISSED_MAX])
         props->arp_missed_max = nla_get_u8(tb[IFLA_BOND_MISSED_MAX]);
     if (tb[IFLA_BOND_MIN_LINKS])
         props->min_links = nla_get_u32(tb[IFLA_BOND_MIN_LINKS]);
     if (tb[IFLA_BOND_LP_INTERVAL])
         props->lp_interval = nla_get_u32(tb[IFLA_BOND_LP_INTERVAL]);
-    if (tb[IFLA_BOND_PACKETS_PER_SLAVE])
-        props->packets_per_port = nla_get_u32(tb[IFLA_BOND_PACKETS_PER_SLAVE]);
+    if (tb[IFLA_BOND_PACKETS_PER_PORT])
+        props->packets_per_port = nla_get_u32(tb[IFLA_BOND_PACKETS_PER_PORT]);
     if (tb[IFLA_BOND_AD_LACP_RATE])
         props->lacp_rate = nla_get_u8(tb[IFLA_BOND_AD_LACP_RATE]);
     if (tb[IFLA_BOND_AD_LACP_ACTIVE]) {
@@ -3458,11 +3464,11 @@ _new_from_nl_link(NMPlatform            *platform,
 
     if (tb[IFLA_LINKINFO]) {
         static const struct nla_policy policy_link_info[] = {
-            [IFLA_INFO_KIND]       = {.type = NLA_STRING},
-            [IFLA_INFO_DATA]       = {.type = NLA_NESTED},
-            [IFLA_INFO_XSTATS]     = {.type = NLA_NESTED},
-            [IFLA_INFO_SLAVE_KIND] = {.type = NLA_STRING},
-            [IFLA_INFO_SLAVE_DATA] = {.type = NLA_NESTED},
+            [IFLA_INFO_KIND]      = {.type = NLA_STRING},
+            [IFLA_INFO_DATA]      = {.type = NLA_NESTED},
+            [IFLA_INFO_XSTATS]    = {.type = NLA_NESTED},
+            [IFLA_INFO_PORT_KIND] = {.type = NLA_STRING},
+            [IFLA_INFO_PORT_DATA] = {.type = NLA_NESTED},
         };
         struct nlattr *li[G_N_ELEMENTS(policy_link_info)];
 
@@ -3474,8 +3480,8 @@ _new_from_nl_link(NMPlatform            *platform,
 
         nl_info_data = li[IFLA_INFO_DATA];
 
-        if (li[IFLA_INFO_SLAVE_KIND]) {
-            const char *s = nla_get_string(li[IFLA_INFO_SLAVE_KIND]);
+        if (li[IFLA_INFO_PORT_KIND]) {
+            const char *s = nla_get_string(li[IFLA_INFO_PORT_KIND]);
 
             if (nm_streq(s, "bond"))
                 obj->link.port_kind = NM_PORT_KIND_BOND;
@@ -3483,10 +3489,10 @@ _new_from_nl_link(NMPlatform            *platform,
                 obj->link.port_kind = NM_PORT_KIND_BRIDGE;
         }
 
-        if (li[IFLA_INFO_SLAVE_DATA]) {
+        if (li[IFLA_INFO_PORT_DATA]) {
             static const struct nla_policy policy_bond_port[] = {
                 [IFLA_BOND_SLAVE_QUEUE_ID] = {.type = NLA_U16},
-                [IFLA_BOND_SLAVE_PRIO]     = {.type = NLA_S32},
+                [IFLA_BOND_PORT_PRIO]      = {.type = NLA_S32},
             };
             struct nlattr                 *bp[G_N_ELEMENTS(policy_bond_port)];
             static const struct nla_policy policy_bridge_port[] = {
@@ -3498,30 +3504,30 @@ _new_from_nl_link(NMPlatform            *platform,
 
             switch (obj->link.port_kind) {
             case NM_PORT_KIND_BOND:
-                if (nla_parse_nested_arr(bp, li[IFLA_INFO_SLAVE_DATA], policy_bond_port) < 0)
+                if (nla_parse_nested_arr(bp, li[IFLA_INFO_PORT_DATA], policy_bond_port) < 0)
                     return NULL;
 
                 if (bp[IFLA_BOND_SLAVE_QUEUE_ID])
                     obj->link.port_data.bond.queue_id = nla_get_u16(bp[IFLA_BOND_SLAVE_QUEUE_ID]);
 
-                if (bp[IFLA_BOND_SLAVE_PRIO]) {
-                    obj->link.port_data.bond.prio     = nla_get_s32(bp[IFLA_BOND_SLAVE_PRIO]);
+                if (bp[IFLA_BOND_PORT_PRIO]) {
+                    obj->link.port_data.bond.prio     = nla_get_s32(bp[IFLA_BOND_PORT_PRIO]);
                     obj->link.port_data.bond.prio_has = TRUE;
                     if (!_nm_platform_kernel_support_detected(
-                            NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BOND_SLAVE_PRIO)) {
-                        /* support for IFLA_BOND_SLAVE_PRIO was added in 0a2ff7cc8ad48a86939a91bd3457f38e59e741a1,
+                            NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BOND_PORT_PRIO)) {
+                        /* support for IFLA_BOND_PORT_PRIO was added in 0a2ff7cc8ad48a86939a91bd3457f38e59e741a1,
                          * kernel 6.0, 2 October 2022.
                          *
                          * We can only detect support if the attribute is present. A missing attribute
                          * is not conclusive. */
                         _nm_platform_kernel_support_init(
-                            NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BOND_SLAVE_PRIO,
+                            NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BOND_PORT_PRIO,
                             1);
                     }
                 }
                 break;
             case NM_PORT_KIND_BRIDGE:
-                if (nla_parse_nested_arr(brp, li[IFLA_INFO_SLAVE_DATA], policy_bridge_port) < 0)
+                if (nla_parse_nested_arr(brp, li[IFLA_INFO_PORT_DATA], policy_bridge_port) < 0)
                     return NULL;
 
                 if (brp[IFLA_BRPORT_COST])
@@ -4941,7 +4947,7 @@ _nl_msg_new_link_set_linkinfo(struct nl_msg *msg, NMLinkType link_type, gconstpo
         if (props->min_links)
             NLA_PUT_U32(msg, IFLA_BOND_MIN_LINKS, props->min_links);
         if (props->packets_per_port)
-            NLA_PUT_U32(msg, IFLA_BOND_PACKETS_PER_SLAVE, props->packets_per_port);
+            NLA_PUT_U32(msg, IFLA_BOND_PACKETS_PER_PORT, props->packets_per_port);
         if (props->peer_notif_delay_has)
             NLA_PUT_U32(msg, IFLA_BOND_PEER_NOTIF_DELAY, props->peer_notif_delay);
         if (props->primary > 0)
@@ -4964,7 +4970,7 @@ _nl_msg_new_link_set_linkinfo(struct nl_msg *msg, NMLinkType link_type, gconstpo
         if (props->arp_missed_max)
             NLA_PUT_U8(msg, IFLA_BOND_MISSED_MAX, props->arp_missed_max);
 
-        NLA_PUT_U8(msg, IFLA_BOND_ALL_SLAVES_ACTIVE, props->all_ports_active);
+        NLA_PUT_U8(msg, IFLA_BOND_ALL_PORTS_ACTIVE, props->all_ports_active);
 
         if (props->fail_over_mac)
             NLA_PUT_U8(msg, IFLA_BOND_FAIL_OVER_MAC, props->fail_over_mac);
@@ -7357,7 +7363,7 @@ cache_on_change(NMPlatform      *platform,
     switch (klass->obj_type) {
     case NMP_OBJECT_TYPE_LINK:
     {
-        /* check whether changing a slave link can cause a controller link (bridge or bond) to go up/down */
+        /* check whether changing a port link can cause a controller link (bridge or bond) to go up/down */
         if (obj_old
             && nmp_cache_link_connected_needs_toggle_by_ifindex(cache,
                                                                 obj_old->link.controller,
@@ -7519,7 +7525,7 @@ cache_on_change(NMPlatform      *platform,
             }
         }
         {
-            /* on enslave/release, we also refresh the controller. */
+            /* on attach/release, we also refresh the controller. */
             int      ifindex1 = 0, ifindex2 = 0;
             gboolean changed_controller, changed_connected;
 
@@ -8650,15 +8656,15 @@ link_change(NMPlatform                   *platform,
             goto nla_put_failure;
 
         nm_assert(nm_streq0("bond", nm_link_type_to_rtnl_type_string(NM_LINK_TYPE_BOND)));
-        NLA_PUT_STRING(nlmsg, IFLA_INFO_SLAVE_KIND, "bond");
+        NLA_PUT_STRING(nlmsg, IFLA_INFO_PORT_KIND, "bond");
 
-        if (!(nl_port_data = nla_nest_start(nlmsg, IFLA_INFO_SLAVE_DATA)))
+        if (!(nl_port_data = nla_nest_start(nlmsg, IFLA_INFO_PORT_DATA)))
             goto nla_put_failure;
 
         NLA_PUT_U16(nlmsg, IFLA_BOND_SLAVE_QUEUE_ID, port_data->bond.queue_id);
 
         if (port_data->bond.prio_has)
-            NLA_PUT_S32(nlmsg, IFLA_BOND_SLAVE_PRIO, port_data->bond.prio);
+            NLA_PUT_S32(nlmsg, IFLA_BOND_PORT_PRIO, port_data->bond.prio);
 
         nla_nest_end(nlmsg, nl_port_data);
         nla_nest_end(nlmsg, nl_info);
@@ -8671,9 +8677,9 @@ link_change(NMPlatform                   *platform,
             goto nla_put_failure;
 
         nm_assert(nm_streq0("bridge", nm_link_type_to_rtnl_type_string(NM_LINK_TYPE_BRIDGE)));
-        NLA_PUT_STRING(nlmsg, IFLA_INFO_SLAVE_KIND, "bridge");
+        NLA_PUT_STRING(nlmsg, IFLA_INFO_PORT_KIND, "bridge");
 
-        if (!(nl_port_data = nla_nest_start(nlmsg, IFLA_INFO_SLAVE_DATA)))
+        if (!(nl_port_data = nla_nest_start(nlmsg, IFLA_INFO_PORT_DATA)))
             goto nla_put_failure;
 
         NLA_PUT_U32(nlmsg, IFLA_BRPORT_COST, port_data->bridge.path_cost);
@@ -9727,10 +9733,10 @@ link_vlan_change(NMPlatform             *platform,
 }
 
 static gboolean
-link_enslave(NMPlatform *platform, int controller, int slave)
+link_attach_port(NMPlatform *platform, int controller, int port)
 {
     nm_auto_nlmsg struct nl_msg *nlmsg   = NULL;
-    int                          ifindex = slave;
+    int                          ifindex = port;
 
     nlmsg = _nl_msg_new_link(RTM_NEWLINK, 0, ifindex, NULL);
     if (!nlmsg)
@@ -9744,9 +9750,9 @@ nla_put_failure:
 }
 
 static gboolean
-link_release(NMPlatform *platform, int controller, int slave)
+link_release_port(NMPlatform *platform, int controller, int port)
 {
-    return link_enslave(platform, 0, slave);
+    return link_attach_port(platform, 0, port);
 }
 
 /*****************************************************************************/
@@ -11814,8 +11820,8 @@ nm_linux_platform_class_init(NMLinuxPlatformClass *klass)
     platform_class->link_supports_vlans          = link_supports_vlans;
     platform_class->link_supports_sriov          = link_supports_sriov;
 
-    platform_class->link_enslave = link_enslave;
-    platform_class->link_release = link_release;
+    platform_class->link_attach_port  = link_attach_port;
+    platform_class->link_release_port = link_release_port;
 
     platform_class->link_can_assume = link_can_assume;
 

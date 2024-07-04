@@ -3,7 +3,7 @@ id=Test Bridge Component
 uuid=d7b4f96c-c45e-4298-bef8-f48574f8c1c0
 type=802-3-ethernet
 controller=br0
-slave-type=bridge
+port-type=bridge
 
 [802-3-ethernet]
 mac-address=00:22:15:59:62:97

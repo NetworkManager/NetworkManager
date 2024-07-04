@@ -1125,7 +1125,7 @@ ipv6.ip6-privacy=0
 <programlisting>
 [connection]
 ipv6.ip6-privacy=0
-connection.autoconnect-slaves=1
+connection.autoconnect-ports=1
 vpn.timeout=120
 
 [connection-wifi-wlan0]

@@ -187,7 +187,7 @@ gboolean    nm_config_data_get_systemd_resolved(const NMConfigData *self);
 
 gboolean nm_config_data_get_ignore_carrier_for_port(const NMConfigData *self,
                                                     const char         *controller,
-                                                    const char         *slave_type);
+                                                    const char         *port_type);
 
 gboolean nm_config_data_get_ignore_carrier_by_device(const NMConfigData *self, NMDevice *device);
 gboolean nm_config_data_get_assume_ipv6ll_only(const NMConfigData *self, NMDevice *device);
