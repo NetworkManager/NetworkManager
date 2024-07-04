@@ -5610,6 +5610,7 @@ _nl_msg_new_route(uint16_t nlmsg_type, uint16_t nlmsg_flags, const NMPObject *ob
     nm_assert(
         NM_IN_SET(NMP_OBJECT_GET_TYPE(obj), NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
     nm_assert(NM_IN_SET(nlmsg_type, RTM_NEWROUTE, RTM_DELROUTE));
+    nm_assert(NM_IN_SET(rtmsg.rtm_protocol, IP_ROUTE_TRACKED_PROTOCOLS));
 
     if (NM_FLAGS_HAS(obj->ip_route.r_rtm_flags, ((unsigned) (RTNH_F_ONLINK)))) {
         if (IS_IPv4 && obj->ip4_route.gateway == 0) {
