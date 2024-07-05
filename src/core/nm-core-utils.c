@@ -5096,7 +5096,9 @@ helper_complete(HelperInfo *info, GError *error)
     }
 
     nm_clear_g_cancellable_disconnect(g_task_get_cancellable(info->task), &info->cancellable_id);
-    g_task_return_pointer(info->task, nm_str_buf_finalize(&info->in_buffer, NULL), g_free);
+    g_task_return_pointer(info->task,
+                          nm_str_buf_finalize(&info->in_buffer, NULL) ?: g_new0(char, 1),
+                          g_free);
     helper_info_free(info);
 }
 
