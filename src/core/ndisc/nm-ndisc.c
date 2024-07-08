@@ -170,6 +170,9 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex        *multi_idx,
     }
 
     if (rdata->gateways_n > 0) {
+        guint              metric_offset = 0;
+        NMIcmpv6RouterPref prev_pref     = NM_ICMPV6_ROUTER_PREF_INVALID;
+
         NMPlatformIP6Route r = {
             .rt_source     = NM_IP_CONFIG_SOURCE_NDISC,
             .ifindex       = ifindex,
@@ -180,6 +183,20 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex        *multi_idx,
         };
 
         for (i = 0; i < rdata->gateways_n; i++) {
+            /* If we add multiple default routes with the same metric and
+             * different preferences, kernel merges them into a single ECMP
+             * route, with overall preference equal to the preference of the
+             * first route added. Therefore, the preference of individual routes
+             * is not respected.
+             * To avoid that, add routes with different metrics if they have
+             * different preferences, so that they are not merged together. Here
+             * the gateways are already ordered by increasing preference. */
+            if (i != 0 && rdata->gateways[i].preference != prev_pref) {
+                metric_offset++;
+            }
+
+            prev_pref = rdata->gateways[i].preference;
+            r.metric  = metric_offset;
             r.gateway = rdata->gateways[i].address;
             r.rt_pref = rdata->gateways[i].preference;
             nm_assert((NMIcmpv6RouterPref) r.rt_pref == rdata->gateways[i].preference);
