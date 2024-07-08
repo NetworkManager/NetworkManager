@@ -132,7 +132,7 @@
 %bcond_without default_ifcfg_rh
 %endif
 
-%if 0%{?rhel} >= 10
+%if 0%{?rhel} >= 10 || 0%{?fedora} >= 41
 %bcond_with ifcfg_rh
 %bcond_with split_ifcfg_rh
 %elif 0%{?fedora} >= 36
@@ -149,7 +149,7 @@
 %bcond_with ifcfg_warning
 %endif
 
-%if 0%{?fedora} >= 39
+%if %{with ifcfg_rh} && 0%{?fedora} >= 39
 %bcond_without ifcfg_migrate
 %else
 %bcond_with ifcfg_migrate
