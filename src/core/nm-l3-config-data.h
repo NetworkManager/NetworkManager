@@ -28,6 +28,7 @@ typedef enum {
     ((is_ipv4) ? NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY_4 \
                : NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY_6)
 
+    NM_L3_CONFIG_DAT_FLAGS_HAS_IPV4_NON_LL = (1ull << 3),
 } NML3ConfigDatFlags;
 
 typedef enum {
