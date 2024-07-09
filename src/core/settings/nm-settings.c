@@ -3520,7 +3520,7 @@ load_plugins(NMSettings *self, const char *const *plugins, GError **error)
         }
 
         if (NM_IN_STRSET(pname, "ifcfg-suse", "ifnet", "ibft", "no-ibft")) {
-            _LOGW("skipping deprecated plugin %s", pname);
+            _LOGW("skipping obsolete plugin %s", pname);
             continue;
         }
 
