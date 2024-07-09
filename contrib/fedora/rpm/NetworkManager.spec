@@ -1,5 +1,5 @@
 # SPEC file to build NetworkManager for testing. It aims for a similar
-# configuration as rhel-7.0 and Fedora rawhide
+# configuration as RHEL and Fedora Rawhide
 #
 # This spec file is not used as is to create official packages for RHEL, Fedora or any
 # other distribution.
@@ -78,7 +78,7 @@
 %bcond_with    test
 %endif
 %if "%{?bcond_default_lto}" == ""
-%if 0%{?fedora} >= 33 || 0%{?rhel} >= 9
+%if 0%{?fedora} || 0%{?rhel} >= 9
 %bcond_without lto
 %else
 %bcond_with    lto
@@ -96,15 +96,10 @@
 %else
 %bcond_with connectivity_fedora
 %endif
-%if 0%{?rhel} >= 8
+%if 0%{?rhel}
 %bcond_without connectivity_redhat
 %else
 %bcond_with connectivity_redhat
-%endif
-%if 0%{?fedora} >= 29 || 0%{?rhel} >= 8
-%bcond_without crypto_gnutls
-%else
-%bcond_with crypto_gnutls
 %endif
 %if 0%{?rhel}
 %bcond_with iwd
@@ -114,21 +109,8 @@
 
 ###############################################################################
 
-%if 0%{?fedora} || 0%{?rhel} >= 8
 %global dbus_version 1.9.18
 %global dbus_sys_dir %{_datadir}/dbus-1/system.d
-%else
-%global dbus_version 1.1
-%global dbus_sys_dir %{_sysconfdir}/dbus-1/system.d
-%endif
-
-# Older libndp versions use select() (rh#1933041). On well known distros,
-# choose a version that has the necessary fix.
-%if 0%{?rhel} == 8
-%global libndp_version 1.7-4
-%else
-%global libndp_version %{nil}
-%endif
 
 %if %{with bluetooth} || %{with wwan}
 %global with_modem_manager_1 1
@@ -136,16 +118,10 @@
 %global with_modem_manager_1 0
 %endif
 
-%if 0%{?fedora} || 0%{?rhel} >= 8
-%global logging_backend_default journal
 %if 0%{?fedora} || 0%{?rhel} >= 9
 %global dns_rc_manager_default auto
 %else
 %global dns_rc_manager_default symlink
-%endif
-%else
-%global logging_backend_default syslog
-%global dns_rc_manager_default file
 %endif
 
 %if 0%{?fedora} >= 33 || 0%{?rhel} >= 9
@@ -218,9 +194,7 @@ Source9: readme-ifcfg-rh-migrated.txt
 #Patch1: 0001-some.patch
 
 Requires(post): systemd
-%if 0%{?fedora} || 0%{?rhel} >= 8
 Requires(post): systemd-udev
-%endif
 Requires(post): /usr/sbin/update-alternatives
 Requires(preun): systemd
 Requires(preun): /usr/sbin/update-alternatives
@@ -229,9 +203,13 @@ Requires(postun): systemd
 Requires: dbus >= %{dbus_version}
 Requires: glib2 >= %{glib2_version}
 Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
-%if "%{libndp_version}" != ""
-Requires: libndp >= %{libndp_version}
+
+%if 0%{?rhel} == 8
+# Older libndp versions use select() (rh#1933041). On well known distros,
+# choose a version that has the necessary fix.
+Requires: libndp >= 1.7-4
 %endif
+
 Obsoletes: NetworkManager < %{obsoletes_device_plugins}
 Obsoletes: NetworkManager < %{obsoletes_ppp_plugin}
 Obsoletes: NetworkManager-wimax < 1:1.2
@@ -241,11 +219,6 @@ Suggests: NetworkManager-initscripts-updown
 Obsoletes: NetworkManager < %{obsoletes_initscripts_updown}
 %if 0%{?split_ifcfg_rh}
 Obsoletes: NetworkManager < %{obsoletes_ifcfg_rh}
-%endif
-
-%if 0%{?rhel} && 0%{?rhel} <= 7
-# Kept for RHEL to ensure that wired 802.1x works out of the box
-Requires: wpa_supplicant >= 1:1.1
 %endif
 
 %if 0%{?rhel} >= 10
@@ -287,11 +260,7 @@ BuildRequires: gobject-introspection-devel >= 0.10.3
 %if %{with ppp}
 BuildRequires: ppp-devel >= 2.4.5
 %endif
-%if %{with crypto_gnutls}
 BuildRequires: gnutls-devel >= 2.12
-%else
-BuildRequires: nss-devel >= 3.11.7
-%endif
 BuildRequires: readline-devel
 BuildRequires: audit-libs-devel
 %if %{with regen_docs}
@@ -329,15 +298,11 @@ BuildRequires: polkit-devel
 BuildRequires: jansson-devel
 %if %{with sanitizer}
 BuildRequires: libasan
-%if 0%{?fedora} || 0%{?rhel} >= 8
 BuildRequires: libubsan
-%endif
 %endif
 BuildRequires: firewalld-filesystem
 BuildRequires: iproute
-%if 0%{?fedora} || 0%{?rhel} >= 8
 BuildRequires: iproute-tc
-%endif
 
 Provides: %{name}-dispatcher%{?_isa} = %{epoch}:%{version}-%{release}
 
@@ -380,12 +345,7 @@ Summary: Bluetooth device plugin for NetworkManager
 Group: System Environment/Base
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: NetworkManager-wwan = %{epoch}:%{version}-%{release}
-%if 0%{?rhel} <= 7
-# No Requires:bluez to prevent it being installed when updating
-# to the split NM package
-%else
 Requires: bluez >= 4.101-5
-%endif
 Obsoletes: NetworkManager < %{obsoletes_device_plugins}
 
 %description bluetooth
@@ -400,12 +360,10 @@ Group: System Environment/Base
 BuildRequires: teamd-devel
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 Obsoletes: NetworkManager < %{obsoletes_device_plugins}
-%if 0%{?fedora} || 0%{?rhel} >= 8
 # Team was split from main NM binary between 0.9.10 and 1.0
 # We need this Obsoletes in addition to the one above
 # (git:3aede801521ef7bff039e6e3f1b3c7b566b4338d).
 Obsoletes: NetworkManager < 1:1.0.0
-%endif
 
 %description team
 This package contains NetworkManager support for team devices.
@@ -424,13 +382,10 @@ Requires: wireless-regdb
 Requires: crda
 %endif
 
-%if %{with iwd} && (0%{?fedora} >= 25 || 0%{?rhel} >= 8)
+%if %{with iwd}
 Requires: (wpa_supplicant >= %{wpa_supplicant_version} or iwd)
 Suggests: wpa_supplicant
 %else
-# Just require wpa_supplicant on platforms that don't support boolean
-# dependencies even though the plugin supports both supplicant and
-# iwd backend.
 Requires: wpa_supplicant >= %{wpa_supplicant_version}
 %endif
 
@@ -446,12 +401,7 @@ This package contains NetworkManager support for Wifi and OLPC devices.
 Summary: Mobile broadband device plugin for NetworkManager
 Group: System Environment/Base
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
-%if 0%{?rhel} <= 7
-# No Requires:ModemManager to prevent it being installed when updating
-# to the split NM package
-%else
 Requires: ModemManager
-%endif
 Obsoletes: NetworkManager < %{obsoletes_device_plugins}
 
 %description wwan
@@ -645,11 +595,7 @@ Preferably use nmcli instead.
 	-Ddhclient=%{_sbindir}/dhclient \
 	-Ddhcpcanon=no \
 	-Ddhcpcd=no \
-%if %{with crypto_gnutls}
 	-Dcrypto=gnutls \
-%else
-	-Dcrypto=nss \
-%endif
 %if %{with debug}
 	-Dmore_logging=true \
 	-Dmore_asserts=10000 \
@@ -762,7 +708,7 @@ Preferably use nmcli instead.
 	-Dresolvconf=no \
 	-Dnetconfig=no \
 	-Dconfig_dns_rc_manager_default=%{dns_rc_manager_default} \
-	-Dconfig_logging_backend_default=%{logging_backend_default}
+	-Dconfig_logging_backend_default=journal
 
 %meson_build
 
@@ -781,18 +727,10 @@ autoreconf --install --force
 	--with-dhclient=%{_sbindir}/dhclient \
 	--with-dhcpcd=no \
 	--with-dhcpcanon=no \
-%if %{with crypto_gnutls}
 	--with-crypto=gnutls \
-%else
-	--with-crypto=nss \
-%endif
 %if %{with sanitizer}
 	--with-address-sanitizer=exec \
-%if 0%{?fedora} || 0%{?rhel} >= 8
 	--enable-undefined-sanitizer=yes \
-%else
-	--enable-undefined-sanitizer=no \
-%endif
 %else
 	--with-address-sanitizer=no \
 	--enable-undefined-sanitizer=no \
@@ -909,7 +847,7 @@ autoreconf --install --force
 	--with-resolvconf=no \
 	--with-netconfig=no \
 	--with-config-dns-rc-manager-default=%{dns_rc_manager_default} \
-	--with-config-logging-backend-default=%{logging_backend_default} \
+	--with-config-logging-backend-default=journal \
 	--disable-autotools-deprecation
 
 %make_build
