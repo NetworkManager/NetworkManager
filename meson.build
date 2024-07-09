@@ -1126,7 +1126,7 @@ output += '  nmcli: ' + enable_nmcli.to_string() + '\n'
 output += '  nmtui: ' + enable_nmtui.to_string() + '\n'
 output += '  nm-cloud-setup: ' + enable_nm_cloud_setup.to_string() + '\n'
 output += '\nConfiguration_plugins (main.plugins=' + config_plugins_default + ')\n'
-output += '  ifcfg-rh: ' + enable_ifcfg_rh.to_string() + '\n'
+output += '  ifcfg-rh: ' + enable_ifcfg_rh.to_string() + ' (deprecated)\n'
 output += '    default value of main.migrate-ifcfg-rh: ' +  config_migrate_ifcfg_rh_default + '\n'
 output += '  ifupdown: ' + enable_ifupdown.to_string() + '\n'
 output += '\nHandlers for /etc/resolv.conf:\n' + resolv_conf_summary
