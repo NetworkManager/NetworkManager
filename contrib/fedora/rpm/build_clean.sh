@@ -267,6 +267,7 @@ if [[ $NO_DIST != 1 ]]; then
             --with-libaudit=yes-disabled-by-default \
             --enable-polkit=yes \
             --with-nm-cloud-setup=yes \
+            --with-dhclient=yes \
             --with-config-dhcp-default=internal \
             --with-config-dns-rc-manager-default=auto \
             \

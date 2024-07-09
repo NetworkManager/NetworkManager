@@ -157,6 +157,7 @@ DISTCHECK_CONFIGURE_FLAGS = \
 	--with-udev-dir=$$dc_install_base/lib/udev \
 	--with-wext=no \
 	--enable-ifcfg-rh \
+	--with-dhclient=yes \
 	--enable-ifupdown \
 	--disable-dependency-tracking \
 	--disable-autotools-deprecation \
