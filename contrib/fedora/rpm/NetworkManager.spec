@@ -96,7 +96,7 @@
 %else
 %bcond_with connectivity_fedora
 %endif
-%if 0%{?rhel} && 0%{?rhel} >= 8
+%if 0%{?rhel} >= 8
 %bcond_without connectivity_redhat
 %else
 %bcond_with connectivity_redhat
@@ -129,7 +129,7 @@
 
 # Older libndp versions use select() (rh#1933041). On well known distros,
 # choose a version that has the necessary fix.
-%if 0%{?rhel} && 0%{?rhel} == 8
+%if 0%{?rhel} == 8
 %global libndp_version 1.7-4
 %else
 %global libndp_version %{nil}
@@ -246,7 +246,7 @@ Requires: libndp >= %{libndp_version}
 Obsoletes: NetworkManager < %{obsoletes_device_plugins}
 Obsoletes: NetworkManager < %{obsoletes_ppp_plugin}
 Obsoletes: NetworkManager-wimax < 1:1.2
-%if 0%{?rhel} && 0%{?rhel} == 8
+%if 0%{?rhel} == 8
 Suggests: NetworkManager-initscripts-updown
 %endif
 Obsoletes: NetworkManager < %{obsoletes_initscripts_updown}
@@ -259,7 +259,7 @@ Obsoletes: NetworkManager < %{obsoletes_ifcfg_rh}
 Requires: wpa_supplicant >= 1:1.1
 %endif
 
-%if 0%{?rhel} && 0%{?rhel} >= 10
+%if 0%{?rhel} >= 10
 %if 0%{without team}
 Obsoletes: NetworkManager-team < 1:1.47.5-3
 %endif
@@ -272,7 +272,7 @@ Conflicts: NetworkManager-openvpn < 1:0.7.0.99-1
 Conflicts: NetworkManager-pptp < 1:0.7.0.99-1
 Conflicts: NetworkManager-openconnect < 0:0.7.0.99-1
 Conflicts: kde-plasma-networkmanagement < 1:0.9-0.49.20110527git.nm09
-%if 0%{?rhel} && 0%{?rhel} >= 10
+%if 0%{?rhel} >= 10
 %if 0%{without team}
 Conflicts: NetworkManager-team <= 1:1.47.5-3
 %endif
@@ -393,7 +393,7 @@ Summary: Bluetooth device plugin for NetworkManager
 Group: System Environment/Base
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: NetworkManager-wwan = %{epoch}:%{version}-%{release}
-%if 0%{?rhel} && 0%{?rhel} <= 7
+%if 0%{?rhel} <= 7
 # No Requires:bluez to prevent it being installed when updating
 # to the split NM package
 %else
@@ -459,7 +459,7 @@ This package contains NetworkManager support for Wifi and OLPC devices.
 Summary: Mobile broadband device plugin for NetworkManager
 Group: System Environment/Base
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
-%if 0%{?rhel} && 0%{?rhel} <= 7
+%if 0%{?rhel} <= 7
 # No Requires:ModemManager to prevent it being installed when updating
 # to the split NM package
 %else
