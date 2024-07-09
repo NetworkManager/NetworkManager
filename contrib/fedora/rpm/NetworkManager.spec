@@ -111,11 +111,6 @@
 %else
 %bcond_without iwd
 %endif
-%if 0%{?fedora} >= 32 || 0%{?rhel} >= 8
-%bcond_without firewalld_zone
-%else
-%bcond_with firewalld_zone
-%endif
 
 ###############################################################################
 
@@ -338,9 +333,7 @@ BuildRequires: libasan
 BuildRequires: libubsan
 %endif
 %endif
-%if %{with firewalld_zone}
 BuildRequires: firewalld-filesystem
-%endif
 BuildRequires: iproute
 %if 0%{?fedora} || 0%{?rhel} >= 8
 BuildRequires: iproute-tc
@@ -759,11 +752,6 @@ Preferably use nmcli instead.
 %else
 	-Dppp=false \
 %endif
-%if %{with firewalld_zone}
-	-Dfirewalld_zone=true \
-%else
-	-Dfirewalld_zone=false \
-%endif
 	-Ddist_version=%{version}-%{release} \
 %if %{?config_plugins_default_ifcfg_rh}
 	-Dconfig_plugins_default=ifcfg-rh \
@@ -910,11 +898,7 @@ autoreconf --install --force
 %else
 	--enable-ppp=no \
 %endif
-%if %{with firewalld_zone}
 	--enable-firewalld-zone=yes \
-%else
-	--enable-firewalld-zone=no \
-%endif
 	--with-dist-version=%{version}-%{release} \
 %if %{?config_plugins_default_ifcfg_rh}
 	--with-config-plugins-default=ifcfg-rh \
@@ -1023,9 +1007,7 @@ if [ -S /run/udev/control ]; then
     /usr/bin/udevadm control --reload-rules || :
     /usr/bin/udevadm trigger --subsystem-match=net || :
 fi
-%if %{with firewalld_zone}
 %firewalld_reload
-%endif
 
 %systemd_post %{systemd_units}
 
@@ -1076,9 +1058,7 @@ fi
 %postun
 /usr/bin/udevadm control --reload-rules || :
 /usr/bin/udevadm trigger --subsystem-match=net || :
-%if %{with firewalld_zone}
 %firewalld_reload
-%endif
 
 %systemd_postun %{systemd_units}
 
@@ -1150,9 +1130,7 @@ fi
 %{_datadir}/dbus-1/system-services/org.freedesktop.nm_priv_helper.service
 %{_datadir}/polkit-1/actions/*.policy
 %{_prefix}/lib/udev/rules.d/*.rules
-%if %{with firewalld_zone}
 %{_prefix}/lib/firewalld/zones/nm-shared.xml
-%endif
 # systemd stuff
 %{_unitdir}/NetworkManager.service
 %{_unitdir}/NetworkManager-wait-online.service
