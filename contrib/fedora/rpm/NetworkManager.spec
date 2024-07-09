@@ -141,12 +141,6 @@
 %global with_modem_manager_1 0
 %endif
 
-%if 0%{?fedora} >= 31 || 0%{?rhel} >= 8
-%global dhcp_default internal
-%else
-%global dhcp_default dhclient
-%endif
-
 %if 0%{?fedora} || 0%{?rhel} >= 8
 %global logging_backend_default journal
 %if 0%{?fedora} || 0%{?rhel} >= 9
@@ -658,7 +652,6 @@ Preferably use nmcli instead.
 	-Ddhclient=%{_sbindir}/dhclient \
 	-Ddhcpcanon=no \
 	-Ddhcpcd=no \
-	-Dconfig_dhcp_default=%{dhcp_default} \
 %if %{with crypto_gnutls}
 	-Dcrypto=gnutls \
 %else
@@ -800,7 +793,6 @@ autoreconf --install --force
 	--with-dhclient=%{_sbindir}/dhclient \
 	--with-dhcpcd=no \
 	--with-dhcpcanon=no \
-	--with-config-dhcp-default=%{dhcp_default} \
 %if %{with crypto_gnutls}
 	--with-crypto=gnutls \
 %else
