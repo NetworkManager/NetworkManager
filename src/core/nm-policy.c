@@ -3028,7 +3028,7 @@ dispose(GObject *object)
     NMPolicy        *self = NM_POLICY(object);
     NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
 
-    nm_assert(!c_list_is_empty(&priv->policy_auto_activate_lst_head));
+    nm_assert(c_list_is_empty(&priv->policy_auto_activate_lst_head));
     nm_assert(g_hash_table_size(priv->devices) == 0);
 
     nm_clear_g_object(&priv->default_ac4);
