@@ -657,6 +657,9 @@ foreach client : [ 'dhclient', 'dhcpcd', 'dhcpcanon' ]
   if (client_enable)
     dhcp_summary += (' ' + client_path)
   endif
+  if (client == 'dhclient')
+    dhcp_summary += ' (deprecated)'
+  endif
   dhcp_summary += '\n'
 endforeach
 

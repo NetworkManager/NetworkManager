@@ -57,7 +57,7 @@ option('netconfig', type: 'string', value: '', description: 'Enable SUSE netconf
 option('config_dns_rc_manager_default', type: 'combo', choices: ['auto', 'symlink', 'file', 'netconfig', 'resolvconf'], value: 'auto', description: 'Configure default value for main.rc-manager setting')
 
 # dhcp clients
-option('dhclient', type: 'string', value: '', description: 'Enable dhclient support')
+option('dhclient', type: 'string', value: 'no', description: 'Enable dhclient support (deprecated)')
 option('dhcpcanon', type: 'string', value: '', description: 'Enable dhcpcanon support (experimental)')
 option('dhcpcd', type: 'string', value: '', description: 'Enable dhcpcd support')
 option('config_dhcp_default', type: 'combo', choices: ['dhcpcanon', 'dhclient', 'dhcpcd', 'internal', 'nettools'], value: 'internal', description: 'Default configuration option for main.dhcp setting, used as fallback if the configuration option is unset')
