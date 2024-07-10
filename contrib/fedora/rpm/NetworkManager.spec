@@ -1091,12 +1091,6 @@ fi
 %systemd_postun %{systemd_units}
 
 
-%if (0%{?fedora} && 0%{?fedora} < 28) || 0%{?rhel}
-%post   libnm -p /sbin/ldconfig
-%postun libnm -p /sbin/ldconfig
-%endif
-
-
 %if %{with nm_cloud_setup}
 %postun cloud-setup
 %systemd_postun %{systemd_units_cloud_setup}
