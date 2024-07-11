@@ -2101,6 +2101,40 @@ nm_platform_link_set_bridge_vlans(NMPlatform                 *self,
 }
 
 gboolean
+nm_platform_link_get_bridge_vlans(NMPlatform            *self,
+                                  int                    ifindex,
+                                  NMPlatformBridgeVlan **out_vlans,
+                                  guint                 *out_num_vlans)
+{
+    char     sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+    gboolean ret;
+    guint    i;
+
+    _CHECK_SELF(self, klass, FALSE);
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+    g_return_val_if_fail(out_vlans, FALSE);
+    g_return_val_if_fail(out_num_vlans, FALSE);
+
+    _LOG3D("link: getting bridge VLANs");
+
+    ret = klass->link_get_bridge_vlans(self, ifindex, out_vlans, out_num_vlans);
+
+    if (_LOGD_ENABLED()) {
+        if (!ret) {
+            _LOG3D("link: failure while getting bridge vlans");
+        } else {
+            for (i = 0; i < *out_num_vlans; i++) {
+                _LOG3D("link:   bridge VLAN %s",
+                       nm_platform_bridge_vlan_to_string(&(*out_vlans)[i], sbuf, sizeof(sbuf)));
+            }
+        }
+    }
+
+    return ret;
+}
+
+gboolean
 nm_platform_link_set_bridge_info(NMPlatform                            *self,
                                  int                                    ifindex,
                                  const NMPlatformLinkSetBridgeInfoData *bridge_info)
