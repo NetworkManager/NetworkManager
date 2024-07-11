@@ -1175,6 +1175,10 @@ typedef struct {
                                       gboolean                    on_master,
                                       const NMPlatformBridgeVlan *vlans,
                                       guint                       num_vlans);
+    gboolean (*link_get_bridge_vlans)(NMPlatform            *self,
+                                      int                    ifindex,
+                                      NMPlatformBridgeVlan **out_vlans,
+                                      guint                 *out_num_vlans);
     gboolean (*link_set_bridge_info)(NMPlatform                            *self,
                                      int                                    ifindex,
                                      const NMPlatformLinkSetBridgeInfoData *bridge_info);
@@ -2033,6 +2037,10 @@ gboolean nm_platform_link_set_bridge_vlans(NMPlatform                 *self,
                                            gboolean                    on_master,
                                            const NMPlatformBridgeVlan *vlans,
                                            guint                       num_vlans);
+gboolean nm_platform_link_get_bridge_vlans(NMPlatform            *self,
+                                           int                    ifindex,
+                                           NMPlatformBridgeVlan **out_vlans,
+                                           guint                 *out_num_vlans);
 gboolean nm_platform_link_set_bridge_info(NMPlatform                            *self,
                                           int                                    ifindex,
                                           const NMPlatformLinkSetBridgeInfoData *bridge_info);
