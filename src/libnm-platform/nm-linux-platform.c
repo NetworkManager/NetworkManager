@@ -9476,6 +9476,138 @@ nla_put_failure:
     g_return_val_if_reached(FALSE);
 }
 
+typedef struct {
+    int     ifindex;
+    GArray *vlans;
+} BridgeVlanData;
+
+static int
+get_bridge_vlans_cb(const struct nl_msg *msg, void *arg)
+{
+    static const struct nla_policy policy[] = {
+        [IFLA_AF_SPEC] = {.type = NLA_NESTED},
+    };
+    struct nlattr    *tb[G_N_ELEMENTS(policy)];
+    gboolean          is_range = FALSE;
+    BridgeVlanData   *data     = arg;
+    struct ifinfomsg *ifinfo;
+    struct nlattr    *attr;
+    int               rem;
+
+    if (nlmsg_parse_arr(nlmsg_hdr(msg), sizeof(struct ifinfomsg), tb, policy) < 0)
+        return NL_SKIP;
+
+    ifinfo = NLMSG_DATA(nlmsg_hdr(msg));
+    if (ifinfo->ifi_index != data->ifindex)
+        return NL_SKIP;
+
+    if (!tb[IFLA_AF_SPEC])
+        return NL_SKIP;
+
+    nla_for_each_nested (attr, tb[IFLA_AF_SPEC], rem) {
+        struct bridge_vlan_info vlan_info;
+        NMPlatformBridgeVlan    vlan = {};
+
+        if (nla_type(attr) != IFLA_BRIDGE_VLAN_INFO)
+            continue;
+
+        if (!data->vlans)
+            data->vlans = g_array_new(0, FALSE, sizeof(NMPlatformBridgeVlan));
+
+        vlan_info = *nla_data_as(struct bridge_vlan_info, attr);
+
+        if (is_range) {
+            nm_g_array_index(data->vlans, NMPlatformBridgeVlan, data->vlans->len - 1).vid_end =
+                vlan_info.vid;
+            is_range = FALSE;
+            continue;
+        } else {
+            vlan.vid_start = vlan_info.vid;
+            vlan.vid_end   = vlan_info.vid;
+            vlan.untagged  = vlan_info.flags & BRIDGE_VLAN_INFO_UNTAGGED;
+            vlan.pvid      = vlan_info.flags & BRIDGE_VLAN_INFO_PVID;
+
+            if (vlan_info.flags & BRIDGE_VLAN_INFO_RANGE_BEGIN)
+                is_range = TRUE;
+        }
+
+        g_array_append_val(data->vlans, vlan);
+    }
+
+    return NL_OK;
+}
+
+static gboolean
+link_get_bridge_vlans(NMPlatform            *platform,
+                      int                    ifindex,
+                      NMPlatformBridgeVlan **out_vlans,
+                      guint                 *out_num_vlans)
+{
+    gboolean                     ret   = FALSE;
+    nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+    struct nl_sock              *sk    = NULL;
+    BridgeVlanData               data;
+    int                          nle;
+
+    nlmsg = _nl_msg_new_link_full(RTM_GETLINK, NLM_F_DUMP, 0, NULL, AF_BRIDGE, 0, 0, 0);
+    if (!nlmsg)
+        g_return_val_if_reached(FALSE);
+
+    nle = nl_socket_new(&sk, NETLINK_ROUTE, NL_SOCKET_FLAGS_DISABLE_MSG_PEEK, 0, 0);
+    if (nle < 0) {
+        _LOGD("get-bridge-vlan: error opening socket: %s (%d)", nm_strerror(nle), nle);
+        ret = FALSE;
+        goto err;
+    }
+
+    NLA_PUT_U32(nlmsg, IFLA_EXT_MASK, RTEXT_FILTER_BRVLAN_COMPRESSED);
+
+    nle = nl_send_auto(sk, nlmsg);
+    if (nle < 0) {
+        _LOGD("get-bridge-vlans: failed sending request: %s (%d)", nm_strerror(nle), nle);
+        ret = FALSE;
+        goto err;
+    }
+
+    data = ((BridgeVlanData){
+        .ifindex = ifindex,
+    });
+
+    do {
+        nle = nl_recvmsgs(sk,
+                          &((const struct nl_cb){
+                              .valid_cb  = get_bridge_vlans_cb,
+                              .valid_arg = &data,
+                          }));
+    } while (nle == -EAGAIN);
+
+    if (nle < 0) {
+        _LOGD("get-bridge-vlan: recv failed: %s (%d)", nm_strerror(nle), nle);
+        ret = FALSE;
+        goto err;
+    }
+
+    if (data.vlans) {
+        NM_SET_OUT(out_vlans, &nm_g_array_index(data.vlans, NMPlatformBridgeVlan, 0));
+        NM_SET_OUT(out_num_vlans, data.vlans->len);
+    } else {
+        NM_SET_OUT(out_vlans, NULL);
+        NM_SET_OUT(out_num_vlans, 0);
+    }
+
+    if (data.vlans)
+        g_array_free(data.vlans, !out_vlans);
+
+    ret = TRUE;
+err:
+    if (sk)
+        nl_socket_free(sk);
+    return ret;
+
+nla_put_failure:
+    g_return_val_if_reached(FALSE);
+}
+
 static gboolean
 link_set_bridge_info(NMPlatform                            *platform,
                      int                                    ifindex,
@@ -11815,6 +11947,7 @@ nm_linux_platform_class_init(NMLinuxPlatformClass *klass)
     platform_class->link_set_sriov_params_async        = link_set_sriov_params_async;
     platform_class->link_set_sriov_vfs                 = link_set_sriov_vfs;
     platform_class->link_set_bridge_vlans              = link_set_bridge_vlans;
+    platform_class->link_get_bridge_vlans              = link_get_bridge_vlans;
     platform_class->link_set_bridge_info               = link_set_bridge_info;
 
     platform_class->link_get_physical_port_id = link_get_physical_port_id;
