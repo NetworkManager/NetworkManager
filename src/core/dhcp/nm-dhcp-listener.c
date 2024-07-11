@@ -30,18 +30,18 @@ const NMDhcpClientFactory *const _nm_dhcp_manager_factories[6] = {
 /* the order here matters, as we will try the plugins in this order to find
  * the first available plugin. */
 
+    &_nm_dhcp_client_factory_internal,
 #if WITH_DHCPCANON
     &_nm_dhcp_client_factory_dhcpcanon,
-#endif
-#if WITH_DHCLIENT
-    &_nm_dhcp_client_factory_dhclient,
 #endif
 #if WITH_DHCPCD
     &_nm_dhcp_client_factory_dhcpcd,
 #endif
-    &_nm_dhcp_client_factory_internal,
     &_nm_dhcp_client_factory_systemd,
     &_nm_dhcp_client_factory_nettools,
+#if WITH_DHCLIENT
+    &_nm_dhcp_client_factory_dhclient,
+#endif
 };
 
 /*****************************************************************************/

@@ -50,8 +50,10 @@
 ###############################################################################
 %if 0%{?fedora} > 40 || 0%{?rhel} >= 10
 %bcond_without meson
+%bcond_with dhclient
 %else
 %bcond_with    meson
+%bcond_without dhclient
 %endif
 %bcond_without adsl
 %bcond_without bluetooth
@@ -593,7 +595,11 @@ Preferably use nmcli instead.
 %endif
 	-Dnft=%{_sbindir}/nft \
 	-Diptables=%{_sbindir}/iptables \
+%if %{with dhclient}
 	-Ddhclient=%{_sbindir}/dhclient \
+%else
+	-Ddhclient=no \
+%endif
 	-Ddhcpcanon=no \
 	-Ddhcpcd=no \
 	-Dcrypto=gnutls \
@@ -725,7 +731,11 @@ autoreconf --install --force
 	--enable-static=no \
 	--with-nft=%{_sbindir}/nft \
 	--with-iptables=%{_sbindir}/iptables \
+%if %{with dhclient}
 	--with-dhclient=%{_sbindir}/dhclient \
+%else
+	--with-dhclient=no \
+%endif
 	--with-dhcpcd=no \
 	--with-dhcpcanon=no \
 	--with-crypto=gnutls \

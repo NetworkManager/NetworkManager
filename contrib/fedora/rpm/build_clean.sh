@@ -226,6 +226,7 @@ if [[ $NO_DIST != 1 ]]; then
                 -Dlibaudit=yes-disabled-by-default \
                 -Dpolkit=true \
                 -Dnm_cloud_setup=true \
+                -Ddhclient=/usr/sbin/dhclient \
                 -Dconfig_dhcp_default=internal \
                 -Dconfig_dns_rc_manager_default=auto \
                 -Diptables=/usr/sbin/iptables \
@@ -267,6 +268,7 @@ if [[ $NO_DIST != 1 ]]; then
             --with-libaudit=yes-disabled-by-default \
             --enable-polkit=yes \
             --with-nm-cloud-setup=yes \
+            --with-dhclient=yes \
             --with-config-dhcp-default=internal \
             --with-config-dns-rc-manager-default=auto \
             \

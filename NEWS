@@ -8,6 +8,10 @@ subject to change and not guaranteed to be compatible with
 the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
+* The support for "dhclient" has been deprecated, not built unless
+  explicitely enabled, and will be removed in a future release.
+  The internal DHCP client should be used instead and has been
+  the default since version 1.20 (1.12 when built with meson).
 * Support matching a OVS system interface by MAC address.
 * Add a timeout option to connectivity checking.
 * Support configuring veth interfaces in nmtui.

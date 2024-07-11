@@ -90,8 +90,15 @@ _client_factory_find_by_name(const char *name)
 static const NMDhcpClientFactory *
 _client_factory_available(const NMDhcpClientFactory *client_factory)
 {
-    if (client_factory && (!client_factory->get_path || client_factory->get_path()))
-        return client_factory;
+    if (client_factory) {
+        if (nm_streq(client_factory->name, "dhclient")) {
+            _LOGW(AF_UNSPEC,
+                  "attempting to used a deprecated DHCP client '%s' ",
+                  client_factory->name);
+        }
+        if (!client_factory->get_path || client_factory->get_path())
+            return client_factory;
+    }
     return NULL;
 }
 
