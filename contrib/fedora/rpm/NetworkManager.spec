@@ -160,32 +160,32 @@
 %endif
 
 %if 0%{?fedora} >= 33 || 0%{?rhel} >= 9
-%global config_plugins_default_ifcfg_rh 0
+%bcond_with default_ifcfg_rh
 %else
-%global config_plugins_default_ifcfg_rh 1
+%bcond_without default_ifcfg_rh
 %endif
 
 %if 0%{?rhel} >= 10
-%global with_ifcfg_rh 0
-%global split_ifcfg_rh 0
+%bcond_with ifcfg_rh
+%bcond_with split_ifcfg_rh
 %elif 0%{?fedora} >= 36
-%global with_ifcfg_rh 1
-%global split_ifcfg_rh 1
+%bcond_without ifcfg_rh
+%bcond_without split_ifcfg_rh
 %else
-%global with_ifcfg_rh 1
-%global split_ifcfg_rh 0
+%bcond_without ifcfg_rh
+%bcond_with split_ifcfg_rh
 %endif
 
 %if (0%{?fedora} >= 36 && 0%{?fedora} < 39) || 0%{?rhel} == 9
-%global ifcfg_warning 1
+%bcond_without ifcfg_warning
 %else
-%global ifcfg_warning 0
+%bcond_with ifcfg_warning
 %endif
 
 %if 0%{?fedora} >= 39
-%global ifcfg_migrate 1
+%bcond_without ifcfg_migrate
 %else
-%global ifcfg_migrate 0
+%bcond_with ifcfg_migrate
 %endif
 
 %if 0%{?fedora}
@@ -250,7 +250,7 @@ Obsoletes: NetworkManager-wimax < 1:1.2
 Suggests: NetworkManager-initscripts-updown
 %endif
 Obsoletes: NetworkManager < %{obsoletes_initscripts_updown}
-%if 0%{?split_ifcfg_rh}
+%if %{with split_ifcfg_rh}
 Obsoletes: NetworkManager < %{obsoletes_ifcfg_rh}
 %endif
 
@@ -567,11 +567,11 @@ This package is intended to be installed by default for server
 deployments.
 
 
-%if %{?with_ifcfg_rh}
+%if %{with ifcfg_rh}
 %package dispatcher-routing-rules
 Summary: NetworkManager dispatcher file for advanced routing rules
 Group: System Environment/Base
-%if 0%{?split_ifcfg_rh}
+%if %{with split_ifcfg_rh}
 Requires: %{name}-initscripts-ifcfg-rh
 %endif
 BuildArch: noarch
@@ -599,7 +599,7 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 %endif
 
 
-%if 0%{?split_ifcfg_rh}
+%if %{with split_ifcfg_rh}
 %package initscripts-ifcfg-rh
 Summary: NetworkManager plugin for reading and writing connections in ifcfg-rh format
 Group: System Environment/Base
@@ -626,7 +626,7 @@ like Aliyun, Azure, EC2, GCP are supported.
 %endif
 
 
-%if %{?with_ifcfg_rh}
+%if %{with ifcfg_rh}
 %package initscripts-updown
 Summary: Legacy ifup/ifdown scripts for NetworkManager that replace initscripts (network-scripts)
 Group: System Environment/Base
@@ -640,6 +640,7 @@ Installs alternative ifup/ifdown scripts that talk to NetworkManager.
 This is only for backward compatibility with initscripts (network-scripts).
 Preferably use nmcli instead.
 %endif
+
 
 %prep
 %autosetup -p1 -n NetworkManager-%{real_version}
@@ -753,7 +754,7 @@ Preferably use nmcli instead.
 	-Ddbus_conf_dir=%{dbus_sys_dir} \
 	-Dtests=yes \
 	-Dvalgrind=no \
-%if %{?with_ifcfg_rh}
+%if %{with ifcfg_rh}
 	-Difcfg_rh=true \
 %else
 	-Difcfg_rh=false \
@@ -772,10 +773,10 @@ Preferably use nmcli instead.
 	-Dfirewalld_zone=false \
 %endif
 	-Ddist_version=%{version}-%{release} \
-%if %{?config_plugins_default_ifcfg_rh}
+%if %{with default_ifcfg_rh}
 	-Dconfig_plugins_default=ifcfg-rh \
 %endif
-%if %{?ifcfg_migrate}
+%if %{with ifcfg_migrate}
 	-Dconfig_migrate_ifcfg_rh_default=true \
 %endif
 	-Dresolvconf=no \
@@ -905,10 +906,10 @@ autoreconf --install --force
 	--enable-more-warnings=yes \
 %endif
 	--with-valgrind=no \
-%if %{?with_ifcfg_rh}
+%if %{with ifcfg_rh}
 	--enable-ifcfg-rh=yes \
 %else
-        --enable-ifcfg-rh=no \
+	--enable-ifcfg-rh=no \
 %endif
 	--enable-ifupdown=no \
 %if %{with ppp}
@@ -924,10 +925,10 @@ autoreconf --install --force
 	--enable-firewalld-zone=no \
 %endif
 	--with-dist-version=%{version}-%{release} \
-%if %{?config_plugins_default_ifcfg_rh}
+%if %{with default_ifcfg_rh}
 	--with-config-plugins-default=ifcfg-rh \
 %endif
-%if %{?ifcfg_migrate}
+%if %{with ifcfg_migrate}
 	--with-config-migrate-ifcfg-rh-default=yes \
 %endif
 	--with-resolvconf=no \
@@ -965,14 +966,14 @@ cp %{SOURCE7} %{buildroot}%{_sysctldir}
 cp %{SOURCE6} %{buildroot}%{nmlibdir}/conf.d/
 %endif
 
-%if 0%{?ifcfg_warning}
+%if %{with ifcfg_warning}
 cp %{SOURCE8} %{buildroot}%{_sysconfdir}/sysconfig/network-scripts
 %endif
-%if 0%{?ifcfg_migrate}
+%if %{with ifcfg_migrate}
 cp %{SOURCE9} %{buildroot}%{_sysconfdir}/sysconfig/network-scripts/readme-ifcfg-rh.txt
 %endif
 
-%if %{?with_ifcfg_rh}
+%if %{with ifcfg_rh}
 cp examples/dispatcher/10-ifcfg-rh-routes.sh %{buildroot}%{nmlibdir}/dispatcher.d/
 ln -s ../no-wait.d/10-ifcfg-rh-routes.sh %{buildroot}%{nmlibdir}/dispatcher.d/pre-up.d/
 ln -s ../10-ifcfg-rh-routes.sh %{buildroot}%{nmlibdir}/dispatcher.d/no-wait.d/
@@ -992,10 +993,11 @@ mkdir -p %{buildroot}%{_prefix}/src/debug/NetworkManager-%{real_version}
 cp valgrind.suppressions %{buildroot}%{_prefix}/src/debug/NetworkManager-%{real_version}
 %endif
 
-%if %{?with_ifcfg_rh}
+%if %{with ifcfg_rh}
 touch %{buildroot}%{_sbindir}/ifup
 touch %{buildroot}%{_sbindir}/ifdown
 %endif
+
 
 %check
 %if %{with meson}
@@ -1038,7 +1040,7 @@ fi
 %systemd_post %{systemd_units}
 
 
-%if %{?with_ifcfg_rh}
+%if %{with ifcfg_rh}
 %post initscripts-updown
 if [ -f %{_sbindir}/ifup -a ! -L %{_sbindir}/ifup ]; then
     # initscripts package too old, won't let us set an alternative
@@ -1067,7 +1069,7 @@ fi
 %systemd_preun NetworkManager-wait-online.service NetworkManager-dispatcher.service nm-priv-helper.service
 
 
-%if %{?with_ifcfg_rh}
+%if %{with ifcfg_rh}
 %preun initscripts-updown
 if [ $1 -eq 0 ]; then
     /usr/sbin/update-alternatives --remove ifup %{_libexecdir}/nm-ifup >/dev/null 2>&1 || :
@@ -1107,7 +1109,7 @@ fi
 %{dbus_sys_dir}/org.freedesktop.NetworkManager.conf
 %{dbus_sys_dir}/nm-dispatcher.conf
 %{dbus_sys_dir}/nm-priv-helper.conf
-%if %{?with_ifcfg_rh} && 0%{?split_ifcfg_rh} == 0
+%if %{with ifcfg_rh} && %{without split_ifcfg_rh}
 %{dbus_sys_dir}/nm-ifcfg-rh.conf
 %endif
 %{_sbindir}/%{name}
@@ -1135,7 +1137,7 @@ fi
 %{_libexecdir}/nm-priv-helper
 %dir %{_libdir}/%{name}
 %dir %{nmplugindir}
-%if %{?with_ifcfg_rh} && 0%{?split_ifcfg_rh} == 0
+%if %{with ifcfg_rh} && %{without split_ifcfg_rh}
 %{nmplugindir}/libnm-settings-plugin-ifcfg-rh.so
 %endif
 %if %{with nmtui}
@@ -1157,7 +1159,7 @@ fi
 %{_mandir}/man8/NetworkManager-dispatcher.8*
 %{_mandir}/man8/NetworkManager-wait-online.service.8*
 %dir %{_localstatedir}/lib/NetworkManager
-%if %{?with_ifcfg_rh}
+%if %{with ifcfg_rh}
 %dir %{_sysconfdir}/sysconfig/network-scripts
 %endif
 %{_datadir}/dbus-1/system-services/org.freedesktop.nm_dispatcher.service
@@ -1174,7 +1176,7 @@ fi
 %{_unitdir}/nm-priv-helper.service
 %dir %{_datadir}/doc/NetworkManager/examples
 %{_datadir}/doc/NetworkManager/examples/server.conf
-%if 0%{?ifcfg_warning} || 0%{?ifcfg_migrate}
+%if %{with ifcfg_warning} || %{with ifcfg_migrate}
 %{_sysconfdir}/sysconfig/network-scripts/readme-ifcfg-rh.txt
 %endif
 %doc NEWS AUTHORS README.md CONTRIBUTING.md
@@ -1274,12 +1276,13 @@ fi
 %{nmlibdir}/conf.d/00-server.conf
 
 
-%if %{?with_ifcfg_rh}
+%if %{with ifcfg_rh}
 %files dispatcher-routing-rules
 %{nmlibdir}/dispatcher.d/10-ifcfg-rh-routes.sh
 %{nmlibdir}/dispatcher.d/no-wait.d/10-ifcfg-rh-routes.sh
 %{nmlibdir}/dispatcher.d/pre-up.d/10-ifcfg-rh-routes.sh
 %endif
+
 
 %if %{with nmtui}
 %files tui
@@ -1291,7 +1294,7 @@ fi
 %endif
 
 
-%if 0%{?split_ifcfg_rh}
+%if %{with split_ifcfg_rh}
 %files initscripts-ifcfg-rh
 %{nmplugindir}/libnm-settings-plugin-ifcfg-rh.so
 %{dbus_sys_dir}/nm-ifcfg-rh.conf
@@ -1310,7 +1313,7 @@ fi
 %endif
 
 
-%if %{?with_ifcfg_rh}
+%if %{with ifcfg_rh}
 %files initscripts-updown
 %{_libexecdir}/nm-ifup
 %ghost %attr(755, root, root) %{_sbindir}/ifup
