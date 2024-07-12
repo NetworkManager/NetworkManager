@@ -871,20 +871,28 @@ nm_active_connection_set_controller(NMActiveConnection *self, NMActiveConnection
 
     priv = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
 
-    /* Controller is write-once, and must be set before exporting the object */
-    g_return_if_fail(priv->controller == NULL);
-    g_return_if_fail(!nm_dbus_object_is_exported(NM_DBUS_OBJECT(self)));
+    if (priv->controller != NULL) {
+        _LOGD("releasing previous controller " NM_HASH_OBFUSCATE_PTR_FMT " %s, state %s",
+              NM_HASH_OBFUSCATE_PTR(priv->controller),
+              nm_active_connection_get_settings_connection_id(priv->controller),
+              state_to_string_a(nm_active_connection_get_state(priv->controller)));
+        g_clear_object(&priv->controller);
+    }
+
     if (priv->device) {
         /* Note, the master ActiveConnection may not yet have a device */
         g_return_if_fail(priv->device != nm_active_connection_get_device(controller));
     }
 
-    _LOGD("set controller %p, %s, state %s",
-          controller,
+    _LOGD("set controller " NM_HASH_OBFUSCATE_PTR_FMT ", %s, state %s",
+          NM_HASH_OBFUSCATE_PTR(controller),
           nm_active_connection_get_settings_connection_id(controller),
           state_to_string_a(nm_active_connection_get_state(controller)));
 
     priv->controller = g_object_ref(controller);
+
+    _notify(self, PROP_CONTROLLER);
+
     g_signal_connect(priv->controller,
                      "notify::" NM_ACTIVE_CONNECTION_STATE,
                      G_CALLBACK(master_state_cb),
@@ -903,15 +911,20 @@ nm_active_connection_set_controller_dev(NMActiveConnection *self, NMDevice *cont
 
     priv = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
 
-    /* Controller device is write-once, and must be set before exporting the object */
-    g_return_if_fail(priv->controller_dev == NULL);
-    g_return_if_fail(!nm_dbus_object_is_exported(NM_DBUS_OBJECT(self)));
+    if (priv->controller_dev != NULL) {
+        _LOGD("releasing previous controller device " NM_HASH_OBFUSCATE_PTR_FMT " %s(%s), state %s",
+              NM_HASH_OBFUSCATE_PTR(priv->controller_dev),
+              nm_device_get_iface(priv->controller_dev),
+              nm_device_get_type_desc(priv->controller_dev),
+              nm_device_state_to_string(nm_device_get_state(priv->controller_dev)));
+        g_clear_object(&priv->controller_dev);
+    }
     if (priv->device) {
         g_return_if_fail(priv->device != controller_dev);
     }
 
-    _LOGD("set controller device %p, %s(%s), state %s",
-          controller_dev,
+    _LOGD("set controller device " NM_HASH_OBFUSCATE_PTR_FMT ", %s(%s), state %s",
+          NM_HASH_OBFUSCATE_PTR(controller_dev),
           nm_device_get_iface(controller_dev),
           nm_device_get_type_desc(controller_dev),
           nm_device_state_to_string(nm_device_get_state(controller_dev)));
