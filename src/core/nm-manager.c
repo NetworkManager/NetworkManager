@@ -5953,15 +5953,21 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
             && (nm_device_get_state_reason(master_device)
                 == NM_DEVICE_STATE_REASON_NEW_ACTIVATION)) {
             nm_active_connection_set_controller_dev(active, master_device);
+            _LOGD(LOGD_CORE,
+                  "Activation of '%s'(%s) depends on controller device %p %s",
+                  nm_settings_connection_get_id(sett_conn),
+                  nm_settings_connection_get_connection_type(sett_conn),
+                  master_device,
+                  nm_dbus_object_get_path(NM_DBUS_OBJECT(master_device)) ?: "");
         } else {
             nm_active_connection_set_master(active, master_ac);
+            _LOGD(LOGD_CORE,
+                  "Activation of '%s'(%s) depends on active connection %p %s",
+                  nm_settings_connection_get_id(sett_conn),
+                  nm_settings_connection_get_connection_type(sett_conn),
+                  master_ac,
+                  nm_dbus_object_get_path(NM_DBUS_OBJECT(master_ac)) ?: "");
         }
-
-        _LOGD(LOGD_CORE,
-              "Activation of '%s' depends on active connection %p %s",
-              nm_settings_connection_get_id(sett_conn),
-              master_ac,
-              nm_dbus_object_get_path(NM_DBUS_OBJECT(master_ac)) ?: "");
     }
 
     /* Check slaves for master connection and possibly activate them */
