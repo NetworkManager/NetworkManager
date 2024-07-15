@@ -283,7 +283,9 @@ edit_clicked(NmtNewtButton *button, gpointer list)
     NMConnection                 *connection;
 
     connection = nmt_newt_listbox_get_active_key(priv->listbox);
-    g_return_if_fail(connection != NULL);
+    if (connection == NULL) {
+        return;
+    }
 
     g_signal_emit(list, signals[EDIT_CONNECTION], 0, connection);
 }
@@ -295,7 +297,9 @@ delete_clicked(NmtNewtButton *button, gpointer list)
     NMRemoteConnection           *connection;
 
     connection = nmt_newt_listbox_get_active_key(priv->listbox);
-    g_return_if_fail(connection != NULL);
+    if (connection == NULL) {
+        return;
+    }
 
     g_signal_emit(list, signals[REMOVE_CONNECTION], 0, connection);
 }
