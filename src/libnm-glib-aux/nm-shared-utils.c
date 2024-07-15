@@ -3014,6 +3014,60 @@ nm_utils_buf_utf8safe_escape_cp(gconstpointer buf, gssize buflen, NMUtilsStrUtf8
     return s ?: g_strdup(s_const);
 }
 
+/**
+ * nm_utils_buf_utf8safe_escape_strv:
+ * @strv: an array of strings of length @strv_len
+ * @strv_len: the length of @strv, or -1 for a NULL terminated strv array.
+ * @flags: #NMUtilsStrUtf8SafeFlags flags
+ * @to_free: (out): return the pointer location of the newly created
+ *   strv if copying was necessary.
+ *
+ * Ensures all strings in a strv are valid UTF-8, copying them unless they
+ * need to be escaped, and escaping them using nm_utils_buf_utf8safe_escape().
+ *
+ * Returns: a strv with all its strings escaped, as valid UTF-8. All the strings
+ *   contained within are escaped using nm_utils_buf_utf8safe_escape().
+ *   If no escaping was necessary it returns the input @strv.
+ *   Otherwise, an allocated strv @to_free is returned which must be freed
+ *   by the caller with g_strfreev().
+ **/
+const char *const *
+nm_utils_buf_utf8safe_escape_strv(const char *const      *strv,
+                                  gssize                  strv_len,
+                                  NMUtilsStrUtf8SafeFlags flags,
+                                  char                 ***out_to_free)
+{
+    char **new_strv = NULL;
+    guint  len;
+
+    g_return_val_if_fail(strv, NULL);
+    g_return_val_if_fail(out_to_free, NULL);
+
+    *out_to_free = NULL;
+    len          = strv_len < 0 ? g_strv_length((char **) strv) : strv_len;
+
+    for (guint i = 0; i < len; ++i) {
+        char *to_free_str = NULL;
+
+        nm_utils_buf_utf8safe_escape(strv[i], -1, flags, &to_free_str);
+
+        if (to_free_str) {
+            if (!new_strv) {
+                new_strv = nm_strv_dup(strv, len, TRUE);
+            }
+
+            g_free(new_strv[i]);
+            new_strv[i] = to_free_str;
+        }
+    }
+
+    if (new_strv) {
+        return (const char *const *) (*out_to_free = new_strv);
+    }
+
+    return strv;
+}
+
 /*****************************************************************************/
 
 const char *
