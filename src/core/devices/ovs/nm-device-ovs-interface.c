@@ -200,7 +200,9 @@ set_platform_mtu(NMDevice *device, guint32 mtu)
 static gboolean
 ready_for_ip_config(NMDevice *device, gboolean is_manual)
 {
-    return nm_device_get_ip_ifindex(device) > 0;
+    NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(device);
+
+    return nm_device_get_ip_ifindex(device) > 0 && !priv->wait_link_is_waiting;
 }
 
 static gboolean
