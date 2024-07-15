@@ -166,6 +166,7 @@ get_property_ip(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec
     const char *const *strv;
     guint              len;
     int                v_i;
+    char             **to_free;
 
     switch (prop_id) {
     case PROP_IP_ADDRESS_DATA:
@@ -193,6 +194,17 @@ get_property_ip(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec
         break;
     case PROP_IP_SEARCHES:
         strv = nm_l3_config_data_get_searches(priv->l3cd, addr_family, &len);
+        if (strv) {
+            strv = nm_utils_buf_utf8safe_escape_strv(
+                strv,
+                NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL
+                    | NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII,
+                &to_free);
+        }
+
+        if (to_free) {
+            g_strfreev(to_free);
+        }
         _value_set_variant_as(value, strv, len);
         break;
     case PROP_IP_DNS_PRIORITY:
