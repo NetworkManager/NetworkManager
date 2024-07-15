@@ -3014,6 +3014,40 @@ nm_utils_buf_utf8safe_escape_cp(gconstpointer buf, gssize buflen, NMUtilsStrUtf8
     return s ?: g_strdup(s_const);
 }
 
+const char *const *
+nm_utils_buf_utf8safe_escape_strv(const char *const      *strv,
+                                  NMUtilsStrUtf8SafeFlags flags,
+                                  char                 ***out_to_free)
+{
+    char **new_strv = NULL;
+    guint  len;
+
+    g_return_val_if_fail(strv != NULL, NULL);
+    g_return_val_if_fail(out_to_free, NULL);
+
+    *out_to_free = NULL;
+    len          = g_strv_length((char **) strv);
+
+    for (guint i = 0; i < len; ++i) {
+        char       *to_free_str = NULL;
+        const char *escaped     = nm_utils_buf_utf8safe_escape(strv[i], -1, flags, &to_free_str);
+        if (to_free_str) {
+            if (!new_strv) {
+                new_strv = nm_strv_dup(strv, len, TRUE);
+            }
+
+            g_free(new_strv[i]);
+            new_strv[i] = (char *) escaped;
+        }
+    }
+
+    if (new_strv) {
+        return (const char *const *) (*out_to_free = new_strv);
+    }
+
+    return strv;
+}
+
 /*****************************************************************************/
 
 const char *
