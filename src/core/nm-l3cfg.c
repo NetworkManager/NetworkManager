@@ -393,7 +393,7 @@ G_DEFINE_TYPE(NML3Cfg, nm_l3cfg, G_TYPE_OBJECT)
     {                                                              \
         char _sbuf_acd[NM_INET_ADDRSTRLEN];                        \
                                                                    \
-        _LOGT("acd[%s, %s]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),  \
+        _LOGW("acd[%s, %s]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),  \
               nm_inet4_ntop((acd_data)->info.addr, _sbuf_acd),     \
               _l3_acd_addr_state_to_string((acd_data)->info.state) \
                   _NM_UTILS_MACRO_REST(__VA_ARGS__));              \
@@ -653,7 +653,7 @@ _nm_l3cfg_emit_signal_notify(NML3Cfg *self, const NML3ConfigNotifyData *notify_d
     nm_assert(_NM_INT_NOT_NEGATIVE(notify_data->notify_type));
     nm_assert(notify_data->notify_type < _NM_L3_CONFIG_NOTIFY_TYPE_NUM);
 
-    _LOGT("emit signal (%s)", _l3_config_notify_data_to_string(notify_data, sbuf, sizeof(sbuf)));
+    _LOGW("emit signal (%s)", _l3_config_notify_data_to_string(notify_data, sbuf, sizeof(sbuf)));
 
     g_signal_emit(self, signals[SIGNAL_NOTIFY], 0, notify_data);
 }
@@ -689,7 +689,7 @@ _nm_l3cfg_emit_signal_notify_l3cd_changed(NML3Cfg              *self,
 static void
 _l3_changed_configs_set_dirty(NML3Cfg *self, const char *reason)
 {
-    _LOGT("IP configuration changed (mark dirty): %s", reason);
+    _LOGW("IP configuration changed (mark dirty): %s", reason);
     self->priv.p->changed_configs_configs   = TRUE;
     self->priv.p->changed_configs_acd_state = TRUE;
 }
@@ -964,7 +964,7 @@ _obj_states_externally_removed_track(NML3Cfg *self, const NMPObject *obj, gboole
         nm_assert(obj_state->os_failedobj_prioq_idx == NM_PRIOQ_IDX_NULL);
         nm_clear_nmp_object(&obj_state->os_plobj);
         c_list_unlink(&obj_state->os_zombie_lst);
-        _LOGD("obj-state: zombie gone (untrack): %s",
+        _LOGW("obj-state: zombie gone (untrack): %s",
               _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
         g_hash_table_remove(self->priv.p->obj_state_hash, obj_state);
         return;
@@ -980,17 +980,17 @@ _obj_states_externally_removed_track(NML3Cfg *self, const NMPObject *obj, gboole
         if (obj_state->os_failedobj_expiry_msec != 0) {
             obj_state->os_failedobj_expiry_msec = 0;
             if (obj_state->os_failedobj_prioq_idx == NM_PRIOQ_IDX_NULL) {
-                _LOGT("obj-state: failed-obj: object now configured after failed earlier: %s",
+                _LOGW("obj-state: failed-obj: object now configured after failed earlier: %s",
                       _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
             } else {
                 nm_prioq_remove(&self->priv.p->failedobj_prioq,
                                 obj_state,
                                 &obj_state->os_failedobj_prioq_idx);
-                _LOGT("obj-state: failed-obj: object now configured after waiting: %s",
+                _LOGW("obj-state: failed-obj: object now configured after waiting: %s",
                       _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
             }
         } else {
-            _LOGD("obj-state: appeared in platform: %s",
+            _LOGW("obj-state: appeared in platform: %s",
                   _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
         }
         nm_assert(obj_state->os_failedobj_prioq_idx == NM_PRIOQ_IDX_NULL);
@@ -998,7 +998,7 @@ _obj_states_externally_removed_track(NML3Cfg *self, const NMPObject *obj, gboole
     }
 
     nm_clear_nmp_object(&obj_state->os_plobj);
-    _LOGD("obj-state: remove from platform: %s",
+    _LOGW("obj-state: remove from platform: %s",
           _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
 
 out:
@@ -1018,7 +1018,7 @@ _obj_states_track_new(NML3Cfg *self, const NMPObject *obj, gboolean dynamic)
     obj_state->os_non_dynamic = !dynamic;
     c_list_link_tail(&self->priv.p->obj_state_lst_head, &obj_state->os_lst);
     g_hash_table_add(self->priv.p->obj_state_hash, obj_state);
-    _LOGD("obj-state: track%s: %s",
+    _LOGW("obj-state: track%s: %s",
           dynamic ? " (dynamic)" : "",
           _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
     nm_assert_obj_state(self, obj_state);
@@ -1065,7 +1065,7 @@ _obj_states_track_update(NML3Cfg         *self,
     if (changed) {
         char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
 
-        _LOGD("obj-state: update: %s (static: %d, dynamic: %d)",
+        _LOGW("obj-state: update: %s (static: %d, dynamic: %d)",
               _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)),
               !!obj_state->os_non_dynamic,
               !!obj_state->os_dynamic);
@@ -1137,12 +1137,12 @@ _obj_states_track_prune_dirty(NML3Cfg *self, gboolean also_dynamic)
             nm_assert(obj_state->os_failedobj_prioq_idx == NM_PRIOQ_IDX_NULL);
             c_list_link_tail(&self->priv.p->obj_state_zombie_lst_head, &obj_state->os_zombie_lst);
             obj_state->os_zombie_count = ZOMBIE_COUNT_START;
-            _LOGD("obj-state: now zombie: %s",
+            _LOGW("obj-state: now zombie: %s",
                   _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
             continue;
         }
 
-        _LOGD("obj-state: untrack: %s", _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
+        _LOGW("obj-state: untrack: %s", _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
         nm_prioq_remove(&self->priv.p->failedobj_prioq,
                         obj_state,
                         &obj_state->os_failedobj_prioq_idx);
@@ -1230,7 +1230,7 @@ _obj_states_sync_filter(NML3Cfg *self, const NMPObject *obj, NML3CfgCommitType c
     if (!obj_state->os_nm_configured) {
         obj_state->os_nm_configured = TRUE;
 
-        _LOGD("obj-state: configure-first-time: %s",
+        _LOGW("obj-state: configure-first-time: %s",
               _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
         return TRUE;
     }
@@ -1439,13 +1439,13 @@ _obj_state_zombie_lst_get_prune_lists(NML3Cfg    *self,
         g_ptr_array_add(*p_a, (gpointer) nmp_object_ref(obj_state->obj));
 
         if (--obj_state->os_zombie_count == 0) {
-            _LOGD("obj-state: prune zombie (untrack): %s",
+            _LOGW("obj-state: prune zombie (untrack): %s",
                   _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
             nm_assert(obj_state->os_failedobj_prioq_idx == NM_PRIOQ_IDX_NULL);
             g_hash_table_remove(self->priv.p->obj_state_hash, obj_state);
             continue;
         }
-        _LOGD("obj-state: prune zombie: %s",
+        _LOGW("obj-state: prune zombie: %s",
               _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
     }
 }
@@ -1474,13 +1474,13 @@ _obj_state_zombie_lst_prune_all(NML3Cfg *self, int addr_family)
             continue;
 
         if (--obj_state->os_zombie_count == 0) {
-            _LOGD("obj-state: zombie pruned during reapply (untrack): %s",
+            _LOGW("obj-state: zombie pruned during reapply (untrack): %s",
                   _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
             nm_assert(obj_state->os_failedobj_prioq_idx == NM_PRIOQ_IDX_NULL);
             g_hash_table_remove(self->priv.p->obj_state_hash, obj_state);
             continue;
         }
-        _LOGD("obj-state: zombie pruned during reapply: %s",
+        _LOGW("obj-state: zombie pruned during reapply: %s",
               _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
     }
 }
@@ -1543,22 +1543,22 @@ _load_link(NML3Cfg *self, gboolean initial)
     ifname     = nmp_object_link_get_ifname(self->priv.plobj);
 
     if (initial) {
-        _LOGT("link ifname changed: %s%s%s (initial)", NM_PRINT_FMT_QUOTE_STRING(ifname));
+        _LOGW("link ifname changed: %s%s%s (initial)", NM_PRINT_FMT_QUOTE_STRING(ifname));
     } else if (!nm_streq0(ifname, ifname_old)) {
-        _LOGT("link ifname changed: %s%s%s (was %s%s%s)",
+        _LOGW("link ifname changed: %s%s%s (was %s%s%s)",
               NM_PRINT_FMT_QUOTE_STRING(ifname),
               NM_PRINT_FMT_QUOTE_STRING(ifname_old));
     }
 
     if (nacd_changed) {
         if (!c_list_is_empty(&self->priv.p->acd_lst_head))
-            _LOGT("acd: link change causes restart of ACD");
+            _LOGW("acd: link change causes restart of ACD");
         _l3_acd_nacd_instance_reset(self, NM_TERNARY_FALSE, TRUE);
     } else if (nacd_link_now_up) {
         if (!c_list_is_empty(&self->priv.p->acd_lst_head)) {
             gint64 now_msec = 0;
 
-            _LOGT("acd: link up requires are re-initialize of ACD probes");
+            _LOGW("acd: link up requires are re-initialize of ACD probes");
             c_list_for_each_entry (acd_data, &self->priv.p->acd_lst_head, acd_lst) {
                 _l3_acd_data_state_change(self,
                                           acd_data,
@@ -1773,7 +1773,7 @@ _l3_acd_nacd_event_down_timeout_cb(gpointer user_data)
     AcdData *acd_data;
     gint64   now_msec = 0;
 
-    _LOGT("acd: message possibly dropped due to device down (handle events)");
+    _LOGW("acd: message possibly dropped due to device down (handle events)");
     nm_clear_g_source_inst(&self->priv.p->nacd_event_down_source);
     c_list_for_each_entry (acd_data, &self->priv.p->acd_lst_head, acd_lst)
         _l3_acd_data_state_change(self, acd_data, ACD_STATE_CHANGE_MODE_NACD_DOWN, NULL, &now_msec);
@@ -1793,7 +1793,7 @@ _l3_acd_nacd_event(int fd, GIOCondition condition, gpointer user_data)
 
     r = n_acd_dispatch(self->priv.p->nacd);
     if (!NM_IN_SET(r, 0, N_ACD_E_PREEMPTED)) {
-        _LOGT("acd: dispatch failed with error %d", r);
+        _LOGW("acd: dispatch failed with error %d", r);
         goto out;
     }
 
@@ -1812,7 +1812,7 @@ _l3_acd_nacd_event(int fd, GIOCondition condition, gpointer user_data)
 
         r = n_acd_pop_event(self->priv.p->nacd, &event);
         if (r) {
-            _LOGT("acd: pop-event failed with error %d", r);
+            _LOGW("acd: pop-event failed with error %d", r);
             goto out;
         }
         if (!event) {
@@ -1876,7 +1876,7 @@ _l3_acd_nacd_event(int fd, GIOCondition condition, gpointer user_data)
                     timeout_msec                                         = 0;
                     self->priv.p->nacd_event_down_ratelimited_until_msec = now_msec + 2000;
                 }
-                _LOGT("acd: message possibly dropped due to device down (schedule handling event "
+                _LOGW("acd: message possibly dropped due to device down (schedule handling event "
                       "in %u msec)",
                       timeout_msec);
                 self->priv.p->nacd_event_down_source =
@@ -1924,7 +1924,7 @@ _l3_acd_nacd_instance_reset(NML3Cfg *self, NMTernary start_timer, gboolean acd_d
     nm_assert(NM_IS_L3CFG(self));
 
     if (self->priv.p->nacd) {
-        _LOGT("acd: clear nacd instance");
+        _LOGW("acd: clear nacd instance");
         self->priv.p->nacd = n_acd_unref(self->priv.p->nacd);
     }
     nm_clear_g_source_inst(&self->priv.p->nacd_source);
@@ -2434,7 +2434,7 @@ _nm_printf(5, 6) static void _l3_acd_data_state_set_full(NML3Cfg         *self,
     else
         changed = FALSE;
 
-    if (_LOGT_ENABLED()) {
+    if (_LOGW_ENABLED()) {
         if (format) {
             gs_free char *msg = NULL;
             va_list       args;
@@ -2799,7 +2799,7 @@ handle_init:
             _l3_acd_data_timeout_schedule(acd_data, ACD_WAIT_TIME_PROBING_FULL_RESTART_MSEC);
 
         if (!_l3_acd_data_defendconflict_warning_ratelimited(acd_data, p_now_msec)) {
-            _LOGD("IPv4 address %s is used on network connected to interface %d%s%s%s from "
+            _LOGW("IPv4 address %s is used on network connected to interface %d%s%s%s from "
                   "host %s",
                   nm_inet4_ntop(acd_data->info.addr, sbuf_addr),
                   self->priv.ifindex,
@@ -2830,7 +2830,7 @@ handle_init:
                   nm_ether_addr_to_string_a(sender_addr));
 
         if (!_l3_acd_data_defendconflict_warning_ratelimited(acd_data, p_now_msec)) {
-            _LOGD("IPv4 address collision detection sees conflict on interface %d%s%s%s for "
+            _LOGW("IPv4 address collision detection sees conflict on interface %d%s%s%s for "
                   "address %s from host %s",
                   self->priv.ifindex,
                   NM_PRINT_FMT_QUOTED(self->priv.plobj_next,
@@ -3399,7 +3399,7 @@ nm_l3cfg_commit_on_idle_schedule(NML3Cfg *self, NML3CfgCommitType commit_type)
     if (self->priv.p->commit_on_idle_source) {
         if (self->priv.p->commit_on_idle_type < commit_type) {
             /* For multiple calls, we collect the maximum "commit-type". */
-            _LOGT("schedule commit on idle (upgrade type to %s)",
+            _LOGW("schedule commit on idle (upgrade type to %s)",
                   _l3_cfg_commit_type_to_string(commit_type,
                                                 sbuf_commit_type,
                                                 sizeof(sbuf_commit_type)));
@@ -3408,7 +3408,7 @@ nm_l3cfg_commit_on_idle_schedule(NML3Cfg *self, NML3CfgCommitType commit_type)
         return FALSE;
     }
 
-    _LOGT("schedule commit on idle (%s)",
+    _LOGW("schedule commit on idle (%s)",
           _l3_cfg_commit_type_to_string(commit_type, sbuf_commit_type, sizeof(sbuf_commit_type)));
     self->priv.p->commit_on_idle_source = nm_g_idle_add_source(_l3_commit_on_idle_cb, self);
     self->priv.p->commit_on_idle_type   = commit_type;
@@ -4094,11 +4094,11 @@ out:
         NM_SET_OUT(out_changed_combined_l3cd, TRUE);
     }
 
-    if ((merged_changed || commited_changed) && _LOGT_ENABLED()) {
+    if ((merged_changed || commited_changed) && _LOGW_ENABLED()) {
         char sbuf256[256];
         char sbuf30[30];
 
-        _LOGT("IP configuration changed (merged=%c%s, commited=%c%s)",
+        _LOGW("IP configuration changed (merged=%c%s, commited=%c%s)",
               merged_changed ? '>' : '=',
               NM_HASH_OBFUSCATE_PTR_STR(self->priv.p->combined_l3cd_merged, sbuf256),
               commited_changed ? '>' : '=',
@@ -4125,7 +4125,7 @@ _failedobj_timeout_cb(gpointer user_data)
 {
     NML3Cfg *self = NM_L3CFG(user_data);
 
-    _LOGT("obj-state: failed-obj: handle timeout");
+    _LOGW("obj-state: failed-obj: handle timeout");
 
     nm_clear_g_source_inst(&self->priv.p->failedobj_timeout_source);
 
@@ -4171,7 +4171,7 @@ again:
 
     if (!obj_state) {
         if (nm_clear_g_source_inst(&self->priv.p->failedobj_timeout_source))
-            _LOGT("obj-state: failed-obj: cancel timeout");
+            _LOGW("obj-state: failed-obj: cancel timeout");
         return;
     }
 
@@ -4180,7 +4180,7 @@ again:
                                 obj_state->os_failedobj_expiry_msec,
                                 _failedobj_timeout_cb,
                                 self)) {
-        _LOGT(
+        _LOGW(
             "obj-state: failed-obj: schedule timeout in %" G_GINT64_FORMAT " msec",
             NM_MAX((gint64) 0,
                    obj_state->os_failedobj_expiry_msec - nm_utils_get_monotonic_timestamp_msec()));
@@ -4273,7 +4273,7 @@ _failedobj_handle_routes(NML3Cfg *self, int addr_family, GPtrArray *routes_faile
                   nm_utils_addr_family_to_char(addr_family),
                   nmp_object_to_string(o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
         } else if (just_started_to_fail) {
-            _LOGT("obj-state: failed-obj: unable to configure %s. Wait for %d msec",
+            _LOGW("obj-state: failed-obj: unable to configure %s. Wait for %d msec",
                   _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)),
                   grace_timeout_msec);
         }
@@ -4397,7 +4397,7 @@ _l3_commit_ip6_privacy(NML3Cfg *self, NML3CfgCommitType commit_type)
         self->priv.p->ip6_privacy_set = FALSE;
         ip6_privacy                   = self->priv.p->ip6_privacy_initial;
         ifname                        = nm_l3cfg_get_ifname(self, TRUE);
-        _LOGT("commit-ip6-privacy: reset initial value %d (was %d)%s%s",
+        _LOGW("commit-ip6-privacy: reset initial value %d (was %d)%s%s",
               (int) ip6_privacy,
               (int) self->priv.p->ip6_privacy_set_before,
               NM_PRINT_FMT_QUOTED2(ifname, ", ifname ", ifname, " (skip, no interface)"));
@@ -4456,7 +4456,7 @@ _l3_commit_ip6_privacy(NML3Cfg *self, NML3CfgCommitType commit_type)
             self->priv.p->ip6_privacy_initial = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
             break;
         }
-        _LOGT("commit-ip6-privacy: set value %d (initial value was %d)%s%s",
+        _LOGW("commit-ip6-privacy: set value %d (initial value was %d)%s%s",
               (int) ip6_privacy,
               (int) self->priv.p->ip6_privacy_initial,
               NM_PRINT_FMT_QUOTED2(ifname, ", ifname ", ifname, " (skip, no interface)"));
@@ -4468,7 +4468,7 @@ _l3_commit_ip6_privacy(NML3Cfg *self, NML3CfgCommitType commit_type)
     }
 
     ifname = nm_l3cfg_get_ifname(self, TRUE);
-    _LOGT("commit-ip6-privacy: set value %d (after %d, initial value was %d)%s%s",
+    _LOGW("commit-ip6-privacy: set value %d (after %d, initial value was %d)%s%s",
           (int) ip6_privacy,
           (int) ip6_privacy_set_before,
           (int) self->priv.p->ip6_privacy_initial,
@@ -4502,7 +4502,7 @@ _l3_commit_ip6_token(NML3Cfg *self, NML3CfgCommitType commit_type)
     if (!pllink || pllink->inet6_token.id == token.id)
         return;
 
-    if (_LOGT_ENABLED()) {
+    if (_LOGW_ENABLED()) {
         struct in6_addr addr     = {};
         struct in6_addr addr_old = {};
         char            addr_str[INET6_ADDRSTRLEN];
@@ -4511,7 +4511,7 @@ _l3_commit_ip6_token(NML3Cfg *self, NML3CfgCommitType commit_type)
         nm_utils_ipv6_addr_set_interface_identifier(&addr, &token);
         nm_utils_ipv6_addr_set_interface_identifier(&addr_old, &pllink->inet6_token);
 
-        _LOGT("commit-ip6-token: set value %s (was %s)",
+        _LOGW("commit-ip6-token: set value %s (was %s)",
               inet_ntop(AF_INET6, &addr, addr_str, INET6_ADDRSTRLEN),
               inet_ntop(AF_INET6, &addr_old, addr_str_old, INET6_ADDRSTRLEN));
     }
@@ -4642,7 +4642,7 @@ _routes_watch_ip_addrs_cb(NMNetns                       *netns,
     if (event_data->ip_addr.change_type == NM_PLATFORM_SIGNAL_REMOVED)
         return;
 
-    _LOGT("watched ip-address %s changed. Schedule an idle commit",
+    _LOGW("watched ip-address %s changed. Schedule an idle commit",
           nm_inet_ntop(watcher_data->ip_addr.addr.addr_family,
                        &watcher_data->ip_addr.addr.addr,
                        sbuf));
@@ -4968,7 +4968,7 @@ _l3_commit_one(NML3Cfg              *self,
                         NM_L3_CFG_COMMIT_TYPE_UPDATE));
     nm_assert_addr_family(addr_family);
 
-    _LOGT("committing IPv%c configuration (%s)",
+    _LOGW("committing IPv%c configuration (%s)",
           nm_utils_addr_family_to_char(addr_family),
           _l3_cfg_commit_type_to_string(commit_type, sbuf_commit_type, sizeof(sbuf_commit_type)));
 
@@ -5138,7 +5138,7 @@ _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
     } else
         self->priv.p->commit_type_update_sticky = TRUE;
 
-    _LOGT("commit %s%s%s%s",
+    _LOGW("commit %s%s%s%s",
           _l3_cfg_commit_type_to_string(commit_type, sbuf_ct, sizeof(sbuf_ct)),
           commit_type_from_auto ? " (auto)" : "",
           is_sticky_update ? " (sticky-update)" : "",
@@ -5194,7 +5194,7 @@ nm_l3cfg_block_obj_pruning(NML3Cfg *self, int addr_family)
     handle->is_ipv4 = IS_IPv4;
     c_list_link_tail(&self->priv.p->blocked_lst_head_x[IS_IPv4], &handle->lst);
 
-    _LOGT("obj-pruning for IPv%c: blocked (%zu)",
+    _LOGW("obj-pruning for IPv%c: blocked (%zu)",
           nm_utils_addr_family_to_char(addr_family),
           c_list_length(&self->priv.p->blocked_lst_head_x[IS_IPv4]));
 
@@ -5213,7 +5213,7 @@ nm_l3cfg_unblock_obj_pruning(NML3CfgBlockHandle *handle)
 
     c_list_unlink_stale(&handle->lst);
 
-    _LOGT("obj-pruning for IPv%c: unblocked (%zu)",
+    _LOGW("obj-pruning for IPv%c: unblocked (%zu)",
           IS_IPv4 ? '4' : '6',
           c_list_length(&self->priv.p->blocked_lst_head_x[IS_IPv4]));
 
@@ -5319,7 +5319,7 @@ nm_l3cfg_commit_type_register(NML3Cfg                 *self,
     nm_l3cfg_commit_on_idle_schedule(self, NM_L3_CFG_COMMIT_TYPE_AUTO);
 
 out:
-    _LOGT("commit type register (type \"%s\", source \"%s\", existing " NM_HASH_OBFUSCATE_PTR_FMT
+    _LOGW("commit type register (type \"%s\", source \"%s\", existing " NM_HASH_OBFUSCATE_PTR_FMT
           ") -> " NM_HASH_OBFUSCATE_PTR_FMT "",
           _l3_cfg_commit_type_to_string(commit_type, buf, sizeof(buf)),
           source,
@@ -5338,7 +5338,7 @@ nm_l3cfg_commit_type_unregister(NML3Cfg *self, NML3CfgCommitTypeHandle *handle)
 
     nm_assert(c_list_contains(&self->priv.p->commit_type_lst_head, &handle->commit_type_lst));
 
-    _LOGT("commit type unregister " NM_HASH_OBFUSCATE_PTR_FMT "", NM_HASH_OBFUSCATE_PTR(handle));
+    _LOGW("commit type unregister " NM_HASH_OBFUSCATE_PTR_FMT "", NM_HASH_OBFUSCATE_PTR(handle));
 
     nm_l3cfg_commit_on_idle_schedule(self, NM_L3_CFG_COMMIT_TYPE_AUTO);
 
@@ -5558,7 +5558,7 @@ constructed(GObject *object)
     self->priv.global_tracker =
         nmp_global_tracker_ref(nm_netns_get_global_tracker(self->priv.netns));
 
-    _LOGT("created (netns=" NM_HASH_OBFUSCATE_PTR_FMT ")", NM_HASH_OBFUSCATE_PTR(self->priv.netns));
+    _LOGW("created (netns=" NM_HASH_OBFUSCATE_PTR_FMT ")", NM_HASH_OBFUSCATE_PTR(self->priv.netns));
 
     G_OBJECT_CLASS(nm_l3cfg_parent_class)->constructed(object);
 
@@ -5648,7 +5648,7 @@ finalize(GObject *object)
 
     nm_clear_pointer(&self->priv.p->acd_ipv4_addresses_on_link, g_hash_table_unref);
 
-    _LOGT("finalized");
+    _LOGW("finalized");
 
     G_OBJECT_CLASS(nm_l3cfg_parent_class)->finalize(object);
 }
