@@ -302,6 +302,14 @@ if [ -z "$P_MODEM_MANAGER_1" ] ; then
     fi
 fi
 
+if [ -z "$P_TEAM" ] ; then
+    if [ "$P_RHEL" -ge 10 ] ; then
+        P_TEAM=0
+    else
+        P_TEAM=1
+    fi
+fi
+
 if bool "$P_DEBUG" ; then
     P_CFLAGS="-g -Og -fexceptions${P_CFLAGS:+ }$P_CFLAGS"
 else
