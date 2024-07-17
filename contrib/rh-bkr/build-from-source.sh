@@ -26,6 +26,10 @@ YUM_ARGS=()
 if grep -q --quiet Ootpa /etc/redhat-release; then
     YUM_ARGS+=("--enablerepo=rhel-8-buildroot")
 fi
+if grep -q --quiet Coughlan /etc/redhat-release; then
+    rpmkeys --import /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
+    YUM_ARGS+=('--repofrompath=buildroot,http://download.devel.redhat.com/rhel-$releasever/nightly/BUILDROOT-$releasever-Public-Beta/latest-BUILDROOT-$releasever-RHEL-$releasever/compose/Buildroot/$basearch/os')
+fi
 
 if [[ "$INSTALL_DEPENDENCIES" == yes ]]; then
   $SUDO yum install \
