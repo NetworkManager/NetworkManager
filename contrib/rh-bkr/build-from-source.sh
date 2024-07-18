@@ -193,7 +193,6 @@ if [[ "$DO_TEST_BUILD" == yes ]]; then
             -Dnmtui=true \
             -Dmodem_manager=true \
             -Dsuspend_resume=systemd \
-            -Dteamdctl=true \
             -Dtests=root \
             -Dnetconfig=no \
             -Dresolvconf=no \
@@ -236,7 +235,6 @@ if [[ "$DO_TEST_BUILD" == yes ]]; then
             --with-nmtui=yes \
             --with-modem-manager-1 \
             --with-suspend-resume=systemd \
-            --enable-teamdctl=yes \
             --enable-tests=root \
             --with-netconfig=/path/does/not/exist/netconfig \
             --with-resolvconf=/path/does/not/exist/resolvconf \
