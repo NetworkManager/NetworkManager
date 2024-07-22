@@ -360,12 +360,13 @@ _c_public_ int n_acd_new(NAcd **acdp, NAcdConfig *config) {
         acd->max_bpf_map = 8;
 
         r = n_acd_bpf_map_create(&acd->fd_bpf_map, acd->max_bpf_map);
-        if (r)
-                return r;
-
-        r = n_acd_bpf_compile(&fd_bpf_prog, acd->fd_bpf_map, (struct ether_addr*) acd->mac);
-        if (r)
-                return r;
+        if (!r) {
+                r = n_acd_bpf_compile(&fd_bpf_prog, acd->fd_bpf_map, (struct ether_addr*) acd->mac);
+                if (r) {
+                        close(acd->fd_bpf_map);
+                        acd->fd_bpf_map = -1;
+                }
+        }
 
         r = n_acd_socket_new(&acd->fd_socket, fd_bpf_prog, config);
         if (r)
@@ -570,6 +571,21 @@ int n_acd_send(NAcd *acd, const struct in_addr *tpa, const struct in_addr *spa) 
  */
 _c_public_ void n_acd_get_fd(NAcd *acd, int *fdp) {
         *fdp = acd->fd_epoll;
+}
+
+/**
+ * n_acd_has_bpf() - query the usage of eBPF
+ * @acd:                        context object to operate on
+ *
+ * Checks whether the ACD context has been configured, and if so, checks
+ * whether the probe is using eBPF or not.
+ *
+ * Return: true if the probe is using eBPF, or
+ *         false if the probe failed to configure eBPF
+ *               (e.g. due to missing capabilities)
+ */
+_c_public_ bool n_acd_has_bpf(NAcd *acd) {
+        return acd->fd_bpf_map != -1;
 }
 
 static int n_acd_handle_timeout(NAcd *acd) {

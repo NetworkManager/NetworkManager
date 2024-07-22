@@ -15,6 +15,7 @@ global:
         n_acd_ref;
         n_acd_unref;
         n_acd_get_fd;
+        n_acd_has_bpf;
         n_acd_dispatch;
         n_acd_pop_event;
         n_acd_probe;

@@ -236,9 +236,10 @@ static int n_acd_probe_link(NAcdProbe *probe) {
         }
 
         /*
-         * Add the ip address to the map, if it is not already there.
+         * Add the ip address to the map, if it is not already there, and
+         * if we have a map file descriptor (meaning the system supports eBPF).
          */
-        if (n_acd_probe_is_unique(probe)) {
+        if (probe->acd->fd_bpf_map != -1 && n_acd_probe_is_unique(probe)) {
                 r = n_acd_bpf_map_add(probe->acd->fd_bpf_map, &probe->ip);
                 if (r) {
                         /*
@@ -258,10 +259,10 @@ static void n_acd_probe_unlink(NAcdProbe *probe) {
         int r;
 
         /*
-         * If this is the only probe for a given IP, remove the IP from the
-         * kernel BPF map.
+         * If this is the only probe for a given IP, and we have a kernel BPF map,
+         * remove the IP from it.
          */
-        if (n_acd_probe_is_unique(probe)) {
+        if (probe->acd->fd_bpf_map != -1 && n_acd_probe_is_unique(probe)) {
                 r = n_acd_bpf_map_remove(probe->acd->fd_bpf_map, &probe->ip);
                 c_assert(r >= 0);
                 --probe->acd->n_bpf_map;
