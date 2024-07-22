@@ -15,17 +15,8 @@ libnacd_sources = [
         'n-acd.c',
         'n-acd-probe.c',
         'util/timer.c',
+        'n-acd-bpf.c'
 ]
-
-if use_ebpf
-        libnacd_sources += [
-                'n-acd-bpf.c',
-        ]
-else
-        libnacd_sources += [
-                'n-acd-bpf-fallback.c',
-        ]
-endif
 
 libnacd_private = static_library(
         'nacd-private',
