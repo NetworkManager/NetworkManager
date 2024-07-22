@@ -265,7 +265,9 @@ modm_handle_name_owner_changed(MMManager *modem_manager, GParamSpec *pspec, NMMo
     modm_clear_manager(self);
     modm_ensure_manager(self);
 
-    modm_manager_available(self);
+    /* Whenever GDBusObjectManagerClient is fixed, we can just do the following:
+     * modm_manager_available (self);
+     */
 }
 
 static void
