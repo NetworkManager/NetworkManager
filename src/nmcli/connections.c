@@ -3798,6 +3798,7 @@ check_valid_name_toplevel(const char *val, const char **port_type, GError **erro
     gs_unref_ptrarray GPtrArray   *tmp_arr = NULL;
     const NMMetaSettingInfoEditor *setting_info;
     gs_free_error GError          *tmp_err = NULL;
+    GType                          gtype   = G_TYPE_INVALID;
     const char                    *str;
     int                            i;
 
@@ -3807,6 +3808,13 @@ check_valid_name_toplevel(const char *val, const char **port_type, GError **erro
     tmp_arr = g_ptr_array_sized_new(32);
     for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
         setting_info = &nm_meta_setting_infos_editor[i];
+
+        /* skip "non-base" settings (that means, not valid for a connection's "type") */
+        gtype = setting_info->general->get_setting_gtype();
+        if (nm_meta_setting_info_get_base_type_priority(setting_info->general, gtype)
+            == NM_SETTING_PRIORITY_INVALID)
+            continue;
+
         g_ptr_array_add(tmp_arr, (gpointer) setting_info->general->setting_name);
         if (setting_info->alias)
             g_ptr_array_add(tmp_arr, (gpointer) setting_info->alias);
