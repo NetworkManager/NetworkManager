@@ -2034,10 +2034,11 @@ nm_platform_link_set_sriov_vfs(NMPlatform *self, int ifindex, const NMPlatformVF
 }
 
 gboolean
-nm_platform_link_set_bridge_vlans(NMPlatform                        *self,
-                                  int                                ifindex,
-                                  gboolean                           on_master,
-                                  const NMPlatformBridgeVlan *const *vlans)
+nm_platform_link_set_bridge_vlans(NMPlatform                 *self,
+                                  int                         ifindex,
+                                  gboolean                    on_master,
+                                  const NMPlatformBridgeVlan *vlans,
+                                  guint                       num_vlans)
 {
     guint i;
     _CHECK_SELF(self, klass, FALSE);
@@ -2049,9 +2050,9 @@ nm_platform_link_set_bridge_vlans(NMPlatform                        *self,
                vlans ? "setting" : "clearing",
                on_master ? "master" : "self");
         if (vlans) {
-            for (i = 0; vlans[i]; i++) {
+            for (i = 0; i < num_vlans; i++) {
                 char                        sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
-                const NMPlatformBridgeVlan *vlan = vlans[i];
+                const NMPlatformBridgeVlan *vlan = &vlans[i];
 
                 _LOG3D("link:   bridge VLAN %s",
                        nm_platform_bridge_vlan_to_string(vlan, sbuf, sizeof(sbuf)));
@@ -2059,7 +2060,7 @@ nm_platform_link_set_bridge_vlans(NMPlatform                        *self,
         }
     }
 
-    return klass->link_set_bridge_vlans(self, ifindex, on_master, vlans);
+    return klass->link_set_bridge_vlans(self, ifindex, on_master, vlans, num_vlans);
 }
 
 gboolean
