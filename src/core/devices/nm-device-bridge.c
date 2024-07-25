@@ -814,6 +814,93 @@ bridge_set_vlan_options(NMDevice *device, NMSettingBridge *s_bridge, gboolean is
     return TRUE;
 }
 
+static NMPlatformBridgeVlan *
+merge_bridge_vlan_default_pvid(NMPlatformBridgeVlan *vlans, guint *num_vlans, guint default_pvid)
+{
+    NMPlatformBridgeVlan *vlan;
+    gboolean              has_pvid = FALSE;
+    guint                 i;
+
+    for (i = 0; i < *num_vlans; i++) {
+        if (vlans[i].pvid) {
+            has_pvid = TRUE;
+            break;
+        }
+    }
+
+    /* search if the list of VLANs already contains the default PVID */
+    vlan = NULL;
+    for (i = 0; i < *num_vlans; i++) {
+        if (default_pvid >= vlans[i].vid_start && default_pvid <= vlans[i].vid_end) {
+            vlan = &vlans[i];
+            break;
+        }
+    }
+
+    if (!vlan) {
+        /* VLAN id not found, append the default PVID at the end.
+         * Set the PVID flag only if the port didn't have one. */
+        vlans = g_realloc_n(vlans, *num_vlans + 1, sizeof(NMPlatformBridgeVlan));
+        (*num_vlans)++;
+        vlans[*num_vlans - 1] = (NMPlatformBridgeVlan){
+            .vid_start = default_pvid,
+            .vid_end   = default_pvid,
+            .untagged  = TRUE,
+            .pvid      = !has_pvid,
+        };
+    }
+
+    return vlans;
+}
+
+void
+nm_device_reapply_bridge_port_vlans(NMDevice *device)
+{
+    NMSettingBridgePort          *s_bridge_port;
+    NMDevice                     *controller;
+    NMSettingBridge              *s_bridge;
+    gs_unref_ptrarray GPtrArray  *tmp_vlans         = NULL;
+    gs_free NMPlatformBridgeVlan *setting_vlans     = NULL;
+    guint                         num_setting_vlans = 0;
+    NMPlatform                   *plat;
+    int                           ifindex;
+
+    s_bridge_port = nm_device_get_applied_setting(device, NM_TYPE_SETTING_BRIDGE_PORT);
+    if (!s_bridge_port)
+        return;
+
+    controller = nm_device_get_master(device);
+    if (!controller)
+        return;
+
+    s_bridge = nm_device_get_applied_setting(controller, NM_TYPE_SETTING_BRIDGE);
+    if (!s_bridge)
+        return;
+
+    if (nm_setting_bridge_get_vlan_filtering(s_bridge)) {
+        g_object_get(s_bridge_port, NM_SETTING_BRIDGE_PORT_VLANS, &tmp_vlans, NULL);
+        setting_vlans = setting_vlans_to_platform(tmp_vlans, &num_setting_vlans);
+
+        /* During a regular activation, we first set the default_pvid on the bridge
+        * (which creates the PVID VLAN on the port) and then add the VLANs on the port.
+        * This ensures that the PVID VLAN is inherited from the bridge, but it's
+        * overridden if the port specifies one.
+        * During a reapply on the port, we are not going to touch the bridge and
+        * so we need to merge manually the PVID from the bridge with the port VLANs. */
+        setting_vlans =
+            merge_bridge_vlan_default_pvid(setting_vlans,
+                                           &num_setting_vlans,
+                                           nm_setting_bridge_get_vlan_default_pvid(s_bridge));
+    }
+
+    plat    = nm_device_get_platform(device);
+    ifindex = nm_device_get_ifindex(device);
+
+    nm_platform_link_set_bridge_vlans(plat, ifindex, TRUE, NULL, 0);
+    if (num_setting_vlans > 0)
+        nm_platform_link_set_bridge_vlans(plat, ifindex, TRUE, setting_vlans, num_setting_vlans);
+}
+
 static void
 _platform_lnk_bridge_init_from_setting(NMSettingBridge *s_bridge, NMPlatformLnkBridge *props)
 {
