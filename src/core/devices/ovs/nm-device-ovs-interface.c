@@ -155,6 +155,8 @@ check_waiting_for_link(NMDevice *device, const char *from)
         reason = "no ifindex";
     } else if (!(pllink = nm_platform_link_get(platform, ip_ifindex))) {
         reason = "platform link not found";
+    } else if (!pllink->initialized) {
+        reason = "link is not ready yet";
     } else if (priv->wait_link.cloned_mac
                && !nm_utils_hwaddr_matches(priv->wait_link.cloned_mac,
                                            -1,
