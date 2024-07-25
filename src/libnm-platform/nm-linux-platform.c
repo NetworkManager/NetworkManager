@@ -9405,17 +9405,20 @@ nla_put_failure:
 }
 
 static gboolean
-link_set_bridge_vlans(NMPlatform                        *platform,
-                      int                                ifindex,
-                      gboolean                           on_controller,
-                      const NMPlatformBridgeVlan *const *vlans)
+link_set_bridge_vlans(NMPlatform                 *platform,
+                      int                         ifindex,
+                      gboolean                    on_controller,
+                      const NMPlatformBridgeVlan *vlans,
+                      guint                       num_vlans)
 {
     nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
     struct nlattr               *list;
     struct bridge_vlan_info      vinfo = {};
     guint                        i;
 
-    nlmsg = _nl_msg_new_link_full(vlans ? RTM_SETLINK : RTM_DELLINK,
+    nm_assert(num_vlans == 0 || vlans);
+
+    nlmsg = _nl_msg_new_link_full(num_vlans > 0 ? RTM_SETLINK : RTM_DELLINK,
                                   0,
                                   ifindex,
                                   NULL,
@@ -9433,10 +9436,10 @@ link_set_bridge_vlans(NMPlatform                        *platform,
                 IFLA_BRIDGE_FLAGS,
                 on_controller ? BRIDGE_FLAGS_CONTROLLER : BRIDGE_FLAGS_SELF);
 
-    if (vlans) {
+    if (num_vlans > 0) {
         /* Add VLANs */
-        for (i = 0; vlans[i]; i++) {
-            const NMPlatformBridgeVlan *vlan     = vlans[i];
+        for (i = 0; i < num_vlans; i++) {
+            const NMPlatformBridgeVlan *vlan     = &vlans[i];
             gboolean                    is_range = vlan->vid_start != vlan->vid_end;
 
             vinfo.vid   = vlan->vid_start;
