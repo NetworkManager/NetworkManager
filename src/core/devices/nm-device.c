@@ -13881,6 +13881,8 @@ check_and_reapply_connection(NMDevice            *self,
     if (priv->state >= NM_DEVICE_STATE_ACTIVATED)
         nm_device_update_metered(self);
 
+    nm_device_reapply_bridge_port_vlans(self);
+
     sett_conn = nm_device_get_settings_connection(self);
     if (sett_conn) {
         nm_settings_connection_autoconnect_blocked_reason_set(
