@@ -13,6 +13,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "libnm-platform/nm-platform.h"
+#include "libnm-platform/nm-platform-utils.h"
 #include "nm-device-factory.h"
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
@@ -770,14 +771,18 @@ merge_bridge_vlan_default_pvid(NMPlatformBridgeVlan *vlans, guint *num_vlans, gu
 void
 nm_device_reapply_bridge_port_vlans(NMDevice *device)
 {
+    NMDevice                     *self = device; /* for logging */
     NMSettingBridgePort          *s_bridge_port;
     NMDevice                     *controller;
     NMSettingBridge              *s_bridge;
     gs_unref_ptrarray GPtrArray  *tmp_vlans         = NULL;
     gs_free NMPlatformBridgeVlan *setting_vlans     = NULL;
+    gs_free NMPlatformBridgeVlan *plat_vlans        = NULL;
     guint                         num_setting_vlans = 0;
+    guint                         num_plat_vlans    = 0;
     NMPlatform                   *plat;
     int                           ifindex;
+    gboolean                      do_reapply;
 
     s_bridge_port = nm_device_get_applied_setting(device, NM_TYPE_SETTING_BRIDGE_PORT);
     if (!s_bridge_port)
@@ -810,9 +815,33 @@ nm_device_reapply_bridge_port_vlans(NMDevice *device)
     plat    = nm_device_get_platform(device);
     ifindex = nm_device_get_ifindex(device);
 
-    nm_platform_link_set_bridge_vlans(plat, ifindex, TRUE, NULL, 0);
-    if (num_setting_vlans > 0)
-        nm_platform_link_set_bridge_vlans(plat, ifindex, TRUE, setting_vlans, num_setting_vlans);
+    if (!nm_platform_link_get_bridge_vlans(plat, ifindex, &plat_vlans, &num_plat_vlans)) {
+        _LOGD(LOGD_DEVICE, "reapply-bridge-port-vlans: can't get current VLANs from platform");
+        do_reapply = TRUE;
+    } else {
+        nmp_utils_bridge_vlan_normalize(setting_vlans, &num_setting_vlans);
+        nmp_utils_bridge_vlan_normalize(plat_vlans, &num_plat_vlans);
+        if (!nmp_utils_bridge_normalized_vlans_equal(setting_vlans,
+                                                     num_setting_vlans,
+                                                     plat_vlans,
+                                                     num_plat_vlans)) {
+            _LOGD(LOGD_DEVICE, "reapply-bridge-port-vlans: VLANs in platform need reapply");
+            do_reapply = TRUE;
+        } else {
+            _LOGD(LOGD_DEVICE, "reapply-bridge-port-vlans: VLANs in platform didn't change");
+            do_reapply = FALSE;
+        }
+    }
+
+    if (do_reapply) {
+        nm_platform_link_set_bridge_vlans(plat, ifindex, TRUE, NULL, 0);
+        if (num_setting_vlans > 0)
+            nm_platform_link_set_bridge_vlans(plat,
+                                              ifindex,
+                                              TRUE,
+                                              setting_vlans,
+                                              num_setting_vlans);
+    }
 }
 
 static void
