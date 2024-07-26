@@ -231,6 +231,14 @@ Obsoletes: NetworkManager-initscripts-ifcfg-rh < 1:1.47.5-3
 Obsoletes: NetworkManager-dispatcher-routing-rules < 1:1.47.5-3
 %endif
 
+%if 0%{?fedora} >= 41
+%if %{without ifcfg_rh}
+Obsoletes: NetworkManager-initscripts-ifcfg-rh < 1:1.49-3.1
+Obsoletes: NetworkManager-dispatcher-routing-rules < 1:1.49.3-1
+Obsoletes: NetworkManager-initscripts-updown < 1:1.49.3-1
+%endif
+%endif
+
 Conflicts: NetworkManager-vpnc < 1:0.7.0.99-1
 Conflicts: NetworkManager-openvpn < 1:0.7.0.99-1
 Conflicts: NetworkManager-pptp < 1:0.7.0.99-1
