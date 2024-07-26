@@ -39,6 +39,15 @@ typedef enum {
 /*****************************************************************************/
 
 typedef struct {
+    guint16 vid_start;
+    guint16 vid_end;
+    bool    untagged : 1;
+    bool    pvid : 1;
+} NMPlatformBridgeVlan;
+
+/*****************************************************************************/
+
+typedef struct {
     /* We don't want to include <linux/ethtool.h> in header files,
      * thus create a ABI compatible version of struct ethtool_drvinfo.*/
     guint32 _private_cmd;
