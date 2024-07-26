@@ -192,6 +192,239 @@ test_nmp_link_mode_all_advertised_modes_bits(void)
 /*****************************************************************************/
 
 static void
+test_nmp_utils_bridge_vlans_normalize(void)
+{
+    NMPlatformBridgeVlan vlans[10];
+    NMPlatformBridgeVlan expect[10];
+    guint                vlans_len;
+
+    /* Single one is unmodified */
+    vlans[0] = (NMPlatformBridgeVlan){
+        .vid_start = 1,
+        .vid_end   = 10,
+        .untagged  = TRUE,
+    };
+    expect[0] = (NMPlatformBridgeVlan){
+        .vid_start = 1,
+        .vid_end   = 10,
+        .untagged  = TRUE,
+    };
+    vlans_len = 1;
+    nmp_utils_bridge_vlan_normalize(vlans, &vlans_len);
+    g_assert(vlans_len == 1);
+    g_assert(nmp_utils_bridge_normalized_vlans_equal(vlans, vlans_len, expect, vlans_len));
+
+    /* Not merged if flags are different */
+    vlans[0] = (NMPlatformBridgeVlan){
+        .vid_start = 1,
+        .vid_end   = 10,
+        .untagged  = TRUE,
+    };
+    vlans[1] = (NMPlatformBridgeVlan){
+        .vid_start = 11,
+        .vid_end   = 11,
+        .pvid      = TRUE,
+    };
+    vlans[2] = (NMPlatformBridgeVlan){
+        .vid_start = 20,
+        .vid_end   = 25,
+    };
+    vlans[3] = (NMPlatformBridgeVlan){
+        .vid_start = 26,
+        .vid_end   = 30,
+        .untagged  = TRUE,
+    };
+    vlans[4] = (NMPlatformBridgeVlan){
+        .vid_start = 40,
+        .vid_end   = 40,
+        .untagged  = TRUE,
+    };
+    vlans[5] = (NMPlatformBridgeVlan){
+        .vid_start = 40,
+        .vid_end   = 40,
+        .untagged  = TRUE,
+        .pvid      = TRUE,
+    };
+    expect[0] = (NMPlatformBridgeVlan){
+        .vid_start = 1,
+        .vid_end   = 10,
+        .untagged  = TRUE,
+    };
+    expect[1] = (NMPlatformBridgeVlan){
+        .vid_start = 11,
+        .vid_end   = 11,
+        .pvid      = TRUE,
+    };
+    expect[2] = (NMPlatformBridgeVlan){
+        .vid_start = 20,
+        .vid_end   = 25,
+    };
+    expect[3] = (NMPlatformBridgeVlan){
+        .vid_start = 26,
+        .vid_end   = 30,
+        .untagged  = TRUE,
+    };
+    expect[4] = (NMPlatformBridgeVlan){
+        .vid_start = 40,
+        .vid_end   = 40,
+        .untagged  = TRUE,
+    };
+    expect[5] = (NMPlatformBridgeVlan){
+        .vid_start = 40,
+        .vid_end   = 40,
+        .untagged  = TRUE,
+        .pvid      = TRUE,
+    };
+    vlans_len = 6;
+    nmp_utils_bridge_vlan_normalize(vlans, &vlans_len);
+    g_assert(vlans_len == 6);
+    g_assert(nmp_utils_bridge_normalized_vlans_equal(vlans, vlans_len, expect, vlans_len));
+
+    /* Overlapping and contiguous ranges are merged */
+    vlans[0] = (NMPlatformBridgeVlan){
+        .vid_start = 1,
+        .vid_end   = 10,
+        .untagged  = TRUE,
+    };
+    vlans[1] = (NMPlatformBridgeVlan){
+        .vid_start = 11,
+        .vid_end   = 20,
+        .untagged  = TRUE,
+    };
+    vlans[2] = (NMPlatformBridgeVlan){
+        .vid_start = 19,
+        .vid_end   = 30,
+        .untagged  = TRUE,
+    };
+    expect[0] = (NMPlatformBridgeVlan){
+        .vid_start = 1,
+        .vid_end   = 30,
+        .untagged  = TRUE,
+    };
+    vlans_len = 3;
+    nmp_utils_bridge_vlan_normalize(vlans, &vlans_len);
+    g_assert(vlans_len == 1);
+    g_assert(nmp_utils_bridge_normalized_vlans_equal(vlans, vlans_len, expect, vlans_len));
+
+    vlans[0] = (NMPlatformBridgeVlan){
+        .vid_start = 20,
+        .vid_end   = 20,
+    };
+    vlans[1] = (NMPlatformBridgeVlan){
+        .vid_start = 4,
+        .vid_end   = 4,
+        .pvid      = TRUE,
+    };
+    vlans[2] = (NMPlatformBridgeVlan){
+        .vid_start = 33,
+        .vid_end   = 33,
+    };
+    vlans[3] = (NMPlatformBridgeVlan){
+        .vid_start = 100,
+        .vid_end   = 100,
+        .untagged  = TRUE,
+    };
+    vlans[4] = (NMPlatformBridgeVlan){
+        .vid_start = 34,
+        .vid_end   = 40,
+    };
+    vlans[5] = (NMPlatformBridgeVlan){
+        .vid_start = 21,
+        .vid_end   = 32,
+    };
+    expect[0] = (NMPlatformBridgeVlan){
+        .vid_start = 4,
+        .vid_end   = 4,
+        .pvid      = TRUE,
+    };
+    expect[1] = (NMPlatformBridgeVlan){
+        .vid_start = 20,
+        .vid_end   = 40,
+    };
+    expect[2] = (NMPlatformBridgeVlan){
+        .vid_start = 100,
+        .vid_end   = 100,
+        .untagged  = TRUE,
+    };
+    vlans_len = 6;
+    nmp_utils_bridge_vlan_normalize(vlans, &vlans_len);
+    g_assert(vlans_len == 3);
+    g_assert(nmp_utils_bridge_normalized_vlans_equal(vlans, vlans_len, expect, vlans_len));
+}
+
+static void
+test_nmp_utils_bridge_normalized_vlans_equal(void)
+{
+    NMPlatformBridgeVlan a[10];
+    NMPlatformBridgeVlan b[10];
+
+    /* Both empty */
+    g_assert(nmp_utils_bridge_normalized_vlans_equal(NULL, 0, NULL, 0));
+    g_assert(nmp_utils_bridge_normalized_vlans_equal(a, 0, b, 0));
+    g_assert(nmp_utils_bridge_normalized_vlans_equal(a, 0, NULL, 0));
+    g_assert(nmp_utils_bridge_normalized_vlans_equal(NULL, 0, b, 0));
+
+    /* One empty, other not */
+    a[0] = (NMPlatformBridgeVlan){
+        .vid_start = 1,
+        .vid_end   = 10,
+        .untagged  = TRUE,
+    };
+    g_assert(!nmp_utils_bridge_normalized_vlans_equal(a, 1, NULL, 0));
+    g_assert(!nmp_utils_bridge_normalized_vlans_equal(NULL, 0, a, 1));
+
+    /* Equal range + VLAN */
+    a[0] = (NMPlatformBridgeVlan){
+        .vid_start = 1,
+        .vid_end   = 10,
+        .untagged  = TRUE,
+    };
+    a[1] = (NMPlatformBridgeVlan){
+        .vid_start = 11,
+        .vid_end   = 11,
+        .pvid      = TRUE,
+    };
+    b[0] = (NMPlatformBridgeVlan){
+        .vid_start = 1,
+        .vid_end   = 10,
+        .untagged  = TRUE,
+    };
+    b[1] = (NMPlatformBridgeVlan){
+        .vid_start = 11,
+        .vid_end   = 11,
+        .pvid      = TRUE,
+    };
+    g_assert(nmp_utils_bridge_normalized_vlans_equal(a, 2, b, 2));
+    g_assert(nmp_utils_bridge_normalized_vlans_equal(b, 2, a, 2));
+
+    /* Different flag */
+    b[1].pvid = FALSE;
+    g_assert(!nmp_utils_bridge_normalized_vlans_equal(a, 2, b, 2));
+    g_assert(!nmp_utils_bridge_normalized_vlans_equal(b, 2, a, 2));
+
+    /* Different ranges */
+    a[0] = (NMPlatformBridgeVlan){
+        .vid_start = 1,
+        .vid_end   = 30,
+        .untagged  = TRUE,
+    };
+    b[0] = (NMPlatformBridgeVlan){
+        .vid_start = 1,
+        .vid_end   = 29,
+        .untagged  = TRUE,
+    };
+    g_assert(!nmp_utils_bridge_normalized_vlans_equal(a, 1, b, 1));
+    g_assert(!nmp_utils_bridge_normalized_vlans_equal(b, 1, a, 1));
+
+    b[0].vid_start = 2;
+    b[0].vid_end   = 30;
+    g_assert(!nmp_utils_bridge_normalized_vlans_equal(a, 1, b, 1));
+    g_assert(!nmp_utils_bridge_normalized_vlans_equal(b, 1, a, 1));
+}
+
+/*****************************************************************************/
+
+static void
 test_nmpclass_consistency(void)
 {
     NMPObjectType obj_type;
@@ -253,6 +486,10 @@ main(int argc, char **argv)
     g_test_add_func("/nm-platform/test_nmp_link_mode_all_advertised_modes_bits",
                     test_nmp_link_mode_all_advertised_modes_bits);
     g_test_add_func("/nm-platform/test_nmpclass_consistency", test_nmpclass_consistency);
+    g_test_add_func("/nm-platform/test_nmp_utils_bridge_vlans_normalize",
+                    test_nmp_utils_bridge_vlans_normalize);
+    g_test_add_func("/nm-platform/nmp-utils-bridge-vlans-equal",
+                    test_nmp_utils_bridge_normalized_vlans_equal);
 
     return g_test_run();
 }

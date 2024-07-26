@@ -718,13 +718,6 @@ typedef struct {
 } NMPlatformVF;
 
 typedef struct {
-    guint16 vid_start;
-    guint16 vid_end;
-    bool    untagged : 1;
-    bool    pvid : 1;
-} NMPlatformBridgeVlan;
-
-typedef struct {
     guint16 vlan_default_pvid_val;
     bool    vlan_filtering_val : 1;
     bool    vlan_default_pvid_has : 1;
