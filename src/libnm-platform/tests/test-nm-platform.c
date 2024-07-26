@@ -191,6 +191,139 @@ test_nmp_link_mode_all_advertised_modes_bits(void)
 /*****************************************************************************/
 
 static void
+test_nmp_utils_bridge_vlans_equal(void)
+{
+    NMPlatformBridgeVlan a[10];
+    NMPlatformBridgeVlan b[10];
+
+    /* Both empty */
+    g_assert(nmp_utils_bridge_vlans_equal(NULL, 0, NULL, 0));
+    g_assert(nmp_utils_bridge_vlans_equal(a, 0, b, 0));
+    g_assert(nmp_utils_bridge_vlans_equal(a, 0, NULL, 0));
+    g_assert(nmp_utils_bridge_vlans_equal(NULL, 0, b, 0));
+
+    /* One empty, other not */
+    a[0] = (NMPlatformBridgeVlan){
+        .vid_start = 1,
+        .vid_end   = 10,
+        .untagged  = TRUE,
+    };
+    g_assert(!nmp_utils_bridge_vlans_equal(a, 1, NULL, 0));
+    g_assert(!nmp_utils_bridge_vlans_equal(NULL, 0, a, 1));
+
+    /* Equal range + VLAN */
+    a[0] = (NMPlatformBridgeVlan){
+        .vid_start = 1,
+        .vid_end   = 10,
+        .untagged  = TRUE,
+    };
+    a[1] = (NMPlatformBridgeVlan){
+        .vid_start = 11,
+        .vid_end   = 11,
+        .pvid      = TRUE,
+    };
+    b[0] = (NMPlatformBridgeVlan){
+        .vid_start = 1,
+        .vid_end   = 10,
+        .untagged  = TRUE,
+    };
+    b[1] = (NMPlatformBridgeVlan){
+        .vid_start = 11,
+        .vid_end   = 11,
+        .pvid      = TRUE,
+    };
+    g_assert(nmp_utils_bridge_vlans_equal(a, 2, b, 2));
+    g_assert(nmp_utils_bridge_vlans_equal(b, 2, a, 2));
+    b[1].pvid = FALSE;
+    g_assert(!nmp_utils_bridge_vlans_equal(a, 2, b, 2));
+    g_assert(!nmp_utils_bridge_vlans_equal(b, 2, a, 2));
+
+    /* Split ranges */
+    a[0] = (NMPlatformBridgeVlan){
+        .vid_start = 1,
+        .vid_end   = 10,
+        .untagged  = TRUE,
+    };
+    a[1] = (NMPlatformBridgeVlan){
+        .vid_start = 11,
+        .vid_end   = 20,
+        .untagged  = TRUE,
+    };
+    a[2] = (NMPlatformBridgeVlan){
+        .vid_start = 21,
+        .vid_end   = 30,
+        .untagged  = TRUE,
+    };
+    b[0] = (NMPlatformBridgeVlan){
+        .vid_start = 1,
+        .vid_end   = 30,
+        .untagged  = TRUE,
+    };
+    g_assert(nmp_utils_bridge_vlans_equal(a, 3, b, 1));
+    g_assert(nmp_utils_bridge_vlans_equal(b, 1, a, 3));
+    a[2].vid_end = 29;
+    g_assert(!nmp_utils_bridge_vlans_equal(a, 3, b, 1));
+    g_assert(!nmp_utils_bridge_vlans_equal(b, 1, a, 3));
+
+    /* Multiple ranges, VLANs, flags */
+    a[0] = (NMPlatformBridgeVlan){
+        .vid_start = 100,
+        .vid_end   = 100,
+        .untagged  = TRUE,
+    };
+    a[1] = (NMPlatformBridgeVlan){
+        .vid_start = 20,
+        .vid_end   = 30,
+    };
+    a[2] = (NMPlatformBridgeVlan){
+        .vid_start = 4,
+        .vid_end   = 4,
+        .pvid      = TRUE,
+    };
+    a[3] = (NMPlatformBridgeVlan){
+        .vid_start = 31,
+        .vid_end   = 40,
+    };
+    b[0] = (NMPlatformBridgeVlan){
+        .vid_start = 4,
+        .vid_end   = 4,
+        .pvid      = TRUE,
+    };
+    b[1] = (NMPlatformBridgeVlan){
+        .vid_start = 20,
+        .vid_end   = 20,
+    };
+    b[2] = (NMPlatformBridgeVlan){
+        .vid_start = 33,
+        .vid_end   = 33,
+    };
+    b[3] = (NMPlatformBridgeVlan){
+        .vid_start = 100,
+        .vid_end   = 100,
+        .untagged  = TRUE,
+    };
+    b[4] = (NMPlatformBridgeVlan){
+        .vid_start = 34,
+        .vid_end   = 40,
+    };
+    b[5] = (NMPlatformBridgeVlan){
+        .vid_start = 21,
+        .vid_end   = 32,
+    };
+    g_assert(nmp_utils_bridge_vlans_equal(a, 4, b, 6));
+    g_assert(nmp_utils_bridge_vlans_equal(b, 6, a, 4));
+    b[4].vid_end = 41;
+    g_assert(!nmp_utils_bridge_vlans_equal(a, 4, b, 6));
+    g_assert(!nmp_utils_bridge_vlans_equal(b, 6, a, 4));
+    b[4].vid_end   = 40;
+    b[1].vid_start = 19;
+    g_assert(!nmp_utils_bridge_vlans_equal(a, 4, b, 6));
+    g_assert(!nmp_utils_bridge_vlans_equal(b, 6, a, 4));
+}
+
+/*****************************************************************************/
+
+static void
 test_nmpclass_consistency(void)
 {
     NMPObjectType obj_type;
@@ -252,6 +385,7 @@ main(int argc, char **argv)
     g_test_add_func("/nm-platform/test_nmp_link_mode_all_advertised_modes_bits",
                     test_nmp_link_mode_all_advertised_modes_bits);
     g_test_add_func("/nm-platform/test_nmpclass_consistency", test_nmpclass_consistency);
+    g_test_add_func("/nm-platform/nmp-utils-bridge-vlans-equal", test_nmp_utils_bridge_vlans_equal);
 
     return g_test_run();
 }

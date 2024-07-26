@@ -99,4 +99,9 @@ guint32 nmp_utils_lifetime_get(guint32  timestamp,
 int nmp_utils_modprobe(GError **error, gboolean suppress_error_logging, const char *arg1, ...)
     G_GNUC_NULL_TERMINATED;
 
+gboolean nmp_utils_bridge_vlans_equal(NMPlatformBridgeVlan *vlans_a,
+                                      guint                 num_vlans_a,
+                                      NMPlatformBridgeVlan *vlans_b,
+                                      guint                 num_vlans_b);
+
 #endif /* __NM_PLATFORM_UTILS_H__ */

@@ -2275,6 +2275,94 @@ nmp_utils_lifetime_get(guint32  timestamp,
 
 /*****************************************************************************/
 
+static int
+bridge_vlan_compare(gconstpointer a, gconstpointer b, gpointer user_data)
+{
+    const NMPlatformBridgeVlan *vlan_a = a;
+    const NMPlatformBridgeVlan *vlan_b = b;
+
+    return (int) vlan_a->vid_start - (int) vlan_b->vid_start;
+}
+
+static NMPlatformBridgeVlan *
+bridge_vlan_find(NMPlatformBridgeVlan *vlans, guint num_vlans, guint id, guint *index)
+{
+    NMPlatformBridgeVlan *v;
+
+    while (*index < num_vlans) {
+        v = &vlans[*index];
+        if (id >= v->vid_start && id <= v->vid_end)
+            return v;
+        if (id < v->vid_start)
+            return NULL;
+        (*index)++;
+    };
+
+    return NULL;
+}
+
+/**
+ * nmp_utils_bridge_vlans_equal:
+ * @vlans_a: the first array of bridge VLANs
+ * @num_vlans_a: the number of elements of first array
+ * @vlans_b: the second array of bridge VLANs
+ * @num_vlans_b: the number of elements of second array
+ *
+ * Given two arrays of bridge VLAN ranges, compare if they are equal,
+ * i.e. if they represent the same set of VLANs with the same attributes.
+ * The input arrays must not have overlapping or duplicated ranges; they
+ * don't need to be necessarily sorted or normalized to the minimal form.
+ */
+gboolean
+nmp_utils_bridge_vlans_equal(NMPlatformBridgeVlan *vlans_a,
+                             guint                 num_vlans_a,
+                             NMPlatformBridgeVlan *vlans_b,
+                             guint                 num_vlans_b)
+{
+    NMPlatformBridgeVlan *v;
+    guint                 i; /* index in the array */
+    guint                 j; /* id in the current range */
+    guint                 k; /* index in the other array */
+
+    if (num_vlans_a > 0) {
+        g_qsort_with_data(vlans_a,
+                          num_vlans_a,
+                          sizeof(NMPlatformBridgeVlan),
+                          bridge_vlan_compare,
+                          NULL);
+    }
+
+    if (num_vlans_b > 0) {
+        g_qsort_with_data(vlans_b,
+                          num_vlans_b,
+                          sizeof(NMPlatformBridgeVlan),
+                          bridge_vlan_compare,
+                          NULL);
+    }
+
+    for (i = 0, j = 0, k = 0; i < num_vlans_a; i++) {
+        for (j = vlans_a[i].vid_start; j <= vlans_a[i].vid_end; j++) {
+            v = bridge_vlan_find(vlans_b, num_vlans_b, j, &k);
+            if (!v || v->pvid != vlans_a[i].pvid || v->untagged != vlans_a[i].untagged) {
+                return FALSE;
+            }
+        }
+    }
+
+    for (i = 0, j = 0, k = 0; i < num_vlans_b; i++) {
+        for (j = vlans_b[i].vid_start; j <= vlans_b[i].vid_end; j++) {
+            v = bridge_vlan_find(vlans_a, num_vlans_a, j, &k);
+            if (!v || v->pvid != vlans_b[i].pvid || v->untagged != vlans_b[i].untagged) {
+                return FALSE;
+            }
+        }
+    }
+
+    return TRUE;
+}
+
+/*****************************************************************************/
+
 static const char *
 _trunk_first_line(char *str)
 {
