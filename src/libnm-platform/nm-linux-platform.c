@@ -7940,10 +7940,16 @@ do_request_all_no_delayed_actions(NMPlatform *platform, DelayedActionType action
             struct rtmsg rtm = {
                 .rtm_family = refresh_all_info->addr_family_for_dump,
             };
+            guint retry_count = 0;
             guint i;
 
             for (i = 0; i < G_N_ELEMENTS(ip_route_tracked_protocols); i++) {
                 nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+
+                if (retry_count > 0) {
+                    /* Try again previous protocol */
+                    i--;
+                }
 
                 /* If we try to request a new dump while the previous is still
                  * in progress, kernel returns -EBUSY. Complete the previous
@@ -7970,7 +7976,17 @@ do_request_all_no_delayed_actions(NMPlatform *platform, DelayedActionType action
                                         out_refresh_all_in_progress)
                     < 0) {
                     *out_refresh_all_in_progress -= 1;
-                    /* Try to refresh other route protocols ... */
+                    retry_count++;
+                    if (retry_count > 4) {
+                        _LOGW("failed dumping IPv%c routes with protocol %u, cache might be "
+                              "inconsistent",
+                              nm_utils_addr_family_to_char(rtm.rtm_family),
+                              rtm.rtm_protocol);
+                        retry_count = 0;
+                        /* Give up and try the next protocol */
+                    }
+                } else {
+                    retry_count = 0;
                 }
             }
         } else {
