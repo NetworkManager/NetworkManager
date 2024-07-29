@@ -17,6 +17,7 @@
 
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device.h"
+#include "devices/nm-device-factory.h"
 #include "dns/nm-dns-manager.h"
 #include "nm-act-request.h"
 #include "nm-auth-utils.h"
@@ -1774,6 +1775,74 @@ _connection_autoconnect_retries_set(NMPolicy             *self,
 }
 
 static void
+unblock_autoconnect_for_children(NMPolicy   *self,
+                                 const char *parent_device,
+                                 const char *parent_uuid_settings,
+                                 const char *parent_uuid_applied,
+                                 const char *parent_mac_addr,
+                                 gboolean    reset_devcon_autoconnect)
+{
+    NMPolicyPrivate             *priv = NM_POLICY_GET_PRIVATE(self);
+    NMSettingsConnection *const *connections;
+    gboolean                     changed;
+    guint                        i;
+
+    _LOGT(LOGD_CORE,
+          "block-autoconnect: unblocking child profiles for parent ifname=%s%s%s, uuid=%s%s%s"
+          "%s%s%s",
+          NM_PRINT_FMT_QUOTE_STRING(parent_device),
+          NM_PRINT_FMT_QUOTE_STRING(parent_uuid_settings),
+          NM_PRINT_FMT_QUOTED(parent_uuid_applied,
+                              ", applied-uuid=\"",
+                              parent_uuid_applied,
+                              "\"",
+                              ""));
+
+    changed     = FALSE;
+    connections = nm_settings_get_connections(priv->settings, NULL);
+    for (i = 0; connections[i]; i++) {
+        NMSettingsConnection *sett_conn = connections[i];
+        NMConnection         *connection;
+        NMDeviceFactory      *factory;
+        const char           *parent_name = NULL;
+
+        connection = nm_settings_connection_get_connection(sett_conn);
+        factory    = nm_device_factory_manager_find_factory_for_connection(connection);
+        if (factory)
+            parent_name = nm_device_factory_get_connection_parent(factory, connection);
+
+        if (!parent_name)
+            continue;
+
+        if (!NM_IN_STRSET(parent_name,
+                          parent_device,
+                          parent_uuid_applied,
+                          parent_uuid_settings,
+                          parent_mac_addr))
+            continue;
+
+        if (reset_devcon_autoconnect) {
+            if (nm_manager_devcon_autoconnect_retries_reset(priv->manager, NULL, sett_conn))
+                changed = TRUE;
+        }
+
+        /* unblock the devices associated with that connection */
+        if (nm_manager_devcon_autoconnect_blocked_reason_set(
+                priv->manager,
+                NULL,
+                sett_conn,
+                NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED,
+                FALSE)) {
+            if (!nm_settings_connection_autoconnect_is_blocked(sett_conn))
+                changed = TRUE;
+        }
+    }
+
+    if (changed)
+        nm_policy_device_recheck_auto_activate_all_schedule(self);
+}
+
+static void
 unblock_autoconnect_for_ports(NMPolicy   *self,
                               const char *controller_device,
                               const char *controller_uuid_settings,
@@ -1856,16 +1925,21 @@ unblock_autoconnect_for_ports_for_sett_conn(NMPolicy *self, NMSettingsConnection
 }
 
 static void
-activate_slave_connections(NMPolicy *self, NMDevice *device)
+activate_port_or_children_connections(NMPolicy *self,
+                                      NMDevice *device,
+                                      gboolean  activate_children_connections_only)
 {
-    const char   *master_device;
-    const char   *master_uuid_settings = NULL;
-    const char   *master_uuid_applied  = NULL;
+    const char   *controller_device;
+    const char   *controller_uuid_settings = NULL;
+    const char   *controller_uuid_applied  = NULL;
+    const char   *parent_mac_addr          = NULL;
     NMActRequest *req;
     gboolean      internal_activation = FALSE;
 
-    master_device = nm_device_get_iface(device);
-    nm_assert(master_device);
+    controller_device = nm_device_get_iface(device);
+    nm_assert(controller_device);
+
+    parent_mac_addr = nm_device_get_permanent_hw_address(device);
 
     req = nm_device_get_act_request(device);
     if (req) {
@@ -1875,25 +1949,33 @@ activate_slave_connections(NMPolicy *self, NMDevice *device)
 
         sett_conn = nm_active_connection_get_settings_connection(NM_ACTIVE_CONNECTION(req));
         if (sett_conn)
-            master_uuid_settings = nm_settings_connection_get_uuid(sett_conn);
+            controller_uuid_settings = nm_settings_connection_get_uuid(sett_conn);
 
         connection = nm_active_connection_get_applied_connection(NM_ACTIVE_CONNECTION(req));
         if (connection)
-            master_uuid_applied = nm_connection_get_uuid(connection);
+            controller_uuid_applied = nm_connection_get_uuid(connection);
 
-        if (nm_streq0(master_uuid_settings, master_uuid_applied))
-            master_uuid_applied = NULL;
+        if (nm_streq0(controller_uuid_settings, controller_uuid_applied))
+            controller_uuid_applied = NULL;
 
         subject = nm_active_connection_get_subject(NM_ACTIVE_CONNECTION(req));
         internal_activation =
             subject && (nm_auth_subject_get_subject_type(subject) == NM_AUTH_SUBJECT_TYPE_INTERNAL);
     }
 
-    unblock_autoconnect_for_ports(self,
-                                  master_device,
-                                  master_uuid_settings,
-                                  master_uuid_applied,
-                                  !internal_activation);
+    if (!activate_children_connections_only) {
+        unblock_autoconnect_for_ports(self,
+                                      controller_device,
+                                      controller_uuid_settings,
+                                      controller_uuid_applied,
+                                      !internal_activation);
+    }
+    unblock_autoconnect_for_children(self,
+                                     controller_device,
+                                     controller_uuid_settings,
+                                     controller_uuid_applied,
+                                     parent_mac_addr,
+                                     !internal_activation);
 }
 
 static gboolean
@@ -2061,13 +2143,12 @@ device_state_changed(NMDevice           *device,
                 }
                 break;
             case NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED:
-                /* A connection that fails due to dependency-failed is not
-                 * able to reconnect until the master connection activates
-                 * again; when this happens, the master clears the blocked
-                 * reason for all its slaves in activate_slave_connections()
-                 * and tries to reconnect them. For this to work, the slave
-                 * should be marked as blocked when it fails with
-                 * dependency-failed.
+                /* A connection that fails due to dependency-failed is not able to
+                 * reconnect until the connection it depends on activates again;
+                 * when this happens, the controller or parent clears the blocked
+                 * reason for all its dependent devices in activate_port_or_children_connections()
+                 * and tries to reconnect them. For this to work, the port should
+                 * be marked as blocked when it fails with dependency-failed.
                  */
                 _LOGD(LOGD_DEVICE,
                       "block-autoconnect: connection[%p] (%s) now blocked from autoconnect due to "
@@ -2111,6 +2192,11 @@ device_state_changed(NMDevice           *device,
         }
         break;
     case NM_DEVICE_STATE_ACTIVATED:
+        if (nm_device_get_device_type(device) == NM_DEVICE_TYPE_OVS_INTERFACE) {
+            /* When parent is ovs-interface, the kernel link is only created in stage3, we have to
+            * delay unblocking the children and schedule them for activation until parent is activated */
+            activate_port_or_children_connections(self, device, TRUE);
+        }
         if (sett_conn) {
             /* Reset auto retries back to default since connection was successful */
             nm_manager_devcon_autoconnect_retries_reset(priv->manager, device, sett_conn);
@@ -2195,9 +2281,9 @@ device_state_changed(NMDevice           *device,
         break;
 
     case NM_DEVICE_STATE_PREPARE:
-        /* Reset auto-connect retries of all slaves and schedule them for
+        /* Reset auto-connect retries of all ports or children and schedule them for
          * activation. */
-        activate_slave_connections(self, device);
+        activate_port_or_children_connections(self, device, FALSE);
 
         /* Now that the device state is progressing, we don't care
          * anymore for the AC state. */
