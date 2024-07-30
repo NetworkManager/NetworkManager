@@ -372,6 +372,7 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
 {
     NMDeviceOvsInterface        *self = NM_DEVICE_OVS_INTERFACE(device);
     NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
+    bool                         old_wait_link;
 
     /*
      * When the ovs-interface device enters stage3, it becomes eligible to be attached to
@@ -425,6 +426,7 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
         priv->wait_link.cloned_mac_evaluated = TRUE;
     }
 
+    old_wait_link           = priv->wait_link.waiting;
     priv->wait_link.waiting = TRUE;
     if (check_waiting_for_link(device, addr_family == AF_INET ? "stage3-ipv4" : "stage3-ipv6")) {
         nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_PENDING, NULL);
@@ -443,6 +445,18 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
           nm_utils_addr_family_to_char(addr_family));
 
     priv->wait_link.waiting = FALSE;
+    /*
+     * It is possible we detect the link is ready before link_changed event does. It could happen
+     * because another stage3_ip_config scheduled happened right after the link is ready.
+     * Therefore, if we learn on this function that we are not waiting for the link anymore,
+     * we schedule a sync. stage3_ip_config. Otherwise, it could happen that we proceed with
+     * IP configuration without the needed allocated resources like DHCP client.
+     */
+    if (old_wait_link) {
+        nm_device_bring_up(device);
+        nm_device_activate_schedule_stage3_ip_config(device, TRUE);
+        return;
+    }
     nm_clear_g_source_inst(&priv->wait_link.tun_set_ifindex_idle_source);
     nm_clear_g_signal_handler(nm_device_get_platform(device), &priv->wait_link.tun_link_signal_id);
 
