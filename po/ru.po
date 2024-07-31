@@ -1,7 +1,18 @@
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
-#
+# Copyright (C) 2024 Дронова Юлия <juliette.tux@gmail.com>,
+# Leonid Kanter <leon@asplinux.ru>, 2006, 2007.
+# Артём Попов <artfwo@gmail.com>, 2009.
+# Yulia <ypoyarko@redhat.com>, 2010.
+# Sergey Isachenko aka Zabuldon <vortexius@gmail.com>, 2011.
+# Yuri Kozlov <yuray@komyakino.ru>, 2011.
+# Yuri Myasoedov <omerta13@yandex.ru>, 2012.
+# Stas Solovey <whats_up@tut.by>, 2012, 2014, 2015.
+# ljanda <ljanda@redhat.com>, 2017. #zanata.
+# lrintel <lrintel@redhat.com>, 2017. #zanata.
+# tchuang <tchuang@redhat.com>, 2017. #zanata.
+# ljanda <ljanda@redhat.com>, 2018. #zanata.
+# lrintel <lrintel@redhat.com>, 2018. #zanata.
 # Дронова Юлия <juliette.tux@gmail.com>, 2023.
+# This file is distributed under the same license as the NetworkManager package.
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
