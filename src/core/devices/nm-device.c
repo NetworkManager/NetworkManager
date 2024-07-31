@@ -6884,7 +6884,7 @@ nm_device_controller_release_port(NMDevice           *self,
     if (c_list_is_empty(&priv->ports)) {
         _active_connection_set_state_flags_full(self,
                                                 0,
-                                                NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES);
+                                                NM_ACTIVATION_STATE_FLAG_CONTROLLER_HAS_PORTS);
     }
 
     /* Ensure the device's hardware address is up-to-date; it often changes
@@ -8535,7 +8535,7 @@ nm_device_controller_add_port(NMDevice *self, NMDevice *port, gboolean configure
         c_list_link_tail(&priv->ports, &info->lst_port);
         port_priv->controller = g_object_ref(self);
 
-        _active_connection_set_state_flags(self, NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES);
+        _active_connection_set_state_flags(self, NM_ACTIVATION_STATE_FLAG_CONTROLLER_HAS_PORTS);
 
         /* no need to emit
          *

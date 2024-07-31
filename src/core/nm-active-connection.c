@@ -157,12 +157,12 @@ static NM_UTILS_FLAGS2STR_DEFINE(
     _state_flags_to_string,
     NMActivationStateFlags,
     NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_NONE, "none"),
-    NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_IS_MASTER, "is-controller"),
-    NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_IS_SLAVE, "is-port"),
+    NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_IS_CONTROLLER, "is-controller"),
+    NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_IS_PORT, "is-port"),
     NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_LAYER2_READY, "layer2-ready"),
     NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_IP4_READY, "ip4-ready"),
     NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_IP6_READY, "ip6-ready"),
-    NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES, "controller-has-ports"),
+    NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_CONTROLLER_HAS_PORTS, "controller-has-ports"),
     NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY,
                        "lifetime-bound-to-profile-visibility"),
     NM_UTILS_FLAGS2STR(NM_ACTIVATION_STATE_FLAG_EXTERNAL, "external"), );
@@ -448,15 +448,15 @@ _set_applied_connection_take(NMActiveConnection *self, NMConnection *applied_con
      * on the connection properties itself. */
     s_con = nm_connection_get_setting_connection(priv->applied_connection);
     if (nm_setting_connection_get_controller(s_con))
-        flags_val |= NM_ACTIVATION_STATE_FLAG_IS_SLAVE;
+        flags_val |= NM_ACTIVATION_STATE_FLAG_IS_PORT;
 
     if (_nm_connection_type_is_controller(nm_setting_connection_get_connection_type(s_con)))
-        flags_val |= NM_ACTIVATION_STATE_FLAG_IS_MASTER;
+        flags_val |= NM_ACTIVATION_STATE_FLAG_IS_CONTROLLER;
 
     nm_active_connection_set_state_flags_full(self,
                                               flags_val,
-                                              NM_ACTIVATION_STATE_FLAG_IS_MASTER
-                                                  | NM_ACTIVATION_STATE_FLAG_IS_SLAVE);
+                                              NM_ACTIVATION_STATE_FLAG_IS_CONTROLLER
+                                                  | NM_ACTIVATION_STATE_FLAG_IS_PORT);
 }
 
 void

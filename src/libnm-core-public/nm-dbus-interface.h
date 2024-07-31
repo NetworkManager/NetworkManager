@@ -1091,12 +1091,12 @@ typedef enum /*< flags >*/ {
 /**
  * NMActivationStateFlags:
  * @NM_ACTIVATION_STATE_FLAG_NONE: an alias for numeric zero, no flags set.
- * @NM_ACTIVATION_STATE_FLAG_IS_MASTER: the device is a controller.
- * @NM_ACTIVATION_STATE_FLAG_IS_SLAVE: the device is a slave.
+ * @NM_ACTIVATION_STATE_FLAG_IS_CONTROLLER: the device is a controller.
+ * @NM_ACTIVATION_STATE_FLAG_IS_PORT: the device is a port.
  * @NM_ACTIVATION_STATE_FLAG_LAYER2_READY: layer2 is activated and ready.
  * @NM_ACTIVATION_STATE_FLAG_IP4_READY: IPv4 setting is completed.
  * @NM_ACTIVATION_STATE_FLAG_IP6_READY: IPv6 setting is completed.
- * @NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES: The controller has any slave devices attached.
+ * @NM_ACTIVATION_STATE_FLAG_CONTROLLER_HAS_PORTS: The controller has any port devices attached.
  *   This only makes sense if the device is a controller.
  * @NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY: the lifetime
  *   of the activation is bound to the visibility of the connection profile,
@@ -1112,15 +1112,19 @@ typedef enum /*< flags >*/ {
 typedef enum /*< flags >*/ {
     NM_ACTIVATION_STATE_FLAG_NONE = 0,
 
-    NM_ACTIVATION_STATE_FLAG_IS_MASTER                            = 0x1,
-    NM_ACTIVATION_STATE_FLAG_IS_SLAVE                             = 0x2,
+    NM_ACTIVATION_STATE_FLAG_IS_CONTROLLER                        = 0x1,
+    NM_ACTIVATION_STATE_FLAG_IS_PORT                              = 0x2,
     NM_ACTIVATION_STATE_FLAG_LAYER2_READY                         = 0x4,
     NM_ACTIVATION_STATE_FLAG_IP4_READY                            = 0x8,
     NM_ACTIVATION_STATE_FLAG_IP6_READY                            = 0x10,
-    NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES                    = 0x20,
+    NM_ACTIVATION_STATE_FLAG_CONTROLLER_HAS_PORTS                 = 0x20,
     NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY = 0x40,
     NM_ACTIVATION_STATE_FLAG_EXTERNAL                             = 0x80,
 } NMActivationStateFlags;
+
+#define NM_ACTIVATION_STATE_FLAG_IS_MASTER         NM_ACTIVATION_STATE_FLAG_IS_CONTROLLER
+#define NM_ACTIVATION_STATE_FLAG_IS_SLAVE          NM_ACTIVATION_STATE_FLAG_IS_PORT
+#define NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES NM_ACTIVATION_FLAG_CONTROLLER_HAS_PORTS
 
 /**
  * NMSettingsAddConnection2Flags:
