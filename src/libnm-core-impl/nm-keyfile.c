@@ -4074,6 +4074,16 @@ write_setting_value(KeyfileWriterInfo        *info,
             return;
     }
 
+    /* Don't write offensive terms that are already deprecated as the new inclusive terms
+     * are being written.
+     */
+    if (NM_IN_STRSET(key,
+                     NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES,
+                     NM_SETTING_CONNECTION_MASTER,
+                     NM_SETTING_CONNECTION_SLAVE_TYPE,
+                     NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST))
+        return;
+
     value = (GValue){0};
 
     g_value_init(&value, G_PARAM_SPEC_VALUE_TYPE(property_info->param_spec));
