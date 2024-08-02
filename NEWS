@@ -7,6 +7,7 @@ Overview of changes since NetworkManager-1.48.2
 * When looking up the system hostname from the reverse DNS lookup of
   addresses configured on interfaces, NetworkManager now takes into
   account the content of /etc/hosts.
+* keyfile: Stop writing offensive terms into keyfiles
 
 ===============================================
 NetworkManager-1.48.2
