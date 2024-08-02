@@ -244,6 +244,7 @@ int sd_dhcp6_client_set_duid_en(sd_dhcp6_client *client) {
         return 0;
 }
 
+#if 0  /* NM_IGNORED */
 int sd_dhcp6_client_set_duid_uuid(sd_dhcp6_client *client) {
         int r;
 
@@ -256,6 +257,7 @@ int sd_dhcp6_client_set_duid_uuid(sd_dhcp6_client *client) {
 
         return 0;
 }
+#endif /* NM_IGNORED */
 
 int sd_dhcp6_client_set_duid_raw(sd_dhcp6_client *client, uint16_t duid_type, const uint8_t *duid, size_t duid_len) {
         int r;
