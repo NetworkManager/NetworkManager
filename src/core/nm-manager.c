@@ -5375,11 +5375,21 @@ should_connect_ports(NMConnection *connection, NMDevice *device)
 
     val =
         nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
-                                                    NM_CON_DEFAULT("connection.autoconnect-slaves"),
+                                                    NM_CON_DEFAULT("connection.autoconnect-ports"),
                                                     device,
                                                     0,
                                                     1,
                                                     -1);
+
+    /* Trust "connection.autoconnect-ports" first, if set to default fallback to the deprecated term. */
+    if (val == NM_TERNARY_DEFAULT)
+        val = nm_config_data_get_connection_default_int64(
+            NM_CONFIG_GET_DATA,
+            NM_CON_DEFAULT("connection.autoconnect-slaves"),
+            device,
+            0,
+            1,
+            -1);
 
 out:
     if (val == NM_TERNARY_FALSE)
