@@ -858,7 +858,12 @@ ipv6.ip6-privacy=0
           </para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>connection.autoconnect-ports</varname></term>
+        </varlistentry>
+        <varlistentry>
           <term><varname>connection.autoconnect-slaves</varname></term>
+          <listitem><para>This is deprecated, please use "connection.autoconnect-ports" instead.
+          </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>connection.down-on-poweroff</varname></term>
