@@ -12,6 +12,8 @@
 #include "nm-lldp.h"
 #include "nm-lldp-rx-internal.h"
 
+#define MAX_NEIGHBORS 128
+
 /*****************************************************************************/
 
 guint
@@ -743,10 +745,17 @@ nm_lldp_neighbor_new(size_t raw_size)
     return n;
 }
 
-NMLldpNeighbor *
-nm_lldp_neighbor_new_from_raw(NMLldpRX *lldp_rx, const void *raw, size_t raw_size)
+static void
+nmtst_lldp_event_handler(NMLldpRX *lldp, NMLldpRXEvent event, NMLldpNeighbor *n, void *user_data)
 {
-    nm_auto(nm_lldp_neighbor_unrefp) NMLldpNeighbor *n = NULL;
+    g_assert_not_reached();
+}
+
+NMLldpNeighbor *
+nm_lldp_neighbor_new_from_raw(const void *raw, size_t raw_size)
+{
+    nm_auto(nm_lldp_neighbor_unrefp) NMLldpNeighbor *n       = NULL;
+    nm_auto(nm_lldp_rx_unrefp) NMLldpRX             *lldp_rx = NULL;
     int                                              r;
 
     g_return_val_if_fail(raw || raw_size <= 0, NULL);
@@ -755,7 +764,12 @@ nm_lldp_neighbor_new_from_raw(NMLldpRX *lldp_rx, const void *raw, size_t raw_siz
 
     nm_memcpy(NM_LLDP_NEIGHBOR_RAW(n), raw, raw_size);
 
-    r = nm_lldp_neighbor_parse(lldp_rx, n);
+    lldp_rx = nm_lldp_rx_new(&(NMLldpRXConfig){
+        .ifindex       = 1,
+        .neighbors_max = MAX_NEIGHBORS,
+        .callback      = nmtst_lldp_event_handler,
+    });
+    r       = nm_lldp_neighbor_parse(lldp_rx, n);
     if (r < 0)
         return NULL;
 
