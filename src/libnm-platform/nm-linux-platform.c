@@ -7978,7 +7978,7 @@ do_request_all_no_delayed_actions(NMPlatform *platform, DelayedActionType action
                     *out_refresh_all_in_progress -= 1;
                     retry_count++;
                     if (retry_count > 4) {
-                        _LOGW("failed dumping IPv%c routes with protocol %u, cache might be "
+                        _LOGE("failed dumping IPv%c routes with protocol %u, cache might be "
                               "inconsistent",
                               nm_utils_addr_family_to_char(rtm.rtm_family),
                               rtm.rtm_protocol);
