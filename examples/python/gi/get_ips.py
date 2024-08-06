@@ -35,7 +35,7 @@ def show_addresses(dev, family):
         addr = nm_address.get_address()
         prefix = nm_address.get_prefix()
 
-        print("%s/%d") % (addr, prefix)
+        print("%s/%d" % (addr, prefix))
 
 
 def show_gateway(dev, family):
@@ -75,7 +75,7 @@ def show_routes(dev, family):
         next_hop = nm_route.get_next_hop()
         metric = nm_route.get_metric()
 
-        print("%s/%d  %s  %d") % (dest, prefix, next_hop, metric)
+        print("%s/%d  %s  %d" % (dest, prefix, next_hop, metric))
 
 
 def show_dns(dev, family):
@@ -88,11 +88,11 @@ def show_dns(dev, family):
         print("None")
         return
 
-    print("Nameservers: %s") % (ip_cfg.get_nameservers())
-    print("Domains: %s") % (ip_cfg.get_domains())
-    print("Searches: %s") % (ip_cfg.get_searches())
+    print("Nameservers: %s" % ip_cfg.get_nameservers())
+    print("Domains: %s" % ip_cfg.get_domains())
+    print("Searches: %s" % ip_cfg.get_searches())
     if family == socket.AF_INET:
-        print("WINS: %s") % (ip_cfg.get_wins_servers())
+        print("WINS: %s" % ip_cfg.get_wins_servers())
 
 
 if __name__ == "__main__":
@@ -110,39 +110,39 @@ if __name__ == "__main__":
     print("IPv4 addresses:")
     print("---------------")
     show_addresses(dev, socket.AF_INET)
-    print
+    print()
 
     print("IPv4 gateway:")
     print("-------------")
     show_gateway(dev, socket.AF_INET)
-    print
+    print()
 
     print("IPv4 routes:")
     print("------------")
     show_routes(dev, socket.AF_INET)
-    print
+    print()
 
     print("IPv6 addresses:")
     print("---------------")
     show_addresses(dev, socket.AF_INET6)
-    print
+    print()
 
     print("IPv6 gateway:")
     print("-------------")
     show_gateway(dev, socket.AF_INET6)
-    print
+    print()
 
     print("IPv6 routes:")
     print("------------")
     show_routes(dev, socket.AF_INET6)
-    print
+    print()
 
     print("IPv4 DNS:")
     print("------------")
     show_dns(dev, socket.AF_INET)
-    print
+    print()
 
     print("IPv6 DNS:")
     print("------------")
     show_dns(dev, socket.AF_INET6)
-    print
+    print()

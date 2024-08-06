@@ -42,33 +42,32 @@ if __name__ == "__main__":
     # create Client object
     client = NM.Client.new(None)
 
-    all_connections = client.get_connections()
-    for c in all_connections:
-        if c.get_uuid() != uuid:
-            continue
+    try:
+        conn = next(c for c in client.get_connections() if c.get_uuid() == uuid)
+    except StopIteration:
+        sys.exit("not found connection with uuid=%s" % uuid)
 
-        # add IPv4 setting if it doesn't yet exist
-        s_ip4 = c.get_setting_ip4_config()
-        if not s_ip4:
-            s_ip4 = NM.SettingIP4Config.new()
-            c.add_setting(s_ip4)
+    # add IPv4 setting if it doesn't yet exist
+    s_ip4 = conn.get_setting_ip4_config()
+    if not s_ip4:
+        s_ip4 = NM.SettingIP4Config.new()
+        conn.add_setting(s_ip4)
 
-        # set the method and change properties
-        s_ip4.set_property(NM.SETTING_IP_CONFIG_METHOD, method)
-        if method == "auto":
-            # remove addresses and gateway
-            s_ip4.clear_addresses()
-            s_ip4.props.gateway = None
-        elif method == "manual":
-            # Add the static IP address, prefix, and (optional) gateway
-            addr = NM.IPAddress.new(socket.AF_INET, sys.argv[3], int(sys.argv[4]))
-            s_ip4.add_address(addr)
-            if len(sys.argv) == 6:
-                s_ip4.props.gateway = sys.argv[5]
+    # set the method and change properties
+    s_ip4.set_property(NM.SETTING_IP_CONFIG_METHOD, method)
+    if method == "auto":
+        # remove addresses and gateway
+        s_ip4.clear_addresses()
+        s_ip4.props.gateway = None
+    elif method == "manual":
+        # Add the static IP address, prefix, and (optional) gateway
+        addr = NM.IPAddress.new(socket.AF_INET, sys.argv[3], int(sys.argv[4]))
+        s_ip4.add_address(addr)
+        if len(sys.argv) == 6:
+            s_ip4.props.gateway = sys.argv[5]
 
-        try:
-            c.commit_changes(True, None)
-            print("The connection profile has been updated.")
-        except Exception as e:
-            sys.stderr.write("Error: %s\n" % e)
-        break
+    try:
+        conn.commit_changes(True, None)
+        print("The connection profile has been updated.")
+    except Exception as e:
+        sys.stderr.write("Error: %s\n" % e)

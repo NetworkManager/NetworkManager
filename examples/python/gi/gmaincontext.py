@@ -14,7 +14,7 @@
 # API (like NM.Client.new()) is for simple programs but usually not best
 # for using NMClient for real applications.
 #
-# To learn more about GMainContext, read https://developer.gnome.org/SearchProvider/documentation/tutorials/main-contexts.html
+# To learn more about GMainContext, read https://developer.gnome.org/documentation/tutorials/main-contexts.html
 # When I say "mainloop" or "event loop", I mean GMainContext. GMainLoop is
 # a small wrapper around GMainContext to run the context with a boolean
 # flag.
