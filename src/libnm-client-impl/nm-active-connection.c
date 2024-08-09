@@ -381,9 +381,9 @@ nm_active_connection_get_vpn(NMActiveConnection *connection)
  * nm_active_connection_get_master:
  * @connection: a #NMActiveConnection
  *
- * Gets the master #NMDevice of the connection.
+ * Gets the controller #NMDevice of the connection.
  *
- * Returns: (transfer none): the master #NMDevice of the #NMActiveConnection.
+ * Returns: (transfer none): the controller #NMDevice of the #NMActiveConnection.
  *
  * Deprecated: 1.44: Use nm_active_connection_get_controller() instead.
  **/
@@ -880,7 +880,7 @@ nm_active_connection_class_init(NMActiveConnectionClass *klass)
     /**
      * NMActiveConnection:master:
      *
-     * The master device if one exists. Replaced by the "controller" property.
+     * The controller device if one exists. Replaced by the "controller" property.
      *
      * Deprecated: 1.44
      **/

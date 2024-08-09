@@ -286,21 +286,21 @@ _cert_set_from_ifcfg(gpointer    setting,
 /*****************************************************************************/
 
 static void
-check_if_bond_slave(shvarFile *ifcfg, NMSettingConnection *s_con)
+check_if_bond_port(shvarFile *ifcfg, NMSettingConnection *s_con)
 {
     gs_free char *value = NULL;
     const char   *v;
-    const char   *master;
+    const char   *controller;
 
     v = svGetValueStr(ifcfg, "MASTER_UUID", &value);
     if (!v)
         v = svGetValueStr(ifcfg, "MASTER", &value);
 
     if (v) {
-        master = nm_setting_connection_get_controller(s_con);
-        if (master) {
-            PARSE_WARNING("Already configured as slave of %s. Ignoring MASTER{_UUID}=\"%s\"",
-                          master,
+        controller = nm_setting_connection_get_controller(s_con);
+        if (controller) {
+            PARSE_WARNING("Already configured as port of %s. Ignoring MASTER{_UUID}=\"%s\"",
+                          controller,
                           v);
             return;
         }
@@ -319,11 +319,11 @@ check_if_bond_slave(shvarFile *ifcfg, NMSettingConnection *s_con)
 }
 
 static void
-check_if_team_slave(shvarFile *ifcfg, NMSettingConnection *s_con)
+check_if_team_port(shvarFile *ifcfg, NMSettingConnection *s_con)
 {
     gs_free char *value = NULL;
     const char   *v;
-    const char   *master;
+    const char   *controller;
 
     v = svGetValueStr(ifcfg, "TEAM_MASTER_UUID", &value);
     if (!v)
@@ -331,10 +331,10 @@ check_if_team_slave(shvarFile *ifcfg, NMSettingConnection *s_con)
     if (!v)
         return;
 
-    master = nm_setting_connection_get_controller(s_con);
-    if (master) {
-        PARSE_WARNING("Already configured as slave of %s. Ignoring TEAM_MASTER{_UUID}=\"%s\"",
-                      master,
+    controller = nm_setting_connection_get_controller(s_con);
+    if (controller) {
+        PARSE_WARNING("Already configured as port of %s. Ignoring TEAM_MASTER{_UUID}=\"%s\"",
+                      controller,
                       v);
         return;
     }
@@ -508,9 +508,7 @@ make_connection_setting(const char *file,
         const char *old_value;
 
         if ((old_value = nm_setting_connection_get_controller(s_con))) {
-            PARSE_WARNING("Already configured as slave of %s. Ignoring BRIDGE=\"%s\"",
-                          old_value,
-                          v);
+            PARSE_WARNING("Already configured as port of %s. Ignoring BRIDGE=\"%s\"", old_value, v);
         } else {
             g_object_set(s_con, NM_SETTING_CONNECTION_CONTROLLER, v, NULL);
             g_object_set(s_con,
@@ -520,8 +518,8 @@ make_connection_setting(const char *file,
         }
     }
 
-    check_if_bond_slave(ifcfg, s_con);
-    check_if_team_slave(ifcfg, s_con);
+    check_if_bond_port(ifcfg, s_con);
+    check_if_team_port(ifcfg, s_con);
 
     nm_clear_g_free(&value);
     v = svGetValueStr(ifcfg, "OVS_PORT_UUID", &value);
@@ -531,7 +529,7 @@ make_connection_setting(const char *file,
         const char *old_value;
 
         if ((old_value = nm_setting_connection_get_controller(s_con))) {
-            PARSE_WARNING("Already configured as slave of %s. Ignoring OVS_PORT=\"%s\"",
+            PARSE_WARNING("Already configured as port of %s. Ignoring OVS_PORT=\"%s\"",
                           old_value,
                           v);
         } else {
@@ -551,7 +549,7 @@ make_connection_setting(const char *file,
         const char *old_value;
 
         if ((old_value = nm_setting_connection_get_controller(s_con))) {
-            PARSE_WARNING("Already configured as slave of %s. Ignoring VRF{_UUID}=\"%s\"",
+            PARSE_WARNING("Already configured as port of %s. Ignoring VRF{_UUID}=\"%s\"",
                           old_value,
                           v);
         } else {
@@ -6683,7 +6681,7 @@ connection_from_file_full(const char *filename,
         gs_free char *bond_options = NULL;
 
         if (svGetValueStr(main_ifcfg, "BONDING_OPTS", &bond_options)) {
-            /* initscripts consider these as bond masters */
+            /* initscripts consider these as bond controllers */
             g_free(type);
             type = g_strdup(TYPE_BOND);
         }

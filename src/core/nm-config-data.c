@@ -373,8 +373,8 @@ nm_config_data_get_iwd_config_path(const NMConfigData *self)
 
 gboolean
 nm_config_data_get_ignore_carrier_for_port(const NMConfigData *self,
-                                           const char         *master,
-                                           const char         *slave_type)
+                                           const char         *controller,
+                                           const char         *port_type)
 {
     const char           *value;
     gboolean              has_match;
@@ -383,15 +383,15 @@ nm_config_data_get_ignore_carrier_for_port(const NMConfigData *self,
 
     g_return_val_if_fail(NM_IS_CONFIG_DATA(self), FALSE);
 
-    if (!master || !slave_type)
+    if (!controller || !port_type)
         goto out_default;
 
-    if (!nm_utils_ifname_valid_kernel(master, NULL))
+    if (!nm_utils_ifname_valid_kernel(controller, NULL))
         goto out_default;
 
     match_data = (NMMatchSpecDeviceData){
-        .interface_name = master,
-        .device_type    = slave_type,
+        .interface_name = controller,
+        .device_type    = port_type,
     };
 
     value = _config_data_get_device_config(self,
@@ -412,7 +412,7 @@ nm_config_data_get_ignore_carrier_for_port(const NMConfigData *self,
         return m;
 
 out_default:
-    /* if ignore-carrier is not explicitly or detected for the master, then we assume it's
+    /* if ignore-carrier is not explicitly or detected for the controller, then we assume it's
      * enabled. This is in line with nm_config_data_get_ignore_carrier_by_device(), where
      * ignore-carrier is enabled based on nm_device_ignore_carrier_by_default().
      */

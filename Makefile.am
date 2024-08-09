@@ -3439,10 +3439,10 @@ EXTRA_DIST += \
 	src/core/settings/plugins/keyfile/tests/keyfiles/Test_New_Wireless_Group_Names \
 	src/core/settings/plugins/keyfile/tests/keyfiles/Test_minimal_1 \
 	src/core/settings/plugins/keyfile/tests/keyfiles/Test_minimal_2 \
-	src/core/settings/plugins/keyfile/tests/keyfiles/Test_minimal_slave_1 \
-	src/core/settings/plugins/keyfile/tests/keyfiles/Test_minimal_slave_2 \
-	src/core/settings/plugins/keyfile/tests/keyfiles/Test_minimal_slave_3 \
-	src/core/settings/plugins/keyfile/tests/keyfiles/Test_minimal_slave_4 \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_minimal_port_1 \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_minimal_port_2 \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_minimal_port_3 \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_minimal_port_4 \
 	src/core/settings/plugins/keyfile/tests/keyfiles/Test_Missing_Vlan_Setting \
 	src/core/settings/plugins/keyfile/tests/keyfiles/Test_Missing_Vlan_Flags \
 	src/core/settings/plugins/keyfile/tests/keyfiles/Test_Missing_ID_UUID \
@@ -3602,13 +3602,13 @@ EXTRA_DIST += \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-netmask-1.cexpected \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-random_wifi_connection.cexpected \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-random_wifi_connection_2.cexpected \
-	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-team-slave-enp31s0f1-142.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-team-port-enp31s0f1-142.cexpected \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-eth-type \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-main \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-mode-numeric \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-port \
-	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-slave \
-	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-slave-ib \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-port \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-port-ib \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bridge-component \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bridge-main \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bridge-missing-stp \

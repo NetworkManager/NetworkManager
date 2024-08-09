@@ -1426,7 +1426,7 @@ ac_overview(NmCli *nmc, NMActiveConnection *ac)
     if (nm_active_connection_get_controller(ac)) {
         nm_str_buf_append_printf(&str,
                                  "%s %s, ",
-                                 _("master"),
+                                 _("controller"),
                                  nm_device_get_iface(nm_active_connection_get_controller(ac)));
     }
     if (nm_active_connection_get_vpn(ac))

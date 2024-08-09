@@ -1,0 +1,4 @@
+[connection]
+controller=br0
+port-type=bridge
+[802-3-ethernet]

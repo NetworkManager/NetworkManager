@@ -157,7 +157,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                        _("A connection with a '%s' setting must not have a master."),
+                        _("A connection with a '%s' setting must not have a controller."),
                         NM_SETTING_OVS_BRIDGE_SETTING_NAME);
             g_prefix_error(error,
                            "%s.%s: ",

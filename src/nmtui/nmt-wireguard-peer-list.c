@@ -56,7 +56,7 @@ static guint signals[LAST_SIGNAL] = {0};
 
 /**
  * nmt_wireguard_peer_list_new:
- * @master: the master #NMSettingWireGuard whose peers are being listed
+ * @controller: the controller #NMSettingWireGuard whose peers are being listed
  *
  * Creates a new #NmtWireguardPeerList.
  *

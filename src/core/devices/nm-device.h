@@ -375,10 +375,10 @@ typedef struct _NMDeviceClass {
     /* Update the connection with currently configured L2 settings */
     void (*update_connection)(NMDevice *device, NMConnection *connection);
 
-    gboolean (*master_update_slave_connection)(NMDevice     *self,
-                                               NMDevice     *slave,
-                                               NMConnection *connection,
-                                               GError      **error);
+    gboolean (*controller_update_port_connection)(NMDevice     *self,
+                                                  NMDevice     *port,
+                                                  NMConnection *connection,
+                                                  GError      **error);
 
     /* Attachs a port asynchronously. Returns TRUE/FALSE on immediate
      * success/error; in such cases, the callback is not invoked. If the
@@ -526,14 +526,14 @@ gboolean nm_device_is_available(NMDevice *dev, NMDeviceCheckDevAvailableFlags fl
 gboolean nm_device_has_carrier(NMDevice *dev);
 
 NMConnection *nm_device_generate_connection(NMDevice *self,
-                                            NMDevice *master,
+                                            NMDevice *controller,
                                             gboolean *out_maybe_later,
                                             GError  **error);
 
-gboolean nm_device_master_update_slave_connection(NMDevice     *master,
-                                                  NMDevice     *slave,
-                                                  NMConnection *connection,
-                                                  GError      **error);
+gboolean nm_device_controller_update_port_connection(NMDevice     *controller,
+                                                     NMDevice     *port,
+                                                     NMConnection *connection,
+                                                     GError      **error);
 
 gboolean
 nm_device_can_auto_connect(NMDevice *self, NMSettingsConnection *sett_conn, char **specific_object);
@@ -549,7 +549,7 @@ gboolean nm_device_check_connection_compatible(NMDevice     *device,
                                                gboolean      check_properties,
                                                GError      **error);
 
-gboolean nm_device_check_slave_connection_compatible(NMDevice *device, NMConnection *connection);
+gboolean nm_device_check_port_connection_compatible(NMDevice *device, NMConnection *connection);
 gboolean nm_device_can_be_parent(NMDevice *device);
 
 gboolean nm_device_can_assume_connections(NMDevice *self);
@@ -603,9 +603,9 @@ void nm_device_copy_ip6_dns_config(NMDevice *self, NMDevice *from_device);
  *   them by default
  * @NM_UNMANAGED_USER_UDEV: %TRUE when unmanaged by user decision (via UDev rule)
  * @NM_UNMANAGED_EXTERNAL_DOWN: %TRUE when unmanaged because !IFF_UP and not created by NM
- * @NM_UNMANAGED_IS_SLAVE: indicates that the device is enslaved. Note that
- *   setting the NM_UNMANAGED_IS_SLAVE to %TRUE makes no sense, this flag has only
- *   meaning to set a slave device as managed if the parent is managed too.
+ * @NM_UNMANAGED_IS_PORT: indicates that the device is attached as port. Note that
+ *   setting the NM_UNMANAGED_IS_PORT to %TRUE makes no sense, this flag has only
+ *   meaning to set a port device as managed if the parent is managed too.
  */
 typedef enum {
     NM_UNMANAGED_NONE = 0,
@@ -624,7 +624,7 @@ typedef enum {
     NM_UNMANAGED_USER_CONF     = (1LL << 6),
     NM_UNMANAGED_USER_UDEV     = (1LL << 7),
     NM_UNMANAGED_EXTERNAL_DOWN = (1LL << 8),
-    NM_UNMANAGED_IS_SLAVE      = (1LL << 9),
+    NM_UNMANAGED_IS_PORT       = (1LL << 9),
 
     NM_UNMANAGED_ALL = ((1LL << 10) - 1),
 } NMUnmanagedFlags;

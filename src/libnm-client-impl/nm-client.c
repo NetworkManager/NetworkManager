@@ -9221,17 +9221,17 @@ nm_client_wait_shutdown_finish(GAsyncResult *result, GError **error)
 
 /*****************************************************************************
  * Backported symbols. Usually, new API is only added in new major versions
- * of NetworkManager (that is, on "master" branch). Sometimes however, we might
+ * of NetworkManager (that is, on "main" branch). Sometimes however, we might
  * have to backport some API to an older stable branch. In that case, we backport
  * the symbols with a different version corresponding to the minor API.
  *
- * To allow upgrading from such a extended minor-release, "master" contains these
+ * To allow upgrading from such a extended minor-release, "main" contains these
  * backported symbols too.
  *
  * For example, 1.2.0 added nm_setting_connection_autoconnect_slaves_get_type.
  * This was backported for 1.0.4 as nm_setting_connection_autoconnect_slaves_get_type@libnm_1_0_4
  * To allow an application that was linked against 1.0.4 to seamlessly upgrade to
- * a newer major version, the same symbols is also exposed on "master". Note, that
+ * a newer major version, the same symbols is also exposed on "main". Note, that
  * a user can only seamlessly upgrade to a newer major version, that is released
  * *after* 1.0.4 is out. In this example, 1.2.0 was released after 1.4.0, and thus
  * a 1.0.4 user can upgrade to 1.2.0 ABI.

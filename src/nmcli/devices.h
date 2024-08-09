@@ -27,7 +27,7 @@ extern const NmcMetaGenericInfo *const metagen_device_detail_wifi_properties[];
 extern const NmcMetaGenericInfo *const metagen_device_detail_wimax_properties[];
 extern const NmcMetaGenericInfo *const nmc_fields_dev_wifi_list[];
 extern const NmcMetaGenericInfo *const nmc_fields_dev_wimax_list[];
-extern const NmcMetaGenericInfo *const nmc_fields_dev_show_master_prop[];
+extern const NmcMetaGenericInfo *const nmc_fields_dev_show_controller_prop[];
 extern const NmcMetaGenericInfo *const nmc_fields_dev_show_team_prop[];
 extern const NmcMetaGenericInfo *const nmc_fields_dev_show_vlan_prop[];
 extern const NmcMetaGenericInfo *const nmc_fields_dev_show_bluetooth[];

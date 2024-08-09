@@ -3293,8 +3293,8 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     GError                             *error = NULL;
     guint                               timeout;
     NMActRequest                       *request;
-    NMActiveConnection                 *master_ac;
-    NMDevice                           *master;
+    NMActiveConnection                 *controller_ac;
+    NMDevice                           *controller;
 
     nm_clear_g_source(&priv->sup_timeout_id);
     nm_clear_g_source(&priv->link_timeout_id);
@@ -3374,10 +3374,10 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 
     /* Tell the supplicant in which bridge the interface is */
     if ((request = nm_device_get_act_request(device))
-        && (master_ac = nm_active_connection_get_controller(NM_ACTIVE_CONNECTION(request)))
-        && (master = nm_active_connection_get_device(master_ac))
-        && nm_device_get_device_type(master) == NM_DEVICE_TYPE_BRIDGE) {
-        nm_supplicant_interface_set_bridge(priv->sup_iface, nm_device_get_iface(master));
+        && (controller_ac = nm_active_connection_get_controller(NM_ACTIVE_CONNECTION(request)))
+        && (controller = nm_active_connection_get_device(controller_ac))
+        && nm_device_get_device_type(controller) == NM_DEVICE_TYPE_BRIDGE) {
+        nm_supplicant_interface_set_bridge(priv->sup_iface, nm_device_get_iface(controller));
     } else
         nm_supplicant_interface_set_bridge(priv->sup_iface, NULL);
 

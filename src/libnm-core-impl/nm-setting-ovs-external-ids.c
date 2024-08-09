@@ -124,7 +124,7 @@ _nm_setting_ovs_verify_connection_type(GType gtype, NMConnection *connection, GE
 {
     NMSettingConnection *s_con;
     const char          *type;
-    const char          *slave_type;
+    const char          *port_type;
 
     nm_assert(!connection || NM_IS_CONNECTION(connection));
     nm_assert(NM_IN_SET(gtype, NM_TYPE_SETTING_OVS_EXTERNAL_IDS, NM_TYPE_SETTING_OVS_OTHER_CONFIG));
@@ -150,14 +150,14 @@ _nm_setting_ovs_verify_connection_type(GType gtype, NMConnection *connection, GE
         return TRUE;
 
     if ((s_con = nm_connection_get_setting_connection(connection))
-        && _nm_connection_detect_slave_type_full(s_con,
-                                                 connection,
-                                                 &slave_type,
-                                                 NULL,
-                                                 NULL,
-                                                 NULL,
-                                                 NULL)
-        && nm_streq0(slave_type, NM_SETTING_OVS_PORT_SETTING_NAME))
+        && _nm_connection_detect_port_type_full(s_con,
+                                                connection,
+                                                &port_type,
+                                                NULL,
+                                                NULL,
+                                                NULL,
+                                                NULL)
+        && nm_streq0(port_type, NM_SETTING_OVS_PORT_SETTING_NAME))
         return TRUE;
 
     g_set_error(error,

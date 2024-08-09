@@ -219,7 +219,7 @@ no-auto-default=*
             if specified (See <xref linkend="ignore-carrier"/>).
             Otherwise, it is a list of matches to specify for which device
             carrier should be ignored. See <xref linkend="device-spec"/> for the
-            syntax how to specify a device. Note that master types like
+            syntax how to specify a device. Note that controller types like
             bond, bridge, and team ignore carrier by default. You can however
             revert that default using the "except:" specifier (or better,
             use the per-device setting instead of the deprecated setting).
@@ -858,7 +858,12 @@ ipv6.ip6-privacy=0
           </para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>connection.autoconnect-ports</varname></term>
+        </varlistentry>
+        <varlistentry>
           <term><varname>connection.autoconnect-slaves</varname></term>
+          <listitem><para>This is deprecated, please use "connection.autoconnect-ports" instead.
+          </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>connection.down-on-poweroff</varname></term>
@@ -1125,7 +1130,7 @@ ipv6.ip6-privacy=0
 <programlisting>
 [connection]
 ipv6.ip6-privacy=0
-connection.autoconnect-slaves=1
+connection.autoconnect-ports=1
 vpn.timeout=120
 
 [connection-wifi-wlan0]

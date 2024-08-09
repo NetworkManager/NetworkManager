@@ -233,7 +233,7 @@ _secret_flags_persist_secret(NMSettingSecretFlags flags)
 /*****************************************************************************/
 /* Some setting properties also contain setting names, such as
  * NMSettingConnection's 'type' property (which specifies the base type of the
- * connection, e.g. ethernet or wifi) or 'slave-type' (specifies type of slave
+ * connection, e.g. ethernet or wifi) or 'port-type' (specifies type of port
  * connection, e.g. bond or bridge). This function handles translating those
  * properties' values to the real setting name if they are an alias.
  */

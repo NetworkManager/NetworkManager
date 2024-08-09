@@ -1056,7 +1056,7 @@ nm_platform_link_get_all(NMPlatform *self)
         return NULL;
 
     /* first sort the links by their name. Below we will sort
-     * further by moving children/slaves to the end. */
+     * further by moving children/ports to the end. */
     g_ptr_array_sort(links, _link_get_all_presort);
 
     unseen = g_hash_table_new(nm_direct_hash, NULL);
@@ -1074,10 +1074,10 @@ nm_platform_link_get_all(NMPlatform *self)
 
         if (!item->ifindex)
             continue;
-        if (item->master != 0) {
-            g_warn_if_fail(item->master > 0);
-            g_warn_if_fail(item->master != item->ifindex);
-            g_warn_if_fail(g_hash_table_contains(unseen, GINT_TO_POINTER(item->master)));
+        if (item->controller != 0) {
+            g_warn_if_fail(item->controller > 0);
+            g_warn_if_fail(item->controller != item->ifindex);
+            g_warn_if_fail(g_hash_table_contains(unseen, GINT_TO_POINTER(item->controller)));
         }
         if (item->parent != 0) {
             if (item->parent != NM_PLATFORM_LINK_OTHER_NETNS) {
@@ -1089,7 +1089,7 @@ nm_platform_link_get_all(NMPlatform *self)
     }
 #endif
 
-    /* Re-order the links list such that children/slaves come after all ancestors */
+    /* Re-order the links list such that children/ports come after all ancestors */
     nm_assert(g_hash_table_size(unseen) == links->len);
     nresult = links->len;
     result  = g_ptr_array_new_full(nresult, (GDestroyNotify) nmp_object_unref);
@@ -1106,7 +1106,8 @@ nm_platform_link_get_all(NMPlatform *self)
 
             g_assert(g_hash_table_contains(unseen, GINT_TO_POINTER(item->ifindex)));
 
-            if (item->master > 0 && g_hash_table_contains(unseen, GINT_TO_POINTER(item->master)))
+            if (item->controller > 0
+                && g_hash_table_contains(unseen, GINT_TO_POINTER(item->controller)))
                 goto skip;
             if (item->parent > 0 && g_hash_table_contains(unseen, GINT_TO_POINTER(item->parent)))
                 goto skip;
@@ -1712,7 +1713,7 @@ nm_platform_link_is_software(NMPlatform *self, int ifindex)
 }
 
 /**
- * nm_platform_link_supports_slaves:
+ * nm_platform_link_supports_ports:
  * @self: platform instance
  * @ifindex: Interface index.
  *
@@ -1720,9 +1721,9 @@ nm_platform_link_is_software(NMPlatform *self, int ifindex)
  * other interfaces.
  */
 gboolean
-nm_platform_link_supports_slaves(NMPlatform *self, int ifindex)
+nm_platform_link_supports_ports(NMPlatform *self, int ifindex)
 {
-    return nm_link_type_supports_slaves(nm_platform_link_get_type(self, ifindex));
+    return nm_link_type_supports_ports(nm_platform_link_get_type(self, ifindex));
 }
 
 /**
@@ -2071,7 +2072,7 @@ nm_platform_link_set_sriov_vfs(NMPlatform *self, int ifindex, const NMPlatformVF
 gboolean
 nm_platform_link_set_bridge_vlans(NMPlatform                        *self,
                                   int                                ifindex,
-                                  gboolean                           on_master,
+                                  gboolean                           on_controller,
                                   const NMPlatformBridgeVlan *const *vlans)
 {
     guint i;
@@ -2082,7 +2083,7 @@ nm_platform_link_set_bridge_vlans(NMPlatform                        *self,
     if (_LOGD_ENABLED()) {
         _LOG3D("link: %s bridge VLANs on %s",
                vlans ? "setting" : "clearing",
-               on_master ? "master" : "self");
+               on_controller ? "controller" : "self");
         if (vlans) {
             for (i = 0; vlans[i]; i++) {
                 char                        sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
@@ -2094,7 +2095,7 @@ nm_platform_link_set_bridge_vlans(NMPlatform                        *self,
         }
     }
 
-    return klass->link_set_bridge_vlans(self, ifindex, on_master, vlans);
+    return klass->link_set_bridge_vlans(self, ifindex, on_controller, vlans);
 }
 
 gboolean
@@ -2376,65 +2377,65 @@ nm_platform_link_get_driver_info(NMPlatform *self,
 }
 
 /**
- * nm_platform_link_enslave:
+ * nm_platform_link_attach_port:
  * @self: platform instance
- * @master: Interface index of the master
- * @ifindex: Interface index of the slave
+ * @controller: Interface index of the controller
+ * @ifindex: Interface index of the port
  *
- * Enslave @ifindex to @master.
+ * Enport @ifindex to @controller.
  */
 gboolean
-nm_platform_link_enslave(NMPlatform *self, int master, int ifindex)
+nm_platform_link_attach_port(NMPlatform *self, int controller, int ifindex)
 {
     _CHECK_SELF(self, klass, FALSE);
 
-    g_return_val_if_fail(master > 0, FALSE);
+    g_return_val_if_fail(controller > 0, FALSE);
     g_return_val_if_fail(ifindex > 0, FALSE);
 
-    _LOG3D("link: enslaving to master '%s'", nm_platform_link_get_name(self, master));
-    return klass->link_enslave(self, master, ifindex);
+    _LOG3D("link: enslaving to controller '%s'", nm_platform_link_get_name(self, controller));
+    return klass->link_attach_port(self, controller, ifindex);
 }
 
 /**
- * nm_platform_link_release:
+ * nm_platform_link_release_port:
  * @self: platform instance
- * @master: Interface index of the master
- * @ifindex: Interface index of the slave
+ * @controller: Interface index of the controller
+ * @ifindex: Interface index of the port
  *
- * Release @slave from @master.
+ * Release @port from @controller.
  */
 gboolean
-nm_platform_link_release(NMPlatform *self, int master, int ifindex)
+nm_platform_link_release_port(NMPlatform *self, int controller, int ifindex)
 {
     _CHECK_SELF(self, klass, FALSE);
 
-    g_return_val_if_fail(master > 0, FALSE);
+    g_return_val_if_fail(controller > 0, FALSE);
     g_return_val_if_fail(ifindex > 0, FALSE);
 
-    if (nm_platform_link_get_master(self, ifindex) != master)
+    if (nm_platform_link_get_controller(self, ifindex) != controller)
         return FALSE;
 
-    _LOG3D("link: releasing %d from master '%s' (%d)",
+    _LOG3D("link: releasing %d from controller '%s' (%d)",
            ifindex,
-           nm_platform_link_get_name(self, master),
-           master);
-    return klass->link_release(self, master, ifindex);
+           nm_platform_link_get_name(self, controller),
+           controller);
+    return klass->link_release_port(self, controller, ifindex);
 }
 
 /**
- * nm_platform_link_get_master:
+ * nm_platform_link_get_controller:
  * @self: platform instance
- * @slave: Interface index of the slave.
+ * @port: Interface index of the port.
  *
- * Returns: Interface index of the slave's master.
+ * Returns: Interface index of the port's controller.
  */
 int
-nm_platform_link_get_master(NMPlatform *self, int slave)
+nm_platform_link_get_controller(NMPlatform *self, int port)
 {
     const NMPlatformLink *pllink;
 
-    pllink = nm_platform_link_get(self, slave);
-    return pllink ? pllink->master : 0;
+    pllink = nm_platform_link_get(self, port);
+    return pllink ? pllink->controller : 0;
 }
 
 /*****************************************************************************/
@@ -2852,9 +2853,9 @@ link_get_option(NMPlatform *self, int ifindex, const char *category, const char 
 }
 
 static const char *
-master_category(NMPlatform *self, int master)
+controller_category(NMPlatform *self, int controller)
 {
-    switch (nm_platform_link_get_type(self, master)) {
+    switch (nm_platform_link_get_type(self, controller)) {
     case NM_LINK_TYPE_BRIDGE:
         return "bridge";
     case NM_LINK_TYPE_BOND:
@@ -2865,28 +2866,28 @@ master_category(NMPlatform *self, int master)
 }
 
 static const char *
-slave_category(NMPlatform *self, int slave)
+port_category(NMPlatform *self, int port)
 {
-    int master = nm_platform_link_get_master(self, slave);
+    int controller = nm_platform_link_get_controller(self, port);
 
-    if (master <= 0)
+    if (controller <= 0)
         return NULL;
 
-    switch (nm_platform_link_get_type(self, master)) {
+    switch (nm_platform_link_get_type(self, controller)) {
     case NM_LINK_TYPE_BRIDGE:
         return "brport";
     case NM_LINK_TYPE_BOND:
-        return "bonding_slave";
+        return "bonding_port";
     default:
         return NULL;
     }
 }
 
 gboolean
-nm_platform_sysctl_master_set_option(NMPlatform *self,
-                                     int         ifindex,
-                                     const char *option,
-                                     const char *value)
+nm_platform_sysctl_controller_set_option(NMPlatform *self,
+                                         int         ifindex,
+                                         const char *option,
+                                         const char *value)
 {
     _CHECK_SELF(self, klass, FALSE);
 
@@ -2894,25 +2895,25 @@ nm_platform_sysctl_master_set_option(NMPlatform *self,
     g_return_val_if_fail(option, FALSE);
     g_return_val_if_fail(value, FALSE);
 
-    return link_set_option(self, ifindex, master_category(self, ifindex), option, value);
+    return link_set_option(self, ifindex, controller_category(self, ifindex), option, value);
 }
 
 char *
-nm_platform_sysctl_master_get_option(NMPlatform *self, int ifindex, const char *option)
+nm_platform_sysctl_controller_get_option(NMPlatform *self, int ifindex, const char *option)
 {
     _CHECK_SELF(self, klass, NULL);
 
     g_return_val_if_fail(ifindex > 0, FALSE);
     g_return_val_if_fail(option, FALSE);
 
-    return link_get_option(self, ifindex, master_category(self, ifindex), option);
+    return link_get_option(self, ifindex, controller_category(self, ifindex), option);
 }
 
 gboolean
-nm_platform_sysctl_slave_set_option(NMPlatform *self,
-                                    int         ifindex,
-                                    const char *option,
-                                    const char *value)
+nm_platform_sysctl_port_set_option(NMPlatform *self,
+                                   int         ifindex,
+                                   const char *option,
+                                   const char *value)
 {
     _CHECK_SELF(self, klass, FALSE);
 
@@ -2920,18 +2921,18 @@ nm_platform_sysctl_slave_set_option(NMPlatform *self,
     g_return_val_if_fail(option, FALSE);
     g_return_val_if_fail(value, FALSE);
 
-    return link_set_option(self, ifindex, slave_category(self, ifindex), option, value);
+    return link_set_option(self, ifindex, port_category(self, ifindex), option, value);
 }
 
 char *
-nm_platform_sysctl_slave_get_option(NMPlatform *self, int ifindex, const char *option)
+nm_platform_sysctl_port_get_option(NMPlatform *self, int ifindex, const char *option)
 {
     _CHECK_SELF(self, klass, NULL);
 
     g_return_val_if_fail(ifindex > 0, FALSE);
     g_return_val_if_fail(option, FALSE);
 
-    return link_get_option(self, ifindex, slave_category(self, ifindex), option);
+    return link_get_option(self, ifindex, port_category(self, ifindex), option);
 }
 
 /*****************************************************************************/
@@ -4866,8 +4867,8 @@ nm_platform_ip_route_get_prune_list(NMPlatform            *self,
         return NULL;
 
     lnk_vrf = nm_platform_link_get_lnk_vrf(self, ifindex, &pllink);
-    if (!lnk_vrf && pllink && pllink->master > 0)
-        lnk_vrf = nm_platform_link_get_lnk_vrf(self, pllink->master, NULL);
+    if (!lnk_vrf && pllink && pllink->controller > 0)
+        lnk_vrf = nm_platform_link_get_lnk_vrf(self, pllink->controller, NULL);
     local_table = lnk_vrf ? lnk_vrf->table : RT_TABLE_LOCAL;
 
     c_list_for_each (iter, &head_entry->lst_entries_head) {
@@ -6049,7 +6050,7 @@ nm_platform_vlan_qos_mapping_to_string(const char             *name,
 const char *
 nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len)
 {
-    char        master[20];
+    char        controller[20];
     char        parent[20];
     char        str_flags[1 + NM_PLATFORM_LINK_FLAGS2STR_MAX_LEN + 1];
     char        str_highlighted_flags[50];
@@ -6084,10 +6085,10 @@ nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len)
     } else
         str_flags[0] = '\0';
 
-    if (link->master)
-        g_snprintf(master, sizeof(master), " master %d", link->master);
+    if (link->controller)
+        g_snprintf(controller, sizeof(controller), " controller %d", link->controller);
     else
-        master[0] = 0;
+        controller[0] = 0;
 
     if (link->parent > 0)
         g_snprintf(parent, sizeof(parent), "@%d", link->parent);
@@ -6115,7 +6116,7 @@ nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len)
         "%s"      /* parent */
         " <%s%s>" /* flags */
         " mtu %d"
-        "%s"      /* master */
+        "%s"      /* controller */
         " arp %u" /* arptype */
         " %s"     /* link->type */
         "%s%s"    /* kind */
@@ -6139,7 +6140,7 @@ nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len)
         str_highlighted_flags,
         str_flags,
         link->mtu,
-        master,
+        controller,
         link->arptype,
         str_link_type ?: "???",
         link->kind ? (g_strcmp0(str_link_type, link->kind) ? "/" : "*") : "?",
@@ -8032,7 +8033,7 @@ nm_platform_link_hash_update(const NMPlatformLink *obj, NMHashState *h)
 {
     nm_hash_update_vals(h,
                         obj->ifindex,
-                        obj->master,
+                        obj->controller,
                         obj->parent,
                         obj->n_ifi_flags,
                         obj->mtu,
@@ -8095,7 +8096,7 @@ nm_platform_link_cmp(const NMPlatformLink *a, const NMPlatformLink *b)
     NM_CMP_FIELD(a, b, ifindex);
     NM_CMP_FIELD(a, b, type);
     NM_CMP_FIELD_STR(a, b, name);
-    NM_CMP_FIELD(a, b, master);
+    NM_CMP_FIELD(a, b, controller);
     NM_CMP_FIELD(a, b, parent);
     NM_CMP_FIELD(a, b, n_ifi_flags);
     NM_CMP_FIELD_UNSAFE(a, b, connected);

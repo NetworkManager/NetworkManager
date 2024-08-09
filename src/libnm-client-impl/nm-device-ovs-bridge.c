@@ -36,10 +36,10 @@ G_DEFINE_TYPE(NMDeviceOvsBridge, nm_device_ovs_bridge, NM_TYPE_DEVICE)
  * nm_device_ovs_bridge_get_slaves:
  * @device: a #NMDeviceOvsBridge
  *
- * Gets the ports currently enslaved to @device.
+ * Gets the ports currently attached as port to @device.
  *
  * Returns: (element-type NMDevice): the #GPtrArray containing
- * #NMDevices that are slaves of @device. This is the internal
+ * #NMDevices that are ports of @device. This is the internal
  * copy used by the device, and must not be modified.
  *
  * Since: 1.14
@@ -142,7 +142,7 @@ nm_device_ovs_bridge_class_init(NMDeviceOvsBridgeClass *klass)
     /**
      * NMDeviceOvsBridge:slaves: (type GPtrArray(NMDevice))
      *
-     * Gets the ports currently enslaved to the device.
+     * Gets the ports currently attached as port to the device.
      *
      * Since: 1.22
      */
@@ -155,5 +155,5 @@ nm_device_ovs_bridge_class_init(NMDeviceOvsBridgeClass *klass)
     _nml_dbus_meta_class_init_with_properties(object_class,
                                               &_nml_dbus_meta_iface_nm_device_ovsbridge);
 
-    device_class->slaves_param_spec = obj_properties[PROP_SLAVES];
+    device_class->ports_param_spec = obj_properties[PROP_SLAVES];
 }

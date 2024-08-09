@@ -349,7 +349,7 @@ device_state_changed(NMActiveConnection *active,
 }
 
 static void
-master_failed(NMActiveConnection *self)
+controller_failed(NMActiveConnection *self)
 {
     NMDevice     *device;
     NMDeviceState device_state;
@@ -496,7 +496,7 @@ nm_act_request_class_init(NMActRequestClass *req_class)
     /* virtual methods */
     object_class->dispose              = dispose;
     object_class->get_property         = get_property;
-    active_class->master_failed        = master_failed;
+    active_class->controller_failed    = controller_failed;
     active_class->device_state_changed = device_state_changed;
 
     /* properties */

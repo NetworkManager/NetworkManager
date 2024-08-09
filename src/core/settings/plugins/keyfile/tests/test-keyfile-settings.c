@@ -2346,13 +2346,13 @@ test_read_minimal(void)
 }
 
 static void
-test_read_minimal_slave(void)
+test_read_minimal_port(void)
 {
     gs_unref_object NMConnection *connection    = NULL;
     gs_unref_object NMConnection *con_archetype = NULL;
     NMSettingConnection          *s_con;
 
-    con_archetype = nmtst_create_minimal_connection("Test_minimal_slave_x",
+    con_archetype = nmtst_create_minimal_connection("Test_minimal_port_x",
                                                     "a56b4ca5-7075-43d4-82c7-5d0cb15f7654",
                                                     NM_SETTING_WIRED_SETTING_NAME,
                                                     &s_con);
@@ -2364,7 +2364,7 @@ test_read_minimal_slave(void)
                  NULL);
     nmtst_connection_normalize(con_archetype);
 
-    connection = keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/Test_minimal_slave_1");
+    connection = keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/Test_minimal_port_1");
     g_object_set(s_con,
                  NM_SETTING_CONNECTION_ID,
                  nm_connection_get_id(connection),
@@ -2374,7 +2374,7 @@ test_read_minimal_slave(void)
     nmtst_assert_connection_equals(con_archetype, FALSE, connection, FALSE);
     g_clear_object(&connection);
 
-    connection = keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/Test_minimal_slave_2");
+    connection = keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/Test_minimal_port_2");
     g_object_set(s_con,
                  NM_SETTING_CONNECTION_ID,
                  nm_connection_get_id(connection),
@@ -2384,7 +2384,7 @@ test_read_minimal_slave(void)
     nmtst_assert_connection_equals(con_archetype, FALSE, connection, FALSE);
     g_clear_object(&connection);
 
-    connection = keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/Test_minimal_slave_3");
+    connection = keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/Test_minimal_port_3");
     g_object_set(s_con,
                  NM_SETTING_CONNECTION_ID,
                  nm_connection_get_id(connection),
@@ -2394,7 +2394,7 @@ test_read_minimal_slave(void)
     nmtst_assert_connection_equals(con_archetype, FALSE, connection, FALSE);
     g_clear_object(&connection);
 
-    connection = keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/Test_minimal_slave_4");
+    connection = keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/Test_minimal_port_4");
     g_object_set(s_con,
                  NM_SETTING_CONNECTION_ID,
                  nm_connection_get_id(connection),
@@ -2921,7 +2921,7 @@ main(int argc, char **argv)
     g_test_add_func("/keyfile/test_read_missing_id_uuid", test_read_missing_id_uuid);
 
     g_test_add_func("/keyfile/test_read_minimal", test_read_minimal);
-    g_test_add_func("/keyfile/test_read_minimal_slave", test_read_minimal_slave);
+    g_test_add_func("/keyfile/test_read_minimal_port", test_read_minimal_port);
 
     g_test_add_func("/keyfile/test_read_enum_property", test_read_enum_property);
     g_test_add_func("/keyfile/test_write_enum_property", test_write_enum_property);
