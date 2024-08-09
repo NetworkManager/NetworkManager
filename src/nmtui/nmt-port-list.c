@@ -124,7 +124,7 @@ nmt_port_list_add_connection(NmtEditConnectionList *list)
 {
     NmtPortListPrivate *priv = NMT_PORT_LIST_GET_PRIVATE(list);
 
-    nmt_add_connection_full(_("Select the type of slave connection you wish to add."),
+    nmt_add_connection_full(_("Select the type of port connection you wish to add."),
                             NULL,
                             priv->controller,
                             priv->type_filter,

@@ -1047,11 +1047,11 @@ _nm_connection_detect_bluetooth_type(NMConnection *self)
 }
 
 const char *
-_nm_connection_detect_slave_type(NMConnection *connection, NMSetting **out_s_port)
+_nm_connection_detect_port_type(NMConnection *connection, NMSetting **out_s_port)
 {
-    NMConnectionPrivate *priv       = NM_CONNECTION_GET_PRIVATE(connection);
-    const char          *slave_type = NULL;
-    NMSetting           *s_port     = NULL;
+    NMConnectionPrivate *priv      = NM_CONNECTION_GET_PRIVATE(connection);
+    const char          *port_type = NULL;
+    NMSetting           *s_port    = NULL;
     int                  i;
     static const struct {
         NMMetaSettingType meta_type;
@@ -1070,40 +1070,40 @@ _nm_connection_detect_slave_type(NMConnection *connection, NMSetting **out_s_por
         if (!setting)
             continue;
 
-        if (slave_type) {
-            /* there are more then one matching port types, cannot detect the slave type. */
-            slave_type = NULL;
-            s_port     = NULL;
+        if (port_type) {
+            /* there are more then one matching port types, cannot detect the port type. */
+            port_type = NULL;
+            s_port    = NULL;
             break;
         }
-        slave_type = infos[i].controller_type_name;
-        s_port     = setting;
+        port_type = infos[i].controller_type_name;
+        s_port    = setting;
     }
 
     if (out_s_port)
         *out_s_port = s_port;
-    return slave_type;
+    return port_type;
 }
 
 static gboolean
-_normalize_connection_slave_type(NMConnection *self)
+_normalize_connection_port_type(NMConnection *self)
 {
     NMSettingConnection *s_con = nm_connection_get_setting_connection(self);
-    const char          *slave_type, *port_type;
+    const char          *port_type, *port_setting_type;
 
     if (!s_con)
         return FALSE;
     if (!nm_setting_connection_get_controller(s_con))
         return FALSE;
 
-    slave_type = nm_setting_connection_get_port_type(s_con);
-    if (slave_type) {
-        if (_nm_setting_slave_type_is_valid(slave_type, &port_type) && port_type) {
+    port_type = nm_setting_connection_get_port_type(s_con);
+    if (port_type) {
+        if (_nm_setting_port_type_is_valid(port_type, &port_setting_type) && port_setting_type) {
             NMSetting *s_port;
 
-            s_port = nm_connection_get_setting_by_name(self, port_type);
+            s_port = nm_connection_get_setting_by_name(self, port_setting_type);
             if (!s_port) {
-                GType p_type = nm_setting_lookup_type(port_type);
+                GType p_type = nm_setting_lookup_type(port_setting_type);
 
                 g_return_val_if_fail(p_type, FALSE);
                 nm_connection_add_setting(self, g_object_new(p_type, NULL));
@@ -1111,8 +1111,8 @@ _normalize_connection_slave_type(NMConnection *self)
             }
         }
     } else {
-        if ((slave_type = _nm_connection_detect_slave_type(self, NULL))) {
-            g_object_set(s_con, NM_SETTING_CONNECTION_PORT_TYPE, slave_type, NULL);
+        if ((port_type = _nm_connection_detect_port_type(self, NULL))) {
+            g_object_set(s_con, NM_SETTING_CONNECTION_PORT_TYPE, port_type, NULL);
             return TRUE;
         }
     }
@@ -1762,23 +1762,23 @@ _normalize_required_settings(NMConnection *self)
 }
 
 static gboolean
-_normalize_invalid_slave_port_settings(NMConnection *self)
+_normalize_invalid_port_port_settings(NMConnection *self)
 {
     NMSettingConnection *s_con = nm_connection_get_setting_connection(self);
-    const char          *slave_type;
+    const char          *port_type;
     gboolean             changed = FALSE;
 
-    slave_type = nm_setting_connection_get_port_type(s_con);
+    port_type = nm_setting_connection_get_port_type(s_con);
 
-    if (!nm_streq0(slave_type, NM_SETTING_BRIDGE_SETTING_NAME)
+    if (!nm_streq0(port_type, NM_SETTING_BRIDGE_SETTING_NAME)
         && _nm_connection_remove_setting(self, NM_TYPE_SETTING_BRIDGE_PORT))
         changed = TRUE;
 
-    if (!nm_streq0(slave_type, NM_SETTING_BOND_SETTING_NAME)
+    if (!nm_streq0(port_type, NM_SETTING_BOND_SETTING_NAME)
         && _nm_connection_remove_setting(self, NM_TYPE_SETTING_BOND_PORT))
         changed = TRUE;
 
-    if (!nm_streq0(slave_type, NM_SETTING_TEAM_SETTING_NAME)
+    if (!nm_streq0(port_type, NM_SETTING_TEAM_SETTING_NAME)
         && _nm_connection_remove_setting(self, NM_TYPE_SETTING_TEAM_PORT))
         changed = TRUE;
 
@@ -1890,10 +1890,10 @@ _nm_connection_verify(NMConnection *connection, GError **error)
                 g_set_error_literal(&normalizable_error,
                                     NM_CONNECTION_ERROR,
                                     NM_CONNECTION_ERROR_MISSING_SETTING,
-                                    _("setting is required for non-slave connections"));
+                                    _("setting is required for non-port connections"));
                 g_prefix_error(&normalizable_error, "%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
-                /* having a master without IP config was not a verify() error, accept
+                /* having a controller without IP config was not a verify() error, accept
                  * it for backward compatibility. */
                 normalizable_error_type = NM_SETTING_VERIFY_NORMALIZABLE;
             }
@@ -1903,9 +1903,9 @@ _nm_connection_verify(NMConnection *connection, GError **error)
                 g_set_error_literal(&normalizable_error,
                                     NM_CONNECTION_ERROR,
                                     NM_CONNECTION_ERROR_INVALID_SETTING,
-                                    _("setting not allowed in slave connection"));
+                                    _("setting not allowed in port connection"));
                 g_prefix_error(&normalizable_error, "%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME);
-                /* having a slave with IP config *was* and is a verify() error. */
+                /* having a port with IP config *was* and is a verify() error. */
                 normalizable_error_type = NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
             }
         }
@@ -1915,10 +1915,10 @@ _nm_connection_verify(NMConnection *connection, GError **error)
                 g_set_error_literal(&normalizable_error,
                                     NM_CONNECTION_ERROR,
                                     NM_CONNECTION_ERROR_MISSING_SETTING,
-                                    _("setting is required for non-slave connections"));
+                                    _("setting is required for non-port connections"));
                 g_prefix_error(&normalizable_error, "%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME);
 
-                /* having a master without IP config was not a verify() error, accept
+                /* having a controller without IP config was not a verify() error, accept
                  * it for backward compatibility. */
                 normalizable_error_type = NM_SETTING_VERIFY_NORMALIZABLE;
             }
@@ -1928,9 +1928,9 @@ _nm_connection_verify(NMConnection *connection, GError **error)
                 g_set_error_literal(&normalizable_error,
                                     NM_CONNECTION_ERROR,
                                     NM_CONNECTION_ERROR_INVALID_SETTING,
-                                    _("setting not allowed in slave connection"));
+                                    _("setting not allowed in port connection"));
                 g_prefix_error(&normalizable_error, "%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME);
-                /* having a slave with IP config *was* and is a verify() error. */
+                /* having a port with IP config *was* and is a verify() error. */
                 normalizable_error_type = NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
             }
         }
@@ -1940,10 +1940,10 @@ _nm_connection_verify(NMConnection *connection, GError **error)
                 g_set_error_literal(&normalizable_error,
                                     NM_CONNECTION_ERROR,
                                     NM_CONNECTION_ERROR_MISSING_SETTING,
-                                    _("setting is required for non-slave connections"));
+                                    _("setting is required for non-port connections"));
                 g_prefix_error(&normalizable_error, "%s: ", NM_SETTING_PROXY_SETTING_NAME);
 
-                /* having a master without proxy config was not a verify() error, accept
+                /* having a controller without proxy config was not a verify() error, accept
                  * it for backward compatibility. */
                 normalizable_error_type = NM_SETTING_VERIFY_NORMALIZABLE;
             }
@@ -1953,9 +1953,9 @@ _nm_connection_verify(NMConnection *connection, GError **error)
                 g_set_error_literal(&normalizable_error,
                                     NM_CONNECTION_ERROR,
                                     NM_CONNECTION_ERROR_INVALID_SETTING,
-                                    _("setting not allowed in slave connection"));
+                                    _("setting not allowed in port connection"));
                 g_prefix_error(&normalizable_error, "%s: ", NM_SETTING_PROXY_SETTING_NAME);
-                /* having a slave with proxy config *was* and is a verify() error. */
+                /* having a port with proxy config *was* and is a verify() error. */
                 normalizable_error_type = NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
             }
         }
@@ -2026,11 +2026,11 @@ _connection_normalize(NMConnection *connection,
 
     was_modified |= _normalize_connection_uuid(connection);
     was_modified |= _normalize_connection_type(connection);
-    was_modified |= _normalize_connection_slave_type(connection);
+    was_modified |= _normalize_connection_port_type(connection);
     was_modified |= _normalize_connection_secondaries(connection);
     was_modified |= _normalize_connection(connection);
     was_modified |= _normalize_required_settings(connection);
-    was_modified |= _normalize_invalid_slave_port_settings(connection);
+    was_modified |= _normalize_invalid_port_port_settings(connection);
     was_modified |= _normalize_ip_config(connection, parameters);
     was_modified |= _normalize_ethernet_link_neg(connection);
     was_modified |= _normalize_infiniband(connection);

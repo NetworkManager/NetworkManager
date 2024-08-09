@@ -503,8 +503,7 @@ extern const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[_NM_META_SETTI
 extern const NMMetaSettingValidPartItem *const nm_meta_setting_info_valid_parts_default[];
 
 const NMMetaSettingValidPartItem *const *
-nm_meta_setting_info_valid_parts_for_slave_type(const char  *slave_type,
-                                                const char **out_slave_name);
+nm_meta_setting_info_valid_parts_for_port_type(const char *port_type, const char **out_port_name);
 
 gboolean nm_meta_property_int_get_range(const NMMetaPropertyInfo *property_info,
                                         NMMetaSignUnsignInt64    *out_min,

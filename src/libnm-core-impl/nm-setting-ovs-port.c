@@ -401,7 +401,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
     if (connection) {
         NMSettingConnection *s_con;
-        const char          *slave_type;
+        const char          *port_type;
 
         s_con = nm_connection_get_setting_connection(connection);
         if (!s_con) {
@@ -417,7 +417,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                        _("A connection with a '%s' setting must have a master."),
+                        _("A connection with a '%s' setting must have a controller."),
                         NM_SETTING_OVS_PORT_SETTING_NAME);
             g_prefix_error(error,
                            "%s.%s: ",
@@ -426,8 +426,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
             return FALSE;
         }
 
-        slave_type = nm_setting_connection_get_port_type(s_con);
-        if (slave_type && strcmp(slave_type, NM_SETTING_OVS_BRIDGE_SETTING_NAME)) {
+        port_type = nm_setting_connection_get_port_type(s_con);
+        if (port_type && strcmp(port_type, NM_SETTING_OVS_BRIDGE_SETTING_NAME)) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -435,7 +435,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                           "Instead it is '%s'"),
                         NM_SETTING_OVS_PORT_SETTING_NAME,
                         NM_SETTING_OVS_BRIDGE_SETTING_NAME,
-                        slave_type);
+                        port_type);
             g_prefix_error(error,
                            "%s.%s: ",
                            NM_SETTING_CONNECTION_SETTING_NAME,

@@ -73,8 +73,8 @@ nm_phasechange(int arg)
     case NM_PPP_STATUS_HOLDOFF:
         ppp_phase = "holdoff";
         break;
-    case NM_PPP_STATUS_MASTER:
-        ppp_phase = "master";
+    case NM_PPP_STATUS_CONTROLLER:
+        ppp_phase = "controller";
         break;
 
     default:

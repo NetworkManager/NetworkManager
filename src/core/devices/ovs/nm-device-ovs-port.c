@@ -48,7 +48,7 @@ create_and_realize(NMDevice              *device,
                    const NMPlatformLink **out_plink,
                    GError               **error)
 {
-    /* The port will be added to ovsdb when an interface is enslaved,
+    /* The port will be added to ovsdb when an interface is attached as port,
      * because there's no such thing like an empty port. */
 
     return TRUE;

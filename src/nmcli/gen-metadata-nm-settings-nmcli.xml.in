@@ -671,11 +671,11 @@
                   format="string" />
         <property name="master"
                   alias="master"
-                  nmcli-description="Interface name of the master device or UUID of the master connection. Deprecated 1.46. Use &quot;controller&quot; instead, this is just an alias."
+                  nmcli-description="Interface name of the controller device or UUID of the controller connection. Deprecated 1.46. Use &quot;controller&quot; instead, this is just an alias."
                   format="string" />
         <property name="slave-type"
                   alias="slave-type"
-                  nmcli-description="Setting name of the device type of this slave&apos;s master connection (eg, &quot;bond&quot;), or NULL if this connection is not a slave. Deprecated 1.46. Use &quot;port-type&quot; instead, this is just an alias."
+                  nmcli-description="Setting name of the device type of this port&apos;s controller connection (eg, &quot;bond&quot;), or NULL if this connection is not a port. Deprecated 1.46. Use &quot;port-type&quot; instead, this is just an alias."
                   format="string"
                   values="bond, bridge, ovs-bridge, ovs-port, team, vrf" />
         <property name="port-type"
@@ -684,7 +684,7 @@
                   format="string"
                   values="bond, bridge, ovs-bridge, ovs-port, team, vrf" />
         <property name="autoconnect-slaves"
-                  nmcli-description="Whether or not slaves of this connection should be automatically brought up when NetworkManager activates this connection. This only has a real effect for master connections. The properties &quot;autoconnect&quot;, &quot;autoconnect-priority&quot; and &quot;autoconnect-retries&quot; are unrelated to this setting. The permitted values are: 0: leave slave connections untouched, 1: activate all the slave connections with this connection, -1: default. If -1 (default) is set, global connection.autoconnect-slaves is read to determine the real value. If it is default as well, this fallbacks to 0. Deprecated 1.46. Use &quot;autoconnect-ports&quot; instead, this is just an alias."
+                  nmcli-description="Whether or not ports of this connection should be automatically brought up when NetworkManager activates this connection. This only has a real effect for controller connections. The properties &quot;autoconnect&quot;, &quot;autoconnect-priority&quot; and &quot;autoconnect-retries&quot; are unrelated to this setting. The permitted values are: 0: leave port connections untouched, 1: activate all the port connections with this connection, -1: default. If -1 (default) is set, global connection.autoconnect-slaves is read to determine the real value. If it is default as well, this fallbacks to 0. Deprecated 1.46. Use &quot;autoconnect-ports&quot; instead, this is just an alias."
                   format="choice (NMSettingConnectionAutoconnectSlaves)"
                   values="default (-1), no (0), yes (1)" />
         <property name="autoconnect-ports"
@@ -2038,7 +2038,7 @@
                   values="0 - 4095" />
         <property name="flags"
                   alias="flags"
-                  nmcli-description="One or more flags which control the behavior and features of the VLAN interface.  Flags include &quot;reorder-headers&quot; (0x1) (reordering of output packet headers), &quot;gvrp&quot; (0x2) (use of the GVRP protocol), and &quot;loose-binding&quot; (0x4) (loose binding of the interface to its master device&apos;s operating state). &quot;mvrp&quot; (0x8) (use of the MVRP protocol). The default value of this property is NM_VLAN_FLAG_REORDER_HEADERS, but it used to be 0. To preserve backward compatibility, the default-value in the D-Bus API continues to be 0 and a missing property on D-Bus is still considered as 0."
+                  nmcli-description="One or more flags which control the behavior and features of the VLAN interface.  Flags include &quot;reorder-headers&quot; (0x1) (reordering of output packet headers), &quot;gvrp&quot; (0x2) (use of the GVRP protocol), and &quot;loose-binding&quot; (0x4) (loose binding of the interface to its controller device&apos;s operating state). &quot;mvrp&quot; (0x8) (use of the MVRP protocol). The default value of this property is NM_VLAN_FLAG_REORDER_HEADERS, but it used to be 0. To preserve backward compatibility, the default-value in the D-Bus API continues to be 0 and a missing property on D-Bus is still considered as 0."
                   format="flags (NMVlanFlags)"
                   values="reorder-headers (0x1), gvrp (0x2), loose-binding (0x4), mvrp (0x8)" />
         <property name="protocol"

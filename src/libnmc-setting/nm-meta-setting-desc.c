@@ -2667,9 +2667,9 @@ _complete_fcn_connection_type(ARGS_COMPLETE_FCN)
     guint       i, j;
     char      **result;
     gsize       text_len;
-    const char *slave_types[] = {"bond-slave", "bridge-slave", "team-slave"};
+    const char *port_types[] = {"bond-slave", "bridge-slave", "team-slave"};
 
-    result = g_new(char *, _NM_META_SETTING_TYPE_NUM * 2 + G_N_ELEMENTS(slave_types) + 1);
+    result = g_new(char *, _NM_META_SETTING_TYPE_NUM * 2 + G_N_ELEMENTS(port_types) + 1);
 
     text_len = text ? strlen(text) : 0;
 
@@ -2694,8 +2694,8 @@ _complete_fcn_connection_type(ARGS_COMPLETE_FCN)
         if (!text || strncmp(text, v, text_len) == 0)
             result[j++] = g_strdup(v);
     }
-    for (i = 0; i < G_N_ELEMENTS(slave_types); i++) {
-        const char *v = slave_types[i];
+    for (i = 0; i < G_N_ELEMENTS(port_types); i++) {
+        const char *v = port_types[i];
 
         if (!text || strncmp(text, v, text_len) == 0)
             result[j++] = g_strdup(v);
@@ -2763,7 +2763,7 @@ _multilist_remove_by_value_fcn_connection_permissions(NMSetting *setting, const 
 }
 
 static const char *const *
-_complete_fcn_connection_master(ARGS_COMPLETE_FCN)
+_complete_fcn_connection_controller(ARGS_COMPLETE_FCN)
 {
     NMRemoteConnection *const *connections = NULL;
     guint                      len         = 0;
@@ -2781,7 +2781,7 @@ _complete_fcn_connection_master(ARGS_COMPLETE_FCN)
 
     if ((!text || !*text) && operation_context && operation_context->connection) {
         /* if we have no text yet, initially only complete for matching
-         * slave-type. */
+         * port-type. */
         s_con = nm_connection_get_setting_connection(operation_context->connection);
         if (s_con)
             expected_type = nm_setting_connection_get_port_type(s_con);
@@ -5584,7 +5584,7 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
         .property_type = DEFINE_PROPERTY_TYPE (
             .get_fcn =                  _get_fcn_gobject,
             .set_fcn =                  _set_fcn_gobject_string,
-            .complete_fcn =             _complete_fcn_connection_master,
+            .complete_fcn =             _complete_fcn_connection_controller,
             .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
@@ -5596,7 +5596,7 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
         .property_type = DEFINE_PROPERTY_TYPE (
             .get_fcn =                  _get_fcn_gobject,
             .set_fcn =                  _set_fcn_gobject_string,
-            .complete_fcn =             _complete_fcn_connection_master,
+            .complete_fcn =             _complete_fcn_connection_controller,
             .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
@@ -9091,7 +9091,7 @@ const NMMetaSettingValidPartItem *const nm_meta_setting_info_valid_parts_default
 
 /*****************************************************************************/
 
-static const NMMetaSettingValidPartItem *const valid_settings_noslave[] = {
+static const NMMetaSettingValidPartItem *const valid_settings_noport[] = {
     NM_META_SETTING_VALID_PART_ITEM(MATCH, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(IP4_CONFIG, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(IP6_CONFIG, FALSE),
@@ -9102,33 +9102,33 @@ static const NMMetaSettingValidPartItem *const valid_settings_noslave[] = {
     NULL,
 };
 
-static const NMMetaSettingValidPartItem *const valid_settings_slave_bond[] = {
+static const NMMetaSettingValidPartItem *const valid_settings_port_bond[] = {
     NM_META_SETTING_VALID_PART_ITEM(BOND_PORT, TRUE),
     NM_META_SETTING_VALID_PART_ITEM(LINK, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(MATCH, FALSE),
     NULL,
 };
 
-static const NMMetaSettingValidPartItem *const valid_settings_slave_bridge[] = {
+static const NMMetaSettingValidPartItem *const valid_settings_port_bridge[] = {
     NM_META_SETTING_VALID_PART_ITEM(BRIDGE_PORT, TRUE),
     NM_META_SETTING_VALID_PART_ITEM(LINK, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(MATCH, FALSE),
     NULL,
 };
 
-static const NMMetaSettingValidPartItem *const valid_settings_slave_ovs_bridge[] = {
+static const NMMetaSettingValidPartItem *const valid_settings_port_ovs_bridge[] = {
     NM_META_SETTING_VALID_PART_ITEM(OVS_PORT, FALSE),
     NULL,
 };
 
-static const NMMetaSettingValidPartItem *const valid_settings_slave_ovs_port[] = {
+static const NMMetaSettingValidPartItem *const valid_settings_port_ovs_port[] = {
     NM_META_SETTING_VALID_PART_ITEM(LINK, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(MATCH, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(OVS_INTERFACE, FALSE),
     NULL,
 };
 
-static const NMMetaSettingValidPartItem *const valid_settings_slave_team[] = {
+static const NMMetaSettingValidPartItem *const valid_settings_port_team[] = {
     NM_META_SETTING_VALID_PART_ITEM(LINK, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(MATCH, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(TEAM_PORT, TRUE),
@@ -9136,35 +9136,35 @@ static const NMMetaSettingValidPartItem *const valid_settings_slave_team[] = {
 };
 
 const NMMetaSettingValidPartItem *const *
-nm_meta_setting_info_valid_parts_for_slave_type(const char *slave_type, const char **out_slave_name)
+nm_meta_setting_info_valid_parts_for_port_type(const char *port_type, const char **out_port_name)
 {
-    if (!slave_type) {
-        NM_SET_OUT(out_slave_name, NULL);
-        return valid_settings_noslave;
+    if (!port_type) {
+        NM_SET_OUT(out_port_name, NULL);
+        return valid_settings_noport;
     }
-    if (nm_streq(slave_type, NM_SETTING_BOND_SETTING_NAME)) {
-        NM_SET_OUT(out_slave_name, "bond-slave");
-        return valid_settings_slave_bond;
+    if (nm_streq(port_type, NM_SETTING_BOND_SETTING_NAME)) {
+        NM_SET_OUT(out_port_name, "bond-slave");
+        return valid_settings_port_bond;
     }
-    if (nm_streq(slave_type, NM_SETTING_BRIDGE_SETTING_NAME)) {
-        NM_SET_OUT(out_slave_name, "bridge-slave");
-        return valid_settings_slave_bridge;
+    if (nm_streq(port_type, NM_SETTING_BRIDGE_SETTING_NAME)) {
+        NM_SET_OUT(out_port_name, "bridge-slave");
+        return valid_settings_port_bridge;
     }
-    if (nm_streq(slave_type, NM_SETTING_OVS_BRIDGE_SETTING_NAME)) {
-        NM_SET_OUT(out_slave_name, "ovs-slave");
-        return valid_settings_slave_ovs_bridge;
+    if (nm_streq(port_type, NM_SETTING_OVS_BRIDGE_SETTING_NAME)) {
+        NM_SET_OUT(out_port_name, "ovs-slave");
+        return valid_settings_port_ovs_bridge;
     }
-    if (nm_streq(slave_type, NM_SETTING_OVS_PORT_SETTING_NAME)) {
-        NM_SET_OUT(out_slave_name, "ovs-slave");
-        return valid_settings_slave_ovs_port;
+    if (nm_streq(port_type, NM_SETTING_OVS_PORT_SETTING_NAME)) {
+        NM_SET_OUT(out_port_name, "ovs-slave");
+        return valid_settings_port_ovs_port;
     }
-    if (nm_streq(slave_type, NM_SETTING_TEAM_SETTING_NAME)) {
-        NM_SET_OUT(out_slave_name, "team-slave");
-        return valid_settings_slave_team;
+    if (nm_streq(port_type, NM_SETTING_TEAM_SETTING_NAME)) {
+        NM_SET_OUT(out_port_name, "team-slave");
+        return valid_settings_port_team;
     }
-    if (nm_streq(slave_type, NM_SETTING_VRF_SETTING_NAME)) {
-        NM_SET_OUT(out_slave_name, "vrf-slave");
-        return valid_settings_noslave;
+    if (nm_streq(port_type, NM_SETTING_VRF_SETTING_NAME)) {
+        NM_SET_OUT(out_port_name, "vrf-slave");
+        return valid_settings_noport;
     }
     return NULL;
 }

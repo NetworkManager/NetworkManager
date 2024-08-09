@@ -153,8 +153,8 @@ BOOTPROTO=dhcp
           <para>
             <programlisting>
             <emphasis role="bold">Bonding configuration:</emphasis>
-ifcfg-BOND:                                  ifcfg-BOND-slave:
-NAME=BOND                                    NAME=BOND-slave
+ifcfg-BOND:                                  ifcfg-BOND-port:
+NAME=BOND                                    NAME=BOND-port
 UUID=b41888aa-924c-450c-b0f8-85a4f0a51b4a    UUID=9bb048e4-286a-4cc3-b104-007dbd20decb
 DEVICE=bond100                               DEVICE=eth0
 BONDING_OPTS="mode=balance-rr miimon=100"    ONBOOT=yes
@@ -177,16 +177,16 @@ NAME=team0-profile
 UUID=1d3460a0-7b37-457f-a300-fe8d92da4807
 ONBOOT=yes
 
-ifcfg-my_team0_slave1:
-NAME=team0-slave1
+ifcfg-my_team0_port1:
+NAME=team0-port1
 UUID=d5aed298-c567-4cc1-b808-6d38ecef9e64
 DEVICE=eth1
 ONBOOT=yes
 TEAM_MASTER=team0
 DEVICETYPE=TeamPort
 
-ifcfg-my_team0_slave2:
-NAME=team0-slave2
+ifcfg-my_team0_port2:
+NAME=team0-port2
 UUID=94e75f4e-e5ad-401c-8962-31e0ae5d2215
 DEVICE=eth2
 ONBOOT=yes

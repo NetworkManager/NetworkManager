@@ -311,7 +311,7 @@ typedef struct {
 
 #define OPTION_TYPE_TOFROM(to, fro) .to_sysfs = (to), .from_sysfs = (fro)
 
-static const Option master_options[] = {
+static const Option controller_options[] = {
     OPTION(NM_SETTING_BRIDGE_STP, /* this must stay as the first item */
            "stp_state",
            OPTION_TYPE_BOOL(NM_BRIDGE_STP_DEF), ),
@@ -487,12 +487,12 @@ update_connection(NMDevice *device, NMConnection *connection)
     gs_free char    *stp = NULL;
     int              stp_value;
 
-    option = master_options;
+    option = controller_options;
     nm_assert(nm_streq(option->sysname, "stp_state"));
 
-    stp = nm_platform_sysctl_master_get_option(nm_device_get_platform(device),
-                                               ifindex,
-                                               option->sysname);
+    stp = nm_platform_sysctl_controller_get_option(nm_device_get_platform(device),
+                                                   ifindex,
+                                                   option->sysname);
     stp_value =
         _nm_utils_ascii_str_to_int64(stp, 10, option->nm_min, option->nm_max, option->nm_default);
     g_object_set(s_bridge, option->name, stp_value, NULL);
@@ -503,9 +503,9 @@ update_connection(NMDevice *device, NMConnection *connection)
         gs_free char               *str   = NULL;
         GParamSpec                 *pspec;
 
-        str   = nm_platform_sysctl_master_get_option(nm_device_get_platform(device),
-                                                   ifindex,
-                                                   option->sysname);
+        str   = nm_platform_sysctl_controller_get_option(nm_device_get_platform(device),
+                                                       ifindex,
+                                                       option->sysname);
         pspec = g_object_class_find_property(G_OBJECT_GET_CLASS(s_bridge), option->name);
 
         if (!stp_value && option->only_with_stp)
@@ -575,22 +575,22 @@ out:
 }
 
 static gboolean
-master_update_slave_connection(NMDevice     *device,
-                               NMDevice     *slave,
-                               NMConnection *connection,
-                               GError      **error)
+controller_update_port_connection(NMDevice     *device,
+                                  NMDevice     *port,
+                                  NMConnection *connection,
+                                  GError      **error)
 {
     NMSettingConnection  *s_con;
     NMSettingBridgePort  *s_port;
-    int                   ifindex_slave      = nm_device_get_ifindex(slave);
+    int                   ifindex_port       = nm_device_get_ifindex(port);
     NMConnection         *applied_connection = nm_device_get_applied_connection(device);
     const NMPlatformLink *pllink;
 
-    g_return_val_if_fail(ifindex_slave > 0, FALSE);
+    g_return_val_if_fail(ifindex_port > 0, FALSE);
 
     s_con  = nm_connection_get_setting_connection(connection);
     s_port = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_BRIDGE_PORT);
-    pllink = nm_platform_link_get(nm_device_get_platform(slave), ifindex_slave);
+    pllink = nm_platform_link_get(nm_device_get_platform(port), ifindex_port);
 
     if (pllink && pllink->port_kind == NM_PORT_KIND_BRIDGE) {
         g_object_set(s_port,
@@ -917,19 +917,19 @@ attach_port(NMDevice                  *device,
             gpointer                   user_data)
 {
     NMDeviceBridge      *self = NM_DEVICE_BRIDGE(device);
-    NMConnection        *master_connection;
+    NMConnection        *controller_connection;
     NMSettingBridge     *s_bridge;
     NMSettingBridgePort *s_port;
 
     if (configure) {
-        if (!nm_platform_link_enslave(nm_device_get_platform(device),
-                                      nm_device_get_ip_ifindex(device),
-                                      nm_device_get_ip_ifindex(port)))
+        if (!nm_platform_link_attach_port(nm_device_get_platform(device),
+                                          nm_device_get_ip_ifindex(device),
+                                          nm_device_get_ip_ifindex(port)))
             return FALSE;
 
-        master_connection = nm_device_get_applied_connection(device);
-        nm_assert(master_connection);
-        s_bridge = nm_connection_get_setting_bridge(master_connection);
+        controller_connection = nm_device_get_applied_connection(device);
+        nm_assert(controller_connection);
+        s_bridge = nm_connection_get_setting_bridge(controller_connection);
         nm_assert(s_bridge);
         s_port = nm_connection_get_setting_bridge_port(connection);
 
@@ -945,7 +945,7 @@ attach_port(NMDevice                  *device,
 
             plat_vlans = setting_vlans_to_platform(vlans);
 
-            /* Since the link was just enslaved, there are no existing VLANs
+            /* Since the link was just enportd, there are no existing VLANs
              * (except for the default one) and so there's no need to flush. */
 
             if (plat_vlans
@@ -976,7 +976,7 @@ detach_port(NMDevice                  *device,
 {
     NMDeviceBridge *self = NM_DEVICE_BRIDGE(device);
     gboolean        success;
-    int             ifindex_slave;
+    int             ifindex_port;
     int             ifindex;
 
     if (configure) {
@@ -985,17 +985,17 @@ detach_port(NMDevice                  *device,
             configure = FALSE;
     }
 
-    ifindex_slave = nm_device_get_ip_ifindex(port);
+    ifindex_port = nm_device_get_ip_ifindex(port);
 
-    if (ifindex_slave <= 0) {
+    if (ifindex_port <= 0) {
         _LOGD(LOGD_TEAM, "bridge port %s is already detached", nm_device_get_ip_iface(port));
         return TRUE;
     }
 
     if (configure) {
-        success = nm_platform_link_release(nm_device_get_platform(device),
-                                           nm_device_get_ip_ifindex(device),
-                                           ifindex_slave);
+        success = nm_platform_link_release_port(nm_device_get_platform(device),
+                                                nm_device_get_ip_ifindex(device),
+                                                ifindex_port);
 
         if (success) {
             _LOGI(LOGD_BRIDGE, "detached bridge port %s", nm_device_get_ip_iface(port));
@@ -1061,7 +1061,7 @@ create_and_realize(NMDevice              *device,
     mtu = nm_setting_wired_get_mtu(s_wired);
 
     /* If mtu != 0, we set the MTU of the new bridge at creation time. However, kernel will still
-     * automatically adjust the MTU of the bridge based on the minimum of the slave's MTU.
+     * automatically adjust the MTU of the bridge based on the minimum of the port's MTU.
      * We don't want this automatism as the user asked for a fixed MTU.
      *
      * To workaround this behavior of kernel, we will later toggle the MTU twice. See
@@ -1199,8 +1199,8 @@ nm_device_bridge_class_init(NMDeviceBridgeClass *klass)
     device_class->check_connection_available  = check_connection_available;
     device_class->complete_connection         = complete_connection;
 
-    device_class->update_connection              = update_connection;
-    device_class->master_update_slave_connection = master_update_slave_connection;
+    device_class->update_connection                 = update_connection;
+    device_class->controller_update_port_connection = controller_update_port_connection;
 
     device_class->create_and_realize                     = create_and_realize;
     device_class->act_stage1_prepare_set_hwaddr_ethernet = TRUE;

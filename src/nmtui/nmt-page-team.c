@@ -123,7 +123,7 @@ nmt_page_team_constructed(GObject *object)
 
     grid = NMT_NEWT_GRID(widget);
 
-    widget = nmt_newt_label_new(_("Slaves"));
+    widget = nmt_newt_label_new(_("Ports"));
     nmt_newt_grid_add(grid, widget, 0, 0);
 
     widget = nmt_port_list_new(conn, team_connection_type_filter, team);

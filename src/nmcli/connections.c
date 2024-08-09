@@ -1120,7 +1120,7 @@ usage(void)
           "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [passwd-file <file with "
           "passwords>]\n\n"
           "  down [id | uuid | path | apath] <ID> ...\n\n"
-          "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS SLAVE_OPTIONS IP_OPTIONS [-- "
+          "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS PORT_OPTIONS IP_OPTIONS [-- "
           "([+|-]<setting>.<property> <value>)+]\n\n"
           "  modify [--temporary] [id | uuid | path] <ID> ([+|-]<setting>.<property> <value>)+\n\n"
           "  clone [--temporary] [id | uuid | path ] <ID> <new name>\n\n"
@@ -1196,130 +1196,131 @@ usage_connection_down(void)
 static void
 usage_connection_add(void)
 {
-    nmc_printerr(_("Usage: nmcli connection add { ARGUMENTS | help }\n"
-                   "\n"
-                   "ARGUMENTS := COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS SLAVE_OPTIONS IP_OPTIONS [-- "
-                   "([+|-]<setting>.<property> <value>)+]\n\n"
-                   "  COMMON_OPTIONS:\n"
-                   "                  type <type>\n"
-                   "                  [ifname <interface name> | \"*\"]\n"
-                   "                  [con-name <connection name>]\n"
-                   "                  [autoconnect yes|no]\n"
-                   "                  [save yes|no]\n"
-                   "                  [master <master (ifname, or connection UUID or name)>]\n"
-                   "                  [slave-type <master connection type>]\n\n"
-                   "  TYPE_SPECIFIC_OPTIONS:\n"
-                   "    ethernet:     [mac <MAC address>]\n"
-                   "                  [cloned-mac <cloned MAC address>]\n"
-                   "                  [mtu <MTU>]\n\n"
-                   "    wifi:         ssid <SSID>\n"
-                   "                  [mac <MAC address>]\n"
-                   "                  [cloned-mac <cloned MAC address>]\n"
-                   "                  [mtu <MTU>]\n"
-                   "                  [mode infrastructure|ap|adhoc]\n\n"
-                   "    wimax:        [mac <MAC address>]\n"
-                   "                  [nsp <NSP>]\n\n"
-                   "    pppoe:        username <PPPoE username>\n"
-                   "                  [password <PPPoE password>]\n"
-                   "                  [service <PPPoE service name>]\n"
-                   "                  [mtu <MTU>]\n"
-                   "                  [mac <MAC address>]\n\n"
-                   "    gsm:          apn <APN>\n"
-                   "                  [user <username>]\n"
-                   "                  [password <password>]\n\n"
-                   "    cdma:         [user <username>]\n"
-                   "                  [password <password>]\n\n"
-                   "    infiniband:   [mac <MAC address>]\n"
-                   "                  [mtu <MTU>]\n"
-                   "                  [transport-mode datagram | connected]\n"
-                   "                  [parent <ifname>]\n"
-                   "                  [p-key <IPoIB P_Key>]\n\n"
-                   "    bluetooth:    [addr <bluetooth address>]\n"
-                   "                  [bt-type panu|nap|dun-gsm|dun-cdma]\n\n"
-                   "    vlan:         dev <parent device (connection UUID, ifname, or MAC)>\n"
-                   "                  id <VLAN ID>\n"
-                   "                  [flags <VLAN flags>]\n"
-                   "                  [ingress <ingress priority mapping>]\n"
-                   "                  [egress <egress priority mapping>]\n"
-                   "                  [mtu <MTU>]\n\n"
-                   "    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) | "
-                   "broadcast (3) |\n"
-                   "                        802.3ad    (4) | balance-tlb   (5) | balance-alb (6)]\n"
-                   "                  [primary <ifname>]\n"
-                   "                  [miimon <num>]\n"
-                   "                  [downdelay <num>]\n"
-                   "                  [updelay <num>]\n"
-                   "                  [arp-interval <num>]\n"
-                   "                  [arp-ip-target <num>]\n"
-                   "                  [lacp-rate slow (0) | fast (1)]\n\n"
-                   "    bond-slave:   master <master (ifname, or connection UUID or name)>\n"
-                   "                  [queue-id <0-65535>]\n\n"
-                   "    team:         [config <file>|<raw JSON data>]\n\n"
-                   "    team-slave:   master <master (ifname, or connection UUID or name)>\n"
-                   "                  [config <file>|<raw JSON data>]\n\n"
-                   "    bridge:       [stp yes|no]\n"
-                   "                  [priority <num>]\n"
-                   "                  [forward-delay <2-30>]\n"
-                   "                  [hello-time <1-10>]\n"
-                   "                  [max-age <6-40>]\n"
-                   "                  [ageing-time <0-1000000>]\n"
-                   "                  [multicast-snooping yes|no]\n"
-                   "                  [mac <MAC address>]\n\n"
-                   "    bridge-slave: master <master (ifname, or connection UUID or name)>\n"
-                   "                  [priority <0-63>]\n"
-                   "                  [path-cost <1-65535>]\n"
-                   "                  [hairpin yes|no]\n\n"
-                   "    vpn:          vpn-type "
-                   "vpnc|openvpn|pptp|openconnect|openswan|libreswan|ssh|l2tp|iodine|...\n"
-                   "                  [user <username>]\n\n"
-                   "    olpc-mesh:    ssid <SSID>\n"
-                   "                  [channel <1-13>]\n"
-                   "                  [dhcp-anycast <MAC address>]\n\n"
-                   "    adsl:         username <username>\n"
-                   "                  protocol pppoa|pppoe|ipoatm\n"
-                   "                  [password <password>]\n"
-                   "                  [encapsulation vcmux|llc]\n\n"
-                   "    tun:          mode tun|tap\n"
-                   "                  [owner <UID>]\n"
-                   "                  [group <GID>]\n"
-                   "                  [pi yes|no]\n"
-                   "                  [vnet-hdr yes|no]\n"
-                   "                  [multi-queue yes|no]\n\n"
-                   "    ip-tunnel:    mode ipip|gre|sit|isatap|vti|ip6ip6|ipip6|ip6gre|vti6\n"
-                   "                  remote <remote endpoint IP>\n"
-                   "                  [local <local endpoint IP>]\n"
-                   "                  [dev <parent device (ifname or connection UUID)>]\n\n"
-                   "    macsec:       dev <parent device (connection UUID, ifname, or MAC)>\n"
-                   "                  mode <psk|eap>\n"
-                   "                  [cak <key> ckn <key>]\n"
-                   "                  [encrypt yes|no]\n"
-                   "                  [port 1-65534]\n\n\n"
-                   "    macvlan:      dev <parent device (connection UUID, ifname, or MAC)>\n"
-                   "                  mode vepa|bridge|private|passthru|source\n"
-                   "                  [tap yes|no]\n\n"
-                   "    vxlan:        id <VXLAN ID>\n"
-                   "                  [remote <IP of multicast group or remote address>]\n"
-                   "                  [local <source IP>]\n"
-                   "                  [dev <parent device (ifname or connection UUID)>]\n"
-                   "                  [source-port-min <0-65535>]\n"
-                   "                  [source-port-max <0-65535>]\n"
-                   "                  [destination-port <0-65535>]\n\n"
-                   "    wpan:         [short-addr <0x0000-0xffff>]\n"
-                   "                  [pan-id <0x0000-0xffff>]\n"
-                   "                  [page <default|0-31>]\n"
-                   "                  [channel <default|0-26>]\n"
-                   "                  [mac <MAC address>]\n\n"
-                   "    6lowpan:      dev <parent device (connection UUID, ifname, or MAC)>\n"
-                   "    dummy:\n\n"
-                   "  SLAVE_OPTIONS:\n"
-                   "    bridge:       [priority <0-63>]\n"
-                   "                  [path-cost <1-65535>]\n"
-                   "                  [hairpin yes|no]\n\n"
-                   "    team:         [config <file>|<raw JSON data>]\n\n"
-                   "    bond:         [queue-id <0-65535>]\n\n"
-                   "  IP_OPTIONS:\n"
-                   "                  [ip4 <IPv4 address>] [gw4 <IPv4 gateway>]\n"
-                   "                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n\n"));
+    nmc_printerr(
+        _("Usage: nmcli connection add { ARGUMENTS | help }\n"
+          "\n"
+          "ARGUMENTS := COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS PORT_OPTIONS IP_OPTIONS [-- "
+          "([+|-]<setting>.<property> <value>)+]\n\n"
+          "  COMMON_OPTIONS:\n"
+          "                  type <type>\n"
+          "                  [ifname <interface name> | \"*\"]\n"
+          "                  [con-name <connection name>]\n"
+          "                  [autoconnect yes|no]\n"
+          "                  [save yes|no]\n"
+          "                  [controller <controller (ifname, or connection UUID or name)>]\n"
+          "                  [port-type <controller connection type>]\n\n"
+          "  TYPE_SPECIFIC_OPTIONS:\n"
+          "    ethernet:     [mac <MAC address>]\n"
+          "                  [cloned-mac <cloned MAC address>]\n"
+          "                  [mtu <MTU>]\n\n"
+          "    wifi:         ssid <SSID>\n"
+          "                  [mac <MAC address>]\n"
+          "                  [cloned-mac <cloned MAC address>]\n"
+          "                  [mtu <MTU>]\n"
+          "                  [mode infrastructure|ap|adhoc]\n\n"
+          "    wimax:        [mac <MAC address>]\n"
+          "                  [nsp <NSP>]\n\n"
+          "    pppoe:        username <PPPoE username>\n"
+          "                  [password <PPPoE password>]\n"
+          "                  [service <PPPoE service name>]\n"
+          "                  [mtu <MTU>]\n"
+          "                  [mac <MAC address>]\n\n"
+          "    gsm:          apn <APN>\n"
+          "                  [user <username>]\n"
+          "                  [password <password>]\n\n"
+          "    cdma:         [user <username>]\n"
+          "                  [password <password>]\n\n"
+          "    infiniband:   [mac <MAC address>]\n"
+          "                  [mtu <MTU>]\n"
+          "                  [transport-mode datagram | connected]\n"
+          "                  [parent <ifname>]\n"
+          "                  [p-key <IPoIB P_Key>]\n\n"
+          "    bluetooth:    [addr <bluetooth address>]\n"
+          "                  [bt-type panu|nap|dun-gsm|dun-cdma]\n\n"
+          "    vlan:         dev <parent device (connection UUID, ifname, or MAC)>\n"
+          "                  id <VLAN ID>\n"
+          "                  [flags <VLAN flags>]\n"
+          "                  [ingress <ingress priority mapping>]\n"
+          "                  [egress <egress priority mapping>]\n"
+          "                  [mtu <MTU>]\n\n"
+          "    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) | "
+          "broadcast (3) |\n"
+          "                        802.3ad    (4) | balance-tlb   (5) | balance-alb (6)]\n"
+          "                  [primary <ifname>]\n"
+          "                  [miimon <num>]\n"
+          "                  [downdelay <num>]\n"
+          "                  [updelay <num>]\n"
+          "                  [arp-interval <num>]\n"
+          "                  [arp-ip-target <num>]\n"
+          "                  [lacp-rate slow (0) | fast (1)]\n\n"
+          "    bond-slave:   controller <controller (ifname, or connection UUID or name)>\n"
+          "                  [queue-id <0-65535>]\n\n"
+          "    team:         [config <file>|<raw JSON data>]\n\n"
+          "    team-slave:   controller <controller (ifname, or connection UUID or name)>\n"
+          "                  [config <file>|<raw JSON data>]\n\n"
+          "    bridge:       [stp yes|no]\n"
+          "                  [priority <num>]\n"
+          "                  [forward-delay <2-30>]\n"
+          "                  [hello-time <1-10>]\n"
+          "                  [max-age <6-40>]\n"
+          "                  [ageing-time <0-1000000>]\n"
+          "                  [multicast-snooping yes|no]\n"
+          "                  [mac <MAC address>]\n\n"
+          "    bridge-slave: controller <controller (ifname, or connection UUID or name)>\n"
+          "                  [priority <0-63>]\n"
+          "                  [path-cost <1-65535>]\n"
+          "                  [hairpin yes|no]\n\n"
+          "    vpn:          vpn-type "
+          "vpnc|openvpn|pptp|openconnect|openswan|libreswan|ssh|l2tp|iodine|...\n"
+          "                  [user <username>]\n\n"
+          "    olpc-mesh:    ssid <SSID>\n"
+          "                  [channel <1-13>]\n"
+          "                  [dhcp-anycast <MAC address>]\n\n"
+          "    adsl:         username <username>\n"
+          "                  protocol pppoa|pppoe|ipoatm\n"
+          "                  [password <password>]\n"
+          "                  [encapsulation vcmux|llc]\n\n"
+          "    tun:          mode tun|tap\n"
+          "                  [owner <UID>]\n"
+          "                  [group <GID>]\n"
+          "                  [pi yes|no]\n"
+          "                  [vnet-hdr yes|no]\n"
+          "                  [multi-queue yes|no]\n\n"
+          "    ip-tunnel:    mode ipip|gre|sit|isatap|vti|ip6ip6|ipip6|ip6gre|vti6\n"
+          "                  remote <remote endpoint IP>\n"
+          "                  [local <local endpoint IP>]\n"
+          "                  [dev <parent device (ifname or connection UUID)>]\n\n"
+          "    macsec:       dev <parent device (connection UUID, ifname, or MAC)>\n"
+          "                  mode <psk|eap>\n"
+          "                  [cak <key> ckn <key>]\n"
+          "                  [encrypt yes|no]\n"
+          "                  [port 1-65534]\n\n\n"
+          "    macvlan:      dev <parent device (connection UUID, ifname, or MAC)>\n"
+          "                  mode vepa|bridge|private|passthru|source\n"
+          "                  [tap yes|no]\n\n"
+          "    vxlan:        id <VXLAN ID>\n"
+          "                  [remote <IP of multicast group or remote address>]\n"
+          "                  [local <source IP>]\n"
+          "                  [dev <parent device (ifname or connection UUID)>]\n"
+          "                  [source-port-min <0-65535>]\n"
+          "                  [source-port-max <0-65535>]\n"
+          "                  [destination-port <0-65535>]\n\n"
+          "    wpan:         [short-addr <0x0000-0xffff>]\n"
+          "                  [pan-id <0x0000-0xffff>]\n"
+          "                  [page <default|0-31>]\n"
+          "                  [channel <default|0-26>]\n"
+          "                  [mac <MAC address>]\n\n"
+          "    6lowpan:      dev <parent device (connection UUID, ifname, or MAC)>\n"
+          "    dummy:\n\n"
+          "  PORT_OPTIONS:\n"
+          "    bridge:       [priority <0-63>]\n"
+          "                  [path-cost <1-65535>]\n"
+          "                  [hairpin yes|no]\n\n"
+          "    team:         [config <file>|<raw JSON data>]\n\n"
+          "    bond:         [queue-id <0-65535>]\n\n"
+          "  IP_OPTIONS:\n"
+          "                  [ip4 <IPv4 address>] [gw4 <IPv4 gateway>]\n"
+          "                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n\n"));
 }
 
 static void
@@ -3533,7 +3534,7 @@ get_name_alias_toplevel(const char *name, const char *port_type)
     if (port_type) {
         const char *port_name;
 
-        if (nm_meta_setting_info_valid_parts_for_slave_type(port_type, &port_name))
+        if (nm_meta_setting_info_valid_parts_for_port_type(port_type, &port_name))
             return port_name ?: name;
         return name;
     }
@@ -3881,7 +3882,7 @@ is_setting_mandatory(NMConnection *connection, NMSetting *setting)
         if (i == 0)
             item = get_valid_settings_array(c_type);
         else
-            item = nm_meta_setting_info_valid_parts_for_slave_type(s_type, NULL);
+            item = nm_meta_setting_info_valid_parts_for_port_type(s_type, NULL);
         for (; item && *item; item++) {
             if (nm_streq(name, (*item)->setting_info->general->setting_name))
                 return (*item)->mandatory;
@@ -3989,7 +3990,8 @@ normalized_controller_for_port(const GPtrArray *connections,
     }
 
     if (!out_controller) {
-        nmc_print(_("Warning: master='%s' doesn't refer to any existing profile.\n"), controller);
+        nmc_print(_("Warning: controller='%s' doesn't refer to any existing profile.\n"),
+                  controller);
         out_controller = controller;
         if (out_type)
             *out_type = type;
@@ -4463,12 +4465,12 @@ con_settings(NMConnection                             *connection,
     g_return_val_if_fail(s_con, FALSE);
 
     con_type       = nm_setting_connection_get_port_type(s_con);
-    *port_settings = nm_meta_setting_info_valid_parts_for_slave_type(con_type, NULL);
+    *port_settings = nm_meta_setting_info_valid_parts_for_port_type(con_type, NULL);
     if (!*port_settings) {
         g_set_error(error,
                     NMCLI_ERROR,
                     NMC_RESULT_ERROR_USER_INPUT,
-                    _("Error: invalid slave type; %s."),
+                    _("Error: invalid port type; %s."),
                     con_type);
         return FALSE;
     }
@@ -4690,7 +4692,7 @@ set_connection_controller(NmCli            *nmc,
         g_set_error_literal(error,
                             NMCLI_ERROR,
                             NMC_RESULT_ERROR_USER_INPUT,
-                            _("Error: master is required"));
+                            _("Error: controller is required"));
         return FALSE;
     }
 
@@ -5028,7 +5030,7 @@ complete_property_name(NmCli                 *nmc,
     if (s_con)
         port_type = nm_setting_connection_get_port_type(s_con);
     valid_settings_main = get_valid_settings_array(connection_type);
-    valid_settings_port = nm_meta_setting_info_valid_parts_for_slave_type(port_type, NULL);
+    valid_settings_port = nm_meta_setting_info_valid_parts_for_port_type(port_type, NULL);
 
     word_list = get_valid_properties_string(valid_settings_main,
                                             valid_settings_port,
@@ -6247,7 +6249,7 @@ gen_setting_names(const char *text, int state)
                 return g_strdup(s_name);
         }
 
-        /* Let's give a try to parameters related to slave type */
+        /* Let's give a try to parameters related to port type */
         list_idx = 0;
         is_port  = 1;
     }
@@ -6256,7 +6258,7 @@ gen_setting_names(const char *text, int state)
     s_con = nm_connection_get_setting_connection(nmc_tab_completion.connection);
     if (s_con)
         s_type = nm_setting_connection_get_port_type(s_con);
-    valid_settings_arr = nm_meta_setting_info_valid_parts_for_slave_type(s_type, NULL);
+    valid_settings_arr = nm_meta_setting_info_valid_parts_for_port_type(s_type, NULL);
 
     if (list_idx < NM_PTRARRAY_LEN(valid_settings_arr)) {
         while (valid_settings_arr[list_idx]) {
@@ -6313,7 +6315,7 @@ gen_property_names(const char *text, int state)
             port_type = NM_SETTING_BOND_SETTING_NAME;
         else
             port_type = NULL;
-        valid_settings_port = nm_meta_setting_info_valid_parts_for_slave_type(port_type, NULL);
+        valid_settings_port = nm_meta_setting_info_valid_parts_for_port_type(port_type, NULL);
 
         setting_name = check_valid_name(strv[0], valid_settings_main, valid_settings_port, NULL);
         if (setting_name) {
@@ -6625,7 +6627,7 @@ get_setting_and_property(const char *prompt,
             s_type = nm_setting_connection_get_port_type(s_con);
 
         valid_settings_main = get_valid_settings_array(nmc_tab_completion.con_type);
-        valid_settings_port = nm_meta_setting_info_valid_parts_for_slave_type(s_type, NULL);
+        valid_settings_port = nm_meta_setting_info_valid_parts_for_port_type(s_type, NULL);
 
         setting_name = check_valid_name(sett, valid_settings_main, valid_settings_port, NULL);
         setting      = nm_meta_setting_info_editor_new_setting(
@@ -7996,7 +7998,7 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
         s_type = nm_setting_connection_get_port_type(s_con);
 
     valid_settings_main = get_valid_settings_array(connection_type);
-    valid_settings_port = nm_meta_setting_info_valid_parts_for_slave_type(s_type, NULL);
+    valid_settings_port = nm_meta_setting_info_valid_parts_for_port_type(s_type, NULL);
 
     valid_settings_str = get_valid_options_string(valid_settings_main, valid_settings_port);
     nmc_print(_("You may edit the following settings: %s\n"), valid_settings_str);

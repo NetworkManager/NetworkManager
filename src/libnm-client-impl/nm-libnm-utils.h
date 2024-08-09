@@ -852,7 +852,7 @@ struct _NMDeviceClass {
     /* Slaves was originally part of some subtypes of NMDevice. It was deprecated and
     * a new NMDevice::ports property was added. When that property changes, we need
     * to notify about the subclass' respective property. This is the property. */
-    const GParamSpec *slaves_param_spec;
+    const GParamSpec *ports_param_spec;
 };
 
 #define _NML_DEVICE_META_PROPERTY_INDEX_PORTS 27

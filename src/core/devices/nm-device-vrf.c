@@ -222,13 +222,13 @@ attach_port(NMDevice                  *device,
     gboolean     success    = TRUE;
     const char  *port_iface = nm_device_get_ip_iface(port);
 
-    nm_device_master_check_slave_physical_port(device, port, LOGD_DEVICE);
+    nm_device_controller_check_port_physical_port(device, port, LOGD_DEVICE);
 
     if (configure) {
         nm_device_take_down(port, TRUE);
-        success = nm_platform_link_enslave(nm_device_get_platform(device),
-                                           nm_device_get_ip_ifindex(device),
-                                           nm_device_get_ip_ifindex(port));
+        success = nm_platform_link_attach_port(nm_device_get_platform(device),
+                                               nm_device_get_ip_ifindex(device),
+                                               nm_device_get_ip_ifindex(port));
         nm_device_bring_up(port);
 
         if (!success)
@@ -267,9 +267,9 @@ detach_port(NMDevice                  *device,
 
     if (configure) {
         if (ifindex_port > 0) {
-            success = nm_platform_link_release(nm_device_get_platform(device),
-                                               nm_device_get_ip_ifindex(device),
-                                               ifindex_port);
+            success = nm_platform_link_release_port(nm_device_get_platform(device),
+                                                    nm_device_get_ip_ifindex(device),
+                                                    ifindex_port);
 
             if (success) {
                 _LOGI(LOGD_DEVICE, "detached VRF port %s", nm_device_get_ip_iface(port));
