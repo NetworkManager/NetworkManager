@@ -361,7 +361,8 @@ struct _ifla_vf_vlan_info {
 
 /*****************************************************************************/
 
-#define RESYNC_RETRIES 50
+#define RESYNC_RETRIES         50
+#define RESYNC_BACKOFF_SECONDS 1
 
 /*****************************************************************************/
 
@@ -11203,6 +11204,20 @@ event_handler_read_netlink(NMPlatform        *platform,
                               }
                               _reason;
                           }));
+
+                    if (nle == -ENOBUFS) {
+                        /* Netlink notifications are coming faster than what
+                         * we can process them. Backoff a bit so we give some
+                         * time for this burst to finish, and we don't
+                         * contribute to starve the system contending for the
+                         * kernel's RTNL lock.
+                         */
+                        _LOGI("netlink[%s]: backoff for %d seconds before the resync.",
+                              nmp_netlink_protocol_info(netlink_protocol)->name,
+                              RESYNC_BACKOFF_SECONDS);
+                        sleep(RESYNC_BACKOFF_SECONDS);
+                    }
+
                     _netlink_recv_handle(platform, netlink_protocol, FALSE);
                     delayed_action_wait_for_nl_response_complete_all(
                         platform,
