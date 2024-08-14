@@ -154,7 +154,7 @@ nmt_edit_connection_list_rebuild(NmtEditConnectionList *list)
     NmtEditConnectionListPrivate *priv = NMT_EDIT_CONNECTION_LIST_GET_PRIVATE(list);
     const GPtrArray              *connections;
     GSList                       *iter;
-    gboolean                      did_header = FALSE, did_vpn = FALSE;
+    gboolean                      did_header = FALSE, did_vpn = FALSE, did_any = FALSE;
     NMEditorConnectionTypeData  **types;
     NMConnection                 *conn, *selected_conn;
     int                           i, row, selected_row;
@@ -181,9 +181,6 @@ nmt_edit_connection_list_rebuild(NmtEditConnectionList *list)
     g_object_notify(G_OBJECT(list), "connections");
     g_object_notify(G_OBJECT(list), "num-connections");
 
-    nmt_newt_component_set_sensitive(NMT_NEWT_COMPONENT(priv->edit), priv->connections != NULL);
-    nmt_newt_component_set_sensitive(NMT_NEWT_COMPONENT(priv->delete), priv->connections != NULL);
-
     nmt_newt_listbox_clear(priv->listbox);
 
     if (!priv->grouped) {
@@ -198,7 +195,9 @@ nmt_edit_connection_list_rebuild(NmtEditConnectionList *list)
             selected_row = row - 1;
         nmt_newt_listbox_set_active(priv->listbox, selected_row);
 
-        return;
+        did_any = !!priv->connections;
+
+        goto done;
     }
 
     types = nm_editor_utils_get_connection_type_list();
@@ -230,6 +229,10 @@ nmt_edit_connection_list_rebuild(NmtEditConnectionList *list)
                 did_header = TRUE;
             }
 
+            if (!did_any) {
+                did_any = TRUE;
+            }
+
             indented = g_strdup_printf("  %s", nm_connection_get_id(conn));
             nmt_newt_listbox_append(priv->listbox, indented, conn);
             g_free(indented);
@@ -243,6 +246,10 @@ nmt_edit_connection_list_rebuild(NmtEditConnectionList *list)
     if (selected_row >= row)
         selected_row = row - 1;
     nmt_newt_listbox_set_active(priv->listbox, selected_row);
+
+done:
+    nmt_newt_component_set_sensitive(NMT_NEWT_COMPONENT(priv->edit), did_any);
+    nmt_newt_component_set_sensitive(NMT_NEWT_COMPONENT(priv->delete), did_any);
 }
 
 static void
