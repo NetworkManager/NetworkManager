@@ -187,6 +187,9 @@ G_STATIC_ASSERT(RTA_MAX == (__RTA_MAX - 1));
 
 /*****************************************************************************/
 
+/* Added in kernel 5.19, dated July 31, 2022 */
+#define IFLA_BOND_SLAVE_PRIO 9
+
 #define IFLA_BOND_ACTIVE_PORT      IFLA_BOND_ACTIVE_SLAVE
 #define IFLA_BOND_PORT_PRIO        IFLA_BOND_SLAVE_PRIO
 #define IFLA_BOND_ALL_PORTS_ACTIVE IFLA_BOND_ALL_SLAVES_ACTIVE
