@@ -255,7 +255,7 @@ lldp_rx_receive_datagram(int fd, GIOCondition condition, gpointer user_data)
     } else
         n->timestamp_usec = nm_utils_get_monotonic_timestamp_usec();
 
-    r = nm_lldp_neighbor_parse(n);
+    r = nm_lldp_neighbor_parse(lldp_rx, n);
     if (r < 0) {
         _LOG2D(lldp_rx, "Failure parsing invalid LLDP datagram.");
         return G_SOURCE_CONTINUE;

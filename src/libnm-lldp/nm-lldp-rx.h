@@ -68,7 +68,7 @@ NMLldpNeighbor **nm_lldp_rx_get_neighbors(NMLldpRX *lldp_rx, guint *out_len);
 
 /*****************************************************************************/
 
-NMLldpNeighbor *nm_lldp_neighbor_new_from_raw(const void *raw, size_t raw_size);
+NMLldpNeighbor *nm_lldp_neighbor_new_from_raw(NMLldpRX *lldp_rx, const void *raw, size_t raw_size);
 
 NMLldpNeighbor *nm_lldp_neighbor_ref(NMLldpNeighbor *n);
 NMLldpNeighbor *nm_lldp_neighbor_unref(NMLldpNeighbor *n);
