@@ -6630,9 +6630,11 @@ get_setting_and_property(const char *prompt,
         valid_settings_port = nm_meta_setting_info_valid_parts_for_port_type(s_type, NULL);
 
         setting_name = check_valid_name(sett, valid_settings_main, valid_settings_port, NULL);
-        setting      = nm_meta_setting_info_editor_new_setting(
-            nm_meta_setting_info_editor_find_by_name(setting_name, FALSE),
-            NM_META_ACCESSOR_SETTING_INIT_TYPE_DEFAULT);
+        if (setting_name) {
+            setting = nm_meta_setting_info_editor_new_setting(
+                nm_meta_setting_info_editor_find_by_name(setting_name, FALSE),
+                NM_META_ACCESSOR_SETTING_INIT_TYPE_DEFAULT);
+        }
     } else
         setting = nm_g_object_ref(nmc_tab_completion.setting);
 
