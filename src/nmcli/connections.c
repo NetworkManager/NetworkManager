@@ -6565,8 +6565,15 @@ extract_setting_and_property(const char *prompt, const char *line, char **settin
             p2   = dot + 1;
             num1 = strcspn(p1, ".");
             num2 = len > num1 + 1 ? len - num1 - 1 : 0;
-            sett = num1 > 0 ? g_strndup(p1, num1) : sett;
-            prop = num2 > 0 ? g_strndup(p2, num2) : prop;
+            if (num1 > 0) {
+                g_free(sett);
+                sett = g_strndup(p1, num1);
+            }
+
+            if (num2 > 0) {
+                g_free(prop);
+                prop = g_strndup(p2, num2);
+            }
         } else {
             if (!prop)
                 prop = len > 0 ? g_strndup(p1, len) : NULL;
