@@ -16893,10 +16893,6 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
             _cleanup_ip_pre(self, AF_INET6, CLEANUP_TYPE_DECONFIGURE, FALSE);
         }
         break;
-    case NM_DEVICE_STATE_DEACTIVATING:
-        /* If we are now deactivating we should enforce IP cleanup. */
-        _cleanup_ip_pre(self, AF_INET, CLEANUP_TYPE_DECONFIGURE, FALSE);
-        _cleanup_ip_pre(self, AF_INET6, CLEANUP_TYPE_DECONFIGURE, FALSE);
     default:
         break;
     }
