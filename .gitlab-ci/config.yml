@@ -67,10 +67,6 @@ distributions:
     versions:
       - 'stable'
       - 'oldstable'
-  - name: centos
-    tier: 3
-    versions:
-      - 'stream8'
   - name: alpine
     tier: 3
     versions:
