@@ -24,6 +24,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * wifi: Support configuring channel-width in AP mode
 * keyfile: Stop writing offensive terms into keyfiles
 * Support reapplying the VLANs on bridge ports.
+* Fix crash caused by malformed LLDP package if debug log is enabled
+* Retry hostname resolution when it fails
 
 =============================================
 NetworkManager-1.48
