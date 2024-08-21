@@ -71,7 +71,7 @@ install \
     meson \
     mobile-broadband-provider-info \
     pkg-config \
-    policykit-1 \
+    polkitd \
     ppp \
     ppp-dev \
     python3-dbus \
