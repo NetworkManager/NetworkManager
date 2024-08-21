@@ -6183,9 +6183,9 @@ nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len)
         link->initialized ? " init" : " not-init",
         link->inet6_addr_gen_mode_inv ? " addrgenmode " : "",
         link->inet6_addr_gen_mode_inv ? nm_platform_link_inet6_addrgenmode2str(
-            _nm_platform_uint8_inv(link->inet6_addr_gen_mode_inv),
-            str_addrmode,
-            sizeof(str_addrmode))
+                                            _nm_platform_uint8_inv(link->inet6_addr_gen_mode_inv),
+                                            str_addrmode,
+                                            sizeof(str_addrmode))
                                       : "",
         str_address[0] ? " addr " : "",
         str_address[0] ? str_address : "",
@@ -7421,11 +7421,12 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
                                                        route->lock_mtu ? "lock " : "",
                                                        route->mtu)
                                       : "",
-        route->rt_pref ? nm_sprintf_buf(
-            str_pref,
-            " pref %s",
-            nm_icmpv6_router_pref_to_string(route->rt_pref, str_pref2, sizeof(str_pref2)))
-                       : "");
+        route->rt_pref
+            ? nm_sprintf_buf(
+                  str_pref,
+                  " pref %s",
+                  nm_icmpv6_router_pref_to_string(route->rt_pref, str_pref2, sizeof(str_pref2)))
+            : "");
 
     return buf;
 }
