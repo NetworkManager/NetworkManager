@@ -742,13 +742,6 @@ typedef struct {
 } NMPlatformVF;
 
 typedef struct {
-    guint16 vid_start;
-    guint16 vid_end;
-    bool    untagged : 1;
-    bool    pvid : 1;
-} NMPlatformBridgeVlan;
-
-typedef struct {
     guint16 vlan_default_pvid_val;
     bool    vlan_filtering_val : 1;
     bool    vlan_default_pvid_has : 1;
@@ -1185,10 +1178,15 @@ typedef struct {
                                         gpointer                callback_data,
                                         GCancellable           *cancellable);
     gboolean (*link_set_sriov_vfs)(NMPlatform *self, int ifindex, const NMPlatformVF *const *vfs);
-    gboolean (*link_set_bridge_vlans)(NMPlatform                        *self,
-                                      int                                ifindex,
-                                      gboolean                           on_controller,
-                                      const NMPlatformBridgeVlan *const *vlans);
+    gboolean (*link_set_bridge_vlans)(NMPlatform                 *self,
+                                      int                         ifindex,
+                                      gboolean                    on_controller,
+                                      const NMPlatformBridgeVlan *vlans,
+                                      guint                       num_vlans);
+    gboolean (*link_get_bridge_vlans)(NMPlatform            *self,
+                                      int                    ifindex,
+                                      NMPlatformBridgeVlan **out_vlans,
+                                      guint                 *out_num_vlans);
     gboolean (*link_set_bridge_info)(NMPlatform                            *self,
                                      int                                    ifindex,
                                      const NMPlatformLinkSetBridgeInfoData *bridge_info);
@@ -2049,10 +2047,15 @@ void nm_platform_link_set_sriov_params_async(NMPlatform             *self,
 
 gboolean
 nm_platform_link_set_sriov_vfs(NMPlatform *self, int ifindex, const NMPlatformVF *const *vfs);
-gboolean nm_platform_link_set_bridge_vlans(NMPlatform                        *self,
-                                           int                                ifindex,
-                                           gboolean                           on_controller,
-                                           const NMPlatformBridgeVlan *const *vlans);
+gboolean nm_platform_link_set_bridge_vlans(NMPlatform                 *self,
+                                           int                         ifindex,
+                                           gboolean                    on_controller,
+                                           const NMPlatformBridgeVlan *vlans,
+                                           guint                       num_vlans);
+gboolean nm_platform_link_get_bridge_vlans(NMPlatform            *self,
+                                           int                    ifindex,
+                                           NMPlatformBridgeVlan **out_vlans,
+                                           guint                 *out_num_vlans);
 gboolean nm_platform_link_set_bridge_info(NMPlatform                            *self,
                                           int                                    ifindex,
                                           const NMPlatformLinkSetBridgeInfoData *bridge_info);

@@ -8,6 +8,7 @@ Overview of changes since NetworkManager-1.48.2
   addresses configured on interfaces, NetworkManager now takes into
   account the content of /etc/hosts.
 * keyfile: Stop writing offensive terms into keyfiles
+* Support reapplying the VLANs on bridge ports.
 
 ===============================================
 NetworkManager-1.48.2

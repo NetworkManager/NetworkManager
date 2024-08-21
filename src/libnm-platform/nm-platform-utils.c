@@ -2275,6 +2275,89 @@ nmp_utils_lifetime_get(guint32  timestamp,
 
 /*****************************************************************************/
 
+static int
+bridge_vlan_compare(gconstpointer a, gconstpointer b, gpointer user_data)
+{
+    const NMPlatformBridgeVlan *vlan_a = a;
+    const NMPlatformBridgeVlan *vlan_b = b;
+
+    return (int) vlan_a->vid_start - (int) vlan_b->vid_start;
+}
+
+/**
+ * nmp_utils_bridge_vlan_normalize:
+ * @vlans: the array of VLAN ranges
+ * @num_vlans: the number of VLAN ranges in the array. On return, it contains
+ *    the new number.
+ *
+ * Sort the VLAN ranges and merge those that are contiguous or overlapping. It
+ * must not contain invalid data such as 2 overlapping ranges with different
+ * flags.
+ */
+void
+nmp_utils_bridge_vlan_normalize(NMPlatformBridgeVlan *vlans, guint *num_vlans)
+{
+    guint i;
+
+    if (*num_vlans <= 1)
+        return;
+
+    g_qsort_with_data(vlans, *num_vlans, sizeof(NMPlatformBridgeVlan), bridge_vlan_compare, NULL);
+
+    /* Merge VLAN ranges that are contiguous or overlap */
+    i = 0;
+    while (i < *num_vlans - 1) {
+        guint    j         = i + 1;
+        gboolean can_merge = vlans[j].vid_start <= vlans[i].vid_end + 1
+                             && vlans[j].pvid == vlans[i].pvid
+                             && vlans[j].untagged == vlans[i].untagged;
+
+        if (can_merge) {
+            vlans[i].vid_end = NM_MAX(vlans[i].vid_end, vlans[j].vid_end);
+            for (; j < *num_vlans - 1; j++)
+                vlans[j] = vlans[j + 1];
+            *num_vlans -= 1;
+        } else {
+            i++;
+        }
+    }
+}
+
+/**
+ * nmp_utils_bridge_normalized_vlans_equal:
+ * @vlans_a: the first array of bridge VLANs
+ * @num_vlans_a: the number of elements of first array
+ * @vlans_b: the second array of bridge VLANs
+ * @num_vlans_b: the number of elements of second array
+ *
+ * Given two arrays of bridge VLAN ranges, compare if they are equal,
+ * i.e. if they represent the same set of VLANs with the same attributes.
+ * The input arrays must be normalized (sorted and without overlapping or
+ * duplicated ranges). Normalize with nmp_utils_bridge_vlan_normalize().
+ */
+gboolean
+nmp_utils_bridge_normalized_vlans_equal(const NMPlatformBridgeVlan *vlans_a,
+                                        guint                       num_vlans_a,
+                                        const NMPlatformBridgeVlan *vlans_b,
+                                        guint                       num_vlans_b)
+{
+    guint i;
+
+    if (num_vlans_a != num_vlans_b)
+        return FALSE;
+
+    for (i = 0; i < num_vlans_a; i++) {
+        if (vlans_a[i].vid_start != vlans_b[i].vid_start || vlans_a[i].vid_end != vlans_b[i].vid_end
+            || vlans_a[i].pvid != vlans_b[i].pvid || vlans_a[i].untagged != vlans_b[i].untagged) {
+            return FALSE;
+        }
+    }
+
+    return TRUE;
+}
+
+/*****************************************************************************/
+
 static const char *
 _trunk_first_line(char *str)
 {
