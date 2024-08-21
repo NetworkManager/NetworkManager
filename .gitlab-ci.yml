@@ -62,9 +62,9 @@ variables:
   # ".default_tag".
   ALPINE_TAG:  'tag-961e70a41177'
   CENTOS_TAG:  'tag-fe6805b2c8f4'
-  DEBIAN_TAG:  'tag-f95b2e33bdf7'
+  DEBIAN_TAG:  'tag-806721d9d354'
   FEDORA_TAG:  'tag-fe6805b2c8f4'
-  UBUNTU_TAG:  'tag-f95b2e33bdf7'
+  UBUNTU_TAG:  'tag-806721d9d354'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
