@@ -23,6 +23,7 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * ndisc: Support multiple gateways for a single network
 * wifi: Support configuring channel-width in AP mode
 * keyfile: Stop writing offensive terms into keyfiles
+* Support reapplying the VLANs on bridge ports.
 
 =============================================
 NetworkManager-1.48
