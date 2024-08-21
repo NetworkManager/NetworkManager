@@ -60,11 +60,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-002928e49e27'
-  CENTOS_TAG:  'tag-15f80c990684'
-  DEBIAN_TAG:  'tag-1ce75d18715e'
-  FEDORA_TAG:  'tag-15f80c990684'
-  UBUNTU_TAG:  'tag-1ce75d18715e'
+  ALPINE_TAG:  'tag-961e70a41177'
+  CENTOS_TAG:  'tag-fe6805b2c8f4'
+  DEBIAN_TAG:  'tag-f95b2e33bdf7'
+  FEDORA_TAG:  'tag-fe6805b2c8f4'
+  UBUNTU_TAG:  'tag-f95b2e33bdf7'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
@@ -289,20 +289,6 @@ tier3:debian:oldstable@prep:
     FDO_DISTRIBUTION_VERSION: 'oldstable'
     FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
     FDO_DISTRIBUTION_EXEC: $DEBIAN_EXEC
-  rules:
-    - if: $CI_PIPELINE_SOURCE != 'schedule'
-      when: manual
-      allow_failure: true
-
-tier3:centos:stream8@prep:
-  extends:
-    - .fdo.container-build@centos
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: 'stream8'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-    FDO_DISTRIBUTION_EXEC: $CENTOS_EXEC
   rules:
     - if: $CI_PIPELINE_SOURCE != 'schedule'
       when: manual
@@ -540,20 +526,6 @@ t_debian:oldstable:
     FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
   needs:
     - "tier3:debian:oldstable@prep"
-  rules:
-    - if: $CI_PIPELINE_SOURCE != 'schedule'
-
-t_centos:stream8:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@centos
-    - .nm_artifacts_debug
-  stage: tier3
-  variables:
-    FDO_DISTRIBUTION_VERSION: 'stream8'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-  needs:
-    - "tier3:centos:stream8@prep"
   rules:
     - if: $CI_PIPELINE_SOURCE != 'schedule'
 
