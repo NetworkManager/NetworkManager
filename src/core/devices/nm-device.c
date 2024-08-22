@@ -3394,7 +3394,7 @@ nm_device_sys_iface_state_set(NMDevice *self, NMDeviceSysIfaceState sys_iface_st
     priv = NM_DEVICE_GET_PRIVATE(self);
     if (priv->sys_iface_state != sys_iface_state) {
         _LOGT(LOGD_DEVICE,
-              "sys-iface-state: %s -> %s",
+              "managed-type: %s -> %s",
               nm_device_sys_iface_state_to_string(priv->sys_iface_state),
               nm_device_sys_iface_state_to_string(sys_iface_state));
         priv->sys_iface_state_ = sys_iface_state;
@@ -16728,7 +16728,7 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
     if ((priv->state == state)
         && (state != NM_DEVICE_STATE_UNAVAILABLE || !priv->firmware_missing)) {
         _LOGD(LOGD_DEVICE,
-              "state change: %s -> %s (reason '%s', sys-iface-state: '%s'%s)",
+              "state change: %s -> %s (reason '%s', managed-type: '%s'%s)",
               nm_device_state_to_string(old_state),
               nm_device_state_to_string(state),
               nm_device_state_reason_to_string_a(reason),
@@ -16738,7 +16738,7 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
     }
 
     _LOGI(LOGD_DEVICE,
-          "state change: %s -> %s (reason '%s', sys-iface-state: '%s')",
+          "state change: %s -> %s (reason '%s', managed-type: '%s')",
           nm_device_state_to_string(old_state),
           nm_device_state_to_string(state),
           nm_device_state_reason_to_string_a(reason),
