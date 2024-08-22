@@ -60,11 +60,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-94fd546ecdd9'
-  CENTOS_TAG:  'tag-ec274fe113f5'
-  DEBIAN_TAG:  'tag-cae73089725c'
-  FEDORA_TAG:  'tag-ec274fe113f5'
-  UBUNTU_TAG:  'tag-cae73089725c'
+  ALPINE_TAG:  'tag-ee13da0f38c7'
+  CENTOS_TAG:  'tag-5d3b59c9dd4b'
+  DEBIAN_TAG:  'tag-b274cbc4bddd'
+  FEDORA_TAG:  'tag-5d3b59c9dd4b'
+  UBUNTU_TAG:  'tag-b274cbc4bddd'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
@@ -680,7 +680,7 @@ coverity:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $SCHEDULED_PIPELINE_NAME == "weekly"
   script:
     - dnf install -y curl
-    - BUILD_TYPE=meson CC=gcc CONFIGURE_ONLY=1 contrib/scripts/nm-ci-run.sh
+    - CC=gcc CONFIGURE_ONLY=1 contrib/scripts/nm-ci-run.sh
     - cd build
     - ../.gitlab-ci/coverity.sh download
     - cov-analysis-linux64-*/bin/cov-build --dir cov-int ninja

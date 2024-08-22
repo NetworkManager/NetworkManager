@@ -229,7 +229,6 @@ RUN dnf install -y \\
     libtool \\
     libubsan \\
     libuuid-devel \\
-    make \\
     meson \\
     mlocate \\
     mobile-broadband-provider-info-devel \\

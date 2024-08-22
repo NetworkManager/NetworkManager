@@ -13,24 +13,6 @@ die() {
 # plugins. Note that this depends on how NetworkManager and
 # the plugins are build. For example, compiling without
 # --with-more-asserts will yield less symbols.
-#
-# _build re-builds NetworkManager with relevant compile time
-# options to yield the most symbols.
-_build() {
-    git clean -fdx
-    ./autogen.sh --enable-ld-gc \
-                 --enable-ifcfg-rh \
-                 --enable-ifupdown \
-                 --enable-teamdctl \
-                 --enable-wifi \
-                 --with-modem-manager-1 \
-                 --with-ofono \
-                 --with-more-asserts \
-                 --with-more-logging \
-                 --disable-autotools-deprecation
-    make -j20
-}
-
 _sort() {
     LANG=C sort -u
 }
@@ -75,16 +57,6 @@ pretty() {
     sed 's/.*/\t&;/'
 }
 
-do_build() {
-    do_update
-    make
-}
-
-do_rebuild() {
-    _build
-    do_build
-}
-
 do_update() {
     do_generate > ./src/core/NetworkManager.ver
 }
@@ -117,14 +89,6 @@ EOF
 test -f ./src/core/${libs}libNetworkManager.a || die "must be called from NetworkManager top build dir after building the tree"
 
 case "$1" in
-    rebuild)
-        [ -n "$from_meson" ] && die "can't do a build when called from meson"
-        do_rebuild
-        ;;
-    build)
-        [ -n "$from_meson" ] && die "can't do a build when called from meson"
-        do_build
-        ;;
     --called-from-build)
         if test -z "${NM_BUILD_NO_CREATE_EXPORTS+x}"; then
             do_update

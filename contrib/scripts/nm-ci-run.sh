@@ -3,7 +3,6 @@
 # Arguments via environment variables:
 #  - CI
 #  - CC
-#  - BUILD_TYPE
 #  - CFLAGS
 #  - WITH_DOCS
 
@@ -50,23 +49,13 @@ grep -q '^NAME=.*\(Alpine\)' /etc/os-release && IS_ALPINE=1
 
 ###############################################################################
 
-if [ "$BUILD_TYPE" == meson ]; then
-    _TRUE=true
-    _FALSE=false
-elif [ "$BUILD_TYPE" == autotools ]; then
-    _TRUE=yes
-    _FALSE=no
-else
-    die "invalid \$BUILD_TYPE \"$BUILD_TYPE\""
-fi
-
 _WITH_CRYPTO="gnutls"
 _WITH_WERROR=1
-_WITH_LIBTEAM="$_TRUE"
-_WITH_DOCS="$_TRUE"
-_WITH_SYSTEMD_LOGIND="$_TRUE"
+_WITH_LIBTEAM="true"
+_WITH_DOCS="true"
+_WITH_SYSTEMD_LOGIND="true"
 if [ $IS_ALPINE = 1 ]; then
-    _WITH_SYSTEMD_LOGIND="$_FALSE"
+    _WITH_SYSTEMD_LOGIND="false"
 fi
 
 if [ -z "${NMTST_SEED_RAND+x}" ]; then
@@ -92,9 +81,9 @@ fi
 
 if [ "$WITH_DOCS" != "" ]; then
     if _is_true "$WITH_DOCS"; then
-        _WITH_DOCS="$_TRUE"
+        _WITH_DOCS="true"
     else
-        _WITH_DOCS="$_FALSE"
+        _WITH_DOCS="false"
     fi
 fi
 
@@ -149,149 +138,72 @@ _print_test_logs() {
     fi
 }
 
-run_autotools() {
-    NOCONFIGURE=1 ./autogen.sh
-    mkdir ./build
-    if [ "$_WITH_WERROR" == 1 ]; then
-        _WITH_WERROR_VAL="error"
-    else
-        _WITH_WERROR_VAL="yes"
-    fi
-    DISABLE_DEPENDENCY_TRACKING=
-    if [ $IS_ALPINE = 1 ]; then
-        DISABLE_DEPENDENCY_TRACKING='--disable-dependency-tracking'
-    fi
-    pushd ./build
-        ../configure \
-            --prefix="$PWD/INST" \
-            $DISABLE_DEPENDENCY_TRACKING \
-            \
-            --enable-introspection=$_WITH_DOCS \
-            --enable-gtk-doc=$_WITH_DOCS \
-            --with-systemd-logind=$_WITH_SYSTEMD_LOGIND \
-            --enable-more-warnings="$_WITH_WERROR_VAL" \
-            --enable-tests=yes \
-            --with-crypto=$_WITH_CRYPTO \
-            \
-            --with-ebpf=no \
-            \
-            --with-iwd=yes \
-            --with-ofono=yes \
-            --enable-teamdctl=$_WITH_LIBTEAM \
-            \
-            --with-dhcpcanon=yes \
-            --with-dhcpcd=yes \
-            --with-dhclient=yes \
-            \
-            --with-netconfig=/bin/nowhere/netconfig \
-            --with-resolvconf=/bin/nowhere/resolvconf \
-            \
-            --enable-ifcfg-rh=yes \
-            --enable-ifupdown=yes \
-            --disable-autotools-deprecation \
-            \
-            #end
-
-        if [ "$CONFIGURE_ONLY" != 1 ]; then
-            make -j 6
-            make install
-
-            export NM_TEST_CLIENT_CHECK_L10N=1
-
-            if ! make check -j 6 -k ; then
-                _print_test_logs "first-test"
-                echo ">>>> RUN SECOND TEST (start)"
-                NMTST_DEBUG="debug,TRACE,no-expect-message" make check -k || :
-                echo ">>>> RUN SECOND TEST (done)"
-                _print_test_logs "second-test"
-                die "autotools test failed"
-            fi
-
-            if _with_valgrind; then
-                if ! NMTST_USE_VALGRIND=1 make check -j 3 -k ; then
-                    _print_test_logs "(valgrind test)"
-                    die "autotools+valgrind test failed"
-                fi
-            fi
-        fi
-    popd
-}
-
 ###############################################################################
 
-run_meson() {
-    if [ "$_WITH_WERROR" == 1 ]; then
-        _WITH_WERROR_VAL="--werror"
-    else
-        _WITH_WERROR_VAL=""
+if [ "$_WITH_WERROR" == 1 ]; then
+    _WITH_WERROR_VAL="--werror"
+else
+    _WITH_WERROR_VAL=""
+fi
+
+meson setup build \
+    \
+    -Dprefix="$PWD/INST" \
+    \
+    --warnlevel 2 \
+    $_WITH_WERROR_VAL \
+    \
+    -D ld_gc=false \
+    -D session_tracking=no \
+    -D systemdsystemunitdir=no \
+    -D systemd_journal=false \
+    -D selinux=false \
+    -D libaudit=no \
+    -D libpsl=false \
+    -D vapi=false \
+    -D introspection=$_WITH_DOCS \
+    -D qt=false \
+    -D crypto=$_WITH_CRYPTO \
+    -D docs=$_WITH_DOCS \
+    \
+    -D ebpf=false \
+    \
+    -D iwd=true \
+    -D ofono=true \
+    -D teamdctl=$_WITH_LIBTEAM \
+    \
+    -D dhclient=/bin/nowhere/dhclient \
+    -D dhcpcanon=/bin/nowhere/dhcpcanon \
+    -D dhcpcd=/bin/nowhere/dhcpd \
+    \
+    -D netconfig=/bin/nowhere/netconfig \
+    -D resolvconf=/bin/nowhere/resolvconf \
+    \
+    -D ifcfg_rh=false \
+    -D ifupdown=true \
+    \
+    #end
+
+export NM_TEST_CLIENT_CHECK_L10N=1
+
+if [ "$CONFIGURE_ONLY" != 1 ]; then
+    ninja -C build -v
+    ninja -C build install
+
+    if ! meson test -C build -v --print-errorlogs ; then
+        echo ">>>> RUN SECOND TEST (start)"
+        NMTST_DEBUG="debug,TRACE,no-expect-message" \
+        meson test -C build -v --print-errorlogs || :
+        echo ">>>> RUN SECOND TEST (done)"
+        die "meson test failed"
     fi
-    meson setup build \
-        \
-        -Dprefix="$PWD/INST" \
-        \
-        --warnlevel 2 \
-        $_WITH_WERROR_VAL \
-        \
-        -D ld_gc=false \
-        -D session_tracking=no \
-        -D systemdsystemunitdir=no \
-        -D systemd_journal=false \
-        -D selinux=false \
-        -D libaudit=no \
-        -D libpsl=false \
-        -D vapi=false \
-        -D introspection=$_WITH_DOCS \
-        -D qt=false \
-        -D crypto=$_WITH_CRYPTO \
-        -D docs=$_WITH_DOCS \
-        \
-        -D ebpf=false \
-        \
-        -D iwd=true \
-        -D ofono=true \
-        -D teamdctl=$_WITH_LIBTEAM \
-        \
-        -D dhclient=/bin/nowhere/dhclient \
-        -D dhcpcanon=/bin/nowhere/dhcpcanon \
-        -D dhcpcd=/bin/nowhere/dhcpd \
-        \
-        -D netconfig=/bin/nowhere/netconfig \
-        -D resolvconf=/bin/nowhere/resolvconf \
-        \
-        -D ifcfg_rh=false \
-        -D ifupdown=true \
-        \
-        #end
 
-    export NM_TEST_CLIENT_CHECK_L10N=1
-
-    if [ "$CONFIGURE_ONLY" != 1 ]; then
-        ninja -C build -v
-        ninja -C build install
-
-        if ! meson test -C build -v --print-errorlogs ; then
-            echo ">>>> RUN SECOND TEST (start)"
-            NMTST_DEBUG="debug,TRACE,no-expect-message" \
-            meson test -C build -v --print-errorlogs || :
-            echo ">>>> RUN SECOND TEST (done)"
-            die "meson test failed"
-        fi
-
-        if _with_valgrind; then
-            if ! NMTST_USE_VALGRIND=1 meson test -C build -v --print-errorlogs ; then
-                _print_test_logs "(valgrind test)"
-                die "meson+valgrind test failed"
-            fi
+    if _with_valgrind; then
+        if ! NMTST_USE_VALGRIND=1 meson test -C build -v --print-errorlogs ; then
+            _print_test_logs "(valgrind test)"
+            die "meson+valgrind test failed"
         fi
     fi
-}
-
-###############################################################################
-
-if [ "$BUILD_TYPE" == autotools ]; then
-    run_autotools
-elif [ "$BUILD_TYPE" == meson ]; then
-    run_meson
 fi
 
 if [ "$USE_CCACHE" = 1 ]; then
