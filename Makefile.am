@@ -3608,7 +3608,7 @@ EXTRA_DIST += \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-main \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-mode-numeric \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-port \
-	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-port \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-port-bond0 \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-port-ib \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bridge-component \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bridge-main \
