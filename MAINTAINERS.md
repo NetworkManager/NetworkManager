@@ -252,10 +252,10 @@ Versioning scheme (version numbers are called MAJOR.MINOR.MICRO):
 
 When doing a release, follow this process:
 1. Ensure that `NEWS` file is up to date.
-2. Increment the version in `configure.ac`, commit and tag the commit. Example:
+2. Increment the version in `meson.build`, commit and tag the commit. Example:
    `git tag -s 1.2.8 -m 'Tag 1.2.8'`.
 3. Ensure that you are on the right commit and create the tarball:
-   `git clean -fdx && ./autogen.sh && make distcheck`
+   `git clean -fdx && meson setup build && cd build && meson dist`
 4. Upload the tarball: `scp ./*-*.tar.xz "$user@master.gnome.org:"`
 5. Login to `master.gnome.org` and run `ftpadmin install`.  
    Ensure the new tarballs show up at https://download.gnome.org/sources/

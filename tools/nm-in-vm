@@ -23,7 +23,7 @@ set -e
 # NetworkManager directories:
 #
 #   The NetworkManager root directory is mounted in the VM as a filesystem share.
-#   You can run `make install` and run tests.
+#   You can run `meson install` and run tests.
 #
 #   Create a symlink ./.git/NetworkManager-ci, to share the CI directory too.
 #

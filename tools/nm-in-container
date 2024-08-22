@@ -23,7 +23,7 @@ set -e
 #    - with command "journal", additional arguments that are passed to journalctl.
 #
 # It bind mounts the current working directory inside the container.
-# You can run `make install` and run tests.
+# You can run `meson install` and run tests.
 # There is a script nm-env-prepare.sh to generate a net1 interface for testing.
 #
 # This will bind-mount the NetworkManager working tree inside the container (and symlink

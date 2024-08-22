@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Run configure/meson for NetworkManager in a way similar to how an RPM build does it.
-# The effect is, that if you do `make install`, that it will overwrite the files that
+# The effect is, that if you do `meson install`, that it will overwrite the files that
 # you'd usually get by installing the NetworkManager RPM. Also, it means you can afterwards
 # systemctl restart NetworkManager.
 
@@ -33,7 +33,7 @@ usage() {
     echo "$ $0 [-m|--meson <builddir>] [-s|--show] [-B|--no-build] [-h|--help]"
     echo ""
     echo "Configure NetworkManager in a way that is similar to when building"
-    echo "RPMs of NetworkManager for Fedora/RHEL. The effect is that \`make install\`"
+    echo "RPMs of NetworkManager for Fedora/RHEL. The effect is that \`meson install\`"
     echo "will overwrite the files in /usr that you installed via the package management"
     echo "systemd. Also, subsequent \`systemctl restart NetworkManager\` works."
     echo "You don't want to do this on your real system, because it messes up your"
