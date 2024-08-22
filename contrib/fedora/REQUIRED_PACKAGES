@@ -69,7 +69,6 @@ install \
     libselinux-devel \
     libtool \
     libuuid-devel \
-    make \
     meson \
     mobile-broadband-provider-info-devel \
     newt-devel \

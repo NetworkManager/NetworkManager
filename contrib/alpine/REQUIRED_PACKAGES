@@ -7,7 +7,6 @@ apk update
 apk add \
     'alpine-sdk' \
     'autoconf' \
-    'automake' \
     'bash' \
     'clang' \
     'curl-dev' \
@@ -31,7 +30,6 @@ apk add \
     'libteam-dev' \
     'libtool' \
     'linux-headers' \
-    'make' \
     'meson' \
     'mobile-broadband-provider-info' \
     'modemmanager-dev' \

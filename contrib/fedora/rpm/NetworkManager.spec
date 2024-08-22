@@ -250,7 +250,6 @@ Conflicts: NetworkManager-initscripts-ifcfg-rh <= 1:1.47.5-3
 Conflicts: NetworkManager-dispatcher-routing-rules <= 1:1.47.5-3
 %endif
 
-BuildRequires: make
 BuildRequires: gcc
 BuildRequires: libtool
 BuildRequires: pkgconfig
