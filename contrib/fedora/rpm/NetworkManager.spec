@@ -49,10 +49,8 @@
 
 ###############################################################################
 %if 0%{?fedora} > 40 || 0%{?rhel} >= 10
-%bcond_without meson
 %bcond_with dhclient
 %else
-%bcond_with    meson
 %bcond_without dhclient
 %endif
 %bcond_without adsl
@@ -256,12 +254,7 @@ BuildRequires: make
 BuildRequires: gcc
 BuildRequires: libtool
 BuildRequires: pkgconfig
-%if %{with meson}
 BuildRequires: meson
-%else
-BuildRequires: automake
-BuildRequires: autoconf
-%endif
 BuildRequires: gettext-devel >= 0.19.8
 
 BuildRequires: dbus-devel >= %{dbus_version}
@@ -594,7 +587,6 @@ Preferably use nmcli instead.
 
 
 %build
-%if %{with meson}
 %meson \
 	-Db_ndebug=false \
 	--warnlevel 2 \
@@ -727,158 +719,8 @@ Preferably use nmcli instead.
 
 %meson_build
 
-%else
-# autotools
-%if %{with regen_docs}
-gtkdocize
-%endif
-autoreconf --install --force
-%configure \
-	--with-runstatedir=%{_rundir} \
-	--enable-silent-rules=no \
-	--enable-static=no \
-	--with-nft=%{_sbindir}/nft \
-	--with-iptables=%{_sbindir}/iptables \
-%if %{with dhclient}
-	--with-dhclient=%{_sbindir}/dhclient \
-%else
-	--with-dhclient=no \
-%endif
-	--with-dhcpcd=no \
-	--with-dhcpcanon=no \
-	--with-crypto=gnutls \
-%if %{with sanitizer}
-	--with-address-sanitizer=exec \
-	--enable-undefined-sanitizer=yes \
-%else
-	--with-address-sanitizer=no \
-	--enable-undefined-sanitizer=no \
-%endif
-%if %{with debug}
-	--enable-more-logging=yes \
-	--with-more-asserts=10000 \
-%else
-	--enable-more-logging=no \
-	--with-more-asserts=0 \
-%endif
-	--enable-ld-gc=yes \
-%if %{with lto}
-	--enable-lto=yes \
-%else
-	--enable-lto=no \
-%endif
-	--with-libaudit=yes-disabled-by-default \
-%if 0%{?with_modem_manager_1}
-	--with-modem-manager-1=yes \
-%else
-	--with-modem-manager-1=no \
-%endif
-%if %{with wifi}
-	--enable-wifi=yes \
-%if 0%{?fedora}
-	--with-wext=yes \
-%else
-	--with-wext=no \
-%endif
-%else
-	--enable-wifi=no \
-%endif
-%if %{with iwd}
-	--with-iwd=yes \
-%else
-	--with-iwd=no \
-%endif
-%if %{with bluetooth}
-	--enable-bluez5-dun=yes \
-%else
-	--enable-bluez5-dun=no \
-%endif
-%if %{with nmtui}
-	--with-nmtui=yes \
-%else
-	--with-nmtui=no \
-%endif
-%if %{with nm_cloud_setup}
-	--with-nm-cloud-setup=yes \
-%else
-	--with-nm-cloud-setup=no \
-%endif
-	--enable-vala=yes \
-	--enable-introspection=yes \
-%if %{with regen_docs}
-	--enable-gtk-doc=yes \
-%else
-	--enable-gtk-doc=no \
-%endif
-%if %{with team}
-	--enable-teamdctl=yes \
-%else
-	--enable-teamdctl=no \
-%endif
-%if %{with ovs}
-	--enable-ovs=yes \
-%else
-	--enable-ovs=no \
-%endif
-	--with-selinux=yes \
-	--enable-polkit=yes \
-	--enable-modify-system=yes \
-	--enable-concheck=yes \
-%if 0%{?fedora}
-	--with-libpsl=yes \
-%else
-	--with-libpsl=no \
-%endif
-	--with-ebpf=%{ebpf_enabled} \
-	--with-session-tracking=systemd \
-	--with-suspend-resume=systemd \
-	--with-systemdsystemunitdir=%{_unitdir} \
-	--with-system-ca-path=/etc/pki/tls/cert.pem \
-	--with-dbus-sys-dir=%{dbus_sys_dir} \
-	--with-tests=yes \
-%if %{with test}
-	--enable-more-warnings=error \
-%else
-	--enable-more-warnings=yes \
-%endif
-	--with-valgrind=no \
-%if %{with ifcfg_rh}
-	--enable-ifcfg-rh=yes \
-%else
-	--enable-ifcfg-rh=no \
-%endif
-	--enable-ifupdown=no \
-%if %{with ppp}
-	--enable-ppp=yes \
-	--with-pppd="%{_sbindir}/pppd" \
-	--with-pppd-plugin-dir="%{_libdir}/pppd/%{ppp_version}" \
-%else
-	--enable-ppp=no \
-%endif
-	--enable-firewalld-zone=yes \
-	--with-dist-version=%{version}-%{release} \
-%if %{with default_ifcfg_rh}
-	--with-config-plugins-default=ifcfg-rh \
-%endif
-%if %{with ifcfg_migrate}
-	--with-config-migrate-ifcfg-rh-default=yes \
-%endif
-	--with-resolvconf=no \
-	--with-netconfig=no \
-	--with-config-dns-rc-manager-default=%{dns_rc_manager_default} \
-	--with-config-logging-backend-default=journal \
-	--disable-autotools-deprecation
-
-%make_build
-
-%endif
-
 %install
-%if %{with meson}
 %meson_install
-%else
-%make_install
-%endif
 
 cp %{SOURCE1} %{buildroot}%{_sysconfdir}/%{name}/
 
@@ -918,7 +760,7 @@ rm -f %{buildroot}%{_libdir}/pppd/%{ppp_version}/*.la
 rm -f %{buildroot}%{nmplugindir}/*.la
 
 # Ensure the documentation timestamps are constant to avoid multilib conflicts
-find %{buildroot}%{_datadir}/gtk-doc -exec touch --reference configure.ac '{}' \+
+find %{buildroot}%{_datadir}/gtk-doc -exec touch --reference meson.build '{}' \+
 
 %if 0%{?__debug_package} && ! 0%{?flatpak}
 mkdir -p %{buildroot}%{_prefix}/src/debug/NetworkManager-%{real_version}
@@ -932,21 +774,11 @@ touch %{buildroot}%{_sbindir}/ifdown
 
 
 %check
-%if %{with meson}
 %if %{with test}
 %meson_test
 %else
 %ninja_test -C %{_vpath_builddir} || :
 %endif
-%else
-# autotools
-%if %{with test}
-make -k %{?_smp_mflags} check
-%else
-make -k %{?_smp_mflags} check || :
-%endif
-%endif
-
 
 %pre
 if [ -f "%{_unitdir}/network-online.target.wants/NetworkManager-wait-online.service" ] ; then
