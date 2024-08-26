@@ -8,6 +8,17 @@ After=NetworkManager.service
 Type=oneshot
 ExecStart=@libexecdir@/nm-cloud-setup
 
+# The service restart gets triggered from dispatcher script
+# (pre-up and dhcp4-change actions), possibly ending up with many
+# restart requests at the same time (e.g. on initial daemon startup
+# on a machine with multiple NICs). The systemd handles multiple
+# concurrent restart requests gracefully (the newer requests supersede
+# older, which wait for them to finish), but the default limits are way
+# too low: 5 restarts in 10 seconds. Raise that high enough for us to
+# be on the safe side.
+StartLimitIntervalSec=1
+StartLimitBurst=100
+
 #Environment=NM_CLOUD_SETUP_LOG=TRACE
 
 # Cloud providers are disabled by default. You need to
