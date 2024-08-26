@@ -10,6 +10,7 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 * Add new ipv4.link-local=fallback to set an IPv4 link-local address
   when no other IPv4 is set.
+* Remove support for building with Autotools
 
 =============================================
 NetworkManager-1.50
