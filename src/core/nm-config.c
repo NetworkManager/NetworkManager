@@ -1284,19 +1284,23 @@ _get_config_dir_files(const char *config_dir)
 static void
 _confs_to_description(GString *str, const GPtrArray *confs, const char *name)
 {
-    guint i;
+    guint    i;
+    gboolean need_braces;
 
     if (!confs->len)
         return;
 
+    need_braces = confs->len > 1;
+
     for (i = 0; i < confs->len; i++) {
         if (i == 0)
-            g_string_append_printf(str, " (%s: ", name);
+            g_string_append_printf(str, ", %s/%s", name, need_braces ? "{" : "");
         else
-            g_string_append(str, ", ");
+            g_string_append(str, ",");
         g_string_append(str, confs->pdata[i]);
     }
-    g_string_append(str, ")");
+    if (need_braces)
+        g_string_append(str, "}");
 }
 
 static GKeyFile *
@@ -1427,9 +1431,9 @@ read_entire_config(const NMConfigCmdLineOptions *cli,
         GString *str;
 
         str = g_string_new(o_config_main_file);
-        _confs_to_description(str, system_confs, "lib");
-        _confs_to_description(str, run_confs, "run");
-        _confs_to_description(str, confs, "etc");
+        _confs_to_description(str, system_confs, system_config_dir);
+        _confs_to_description(str, run_confs, run_config_dir);
+        _confs_to_description(str, confs, config_dir);
         *out_config_description = g_string_free(str, FALSE);
     }
     NM_SET_OUT(out_config_main_file, g_steal_pointer(&o_config_main_file));
