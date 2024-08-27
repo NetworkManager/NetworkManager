@@ -318,5 +318,5 @@ touch the interface. The external status is tracked in the
 
  - EXTERNAL: the interface is not touched by NM.
  - ASSUME: this value is deprecated; it used to mean that NM should manage the device without fully reconfiguring it. Now, the interface is either managed on external.
- - MANAGED: the interface is fully managed.
+ - FULL: the interface is fully managed.
  - REMOVED: the link was removed externally.

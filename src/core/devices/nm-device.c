@@ -3388,7 +3388,7 @@ nm_device_managed_type_set(NMDevice *self, NMDeviceManagedType managed_type)
     g_return_if_fail(NM_IN_SET(managed_type,
                                NM_DEVICE_MANAGED_TYPE_EXTERNAL,
                                NM_DEVICE_MANAGED_TYPE_ASSUME,
-                               NM_DEVICE_MANAGED_TYPE_MANAGED,
+                               NM_DEVICE_MANAGED_TYPE_FULL,
                                NM_DEVICE_MANAGED_TYPE_REMOVED));
 
     priv = NM_DEVICE_GET_PRIVATE(self);
@@ -4736,7 +4736,7 @@ _dev_l3_cfg_commit_type_reset(NMDevice *self)
          * Meanwhile, the commit type must be updated. */
         commit_type = NM_L3_CFG_COMMIT_TYPE_UPDATE;
         goto do_set;
-    case NM_DEVICE_MANAGED_TYPE_MANAGED:
+    case NM_DEVICE_MANAGED_TYPE_FULL:
         commit_type = NM_L3_CFG_COMMIT_TYPE_UPDATE;
         goto do_set;
     }
@@ -8469,9 +8469,9 @@ port_state_changed(NMDevice           *port,
     }
 
     if (release) {
-        configure = (priv->managed_type == NM_DEVICE_MANAGED_TYPE_MANAGED
+        configure = (priv->managed_type == NM_DEVICE_MANAGED_TYPE_FULL
                      && nm_device_managed_type_get(port) != NM_DEVICE_MANAGED_TYPE_EXTERNAL)
-                    || nm_device_managed_type_get(port) == NM_DEVICE_MANAGED_TYPE_MANAGED;
+                    || nm_device_managed_type_get(port) == NM_DEVICE_MANAGED_TYPE_FULL;
 
         nm_device_controller_release_port(self,
                                           port,
@@ -13404,7 +13404,7 @@ act_request_set(NMDevice *self, NMActRequest *act_request)
                                 priv->managed_type,
                                 NM_DEVICE_MANAGED_TYPE_EXTERNAL,
                                 NM_DEVICE_MANAGED_TYPE_ASSUME))
-                nm_device_managed_type_set(self, NM_DEVICE_MANAGED_TYPE_MANAGED);
+                nm_device_managed_type_set(self, NM_DEVICE_MANAGED_TYPE_FULL);
             break;
         }
     }
@@ -13948,7 +13948,7 @@ reapply_cb(NMDevice              *self,
     }
 
     if (nm_device_managed_type_is_external(self))
-        nm_device_managed_type_set(self, NM_DEVICE_MANAGED_TYPE_MANAGED);
+        nm_device_managed_type_set(self, NM_DEVICE_MANAGED_TYPE_FULL);
 
     if (!check_and_reapply_connection(self,
                                       connection
@@ -14435,7 +14435,7 @@ nm_device_disconnect_active_connection(NMActiveConnection           *active,
              * the managed-type to managed so that we deconfigure/cleanup the interface.
              * But for external connections that go down otherwise, we don't want to touch the interface. */
             if (nm_device_managed_type_is_external(self))
-                nm_device_managed_type_set(self, NM_DEVICE_MANAGED_TYPE_MANAGED);
+                nm_device_managed_type_set(self, NM_DEVICE_MANAGED_TYPE_FULL);
 
             nm_device_state_changed(self, NM_DEVICE_STATE_DEACTIVATING, device_reason);
         } else {
@@ -16767,7 +16767,7 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
                            priv->managed_type,
                            NM_DEVICE_MANAGED_TYPE_EXTERNAL,
                            NM_DEVICE_MANAGED_TYPE_ASSUME))
-        nm_device_managed_type_set(self, NM_DEVICE_MANAGED_TYPE_MANAGED);
+        nm_device_managed_type_set(self, NM_DEVICE_MANAGED_TYPE_FULL);
 
     if (state <= NM_DEVICE_STATE_DISCONNECTED || state >= NM_DEVICE_STATE_ACTIVATED)
         priv->auth_retries = NM_DEVICE_AUTH_RETRIES_UNSET;
@@ -16809,7 +16809,7 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
     case NM_DEVICE_STATE_UNMANAGED:
         nm_device_set_firmware_missing(self, FALSE);
         if (old_state > NM_DEVICE_STATE_UNMANAGED) {
-            if (priv->managed_type != NM_DEVICE_MANAGED_TYPE_MANAGED) {
+            if (priv->managed_type != NM_DEVICE_MANAGED_TYPE_FULL) {
                 nm_device_cleanup(self,
                                   reason,
                                   priv->managed_type == NM_DEVICE_MANAGED_TYPE_REMOVED
@@ -16830,7 +16830,7 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
     case NM_DEVICE_STATE_UNAVAILABLE:
         if (old_state == NM_DEVICE_STATE_UNMANAGED) {
             _dev_sysctl_save_ip6_properties(self);
-            if (priv->managed_type == NM_DEVICE_MANAGED_TYPE_MANAGED)
+            if (priv->managed_type == NM_DEVICE_MANAGED_TYPE_FULL)
                 ip6_managed_setup(self);
             device_init_static_sriov_num_vfs(self);
 
@@ -16842,7 +16842,7 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
             carrier_detect_wait(self);
         }
 
-        if (priv->managed_type == NM_DEVICE_MANAGED_TYPE_MANAGED) {
+        if (priv->managed_type == NM_DEVICE_MANAGED_TYPE_FULL) {
             if (old_state == NM_DEVICE_STATE_UNMANAGED || priv->firmware_missing) {
                 if (!nm_device_bring_up_full(self, TRUE, FALSE, &no_firmware) && no_firmware)
                     _LOGW(LOGD_PLATFORM, "firmware may be missing.");
@@ -16872,7 +16872,7 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
                 nm_device_cleanup(self, reason, CLEANUP_TYPE_DECONFIGURE);
 
         } else if (old_state < NM_DEVICE_STATE_DISCONNECTED) {
-            if (priv->managed_type == NM_DEVICE_MANAGED_TYPE_MANAGED) {
+            if (priv->managed_type == NM_DEVICE_MANAGED_TYPE_FULL) {
                 /* Ensure IPv6 is set up as it may not have been done when
                  * entering the UNAVAILABLE state depending on the reason.
                  */
@@ -18725,7 +18725,7 @@ nm_device_init(NMDevice *self)
     priv->managed_type_ = NM_DEVICE_MANAGED_TYPE_EXTERNAL;
     /* If networking is already disabled at boot, we want to manage all devices
      * after re-enabling networking; hence, the initial state is MANAGED. */
-    priv->managed_type_before_sleep = NM_DEVICE_MANAGED_TYPE_MANAGED;
+    priv->managed_type_before_sleep = NM_DEVICE_MANAGED_TYPE_FULL;
 
     priv->promisc_reset = NM_OPTION_BOOL_DEFAULT;
 }

@@ -157,7 +157,7 @@ NM_UTILS_LOOKUP_STR_DEFINE(nm_device_managed_type_to_string,
                            NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT("unknown"),
                            NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_MANAGED_TYPE_EXTERNAL, "external"),
                            NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_MANAGED_TYPE_ASSUME, "assume"),
-                           NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_MANAGED_TYPE_MANAGED, "managed"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_MANAGED_TYPE_FULL, "full"),
                            NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_MANAGED_TYPE_REMOVED, "removed"), );
 
 NM_UTILS_LOOKUP_STR_DEFINE(nm_device_ip_state_to_string,

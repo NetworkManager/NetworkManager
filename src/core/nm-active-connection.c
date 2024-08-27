@@ -992,7 +992,7 @@ _set_activation_type_managed(NMActiveConnection *self)
         && NM_IN_SET(nm_device_managed_type_get(priv->device),
                      NM_DEVICE_MANAGED_TYPE_EXTERNAL,
                      NM_DEVICE_MANAGED_TYPE_ASSUME))
-        nm_device_managed_type_set(priv->device, NM_DEVICE_MANAGED_TYPE_MANAGED);
+        nm_device_managed_type_set(priv->device, NM_DEVICE_MANAGED_TYPE_FULL);
 }
 
 NMActivationReason

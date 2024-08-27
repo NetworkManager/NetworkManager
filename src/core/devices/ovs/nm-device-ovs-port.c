@@ -219,7 +219,7 @@ detach_port(NMDevice                  *device,
 {
     NMDeviceOvsPort *self             = NM_DEVICE_OVS_PORT(device);
     bool             port_not_managed = !NM_IN_SET(nm_device_managed_type_get(port),
-                                       NM_DEVICE_MANAGED_TYPE_MANAGED,
+                                       NM_DEVICE_MANAGED_TYPE_FULL,
                                        NM_DEVICE_MANAGED_TYPE_ASSUME);
     NMTernary        ret              = TRUE;
 

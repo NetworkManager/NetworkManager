@@ -5768,7 +5768,7 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
     }
 
     if (nm_active_connection_get_activation_type(active) == NM_ACTIVATION_TYPE_MANAGED)
-        nm_device_managed_type_set(device, NM_DEVICE_MANAGED_TYPE_MANAGED);
+        nm_device_managed_type_set(device, NM_DEVICE_MANAGED_TYPE_FULL);
 
     /* Try to find the controller connection/device if the connection has a dependency */
     if (!find_controller(self,

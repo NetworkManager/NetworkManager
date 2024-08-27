@@ -59,7 +59,7 @@ const char *nm_device_mtu_source_to_string(NMDeviceMtuSource mtu_source);
 typedef enum _nm_packed {
     NM_DEVICE_MANAGED_TYPE_EXTERNAL,
     NM_DEVICE_MANAGED_TYPE_ASSUME,
-    NM_DEVICE_MANAGED_TYPE_MANAGED,
+    NM_DEVICE_MANAGED_TYPE_FULL,
 
     /* the REMOVED state applies when the device is manually set to unmanaged
      * or the link was externally removed. In both cases, we move the device
