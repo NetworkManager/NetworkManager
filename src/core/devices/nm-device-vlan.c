@@ -72,7 +72,7 @@ parent_hwaddr_maybe_changed(NMDevice *parent, GParamSpec *pspec, gpointer user_d
     const char   *new_mac;
 
     /* Never touch assumed devices */
-    if (nm_device_sys_iface_state_is_external_or_assume(device))
+    if (nm_device_managed_type_is_external_or_assume(device))
         return;
 
     connection = nm_device_get_applied_connection(device);

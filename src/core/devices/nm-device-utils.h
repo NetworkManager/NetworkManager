@@ -57,19 +57,19 @@ const char *nm_device_mtu_source_to_string(NMDeviceMtuSource mtu_source);
 /*****************************************************************************/
 
 typedef enum _nm_packed {
-    NM_DEVICE_SYS_IFACE_STATE_EXTERNAL,
-    NM_DEVICE_SYS_IFACE_STATE_ASSUME,
-    NM_DEVICE_SYS_IFACE_STATE_MANAGED,
+    NM_DEVICE_MANAGED_TYPE_EXTERNAL,
+    NM_DEVICE_MANAGED_TYPE_ASSUME,
+    NM_DEVICE_MANAGED_TYPE_MANAGED,
 
     /* the REMOVED state applies when the device is manually set to unmanaged
      * or the link was externally removed. In both cases, we move the device
      * to UNMANAGED state, without touching the link -- be it, because the link
      * is already gone or because we want to release it (give it up).
      */
-    NM_DEVICE_SYS_IFACE_STATE_REMOVED,
-} NMDeviceSysIfaceState;
+    NM_DEVICE_MANAGED_TYPE_REMOVED,
+} NMDeviceManagedType;
 
-const char *nm_device_sys_iface_state_to_string(NMDeviceSysIfaceState sys_iface_state);
+const char *nm_device_managed_type_to_string(NMDeviceManagedType managed_type);
 
 /*****************************************************************************/
 

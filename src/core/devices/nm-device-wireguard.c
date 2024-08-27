@@ -1586,26 +1586,25 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
     NMDeviceWireGuard        *self = NM_DEVICE_WIREGUARD(device);
     NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
-    NMDeviceSysIfaceState     sys_iface_state;
+    NMDeviceManagedType       managed_type;
     NMDeviceStateReason       failure_reason;
     NMActStageReturn          ret;
 
-    sys_iface_state = nm_device_sys_iface_state_get(device);
+    managed_type = nm_device_managed_type_get(device);
 
-    if (sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_EXTERNAL) {
+    if (managed_type == NM_DEVICE_MANAGED_TYPE_EXTERNAL) {
         NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_NONE);
         return NM_ACT_STAGE_RETURN_SUCCESS;
     }
 
-    ret =
-        link_config(NM_DEVICE_WIREGUARD(device),
-                    "configure",
-                    (sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_ASSUME) ? LINK_CONFIG_MODE_ASSUME
-                                                                          : LINK_CONFIG_MODE_FULL,
-                    &failure_reason);
+    ret = link_config(NM_DEVICE_WIREGUARD(device),
+                      "configure",
+                      (managed_type == NM_DEVICE_MANAGED_TYPE_ASSUME) ? LINK_CONFIG_MODE_ASSUME
+                                                                      : LINK_CONFIG_MODE_FULL,
+                      &failure_reason);
 
     if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
-        if (sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_ASSUME) {
+        if (managed_type == NM_DEVICE_MANAGED_TYPE_ASSUME) {
             /* this never fails. */
             return NM_ACT_STAGE_RETURN_SUCCESS;
         }

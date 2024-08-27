@@ -988,8 +988,8 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     NMDeviceEthernet        *self = NM_DEVICE_ETHERNET(device);
     NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE(self);
 
-    if (nm_device_sys_iface_state_is_external_or_assume(device)) {
-        if (!priv->ethtool_prev_set && !nm_device_sys_iface_state_is_external(device)) {
+    if (nm_device_managed_type_is_external_or_assume(device)) {
+        if (!priv->ethtool_prev_set && !nm_device_managed_type_is_external(device)) {
             NMSettingWired *s_wired;
 
             /* During restart of NetworkManager service we forget the original auto

@@ -218,9 +218,9 @@ detach_port(NMDevice                  *device,
             gpointer                   user_data)
 {
     NMDeviceOvsPort *self             = NM_DEVICE_OVS_PORT(device);
-    bool             port_not_managed = !NM_IN_SET(nm_device_sys_iface_state_get(port),
-                                       NM_DEVICE_SYS_IFACE_STATE_MANAGED,
-                                       NM_DEVICE_SYS_IFACE_STATE_ASSUME);
+    bool             port_not_managed = !NM_IN_SET(nm_device_managed_type_get(port),
+                                       NM_DEVICE_MANAGED_TYPE_MANAGED,
+                                       NM_DEVICE_MANAGED_TYPE_ASSUME);
     NMTernary        ret              = TRUE;
 
     _LOGI(LOGD_DEVICE, "detaching ovs interface %s", nm_device_get_ip_iface(port));

@@ -152,14 +152,13 @@ NM_UTILS_LOOKUP_STR_DEFINE(nm_device_mtu_source_to_string,
                            NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_MTU_SOURCE_CONNECTION,
                                                     "connection"), );
 
-NM_UTILS_LOOKUP_STR_DEFINE(nm_device_sys_iface_state_to_string,
-                           NMDeviceSysIfaceState,
+NM_UTILS_LOOKUP_STR_DEFINE(nm_device_managed_type_to_string,
+                           NMDeviceManagedType,
                            NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT("unknown"),
-                           NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_SYS_IFACE_STATE_EXTERNAL, "external"),
-                           NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_SYS_IFACE_STATE_ASSUME, "assume"),
-                           NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_SYS_IFACE_STATE_MANAGED, "managed"),
-                           NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_SYS_IFACE_STATE_REMOVED,
-                                                    "removed"), );
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_MANAGED_TYPE_EXTERNAL, "external"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_MANAGED_TYPE_ASSUME, "assume"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_MANAGED_TYPE_MANAGED, "managed"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_MANAGED_TYPE_REMOVED, "removed"), );
 
 NM_UTILS_LOOKUP_STR_DEFINE(nm_device_ip_state_to_string,
                            NMDeviceIPState,

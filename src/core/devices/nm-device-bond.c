@@ -608,12 +608,12 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     s_bond = nm_connection_get_setting_bond(connection);
     g_return_val_if_fail(s_bond, NM_ACT_STAGE_RETURN_FAILURE);
 
-    if (nm_device_sys_iface_state_is_external(device))
+    if (nm_device_managed_type_is_external(device))
         return NM_ACT_STAGE_RETURN_SUCCESS;
 
     _balance_slb_setup(self, connection);
 
-    if (nm_device_sys_iface_state_is_external_or_assume(device))
+    if (nm_device_managed_type_is_external_or_assume(device))
         return NM_ACT_STAGE_RETURN_SUCCESS;
 
     _platform_lnk_bond_init_from_setting(s_bond, &props);

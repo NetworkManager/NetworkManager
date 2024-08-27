@@ -304,8 +304,8 @@ Note that the unmanaged flags are tracked via two variables
 practice a tri-state variable with possible values TRUE (unmanaged),
 FALSE (managed) and UNSET.
 
-External devices and sys-iface-state
-------------------------------------
+External devices and managed-type
+---------------------------------
 
 Even if a device is managed, that doesn't mean that NetworkManager is
 actively configuring it. When a device is created externally (for
@@ -314,7 +314,7 @@ creates a in-memory connection representing the configuration
 parameters on the interface such as IP addresses, routes, DNS, etc.;
 the connection appears as active but NetworkManager doesn't actually
 touch the interface. The external status is tracked in the
-`sys-iface-state` member, which can have the following values:
+`managed-type` member, which can have the following values:
 
  - EXTERNAL: the interface is not touched by NM.
  - ASSUME: this value is deprecated; it used to mean that NM should manage the device without fully reconfiguring it. Now, the interface is either managed on external.

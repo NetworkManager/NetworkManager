@@ -989,10 +989,10 @@ _set_activation_type_managed(NMActiveConnection *self)
     _set_activation_type(self, NM_ACTIVATION_TYPE_MANAGED);
 
     if (priv->device && self == NM_ACTIVE_CONNECTION(nm_device_get_act_request(priv->device))
-        && NM_IN_SET(nm_device_sys_iface_state_get(priv->device),
-                     NM_DEVICE_SYS_IFACE_STATE_EXTERNAL,
-                     NM_DEVICE_SYS_IFACE_STATE_ASSUME))
-        nm_device_sys_iface_state_set(priv->device, NM_DEVICE_SYS_IFACE_STATE_MANAGED);
+        && NM_IN_SET(nm_device_managed_type_get(priv->device),
+                     NM_DEVICE_MANAGED_TYPE_EXTERNAL,
+                     NM_DEVICE_MANAGED_TYPE_ASSUME))
+        nm_device_managed_type_set(priv->device, NM_DEVICE_MANAGED_TYPE_MANAGED);
 }
 
 NMActivationReason

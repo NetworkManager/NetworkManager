@@ -763,10 +763,10 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     NMSettingTeam       *s_team;
     const char          *cfg;
 
-    if (nm_device_sys_iface_state_is_external(device))
+    if (nm_device_managed_type_is_external(device))
         return NM_ACT_STAGE_RETURN_SUCCESS;
 
-    if (nm_device_sys_iface_state_is_external_or_assume(device)) {
+    if (nm_device_managed_type_is_external_or_assume(device)) {
         if (ensure_teamd_connection(device, &error))
             return NM_ACT_STAGE_RETURN_SUCCESS;
         _LOGD(LOGD_TEAM, "could not connect to teamd: %s", error->message);
@@ -832,7 +832,7 @@ deactivate(NMDevice *device)
 
     priv->stage1_state = NM_DEVICE_STAGE_STATE_INIT;
 
-    if (nm_device_sys_iface_state_is_external(device))
+    if (nm_device_managed_type_is_external(device))
         return;
 
     if (priv->teamd_pid || priv->tdc)
