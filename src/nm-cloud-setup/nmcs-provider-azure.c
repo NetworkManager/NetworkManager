@@ -100,6 +100,11 @@ typedef struct {
     guint                           n_iface_data_pending;
 } AzureIfaceData;
 
+typedef struct {
+    AzureIfaceData *iface_data;
+    guint64         ipaddress_idx;
+} AzureIpAddressReqData;
+
 static void
 _azure_iface_data_destroy(AzureIfaceData *iface_data)
 {
@@ -110,7 +115,8 @@ static void
 _get_config_fetch_done_cb(NMHttpClient      *http_client,
                           GAsyncResult      *result,
                           AzureIfaceData    *iface_data,
-                          GetConfigFetchType fetch_type)
+                          GetConfigFetchType fetch_type,
+                          guint64            ipaddress_idx)
 {
     NMCSProviderGetConfigTaskData  *get_config_data;
     NMCSProviderGetConfigIfaceData *iface_get_config;
@@ -147,9 +153,7 @@ _get_config_fetch_done_cb(NMHttpClient      *http_client,
         _LOGD("interface[%" G_GSSIZE_FORMAT "]: received address %s",
               iface_data->intern_iface_idx,
               _nm_utils_inet4_ntop(tmp_addr, tmp_addr_str));
-        iface_get_config->ipv4s_arr[iface_get_config->ipv4s_len] = tmp_addr;
-        iface_get_config->has_ipv4s                              = TRUE;
-        iface_get_config->ipv4s_len++;
+        iface_get_config->ipv4s_arr[ipaddress_idx] = tmp_addr;
         break;
 
     case GET_CONFIG_FETCH_TYPE_IPV4_SUBNET_0_ADDRESS:
@@ -201,10 +205,14 @@ _get_config_fetch_done_cb_ipv4_ipaddress_x_privateipaddress(GObject      *source
                                                             GAsyncResult *result,
                                                             gpointer      user_data)
 {
+    AzureIpAddressReqData *ipaddress_req_data = user_data;
+
     _get_config_fetch_done_cb(NM_HTTP_CLIENT(source),
                               result,
-                              user_data,
-                              GET_CONFIG_FETCH_TYPE_IPV4_IPADDRESS_X_PRIVATEIPADDRESS);
+                              ipaddress_req_data->iface_data,
+                              GET_CONFIG_FETCH_TYPE_IPV4_IPADDRESS_X_PRIVATEIPADDRESS,
+                              ipaddress_req_data->ipaddress_idx);
+    g_free(ipaddress_req_data);
 }
 
 static void
@@ -215,7 +223,8 @@ _get_config_fetch_done_cb_ipv4_subnet_0_address(GObject      *source,
     _get_config_fetch_done_cb(NM_HTTP_CLIENT(source),
                               result,
                               user_data,
-                              GET_CONFIG_FETCH_TYPE_IPV4_SUBNET_0_ADDRESS);
+                              GET_CONFIG_FETCH_TYPE_IPV4_SUBNET_0_ADDRESS,
+                              0);
 }
 
 static void
@@ -226,7 +235,8 @@ _get_config_fetch_done_cb_ipv4_subnet_0_prefix(GObject      *source,
     _get_config_fetch_done_cb(NM_HTTP_CLIENT(source),
                               result,
                               user_data,
-                              GET_CONFIG_FETCH_TYPE_IPV4_SUBNET_0_PREFIX);
+                              GET_CONFIG_FETCH_TYPE_IPV4_SUBNET_0_PREFIX,
+                              0);
 }
 
 static void
@@ -263,9 +273,10 @@ _get_config_ips_prefix_list_cb(GObject *source, GAsyncResult *result, gpointer u
     nm_sprintf_buf(iface_idx_str, "%" G_GSSIZE_FORMAT, iface_data->intern_iface_idx);
 
     while (nm_utils_parse_next_line(&response_str, &response_len, &line, &line_len)) {
-        gint64        ips_prefix_idx;
-        gs_free char *uri = NULL;
-        char          buf[100];
+        AzureIpAddressReqData *ipaddress_req_data;
+        gint64                 ips_prefix_idx;
+        gs_free char          *uri = NULL;
+        char                   buf[100];
 
         if (line_len == 0)
             continue;
@@ -282,8 +293,11 @@ _get_config_ips_prefix_list_cb(GObject *source, GAsyncResult *result, gpointer u
         if (ips_prefix_idx < 0)
             continue;
 
-        iface_data->n_iface_data_pending++;
+        ipaddress_req_data                = g_new(AzureIpAddressReqData, 1);
+        ipaddress_req_data->iface_data    = iface_data;
+        ipaddress_req_data->ipaddress_idx = ips_prefix_idx;
 
+        iface_data->n_iface_data_pending++;
         nm_http_client_poll_req(
             NM_HTTP_CLIENT(source),
             (uri = _azure_uri_interfaces(iface_idx_str,
@@ -300,11 +314,12 @@ _get_config_ips_prefix_list_cb(GObject *source, GAsyncResult *result, gpointer u
             NULL,
             NULL,
             _get_config_fetch_done_cb_ipv4_ipaddress_x_privateipaddress,
-            iface_data);
+            ipaddress_req_data);
     }
 
-    iface_data->iface_get_config->ipv4s_len = 0;
     iface_data->iface_get_config->ipv4s_arr = g_new(in_addr_t, iface_data->n_iface_data_pending);
+    iface_data->iface_get_config->has_ipv4s = TRUE;
+    iface_data->iface_get_config->ipv4s_len = iface_data->n_iface_data_pending;
 
     {
         gs_free char *uri = NULL;
