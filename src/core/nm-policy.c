@@ -429,7 +429,7 @@ get_best_active_connection(NMPolicy *self, int addr_family, gboolean fully_activ
         if (state <= NM_DEVICE_STATE_DISCONNECTED || state >= NM_DEVICE_STATE_DEACTIVATING)
             continue;
 
-        if (nm_device_sys_iface_state_is_external(device))
+        if (nm_device_managed_type_is_external(device))
             continue;
 
         r = nm_device_get_best_default_route(device, addr_family);
@@ -482,7 +482,7 @@ any_devices_active(NMPolicy *self)
         state = nm_device_get_state(device);
         if (state <= NM_DEVICE_STATE_DISCONNECTED || state >= NM_DEVICE_STATE_DEACTIVATING)
             continue;
-        if (nm_device_sys_iface_state_is_external(device))
+        if (nm_device_managed_type_is_external(device))
             continue;
         return TRUE;
     }
@@ -809,7 +809,7 @@ build_device_hostname_infos(NMPolicy *self)
         if (!device)
             continue;
 
-        if (nm_device_sys_iface_state_is_external(device))
+        if (nm_device_managed_type_is_external(device))
             continue;
 
         only_from_default =
@@ -1307,7 +1307,7 @@ update_ip_dns(NMPolicy *self, int addr_family, NMDevice *changed_device)
         /* Tell the DNS manager this config is preferred by re-adding it with
          * a different IP config type.
          */
-        if (device && nm_device_sys_iface_state_is_external(device))
+        if (device && nm_device_managed_type_is_external(device))
             ip_config_type = NM_DNS_IP_CONFIG_TYPE_REMOVED;
         else if (vpn || (device && nm_device_is_vpn(device)))
             ip_config_type = NM_DNS_IP_CONFIG_TYPE_VPN;
@@ -1447,7 +1447,7 @@ _auto_activate_device(NMPolicy *self, NMDevice *device)
     // deactivate the device and activate the new connection instead of just
     // bailing if the device is already active
     if (nm_device_get_act_request(device)) {
-        if (nm_device_sys_iface_state_is_external(device)
+        if (nm_device_managed_type_is_external(device)
             && nm_device_get_allow_autoconnect_on_external(device)) {
             /* this is an external activation, and we allow autoconnecting on
              * top of that.
@@ -1781,7 +1781,7 @@ nm_policy_device_recheck_auto_activate_schedule(NMPolicy *self, NMDevice *device
 
     nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
         if (nm_active_connection_get_device(ac) == device) {
-            if (nm_device_sys_iface_state_is_external(device)
+            if (nm_device_managed_type_is_external(device)
                 && nm_device_get_allow_autoconnect_on_external(device)) {
                 /* pass */
             } else
@@ -2300,7 +2300,7 @@ device_state_changed(NMDevice           *device,
          * again when the device becomes ACTIVATED, we need also to update
          * routing and DNS here. */
         nm_dns_manager_begin_updates(priv->dns_manager, __func__);
-        if (!nm_device_sys_iface_state_is_external(device)) {
+        if (!nm_device_managed_type_is_external(device)) {
             nm_dns_manager_set_ip_config(priv->dns_manager,
                                          AF_UNSPEC,
                                          device,

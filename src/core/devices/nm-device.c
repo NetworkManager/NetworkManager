@@ -571,11 +571,11 @@ typedef struct _NMDevicePrivate {
     };
 
     union {
-        const NMDeviceSysIfaceState sys_iface_state;
-        NMDeviceSysIfaceState       sys_iface_state_;
+        const NMDeviceManagedType managed_type;
+        NMDeviceManagedType       managed_type_;
     };
 
-    NMDeviceSysIfaceState sys_iface_state_before_sleep;
+    NMDeviceManagedType managed_type_before_sleep;
 
     bool carrier : 1;
     bool ignore_carrier : 1;
@@ -3357,47 +3357,47 @@ nm_device_create_l3_config_data_from_connection(NMDevice *self, NMConnection *co
 
 /*****************************************************************************/
 
-NMDeviceSysIfaceState
-nm_device_sys_iface_state_get(NMDevice *self)
+NMDeviceManagedType
+nm_device_managed_type_get(NMDevice *self)
 {
-    g_return_val_if_fail(NM_IS_DEVICE(self), NM_DEVICE_SYS_IFACE_STATE_EXTERNAL);
+    g_return_val_if_fail(NM_IS_DEVICE(self), NM_DEVICE_MANAGED_TYPE_EXTERNAL);
 
-    return NM_DEVICE_GET_PRIVATE(self)->sys_iface_state;
+    return NM_DEVICE_GET_PRIVATE(self)->managed_type;
 }
 
 gboolean
-nm_device_sys_iface_state_is_external(NMDevice *self)
+nm_device_managed_type_is_external(NMDevice *self)
 {
-    return NM_IN_SET(nm_device_sys_iface_state_get(self), NM_DEVICE_SYS_IFACE_STATE_EXTERNAL);
+    return NM_IN_SET(nm_device_managed_type_get(self), NM_DEVICE_MANAGED_TYPE_EXTERNAL);
 }
 
 gboolean
-nm_device_sys_iface_state_is_external_or_assume(NMDevice *self)
+nm_device_managed_type_is_external_or_assume(NMDevice *self)
 {
-    return NM_IN_SET(nm_device_sys_iface_state_get(self),
-                     NM_DEVICE_SYS_IFACE_STATE_EXTERNAL,
-                     NM_DEVICE_SYS_IFACE_STATE_ASSUME);
+    return NM_IN_SET(nm_device_managed_type_get(self),
+                     NM_DEVICE_MANAGED_TYPE_EXTERNAL,
+                     NM_DEVICE_MANAGED_TYPE_ASSUME);
 }
 
 void
-nm_device_sys_iface_state_set(NMDevice *self, NMDeviceSysIfaceState sys_iface_state)
+nm_device_managed_type_set(NMDevice *self, NMDeviceManagedType managed_type)
 {
     NMDevicePrivate *priv;
 
     g_return_if_fail(NM_IS_DEVICE(self));
-    g_return_if_fail(NM_IN_SET(sys_iface_state,
-                               NM_DEVICE_SYS_IFACE_STATE_EXTERNAL,
-                               NM_DEVICE_SYS_IFACE_STATE_ASSUME,
-                               NM_DEVICE_SYS_IFACE_STATE_MANAGED,
-                               NM_DEVICE_SYS_IFACE_STATE_REMOVED));
+    g_return_if_fail(NM_IN_SET(managed_type,
+                               NM_DEVICE_MANAGED_TYPE_EXTERNAL,
+                               NM_DEVICE_MANAGED_TYPE_ASSUME,
+                               NM_DEVICE_MANAGED_TYPE_FULL,
+                               NM_DEVICE_MANAGED_TYPE_REMOVED));
 
     priv = NM_DEVICE_GET_PRIVATE(self);
-    if (priv->sys_iface_state != sys_iface_state) {
+    if (priv->managed_type != managed_type) {
         _LOGT(LOGD_DEVICE,
-              "sys-iface-state: %s -> %s",
-              nm_device_sys_iface_state_to_string(priv->sys_iface_state),
-              nm_device_sys_iface_state_to_string(sys_iface_state));
-        priv->sys_iface_state_ = sys_iface_state;
+              "managed-type: %s -> %s",
+              nm_device_managed_type_to_string(priv->managed_type),
+              nm_device_managed_type_to_string(managed_type));
+        priv->managed_type_ = managed_type;
         _dev_l3_cfg_commit_type_reset(self);
         nm_device_l3cfg_commit(self, NM_L3_CFG_COMMIT_TYPE_AUTO, FALSE);
     }
@@ -3406,7 +3406,7 @@ nm_device_sys_iface_state_set(NMDevice *self, NMDeviceSysIfaceState sys_iface_st
      *
      * If you change this, make sure that all callers are fine with such actions. */
 
-    nm_assert(priv->sys_iface_state == sys_iface_state);
+    nm_assert(priv->managed_type == managed_type);
 }
 
 void
@@ -3414,15 +3414,15 @@ nm_device_notify_sleeping(NMDevice *self)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
-    priv->sys_iface_state_before_sleep = priv->sys_iface_state;
+    priv->managed_type_before_sleep = priv->managed_type;
 }
 
-NMDeviceSysIfaceState
-nm_device_get_sys_iface_state_before_sleep(NMDevice *self)
+NMDeviceManagedType
+nm_device_get_managed_type_before_sleep(NMDevice *self)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
-    return priv->sys_iface_state_before_sleep;
+    return priv->managed_type_before_sleep;
 }
 
 static void
@@ -3820,7 +3820,7 @@ _dev_ip_state_check(NMDevice *self, int addr_family)
         goto got_ip_state;
     }
 
-    if (nm_device_sys_iface_state_is_external(self)) {
+    if (nm_device_managed_type_is_external(self)) {
         ip_state = NM_DEVICE_IP_STATE_READY;
         goto got_ip_state;
     }
@@ -4005,7 +4005,7 @@ got_ip_state:
         /* If both IP states failed, or one failed and the other is disabled
          * then it's a failure. may-fail does not mean that both families may
          * fail, instead it means that at least one family must succeed. */
-        if (nm_device_sys_iface_state_is_external_or_assume(self)) {
+        if (nm_device_managed_type_is_external_or_assume(self)) {
             _dev_ip_state_set_state(self, AF_INET, NM_DEVICE_IP_STATE_READY, "assumed");
             _dev_ip_state_set_state(self, AF_INET6, NM_DEVICE_IP_STATE_READY, "assumed");
             combinedip_state = NM_DEVICE_IP_STATE_READY;
@@ -4458,7 +4458,7 @@ _dev_l3_register_l3cds(NMDevice *self,
     if (!l3cfg)
         return FALSE;
 
-    is_external = nm_device_sys_iface_state_is_external(self);
+    is_external = nm_device_managed_type_is_external(self);
 
     changed = FALSE;
     for (i = 0; i < (int) G_N_ELEMENTS(priv->l3cds); i++) {
@@ -4530,7 +4530,7 @@ update_external_connection(NMDevice *self)
 
     /* Update external connections with configuration from platform */
 
-    if (!nm_device_sys_iface_state_is_external(self))
+    if (!nm_device_managed_type_is_external(self))
         return;
 
     settings_connection = nm_device_get_settings_connection(self);
@@ -4726,17 +4726,17 @@ _dev_l3_cfg_commit_type_reset(NMDevice *self)
     if (!priv->l3cfg)
         return;
 
-    switch (priv->sys_iface_state) {
-    case NM_DEVICE_SYS_IFACE_STATE_EXTERNAL:
-    case NM_DEVICE_SYS_IFACE_STATE_REMOVED:
+    switch (priv->managed_type) {
+    case NM_DEVICE_MANAGED_TYPE_EXTERNAL:
+    case NM_DEVICE_MANAGED_TYPE_REMOVED:
         commit_type = NM_L3_CFG_COMMIT_TYPE_NONE;
         goto do_set;
-    case NM_DEVICE_SYS_IFACE_STATE_ASSUME:
-        /* TODO: NM_DEVICE_SYS_IFACE_STATE_ASSUME, will be dropped from the code.
+    case NM_DEVICE_MANAGED_TYPE_ASSUME:
+        /* TODO: NM_DEVICE_MANAGED_TYPE_ASSUME, will be dropped from the code.
          * Meanwhile, the commit type must be updated. */
         commit_type = NM_L3_CFG_COMMIT_TYPE_UPDATE;
         goto do_set;
-    case NM_DEVICE_SYS_IFACE_STATE_MANAGED:
+    case NM_DEVICE_MANAGED_TYPE_FULL:
         commit_type = NM_L3_CFG_COMMIT_TYPE_UPDATE;
         goto do_set;
     }
@@ -6365,7 +6365,7 @@ concheck_update_state(NMDevice           *self,
 
     _notify(self, IS_IPv4 ? PROP_IP4_CONNECTIVITY : PROP_IP6_CONNECTIVITY);
 
-    if (priv->state == NM_DEVICE_STATE_ACTIVATED && !nm_device_sys_iface_state_is_external(self))
+    if (priv->state == NM_DEVICE_STATE_ACTIVATED && !nm_device_managed_type_is_external(self))
         _dev_l3_register_l3cds(self, priv->l3cfg, TRUE, NM_TERNARY_DEFAULT);
 }
 
@@ -6850,7 +6850,7 @@ nm_device_controller_release_port(NMDevice           *self,
     nm_clear_g_cancellable(&info->cancellable);
 
     /* first, let subclasses handle the release ... */
-    if (info->port_is_attached || nm_device_sys_iface_state_is_external(port)
+    if (info->port_is_attached || nm_device_managed_type_is_external(port)
         || release_type >= RELEASE_PORT_TYPE_CONFIG_FORCE) {
         NMTernary ret;
 
@@ -7286,7 +7286,7 @@ device_update_interface_flags(NMDevice *self, const NMPlatformLink *plink)
 /*
  * Returns the reason for managing a device. The suffix "external" indicates
  * that the reason mainly depends on whether we want to make the device
- * sys-iface-state=external or not.
+ * managed_type=external or not.
  */
 NMDeviceStateReason
 nm_device_get_manage_reason_external(NMDevice *self)
@@ -7294,14 +7294,14 @@ nm_device_get_manage_reason_external(NMDevice *self)
     NMDeviceStateReason reason;
 
     /* By default we return reason NOW_MANAGED, which makes the device fully
-     * managed by NM (sys-iface-state=managed). */
+     * managed by NM (managed_type=managed). */
     reason = NM_DEVICE_STATE_REASON_NOW_MANAGED;
 
     /* If the device is an external-down candidate but no longer has the flag
      * set, then the device is an externally created interface that previously
      * had no addresses or no controller and now has.
      * We need to set CONNECTION_ASSUMED as the reason, so that the device
-     * is managed but is not touched by NM (sys-iface-state=external). */
+     * is managed but is not touched by NM (managed_type=external). */
     if (nm_device_get_unmanaged_mask(self, NM_UNMANAGED_EXTERNAL_DOWN)
         && !nm_device_get_unmanaged_flags(self, NM_UNMANAGED_EXTERNAL_DOWN)) {
         /* user-udev overwrites external-down, so we only assume the device
@@ -7449,7 +7449,7 @@ device_link_changed(gpointer user_data)
          * NMVpnConnection should become like a regular device, akin to NMDevicePpp).
          */
         if (priv->state >= NM_DEVICE_STATE_IP_CONFIG && priv->state <= NM_DEVICE_STATE_ACTIVATED
-            && !nm_device_sys_iface_state_is_external(self))
+            && !nm_device_managed_type_is_external(self))
             nm_device_l3cfg_commit(self, NM_L3_CFG_COMMIT_TYPE_REAPPLY, FALSE);
 
         /* If the device is active without a carrier (probably because it is
@@ -8041,7 +8041,7 @@ realize_start_setup(NMDevice             *self,
 
     _assume_state_set(self, assume_state_guess_assume, assume_state_connection_uuid);
 
-    nm_device_sys_iface_state_set(self, NM_DEVICE_SYS_IFACE_STATE_EXTERNAL);
+    nm_device_managed_type_set(self, NM_DEVICE_MANAGED_TYPE_EXTERNAL);
 
     if (plink)
         nm_device_update_from_platform_link(self, plink);
@@ -8469,9 +8469,9 @@ port_state_changed(NMDevice           *port,
     }
 
     if (release) {
-        configure = (priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_MANAGED
-                     && nm_device_sys_iface_state_get(port) != NM_DEVICE_SYS_IFACE_STATE_EXTERNAL)
-                    || nm_device_sys_iface_state_get(port) == NM_DEVICE_SYS_IFACE_STATE_MANAGED;
+        configure = (priv->managed_type == NM_DEVICE_MANAGED_TYPE_FULL
+                     && nm_device_managed_type_get(port) != NM_DEVICE_MANAGED_TYPE_EXTERNAL)
+                    || nm_device_managed_type_get(port) == NM_DEVICE_MANAGED_TYPE_FULL;
 
         nm_device_controller_release_port(self,
                                           port,
@@ -8610,7 +8610,7 @@ nm_device_controller_release_ports_all(NMDevice *self)
     PortInfo           *safe;
 
     /* Don't release the ports if this connection doesn't belong to NM. */
-    if (nm_device_sys_iface_state_is_external(self))
+    if (nm_device_managed_type_is_external(self))
         return;
 
     reason = priv->state_reason;
@@ -8619,7 +8619,7 @@ nm_device_controller_release_ports_all(NMDevice *self)
 
     c_list_for_each_entry_safe (info, safe, &priv->ports, lst_port) {
         if (priv->activation_state_preserve_external_ports
-            && nm_device_sys_iface_state_is_external(info->port)) {
+            && nm_device_managed_type_is_external(info->port)) {
             _LOGT(LOGD_DEVICE,
                   "controller: preserve external port %s",
                   nm_device_get_iface(info->port));
@@ -8821,9 +8821,9 @@ nm_device_removed(NMDevice *self, gboolean unconfigure_ip_config)
      * commit type NONE, that doesn't emit a l3cd-changed. Do it manually,
      * to ensure that entries are removed from the DNS manager. */
     if (priv->l3cfg
-        && NM_IN_SET(priv->sys_iface_state,
-                     NM_DEVICE_SYS_IFACE_STATE_REMOVED,
-                     NM_DEVICE_SYS_IFACE_STATE_EXTERNAL)) {
+        && NM_IN_SET(priv->managed_type,
+                     NM_DEVICE_MANAGED_TYPE_REMOVED,
+                     NM_DEVICE_MANAGED_TYPE_EXTERNAL)) {
         l3cd_old = nm_l3cfg_get_combined_l3cd(priv->l3cfg, TRUE);
         if (l3cd_old)
             g_signal_emit(self, signals[L3CD_CHANGED], 0, l3cd_old, NULL);
@@ -9937,7 +9937,7 @@ controller_ready(NMDevice *self, NMActiveConnection *active)
     /* If the controller didn't change, add-port only rechecks whether to assume a connection. */
     nm_device_controller_add_port(controller,
                                   self,
-                                  !nm_device_sys_iface_state_is_external_or_assume(self));
+                                  !nm_device_managed_type_is_external_or_assume(self));
 }
 
 static void
@@ -10093,7 +10093,7 @@ activate_stage1_device_prepare(NMDevice *self)
     if (priv->stage1_sriov_state != NM_DEVICE_STAGE_STATE_COMPLETED) {
         NMSettingSriov *s_sriov = NULL;
 
-        if (nm_device_sys_iface_state_is_external_or_assume(self)) {
+        if (nm_device_managed_type_is_external_or_assume(self)) {
             /* pass */
         } else if (priv->stage1_sriov_state == NM_DEVICE_STAGE_STATE_PENDING) {
             return;
@@ -10163,7 +10163,7 @@ activate_stage1_device_prepare(NMDevice *self)
     klass = NM_DEVICE_GET_CLASS(self);
 
     if (klass->act_stage1_prepare_set_hwaddr_ethernet
-        && !nm_device_sys_iface_state_is_external_or_assume(self)) {
+        && !nm_device_managed_type_is_external_or_assume(self)) {
         if (!nm_device_hw_addr_set_cloned(self, nm_device_get_applied_connection(self), FALSE)) {
             nm_device_state_changed(self,
                                     NM_DEVICE_STATE_FAILED,
@@ -10173,7 +10173,7 @@ activate_stage1_device_prepare(NMDevice *self)
     }
 
     if (klass->act_stage1_prepare_also_for_external_or_assume
-        || !nm_device_sys_iface_state_is_external_or_assume(self)) {
+        || !nm_device_managed_type_is_external_or_assume(self)) {
         nm_assert(!klass->act_stage1_prepare_also_for_external_or_assume
                   || klass->act_stage1_prepare);
         if (klass->act_stage1_prepare) {
@@ -10460,12 +10460,12 @@ activate_stage2_device_config(NMDevice *self)
 
     nm_device_state_changed(self, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 
-    if (!nm_device_sys_iface_state_is_external(self)) {
+    if (!nm_device_managed_type_is_external(self)) {
         _ethtool_state_set(self);
         nm_device_link_properties_set(self, FALSE);
     }
 
-    if (!nm_device_sys_iface_state_is_external(self)) {
+    if (!nm_device_managed_type_is_external(self)) {
         if (!priv->tc_committed && !tc_commit(self)) {
             _LOGW(LOGD_DEVICE, "failed applying traffic control rules");
             nm_device_state_changed(self,
@@ -10478,7 +10478,7 @@ activate_stage2_device_config(NMDevice *self)
 
     _routing_rules_sync(self, NM_TERNARY_TRUE);
 
-    if (!nm_device_sys_iface_state_is_external_or_assume(self)) {
+    if (!nm_device_managed_type_is_external_or_assume(self)) {
         if (!nm_device_bring_up_full(self, FALSE, TRUE, &no_firmware)) {
             nm_device_state_changed(self,
                                     NM_DEVICE_STATE_FAILED,
@@ -10490,7 +10490,7 @@ activate_stage2_device_config(NMDevice *self)
 
     klass = NM_DEVICE_GET_CLASS(self);
     if (klass->act_stage2_config_also_for_external_or_assume
-        || !nm_device_sys_iface_state_is_external_or_assume(self)) {
+        || !nm_device_managed_type_is_external_or_assume(self)) {
         NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
 
         ret = klass->act_stage2_config(self, &failure_reason);
@@ -10511,7 +10511,7 @@ activate_stage2_device_config(NMDevice *self)
             nm_device_controller_attach_port(self,
                                              info->port,
                                              nm_device_get_applied_connection(info->port));
-        else if (priv->act_request.obj && nm_device_sys_iface_state_is_external(self)
+        else if (priv->act_request.obj && nm_device_managed_type_is_external(self)
                  && port_state <= NM_DEVICE_STATE_DISCONNECTED)
             nm_device_queue_recheck_assume(info->port);
     }
@@ -11136,7 +11136,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
         return;
     }
 
-    if (nm_device_sys_iface_state_is_external(self)) {
+    if (nm_device_managed_type_is_external(self)) {
         fail_reason = nm_assert_unreachable_val("cannot run DHCP on external interface");
         goto out_fail;
     }
@@ -11745,7 +11745,7 @@ _dev_ipll6_start(NMDevice *self)
 
     connection = nm_device_get_applied_connection(self);
 
-    assume = nm_device_sys_iface_state_is_external_or_assume(self);
+    assume = nm_device_managed_type_is_external_or_assume(self);
 
     if (_prop_get_ipv6_addr_gen_mode(self) == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY) {
         NMUtilsStableType stable_type;
@@ -11977,7 +11977,7 @@ _commit_mtu(NMDevice *self)
     if (ifindex <= 0)
         return;
 
-    if (!nm_device_get_applied_connection(self) || nm_device_sys_iface_state_is_external(self)) {
+    if (!nm_device_get_applied_connection(self) || nm_device_managed_type_is_external(self)) {
         /* we don't tamper with the MTU of disconnected and external devices. */
         return;
     }
@@ -12703,7 +12703,7 @@ activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family, const
     NMConnection    *connection;
     int              ip_ifindex;
 
-    if (nm_device_sys_iface_state_is_external(self))
+    if (nm_device_managed_type_is_external(self))
         goto out;
 
     connection = nm_device_get_applied_connection(self);
@@ -12940,7 +12940,7 @@ activate_stage3_ip_config(NMDevice *self)
     /* Add the interface to the specified firewall zone */
     switch (priv->fw_state) {
     case FIREWALL_STATE_UNMANAGED:
-        if (nm_device_sys_iface_state_is_external(self)) {
+        if (nm_device_managed_type_is_external(self)) {
             /* fake success */
             priv->fw_state = FIREWALL_STATE_INITIALIZED;
         } else if (ifindex > 0) {
@@ -12970,7 +12970,7 @@ activate_stage3_ip_config(NMDevice *self)
 
     ipv6_method = nm_device_get_effective_ip_config_method(self, AF_INET6);
     if (!g_file_test("/proc/sys/net/ipv6", G_FILE_TEST_IS_DIR)) {
-        _NMLOG_ip((nm_device_sys_iface_state_is_external(self)
+        _NMLOG_ip((nm_device_managed_type_is_external(self)
                    || NM_IN_STRSET(ipv6_method,
                                    NM_SETTING_IP6_CONFIG_METHOD_AUTO,
                                    NM_SETTING_IP6_CONFIG_METHOD_DISABLED,
@@ -13010,7 +13010,7 @@ activate_stage3_ip_config(NMDevice *self)
         nm_device_state_changed(self, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 
         /* Device should be up before we can do anything with it */
-        if (!nm_device_sys_iface_state_is_external(self) && ifindex > 0
+        if (!nm_device_managed_type_is_external(self) && ifindex > 0
             && !nm_platform_link_is_up(nm_device_get_platform(self), ifindex))
             _LOGW(LOGD_DEVICE,
                   "interface %s not up for IP configuration",
@@ -13026,7 +13026,7 @@ activate_stage3_ip_config(NMDevice *self)
      * let's do it! */
     _commit_mtu(self);
 
-    if (!nm_device_sys_iface_state_is_external(self)
+    if (!nm_device_managed_type_is_external(self)
         && (!klass->ready_for_ip_config || klass->ready_for_ip_config(self, TRUE))) {
         if (priv->ipmanual_data.state_6 == NM_DEVICE_IP_STATE_NONE
             && !NM_IN_STRSET(ipv6_method,
@@ -13042,7 +13042,7 @@ activate_stage3_ip_config(NMDevice *self)
              * IPv6LL if this is not an assumed connection, since assumed connections
              * will already have IPv6 set up.
              */
-            if (!nm_device_sys_iface_state_is_external_or_assume(self))
+            if (!nm_device_managed_type_is_external_or_assume(self))
                 _dev_addrgenmode6_set(self, NM_IN6_ADDR_GEN_MODE_NONE);
 
             /* Re-enable IPv6 on the interface */
@@ -13396,15 +13396,15 @@ act_request_set(NMDevice *self, NMActRequest *act_request)
         case NM_ACTIVATION_TYPE_EXTERNAL:
             break;
         case NM_ACTIVATION_TYPE_ASSUME:
-            if (priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_EXTERNAL)
-                nm_device_sys_iface_state_set(self, NM_DEVICE_SYS_IFACE_STATE_ASSUME);
+            if (priv->managed_type == NM_DEVICE_MANAGED_TYPE_EXTERNAL)
+                nm_device_managed_type_set(self, NM_DEVICE_MANAGED_TYPE_ASSUME);
             break;
         case NM_ACTIVATION_TYPE_MANAGED:
-            if (NM_IN_SET_TYPED(NMDeviceSysIfaceState,
-                                priv->sys_iface_state,
-                                NM_DEVICE_SYS_IFACE_STATE_EXTERNAL,
-                                NM_DEVICE_SYS_IFACE_STATE_ASSUME))
-                nm_device_sys_iface_state_set(self, NM_DEVICE_SYS_IFACE_STATE_MANAGED);
+            if (NM_IN_SET_TYPED(NMDeviceManagedType,
+                                priv->managed_type,
+                                NM_DEVICE_MANAGED_TYPE_EXTERNAL,
+                                NM_DEVICE_MANAGED_TYPE_ASSUME))
+                nm_device_managed_type_set(self, NM_DEVICE_MANAGED_TYPE_FULL);
             break;
         }
     }
@@ -13947,8 +13947,8 @@ reapply_cb(NMDevice              *self,
         return;
     }
 
-    if (nm_device_sys_iface_state_is_external(self))
-        nm_device_sys_iface_state_set(self, NM_DEVICE_SYS_IFACE_STATE_MANAGED);
+    if (nm_device_managed_type_is_external(self))
+        nm_device_managed_type_set(self, NM_DEVICE_MANAGED_TYPE_FULL);
 
     if (!check_and_reapply_connection(self,
                                       connection
@@ -14432,10 +14432,10 @@ nm_device_disconnect_active_connection(NMActiveConnection           *active,
     if (NM_ACTIVE_CONNECTION(priv->act_request.obj) == active) {
         if (priv->state < NM_DEVICE_STATE_DEACTIVATING) {
             /* When the user actively deactivates a profile, we set
-             * the sys-iface-state to managed so that we deconfigure/cleanup the interface.
+             * the managed-type to managed so that we deconfigure/cleanup the interface.
              * But for external connections that go down otherwise, we don't want to touch the interface. */
-            if (nm_device_sys_iface_state_is_external(self))
-                nm_device_sys_iface_state_set(self, NM_DEVICE_SYS_IFACE_STATE_MANAGED);
+            if (nm_device_managed_type_is_external(self))
+                nm_device_managed_type_set(self, NM_DEVICE_MANAGED_TYPE_FULL);
 
             nm_device_state_changed(self, NM_DEVICE_STATE_DEACTIVATING, device_reason);
         } else {
@@ -15702,8 +15702,7 @@ nm_device_update_firewall_zone(NMDevice *self)
 
     priv = NM_DEVICE_GET_PRIVATE(self);
 
-    if (priv->fw_state >= FIREWALL_STATE_INITIALIZED
-        && !nm_device_sys_iface_state_is_external(self))
+    if (priv->fw_state >= FIREWALL_STATE_INITIALIZED && !nm_device_managed_type_is_external(self))
         fw_change_zone(self);
 }
 
@@ -16350,7 +16349,7 @@ _cleanup_generic_pre(NMDevice *self, CleanupType cleanup_type)
     }
 
     if (cleanup_type == CLEANUP_TYPE_DECONFIGURE && priv->fw_state >= FIREWALL_STATE_INITIALIZED
-        && priv->fw_mgr && !nm_device_sys_iface_state_is_external(self)) {
+        && priv->fw_mgr && !nm_device_managed_type_is_external(self)) {
         nm_firewalld_manager_remove_from_zone(priv->fw_mgr,
                                               nm_device_get_ip_iface(self),
                                               NULL,
@@ -16715,7 +16714,7 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
 
     old_state = priv->state;
 
-    if (state == NM_DEVICE_STATE_FAILED && nm_device_sys_iface_state_is_external_or_assume(self)) {
+    if (state == NM_DEVICE_STATE_FAILED && nm_device_managed_type_is_external_or_assume(self)) {
         /* Avoid tearing down assumed connection, assume it's connected */
         state  = NM_DEVICE_STATE_ACTIVATED;
         reason = NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED;
@@ -16728,21 +16727,21 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
     if ((priv->state == state)
         && (state != NM_DEVICE_STATE_UNAVAILABLE || !priv->firmware_missing)) {
         _LOGD(LOGD_DEVICE,
-              "state change: %s -> %s (reason '%s', sys-iface-state: '%s'%s)",
+              "state change: %s -> %s (reason '%s', managed-type: '%s'%s)",
               nm_device_state_to_string(old_state),
               nm_device_state_to_string(state),
               nm_device_state_reason_to_string_a(reason),
-              nm_device_sys_iface_state_to_string(priv->sys_iface_state),
+              nm_device_managed_type_to_string(priv->managed_type),
               priv->firmware_missing ? ", missing firmware" : "");
         return;
     }
 
     _LOGI(LOGD_DEVICE,
-          "state change: %s -> %s (reason '%s', sys-iface-state: '%s')",
+          "state change: %s -> %s (reason '%s', managed-type: '%s')",
           nm_device_state_to_string(old_state),
           nm_device_state_to_string(state),
           nm_device_state_reason_to_string_a(reason),
-          nm_device_sys_iface_state_to_string(priv->sys_iface_state));
+          nm_device_managed_type_to_string(priv->managed_type));
 
     /* in order to prevent triggering any callback caused
      * by the device not having any pending action anymore
@@ -16764,11 +16763,11 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
 
     if (state > NM_DEVICE_STATE_UNMANAGED && state <= NM_DEVICE_STATE_ACTIVATED
         && nm_device_state_reason_check(reason) == NM_DEVICE_STATE_REASON_NOW_MANAGED
-        && NM_IN_SET_TYPED(NMDeviceSysIfaceState,
-                           priv->sys_iface_state,
-                           NM_DEVICE_SYS_IFACE_STATE_EXTERNAL,
-                           NM_DEVICE_SYS_IFACE_STATE_ASSUME))
-        nm_device_sys_iface_state_set(self, NM_DEVICE_SYS_IFACE_STATE_MANAGED);
+        && NM_IN_SET_TYPED(NMDeviceManagedType,
+                           priv->managed_type,
+                           NM_DEVICE_MANAGED_TYPE_EXTERNAL,
+                           NM_DEVICE_MANAGED_TYPE_ASSUME))
+        nm_device_managed_type_set(self, NM_DEVICE_MANAGED_TYPE_FULL);
 
     if (state <= NM_DEVICE_STATE_DISCONNECTED || state >= NM_DEVICE_STATE_ACTIVATED)
         priv->auth_retries = NM_DEVICE_AUTH_RETRIES_UNSET;
@@ -16810,10 +16809,10 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
     case NM_DEVICE_STATE_UNMANAGED:
         nm_device_set_firmware_missing(self, FALSE);
         if (old_state > NM_DEVICE_STATE_UNMANAGED) {
-            if (priv->sys_iface_state != NM_DEVICE_SYS_IFACE_STATE_MANAGED) {
+            if (priv->managed_type != NM_DEVICE_MANAGED_TYPE_FULL) {
                 nm_device_cleanup(self,
                                   reason,
-                                  priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_REMOVED
+                                  priv->managed_type == NM_DEVICE_MANAGED_TYPE_REMOVED
                                       ? CLEANUP_TYPE_REMOVED
                                       : CLEANUP_TYPE_KEEP);
             } else {
@@ -16826,12 +16825,12 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
                 _dev_sysctl_restore_ip6_properties(self);
             }
         }
-        nm_device_sys_iface_state_set(self, NM_DEVICE_SYS_IFACE_STATE_EXTERNAL);
+        nm_device_managed_type_set(self, NM_DEVICE_MANAGED_TYPE_EXTERNAL);
         break;
     case NM_DEVICE_STATE_UNAVAILABLE:
         if (old_state == NM_DEVICE_STATE_UNMANAGED) {
             _dev_sysctl_save_ip6_properties(self);
-            if (priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_MANAGED)
+            if (priv->managed_type == NM_DEVICE_MANAGED_TYPE_FULL)
                 ip6_managed_setup(self);
             device_init_static_sriov_num_vfs(self);
 
@@ -16843,7 +16842,7 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
             carrier_detect_wait(self);
         }
 
-        if (priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_MANAGED) {
+        if (priv->managed_type == NM_DEVICE_MANAGED_TYPE_FULL) {
             if (old_state == NM_DEVICE_STATE_UNMANAGED || priv->firmware_missing) {
                 if (!nm_device_bring_up_full(self, TRUE, FALSE, &no_firmware) && no_firmware)
                     _LOGW(LOGD_PLATFORM, "firmware may be missing.");
@@ -16867,13 +16866,13 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
              * userspace IPv6LL enabled.
              */
             _dev_addrgenmode6_set(self, NM_IN6_ADDR_GEN_MODE_NONE);
-            if (priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_REMOVED) {
+            if (priv->managed_type == NM_DEVICE_MANAGED_TYPE_REMOVED) {
                 nm_device_cleanup(self, reason, CLEANUP_TYPE_REMOVED);
             } else
                 nm_device_cleanup(self, reason, CLEANUP_TYPE_DECONFIGURE);
 
         } else if (old_state < NM_DEVICE_STATE_DISCONNECTED) {
-            if (priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_MANAGED) {
+            if (priv->managed_type == NM_DEVICE_MANAGED_TYPE_FULL) {
                 /* Ensure IPv6 is set up as it may not have been done when
                  * entering the UNAVAILABLE state depending on the reason.
                  */
@@ -17036,7 +17035,7 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
     {
         gboolean change_zone = FALSE;
 
-        if (!nm_device_sys_iface_state_is_external(self)) {
+        if (!nm_device_managed_type_is_external(self)) {
             if (priv->ip_iface) {
                 /* The device now has a @ip_iface different from the
                  * @iface on which we previously set the zone. */
@@ -18628,14 +18627,14 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
             managed = g_value_get_boolean(value);
             if (managed) {
                 reason = NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED;
-                if (NM_IN_SET_TYPED(NMDeviceSysIfaceState,
-                                    priv->sys_iface_state,
-                                    NM_DEVICE_SYS_IFACE_STATE_EXTERNAL,
-                                    NM_DEVICE_SYS_IFACE_STATE_REMOVED))
-                    nm_device_sys_iface_state_set(self, NM_DEVICE_SYS_IFACE_STATE_ASSUME);
+                if (NM_IN_SET_TYPED(NMDeviceManagedType,
+                                    priv->managed_type,
+                                    NM_DEVICE_MANAGED_TYPE_EXTERNAL,
+                                    NM_DEVICE_MANAGED_TYPE_REMOVED))
+                    nm_device_managed_type_set(self, NM_DEVICE_MANAGED_TYPE_ASSUME);
             } else {
                 reason = NM_DEVICE_STATE_REASON_REMOVED;
-                nm_device_sys_iface_state_set(self, NM_DEVICE_SYS_IFACE_STATE_REMOVED);
+                nm_device_managed_type_set(self, NM_DEVICE_MANAGED_TYPE_REMOVED);
             }
             nm_device_set_unmanaged_by_flags(self, NM_UNMANAGED_USER_EXPLICIT, !managed, reason);
         }
@@ -18723,10 +18722,10 @@ nm_device_init(NMDevice *self)
     priv->available_connections = g_hash_table_new_full(nm_direct_hash, NULL, g_object_unref, NULL);
     priv->ip6_saved_properties  = g_hash_table_new_full(nm_str_hash, g_str_equal, NULL, g_free);
 
-    priv->sys_iface_state_ = NM_DEVICE_SYS_IFACE_STATE_EXTERNAL;
+    priv->managed_type_ = NM_DEVICE_MANAGED_TYPE_EXTERNAL;
     /* If networking is already disabled at boot, we want to manage all devices
      * after re-enabling networking; hence, the initial state is MANAGED. */
-    priv->sys_iface_state_before_sleep = NM_DEVICE_SYS_IFACE_STATE_MANAGED;
+    priv->managed_type_before_sleep = NM_DEVICE_MANAGED_TYPE_FULL;
 
     priv->promisc_reset = NM_OPTION_BOOL_DEFAULT;
 }

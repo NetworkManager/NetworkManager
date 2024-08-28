@@ -354,7 +354,7 @@ gboolean nm_l3cfg_remove_config_all_dirty(NML3Cfg *self, gconstpointer tag);
  * nm_l3cfg_commit_type_register(). nm_l3cfg_commit_on_idle_schedule() also
  * accepts a one-time commit-type argument.
  *
- * This is related to NMDevice's sys_iface_state, which we use to control whether
+ * This is related to NMDevice's managed_type, which we use to control whether
  * to touch/assume/manage the interface.
  *
  * The numeric values of the enum matters: higher number mean more "important".

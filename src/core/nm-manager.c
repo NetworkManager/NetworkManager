@@ -2309,7 +2309,7 @@ remove_device(NMManager *self, NMDevice *device, gboolean quitting)
             if (quitting)
                 nm_device_set_unmanaged_by_quitting(device);
             else {
-                nm_device_sys_iface_state_set(device, NM_DEVICE_SYS_IFACE_STATE_REMOVED);
+                nm_device_managed_type_set(device, NM_DEVICE_MANAGED_TYPE_REMOVED);
                 nm_device_set_unmanaged_by_flags(device,
                                                  NM_UNMANAGED_PLATFORM_INIT,
                                                  NM_UNMAN_FLAG_OP_SET_UNMANAGED,
@@ -3694,9 +3694,9 @@ recheck_assume_connection(NMManager *self, NMDevice *device)
         }
     }
 
-    nm_device_sys_iface_state_set(device,
-                                  activation_type_assume ? NM_DEVICE_SYS_IFACE_STATE_ASSUME
-                                                         : NM_DEVICE_SYS_IFACE_STATE_EXTERNAL);
+    nm_device_managed_type_set(device,
+                               activation_type_assume ? NM_DEVICE_MANAGED_TYPE_ASSUME
+                                                      : NM_DEVICE_MANAGED_TYPE_EXTERNAL);
 
     /* Move device to DISCONNECTED to activate the connection */
     if (state == NM_DEVICE_STATE_UNMANAGED) {
@@ -3765,8 +3765,8 @@ recheck_assume_connection(NMManager *self, NMDevice *device)
                        "assume: deleting generated connection after assuming failed");
                 nm_settings_connection_delete(sett_conn, FALSE);
             } else {
-                if (nm_device_sys_iface_state_get(device) == NM_DEVICE_SYS_IFACE_STATE_ASSUME)
-                    nm_device_sys_iface_state_set(device, NM_DEVICE_SYS_IFACE_STATE_EXTERNAL);
+                if (nm_device_managed_type_get(device) == NM_DEVICE_MANAGED_TYPE_ASSUME)
+                    nm_device_managed_type_set(device, NM_DEVICE_MANAGED_TYPE_EXTERNAL);
             }
             return FALSE;
         }
@@ -4374,7 +4374,7 @@ _platform_link_cb_idle(PlatformLinkCbData *data)
         device = nm_manager_get_device_by_ifindex(self, ifindex);
         if (device) {
             if (nm_device_is_software(device)) {
-                nm_device_sys_iface_state_set(device, NM_DEVICE_SYS_IFACE_STATE_REMOVED);
+                nm_device_managed_type_set(device, NM_DEVICE_MANAGED_TYPE_REMOVED);
                 if (!nm_device_unrealize(device, FALSE, &error)) {
                     _LOG2W(LOGD_DEVICE, device, "failed to unrealize: %s", error->message);
                     g_clear_error(&error);
@@ -5768,7 +5768,7 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
     }
 
     if (nm_active_connection_get_activation_type(active) == NM_ACTIVATION_TYPE_MANAGED)
-        nm_device_sys_iface_state_set(device, NM_DEVICE_SYS_IFACE_STATE_MANAGED);
+        nm_device_managed_type_set(device, NM_DEVICE_MANAGED_TYPE_FULL);
 
     /* Try to find the controller connection/device if the connection has a dependency */
     if (!find_controller(self,
@@ -7404,13 +7404,13 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
                     nm_device_set_enabled(device, enabled);
             }
 
-            /* The reason determines whether the device will be sys-iface-state=managed
-             * or sys-iface-state=external. Pass the correct reason to restore the state
+            /* The reason determines whether the device will be managed_type=managed
+             * or managed_type=external. Pass the correct reason to restore the state
              * that was set before sleeping. */
-            reason = nm_device_get_sys_iface_state_before_sleep(device)
-                             == NM_DEVICE_SYS_IFACE_STATE_EXTERNAL
-                         ? NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED
-                         : NM_DEVICE_STATE_REASON_NOW_MANAGED;
+            reason =
+                nm_device_get_managed_type_before_sleep(device) == NM_DEVICE_MANAGED_TYPE_EXTERNAL
+                    ? NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED
+                    : NM_DEVICE_STATE_REASON_NOW_MANAGED;
             nm_device_set_unmanaged_by_flags(device,
                                              NM_UNMANAGED_SLEEPING,
                                              NM_UNMAN_FLAG_OP_SET_MANAGED,

@@ -726,16 +726,16 @@ nm_device_autoconnect_blocked_unset(NMDevice *device, NMDeviceAutoconnectBlocked
 
 void nm_device_recheck_auto_activate_schedule(NMDevice *device);
 
-NMDeviceSysIfaceState nm_device_sys_iface_state_get(NMDevice *device);
+NMDeviceManagedType nm_device_managed_type_get(NMDevice *device);
 
-gboolean nm_device_sys_iface_state_is_external(NMDevice *self);
-gboolean nm_device_sys_iface_state_is_external_or_assume(NMDevice *self);
+gboolean nm_device_managed_type_is_external(NMDevice *self);
+gboolean nm_device_managed_type_is_external_or_assume(NMDevice *self);
 
-void nm_device_sys_iface_state_set(NMDevice *device, NMDeviceSysIfaceState sys_iface_state);
+void nm_device_managed_type_set(NMDevice *device, NMDeviceManagedType managed_type);
 
 void nm_device_notify_sleeping(NMDevice *self);
 
-NMDeviceSysIfaceState nm_device_get_sys_iface_state_before_sleep(NMDevice *self);
+NMDeviceManagedType nm_device_get_managed_type_before_sleep(NMDevice *self);
 
 void nm_device_state_changed(NMDevice *device, NMDeviceState state, NMDeviceStateReason reason);
 
