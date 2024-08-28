@@ -1,4 +1,29 @@
 ===============================================
+NetworkManager-1.48.10
+Overview of changes since NetworkManager-1.48.8
+===============================================
+
+* Support reapplying the VLANs on bridge ports.
+* Fix crash caused by malformed LLDP package if debug log is enabled
+* Retry hostname resolution when it fails
+
+===============================================
+NetworkManager-1.48.8
+Overview of changes since NetworkManager-1.48.6
+===============================================
+
+* Do not write offensive terms into disk's connection profiles.
+* Do not merge routes with different precedences.
+
+===============================================
+NetworkManager-1.48.6
+Overview of changes since NetworkManager-1.48.4
+===============================================
+
+* Allow changing controller of exposed active connection.
+* OVS: wait for the link to be ready before activating.
+
+===============================================
 NetworkManager-1.48.4
 Overview of changes since NetworkManager-1.48.2
 ===============================================
@@ -7,8 +32,6 @@ Overview of changes since NetworkManager-1.48.2
 * When looking up the system hostname from the reverse DNS lookup of
   addresses configured on interfaces, NetworkManager now takes into
   account the content of /etc/hosts.
-* keyfile: Stop writing offensive terms into keyfiles
-* Support reapplying the VLANs on bridge ports.
 
 ===============================================
 NetworkManager-1.48.2
