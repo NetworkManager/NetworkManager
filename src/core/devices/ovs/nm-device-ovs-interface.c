@@ -438,7 +438,7 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
     if (check_waiting_for_link(device, addr_family == AF_INET ? "stage3-ipv4" : "stage3-ipv6")) {
         nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_PENDING, NULL);
         if (nm_device_get_ip_ifindex(device) <= 0 && priv->wait_link.tun_link_signal_id == 0
-            && ovs_interface_is_netdev_datapath(self)) {
+            && priv->wait_link.tun_ifindex <= 0 && ovs_interface_is_netdev_datapath(self)) {
             priv->wait_link.tun_link_signal_id = g_signal_connect(nm_device_get_platform(device),
                                                                   NM_PLATFORM_SIGNAL_LINK_CHANGED,
                                                                   G_CALLBACK(_netdev_tun_link_cb),
@@ -483,6 +483,7 @@ deactivate(NMDevice *device)
     NMDeviceOvsInterface        *self = NM_DEVICE_OVS_INTERFACE(device);
     NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
 
+    priv->wait_link.tun_ifindex          = -1;
     priv->wait_link.waiting              = FALSE;
     priv->wait_link.cloned_mac_evaluated = FALSE;
     nm_clear_g_free(&priv->wait_link.cloned_mac);
@@ -581,6 +582,7 @@ deactivate_async(NMDevice                  *device,
 
     nm_clear_g_signal_handler(nm_device_get_platform(device), &priv->wait_link.tun_link_signal_id);
     nm_clear_g_source_inst(&priv->wait_link.tun_set_ifindex_idle_source);
+    priv->wait_link.tun_ifindex          = -1;
     priv->wait_link.cloned_mac_evaluated = FALSE;
     nm_clear_g_free(&priv->wait_link.cloned_mac);
 
@@ -668,6 +670,8 @@ nm_device_ovs_interface_init(NMDeviceOvsInterface *self)
 
     if (!nm_ovsdb_is_ready(priv->ovsdb))
         g_signal_connect(priv->ovsdb, NM_OVSDB_READY, G_CALLBACK(ovsdb_ready), self);
+
+    priv->wait_link.tun_ifindex = -1;
 }
 
 static void
