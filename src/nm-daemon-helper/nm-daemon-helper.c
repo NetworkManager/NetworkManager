@@ -120,8 +120,8 @@ cmd_resolve_address(void)
                     service,
                     ret,
                     gai_strerror(ret),
-                    errsv,
-                    _nm_strerror_r(errsv, buf, sizeof(buf)));
+                    errno,
+                    strerror(errno));
         } else {
             fprintf(stderr,
                     "getnameinfo() via service '%s' failed: %d (%s)\n",
