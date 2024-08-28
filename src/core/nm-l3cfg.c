@@ -2748,7 +2748,9 @@ handle_init:
                     goto handle_start_defending;
                 }
 
-                log_reason = "retry probing on timeout";
+                acd_data->probing_timestamp_msec = (*p_now_msec);
+                acd_data->probing_timeout_msec   = acd_timeout_msec;
+                log_reason                       = "retry probing on timeout";
                 goto handle_start_probing;
             }
 
