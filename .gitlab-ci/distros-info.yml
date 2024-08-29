@@ -2,10 +2,15 @@
 #   cadence: every 6 months
 #   support: 13 months
 # Image aliases: latest, rawhide
+# Releases and support info: https://docs.fedoraproject.org/en-US/releases/lifecycle/
+# NetworkManager versions info: https://src.fedoraproject.org/rpms/NetworkManager
 fedora:
 - version: rawhide
   support: yes
   nm: main
+- version: 41
+  support: yes
+  nm: 1.50
 - version: 40
   support: 2025-05-13
   nm: 1.46
@@ -18,9 +23,6 @@ centos:
 - version: stream9
   support: 2027-05-31
   nm: main
-- version: stream8
-  support: 2024-05-31  ## EOL
-  nm: 1.40
 
 # RHEL:
 # Even minor versions:
@@ -29,10 +31,14 @@ centos:
 # Odd minor versions:
 #   cadence: every year (every other 6 months than even versions)
 #   support: 6 months
+# Releases and support info: https://access.redhat.com/support/policy/updates/errata
 rhel:
-- version: 9.5
+- version: 9.6  # not released yet
   support: yes
   nm: main
+- version: 9.5
+  support: yes
+  nm: 1.48
 - version: 9.4
   support: 2026-04-30
   extended-support: 2028-04-30
@@ -67,12 +73,14 @@ rhel:
 #   cadence: every 6 months
 #   support: 9 months
 # Image aliases: latest (LTS), rolling (LTS or non-LTS), devel
+# Releases and support info: https://salsa.debian.org/debian/distro-info-data/-/blob/main/ubuntu.csv
+# NetworkManager versions info: https://packages.ubuntu.com/search?keywords=network-manager
 ubuntu:
 - version: devel
   support: yes
   nm: main
 - version: 24.04
-  name: focal
+  name: noble
   support: 2029-05-31
   extended-support: 2034-04-25
   nm: 1.46
@@ -82,7 +90,7 @@ ubuntu:
   extended-support: 2032-04-21
   nm: 1.36
 - version: 20.04
-  name: noble
+  name: focal
   support: 2025-05-29
   extended-support: 2030-04-23
   nm: 1.22
@@ -90,9 +98,11 @@ ubuntu:
 # Debian:
 #   cadence: every 2 years
 #   support: 3 years + 2 years LTS
-# Images aliases: stable, oldstable, oldoldstable
+# Images aliases: testing, sid, stable, oldstable, oldoldstable
+# Releases and support info: https://salsa.debian.org/debian/distro-info-data/-/blob/main/debian.csv
+# NetworkManager versions info: https://packages.debian.org/search?keywords=network-manager
 debian:
-- version: devel
+- version: testing
   support: yes
   nm: main
 - version: sid
@@ -113,6 +123,8 @@ debian:
 #   cadence: every 6 months
 #   support: 2 years
 # Image aliases: latest, edge (development)
+# Releases and support info: https://alpinelinux.org/releases/
+# NetworkManager versions info (manually select Alpine version): https://pkgs.alpinelinux.org/packages?name=networkmanager&arch=x86_64
 alpine:
 - version: edge
   support: yes
