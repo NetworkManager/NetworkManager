@@ -1558,6 +1558,7 @@ intern_config_read(const char        *filename,
     gs_strfreev char **groups        = NULL;
     guint              g, k;
     gboolean           has_intern = FALSE;
+    gboolean           has_global_dns;
 
     g_return_val_if_fail(filename, NULL);
 
@@ -1575,6 +1576,8 @@ intern_config_read(const char        *filename,
         goto out;
     }
 
+    has_global_dns = nm_config_keyfile_has_global_dns_config(keyfile_conf, FALSE);
+
     groups = g_key_file_get_groups(keyfile, NULL);
     for (g = 0; groups && groups[g]; g++) {
         gs_strfreev char **keys  = NULL;
@@ -1590,6 +1593,21 @@ intern_config_read(const char        *filename,
 
         is_intern = NM_STR_HAS_PREFIX(group, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
         is_atomic = !is_intern && _is_atomic_section(atomic_section_prefixes, group);
+
+        if (has_global_dns
+            && (nm_streq0(group, NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS)
+                || NM_STR_HAS_PREFIX_WITH_MORE(
+                    group,
+                    NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_GLOBAL_DNS_DOMAIN))) {
+            /*
+             * If user configuration specifies global DNS options, the DNS
+             * options in internal configuration must be deleted. Otherwise, a
+             * deletion of options from user configuration may cause the
+             * internal options to appear again.
+             */
+            needs_rewrite = TRUE;
+            continue;
+        }
 
         if (is_atomic) {
             gs_free char *conf_section_was = NULL;
@@ -1684,26 +1702,6 @@ intern_config_read(const char        *filename,
     }
 
 out:
-    /*
-     * If user configuration specifies global DNS options, the DNS
-     * options in internal configuration must be deleted. Otherwise, a
-     * deletion of options from user configuration may cause the
-     * internal options to appear again.
-     */
-    if (nm_config_keyfile_has_global_dns_config(keyfile_conf, FALSE)) {
-        if (g_key_file_remove_group(keyfile_intern,
-                                    NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS,
-                                    NULL))
-            needs_rewrite = TRUE;
-        for (g = 0; groups && groups[g]; g++) {
-            if (NM_STR_HAS_PREFIX(groups[g], NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_GLOBAL_DNS_DOMAIN)
-                && groups[g][NM_STRLEN(NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_GLOBAL_DNS_DOMAIN)]) {
-                g_key_file_remove_group(keyfile_intern, groups[g], NULL);
-                needs_rewrite = TRUE;
-            }
-        }
-    }
-
     g_key_file_unref(keyfile);
 
     if (out_needs_rewrite)
