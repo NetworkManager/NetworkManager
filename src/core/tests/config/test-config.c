@@ -965,7 +965,8 @@ _set_values_user_atomic_section_1_set(NMConfig            *config,
     g_key_file_set_string(keyfile, "atomic-prefix-1.section-b", "key1", "user-value1");
     g_key_file_set_string(keyfile, "non-atomic-prefix-1.section-a", "nap1-key1", "user-value1");
     g_key_file_set_string(keyfile, "non-atomic-prefix-1.section-a", "nap1-key2", "user-value2");
-    *out_expected_changes = NM_CONFIG_CHANGE_VALUES | NM_CONFIG_CHANGE_VALUES_USER;
+    *out_expected_changes =
+        NM_CONFIG_CHANGE_VALUES | NM_CONFIG_CHANGE_VALUES_USER | NM_CONFIG_CHANGE_CONFIG_FILES;
 }
 
 static void
@@ -976,7 +977,9 @@ _set_values_user_atomic_section_1_check(NMConfig           *config,
                                         NMConfigData       *old_data)
 {
     if (is_change_event)
-        g_assert(changes == (NM_CONFIG_CHANGE_VALUES | NM_CONFIG_CHANGE_VALUES_USER));
+        g_assert(changes
+                 == (NM_CONFIG_CHANGE_VALUES | NM_CONFIG_CHANGE_VALUES_USER
+                     | NM_CONFIG_CHANGE_CONFIG_FILES));
     assert_config_value(config_data, "atomic-prefix-1.section-a", "key1", "user-value1");
     assert_config_value(config_data, "atomic-prefix-1.section-a", "key2", "user-value2");
     assert_config_value(config_data, "atomic-prefix-1.section-b", "key1", "user-value1");
