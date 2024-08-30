@@ -44,11 +44,20 @@ def _nm_version_is_newer(nm_ver, nm_ver_from):
     return False
 
 
-if len(sys.argv) != 2:
-    print(f"Usage: {sys.argv[0]} <nm_version>")
+def _print_usage():
+    print("Usage: distros_support.py [-a|--all] | <nm_version>")
+    print(" -a|--all:   print NM versions still active in any distro")
+    print(" nm_version: print all info and config.yml file of the specified NM version")
+
+
+if len(sys.argv) == 2 and sys.argv[1] in ("-h", "--help", "help"):
+    _print_usage()
+    quit()
+elif len(sys.argv) > 2:
+    print("Error: wrong arguments.", file=sys.stderr)
+    _print_usage()
     quit(code=1)
 
-nm_version = sys.argv[1]
 today = datetime.date.today()
 with open(os.path.dirname(__file__) + "/distros-info.yml") as f:
     distros_info = yaml.load(f, Loader=yaml.BaseLoader)
@@ -66,6 +75,24 @@ for distro, versions in distros_info.items():
             f"Warn: {distro} {info['version']} reached EOL, consider deleting this entry",
             file=sys.stderr,
         )
+
+# If --all is selected, print all active NM versions and return
+if len(sys.argv) < 2 or sys.argv[1] in ("-a", "--all"):
+    nm_versions = {}
+
+    for distro, versions in distros_info.items():
+        for info in versions:
+            if not _is_supported(info["support"], today):
+                continue
+            nm_versions.setdefault(info["nm"], []).append(f"{distro} {info['version']}")
+
+    for nm_ver, distros in sorted(nm_versions.items(), reverse=True):
+        print("- NM {}: {}".format(nm_ver, ", ".join(distros)))
+
+    quit()
+
+# Otherwise, print all the info related to the specified NM version
+nm_version = sys.argv[1]
 
 # Print distros that uses this nm_version
 print(f"# List of distros using NM {nm_version}")
