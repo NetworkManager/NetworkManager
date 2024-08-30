@@ -2019,6 +2019,8 @@ global:
 	nm_setting_ip4_config_get_dhcp_ipv6_only_preferred;
 	nm_setting_ip4_dhcp_ipv6_only_preferred_get_type;
 	nm_setting_ip_config_get_routed_dns;
+	nm_setting_ip_config_get_shared_dhcp_range;
+	nm_setting_ip_config_get_shared_dhcp_lease_time;
 	nm_setting_ip_config_routed_dns_get_type;
 	nm_setting_ipvlan_get_mode;
 	nm_setting_ipvlan_get_parent;

@@ -1771,6 +1771,14 @@
         <property name="routing-rules"
                   dbus-type="aa{sv}"
                   />
+        <property name="shared-dhcp-lease-time"
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
+        <property name="shared-dhcp-range"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
     </setting>
     <setting name="ipv6"
              gtype="NMSettingIP6Config"
@@ -1925,6 +1933,14 @@
                   />
         <property name="routing-rules"
                   dbus-type="aa{sv}"
+                  />
+        <property name="shared-dhcp-lease-time"
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
+        <property name="shared-dhcp-range"
+                  dbus-type="s"
+                  gprop-type="gchararray"
                   />
         <property name="temp-preferred-lifetime"
                   dbus-type="i"
