@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
+libnm_core_aux_intern_inc = include_directories('.')
 
 libnm_core_aux_intern = static_library(
   'nm-core-aux-intern',

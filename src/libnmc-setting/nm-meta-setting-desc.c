@@ -6554,6 +6554,24 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
     PROPERTY_INFO (NM_SETTING_IP_CONFIG_AUTO_ROUTE_EXT_GW, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_AUTO_ROUTE_EXT_GW,
         .property_type =                &_pt_gobject_ternary,
     ),
+    PROPERTY_INFO (NM_SETTING_IP_CONFIG_SHARED_DHCP_RANGE, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_SHARED_DHCP_RANGE,
+        .property_type =                &_pt_gobject_string,
+    ),
+    PROPERTY_INFO (NM_SETTING_IP_CONFIG_SHARED_DHCP_LEASE_TIME, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_SHARED_DHCP_LEASE_TIME,
+        .property_type =                &_pt_gobject_int,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
+            .value_infos =              INT_VALUE_INFOS (
+                {
+                    .value.i64 = 0,
+                    .nick = "default",
+                },
+                {
+                    .value.i64 = G_MAXINT32,
+                    .nick = "infinity",
+                },
+            ),
+        ),
+    ),
     NULL
 };
 

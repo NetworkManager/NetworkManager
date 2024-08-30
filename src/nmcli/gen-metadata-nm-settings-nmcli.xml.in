@@ -1448,6 +1448,14 @@
                   nmcli-description="VPN connections will default to add the route automatically unless this setting is set to FALSE. For other connection types, adding such an automatic route is currently not supported and setting this to TRUE has no effect."
                   format="ternary"
                   values="true/yes/on, false/no/off, default/unknown" />
+        <property name="shared-dhcp-range"
+                  nmcli-description="This option allows you to specify a custom DHCP range for the shared connection method. The value is expected to be in `&lt;START_ADDRESS&gt;,&lt;END_ADDRESS&gt;` format. The range should be part of network set by ipv4.address option and it should not contain network address or broadcast address. If this option is not specified, the DHCP range will be automatically determined based on the interface address. The range will be selected to be adjacent to the interface address, either before or after it, with the larger possible range being preferred. The range will be adjusted to fill the available address space, except for networks with a prefix length greater than 24, which will be treated as if they have a prefix length of 24."
+                  format="string" />
+        <property name="shared-dhcp-lease-time"
+                  nmcli-description="This option allows you to specify a custom DHCP lease time for the shared connection method in seconds. The value should be either a number between 120 and 31536000 (one year) If this option is not specified, 3600 (one hour) is used. Special values are 0 for default value of 1 hour and 2147483647 (MAXINT32) for infinite lease time."
+                  format="integer"
+                  values="0 - 2147483647"
+                  special-values="default (0), infinity (2147483647)" />
     </setting>
     <setting name="ipv6" >
         <property name="method"

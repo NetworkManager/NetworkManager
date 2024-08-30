@@ -24,6 +24,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   name server is reached only via the device that specifies it.
 * Support OCI in nm-cloud-setup
 * Added support for ethtool FEC mode
+* Add new ipv4.shared-dhcp-range and ipv4.shared-dhcp-lease-time,
+  which allows you to customize the DHCP range and lease time offered
+  by DHCP server in `shared` connection method.
 
 =============================================
 NetworkManager-1.50

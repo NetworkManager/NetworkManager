@@ -479,6 +479,150 @@ nm_utils_validate_dhcp_dscp(const char *dscp, GError **error)
 }
 
 gboolean
+nm_utils_validate_shared_dhcp_range(const char *shared_dhcp_range,
+                                    GPtrArray  *addresses,
+                                    GError    **error)
+{
+    char        *start_address_str;
+    char        *end_address_str;
+    NMIPAddress *interface_address_with_prefix;
+    NMIPAddr     interface_address;
+    NMIPAddr     start_address;
+    NMIPAddr     end_address;
+    guint32      i;
+    guint32      mask;
+    guint32      prefix_length;
+    guint32      start_network;
+    guint32      end_network;
+    guint32      interface_network;
+    guint32      start_ip_length;
+    bool         range_is_in_interface_network;
+
+    g_return_val_if_fail(!error || !(*error), FALSE);
+
+    if (!shared_dhcp_range) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("NULL DHCP range; it should be provided as <START_IP>,<END_IP>."));
+        return FALSE;
+    }
+
+    if (!*shared_dhcp_range) {
+        return TRUE;
+    }
+
+    if (!addresses) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("Non-NULL range and NULL addresses detected."));
+        return FALSE;
+    }
+
+    end_address_str = strchr(shared_dhcp_range, ',');
+    if (!end_address_str) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("Invalid DHCP range; it should be provided as <START_IP>,<END_IP>."));
+        return FALSE;
+    }
+
+    start_ip_length = end_address_str - shared_dhcp_range;
+    if (start_ip_length > 15) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("Start IP has invalid length."));
+        return FALSE;
+    }
+
+    start_address_str = strndupa(shared_dhcp_range, start_ip_length);
+    ++end_address_str; /* end address is pointing to ',', shift it to the actual address */
+
+    if (!nm_inet_parse_bin(AF_INET, start_address_str, NULL, &start_address)) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("Start IP is invalid."));
+        return FALSE;
+    }
+
+    if (!nm_inet_parse_bin(AF_INET, end_address_str, NULL, &end_address)) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("End IP is invalid."));
+        return FALSE;
+    }
+
+    if (ntohl(start_address.addr4) > ntohl(end_address.addr4)) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("Start IP should be lower than the end IP."));
+        return FALSE;
+    }
+
+    range_is_in_interface_network = FALSE;
+    for (i = 0; i < (*addresses).len; ++i) {
+        interface_address_with_prefix = (NMIPAddress *) addresses->pdata[i];
+        nm_inet_parse_bin(AF_INET,
+                          nm_ip_address_get_address(interface_address_with_prefix),
+                          NULL,
+                          &interface_address);
+        prefix_length = nm_ip_address_get_prefix(interface_address_with_prefix);
+        mask          = nm_utils_ip4_prefix_to_netmask(prefix_length);
+
+        interface_network = interface_address.addr4 & mask;
+        start_network     = start_address.addr4 & mask;
+        end_network       = end_address.addr4 & mask;
+
+        if (start_network == interface_network && end_network == interface_network) {
+            range_is_in_interface_network = TRUE;
+            break;
+        }
+    }
+
+    if (!range_is_in_interface_network) {
+        g_set_error_literal(
+            error,
+            NM_CONNECTION_ERROR,
+            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+            _("Requested range is not in any network configured on the interface."));
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+gboolean
+nm_utils_validate_shared_dhcp_lease_time(int shared_dhcp_lease_time, GError **error)
+{
+    g_return_val_if_fail(!error || !(*error), FALSE);
+
+    if (shared_dhcp_lease_time == 0 || shared_dhcp_lease_time == G_MAXINT32) {
+        return TRUE;
+    }
+
+    if (shared_dhcp_lease_time < NM_MIN_FINITE_LEASE_TIME
+        || NM_MAX_FINITE_LEASE_TIME < shared_dhcp_lease_time) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("Invalid DHCP lease time value; it should be either default or a positive "
+                      "number between %u and %u or %s."),
+                    NM_MIN_FINITE_LEASE_TIME,
+                    NM_MAX_FINITE_LEASE_TIME,
+                    NM_INFINITE_LEASE_TIME);
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+gboolean
 nm_settings_connection_validate_permission_user(const char *item, gssize len)
 {
     gsize l;

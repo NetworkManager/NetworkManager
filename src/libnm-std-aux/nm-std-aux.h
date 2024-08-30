@@ -83,6 +83,8 @@
 
 /*****************************************************************************/
 
+/* Reason for double application is described here
+ * https://gcc.gnu.org/onlinedocs/gcc-4.8.5/cpp/Stringification.html */
 #define NM_STRINGIFY_ARG(contents)    #contents
 #define NM_STRINGIFY(macro_or_string) NM_STRINGIFY_ARG(macro_or_string)
 

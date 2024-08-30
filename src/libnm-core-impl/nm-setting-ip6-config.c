@@ -440,6 +440,30 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         return FALSE;
     }
 
+    if (nm_setting_ip_config_get_shared_dhcp_range(s_ip)) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("Shared DHCP range is not supported for IPv6"));
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_IP6_CONFIG_SETTING_NAME,
+                       NM_SETTING_IP_CONFIG_SHARED_DHCP_RANGE);
+        return FALSE;
+    }
+
+    if (nm_setting_ip_config_get_shared_dhcp_lease_time(s_ip)) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("Shared DHCP lease time is not supported for IPv6"));
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_IP6_CONFIG_SETTING_NAME,
+                       NM_SETTING_IP_CONFIG_SHARED_DHCP_LEASE_TIME);
+        return FALSE;
+    }
+
     /* Failures from here on, are NORMALIZABLE_ERROR... */
 
     if (token_needs_normalization) {
