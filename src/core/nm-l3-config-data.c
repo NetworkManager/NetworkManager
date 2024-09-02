@@ -370,7 +370,8 @@ nm_l3_config_data_log(const NML3ConfigData *self,
     nm_assert(!NM_FLAGS_ANY(self->flags,
                             ~(NM_L3_CONFIG_DAT_FLAGS_IGNORE_MERGE_NO_DEFAULT_ROUTES
                               | NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY_4
-                              | NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY_6)));
+                              | NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY_6
+                              | NM_L3_CONFIG_DAT_FLAGS_HAS_IPV4_NON_LL)));
 
     _L("l3cd %s%s%s(" NM_HASH_OBFUSCATE_PTR_FMT ", ifindex=%d%s%s%s%s)",
        NM_PRINT_FMT_QUOTED(title, "\"", title, "\" ", ""),
@@ -1287,15 +1288,26 @@ nm_l3_config_data_add_address_full(NML3ConfigData            *self,
                                    const NMPObject          **out_obj_new)
 {
     const NMPObject *new;
-    gboolean changed;
+    gboolean  changed;
+    const int IS_IPv4 = NM_IS_IPv4(addr_family);
 
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
     nm_assert_addr_family(addr_family);
     nm_assert((!pl_new) != (!obj_new));
     nm_assert(!obj_new || NMP_OBJECT_GET_ADDR_FAMILY(obj_new) == addr_family);
 
+    if (IS_IPv4 && !NM_FLAGS_HAS(self->flags, NM_L3_CONFIG_DAT_FLAGS_HAS_IPV4_NON_LL)) {
+        const NMPlatformIP4Address *addr;
+        addr = obj_new ? NMP_OBJECT_CAST_IP4_ADDRESS(obj_new)
+                       : (const NMPlatformIP4Address *) (pl_new);
+
+        if (!nm_platform_ip4_address_is_link_local(addr)) {
+            self->flags |= NM_L3_CONFIG_DAT_FLAGS_HAS_IPV4_NON_LL;
+        }
+    }
+
     changed = _l3_config_data_add_obj(self->multi_idx,
-                                      &self->idx_addresses_x[NM_IS_IPv4(addr_family)],
+                                      &self->idx_addresses_x[IS_IPv4],
                                       self->ifindex,
                                       obj_new,
                                       (const NMPlatformObject *) pl_new,
@@ -3045,14 +3057,12 @@ _init_from_platform(NML3ConfigData           *self,
         else
             self->has_routes_with_type_local_6_set = FALSE;
         nmp_cache_iter_for_each (&iter, head_entry, &plobj) {
-            if (!_l3_config_data_add_obj(self->multi_idx,
-                                         &self->idx_addresses_x[IS_IPv4],
-                                         self->ifindex,
-                                         plobj,
-                                         NULL,
-                                         NM_L3_CONFIG_ADD_FLAGS_APPEND_FORCE,
-                                         NULL,
-                                         NULL))
+            if (!nm_l3_config_data_add_address_full(self,
+                                                    addr_family,
+                                                    plobj,
+                                                    NULL,
+                                                    NM_L3_CONFIG_ADD_FLAGS_APPEND_FORCE,
+                                                    NULL))
                 nm_assert_not_reached();
         }
         head_entry = nm_l3_config_data_lookup_addresses(self, addr_family);
