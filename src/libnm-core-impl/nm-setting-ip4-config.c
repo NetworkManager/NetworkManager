@@ -1017,7 +1017,7 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * When set to "default", it honors the global connection default, before
      * falling back to "auto". Note that if "ipv4.method" is "disabled", then
      * link local addressing is always disabled too. The default is "default".
-     * Since 1.50, when set to "fallback", a link-local address is obtained
+     * Since 1.52, when set to "fallback", a link-local address is obtained
      * if no other IPv4 address is set.
      *
      * Since: 1.40
