@@ -44,14 +44,7 @@ usage() {
 }
 
 get_version() {
-    local major minor micro
-    local F="./configure.ac"
-
-    vars="$(sed -n 's/^m4_define(\[nm_\(major\|minor\|micro\)_version\], *\[\([0-9]\+\)\]) *$/local \1='\''\2'\''/p' "$F" 2>/dev/null)"
-    eval "$vars"
-
-    [[ -n "$major" && -n "$minor" && "$micro" ]] || return 1
-    echo "$major.$minor.$micro"
+    grep -E -m1 '^\s+version:' meson.build | cut -d"'" -f2
 }
 
 bool() {

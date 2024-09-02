@@ -94,9 +94,9 @@ do_command() {
 }
 
 parse_version() {
-    local MAJ="$(sed -n '1,20 s/^m4_define(\[nm_major_version\], \[\([0-9]\+\)\])$/\1/p' ./configure.ac)"
-    local MIN="$(sed -n '1,20 s/^m4_define(\[nm_minor_version\], \[\([0-9]\+\)\])$/\1/p' ./configure.ac)"
-    local MIC="$(sed -n '1,20 s/^m4_define(\[nm_micro_version\], \[\([0-9]\+\)\])$/\1/p' ./configure.ac)"
+    local VERSION=$(grep -E -m1 '^\s+version:' "$GITDIR/meson.build" \
+                    | cut -d"'" -f2 \
+                    | sed 's/\./ /g')
 
     re='^(0|[1-9][0-9]*) (0|[1-9][0-9]*) (0|[1-9][0-9]*)$'
     [[ "$MAJ $MIN $MIC" =~ $re ]] || return 1
