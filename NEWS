@@ -1,12 +1,20 @@
 =============================================
-NetworkManager-1.50
-Overview of changes since NetworkManager-1.48
+NetworkManager-1.52
+Overview of changes since NetworkManager-1.50
 =============================================
 
 This is a snapshot of NetworkManager development. The API is
 subject to change and not guaranteed to be compatible with
 the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
+
+* Add new ipv4.link-local=fallback to set an IPv4 link-local address
+  when no other IPv4 is set.
+
+=============================================
+NetworkManager-1.50
+Overview of changes since NetworkManager-1.48
+=============================================
 
 * The support for "dhclient" has been deprecated, not built unless
   explicitely enabled, and will be removed in a future release.
@@ -26,8 +34,6 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Support reapplying the VLANs on bridge ports.
 * Fix crash caused by malformed LLDP package if debug log is enabled
 * Retry hostname resolution when it fails
-* Add new ipv4.link-local=fallback to set an IPv4 link-local address
-  when no other IPv4 is set.
 
 =============================================
 NetworkManager-1.48
