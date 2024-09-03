@@ -574,6 +574,7 @@ test_ip4_route_get(void)
     result = nm_platform_ip_route_get(NM_PLATFORM_GET,
                                       AF_INET,
                                       &a,
+                                      0,
                                       nmtst_get_rand_uint32() % 2 ? 0 : ifindex,
                                       &route);
 
@@ -766,6 +767,7 @@ test_ip6_route_get(void)
     result = nm_platform_ip_route_get(NM_PLATFORM_GET,
                                       AF_INET6,
                                       a,
+                                      0,
                                       nmtst_get_rand_uint32() % 2 ? 0 : ifindex,
                                       &route);
 
