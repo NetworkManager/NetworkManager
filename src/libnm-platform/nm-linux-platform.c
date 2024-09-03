@@ -10591,6 +10591,7 @@ static int
 ip_route_get(NMPlatform   *platform,
              int           addr_family,
              gconstpointer address,
+             guint32       fwmark,
              int           oif_ifindex,
              NMPObject   **out_route)
 {
@@ -10624,6 +10625,11 @@ ip_route_get(NMPlatform   *platform,
 
         if (!_nl_addattr_l(&req.n, sizeof(req), RTA_DST, address, addr_len))
             nm_assert_not_reached();
+
+        if (fwmark != 0) {
+            if (!_nl_addattr_l(&req.n, sizeof(req), RTA_MARK, &fwmark, sizeof(fwmark)))
+                nm_assert_not_reached();
+        }
 
         if (oif_ifindex > 0) {
             gint32 ii = oif_ifindex;

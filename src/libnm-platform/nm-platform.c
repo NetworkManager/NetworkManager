@@ -5603,6 +5603,7 @@ int
 nm_platform_ip_route_get(NMPlatform   *self,
                          int           addr_family,
                          gconstpointer address /* in_addr_t or struct in6_addr */,
+                         guint32       fwmark,
                          int           oif_ifindex,
                          NMPObject   **out_route)
 {
@@ -5611,21 +5612,23 @@ nm_platform_ip_route_get(NMPlatform   *self,
     int                       result;
     char                      buf[NM_INET_ADDRSTRLEN];
     char                      buf_oif[64];
+    char                      buf_fwmark[64];
 
     _CHECK_SELF(self, klass, FALSE);
 
     g_return_val_if_fail(address, -NME_BUG);
     g_return_val_if_fail(NM_IN_SET(addr_family, AF_INET, AF_INET6), -NME_BUG);
 
-    _LOGT("route: get IPv%c route for: %s%s",
+    _LOGT("route: get IPv%c route for: %s%s%s",
           nm_utils_addr_family_to_char(addr_family),
           inet_ntop(addr_family, address, buf, sizeof(buf)),
-          oif_ifindex > 0 ? nm_sprintf_buf(buf_oif, " oif %d", oif_ifindex) : "");
+          oif_ifindex > 0 ? nm_sprintf_buf(buf_oif, " oif %d", oif_ifindex) : "",
+          fwmark > 0 ? nm_sprintf_buf(buf_fwmark, " fwmark %u", fwmark) : "");
 
     if (!klass->ip_route_get)
         result = -NME_PL_OPNOTSUPP;
     else {
-        result = klass->ip_route_get(self, addr_family, address, oif_ifindex, &route);
+        result = klass->ip_route_get(self, addr_family, address, fwmark, oif_ifindex, &route);
     }
 
     if (result < 0) {
