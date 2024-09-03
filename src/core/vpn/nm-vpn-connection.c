@@ -1203,6 +1203,7 @@ _parent_device_l3cd_add_gateway_route(NML3ConfigData *l3cd,
     r = nm_platform_ip_route_get(platform,
                                  addr_family,
                                  vpn_gw,
+                                 0,
                                  ifindex,
                                  (NMPObject **) &route_resolved);
     if (r >= 0) {
