@@ -1566,6 +1566,10 @@
     <setting name="ipv4"
              gtype="NMSettingIP4Config"
              >
+        <property name="add-dns-routes"
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="address-data"
                   dbus-type="aa{sv}"
                   />
@@ -1709,6 +1713,10 @@
     <setting name="ipv6"
              gtype="NMSettingIP6Config"
              >
+        <property name="add-dns-routes"
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="addr-gen-mode"
                   dbus-type="i"
                   gprop-type="gint"
