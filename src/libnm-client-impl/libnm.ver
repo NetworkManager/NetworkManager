@@ -2016,6 +2016,8 @@ global:
 	nm_device_ipvlan_get_private;
 	nm_device_ipvlan_get_type;
 	nm_device_ipvlan_get_vepa;
+	nm_setting_ip_config_get_routed_dns;
+	nm_setting_ip_config_routed_dns_get_type;
 	nm_setting_ipvlan_get_mode;
 	nm_setting_ipvlan_get_parent;
 	nm_setting_ipvlan_get_private;

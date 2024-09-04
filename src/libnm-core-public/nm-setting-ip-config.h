@@ -36,6 +36,23 @@ typedef enum /*< flags >*/ {
     NM_IP_ADDRESS_CMP_FLAGS_WITH_ATTRS = 0x1,
 } NMIPAddressCmpFlags;
 
+/**
+ * NMSettingIPConfigRoutedDns:
+ * @NM_SETTING_IP_CONFIG_ROUTED_DNS_DEFAULT: use the global default value
+ * @NM_SETTING_IP_CONFIG_ROUTED_DNS_NO: do not add DNS routes
+ * @NM_SETTING_IP_CONFIG_ROUTED_DNS_YES: do add DNS routes
+ *
+ * #NMSettingIPConfigRoutedDns indicates whether routes are added
+ * automatically for each DNS that is associated with this connection.
+ *
+ * Since: 1.52
+ */
+typedef enum {
+    NM_SETTING_IP_CONFIG_ROUTED_DNS_DEFAULT = -1,
+    NM_SETTING_IP_CONFIG_ROUTED_DNS_NO      = 0,
+    NM_SETTING_IP_CONFIG_ROUTED_DNS_YES     = 1,
+} NMSettingIPConfigRoutedDns;
+
 typedef struct NMIPAddress NMIPAddress;
 
 GType nm_ip_address_get_type(void);
@@ -343,6 +360,7 @@ char *nm_ip_routing_rule_to_string(const NMIPRoutingRule       *self,
 #define NM_SETTING_IP_CONFIG_AUTO_ROUTE_EXT_GW   "auto-route-ext-gw"
 #define NM_SETTING_IP_CONFIG_REPLACE_LOCAL_RULE  "replace-local-rule"
 #define NM_SETTING_IP_CONFIG_DHCP_SEND_RELEASE   "dhcp-send-release"
+#define NM_SETTING_IP_CONFIG_ROUTED_DNS          "routed-dns"
 
 /* these are not real GObject properties. */
 #define NM_SETTING_IP_CONFIG_ROUTING_RULES "routing-rules"
@@ -512,6 +530,8 @@ NM_AVAILABLE_IN_1_44
 NMTernary nm_setting_ip_config_get_replace_local_rule(NMSettingIPConfig *setting);
 NM_AVAILABLE_IN_1_48
 NMTernary nm_setting_ip_config_get_dhcp_send_release(NMSettingIPConfig *setting);
+NM_AVAILABLE_IN_1_52
+NMSettingIPConfigRoutedDns nm_setting_ip_config_get_routed_dns(NMSettingIPConfig *setting);
 
 G_END_DECLS
 
