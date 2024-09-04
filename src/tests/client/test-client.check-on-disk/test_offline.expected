@@ -124,14 +124,15 @@ method=auto
 [proxy]
 
 <<<
-size: 199
+size: 219
 location: src/tests/client/test-client.py:test_offline()/8
 cmd: $NMCLI --complete-args --offline conn modify ipv6.ad
 lang: C
 returncode: 0
-stdout: 34 bytes
+stdout: 54 bytes
 >>>
 ipv6.addresses
+ipv6.add-dns-routes
 ipv6.addr-gen-mode
 
 <<<
