@@ -3962,7 +3962,7 @@ typedef struct {
 
 typedef struct {
     const char *name;
-    DiffKey     keys[33];
+    DiffKey     keys[40];
 } DiffSetting;
 
 #define ARRAY_LEN(a) (sizeof(a) / sizeof(a[0]))
@@ -4092,6 +4092,7 @@ test_connection_diff_a_only(void)
              {NM_SETTING_IP_CONFIG_AUTO_ROUTE_EXT_GW, NM_SETTING_DIFF_RESULT_IN_A},
              {NM_SETTING_IP_CONFIG_REPLACE_LOCAL_RULE, NM_SETTING_DIFF_RESULT_IN_A},
              {NM_SETTING_IP_CONFIG_DHCP_SEND_RELEASE, NM_SETTING_DIFF_RESULT_IN_A},
+             {NM_SETTING_IP_CONFIG_ROUTED_DNS, NM_SETTING_DIFF_RESULT_IN_A},
              {NULL, NM_SETTING_DIFF_RESULT_UNKNOWN},
          }},
     };
