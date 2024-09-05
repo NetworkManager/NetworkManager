@@ -3040,6 +3040,10 @@ handle_start_probing:
             goto handle_start_defending;
         }
 
+        _LOGT_acd(acd_data,
+                  "probe created with%s eBPF support",
+                  n_acd_has_bpf(self->priv.p->nacd) ? "" : "out");
+
         _l3_acd_data_state_set(self,
                                acd_data,
                                NM_L3_ACD_ADDR_STATE_PROBING,
