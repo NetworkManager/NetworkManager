@@ -3962,7 +3962,7 @@ typedef struct {
 
 typedef struct {
     const char *name;
-    DiffKey     keys[33];
+    DiffKey     keys[36];
 } DiffSetting;
 
 #define ARRAY_LEN(a) (sizeof(a) / sizeof(a[0]))
@@ -4037,6 +4037,8 @@ test_connection_diff_a_only(void)
           {NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT, NM_SETTING_DIFF_RESULT_IN_A},
           {NM_SETTING_CONNECTION_WAIT_ACTIVATION_DELAY, NM_SETTING_DIFF_RESULT_IN_A},
           {NM_SETTING_CONNECTION_DOWN_ON_POWEROFF, NM_SETTING_DIFF_RESULT_IN_A},
+          {NM_SETTING_CONNECTION_IP_PING_ADDRESSES, NM_SETTING_DIFF_RESULT_IN_A},
+          {NM_SETTING_CONNECTION_IP_PING_ADDRESSES_REQUIRE_ALL, NM_SETTING_DIFF_RESULT_IN_A},
           {NULL, NM_SETTING_DIFF_RESULT_UNKNOWN}}},
         {NM_SETTING_WIRED_SETTING_NAME,
          {
