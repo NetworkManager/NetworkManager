@@ -629,7 +629,7 @@
                   alias="type"
                   nmcli-description="Base type of the connection. For hardware-dependent connections, should contain the setting name of the hardware-type specific setting (ie, &quot;802-3-ethernet&quot; or &quot;802-11-wireless&quot; or &quot;bluetooth&quot;, etc), and for non-hardware dependent connections like VPN or otherwise, should contain the setting name of that setting type (ie, &quot;vpn&quot; or &quot;bridge&quot;, etc)."
                   format="string"
-                  values="6lowpan, 802-11-olpc-mesh, 802-11-wireless, 802-3-ethernet, adsl, bluetooth, bond, bridge, cdma, dummy, generic, gsm, hsr, infiniband, ip-tunnel, loopback, macsec, macvlan, ovs-bridge, ovs-dpdk, ovs-interface, ovs-patch, ovs-port, pppoe, team, tun, veth, vlan, vpn, vrf, vxlan, wifi-p2p, wimax, wireguard, wpan" />
+                  values="6lowpan, 802-11-olpc-mesh, 802-11-wireless, 802-3-ethernet, adsl, bluetooth, bond, bridge, cdma, dummy, generic, gsm, hsr, infiniband, ip-tunnel, ipvlan, loopback, macsec, macvlan, ovs-bridge, ovs-dpdk, ovs-interface, ovs-patch, ovs-port, pppoe, team, tun, veth, vlan, vpn, vrf, vxlan, wifi-p2p, wimax, wireguard, wpan" />
         <property name="interface-name"
                   alias="ifname"
                   nmcli-description="The name of the network interface this connection is bound to. If not set, then the connection can be attached to any interface of the appropriate type (subject to restrictions imposed by other settings). For software devices this specifies the name of the created device. For connection types where interface names cannot easily be made persistent (e.g. mobile broadband or USB Ethernet), this property should not be used. Setting this property restricts the interfaces a connection can be used with, and if interface names change or are reordered the connection may be applied to the wrong interface."
@@ -1516,6 +1516,25 @@
         <property name="token"
                   nmcli-description="Configure the token for draft-chown-6man-tokenised-ipv6-identifiers-02 IPv6 tokenized interface identifiers. Useful with eui64 addr-gen-mode. When set, the token is used as IPv6 interface identifier instead of the hardware address. This only applies to addresses from stateless autoconfiguration, not to IPv6 link local addresses."
                   format="string" />
+    </setting>
+    <setting name="ipvlan" >
+        <property name="parent"
+                  alias="dev"
+                  nmcli-description="If given, specifies the parent interface name or parent connection UUID from which this IPVLAN interface should be created. If this property is not specified, the connection must contain an &quot;802-3-ethernet&quot; setting with a &quot;mac-address&quot; property."
+                  format="string" />
+        <property name="mode"
+                  alias="mode"
+                  nmcli-description="The IPVLAN mode. Valid values: l2 (1), l3 (2), l3s (3)"
+                  format="choice (NMSettingIpvlanMode)"
+                  values="l2 (1), l3 (2), l3s (3)" />
+        <property name="private"
+                  nmcli-description="Whether the interface should be put in private mode."
+                  format="boolean"
+                  values="true/yes/on, false/no/off" />
+        <property name="vepa"
+                  nmcli-description="Whether the interface should be put in VEPA mode."
+                  format="boolean"
+                  values="true/yes/on, false/no/off" />
     </setting>
     <setting name="link" >
         <property name="gso-max-segments"

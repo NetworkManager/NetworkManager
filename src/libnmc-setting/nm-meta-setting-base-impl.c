@@ -35,6 +35,7 @@
 #include "nm-setting-ip-tunnel.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
+#include "nm-setting-ipvlan.h"
 #include "nm-setting-link.h"
 #include "nm-setting-loopback.h"
 #include "nm-setting-macsec.h"
@@ -371,6 +372,13 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
             .setting_name      = NM_SETTING_IP_TUNNEL_SETTING_NAME,
             .get_setting_gtype = nm_setting_ip_tunnel_get_type,
         },
+    [NM_META_SETTING_TYPE_IPVLAN] =
+        {
+            .meta_type         = NM_META_SETTING_TYPE_IPVLAN,
+            .setting_priority  = NM_SETTING_PRIORITY_HW_BASE,
+            .setting_name      = NM_SETTING_IPVLAN_SETTING_NAME,
+            .get_setting_gtype = nm_setting_ipvlan_get_type,
+        },
     [NM_META_SETTING_TYPE_LINK] =
         {
             .meta_type         = NM_META_SETTING_TYPE_LINK,
@@ -643,6 +651,7 @@ const NMMetaSettingType nm_meta_setting_types_by_priority[] = {
     NM_META_SETTING_TYPE_HSR,
     NM_META_SETTING_TYPE_INFINIBAND,
     NM_META_SETTING_TYPE_IP_TUNNEL,
+    NM_META_SETTING_TYPE_IPVLAN,
     NM_META_SETTING_TYPE_LOOPBACK,
     NM_META_SETTING_TYPE_MACSEC,
     NM_META_SETTING_TYPE_MACVLAN,

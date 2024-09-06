@@ -41,6 +41,7 @@ _setting_name_order = [
     "ipv4",
     "ipv6",
     "ip-tunnel",
+    "ipvlan",
     "macsec",
     "macvlan",
     "match",

@@ -325,6 +325,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-setting-ip-tunnel.xml"/>
     <xi:include href="xml/nm-setting-ip4-config.xml"/>
     <xi:include href="xml/nm-setting-ip6-config.xml"/>
+    <xi:include href="xml/nm-setting-ipvlan.xml"/>
     <xi:include href="xml/nm-setting-link.xml"/>
     <xi:include href="xml/nm-setting-loopback.xml"/>
     <xi:include href="xml/nm-setting-macsec.xml"/>
@@ -378,6 +379,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-device-hsr.xml"/>
     <xi:include href="xml/nm-device-infiniband.xml"/>
     <xi:include href="xml/nm-device-ip-tunnel.xml"/>
+    <xi:include href="xml/nm-device-ipvlan.xml"/>
     <xi:include href="xml/nm-device-loopback.xml"/>
     <xi:include href="xml/nm-device-macsec.xml"/>
     <xi:include href="xml/nm-device-macvlan.xml"/>

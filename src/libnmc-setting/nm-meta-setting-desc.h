@@ -69,6 +69,8 @@ struct _NMDevice;
 
 #define NM_META_TEXT_PROMPT_IP_TUNNEL_MODE N_("IP Tunnel mode")
 
+#define NM_META_TEXT_PROMPT_IPVLAN_MODE N_("IPVLAN mode")
+
 #define NM_META_TEXT_PROMPT_MACVLAN_MODE N_("MACVLAN mode")
 
 #define NM_META_TEXT_PROMPT_MACSEC_MODE N_("MACsec mode")

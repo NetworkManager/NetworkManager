@@ -5632,6 +5632,8 @@ nm_device_get_route_metric_default(NMDeviceType device_type)
         return 400;
     case NM_DEVICE_TYPE_MACVLAN:
         return 410;
+    case NM_DEVICE_TYPE_IPVLAN:
+        return 420;
     case NM_DEVICE_TYPE_BRIDGE:
         return 425;
     case NM_DEVICE_TYPE_TUN:
@@ -18700,7 +18702,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         nm_assert(priv->type == NM_DEVICE_TYPE_UNKNOWN);
         priv->type = g_value_get_uint(value);
         nm_assert(priv->type > NM_DEVICE_TYPE_UNKNOWN);
-        nm_assert(priv->type <= NM_DEVICE_TYPE_HSR);
+        nm_assert(priv->type <= NM_DEVICE_TYPE_IPVLAN);
         break;
     case PROP_LINK_TYPE:
         /* construct-only */

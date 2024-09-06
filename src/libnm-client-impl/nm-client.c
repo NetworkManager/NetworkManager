@@ -32,6 +32,7 @@
 #include "nm-device-hsr.h"
 #include "nm-device-infiniband.h"
 #include "nm-device-ip-tunnel.h"
+#include "nm-device-ipvlan.h"
 #include "nm-device-loopback.h"
 #include "nm-device-macsec.h"
 #include "nm-device-macvlan.h"
