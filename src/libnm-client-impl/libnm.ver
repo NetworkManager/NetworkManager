@@ -2005,6 +2005,8 @@ global:
 
 libnm_1_50_0 {
 global:
+	nm_setting_connection_get_ip_ping_timeout;
+	nm_setting_connection_get_ip_ping_address;
 	nm_setting_wireless_channel_width_get_type;
 	nm_setting_wireless_get_channel_width;
 } libnm_1_48_0;
@@ -2023,4 +2025,10 @@ global:
 	nm_setting_ipvlan_get_vepa;
 	nm_setting_ipvlan_mode_get_type;
 	nm_setting_ipvlan_new;
+	nm_setting_connection_get_ip_ping_timeout;
+	nm_setting_connection_get_ip_ping_address;
+	nm_setting_connection_add_ip_ping_address;
+	nm_setting_connection_remove_ip_ping_address;
+	nm_setting_connection_clear_ip_ping_addresses;
+	nm_setting_connection_get_ip_ping_addresses_require_all;
 } libnm_1_50_0;

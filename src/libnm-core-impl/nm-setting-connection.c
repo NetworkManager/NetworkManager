@@ -63,6 +63,9 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingConnection,
                              PROP_AUTOCONNECT_PORTS,
                              PROP_SECONDARIES,
                              PROP_GATEWAY_PING_TIMEOUT,
+                             PROP_IP_PING_TIMEOUT,
+                             PROP_IP_PING_ADDRESSES,
+                             PROP_IP_PING_ADDRESSES_REQUIRE_ALL,
                              PROP_METERED,
                              PROP_LLDP,
                              PROP_MDNS,
@@ -91,6 +94,7 @@ typedef struct {
     guint64     timestamp;
     int         autoconnect_ports;
     int         down_on_poweroff;
+    int         ip_ping_addresses_require_all;
     int         metered;
     gint32      autoconnect_priority;
     gint32      autoconnect_retries;
@@ -104,6 +108,8 @@ typedef struct {
     gint32      wait_activation_delay;
     guint32     mptcp_flags;
     guint32     gateway_ping_timeout;
+    NMValueStrv ip_ping_addresses;
+    guint32     ip_ping_timeout;
     bool        autoconnect;
     bool        read_only;
 } NMSettingConnectionPrivate;
@@ -1037,6 +1043,143 @@ nm_setting_connection_get_gateway_ping_timeout(NMSettingConnection *setting)
     return NM_SETTING_CONNECTION_GET_PRIVATE(setting)->gateway_ping_timeout;
 }
 
+GArray *
+_nm_setting_connection_get_ip_ping_addresses(NMSettingConnection *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), 0);
+
+    return NM_SETTING_CONNECTION_GET_PRIVATE(setting)->ip_ping_addresses.arr;
+}
+
+/**
+ * nm_setting_connection_get_ip_ping_address:
+ * @setting: the #NMSettingConnection
+ * @idx: the zero-based index of the ip-ping-addresses entry.
+ *
+ * Returns: the ip address string at index @idx or
+ *   %NULL if @idx is the number of ip-ping-addresses.
+ *
+ * Since: 1.52
+ **/
+const char *
+nm_setting_connection_get_ip_ping_address(NMSettingConnection *setting, guint32 idx)
+{
+    g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), NULL);
+
+    return nm_strvarray_get_idxnull_or_greturn(
+        NM_SETTING_CONNECTION_GET_PRIVATE(setting)->ip_ping_addresses.arr,
+        idx);
+}
+
+/**
+ * nm_setting_connection_add_ip_ping_address:
+ * @setting: the #NMSettingConnection
+ * @address: the IP address string to add
+ *
+ * Adds a new IP address string to the ip-ping-taget.
+ *
+ * Returns: %TRUE if the new IP address was added; %FALSE if the IP address
+ * was already present
+ *
+ * Since: 1.52
+ **/
+gboolean
+nm_setting_connection_add_ip_ping_address(NMSettingConnection *setting, const char *address)
+{
+    NMSettingConnectionPrivate *priv;
+
+    g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), FALSE);
+    g_return_val_if_fail(address, FALSE);
+
+    priv = NM_SETTING_CONNECTION_GET_PRIVATE(setting);
+
+    if (!nm_strvarray_ensure_and_add_unique(&priv->ip_ping_addresses.arr, address))
+        return FALSE;
+
+    _notify(setting, PROP_IP_PING_ADDRESSES);
+    return TRUE;
+}
+
+/**
+ * nm_setting_connection_remove_ip_ping_address:
+ * @setting: the #NMSettingConnection
+ * @idx: index number of the IP address
+ *
+ * Removes the IP address at index @idx.
+ *
+ * Since: 1.52
+ **/
+void
+nm_setting_connection_remove_ip_ping_address(NMSettingConnection *setting, guint32 idx)
+{
+    NMSettingConnectionPrivate *priv;
+
+    g_return_if_fail(NM_IS_SETTING_CONNECTION(setting));
+
+    priv = NM_SETTING_CONNECTION_GET_PRIVATE(setting);
+
+    g_return_if_fail(idx < nm_g_array_len(priv->ip_ping_addresses.arr));
+
+    nm_strvarray_remove_index(priv->ip_ping_addresses.arr, idx);
+    _notify(setting, PROP_IP_PING_ADDRESSES);
+}
+
+/**
+ * nm_setting_connection_clear_ip_ping_addresses:
+ * @setting: the #NMSettingConnection
+ *
+ * Removes all configured ip-ping-addresses.
+ *
+ * Since: 1.52
+ **/
+void
+nm_setting_connection_clear_ip_ping_addresses(NMSettingConnection *setting)
+{
+    NMSettingConnectionPrivate *priv;
+
+    g_return_if_fail(NM_IS_SETTING_CONNECTION(setting));
+
+    priv = NM_SETTING_CONNECTION_GET_PRIVATE(setting);
+
+    if (nm_strvarray_clear(&priv->ip_ping_addresses.arr))
+        _notify(setting, PROP_IP_PING_ADDRESSES);
+}
+
+/**
+ * nm_setting_connection_get_ip_ping_timeout:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns: the value contained in the #NMSettingConnection:ip-ping-timeout
+ * property.
+ *
+ * Since: 1.52
+ **/
+guint32
+nm_setting_connection_get_ip_ping_timeout(NMSettingConnection *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), 0);
+
+    return NM_SETTING_CONNECTION_GET_PRIVATE(setting)->ip_ping_timeout;
+}
+
+/**
+ * nm_setting_connection_get_ip_ping_addresses_require_all:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns the #NMSettingConnection:ip-ping-addresses-require-all property of the connection.
+ *
+ * Returns: whether all the ip ping addresses pass the connectivity check.
+ *
+ * Since: 1.52
+ **/
+NMTernary
+nm_setting_connection_get_ip_ping_addresses_require_all(NMSettingConnection *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), NM_TERNARY_DEFAULT);
+
+    return NM_SETTING_CONNECTION_GET_PRIVATE(setting)->ip_ping_addresses_require_all;
+}
+
 /**
  * nm_setting_connection_get_metered:
  * @setting: the #NMSettingConnection
@@ -1610,6 +1753,83 @@ after_interface_name:
         }
     }
 
+    if (priv->ip_ping_addresses.arr && priv->ip_ping_addresses.arr->len > 0) {
+        const char *const *strv = nm_strvarray_get_strv_notempty(priv->ip_ping_addresses.arr, NULL);
+        guint              i;
+
+        for (i = 0; i < priv->ip_ping_addresses.arr->len; i++) {
+            const char *address = strv[i];
+
+            int addr_family = _get_ip_address_family(address);
+
+            if (addr_family == AF_INET) {
+                if (_nm_connection_get_may_fail_by_address_family(connection, AF_INET6)) {
+                    g_set_error(
+                        error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("contains IPv4 address %s, and ipv4.may-fail property can not be 'true'"),
+                        address);
+                    g_prefix_error(error,
+                                   "%s.%s: ",
+                                   NM_SETTING_CONNECTION_SETTING_NAME,
+                                   NM_SETTING_CONNECTION_IP_PING_ADDRESSES);
+                    return FALSE;
+                }
+            } else if (addr_family == AF_INET6) {
+                if (_nm_connection_get_may_fail_by_address_family(connection, AF_INET6)) {
+                    g_set_error(
+                        error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("contains IPv6 address %s, and ipv6.may-fail property can not be 'true'"),
+                        address);
+                    g_prefix_error(error,
+                                   "%s.%s: ",
+                                   NM_SETTING_CONNECTION_SETTING_NAME,
+                                   NM_SETTING_CONNECTION_IP_PING_ADDRESSES);
+                    return FALSE;
+                }
+            } else {
+                g_set_error_literal(error,
+                                    NM_CONNECTION_ERROR,
+                                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                    _("has an invalid IP address"));
+                g_prefix_error(error,
+                               "%s.%s: ",
+                               NM_SETTING_CONNECTION_SETTING_NAME,
+                               NM_SETTING_CONNECTION_IP_PING_ADDRESSES);
+                return FALSE;
+            }
+        }
+    }
+
+    if (priv->ip_ping_addresses.arr && priv->ip_ping_addresses.arr->len > 0
+        && !priv->ip_ping_timeout) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("ip ping target cannot be set if there are no ip ping timeout configured"));
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_CONNECTION_SETTING_NAME,
+                       NM_SETTING_CONNECTION_IP_PING_ADDRESSES);
+        return FALSE;
+    }
+
+    if (priv->gateway_ping_timeout && priv->ip_ping_timeout) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("a gateway ping timeout is incompatible with '%s'"),
+                    NM_SETTING_CONNECTION_IP_PING_TIMEOUT);
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_CONNECTION_SETTING_NAME,
+                       NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT);
+        return FALSE;
+    }
+
     /* *** errors above here should be always fatal, below NORMALIZABLE_ERROR *** */
 
     if (!priv->uuid) {
@@ -1710,6 +1930,18 @@ after_interface_name:
 
     if (!_nm_setting_connection_verify_secondaries(priv->secondaries.arr, error))
         return NM_SETTING_VERIFY_NORMALIZABLE;
+
+    if (!_nm_setting_connection_verify_no_duplicate_addresses(priv->ip_ping_addresses.arr, error)) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("has duplicate addresses"));
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_CONNECTION_SETTING_NAME,
+                       NM_SETTING_CONNECTION_IP_PING_ADDRESSES);
+        return NM_SETTING_VERIFY_NORMALIZABLE;
+    }
 
     if (priv->read_only) {
         g_set_error_literal(error,
@@ -2048,6 +2280,29 @@ _nm_setting_connection_autoconnect_ports_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_
     autoconnect = g_variant_get_int32(value);
 
     g_object_set(setting, NM_SETTING_CONNECTION_AUTOCONNECT_PORTS, autoconnect, NULL);
+    return TRUE;
+}
+
+GVariant *
+_nm_setting_connection_ip_ping_addresses_require_all_to_dbus(
+    _NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+{
+    NMTernary ip_ping_addresses_require_all =
+        nm_setting_connection_get_autoconnect_ports(NM_SETTING_CONNECTION(setting));
+
+    return g_variant_new_int32(ip_ping_addresses_require_all);
+}
+
+gboolean
+_nm_setting_connection_ip_ping_addresses_require_all_from_dbus(
+    _NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+{
+    NMTernary ip_ping_addresses_require_all = g_variant_get_int32(value);
+
+    g_object_set(setting,
+                 NM_SETTING_CONNECTION_IP_PING_ADDRESSES_REQUIRE_ALL,
+                 ip_ping_addresses_require_all,
+                 NULL);
     return TRUE;
 }
 
@@ -2753,6 +3008,75 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                             NULL,
                                             NMSettingConnectionPrivate,
                                             secondaries);
+
+    /**
+     * NMSettingConnection:ip-ping-addresses:
+     *
+     * The property specifies a list of targets IP addresses for pinging.
+     * When multiple targets are set, NetworkManager will start multiple ping processes
+     * in parallel by sending the ICMP echo requests the specified IP addresses targets.
+     * The property connection.ip-ping-addresses can not be used if connection.ip-ping-timeout
+     * is not set. The ip-ping-timeout is used to delay the success of IP addressing until
+     * either the specified timeout (in seconds) is reached, or an target IP address replies
+     * to a ping.
+     *
+     * Since: 1.52
+     **/
+    _nm_setting_property_define_direct_strv(properties_override,
+                                            obj_properties,
+                                            NM_SETTING_CONNECTION_IP_PING_ADDRESSES,
+                                            PROP_IP_PING_ADDRESSES,
+                                            NM_SETTING_PARAM_FUZZY_IGNORE,
+                                            NULL,
+                                            NMSettingConnectionPrivate,
+                                            ip_ping_addresses);
+
+    /**
+     * NMSettingConnection:ip-ping-addresses-require-all:
+     *
+     * The property determines whether it is sufficed that any ping check succeeds on the
+     * list of targeted addresses or all ping checks need to succeed on the list of targeted
+     * addresses.
+     *
+     * Since: 1.52
+     **/
+    _nm_setting_property_define_direct_enum(
+        properties_override,
+        obj_properties,
+        NM_SETTING_CONNECTION_IP_PING_ADDRESSES_REQUIRE_ALL,
+        PROP_IP_PING_ADDRESSES_REQUIRE_ALL,
+        NM_TYPE_TERNARY,
+        NM_TERNARY_DEFAULT,
+        NM_SETTING_PARAM_FUZZY_IGNORE,
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(
+            G_VARIANT_TYPE_INT32,
+            .direct_type   = NM_VALUE_TYPE_ENUM,
+            .compare_fcn   = _nm_setting_property_compare_fcn_direct,
+            .to_dbus_fcn   = _nm_setting_connection_ip_ping_addresses_require_all_to_dbus,
+            .from_dbus_fcn = _nm_setting_connection_ip_ping_addresses_require_all_from_dbus, ),
+        NMSettingConnectionPrivate,
+        ip_ping_addresses_require_all);
+
+    /**
+     * NMSettingConnection:ip-ping-timeout:
+     *
+     * If greater than zero, delay success of IP addressing until either the specified
+     * timeout (in seconds) is reached, or an target IP address replies to a ping.
+     * The property connection.ip-ping-timeout is incompatible with the property
+     * connection.gateway-ping-timeout, you can not set these two properties at the same time.
+     *
+     * Since: 1.52
+     **/
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_CONNECTION_IP_PING_TIMEOUT,
+                                              PROP_IP_PING_TIMEOUT,
+                                              0,
+                                              600,
+                                              0,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingConnectionPrivate,
+                                              ip_ping_timeout);
 
     /**
      * NMSettingConnection:gateway-ping-timeout:

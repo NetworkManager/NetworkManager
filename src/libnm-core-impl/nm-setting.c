@@ -2735,6 +2735,7 @@ _nm_setting_property_compare_fcn_direct(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_
                         _nm_setting_connection_controller_to_dbus,
                         _nm_setting_connection_port_type_to_dbus,
                         _nm_setting_connection_autoconnect_ports_to_dbus,
+                        _nm_setting_connection_ip_ping_addresses_require_all_to_dbus,
                         _nm_setting_wireless_mac_denylist_to_dbus,
                         _nm_setting_wired_mac_denylist_to_dbus));
 

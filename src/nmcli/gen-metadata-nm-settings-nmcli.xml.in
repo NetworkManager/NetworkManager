@@ -702,6 +702,17 @@
                   nmcli-description="If greater than zero, delay success of IP addressing until either the timeout is reached, or an IP gateway replies to a ping."
                   format="integer"
                   values="0 - 600" />
+        <property name="ip-ping-timeout"
+                  nmcli-description="If greater than zero, delay success of IP addressing until either the specified timeout (in seconds) is reached, or an target IP address replies to a ping. The property connection.ip-ping-timeout is incompatible with the property connection.gateway-ping-timeout, you can not set these two properties at the same time."
+                  format="integer"
+                  values="0 - 600" />
+        <property name="ip-ping-addresses"
+                  nmcli-description="The property specifies a list of targets IP addresses for pinging. When multiple targets are set, NetworkManager will start multiple ping processes in parallel by sending the ICMP echo requests the specified IP addresses targets. The property connection.ip-ping-addresses can not be used if connection.ip-ping-timeout is not set. The ip-ping-timeout is used to delay the success of IP addressing until either the specified timeout (in seconds) is reached, or an target IP address replies to a ping."
+                  format="list of strings" />
+        <property name="ip-ping-addresses-require-all"
+                  nmcli-description="The property determines whether it is sufficed that any ping check succeeds on the list of targeted addresses or all ping checks need to succeed on the list of targeted addresses. The property defaults to false."
+                  format="boolean"
+                  values="true/yes/on, false/no/off" />
         <property name="metered"
                   nmcli-description="Whether the connection is metered. When updating this property on a currently activated connection, the change takes effect immediately."
                   format="ternary"
