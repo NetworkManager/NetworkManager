@@ -2031,4 +2031,11 @@ global:
 	nm_setting_gsm_get_initial_eps_refuse_eap;
 	nm_setting_gsm_get_initial_eps_refuse_mschap;
 	nm_setting_gsm_get_initial_eps_refuse_mschapv2;
+	nm_setting_connection_get_ip_ping_address;
+	nm_setting_connection_get_ip_ping_timeout;
+	nm_setting_connection_add_ip_ping_address;
+	nm_setting_connection_remove_ip_ping_address;
+	nm_setting_connection_clear_ip_ping_addresses;
+	nm_setting_connection_remove_ip_ping_address_by_value;
+	nm_setting_connection_get_ip_ping_addresses_require_all;
 } libnm_1_50_0;
