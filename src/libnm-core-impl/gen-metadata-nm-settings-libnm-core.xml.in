@@ -826,6 +826,18 @@
                   dbus-type="s"
                   gprop-type="gchararray"
                   />
+        <property name="ip-ping-addresses"
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
+        <property name="ip-ping-addresses-require-all"
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
+        <property name="ip-ping-timeout"
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="lldp"
                   dbus-type="i"
                   gprop-type="gint"

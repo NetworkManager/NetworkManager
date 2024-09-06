@@ -5661,6 +5661,39 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT,
         .property_type =                &_pt_gobject_int,
     ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_IP_PING_TIMEOUT,
+        .property_type =                &_pt_gobject_int,
+    ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_IP_PING_ADDRESSES,
+        .property_type =                &_pt_multilist,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+            PROPERTY_TYP_DATA_SUBTYPE (multilist,
+                .add_fcn =              MULTILIST_ADD_FCN             (NMSettingConnection, nm_setting_connection_add_ip_ping_address),
+                .remove_by_idx_fcn_u32 = MULTILIST_REMOVE_BY_IDX_FCN_U32 (NMSettingConnection, nm_setting_connection_remove_ip_ping_address),
+                .remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingConnection, nm_setting_connection_remove_ip_ping_address_by_value),
+                .clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingConnection, nm_setting_connection_clear_ip_ping_addresses),
+                .strsplit_with_spaces = TRUE,
+            ),
+            .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_IPV4_IPV6,
+        ),
+    ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_IP_PING_ADDRESSES_REQUIRE_ALL,
+        .property_type =                &_pt_gobject_enum,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+            PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
+                .value_infos =              ENUM_VALUE_INFOS(
+                    {
+                        .value = 0,
+                        .nick = "no",
+                    },
+                    {
+                        .value = 1,
+                        .nick = "yes",
+                    },
+                ),
+            ),
+        ),
+    ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_METERED,
         .describe_message =
             N_("Enter a value which indicates whether the connection is subject to a data\n"

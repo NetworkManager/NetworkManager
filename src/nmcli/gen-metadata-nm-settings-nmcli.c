@@ -158,6 +158,8 @@ get_multilist_format(const NMMetaPropertyInfo *prop_info)
             return g_strdup("list of IPv4 addresses");
         case NM_META_PROPERTY_TYPE_FORMAT_IPV6:
             return g_strdup("list of IPv6 addresses");
+        case NM_META_PROPERTY_TYPE_FORMAT_IPV4_IPV6:
+            return g_strdup("list of IPv4 or IPv6 addresses");
         default:
             prop_abort(prop_info, "unsupported item format (%d)", item_fmt);
             break;
@@ -198,6 +200,8 @@ get_property_format(const NMMetaPropertyInfo *prop_info)
         return g_strdup("IPv4 address");
     case NM_META_PROPERTY_TYPE_FORMAT_IPV6:
         return g_strdup("IPv6 address");
+    case NM_META_PROPERTY_TYPE_FORMAT_IPV4_IPV6:
+        return g_strdup("IPv4 or IPv6 address");
     case NM_META_PROPERTY_TYPE_FORMAT_BYTES:
         return g_strdup("bytes");
     case NM_META_PROPERTY_TYPE_FORMAT_PATH:

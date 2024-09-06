@@ -959,6 +959,40 @@ out:
     return FALSE;
 }
 
+gboolean
+_nm_setting_connection_verify_no_duplicate_addresses(GArray *addresses, GError **error)
+{
+    guint i, j;
+
+    if (addresses->len <= 1) {
+        return TRUE;
+    } else {
+        for (i = 0; i < addresses->len - 1; i++) {
+            for (j = i + 1; j < addresses->len; j++) {
+                if (nm_streq0(nm_g_array_index(addresses, const char *, i),
+                              nm_g_array_index(addresses, const char *, j)))
+                    return FALSE;
+            }
+        }
+    }
+
+    return TRUE;
+}
+
+int
+_get_ip_address_family(const char *ip_address)
+{
+    struct in_addr  ipv4_addr;
+    struct in6_addr ipv6_addr;
+
+    if (inet_pton(AF_INET, ip_address, &ipv4_addr))
+        return AF_INET;
+    else if (inet_pton(AF_INET6, ip_address, &ipv6_addr))
+        return AF_INET6;
+    else
+        return -1;
+}
+
 static gboolean
 _normalize_connection_secondaries(NMConnection *self)
 {
@@ -994,6 +1028,48 @@ _normalize_connection_secondaries(NMConnection *self)
     strv[j] = NULL;
 
     g_object_set(s_con, NM_SETTING_CONNECTION_SECONDARIES, strv, NULL);
+    return TRUE;
+}
+
+static gboolean
+_normalize_connection_ip_ping_addresses(NMConnection *self)
+{
+    NMSettingConnection *s_con = nm_connection_get_setting_connection(self);
+    GArray              *addresses;
+    gs_strfreev char   **strv = NULL;
+    guint                i, j, k;
+
+    nm_assert(s_con);
+
+    addresses = _nm_setting_connection_get_ip_ping_addresses(s_con);
+    if (nm_g_array_len(addresses) == 0)
+        return FALSE;
+
+    if (_nm_setting_connection_verify_no_duplicate_addresses(addresses, NULL))
+        return FALSE;
+
+    strv = nm_strvarray_get_strv_notempty_dup(addresses, NULL);
+
+    for (i = 0, j = 0; strv[i]; i++) {
+        gboolean found = FALSE;
+
+        for (k = 0; k < j; k++) {
+            if (nm_streq0(strv[i], strv[k])) {
+                found = TRUE;
+                break;
+            }
+        }
+
+        if (found) {
+            continue;
+        }
+
+        strv[j++] = strv[i];
+    }
+    strv[j] = NULL;
+
+    g_object_set(s_con, NM_SETTING_CONNECTION_IP_PING_ADDRESSES, strv, NULL);
+
     return TRUE;
 }
 
@@ -2049,6 +2125,7 @@ _connection_normalize(NMConnection *connection,
     was_modified |= _normalize_connection_type(connection);
     was_modified |= _normalize_connection_port_type(connection);
     was_modified |= _normalize_connection_secondaries(connection);
+    was_modified |= _normalize_connection_ip_ping_addresses(connection);
     was_modified |= _normalize_connection(connection);
     was_modified |= _normalize_required_settings(connection);
     was_modified |= _normalize_invalid_port_port_settings(connection);

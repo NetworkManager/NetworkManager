@@ -2036,4 +2036,11 @@ global:
 	nm_setting_ipvlan_mode_get_type;
 	nm_setting_ipvlan_new;
 	nm_setting_ip_config_get_dhcp_send_hostname_v2;
+	nm_setting_connection_get_ip_ping_address;
+	nm_setting_connection_get_ip_ping_timeout;
+	nm_setting_connection_add_ip_ping_address;
+	nm_setting_connection_remove_ip_ping_address;
+	nm_setting_connection_clear_ip_ping_addresses;
+	nm_setting_connection_remove_ip_ping_address_by_value;
+	nm_setting_connection_get_ip_ping_addresses_require_all;
 } libnm_1_50_0;
