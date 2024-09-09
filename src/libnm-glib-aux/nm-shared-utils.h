@@ -1297,6 +1297,12 @@ const char *nm_utils_buf_utf8safe_escape(gconstpointer           buf,
                                          char                  **to_free);
 char *
 nm_utils_buf_utf8safe_escape_cp(gconstpointer buf, gssize buflen, NMUtilsStrUtf8SafeFlags flags);
+
+const char *const *nm_utils_buf_utf8safe_escape_strv(const char *const      *strv,
+                                                     gssize                  strv_len,
+                                                     NMUtilsStrUtf8SafeFlags flags,
+                                                     char                 ***out_to_free);
+
 const char *
 nm_utils_buf_utf8safe_escape_bytes(GBytes *bytes, NMUtilsStrUtf8SafeFlags flags, char **to_free);
 gconstpointer nm_utils_buf_utf8safe_unescape(const char             *str,

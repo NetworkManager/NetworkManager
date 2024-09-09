@@ -162,6 +162,7 @@ get_property_ip(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec
     NMIPConfig        *self        = NM_IP_CONFIG(object);
     NMIPConfigPrivate *priv        = NM_IP_CONFIG_GET_PRIVATE(self);
     const int          addr_family = nm_ip_config_get_addr_family(self);
+    char             **to_free     = NULL;
     char               sbuf_addr[NM_INET_ADDRSTRLEN];
     const char *const *strv;
     guint              len;
@@ -193,7 +194,20 @@ get_property_ip(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec
         break;
     case PROP_IP_SEARCHES:
         strv = nm_l3_config_data_get_searches(priv->l3cd, addr_family, &len);
+        if (strv) {
+            strv = nm_utils_buf_utf8safe_escape_strv(
+                strv,
+                -1,
+                NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL
+                    | NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII,
+                &to_free);
+        }
+
         _value_set_variant_as(value, strv, len);
+
+        if (to_free) {
+            g_strfreev(to_free);
+        }
         break;
     case PROP_IP_DNS_PRIORITY:
         v_i = nm_l3_config_data_get_dns_priority_or_default(priv->l3cd, addr_family);
