@@ -4,10 +4,6 @@ Documentation=man:nm-cloud-setup(8)
 Before=network-online.target
 After=NetworkManager.service
 
-[Service]
-Type=oneshot
-ExecStart=@libexecdir@/nm-cloud-setup
-
 # The service restart gets triggered from dispatcher script
 # (pre-up and dhcp4-change actions), possibly ending up with many
 # restart requests at the same time (e.g. on initial daemon startup
@@ -18,6 +14,10 @@ ExecStart=@libexecdir@/nm-cloud-setup
 # be on the safe side.
 StartLimitIntervalSec=1
 StartLimitBurst=100
+
+[Service]
+Type=oneshot
+ExecStart=@libexecdir@/nm-cloud-setup
 
 #Environment=NM_CLOUD_SETUP_LOG=TRACE
 
