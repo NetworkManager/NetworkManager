@@ -3470,8 +3470,8 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
             g_steal_pointer(&self->dhcp_lease_x[1]);
 
         self->source          = src->source;
-        self->dhcp_lease_x[0] = nm_dhcp_lease_ref(self->dhcp_lease_x[0]);
-        self->dhcp_lease_x[1] = nm_dhcp_lease_ref(self->dhcp_lease_x[1]);
+        self->dhcp_lease_x[0] = nm_dhcp_lease_ref(src->dhcp_lease_x[0]);
+        self->dhcp_lease_x[1] = nm_dhcp_lease_ref(src->dhcp_lease_x[1]);
     }
     if (!src->allow_routes_without_address_4)
         self->allow_routes_without_address_4 = FALSE;
