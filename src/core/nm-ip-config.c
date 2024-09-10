@@ -197,7 +197,7 @@ get_property_ip(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec
         if (strv) {
             strv = nm_utils_buf_utf8safe_escape_strv(
                 strv,
-                -1,
+                len,
                 NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL
                     | NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII,
                 &to_free);
