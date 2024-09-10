@@ -15,6 +15,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Remove support for building with Autotools
 * Add IPVLAN interface support
 * Allow to manually configure the authentication of LTE's initial EPS Bearer.
+* Support automatically adding routes to DNS servers via the
+  ipv4.routed-dns and ipv6.routed-dns properties; when enabled, each
+  name server is reached only via the device that specifies it.
 
 =============================================
 NetworkManager-1.50
