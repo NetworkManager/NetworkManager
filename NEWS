@@ -19,6 +19,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   used to indicate that a host supports an IPv6-only mode and is
   willing to forgo obtaining an IPv4 address if the network provides
   IPv6 connectivity.
+* Support automatically adding routes to DNS servers via the
+  ipv4.routed-dns and ipv6.routed-dns properties; when enabled, each
+  name server is reached only via the device that specifies it.
 
 =============================================
 NetworkManager-1.50
