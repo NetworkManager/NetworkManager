@@ -12,6 +12,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   when no other IPv4 is set.
 * Remove support for building with Autotools
 * Add IPVLAN interface support
+* Support automatically adding routes to DNS servers, so that each
+  name server is reached only via the device that specifies it.
 
 =============================================
 NetworkManager-1.50
