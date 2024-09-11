@@ -35,9 +35,7 @@ usage() {
     echo "        the automatism to always launch a D-Bus session"
     echo "  --no-launch-dbus|-D: prevent launching a D-Bus session"
     echo "  --no-libtool: when running with valgrind, the script tries automatically to"
-    echo "        use libtool as necessary. This disables libtool usage" 
-    echo "  --make-first|-m: before running the test, make it (only works with autotools build)"
-    echo "  --no-make-first|-M: disable --make-first option"
+    echo "        use libtool as necessary. This disables libtool usage"
     echo "  --valgrind|-v: run under valgrind"
     echo "  --no-valgrind|-V: disable running under valgrind (overrides NMTST_USE_VALGRIND=1)"
     echo "  -d: set NMTST_DEBUG=d"
@@ -126,8 +124,6 @@ if [ "$CALLED_FROM_MAKE" == 1 ]; then
         NMTST_LAUNCH_DBUS=0
     fi
     TEST="$1"; shift
-    NMTST_MAKE_FIRST=0
-
     TEST_ARGV=("$@")
 else
     if [[ -z "${NMTST_USE_VALGRIND+x}" ]]; then
@@ -160,14 +156,6 @@ else
             ;;
         "--no-libtool")
             NMTST_LIBTOOL=()
-            shift
-            ;;
-        --make-first|-m)
-            NMTST_MAKE_FIRST=1
-            shift
-            ;;
-        --no-make-first|-M)
-            NMTST_MAKE_FIRST=0
             shift
             ;;
         "--valgrind"|-v)
@@ -234,14 +222,6 @@ if [ "$NMTST_SET_DEBUG" == 1 -a -z "${NMTST_DEBUG+x}" ]; then
 fi
 
 [ -n "$TEST" ] || die "Missing test name. Specify it on the command line."
-
-if _is_true "$NMTST_MAKE_FIRST" 0; then
-    git_dir="$(readlink -f "$(git rev-parse --show-toplevel)")"
-    rel_path="$(realpath --relative-to="$git_dir" -m "$TEST" 2>/dev/null)" || die "cannot resolve test-name \"$TEST\". Did you call the script properly?"
-    cd "$git_dir"
-    make -j5 "$rel_path" || die "make of $TEST failed ($git_dir / $rel_path)"
-    cd - 1>/dev/null
-fi
 
 [ -x "$TEST" ] || die "Test \"$TEST\" does not exist"
 TEST_PATH="$(readlink -f "$(dirname "$TEST")")"

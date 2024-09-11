@@ -4,11 +4,6 @@ set -ex
 
 cd /NetworkManager
 
-if [ -f ./config.log ] ; then
-    make -j 5 install
-else
-    meson install -C build
-fi
-
+meson install -C build
 systemctl daemon-reload
 systemctl restart NetworkManager.service

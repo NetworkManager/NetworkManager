@@ -256,14 +256,13 @@ maintained by the upstream maintainers. There you find builds of latest `main` a
 Unit Tests
 ----------
 
-We have plenty of unit tests. Run them with `make check` or
-`meson test -C build`.
+We have plenty of unit tests. Run them with `meson test -C build`.
 
 Note that some files in the source tree are both generated and commited
 to git. That means, certain changes to the code also affect these generated
 files. The unit test fail in that case, to indicate that the generated
 files no longer match what is commited to git.
-You can also automatically regenerate the files by running `NM_TEST_REGENERATE=1 make check`.
+You can also automatically regenerate the files by running `NM_TEST_REGENERATE=1 meson test`.
 Note that test-client requires working translation.
 See the [comment](src/tests/client/test-client.py#L14)
 for how to configure it.

@@ -2,10 +2,9 @@
 
 project(
   'NetworkManager', 'c',
-# NOTE: When incrementing version also:
-#  - add corresponding NM_VERSION_x_y_z macros in
-#    "src/libnm-core-public/nm-version-macros.h.in"
-#  - update number in configure.ac
+# NOTE: When incrementing version also add corresponding
+#       NM_VERSION_x_y_z macros in
+#       "src/libnm-core-public/nm-version-macros.h.in"
   version: '1.51.0',
   license: 'GPL2+',
   default_options: [

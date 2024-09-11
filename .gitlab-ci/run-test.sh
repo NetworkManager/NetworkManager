@@ -107,11 +107,11 @@ check_run_clean() {
 }
 
 if check_run_clean meson+gcc+docs+valgrind ; then
-    BUILD_TYPE=meson CC=gcc WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh
+    CC=gcc WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh
     mv INST/share/gtk-doc/html "$ARTIFACT_DIR/docs-html"
 fi
 
-check_run_clean meson+clang && BUILD_TYPE=meson CC=clang WITH_DOCS=0 contrib/scripts/nm-ci-run.sh
+check_run_clean meson+clang && CC=clang WITH_DOCS=0 contrib/scripts/nm-ci-run.sh
 check_run_clean rpm+meson && test $IS_FEDORA = 1 && ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -w meson
 
 if check_run_clean tarball && [ "$NM_BUILD_TARBALL" = 1 ]; then
@@ -121,7 +121,7 @@ if check_run_clean tarball && [ "$NM_BUILD_TARBALL" = 1 ]; then
     do_clean
 fi
 
-check_run_clean tarball+meson && BUILD_TYPE=meson CC=gcc WITH_DOCS=1 CONFIGURE_ONLY=1 contrib/scripts/nm-ci-run.sh
+check_run_clean tarball+meson && CC=gcc WITH_DOCS=1 CONFIGURE_ONLY=1 contrib/scripts/nm-ci-run.sh
 
 ###############################################################################
 

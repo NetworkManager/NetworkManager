@@ -32,9 +32,6 @@ install_ignore_missing() {
 
 install \
     \
-    autoconf \
-    automake \
-    autopoint \
     clang \
     dbus \
     dbus-x11 \
@@ -67,7 +64,6 @@ install \
     libtool \
     libudev-dev \
     locales \
-    make \
     meson \
     mobile-broadband-provider-info \
     pkg-config \

@@ -219,7 +219,7 @@ check-tree:
     - date '+%Y%m%d-%H%M%S'; git ls-files -z -- 'po/*.po' | xargs -0 -n1 msgfmt -vc
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-code-format.sh -n
     - date '+%Y%m%d-%H%M%S'; ci-fairy generate-template && git diff --exit-code
-    - date '+%Y%m%d-%H%M%S'; ./autogen.sh --disable-autotools-deprecation && [ "$(LANG=C make -C po update-po 2>&1 1>/dev/null | grep -c 'warning:')" = 0 ]
+    - date '+%Y%m%d-%H%M%S'; meson setup build && [ "$(LANG=C ninja -C build NetworkManager-update-po 2>&1 1>/dev/null | grep -c 'warning:')" = 0 ]
 
 pages:
   stage: deploy
@@ -261,7 +261,7 @@ coverity:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $SCHEDULED_PIPELINE_NAME == "weekly"
   script:
     - dnf install -y curl
-    - BUILD_TYPE=meson CC=gcc CONFIGURE_ONLY=1 contrib/scripts/nm-ci-run.sh
+    - CC=gcc CONFIGURE_ONLY=1 contrib/scripts/nm-ci-run.sh
     - cd build
     - ../.gitlab-ci/coverity.sh download
     - cov-analysis-linux64-*/bin/cov-build --dir cov-int ninja

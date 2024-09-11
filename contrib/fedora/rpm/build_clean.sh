@@ -18,11 +18,9 @@ usage() {
     echo "  -f|--force: force build, even if working directory is not clean and has local modifications"
     echo "  -c|--clean: run \`git-clean -fdx :/\` before build"
     echo "  -S|--srpm: only build the SRPM"
-    echo "  -g|--git: create tarball from current git HEAD (skips make dist)"
+    echo "  -g|--git: create tarball from current git HEAD (skips meson dist)"
     echo "  -Q|--quick: only create the distribution tarball, without running checks"
-    echo "  -N|--no-dist: skip creating the source tarball if you already did \`make dist\`"
-    echo "  -m|--meson: (default) use meson to create the source tarball"
-    echo "  -A|--autotools: use autotools to create the source tarball"
+    echo "  -N|--no-dist: skip creating the source tarball if you already did \`meson dist\`"
     echo "  -w|--with \$OPTION: pass --with \$OPTION to rpmbuild. For example --with debug"
     echo "  -W|--without \$OPTION: pass --without \$OPTION to rpmbuild. For example --without debug"
     echo "  -s|--snapshot TEXT: use TEXT as the snapshot version for the new package (overwrites \$NM_BUILD_SNAPSHOT environment)"
@@ -98,14 +96,6 @@ while [[ $# -gt 0 ]]; do
             NO_DIST=1
             IGNORE_DIRTY=1
             SOURCE_FROM_GIT=1
-            ;;
-        -m|--meson)
-            [ "$USE_AUTOTOOLS" = 1 ] && die "conflicting argument: $A when building with autotools is requested";
-            USE_MESON=1
-            ;;
-        -A|--autotools)
-            [ "$USE_MESON" = 1 ] && die "conflicting argument: $A when building with meson is explicitly requested";
-            USE_AUTOTOOLS=1
             ;;
         -Q|--quick)
             QUICK=1
@@ -203,94 +193,46 @@ get_version_meson() {
 }
 
 if [[ $NO_DIST != 1 ]]; then
-    if [[ $USE_AUTOTOOLS != 1 ]]; then
-            meson setup "$GITDIR/build" \
-                --prefix=/usr \
-                --bindir=/usr/bin \
-                --sbindir=/usr/sbin \
-                --sysconfdir=/etc \
-                --datadir=/usr/share \
-                --includedir=/usr/include \
-                --libdir=/usr/lib \
-                --libexecdir=/usr/libexec \
-                --localstatedir=/var \
-                --sharedstatedir=/var/lib \
-                --mandir=/usr/share/man \
-                --infodir=/usr/share/info \
-                -Ddocs=true \
-                -Dintrospection=true \
-                -Difcfg_rh=true \
-                -Difupdown=true \
-                -Dconfig_logging_backend_default=syslog \
-                -Dconfig_wifi_backend_default=wpa_supplicant \
-                -Dlibaudit=yes-disabled-by-default \
-                -Dpolkit=true \
-                -Dnm_cloud_setup=true \
-                -Ddhclient=/usr/sbin/dhclient \
-                -Dconfig_dhcp_default=internal \
-                -Dconfig_dns_rc_manager_default=auto \
-                -Diptables=/usr/sbin/iptables \
-                -Dnft=/usr/bin/nft \
-                || die "Error meson setup"
+    meson setup "$GITDIR/build" \
+        --prefix=/usr \
+        --bindir=/usr/bin \
+        --sbindir=/usr/sbin \
+        --sysconfdir=/etc \
+        --datadir=/usr/share \
+        --includedir=/usr/include \
+        --libdir=/usr/lib \
+        --libexecdir=/usr/libexec \
+        --localstatedir=/var \
+        --sharedstatedir=/var/lib \
+        --mandir=/usr/share/man \
+        --infodir=/usr/share/info \
+        -Ddocs=true \
+        -Dintrospection=true \
+        -Difcfg_rh=true \
+        -Difupdown=true \
+        -Dconfig_logging_backend_default=syslog \
+        -Dconfig_wifi_backend_default=wpa_supplicant \
+        -Dlibaudit=yes-disabled-by-default \
+        -Dpolkit=true \
+        -Dnm_cloud_setup=true \
+        -Ddhclient=/usr/sbin/dhclient \
+        -Dconfig_dhcp_default=internal \
+        -Dconfig_dns_rc_manager_default=auto \
+        -Diptables=/usr/sbin/iptables \
+        -Dnft=/usr/bin/nft \
+        || die "Error meson setup"
 
-            VERSION="${VERSION:-$(get_version_meson || die "Could not read $VERSION")}"
-            if [[ $QUICK == 1 ]]; then
-                meson dist --allow-dirty -C "$GITDIR/build/" --no-tests || die "Error meson dist"
-            else
-                meson dist --allow-dirty -C "$GITDIR/build/" || die "Error meson dist with tests"
-            fi
-            export SOURCE="$(ls -1 "$GITDIR/build/meson-dist/NetworkManager-${VERSION}.tar.xz" 2>/dev/null | head -n1)"
-    else
-        ./autogen.sh \
-            --with-runstatedir=/run \
-            --program-prefix= \
-            --prefix=/usr \
-            --exec-prefix=/usr \
-            --bindir=/usr/bin \
-            --sbindir=/usr/sbin \
-            --sysconfdir=/etc \
-            --datadir=/usr/share \
-            --includedir=/usr/include \
-            --libdir=/usr/lib \
-            --libexecdir=/usr/libexec \
-            --localstatedir=/var \
-            --sharedstatedir=/var/lib \
-            --mandir=/usr/share/man \
-            --infodir=/usr/share/info \
-            \
-            --disable-dependency-tracking \
-            --enable-gtk-doc \
-            --enable-introspection \
-            --enable-ifcfg-rh \
-            --enable-ifupdown \
-            --with-config-logging-backend-default=syslog \
-            --with-config-wifi-backend-default=wpa_supplicant \
-            --with-libaudit=yes-disabled-by-default \
-            --enable-polkit=yes \
-            --with-nm-cloud-setup=yes \
-            --with-dhclient=yes \
-            --with-config-dhcp-default=internal \
-            --with-config-dns-rc-manager-default=auto \
-            \
-            --with-iptables=/usr/sbin/iptables \
-            --with-nft=/usr/sbin/nft \
-            --disable-autotools-deprecation \
-            \
-            || die "Error autogen.sh"
-        if [[ $QUICK == 1 ]]; then
-            make dist -j 7 || die "Error make dist"
-        else
-            make distcheck -j 7 || die "Error make distcheck"
-        fi
+    VERSION="${VERSION:-$(get_version_meson || die "Could not read $VERSION")}"
+    TEST_FLAG=""
+    if [[ $QUICK == 1 ]]; then
+        TEST_FLAG="--no-tests"
     fi
+    meson dist --allow-dirty -C "$GITDIR/build/" $TEST_FLAG || die "Error meson dist"
+    export SOURCE="$(ls -1 "$GITDIR/build/meson-dist/NetworkManager-${VERSION}.tar.xz" 2>/dev/null | head -n1)"
 fi
 
 if [[ "$ADD_WITH_TEST" == 1 ]]; then
     WITH_LIST=("${WITH_LIST[@]}" "--with" "test")
-fi
-
-if [[ "$USE_AUTOTOOLS" != 1 ]]; then
-    WITH_LIST=("${WITH_LIST[@]}" "--with" "meson")
 fi
 
 export SOURCE_FROM_GIT

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Run configure/meson for NetworkManager in a way similar to how an RPM build does it.
-# The effect is, that if you do `make install`, that it will overwrite the files that
+# The effect is, that if you do `meson install`, that it will overwrite the files that
 # you'd usually get by installing the NetworkManager RPM. Also, it means you can afterwards
 # systemctl restart NetworkManager.
 
@@ -30,10 +30,10 @@ vars_with_vals() {
 }
 
 usage() {
-    echo "$ $0 [-m|--meson <builddir>] [-a|--autotools] [-s|--show] [-B|--no-build] [-h|--help]"
+    echo "$ $0 [-m|--meson <builddir>] [-s|--show] [-B|--no-build] [-h|--help]"
     echo ""
     echo "Configure NetworkManager in a way that is similar to when building"
-    echo "RPMs of NetworkManager for Fedora/RHEL. The effect is that \`make install\`"
+    echo "RPMs of NetworkManager for Fedora/RHEL. The effect is that \`meson install\`"
     echo "will overwrite the files in /usr that you installed via the package management"
     echo "systemd. Also, subsequent \`systemctl restart NetworkManager\` works."
     echo "You don't want to do this on your real system, because it messes up your"
@@ -44,14 +44,7 @@ usage() {
 }
 
 get_version() {
-    local major minor micro
-    local F="./configure.ac"
-
-    vars="$(sed -n 's/^m4_define(\[nm_\(major\|minor\|micro\)_version\], *\[\([0-9]\+\)\]) *$/local \1='\''\2'\''/p' "$F" 2>/dev/null)"
-    eval "$vars"
-
-    [[ -n "$major" && -n "$minor" && "$micro" ]] || return 1
-    echo "$major.$minor.$micro"
+    grep -E -m1 '^\s+version:' meson.build | cut -d"'" -f2
 }
 
 bool() {
@@ -149,7 +142,6 @@ P_NOBUILD="${NOBUILD-0}"
 
 P_DEBUG="${DEBUG-1}"
 
-P_BUILD_TYPE="${BUILD_TYPE-meson}"
 P_MESON_BUILDDIR="${MESON_BUILDDIR-./build}"
 [ -n "$MESON_BUILDDIR" ] && P_MESON_BUILDDIR_FORCE=1
 P_CFLAGS="${CFLAGS-}"
@@ -313,13 +305,9 @@ while [[ $# -gt 0 ]] ; do
     shift
     case "$A" in
         --meson|-m)
-            P_BUILD_TYPE=meson
             P_MESON_BUILDDIR="$1"
             P_MESON_BUILDDIR_FORCE=1
             shift
-            ;;
-        --autotools|-a)
-            P_BUILD_TYPE=autotools
             ;;
         -s|--show)
             SHOW_CMD=show_cmd
@@ -338,7 +326,7 @@ while [[ $# -gt 0 ]] ; do
     esac
 done
 
-if [ "$P_BUILD_TYPE" = meson -a "$P_MESON_BUILDDIR_FORCE" != 1 ]; then
+if [ "$P_MESON_BUILDDIR_FORCE" != 1 ]; then
     if [ -d "$P_MESON_BUILDDIR" ]; then
         echo "Build directory '$P_MESON_BUILDDIR' chosen by default, but it exists and will be overwritten." \
              "If you really want that, pass '--meson \"$P_MESON_BUILDDIR\"'." >&2
@@ -348,181 +336,89 @@ fi
 
 vars_with_vals
 
-if [ "$P_BUILD_TYPE" == meson ] ; then
-    MESON_RECONFIGURE=
-    if test -d "$P_MESON_BUILDDIR" ; then
-        MESON_RECONFIGURE="--reconfigure"
-    fi
-
-    $SHOW_CMD \
-    env \
-    CC="$P_CC" \
-    CFLAGS="$P_CFLAGS" \
-    meson setup\
-        $MESON_RECONFIGURE \
-        --buildtype=plain \
-        --prefix="$D_PREFIX" \
-        --libdir="$D_LIBDIR" \
-        --libexecdir="$D_LIBEXECDIR" \
-        --bindir="$D_BINDIR" \
-        --sbindir="$D_SBINDIR" \
-        --includedir="$D_INCLUDEDIR" \
-        --datadir="$D_DATADIR" \
-        --mandir="$D_MANDIR" \
-        --infodir="$D_INFODIR" \
-        --localedir="$D_DATADIR"/locale \
-        --sysconfdir="$D_SYSCONFDIR" \
-        --localstatedir="$D_LOCALSTATEDIR" \
-        --sharedstatedir="$D_SHAREDSTATEDIR" \
-        --wrap-mode=nodownload \
-        --auto-features=enabled \
-        -Db_ndebug=false \
-        --warnlevel 2 \
-        $(args_enable "$P_TEST" --werror) \
-        -Dnft="${D_SBINDIR}/nft" \
-        -Diptables="${D_SBINDIR}/iptables" \
-        -Ddhclient="${D_SBINDIR}/dhclient" \
-        -Ddhcpcanon=no \
-        -Ddhcpcd=no \
-        -Dconfig_dhcp_default="$P_DHCP_DEFAULT" \
-        "-Dcrypto=$P_CRYPTO" \
-        $(args_enable "$P_DEBUG"                    -Dmore_logging=true  -Dmore_asserts=10000) \
-        $(args_enable "$(bool_not_true "$P_DEBUG")" -Dmore_logging=false -Dmore_asserts=0    ) \
-        -Dld_gc=true \
-        -Db_lto="$(bool_true "$P_LTO")" \
-        -Dlibaudit=yes-disabled-by-default \
-        -Dmodem_manager="$(bool_true "$P_MODEM_MANAGER_1")" \
-        $(args_enable "$P_WIFI"                    -Dwifi=true  -Dwext="$(bool_true "$P_FEDORA")") \
-        $(args_enable "$(bool_not_true "$P_WIFI")" -Dwifi=false                                  ) \
-        -Diwd="$(bool_true "$P_IWD")" \
-        -Dbluez5_dun="$(bool_true "$P_BLUETOOTH")" \
-        -Dnmtui="$(bool_true "$P_NMTUI")" \
-        -Dnm_cloud_setup="$(bool_true "$P_NM_CLOUD_SETUP")" \
-        -Dvapi=true \
-        -Dintrospection=true \
-        -Ddocs="$(bool_true "$P_REGEN_DOCS")" \
-        -Dteamdctl="$(bool_true "$P_TEAM")" \
-        -Dovs="$(bool_true "$P_OVS")" \
-        -Dselinux=true \
-        -Dpolkit=true  \
-        -Dconfig_auth_polkit_default=true \
-        -Dmodify_system=true \
-        -Dconcheck=true \
-        -Dlibpsl="$(bool_true "$P_FEDORA")" \
-        -Debpf="$(bool_true "$P_EBPF_ENABLED")" \
-        -Dsession_tracking=systemd \
-        -Dsuspend_resume=systemd \
-        -Dsystemdsystemunitdir=/usr/lib/systemd/system \
-        -Dsystem_ca_path=/etc/pki/tls/cert.pem \
-        -Ddbus_conf_dir="$P_DBUS_SYS_DIR" \
-        -Dtests=yes \
-        -Dvalgrind=no \
-        -Difcfg_rh=true \
-        -Difupdown=false \
-        $(args_enable "$P_PPP"                    -Dppp=true  -Dpppd="$D_SBINDIR/pppd" -Dpppd_plugin_dir="$D_LIBDIR/pppd/$P_PPP_VERSION") \
-        $(args_enable "$(bool_not_true "$P_PPP")" -Dppp=false                                                                           ) \
-        -Dfirewalld_zone="$(bool_true "$P_FIREWALLD_ZONE}")" \
-        -Ddist_version="$P_VERSION-$P_RELEASE" \
-        $(args_enable "$P_CONFIG_PLUGINS_DEFAULT_IFCFG_RH" -Dconfig_plugins_default=ifcfg-rh) \
-        -Dresolvconf=no \
-        -Dnetconfig=no \
-        -Dconfig_dns_rc_manager_default="$P_DNS_RC_MANAGER_DEFAULT" \
-        -Dconfig_logging_backend_default="$P_LOGGING_BACKEND_DEFAULT" \
-        \
-        "$P_MESON_BUILDDIR" \
-        ;
-else
-    if ! test -x ./configure ; then
-        if [ -z "$SHOW_CMD" ]; then
-            NOCONFIGURE=yes ./autogen.sh
-        fi
-    fi
-    $SHOW_CMD \
-    ./configure \
-        --build=x86_64-redhat-linux-gnu \
-        --host=x86_64-redhat-linux-gnu \
-        --program-prefix= \
-        --prefix="$D_PREFIX" \
-        --exec-prefix=/usr \
-        --bindir="$D_BINDIR" \
-        --sbindir="$D_SBINDIR" \
-        --sysconfdir="$D_SYSCONFDIR" \
-        --datadir="$D_DATADIR" \
-        --includedir="$D_INCLUDEDIR" \
-        --libdir="$D_LIBDIR" \
-        --libexecdir="$D_LIBEXECDIR" \
-        --localstatedir="$D_LOCALSTATEDIR" \
-        --sharedstatedir="$D_SHAREDSTATEDIR" \
-        --mandir="$D_MANDIR" \
-        --infodir="$D_INFODIR" \
-        \
-        CC="$P_CC" \
-        CFLAGS="$P_CFLAGS" \
-        \
-        --enable-dependency-tracking=yes \
-        \
-        --with-runstatedir="$D_RUNDIR" \
-        --enable-silent-rules="$(bool_yes "$P_SILENT_RULES")" \
-        --enable-static=no \
-        --with-nft="${D_SBINDIR}/nft" \
-        --with-iptables="${D_SBINDIR}/iptables" \
-        --with-dhclient="${D_SBINDIR}/dhclient" \
-        --with-dhcpcd=no \
-        --with-dhcpcanon=no \
-        --with-config-dhcp-default="$P_DHCP_DEFAULT" \
-        --with-crypto="$P_CRYPTO" \
-        $(args_enable "$P_SANITIZER"                    --with-address-sanitizer=exec --enable-undefined-sanitizer="$( (bool "$P_FEDORA" || test "$P_RHEL" -ge 8) && echo yes || echo no)" ) \
-        $(args_enable "$(bool_not_true "$P_SANITIZER")" --with-address-sanitizer=no   --enable-undefined-sanitizer=no                                                                            ) \
-        $(args_enable "$P_DEBUG"                    --enable-more-logging=yes --with-more-asserts=10000) \
-        $(args_enable "$(bool_not_true "$P_DEBUG")" --enable-more-logging=no  --with-more-asserts=0    ) \
-        --enable-ld-gc=yes \
-        --enable-lto="$(bool_yes "$P_LTO")" \
-        --with-libaudit=yes-disabled-by-default \
-        --with-modem-manager-1="$(bool_yes "$P_MODEM_MANAGER_1")" \
-        $(args_enable "$P_WIFI"                    --enable-wifi=yes --with-wext="$(bool_yes "$P_FEDORA")") \
-        $(args_enable "$(bool_not_true "$P_WIFI")" --enable-wifi=no                                       ) \
-        --with-iwd="$(bool_yes "$P_IWD")" \
-        --enable-bluez5-dun="$(bool_yes "$P_BLUETOOTH")" \
-        --with-nmtui="$(bool_yes "$P_NMTUI")" \
-        --with-nm-cloud-setup="$(bool_yes "$P_NM_CLOUD_SETUP")" \
-        --enable-vala=yes \
-        --enable-introspection=yes \
-        --enable-gtk-doc="$(bool_yes "$P_REGEN_DOCS")" \
-        --enable-teamdctl="$(bool_yes "$P_TEAM")" \
-        --enable-ovs="$(bool_yes "$P_OVS")" \
-        --with-selinux=yes \
-        --enable-polkit=yes \
-        --enable-modify-system=yes \
-        --enable-concheck=yes \
-        --with-libpsl="$(bool_yes "$P_FEDORA")" \
-        --with-ebpf="$(bool_yes "$P_EBPF_ENABLED")" \
-        --with-session-tracking=systemd \
-        --with-suspend-resume=systemd \
-        --with-systemdsystemunitdir=/usr/lib/systemd/system \
-        --with-system-ca-path=/etc/pki/tls/cert.pem \
-        --with-dbus-sys-dir="$P_DBUS_SYS_DIR" \
-        --with-tests=yes \
-        --enable-more-warnings="$(bool "$P_TEST" && echo error || echo yes)" \
-        --with-valgrind=no \
-        --enable-ifcfg-rh=yes \
-        --enable-ifupdown=no \
-        $(args_enable "$P_PPP"                    --enable-ppp=yes --with-pppd="$D_SBINDIR/pppd" --with-pppd-plugin-dir="$D_LIBDIR/pppd/$P_PPP_VERSION") \
-        $(args_enable "$(bool_not_true "$P_PPP")" --enable-ppp=no                                                                                      ) \
-        --enable-firewalld-zone="$(bool_yes "$P_FIREWALLD_ZONE")" \
-        --with-dist-version="$P_VERSION-$P_RELEASE" \
-        $(args_enable "$P_CONFIG_PLUGINS_DEFAULT_IFCFG_RH" --with-config-plugins-default=ifcfg-rh) \
-        --with-resolvconf=no \
-        --with-netconfig=no \
-        --with-config-dns-rc-manager-default="$P_DNS_RC_MANAGER_DEFAULT" \
-        --with-config-logging-backend-default="$P_LOGGING_BACKEND_DEFAULT" \
-        --disable-autotools-deprecation \
-        ;
+MESON_RECONFIGURE=
+if test -d "$P_MESON_BUILDDIR" ; then
+    MESON_RECONFIGURE="--reconfigure"
 fi
 
+$SHOW_CMD \
+env \
+CC="$P_CC" \
+CFLAGS="$P_CFLAGS" \
+meson setup\
+    $MESON_RECONFIGURE \
+    --buildtype=plain \
+    --prefix="$D_PREFIX" \
+    --libdir="$D_LIBDIR" \
+    --libexecdir="$D_LIBEXECDIR" \
+    --bindir="$D_BINDIR" \
+    --sbindir="$D_SBINDIR" \
+    --includedir="$D_INCLUDEDIR" \
+    --datadir="$D_DATADIR" \
+    --mandir="$D_MANDIR" \
+    --infodir="$D_INFODIR" \
+    --localedir="$D_DATADIR"/locale \
+    --sysconfdir="$D_SYSCONFDIR" \
+    --localstatedir="$D_LOCALSTATEDIR" \
+    --sharedstatedir="$D_SHAREDSTATEDIR" \
+    --wrap-mode=nodownload \
+    --auto-features=enabled \
+    -Db_ndebug=false \
+    --warnlevel 2 \
+    $(args_enable "$P_TEST" --werror) \
+    -Dnft="${D_SBINDIR}/nft" \
+    -Diptables="${D_SBINDIR}/iptables" \
+    -Ddhclient="${D_SBINDIR}/dhclient" \
+    -Ddhcpcanon=no \
+    -Ddhcpcd=no \
+    -Dconfig_dhcp_default="$P_DHCP_DEFAULT" \
+    "-Dcrypto=$P_CRYPTO" \
+    $(args_enable "$P_DEBUG"                    -Dmore_logging=true  -Dmore_asserts=10000) \
+    $(args_enable "$(bool_not_true "$P_DEBUG")" -Dmore_logging=false -Dmore_asserts=0    ) \
+    -Dld_gc=true \
+    -Db_lto="$(bool_true "$P_LTO")" \
+    -Dlibaudit=yes-disabled-by-default \
+    -Dmodem_manager="$(bool_true "$P_MODEM_MANAGER_1")" \
+    $(args_enable "$P_WIFI"                    -Dwifi=true  -Dwext="$(bool_true "$P_FEDORA")") \
+    $(args_enable "$(bool_not_true "$P_WIFI")" -Dwifi=false                                  ) \
+    -Diwd="$(bool_true "$P_IWD")" \
+    -Dbluez5_dun="$(bool_true "$P_BLUETOOTH")" \
+    -Dnmtui="$(bool_true "$P_NMTUI")" \
+    -Dnm_cloud_setup="$(bool_true "$P_NM_CLOUD_SETUP")" \
+    -Dvapi=true \
+    -Dintrospection=true \
+    -Ddocs="$(bool_true "$P_REGEN_DOCS")" \
+    -Dteamdctl="$(bool_true "$P_TEAM")" \
+    -Dovs="$(bool_true "$P_OVS")" \
+    -Dselinux=true \
+    -Dpolkit=true  \
+    -Dconfig_auth_polkit_default=true \
+    -Dmodify_system=true \
+    -Dconcheck=true \
+    -Dlibpsl="$(bool_true "$P_FEDORA")" \
+    -Debpf="$(bool_true "$P_EBPF_ENABLED")" \
+    -Dsession_tracking=systemd \
+    -Dsuspend_resume=systemd \
+    -Dsystemdsystemunitdir=/usr/lib/systemd/system \
+    -Dsystem_ca_path=/etc/pki/tls/cert.pem \
+    -Ddbus_conf_dir="$P_DBUS_SYS_DIR" \
+    -Dtests=yes \
+    -Dvalgrind=no \
+    -Difcfg_rh=true \
+    -Difupdown=false \
+    $(args_enable "$P_PPP"                    -Dppp=true  -Dpppd="$D_SBINDIR/pppd" -Dpppd_plugin_dir="$D_LIBDIR/pppd/$P_PPP_VERSION") \
+    $(args_enable "$(bool_not_true "$P_PPP")" -Dppp=false                                                                           ) \
+    -Dfirewalld_zone="$(bool_true "$P_FIREWALLD_ZONE}")" \
+    -Ddist_version="$P_VERSION-$P_RELEASE" \
+    $(args_enable "$P_CONFIG_PLUGINS_DEFAULT_IFCFG_RH" -Dconfig_plugins_default=ifcfg-rh) \
+    -Dresolvconf=no \
+    -Dnetconfig=no \
+    -Dconfig_dns_rc_manager_default="$P_DNS_RC_MANAGER_DEFAULT" \
+    -Dconfig_logging_backend_default="$P_LOGGING_BACKEND_DEFAULT" \
+    \
+    "$P_MESON_BUILDDIR" \
+    ;
+
 if ! bool "$P_NOBUILD" ; then
-    if [ "$P_BUILD_TYPE" == meson ] ; then
-        $SHOW_CMD ninja -C "$P_MESON_BUILDDIR"
-    else
-        $SHOW_CMD make -j 10
-    fi
+    $SHOW_CMD ninja -C "$P_MESON_BUILDDIR"
 fi

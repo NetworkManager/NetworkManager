@@ -19,17 +19,13 @@ from __future__ import print_function
 #
 # For that, you'd setup your system correctly (see SETUP below) and then simply:
 #
-#  $ NM_TEST_REGENERATE=1 make check-local-tests-client
-#    # Or `NM_TEST_REGENERATE=1 make check -j 10`
+#  $ meson -Ddocs=true --prefix=/tmp/nm1 build
+#  $ ninja -C build
+#  $ ninja -C build install
+#  $ NM_TEST_REGENERATE=1 ninja -C build test
 #  $ git diff ... ; git add ...
 #    # The previous step regenerated the expected output. Review the changes
 #    # and consider whether they are correct. Then commit the changes to git.
-#
-#   With meson, you can do
-#     $ meson -Ddocs=true --prefix=/tmp/nm1 build
-#     $ ninja -C build
-#     $ ninja -C build install
-#     $ NM_TEST_REGENERATE=1 ninja -C build test
 #
 # Beware that you need to install the sources, and beware to choose a prefix that doesn't
 # mess up your system (see SETUP below).
@@ -52,7 +48,7 @@ from __future__ import print_function
 #    # Ensure that the built nmcli has Polish locale working. If not,
 #    # you probably need to first `make install` the application at the
 #    # correct prefix. Take care to configure the build with the desired
-#    # prefix, like `./configure --prefix=/opt/tmp`. Usually, you want to avoid
+#    # prefix, like `meson setup build --prefix=/opt/tmp`. Usually, you want to avoid
 #    # using /usr as prefix, because that might overwrite files from your
 #    # package management system.
 #

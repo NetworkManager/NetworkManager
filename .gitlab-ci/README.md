@@ -19,8 +19,8 @@ Regenerate the yml by running `ci-fairy generate-template`.
 There are also tests for checking that the yml is correct:
 
 1) run `tools/check-gitlab-ci.sh`
-2) run `make check-local-gitlab-ci`, which runs 1). This also
-  runs as part of `make check`.
+2) run `meson test check-local-gitlab-ci`, which runs 1). This also
+  runs as part of `meson test`.
 
 In both cases, the test is skipped if `ci-fairy` is not in the path.
 Install the correct `ci-fairy` version.

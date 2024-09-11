@@ -94,9 +94,9 @@ do_command() {
 }
 
 parse_version() {
-    local MAJ="$(sed -n '1,20 s/^m4_define(\[nm_major_version\], \[\([0-9]\+\)\])$/\1/p' ./configure.ac)"
-    local MIN="$(sed -n '1,20 s/^m4_define(\[nm_minor_version\], \[\([0-9]\+\)\])$/\1/p' ./configure.ac)"
-    local MIC="$(sed -n '1,20 s/^m4_define(\[nm_micro_version\], \[\([0-9]\+\)\])$/\1/p' ./configure.ac)"
+    local VERSION=$(grep -E -m1 '^\s+version:' "$GITDIR/meson.build" \
+                    | cut -d"'" -f2 \
+                    | sed 's/\./ /g')
 
     re='^(0|[1-9][0-9]*) (0|[1-9][0-9]*) (0|[1-9][0-9]*)$'
     [[ "$MAJ $MIN $MIC" =~ $re ]] || return 1
@@ -144,23 +144,10 @@ check_gitlab_pipeline() {
     return 0
 }
 
-set_version_number_autotools() {
-    sed -i \
-        -e '1,20 s/^m4_define(\[nm_major_version\], \[\([0-9]\+\)\])$/m4_define([nm_major_version], ['"$1"'])/' \
-        -e '1,20 s/^m4_define(\[nm_minor_version\], \[\([0-9]\+\)\])$/m4_define([nm_minor_version], ['"$2"'])/' \
-        -e '1,20 s/^m4_define(\[nm_micro_version\], \[\([0-9]\+\)\])$/m4_define([nm_micro_version], ['"$3"'])/' \
-        ./configure.ac
-}
-
-set_version_number_meson() {
+set_version_number() {
     sed -i \
         -e '1,20 s/^\( *version: *'\''\)[0-9]\+\.[0-9]\+\.[0-9]\+\('\'',\)$/\1'"$1.$2.$3"'\2/' \
         meson.build
-}
-
-set_version_number() {
-    set_version_number_autotools "$@" &&
-    set_version_number_meson "$@"
 }
 
 check_news() {
