@@ -32,9 +32,9 @@ typedef NMVpnEditorPlugin *(*NMVpnEditorPluginFactory)(GError **error);
 NMVpnEditorPlugin *nm_vpn_editor_plugin_factory(GError **error);
 #endif
 
-/*****************************************************************************/
-/* Editor plugin interface                        */
-/*****************************************************************************/
+/*
+ * Editor plugin interface
+ */
 
 #define NM_TYPE_VPN_EDITOR_PLUGIN (nm_vpn_editor_plugin_get_type())
 #define NM_VPN_EDITOR_PLUGIN(obj) \
@@ -45,10 +45,10 @@ NMVpnEditorPlugin *nm_vpn_editor_plugin_factory(GError **error);
 
 /**
  * NMVpnEditorPluginCapability:
- * @NM_VPN_EDITOR_PLUGIN_CAPABILITY_NONE: unknown or no capability
- * @NM_VPN_EDITOR_PLUGIN_CAPABILITY_IMPORT: the plugin can import new connections
- * @NM_VPN_EDITOR_PLUGIN_CAPABILITY_EXPORT: the plugin can export connections
- * @NM_VPN_EDITOR_PLUGIN_CAPABILITY_IPV6: the plugin supports IPv6 addressing
+ * @NM_VPN_EDITOR_PLUGIN_CAPABILITY_NONE: Unknown or no capability.
+ * @NM_VPN_EDITOR_PLUGIN_CAPABILITY_IMPORT: The plugin can import new connections.
+ * @NM_VPN_EDITOR_PLUGIN_CAPABILITY_EXPORT: The plugin can export connections.
+ * @NM_VPN_EDITOR_PLUGIN_CAPABILITY_IPV6: The plugin supports IPv6 addressing.
  *
  * Flags that indicate certain capabilities of the plugin to editor programs.
  **/
