@@ -299,6 +299,9 @@ _nm_vpn_editor_plugin_load(const char               *plugin_name,
         return NULL;
     }
 
+    /* Note that factory() shouldn't be returning errors or failing.
+     * We can't change its prototype as it would consistute an ABI break,
+     * however it returning a failure would indicate a bug in the plugin. */
     editor_plugin = factory(&factory_error);
 
     if (loaded_before) {
