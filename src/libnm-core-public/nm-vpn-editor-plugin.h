@@ -49,14 +49,16 @@ NMVpnEditorPlugin *nm_vpn_editor_plugin_factory(GError **error);
  * @NM_VPN_EDITOR_PLUGIN_CAPABILITY_IMPORT: The plugin can import new connections.
  * @NM_VPN_EDITOR_PLUGIN_CAPABILITY_EXPORT: The plugin can export connections.
  * @NM_VPN_EDITOR_PLUGIN_CAPABILITY_IPV6: The plugin supports IPv6 addressing.
+ * @NM_VPN_EDITOR_PLUGIN_CAPABILITY_NO_EDITOR: The GUI editor plugin is not available. Since: 1.52.
  *
  * Flags that indicate certain capabilities of the plugin to editor programs.
  **/
 typedef enum /*< flags >*/ {
-    NM_VPN_EDITOR_PLUGIN_CAPABILITY_NONE   = 0x00,
-    NM_VPN_EDITOR_PLUGIN_CAPABILITY_IMPORT = 0x01,
-    NM_VPN_EDITOR_PLUGIN_CAPABILITY_EXPORT = 0x02,
-    NM_VPN_EDITOR_PLUGIN_CAPABILITY_IPV6   = 0x04
+    NM_VPN_EDITOR_PLUGIN_CAPABILITY_NONE      = 0x00,
+    NM_VPN_EDITOR_PLUGIN_CAPABILITY_IMPORT    = 0x01,
+    NM_VPN_EDITOR_PLUGIN_CAPABILITY_EXPORT    = 0x02,
+    NM_VPN_EDITOR_PLUGIN_CAPABILITY_IPV6      = 0x04,
+    NM_VPN_EDITOR_PLUGIN_CAPABILITY_NO_EDITOR = 0x08,
 } NMVpnEditorPluginCapability;
 
 /* Short display name of the VPN plugin */
