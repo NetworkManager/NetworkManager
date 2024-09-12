@@ -1729,6 +1729,31 @@ _scan_kickoff_timeout_cb(gpointer user_data)
     return G_SOURCE_CONTINUE;
 }
 
+static bool is_scan_allowed_for_device(NMDeviceWifi *self)
+{
+    char *device, *context;
+    char *block_list = nm_config_data_get_value(NM_CONFIG_GET_DATA,
+                                     NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE,
+                                     NM_CONFIG_KEYFILE_KEY_DEVICE_WIFI_SCAN_BLOCK_LIST,
+                                     NM_CONFIG_GET_VALUE_STRIP);
+
+    if (block_list == NULL)
+        return true;
+
+    device = strtok_r(block_list, ",", &context);
+    while (device != NULL) {
+        if (strcmp(nm_device_get_iface(NM_DEVICE(self)), device) == 0) {
+            _LOGT_scan("Scan is not allowed for '%s' device (it's in the block list)",
+                        nm_device_get_iface(NM_DEVICE(self)));
+            return false;
+        }
+
+        device = strtok_r(NULL, ",", &context);
+    }
+
+    return true;
+}
+
 static void
 _scan_kickoff(NMDeviceWifi *self)
 {
@@ -1807,7 +1832,7 @@ _scan_kickoff(NMDeviceWifi *self)
         priv->scan_explicit_requested = FALSE;
         is_explict                    = TRUE;
     } else {
-        if (!priv->scan_periodic_allowed) {
+        if ((!priv->scan_periodic_allowed) || (!is_scan_allowed_for_device(self))) {
             _LOGT_scan("kickoff: don't scan (periodic scan currently not allowed)");
             priv->scan_periodic_next_msec    = 0;
             priv->scan_periodic_interval_sec = 0;
