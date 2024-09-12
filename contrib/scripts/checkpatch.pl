@@ -203,7 +203,7 @@ complain ("Don't use g_direct_equal() for hash tables, pass NULL for pointer equ
 complain ("Prefer nm_pint_hash()/nm_pint64_hash()/nm_pdouble_hash() over g_int_hash()/g_int64_hash()/g_double_hash(). Those use siphash24") if $line =~ /\b(g_int_hash|g_int64_hash|g_double_hash)\b/;
 complain ("Prefer nm_pint_equal()/nm_pint64_equal()/nm_pdouble_equal() over g_int_equal()/g_int64_equal()/g_double_equal(). Those names mirror our nm_p*_hash() functions") if $line =~ /\b(g_int_equal|g_int64_equal|g_double_equal)\b/;
 complain ("Avoid g_clear_pointer() and use nm_clear_pointer() (or nm_clear_g_free(), g_clear_object(), etc.)") if $line =~ /\b(g_clear_pointer)\b/;
-complain ("Define setting properties with _nm_setting_property_define_direct_*() API") if $line =~ /g_param_spec_/ and $filename =~ /\/libnm-core-impl\/nm-setting/;
+complain ("Define setting properties with _nm_setting_property_define_direct_*() API") if $line =~ /g_param_spec_/ and $filename =~ /\/libnm-core-impl\/nm-setting/ and (not $filename =~ /\/nm-setting-ip-config.c$/);
 complain ("Use nm_g_array_{index,first,last,index_p}() instead of g_array_index(), as it nm_assert()s for valid element size and out-of-bound access") if $line =~ /\bg_array_index\b/;
 complain ("Use spaces instead of tabs") if $line =~ /\t/;
 complain ("Prefer implementing private pointers via _NM_GET_PRIVATE() or _NM_GET_PRIVATE_PTR() (the latter, if the private data has an opqaue pointer in the header file)") if $line =~ /\b(g_type_class_add_private|G_TYPE_INSTANCE_GET_PRIVATE)\b/;
