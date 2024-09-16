@@ -280,13 +280,12 @@ tier3:debian:12@prep:
       when: manual
       allow_failure: true
 
-tier3:alpine:3.20@prep:
+tier3:alpine:default_version@prep:
   extends:
     - .fdo.container-build@alpine
   stage: prep
   variables:
     GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '3.20'
     FDO_DISTRIBUTION_TAG: $ALPINE_TAG
     FDO_DISTRIBUTION_EXEC: $ALPINE_EXEC
   rules:
@@ -543,17 +542,16 @@ t_debian:12:
   rules:
     - if: $CI_PIPELINE_SOURCE != 'schedule'
 
-t_alpine:3.20:
+t_alpine:default_version:
   extends:
     - .build@template
     - .fdo.distribution-image@alpine
     - .nm_artifacts_debug
   stage: tier3
   variables:
-    FDO_DISTRIBUTION_VERSION: '3.20'
     FDO_DISTRIBUTION_TAG: $ALPINE_TAG
   needs:
-    - "tier3:alpine:3.20@prep"
+    - "tier3:alpine:default_version@prep"
   rules:
     - if: $CI_PIPELINE_SOURCE != 'schedule'
 
