@@ -366,7 +366,7 @@ if [ -n "$RELEASE_BRANCH" ]; then
 fi
 
 if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
-    cmp <(git show "$ORIGIN/main:contrib/fedora/rpm/release.sh") "$BASH_SOURCE_ABSOLUTE" || die "$BASH_SOURCE is not identical to \`git show \"$ORIGIN/main:contrib/fedora/rpm/release.sh\"\`"
+    cmp <(git show "$ORIGIN/nm-1-50:contrib/fedora/rpm/release.sh") "$BASH_SOURCE_ABSOLUTE" || die "$BASH_SOURCE is not identical to \`git show \"$ORIGIN/nm-1-50:contrib/fedora/rpm/release.sh\"\`"
 fi
 
 if ! check_news "$RELEASE_MODE" "@{VERSION_ARR[@]}" ; then
