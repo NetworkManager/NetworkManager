@@ -21,7 +21,7 @@
 include:
   # Alpine container builder template
   - project: 'ihuguet/ci-templates'
-    ref: 8d7382414669460b72b7f032ea530c2cbc1b2d91
+    ref: ae2f671d7e3ce956784aa6cbabe3d492fea91354
     file: '/templates/alpine.yml'
   # Centos container builder template
   - project: 'freedesktop/ci-templates'
