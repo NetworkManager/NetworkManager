@@ -9,7 +9,7 @@
 
     <!--
         Port1:
-	@since: 1.46
+        @since: 1.46
 
         The device's port1 device.
     -->
@@ -17,7 +17,7 @@
 
     <!--
         Port2:
-	@since: 1.46
+        @since: 1.46
 
         The device's port2 device.
     -->
@@ -25,7 +25,7 @@
 
     <!--
         SupervisionAddress:
-	@since: 1.46
+        @since: 1.46
 
         The supervision MAC address.
     -->
@@ -33,7 +33,7 @@
 
     <!--
         MulticastSpec:
-	@since: 1.46
+        @since: 1.46
 
         The last byte of the supervision address.
     -->
@@ -41,7 +41,7 @@
 
     <!--
         Prp:
-	@since: 1.46
+        @since: 1.46
 
         Whether the PRP protocol is used or not.
     -->
