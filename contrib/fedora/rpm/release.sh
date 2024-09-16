@@ -93,14 +93,17 @@ do_command() {
     fi
 }
 
+SCRIPTDIR="$(dirname "$(readlink -f "$0")")"
+GITDIR="$(cd "$SCRIPTDIR" && git rev-parse --show-toplevel || die "Could not get GITDIR")"
+
 parse_version() {
     local VERSION=$(grep -E -m1 '^\s+version:' "$GITDIR/meson.build" \
                     | cut -d"'" -f2 \
                     | sed 's/\./ /g')
 
     re='^(0|[1-9][0-9]*) (0|[1-9][0-9]*) (0|[1-9][0-9]*)$'
-    [[ "$MAJ $MIN $MIC" =~ $re ]] || return 1
-    echo "$MAJ $MIN $MIC"
+    [[ "$VERSION" =~ $re ]] || return 1
+    echo "$VERSION"
 }
 
 number_is_even() {
