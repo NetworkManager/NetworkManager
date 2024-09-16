@@ -36,6 +36,7 @@ _setting_name_order = [
     "ethtool",
     "generic",
     "gsm",
+    "hsr",
     "infiniband",
     "ipv4",
     "ipv6",
