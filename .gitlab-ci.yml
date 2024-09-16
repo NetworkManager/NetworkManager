@@ -20,8 +20,8 @@
 
 include:
   # Alpine container builder template
-  - project: 'freedesktop/ci-templates'
-    ref: *template_sha
+  - project: 'ihuguet/ci-templates'
+    ref: 8d7382414669460b72b7f032ea530c2cbc1b2d91
     file: '/templates/alpine.yml'
   # Centos container builder template
   - project: 'freedesktop/ci-templates'
