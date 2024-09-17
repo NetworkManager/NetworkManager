@@ -782,6 +782,7 @@ const NMLDBusMetaIface *const _nml_dbus_meta_ifaces[] = {
     &_nml_dbus_meta_iface_nm_device_bridge,
     &_nml_dbus_meta_iface_nm_device_dummy,
     &_nml_dbus_meta_iface_nm_device_generic,
+    &_nml_dbus_meta_iface_nm_device_hsr,
     &_nml_dbus_meta_iface_nm_device_iptunnel,
     &_nml_dbus_meta_iface_nm_device_infiniband,
     &_nml_dbus_meta_iface_nm_device_loopback,
