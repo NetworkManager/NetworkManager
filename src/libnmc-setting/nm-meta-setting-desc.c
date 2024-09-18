@@ -6372,6 +6372,23 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
     PROPERTY_INFO (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DHCP_SEND_HOSTNAME,
         .property_type =                &_pt_gobject_bool,
     ),
+    PROPERTY_INFO (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME_V2, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DHCP_SEND_HOSTNAME_V2,
+        .property_type =                &_pt_gobject_enum,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+            PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
+                .value_infos =              ENUM_VALUE_INFOS(
+                    {
+                        .value = 0,
+                        .nick = "no",
+                    },
+                    {
+                        .value = 1,
+                        .nick = "yes",
+                    },
+                ),
+            ),
+        ),
+    ),
     PROPERTY_INFO (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME,
         .property_type =                &_pt_gobject_string,
     ),
@@ -6735,6 +6752,23 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
     ),
     PROPERTY_INFO (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_DHCP_SEND_HOSTNAME,
         .property_type =                &_pt_gobject_bool,
+    ),
+    PROPERTY_INFO (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME_V2, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_DHCP_SEND_HOSTNAME_V2,
+        .property_type =                &_pt_gobject_enum,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+            PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
+                .value_infos =              ENUM_VALUE_INFOS(
+                    {
+                        .value = 0,
+                        .nick = "no",
+                    },
+                    {
+                        .value = 1,
+                        .nick = "yes",
+                    },
+                ),
+            ),
+        ),
     ),
     PROPERTY_INFO (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_DHCP_HOSTNAME,
         .property_type =                &_pt_gobject_string,

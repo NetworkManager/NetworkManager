@@ -2078,6 +2078,35 @@ _prop_get_ipvx_dhcp_hostname_flags(NMDevice *self, int addr_family)
         return NM_DHCP_HOSTNAME_FLAGS_FQDN_DEFAULT_IP6;
 }
 
+static gboolean
+_prop_get_ipvx_dhcp_send_hostname(NMDevice *self, int addr_family)
+{
+    const int          IS_IPv4 = NM_IS_IPv4(addr_family);
+    NMSettingIPConfig *s_ip    = IS_IPv4
+                                     ? nm_device_get_applied_setting(self, NM_TYPE_SETTING_IP4_CONFIG)
+                                     : nm_device_get_applied_setting(self, NM_TYPE_SETTING_IP6_CONFIG);
+    gboolean           send_hostname;
+    gboolean           send_hostname_v2;
+
+    g_return_val_if_fail(s_ip, FALSE);
+
+    send_hostname    = nm_setting_ip_config_get_dhcp_send_hostname(s_ip);
+    send_hostname_v2 = nm_setting_ip_config_get_dhcp_send_hostname_v2(s_ip);
+
+    if (send_hostname_v2 == NM_TERNARY_DEFAULT) {
+        send_hostname_v2 = nm_config_data_get_connection_default_int64(
+            NM_CONFIG_GET_DATA,
+            IS_IPv4 ? NM_CON_DEFAULT("ipv4.dhcp-send-hostname")
+                    : NM_CON_DEFAULT("ipv6.dhcp-send-hostname"),
+            self,
+            NM_TERNARY_FALSE,
+            NM_TERNARY_TRUE,
+            send_hostname ? NM_TERNARY_TRUE : NM_TERNARY_FALSE);
+    }
+
+    return send_hostname_v2;
+}
+
 static const char *
 _prop_get_connection_mud_url(NMDevice *self, NMSettingConnection *s_con)
 {
@@ -11360,7 +11389,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
             .uuid                    = nm_connection_get_uuid(connection),
             .hwaddr                  = hwaddr,
             .bcast_hwaddr            = bcast_hwaddr,
-            .send_hostname           = nm_setting_ip_config_get_dhcp_send_hostname(s_ip),
+            .send_hostname           = _prop_get_ipvx_dhcp_send_hostname(self, AF_INET),
             .hostname                = hostname,
             .hostname_flags          = _prop_get_ipvx_dhcp_hostname_flags(self, AF_INET),
             .client_id               = client_id,
@@ -11400,7 +11429,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
             .iface           = nm_device_get_ip_iface(self),
             .iface_type_log  = nm_device_get_type_desc_for_log(self),
             .uuid            = nm_connection_get_uuid(connection),
-            .send_hostname   = nm_setting_ip_config_get_dhcp_send_hostname(s_ip),
+            .send_hostname   = _prop_get_ipvx_dhcp_send_hostname(self, AF_INET6),
             .hostname        = nm_setting_ip_config_get_dhcp_hostname(s_ip),
             .hostname_flags  = _prop_get_ipvx_dhcp_hostname_flags(self, AF_INET6),
             .client_id       = duid,

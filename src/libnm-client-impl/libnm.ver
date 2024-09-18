@@ -2022,11 +2022,6 @@ global:
 	nm_setting_ip_config_routed_dns_get_type;
 	nm_setting_ipvlan_get_mode;
 	nm_setting_ipvlan_get_parent;
-	nm_setting_ipvlan_get_private;
-	nm_setting_ipvlan_get_type;
-	nm_setting_ipvlan_get_vepa;
-	nm_setting_ipvlan_mode_get_type;
-	nm_setting_ipvlan_new;
 	nm_setting_gsm_get_initial_eps_password;
 	nm_setting_gsm_get_initial_eps_username;
 	nm_setting_gsm_get_initial_eps_noauth;
@@ -2035,4 +2030,10 @@ global:
 	nm_setting_gsm_get_initial_eps_refuse_eap;
 	nm_setting_gsm_get_initial_eps_refuse_mschap;
 	nm_setting_gsm_get_initial_eps_refuse_mschapv2;
+	nm_setting_ipvlan_get_private;
+	nm_setting_ipvlan_get_type;
+	nm_setting_ipvlan_get_vepa;
+	nm_setting_ipvlan_mode_get_type;
+	nm_setting_ipvlan_new;
+	nm_setting_ip_config_get_dhcp_send_hostname_v2;
 } libnm_1_50_0;

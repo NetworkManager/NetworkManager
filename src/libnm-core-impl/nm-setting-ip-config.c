@@ -3996,6 +3996,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingIPConfig,
                              PROP_DHCP_DSCP,
                              PROP_DHCP_HOSTNAME_FLAGS,
                              PROP_DHCP_SEND_HOSTNAME,
+                             PROP_DHCP_SEND_HOSTNAME_V2,
                              PROP_NEVER_DEFAULT,
                              PROP_MAY_FAIL,
                              PROP_DAD_TIMEOUT,
@@ -5194,6 +5195,8 @@ nm_setting_ip_config_get_dhcp_hostname(NMSettingIPConfig *setting)
  * Returns: %TRUE if NetworkManager should send the machine hostname to the
  * DHCP server when requesting addresses to allow the server to automatically
  * update DNS information for this machine.
+ *
+ * Deprecated: 1.52. Use nm_setting_ip_config_get_dhcp_send_hostname_v2() instead.
  **/
 gboolean
 nm_setting_ip_config_get_dhcp_send_hostname(NMSettingIPConfig *setting)
@@ -5201,6 +5204,25 @@ nm_setting_ip_config_get_dhcp_send_hostname(NMSettingIPConfig *setting)
     g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), FALSE);
 
     return NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->dhcp_send_hostname;
+}
+
+/**
+ * nm_setting_ip_config_get_dhcp_send_hostname_v2:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns the value contained in the #NMSettingIPConfig:dhcp-send-hostname-v2
+ * property.
+ *
+ * Returns: the #NMSettingIPConfig:dhcp-send-hostname-v2 property of the setting
+ *
+ * Since: 1.52
+ **/
+NMTernary
+nm_setting_ip_config_get_dhcp_send_hostname_v2(NMSettingIPConfig *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), NM_TERNARY_DEFAULT);
+
+    return NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->dhcp_send_hostname_v2;
 }
 
 /**
@@ -5807,6 +5829,20 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
     }
 
+    if (priv->dhcp_send_hostname_v2 != NM_TERNARY_DEFAULT
+        && priv->dhcp_send_hostname != priv->dhcp_send_hostname_v2) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("the value is inconsistent with '%s'"),
+                    NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME_V2);
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       nm_setting_get_name(setting),
+                       NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME);
+        return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+    }
+
     return TRUE;
 }
 
@@ -6147,6 +6183,14 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
         &nm_sett_info_propert_type_direct_boolean,
         .direct_offset =
             NM_STRUCT_OFFSET_ENSURE_TYPE(bool, NMSettingIPConfigPrivate, dhcp_send_hostname));
+
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_DHCP_SEND_HOSTNAME_V2],
+        &nm_sett_info_propert_type_direct_enum,
+        .direct_offset =
+            NM_STRUCT_OFFSET_ENSURE_TYPE(int, NMSettingIPConfigPrivate, dhcp_send_hostname_v2),
+        .direct_data.enum_gtype = NM_TYPE_TERNARY);
 
     _nm_properties_override_gobj(
         properties_override,
@@ -6686,11 +6730,12 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
     /**
      * NMSettingIPConfig:dhcp-send-hostname:
      *
-     * If %TRUE, a hostname is sent to the DHCP server when acquiring a lease.
-     * Some DHCP servers use this hostname to update DNS databases, essentially
-     * providing a static hostname for the computer.  If the
-     * #NMSettingIPConfig:dhcp-hostname property is %NULL and this property is
-     * %TRUE, the current persistent hostname of the computer is sent.
+     * Since 1.52 this property is deprecated and is only used as fallback value
+     * for #NMSettingIPConfig:dhcp-send-hostname-v2 if it's set to 'default'.
+     * This is only done to avoid breaking existing configurations, the new
+     * property should be used from now on.
+     *
+     * Deprecated: 1.52: use the new version of dhcp-send-hostname instead.
      **/
     obj_properties[PROP_DHCP_SEND_HOSTNAME] =
         g_param_spec_boolean(NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME,
@@ -6989,6 +7034,32 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                          NM_SETTING_IP_CONFIG_ROUTED_DNS_DEFAULT,
                          NM_SETTING_IP_CONFIG_ROUTED_DNS_YES,
                          NM_SETTING_IP_CONFIG_ROUTED_DNS_DEFAULT,
+                         G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
+
+    /**                                                  
+     * NMSettingIPConfig:dhcp-send-hostname-v2:
+     *
+     * If %TRUE, a hostname is sent to the DHCP server when acquiring a lease.
+     * Some DHCP servers use this hostname to update DNS databases, essentially
+     * providing a static hostname for the computer.  If the
+     * #NMSettingIPConfig:dhcp-hostname property is %NULL and this property is
+     * %TRUE, the current persistent hostname of the computer is sent.
+     *
+     * The default value is %NM_TERNARY_DEFAULT. In this case the global value
+     * from NetworkManager configuration is looked up. If it's not set, the value
+     * from #NMSettingIPConfig:dhcp-send-hostname, which defaults to %TRUE, is
+     * used for backwards compatibility. In the future this will change and, in
+     * absence of a global default, it will always fallback to %TRUE.
+     *
+     * Since: 1.52
+     **/
+    obj_properties[PROP_DHCP_SEND_HOSTNAME_V2] =
+        g_param_spec_int(NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME_V2,
+                         "",
+                         "",
+                         G_MININT,
+                         G_MAXINT,
+                         NM_TERNARY_DEFAULT,
                          G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
