@@ -2017,6 +2017,55 @@ _prop_get_ipvx_dhcp_hostname_flags(NMDevice *self, int addr_family)
         return NM_DHCP_HOSTNAME_FLAGS_FQDN_DEFAULT_IP6;
 }
 
+static gboolean
+_prop_get_ipvx_dhcp_client_send_hostname(NMDevice *self, int addr_family)
+{
+    NMDevicePrivate   *priv    = NM_DEVICE_GET_PRIVATE(self);
+    const int          IS_IPv4 = NM_IS_IPv4(addr_family);
+    NMSettingIPConfig *s_ip4   = NULL;
+    NMSettingIPConfig *s_ip6   = NULL;
+    gboolean           send_hostname;
+    gboolean           send_hostname_old;
+
+    if (IS_IPv4)
+        s_ip4 = nm_device_get_applied_setting(self, NM_TYPE_SETTING_IP4_CONFIG);
+    else
+        s_ip6 = nm_device_get_applied_setting(self, NM_TYPE_SETTING_IP6_CONFIG);
+
+    g_return_val_if_fail(s_ip4 || s_ip6, FALSE);
+
+    send_hostname_old = nm_setting_ip_config_get_dhcp_send_hostname(IS_IPv4 ? s_ip4 : s_ip6);
+    if ((IS_IPv4 && s_ip4) || (!IS_IPv4 && s_ip6)) {
+        if (nm_setting_ip_config_get_dhcp_client_send_hostname(IS_IPv4 ? s_ip4 : s_ip6)
+            == NM_TERNARY_DEFAULT) {
+            send_hostname = nm_config_data_get_connection_default_int64(
+                NM_CONFIG_GET_DATA,
+                IS_IPv4 ? NM_CON_DEFAULT("ipv4.dhcp-client-send-hostname")
+                        : NM_CON_DEFAULT("ipv6.dhcp-client-send-hostname"),
+                self,
+                NM_TERNARY_FALSE,
+                NM_TERNARY_TRUE,
+                send_hostname_old ? NM_TERNARY_TRUE : NM_TERNARY_FALSE));
+        } else {
+            send_hostname =
+                nm_setting_ip_config_get_dhcp_client_send_hostname(IS_IPv4 ? s_ip4 : s_ip6);
+        }
+        if (send_hostname != send_hostname_old) {
+            NMSettingIPConfigPrivate *priv =
+                NM_SETTING_IP_CONFIG_GET_PRIVATE(IS_IPv4 ? s_ip4 : s_ip6);
+            priv->dhcp_send_hostname = send_hostname;
+
+            _LOGD(LOGD_DEVICE | LOGD_DHCPX(IS_IPv4) | LOGD_IPX(IS_IPv4),
+                  "normalize the old dhcp send hostname value from %d into %d to match the new "
+                  "property",
+                  send_hostname_old,
+                  send_hostname);
+        }
+    }
+
+    return send_hostname;
+}
+
 static const char *
 _prop_get_connection_mud_url(NMDevice *self, NMSettingConnection *s_con)
 {
@@ -11270,7 +11319,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
             .hwaddr                  = hwaddr,
             .bcast_hwaddr            = bcast_hwaddr,
             .send_hostname           = nm_setting_ip_config_get_dhcp_send_hostname(s_ip),
-            .hostname                = hostname,
+            .hostname                = _prop_get_ipvx_dhcp_client_send_hostname(self, AF_INET),
             .hostname_flags          = _prop_get_ipvx_dhcp_hostname_flags(self, AF_INET),
             .client_id               = client_id,
             .mud_url                 = _prop_get_connection_mud_url(self, s_con),
@@ -11309,7 +11358,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
             .iface_type_log  = nm_device_get_type_desc_for_log(self),
             .uuid            = nm_connection_get_uuid(connection),
             .send_hostname   = nm_setting_ip_config_get_dhcp_send_hostname(s_ip),
-            .hostname        = nm_setting_ip_config_get_dhcp_hostname(s_ip),
+            .hostname        = _prop_get_ipvx_dhcp_client_send_hostname(self, AF_INET6),
             .hostname_flags  = _prop_get_ipvx_dhcp_hostname_flags(self, AF_INET6),
             .client_id       = duid,
             .mud_url         = _prop_get_connection_mud_url(self, s_con),

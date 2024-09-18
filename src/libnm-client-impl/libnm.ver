@@ -2023,4 +2023,5 @@ global:
 	nm_setting_ipvlan_get_vepa;
 	nm_setting_ipvlan_mode_get_type;
 	nm_setting_ipvlan_new;
+	nm_setting_ip_config_get_dhcp_client_send_hostname;
 } libnm_1_50_0;
