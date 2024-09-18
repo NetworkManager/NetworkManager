@@ -3565,6 +3565,18 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
             .cmd_plobj_hash_update = (CmdPlobjHashUpdateFunc) nm_platform_lnk_ipip_hash_update,
             .cmd_plobj_cmp         = (CmdPlobjCmpFunc) nm_platform_lnk_ipip_cmp,
         },
+    [NMP_OBJECT_TYPE_LNK_IPVLAN - 1] =
+        {
+            .parent                = DEDUP_MULTI_OBJ_CLASS_INIT(),
+            .obj_type              = NMP_OBJECT_TYPE_LNK_IPVLAN,
+            .sizeof_data           = sizeof(NMPObjectLnkIpvlan),
+            .sizeof_public         = sizeof(NMPlatformLnkIpvlan),
+            .obj_type_name         = "ipvlan",
+            .lnk_link_type         = NM_LINK_TYPE_IPVLAN,
+            .cmd_plobj_to_string   = (CmdPlobjToStringFunc) nm_platform_lnk_ipvlan_to_string,
+            .cmd_plobj_hash_update = (CmdPlobjHashUpdateFunc) nm_platform_lnk_ipvlan_hash_update,
+            .cmd_plobj_cmp         = (CmdPlobjCmpFunc) nm_platform_lnk_ipvlan_cmp,
+        },
     [NMP_OBJECT_TYPE_LNK_MACSEC - 1] =
         {
             .parent                = DEDUP_MULTI_OBJ_CLASS_INIT(),

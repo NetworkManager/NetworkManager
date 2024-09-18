@@ -579,7 +579,7 @@ struct _NMLDBusMetaIface {
                              NML_DBUS_META_IFACE_OBJ_PROPERTIES(),                              \
                              ##__VA_ARGS__)
 
-extern const NMLDBusMetaIface *const _nml_dbus_meta_ifaces[46];
+extern const NMLDBusMetaIface *const _nml_dbus_meta_ifaces[47];
 
 extern const NMLDBusMetaIface _nml_dbus_meta_iface_nm;
 extern const NMLDBusMetaIface _nml_dbus_meta_iface_nm_accesspoint;
@@ -596,6 +596,7 @@ extern const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_generic;
 extern const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_hsr;
 extern const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_infiniband;
 extern const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_iptunnel;
+extern const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_ipvlan;
 extern const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_loopback;
 extern const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_lowpan;
 extern const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_macsec;

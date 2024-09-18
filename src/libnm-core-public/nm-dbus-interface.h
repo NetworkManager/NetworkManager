@@ -40,6 +40,7 @@
 #define NM_DBUS_INTERFACE_DEVICE_HSR           NM_DBUS_INTERFACE_DEVICE ".Hsr"
 #define NM_DBUS_INTERFACE_DEVICE_INFINIBAND    NM_DBUS_INTERFACE_DEVICE ".Infiniband"
 #define NM_DBUS_INTERFACE_DEVICE_IP_TUNNEL     NM_DBUS_INTERFACE_DEVICE ".IPTunnel"
+#define NM_DBUS_INTERFACE_DEVICE_IPVLAN        NM_DBUS_INTERFACE_DEVICE ".Ipvlan"
 #define NM_DBUS_INTERFACE_DEVICE_LOOPBACK      NM_DBUS_INTERFACE_DEVICE ".Loopback"
 #define NM_DBUS_INTERFACE_DEVICE_MACSEC        NM_DBUS_INTERFACE_DEVICE ".Macsec"
 #define NM_DBUS_INTERFACE_DEVICE_MACVLAN       NM_DBUS_INTERFACE_DEVICE ".Macvlan"
@@ -236,6 +237,7 @@ typedef enum {
  * @NM_DEVICE_TYPE_VRF: A VRF (Virtual Routing and Forwarding) interface. Since: 1.24.
  * @NM_DEVICE_TYPE_LOOPBACK: a loopback interface. Since: 1.42.
  * @NM_DEVICE_TYPE_HSR: A HSR/PRP device. Since: 1.46.
+ * @NM_DEVICE_TYPE_IPVLAN: A IPVLAN device. Since: 1.52.
  *
  * #NMDeviceType values indicate the type of hardware represented by a
  * device object.
@@ -275,6 +277,7 @@ typedef enum {
     NM_DEVICE_TYPE_VRF           = 31,
     NM_DEVICE_TYPE_LOOPBACK      = 32,
     NM_DEVICE_TYPE_HSR           = 33,
+    NM_DEVICE_TYPE_IPVLAN        = 34,
 } NMDeviceType;
 
 /**

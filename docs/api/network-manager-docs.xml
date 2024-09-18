@@ -186,6 +186,7 @@
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Hsr.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.IPTunnel.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Infiniband.xml"/>
+      <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Ipvlan.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Loopback.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Lowpan.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Macsec.xml"/>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+  <!--
+      org.freedesktop.NetworkManager.Device.Ipvlan:
+      @short_description: IPVLAN Device.
+  -->
+  <interface name="org.freedesktop.NetworkManager.Device.Ipvlan">
+
+    <!--
+        Parent:
+        @since: 1.52
+        The object path of the parent device.
+    -->
+    <property name="Parent" type="o" access="read"/>
+
+    <!--
+        Vepa:
+        @since: 1.52
+        The IPVLAN VEPA flag.
+    -->
+    <property name="Vepa" type="b" access="read"/>
+
+    <!--
+        Mode:
+        @since: 1.52
+        The IPVLAN mode, one of "l2", "l3", "l3s".
+    -->
+    <property name="Mode" type="s" access="read"/>
+
+    <!--
+        Private:
+        @since: 1.52
+        The IPVLAN private flag.
+    -->
+    <property name="Private" type="b" access="read"/>
+
+  </interface>
+</node>

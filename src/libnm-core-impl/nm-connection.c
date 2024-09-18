@@ -3176,6 +3176,7 @@ nm_connection_is_virtual(NMConnection *connection)
                      NM_SETTING_DUMMY_SETTING_NAME,
                      NM_SETTING_HSR_SETTING_NAME,
                      NM_SETTING_IP_TUNNEL_SETTING_NAME,
+                     NM_SETTING_IPVLAN_SETTING_NAME,
                      NM_SETTING_MACSEC_SETTING_NAME,
                      NM_SETTING_MACVLAN_SETTING_NAME,
                      NM_SETTING_OVS_BRIDGE_SETTING_NAME,

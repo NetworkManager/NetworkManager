@@ -1418,6 +1418,12 @@ nm_platform_link_add(NMPlatform            *self,
                                                   buf_p,
                                                   buf_len);
                    break;
+               case NM_LINK_TYPE_IPVLAN:
+                   nm_strbuf_append_str(&buf_p, &buf_len, ", ");
+                   nm_platform_lnk_ipvlan_to_string((const NMPlatformLnkIpvlan *) extra_data,
+                                                    buf_p,
+                                                    buf_len);
+                   break;
                case NM_LINK_TYPE_MACSEC:
                    nm_strbuf_append_str(&buf_p, &buf_len, ", ");
                    nm_platform_lnk_macsec_to_string((const NMPlatformLnkMacsec *) extra_data,
@@ -2602,6 +2608,12 @@ const NMPlatformLnkIpIp *
 nm_platform_link_get_lnk_ipip(NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
     return _link_get_lnk(self, ifindex, NM_LINK_TYPE_IPIP, out_link);
+}
+
+const NMPlatformLnkIpvlan *
+nm_platform_link_get_lnk_ipvlan(NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
+{
+    return _link_get_lnk(self, ifindex, NM_LINK_TYPE_IPVLAN, out_link);
 }
 
 const NMPlatformLnkMacsec *
@@ -6671,6 +6683,21 @@ nm_platform_lnk_macvlan_to_string(const NMPlatformLnkMacvlan *lnk, char *buf, gs
 }
 
 const char *
+nm_platform_lnk_ipvlan_to_string(const NMPlatformLnkIpvlan *lnk, char *buf, gsize len)
+{
+    if (!nm_utils_to_string_buffer_init_null(lnk, &buf, &len))
+        return buf;
+
+    g_snprintf(buf,
+               len,
+               "mode %u%s%s",
+               lnk->mode,
+               lnk->private_flag ? " private" : "",
+               lnk->vepa ? " vepa" : "");
+    return buf;
+}
+
+const char *
 nm_platform_lnk_sit_to_string(const NMPlatformLnkSit *lnk, char *buf, gsize len)
 {
     char str_local[30];
@@ -8554,6 +8581,22 @@ nm_platform_lnk_macvlan_cmp(const NMPlatformLnkMacvlan *a, const NMPlatformLnkMa
     NM_CMP_FIELD(a, b, mode);
     NM_CMP_FIELD_UNSAFE(a, b, no_promisc);
     NM_CMP_FIELD_UNSAFE(a, b, tap);
+    return 0;
+}
+
+void
+nm_platform_lnk_ipvlan_hash_update(const NMPlatformLnkIpvlan *obj, NMHashState *h)
+{
+    nm_hash_update_vals(h, obj->mode, NM_HASH_COMBINE_BOOLS(guint8, obj->private_flag, obj->vepa));
+}
+
+int
+nm_platform_lnk_ipvlan_cmp(const NMPlatformLnkIpvlan *a, const NMPlatformLnkIpvlan *b)
+{
+    NM_CMP_SELF(a, b);
+    NM_CMP_FIELD(a, b, mode);
+    NM_CMP_FIELD_UNSAFE(a, b, private_flag);
+    NM_CMP_FIELD_UNSAFE(a, b, vepa);
     return 0;
 }
 

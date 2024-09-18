@@ -105,6 +105,7 @@ libNetworkManager = static_library(
     'devices/nm-device-hsr.c',
     'devices/nm-device-infiniband.c',
     'devices/nm-device-ip-tunnel.c',
+    'devices/nm-device-ipvlan.c',
     'devices/nm-device-loopback.c',
     'devices/nm-device-macsec.c',
     'devices/nm-device-macvlan.c',

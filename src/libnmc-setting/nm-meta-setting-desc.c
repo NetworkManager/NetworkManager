@@ -6077,7 +6077,6 @@ static const NMMetaPropertyInfo *const property_infos_HSR[] = {
     NULL
 };
 
-
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_HOSTNAME
 static const NMMetaPropertyInfo *const property_infos_HOSTNAME[] = {
@@ -6795,6 +6794,37 @@ static const NMMetaPropertyInfo *const property_infos_IP_TUNNEL[] = {
                 .get_gtype =            nm_ip_tunnel_flags_get_type,
             ),
         ),
+    ),
+    NULL
+};
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_IPVLAN
+static const NMMetaPropertyInfo *const property_infos_IPVLAN[] = {
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_IPVLAN_PARENT,
+        .is_cli_option =                TRUE,
+        .property_alias =               "dev",
+        .inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
+        .prompt =                       N_("IPVLAN parent device or connection UUID"),
+        .property_type =                &_pt_gobject_devices,
+    ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_IPVLAN_MODE,
+        .is_cli_option =                TRUE,
+        .property_alias =               "mode",
+        .inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
+        .prompt =                       NM_META_TEXT_PROMPT_IPVLAN_MODE,
+        .property_type =                &_pt_gobject_enum,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
+            .get_gtype =                nm_setting_ipvlan_mode_get_type,
+            .min =                      NM_SETTING_IPVLAN_MODE_UNKNOWN + 1,
+            .max =                      G_MAXINT,
+        ),
+    ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_IPVLAN_PRIVATE,
+        .property_type =                &_pt_gobject_bool,
+    ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_IPVLAN_VEPA,
+        .property_type =                &_pt_gobject_bool,
     ),
     NULL
 };
@@ -8713,6 +8743,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_IP4_CONFIG          N_("IPv4 protocol")
 #define SETTING_PRETTY_NAME_IP6_CONFIG          N_("IPv6 protocol")
 #define SETTING_PRETTY_NAME_IP_TUNNEL           N_("IP-tunnel settings")
+#define SETTING_PRETTY_NAME_IPVLAN              N_("IPVLAN settings")
 #define SETTING_PRETTY_NAME_LINK                N_("Link settings")
 #define SETTING_PRETTY_NAME_LOOPBACK            N_("Loopback settings")
 #define SETTING_PRETTY_NAME_MACSEC              N_("MACsec connection")
@@ -8877,6 +8908,14 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
         .valid_parts = NM_META_SETTING_VALID_PARTS (
             NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
             NM_META_SETTING_VALID_PART_ITEM (IP_TUNNEL,             TRUE),
+            NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
+            NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
+        ),
+    ),
+    SETTING_INFO (IPVLAN,
+        .valid_parts = NM_META_SETTING_VALID_PARTS (
+            NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+            NM_META_SETTING_VALID_PART_ITEM (IPVLAN,                TRUE),
             NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
             NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
         ),

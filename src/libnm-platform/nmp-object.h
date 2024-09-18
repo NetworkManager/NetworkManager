@@ -271,6 +271,10 @@ typedef struct {
 } NMPObjectLnkIpIp;
 
 typedef struct {
+    NMPlatformLnkIpvlan _public;
+} NMPObjectLnkIpvlan;
+
+typedef struct {
     NMPlatformLnkMacsec _public;
 } NMPObjectLnkMacsec;
 
@@ -393,6 +397,9 @@ struct _NMPObject {
 
         NMPlatformLnkIp6Tnl lnk_ip6tnl;
         NMPObjectLnkIp6Tnl  _lnk_ip6tnl;
+
+        NMPlatformLnkIpvlan lnk_ipvlan;
+        NMPObjectLnkIpvlan  _lnk_ipvlan;
 
         NMPlatformLnkMacsec lnk_macsec;
         NMPObjectLnkMacsec  _lnk_macsec;
@@ -544,6 +551,7 @@ _NMP_OBJECT_TYPE_IS_OBJ_WITH_IFINDEX(NMPObjectType obj_type)
     case NMP_OBJECT_TYPE_LNK_IP6GRE:
     case NMP_OBJECT_TYPE_LNK_IP6GRETAP:
     case NMP_OBJECT_TYPE_LNK_IPIP:
+    case NMP_OBJECT_TYPE_LNK_IPVLAN:
     case NMP_OBJECT_TYPE_LNK_MACSEC:
     case NMP_OBJECT_TYPE_LNK_MACVLAN:
     case NMP_OBJECT_TYPE_LNK_MACVTAP:

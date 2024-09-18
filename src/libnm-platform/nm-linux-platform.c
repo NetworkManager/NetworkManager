@@ -861,6 +861,7 @@ static const LinkDesc link_descs[] = {
     [NM_LINK_TYPE_IP6GRE]      = {"ip6gre", "ip6gre", NULL},
     [NM_LINK_TYPE_IP6GRETAP]   = {"ip6gretap", "ip6gretap", NULL},
     [NM_LINK_TYPE_IPIP]        = {"ipip", "ipip", NULL},
+    [NM_LINK_TYPE_IPVLAN]      = {"ipvlan", "ipvlan", NULL},
     [NM_LINK_TYPE_LOOPBACK]    = {"loopback", NULL, NULL},
     [NM_LINK_TYPE_MACSEC]      = {"macsec", "macsec", NULL},
     [NM_LINK_TYPE_MACVLAN]     = {"macvlan", "macvlan", NULL},
@@ -908,6 +909,7 @@ _link_type_from_rtnl_type(const char *name)
         NM_LINK_TYPE_IP6GRETAP,   /* "ip6gretap"   */
         NM_LINK_TYPE_IP6TNL,      /* "ip6tnl"      */
         NM_LINK_TYPE_IPIP,        /* "ipip"        */
+        NM_LINK_TYPE_IPVLAN,      /* "ipvlan"      */
         NM_LINK_TYPE_MACSEC,      /* "macsec"      */
         NM_LINK_TYPE_MACVLAN,     /* "macvlan"     */
         NM_LINK_TYPE_MACVTAP,     /* "macvtap"     */
@@ -2100,6 +2102,40 @@ _parse_lnk_ipip(const char *kind, struct nlattr *info_data)
     props->tos                = tb[IFLA_IPTUN_TOS] ? nla_get_u8(tb[IFLA_IPTUN_TOS]) : 0;
     props->ttl                = tb[IFLA_IPTUN_TTL] ? nla_get_u8(tb[IFLA_IPTUN_TTL]) : 0;
     props->path_mtu_discovery = !tb[IFLA_IPTUN_PMTUDISC] || !!nla_get_u8(tb[IFLA_IPTUN_PMTUDISC]);
+
+    return obj;
+}
+
+/*****************************************************************************/
+
+static NMPObject *
+_parse_lnk_ipvlan(const char *kind, struct nlattr *info_data)
+{
+    static const struct nla_policy policy[] = {
+        [IFLA_IPVLAN_MODE]  = {.type = NLA_U16},
+        [IFLA_IPVLAN_FLAGS] = {.type = NLA_U16},
+    };
+    NMPlatformLnkIpvlan *props;
+    struct nlattr       *tb[G_N_ELEMENTS(policy)];
+    NMPObject           *obj;
+
+    if (!info_data || !kind)
+        return NULL;
+
+    if (nla_parse_nested_arr(tb, info_data, policy) < 0)
+        return NULL;
+
+    if (!tb[IFLA_IPVLAN_MODE])
+        return NULL;
+
+    obj         = nmp_object_new(NMP_OBJECT_TYPE_LNK_IPVLAN, NULL);
+    props       = &obj->lnk_ipvlan;
+    props->mode = nla_get_u16(tb[IFLA_IPVLAN_MODE]);
+
+    if (tb[IFLA_IPVLAN_FLAGS]) {
+        props->private_flag = NM_FLAGS_HAS(nla_get_u16(tb[IFLA_IPVLAN_FLAGS]), IPVLAN_F_PRIVATE);
+        props->vepa         = NM_FLAGS_HAS(nla_get_u16(tb[IFLA_IPVLAN_FLAGS]), IPVLAN_F_VEPA);
+    }
 
     return obj;
 }
@@ -3669,6 +3705,9 @@ _new_from_nl_link(NMPlatform            *platform,
         break;
     case NM_LINK_TYPE_IPIP:
         lnk_data = _parse_lnk_ipip(nl_info_kind, nl_info_data);
+        break;
+    case NM_LINK_TYPE_IPVLAN:
+        lnk_data = _parse_lnk_ipvlan(nl_info_kind, nl_info_data);
         break;
     case NM_LINK_TYPE_MACSEC:
         lnk_data = _parse_lnk_macsec(nl_info_kind, nl_info_data);
@@ -5246,6 +5285,26 @@ _nl_msg_new_link_set_linkinfo(struct nl_msg *msg, NMLinkType link_type, gconstpo
         NLA_PUT_U8(msg, IFLA_IPTUN_TTL, props->ttl);
         NLA_PUT_U8(msg, IFLA_IPTUN_TOS, props->tos);
         NLA_PUT_U8(msg, IFLA_IPTUN_PMTUDISC, !!props->path_mtu_discovery);
+        break;
+    }
+    case NM_LINK_TYPE_IPVLAN:
+    {
+        const NMPlatformLnkIpvlan *props = extra_data;
+        guint16                    flags = 0;
+
+        nm_assert(props);
+
+        if (!(data = nla_nest_start(msg, IFLA_INFO_DATA)))
+            goto nla_put_failure;
+
+        if (props->private_flag)
+            flags |= IPVLAN_F_PRIVATE;
+
+        if (props->vepa)
+            flags |= IPVLAN_F_VEPA;
+
+        NLA_PUT_U16(msg, IFLA_IPVLAN_MODE, props->mode);
+        NLA_PUT_U16(msg, IFLA_IPVLAN_FLAGS, flags);
         break;
     }
     case NM_LINK_TYPE_MACSEC:

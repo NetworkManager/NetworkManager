@@ -30,6 +30,7 @@ libnm_core_headers = files(
   'nm-setting-ip-tunnel.h',
   'nm-setting-ip4-config.h',
   'nm-setting-ip6-config.h',
+  'nm-setting-ipvlan.h',
   'nm-setting-link.h',
   'nm-setting-loopback.h',
   'nm-setting-macsec.h',

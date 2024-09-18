@@ -25,6 +25,7 @@ libnm_core_settings_sources = files(
   'nm-setting-ip-tunnel.c',
   'nm-setting-ip4-config.c',
   'nm-setting-ip6-config.c',
+  'nm-setting-ipvlan.c',
   'nm-setting-link.c',
   'nm-setting-loopback.c',
   'nm-setting-macsec.c',

@@ -1865,6 +1865,26 @@
                   gprop-type="gchararray"
                   />
     </setting>
+    <setting name="ipvlan"
+             gtype="NMSettingIpvlan"
+             >
+        <property name="mode"
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
+        <property name="parent"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
+        <property name="private"
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
+        <property name="vepa"
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
+    </setting>
     <setting name="link"
              gtype="NMSettingLink"
              >

@@ -880,6 +880,12 @@ typedef struct {
 } _nm_alignas(NMPlatformObject) NMPlatformLnkIpIp;
 
 typedef struct {
+    guint16 mode;
+    bool    private_flag : 1;
+    bool    vepa : 1;
+} _nm_alignas(NMPlatformObject) NMPlatformLnkIpvlan;
+
+typedef struct {
     int       parent_ifindex;
     in_addr_t local;
     in_addr_t remote;
@@ -1935,6 +1941,27 @@ nm_platform_link_macvlan_add(NMPlatform                 *self,
                                 out_link);
 }
 
+static inline int
+nm_platform_link_ipvlan_add(NMPlatform                *self,
+                            const char                *name,
+                            int                        parent,
+                            const NMPlatformLnkIpvlan *props,
+                            const NMPlatformLink     **out_link)
+{
+    g_return_val_if_fail(props, -NME_BUG);
+    g_return_val_if_fail(parent > 0, -NME_BUG);
+
+    return nm_platform_link_add(self,
+                                NM_LINK_TYPE_IPVLAN,
+                                name,
+                                parent,
+                                NULL,
+                                0,
+                                0,
+                                props,
+                                out_link);
+}
+
 gboolean nm_platform_link_delete(NMPlatform *self, int ifindex);
 
 gboolean nm_platform_link_set_netns(NMPlatform *self, int ifindex, int netns_fd);
@@ -2117,6 +2144,8 @@ const NMPlatformLnkMacsec *
 nm_platform_link_get_lnk_macsec(NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkMacvlan *
 nm_platform_link_get_lnk_macvlan(NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
+const NMPlatformLnkIpvlan *
+nm_platform_link_get_lnk_ipvlan(NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkMacvlan *
 nm_platform_link_get_lnk_macvtap(NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkSit *
@@ -2431,6 +2460,7 @@ const char *nm_platform_lnk_ipip_to_string(const NMPlatformLnkIpIp *lnk, char *b
 const char *nm_platform_lnk_macsec_to_string(const NMPlatformLnkMacsec *lnk, char *buf, gsize len);
 const char *
 nm_platform_lnk_macvlan_to_string(const NMPlatformLnkMacvlan *lnk, char *buf, gsize len);
+const char *nm_platform_lnk_ipvlan_to_string(const NMPlatformLnkIpvlan *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_sit_to_string(const NMPlatformLnkSit *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_tun_to_string(const NMPlatformLnkTun *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_vlan_to_string(const NMPlatformLnkVlan *lnk, char *buf, gsize len);
@@ -2483,6 +2513,7 @@ int nm_platform_lnk_infiniband_cmp(const NMPlatformLnkInfiniband *a,
 int nm_platform_lnk_ip6tnl_cmp(const NMPlatformLnkIp6Tnl *a, const NMPlatformLnkIp6Tnl *b);
 int nm_platform_lnk_ipip_cmp(const NMPlatformLnkIpIp *a, const NMPlatformLnkIpIp *b);
 int nm_platform_lnk_macsec_cmp(const NMPlatformLnkMacsec *a, const NMPlatformLnkMacsec *b);
+int nm_platform_lnk_ipvlan_cmp(const NMPlatformLnkIpvlan *a, const NMPlatformLnkIpvlan *b);
 int nm_platform_lnk_macvlan_cmp(const NMPlatformLnkMacvlan *a, const NMPlatformLnkMacvlan *b);
 int nm_platform_lnk_sit_cmp(const NMPlatformLnkSit *a, const NMPlatformLnkSit *b);
 int nm_platform_lnk_tun_cmp(const NMPlatformLnkTun *a, const NMPlatformLnkTun *b);
@@ -2555,6 +2586,7 @@ void nm_platform_lnk_ip6tnl_hash_update(const NMPlatformLnkIp6Tnl *obj, NMHashSt
 void nm_platform_lnk_ipip_hash_update(const NMPlatformLnkIpIp *obj, NMHashState *h);
 void nm_platform_lnk_macsec_hash_update(const NMPlatformLnkMacsec *obj, NMHashState *h);
 void nm_platform_lnk_macvlan_hash_update(const NMPlatformLnkMacvlan *obj, NMHashState *h);
+void nm_platform_lnk_ipvlan_hash_update(const NMPlatformLnkIpvlan *obj, NMHashState *h);
 void nm_platform_lnk_sit_hash_update(const NMPlatformLnkSit *obj, NMHashState *h);
 void nm_platform_lnk_tun_hash_update(const NMPlatformLnkTun *obj, NMHashState *h);
 void nm_platform_lnk_vlan_hash_update(const NMPlatformLnkVlan *obj, NMHashState *h);
