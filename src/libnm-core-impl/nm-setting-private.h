@@ -190,6 +190,7 @@ typedef struct {
     int         auto_route_ext_gw;
     int         replace_local_rule;
     int         dhcp_send_release;
+    int         dhcp_send_hostname_v2;
     gint32      required_timeout;
     gint32      dad_timeout;
     gint32      dhcp_timeout;

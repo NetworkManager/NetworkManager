@@ -1379,6 +1379,10 @@
                   nmcli-description="If TRUE, a hostname is sent to the DHCP server when acquiring a lease. Some DHCP servers use this hostname to update DNS databases, essentially providing a static hostname for the computer.  If the &quot;dhcp-hostname&quot; property is NULL and this property is TRUE, the current persistent hostname of the computer is sent."
                   format="boolean"
                   values="true/yes/on, false/no/off" />
+        <property name="dhcp-send-hostname-v2"
+                  nmcli-description="&quot;default&quot; (-1) is a possible value, where the connection tries to use a global default value, if there is no global default value set for dhcp-send-hostname-v2, the value of dhcp-send-hostname will be used as the fallback. But in the future, the setting will always fallback to &quot;true&quot; (1) when there is no global default defined. If &quot;true&quot; (1), a hostname is sent to the DHCP server when acquiring a lease. Some DHCP servers use this hostname to update DNS databases, essentially providing a static hostname for the computer.  If the &quot;dhcp-hostname&quot; property is NULL and this property is TRUE, the current persistent hostname of the computer is sent."
+                  format="choice (NMTernary)"
+                  values="default (-1), false (0), true (1)" />
         <property name="dhcp-hostname"
                   nmcli-description="If the &quot;dhcp-send-hostname&quot; property is TRUE, then the specified name will be sent to the DHCP server when acquiring a lease. This property and &quot;dhcp-fqdn&quot; are mutually exclusive and cannot be set at the same time."
                   format="string" />
@@ -1536,6 +1540,10 @@
                   nmcli-description="If TRUE, a hostname is sent to the DHCP server when acquiring a lease. Some DHCP servers use this hostname to update DNS databases, essentially providing a static hostname for the computer.  If the &quot;dhcp-hostname&quot; property is NULL and this property is TRUE, the current persistent hostname of the computer is sent."
                   format="boolean"
                   values="true/yes/on, false/no/off" />
+        <property name="dhcp-send-hostname-v2"
+                  nmcli-description="&quot;default&quot; (-1) is a possible value, where the connection tries to use a global default value, if there is no global default value set for dhcp-send-hostname-v2, the value of dhcp-send-hostname will be used as the fallback. But in the future, the setting will always fallback to &quot;true&quot; (1) when there is no global default defined. If &quot;true&quot; (1), a hostname is sent to the DHCP server when acquiring a lease. Some DHCP servers use this hostname to update DNS databases, essentially providing a static hostname for the computer.  If the &quot;dhcp-hostname&quot; property is NULL and this property is TRUE, the current persistent hostname of the computer is sent."
+                  format="choice (NMTernary)"
+                  values="default (-1), false (0), true (1)" />
         <property name="dhcp-hostname"
                   nmcli-description="If the &quot;dhcp-send-hostname&quot; property is TRUE, then the specified name will be sent to the DHCP server when acquiring a lease. This property and &quot;dhcp-fqdn&quot; are mutually exclusive and cannot be set at the same time."
                   format="string" />
