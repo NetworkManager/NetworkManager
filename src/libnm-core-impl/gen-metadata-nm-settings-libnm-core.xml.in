@@ -1618,6 +1618,10 @@
                   dbus-type="b"
                   gprop-type="gboolean"
                   />
+        <property name="dhcp-send-hostname-v2"
+                  dbus-type="i"
+                  gprop-type="NMTernary"
+                  />
         <property name="dhcp-send-release"
                   dbus-type="i"
                   gprop-type="NMTernary"
@@ -1760,6 +1764,10 @@
         <property name="dhcp-send-hostname"
                   dbus-type="b"
                   gprop-type="gboolean"
+                  />
+        <property name="dhcp-send-hostname-v2"
+                  dbus-type="i"
+                  gprop-type="NMTernary"
                   />
         <property name="dhcp-send-release"
                   dbus-type="i"
