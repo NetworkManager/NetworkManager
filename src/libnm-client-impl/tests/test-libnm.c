@@ -2692,6 +2692,7 @@ test_types(void)
         G(nm_device_get_type),
         G(nm_device_infiniband_get_type),
         G(nm_device_ip_tunnel_get_type),
+        G(nm_device_ipvlan_get_type),
         G(nm_device_macsec_get_type),
         G(nm_device_macvlan_get_type),
         G(nm_device_modem_capabilities_get_type),
@@ -2769,6 +2770,8 @@ test_types(void)
         G(nm_setting_ip6_config_privacy_get_type),
         G(nm_setting_ip_config_get_type),
         G(nm_setting_ip_tunnel_get_type),
+        G(nm_setting_ipvlan_get_type),
+        G(nm_setting_ipvlan_mode_get_type),
         G(nm_setting_mac_randomization_get_type),
         G(nm_setting_macsec_get_type),
         G(nm_setting_macsec_mode_get_type),
@@ -3391,6 +3394,11 @@ test_dbus_meta_types(void)
         {
             NM_DBUS_INTERFACE_DEVICE_IP_TUNNEL,
             NM_TYPE_DEVICE_IP_TUNNEL,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
+        },
+        {
+            NM_DBUS_INTERFACE_DEVICE_IPVLAN,
+            NM_TYPE_DEVICE_IPVLAN,
             NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
