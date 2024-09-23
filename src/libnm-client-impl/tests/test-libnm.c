@@ -2690,6 +2690,7 @@ test_types(void)
         G(nm_device_ethernet_get_type),
         G(nm_device_generic_get_type),
         G(nm_device_get_type),
+        G(nm_device_hsr_get_type),
         G(nm_device_infiniband_get_type),
         G(nm_device_ip_tunnel_get_type),
         G(nm_device_ipvlan_get_type),
@@ -2763,6 +2764,7 @@ test_types(void)
         G(nm_setting_generic_get_type),
         G(nm_setting_get_type),
         G(nm_setting_gsm_get_type),
+        G(nm_setting_hsr_get_type),
         G(nm_setting_infiniband_get_type),
         G(nm_setting_ip4_config_get_type),
         G(nm_setting_ip6_config_addr_gen_mode_get_type),
@@ -3384,6 +3386,11 @@ test_dbus_meta_types(void)
         {
             NM_DBUS_INTERFACE_DEVICE_GENERIC,
             NM_TYPE_DEVICE_GENERIC,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
+        },
+        {
+            NM_DBUS_INTERFACE_DEVICE_HSR,
+            NM_TYPE_DEVICE_HSR,
             NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
