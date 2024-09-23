@@ -3004,8 +3004,13 @@ test_nml_dbus_meta(void)
                             g_assert(NM_IS_OBJECT_CLASS(p->klass));
                             g_assert(g_type_is_a(gtype, G_TYPE_FROM_CLASS(p->klass)));
                             if (ii == 0)
+                                /* If there is more than one NMLDBusPropertyO needed in the struct
+                                 * associated to the DBus object, they must be all in the same struct field
+                                 * as an array. This is later used on nm-object.c to perform operations on
+                                 * all the object properties at once. */
                                 g_assert(p->klass->property_o_info == p);
                             else
+                                /* Same check than above if branch but for NMLDBusPropertyAO. */
                                 g_assert(p->klass->property_ao_info == p);
                             g_assert_cmpint(p->klass->priv_ptr_offset, >, 0);
                             if (p_prev) {
