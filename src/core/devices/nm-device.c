@@ -122,12 +122,18 @@ typedef enum _nm_packed {
     ADDR_METHOD_STATE_FAILED,
 } AddrMethodState;
 
+typedef enum {
+    PORT_STATE_NOT_ATTACHED,
+    PORT_STATE_ATTACHED,
+    PORT_STATE_ATTACHING,
+} PortState;
+
 typedef struct {
     CList         lst_slave;
     NMDevice     *slave;
     GCancellable *cancellable;
     gulong        watch_id;
-    bool          slave_is_enslaved;
+    PortState     port_state;
     bool          configure;
 } SlaveInfo;
 
@@ -6336,7 +6342,7 @@ attach_port_done(NMDevice *self, NMDevice *slave, gboolean success)
     if (!info)
         return;
 
-    info->slave_is_enslaved = success;
+    info->port_state = (success ? PORT_STATE_ATTACHED : PORT_STATE_NOT_ATTACHED);
 
     nm_device_slave_notify_enslave(info->slave, success);
 
@@ -6399,7 +6405,7 @@ nm_device_master_enslave_slave(NMDevice *self, NMDevice *slave, NMConnection *co
     if (!info)
         return;
 
-    if (info->slave_is_enslaved)
+    if (info->port_state == PORT_STATE_ATTACHED)
         success = TRUE;
     else {
         configure = (info->configure && connection != NULL);
@@ -6408,6 +6414,7 @@ nm_device_master_enslave_slave(NMDevice *self, NMDevice *slave, NMConnection *co
 
         nm_clear_g_cancellable(&info->cancellable);
         info->cancellable = g_cancellable_new();
+        info->port_state  = PORT_STATE_ATTACHING;
         success           = NM_DEVICE_GET_CLASS(self)->attach_port(self,
                                                          slave,
                                                          connection,
@@ -6462,6 +6469,7 @@ nm_device_master_release_slave(NMDevice           *self,
     SlaveInfo                *info;
     gs_unref_object NMDevice *self_free  = NULL;
     gs_unref_object NMDevice *slave_free = NULL;
+    const char               *port_state_str;
 
     g_return_if_fail(NM_DEVICE(self));
     g_return_if_fail(NM_DEVICE(slave));
@@ -6473,11 +6481,20 @@ nm_device_master_release_slave(NMDevice           *self,
 
     info = find_slave_info(self, slave);
 
+    if (info->port_state == PORT_STATE_ATTACHED)
+        port_state_str = "(attached)";
+    else if (info->port_state == PORT_STATE_NOT_ATTACHED)
+        port_state_str = "(not attached)";
+    else {
+        nm_assert(info->port_state == PORT_STATE_ATTACHING);
+        port_state_str = "(attaching)";
+    }
+
     _LOGT(LOGD_CORE,
           "master: release one slave " NM_HASH_OBFUSCATE_PTR_FMT "/%s %s%s",
           NM_HASH_OBFUSCATE_PTR(slave),
           nm_device_get_iface(slave),
-          !info ? "(not registered)" : (info->slave_is_enslaved ? "(enslaved)" : "(not enslaved)"),
+          !info ? "(not registered)" : port_state_str,
           release_type == RELEASE_SLAVE_TYPE_CONFIG_FORCE
               ? " (force-configure)"
               : (release_type == RELEASE_SLAVE_TYPE_CONFIG ? " (configure)" : "(no-config)"));
@@ -6493,7 +6510,7 @@ nm_device_master_release_slave(NMDevice           *self,
     nm_clear_g_cancellable(&info->cancellable);
 
     /* first, let subclasses handle the release ... */
-    if (info->slave_is_enslaved || nm_device_sys_iface_state_is_external(slave)
+    if (info->port_state != PORT_STATE_NOT_ATTACHED || nm_device_sys_iface_state_is_external(slave)
         || release_type >= RELEASE_SLAVE_TYPE_CONFIG_FORCE) {
         NMTernary ret;
 
