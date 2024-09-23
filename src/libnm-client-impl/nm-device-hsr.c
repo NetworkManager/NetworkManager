@@ -20,10 +20,15 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_PORT1,
                                   PROP_MULTICAST_SPEC,
                                   PROP_PRP, );
 
+enum {
+    PROPERTY_O_IDX_PORT1,
+    PROPERTY_O_IDX_PORT2,
+    _PROPERTY_O_IDX_NUM,
+};
+
 typedef struct {
     char            *supervision_address;
-    NMLDBusPropertyO port1;
-    NMLDBusPropertyO port2;
+    NMLDBusPropertyO property_o[_PROPERTY_O_IDX_NUM];
     guint8           multicast_spec;
     bool             prp;
 } NMDeviceHsrPrivate;
@@ -57,7 +62,8 @@ nm_device_hsr_get_port1(NMDeviceHsr *device)
 {
     g_return_val_if_fail(NM_IS_DEVICE_HSR(device), NULL);
 
-    return nml_dbus_property_o_get_obj(&NM_DEVICE_HSR_GET_PRIVATE(device)->port1);
+    return nml_dbus_property_o_get_obj(
+        &NM_DEVICE_HSR_GET_PRIVATE(device)->property_o[PROPERTY_O_IDX_PORT1]);
 }
 
 /**
@@ -73,7 +79,8 @@ nm_device_hsr_get_port2(NMDeviceHsr *device)
 {
     g_return_val_if_fail(NM_IS_DEVICE_HSR(device), NULL);
 
-    return nml_dbus_property_o_get_obj(&NM_DEVICE_HSR_GET_PRIVATE(device)->port2);
+    return nml_dbus_property_o_get_obj(
+        &NM_DEVICE_HSR_GET_PRIVATE(device)->property_o[PROPERTY_O_IDX_PORT2]);
 }
 
 /**
@@ -179,12 +186,12 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_hsr = NML_DBUS_META_IFACE_
         NML_DBUS_META_PROPERTY_INIT_O_PROP("Port1",
                                            PROP_PORT1,
                                            NMDeviceHsr,
-                                           _priv.port1,
+                                           _priv.property_o[PROPERTY_O_IDX_PORT1],
                                            nm_device_get_type),
         NML_DBUS_META_PROPERTY_INIT_O_PROP("Port2",
                                            PROP_PORT2,
                                            NMDeviceHsr,
-                                           _priv.port2,
+                                           _priv.property_o[PROPERTY_O_IDX_PORT2],
                                            nm_device_get_type),
         NML_DBUS_META_PROPERTY_INIT_B("Prp", PROP_PRP, NMDeviceHsr, _priv.prp),
         NML_DBUS_META_PROPERTY_INIT_S("SupervisionAddress",
@@ -203,8 +210,7 @@ nm_device_hsr_class_init(NMDeviceHsrClass *klass)
 
     _NM_OBJECT_CLASS_INIT_PRIV_PTR_DIRECT(nm_object_class, NMDeviceHsr);
 
-    _NM_OBJECT_CLASS_INIT_PROPERTY_O_FIELDS_1(nm_object_class, NMDeviceHsrPrivate, port1);
-    _NM_OBJECT_CLASS_INIT_PROPERTY_O_FIELDS_1(nm_object_class, NMDeviceHsrPrivate, port2);
+    _NM_OBJECT_CLASS_INIT_PROPERTY_O_FIELDS_N(nm_object_class, NMDeviceHsrPrivate, property_o);
 
     /**
      * NMDeviceHsr:port1:
