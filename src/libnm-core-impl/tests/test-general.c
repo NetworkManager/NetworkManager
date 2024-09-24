@@ -10832,7 +10832,7 @@ test_connection_ovs_ifname(gconstpointer test_data)
     /* good if bridge, port, or patch interface */
     g_object_set(s_con, NM_SETTING_CONNECTION_INTERFACE_NAME, "ovs123123123123130123123", NULL);
 
-    if (!ovs_iface_type || nm_streq(ovs_iface_type, "patch"))
+    if (!ovs_iface_type || NM_IN_STRSET(ovs_iface_type, "patch", "dpdk"))
         nmtst_assert_connection_verifies(con);
     else {
         nmtst_assert_connection_unnormalizable(con,
