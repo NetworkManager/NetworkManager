@@ -1358,13 +1358,13 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                 if (connection)
                     goto after_interface_name;
                 iface_type = NMU_IFACE_ANY;
-            } else if (NM_IN_STRSET(ovs_iface_type, "patch")) {
+            } else if (NM_IN_STRSET(ovs_iface_type, "patch", "dpdk")) {
                 /* this interface type is internal to OVS. */
                 iface_type = NMU_IFACE_OVS;
             } else {
                 /* This interface type also requires a netdev. We need to validate
                  * for both OVS and KERNEL. */
-                nm_assert(NM_IN_STRSET(ovs_iface_type, "internal", "system", "dpdk"));
+                nm_assert(NM_IN_STRSET(ovs_iface_type, "internal", "system"));
                 iface_type = NMU_IFACE_OVS_AND_KERNEL;
             }
         } else
