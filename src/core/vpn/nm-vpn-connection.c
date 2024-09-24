@@ -995,12 +995,6 @@ _set_vpn_state(NMVpnConnection              *self,
 
     dispatcher_cleanup(self);
 
-    /* The connection gets destroyed by the VPN manager when it enters the
-     * disconnected/failed state, but we need to keep it around for a bit
-     * to send out signals and handle the dispatcher.  So ref it.
-     */
-    g_object_ref(self);
-
     old_external_state = _state_to_nm_vpn_state(old_vpn_state);
     new_external_state = _state_to_nm_vpn_state(priv->vpn_state);
     if (new_external_state != old_external_state) {
@@ -1120,7 +1114,6 @@ _set_vpn_state(NMVpnConnection              *self,
         break;
     }
 
-    g_object_unref(self);
     if (parent_dev)
         g_object_unref(parent_dev);
 }
