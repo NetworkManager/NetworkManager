@@ -525,6 +525,12 @@ get_property_val(NMSetting            *setting,
         NM_IN_SET(get_type, NM_META_ACCESSOR_GET_TYPE_PARSABLE, NM_META_ACCESSOR_GET_TYPE_PRETTY),
         NULL);
 
+    if (nm_streq(prop, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME)) {
+        prop = NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME_V2;
+    } else if (nm_streq(prop, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME_DEPRECATED)) {
+        prop = NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME;
+    }
+
     if ((property_info = nm_meta_property_info_find_by_setting(setting, prop))) {
         if (property_info->property_type->get_fcn) {
             NMMetaAccessorGetOutFlags out_flags = NM_META_ACCESSOR_GET_OUT_FLAGS_NONE;
@@ -593,8 +599,15 @@ nmc_setting_set_property(NMClient              *client,
                                    NM_META_ACCESSOR_MODIFIER_ADD),
                          FALSE);
 
+    if (nm_streq(prop, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME)) {
+        prop = NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME_V2;
+    } else if (nm_streq(prop, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME_DEPRECATED)) {
+        prop = NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME;
+    }
+
     if (!(property_info = nm_meta_property_info_find_by_setting(setting, prop)))
         goto out_fail_read_only;
+
     if (!property_info->property_type->set_fcn)
         goto out_fail_read_only;
 
@@ -661,8 +674,18 @@ nmc_setting_get_valid_properties(NMSetting *setting)
     num = setting_info ? setting_info->properties_num : 0;
 
     valid_props = g_new(char *, num + 1);
-    for (i = 0; i < num; i++)
+    for (i = 0; i < num; i++) {
+        if (nm_streq(setting_info->properties[i]->property_name,
+                     NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME_V2)) {
+            valid_props[i] = g_strdup(NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME);
+            continue;
+        } else if (nm_streq(setting_info->properties[i]->property_name,
+                            NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME)) {
+            valid_props[i] = g_strdup(NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME_DEPRECATED);
+            continue;
+        }
         valid_props[i] = g_strdup(setting_info->properties[i]->property_name);
+    }
 
     valid_props[num] = NULL;
     return valid_props;
