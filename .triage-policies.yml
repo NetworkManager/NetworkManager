@@ -1,3 +1,5 @@
+# Gitlab-triage documentation: https://gitlab.com/gitlab-org/ruby/gems/gitlab-triage/-/blob/master/README.md
+
 host_url: https://gitlab.freedesktop.org
 
 resource_rules:
