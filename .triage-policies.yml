@@ -224,7 +224,7 @@ resource_rules:
             - community-contributor
           comment_type: thread
           comment: >-
-            Atention maintainers: remember to run the CI!!
+            Attention maintainers: remember to run the CI!!
             
             This MR is authored by a contributor from the community and the CI does not
             run automatically.
