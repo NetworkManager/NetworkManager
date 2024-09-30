@@ -2106,6 +2106,55 @@ nm_platform_link_set_bridge_vlans(NMPlatform                 *self,
 }
 
 gboolean
+nm_platform_dcb_get_dcbx(NMPlatform *self, int ifindex, guint8 *mode_out)
+{
+    gboolean ret;
+
+    _CHECK_SELF(self, klass, FALSE);
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+    g_return_val_if_fail(mode_out, FALSE);
+
+    _LOG3D("dcb: getting DCBX mode");
+
+    ret = klass->dcb_get_dcbx(self, ifindex, mode_out);
+
+    if (_LOGD_ENABLED()) {
+        if (!ret) {
+            _LOG3D("dcb: failure while getting dcbx mode");
+        } else {
+            _LOG3D("dcb: dcbx mode %u", *mode_out);
+        }
+    }
+
+    return ret;
+}
+
+gboolean
+nm_platform_dcb_set_dcbx(NMPlatform *self, int ifindex, guint8 mode)
+{
+    gboolean ret;
+
+    _CHECK_SELF(self, klass, FALSE);
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+
+    _LOG3D("dcb: setting DCBX mode to %u", mode);
+
+    ret = klass->dcb_set_dcbx(self, ifindex, mode);
+
+    if (_LOGD_ENABLED()) {
+        if (!ret) {
+            _LOG3D("dcb: failure while setting dcbx mode");
+        } else {
+            _LOG3D("dcb: dcbx mode set to %u", mode);
+        }
+    }
+
+    return ret;
+}
+
+gboolean
 nm_platform_link_get_bridge_vlans(NMPlatform            *self,
                                   int                    ifindex,
                                   NMPlatformBridgeVlan **out_vlans,
