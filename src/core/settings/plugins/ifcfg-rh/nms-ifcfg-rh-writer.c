@@ -3366,6 +3366,7 @@ do_write_construct(NMConnection                   *connection,
     NMSettingConnection                *s_con;
     NMSettingIPConfig                  *s_ip4;
     NMSettingIPConfig                  *s_ip6;
+    NMSettingDcb                       *s_dcb;
     nm_auto_shvar_file_close shvarFile *ifcfg = NULL;
     const char                         *ifcfg_name;
     gs_free char                       *ifcfg_name_free = NULL;
@@ -3606,6 +3607,15 @@ do_write_construct(NMConnection                   *connection,
                                   FALSE);
             return FALSE;
         }
+    }
+
+    if ((s_dcb = nm_connection_get_setting_dcb(connection))
+        && nm_setting_dcb_get_dcbx_os_controlled(s_dcb)) {
+        set_error_unsupported(error,
+                              connection,
+                              NM_SETTING_DCB_SETTING_NAME "." NM_SETTING_DCB_DCBX_OS_CONTROLLED,
+                              FALSE);
+        return FALSE;
     }
 
     write_ip4_setting(connection,

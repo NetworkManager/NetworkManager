@@ -14,6 +14,7 @@
 #include <endian.h>
 #include <fcntl.h>
 #include <libudev.h>
+#include <linux/dcbnl.h>
 #include <linux/fib_rules.h>
 #include <linux/ip.h>
 #include <linux/if.h>
@@ -5546,6 +5547,125 @@ nla_put_failure:
     g_return_val_if_reached(NULL);
 }
 
+static int
+_dcb_dcbx_get_cb(const struct nl_msg *msg, void *arg)
+{
+    static const struct nla_policy policy[] = {
+        [DCB_ATTR_DCBX] = {.type = NLA_U8},
+    };
+    struct nlattr *tb[G_N_ELEMENTS(policy)];
+
+    if (genlmsg_parse_arr(nlmsg_hdr(msg), 0, tb, policy) < 0)
+        return NL_SKIP;
+
+    if (tb[DCB_ATTR_DCBX]) {
+        guint8 *mode = arg;
+        nm_assert(mode);
+
+        *mode = nla_get_u8(tb[DCB_ATTR_DCBX]);
+
+        return NL_OK;
+    } else if (tb[DCB_CMD_SDCBX]) {
+        return NL_OK;
+    }
+
+    return NL_SKIP;
+}
+
+static gboolean
+_dcb_parse_app_table(GArray *out, struct nlattr *app_attr)
+{
+    static const struct nla_policy policy[] = {[DCB_ATTR_IEEE_APP_UNSPEC] = {.type = NLA_UNSPEC},
+                                               [DCB_ATTR_IEEE_APP]        = {.type = NLA_UNSPEC},
+                                               [DCB_ATTR_DCB_APP]         = {.type = NLA_UNSPEC}};
+    struct nlattr                 *tb[G_N_ELEMENTS(policy)];
+    struct nlattr                 *app;
+    void                          *elem;
+
+    if (nla_parse_nested_arr(tb, app_attr, policy) < 0)
+        return FALSE;
+
+    if (tb[DCB_ATTR_IEEE_APP_UNSPEC])
+        app = tb[DCB_ATTR_IEEE_APP_UNSPEC];
+    else if (tb[DCB_ATTR_IEEE_APP])
+        app = tb[DCB_ATTR_IEEE_APP];
+    else if (tb[DCB_ATTR_DCB_APP])
+        app = tb[DCB_ATTR_DCB_APP];
+    else
+        return false;
+
+    elem = nm_g_array_append_new(out, struct dcb_app);
+    nla_memcpy(&elem, app, sizeof(struct dcb_app));
+
+    return true;
+}
+
+static int
+_dcb_app_table_get_cb(const struct nl_msg *msg, void *arg)
+{
+    static const struct nla_policy policy[] = {[DCB_ATTR_IEEE_APP_TABLE] = {.type = NLA_NESTED}};
+    struct nlattr                 *tb[G_N_ELEMENTS(policy)];
+
+    if (genlmsg_parse_arr(nlmsg_hdr(msg), 0, tb, policy) < 0)
+        return NL_SKIP;
+
+    if (tb[DCB_ATTR_IEEE_APP_TABLE]) {
+        struct nlattr *attr;
+        GArray        *apps;
+        GArray       **apps_out = arg;
+        int            rem;
+
+        apps = g_array_new(TRUE, FALSE, sizeof(struct dcb_app));
+
+        nla_for_each_nested (attr, tb[DCB_ATTR_IEEE_APP_TABLE], rem) {
+            if (!_dcb_parse_app_table(apps, attr)) {
+                g_free(apps);
+                return NL_SKIP;
+            }
+        }
+
+        *apps_out = apps;
+
+        return NL_OK;
+    } else if (tb[DCB_CMD_SDCBX]) {
+        return NL_OK;
+    }
+
+    return NL_SKIP;
+}
+
+static struct nl_msg *
+_nl_msg_new_dcb_full(uint16_t            nlmsg_type,
+                     uint16_t            nlmsg_flags,
+                     enum dcbnl_commands command,
+                     const char *const   ifname,
+                     guint8              family,
+                     void               *data,
+                     size_t              len)
+{
+    nm_auto_nlmsg struct nl_msg *msg = NULL;
+    const struct dcbmsg          d   = {.dcb_family = AF_UNSPEC, .cmd = command, .dcb_pad = 0};
+
+    nm_assert(NM_IN_SET(nlmsg_type, RTM_GETDCB, RTM_SETDCB));
+    nm_assert(ifname);
+
+    msg = nlmsg_alloc_new(len ? nlmsg_total_size(NLMSG_HDRLEN + len) : 0, nlmsg_type, nlmsg_flags);
+
+    if (nlmsg_append_struct(msg, &d) < 0)
+        goto nla_put_failure;
+
+    NLA_PUT_STRING(msg, DCB_ATTR_IFNAME, ifname);
+    if (nlmsg_type == RTM_SETDCB) {
+        guint8 *mode = data;
+        NLA_PUT_U8(msg, DCB_ATTR_DCBX, *mode);
+    }
+
+    return g_steal_pointer(&msg);
+
+nla_put_failure:
+    g_return_val_if_reached(NULL);
+}
+
 static struct nl_msg *
 _nl_msg_new_link(uint16_t nlmsg_type, uint16_t nlmsg_flags, int ifindex, const char *ifname)
 {
@@ -9698,6 +9818,98 @@ get_bridge_vlans_cb(const struct nl_msg *msg, void *arg)
 }
 
 static gboolean
+dcb_get_dcbx(NMPlatform *platform, const char *const ifname, guint8 *mode_out)
+{
+    nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+    struct nl_sock              *sk    = NULL;
+    int                          nle;
+    int                          r;
+    guint8                       mode;
+
+    nm_assert(mode_out);
+
+    nlmsg =
+        _nl_msg_new_dcb_full(RTM_GETDCB, NLM_F_REQUEST, DCB_CMD_GDCBX, ifname, AF_NETLINK, NULL, 0);
+    if (!nlmsg)
+        g_return_val_if_reached(0);
+
+    nle = nl_socket_new(&sk, NETLINK_ROUTE, NL_SOCKET_FLAGS_DISABLE_MSG_PEEK, 0, 0);
+    if (nle < 0) {
+        _LOGD("get-dcbx: error opening socket %s (%d)", nm_strerror(nle), nle);
+        goto err;
+    }
+
+    nle = nl_send_auto(sk, nlmsg);
+    if (nle < 0) {
+        _LOGD("get-dcbx: failed sending request: %s (%d)", nm_strerror(nle), nle);
+    }
+
+    r = nl_recvmsgs(sk,
+                    &((const struct nl_cb) {
+                        .valid_cb  = _dcb_dcbx_get_cb,
+                        .valid_arg = (gpointer) &mode,
+                    }));
+
+    if (r < 0) {
+        _LOGD("get-dcbx: recv failed: %s (%d)", nm_strerror(nle), nle);
+        goto err;
+    }
+
+    *mode_out = mode;
+
+err:
+    if (sk)
+        nl_socket_free(sk);
+    return FALSE;
+}
+
+static gboolean
+dcb_set_dcbx(NMPlatform *platform, const char *const ifname, guint8 mode)
+{
+    nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+    struct nl_sock              *sk    = NULL;
+    int                          nle;
+    int                          r;
+
+    nlmsg = _nl_msg_new_dcb_full(RTM_GETDCB,
+                                 NLM_F_REQUEST,
+                                 DCB_CMD_SDCBX,
+                                 ifname,
+                                 AF_NETLINK,
+                                 &mode,
+                                 0);
+    if (!nlmsg)
+        g_return_val_if_reached(0);
+
+    nle = nl_socket_new(&sk, NETLINK_ROUTE, NL_SOCKET_FLAGS_DISABLE_MSG_PEEK, 0, 0);
+    if (nle < 0) {
+        _LOGD("get-dcbx: error opening socket %s (%d)", nm_strerror(nle), nle);
+        goto err;
+    }
+
+    nle = nl_send_auto(sk, nlmsg);
+    if (nle < 0) {
+        _LOGD("get-dcbx: failed sending request: %s (%d)", nm_strerror(nle), nle);
+    }
+
+    r = nl_recvmsgs(sk,
+                    &((const struct nl_cb) {
+                        .valid_cb  = _dcb_app_table_get_cb,
+                        .valid_arg = NULL,
+                    }));
+
+    if (r < 0) {
+        _LOGD("get-dcbx: recv failed: %s (%d)", nm_strerror(nle), nle);
+        goto err;
+    }
+
+err:
+    if (sk)
+        nl_socket_free(sk);
+    return FALSE;
+}
+
+static gboolean
 link_get_bridge_vlans(NMPlatform            *platform,
                       int                    ifindex,
                       NMPlatformBridgeVlan **out_vlans,
@@ -12146,6 +12358,9 @@ nm_linux_platform_class_init(NMLinuxPlatformClass *klass)
 
     platform_class->link_vlan_change      = link_vlan_change;
     platform_class->link_wireguard_change = link_wireguard_change;
+
+    platform_class->dcb_get_dcbx = dcb_get_dcbx;
+    platform_class->dcb_set_dcbx = dcb_set_dcbx;
 
     platform_class->infiniband_partition_add    = infiniband_partition_add;
     platform_class->infiniband_partition_delete = infiniband_partition_delete;

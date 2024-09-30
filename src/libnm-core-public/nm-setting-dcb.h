@@ -77,6 +77,8 @@ typedef enum /*< flags >*/ {
 #define NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH "priority-strict-bandwidth"
 #define NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS    "priority-traffic-class"
 
+#define NM_SETTING_DCB_DCBX_OS_CONTROLLED "dcbx-os-controlled"
+
 typedef struct _NMSettingDcbClass NMSettingDcbClass;
 
 GType nm_setting_dcb_get_type(void);
@@ -126,6 +128,9 @@ guint nm_setting_dcb_get_priority_traffic_class(NMSettingDcb *setting, guint use
 void  nm_setting_dcb_set_priority_traffic_class(NMSettingDcb *setting,
                                                 guint         user_priority,
                                                 guint         traffic_class);
+
+gboolean nm_setting_dcb_get_dcbx_os_controlled(NMSettingDcb *setting);
+void     nm_setting_dcb_set_dcbx_os_controlled(NMSettingDcb *setting, gboolean os_controlled);
 
 G_END_DECLS
 
