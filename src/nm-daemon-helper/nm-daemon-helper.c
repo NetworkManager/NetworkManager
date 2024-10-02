@@ -112,9 +112,6 @@ cmd_resolve_address(void)
             printf("%s", name);
             return RETURN_SUCCESS;
         } else if (ret == EAI_SYSTEM) {
-            char buf[1024];
-            int  errsv = errno;
-
             fprintf(stderr,
                     "getnameinfo() via service '%s' failed: %d (%s), system error: %d (%s)\n",
                     service,
