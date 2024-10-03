@@ -163,6 +163,9 @@ struct _NML3ConfigData {
     bool ndisc_hop_limit_set : 1;
     bool ndisc_reachable_time_msec_set : 1;
     bool ndisc_retrans_timer_msec_set : 1;
+
+    bool routed_dns_4 : 1;
+    bool routed_dns_6 : 1;
 };
 
 /*****************************************************************************/
@@ -603,6 +606,12 @@ nm_l3_config_data_log(const NML3ConfigData *self,
 
     if (self->proxy_pac_script)
         _L("proxy-pac-script: %s", self->proxy_pac_script->str);
+
+    if (self->routed_dns_4)
+        _L("routed-dns4: yes");
+    if (self->routed_dns_6)
+        _L("routed-dns6: yes");
+
 #undef _L
 }
 
@@ -1977,6 +1986,32 @@ nm_l3_config_data_set_allow_routes_without_address(NML3ConfigData *self,
     }
 }
 
+gboolean
+nm_l3_config_data_get_routed_dns(const NML3ConfigData *self, int addr_family)
+{
+    const int IS_IPv4 = NM_IS_IPv4(addr_family);
+
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+    if (IS_IPv4) {
+        return self->routed_dns_4;
+    } else {
+        return self->routed_dns_6;
+    }
+}
+
+void
+nm_l3_config_data_set_routed_dns(NML3ConfigData *self, int addr_family, gboolean value)
+{
+    const int IS_IPv4 = NM_IS_IPv4(addr_family);
+
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
+    if (IS_IPv4) {
+        self->routed_dns_4 = value;
+    } else {
+        self->routed_dns_6 = value;
+    }
+}
+
 NMProxyConfigMethod
 nm_l3_config_data_get_proxy_method(const NML3ConfigData *self)
 {
@@ -2446,6 +2481,9 @@ nm_l3_config_data_cmp_full(const NML3ConfigData *a,
         NM_CMP_DIRECT_UNSAFE(a->ndisc_retrans_timer_msec_set, b->ndisc_retrans_timer_msec_set);
         if (a->ndisc_retrans_timer_msec_set)
             NM_CMP_DIRECT(a->ndisc_retrans_timer_msec_val, b->ndisc_retrans_timer_msec_val);
+
+        NM_CMP_DIRECT_UNSAFE(a->routed_dns_4, b->routed_dns_4);
+        NM_CMP_DIRECT_UNSAFE(a->routed_dns_6, b->routed_dns_6);
 
         NM_CMP_FIELD(a, b, source);
     }
@@ -3488,6 +3526,11 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
 
     if (!src->allow_routes_without_address_6)
         self->allow_routes_without_address_6 = FALSE;
+
+    if (src->routed_dns_4)
+        self->routed_dns_4 = TRUE;
+    if (src->routed_dns_6)
+        self->routed_dns_6 = TRUE;
 }
 
 NML3ConfigData *
