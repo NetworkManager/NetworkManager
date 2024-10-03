@@ -115,8 +115,8 @@ gboolean nm_device_sysctl_ip_conf_set(NMDevice   *self,
 
 NML3ConfigData *nm_device_create_l3_config_data(NMDevice *self, NMIPConfigSource source);
 
-const NML3ConfigData *nm_device_create_l3_config_data_from_connection(NMDevice     *self,
-                                                                      NMConnection *connection);
+NML3ConfigData *nm_device_create_l3_config_data_from_connection(NMDevice     *self,
+                                                                NMConnection *connection);
 
 void nm_device_ip_method_dhcp4_start(NMDevice *self);
 
