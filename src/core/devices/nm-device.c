@@ -1361,6 +1361,35 @@ _prop_get_ipv6_ra_timeout(NMDevice *self)
                                                        0);
 }
 
+static NMSettingIPConfigRoutedDns
+_prop_get_ipvx_routed_dns(NMDevice *self, int addr_family)
+{
+    NMSettingIPConfig         *s_ip;
+    NMSettingIPConfigRoutedDns val;
+    int                        IS_IPv4;
+
+    g_return_val_if_fail(NM_IS_DEVICE(self), NM_SETTING_IP_CONFIG_ROUTED_DNS_NO);
+    IS_IPv4 = NM_IS_IPv4(addr_family);
+
+    s_ip = nm_device_get_applied_setting(self,
+                                         IS_IPv4 ? NM_TYPE_SETTING_IP4_CONFIG
+                                                 : NM_TYPE_SETTING_IP6_CONFIG);
+    if (!s_ip)
+        return NM_SETTING_IP_CONFIG_ROUTED_DNS_NO;
+
+    val = nm_setting_ip_config_get_routed_dns(s_ip);
+    if (val != NM_SETTING_IP_CONFIG_ROUTED_DNS_DEFAULT)
+        return val;
+
+    return nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
+                                                       IS_IPv4 ? NM_CON_DEFAULT("ipv4.routed-dns")
+                                                               : NM_CON_DEFAULT("ipv6.routed-dns"),
+                                                       self,
+                                                       NM_SETTING_IP_CONFIG_ROUTED_DNS_NO,
+                                                       NM_SETTING_IP_CONFIG_ROUTED_DNS_YES,
+                                                       NM_SETTING_IP_CONFIG_ROUTED_DNS_NO);
+}
+
 static NMSettingConnectionMdns
 _prop_get_connection_mdns(NMDevice *self)
 {
@@ -10973,8 +11002,8 @@ _dev_ipmanual_check_ready(NMDevice *self)
 static void
 _dev_ipmanual_start(NMDevice *self)
 {
-    NMDevicePrivate                         *priv = NM_DEVICE_GET_PRIVATE(self);
-    nm_auto_unref_l3cd const NML3ConfigData *l3cd = NULL;
+    NMDevicePrivate                        *priv = NM_DEVICE_GET_PRIVATE(self);
+    nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
 
     if (priv->ipmanual_data.state_4 != NM_DEVICE_IP_STATE_NONE
         || priv->ipmanual_data.state_6 != NM_DEVICE_IP_STATE_NONE)
@@ -10984,6 +11013,13 @@ _dev_ipmanual_start(NMDevice *self)
         l3cd =
             nm_device_create_l3_config_data_from_connection(self,
                                                             nm_device_get_applied_connection(self));
+
+        if (_prop_get_ipvx_routed_dns(self, AF_INET) == NM_SETTING_IP_CONFIG_ROUTED_DNS_YES) {
+            nm_l3_config_data_set_routed_dns(l3cd, AF_INET, TRUE);
+        }
+        if (_prop_get_ipvx_routed_dns(self, AF_INET6) == NM_SETTING_IP_CONFIG_ROUTED_DNS_YES) {
+            nm_l3_config_data_set_routed_dns(l3cd, AF_INET6, TRUE);
+        }
     }
 
     if (!l3cd) {

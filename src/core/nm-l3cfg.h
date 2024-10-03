@@ -198,6 +198,7 @@ struct _NML3Cfg {
         const NMPObject          *plobj;
         const NMPObject          *plobj_next;
         int                       ifindex;
+        gboolean                  dns_route_added_x[2]; /* index with IS_IPv4 */
     } priv;
 
     /* NML3Cfg strongly cooperates with NMNetns. The latter is
