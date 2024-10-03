@@ -4654,15 +4654,6 @@ _dev_l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, N
     nm_assert(l3cfg == priv->l3cfg);
 
     switch (notify_data->notify_type) {
-    case NM_L3_CONFIG_NOTIFY_TYPE_PRE_COMMIT:
-        if (notify_data->commit.l3cd_changed) {
-            g_signal_emit(self,
-                          signals[L3CD_CHANGED],
-                          0,
-                          notify_data->commit.l3cd_old,
-                          notify_data->commit.l3cd_new);
-        }
-        return;
     case NM_L3_CONFIG_NOTIFY_TYPE_ACD_EVENT:
     {
         const NML3AcdAddrInfo *addr_info = &notify_data->acd_event.info;
@@ -4701,6 +4692,14 @@ _dev_l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, N
         return;
     }
     case NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT:
+        if (notify_data->commit.l3cd_changed) {
+            g_signal_emit(self,
+                          signals[L3CD_CHANGED],
+                          0,
+                          notify_data->commit.l3cd_old,
+                          notify_data->commit.l3cd_new);
+        }
+
         if (priv->ipshared_data_4.state == NM_DEVICE_IP_STATE_PENDING
             && !priv->ipshared_data_4.v4.dnsmasq_manager && priv->ipshared_data_4.v4.l3cd) {
             _dev_ipshared4_spawn_dnsmasq(self);
@@ -19548,6 +19547,9 @@ nm_device_class_init(NMDeviceClass *klass)
                                                 G_TYPE_BOOLEAN,
                                                 0);
 
+    /* Signal "l3cd-changed" indicates that the combined layer-3 configuration
+     * on the device has changed. It is invoked after the new configuration has
+     * been committed to kernel. */
     signals[L3CD_CHANGED] = g_signal_new(NM_DEVICE_L3CD_CHANGED,
                                          G_OBJECT_CLASS_TYPE(object_class),
                                          G_SIGNAL_RUN_FIRST,
