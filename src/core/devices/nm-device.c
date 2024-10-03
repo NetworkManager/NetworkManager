@@ -4654,13 +4654,13 @@ _dev_l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, N
     nm_assert(l3cfg == priv->l3cfg);
 
     switch (notify_data->notify_type) {
-    case NM_L3_CONFIG_NOTIFY_TYPE_L3CD_CHANGED:
-        if (notify_data->l3cd_changed.commited) {
+    case NM_L3_CONFIG_NOTIFY_TYPE_PRE_COMMIT:
+        if (notify_data->commit.l3cd_changed) {
             g_signal_emit(self,
                           signals[L3CD_CHANGED],
                           0,
-                          notify_data->l3cd_changed.l3cd_old,
-                          notify_data->l3cd_changed.l3cd_new);
+                          notify_data->commit.l3cd_old,
+                          notify_data->commit.l3cd_new);
         }
         return;
     case NM_L3_CONFIG_NOTIFY_TYPE_ACD_EVENT:

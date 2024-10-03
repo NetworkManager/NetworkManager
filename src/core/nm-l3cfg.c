@@ -436,7 +436,6 @@ static NM_UTILS_ENUM2STR_DEFINE(
     NML3ConfigNotifyType,
     NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_ACD_EVENT, "acd-event"),
     NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_IPV4LL_EVENT, "ipv4ll-event"),
-    NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_L3CD_CHANGED, "l3cd-changed"),
     NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE, "platform-change"),
     NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE, "platform-change-on-idle"),
     NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_PRE_COMMIT, "pre-commit"),
@@ -591,16 +590,17 @@ _l3_config_notify_data_to_string(const NML3ConfigNotifyData *notify_data,
     nm_strbuf_seek_end(&s, &l);
 
     switch (notify_data->notify_type) {
-    case NM_L3_CONFIG_NOTIFY_TYPE_L3CD_CHANGED:
+    case NM_L3_CONFIG_NOTIFY_TYPE_PRE_COMMIT:
+    case NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT:
         nm_strbuf_append(&s,
                          &l,
                          ", l3cd-old=%s",
-                         NM_HASH_OBFUSCATE_PTR_STR(notify_data->l3cd_changed.l3cd_old, sbufobf));
+                         NM_HASH_OBFUSCATE_PTR_STR(notify_data->commit.l3cd_old, sbufobf));
         nm_strbuf_append(&s,
                          &l,
                          ", l3cd-new=%s",
-                         NM_HASH_OBFUSCATE_PTR_STR(notify_data->l3cd_changed.l3cd_new, sbufobf));
-        nm_strbuf_append(&s, &l, ", commited=%d", notify_data->l3cd_changed.commited);
+                         NM_HASH_OBFUSCATE_PTR_STR(notify_data->commit.l3cd_new, sbufobf));
+        nm_strbuf_append(&s, &l, ", l3cd-changed=%d", notify_data->commit.l3cd_changed);
         break;
     case NM_L3_CONFIG_NOTIFY_TYPE_ACD_EVENT:
         nm_strbuf_append(&s,
@@ -659,27 +659,22 @@ _nm_l3cfg_emit_signal_notify(NML3Cfg *self, const NML3ConfigNotifyData *notify_d
 }
 
 static void
-_nm_l3cfg_emit_signal_notify_simple(NML3Cfg *self, NML3ConfigNotifyType notify_type)
+_nm_l3cfg_emit_signal_notify_commit(NML3Cfg              *self,
+                                    NML3ConfigNotifyType  type,
+                                    const NML3ConfigData *l3cd_old,
+                                    const NML3ConfigData *l3cd_new,
+                                    gboolean              l3cd_changed)
 {
     NML3ConfigNotifyData notify_data;
 
-    notify_data.notify_type = notify_type;
-    _nm_l3cfg_emit_signal_notify(self, &notify_data);
-}
+    nm_assert(
+        NM_IN_SET(type, NM_L3_CONFIG_NOTIFY_TYPE_PRE_COMMIT, NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT));
 
-static void
-_nm_l3cfg_emit_signal_notify_l3cd_changed(NML3Cfg              *self,
-                                          const NML3ConfigData *l3cd_old,
-                                          const NML3ConfigData *l3cd_new,
-                                          gboolean              commited)
-{
-    NML3ConfigNotifyData notify_data;
-
-    notify_data.notify_type  = NM_L3_CONFIG_NOTIFY_TYPE_L3CD_CHANGED;
-    notify_data.l3cd_changed = (typeof(notify_data.l3cd_changed)) {
-        .l3cd_old = l3cd_old,
-        .l3cd_new = l3cd_new,
-        .commited = commited,
+    notify_data.notify_type = type;
+    notify_data.commit      = (typeof(notify_data.commit)){
+             .l3cd_old     = l3cd_old,
+             .l3cd_new     = l3cd_new,
+             .l3cd_changed = l3cd_changed,
     };
     _nm_l3cfg_emit_signal_notify(self, &notify_data);
 }
@@ -4068,11 +4063,6 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
     self->priv.p->combined_l3cd_merged = nm_l3_config_data_seal(g_steal_pointer(&l3cd));
     merged_changed                     = TRUE;
 
-    _nm_l3cfg_emit_signal_notify_l3cd_changed(self,
-                                              l3cd_old,
-                                              self->priv.p->combined_l3cd_merged,
-                                              FALSE);
-
     if (!to_commit) {
         NM_SET_OUT(out_old, g_steal_pointer(&l3cd_old));
         NM_SET_OUT(out_changed_combined_l3cd, TRUE);
@@ -4086,11 +4076,6 @@ out:
         commited_changed = TRUE;
 
         _obj_states_update_all(self);
-
-        _nm_l3cfg_emit_signal_notify_l3cd_changed(self,
-                                                  l3cd_commited_old,
-                                                  self->priv.p->combined_l3cd_commited,
-                                                  TRUE);
 
         NM_SET_OUT(out_old, g_steal_pointer(&l3cd_commited_old));
         NM_SET_OUT(out_changed_combined_l3cd, TRUE);
@@ -4948,7 +4933,6 @@ static void
 _l3_commit_one(NML3Cfg              *self,
                int                   addr_family,
                NML3CfgCommitType     commit_type,
-               gboolean              changed_combined_l3cd,
                const NML3ConfigData *l3cd_old)
 {
     const int                    IS_IPv4         = NM_IS_IPv4(addr_family);
@@ -5163,10 +5147,14 @@ _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
                                   &l3cd_old,
                                   &changed_combined_l3cd);
 
-    _nm_l3cfg_emit_signal_notify_simple(self, NM_L3_CONFIG_NOTIFY_TYPE_PRE_COMMIT);
+    _nm_l3cfg_emit_signal_notify_commit(self,
+                                        NM_L3_CONFIG_NOTIFY_TYPE_PRE_COMMIT,
+                                        l3cd_old,
+                                        self->priv.p->combined_l3cd_commited,
+                                        changed_combined_l3cd);
 
-    _l3_commit_one(self, AF_INET, commit_type, changed_combined_l3cd, l3cd_old);
-    _l3_commit_one(self, AF_INET6, commit_type, changed_combined_l3cd, l3cd_old);
+    _l3_commit_one(self, AF_INET, commit_type, l3cd_old);
+    _l3_commit_one(self, AF_INET6, commit_type, l3cd_old);
 
     _failedobj_reschedule(self, 0);
 
@@ -5177,7 +5165,11 @@ _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
     nm_assert(self->priv.p->commit_reentrant_count == 1);
     self->priv.p->commit_reentrant_count--;
 
-    _nm_l3cfg_emit_signal_notify_simple(self, NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT);
+    _nm_l3cfg_emit_signal_notify_commit(self,
+                                        NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT,
+                                        l3cd_old,
+                                        self->priv.p->combined_l3cd_commited,
+                                        changed_combined_l3cd);
 }
 
 NML3CfgBlockHandle *
