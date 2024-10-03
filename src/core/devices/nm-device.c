@@ -3380,7 +3380,7 @@ nm_device_create_l3_config_data(NMDevice *self, NMIPConfigSource source)
     return nm_l3_config_data_new(nm_device_get_multi_index(self), ifindex, source);
 }
 
-const NML3ConfigData *
+NML3ConfigData *
 nm_device_create_l3_config_data_from_connection(NMDevice *self, NMConnection *connection)
 {
     NML3ConfigData *l3cd;
