@@ -232,9 +232,28 @@ nm_vpn_service_plugin_disconnect(NMVpnServicePlugin *plugin, GError **err)
 }
 
 static void
-nm_vpn_service_plugin_emit_quit(NMVpnServicePlugin *plugin)
+flushed_cb(GObject *object, GAsyncResult *res, gpointer data)
 {
+    NMVpnServicePlugin *plugin = NM_VPN_SERVICE_PLUGIN(data);
+    GError             *error  = NULL;
+
+    if (!g_dbus_connection_flush_finish(G_DBUS_CONNECTION(object), res, &error)) {
+        g_warning("Error flushing D-Bus connection: %s", error->message);
+        g_error_free(error);
+    }
+
     g_signal_emit(plugin, signals[QUIT], 0);
+}
+
+static void
+flush_and_quit(NMVpnServicePlugin *plugin)
+{
+    NMVpnServicePluginPrivate *priv = NM_VPN_SERVICE_PLUGIN_GET_PRIVATE(plugin);
+
+    if (priv->connection != NULL)
+        g_dbus_connection_flush(priv->connection, NULL, flushed_cb, plugin);
+    else
+        g_signal_emit(plugin, signals[QUIT], 0);
 }
 
 /**
@@ -305,7 +324,8 @@ quit_timer_expired(gpointer data)
     NMVpnServicePlugin *self = NM_VPN_SERVICE_PLUGIN(data);
 
     NM_VPN_SERVICE_PLUGIN_GET_PRIVATE(self)->quit_timer = 0;
-    nm_vpn_service_plugin_emit_quit(self);
+    flush_and_quit(self);
+
     return G_SOURCE_REMOVE;
 }
 
@@ -997,17 +1017,17 @@ impl_vpn_service_plugin_set_failure(NMVpnServicePlugin    *plugin,
 /*****************************************************************************/
 
 static void
-_emit_quit(gpointer data, gpointer user_data)
+_flush_and_quit_plugin(gpointer data, gpointer user_data)
 {
     NMVpnServicePlugin *plugin = data;
 
-    nm_vpn_service_plugin_emit_quit(plugin);
+    flush_and_quit(plugin);
 }
 
 static void
 sigterm_handler(int signum)
 {
-    g_slist_foreach(active_plugins, _emit_quit, NULL);
+    g_slist_foreach(active_plugins, _flush_and_quit_plugin, NULL);
 }
 
 static void
@@ -1204,7 +1224,7 @@ state_changed(NMVpnServicePlugin *plugin, NMVpnServiceState state)
         break;
     case NM_VPN_SERVICE_STATE_STOPPED:
         if (priv->dbus_watch_peer)
-            nm_vpn_service_plugin_emit_quit(plugin);
+            flush_and_quit(plugin);
         else
             schedule_quit_timer(plugin);
         nm_clear_g_dbus_connection_signal(nm_vpn_service_plugin_get_connection(plugin),
