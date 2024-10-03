@@ -2448,6 +2448,10 @@ device_l3cd_changed(NMDevice             *device,
      */
     state = nm_device_get_state(device);
     if (l3cd_new && state >= NM_DEVICE_STATE_IP_CONFIG && state < NM_DEVICE_STATE_DEACTIVATING) {
+        /* Since the device L3CD_CHANGED signal is emitted *after* the commit of
+         * configuration, addresses and routes are already set in kernel when we
+         * write the configuration to resolv.conf or send it to the DNS plugin.
+         * This prevents "leaks" of DNS queries via the wrong routes.*/
         nm_dns_manager_set_ip_config(priv->dns_manager,
                                      AF_UNSPEC,
                                      device,

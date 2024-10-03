@@ -10,7 +10,9 @@
 #include "nm-compat-headers/linux/if_addr.h"
 #include <linux/if_ether.h>
 #include <linux/rtnetlink.h>
+#include <linux/fib_rules.h>
 
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-glib-aux/nm-prioq.h"
 #include "libnm-glib-aux/nm-time-utils.h"
 #include "libnm-platform/nm-platform.h"
@@ -671,7 +673,7 @@ _nm_l3cfg_emit_signal_notify_commit(NML3Cfg              *self,
         NM_IN_SET(type, NM_L3_CONFIG_NOTIFY_TYPE_PRE_COMMIT, NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT));
 
     notify_data.notify_type = type;
-    notify_data.commit      = (typeof(notify_data.commit)){
+    notify_data.commit      = (typeof(notify_data.commit)) {
              .l3cd_old     = l3cd_old,
              .l3cd_new     = l3cd_new,
              .l3cd_changed = l3cd_changed,
@@ -3886,6 +3888,139 @@ out_ip4_address:
     }
 }
 
+/*****************************************************************************/
+
+#define DNS_ROUTES_FWMARK_TABLE_PRIO 20053
+
+static void
+_l3cfg_routed_dns(NML3Cfg *self, NML3ConfigData *l3cd)
+{
+    for (int IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
+        const char *const *nameservers;
+        guint              i;
+        guint              len;
+        int                addr_family;
+        gboolean           route_added = FALSE;
+
+        addr_family = IS_IPv4 ? AF_INET : AF_INET6;
+        if (!nm_l3_config_data_get_routed_dns(l3cd, addr_family)) {
+            if (self->priv.dns_route_added_x[IS_IPv4]) {
+                /* Even if the DNS-routes feature is disabled, it was enabled
+                 * before. Therefore, we need to set one last time the routing
+                 * table sync mode to FULL, to clear the DNS routes added
+                 * previously. */
+                self->priv.dns_route_added_x[IS_IPv4] = FALSE;
+                nm_l3_config_data_set_route_table_sync(l3cd,
+                                                       addr_family,
+                                                       NM_IP_ROUTE_TABLE_SYNC_MODE_FULL);
+            }
+            continue;
+        }
+
+        nameservers = nm_l3_config_data_get_nameservers(l3cd, addr_family, &len);
+        nm_l3_config_data_set_route_table_sync(l3cd, addr_family, NM_IP_ROUTE_TABLE_SYNC_MODE_FULL);
+
+        for (i = 0; i < len; i++) {
+            nm_auto_nmpobj NMPObject *obj = NULL;
+            const NMPlatformIPXRoute *route;
+            NMPlatformIPXRoute        route_new;
+            char                      addr_buf[INET6_ADDRSTRLEN];
+            char                      route_buf[128];
+            NMIPAddr                  addr;
+            int                       r;
+
+            if (!nm_utils_dnsname_parse_assert(addr_family, nameservers[i], NULL, &addr, NULL))
+                continue;
+
+            /* Find the gateway to the DNS over the current interface. When
+             * doing the lookup, we want to ignore existing DNS routes added
+             * before: use policy routing with a special fwmark that skips
+             * the table containing DNS routes. */
+            r = nm_platform_ip_route_get(self->priv.platform,
+                                         addr_family,
+                                         &addr,
+                                         DNS_ROUTES_FWMARK_TABLE_PRIO,
+                                         self->priv.ifindex,
+                                         &obj);
+            if (r < 0) {
+                _LOGT("could not get route to DNS %s",
+                      nm_inet_ntop(addr_family, addr.addr_ptr, addr_buf));
+                continue;
+            }
+
+            route = NMP_OBJECT_CAST_IPX_ROUTE(obj);
+
+            if (IS_IPv4) {
+                route_new.r4 = (NMPlatformIP4Route) {
+                    .network       = addr.addr4,
+                    .plen          = 32,
+                    .table_any     = FALSE,
+                    .metric_any    = TRUE,
+                    .table_coerced = nm_platform_route_table_coerce(DNS_ROUTES_FWMARK_TABLE_PRIO),
+                    .gateway       = route->r4.gateway,
+                    .rt_source     = NM_IP_CONFIG_SOURCE_USER,
+                };
+
+                nm_platform_ip_route_normalize(addr_family, &route_new.rx);
+
+                _LOGT("route to %s: %s",
+                      nm_inet4_ntop(addr.addr4, addr_buf),
+                      nm_platform_ip4_route_to_string(&route_new.r4, route_buf, sizeof(route_buf)));
+
+                nm_l3_config_data_add_route_4(l3cd, &route_new.r4);
+                nm_l3_config_data_set_route_table_sync(l3cd,
+                                                       AF_INET,
+                                                       NM_IP_ROUTE_TABLE_SYNC_MODE_FULL);
+                route_added = TRUE;
+            } else {
+                route_new.r6 = (NMPlatformIP6Route) {
+                    .network       = addr.addr6,
+                    .plen          = 128,
+                    .table_any     = FALSE,
+                    .metric_any    = TRUE,
+                    .table_coerced = nm_platform_route_table_coerce(DNS_ROUTES_FWMARK_TABLE_PRIO),
+                    .gateway       = route->r6.gateway,
+                    .rt_source     = NM_IP_CONFIG_SOURCE_USER,
+                };
+
+                nm_platform_ip_route_normalize(addr_family, &route_new.rx);
+
+                _LOGT("route to %s: %s",
+                      nm_inet6_ntop(&addr.addr6, addr_buf),
+                      nm_platform_ip6_route_to_string(&route_new.r6, route_buf, sizeof(route_buf)));
+
+                nm_l3_config_data_add_route_6(l3cd, &route_new.r6);
+                route_added = TRUE;
+            }
+        }
+
+        if (route_added) {
+            NMPlatformRoutingRule rule;
+
+            /* Add a routing rule that selects the table when not using the
+             * special fwmark. Note that the rule is shared between all
+             * devices that use DNS routes. At the moment there is no cleanup
+             * mechanism: once added the rule stays forever. */
+            rule = ((NMPlatformRoutingRule) {
+                .addr_family = addr_family,
+                .flags       = FIB_RULE_INVERT,
+                .priority    = DNS_ROUTES_FWMARK_TABLE_PRIO,
+                .table       = DNS_ROUTES_FWMARK_TABLE_PRIO,
+                .fwmark      = DNS_ROUTES_FWMARK_TABLE_PRIO,
+                .fwmask      = 0xffffffff,
+                .action      = FR_ACT_TO_TBL,
+                .protocol    = RTPROT_STATIC,
+            });
+
+            /* FIXME: don't add the rule every time */
+            nmp_global_tracker_track_rule(self->priv.global_tracker, &rule, 10, self, NULL);
+            nmp_global_tracker_sync(self->priv.global_tracker, NMP_OBJECT_TYPE_ROUTING_RULE, TRUE);
+        }
+
+        self->priv.dns_route_added_x[IS_IPv4] = route_added;
+    }
+}
+
 static void
 _l3cfg_update_combined_config(NML3Cfg               *self,
                               gboolean               to_commit,
@@ -4052,6 +4187,8 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
 
         nm_assert(l3cd);
         nm_assert(nm_l3_config_data_get_ifindex(l3cd) == self->priv.ifindex);
+
+        _l3cfg_routed_dns(self, l3cd);
 
         nm_l3_config_data_seal(l3cd);
     }
