@@ -238,8 +238,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     yes
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -279,8 +279,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                yes
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     yes
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -368,8 +368,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                tak
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     tak
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -409,8 +409,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                tak
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     tak
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -528,8 +528,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     yes
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -569,8 +569,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                yes
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     yes
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -658,8 +658,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                tak
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     tak
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -699,8 +699,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                tak
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     tak
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -818,8 +818,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     yes
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -859,8 +859,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                yes
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     yes
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -948,8 +948,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                tak
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     tak
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -989,8 +989,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                tak
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     tak
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -1263,8 +1263,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     yes
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -1304,8 +1304,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                yes
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     yes
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -1387,8 +1387,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                tak
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     tak
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -1428,8 +1428,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                tak
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     tak
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -1531,8 +1531,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     yes
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -1572,8 +1572,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                yes
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     yes
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -1668,8 +1668,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                tak
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     tak
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -1709,8 +1709,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                tak
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     tak
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -2291,8 +2291,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     yes
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -2332,8 +2332,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                yes
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     yes
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -2415,8 +2415,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                tak
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     tak
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -2456,8 +2456,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                tak
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     tak
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -2563,8 +2563,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     yes
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -2604,8 +2604,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                yes
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     yes
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -2714,8 +2714,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                tak
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     tak
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -2755,8 +2755,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                tak
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     tak
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -3373,8 +3373,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     yes
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -3414,8 +3414,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                yes
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     yes
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -3524,8 +3524,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                tak
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     tak
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -3565,8 +3565,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                tak
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     tak
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -3675,8 +3675,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     yes
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -3716,8 +3716,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                yes
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     yes
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -3812,8 +3812,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                tak
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     tak
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -3853,8 +3853,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                tak
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     tak
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -4159,8 +4159,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     yes
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -4200,8 +4200,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                yes
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     yes
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -4310,8 +4310,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                tak
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     tak
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -4351,8 +4351,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                tak
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     tak
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -4461,8 +4461,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     yes
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -4502,8 +4502,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                yes
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     yes
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -4598,8 +4598,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                tak
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     tak
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -4639,8 +4639,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                tak
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     tak
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -4966,8 +4966,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     yes
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -5008,8 +5008,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                yes
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     yes
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -5133,8 +5133,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                tak
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     tak
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -5175,8 +5175,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                tak
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     tak
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -5300,8 +5300,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     yes
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -5342,8 +5342,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                yes
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     yes
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -5449,8 +5449,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                tak
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     tak
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -5491,8 +5491,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                tak
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     tak
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -5848,8 +5848,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     yes
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -5890,8 +5890,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                yes
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     yes
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -6015,8 +6015,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                tak
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     tak
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -6057,8 +6057,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                tak
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     tak
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -6182,8 +6182,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     yes
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -6224,8 +6224,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                yes
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     yes
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -6331,8 +6331,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                tak
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     tak
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -6373,8 +6373,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                tak
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     tak
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -6634,12 +6634,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL:gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
 
 <<<
-size: 3675
+size: 3691
 location: src/tests/client/test-client.py:test_003()/124
 cmd: $NMCLI --terse con s ethernet
 lang: C
 returncode: 0
-stdout: 3533 bytes
+stdout: 3549 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -6705,8 +6705,8 @@ ipv4.dhcp-client-id:
 ipv4.dhcp-iaid:
 ipv4.dhcp-dscp:
 ipv4.dhcp-timeout:0
-ipv4.dhcp-send-hostname:yes
-ipv4.dhcp-send-hostname-v2:-1
+ipv4.dhcp-send-hostname-deprecated:yes
+ipv4.dhcp-send-hostname:-1
 ipv4.dhcp-hostname:
 ipv4.dhcp-fqdn:
 ipv4.dhcp-hostname-flags:0x0
@@ -6746,8 +6746,8 @@ ipv6.dhcp-pd-hint:
 ipv6.dhcp-duid:
 ipv6.dhcp-iaid:
 ipv6.dhcp-timeout:0
-ipv6.dhcp-send-hostname:yes
-ipv6.dhcp-send-hostname-v2:-1
+ipv6.dhcp-send-hostname-deprecated:yes
+ipv6.dhcp-send-hostname:-1
 ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
@@ -6785,12 +6785,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3685
+size: 3701
 location: src/tests/client/test-client.py:test_003()/125
 cmd: $NMCLI --terse con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3533 bytes
+stdout: 3549 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -6856,8 +6856,8 @@ ipv4.dhcp-client-id:
 ipv4.dhcp-iaid:
 ipv4.dhcp-dscp:
 ipv4.dhcp-timeout:0
-ipv4.dhcp-send-hostname:yes
-ipv4.dhcp-send-hostname-v2:-1
+ipv4.dhcp-send-hostname-deprecated:yes
+ipv4.dhcp-send-hostname:-1
 ipv4.dhcp-hostname:
 ipv4.dhcp-fqdn:
 ipv4.dhcp-hostname-flags:0x0
@@ -6897,8 +6897,8 @@ ipv6.dhcp-pd-hint:
 ipv6.dhcp-duid:
 ipv6.dhcp-iaid:
 ipv6.dhcp-timeout:0
-ipv6.dhcp-send-hostname:yes
-ipv6.dhcp-send-hostname-v2:-1
+ipv6.dhcp-send-hostname-deprecated:yes
+ipv6.dhcp-send-hostname:-1
 ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
@@ -6936,12 +6936,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3325
+size: 3341
 location: src/tests/client/test-client.py:test_003()/126
 cmd: $NMCLI --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 3143 bytes
+stdout: 3159 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -7007,8 +7007,8 @@ ipv4.dhcp-client-id:
 ipv4.dhcp-iaid:
 ipv4.dhcp-dscp:
 ipv4.dhcp-timeout:0
-ipv4.dhcp-send-hostname:yes
-ipv4.dhcp-send-hostname-v2:-1
+ipv4.dhcp-send-hostname-deprecated:yes
+ipv4.dhcp-send-hostname:-1
 ipv4.dhcp-hostname:
 ipv4.dhcp-fqdn:
 ipv4.dhcp-hostname-flags:0x0
@@ -7048,8 +7048,8 @@ ipv6.dhcp-pd-hint:
 ipv6.dhcp-duid:
 ipv6.dhcp-iaid:
 ipv6.dhcp-timeout:0
-ipv6.dhcp-send-hostname:yes
-ipv6.dhcp-send-hostname-v2:-1
+ipv6.dhcp-send-hostname-deprecated:yes
+ipv6.dhcp-send-hostname:-1
 ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
@@ -7073,12 +7073,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3335
+size: 3351
 location: src/tests/client/test-client.py:test_003()/127
 cmd: $NMCLI --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3143 bytes
+stdout: 3159 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -7144,8 +7144,8 @@ ipv4.dhcp-client-id:
 ipv4.dhcp-iaid:
 ipv4.dhcp-dscp:
 ipv4.dhcp-timeout:0
-ipv4.dhcp-send-hostname:yes
-ipv4.dhcp-send-hostname-v2:-1
+ipv4.dhcp-send-hostname-deprecated:yes
+ipv4.dhcp-send-hostname:-1
 ipv4.dhcp-hostname:
 ipv4.dhcp-fqdn:
 ipv4.dhcp-hostname-flags:0x0
@@ -7185,8 +7185,8 @@ ipv6.dhcp-pd-hint:
 ipv6.dhcp-duid:
 ipv6.dhcp-iaid:
 ipv6.dhcp-timeout:0
-ipv6.dhcp-send-hostname:yes
-ipv6.dhcp-send-hostname-v2:-1
+ipv6.dhcp-send-hostname-deprecated:yes
+ipv6.dhcp-send-hostname:-1
 ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
@@ -7416,12 +7416,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL:gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
 
 <<<
-size: 3687
+size: 3703
 location: src/tests/client/test-client.py:test_003()/134
 cmd: $NMCLI --terse --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 3533 bytes
+stdout: 3549 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -7487,8 +7487,8 @@ ipv4.dhcp-client-id:
 ipv4.dhcp-iaid:
 ipv4.dhcp-dscp:
 ipv4.dhcp-timeout:0
-ipv4.dhcp-send-hostname:yes
-ipv4.dhcp-send-hostname-v2:-1
+ipv4.dhcp-send-hostname-deprecated:yes
+ipv4.dhcp-send-hostname:-1
 ipv4.dhcp-hostname:
 ipv4.dhcp-fqdn:
 ipv4.dhcp-hostname-flags:0x0
@@ -7528,8 +7528,8 @@ ipv6.dhcp-pd-hint:
 ipv6.dhcp-duid:
 ipv6.dhcp-iaid:
 ipv6.dhcp-timeout:0
-ipv6.dhcp-send-hostname:yes
-ipv6.dhcp-send-hostname-v2:-1
+ipv6.dhcp-send-hostname-deprecated:yes
+ipv6.dhcp-send-hostname:-1
 ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
@@ -7567,12 +7567,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3697
+size: 3713
 location: src/tests/client/test-client.py:test_003()/135
 cmd: $NMCLI --terse --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3533 bytes
+stdout: 3549 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -7638,8 +7638,8 @@ ipv4.dhcp-client-id:
 ipv4.dhcp-iaid:
 ipv4.dhcp-dscp:
 ipv4.dhcp-timeout:0
-ipv4.dhcp-send-hostname:yes
-ipv4.dhcp-send-hostname-v2:-1
+ipv4.dhcp-send-hostname-deprecated:yes
+ipv4.dhcp-send-hostname:-1
 ipv4.dhcp-hostname:
 ipv4.dhcp-fqdn:
 ipv4.dhcp-hostname-flags:0x0
@@ -7679,8 +7679,8 @@ ipv6.dhcp-pd-hint:
 ipv6.dhcp-duid:
 ipv6.dhcp-iaid:
 ipv6.dhcp-timeout:0
-ipv6.dhcp-send-hostname:yes
-ipv6.dhcp-send-hostname-v2:-1
+ipv6.dhcp-send-hostname-deprecated:yes
+ipv6.dhcp-send-hostname:-1
 ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
@@ -7718,12 +7718,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3337
+size: 3353
 location: src/tests/client/test-client.py:test_003()/136
 cmd: $NMCLI --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 3143 bytes
+stdout: 3159 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -7789,8 +7789,8 @@ ipv4.dhcp-client-id:
 ipv4.dhcp-iaid:
 ipv4.dhcp-dscp:
 ipv4.dhcp-timeout:0
-ipv4.dhcp-send-hostname:yes
-ipv4.dhcp-send-hostname-v2:-1
+ipv4.dhcp-send-hostname-deprecated:yes
+ipv4.dhcp-send-hostname:-1
 ipv4.dhcp-hostname:
 ipv4.dhcp-fqdn:
 ipv4.dhcp-hostname-flags:0x0
@@ -7830,8 +7830,8 @@ ipv6.dhcp-pd-hint:
 ipv6.dhcp-duid:
 ipv6.dhcp-iaid:
 ipv6.dhcp-timeout:0
-ipv6.dhcp-send-hostname:yes
-ipv6.dhcp-send-hostname-v2:-1
+ipv6.dhcp-send-hostname-deprecated:yes
+ipv6.dhcp-send-hostname:-1
 ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
@@ -7855,12 +7855,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3347
+size: 3363
 location: src/tests/client/test-client.py:test_003()/137
 cmd: $NMCLI --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3143 bytes
+stdout: 3159 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -7926,8 +7926,8 @@ ipv4.dhcp-client-id:
 ipv4.dhcp-iaid:
 ipv4.dhcp-dscp:
 ipv4.dhcp-timeout:0
-ipv4.dhcp-send-hostname:yes
-ipv4.dhcp-send-hostname-v2:-1
+ipv4.dhcp-send-hostname-deprecated:yes
+ipv4.dhcp-send-hostname:-1
 ipv4.dhcp-hostname:
 ipv4.dhcp-fqdn:
 ipv4.dhcp-hostname-flags:0x0
@@ -7967,8 +7967,8 @@ ipv6.dhcp-pd-hint:
 ipv6.dhcp-duid:
 ipv6.dhcp-iaid:
 ipv6.dhcp-timeout:0
-ipv6.dhcp-send-hostname:yes
-ipv6.dhcp-send-hostname-v2:-1
+ipv6.dhcp-send-hostname-deprecated:yes
+ipv6.dhcp-send-hostname:-1
 ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
@@ -8202,12 +8202,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 4667
+size: 4699
 location: src/tests/client/test-client.py:test_003()/144
 cmd: $NMCLI --mode tabular con s ethernet
 lang: C
 returncode: 0
-stdout: 4518 bytes
+stdout: 4550 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -8215,11 +8215,11 @@ connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-eth
 name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-denylist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
 802-3-ethernet  --    0      --      no              --           --                  --                         --                    auto  --                --            --            default      --                    -1 (default)             
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                 -1 (default)           --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                            -1 (default)        --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  auto  --            --         --         0 (default)   yes                 -1 (default)           --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  auto  --            --         --         0 (default)   yes                            -1 (default)        --             0x0 (none)           -1 (default)       --    
 
 name   method  browser-only  pac-url  pac-script 
 proxy  none    no            --       --         
@@ -8233,12 +8233,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 4717
+size: 4749
 location: src/tests/client/test-client.py:test_003()/145
 cmd: $NMCLI --mode tabular con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4558 bytes
+stdout: 4590 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -8246,11 +8246,11 @@ connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-eth
 name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-denylist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
 802-3-ethernet  --    0      --      nie             --           --                  --                         --                    automatyczne  --                --            --            default      --                    -1 (default)             
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                 -1 (default)           --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                            -1 (default)        --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 -1 (default)           --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  automatyczne  --            --         --         0 (default)   tak                            -1 (default)        --             0x0 (none)           -1 (default)       --    
 
 name   method  browser-only  pac-url  pac-script 
 proxy  none    nie           --       --         
@@ -8264,12 +8264,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 4205
+size: 4237
 location: src/tests/client/test-client.py:test_003()/146
 cmd: $NMCLI --mode tabular c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 4016 bytes
+stdout: 4048 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -8277,11 +8277,11 @@ connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-eth
 name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-denylist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
 802-3-ethernet  --    0      --      no              --           --                  --                         --                    auto  --                --            --            default      --                    -1 (default)             
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                 -1 (default)           --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                            -1 (default)        --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  auto  --            --         --         0 (default)   yes                 -1 (default)           --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  auto  --            --         --         0 (default)   yes                            -1 (default)        --             0x0 (none)           -1 (default)       --    
 
 name   method  browser-only  pac-url  pac-script 
 proxy  none    no            --       --         
@@ -8291,12 +8291,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 4253
+size: 4285
 location: src/tests/client/test-client.py:test_003()/147
 cmd: $NMCLI --mode tabular c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4054 bytes
+stdout: 4086 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -8304,11 +8304,11 @@ connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-eth
 name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-denylist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
 802-3-ethernet  --    0      --      nie             --           --                  --                         --                    automatyczne  --                --            --            default      --                    -1 (default)             
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                 -1 (default)           --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                            -1 (default)        --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 -1 (default)           --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  automatyczne  --            --         --         0 (default)   tak                            -1 (default)        --             0x0 (none)           -1 (default)       --    
 
 name   method  browser-only  pac-url  pac-script 
 proxy  none    nie           --       --         
@@ -8454,12 +8454,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 4679
+size: 4711
 location: src/tests/client/test-client.py:test_003()/154
 cmd: $NMCLI --mode tabular --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 4518 bytes
+stdout: 4550 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -8467,11 +8467,11 @@ connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-eth
 name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-denylist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
 802-3-ethernet  --    0      --      no              --           --                  --                         --                    auto  --                --            --            default      --                    -1 (default)             
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                 -1 (default)           --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                            -1 (default)        --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  auto  --            --         --         0 (default)   yes                 -1 (default)           --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  auto  --            --         --         0 (default)   yes                            -1 (default)        --             0x0 (none)           -1 (default)       --    
 
 name   method  browser-only  pac-url  pac-script 
 proxy  none    no            --       --         
@@ -8485,12 +8485,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 4729
+size: 4761
 location: src/tests/client/test-client.py:test_003()/155
 cmd: $NMCLI --mode tabular --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4558 bytes
+stdout: 4590 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -8498,11 +8498,11 @@ connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-eth
 name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-denylist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
 802-3-ethernet  --    0      --      nie             --           --                  --                         --                    automatyczne  --                --            --            default      --                    -1 (default)             
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                 -1 (default)           --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                            -1 (default)        --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 -1 (default)           --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  automatyczne  --            --         --         0 (default)   tak                            -1 (default)        --             0x0 (none)           -1 (default)       --    
 
 name   method  browser-only  pac-url  pac-script 
 proxy  none    nie           --       --         
@@ -8516,12 +8516,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 4217
+size: 4249
 location: src/tests/client/test-client.py:test_003()/156
 cmd: $NMCLI --mode tabular --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 4016 bytes
+stdout: 4048 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -8529,11 +8529,11 @@ connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-eth
 name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-denylist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
 802-3-ethernet  --    0      --      no              --           --                  --                         --                    auto  --                --            --            default      --                    -1 (default)             
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                 -1 (default)           --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                            -1 (default)        --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  auto  --            --         --         0 (default)   yes                 -1 (default)           --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  auto  --            --         --         0 (default)   yes                            -1 (default)        --             0x0 (none)           -1 (default)       --    
 
 name   method  browser-only  pac-url  pac-script 
 proxy  none    no            --       --         
@@ -8543,12 +8543,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 4265
+size: 4297
 location: src/tests/client/test-client.py:test_003()/157
 cmd: $NMCLI --mode tabular --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4054 bytes
+stdout: 4086 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  permissions  zone  controller  master  slave-type  port-type  autoconnect-slaves  autoconnect-ports  down-on-poweroff  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          --           --    --          --      --          --         -1 (default)        -1 (default)       -1 (default)      --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -8556,11 +8556,11 @@ connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-eth
 name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-denylist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
 802-3-ethernet  --    0      --      nie             --           --                  --                         --                    automatyczne  --                --            --            default      --                    -1 (default)             
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                 -1 (default)           --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                            -1 (default)        --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 -1 (default)           --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  automatyczne  --            --         --         0 (default)   tak                            -1 (default)        --             0x0 (none)           -1 (default)       --    
 
 name   method  browser-only  pac-url  pac-script 
 proxy  none    nie           --       --         
@@ -8722,12 +8722,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 7472
+size: 7520
 location: src/tests/client/test-client.py:test_003()/164
 cmd: $NMCLI --mode tabular --pretty con s ethernet
 lang: C
 returncode: 0
-stdout: 7314 bytes
+stdout: 7362 bytes
 >>>
 =========================================
   Connection profile details (ethernet)
@@ -8740,13 +8740,13 @@ name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-add
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 802-3-ethernet  --    0      --      no              --           --                  --                         --                    auto  --                --            --            default      --                    -1 (default)             
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                 -1 (default)           --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                            -1 (default)        --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  auto  --            --         --         0 (default)   yes                 -1 (default)           --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  auto  --            --         --         0 (default)   yes                            -1 (default)        --             0x0 (none)           -1 (default)       --    
 
 name   method  browser-only  pac-url  pac-script 
 --------------------------------------------------
@@ -8769,12 +8769,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 7602
+size: 7650
 location: src/tests/client/test-client.py:test_003()/165
 cmd: $NMCLI --mode tabular --pretty con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 7434 bytes
+stdout: 7482 bytes
 >>>
 ===========================================
   Szczegóły profilu połączenia (ethernet)
@@ -8787,13 +8787,13 @@ name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-add
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 802-3-ethernet  --    0      --      nie             --           --                  --                         --                    automatyczne  --                --            --            default      --                    -1 (default)             
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                 -1 (default)           --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                            -1 (default)        --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 -1 (default)           --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  automatyczne  --            --         --         0 (default)   tak                            -1 (default)        --             0x0 (none)           -1 (default)       --    
 
 name   method  browser-only  pac-url  pac-script 
 --------------------------------------------------
@@ -8816,12 +8816,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 6554
+size: 6602
 location: src/tests/client/test-client.py:test_003()/166
 cmd: $NMCLI --mode tabular --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 6356 bytes
+stdout: 6404 bytes
 >>>
 =========================================
   Connection profile details (ethernet)
@@ -8834,13 +8834,13 @@ name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-add
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 802-3-ethernet  --    0      --      no              --           --                  --                         --                    auto  --                --            --            default      --                    -1 (default)             
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                 -1 (default)           --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                            -1 (default)        --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  auto  --            --         --         0 (default)   yes                 -1 (default)           --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  auto  --            --         --         0 (default)   yes                            -1 (default)        --             0x0 (none)           -1 (default)       --    
 
 name   method  browser-only  pac-url  pac-script 
 --------------------------------------------------
@@ -8855,12 +8855,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 6656
+size: 6704
 location: src/tests/client/test-client.py:test_003()/167
 cmd: $NMCLI --mode tabular --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6448 bytes
+stdout: 6496 bytes
 >>>
 ===========================================
   Szczegóły profilu połączenia (ethernet)
@@ -8873,13 +8873,13 @@ name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-add
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 802-3-ethernet  --    0      --      nie             --           --                  --                         --                    automatyczne  --                --            --            default      --                    -1 (default)             
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                 -1 (default)           --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                            -1 (default)        --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 -1 (default)           --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  automatyczne  --            --         --         0 (default)   tak                            -1 (default)        --             0x0 (none)           -1 (default)       --    
 
 name   method  browser-only  pac-url  pac-script 
 --------------------------------------------------
@@ -9070,12 +9070,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 7484
+size: 7532
 location: src/tests/client/test-client.py:test_003()/174
 cmd: $NMCLI --mode tabular --pretty --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 7314 bytes
+stdout: 7362 bytes
 >>>
 =========================================
   Connection profile details (ethernet)
@@ -9088,13 +9088,13 @@ name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-add
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 802-3-ethernet  --    0      --      no              --           --                  --                         --                    auto  --                --            --            default      --                    -1 (default)             
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                 -1 (default)           --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                            -1 (default)        --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  auto  --            --         --         0 (default)   yes                 -1 (default)           --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  auto  --            --         --         0 (default)   yes                            -1 (default)        --             0x0 (none)           -1 (default)       --    
 
 name   method  browser-only  pac-url  pac-script 
 --------------------------------------------------
@@ -9117,12 +9117,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 7614
+size: 7662
 location: src/tests/client/test-client.py:test_003()/175
 cmd: $NMCLI --mode tabular --pretty --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 7434 bytes
+stdout: 7482 bytes
 >>>
 ===========================================
   Szczegóły profilu połączenia (ethernet)
@@ -9135,13 +9135,13 @@ name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-add
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 802-3-ethernet  --    0      --      nie             --           --                  --                         --                    automatyczne  --                --            --            default      --                    -1 (default)             
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                 -1 (default)           --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                            -1 (default)        --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 -1 (default)           --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  automatyczne  --            --         --         0 (default)   tak                            -1 (default)        --             0x0 (none)           -1 (default)       --    
 
 name   method  browser-only  pac-url  pac-script 
 --------------------------------------------------
@@ -9164,12 +9164,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 6566
+size: 6614
 location: src/tests/client/test-client.py:test_003()/176
 cmd: $NMCLI --mode tabular --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 6356 bytes
+stdout: 6404 bytes
 >>>
 =========================================
   Connection profile details (ethernet)
@@ -9182,13 +9182,13 @@ name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-add
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 802-3-ethernet  --    0      --      no              --           --                  --                         --                    auto  --                --            --            default      --                    -1 (default)             
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                 -1 (default)           --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               --              --         --         0 (default)   yes                            -1 (default)        --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  auto  --            --         --         0 (default)   yes                 -1 (default)           --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu   dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       no                  no               no             yes       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  auto  --            --         --         0 (default)   yes                            -1 (default)        --             0x0 (none)           -1 (default)       --    
 
 name   method  browser-only  pac-url  pac-script 
 --------------------------------------------------
@@ -9203,12 +9203,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 6668
+size: 6716
 location: src/tests/client/test-client.py:test_003()/177
 cmd: $NMCLI --mode tabular --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6448 bytes
+stdout: 6496 bytes
 >>>
 ===========================================
   Szczegóły profilu połączenia (ethernet)
@@ -9221,13 +9221,13 @@ name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-add
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 802-3-ethernet  --    0      --      nie             --           --                  --                         --                    automatyczne  --                --            --            default      --                    -1 (default)             
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                 -1 (default)           --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-dscp  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers  auto-route-ext-gw 
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              --              --         --         0 (default)   tak                            -1 (default)        --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                   -1 (default)      
 
-name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-send-hostname-v2  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  automatyczne  --            --         --         0 (default)   tak                 -1 (default)           --             0x0 (none)           -1 (default)       --    
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  replace-local-rule  dhcp-send-release  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   temp-valid-lifetime  temp-preferred-lifetime  addr-gen-mode  ra-timeout   mtu           dhcp-pd-hint  dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname-deprecated  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             -1 (default)        -1 (default)       nie                 nie              nie            tak       -1 (default)      -1 (default)  0 (default)          0 (default)              default        0 (default)  automatyczne  --            --         --         0 (default)   tak                            -1 (default)        --             0x0 (none)           -1 (default)       --    
 
 name   method  browser-only  pac-url  pac-script 
 --------------------------------------------------
@@ -10001,8 +10001,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     yes
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -10042,8 +10042,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                yes
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     yes
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -10152,8 +10152,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                tak
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     tak
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -10193,8 +10193,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                tak
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     tak
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -10303,8 +10303,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     yes
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -10344,8 +10344,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                yes
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     yes
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -10440,8 +10440,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                tak
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     tak
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -10481,8 +10481,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                tak
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     tak
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -10991,8 +10991,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     yes
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -11032,8 +11032,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                yes
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     yes
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -11142,8 +11142,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                tak
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     tak
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -11183,8 +11183,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                tak
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     tak
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -11293,8 +11293,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     yes
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -11334,8 +11334,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                yes
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     yes
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -11430,8 +11430,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                tak
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     tak
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -11471,8 +11471,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                tak
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     tak
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -12024,8 +12024,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     yes
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -12066,8 +12066,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                yes
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     yes
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -12191,8 +12191,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                tak
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     tak
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -12233,8 +12233,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                tak
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     tak
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -12358,8 +12358,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     yes
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -12400,8 +12400,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                yes
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     yes
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -12507,8 +12507,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                tak
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     tak
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -12549,8 +12549,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                tak
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     tak
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -13132,8 +13132,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     yes
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -13174,8 +13174,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                yes
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     yes
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -13299,8 +13299,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                tak
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     tak
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -13341,8 +13341,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                tak
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     tak
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -13466,8 +13466,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     yes
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -13508,8 +13508,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                yes
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     yes
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -13615,8 +13615,8 @@ ipv4.dhcp-client-id:                    --
 ipv4.dhcp-iaid:                         --
 ipv4.dhcp-dscp:                         --
 ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                tak
-ipv4.dhcp-send-hostname-v2:             -1 (default)
+ipv4.dhcp-send-hostname-deprecated:     tak
+ipv4.dhcp-send-hostname:                -1 (default)
 ipv4.dhcp-hostname:                     --
 ipv4.dhcp-fqdn:                         --
 ipv4.dhcp-hostname-flags:               0x0 (none)
@@ -13657,8 +13657,8 @@ ipv6.dhcp-pd-hint:                      --
 ipv6.dhcp-duid:                         --
 ipv6.dhcp-iaid:                         --
 ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                tak
-ipv6.dhcp-send-hostname-v2:             -1 (default)
+ipv6.dhcp-send-hostname-deprecated:     tak
+ipv6.dhcp-send-hostname:                -1 (default)
 ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
@@ -14126,12 +14126,12 @@ UUID:UUID-con-xx1-REPLACED-REPLACED-REPLA
 TYPE:802-3-ethernet
 
 <<<
-size: 3692
+size: 3708
 location: src/tests/client/test-client.py:test_003()/244
 cmd: $NMCLI --mode multiline --terse con s ethernet
 lang: C
 returncode: 0
-stdout: 3533 bytes
+stdout: 3549 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -14197,8 +14197,8 @@ ipv4.dhcp-client-id:
 ipv4.dhcp-iaid:
 ipv4.dhcp-dscp:
 ipv4.dhcp-timeout:0
-ipv4.dhcp-send-hostname:yes
-ipv4.dhcp-send-hostname-v2:-1
+ipv4.dhcp-send-hostname-deprecated:yes
+ipv4.dhcp-send-hostname:-1
 ipv4.dhcp-hostname:
 ipv4.dhcp-fqdn:
 ipv4.dhcp-hostname-flags:0x0
@@ -14238,8 +14238,8 @@ ipv6.dhcp-pd-hint:
 ipv6.dhcp-duid:
 ipv6.dhcp-iaid:
 ipv6.dhcp-timeout:0
-ipv6.dhcp-send-hostname:yes
-ipv6.dhcp-send-hostname-v2:-1
+ipv6.dhcp-send-hostname-deprecated:yes
+ipv6.dhcp-send-hostname:-1
 ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
@@ -14277,12 +14277,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3702
+size: 3718
 location: src/tests/client/test-client.py:test_003()/245
 cmd: $NMCLI --mode multiline --terse con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3533 bytes
+stdout: 3549 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -14348,8 +14348,8 @@ ipv4.dhcp-client-id:
 ipv4.dhcp-iaid:
 ipv4.dhcp-dscp:
 ipv4.dhcp-timeout:0
-ipv4.dhcp-send-hostname:yes
-ipv4.dhcp-send-hostname-v2:-1
+ipv4.dhcp-send-hostname-deprecated:yes
+ipv4.dhcp-send-hostname:-1
 ipv4.dhcp-hostname:
 ipv4.dhcp-fqdn:
 ipv4.dhcp-hostname-flags:0x0
@@ -14389,8 +14389,8 @@ ipv6.dhcp-pd-hint:
 ipv6.dhcp-duid:
 ipv6.dhcp-iaid:
 ipv6.dhcp-timeout:0
-ipv6.dhcp-send-hostname:yes
-ipv6.dhcp-send-hostname-v2:-1
+ipv6.dhcp-send-hostname-deprecated:yes
+ipv6.dhcp-send-hostname:-1
 ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
@@ -14428,12 +14428,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3342
+size: 3358
 location: src/tests/client/test-client.py:test_003()/246
 cmd: $NMCLI --mode multiline --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 3143 bytes
+stdout: 3159 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -14499,8 +14499,8 @@ ipv4.dhcp-client-id:
 ipv4.dhcp-iaid:
 ipv4.dhcp-dscp:
 ipv4.dhcp-timeout:0
-ipv4.dhcp-send-hostname:yes
-ipv4.dhcp-send-hostname-v2:-1
+ipv4.dhcp-send-hostname-deprecated:yes
+ipv4.dhcp-send-hostname:-1
 ipv4.dhcp-hostname:
 ipv4.dhcp-fqdn:
 ipv4.dhcp-hostname-flags:0x0
@@ -14540,8 +14540,8 @@ ipv6.dhcp-pd-hint:
 ipv6.dhcp-duid:
 ipv6.dhcp-iaid:
 ipv6.dhcp-timeout:0
-ipv6.dhcp-send-hostname:yes
-ipv6.dhcp-send-hostname-v2:-1
+ipv6.dhcp-send-hostname-deprecated:yes
+ipv6.dhcp-send-hostname:-1
 ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
@@ -14565,12 +14565,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3352
+size: 3368
 location: src/tests/client/test-client.py:test_003()/247
 cmd: $NMCLI --mode multiline --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3143 bytes
+stdout: 3159 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -14636,8 +14636,8 @@ ipv4.dhcp-client-id:
 ipv4.dhcp-iaid:
 ipv4.dhcp-dscp:
 ipv4.dhcp-timeout:0
-ipv4.dhcp-send-hostname:yes
-ipv4.dhcp-send-hostname-v2:-1
+ipv4.dhcp-send-hostname-deprecated:yes
+ipv4.dhcp-send-hostname:-1
 ipv4.dhcp-hostname:
 ipv4.dhcp-fqdn:
 ipv4.dhcp-hostname-flags:0x0
@@ -14677,8 +14677,8 @@ ipv6.dhcp-pd-hint:
 ipv6.dhcp-duid:
 ipv6.dhcp-iaid:
 ipv6.dhcp-timeout:0
-ipv6.dhcp-send-hostname:yes
-ipv6.dhcp-send-hostname-v2:-1
+ipv6.dhcp-send-hostname-deprecated:yes
+ipv6.dhcp-send-hostname:-1
 ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
@@ -15116,12 +15116,12 @@ UUID:UUID-con-xx1-REPLACED-REPLACED-REPLA
 TYPE:802-3-ethernet
 
 <<<
-size: 3704
+size: 3720
 location: src/tests/client/test-client.py:test_003()/254
 cmd: $NMCLI --mode multiline --terse --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 3533 bytes
+stdout: 3549 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -15187,8 +15187,8 @@ ipv4.dhcp-client-id:
 ipv4.dhcp-iaid:
 ipv4.dhcp-dscp:
 ipv4.dhcp-timeout:0
-ipv4.dhcp-send-hostname:yes
-ipv4.dhcp-send-hostname-v2:-1
+ipv4.dhcp-send-hostname-deprecated:yes
+ipv4.dhcp-send-hostname:-1
 ipv4.dhcp-hostname:
 ipv4.dhcp-fqdn:
 ipv4.dhcp-hostname-flags:0x0
@@ -15228,8 +15228,8 @@ ipv6.dhcp-pd-hint:
 ipv6.dhcp-duid:
 ipv6.dhcp-iaid:
 ipv6.dhcp-timeout:0
-ipv6.dhcp-send-hostname:yes
-ipv6.dhcp-send-hostname-v2:-1
+ipv6.dhcp-send-hostname-deprecated:yes
+ipv6.dhcp-send-hostname:-1
 ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
@@ -15267,12 +15267,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3714
+size: 3730
 location: src/tests/client/test-client.py:test_003()/255
 cmd: $NMCLI --mode multiline --terse --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3533 bytes
+stdout: 3549 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -15338,8 +15338,8 @@ ipv4.dhcp-client-id:
 ipv4.dhcp-iaid:
 ipv4.dhcp-dscp:
 ipv4.dhcp-timeout:0
-ipv4.dhcp-send-hostname:yes
-ipv4.dhcp-send-hostname-v2:-1
+ipv4.dhcp-send-hostname-deprecated:yes
+ipv4.dhcp-send-hostname:-1
 ipv4.dhcp-hostname:
 ipv4.dhcp-fqdn:
 ipv4.dhcp-hostname-flags:0x0
@@ -15379,8 +15379,8 @@ ipv6.dhcp-pd-hint:
 ipv6.dhcp-duid:
 ipv6.dhcp-iaid:
 ipv6.dhcp-timeout:0
-ipv6.dhcp-send-hostname:yes
-ipv6.dhcp-send-hostname-v2:-1
+ipv6.dhcp-send-hostname-deprecated:yes
+ipv6.dhcp-send-hostname:-1
 ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
@@ -15418,12 +15418,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3354
+size: 3370
 location: src/tests/client/test-client.py:test_003()/256
 cmd: $NMCLI --mode multiline --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 3143 bytes
+stdout: 3159 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -15489,8 +15489,8 @@ ipv4.dhcp-client-id:
 ipv4.dhcp-iaid:
 ipv4.dhcp-dscp:
 ipv4.dhcp-timeout:0
-ipv4.dhcp-send-hostname:yes
-ipv4.dhcp-send-hostname-v2:-1
+ipv4.dhcp-send-hostname-deprecated:yes
+ipv4.dhcp-send-hostname:-1
 ipv4.dhcp-hostname:
 ipv4.dhcp-fqdn:
 ipv4.dhcp-hostname-flags:0x0
@@ -15530,8 +15530,8 @@ ipv6.dhcp-pd-hint:
 ipv6.dhcp-duid:
 ipv6.dhcp-iaid:
 ipv6.dhcp-timeout:0
-ipv6.dhcp-send-hostname:yes
-ipv6.dhcp-send-hostname-v2:-1
+ipv6.dhcp-send-hostname-deprecated:yes
+ipv6.dhcp-send-hostname:-1
 ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
@@ -15555,12 +15555,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3364
+size: 3380
 location: src/tests/client/test-client.py:test_003()/257
 cmd: $NMCLI --mode multiline --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3143 bytes
+stdout: 3159 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -15626,8 +15626,8 @@ ipv4.dhcp-client-id:
 ipv4.dhcp-iaid:
 ipv4.dhcp-dscp:
 ipv4.dhcp-timeout:0
-ipv4.dhcp-send-hostname:yes
-ipv4.dhcp-send-hostname-v2:-1
+ipv4.dhcp-send-hostname-deprecated:yes
+ipv4.dhcp-send-hostname:-1
 ipv4.dhcp-hostname:
 ipv4.dhcp-fqdn:
 ipv4.dhcp-hostname-flags:0x0
@@ -15667,8 +15667,8 @@ ipv6.dhcp-pd-hint:
 ipv6.dhcp-duid:
 ipv6.dhcp-iaid:
 ipv6.dhcp-timeout:0
-ipv6.dhcp-send-hostname:yes
-ipv6.dhcp-send-hostname-v2:-1
+ipv6.dhcp-send-hostname-deprecated:yes
+ipv6.dhcp-send-hostname:-1
 ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
