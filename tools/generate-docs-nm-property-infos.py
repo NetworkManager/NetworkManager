@@ -164,6 +164,7 @@ KEYWORD_XML_TYPE_ATTR = "attr"
 keywords = collections.OrderedDict(
     [
         ("property", KEYWORD_XML_TYPE_ATTR),
+        ("rename", KEYWORD_XML_TYPE_ATTR),
         ("variable", KEYWORD_XML_TYPE_ATTR),
         ("format", KEYWORD_XML_TYPE_ATTR),
         ("values", KEYWORD_XML_TYPE_ATTR),

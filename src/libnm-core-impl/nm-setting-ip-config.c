@@ -6706,12 +6706,21 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
     /**
      * NMSettingIPConfig:dhcp-send-hostname:
      *
-     * If %TRUE, a hostname is sent to the DHCP server when acquiring a lease.
-     * Some DHCP servers use this hostname to update DNS databases, essentially
-     * providing a static hostname for the computer.  If the
-     * #NMSettingIPConfig:dhcp-hostname property is %NULL and this property is
-     * %TRUE, the current persistent hostname of the computer is sent.
+     * Since 1.52 this property is deprecated and is only used as fallback value
+     * for #NMSettingIPConfig:dhcp-send-hostname-v2 if it's set to 'default'.
+     * This is only done to avoid breaking existing configurations, the new
+     * property should be used from now on.
+     *
+     * Deprecated: 1.52: use the new version of dhcp-send-hostname instead.
      **/
+    /* ---nmcli---
+     * property: dhcp-send-hostname
+     * rename: dhcp-send-hostname-deprecated
+     * description: Since 1.52 this property is deprecated and is only used as fallback value
+     *    for dhcp-send-hostname if it's set to 'default'. This is only done to avoid
+     *    breaking existing configurations, the new property should be used from now on.
+     * ---end---
+     */
     obj_properties[PROP_DHCP_SEND_HOSTNAME] =
         g_param_spec_boolean(NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME,
                              "",
@@ -6993,18 +7002,36 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
     /**
      * NMSettingIPConfig:dhcp-send-hostname-v2:
      *
-     * %NM_TERNARY_DEFAULT is a possible value, where the connection tries to use a global
-     * default value, if there is no global default value set for dhcp-send-hostname-v2,
-     * the value of dhcp-send-hostname will be used as the fallback. But in the future,
-     * the setting will always fallback to %NM_TERNARY_TRUE when there is no global default
-     * defined. If %NM_TERNARY_TRUE, a hostname is sent to the DHCP server when acquiring
-     * a lease. Some DHCP servers use this hostname to update DNS databases, essentially
+     * If %TRUE, a hostname is sent to the DHCP server when acquiring a lease.
+     * Some DHCP servers use this hostname to update DNS databases, essentially
      * providing a static hostname for the computer.  If the
      * #NMSettingIPConfig:dhcp-hostname property is %NULL and this property is
      * %TRUE, the current persistent hostname of the computer is sent.
      *
+     * The default value is %NM_TERNARY_DEFAULT. In this case the global value
+     * from NetworkManager configuration is looked up. If it's not set, the value
+     * from #NMSettingIPConfig:dhcp-send-hostname, which defaults to %TRUE, is
+     * used for backwards compatibility. In the future this will change and, in
+     * absence of a global default, it will always fallback to %TRUE.
+     *
      * Since: 1.52
      **/
+    /* ---nmcli---
+     * property: dhcp-send-hostname-v2
+     * rename: dhcp-send-hostname
+     * description: If %TRUE, a hostname is sent to the DHCP server when acquiring a lease.
+     *    Some DHCP servers use this hostname to update DNS databases, essentially
+     *    providing a static hostname for the computer.  If the dhcp-hostname
+     *    property is %NULL and this property is %TRUE, the current persistent
+     *    hostname of the computer is sent.
+     *
+     *    The default value is %NM_TERNARY_DEFAULT. In this case the global value
+     *    from NetworkManager configuration is looked up. If it's not set, the value
+     *    from dhcp-send-hostname-deprecated, which defaults to %TRUE, is
+     *    used for backwards compatibility. In the future this will change and, in
+     *    absence of a global default, it will always fallback to %TRUE.
+     * ---end---
+     */
     obj_properties[PROP_DHCP_SEND_HOSTNAME_V2] =
         g_param_spec_enum(NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME_V2,
                           "",
