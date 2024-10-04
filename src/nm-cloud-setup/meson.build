@@ -9,6 +9,12 @@ if install_systemdunitdir
     configuration: data_conf,
   )
 
+  test(
+    'check-nm-cloud-setup.service',
+    find_program(join_paths(source_root, 'src/tests/check-systemd-unit.sh')),
+    args: [ join_paths(meson.current_build_dir(), 'nm-cloud-setup.service') ],
+  )
+
   install_data(
     'nm-cloud-setup.timer',
     install_dir: systemd_systemdsystemunitdir,
