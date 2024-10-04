@@ -1,4 +1,14 @@
 ===============================================
+NetworkManager-1.48.12
+Overview of changes since NetworkManager-1.48.10
+===============================================
+
+* Fix lost of connectivity before pre-down dispatcher event.
+* Ensure IP address order in Azure cloud-setup.
+* Fix validation of OVS DPDK interface names.
+* Fix OVS interface race condition when deactivating OVS ports.
+
+===============================================
 NetworkManager-1.48.10
 Overview of changes since NetworkManager-1.48.8
 ===============================================
