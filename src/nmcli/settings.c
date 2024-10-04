@@ -525,11 +525,7 @@ get_property_val(NMSetting            *setting,
         NM_IN_SET(get_type, NM_META_ACCESSOR_GET_TYPE_PARSABLE, NM_META_ACCESSOR_GET_TYPE_PRETTY),
         NULL);
 
-    if (nm_streq(prop, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME)) {
-        prop = NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME_V2;
-    } else if (nm_streq(prop, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME_DEPRECATED)) {
-        prop = NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME;
-    }
+    prop = nmc_setting_propname_user_to_libnm(nm_setting_get_name(setting), prop);
 
     if ((property_info = nm_meta_property_info_find_by_setting(setting, prop))) {
         if (property_info->property_type->get_fcn) {
@@ -599,11 +595,7 @@ nmc_setting_set_property(NMClient              *client,
                                    NM_META_ACCESSOR_MODIFIER_ADD),
                          FALSE);
 
-    if (nm_streq(prop, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME)) {
-        prop = NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME_V2;
-    } else if (nm_streq(prop, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME_DEPRECATED)) {
-        prop = NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME;
-    }
+    prop = nmc_setting_propname_user_to_libnm(nm_setting_get_name(setting), prop);
 
     if (!(property_info = nm_meta_property_info_find_by_setting(setting, prop)))
         goto out_fail_read_only;
@@ -675,16 +667,10 @@ nmc_setting_get_valid_properties(NMSetting *setting)
 
     valid_props = g_new(char *, num + 1);
     for (i = 0; i < num; i++) {
-        if (nm_streq(setting_info->properties[i]->property_name,
-                     NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME_V2)) {
-            valid_props[i] = g_strdup(NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME);
-            continue;
-        } else if (nm_streq(setting_info->properties[i]->property_name,
-                            NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME)) {
-            valid_props[i] = g_strdup(NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME_DEPRECATED);
-            continue;
-        }
-        valid_props[i] = g_strdup(setting_info->properties[i]->property_name);
+        const char *prop =
+            nmc_setting_propname_libnm_to_user(setting_info->general->setting_name,
+                                               setting_info->properties[i]->property_name);
+        valid_props[i] = g_strdup(prop);
     }
 
     valid_props[num] = NULL;
@@ -700,6 +686,8 @@ nmc_setting_get_property_allowed_values(NMSetting *setting, const char *prop, ch
     g_return_val_if_fail(out_to_free, FALSE);
 
     *out_to_free = NULL;
+
+    prop = nmc_setting_propname_user_to_libnm(nm_setting_get_name(setting), prop);
 
     if ((property_info = nm_meta_property_info_find_by_setting(setting, prop))) {
         if (property_info->property_type->values_fcn) {
@@ -733,6 +721,8 @@ nmc_setting_get_property_desc(NMSetting *setting, const char *prop)
     const char               *desc = NULL;
 
     g_return_val_if_fail(NM_IS_SETTING(setting), FALSE);
+
+    prop = nmc_setting_propname_user_to_libnm(nm_setting_get_name(setting), prop);
 
     property_info = nm_meta_property_info_find_by_setting(setting, prop);
     if (!property_info)
@@ -796,4 +786,34 @@ setting_details(const NmcConfig *nmc_config, NMSetting *setting, const char *one
         return FALSE;
 
     return TRUE;
+}
+
+const char *
+nmc_setting_propname_user_to_libnm(const char *setting_name, const char *prop)
+{
+    if (NM_IN_STRSET(setting_name,
+                     NM_SETTING_IP4_CONFIG_SETTING_NAME,
+                     NM_SETTING_IP6_CONFIG_SETTING_NAME)) {
+        if (nm_streq0(prop, "dhcp-send-hostname"))
+            return NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME_V2;
+        else if (nm_streq0(prop, "dhcp-send-hostname-deprecated"))
+            return NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME;
+    }
+
+    return prop;
+}
+
+const char *
+nmc_setting_propname_libnm_to_user(const char *setting_name, const char *prop)
+{
+    if (NM_IN_STRSET(setting_name,
+                     NM_SETTING_IP4_CONFIG_SETTING_NAME,
+                     NM_SETTING_IP6_CONFIG_SETTING_NAME)) {
+        if (nm_streq0(prop, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME_V2))
+            return "dhcp-send-hostname";
+        else if (nm_streq0(prop, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME))
+            return "dhcp-send-hostname-deprecated";
+    }
+
+    return prop;
 }
