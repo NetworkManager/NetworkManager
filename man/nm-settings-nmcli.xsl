@@ -141,7 +141,14 @@
       <term>
         <option>
           <xsl:attribute name="id">nm-settings-nmcli.property.<xsl:value-of select="$setting_name"/>.<xsl:value-of select="@name"/></xsl:attribute>
-          <xsl:value-of select="$setting_name"/>.<xsl:value-of select="@name"/>
+          <xsl:choose>
+            <xsl:when test="@rename">
+              <xsl:value-of select="$setting_name"/>.<xsl:value-of select="@rename"/>
+            </xsl:when>
+            <xsl:otherwise>
+              <xsl:value-of select="$setting_name"/>.<xsl:value-of select="@name"/>
+            </xsl:otherwise>
+          </xsl:choose>
         </option>
       </term>
       <listitem>
