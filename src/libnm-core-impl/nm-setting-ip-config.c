@@ -7033,12 +7033,13 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      * ---end---
      */
     obj_properties[PROP_DHCP_SEND_HOSTNAME_V2] =
-        g_param_spec_enum(NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME_V2,
-                          "",
-                          "",
-                          NM_TYPE_TERNARY,
-                          NM_TERNARY_DEFAULT,
-                          G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
+        g_param_spec_int(NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME_V2,
+                         "",
+                         "",
+                         G_MININT,
+                         G_MAXINT,
+                         NM_TERNARY_DEFAULT,
+                         G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }
