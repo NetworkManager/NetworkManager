@@ -1380,11 +1380,11 @@
                   values="0 - 2147483647"
                   special-values="default (0), infinity (2147483647)" />
         <property name="dhcp-send-hostname"
-                  nmcli-description="Since 1.52 this property is deprecated and is only used as fallback value for &quot;dhcp-send-hostname-v2&quot; if it&apos;s set to &apos;default&apos;. This is only done to avoid breaking existing configurations, the new property should be used from now on."
+                  nmcli-description="Since 1.52 this property is deprecated and is only used as fallback value for dhcp-send-hostname if it&apos;s set to &apos;default&apos;. This is only done to avoid breaking existing configurations, the new property should be used from now on."
                   format="boolean"
                   values="true/yes/on, false/no/off" />
         <property name="dhcp-send-hostname-v2"
-                  nmcli-description="If TRUE, a hostname is sent to the DHCP server when acquiring a lease. Some DHCP servers use this hostname to update DNS databases, essentially providing a static hostname for the computer.  If the &quot;dhcp-hostname&quot; property is NULL and this property is TRUE, the current persistent hostname of the computer is sent. The default value is &quot;default&quot; (-1). In this case the global value from NetworkManager configuration is looked up. If it&apos;s not set, the value from &quot;dhcp-send-hostname&quot;, which defaults to TRUE, is used for backwards compatibility. In the future this will change and, in absence of a global default, it will always fallback to TRUE."
+                  nmcli-description="If TRUE, a hostname is sent to the DHCP server when acquiring a lease. Some DHCP servers use this hostname to update DNS databases, essentially providing a static hostname for the computer.  If the dhcp-hostname property is NULL and this property is TRUE, the current persistent hostname of the computer is sent. The default value is default (-1). In this case the global value from NetworkManager configuration is looked up. If it&apos;s not set, the value from dhcp-send-hostname-deprecated, which defaults to TRUE, is used for backwards compatibility. In the future this will change and, in absence of a global default, it will always fallback to TRUE."
                   format="choice (NMTernary)"
                   values="default (-1), false/no (0), true/yes (1)" />
         <property name="dhcp-hostname"
@@ -1549,11 +1549,11 @@
                   values="0 - 2147483647"
                   special-values="default (0), infinity (2147483647)" />
         <property name="dhcp-send-hostname"
-                  nmcli-description="Since 1.52 this property is deprecated and is only used as fallback value for &quot;dhcp-send-hostname-v2&quot; if it&apos;s set to &apos;default&apos;. This is only done to avoid breaking existing configurations, the new property should be used from now on."
+                  nmcli-description="Since 1.52 this property is deprecated and is only used as fallback value for dhcp-send-hostname if it&apos;s set to &apos;default&apos;. This is only done to avoid breaking existing configurations, the new property should be used from now on."
                   format="boolean"
                   values="true/yes/on, false/no/off" />
         <property name="dhcp-send-hostname-v2"
-                  nmcli-description="If TRUE, a hostname is sent to the DHCP server when acquiring a lease. Some DHCP servers use this hostname to update DNS databases, essentially providing a static hostname for the computer.  If the &quot;dhcp-hostname&quot; property is NULL and this property is TRUE, the current persistent hostname of the computer is sent. The default value is &quot;default&quot; (-1). In this case the global value from NetworkManager configuration is looked up. If it&apos;s not set, the value from &quot;dhcp-send-hostname&quot;, which defaults to TRUE, is used for backwards compatibility. In the future this will change and, in absence of a global default, it will always fallback to TRUE."
+                  nmcli-description="If TRUE, a hostname is sent to the DHCP server when acquiring a lease. Some DHCP servers use this hostname to update DNS databases, essentially providing a static hostname for the computer.  If the dhcp-hostname property is NULL and this property is TRUE, the current persistent hostname of the computer is sent. The default value is default (-1). In this case the global value from NetworkManager configuration is looked up. If it&apos;s not set, the value from dhcp-send-hostname-deprecated, which defaults to TRUE, is used for backwards compatibility. In the future this will change and, in absence of a global default, it will always fallback to TRUE."
                   format="choice (NMTernary)"
                   values="default (-1), false/no (0), true/yes (1)" />
         <property name="dhcp-hostname"
