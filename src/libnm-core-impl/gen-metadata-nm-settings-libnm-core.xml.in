@@ -1658,7 +1658,7 @@
                   />
         <property name="dhcp-send-hostname-v2"
                   dbus-type="i"
-                  gprop-type="NMTernary"
+                  gprop-type="gint"
                   />
         <property name="dhcp-send-release"
                   dbus-type="i"
@@ -1805,7 +1805,7 @@
                   />
         <property name="dhcp-send-hostname-v2"
                   dbus-type="i"
-                  gprop-type="NMTernary"
+                  gprop-type="gint"
                   />
         <property name="dhcp-send-release"
                   dbus-type="i"
