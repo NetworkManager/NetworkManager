@@ -103,7 +103,7 @@ nm_sriov_vf_new(guint index)
     NMSriovVF *vf;
 
     vf  = g_slice_new(NMSriovVF);
-    *vf = (NMSriovVF){
+    *vf = (NMSriovVF) {
         .refcount   = 1,
         .index      = index,
         .attributes = g_hash_table_new_full(nm_str_hash,
@@ -223,7 +223,7 @@ vf_add_vlan(NMSriovVF *vf, guint vlan_id, guint qos, NMSriovVFVlanProtocol proto
     VFVlan *vlan;
 
     vlan  = g_slice_new(VFVlan);
-    *vlan = (VFVlan){
+    *vlan = (VFVlan) {
         .id       = vlan_id,
         .qos      = qos,
         .protocol = protocol,

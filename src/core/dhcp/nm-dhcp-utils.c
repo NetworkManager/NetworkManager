@@ -92,7 +92,7 @@ ip4_process_dhcpcd_rfc3442_routes(const char     *iface,
 
             nm_l3_config_data_add_route_4(
                 l3cd,
-                &((const NMPlatformIP4Route){
+                &((const NMPlatformIP4Route) {
                     .rt_source  = NM_IP_CONFIG_SOURCE_DHCP,
                     .network    = nm_ip4_addr_clear_host_address(rt_addr, rt_cidr),
                     .plen       = rt_cidr,
@@ -147,7 +147,7 @@ process_dhclient_rfc3442_route(const char *const **p_octets, NMPlatformIP4Route 
     if (inet_pton(AF_INET, next_hop, &tmp_addr) <= 0)
         return FALSE;
 
-    *route = (NMPlatformIP4Route){
+    *route = (NMPlatformIP4Route) {
         .network = v_network,
         .plen    = v_plen,
         .gateway = tmp_addr,
@@ -316,7 +316,7 @@ process_classful_routes(const char     *iface,
 
         // FIXME: ensure the IP address and route are sane
 
-        route = (NMPlatformIP4Route){
+        route = (NMPlatformIP4Route) {
             .network = rt_addr,
         };
 
@@ -409,7 +409,7 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
 
     now = nm_utils_get_monotonic_timestamp_sec();
 
-    address = (NMPlatformIP4Address){
+    address = (NMPlatformIP4Address) {
         .timestamp = now,
     };
 
@@ -655,7 +655,7 @@ nm_dhcp_utils_ip6_config_from_options(NMDedupMultiIndex *multi_idx,
 
     now = nm_utils_get_monotonic_timestamp_sec();
 
-    address = (NMPlatformIP6Address){
+    address = (NMPlatformIP6Address) {
         .plen      = 128,
         .timestamp = now,
     };

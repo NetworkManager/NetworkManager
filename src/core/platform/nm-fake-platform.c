@@ -1000,7 +1000,7 @@ ip4_address_add(NMPlatform *platform,
 {
     NMPlatformIP4Address address;
 
-    address = (NMPlatformIP4Address){
+    address = (NMPlatformIP4Address) {
         .addr_source               = NM_IP_CONFIG_SOURCE_KERNEL,
         .ifindex                   = ifindex,
         .address                   = addr,

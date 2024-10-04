@@ -11,10 +11,10 @@
 
 /*****************************************************************************/
 
-#define ETHT_DATA(xname)                                \
-    [NM_ETHTOOL_ID_##xname] = (&((const NMEthtoolData){ \
-        .optname = NM_ETHTOOL_OPTNAME_##xname,          \
-        .id      = NM_ETHTOOL_ID_##xname,               \
+#define ETHT_DATA(xname)                                 \
+    [NM_ETHTOOL_ID_##xname] = (&((const NMEthtoolData) { \
+        .optname = NM_ETHTOOL_OPTNAME_##xname,           \
+        .id      = NM_ETHTOOL_ID_##xname,                \
     }))
 
 const NMEthtoolData *const nm_ethtool_data[_NM_ETHTOOL_ID_NUM + 1] = {

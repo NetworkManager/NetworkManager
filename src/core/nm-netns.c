@@ -274,7 +274,7 @@ _ecmp_track_init_merged_obj(EcmpTrackEcmpid *track_ecmpid, const NMPObject **out
             const NMPlatformIP4Route *r  = NMP_OBJECT_CAST_IP4_ROUTE(track_obj->obj);
             NMPlatformIP4RtNextHop   *nh = (gpointer) &obj_new->_ip4_route.extra_nexthops[i - 1];
 
-            *nh = (NMPlatformIP4RtNextHop){
+            *nh = (NMPlatformIP4RtNextHop) {
                 .ifindex = r->ifindex,
                 .gateway = r->gateway,
                 .weight  = r->weight,
@@ -620,7 +620,7 @@ nm_netns_shared_ip_reserve(NMNetns *self)
     }
 
     handle  = g_slice_new(NMNetnsSharedIPHandle);
-    *handle = (NMNetnsSharedIPHandle){
+    *handle = (NMNetnsSharedIPHandle) {
         .addr       = addr,
         ._ref_count = 1,
         ._self      = self,
@@ -717,7 +717,7 @@ nm_netns_ip_route_ecmp_register(NMNetns *self, NML3Cfg *l3cfg, const NMPObject *
         track_ecmpid = g_hash_table_lookup(priv->ecmp_track_by_ecmpid, &obj);
         if (!track_ecmpid) {
             track_ecmpid  = g_slice_new(EcmpTrackEcmpid);
-            *track_ecmpid = (EcmpTrackEcmpid){
+            *track_ecmpid = (EcmpTrackEcmpid) {
                 .representative_obj = nmp_object_ref(obj),
                 .merged_obj         = NULL,
                 .ecmpid_lst_head    = C_LIST_INIT(track_ecmpid->ecmpid_lst_head),
@@ -728,7 +728,7 @@ nm_netns_ip_route_ecmp_register(NMNetns *self, NML3Cfg *l3cfg, const NMPObject *
             track_ecmpid->needs_update = TRUE;
 
         track_obj  = g_slice_new(EcmpTrackObj);
-        *track_obj = (EcmpTrackObj){
+        *track_obj = (EcmpTrackObj) {
             .obj                 = nmp_object_ref(obj),
             .l3cfg               = l3cfg,
             .parent_track_ecmpid = track_ecmpid,
@@ -1031,7 +1031,7 @@ _watcher_handle_init(NMNetnsWatcherHandle     *handle,
     nm_assert(handle);
     nm_assert(NM_NETNS_WATCHER_TYPE_VALID(watcher_type));
 
-    *handle = (NMNetnsWatcherHandle){
+    *handle = (NMNetnsWatcherHandle) {
         .watcher_type    = watcher_type,
         .tag             = tag,
         .watcher_tag_lst = C_LIST_INIT(handle->watcher_tag_lst),
@@ -1194,7 +1194,7 @@ _watcher_register_handle(NMNetns *self, NMNetnsWatcherHandle *handle)
         data = _watcher_ip_data_lookup_addr(self, &handle->watcher_data.ip_addr.addr);
         if (!data) {
             data  = g_slice_new(WatcherDataIPAddr);
-            *data = (WatcherDataIPAddr){
+            *data = (WatcherDataIPAddr) {
                 .addr                     = handle->watcher_data.ip_addr.addr,
                 .watcher_ip_addr_lst_head = C_LIST_INIT(data->watcher_ip_addr_lst_head),
             };
@@ -1288,7 +1288,7 @@ nm_netns_watcher_add(NMNetns                  *self,
 
         if (!watcher_by_tag) {
             watcher_by_tag  = g_slice_new(WatcherByTag);
-            *watcher_by_tag = (WatcherByTag){
+            *watcher_by_tag = (WatcherByTag) {
                 .tag                     = tag,
                 .watcher_by_tag_lst_head = C_LIST_INIT(watcher_by_tag->watcher_by_tag_lst_head),
             };

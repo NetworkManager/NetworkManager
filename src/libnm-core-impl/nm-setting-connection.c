@@ -139,7 +139,7 @@ _permission_set_stale(Permission *permission, PermType ptype, char *item_take)
 
     /* we don't inspect (clear) permission before setting. It takes a
      * stale instance. */
-    *permission = (Permission){
+    *permission = (Permission) {
         .ptype = ptype,
         .item  = item_take,
     };

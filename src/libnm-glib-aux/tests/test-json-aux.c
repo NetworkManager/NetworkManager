@@ -88,16 +88,16 @@ test_jansson(void)
     CHECK_FCN(vt,
               json_array_get,
               nm_json_t * (*_f_nm)(const nm_json_t *, gsize),
-              json_t * (*_f_js)(const json_t *, size_t));
+              json_t * (*_f_js)(const json_t *, size_t) );
     CHECK_FCN(vt,
               json_array_size,
               gsize(*_f_nm)(const nm_json_t *),
-              size_t(*_f_js)(const json_t *));
+              size_t (*_f_js)(const json_t *));
     CHECK_FCN(vt, json_delete, void (*_f_nm)(nm_json_t *), void (*_f_js)(json_t *));
     CHECK_FCN(vt,
               json_dumps,
               char *(*_f_nm)(const nm_json_t *, gsize),
-              char *(*_f_js)(const json_t *, size_t));
+              char *(*_f_js)(const json_t *, size_t) );
     CHECK_FCN(vt, json_false, nm_json_t * (*_f_nm)(void), json_t * (*_f_js)(void) );
     CHECK_FCN(vt, json_integer, nm_json_t * (*_f_nm)(nm_json_int_t), json_t * (*_f_js)(json_int_t));
     CHECK_FCN(vt,
@@ -138,7 +138,7 @@ test_jansson(void)
     CHECK_FCN(vt,
               json_object_size,
               gsize(*_f_nm)(const nm_json_t *),
-              size_t(*_f_js)(const json_t *));
+              size_t (*_f_js)(const json_t *));
     CHECK_FCN(vt,
               json_string,
               nm_json_t * (*_f_nm)(const char *),

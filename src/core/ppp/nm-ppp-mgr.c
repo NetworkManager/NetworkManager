@@ -208,11 +208,11 @@ _set_state_failed(NMPppMgr *self, NMPppMgrState state, NMPppMgrState *out_old_st
     self->ifindex = 0;
     nm_clear_l3cd(&self->ip_data_4.l3cd);
     nm_clear_l3cd(&self->ip_data_6.l3cd);
-    self->ip_data_4 = (NMPppMgrIPData){
+    self->ip_data_4 = (NMPppMgrIPData) {
         .ip_received = FALSE,
         .ip_enabled  = FALSE,
     };
-    self->ip_data_6 = (NMPppMgrIPData){
+    self->ip_data_6 = (NMPppMgrIPData) {
         .ip_received = FALSE,
         .ip_enabled  = FALSE,
     };
@@ -563,7 +563,7 @@ nm_ppp_mgr_start(const NMPppMgrConfig *config, GError **error)
 
     self = g_slice_new(NMPppMgr);
 
-    *self = (NMPppMgr){
+    *self = (NMPppMgr) {
         .config      = *config,
         .ppp_manager = ppp_manager,
         .idle_start  = nm_g_idle_add_source(_idle_start_cb, self),

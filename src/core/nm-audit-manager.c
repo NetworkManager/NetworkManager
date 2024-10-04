@@ -90,7 +90,7 @@ _audit_field_init_string(AuditField  *field,
                          gboolean     need_encoding,
                          AuditBackend backends)
 {
-    *field = (AuditField){
+    *field = (AuditField) {
         .name           = name,
         .need_encoding  = need_encoding,
         .backends       = backends,
@@ -102,7 +102,7 @@ _audit_field_init_string(AuditField  *field,
 static void
 _audit_field_init_uint64(AuditField *field, const char *name, guint64 val, AuditBackend backends)
 {
-    *field = (AuditField){
+    *field = (AuditField) {
         .name           = name,
         .backends       = backends,
         .value_type     = NM_VALUE_TYPE_UINT64,

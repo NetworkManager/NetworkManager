@@ -703,7 +703,7 @@ _startup_complete_notify_connection(NMSettings           *self,
         if (timeout_msec == 0)
             return;
         scd  = g_slice_new(StartupCompleteData);
-        *scd = (StartupCompleteData){
+        *scd = (StartupCompleteData) {
             .sett_conn    = g_object_ref(sett_conn),
             .timeout_msec = timeout_msec,
         };

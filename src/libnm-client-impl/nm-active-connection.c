@@ -624,7 +624,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_connection_active = NML_DBUS_META
                                         PROP_CONTROLLER,
                                         "o",
                                         active_connection_update_prop_controller,
-                                        .extra.property_vtable_o = &((const NMLDBusPropertVTableO){
+                                        .extra.property_vtable_o = &((const NMLDBusPropertVTableO) {
                                             .get_o_type_fcn = (nm_device_get_type)})),
         NML_DBUS_META_PROPERTY_INIT_B("Default",
                                       PROP_DEFAULT,
@@ -664,7 +664,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_connection_active = NML_DBUS_META
                                         PROP_MASTER,
                                         "o",
                                         active_connection_update_prop_controller,
-                                        .extra.property_vtable_o = &((const NMLDBusPropertVTableO){
+                                        .extra.property_vtable_o = &((const NMLDBusPropertVTableO) {
                                             .get_o_type_fcn = (nm_device_get_type)})),
         NML_DBUS_META_PROPERTY_INIT_O("SpecificObject",
                                       PROP_SPECIFIC_OBJECT_PATH,

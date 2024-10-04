@@ -230,7 +230,7 @@ _nm_json_vt_internal_load(void)
 
 fail_symbol:
     dlclose(&handle);
-    *v = (NMJsonVtInternal){};
+    *v = (NMJsonVtInternal) {};
     return v;
 }
 

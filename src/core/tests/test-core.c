@@ -1027,7 +1027,7 @@ test_connection_match_ip6_routes(void)
 }
 
 #define do_test_wildcard_match_eval(str, ...) \
-    nm_wildcard_match_check(str, (const char *const[]){__VA_ARGS__}, NM_NARG(__VA_ARGS__))
+    nm_wildcard_match_check(str, (const char *const[]) {__VA_ARGS__}, NM_NARG(__VA_ARGS__))
 
 #define do_test_wildcard_match(str, result, ...) \
     g_assert(do_test_wildcard_match_eval(str, __VA_ARGS__) == result)
@@ -1244,7 +1244,7 @@ _test_match_spec_device(const GSList *specs, const char *match_str)
 {
     if (match_str && g_str_has_prefix(match_str, MATCH_S390))
         return nm_match_spec_device(specs,
-                                    &((const NMMatchSpecDeviceData){
+                                    &((const NMMatchSpecDeviceData) {
                                         .s390_subchannels = &match_str[NM_STRLEN(MATCH_S390)],
                                     }));
     if (match_str && g_str_has_prefix(match_str, MATCH_DRIVER)) {
@@ -1257,13 +1257,13 @@ _test_match_spec_device(const GSList *specs, const char *match_str)
             t++;
         }
         return nm_match_spec_device(specs,
-                                    &((const NMMatchSpecDeviceData){
+                                    &((const NMMatchSpecDeviceData) {
                                         .driver         = s,
                                         .driver_version = t,
                                     }));
     }
     return nm_match_spec_device(specs,
-                                &((const NMMatchSpecDeviceData){
+                                &((const NMMatchSpecDeviceData) {
                                     .interface_name = match_str,
                                 }));
 }
@@ -1789,28 +1789,28 @@ test_nm_utils_strbuf_append(void)
     }                                                                        \
     G_STMT_END
 
-#define _strbuf_append_c(buf, len, ch)                             \
-    G_STMT_START                                                   \
-    {                                                              \
-        char **_buf = (buf);                                       \
-        gsize *_len = (len);                                       \
-        char   _ch  = (ch);                                        \
-                                                                   \
-        switch (nmtst_get_rand_uint32() % 4) {                     \
-        case 0:                                                    \
-            nm_strbuf_append(_buf, _len, "%c", _ch);               \
-            break;                                                 \
-        case 1:                                                    \
-            nm_strbuf_append_str(_buf, _len, ((char[2]){_ch, 0})); \
-            break;                                                 \
-        case 2:                                                    \
-            nm_strbuf_append_bin(_buf, _len, &_ch, 1);             \
-            break;                                                 \
-        case 3:                                                    \
-            nm_strbuf_append_c(_buf, _len, _ch);                   \
-            break;                                                 \
-        }                                                          \
-    }                                                              \
+#define _strbuf_append_c(buf, len, ch)                              \
+    G_STMT_START                                                    \
+    {                                                               \
+        char **_buf = (buf);                                        \
+        gsize *_len = (len);                                        \
+        char   _ch  = (ch);                                         \
+                                                                    \
+        switch (nmtst_get_rand_uint32() % 4) {                      \
+        case 0:                                                     \
+            nm_strbuf_append(_buf, _len, "%c", _ch);                \
+            break;                                                  \
+        case 1:                                                     \
+            nm_strbuf_append_str(_buf, _len, ((char[2]) {_ch, 0})); \
+            break;                                                  \
+        case 2:                                                     \
+            nm_strbuf_append_bin(_buf, _len, &_ch, 1);              \
+            break;                                                  \
+        case 3:                                                     \
+            nm_strbuf_append_c(_buf, _len, _ch);                    \
+            break;                                                  \
+        }                                                           \
+    }                                                               \
     G_STMT_END
 
     for (buf_len = 0; buf_len < 10; buf_len++) {

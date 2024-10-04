@@ -824,7 +824,7 @@ build_device_hostname_infos(NMPolicy *self)
                 array = g_array_sized_new(FALSE, FALSE, sizeof(DeviceHostnameInfo), 4);
 
             info  = nm_g_array_append_new(array, DeviceHostnameInfo);
-            *info = (DeviceHostnameInfo){
+            *info = (DeviceHostnameInfo) {
                 .device   = device,
                 .priority = device_get_hostname_priority(device),
                 .from_dhcp =

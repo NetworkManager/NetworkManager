@@ -132,7 +132,7 @@ _nm_printf(5, 6) static void _read_handle_warn(KeyfileReaderInfo    *info,
                                      info,
                                      kf_key,
                                      cur_property);
-    handler_data.warn = (NMKeyfileHandlerDataWarn){
+    handler_data.warn = (NMKeyfileHandlerDataWarn) {
         .severity = severity,
         .message  = NULL,
         .fmt      = fmt,
@@ -186,7 +186,7 @@ _nm_printf(6, 7) static void _write_handle_warn(KeyfileWriterInfo    *info,
                                       cur_property,
                                       setting,
                                       kf_key);
-    handler_data.warn = (NMKeyfileHandlerDataWarn){
+    handler_data.warn = (NMKeyfileHandlerDataWarn) {
         .severity = severity,
         .message  = NULL,
         .fmt      = fmt,
@@ -915,7 +915,7 @@ _build_list_create(GKeyFile     *keyfile,
         if (G_UNLIKELY(!build_list))
             build_list = g_new(BuildListData, n_keys - i_keys);
 
-        build_list[build_list_len++] = (BuildListData){
+        build_list[build_list_len++] = (BuildListData) {
             .s_key    = s_key,
             .key_idx  = key_idx,
             .key_type = key_type,
@@ -2882,7 +2882,7 @@ cert_writer(KeyfileWriterInfo *info, NMSetting *setting, const char *key, const 
                                           vtable->setting_key,
                                           setting,
                                           key);
-        handler_data.write_cert = (NMKeyfileHandlerDataWriteCert){
+        handler_data.write_cert = (NMKeyfileHandlerDataWriteCert) {
             .vtable = vtable,
         };
 
@@ -2944,11 +2944,11 @@ struct _ParseInfoProperty {
 };
 
 #define PARSE_INFO_PROPERTY(_property_name, ...) \
-    (&((const ParseInfoProperty){.property_name = _property_name, __VA_ARGS__}))
+    (&((const ParseInfoProperty) {.property_name = _property_name, __VA_ARGS__}))
 
-#define PARSE_INFO_PROPERTIES(...)                     \
-    .properties = ((const ParseInfoProperty *const[]){ \
-        __VA_ARGS__ NULL,                              \
+#define PARSE_INFO_PROPERTIES(...)                      \
+    .properties = ((const ParseInfoProperty *const[]) { \
+        __VA_ARGS__ NULL,                               \
     })
 
 typedef struct {
@@ -2956,7 +2956,7 @@ typedef struct {
 } ParseInfoSetting;
 
 #define PARSE_INFO_SETTING(setting_type, ...) \
-    [setting_type] = (&((const ParseInfoSetting){__VA_ARGS__}))
+    [setting_type] = (&((const ParseInfoSetting) {__VA_ARGS__}))
 
 static const ParseInfoSetting *const parse_infos[_NM_META_SETTING_TYPE_NUM] = {
     PARSE_INFO_SETTING(
@@ -3950,7 +3950,7 @@ nm_keyfile_read(GKeyFile             *keyfile,
 
     connection = nm_simple_connection_new();
 
-    info = (KeyfileReaderInfo){
+    info = (KeyfileReaderInfo) {
         .connection   = connection,
         .keyfile      = keyfile,
         .base_dir     = base_dir,
@@ -4084,7 +4084,7 @@ write_setting_value(KeyfileWriterInfo        *info,
                      NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST))
         return;
 
-    value = (GValue){0};
+    value = (GValue) {0};
 
     g_value_init(&value, G_PARAM_SPEC_VALUE_TYPE(property_info->param_spec));
     g_object_get_property(G_OBJECT(setting), property_info->param_spec->name, &value);
@@ -4304,7 +4304,7 @@ nm_keyfile_write(NMConnection         *connection,
 
     keyfile = g_key_file_new();
 
-    info = (KeyfileWriterInfo){
+    info = (KeyfileWriterInfo) {
         .connection    = connection,
         .keyfile       = keyfile,
         .error         = NULL,

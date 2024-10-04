@@ -943,7 +943,7 @@ test_invalid_option(void)
 
     nm_setting_option_set_boolean(s_ethtool, NM_ETHTOOL_OPTNAME_PAUSE_RX, TRUE);
 
-    data = (InvalidOptionWriteData){};
+    data = (InvalidOptionWriteData) {};
     kf   = nm_keyfile_write(con,
                           NM_KEYFILE_HANDLER_FLAGS_NONE,
                           _invalid_option_write_handler,
@@ -956,7 +956,7 @@ test_invalid_option(void)
 
     nmtst_assert_connection_verifies_without_normalization(con);
 
-    data = (InvalidOptionWriteData){};
+    data = (InvalidOptionWriteData) {};
     kf   = nm_keyfile_write(con,
                           NM_KEYFILE_HANDLER_FLAGS_NONE,
                           _invalid_option_write_handler,
@@ -967,7 +967,7 @@ test_invalid_option(void)
 
     nm_setting_option_set(s_ethtool, "bogus", g_variant_new_int64(0));
 
-    data = (InvalidOptionWriteData){
+    data = (InvalidOptionWriteData) {
         .expect = TRUE,
     };
     kf = nm_keyfile_write(con,

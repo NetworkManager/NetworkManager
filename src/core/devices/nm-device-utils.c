@@ -355,7 +355,7 @@ nm_device_resolve_address(int                 addr_family,
     NMDnsSystemdResolved *resolved;
 
     info  = g_new(ResolveAddrInfo, 1);
-    *info = (ResolveAddrInfo){
+    *info = (ResolveAddrInfo) {
         .task = nm_g_task_new(NULL, cancellable, nm_device_resolve_address, callback, cb_data),
         .addr_family = addr_family,
         .address     = nm_ip_addr_init(addr_family, address),

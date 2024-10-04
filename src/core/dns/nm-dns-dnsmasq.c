@@ -263,7 +263,7 @@ handle_kill:
           PIDFILE);
 
     gl_pid.kill_external_data  = g_slice_new(GlPidKillExternalData);
-    *gl_pid.kill_external_data = (GlPidKillExternalData){
+    *gl_pid.kill_external_data = (GlPidKillExternalData) {
         .shutdown_wait_handle = nm_shutdown_wait_obj_register_handle_full(
             g_strdup_printf("kill-external-dnsmasq-process-%" G_PID_FORMAT, pid),
             TRUE),
@@ -623,7 +623,7 @@ _gl_pid_spawn(const char           *dm_binary,
         nm_assert(notify);
         nm_assert(G_IS_CANCELLABLE(cancellable));
         gl_pid.spawn_data  = g_slice_new(GlPidSpawnAsyncData);
-        *gl_pid.spawn_data = (GlPidSpawnAsyncData){
+        *gl_pid.spawn_data = (GlPidSpawnAsyncData) {
             .dm_binary        = dm_binary,
             .notify           = notify,
             .notify_user_data = notify_user_data,

@@ -1023,7 +1023,7 @@ _check_duid_impl(const guint8 *duid_bin,
     g_assert_cmpint(contents_len, ==, strlen(contents));
 }
 
-#define _DUID(...) ((const guint8[]){__VA_ARGS__})
+#define _DUID(...) ((const guint8[]) {__VA_ARGS__})
 
 #define _check_duid(duid, enforce_duid, old_content, new_content) \
     _check_duid_impl((duid), sizeof(duid), (enforce_duid), (old_content), (new_content))

@@ -113,7 +113,7 @@ _add_connection_info_new(NmCli *nmc, NMConnection *orig_connection, NMConnection
     AddConnectionInfo *info;
 
     info  = g_slice_new(AddConnectionInfo);
-    *info = (AddConnectionInfo){
+    *info = (AddConnectionInfo) {
         .nmc       = nmc,
         .orig_id   = orig_connection ? g_strdup(nm_connection_get_id(orig_connection)) : NULL,
         .orig_uuid = orig_connection ? g_strdup(nm_connection_get_uuid(orig_connection)) : NULL,
@@ -1763,7 +1763,7 @@ nmc_active_connection_details(NMActiveConnection *acon, NmCli *nmc)
 
             nmc_print_table(
                 &nmc->nmc_config,
-                (gpointer[]){acon, NULL},
+                (gpointer[]) {acon, NULL},
                 NULL,
                 NULL,
                 NMC_META_GENERIC_GROUP("GENERAL", metagen_con_active_general, N_("GROUP")),
@@ -1820,7 +1820,7 @@ nmc_active_connection_details(NMActiveConnection *acon, NmCli *nmc)
         if (nmc_fields_con_active_details_groups[group_idx]->nested == metagen_con_active_vpn) {
             if (NM_IS_VPN_CONNECTION(acon)) {
                 nmc_print_table(&nmc->nmc_config,
-                                (gpointer[]){acon, NULL},
+                                (gpointer[]) {acon, NULL},
                                 NULL,
                                 NULL,
                                 NMC_META_GENERIC_GROUP("VPN", metagen_con_active_vpn, N_("NAME")),

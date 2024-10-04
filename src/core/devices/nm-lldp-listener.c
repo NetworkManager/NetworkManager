@@ -397,7 +397,7 @@ lldp_neighbor_new(NMLldpNeighbor *neighbor_nm)
     }
 
     neigh  = g_slice_new(LldpNeighbor);
-    *neigh = (LldpNeighbor){
+    *neigh = (LldpNeighbor) {
         .neighbor_nm     = nm_lldp_neighbor_ref(neighbor_nm),
         .chassis_id_type = chassis_id_type,
         .chassis_id      = g_steal_pointer(&s_chassis_id),
@@ -522,7 +522,7 @@ lldp_neighbor_to_variant(LldpNeighbor *neigh)
             if (len <= 6)
                 continue;
 
-                /* skip over leading TLV, OUI and subtype */
+            /* skip over leading TLV, OUI and subtype */
 #if NM_MORE_ASSERTS > 5
             {
                 guint8 check_hdr[] = {0xfe | (((len - 2) >> 8) & 0x01),
@@ -721,7 +721,7 @@ nmtst_lldp_parse_from_raw(const guint8 *raw_data, gsize raw_len)
     g_assert(raw_data);
     g_assert(raw_len > 0);
 
-    lldp_rx = nm_lldp_rx_new(&((NMLldpRXConfig){
+    lldp_rx = nm_lldp_rx_new(&((NMLldpRXConfig) {
         .ifindex       = 1,
         .neighbors_max = MAX_NEIGHBORS,
         .callback      = nmtst_lldp_event_handler,
@@ -889,7 +889,7 @@ nm_lldp_listener_new(int                  ifindex,
     g_return_val_if_fail(notify_callback, FALSE);
 
     self  = g_slice_new(NMLldpListener);
-    *self = (NMLldpListener){
+    *self = (NMLldpListener) {
         .ifindex          = ifindex,
         .notify_callback  = notify_callback,
         .notify_user_data = notify_user_data,
@@ -897,7 +897,7 @@ nm_lldp_listener_new(int                  ifindex,
 
     nm_assert(nm_g_main_context_is_thread_default(g_main_context_default()));
 
-    lldp_rx = nm_lldp_rx_new(&((NMLldpRXConfig){
+    lldp_rx = nm_lldp_rx_new(&((NMLldpRXConfig) {
         .ifindex       = ifindex,
         .neighbors_max = MAX_NEIGHBORS,
         .callback      = lldp_event_handler,

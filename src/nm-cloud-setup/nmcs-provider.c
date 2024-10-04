@@ -95,7 +95,7 @@ nmcs_provider_get_config_result_new(GHashTable *iface_datas)
     g_ptr_array_add(ptrarr, NULL);
 
     result  = g_new(NMCSProviderGetConfigResult, 1);
-    *result = (NMCSProviderGetConfigResult){
+    *result = (NMCSProviderGetConfigResult) {
         .iface_datas   = g_hash_table_ref(iface_datas),
         .n_iface_datas = n_iface_datas,
         .iface_datas_arr =
@@ -185,7 +185,7 @@ nmcs_provider_get_config_iface_data_create(NMCSProviderGetConfigTaskData *get_co
     nm_assert(NMCS_IS_PROVIDER(get_config_data->self));
 
     iface_data  = g_slice_new(NMCSProviderGetConfigIfaceData);
-    *iface_data = (NMCSProviderGetConfigIfaceData){
+    *iface_data = (NMCSProviderGetConfigIfaceData) {
         .get_config_data = get_config_data,
         .hwaddr          = g_strdup(hwaddr),
         .iface_idx       = -1,
@@ -198,7 +198,7 @@ nmcs_provider_get_config_iface_data_create(NMCSProviderGetConfigTaskData *get_co
      * Also, knowing the type would allow us to initialize to something other than
      * false/0/NULL/0.0. */
     if (G_OBJECT_TYPE(get_config_data->self) == nmcs_provider_aliyun_get_type()) {
-        iface_data->priv.aliyun = (typeof(iface_data->priv.aliyun)){
+        iface_data->priv.aliyun = (typeof(iface_data->priv.aliyun)) {
             .has_primary_ip_address = FALSE,
         };
     }
@@ -293,7 +293,7 @@ nmcs_provider_get_config(NMCSProvider       *self,
     _LOGD("get-config: starting");
 
     get_config_data  = g_slice_new(NMCSProviderGetConfigTaskData);
-    *get_config_data = (NMCSProviderGetConfigTaskData){
+    *get_config_data = (NMCSProviderGetConfigTaskData) {
         /* "self" is kept alive by "task". */
         .self = self,
         .task = nm_g_task_new(self, cancellable, nmcs_provider_get_config, callback, user_data),

@@ -178,7 +178,7 @@ _map_interfaces_parse(void)
         nm_assert(j < alloc_len);
         m = &map_interfaces[j++];
 
-        *m = (NMUtilsNamedValue){
+        *m = (NMUtilsNamedValue) {
             .name      = g_strndup(str, s - str),
             .value_str = hwaddr,
         };
@@ -187,7 +187,7 @@ _map_interfaces_parse(void)
     }
 
     nm_assert(j < alloc_len);
-    map_interfaces[j++] = (NMUtilsNamedValue){
+    map_interfaces[j++] = (NMUtilsNamedValue) {
         .name      = NULL,
         .value_str = NULL,
     };
@@ -766,7 +766,7 @@ main(int argc, const char *const *argv)
 
     sigterm_cancellable = g_cancellable_new();
 
-    sigterm_data = (SigTermData){
+    sigterm_data = (SigTermData) {
         .cancellable     = sigterm_cancellable,
         .enabled         = TRUE,
         .signal_received = FALSE,

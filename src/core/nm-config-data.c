@@ -399,7 +399,7 @@ nm_config_data_get_ignore_carrier_for_port(const NMConfigData *self,
     if (!nm_utils_ifname_valid_kernel(controller, NULL))
         goto out_default;
 
-    match_data = (NMMatchSpecDeviceData){
+    match_data = (NMMatchSpecDeviceData) {
         .interface_name = controller,
         .device_type    = port_type,
     };
@@ -1879,7 +1879,7 @@ _match_section_info_init(MatchSectionInfo *connection_info,
         if (!value)
             continue;
 
-        vals[j++] = (NMUtilsNamedValue){
+        vals[j++] = (NMUtilsNamedValue) {
             .name      = g_steal_pointer(&key),
             .value_str = value,
         };

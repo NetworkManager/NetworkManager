@@ -439,7 +439,7 @@ setting_vlans_to_platform(GPtrArray *array, guint *out_len)
 
         nm_bridge_vlan_get_vid_range(vlan, &vid_start, &vid_end);
 
-        arr[i] = (NMPlatformBridgeVlan){
+        arr[i] = (NMPlatformBridgeVlan) {
             .vid_start = vid_start,
             .vid_end   = vid_end,
             .pvid      = nm_bridge_vlan_is_pvid(vlan),
@@ -468,7 +468,7 @@ commit_port_options(NMDevice *device, NMSettingBridgePort *setting)
                             nm_device_get_ifindex(device),
                             NULL,
                             NULL,
-                            &((NMPlatformLinkBridgePort){
+                            &((NMPlatformLinkBridgePort) {
                                 .path_cost = path_cost,
                                 .priority  = priority,
                                 .hairpin   = nm_setting_bridge_port_get_hairpin_mode(setting),
@@ -660,10 +660,10 @@ bridge_set_vlan_options(NMDevice *device, NMSettingBridge *s_bridge, gboolean is
         nm_platform_link_set_bridge_info(
             plat,
             ifindex,
-            &((NMPlatformLinkSetBridgeInfoData){.vlan_filtering_has    = TRUE,
-                                                .vlan_filtering_val    = FALSE,
-                                                .vlan_default_pvid_has = TRUE,
-                                                .vlan_default_pvid_val = 1}));
+            &((NMPlatformLinkSetBridgeInfoData) {.vlan_filtering_has    = TRUE,
+                                                 .vlan_filtering_val    = FALSE,
+                                                 .vlan_default_pvid_has = TRUE,
+                                                 .vlan_default_pvid_val = 1}));
         nm_platform_link_set_bridge_vlans(plat, ifindex, FALSE, NULL, 0);
         return TRUE;
     }
@@ -690,10 +690,10 @@ bridge_set_vlan_options(NMDevice *device, NMSettingBridge *s_bridge, gboolean is
         nm_platform_link_set_bridge_info(
             plat,
             ifindex,
-            &((NMPlatformLinkSetBridgeInfoData){.vlan_filtering_has    = TRUE,
-                                                .vlan_filtering_val    = FALSE,
-                                                .vlan_default_pvid_has = TRUE,
-                                                .vlan_default_pvid_val = 0}));
+            &((NMPlatformLinkSetBridgeInfoData) {.vlan_filtering_has    = TRUE,
+                                                 .vlan_filtering_val    = FALSE,
+                                                 .vlan_default_pvid_has = TRUE,
+                                                 .vlan_default_pvid_val = 0}));
 
         /* Clear all existing VLANs */
         if (!nm_platform_link_set_bridge_vlans(plat, ifindex, FALSE, NULL, 0))
@@ -706,8 +706,8 @@ bridge_set_vlan_options(NMDevice *device, NMSettingBridge *s_bridge, gboolean is
             nm_platform_link_set_bridge_info(
                 plat,
                 ifindex,
-                &((NMPlatformLinkSetBridgeInfoData){.vlan_default_pvid_has = TRUE,
-                                                    .vlan_default_pvid_val = pvid}));
+                &((NMPlatformLinkSetBridgeInfoData) {.vlan_default_pvid_has = TRUE,
+                                                     .vlan_default_pvid_val = pvid}));
         }
     }
 
@@ -721,7 +721,7 @@ bridge_set_vlan_options(NMDevice *device, NMSettingBridge *s_bridge, gboolean is
 
     nm_platform_link_set_bridge_info(plat,
                                      ifindex,
-                                     &((NMPlatformLinkSetBridgeInfoData){
+                                     &((NMPlatformLinkSetBridgeInfoData) {
                                          .vlan_filtering_has = TRUE,
                                          .vlan_filtering_val = TRUE,
                                      }));
@@ -757,7 +757,7 @@ merge_bridge_vlan_default_pvid(NMPlatformBridgeVlan *vlans, guint *num_vlans, gu
          * Set the PVID flag only if the port didn't have one. */
         vlans = g_realloc_n(vlans, *num_vlans + 1, sizeof(NMPlatformBridgeVlan));
         (*num_vlans)++;
-        vlans[*num_vlans - 1] = (NMPlatformBridgeVlan){
+        vlans[*num_vlans - 1] = (NMPlatformBridgeVlan) {
             .vid_start = default_pvid,
             .vid_end   = default_pvid,
             .untagged  = TRUE,
@@ -847,7 +847,7 @@ nm_device_reapply_bridge_port_vlans(NMDevice *device)
 static void
 _platform_lnk_bridge_init_from_setting(NMSettingBridge *s_bridge, NMPlatformLnkBridge *props)
 {
-    *props = (NMPlatformLnkBridge){
+    *props = (NMPlatformLnkBridge) {
         .forward_delay = _DEFAULT_IF_ZERO(nm_setting_bridge_get_forward_delay(s_bridge) * 100u,
                                           NM_BRIDGE_FORWARD_DELAY_DEF_SYS),
         .hello_time    = _DEFAULT_IF_ZERO(nm_setting_bridge_get_hello_time(s_bridge) * 100u,

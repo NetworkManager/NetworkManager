@@ -1116,7 +1116,7 @@ stage3_ip_config_start(NMModem *modem, int addr_family, NMModemIPMethod ip_metho
                                      ifindex,
                                      NM_IP_CONFIG_SOURCE_WWAN);
 
-        address = (NMPlatformIP4Address){
+        address = (NMPlatformIP4Address) {
             .address      = address_network,
             .peer_address = address_network,
             .plen         = mm_bearer_ip_config_get_prefix(self->_priv.ipv4_config),
@@ -1127,7 +1127,7 @@ stage3_ip_config_start(NMModem *modem, int addr_family, NMModemIPMethod ip_metho
 
         _LOGI("  address %s", nm_platform_ip4_address_to_string(&address, sbuf, sizeof(sbuf)));
 
-        route = (NMPlatformIP4Route){
+        route = (NMPlatformIP4Route) {
             .rt_source     = NM_IP_CONFIG_SOURCE_WWAN,
             .gateway       = gw,
             .table_any     = TRUE,
@@ -1193,7 +1193,7 @@ stage3_ip_config_start(NMModem *modem, int addr_family, NMModemIPMethod ip_metho
         do_auto = TRUE;
 
         if (address_string) {
-            address = (NMPlatformIP6Address){};
+            address = (NMPlatformIP6Address) {};
 
             if (!inet_pton(AF_INET6, address_string, &address.address)) {
                 g_set_error(&error,

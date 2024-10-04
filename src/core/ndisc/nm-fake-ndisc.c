@@ -161,7 +161,7 @@ nm_fake_ndisc_add_prefix(NMFakeNDisc       *self,
     g_assert(ra);
 
     prefix  = nm_g_array_append_new(ra->prefixes, FakePrefix);
-    *prefix = (FakePrefix){
+    *prefix = (FakePrefix) {
         .plen                  = plen,
         .expiry_msec           = expiry_msec,
         .expiry_preferred_msec = expiry_preferred_msec,

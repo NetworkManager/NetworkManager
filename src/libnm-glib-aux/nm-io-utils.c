@@ -683,7 +683,7 @@ nm_g_subprocess_terminate_in_background(GSubprocess *subprocess, int timeout_mse
     main_context = g_main_context_get_thread_default();
 
     term_data  = g_slice_new(SubprocessTerminateData);
-    *term_data = (SubprocessTerminateData){
+    *term_data = (SubprocessTerminateData) {
         .subprocess     = g_object_ref(subprocess),
         .timeout_source = NULL,
     };
@@ -845,7 +845,7 @@ nm_sd_notify(const char *state)
 
     /* systemd calls here fd_set_sndbuf(fd, SNDBUF_SIZE) .We don't bother. */
 
-    iovec = (struct iovec){
+    iovec = (struct iovec) {
         .iov_base = (gpointer) state,
         .iov_len  = strlen(state),
     };

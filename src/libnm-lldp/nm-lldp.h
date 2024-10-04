@@ -63,16 +63,8 @@ enum {
                  | NM_LLDP_SYSTEM_CAPABILITIES_DOCSIS | NM_LLDP_SYSTEM_CAPABILITIES_CVLAN   \
                  | NM_LLDP_SYSTEM_CAPABILITIES_SVLAN | NM_LLDP_SYSTEM_CAPABILITIES_TPMR))
 
-#define NM_LLDP_OUI_802_1 \
-    (const uint8_t[])     \
-    {                     \
-        0x00, 0x80, 0xc2  \
-    }
-#define NM_LLDP_OUI_802_3 \
-    (const uint8_t[])     \
-    {                     \
-        0x00, 0x12, 0x0f  \
-    }
+#define NM_LLDP_OUI_802_1 (const uint8_t[]){0x00, 0x80, 0xc2}
+#define NM_LLDP_OUI_802_3 (const uint8_t[]){0x00, 0x12, 0x0f}
 
 #define _SD_LLDP_OUI_IANA 0x00, 0x00, 0x5E
 #define NM_LLDP_OUI_IANA  \

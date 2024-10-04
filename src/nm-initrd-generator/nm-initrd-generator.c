@@ -226,7 +226,7 @@ main(int argc, char *argv[])
                                                          : "from \"rd.net.timeout.carrier\"");
         }
 
-        v = (NMUtilsNamedValue){
+        v = (NMUtilsNamedValue) {
             .name      = g_strdup_printf("%s/15-carrier-timeout.conf", run_config_dir),
             .value_str = g_key_file_to_data(keyfile, NULL, NULL),
         };

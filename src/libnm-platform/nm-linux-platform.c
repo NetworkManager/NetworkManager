@@ -2710,7 +2710,7 @@ _wireguard_update_from_allowed_ips_nla(NMPWireGuardAllowedIP *allowed_ip, struct
 
     _check_addr_or_return_val(tb, WGALLOWEDIP_A_IPADDR, addr_len, FALSE);
 
-    *allowed_ip = (NMPWireGuardAllowedIP){
+    *allowed_ip = (NMPWireGuardAllowedIP) {
         .family = family,
     };
 
@@ -2960,7 +2960,7 @@ _wireguard_read_info(NMPlatform     *platform /* used only as logging context */
     /* we ignore errors, and return whatever we could successfully
      * parse. */
     nl_recvmsgs(genl,
-                &((const struct nl_cb){
+                &((const struct nl_cb) {
                     .valid_cb  = _wireguard_get_device_cb,
                     .valid_arg = (gpointer) &parse_data,
                 }));
@@ -3397,7 +3397,7 @@ link_wireguard_change(NMPlatform                               *platform,
 static void
 _nmp_link_address_set(NMPLinkAddress *dst, const struct nlattr *nla)
 {
-    *dst = (NMPLinkAddress){
+    *dst = (NMPLinkAddress) {
         .len = 0,
     };
     if (nla) {
@@ -8211,7 +8211,7 @@ _rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg)
         is_del = TRUE;
     }
 
-    parse_nlmsg_iter = (ParseNlmsgIter){
+    parse_nlmsg_iter = (ParseNlmsgIter) {
         .iter_more = FALSE,
     };
 
@@ -9729,13 +9729,13 @@ link_get_bridge_vlans(NMPlatform            *platform,
         goto err;
     }
 
-    data = ((BridgeVlanData){
+    data = ((BridgeVlanData) {
         .ifindex = ifindex,
     });
 
     do {
         nle = nl_recvmsgs(sk,
-                          &((const struct nl_cb){
+                          &((const struct nl_cb) {
                               .valid_cb  = get_bridge_vlans_cb,
                               .valid_arg = &data,
                           }));
@@ -11662,12 +11662,12 @@ mptcp_addrs_dump(NMPlatform *platform)
 
     addrs = g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
 
-    parse_data = (FetchMptcpAddrParseData){
+    parse_data = (FetchMptcpAddrParseData) {
         .addrs = addrs,
     };
 
     nl_recvmsgs(priv->sk_genl_sync,
-                &((const struct nl_cb){
+                &((const struct nl_cb) {
                     .valid_cb  = _mptcp_addrs_dump_parse_cb,
                     .valid_arg = (gpointer) &parse_data,
                 }));

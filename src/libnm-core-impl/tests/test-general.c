@@ -560,13 +560,13 @@ test_nm_hash(void)
 
     g_assert_cmpmem(NM_HASH_SEED_16(55, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
                     16,
-                    ((guint8[16]){55, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}),
+                    ((guint8[16]) {55, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}),
                     16);
 
-    g_assert_cmpmem(NM_HASH_SEED_16_U64(1), 16, ((guint8[16]){0, 0, 0, 0, 0, 0, 0, 1, 0}), 16);
+    g_assert_cmpmem(NM_HASH_SEED_16_U64(1), 16, ((guint8[16]) {0, 0, 0, 0, 0, 0, 0, 1, 0}), 16);
     g_assert_cmpmem(NM_HASH_SEED_16_U64(0x1234567890ABCDEFu),
                     16,
-                    ((guint8[16]){0x12, 0x34, 0x56, 0x78, 0x90, 0xAB, 0xCD, 0xEF, 0}),
+                    ((guint8[16]) {0x12, 0x34, 0x56, 0x78, 0x90, 0xAB, 0xCD, 0xEF, 0}),
                     16);
 
     g_assert_cmpint(c_siphash_hash(NM_HASH_SEED_16_U64(0x780E21E45489CC6Fu), (guint8 *) "foo", 3),
@@ -1702,7 +1702,7 @@ static const NMDedupMultiObjClass dedup_obj_class = {
 };
 
 #define DEDUP_OBJ_INIT(val_val, other_other)              \
-    (&((DedupObj){                                        \
+    (&((DedupObj) {                                       \
         .parent =                                         \
             {                                             \
                 .klass      = &dedup_obj_class,           \
@@ -1904,7 +1904,7 @@ _dedup_entry_assert_all(const NMDedupMultiEntry *entry,
     }
 }
 #define _dedup_entry_assert_all(entry, expected_idx, ...) \
-    _dedup_entry_assert_all(entry, expected_idx, (const DedupObj *const[]){__VA_ARGS__, NULL})
+    _dedup_entry_assert_all(entry, expected_idx, (const DedupObj *const[]) {__VA_ARGS__, NULL})
 
 static void
 test_dedup_multi(void)
@@ -10613,7 +10613,7 @@ test_integrate_maincontext(gconstpointer test_data)
 
         loop1 = g_main_loop_new(c1, FALSE);
 
-        d = (IntegData){
+        d = (IntegData) {
             .loop1 = loop1,
             .c2    = c2,
         };

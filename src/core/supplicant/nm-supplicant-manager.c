@@ -693,7 +693,7 @@ nm_supplicant_manager_create_interface(NMSupplicantManager                 *self
     priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE(self);
 
     handle  = g_slice_new(NMSupplMgrCreateIfaceHandle);
-    *handle = (NMSupplMgrCreateIfaceHandle){
+    *handle = (NMSupplMgrCreateIfaceHandle) {
         .self               = g_object_ref(self),
         .callback           = callback,
         .callback_user_data = user_data,

@@ -547,7 +547,7 @@ impl_ppp_manager_set_ip4_config(NMDBusObject                      *obj,
 
     nm_l3_config_data_set_mtu(l3cd, mtu);
 
-    address = (NMPlatformIP4Address){
+    address = (NMPlatformIP4Address) {
         .plen = 32,
     };
 
@@ -662,7 +662,7 @@ impl_ppp_manager_set_ip6_config(NMDBusObject                      *obj,
 
     nm_l3_config_data_set_mtu(l3cd, mtu);
 
-    address = (NMPlatformIP6Address){
+    address = (NMPlatformIP6Address) {
         .plen        = 64,
         .addr_source = NM_IP_CONFIG_SOURCE_PPP,
     };

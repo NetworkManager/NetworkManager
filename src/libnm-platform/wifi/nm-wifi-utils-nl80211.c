@@ -689,7 +689,7 @@ nl80211_wiphy_info_handler(const struct nl_msg *msg, void *arg)
                 }
 
                 f  = &info->freqs[info->num_freqs];
-                *f = (Nl80211Freq){
+                *f = (Nl80211Freq) {
                     .freq     = nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_FREQ]),
                     .disabled = !!tb_freq[NL80211_FREQUENCY_ATTR_DISABLED],
                     .no_ir    = !!tb_freq[NL80211_FREQUENCY_ATTR_NO_IR],

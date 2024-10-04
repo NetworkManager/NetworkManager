@@ -321,7 +321,7 @@ _emit_notify_data(NMDhcpClient *self, const NMDhcpClientNotifyData *notify_data)
 #define _emit_notify(self, _notify_type, ...) \
     _emit_notify_data(                        \
         (self),                               \
-        &((const NMDhcpClientNotifyData){.notify_type = (_notify_type), __VA_ARGS__}))
+        &((const NMDhcpClientNotifyData) {.notify_type = (_notify_type), __VA_ARGS__}))
 
 /*****************************************************************************/
 
@@ -669,7 +669,7 @@ _acd_check_lease(NMDhcpClient *self, NMOptionBool *out_acd_state)
     now_msec = nm_utils_get_monotonic_timestamp_msec();
 
     g_array_append_val(priv->v4.acd.reglist,
-                       ((AcdRegListData){
+                       ((AcdRegListData) {
                            .l3cd        = nm_l3_config_data_ref(priv->l3cd_next),
                            .addr        = addr,
                            .expiry_msec = now_msec + ACD_REGLIST_GRACE_PERIOD_MSEC,
@@ -1928,7 +1928,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         /* I know, this is technically not necessary. It just feels nicer to
          * explicitly initialize the respective union member. */
         if (NM_IS_IPv4(priv->config.addr_family)) {
-            priv->v4 = (typeof(priv->v4)){
+            priv->v4 = (typeof(priv->v4)) {
                 .acd =
                     {
                         .addr                = INADDR_ANY,
@@ -1938,7 +1938,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
                     },
             };
         } else {
-            priv->v6 = (typeof(priv->v6)){
+            priv->v6 = (typeof(priv->v6)) {
                 .lladdr_timeout_source = NULL,
             };
         }

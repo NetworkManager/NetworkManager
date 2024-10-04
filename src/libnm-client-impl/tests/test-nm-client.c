@@ -1099,7 +1099,7 @@ test_connection_invalid(void)
     g_assert_cmpint(connections->len, ==, 3);
     n_found = nmtst_find_all_indexes(connections->pdata,
                                      connections->len,
-                                     (gpointer *) ((const char *[]){path0, path1, path2}),
+                                     (gpointer *) ((const char *[]) {path0, path1, path2}),
                                      3,
                                      _test_connection_invalid_find_connections,
                                      NULL,
@@ -1134,7 +1134,7 @@ test_connection_invalid(void)
     g_assert_cmpint(connections->len, ==, 4);
     n_found = nmtst_find_all_indexes(connections->pdata,
                                      connections->len,
-                                     (gpointer *) ((const char *[]){path0, path1, path2, path3}),
+                                     (gpointer *) ((const char *[]) {path0, path1, path2, path3}),
                                      4,
                                      _test_connection_invalid_find_connections,
                                      NULL,
@@ -1166,7 +1166,7 @@ test_connection_invalid(void)
     g_assert_cmpint(connections->len, ==, 4);
     n_found = nmtst_find_all_indexes(connections->pdata,
                                      connections->len,
-                                     (gpointer *) ((const char *[]){path0, path1, path2, path3}),
+                                     (gpointer *) ((const char *[]) {path0, path1, path2, path3}),
                                      4,
                                      _test_connection_invalid_find_connections,
                                      NULL,
@@ -1202,7 +1202,7 @@ test_connection_invalid(void)
     g_assert_cmpint(connections->len, ==, 4);
     n_found = nmtst_find_all_indexes(connections->pdata,
                                      connections->len,
-                                     (gpointer *) ((const char *[]){path0, path1, path2, path3}),
+                                     (gpointer *) ((const char *[]) {path0, path1, path2, path3}),
                                      4,
                                      _test_connection_invalid_find_connections,
                                      NULL,
@@ -1232,7 +1232,7 @@ test_connection_invalid(void)
     g_assert_cmpint(connections->len, ==, 4);
     n_found = nmtst_find_all_indexes(connections->pdata,
                                      connections->len,
-                                     (gpointer *) ((const char *[]){path0, path1, path2, path3}),
+                                     (gpointer *) ((const char *[]) {path0, path1, path2, path3}),
                                      4,
                                      _test_connection_invalid_find_connections,
                                      NULL,
@@ -1279,7 +1279,7 @@ test_connection_invalid(void)
     g_assert_cmpint(connections->len, ==, 4);
     n_found = nmtst_find_all_indexes(connections->pdata,
                                      connections->len,
-                                     (gpointer *) ((const char *[]){path0, path1, path2, path3}),
+                                     (gpointer *) ((const char *[]) {path0, path1, path2, path3}),
                                      4,
                                      _test_connection_invalid_find_connections,
                                      NULL,
@@ -1326,7 +1326,7 @@ test_connection_invalid(void)
     g_assert_cmpint(connections->len, ==, 4);
     n_found = nmtst_find_all_indexes(connections->pdata,
                                      connections->len,
-                                     (gpointer *) ((const char *[]){path0, path1, path2, path3}),
+                                     (gpointer *) ((const char *[]) {path0, path1, path2, path3}),
                                      4,
                                      _test_connection_invalid_find_connections,
                                      NULL,

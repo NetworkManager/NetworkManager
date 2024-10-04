@@ -1635,7 +1635,7 @@ _devcon_lookup_data(NMManager            *self,
         return NULL;
 
     data  = g_slice_new(DevConData);
-    *data = (DevConData){
+    *data = (DevConData) {
         .device    = device,
         .sett_conn = sett_conn,
         .autoconnect =
@@ -3452,7 +3452,7 @@ get_existing_connection(NMManager *self, NMDevice *device, gboolean *out_generat
         if (connection) {
             NMConnection *con = nm_settings_connection_get_connection(connection_checked);
 
-            if (nm_utils_match_connection((NMConnection *[]){con, NULL},
+            if (nm_utils_match_connection((NMConnection *[]) {con, NULL},
                                           connection,
                                           TRUE,
                                           nm_device_has_carrier(device),
@@ -5344,7 +5344,7 @@ find_ports(NMManager            *manager,
             }
 
             nm_assert(n_ports < n_all_connections);
-            ports[n_ports++] = (PortConnectionInfo){
+            ports[n_ports++] = (PortConnectionInfo) {
                 .connection = candidate,
                 .device     = port_device,
             };
@@ -8928,12 +8928,12 @@ nm_manager_init(NMManager *self)
 
     priv->capabilities = g_array_new(FALSE, FALSE, sizeof(guint32));
 
-    priv->radio_states[NM_RFKILL_TYPE_WLAN] = (RfkillRadioState){
+    priv->radio_states[NM_RFKILL_TYPE_WLAN] = (RfkillRadioState) {
         .user_enabled = TRUE,
         .sw_enabled   = FALSE,
         .hw_enabled   = TRUE,
     };
-    priv->radio_states[NM_RFKILL_TYPE_WWAN] = (RfkillRadioState){
+    priv->radio_states[NM_RFKILL_TYPE_WWAN] = (RfkillRadioState) {
         .user_enabled = TRUE,
         .sw_enabled   = FALSE,
         .hw_enabled   = TRUE,

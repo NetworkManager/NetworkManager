@@ -799,29 +799,29 @@ static void
 test_bond_compare(void)
 {
     test_bond_compare_options(TRUE,
-                              ((const char *[]){"mode", "balance-rr", "miimon", "1", NULL}),
-                              ((const char *[]){"mode", "balance-rr", "miimon", "1", NULL}));
+                              ((const char *[]) {"mode", "balance-rr", "miimon", "1", NULL}),
+                              ((const char *[]) {"mode", "balance-rr", "miimon", "1", NULL}));
     test_bond_compare_options(FALSE,
-                              ((const char *[]){"mode", "balance-rr", "miimon", "1", NULL}),
-                              ((const char *[]){"mode", "balance-rr", "miimon", "2", NULL}));
+                              ((const char *[]) {"mode", "balance-rr", "miimon", "1", NULL}),
+                              ((const char *[]) {"mode", "balance-rr", "miimon", "2", NULL}));
 
     test_bond_compare_options(FALSE,
-                              ((const char *[]){"miimon", "1", NULL}),
-                              ((const char *[]){"miimon", "1", "updelay", "0", NULL}));
+                              ((const char *[]) {"miimon", "1", NULL}),
+                              ((const char *[]) {"miimon", "1", "updelay", "0", NULL}));
 
     test_bond_compare_options(FALSE,
-                              ((const char *[]){"num_grat_arp", "2", NULL}),
-                              ((const char *[]){"num_grat_arp", "1", NULL}));
+                              ((const char *[]) {"num_grat_arp", "2", NULL}),
+                              ((const char *[]) {"num_grat_arp", "1", NULL}));
     test_bond_compare_options(FALSE,
-                              ((const char *[]){"num_grat_arp", "3", NULL}),
-                              ((const char *[]){"num_unsol_na", "3", NULL}));
+                              ((const char *[]) {"num_grat_arp", "3", NULL}),
+                              ((const char *[]) {"num_unsol_na", "3", NULL}));
     test_bond_compare_options(FALSE,
-                              ((const char *[]){"num_grat_arp", "4", NULL}),
-                              ((const char *[]){"num_unsol_na", "4", "num_grat_arp", "4", NULL}));
+                              ((const char *[]) {"num_grat_arp", "4", NULL}),
+                              ((const char *[]) {"num_unsol_na", "4", "num_grat_arp", "4", NULL}));
 
     test_bond_compare_options(FALSE,
-                              ((const char *[]){"mode", "balance-rr", "miimon", "100", NULL}),
-                              ((const char *[]){"mode", "balance-rr", NULL}));
+                              ((const char *[]) {"mode", "balance-rr", "miimon", "100", NULL}),
+                              ((const char *[]) {"mode", "balance-rr", NULL}));
 }
 
 static void
@@ -856,20 +856,25 @@ static void
 test_bond_normalize(void)
 {
     test_bond_normalize_options(
-        ((const char *[]){"mode", "802.3ad", "ad_actor_system", "00:02:03:04:05:06", NULL}),
-        ((const char *[]){"mode", "802.3ad", "ad_actor_system", "00:02:03:04:05:06", NULL}));
-    test_bond_normalize_options(((const char *[]){"mode", "1", "miimon", "1", NULL}),
-                                ((const char *[]){"mode", "active-backup", "miimon", "1", NULL}));
+        ((const char *[]) {"mode", "802.3ad", "ad_actor_system", "00:02:03:04:05:06", NULL}),
+        ((const char *[]) {"mode", "802.3ad", "ad_actor_system", "00:02:03:04:05:06", NULL}));
+    test_bond_normalize_options(((const char *[]) {"mode", "1", "miimon", "1", NULL}),
+                                ((const char *[]) {"mode", "active-backup", "miimon", "1", NULL}));
     test_bond_normalize_options(
-        ((const char *[]){"mode", "balance-alb", "tlb_dynamic_lb", "1", NULL}),
-        ((const char *[]){"mode", "balance-alb", "tlb_dynamic_lb", "1", NULL}));
+        ((const char *[]) {"mode", "balance-alb", "tlb_dynamic_lb", "1", NULL}),
+        ((const char *[]) {"mode", "balance-alb", "tlb_dynamic_lb", "1", NULL}));
     test_bond_normalize_options(
-        ((const char *[]){"mode", "balance-tlb", "tlb_dynamic_lb", "1", NULL}),
-        ((const char *[]){"mode", "balance-tlb", "tlb_dynamic_lb", "1", NULL}));
+        ((const char *[]) {"mode", "balance-tlb", "tlb_dynamic_lb", "1", NULL}),
+        ((const char *[]) {"mode", "balance-tlb", "tlb_dynamic_lb", "1", NULL}));
     test_bond_normalize_options(
-        ((const char
-              *[]){"mode", "balance-rr", "ad_actor_sys_prio", "4", "packets_per_slave", "3", NULL}),
-        ((const char *[]){"mode", "balance-rr", "packets_per_slave", "3", NULL}));
+        ((const char *[]) {"mode",
+                           "balance-rr",
+                           "ad_actor_sys_prio",
+                           "4",
+                           "packets_per_slave",
+                           "3",
+                           NULL}),
+        ((const char *[]) {"mode", "balance-rr", "packets_per_slave", "3", NULL}));
 }
 
 /*****************************************************************************/

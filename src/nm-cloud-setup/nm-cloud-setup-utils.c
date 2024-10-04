@@ -126,7 +126,7 @@ nmcs_wait_for_objects_iterate_until_done(GMainContext *context, int timeout_msec
     _wait_for_objects_iterate_loops = g_slist_prepend(_wait_for_objects_iterate_loops, loop);
     G_UNLOCK(_wait_for_objects_lock);
 
-    data = (WaitForObjectsData){
+    data = (WaitForObjectsData) {
         .loop        = loop,
         .got_timeout = FALSE,
     };

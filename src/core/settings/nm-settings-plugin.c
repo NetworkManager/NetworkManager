@@ -110,7 +110,7 @@ nm_settings_plugin_create_connection_load_entries(const char *const *filenames, 
 
     entries = g_new(NMSettingsPluginConnectionLoadEntry, len);
     for (i = 0; i < len; i++) {
-        entries[i] = (NMSettingsPluginConnectionLoadEntry){
+        entries[i] = (NMSettingsPluginConnectionLoadEntry) {
             .filename = filenames[i],
             .error    = NULL,
             .handled  = FALSE,

@@ -430,7 +430,7 @@ get_extra_rules(NMDevice *device)
 
         g_ptr_array_add(extra_rules,
                         nmp_object_new(NMP_OBJECT_TYPE_ROUTING_RULE,
-                                       &((const NMPlatformRoutingRule){
+                                       &((const NMPlatformRoutingRule) {
                                            .priority                   = priority,
                                            .addr_family                = addr_family,
                                            .action                     = FR_ACT_TO_TBL,
@@ -440,7 +440,7 @@ get_extra_rules(NMDevice *device)
 
         g_ptr_array_add(extra_rules,
                         nmp_object_new(NMP_OBJECT_TYPE_ROUTING_RULE,
-                                       &((const NMPlatformRoutingRule){
+                                       &((const NMPlatformRoutingRule) {
                                            .priority    = priority + 1u,
                                            .addr_family = addr_family,
                                            .action      = FR_ACT_TO_TBL,
@@ -588,7 +588,7 @@ _peers_add(NMDeviceWireGuard *self, NMWireGuardPeer *peer)
     nm_assert(!_peers_find(priv, peer));
 
     peer_data  = g_slice_new(PeerData);
-    *peer_data = (PeerData){
+    *peer_data = (PeerData) {
         .self = self,
         .peer = nm_wireguard_peer_ref(peer),
         .ep_resolv =
@@ -792,7 +792,7 @@ _peers_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
             switch (g_inet_address_get_family(a)) {
             case G_SOCKET_FAMILY_IPV4:
                 nm_assert(g_inet_address_get_native_size(a) == sizeof(struct in_addr));
-                s->in = (struct sockaddr_in){
+                s->in = (struct sockaddr_in) {
                     .sin_family = AF_INET,
                     .sin_port   = htons(nm_sock_addr_endpoint_get_port(
                         _nm_wireguard_peer_get_endpoint(peer_data->peer))),
@@ -801,7 +801,7 @@ _peers_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
                 break;
             case G_SOCKET_FAMILY_IPV6:
                 nm_assert(g_inet_address_get_native_size(a) == sizeof(struct in6_addr));
-                s->in6 = (struct sockaddr_in6){
+                s->in6 = (struct sockaddr_in6) {
                     .sin6_family   = AF_INET6,
                     .sin6_port     = htons(nm_sock_addr_endpoint_get_port(
                         _nm_wireguard_peer_get_endpoint(peer_data->peer))),
@@ -985,7 +985,7 @@ _peers_update(NMDeviceWireGuard *self,
     if (nm_clear_g_cancellable(&peer_data->ep_resolv.cancellable))
         _peers_resolving_cnt_decrement(self);
 
-    peer_data->ep_resolv = (PeerEndpointResolveData){
+    peer_data->ep_resolv = (PeerEndpointResolveData) {
         .sockaddr          = sockaddr,
         .resolv_fail_count = 0,
         .cancellable       = NULL,
@@ -1166,7 +1166,7 @@ _peers_get_platform_list(NMDeviceWireGuardPrivate            *priv,
                     prefix = addr_family == AF_INET ? 32 : 128;
 
                 g_array_append_val(allowed_ips,
-                                   ((NMPWireGuardAllowedIP){
+                                   ((NMPWireGuardAllowedIP) {
                                        .family = addr_family,
                                        .mask   = prefix,
                                        .addr   = addrbin,
@@ -1486,7 +1486,7 @@ link_config(NMDeviceWireGuard   *self,
 
     _peers_update_all(self, s_wg, &peers_removed);
 
-    wg_lnk = (NMPlatformLnkWireGuard){};
+    wg_lnk = (NMPlatformLnkWireGuard) {};
 
     wg_change_flags = NM_PLATFORM_WIREGUARD_CHANGE_FLAG_NONE;
 
@@ -1733,7 +1733,7 @@ _get_dev2_ip_config(NMDeviceWireGuard *self, int addr_family)
             }
 
             if (addr_family == AF_INET) {
-                rt.r4 = (NMPlatformIP4Route){
+                rt.r4 = (NMPlatformIP4Route) {
                     .network       = addrbin.addr4,
                     .plen          = prefix,
                     .ifindex       = ip_ifindex,
@@ -1742,7 +1742,7 @@ _get_dev2_ip_config(NMDeviceWireGuard *self, int addr_family)
                     .metric        = route_metric,
                 };
             } else {
-                rt.r6 = (NMPlatformIP6Route){
+                rt.r6 = (NMPlatformIP6Route) {
                     .network       = addrbin.addr6,
                     .plen          = prefix,
                     .ifindex       = ip_ifindex,

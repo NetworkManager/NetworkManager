@@ -107,7 +107,7 @@ connection_add(NMConnection *conn)
             nm_connection_get_id(conn),
             nm_connection_get_uuid(conn));
 
-    rdata = (RequestData){
+    rdata = (RequestData) {
         .loop  = g_main_loop_new(NULL, FALSE),
         .rconn = NULL,
         .error = NULL,

@@ -334,7 +334,7 @@ _bz_dbus_obj_new(NMBluezManager *self, const char *object_path)
     l = strlen(object_path) + 1;
 
     bzobj  = g_malloc(sizeof(BzDBusObj) + l);
-    *bzobj = (BzDBusObj){
+    *bzobj = (BzDBusObj) {
         .object_path                           = bzobj->_object_path_intern,
         .self                                  = self,
         .x_network_server.lst                  = C_LIST_INIT(bzobj->x_network_server.lst),
@@ -751,7 +751,7 @@ _conn_data_head_new(NMBluetoothCapabilities bt_type, const char *bdaddr)
 
     l         = strlen(bdaddr) + 1;
     cdata_hd  = g_malloc(sizeof(ConnDataHead) + l);
-    *cdata_hd = (ConnDataHead){
+    *cdata_hd = (ConnDataHead) {
         .bdaddr   = cdata_hd->bdaddr_data,
         .lst_head = C_LIST_INIT(cdata_hd->lst_head),
         .bt_type  = bt_type,
@@ -1143,7 +1143,7 @@ _network_server_vt_register_bridge(const NMBtVTableNetworkServer *vtable,
           bzobj->d_adapter.address);
 
     r_req_data  = g_slice_new(NetworkServerRegisterReqData);
-    *r_req_data = (NetworkServerRegisterReqData){
+    *r_req_data = (NetworkServerRegisterReqData) {
         .int_cancellable    = g_cancellable_new(),
         .ext_cancellable    = g_object_ref(cancellable),
         .callback           = callback,
@@ -2749,7 +2749,7 @@ nm_bluez_manager_connect(NMBluezManager         *self,
     }
 
     c_req_data  = g_slice_new(DeviceConnectReqData);
-    *c_req_data = (DeviceConnectReqData){
+    *c_req_data = (DeviceConnectReqData) {
         .int_cancellable    = g_steal_pointer(&int_cancellable),
         .ext_cancellable    = g_object_ref(cancellable),
         .callback           = callback,
@@ -2814,7 +2814,7 @@ nm_bluez_manager_init(NMBluezManager *self)
 {
     NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE(self);
 
-    priv->vtable_network_server = (NMBtVTableNetworkServer){
+    priv->vtable_network_server = (NMBtVTableNetworkServer) {
         .is_available      = _network_server_vt_is_available,
         .register_bridge   = _network_server_vt_register_bridge,
         .unregister_bridge = _network_server_vt_unregister_bridge,

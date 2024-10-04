@@ -50,10 +50,10 @@ extern const GDBusAnnotationInfo _nm_gdbus_annotation_info_deprecated;
 #define NM_GDBUS_ANNOTATION_INFO_DEPRECATED() \
     ((GDBusAnnotationInfo *) &_nm_gdbus_annotation_info_deprecated)
 
-#define NM_DEFINE_DBUS_ANNOTATION_INFO(a_key, a_value)      \
-    ((GDBusAnnotationInfo *) &((const GDBusAnnotationInfo){ \
-        .key   = (a_key),                                   \
-        .value = (a_value),                                 \
+#define NM_DEFINE_DBUS_ANNOTATION_INFO(a_key, a_value)       \
+    ((GDBusAnnotationInfo *) &((const GDBusAnnotationInfo) { \
+        .key   = (a_key),                                    \
+        .value = (a_value),                                  \
     }))
 
 extern const GDBusAnnotationInfo *const _nm_gdbus_annotation_info_list_deprecated[];
@@ -67,10 +67,10 @@ extern const GDBusAnnotationInfo *const _nm_gdbus_annotation_info_list_deprecate
     ((GDBusAnnotationInfo **) _nm_gdbus_annotation_info_list_deprecated)
 
 #define NM_DEFINE_DBUS_ANNOTATION_INFOS(...) \
-    ((GDBusAnnotationInfo **) ((const GDBusAnnotationInfo *const[]){__VA_ARGS__, NULL}))
+    ((GDBusAnnotationInfo **) ((const GDBusAnnotationInfo *const[]) {__VA_ARGS__, NULL}))
 
 #define NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE(m_name, m_signature, m_property_name, ...) \
-    ((GDBusPropertyInfo *) &((const struct _NMDBusPropertyInfoExtendedBase){                      \
+    ((GDBusPropertyInfo *) &((const struct _NMDBusPropertyInfoExtendedBase) {                     \
         ._parent       = {.ref_count = -1,                                                        \
                           .name      = m_name,                                                    \
                           .signature = m_signature,                                               \
@@ -79,25 +79,25 @@ extern const GDBusAnnotationInfo *const _nm_gdbus_annotation_info_list_deprecate
         .property_name = m_property_name,                                                         \
     }))
 
-#define NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READWRITABLE(m_name,                   \
-                                                           m_signature,              \
-                                                           m_property_name,          \
-                                                           m_permission,             \
-                                                           m_audit_op,               \
-                                                           ...)                      \
-    ((GDBusPropertyInfo *) &((const struct _NMDBusPropertyInfoExtendedReadWritable){ \
-        ._base =                                                                     \
-            {                                                                        \
-                ._parent       = {.ref_count = -1,                                   \
-                                  .name      = m_name,                               \
-                                  .signature = m_signature,                          \
-                                  .flags     = G_DBUS_PROPERTY_INFO_FLAGS_READABLE   \
-                                           | G_DBUS_PROPERTY_INFO_FLAGS_WRITABLE,    \
-                                  __VA_ARGS__},                                      \
-                .property_name = m_property_name,                                    \
-            },                                                                       \
-        .permission = m_permission,                                                  \
-        .audit_op   = m_audit_op,                                                    \
+#define NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READWRITABLE(m_name,                    \
+                                                           m_signature,               \
+                                                           m_property_name,           \
+                                                           m_permission,              \
+                                                           m_audit_op,                \
+                                                           ...)                       \
+    ((GDBusPropertyInfo *) &((const struct _NMDBusPropertyInfoExtendedReadWritable) { \
+        ._base =                                                                      \
+            {                                                                         \
+                ._parent       = {.ref_count = -1,                                    \
+                                  .name      = m_name,                                \
+                                  .signature = m_signature,                           \
+                                  .flags     = G_DBUS_PROPERTY_INFO_FLAGS_READABLE    \
+                                           | G_DBUS_PROPERTY_INFO_FLAGS_WRITABLE,     \
+                                  __VA_ARGS__},                                       \
+                .property_name = m_property_name,                                     \
+            },                                                                        \
+        .permission = m_permission,                                                   \
+        .audit_op   = m_audit_op,                                                     \
     }))
 
 typedef struct _NMDBusMethodInfoExtended {
@@ -113,7 +113,7 @@ typedef struct _NMDBusMethodInfoExtended {
 } NMDBusMethodInfoExtended;
 
 #define NM_DEFINE_DBUS_METHOD_INFO_EXTENDED(parent_, ...) \
-    ((GDBusMethodInfo *) (&((const NMDBusMethodInfoExtended){.parent = parent_, __VA_ARGS__})))
+    ((GDBusMethodInfo *) (&((const NMDBusMethodInfoExtended) {.parent = parent_, __VA_ARGS__})))
 
 typedef struct _NMDBusInterfaceInfoExtended {
     GDBusInterfaceInfo parent;

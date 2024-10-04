@@ -482,7 +482,7 @@ void _nm_setting_class_commit(NMSettingClass             *setting_class,
         &_g;                                                   \
     })
 
-#define NM_SETT_INFO_SETT_DETAIL(...) (&((const NMSettInfoSettDetail){__VA_ARGS__}))
+#define NM_SETT_INFO_SETT_DETAIL(...) (&((const NMSettInfoSettDetail) {__VA_ARGS__}))
 
 #define NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(_dbus_type, ...) {.dbus_type = _dbus_type, __VA_ARGS__}
 
@@ -504,7 +504,7 @@ void _nm_setting_class_commit(NMSettingClass             *setting_class,
 #define NM_SETT_INFO_PROPERT_TYPE_GPROP(_dbus_type, ...) \
     NM_SETT_INFO_PROPERT_TYPE(NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(_dbus_type, __VA_ARGS__))
 
-#define NM_SETT_INFO_PROPERTY(...) (&((const NMSettInfoProperty){__VA_ARGS__}))
+#define NM_SETT_INFO_PROPERTY(...) (&((const NMSettInfoProperty) {__VA_ARGS__}))
 
 gboolean _nm_properties_override_assert(const NMSettInfoProperty *prop_info);
 

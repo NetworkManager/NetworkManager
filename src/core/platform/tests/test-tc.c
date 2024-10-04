@@ -16,7 +16,7 @@ qdisc_new(int ifindex, const char *kind, guint32 parent)
     NMPObject *obj;
 
     obj        = nmp_object_new(NMP_OBJECT_TYPE_QDISC, NULL);
-    obj->qdisc = (NMPlatformQdisc){
+    obj->qdisc = (NMPlatformQdisc) {
         .ifindex = ifindex,
         .kind    = kind,
         .parent  = parent,

@@ -431,11 +431,11 @@ ethtool_get_stringset_index(SocketHandle *shandle, int stringset_id, const char 
 /*****************************************************************************/
 
 static const NMEthtoolFeatureInfo _ethtool_feature_infos[_NM_ETHTOOL_ID_FEATURE_NUM] = {
-#define ETHT_FEAT(eid, ...)                                     \
-    {                                                           \
-        .ethtool_id     = eid,                                  \
-        .n_kernel_names = NM_NARG(__VA_ARGS__),                 \
-        .kernel_names   = ((const char *const[]){__VA_ARGS__}), \
+#define ETHT_FEAT(eid, ...)                                      \
+    {                                                            \
+        .ethtool_id     = eid,                                   \
+        .n_kernel_names = NM_NARG(__VA_ARGS__),                  \
+        .kernel_names   = ((const char *const[]) {__VA_ARGS__}), \
     }
 
     /* the order does only matter for one thing: if it happens that more than one NMEthtoolID
@@ -882,7 +882,7 @@ nmp_utils_ethtool_get_coalesce(int ifindex, NMEthtoolCoalesceState *coalesce)
         return FALSE;
     }
 
-    *coalesce = (NMEthtoolCoalesceState){
+    *coalesce = (NMEthtoolCoalesceState) {
         .s = {
             [_NM_ETHTOOL_ID_COALESCE_AS_IDX(NM_ETHTOOL_ID_COALESCE_RX_USECS)] =
                 eth_data.rx_coalesce_usecs,
@@ -946,7 +946,7 @@ nmp_utils_ethtool_set_coalesce(int ifindex, const NMEthtoolCoalesceState *coales
     g_return_val_if_fail(ifindex > 0, FALSE);
     g_return_val_if_fail(coalesce, FALSE);
 
-    eth_data = (struct ethtool_coalesce){
+    eth_data = (struct ethtool_coalesce) {
         .cmd = ETHTOOL_SCOALESCE,
         .rx_coalesce_usecs =
             coalesce->s[_NM_ETHTOOL_ID_COALESCE_AS_IDX(NM_ETHTOOL_ID_COALESCE_RX_USECS)],
@@ -1027,7 +1027,7 @@ nmp_utils_ethtool_get_ring(int ifindex, NMEthtoolRingState *ring)
         return FALSE;
     }
 
-    *ring = (NMEthtoolRingState){
+    *ring = (NMEthtoolRingState) {
         .rx_pending       = eth_data.rx_pending,
         .rx_jumbo_pending = eth_data.rx_jumbo_pending,
         .rx_mini_pending  = eth_data.rx_mini_pending,
@@ -1049,7 +1049,7 @@ nmp_utils_ethtool_set_ring(int ifindex, const NMEthtoolRingState *ring)
     g_return_val_if_fail(ifindex > 0, FALSE);
     g_return_val_if_fail(ring, FALSE);
 
-    eth_data = (struct ethtool_ringparam){
+    eth_data = (struct ethtool_ringparam) {
         .cmd              = ETHTOOL_SRINGPARAM,
         .rx_pending       = ring->rx_pending,
         .rx_jumbo_pending = ring->rx_jumbo_pending,
@@ -1087,7 +1087,7 @@ nmp_utils_ethtool_get_channels(int ifindex, NMEthtoolChannelsState *channels)
         return FALSE;
     }
 
-    *channels = (NMEthtoolChannelsState){
+    *channels = (NMEthtoolChannelsState) {
         .rx       = eth_data.rx_count,
         .tx       = eth_data.tx_count,
         .other    = eth_data.other_count,
@@ -1109,7 +1109,7 @@ nmp_utils_ethtool_set_channels(int ifindex, const NMEthtoolChannelsState *channe
     g_return_val_if_fail(ifindex > 0, FALSE);
     g_return_val_if_fail(channels, FALSE);
 
-    eth_data = (struct ethtool_channels){
+    eth_data = (struct ethtool_channels) {
         .cmd            = ETHTOOL_SCHANNELS,
         .rx_count       = channels->rx,
         .tx_count       = channels->tx,
@@ -1150,7 +1150,7 @@ nmp_utils_ethtool_get_pause(int ifindex, NMEthtoolPauseState *pause)
         return FALSE;
     }
 
-    *pause = (NMEthtoolPauseState){
+    *pause = (NMEthtoolPauseState) {
         .autoneg = eth_data.autoneg == 1,
         .rx      = eth_data.rx_pause == 1,
         .tx      = eth_data.tx_pause == 1,
@@ -1181,7 +1181,7 @@ nmp_utils_ethtool_get_eee(int ifindex, NMEthtoolEEEState *eee)
         return FALSE;
     }
 
-    *eee = (NMEthtoolEEEState){
+    *eee = (NMEthtoolEEEState) {
         .enabled = eth_data.eee_enabled == 1,
     };
 
@@ -1201,7 +1201,7 @@ nmp_utils_ethtool_set_pause(int ifindex, const NMEthtoolPauseState *pause)
     g_return_val_if_fail(ifindex > 0, FALSE);
     g_return_val_if_fail(pause, FALSE);
 
-    eth_data = (struct ethtool_pauseparam){
+    eth_data = (struct ethtool_pauseparam) {
         .cmd      = ETHTOOL_SPAUSEPARAM,
         .autoneg  = pause->autoneg ? 1 : 0,
         .rx_pause = pause->rx ? 1 : 0,
@@ -1271,7 +1271,7 @@ nmp_utils_ethtool_get_driver_info(int ifindex, NMPUtilsEthtoolDriverInfo *data)
     g_return_val_if_fail(data, FALSE);
 
     drvinfo  = (struct ethtool_drvinfo *) data;
-    *drvinfo = (struct ethtool_drvinfo){
+    *drvinfo = (struct ethtool_drvinfo) {
         .cmd = ETHTOOL_GDRVINFO,
     };
     return _ethtool_call_once(ifindex, drvinfo, sizeof(*drvinfo)) >= 0;
@@ -1609,7 +1609,7 @@ set_link_settings_new(SocketHandle            *shandle,
     guint                                 nwords;
     guint                                 i;
 
-    edata0 = (struct ethtool_link_settings){
+    edata0 = (struct ethtool_link_settings) {
         .cmd                    = ETHTOOL_GLINKSETTINGS,
         .link_mode_masks_nwords = 0,
     };

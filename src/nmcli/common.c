@@ -355,7 +355,7 @@ print_ip_config(NMIPConfig      *cfg,
     }
 
     if (!nmc_print_table(nmc_config,
-                         (gpointer[]){cfg, NULL},
+                         (gpointer[]) {cfg, NULL},
                          NULL,
                          NULL,
                          addr_family == AF_INET
@@ -386,7 +386,7 @@ print_dhcp_config(NMDhcpConfig    *dhcp,
     }
 
     if (!nmc_print_table(nmc_config,
-                         (gpointer[]){dhcp, NULL},
+                         (gpointer[]) {dhcp, NULL},
                          NULL,
                          NULL,
                          addr_family == AF_INET
@@ -1399,7 +1399,7 @@ call_cmd(NmCli *nmc, GTask *task, const NMCCommand *cmd, int argc, const char *c
 
             nmc->should_wait++;
             call  = g_slice_new(CmdCall);
-            *call = (CmdCall){
+            *call = (CmdCall) {
                 .cmd  = cmd,
                 .argc = argc,
                 .argv = nm_strv_dup(argv, argc, TRUE),
@@ -1430,7 +1430,7 @@ call_cmd(NmCli *nmc, GTask *task, const NMCCommand *cmd, int argc, const char *c
 
         nmc->should_wait++;
         call  = g_slice_new(CmdCall);
-        *call = (CmdCall){
+        *call = (CmdCall) {
             .cmd  = cmd,
             .argc = argc,
             .argv = nm_strv_dup(argv, argc, TRUE),

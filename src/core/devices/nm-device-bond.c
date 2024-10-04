@@ -436,7 +436,7 @@ _platform_lnk_bond_init_from_setting(NMSettingBond *s_bond, NMPlatformLnkBond *p
 #define _v_u32(s_bond, opt)      _nm_setting_bond_opt_value_as_u32((s_bond), (opt))
 #define _v_intbool(s_bond, opt)  _nm_setting_bond_opt_value_as_intbool((s_bond), (opt))
 
-    *props = (NMPlatformLnkBond){
+    *props = (NMPlatformLnkBond) {
         .mode      = _v_fcn(_nm_setting_bond_mode_from_string, s_bond, NM_SETTING_BOND_OPTION_MODE),
         .primary   = _setting_bond_primary_opt_as_ifindex(s_bond),
         .miimon    = _v_u32(s_bond, NM_SETTING_BOND_OPTION_MIIMON),
@@ -681,7 +681,7 @@ commit_port_options(NMDevice *bond_device, NMDevice *port, NMSettingBondPort *s_
     nm_platform_link_change(nm_device_get_platform(port),
                             nm_device_get_ifindex(port),
                             NULL,
-                            &((NMPlatformLinkBondPort){
+                            &((NMPlatformLinkBondPort) {
                                 .queue_id = s_port ? nm_setting_bond_port_get_queue_id(s_port)
                                                    : NM_BOND_PORT_QUEUE_ID_DEF,
                                 .prio     = prio_has ? prio : 0,

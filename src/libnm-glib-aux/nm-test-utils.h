@@ -1002,7 +1002,7 @@ _nmtst_add_test_func_full(const char      *testpath,
     data = g_malloc(G_STRUCT_OFFSET(NmtstTestData, args)
                     + (sizeof(gpointer) * (n_args + 1u) + testpath_len));
 
-    *data = (NmtstTestData){
+    *data = (NmtstTestData) {
         .testpath       = (gpointer) &data->args[n_args + 1u],
         ._func_test     = func_test,
         ._func_setup    = func_setup,

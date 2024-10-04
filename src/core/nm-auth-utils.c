@@ -293,7 +293,7 @@ nm_auth_chain_set_data_unsafe(NMAuthChain   *self,
     }
 
     chain_data  = &self->data_arr[self->data_len++];
-    *chain_data = (ChainData){
+    *chain_data = (ChainData) {
         .tag     = tag,
         .data    = data,
         .destroy = data_destroy,
@@ -445,7 +445,7 @@ nm_auth_chain_add_call_unsafe(NMAuthChain *self, const char *permission, gboolea
     }
 
     call  = g_slice_new(AuthCall);
-    *call = (AuthCall){
+    *call = (AuthCall) {
         .chain   = self,
         .call_id = NULL,
         .result  = NM_AUTH_CALL_RESULT_UNKNOWN,
@@ -520,7 +520,7 @@ nm_auth_chain_new_subject(NMAuthSubject         *subject,
     nm_assert(done_func);
 
     self  = g_slice_new(NMAuthChain);
-    *self = (NMAuthChain){
+    *self = (NMAuthChain) {
         .done_func          = done_func,
         .user_data          = user_data,
         .context            = nm_g_object_ref(context),

@@ -314,7 +314,7 @@ add_device_common(NMTstcServiceInfo *sinfo,
 
     loop = g_main_loop_new(nm_client_get_main_context(client), FALSE);
 
-    info = (AddDeviceInfo){
+    info = (AddDeviceInfo) {
         .ifname = ifname,
         .loop   = loop,
     };

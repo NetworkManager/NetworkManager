@@ -365,7 +365,7 @@ nm_pacrunner_manager_add(NMPacrunnerManager *self, const char *iface, const NML3
     priv = NM_PACRUNNER_MANAGER_GET_PRIVATE(self);
 
     conf_id  = g_slice_new(NMPacrunnerConfId);
-    *conf_id = (NMPacrunnerConfId){
+    *conf_id = (NMPacrunnerConfId) {
         .log_id     = ++priv->log_id_counter,
         .refcount   = 1,
         .self       = g_object_ref(self),

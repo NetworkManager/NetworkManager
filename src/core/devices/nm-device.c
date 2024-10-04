@@ -3142,7 +3142,7 @@ link_properties_fill_from_setting(NMDevice *self, NMPlatformLinkProps *props)
     NMSettingLink            *s_link;
     gint64                    v;
 
-    *props = (NMPlatformLinkProps){};
+    *props = (NMPlatformLinkProps) {};
 
     s_link = nm_device_get_applied_setting(self, NM_TYPE_SETTING_LINK);
     if (!s_link)
@@ -7943,9 +7943,9 @@ sriov_op_queue(NMDevice                *self,
      * grace period we pull the plug and cancel it. */
 
     op  = g_slice_new(SriovOp);
-    *op = (SriovOp){
+    *op = (SriovOp) {
         .sriov_params =
-            (NMPlatformSriovParams){
+            (NMPlatformSriovParams) {
                 .num_vfs             = num_vfs,
                 .autoprobe           = autoprobe,
                 .eswitch_mode        = (_NMSriovEswitchMode) eswitch_mode,
@@ -11278,7 +11278,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
             hostname         = nm_setting_ip_config_get_dhcp_hostname(s_ip);
         }
 
-        config = (NMDhcpClientConfig){
+        config = (NMDhcpClientConfig) {
             .addr_family             = AF_INET,
             .l3cfg                   = nm_device_get_l3cfg(self),
             .iface                   = nm_device_get_ip_iface(self),
@@ -11319,7 +11319,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
         iaid = _prop_get_ipvx_dhcp_iaid(self, AF_INET6, connection, FALSE, &iaid_explicit);
         duid = _prop_get_ipv6_dhcp_duid(self, connection, hwaddr, &enforce_duid);
 
-        config = (NMDhcpClientConfig){
+        config = (NMDhcpClientConfig) {
             .addr_family     = AF_INET6,
             .l3cfg           = nm_device_get_l3cfg(self),
             .iface           = nm_device_get_ip_iface(self),
@@ -14111,7 +14111,7 @@ impl_device_reapply(NMDBusObject                      *obj,
     }
 
     reapply_data  = g_slice_new(ReapplyData);
-    *reapply_data = (ReapplyData){
+    *reapply_data = (ReapplyData) {
         .connection    = connection,
         .version_id    = version_id,
         .reapply_flags = reapply_flags,
@@ -18364,7 +18364,7 @@ nm_device_get_hostname_from_dns_lookup(NMDevice *self, int addr_family, gboolean
     resolver = priv->hostname_resolver_x[IS_IPv4];
     if (!resolver) {
         resolver  = g_slice_new(HostnameResolver);
-        *resolver = (HostnameResolver){
+        *resolver = (HostnameResolver) {
             .device      = self,
             .addr_family = addr_family,
             .state       = RESOLVER_WAIT_ADDRESS,

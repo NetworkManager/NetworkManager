@@ -1721,7 +1721,7 @@ settings_connection_update(NMSettingsConnection  *self,
         goto error;
 
     info  = g_slice_new(UpdateInfo);
-    *info = (UpdateInfo){
+    *info = (UpdateInfo) {
         .is_update2   = is_update2,
         .context      = context,
         .agent_mgr    = g_object_ref(priv->agent_mgr),

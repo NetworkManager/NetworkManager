@@ -440,8 +440,8 @@ typedef struct {
         v_obj_properties_idx,                                                     \
         .prop_struct_offset =                                                     \
             NM_STRUCT_OFFSET_ENSURE_TYPE(NMLDBusPropertyO, v_container, v_field), \
-        .extra.property_vtable_o =                                                \
-            &((const NMLDBusPropertVTableO){.get_o_type_fcn = (v_get_o_type_fcn), ##__VA_ARGS__}))
+        .extra.property_vtable_o = &(                                             \
+            (const NMLDBusPropertVTableO) {.get_o_type_fcn = (v_get_o_type_fcn), ##__VA_ARGS__}))
 
 #define NML_DBUS_META_PROPERTY_INIT_AO_PROP(v_dbus_property_name,                  \
                                             v_obj_properties_idx,                  \
@@ -456,7 +456,7 @@ typedef struct {
         .prop_struct_offset =                                                      \
             NM_STRUCT_OFFSET_ENSURE_TYPE(NMLDBusPropertyAO, v_container, v_field), \
         .extra.property_vtable_ao = &(                                             \
-            (const NMLDBusPropertVTableAO){.get_o_type_fcn = (v_get_o_type_fcn), ##__VA_ARGS__}))
+            (const NMLDBusPropertVTableAO) {.get_o_type_fcn = (v_get_o_type_fcn), ##__VA_ARGS__}))
 
 #define NML_DBUS_META_PROPERTY_INIT_FCN(v_dbus_property_name,                 \
                                         v_obj_properties_idx,                 \
@@ -559,12 +559,12 @@ struct _NMLDBusMetaIface {
 #define NML_DBUS_META_IFACE_OBJ_PROPERTIES()                                    \
     .obj_properties             = (const GParamSpec *const *) (obj_properties), \
     .n_obj_properties           = _PROPERTY_ENUMS_LAST,                         \
-    .obj_properties_reverse_idx = ((guint8[_PROPERTY_ENUMS_LAST]){})
+    .obj_properties_reverse_idx = ((guint8[_PROPERTY_ENUMS_LAST]) {})
 
-#define NML_DBUS_META_IFACE_DBUS_PROPERTIES(...)                     \
-    .dbus_properties = ((const NMLDBusMetaProperty[]){__VA_ARGS__}), \
-    .n_dbus_properties =                                             \
-        (sizeof((const NMLDBusMetaProperty[]){__VA_ARGS__}) / sizeof(NMLDBusMetaProperty))
+#define NML_DBUS_META_IFACE_DBUS_PROPERTIES(...)                      \
+    .dbus_properties = ((const NMLDBusMetaProperty[]) {__VA_ARGS__}), \
+    .n_dbus_properties =                                              \
+        (sizeof((const NMLDBusMetaProperty[]) {__VA_ARGS__}) / sizeof(NMLDBusMetaProperty))
 
 #define NML_DBUS_META_IFACE_INIT(v_dbus_iface_name, v_get_type_fcn, v_interface_prio, ...) \
     {.dbus_iface_name = "" v_dbus_iface_name "",                                           \
@@ -640,7 +640,7 @@ void _nml_dbus_meta_class_init_with_properties_impl(GObjectClass                
 #define _nml_dbus_meta_class_init_with_properties(object_class, ...) \
     _nml_dbus_meta_class_init_with_properties_impl(                  \
         (object_class),                                              \
-        ((const NMLDBusMetaIface *const[]){__VA_ARGS__, NULL}))
+        ((const NMLDBusMetaIface *const[]) {__VA_ARGS__, NULL}))
 
 /*****************************************************************************/
 
@@ -793,7 +793,7 @@ struct _NMObjectClass {
              * variable here. */          \
             nm_assert(!_f.klass);                                                    \
                                                                                      \
-            _f = (_NMObjectClassFieldInfo){                                          \
+            _f = (_NMObjectClassFieldInfo) {                                         \
                 .parent = _klass->field_name,                                        \
                 .klass  = _klass,                                                    \
                 .offset = (_offset),                                                 \

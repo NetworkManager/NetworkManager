@@ -1256,7 +1256,7 @@ handle_settings(NMModemOfono *self, GVariant *v_dict)
         goto out;
     }
 
-    address = (NMPlatformIP4Address){
+    address = (NMPlatformIP4Address) {
         .ifindex     = ifindex,
         .address     = address_network,
         .addr_source = NM_IP_CONFIG_SOURCE_WWAN,

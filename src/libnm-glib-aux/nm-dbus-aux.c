@@ -382,7 +382,7 @@ nm_dbus_call(GBusType            bus_type,
     CallAsyncInfo *info;
 
     info  = g_new(CallAsyncInfo, 1);
-    *info = (CallAsyncInfo){
+    *info = (CallAsyncInfo) {
         .bus_name       = g_strdup(bus_name),
         .object_path    = g_strdup(object_path),
         .interface_name = g_strdup(interface_name),

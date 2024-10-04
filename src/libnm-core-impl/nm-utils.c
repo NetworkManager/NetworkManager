@@ -305,14 +305,14 @@ nm_sock_addr_endpoint_get_fixed_sockaddr(NMSockAddrEndpoint *self, gpointer sock
 good:
     switch (addr_family) {
     case AF_INET:
-        *((struct sockaddr_in *) sockaddr) = (struct sockaddr_in){
+        *((struct sockaddr_in *) sockaddr) = (struct sockaddr_in) {
             .sin_family = AF_INET,
             .sin_addr   = addrbin.addr4_struct,
             .sin_port   = htons(self->port),
         };
         return TRUE;
     case AF_INET6:
-        *((struct sockaddr_in6 *) sockaddr) = (struct sockaddr_in6){
+        *((struct sockaddr_in6 *) sockaddr) = (struct sockaddr_in6) {
             .sin6_family   = AF_INET6,
             .sin6_addr     = addrbin.addr6,
             .sin6_port     = htons(self->port),
@@ -2719,9 +2719,9 @@ typedef struct {
 } NMQdiscAttributeSpec;
 
 static const NMQdiscAttributeSpec *const tc_qdisc_attribute_spec[] = {
-    &(const NMQdiscAttributeSpec){"fq_codel", tc_qdisc_fq_codel_spec},
-    &(const NMQdiscAttributeSpec){"sfq", tc_qdisc_sfq_spec},
-    &(const NMQdiscAttributeSpec){"tbf", tc_qdisc_tbf_spec},
+    &(const NMQdiscAttributeSpec) {"fq_codel", tc_qdisc_fq_codel_spec},
+    &(const NMQdiscAttributeSpec) {"sfq", tc_qdisc_sfq_spec},
+    &(const NMQdiscAttributeSpec) {"tbf", tc_qdisc_tbf_spec},
     NULL,
 };
 

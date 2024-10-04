@@ -610,7 +610,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device = NML_DBUS_META_IFACE_INIT
             .prop_struct_offset =
                 G_STRUCT_OFFSET(NMDevicePrivate, property_ao[PROPERTY_AO_IDX_PORTS]),
             .extra.property_vtable_ao =
-                &((const NMLDBusPropertVTableAO){.get_o_type_fcn = (nm_device_get_type)})),
+                &((const NMLDBusPropertVTableAO) {.get_o_type_fcn = (nm_device_get_type)})),
         NML_DBUS_META_PROPERTY_INIT_B("Real", PROP_REAL, NMDevicePrivate, real),
         NML_DBUS_META_PROPERTY_INIT_IGNORE("State", "u"),
         NML_DBUS_META_PROPERTY_INIT_FCN("StateReason",
@@ -3004,7 +3004,7 @@ nm_lldp_neighbor_new(void)
     NMLldpNeighbor *neigh;
 
     neigh  = g_slice_new(NMLldpNeighbor);
-    *neigh = (NMLldpNeighbor){
+    *neigh = (NMLldpNeighbor) {
         .refcount = 1,
         .attrs    = g_hash_table_new_full(nm_str_hash,
                                        g_str_equal,

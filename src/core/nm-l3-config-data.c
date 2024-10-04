@@ -678,7 +678,7 @@ nm_l3_config_data_new(NMDedupMultiIndex *multi_idx, int ifindex, NMIPConfigSourc
               || (source >= NM_IP_CONFIG_SOURCE_KERNEL && source <= NM_IP_CONFIG_SOURCE_USER));
 
     self  = g_slice_new(NML3ConfigData);
-    *self = (NML3ConfigData){
+    *self = (NML3ConfigData) {
         .ref_count                      = 1,
         .ifindex                        = ifindex,
         .multi_idx                      = nm_dedup_multi_index_ref(multi_idx),
@@ -2555,7 +2555,7 @@ nm_l3_config_data_get_blacklisted_ip4_routes(const NML3ConfigData *self, gboolea
             continue;
         }
 
-        rx.r4 = (NMPlatformIP4Route){
+        rx.r4 = (NMPlatformIP4Route) {
             .ifindex       = self->ifindex,
             .rt_source     = NM_IP_CONFIG_SOURCE_KERNEL,
             .network       = network_4,
@@ -2737,7 +2737,7 @@ nm_l3_config_data_add_dependent_device_routes(NML3ConfigData       *self,
                     plen = addr_src->a6.plen;
                 }
 
-                rx.r6 = (NMPlatformIP6Route){
+                rx.r6 = (NMPlatformIP6Route) {
                     .ifindex       = self->ifindex,
                     .rt_source     = NM_IP_CONFIG_SOURCE_KERNEL,
                     .table_coerced = nm_platform_route_table_coerce(route_table),
@@ -2810,14 +2810,14 @@ _init_from_connection_ip(NML3ConfigData *self, int addr_family, NMConnection *co
         NMPlatformIPXRoute r;
 
         if (IS_IPv4) {
-            r.r4 = (NMPlatformIP4Route){
+            r.r4 = (NMPlatformIP4Route) {
                 .rt_source  = NM_IP_CONFIG_SOURCE_USER,
                 .gateway    = gateway_bin.addr4,
                 .table_any  = TRUE,
                 .metric_any = TRUE,
             };
         } else {
-            r.r6 = (NMPlatformIP6Route){
+            r.r6 = (NMPlatformIP6Route) {
                 .rt_source  = NM_IP_CONFIG_SOURCE_USER,
                 .gateway    = gateway_bin.addr6,
                 .table_any  = TRUE,
@@ -2840,7 +2840,7 @@ _init_from_connection_ip(NML3ConfigData *self, int addr_family, NMConnection *co
         nm_ip_address_get_address_binary(s_addr, &addr_bin);
 
         if (IS_IPv4) {
-            a.a4 = (NMPlatformIP4Address){
+            a.a4 = (NMPlatformIP4Address) {
                 .address      = addr_bin.addr4,
                 .peer_address = addr_bin.addr4,
                 .plen         = nm_ip_address_get_prefix(s_addr),
@@ -2854,7 +2854,7 @@ _init_from_connection_ip(NML3ConfigData *self, int addr_family, NMConnection *co
 
             nm_assert(a.a4.plen <= 32);
         } else {
-            a.a6 = (NMPlatformIP6Address){
+            a.a6 = (NMPlatformIP6Address) {
                 .address     = addr_bin.addr6,
                 .plen        = nm_ip_address_get_prefix(s_addr),
                 .lifetime    = NM_PLATFORM_LIFETIME_PERMANENT,
@@ -2899,7 +2899,7 @@ _init_from_connection_ip(NML3ConfigData *self, int addr_family, NMConnection *co
         nm_ip_addr_clear_host_address(addr_family, &network_bin, &network_bin, plen);
 
         if (IS_IPv4) {
-            r.r4 = (NMPlatformIP4Route){
+            r.r4 = (NMPlatformIP4Route) {
                 .network    = network_bin.addr4,
                 .plen       = plen,
                 .gateway    = next_hop_bin.addr4,
@@ -2909,7 +2909,7 @@ _init_from_connection_ip(NML3ConfigData *self, int addr_family, NMConnection *co
             };
             nm_assert(r.r4.plen <= 32);
         } else {
-            r.r6 = (NMPlatformIP6Route){
+            r.r6 = (NMPlatformIP6Route) {
                 .network    = network_bin.addr6,
                 .plen       = plen,
                 .gateway    = next_hop_bin.addr6,

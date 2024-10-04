@@ -175,7 +175,7 @@ attach_port(NMDevice                  *device,
     }
 
     data  = g_slice_new(AttachPortData);
-    *data = (AttachPortData){
+    *data = (AttachPortData) {
         .device             = g_object_ref(device),
         .port               = g_object_ref(port),
         .cancellable        = g_object_ref(cancellable),
@@ -233,7 +233,7 @@ detach_port(NMDevice                  *device,
         AttachPortData *data;
 
         data  = g_slice_new(AttachPortData);
-        *data = (AttachPortData){
+        *data = (AttachPortData) {
             .device             = g_object_ref(device),
             .port               = g_object_ref(port),
             .cancellable        = nm_g_object_ref(cancellable),

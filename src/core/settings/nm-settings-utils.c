@@ -37,14 +37,14 @@ nm_sett_util_stat_mtime(const char *filename, gboolean do_lstat, struct timespec
     }
 
     if (gettimeofday(&now_tv, NULL) == 0) {
-        *out_val = (struct timespec){
+        *out_val = (struct timespec) {
             .tv_sec  = now_tv.tv_sec,
             .tv_nsec = now_tv.tv_usec * 1000u,
         };
         return out_val;
     }
 
-    *out_val = (struct timespec){};
+    *out_val = (struct timespec) {};
     return out_val;
 }
 

@@ -269,13 +269,13 @@ struct _NmcMetaGenericInfo {
 };
 
 #define NMC_META_GENERIC(n, ...) \
-    (&((NmcMetaGenericInfo){.meta_type = &nmc_meta_type_generic_info, .name = n, __VA_ARGS__}))
+    (&((NmcMetaGenericInfo) {.meta_type = &nmc_meta_type_generic_info, .name = n, __VA_ARGS__}))
 
 #define NMC_META_GENERIC_WITH_NESTED(n, nest, ...) \
     NMC_META_GENERIC(n, .nested = (nest), __VA_ARGS__)
 
 #define NMC_META_GENERIC_GROUP(_group_name, _nested, _name_header)                       \
-    ((const NMMetaAbstractInfo *const *) ((const NmcMetaGenericInfo *const[]){           \
+    ((const NMMetaAbstractInfo *const *) ((const NmcMetaGenericInfo *const[]) {          \
         NMC_META_GENERIC_WITH_NESTED(_group_name, _nested, .name_header = _name_header), \
         NULL,                                                                            \
     }))

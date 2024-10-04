@@ -340,7 +340,7 @@ _scan_request_ssids_track(NMDeviceWifiPrivate *priv, const GPtrArray *ssids)
         d = g_hash_table_lookup(priv->scan_request_ssids_hash, &ssid);
         if (!d) {
             d  = g_slice_new(ScanRequestSsidData);
-            *d = (ScanRequestSsidData){
+            *d = (ScanRequestSsidData) {
                 .lst            = C_LIST_INIT(d->lst),
                 .timestamp_msec = now_msec,
                 .ssid           = g_bytes_ref(ssid),

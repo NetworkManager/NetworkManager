@@ -1524,7 +1524,7 @@ _char_lookup_table_set_all(CharLookupTable *lookup, const char *candidates)
 static void
 _char_lookup_table_init(CharLookupTable *lookup, const char *candidates)
 {
-    *lookup = (CharLookupTable){
+    *lookup = (CharLookupTable) {
         .table = {0},
     };
     if (candidates)
@@ -3720,7 +3720,7 @@ nm_utils_hashtable_cmp(const GHashTable *a,
     g_hash_table_iter_init(&h, hash_a);
     while (g_hash_table_iter_next(&h, &i_key, &i_val)) {
         nm_assert(i < size);
-        cmp_array_a[i++] = (HashTableCmpData){
+        cmp_array_a[i++] = (HashTableCmpData) {
             .key = i_key,
             .val = i_val,
         };
@@ -3731,7 +3731,7 @@ nm_utils_hashtable_cmp(const GHashTable *a,
     g_hash_table_iter_init(&h, hash_b);
     while (g_hash_table_iter_next(&h, &i_key, &i_val)) {
         nm_assert(i < size);
-        cmp_array_b[i++] = (HashTableCmpData){
+        cmp_array_b[i++] = (HashTableCmpData) {
             .key = i_key,
             .val = i_val,
         };
@@ -3742,7 +3742,7 @@ nm_utils_hashtable_cmp(const GHashTable *a,
                       size,
                       sizeof(HashTableCmpData),
                       _hashtable_cmp_func,
-                      &((HashTableUserData){
+                      &((HashTableUserData) {
                           .cmp_keys  = cmp_keys,
                           .user_data = user_data,
                       }));
@@ -3751,7 +3751,7 @@ nm_utils_hashtable_cmp(const GHashTable *a,
                       size,
                       sizeof(HashTableCmpData),
                       _hashtable_cmp_func,
-                      &((HashTableUserData){
+                      &((HashTableUserData) {
                           .cmp_keys  = cmp_keys,
                           .user_data = user_data,
                       }));
@@ -4499,7 +4499,7 @@ _nm_utils_invoke_on_idle_start(gboolean                    use_timeout,
     g_return_if_fail(callback);
 
     data  = g_slice_new(InvokeOnIdleData);
-    *data = (InvokeOnIdleData){
+    *data = (InvokeOnIdleData) {
         .callback           = callback,
         .callback_user_data = callback_user_data,
         .cancellable        = nm_g_object_ref(cancellable),
@@ -5287,7 +5287,7 @@ _ctx_integ_source_prepare(GSource *source, int *out_timeout)
 
             if (G_UNLIKELY(!poll_data)) {
                 poll_data  = g_slice_new(PollData);
-                *poll_data = (PollData){
+                *poll_data = (PollData) {
                     .fd                = fd->fd,
                     .idx.one           = i,
                     .has_many_idx      = FALSE,
@@ -7305,7 +7305,7 @@ nm_utils_poll(int                               poll_timeout_ms,
     PollTaskData *poll_task_data;
 
     poll_task_data  = g_slice_new(PollTaskData);
-    *poll_task_data = (PollTaskData){
+    *poll_task_data = (PollTaskData) {
         .task             = nm_g_task_new(NULL, cancellable, nm_utils_poll, callback, user_data),
         .probe_start_fcn  = probe_start_fcn,
         .probe_finish_fcn = probe_finish_fcn,

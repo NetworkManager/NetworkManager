@@ -146,7 +146,7 @@ killswitch_new(struct udev_device *device, NMRfkillType rtype)
         platform = TRUE;
 
     ks  = g_slice_new(Killswitch);
-    *ks = (Killswitch){
+    *ks = (Killswitch) {
         .name     = g_strdup(udev_device_get_sysname(device)),
         .seqnum   = udev_device_get_seqnum(device),
         .path     = g_strdup(udev_device_get_syspath(device)),

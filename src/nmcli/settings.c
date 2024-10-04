@@ -503,7 +503,7 @@ _env_get_env_flags(const NMMetaEnvironment *environment, gpointer environment_us
 
 /*****************************************************************************/
 
-const NMMetaEnvironment *const nmc_meta_environment = &((NMMetaEnvironment){
+const NMMetaEnvironment *const nmc_meta_environment = &((NMMetaEnvironment) {
     .warn_fcn           = _env_warn_fcn_handle,
     .get_nm_devices     = _env_get_nm_devices,
     .get_nm_connections = _env_get_nm_connections,
@@ -764,10 +764,10 @@ setting_details(const NmcConfig *nmc_config, NMSetting *setting, const char *one
 
     if (!nmc_print_table(
             nmc_config,
-            (gpointer[]){setting, NULL},
+            (gpointer[]) {setting, NULL},
             NULL,
             NULL,
-            (const NMMetaAbstractInfo *const[]){(const NMMetaAbstractInfo *) setting_info, NULL},
+            (const NMMetaAbstractInfo *const[]) {(const NMMetaAbstractInfo *) setting_info, NULL},
             fields_str,
             &error))
         return FALSE;

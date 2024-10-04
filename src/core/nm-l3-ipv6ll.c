@@ -646,7 +646,7 @@ _nm_l3_ipv6ll_new(NML3Cfg                  *l3cfg,
         NULL);
 
     self  = g_slice_new(NML3IPv6LL);
-    *self = (NML3IPv6LL){
+    *self = (NML3IPv6LL) {
         .l3cfg                   = g_object_ref(l3cfg),
         .notify_fcn              = notify_fcn,
         .user_data               = user_data,

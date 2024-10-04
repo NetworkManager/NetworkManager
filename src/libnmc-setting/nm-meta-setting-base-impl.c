@@ -831,7 +831,7 @@ again:
         for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
             const NMMetaSettingInfo *m = &nm_meta_setting_infos[i];
 
-            static_array[i] = (LookupData){
+            static_array[i] = (LookupData) {
                 .gtype        = m->get_setting_gtype(),
                 .setting_info = m,
             };

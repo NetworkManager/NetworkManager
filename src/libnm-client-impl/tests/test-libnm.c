@@ -2285,7 +2285,7 @@ typedef struct {
     const char *val;
 } ReadVpnDetailData;
 
-#define READ_VPN_DETAIL_DATA(...) ((ReadVpnDetailData[]){__VA_ARGS__})
+#define READ_VPN_DETAIL_DATA(...) ((ReadVpnDetailData[]) {__VA_ARGS__})
 
 static gboolean
 _do_read_vpn_details_impl1(const char              *file,

@@ -224,7 +224,7 @@ _nmtstp_platform_ip_addresses_assert(const char        *filename,
         else
             g_error("%s:%d: invalid IP address in argument: %s", filename, lineno, addrstr);
 
-        addrs_bin[i] = (IPAddressesAssertData){
+        addrs_bin[i] = (IPAddressesAssertData) {
             .addr_family = addr_family,
             .addr        = a,
             .found       = FALSE,
@@ -1117,7 +1117,7 @@ again:
         link = nmtstp_link_gre_add(NULL,
                                    EX,
                                    test_ifname,
-                                   &((const NMPlatformLnkGre){
+                                   &((const NMPlatformLnkGre) {
                                        .local          = nmtst_inet4_from_string("192.168.233.204"),
                                        .remote         = nmtst_inet4_from_string("172.168.10.25"),
                                        .parent_ifindex = 0,
@@ -1129,7 +1129,7 @@ again:
         link = nmtstp_link_ipip_add(NULL,
                                     EX,
                                     test_ifname,
-                                    &((const NMPlatformLnkIpIp){
+                                    &((const NMPlatformLnkIpIp) {
                                         .local              = nmtst_inet4_from_string("1.2.3.4"),
                                         .remote             = nmtst_inet4_from_string("5.6.7.8"),
                                         .parent_ifindex     = 0,
@@ -1140,7 +1140,7 @@ again:
         link = nmtstp_link_ip6tnl_add(NULL,
                                       EX,
                                       test_ifname,
-                                      &((const NMPlatformLnkIp6Tnl){
+                                      &((const NMPlatformLnkIp6Tnl) {
                                           .local       = nmtst_inet6_from_string("fd01::15"),
                                           .remote      = nmtst_inet6_from_string("fd01::16"),
                                           .tclass      = 20,
@@ -1152,7 +1152,7 @@ again:
         link = nmtstp_link_ip6gre_add(NULL,
                                       EX,
                                       test_ifname,
-                                      &((const NMPlatformLnkIp6Tnl){
+                                      &((const NMPlatformLnkIp6Tnl) {
                                           .local      = nmtst_inet6_from_string("fd01::42"),
                                           .remote     = nmtst_inet6_from_string("fd01::aaaa"),
                                           .tclass     = 21,
@@ -1163,7 +1163,7 @@ again:
         link = nmtstp_link_sit_add(NULL,
                                    EX,
                                    test_ifname,
-                                   &((const NMPlatformLnkSit){
+                                   &((const NMPlatformLnkSit) {
                                        .local  = nmtst_inet4_from_string("192.168.200.1"),
                                        .remote = nmtst_inet4_from_string("172.25.100.14"),
                                        .ttl    = 0,
@@ -1174,7 +1174,7 @@ again:
         link = nmtstp_link_vti_add(NULL,
                                    EX,
                                    test_ifname,
-                                   &((const NMPlatformLnkVti){
+                                   &((const NMPlatformLnkVti) {
                                        .local  = nmtst_inet4_from_string("192.168.212.204"),
                                        .remote = nmtst_inet4_from_string("172.168.11.25"),
                                        .ikey   = 12,
@@ -1184,7 +1184,7 @@ again:
         link = nmtstp_link_vti6_add(NULL,
                                     EX,
                                     test_ifname,
-                                    &((const NMPlatformLnkVti6){
+                                    &((const NMPlatformLnkVti6) {
                                         .local  = nmtst_inet6_from_string("fd01::1"),
                                         .remote = nmtst_inet6_from_string("fd02::2"),
                                         .ikey   = 13,
@@ -1891,11 +1891,11 @@ nmtstp_ip4_address_add(NMPlatform *platform,
                     external_command,
                     TRUE,
                     ifindex,
-                    &((NMIPAddr){
+                    &((NMIPAddr) {
                         .addr4 = address,
                     }),
                     plen,
-                    &((NMIPAddr){
+                    &((NMIPAddr) {
                         .addr4 = peer_address,
                     }),
                     lifetime,
@@ -3592,7 +3592,7 @@ nmtstp_acd_defender_new(int ifindex, in_addr_t ip_addr, const NMEtherAddr *mac_a
     g_assert_cmpint(r, ==, 0);
     g_assert(probe_config);
 
-    n_acd_probe_config_set_ip(probe_config, (struct in_addr){ip_addr});
+    n_acd_probe_config_set_ip(probe_config, (struct in_addr) {ip_addr});
     n_acd_probe_config_set_timeout(probe_config, 0);
 
     r = n_acd_probe(nacd, &probe, probe_config);
@@ -3600,7 +3600,7 @@ nmtstp_acd_defender_new(int ifindex, in_addr_t ip_addr, const NMEtherAddr *mac_a
     g_assert(probe);
 
     defender  = g_slice_new(NMTstpAcdDefender);
-    *defender = (NMTstpAcdDefender){
+    *defender = (NMTstpAcdDefender) {
         .ifindex = ifindex,
         .ip_addr = ip_addr,
         .nacd    = g_steal_pointer(&nacd),

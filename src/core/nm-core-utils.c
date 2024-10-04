@@ -1434,7 +1434,7 @@ nm_match_spec_device(const GSList *specs, const NMMatchSpecDeviceData *data)
     if (!specs)
         return NM_MATCH_SPEC_NO_MATCH;
 
-    match_data = (MatchSpecDeviceData){
+    match_data = (MatchSpecDeviceData) {
         .data           = data,
         .device_type    = nm_str_not_empty(data->device_type),
         .driver         = nm_str_not_empty(data->driver),
@@ -3011,7 +3011,7 @@ nmtst_utils_host_id_push(const guint8 *host_id,
 
     h = nm_g_array_append_new(nmtst_host_id_stack, HostIdData);
 
-    *h = (HostIdData){
+    *h = (HostIdData) {
         .host_id           = nm_memdup(host_id, host_id_len),
         .host_id_len       = host_id_len,
         .timestamp_nsec    = p_timestamp_nsec ? *p_timestamp_nsec : 0,
@@ -3585,11 +3585,11 @@ _is_reserved_ipv6_iid(const guint8 *iid)
     /* 0200:5EFF:FE00:0000 - 0200:5EFF:FE00:5212 (Reserved IPv6 Interface Identifiers corresponding to the IANA Ethernet Block [RFC4291])
      * 0200:5EFF:FE00:5213                       (Proxy Mobile IPv6 [RFC6543])
      * 0200:5EFF:FE00:5214 - 0200:5EFF:FEFF:FFFF (Reserved IPv6 Interface Identifiers corresponding to the IANA Ethernet Block [RFC4291]) */
-    if (memcmp(iid, (const guint8[]){0x02, 0x00, 0x5E, 0xFF, 0xFE}, 5) == 0)
+    if (memcmp(iid, (const guint8[]) {0x02, 0x00, 0x5E, 0xFF, 0xFE}, 5) == 0)
         return TRUE;
 
     /* FDFF:FFFF:FFFF:FF80 - FDFF:FFFF:FFFF:FFFF (Reserved Subnet Anycast Addresses [RFC2526]) */
-    if (memcmp(iid, (const guint8[]){0xFD, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}, 7) == 0) {
+    if (memcmp(iid, (const guint8[]) {0xFD, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}, 7) == 0) {
         if (iid[7] & 0x80)
             return TRUE;
     }
@@ -5255,7 +5255,7 @@ nm_utils_spawn_helper(const char *const  *args,
     nm_assert(args && args[0]);
 
     info  = g_new(HelperInfo, 1);
-    *info = (HelperInfo){
+    *info = (HelperInfo) {
         .task = nm_g_task_new(NULL, cancellable, nm_utils_spawn_helper, callback, cb_data),
     };
 

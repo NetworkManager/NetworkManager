@@ -48,7 +48,7 @@ do_update_properties(NMDeviceVrf *self, const NMPlatformLnkVrf *props)
     NMPlatformLnkVrf    props_null;
 
     if (!props) {
-        props_null = (NMPlatformLnkVrf){};
+        props_null = (NMPlatformLnkVrf) {};
         props      = &props_null;
     }
 

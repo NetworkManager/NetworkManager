@@ -70,7 +70,7 @@ event_create_source(sd_event *event)
 
     source->event = is_default_event ? g_steal_pointer(&event) : sd_event_ref(event);
 
-    source->pollfd = (GPollFD){
+    source->pollfd = (GPollFD) {
         .fd     = sd_event_get_fd(source->event),
         .events = G_IO_IN | G_IO_HUP | G_IO_ERR,
     };

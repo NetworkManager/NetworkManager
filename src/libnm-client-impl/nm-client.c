@@ -419,7 +419,7 @@ nml_init_data_new_sync(GCancellable *cancellable, GMainLoop *main_loop, GError *
     NMLInitData *init_data;
 
     init_data  = g_slice_new(NMLInitData);
-    *init_data = (NMLInitData){
+    *init_data = (NMLInitData) {
         .cancellable = nm_g_object_ref(cancellable),
         .is_sync     = TRUE,
         .data.sync =
@@ -437,7 +437,7 @@ nml_init_data_new_async(GCancellable *cancellable, GTask *task_take)
     NMLInitData *init_data;
 
     init_data  = g_slice_new(NMLInitData);
-    *init_data = (NMLInitData){
+    *init_data = (NMLInitData) {
         .cancellable = nm_g_object_ref(cancellable),
         .is_sync     = FALSE,
         .data.async =
@@ -1103,7 +1103,7 @@ nml_dbus_object_new(NMRefString *dbus_path_take)
     nm_assert(NM_IS_REF_STRING(dbus_path_take));
 
     dbobj  = g_slice_new(NMLDBusObject);
-    *dbobj = (NMLDBusObject){
+    *dbobj = (NMLDBusObject) {
         .dbus_path        = g_steal_pointer(&dbus_path_take),
         .ref_count        = 1,
         .dbus_objects_lst = C_LIST_INIT(dbobj->dbus_objects_lst),
@@ -1209,7 +1209,7 @@ nml_dbus_object_iface_data_get(NMLDBusObject *dbobj,
         G_STRUCT_OFFSET(NMLDBusObjIfaceData, prop_datas)
         + (meta_iface ? (sizeof(NMLDBusObjPropData) * meta_iface->n_dbus_properties) : 0u));
     if (meta_iface) {
-        *db_iface_data = (NMLDBusObjIfaceData){
+        *db_iface_data = (NMLDBusObjIfaceData) {
             .dbus_iface.meta         = meta_iface,
             .dbus_iface_is_wellknown = TRUE,
             .changed_prop_lst_head   = C_LIST_INIT(db_iface_data->changed_prop_lst_head),
@@ -1217,7 +1217,7 @@ nml_dbus_object_iface_data_get(NMLDBusObject *dbobj,
         };
         db_prop_data = &db_iface_data->prop_datas[0];
         for (i = 0; i < meta_iface->n_dbus_properties; i++, db_prop_data++) {
-            *db_prop_data = (NMLDBusObjPropData){
+            *db_prop_data = (NMLDBusObjPropData) {
                 .prop_data_value  = NULL,
                 .changed_prop_lst = C_LIST_INIT(db_prop_data->changed_prop_lst),
             };
@@ -3912,7 +3912,7 @@ _request_wait_start(GTask      *task_take,
     }
 
     request_data  = g_slice_new(RequestWaitData);
-    *request_data = (RequestWaitData){
+    *request_data = (RequestWaitData) {
         .task           = g_steal_pointer(&task),
         .op_name        = op_name,
         .gtype          = gtype,
@@ -7077,7 +7077,7 @@ _init_release_all(NMClient *self)
 
     nm_assert(c_list_is_empty(&priv->obj_changed_lst_head));
 
-    dbus_objects_lst_heads = ((CList *[]){
+    dbus_objects_lst_heads = ((CList *[]) {
         &priv->dbus_objects_lst_head_on_dbus,
         &priv->dbus_objects_lst_head_with_nmobj_not_ready,
         &priv->dbus_objects_lst_head_with_nmobj_ready,
@@ -9149,7 +9149,7 @@ nm_client_wait_shutdown(NMClient           *client,
     }
 
     data  = g_slice_new(WaitShutdownData);
-    *data = (WaitShutdownData){
+    *data = (WaitShutdownData) {
         .cancellable        = nm_g_object_ref(cancellable),
         .task               = g_object_ref(task),
         .result             = -1,

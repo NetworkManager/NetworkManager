@@ -198,12 +198,12 @@ test_nmp_utils_bridge_vlans_normalize(void)
     guint                vlans_len;
 
     /* Single one is unmodified */
-    vlans[0] = (NMPlatformBridgeVlan){
+    vlans[0] = (NMPlatformBridgeVlan) {
         .vid_start = 1,
         .vid_end   = 10,
         .untagged  = TRUE,
     };
-    expect[0] = (NMPlatformBridgeVlan){
+    expect[0] = (NMPlatformBridgeVlan) {
         .vid_start = 1,
         .vid_end   = 10,
         .untagged  = TRUE,
@@ -214,61 +214,61 @@ test_nmp_utils_bridge_vlans_normalize(void)
     g_assert(nmp_utils_bridge_normalized_vlans_equal(vlans, vlans_len, expect, vlans_len));
 
     /* Not merged if flags are different */
-    vlans[0] = (NMPlatformBridgeVlan){
+    vlans[0] = (NMPlatformBridgeVlan) {
         .vid_start = 1,
         .vid_end   = 10,
         .untagged  = TRUE,
     };
-    vlans[1] = (NMPlatformBridgeVlan){
+    vlans[1] = (NMPlatformBridgeVlan) {
         .vid_start = 11,
         .vid_end   = 11,
         .pvid      = TRUE,
     };
-    vlans[2] = (NMPlatformBridgeVlan){
+    vlans[2] = (NMPlatformBridgeVlan) {
         .vid_start = 20,
         .vid_end   = 25,
     };
-    vlans[3] = (NMPlatformBridgeVlan){
+    vlans[3] = (NMPlatformBridgeVlan) {
         .vid_start = 26,
         .vid_end   = 30,
         .untagged  = TRUE,
     };
-    vlans[4] = (NMPlatformBridgeVlan){
+    vlans[4] = (NMPlatformBridgeVlan) {
         .vid_start = 40,
         .vid_end   = 40,
         .untagged  = TRUE,
     };
-    vlans[5] = (NMPlatformBridgeVlan){
+    vlans[5] = (NMPlatformBridgeVlan) {
         .vid_start = 40,
         .vid_end   = 40,
         .untagged  = TRUE,
         .pvid      = TRUE,
     };
-    expect[0] = (NMPlatformBridgeVlan){
+    expect[0] = (NMPlatformBridgeVlan) {
         .vid_start = 1,
         .vid_end   = 10,
         .untagged  = TRUE,
     };
-    expect[1] = (NMPlatformBridgeVlan){
+    expect[1] = (NMPlatformBridgeVlan) {
         .vid_start = 11,
         .vid_end   = 11,
         .pvid      = TRUE,
     };
-    expect[2] = (NMPlatformBridgeVlan){
+    expect[2] = (NMPlatformBridgeVlan) {
         .vid_start = 20,
         .vid_end   = 25,
     };
-    expect[3] = (NMPlatformBridgeVlan){
+    expect[3] = (NMPlatformBridgeVlan) {
         .vid_start = 26,
         .vid_end   = 30,
         .untagged  = TRUE,
     };
-    expect[4] = (NMPlatformBridgeVlan){
+    expect[4] = (NMPlatformBridgeVlan) {
         .vid_start = 40,
         .vid_end   = 40,
         .untagged  = TRUE,
     };
-    expect[5] = (NMPlatformBridgeVlan){
+    expect[5] = (NMPlatformBridgeVlan) {
         .vid_start = 40,
         .vid_end   = 40,
         .untagged  = TRUE,
@@ -280,22 +280,22 @@ test_nmp_utils_bridge_vlans_normalize(void)
     g_assert(nmp_utils_bridge_normalized_vlans_equal(vlans, vlans_len, expect, vlans_len));
 
     /* Overlapping and contiguous ranges are merged */
-    vlans[0] = (NMPlatformBridgeVlan){
+    vlans[0] = (NMPlatformBridgeVlan) {
         .vid_start = 1,
         .vid_end   = 10,
         .untagged  = TRUE,
     };
-    vlans[1] = (NMPlatformBridgeVlan){
+    vlans[1] = (NMPlatformBridgeVlan) {
         .vid_start = 11,
         .vid_end   = 20,
         .untagged  = TRUE,
     };
-    vlans[2] = (NMPlatformBridgeVlan){
+    vlans[2] = (NMPlatformBridgeVlan) {
         .vid_start = 19,
         .vid_end   = 30,
         .untagged  = TRUE,
     };
-    expect[0] = (NMPlatformBridgeVlan){
+    expect[0] = (NMPlatformBridgeVlan) {
         .vid_start = 1,
         .vid_end   = 30,
         .untagged  = TRUE,
@@ -305,42 +305,42 @@ test_nmp_utils_bridge_vlans_normalize(void)
     g_assert(vlans_len == 1);
     g_assert(nmp_utils_bridge_normalized_vlans_equal(vlans, vlans_len, expect, vlans_len));
 
-    vlans[0] = (NMPlatformBridgeVlan){
+    vlans[0] = (NMPlatformBridgeVlan) {
         .vid_start = 20,
         .vid_end   = 20,
     };
-    vlans[1] = (NMPlatformBridgeVlan){
+    vlans[1] = (NMPlatformBridgeVlan) {
         .vid_start = 4,
         .vid_end   = 4,
         .pvid      = TRUE,
     };
-    vlans[2] = (NMPlatformBridgeVlan){
+    vlans[2] = (NMPlatformBridgeVlan) {
         .vid_start = 33,
         .vid_end   = 33,
     };
-    vlans[3] = (NMPlatformBridgeVlan){
+    vlans[3] = (NMPlatformBridgeVlan) {
         .vid_start = 100,
         .vid_end   = 100,
         .untagged  = TRUE,
     };
-    vlans[4] = (NMPlatformBridgeVlan){
+    vlans[4] = (NMPlatformBridgeVlan) {
         .vid_start = 34,
         .vid_end   = 40,
     };
-    vlans[5] = (NMPlatformBridgeVlan){
+    vlans[5] = (NMPlatformBridgeVlan) {
         .vid_start = 21,
         .vid_end   = 32,
     };
-    expect[0] = (NMPlatformBridgeVlan){
+    expect[0] = (NMPlatformBridgeVlan) {
         .vid_start = 4,
         .vid_end   = 4,
         .pvid      = TRUE,
     };
-    expect[1] = (NMPlatformBridgeVlan){
+    expect[1] = (NMPlatformBridgeVlan) {
         .vid_start = 20,
         .vid_end   = 40,
     };
-    expect[2] = (NMPlatformBridgeVlan){
+    expect[2] = (NMPlatformBridgeVlan) {
         .vid_start = 100,
         .vid_end   = 100,
         .untagged  = TRUE,
@@ -364,7 +364,7 @@ test_nmp_utils_bridge_normalized_vlans_equal(void)
     g_assert(nmp_utils_bridge_normalized_vlans_equal(NULL, 0, b, 0));
 
     /* One empty, other not */
-    a[0] = (NMPlatformBridgeVlan){
+    a[0] = (NMPlatformBridgeVlan) {
         .vid_start = 1,
         .vid_end   = 10,
         .untagged  = TRUE,
@@ -373,22 +373,22 @@ test_nmp_utils_bridge_normalized_vlans_equal(void)
     g_assert(!nmp_utils_bridge_normalized_vlans_equal(NULL, 0, a, 1));
 
     /* Equal range + VLAN */
-    a[0] = (NMPlatformBridgeVlan){
+    a[0] = (NMPlatformBridgeVlan) {
         .vid_start = 1,
         .vid_end   = 10,
         .untagged  = TRUE,
     };
-    a[1] = (NMPlatformBridgeVlan){
+    a[1] = (NMPlatformBridgeVlan) {
         .vid_start = 11,
         .vid_end   = 11,
         .pvid      = TRUE,
     };
-    b[0] = (NMPlatformBridgeVlan){
+    b[0] = (NMPlatformBridgeVlan) {
         .vid_start = 1,
         .vid_end   = 10,
         .untagged  = TRUE,
     };
-    b[1] = (NMPlatformBridgeVlan){
+    b[1] = (NMPlatformBridgeVlan) {
         .vid_start = 11,
         .vid_end   = 11,
         .pvid      = TRUE,
@@ -402,12 +402,12 @@ test_nmp_utils_bridge_normalized_vlans_equal(void)
     g_assert(!nmp_utils_bridge_normalized_vlans_equal(b, 2, a, 2));
 
     /* Different ranges */
-    a[0] = (NMPlatformBridgeVlan){
+    a[0] = (NMPlatformBridgeVlan) {
         .vid_start = 1,
         .vid_end   = 30,
         .untagged  = TRUE,
     };
-    b[0] = (NMPlatformBridgeVlan){
+    b[0] = (NMPlatformBridgeVlan) {
         .vid_start = 1,
         .vid_end   = 29,
         .untagged  = TRUE,

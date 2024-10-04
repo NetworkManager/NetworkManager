@@ -22,10 +22,7 @@ typedef struct _NMIPAddrTyped {
     gint8    addr_family;
 } NMIPAddrTyped;
 
-#define NM_IP_ADDR_INIT   \
-    {                     \
-        .addr_ptr = { 0 } \
-    }
+#define NM_IP_ADDR_INIT {.addr_ptr = {0}}
 
 #define _NM_IN6ADDR_INIT(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, aa, ab, ac, ad, ae, af) \
     {                                                                                    \

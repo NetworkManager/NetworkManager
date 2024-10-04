@@ -265,7 +265,7 @@ _stack_push(GArray *netns_stack, NMPNetns *netns, int ns_types)
     nm_assert(!NM_FLAGS_ANY(ns_types, ~_CLONE_NS_ALL));
 
     info  = nm_g_array_append_new(netns_stack, NetnsInfo);
-    *info = (NetnsInfo){
+    *info = (NetnsInfo) {
         .netns    = g_object_ref(netns),
         .ns_types = ns_types,
         .count    = 1,

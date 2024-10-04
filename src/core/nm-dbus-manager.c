@@ -549,7 +549,7 @@ _get_caller_info_ensure(NMDBusManager *self,
         gsize l = strlen(sender) + 1;
 
         caller_info  = g_malloc(sizeof(CallerInfo) + l);
-        *caller_info = (CallerInfo){
+        *caller_info = (CallerInfo) {
             .uid_checked_at = -CALLER_INFO_MAX_AGE,
             .pid_checked_at = -CALLER_INFO_MAX_AGE,
         };

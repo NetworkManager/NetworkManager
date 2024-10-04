@@ -77,7 +77,7 @@ nm_wireguard_peer_new(void)
     NMWireGuardPeer *self;
 
     self  = g_slice_new(NMWireGuardPeer);
-    *self = (NMWireGuardPeer){
+    *self = (NMWireGuardPeer) {
         .refcount            = 1,
         .preshared_key_flags = NM_SETTING_SECRET_FLAG_NOT_REQUIRED,
     };
@@ -104,7 +104,7 @@ nm_wireguard_peer_new_clone(const NMWireGuardPeer *self, gboolean with_secrets)
     g_return_val_if_fail(NM_IS_WIREGUARD_PEER(self, TRUE), NULL);
 
     new  = g_slice_new(NMWireGuardPeer);
-    *new = (NMWireGuardPeer){
+    *new = (NMWireGuardPeer) {
         .refcount             = 1,
         .public_key           = g_strdup(self->public_key),
         .public_key_valid     = self->public_key_valid,
@@ -1310,7 +1310,7 @@ _peers_set(NMSettingWireGuardPrivate *priv,
     if (!pd_same_key)
         pd_same_key = g_slice_new(PeerData);
 
-    *pd_same_key = (PeerData){
+    *pd_same_key = (PeerData) {
         .peer       = peer,
         .public_key = public_key,
         .idx        = priv->peers_arr->len,

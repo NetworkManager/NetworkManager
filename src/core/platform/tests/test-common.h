@@ -372,21 +372,21 @@ void _nmtstp_platform_ip_addresses_assert(const char        *filename,
                                           guint              addrs_len,
                                           const char *const *addrs);
 
-#define nmtstp_platform_ip_addresses_assert(self,                                              \
-                                            ifindex,                                           \
-                                            force_exact_4,                                     \
-                                            force_exact_6,                                     \
-                                            ignore_ll6,                                        \
-                                            ...)                                               \
-    _nmtstp_platform_ip_addresses_assert(__FILE__,                                             \
-                                         __LINE__,                                             \
-                                         (self),                                               \
-                                         (ifindex),                                            \
-                                         (force_exact_4),                                      \
-                                         (force_exact_6),                                      \
-                                         (ignore_ll6),                                         \
-                                         NM_NARG(__VA_ARGS__),                                 \
-                                         ((const char *const[]){"dummy", ##__VA_ARGS__, NULL}) \
+#define nmtstp_platform_ip_addresses_assert(self,                                               \
+                                            ifindex,                                            \
+                                            force_exact_4,                                      \
+                                            force_exact_6,                                      \
+                                            ignore_ll6,                                         \
+                                            ...)                                                \
+    _nmtstp_platform_ip_addresses_assert(__FILE__,                                              \
+                                         __LINE__,                                              \
+                                         (self),                                                \
+                                         (ifindex),                                             \
+                                         (force_exact_4),                                       \
+                                         (force_exact_6),                                       \
+                                         (ignore_ll6),                                          \
+                                         NM_NARG(__VA_ARGS__),                                  \
+                                         ((const char *const[]) {"dummy", ##__VA_ARGS__, NULL}) \
                                              + 1)
 
 /*****************************************************************************/
@@ -540,7 +540,7 @@ gboolean nmtstp_ensure_module(const char *module_name);
 /*****************************************************************************/
 
 #define nmtst_object_new_mptcp_addr(...) \
-    nmp_object_new(NMP_OBJECT_TYPE_MPTCP_ADDR, &((const NMPlatformMptcpAddr){__VA_ARGS__}))
+    nmp_object_new(NMP_OBJECT_TYPE_MPTCP_ADDR, &((const NMPlatformMptcpAddr) {__VA_ARGS__}))
 
 /*****************************************************************************/
 

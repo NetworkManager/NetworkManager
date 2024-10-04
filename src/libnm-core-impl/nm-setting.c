@@ -446,7 +446,7 @@ _nm_setting_class_commit(NMSettingClass             *setting_class,
         const NMSettInfoProperty *property_info = &sett_info->property_infos[j];
 
         if (property_info->param_spec) {
-            *(lookup_by_iter++) = (NMSettInfoPropertLookupByParamSpec){
+            *(lookup_by_iter++) = (NMSettInfoPropertLookupByParamSpec) {
                 .param_spec_as_uint = (uintptr_t) ((gpointer) property_info->param_spec),
                 .property_info      = property_info,
             };
@@ -4346,7 +4346,7 @@ nm_range_new(guint64 start, guint64 end)
     g_return_val_if_fail(start <= end, NULL);
 
     range  = g_slice_new(NMRange);
-    *range = (NMRange){
+    *range = (NMRange) {
         .refcount = 1,
         .start    = start,
         .end      = end,

@@ -97,19 +97,19 @@ nm_secret_ptr_clear(NMSecretPtr *secret)
 #define nm_auto_clear_secret_ptr nm_auto(nm_secret_ptr_clear)
 
 #define NM_SECRET_PTR_INIT() \
-    ((const NMSecretPtr){    \
+    ((const NMSecretPtr) {   \
         .len = 0,            \
         .ptr = NULL,         \
     })
 
-#define NM_SECRET_PTR_STATIC(_len) \
-    ((const NMSecretPtr){          \
-        .len = _len,               \
-        .ptr = ((guint8[_len]){}), \
+#define NM_SECRET_PTR_STATIC(_len)  \
+    ((const NMSecretPtr) {          \
+        .len = _len,                \
+        .ptr = ((guint8[_len]) {}), \
     })
 
 #define NM_SECRET_PTR_ARRAY(_arr)                      \
-    ((const NMSecretPtr){                              \
+    ((const NMSecretPtr) {                             \
         .len = G_N_ELEMENTS(_arr) * sizeof((_arr)[0]), \
         .ptr = &((_arr)[0]),                           \
     })

@@ -305,7 +305,7 @@ lease_parse_address(NMDhcpNettools    *self /* for logging context only */,
     }
 
     nm_l3_config_data_add_address_4(l3cd,
-                                    &((const NMPlatformIP4Address){
+                                    &((const NMPlatformIP4Address) {
                                         .address      = a_address.s_addr,
                                         .peer_address = a_address.s_addr,
                                         .plen         = a_plen,
@@ -445,7 +445,7 @@ lease_parse_routes(NDhcp4ClientLease *lease,
                 m = 0;
 
             nm_l3_config_data_add_route_4(l3cd,
-                                          &((const NMPlatformIP4Route){
+                                          &((const NMPlatformIP4Route) {
                                               .rt_source     = NM_IP_CONFIG_SOURCE_DHCP,
                                               .network       = dest,
                                               .plen          = plen,
@@ -489,7 +489,7 @@ lease_parse_routes(NDhcp4ClientLease *lease,
             }
 
             nm_l3_config_data_add_route_4(l3cd,
-                                          &((const NMPlatformIP4Route){
+                                          &((const NMPlatformIP4Route) {
                                               .rt_source     = NM_IP_CONFIG_SOURCE_DHCP,
                                               .network       = dest,
                                               .plen          = plen,
@@ -533,7 +533,7 @@ lease_parse_routes(NDhcp4ClientLease *lease,
             m = default_route_metric_offset++;
 
             nm_l3_config_data_add_route_4(l3cd,
-                                          &((const NMPlatformIP4Route){
+                                          &((const NMPlatformIP4Route) {
                                               .rt_source     = NM_IP_CONFIG_SOURCE_DHCP,
                                               .gateway       = gateway,
                                               .pref_src      = lease_address,

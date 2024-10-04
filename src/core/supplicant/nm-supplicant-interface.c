@@ -714,7 +714,7 @@ _bss_info_properties_changed(NMSupplicantInterface *self,
     if (v_v) {
         arr_data = g_variant_get_fixed_array(v_v, &arr_len, 1);
         if (arr_len == ETH_ALEN && memcmp(arr_data, &nm_ether_addr_zero, ETH_ALEN) != 0
-            && memcmp(arr_data, (char[ETH_ALEN]){0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}, ETH_ALEN)
+            && memcmp(arr_data, (char[ETH_ALEN]) {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}, ETH_ALEN)
                    != 0) {
             /* pass */
         } else
@@ -839,7 +839,7 @@ _bss_info_add(NMSupplicantInterface *self, const char *object_path)
     }
 
     bss_info  = g_slice_new(NMSupplicantBssInfo);
-    *bss_info = (NMSupplicantBssInfo){
+    *bss_info = (NMSupplicantBssInfo) {
         ._self             = self,
         .bss_path          = g_steal_pointer(&bss_path),
         ._init_cancellable = g_cancellable_new(),
@@ -953,7 +953,7 @@ _peer_info_properties_changed(NMSupplicantInterface *self,
     if (v_v) {
         arr_data = g_variant_get_fixed_array(v_v, &arr_len, 1);
         if (arr_len == ETH_ALEN && memcmp(arr_data, &nm_ether_addr_zero, ETH_ALEN) != 0
-            && memcmp(arr_data, (char[ETH_ALEN]){0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}, ETH_ALEN)
+            && memcmp(arr_data, (char[ETH_ALEN]) {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}, ETH_ALEN)
                    != 0) {
             /* pass */
         } else
@@ -1037,7 +1037,7 @@ _peer_info_add(NMSupplicantInterface *self, const char *object_path)
     }
 
     peer_info  = g_slice_new(NMSupplicantPeerInfo);
-    *peer_info = (NMSupplicantPeerInfo){
+    *peer_info = (NMSupplicantPeerInfo) {
         ._self             = self,
         .peer_path         = g_steal_pointer(&peer_path),
         ._init_cancellable = g_cancellable_new(),
@@ -1831,7 +1831,7 @@ _wps_start(NMSupplicantInterface *self, const char *type, const char *bssid, con
         }
 
         wps_data  = g_slice_new(WpsData);
-        *wps_data = (WpsData){
+        *wps_data = (WpsData) {
             .self  = self,
             .type  = g_strdup(type),
             .bssid = g_strdup(bssid),
@@ -2381,7 +2381,7 @@ add_network(NMSupplicantInterface *self)
      * For that we also have a shutdown_wait_obj so that on exit we still wait
      * to handle the response. */
     add_network_data  = g_slice_new(AddNetworkData);
-    *add_network_data = (AddNetworkData){
+    *add_network_data = (AddNetworkData) {
         .assoc_data        = priv->assoc_data,
         .name_owner        = nm_ref_string_ref(priv->name_owner),
         .object_path       = nm_ref_string_ref(priv->object_path),
@@ -2534,7 +2534,7 @@ nm_supplicant_interface_assoc(NMSupplicantInterface       *self,
     nm_supplicant_interface_disconnect(self);
 
     assoc_data  = g_slice_new(AssocData);
-    *assoc_data = (AssocData){
+    *assoc_data = (AssocData) {
         .self      = self,
         .cfg       = g_object_ref(cfg),
         .callback  = callback,
@@ -2707,7 +2707,7 @@ nm_supplicant_interface_request_scan(NMSupplicantInterface                   *se
     }
 
     data  = g_slice_new(ScanRequestData);
-    *data = (ScanRequestData){
+    *data = (ScanRequestData) {
         .self        = self,
         .callback    = callback,
         .user_data   = user_data,

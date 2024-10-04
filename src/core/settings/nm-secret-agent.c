@@ -142,7 +142,7 @@ _call_id_new(NMSecretAgent        *self,
     NMSecretAgentCallId  *call_id;
 
     call_id  = g_slice_new(NMSecretAgentCallId);
-    *call_id = (NMSecretAgentCallId){
+    *call_id = (NMSecretAgentCallId) {
         .self          = g_object_ref(self),
         .path          = g_strdup(path),
         .setting_name  = g_strdup(setting_name),

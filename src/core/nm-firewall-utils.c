@@ -566,7 +566,7 @@ nm_firewall_nft_call(GBytes             *stdin_buf,
     gs_free char                        *ss1 = NULL;
 
     call_data  = g_slice_new(FwNftCallData);
-    *call_data = (FwNftCallData){
+    *call_data = (FwNftCallData) {
         .task =
             nm_g_task_new(NULL, cancellable, nm_firewall_nft_call, callback, callback_user_data),
         .subprocess     = NULL,
@@ -661,7 +661,7 @@ _fw_nft_call_sync(GBytes *stdin_buf, GError **error)
     nm_auto_pop_and_unref_gmaincontext GMainContext *main_context =
         nm_g_main_context_push_thread_default(g_main_context_new());
     nm_auto_unref_gmainloop GMainLoop *main_loop = g_main_loop_new(main_context, FALSE);
-    FwNftCallSyncData                  data      = (FwNftCallSyncData){
+    FwNftCallSyncData                  data      = (FwNftCallSyncData) {
                               .loop  = main_loop,
                               .error = error,
     };
@@ -964,7 +964,7 @@ nm_firewall_config_new_shared(const char *ip_iface, in_addr_t addr, guint8 plen)
     nm_assert(plen <= 32);
 
     self  = g_slice_new(NMFirewallConfig);
-    *self = (NMFirewallConfig){
+    *self = (NMFirewallConfig) {
         .ip_iface = g_strdup(ip_iface),
         .addr     = addr,
         .plen     = plen,

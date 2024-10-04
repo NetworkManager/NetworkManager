@@ -3824,7 +3824,7 @@ nm_platform_ip4_address_add(NMPlatform *self,
         char                 sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
         NMPlatformIP4Address addr;
 
-        addr = (NMPlatformIP4Address){
+        addr = (NMPlatformIP4Address) {
             .ifindex           = ifindex,
             .address           = address,
             .peer_address      = peer_address,
@@ -4823,7 +4823,7 @@ nm_platform_ip_address_get_prune_list(NMPlatform            *self,
             const NMPlatformIP4Address *a4 = NMP_OBJECT_CAST_IP4_ADDRESS(obj);
 
             if (a4->address == NM_IPV4LO_ADDR1 && a4->plen == NM_IPV4LO_PREFIXLEN) {
-                const NMPlatformIP4Address addr = (NMPlatformIP4Address){
+                const NMPlatformIP4Address addr = (NMPlatformIP4Address) {
                     .ifindex                   = NM_LOOPBACK_IFINDEX,
                     .address                   = NM_IPV4LO_ADDR1,
                     .peer_address              = NM_IPV4LO_ADDR1,
@@ -4944,7 +4944,7 @@ nm_platform_ip_route_get_prune_list(NMPlatform            *self,
                     NMPlatformIP4Route r;
 
                     if (rt->r4.network == NM_IPV4LO_ADDR1) {
-                        r = (NMPlatformIP4Route){
+                        r = (NMPlatformIP4Route) {
                             .ifindex       = NM_LOOPBACK_IFINDEX,
                             .type_coerced  = nm_platform_route_type_coerce(RTN_LOCAL),
                             .table_coerced = nm_platform_route_table_coerce(local_table),
@@ -4956,7 +4956,7 @@ nm_platform_ip_route_get_prune_list(NMPlatform            *self,
                             .pref_src      = NM_IPV4LO_ADDR1,
                         };
                     } else {
-                        r = (NMPlatformIP4Route){
+                        r = (NMPlatformIP4Route) {
                             .ifindex       = NM_LOOPBACK_IFINDEX,
                             .type_coerced  = nm_platform_route_type_coerce(RTN_LOCAL),
                             .table_coerced = nm_platform_route_table_coerce(local_table),
@@ -9623,7 +9623,7 @@ nm_platform_ip4_address_generate_device_route(const NMPlatformIP4Address *addr,
         return NULL;
     }
 
-    *dst = (NMPlatformIP4Route){
+    *dst = (NMPlatformIP4Route) {
         .ifindex       = ifindex,
         .rt_source     = NM_IP_CONFIG_SOURCE_KERNEL,
         .network       = network_4,
@@ -9970,7 +9970,7 @@ nm_platform_ip6_dadfailed_set(NMPlatform            *self,
 
     if (failed) {
         addr  = g_slice_new(IP6DadFailedAddr);
-        *addr = (IP6DadFailedAddr){
+        *addr = (IP6DadFailedAddr) {
             .address        = *ip6,
             .ifindex        = ifindex,
             .timestamp_nsec = now_nsec,

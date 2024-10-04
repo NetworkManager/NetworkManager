@@ -1675,7 +1675,7 @@ show_device_info(NMDevice *device, NmCli *nmc)
 
             nmc_print_table(
                 &nmc->nmc_config,
-                (gpointer[]){device, NULL},
+                (gpointer[]) {device, NULL},
                 NULL,
                 NULL,
                 NMC_META_GENERIC_GROUP("GENERAL", metagen_device_detail_general, N_("NAME")),
@@ -1690,7 +1690,7 @@ show_device_info(NMDevice *device, NmCli *nmc)
             gs_free char *f = section_fld ? g_strdup_printf("CAPABILITIES.%s", section_fld) : NULL;
 
             nmc_print_table(&nmc->nmc_config,
-                            (gpointer[]){device, NULL},
+                            (gpointer[]) {device, NULL},
                             NULL,
                             NULL,
                             NMC_META_GENERIC_GROUP("CAPABILITIES",
@@ -1708,7 +1708,7 @@ show_device_info(NMDevice *device, NmCli *nmc)
                 section_fld ? g_strdup_printf("INTERFACE-FLAGS.%s", section_fld) : NULL;
 
             nmc_print_table(&nmc->nmc_config,
-                            (gpointer[]){device, NULL},
+                            (gpointer[]) {device, NULL},
                             NULL,
                             NULL,
                             NMC_META_GENERIC_GROUP("INTERFACE-FLAGS",
@@ -1727,7 +1727,7 @@ show_device_info(NMDevice *device, NmCli *nmc)
                     section_fld ? g_strdup_printf("WIFI-PROPERTIES.%s", section_fld) : NULL;
 
                 nmc_print_table(&nmc->nmc_config,
-                                (gpointer[]){device, NULL},
+                                (gpointer[]) {device, NULL},
                                 NULL,
                                 NULL,
                                 NMC_META_GENERIC_GROUP("WIFI-PROPERTIES",
@@ -1791,7 +1791,7 @@ show_device_info(NMDevice *device, NmCli *nmc)
                     section_fld ? g_strdup_printf("WIRED-PROPERTIES.%s", section_fld) : NULL;
 
                 nmc_print_table(&nmc->nmc_config,
-                                (gpointer[]){device, NULL},
+                                (gpointer[]) {device, NULL},
                                 NULL,
                                 NULL,
                                 NMC_META_GENERIC_GROUP("WIRED-PROPERTIES",
@@ -1920,7 +1920,7 @@ show_device_info(NMDevice *device, NmCli *nmc)
             gs_free char *f = section_fld ? g_strdup_printf("CONNECTIONS.%s", section_fld) : NULL;
 
             nmc_print_table(&nmc->nmc_config,
-                            (gpointer[]){device, NULL},
+                            (gpointer[]) {device, NULL},
                             NULL,
                             NULL,
                             NMC_META_GENERIC_GROUP("CONNECTIONS",
@@ -2102,7 +2102,7 @@ add_and_activate_info_new(NmCli      *nmc,
     AddAndActivateInfo *info;
 
     info  = g_slice_new(AddAndActivateInfo);
-    *info = (AddAndActivateInfo){
+    *info = (AddAndActivateInfo) {
         .nmc             = nmc,
         .device          = g_object_ref(device),
         .hotspot         = hotspot,
@@ -2639,7 +2639,7 @@ do_device_modify(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const 
     nmc->should_wait++;
 
     info  = g_slice_new(ModifyInfo);
-    *info = (ModifyInfo){
+    *info = (ModifyInfo) {
         .nmc  = nmc,
         .argc = argc,
         .argv = nm_strv_dup(argv, argc, TRUE),
@@ -3535,7 +3535,7 @@ do_device_wifi_list(const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
     }
 
     scan_info  = g_slice_new(ScanInfo);
-    *scan_info = (ScanInfo){
+    *scan_info = (ScanInfo) {
         .out_indices        = g_array_ref(out_indices),
         .tmpl               = tmpl,
         .bssid_user         = g_strdup(bssid_user),
@@ -3557,7 +3557,7 @@ do_device_wifi_list(const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
             timeout_msec = 15000;
 
         wifi_list_data  = g_slice_new(WifiListData);
-        *wifi_list_data = (WifiListData){
+        *wifi_list_data = (WifiListData) {
             .wifi       = wifi,
             .scan_info  = scan_info,
             .timeout_id = g_timeout_add(timeout_msec, wifi_list_scan_timeout, wifi_list_data),

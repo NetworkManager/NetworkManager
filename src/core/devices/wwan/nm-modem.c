@@ -1065,7 +1065,7 @@ nm_modem_act_stage2_config(NMModem *self, NMDevice *device, NMDeviceStateReason 
         else
             baud_override = 0;
 
-        priv->ppp_mgr = nm_ppp_mgr_start(&((const NMPppMgrConfig){
+        priv->ppp_mgr = nm_ppp_mgr_start(&((const NMPppMgrConfig) {
                                              .netns         = nm_device_get_netns(device),
                                              .parent_iface  = priv->data_port,
                                              .callback      = _ppp_mgr_callback,

@@ -234,7 +234,7 @@ _bus_find_nm_nameowner(GlobalData *gl)
                                                                gl,
                                                                NULL);
 
-    data = (BusFindNMNameOwnerData){
+    data = (BusFindNMNameOwnerData) {
         .gl           = gl,
         .is_cancelled = FALSE,
         .p_name_owner = &name_owner,

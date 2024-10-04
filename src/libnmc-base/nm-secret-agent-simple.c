@@ -164,7 +164,7 @@ _secret_real_new_plain(NMSecretAgentSecretType secret_type,
     g_object_get(setting, property, &value, NULL);
 
     real  = g_slice_new(SecretReal);
-    *real = (SecretReal){
+    *real = (SecretReal) {
         .base.secret_type = secret_type,
         .base.pretty_name = g_strdup(pretty_name),
         .base.entry_id    = g_strdup_printf("%s.%s", nm_setting_get_name(setting), property),
@@ -194,7 +194,7 @@ _secret_real_new_vpn_secret(const char *pretty_name,
     value = nm_setting_vpn_get_secret(NM_SETTING_VPN(setting), property);
 
     real  = g_slice_new(SecretReal);
-    *real = (SecretReal){
+    *real = (SecretReal) {
         .base.secret_type = NM_SECRET_AGENT_SECRET_TYPE_VPN_SECRET,
         .base.pretty_name = g_strdup(pretty_name),
         .base.entry_id =
@@ -220,7 +220,7 @@ _secret_real_new_wireguard_peer_psk(NMSettingWireGuard *s_wg,
     nm_assert(public_key);
 
     real  = g_slice_new(SecretReal);
-    *real = (SecretReal){
+    *real = (SecretReal) {
         .base.secret_type        = NM_SECRET_AGENT_SECRET_TYPE_WIREGUARD_PEER_PSK,
         .base.pretty_name        = g_strdup_printf(_("Preshared-key for %s"), public_key),
         .base.entry_id           = g_strdup_printf(NM_SETTING_WIREGUARD_SETTING_NAME
@@ -840,7 +840,7 @@ try_spawn_vpn_auth_helper(RequestData *request, GPtrArray *secrets)
     auth_dialog_request_str = g_string_free(auth_dialog_request, FALSE);
 
     data  = g_slice_new(AuthDialogData);
-    *data = (AuthDialogData){
+    *data = (AuthDialogData) {
         .auth_dialog_response = g_string_new_len(NULL, sizeof(data->read_buf)),
         .auth_dialog_pid      = auth_dialog_pid,
         .request              = request,
@@ -1100,7 +1100,7 @@ get_secrets(NMSecretAgentOld              *agent,
     nm_assert(nm_streq(request_id_setting_name, setting_name));
 
     request  = g_slice_new(RequestData);
-    *request = (RequestData){
+    *request = (RequestData) {
         .self          = self,
         .connection    = g_object_ref(connection),
         .setting_name  = request_id_setting_name,

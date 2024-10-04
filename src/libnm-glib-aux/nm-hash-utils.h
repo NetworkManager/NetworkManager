@@ -12,7 +12,7 @@
 /*****************************************************************************/
 
 #define NM_HASH_SEED_16(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, aa, ab, ac, ad, ae, af) \
-    ((const guint8[16]){a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, aa, ab, ac, ad, ae, af})
+    ((const guint8[16]) {a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, aa, ab, ac, ad, ae, af})
 
 struct _nm_packed _nm_hash_seed_16_u64_data {
     guint64 s1;
@@ -29,11 +29,11 @@ G_STATIC_ASSERT(sizeof(struct _nm_hash_seed_16_u64_data) == sizeof(guint64) * 2)
  * This macro takes a u64 (in host-endianness) and returns a 16 byte seed
  * buffer. The number will be big endian encoded, to be architecture
  * independent. */
-#define NM_HASH_SEED_16_U64(u64)                              \
-    ((const guint8 *) ((gpointer)                             \
-                       & ((struct _nm_hash_seed_16_u64_data){ \
-                           .s1 = htobe64((u64)),              \
-                           .s2 = 0,                           \
+#define NM_HASH_SEED_16_U64(u64)                               \
+    ((const guint8 *) ((gpointer)                              \
+                       & ((struct _nm_hash_seed_16_u64_data) { \
+                           .s1 = htobe64((u64)),               \
+                           .s2 = 0,                            \
                        })))
 
 /*****************************************************************************/
@@ -212,10 +212,10 @@ nm_hash_update_str(NMHashState *state, const char *str)
 /* Like nm_hash_update_str(), but restricted to arrays only. nm_hash_update_str() only works
  * with a @str argument that cannot be NULL. If you have a string pointer, that is never NULL, use
  * nm_hash_update() instead. */
-#define nm_hash_update_strarr(state, str)                               \
-    (_Generic(&(str),                                                   \
-        const char(*)[sizeof(str)]: nm_hash_update_str((state), (str)), \
-        char(*)[sizeof(str)]: nm_hash_update_str((state), (str))))
+#define nm_hash_update_strarr(state, str)                                \
+    (_Generic(&(str),                                                    \
+         const char(*)[sizeof(str)]: nm_hash_update_str((state), (str)), \
+         char(*)[sizeof(str)]: nm_hash_update_str((state), (str))))
 #else
 #define nm_hash_update_strarr(state, str) nm_hash_update_str((state), (str))
 #endif

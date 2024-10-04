@@ -497,7 +497,7 @@ multi_socket_cb(CURL *e_handle, curl_socket_t fd, int what, void *userdata, void
 
         if (!fdp) {
             fdp  = g_slice_new(ConCurlSockData);
-            *fdp = (ConCurlSockData){
+            *fdp = (ConCurlSockData) {
                 .cb_data = cb_data,
             };
             curl_multi_assign(cb_data->concheck.curl_mhandle, fd, fdp);
@@ -1291,7 +1291,7 @@ update_config(NMConnectivity *self, NMConfigData *config_data)
         }
         _con_config_unref(priv->con_config);
         priv->con_config  = g_slice_new(ConConfig);
-        *priv->con_config = (ConConfig){
+        *priv->con_config = (ConConfig) {
             .ref_count = 1,
             .uri       = g_strdup(new_uri),
             .response  = g_strdup(new_response),

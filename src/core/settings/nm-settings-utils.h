@@ -81,7 +81,7 @@ typedef struct {
 } NMSettUtilAllowFilenameData;
 
 #define NM_SETT_UTIL_ALLOW_FILENAME_DATA(_storages, _allowed_filename) \
-    (&((NMSettUtilAllowFilenameData){                                  \
+    (&((NMSettUtilAllowFilenameData) {                                 \
         .idx_by_filename  = (_storages)->idx_by_filename,              \
         .allowed_filename = (_allowed_filename),                       \
     }))

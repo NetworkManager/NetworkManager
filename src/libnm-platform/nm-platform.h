@@ -529,9 +529,9 @@ typedef union {
 
 #undef __NMPlatformIPRoute_COMMON
 
-#define NM_PLATFORM_IP4_ROUTE_INIT(...) (&((const NMPlatformIP4Route){__VA_ARGS__}))
+#define NM_PLATFORM_IP4_ROUTE_INIT(...) (&((const NMPlatformIP4Route) {__VA_ARGS__}))
 
-#define NM_PLATFORM_IP6_ROUTE_INIT(...) (&((const NMPlatformIP6Route){__VA_ARGS__}))
+#define NM_PLATFORM_IP6_ROUTE_INIT(...) (&((const NMPlatformIP6Route) {__VA_ARGS__}))
 
 typedef struct {
     /* struct fib_rule_uid_range */
@@ -2686,7 +2686,7 @@ void     nm_platform_ip6_dadfailed_set(NMPlatform            *self,
 static inline NMPlatformIP4Address *
 nm_platform_ip4_address_init_loopback_addr1(NMPlatformIP4Address *a)
 {
-    *a = ((NMPlatformIP4Address){
+    *a = ((NMPlatformIP4Address) {
         .address      = NM_IPV4LO_ADDR1,
         .peer_address = NM_IPV4LO_ADDR1,
         .ifindex      = NM_LOOPBACK_IFINDEX,
@@ -2698,7 +2698,7 @@ nm_platform_ip4_address_init_loopback_addr1(NMPlatformIP4Address *a)
 static inline NMPlatformIP6Address *
 nm_platform_ip6_address_init_loopback(NMPlatformIP6Address *a)
 {
-    *a = ((NMPlatformIP6Address){
+    *a = ((NMPlatformIP6Address) {
         .address = IN6ADDR_LOOPBACK_INIT,
         .ifindex = NM_LOOPBACK_IFINDEX,
         .plen    = 128,

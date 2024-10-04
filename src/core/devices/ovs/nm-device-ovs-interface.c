@@ -603,7 +603,7 @@ deactivate_async(NMDevice                  *device,
      * with a timeout.
      */
     data  = g_slice_new(DeactivateData);
-    *data = (DeactivateData){
+    *data = (DeactivateData) {
         .self               = g_object_ref(self),
         .cancellable        = g_object_ref(cancellable),
         .callback           = callback,

@@ -60,7 +60,7 @@ typedef union {
     ({                                            \
         NMValueTypUnion *const _arg2 = (_arg);    \
                                                   \
-        *_arg2 = (NMValueTypUnion){               \
+        *_arg2 = (NMValueTypUnion) {              \
             ._type = (_val),                      \
         };                                        \
         _arg2;                                    \
@@ -75,7 +75,7 @@ typedef struct {
     ({                                                 \
         NMValueTypUnioMaybe *const _arg2 = (_arg);     \
                                                        \
-        *_arg2 = (NMValueTypUnioMaybe){                \
+        *_arg2 = (NMValueTypUnioMaybe) {               \
             .has       = TRUE,                         \
             .val._type = (_val),                       \
         };                                             \

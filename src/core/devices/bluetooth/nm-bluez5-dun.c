@@ -683,7 +683,7 @@ nm_bluez5_dun_connect(const char                  *adapter,
     dst_l = strlen(remote) + 1;
 
     cdat  = g_slice_new(ConnectData);
-    *cdat = (ConnectData){
+    *cdat = (ConnectData) {
         .callback              = callback,
         .callback_user_data    = callback_user_data,
         .cancellable           = g_object_ref(cancellable),
@@ -691,7 +691,7 @@ nm_bluez5_dun_connect(const char                  *adapter,
     };
 
     context  = g_malloc(sizeof(NMBluez5DunContext) + src_l + dst_l);
-    *context = (NMBluez5DunContext){
+    *context = (NMBluez5DunContext) {
         .cdat                        = cdat,
         .notify_tty_hangup_cb        = notify_tty_hangup_cb,
         .notify_tty_hangup_user_data = notify_tty_hangup_user_data,

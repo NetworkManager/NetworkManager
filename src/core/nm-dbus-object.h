@@ -29,7 +29,7 @@ typedef struct {
 
 #define NM_DBUS_EXPORT_PATH_STATIC(basepath) \
     ({                                       \
-        ((NMDBusExportPath){                 \
+        ((NMDBusExportPath) {                \
             .path = "" basepath "",          \
         });                                  \
     })
@@ -37,7 +37,7 @@ typedef struct {
 #define NM_DBUS_EXPORT_PATH_NUMBERED(basepath)      \
     ({                                              \
         static long long unsigned _int_counter = 0; \
-        ((NMDBusExportPath){                        \
+        ((NMDBusExportPath) {                       \
             .path        = "" basepath "/%llu",     \
             .int_counter = &_int_counter,           \
         });                                         \
@@ -81,7 +81,7 @@ struct _NMDBusObject {
 };
 
 #define NM_DEFINE_DBUS_INTERFACE_INFO(...) \
-    ((NMDBusInterfaceInfo *) (&((const NMDBusInterfaceInfo){__VA_ARGS__})))
+    ((NMDBusInterfaceInfo *) (&((const NMDBusInterfaceInfo) {__VA_ARGS__})))
 
 typedef struct {
     GObjectClass parent;

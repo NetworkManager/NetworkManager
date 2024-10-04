@@ -676,7 +676,7 @@ _nm_l3cfg_emit_signal_notify_l3cd_changed(NML3Cfg              *self,
     NML3ConfigNotifyData notify_data;
 
     notify_data.notify_type  = NM_L3_CONFIG_NOTIFY_TYPE_L3CD_CHANGED;
-    notify_data.l3cd_changed = (typeof(notify_data.l3cd_changed)){
+    notify_data.l3cd_changed = (typeof(notify_data.l3cd_changed)) {
         .l3cd_old = l3cd_old,
         .l3cd_new = l3cd_new,
         .commited = commited,
@@ -770,7 +770,7 @@ _nm_n_acd_data_probe_new(NML3Cfg *self, in_addr_t addr, guint32 timeout_msec, gp
     if (r)
         return NULL;
 
-    n_acd_probe_config_set_ip(probe_config, (struct in_addr){addr});
+    n_acd_probe_config_set_ip(probe_config, (struct in_addr) {addr});
     n_acd_probe_config_set_timeout(probe_config, timeout_msec);
 
     r = n_acd_probe(self->priv.p->nacd, &probe, probe_config);
@@ -855,7 +855,7 @@ _obj_state_data_new(const NMPObject *obj, const NMPObject *plobj)
     ObjStateData *obj_state;
 
     obj_state  = g_slice_new(ObjStateData);
-    *obj_state = (ObjStateData){
+    *obj_state = (ObjStateData) {
         .obj                      = nmp_object_ref(obj),
         .os_plobj                 = nmp_object_ref(plobj),
         .os_was_in_platform       = !!plobj,
@@ -1581,7 +1581,7 @@ _nm_l3cfg_notify_platform_change_on_idle(NML3Cfg *self, guint32 obj_type_flags)
         _load_link(self, FALSE);
 
     notify_data.notify_type             = NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE;
-    notify_data.platform_change_on_idle = (typeof(notify_data.platform_change_on_idle)){
+    notify_data.platform_change_on_idle = (typeof(notify_data.platform_change_on_idle)) {
         .obj_type_flags = obj_type_flags,
     };
     _nm_l3cfg_emit_signal_notify(self, &notify_data);
@@ -1625,7 +1625,7 @@ _nm_l3cfg_notify_platform_change(NML3Cfg                   *self,
     }
 
     notify_data.notify_type     = NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE;
-    notify_data.platform_change = (typeof(notify_data.platform_change)){
+    notify_data.platform_change = (typeof(notify_data.platform_change)) {
         .obj         = obj,
         .change_type = change_type,
     };
@@ -2161,7 +2161,7 @@ _l3_acd_data_add(NML3Cfg              *self,
         }
 
         acd_data  = g_slice_new(AcdData);
-        *acd_data = (AcdData){
+        *acd_data = (AcdData) {
             .info =
                 {
                     .l3cfg         = self,
@@ -2193,7 +2193,7 @@ _l3_acd_data_add(NML3Cfg              *self,
         }
         acd_track =
             (NML3AcdAddrTrackInfo *) &acd_data->info.track_infos[acd_data->info.n_track_infos++];
-        *acd_track = (NML3AcdAddrTrackInfo){
+        *acd_track = (NML3AcdAddrTrackInfo) {
             .l3cd                         = nm_l3_config_data_ref(l3cd),
             .obj                          = nmp_object_ref(obj),
             .tag                          = tag,
@@ -2348,7 +2348,7 @@ _nm_l3cfg_emit_signal_notify_acd_event(NML3Cfg *self, AcdData *acd_data)
     nm_assert(acd_data->info.n_track_infos > 0);
 
     notify_data.notify_type = NM_L3_CONFIG_NOTIFY_TYPE_ACD_EVENT;
-    notify_data.acd_event   = (typeof(notify_data.acd_event)){
+    notify_data.acd_event   = (typeof(notify_data.acd_event)) {
           .info = acd_data->info,
     };
 
@@ -3601,7 +3601,7 @@ nm_l3cfg_add_config(NML3Cfg              *self,
 
     if (idx < 0) {
         l3_config_data  = nm_g_array_append_new(self->priv.p->l3_config_datas, L3ConfigData);
-        *l3_config_data = (L3ConfigData){
+        *l3_config_data = (L3ConfigData) {
             .tag_confdata              = tag,
             .l3cd                      = nm_l3_config_data_ref_and_seal(l3cd),
             .config_flags              = config_flags,
@@ -4021,7 +4021,7 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
                                                 nm_platform_ip6_address_init_loopback(&ax.a6));
             }
 
-            rx.r4 = (NMPlatformIP4Route){
+            rx.r4 = (NMPlatformIP4Route) {
                 .ifindex       = NM_LOOPBACK_IFINDEX,
                 .rt_source     = NM_IP_CONFIG_SOURCE_KERNEL,
                 .network       = NM_IPV4LO_ADDR1,

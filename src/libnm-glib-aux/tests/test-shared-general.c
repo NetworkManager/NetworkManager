@@ -1622,17 +1622,17 @@ test_parse_env_file(void)
     gs_free char      *arg2 = NULL;
     int                r;
 
-#define env_file_1                  \
-    "a=a\n"                         \
-    "a=b\n"                         \
-    "a=b\n"                         \
-    "a=a\n"                         \
-    "b=b\\\n"                       \
-    "c\n"                           \
-    "d= d\\\n"                      \
-    "e  \\\n"                       \
-    "f  \n"                         \
-    "g=g\\ \n"                      \
+#define env_file_1        \
+    "a=a\n"               \
+    "a=b\n"               \
+    "a=b\n"               \
+    "a=a\n"               \
+    "b=b\\\n"             \
+    "c\n"                 \
+    "d= d\\\n"            \
+    "e  \\\n"             \
+    "f  \n"               \
+    "g=g\\ \n"            \
     "h= ąęół\\ śćńźżµ \n" \
     "i=i\\"
     r = nm_parse_env_file_full(env_file_1, _env_file_push_cb, &data);

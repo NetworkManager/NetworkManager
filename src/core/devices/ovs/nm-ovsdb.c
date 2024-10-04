@@ -205,7 +205,7 @@ static void     cleanup_check_ready(NMOvsdb *self);
 /*****************************************************************************/
 
 #define OVSDB_METHOD_PAYLOAD_MONITOR() \
-    (&((const OvsdbMethodPayload){     \
+    (&((const OvsdbMethodPayload) {    \
         .monitor = {},                 \
     }))
 
@@ -214,7 +214,7 @@ static void     cleanup_check_ready(NMOvsdb *self);
                                            xinterface,        \
                                            xbridge_device,    \
                                            xinterface_device) \
-    (&((const OvsdbMethodPayload){                            \
+    (&((const OvsdbMethodPayload) {                           \
         .add_interface =                                      \
             {                                                 \
                 .bridge           = (xbridge),                \
@@ -226,7 +226,7 @@ static void     cleanup_check_ready(NMOvsdb *self);
     }))
 
 #define OVSDB_METHOD_PAYLOAD_DEL_INTERFACE(xifname)               \
-    (&((const OvsdbMethodPayload){                                \
+    (&((const OvsdbMethodPayload) {                               \
         .del_interface =                                          \
             {                                                     \
                 .ifname = (char *) NM_CONSTCAST(char, (xifname)), \
@@ -234,7 +234,7 @@ static void     cleanup_check_ready(NMOvsdb *self);
     }))
 
 #define OVSDB_METHOD_PAYLOAD_SET_INTERFACE_MTU(xifname, xmtu)     \
-    (&((const OvsdbMethodPayload){                                \
+    (&((const OvsdbMethodPayload) {                               \
         .set_interface_mtu =                                      \
             {                                                     \
                 .ifname = (char *) NM_CONSTCAST(char, (xifname)), \
@@ -249,7 +249,7 @@ static void     cleanup_check_ready(NMOvsdb *self);
                                          xexternal_ids_new,                          \
                                          xother_config_old,                          \
                                          xother_config_new)                          \
-    (&((const OvsdbMethodPayload){                                                   \
+    (&((const OvsdbMethodPayload) {                                                  \
         .set_reapply =                                                               \
             {                                                                        \
                 .device_type      = xdevice_type,                                    \
@@ -420,7 +420,7 @@ ovsdb_call_method(NMOvsdb                  *self,
     ovsdb_try_connect(self);
 
     call  = g_slice_new(OvsdbMethodCall);
-    *call = (OvsdbMethodCall){
+    *call = (OvsdbMethodCall) {
         .self              = self,
         .call_id           = CALL_ID_UNSPEC,
         .command           = command,
@@ -1682,7 +1682,7 @@ _strdict_extract(json_t *strdict, GArray **out_array)
         }
 
         v  = nm_g_array_append_new(*out_array, NMUtilsNamedValue);
-        *v = (NMUtilsNamedValue){
+        *v = (NMUtilsNamedValue) {
             .name      = g_strdup(key),
             .value_str = g_strdup(val),
         };
@@ -1909,7 +1909,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
             gs_free char *strtmp2 = NULL;
 
             ovs_interface  = g_slice_new(OpenvswitchInterface);
-            *ovs_interface = (OpenvswitchInterface){
+            *ovs_interface = (OpenvswitchInterface) {
                 .interface_uuid  = g_strdup(key),
                 .name            = g_strdup(name),
                 .type            = g_strdup(type),
@@ -2040,7 +2040,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
             gs_free char *strtmp2 = NULL;
 
             ovs_port  = g_slice_new(OpenvswitchPort);
-            *ovs_port = (OpenvswitchPort){
+            *ovs_port = (OpenvswitchPort) {
                 .port_uuid       = g_strdup(key),
                 .name            = g_strdup(name),
                 .connection_uuid = g_strdup(connection_uuid),
@@ -2161,7 +2161,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
             gs_free char *strtmp2 = NULL;
 
             ovs_bridge  = g_slice_new(OpenvswitchBridge);
-            *ovs_bridge = (OpenvswitchBridge){
+            *ovs_bridge = (OpenvswitchBridge) {
                 .bridge_uuid     = g_strdup(key),
                 .name            = g_strdup(name),
                 .connection_uuid = g_strdup(connection_uuid),
@@ -2905,7 +2905,7 @@ ovsdb_call_new(NMOvsdbCallback callback, gpointer user_data)
     OvsdbCall *call;
 
     call  = g_slice_new(OvsdbCall);
-    *call = (OvsdbCall){
+    *call = (OvsdbCall) {
         .callback  = callback,
         .user_data = user_data,
     };

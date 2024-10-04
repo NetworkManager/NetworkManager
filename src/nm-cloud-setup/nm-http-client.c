@@ -201,7 +201,7 @@ _ehandle_complete(EHandleData *edata, GError *error_take)
     _ehandle_free_ehandle(edata);
 
     req_result  = g_slice_new(GetResult);
-    *req_result = (GetResult){
+    *req_result = (GetResult) {
         .response_code = response_code,
         /* This ensures that response_data is always NUL terminated. This is an important guarantee
          * that NMHttpClient makes. */
@@ -280,7 +280,7 @@ nm_http_client_req(NMHttpClient       *self,
     priv = NM_HTTP_CLIENT_GET_PRIVATE(self);
 
     edata  = g_slice_new(EHandleData);
-    *edata = (EHandleData){
+    *edata = (EHandleData) {
         .task      = nm_g_task_new(self, cancellable, nm_http_client_req, callback, user_data),
         .recv_data = NM_STR_BUF_INIT(0, FALSE),
         .max_data  = max_data,
@@ -558,7 +558,7 @@ nm_http_client_poll_req(NMHttpClient               *self,
     g_return_if_fail(!cancellable || G_CANCELLABLE(cancellable));
 
     poll_req_data  = g_slice_new(PollReqData);
-    *poll_req_data = (PollReqData){
+    *poll_req_data = (PollReqData) {
         .task = nm_g_task_new(self, cancellable, nm_http_client_poll_req, callback, user_data),
         .uri  = g_strdup(uri),
         .request_timeout_ms = request_timeout_ms,

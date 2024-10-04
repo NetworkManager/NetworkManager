@@ -174,7 +174,7 @@ software_add(NMLinkType link_type, const char *name)
             return NMTST_NM_ERR_SUCCESS(nm_platform_link_vlan_add(NM_PLATFORM_GET,
                                                                   name,
                                                                   parent_ifindex,
-                                                                  &((NMPlatformLnkVlan){
+                                                                  &((NMPlatformLnkVlan) {
                                                                       .id       = VLAN_ID,
                                                                       .protocol = ETH_P_8021Q,
                                                                   }),
@@ -289,7 +289,7 @@ test_port(int controller, int port_type, SignalData *controller_changed)
         prio_supported = (lnk->mode == 1);
         prio_has       = nmtst_get_rand_bool() && prio_supported;
 
-        bond_port = (NMPlatformLinkBondPort){
+        bond_port = (NMPlatformLinkBondPort) {
             .queue_id = 5,
             .prio_has = prio_has,
             .prio     = prio_has ? 6 : 0,
@@ -315,7 +315,7 @@ test_port(int controller, int port_type, SignalData *controller_changed)
             lnk = nm_platform_link_get_lnk_bridge(NM_PLATFORM_GET, controller, NULL);
             g_assert(lnk);
 
-            bridge_port = (NMPlatformLinkBridgePort){
+            bridge_port = (NMPlatformLinkBridgePort) {
                 .path_cost = 100,
                 .priority  = 614,
                 .hairpin   = 0,
@@ -724,7 +724,7 @@ test_bridge_addr(void)
     g_assert_cmpint(plink->l_address.len, ==, sizeof(addr));
     g_assert(!memcmp(plink->l_address.data, addr, sizeof(addr)));
 
-    info_data = (const NMPlatformLinkSetBridgeInfoData){
+    info_data = (const NMPlatformLinkSetBridgeInfoData) {
         .vlan_default_pvid_val = nmtst_rand_select(0, 5, 42, 1048),
         .vlan_default_pvid_has = nmtst_get_rand_bool(),
         .vlan_filtering_val    = nmtst_get_rand_bool(),
@@ -743,7 +743,7 @@ test_bridge_addr(void)
                       "/sys/class/net/" DEVICE_NAME "/bridge/vlan_filtering",
                       info_data.vlan_filtering_val && info_data.vlan_filtering_has ? "1" : "0");
 
-    info_data = (const NMPlatformLinkSetBridgeInfoData){
+    info_data = (const NMPlatformLinkSetBridgeInfoData) {
         .vlan_default_pvid_val = 55,
         .vlan_default_pvid_has = TRUE,
         .vlan_filtering_val    = !info_data.vlan_filtering_val,
@@ -1275,7 +1275,7 @@ _test_wireguard_change(NMPlatform *platform, int ifindex, int test_mode)
 
     peers = g_array_new(FALSE, TRUE, sizeof(NMPWireGuardPeer));
 
-    lnk_wireguard = (NMPlatformLnkWireGuard){
+    lnk_wireguard = (NMPlatformLnkWireGuard) {
         .listen_port = 50754,
         .fwmark      = 0x1102,
     };
@@ -1295,7 +1295,7 @@ _test_wireguard_change(NMPlatform *platform, int ifindex, int test_mode)
             NMPWireGuardAllowedIP *allowed_ips;
 
             if ((i % 2) == 1) {
-                endpoint = (NMSockAddrUnion){
+                endpoint = (NMSockAddrUnion) {
                     .in =
                         {
                             .sin_family = AF_INET,
@@ -1305,7 +1305,7 @@ _test_wireguard_change(NMPlatform *platform, int ifindex, int test_mode)
                         },
                 };
             } else {
-                endpoint = (NMSockAddrUnion){
+                endpoint = (NMSockAddrUnion) {
                     .in6 =
                         {
                             .sin6_family = AF_INET6,
@@ -1337,7 +1337,7 @@ _test_wireguard_change(NMPlatform *platform, int ifindex, int test_mode)
                 }
             }
 
-            peer = (NMPWireGuardPeer){
+            peer = (NMPWireGuardPeer) {
                 .persistent_keepalive_interval = 60 + i,
                 .endpoint                      = endpoint,
                 .allowed_ips                   = n_allowed_ips > 0 ? allowed_ips : NULL,
@@ -1803,7 +1803,7 @@ test_software_detect(gconstpointer user_data)
 
         switch (test_data->test_mode) {
         case 0:
-            lnk_tun = (NMPlatformLnkTun){
+            lnk_tun = (NMPlatformLnkTun) {
                 .type        = nmtst_get_rand_bool() ? IFF_TUN : IFF_TAP,
                 .owner       = owner_valid ? getuid() : 0,
                 .owner_valid = owner_valid,
@@ -2705,7 +2705,7 @@ test_link_set_properties(void)
     NMPlatformLinkChangeFlags flags;
     int                       ifindex;
 
-    props = (NMPlatformLinkProps){
+    props = (NMPlatformLinkProps) {
         .tx_queue_length  = 599,
         .gso_max_size     = 10001,
         .gso_max_segments = 512,
@@ -3817,7 +3817,7 @@ test_sysctl_set_async(void)
     cancellable   = g_cancellable_new();
     proc_writable = access(PATH, W_OK) == 0;
 
-    data = (SetAsyncData){
+    data = (SetAsyncData) {
         .loop             = loop,
         .path             = PATH,
         .expected_success = proc_writable,
@@ -3826,7 +3826,7 @@ test_sysctl_set_async(void)
 
     nm_platform_sysctl_set_async(PL,
                                  NMP_SYSCTL_PATHID_ABSOLUTE(PATH),
-                                 (const char *[]){"2", NULL},
+                                 (const char *[]) {"2", NULL},
                                  sysctl_set_async_cb,
                                  &data,
                                  cancellable);
@@ -3834,7 +3834,7 @@ test_sysctl_set_async(void)
     if (!nmtst_main_loop_run(loop, 1000))
         g_assert_not_reached();
 
-    data = (SetAsyncData){
+    data = (SetAsyncData) {
         .loop             = loop,
         .path             = PATH,
         .expected_success = proc_writable,
@@ -3843,7 +3843,7 @@ test_sysctl_set_async(void)
 
     nm_platform_sysctl_set_async(PL,
                                  NMP_SYSCTL_PATHID_ABSOLUTE(PATH),
-                                 (const char *[]){"2", "0", "1", "0", "1", NULL},
+                                 (const char *[]) {"2", "0", "1", "0", "1", NULL},
                                  sysctl_set_async_cb,
                                  &data,
                                  cancellable);
@@ -3870,7 +3870,7 @@ test_sysctl_set_async_fail(void)
     loop        = g_main_loop_new(NULL, FALSE);
     cancellable = g_cancellable_new();
 
-    data = (SetAsyncData){
+    data = (SetAsyncData) {
         .loop             = loop,
         .path             = PATH,
         .expected_success = FALSE,
@@ -3878,7 +3878,7 @@ test_sysctl_set_async_fail(void)
 
     nm_platform_sysctl_set_async(PL,
                                  NMP_SYSCTL_PATHID_ABSOLUTE(PATH),
-                                 (const char *[]){"2", NULL},
+                                 (const char *[]) {"2", NULL},
                                  sysctl_set_async_cb,
                                  &data,
                                  cancellable);

@@ -218,40 +218,40 @@ NM_G_ERROR_MSG(GError *error)
 #if _NM_CC_SUPPORT_GENERIC
 #define _NM_CONSTCAST_FULL_1(type, obj_expr, obj) \
     (_Generic((obj_expr),                         \
-        const void *: ((const type *) (obj)),     \
-        void *: ((type *) (obj)),                 \
-        const type *: ((const type *) (obj)),     \
-        type *: ((type *) (obj))))
+         const void *: ((const type *) (obj)),    \
+         void *: ((type *) (obj)),                \
+         const type *: ((const type *) (obj)),    \
+         type *: ((type *) (obj))))
 #define _NM_CONSTCAST_FULL_2(type, obj_expr, obj, alias_type2) \
     (_Generic((obj_expr),                                      \
-        const void *: ((const type *) (obj)),                  \
-        void *: ((type *) (obj)),                              \
-        const alias_type2 *: ((const type *) (obj)),           \
-        alias_type2 *: ((type *) (obj)),                       \
-        const type *: ((const type *) (obj)),                  \
-        type *: ((type *) (obj))))
+         const void *: ((const type *) (obj)),                 \
+         void *: ((type *) (obj)),                             \
+         const alias_type2 *: ((const type *) (obj)),          \
+         alias_type2 *: ((type *) (obj)),                      \
+         const type *: ((const type *) (obj)),                 \
+         type *: ((type *) (obj))))
 #define _NM_CONSTCAST_FULL_3(type, obj_expr, obj, alias_type2, alias_type3) \
     (_Generic((obj_expr),                                                   \
-        const void *: ((const type *) (obj)),                               \
-        void *: ((type *) (obj)),                                           \
-        const alias_type2 *: ((const type *) (obj)),                        \
-        alias_type2 *: ((type *) (obj)),                                    \
-        const alias_type3 *: ((const type *) (obj)),                        \
-        alias_type3 *: ((type *) (obj)),                                    \
-        const type *: ((const type *) (obj)),                               \
-        type *: ((type *) (obj))))
+         const void *: ((const type *) (obj)),                              \
+         void *: ((type *) (obj)),                                          \
+         const alias_type2 *: ((const type *) (obj)),                       \
+         alias_type2 *: ((type *) (obj)),                                   \
+         const alias_type3 *: ((const type *) (obj)),                       \
+         alias_type3 *: ((type *) (obj)),                                   \
+         const type *: ((const type *) (obj)),                              \
+         type *: ((type *) (obj))))
 #define _NM_CONSTCAST_FULL_4(type, obj_expr, obj, alias_type2, alias_type3, alias_type4) \
     (_Generic((obj_expr),                                                                \
-        const void *: ((const type *) (obj)),                                            \
-        void *: ((type *) (obj)),                                                        \
-        const alias_type2 *: ((const type *) (obj)),                                     \
-        alias_type2 *: ((type *) (obj)),                                                 \
-        const alias_type3 *: ((const type *) (obj)),                                     \
-        alias_type3 *: ((type *) (obj)),                                                 \
-        const alias_type4 *: ((const type *) (obj)),                                     \
-        alias_type4 *: ((type *) (obj)),                                                 \
-        const type *: ((const type *) (obj)),                                            \
-        type *: ((type *) (obj))))
+         const void *: ((const type *) (obj)),                                           \
+         void *: ((type *) (obj)),                                                       \
+         const alias_type2 *: ((const type *) (obj)),                                    \
+         alias_type2 *: ((type *) (obj)),                                                \
+         const alias_type3 *: ((const type *) (obj)),                                    \
+         alias_type3 *: ((type *) (obj)),                                                \
+         const alias_type4 *: ((const type *) (obj)),                                    \
+         alias_type4 *: ((type *) (obj)),                                                \
+         const type *: ((const type *) (obj)),                                           \
+         type *: ((type *) (obj))))
 #define _NM_CONSTCAST_FULL_x(type, obj_expr, obj, n, ...) \
     (_NM_CONSTCAST_FULL_##n(type, obj_expr, obj, ##__VA_ARGS__))
 #define _NM_CONSTCAST_FULL_y(type, obj_expr, obj, n, ...) \
@@ -335,29 +335,29 @@ NM_G_ERROR_MSG(GError *error)
  * These macros do the cast, but they only accept a compatible input
  * type, otherwise they will fail compilation.
  */
-#define NM_CAST_STRV_MC(value)                  \
-    (_Generic((value),                          \
-        const char **: (const char **) (value), \
-        char **: (const char **) (value),       \
-        void *: (const char **) (value)))
-#define NM_CAST_STRV_CC(value)                              \
-    (_Generic((value),                                      \
-        const char *const *: (const char *const *) (value), \
-        const char **: (const char *const *) (value),       \
-        char *const *: (const char *const *) (value),       \
-        char **: (const char *const *) (value),             \
-        const void *: (const char *const *) (value),        \
-        void *: (const char *const *) (value)))
+#define NM_CAST_STRV_MC(value)                   \
+    (_Generic((value),                           \
+         const char **: (const char **) (value), \
+         char **: (const char **) (value),       \
+         void *: (const char **) (value)))
+#define NM_CAST_STRV_CC(value)                               \
+    (_Generic((value),                                       \
+         const char *const *: (const char *const *) (value), \
+         const char **: (const char *const *) (value),       \
+         char *const *: (const char *const *) (value),       \
+         char **: (const char *const *) (value),             \
+         const void *: (const char *const *) (value),        \
+         void *: (const char *const *) (value)))
 #else
 #define NM_CAST_STRV_MC(value) ((const char **) (value))
 #define NM_CAST_STRV_CC(value) ((const char *const *) (value))
 #endif
 
 #if _NM_CC_SUPPORT_GENERIC
-#define NM_PROPAGATE_CONST(test_expr, ptr)                              \
-    (_Generic((test_expr),                                              \
-        const typeof(*(test_expr)) *: ((const typeof(*(ptr)) *) (ptr)), \
-        default: (_Generic((test_expr), typeof(*(test_expr)) *: (ptr)))))
+#define NM_PROPAGATE_CONST(test_expr, ptr)                               \
+    (_Generic((test_expr),                                               \
+         const typeof(*(test_expr)) *: ((const typeof(*(ptr)) *) (ptr)), \
+         default: (_Generic((test_expr), typeof(*(test_expr)) *: (ptr)))))
 #else
 #define NM_PROPAGATE_CONST(test_expr, ptr) (ptr)
 #endif
@@ -365,8 +365,8 @@ NM_G_ERROR_MSG(GError *error)
 /* with the way it is implemented, the caller may or may not pass a trailing
  * ',' and it will work. However, this makes the macro unsuitable for initializing
  * an array. */
-#define NM_MAKE_STRV(...)                                                                     \
-    ((const char *const[(sizeof(((const char *const[]){__VA_ARGS__})) / sizeof(const char *)) \
+#define NM_MAKE_STRV(...)                                                                      \
+    ((const char *const[(sizeof(((const char *const[]) {__VA_ARGS__})) / sizeof(const char *)) \
                         + 1]){__VA_ARGS__})
 
 /*****************************************************************************/

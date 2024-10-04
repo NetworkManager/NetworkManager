@@ -810,7 +810,7 @@ nm_setting_wired_add_s390_option(NMSettingWired *setting, const char *key, const
                     &priv->s390_options.arr[dst_idx],
                     (priv->s390_options.len - dst_idx) * sizeof(NMUtilsNamedValue));
         }
-        priv->s390_options.arr[dst_idx] = (NMUtilsNamedValue){
+        priv->s390_options.arr[dst_idx] = (NMUtilsNamedValue) {
             .name      = g_strdup(key),
             .value_str = g_strdup(value),
         };
@@ -1253,7 +1253,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
 
                 nm_assert(priv->s390_options.len < priv->s390_options.n_alloc);
 
-                priv->s390_options.arr[priv->s390_options.len] = (NMUtilsNamedValue){
+                priv->s390_options.arr[priv->s390_options.len] = (NMUtilsNamedValue) {
                     .name      = g_strdup(key),
                     .value_str = g_strdup(val),
                 };

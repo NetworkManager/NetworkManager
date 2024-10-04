@@ -248,7 +248,7 @@ _request_item_append(NMDnsSystemdResolved *self,
     RequestItem                 *request_item;
 
     request_item  = g_slice_new(RequestItem);
-    *request_item = (RequestItem){
+    *request_item = (RequestItem) {
         .ref_count = 1,
         .operation = operation,
         .argument  = g_variant_ref_sink(argument),
@@ -803,7 +803,7 @@ update(NMDnsPlugin             *plugin,
         ic = g_hash_table_lookup(interfaces, GINT_TO_POINTER(ifindex));
         if (!ic) {
             ic  = g_slice_new(InterfaceConfig);
-            *ic = (InterfaceConfig){
+            *ic = (InterfaceConfig) {
                 .ifindex      = ifindex,
                 .ip_data_list = g_ptr_array_sized_new(4),
             };
@@ -855,7 +855,7 @@ update(NMDnsPlugin             *plugin,
             InterfaceConfig ic;
 
             _LOGT("clear previously configured ifindex %d", ifindex);
-            ic = (InterfaceConfig){
+            ic = (InterfaceConfig) {
                 .ifindex      = ifindex,
                 .ip_data_list = NULL,
             };
@@ -1053,7 +1053,7 @@ _resolve_handle_call_cb(GObject *source, GAsyncResult *result, gpointer user_dat
         NMDnsSystemdResolvedAddressResult *n;
 
         n  = nm_g_array_append_new(v_names, NMDnsSystemdResolvedAddressResult);
-        *n = (NMDnsSystemdResolvedAddressResult){
+        *n = (NMDnsSystemdResolvedAddressResult) {
             .name    = g_steal_pointer(&v_name),
             .ifindex = v_ifindex,
         };
@@ -1167,7 +1167,7 @@ nm_dns_systemd_resolved_resolve_address(NMDnsSystemdResolved                    
     nm_assert(callback);
 
     handle  = g_slice_new(NMDnsSystemdResolvedResolveHandle);
-    *handle = (NMDnsSystemdResolvedResolveHandle){
+    *handle = (NMDnsSystemdResolvedResolveHandle) {
         .self               = self,
         .timeout_msec       = timeout_msec,
         .callback_user_data = user_data,

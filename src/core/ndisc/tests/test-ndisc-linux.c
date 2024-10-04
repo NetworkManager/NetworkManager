@@ -62,7 +62,7 @@ main(int argc, char **argv)
 
     l3cfg = nm_netns_l3cfg_acquire(NM_NETNS_GET, ifindex);
 
-    config = (NMNDiscConfig){
+    config = (NMNDiscConfig) {
         .l3cfg                        = l3cfg,
         .ifname                       = nm_l3cfg_get_ifname(l3cfg, TRUE),
         .stable_type                  = NM_UTILS_STABLE_TYPE_UUID,

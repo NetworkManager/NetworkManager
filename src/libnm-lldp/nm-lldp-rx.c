@@ -411,7 +411,7 @@ nm_lldp_rx_new(const NMLldpRXConfig *config)
     G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(NMLldpNeighbor, id) == 0);
 
     lldp_rx  = g_slice_new(NMLldpRX);
-    *lldp_rx = (NMLldpRX){
+    *lldp_rx = (NMLldpRX) {
         .ref_count      = 1,
         .fd             = -1,
         .main_context   = g_main_context_ref_thread_default(),

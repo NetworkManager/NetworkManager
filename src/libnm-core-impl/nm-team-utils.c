@@ -692,9 +692,9 @@ _team_setting_has_fields_any_v(const NMTeamSetting   *self,
     return FALSE;
 }
 
-#define _team_setting_has_fields_any(self, ...)                              \
-    _team_setting_has_fields_any_v((self),                                   \
-                                   ((const NMTeamAttribute[]){__VA_ARGS__}), \
+#define _team_setting_has_fields_any(self, ...)                               \
+    _team_setting_has_fields_any_v((self),                                    \
+                                   ((const NMTeamAttribute[]) {__VA_ARGS__}), \
                                    NM_NARG(__VA_ARGS__))
 
 static void

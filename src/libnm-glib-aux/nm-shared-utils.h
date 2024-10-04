@@ -278,12 +278,7 @@ typedef struct _NMUtilsIPv6IfaceId {
     };
 } NMUtilsIPv6IfaceId;
 
-#define NM_UTILS_IPV6_IFACE_ID_INIT \
-    {                               \
-        {                           \
-            .id = 0                 \
-        }                           \
-    }
+#define NM_UTILS_IPV6_IFACE_ID_INIT {{.id = 0}}
 
 /**
  * nm_utils_ipv6_addr_set_interface_identifier:
@@ -2427,28 +2422,28 @@ int     nm_utils_fd_read_loop_exact(int fd, void *buf, size_t nbytes, bool do_po
 /*****************************************************************************/
 
 #define NM_DEFINE_GDBUS_ARG_INFO_FULL(name_, ...) \
-    ((GDBusArgInfo *) (&((const GDBusArgInfo){.ref_count = -1, .name = name_, __VA_ARGS__})))
+    ((GDBusArgInfo *) (&((const GDBusArgInfo) {.ref_count = -1, .name = name_, __VA_ARGS__})))
 
 #define NM_DEFINE_GDBUS_ARG_INFO(name_, a_signature) \
     NM_DEFINE_GDBUS_ARG_INFO_FULL(name_, .signature = a_signature, )
 
-#define NM_DEFINE_GDBUS_ARG_INFOS(...)            \
-    ((GDBusArgInfo **) ((const GDBusArgInfo *[]){ \
-        __VA_ARGS__ NULL,                         \
+#define NM_DEFINE_GDBUS_ARG_INFOS(...)             \
+    ((GDBusArgInfo **) ((const GDBusArgInfo *[]) { \
+        __VA_ARGS__ NULL,                          \
     }))
 
 #define NM_DEFINE_GDBUS_PROPERTY_INFO(name_, ...) \
     ((GDBusPropertyInfo *) (&(                    \
-        (const GDBusPropertyInfo){.ref_count = -1, .name = name_, __VA_ARGS__})))
+        (const GDBusPropertyInfo) {.ref_count = -1, .name = name_, __VA_ARGS__})))
 
 #define NM_DEFINE_GDBUS_PROPERTY_INFO_READABLE(name_, m_signature) \
     NM_DEFINE_GDBUS_PROPERTY_INFO(name_,                           \
                                   .signature = m_signature,        \
                                   .flags     = G_DBUS_PROPERTY_INFO_FLAGS_READABLE, )
 
-#define NM_DEFINE_GDBUS_PROPERTY_INFOS(...)                 \
-    ((GDBusPropertyInfo **) ((const GDBusPropertyInfo *[]){ \
-        __VA_ARGS__ NULL,                                   \
+#define NM_DEFINE_GDBUS_PROPERTY_INFOS(...)                  \
+    ((GDBusPropertyInfo **) ((const GDBusPropertyInfo *[]) { \
+        __VA_ARGS__ NULL,                                    \
     }))
 
 #define NM_DEFINE_GDBUS_SIGNAL_INFO_INIT(name_, ...) {.ref_count = -1, .name = name_, __VA_ARGS__}
@@ -2457,9 +2452,9 @@ int     nm_utils_fd_read_loop_exact(int fd, void *buf, size_t nbytes, bool do_po
     ((GDBusSignalInfo *) (&(                    \
         (const GDBusSignalInfo) NM_DEFINE_GDBUS_SIGNAL_INFO_INIT(name_, __VA_ARGS__))))
 
-#define NM_DEFINE_GDBUS_SIGNAL_INFOS(...)               \
-    ((GDBusSignalInfo **) ((const GDBusSignalInfo *[]){ \
-        __VA_ARGS__ NULL,                               \
+#define NM_DEFINE_GDBUS_SIGNAL_INFOS(...)                \
+    ((GDBusSignalInfo **) ((const GDBusSignalInfo *[]) { \
+        __VA_ARGS__ NULL,                                \
     }))
 
 #define NM_DEFINE_GDBUS_METHOD_INFO_INIT(name_, ...) {.ref_count = -1, .name = name_, __VA_ARGS__}
@@ -2468,9 +2463,9 @@ int     nm_utils_fd_read_loop_exact(int fd, void *buf, size_t nbytes, bool do_po
     ((GDBusMethodInfo *) (&(                    \
         (const GDBusMethodInfo) NM_DEFINE_GDBUS_METHOD_INFO_INIT(name_, __VA_ARGS__))))
 
-#define NM_DEFINE_GDBUS_METHOD_INFOS(...)               \
-    ((GDBusMethodInfo **) ((const GDBusMethodInfo *[]){ \
-        __VA_ARGS__ NULL,                               \
+#define NM_DEFINE_GDBUS_METHOD_INFOS(...)                \
+    ((GDBusMethodInfo **) ((const GDBusMethodInfo *[]) { \
+        __VA_ARGS__ NULL,                                \
     }))
 
 #define NM_DEFINE_GDBUS_INTERFACE_INFO_INIT(name_, ...) \
@@ -2481,7 +2476,7 @@ int     nm_utils_fd_read_loop_exact(int fd, void *buf, size_t nbytes, bool do_po
         (const GDBusInterfaceInfo) NM_DEFINE_GDBUS_INTERFACE_INFO_INIT(name_, __VA_ARGS__))))
 
 #define NM_DEFINE_GDBUS_INTERFACE_VTABLE(...) \
-    ((GDBusInterfaceVTable *) (&((const GDBusInterfaceVTable){__VA_ARGS__})))
+    ((GDBusInterfaceVTable *) (&((const GDBusInterfaceVTable) {__VA_ARGS__})))
 
 /*****************************************************************************/
 
@@ -2503,7 +2498,7 @@ typedef struct _NMUtilsUserData NMUtilsUserData;
 NMUtilsUserData *_nm_utils_user_data_pack(int nargs, gconstpointer *args);
 
 #define nm_utils_user_data_pack(...) \
-    _nm_utils_user_data_pack(NM_NARG(__VA_ARGS__), (gconstpointer[]){__VA_ARGS__})
+    _nm_utils_user_data_pack(NM_NARG(__VA_ARGS__), (gconstpointer[]) {__VA_ARGS__})
 
 void _nm_utils_user_data_unpack(NMUtilsUserData *user_data, int nargs, ...);
 

@@ -327,7 +327,7 @@ nm_auth_manager_check_authorization(NMAuthManager                          *self
                                    : POLKIT_CHECK_AUTHORIZATION_FLAGS_NONE;
 
     call_id  = g_slice_new(NMAuthManagerCallId);
-    *call_id = (NMAuthManagerCallId){
+    *call_id = (NMAuthManagerCallId) {
         .self               = g_object_ref(self),
         .callback           = callback,
         .user_data          = user_data,

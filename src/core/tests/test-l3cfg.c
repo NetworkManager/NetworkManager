@@ -111,7 +111,7 @@ _test_fixture_1_teardown(TestFixture1 *f)
     g_object_unref(f->platform);
     nm_dedup_multi_index_unref(f->multiidx);
 
-    *f = (TestFixture1){
+    *f = (TestFixture1) {
         .test_idx = 0,
     };
 }

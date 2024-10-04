@@ -393,7 +393,7 @@ nlmsg_alloc(size_t len)
         g_return_val_if_reached(NULL);
 
     nm  = g_slice_new(struct nl_msg);
-    *nm = (struct nl_msg){
+    *nm = (struct nl_msg) {
         .nm_protocol = -1,
         .nm_size     = len,
         .nm_nlh      = g_malloc0(len),
@@ -1125,7 +1125,7 @@ nl_socket_new(struct nl_sock **out_sk,
     nm_random_get_bytes(&seq_init, sizeof(seq_init));
 
     sk  = g_slice_new(struct nl_sock);
-    *sk = (struct nl_sock){
+    *sk = (struct nl_sock) {
         .s_fd = nm_steal_fd(&fd),
         .s_local =
             {

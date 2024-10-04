@@ -574,7 +574,7 @@ create_request(NMPolkitListener      *listener,
     AuthRequest *request;
 
     request  = g_slice_new(AuthRequest);
-    *request = (AuthRequest){
+    *request = (AuthRequest) {
         .listener             = listener,
         .dbus_invocation      = invocation,
         .action_id            = g_strdup(action_id),

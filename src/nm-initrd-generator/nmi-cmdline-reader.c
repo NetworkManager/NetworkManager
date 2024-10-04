@@ -50,7 +50,7 @@ reader_new(void)
     Reader *reader;
 
     reader  = g_slice_new(Reader);
-    *reader = (Reader){
+    *reader = (Reader) {
         .hash = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_object_unref),
         .explicit_ip_connections =
             g_hash_table_new_full(nm_direct_hash, NULL, g_object_unref, NULL),

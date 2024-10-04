@@ -54,7 +54,7 @@ nm_dedup_multi_idx_type_init(NMDedupMultiIdxType *idx_type, const NMDedupMultiId
     nm_assert(idx_type);
     nm_assert(klass);
 
-    *idx_type = (NMDedupMultiIdxType){
+    *idx_type = (NMDedupMultiIdxType) {
         .klass        = klass,
         .lst_idx_head = C_LIST_INIT(idx_type->lst_idx_head),
     };
@@ -1005,7 +1005,7 @@ nm_dedup_multi_index_new(void)
     NMDedupMultiIndex *self;
 
     self  = g_slice_new(NMDedupMultiIndex);
-    *self = (NMDedupMultiIndex){
+    *self = (NMDedupMultiIndex) {
         .ref_count   = 1,
         .idx_entries = g_hash_table_new((GHashFunc) _dict_idx_entries_hash,
                                         (GEqualFunc) _dict_idx_entries_equal),

@@ -14,7 +14,7 @@
 #include "nm-setting-ip-config.h"
 
 #define NM_VARIANT_ATTRIBUTE_SPEC_DEFINE(_name, _type, ...) \
-    (&((const NMVariantAttributeSpec){.name = _name, .type = _type, __VA_ARGS__}))
+    (&((const NMVariantAttributeSpec) {.name = _name, .type = _type, __VA_ARGS__}))
 
 gboolean _nm_utils_string_slist_validate(GSList *list, const char **valid_values);
 

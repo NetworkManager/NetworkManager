@@ -156,9 +156,9 @@ typedef enum {
                  NMPlatformIP4Address,       \
                  NMPlatformIP6Address)
 
-#define NM_PLATFORM_IP4_ADDRESS_INIT(...) (&((const NMPlatformIP4Address){__VA_ARGS__}))
+#define NM_PLATFORM_IP4_ADDRESS_INIT(...) (&((const NMPlatformIP4Address) {__VA_ARGS__}))
 
-#define NM_PLATFORM_IP6_ADDRESS_INIT(...) (&((const NMPlatformIP6Address){__VA_ARGS__}))
+#define NM_PLATFORM_IP6_ADDRESS_INIT(...) (&((const NMPlatformIP6Address) {__VA_ARGS__}))
 
 /*****************************************************************************/
 

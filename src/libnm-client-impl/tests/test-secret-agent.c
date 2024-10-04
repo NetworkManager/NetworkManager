@@ -344,7 +344,7 @@ test_cleanup(TestSecretAgentData *sadata, gconstpointer test_data)
     g_free(sadata->ifname);
     g_free(sadata->con_id);
 
-    *sadata = (TestSecretAgentData){};
+    *sadata = (TestSecretAgentData) {};
 
     nmtst_context_busy_watcher_wait(&watcher_data);
 

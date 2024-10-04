@@ -967,7 +967,7 @@ nm_match_spec_device_data_init_from_device(struct _NMMatchSpecDeviceData *out_da
     nm_assert(out_data);
 
     if (!device) {
-        *out_data = (NMMatchSpecDeviceData){};
+        *out_data = (NMMatchSpecDeviceData) {};
         return out_data;
     }
 
@@ -983,7 +983,7 @@ nm_match_spec_device_data_init_from_device(struct _NMMatchSpecDeviceData *out_da
      *
      * The returned data is only valid, until NMDevice gets modified again. */
 
-    *out_data = (NMMatchSpecDeviceData){
+    *out_data = (NMMatchSpecDeviceData) {
         .interface_name   = nm_device_get_iface(device),
         .device_type      = nm_device_get_type_description(device),
         .driver           = nm_device_get_driver(device),
@@ -1010,7 +1010,7 @@ nm_match_spec_device_data_init_from_platform(NMMatchSpecDeviceData *out_data,
      * It's still useful because of specs like "*" and "except:interface-name:eth0",
      * which match even in that case. */
 
-    *out_data = (NMMatchSpecDeviceData){
+    *out_data = (NMMatchSpecDeviceData) {
         .interface_name   = pllink ? pllink->name : NULL,
         .device_type      = match_device_type,
         .driver           = pllink ? pllink->driver : NULL,
@@ -1057,7 +1057,7 @@ nm_ip_routing_rule_to_platform(const NMIPRoutingRule *rule, NMPlatformRoutingRul
 
     uid_range_has = nm_ip_routing_rule_get_uid_range(rule, &uid_range_start, &uid_range_end);
 
-    *out_pl = (NMPlatformRoutingRule){
+    *out_pl = (NMPlatformRoutingRule) {
         .addr_family = nm_ip_routing_rule_get_addr_family(rule),
         .flags       = (nm_ip_routing_rule_get_invert(rule) ? FIB_RULE_INVERT : 0),
         .priority    = nm_ip_routing_rule_get_priority(rule),
@@ -1200,7 +1200,7 @@ nm_shutdown_wait_obj_register_full(gpointer           watched_obj,
      * make sure to use the default context. */
 
     handle  = g_slice_new(NMShutdownWaitObjHandle);
-    *handle = (NMShutdownWaitObjHandle){
+    *handle = (NMShutdownWaitObjHandle) {
         /* depending on @free_msg_reason, we take ownership of @msg_reason.
          * In either case, we just reference the string without cloning
          * it. */

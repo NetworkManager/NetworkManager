@@ -191,7 +191,7 @@ _ipv4ll_emit_signal_notify(NML3IPv4LL *self)
     self->notify_on_idle = FALSE;
 
     notify_data.notify_type  = NM_L3_CONFIG_NOTIFY_TYPE_IPV4LL_EVENT;
-    notify_data.ipv4ll_event = (typeof(notify_data.ipv4ll_event)){
+    notify_data.ipv4ll_event = (typeof(notify_data.ipv4ll_event)) {
         .ipv4ll = self,
     };
     _nm_l3cfg_emit_signal_notify(self->l3cfg, &notify_data);
@@ -231,7 +231,7 @@ _registration_update(NML3IPv4LL             *self,
 
     if (!reg) {
         reg  = g_slice_new(NML3IPv4LLRegistration);
-        *reg = (NML3IPv4LLRegistration){
+        *reg = (NML3IPv4LLRegistration) {
             .self         = self,
             .timeout_msec = timeout_msec,
         };
@@ -951,7 +951,7 @@ nm_l3_ipv4ll_new(NML3Cfg *l3cfg)
     g_return_val_if_fail(NM_IS_L3CFG(l3cfg), NULL);
 
     self  = g_slice_new(NML3IPv4LL);
-    *self = (NML3IPv4LL){
+    *self = (NML3IPv4LL) {
         .l3cfg                       = g_object_ref(l3cfg),
         .ref_count                   = 1,
         .reg_lst_head                = C_LIST_INIT(self->reg_lst_head),

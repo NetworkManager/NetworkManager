@@ -130,7 +130,7 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex        *multi_idx,
         const NMNDiscAddress *ndisc_addr = &rdata->addresses[i];
         NMPlatformIP6Address  a;
 
-        a = (NMPlatformIP6Address){
+        a = (NMPlatformIP6Address) {
             .ifindex   = ifindex,
             .address   = ndisc_addr->address,
             .plen      = 64,
@@ -151,7 +151,7 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex        *multi_idx,
         const NMNDiscRoute *ndisc_route = &rdata->routes[i];
         NMPlatformIP6Route  r;
 
-        r = (NMPlatformIP6Route){
+        r = (NMPlatformIP6Route) {
             .ifindex       = ifindex,
             .network       = ndisc_route->network,
             .plen          = ndisc_route->plen,
@@ -836,7 +836,7 @@ nm_ndisc_add_dns_domain(NMNDisc *ndisc, const NMNDiscDNSDomain *new_item, gint64
         return FALSE;
 
     item  = nm_g_array_append_new(rdata->dns_domains, NMNDiscDNSDomain);
-    *item = (NMNDiscDNSDomain){
+    *item = (NMNDiscDNSDomain) {
         .domain      = g_strdup(new_item->domain),
         .expiry_msec = new_item->expiry_msec,
     };
@@ -1090,7 +1090,7 @@ nm_ndisc_set_config(NMNDisc *ndisc, const NML3ConfigData *l3cd)
         if (!lifetime)
             continue;
 
-        a = (NMNDiscAddress){
+        a = (NMNDiscAddress) {
             .address     = addr->address,
             .expiry_msec = _nm_ndisc_lifetime_to_expiry(NM_NDISC_EXPIRY_BASE_TIMESTAMP, lifetime),
             .expiry_preferred_msec =
@@ -1112,7 +1112,7 @@ nm_ndisc_set_config(NMNDisc *ndisc, const NML3ConfigData *l3cd)
         if (!nm_utils_dnsname_parse_assert(AF_INET6, strvarr[i], NULL, &a, NULL))
             continue;
 
-        n = (NMNDiscDNSServer){
+        n = (NMNDiscDNSServer) {
             .address     = a,
             .expiry_msec = _nm_ndisc_lifetime_to_expiry(NM_NDISC_EXPIRY_BASE_TIMESTAMP,
                                                         NM_NDISC_ROUTER_LIFETIME),
@@ -1128,7 +1128,7 @@ nm_ndisc_set_config(NMNDisc *ndisc, const NML3ConfigData *l3cd)
     for (i = 0; i < len; i++) {
         NMNDiscDNSDomain n;
 
-        n = (NMNDiscDNSDomain){
+        n = (NMNDiscDNSDomain) {
             .domain      = (char *) strvarr[i],
             .expiry_msec = _nm_ndisc_lifetime_to_expiry(NM_NDISC_EXPIRY_BASE_TIMESTAMP,
                                                         NM_NDISC_ROUTER_LIFETIME),

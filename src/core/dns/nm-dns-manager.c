@@ -401,7 +401,7 @@ _dns_config_ip_data_new(NMDnsConfigData      *data,
     nm_assert(ip_config_type != NM_DNS_IP_CONFIG_TYPE_REMOVED);
 
     ip_data  = g_slice_new(NMDnsConfigIPData);
-    *ip_data = (NMDnsConfigIPData){
+    *ip_data = (NMDnsConfigIPData) {
         .data           = data,
         .source_tag     = source_tag,
         .l3cd           = nm_l3_config_data_ref_and_seal(l3cd),
@@ -2108,7 +2108,7 @@ nm_dns_manager_set_ip_config(NMDnsManager         *self,
 
     if (!data) {
         data  = g_slice_new(NMDnsConfigData);
-        *data = (NMDnsConfigData){
+        *data = (NMDnsConfigData) {
             .ifindex       = ifindex,
             .self          = self,
             .data_lst_head = C_LIST_INIT(data->data_lst_head),

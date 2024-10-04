@@ -500,7 +500,7 @@ _get_net_ifaces_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
             continue;
 
         iface_data  = g_slice_new(AzureIfaceData);
-        *iface_data = (AzureIfaceData){
+        *iface_data = (AzureIfaceData) {
             .get_config_data      = get_config_data,
             .iface_get_config     = NULL,
             .intern_iface_idx     = intern_iface_idx,

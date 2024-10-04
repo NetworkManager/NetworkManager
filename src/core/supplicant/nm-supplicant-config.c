@@ -154,7 +154,7 @@ nm_supplicant_config_add_option_with_type(NMSupplicantConfig *self,
     }
 
     opt  = g_slice_new(ConfigOption);
-    *opt = (ConfigOption){
+    *opt = (ConfigOption) {
         .value = nm_memdup_nul(value, len),
         .len   = len,
         .type  = type,

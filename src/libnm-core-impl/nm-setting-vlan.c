@@ -130,7 +130,7 @@ priority_map_new(guint32 from, guint32 to)
     NMVlanQosMapping *mapping;
 
     mapping  = g_new(NMVlanQosMapping, 1);
-    *mapping = (NMVlanQosMapping){
+    *mapping = (NMVlanQosMapping) {
         .from = from,
         .to   = to,
     };

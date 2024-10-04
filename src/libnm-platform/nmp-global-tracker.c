@@ -422,7 +422,7 @@ nmp_global_tracker_track(NMPGlobalTracker *self,
 
     if (!track_data) {
         track_data  = g_slice_new(TrackData);
-        *track_data = (TrackData){
+        *track_data = (TrackData) {
             .obj      = nm_dedup_multi_index_obj_intern(nm_platform_get_multi_idx(self->platform),
                                                    p_obj_stack),
             .user_tag = user_tag,
@@ -435,7 +435,7 @@ nmp_global_tracker_track(NMPGlobalTracker *self,
         obj_data = g_hash_table_lookup(self->by_obj, &track_data->obj);
         if (!obj_data) {
             obj_data  = g_slice_new(TrackObjData);
-            *obj_data = (TrackObjData){
+            *obj_data = (TrackObjData) {
                 .obj          = nmp_object_ref(track_data->obj),
                 .obj_lst_head = C_LIST_INIT(obj_data->obj_lst_head),
                 .config_state = CONFIG_STATE_NONE,
@@ -448,7 +448,7 @@ nmp_global_tracker_track(NMPGlobalTracker *self,
         user_tag_data = g_hash_table_lookup(self->by_user_tag, &track_data->user_tag);
         if (!user_tag_data) {
             user_tag_data  = g_slice_new(TrackUserTagData);
-            *user_tag_data = (TrackUserTagData){
+            *user_tag_data = (TrackUserTagData) {
                 .user_tag          = user_tag,
                 .user_tag_lst_head = C_LIST_INIT(user_tag_data->user_tag_lst_head),
             };
@@ -651,7 +651,7 @@ nmp_global_tracker_mptcp_addr_init_for_ifindex(NMPlatformMptcpAddr *addr, int if
     nm_assert(addr);
     nm_assert(ifindex > 0);
 
-    *addr = (NMPlatformMptcpAddr){
+    *addr = (NMPlatformMptcpAddr) {
         .ifindex     = ifindex,
         .addr_family = AF_UNSPEC,
     };
@@ -776,7 +776,7 @@ nmp_global_tracker_sync_mptcp_addrs(NMPGlobalTracker *self, gboolean reapply)
             entries = g_array_new(FALSE, FALSE, sizeof(MptcpSyncData));
 
         g_array_append_val(entries,
-                           ((const MptcpSyncData){
+                           ((const MptcpSyncData) {
                                .obj_data = obj_data,
                                .td_best  = td_best,
                            }));
@@ -1158,7 +1158,7 @@ nmp_global_tracker_track_rule_default(NMPGlobalTracker *self,
     if (NM_IN_SET(addr_family, AF_UNSPEC, AF_INET)) {
         nmp_global_tracker_track_local_rule(self, addr_family, track_priority, user_tag, NULL);
         nmp_global_tracker_track_rule(self,
-                                      &((NMPlatformRoutingRule){
+                                      &((NMPlatformRoutingRule) {
                                           .addr_family = AF_INET,
                                           .priority    = 32766,
                                           .table       = RT_TABLE_MAIN,
@@ -1169,7 +1169,7 @@ nmp_global_tracker_track_rule_default(NMPGlobalTracker *self,
                                       user_tag,
                                       NULL);
         nmp_global_tracker_track_rule(self,
-                                      &((NMPlatformRoutingRule){
+                                      &((NMPlatformRoutingRule) {
                                           .addr_family = AF_INET,
                                           .priority    = 32767,
                                           .table       = RT_TABLE_DEFAULT,
@@ -1183,7 +1183,7 @@ nmp_global_tracker_track_rule_default(NMPGlobalTracker *self,
     if (NM_IN_SET(addr_family, AF_UNSPEC, AF_INET6)) {
         nmp_global_tracker_track_local_rule(self, addr_family, track_priority, user_tag, NULL);
         nmp_global_tracker_track_rule(self,
-                                      &((NMPlatformRoutingRule){
+                                      &((NMPlatformRoutingRule) {
                                           .addr_family = AF_INET6,
                                           .priority    = 32766,
                                           .table       = RT_TABLE_MAIN,
@@ -1209,7 +1209,7 @@ nmp_global_tracker_track_local_rule(NMPGlobalTracker *self,
 
     if (NM_IN_SET(addr_family, AF_UNSPEC, AF_INET)) {
         nmp_global_tracker_track_rule(self,
-                                      &((NMPlatformRoutingRule){
+                                      &((NMPlatformRoutingRule) {
                                           .addr_family = AF_INET,
                                           .priority    = 0,
                                           .table       = RT_TABLE_LOCAL,
@@ -1222,7 +1222,7 @@ nmp_global_tracker_track_local_rule(NMPGlobalTracker *self,
     }
     if (NM_IN_SET(addr_family, AF_UNSPEC, AF_INET6)) {
         nmp_global_tracker_track_rule(self,
-                                      &((NMPlatformRoutingRule){
+                                      &((NMPlatformRoutingRule) {
                                           .addr_family = AF_INET6,
                                           .priority    = 0,
                                           .table       = RT_TABLE_LOCAL,
@@ -1247,7 +1247,7 @@ nmp_global_tracker_new(NMPlatform *platform)
     G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(TrackUserTagData, user_tag) == 0);
 
     self  = g_slice_new(NMPGlobalTracker);
-    *self = (NMPGlobalTracker){
+    *self = (NMPGlobalTracker) {
         .ref_count = 1,
         .platform  = g_object_ref(platform),
         .by_data =

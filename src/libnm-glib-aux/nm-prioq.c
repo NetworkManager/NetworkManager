@@ -57,7 +57,7 @@ nm_prioq_init(NMPrioq *q, GCompareFunc compare_func)
     nm_assert(q);
     nm_assert(compare_func);
 
-    *q = (NMPrioq){
+    *q = (NMPrioq) {
         ._priv =
             {
                 .compare_func      = compare_func,
@@ -76,7 +76,7 @@ nm_prioq_init_with_data(NMPrioq *q, GCompareDataFunc compare_func, gpointer comp
     nm_assert(q);
     nm_assert(compare_func);
 
-    *q = (NMPrioq){
+    *q = (NMPrioq) {
         ._priv =
             {
                 .compare_data_func = compare_func,
@@ -223,7 +223,7 @@ nm_prioq_put(NMPrioq *q, void *data, unsigned *idx)
 
     k = q->_priv.n_items++;
 
-    q->_priv.items[k] = (PrioqItem){
+    q->_priv.items[k] = (PrioqItem) {
         .data = data,
         .idx  = idx,
     };
