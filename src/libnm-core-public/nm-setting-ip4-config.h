@@ -32,6 +32,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID               "dhcp-client-id"
 #define NM_SETTING_IP4_CONFIG_DHCP_FQDN                    "dhcp-fqdn"
 #define NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER "dhcp-vendor-class-identifier"
+#define NM_SETTING_IP4_CONFIG_DHCP_IPV6_ONLY               "dhcp-ipv6-only"
 #define NM_SETTING_IP4_CONFIG_LINK_LOCAL                   "link-local"
 
 /**
@@ -103,6 +104,24 @@ typedef enum {
     NM_SETTING_IP4_LL_FALLBACK = 4,
 } NMSettingIP4LinkLocal;
 
+/**
+ * NMSettingIP4DhcpIpv6Only:
+ * @NM_SETTING_IP4_DHCP_IPV6_ONLY_DEFAULT: use the global default value
+ * @NM_SETTING_IP4_DHCP_IPV6_ONLY_DISABLED: the host does not request the option
+ * @NM_SETTING_IP4_DHCP_IPV6_ONLY_ENABLED: the host is IPv6-only capable and
+ *   requests the option to the server
+ *
+ * #NMSettingIP4DhcpIpv6Only values specify the handling of the "IPv6-Only
+ * Preferred" option (RFC 8925) for DHCPv4.
+ *
+ * Since: 1.52
+ */
+typedef enum {
+    NM_SETTING_IP4_DHCP_IPV6_ONLY_DEFAULT  = -1,
+    NM_SETTING_IP4_DHCP_IPV6_ONLY_DISABLED = 0,
+    NM_SETTING_IP4_DHCP_IPV6_ONLY_ENABLED  = 1,
+} NMSettingIP4DhcpIpv6Only;
+
 typedef struct _NMSettingIP4ConfigClass NMSettingIP4ConfigClass;
 
 GType nm_setting_ip4_config_get_type(void);
@@ -118,6 +137,9 @@ const char *nm_setting_ip4_config_get_dhcp_vendor_class_identifier(NMSettingIP4C
 
 NM_AVAILABLE_IN_1_42
 NMSettingIP4LinkLocal nm_setting_ip4_config_get_link_local(NMSettingIP4Config *setting);
+
+NM_AVAILABLE_IN_1_52
+NMSettingIP4DhcpIpv6Only nm_setting_ip4_config_get_dhcp_ipv6_only(NMSettingIP4Config *setting);
 
 G_END_DECLS
 

@@ -39,7 +39,8 @@
 NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_DHCP_CLIENT_ID,
                                   PROP_DHCP_FQDN,
                                   PROP_DHCP_VENDOR_CLASS_IDENTIFIER,
-                                  PROP_LINK_LOCAL, );
+                                  PROP_LINK_LOCAL,
+                                  PROP_DHCP_IPV6_ONLY, );
 
 typedef struct {
     NMSettingIPConfigPrivate parent;
@@ -48,6 +49,7 @@ typedef struct {
     char  *dhcp_fqdn;
     char  *dhcp_vendor_class_identifier;
     gint32 link_local;
+    gint32 dhcp_ipv6_only;
 } NMSettingIP4ConfigPrivate;
 
 /**
@@ -144,6 +146,25 @@ nm_setting_ip4_config_get_link_local(NMSettingIP4Config *setting)
     g_return_val_if_fail(NM_IS_SETTING_IP4_CONFIG(setting), NM_SETTING_IP4_LL_DEFAULT);
 
     return NM_SETTING_IP4_CONFIG_GET_PRIVATE(setting)->link_local;
+}
+
+/**
+ * nm_setting_ip4_config_get_dhcp_ipv6_only:
+ * @setting: the #NMSettingIP4Config
+ *
+ * Returns the value contained in the #NMSettingIP4Config:dhcp-ipv6-only
+ * property.
+ *
+ * Returns: the DHCP IPv6-only property value
+ *
+ * Since: 1.52
+ **/
+NMSettingIP4DhcpIpv6Only
+nm_setting_ip4_config_get_dhcp_ipv6_only(NMSettingIP4Config *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_IP4_CONFIG(setting), NM_SETTING_IP4_DHCP_IPV6_ONLY_DEFAULT);
+
+    return NM_SETTING_IP4_CONFIG_GET_PRIVATE(setting)->dhcp_ipv6_only;
 }
 
 static gboolean
@@ -1314,6 +1335,36 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      *   </para>
      * ---end---
      */
+
+    /**
+     * NMSettingIP4Config:dhcp-ipv6-only
+     *
+     * Controls the "IPv6-Only Preferred" DHCPv4 option (RFC 8925).
+     *
+     * When set to %NM_SETTING_IP4_DHCP_IPV6_ONLY_ENABLED, the host adds the option to
+     * the parameter request list; if the DHCP server sends the option back, the host
+     * stops the DHCPv4 client for the time interval specified in the option.
+     *
+     * Enable this feature if the host supports an IPv6-only mode, which means that
+     * either all applications are IPv6-only capable or that there is a form of
+     * 464XLAT deployed.
+     *
+     * When set to %NM_SETTING_IP4_DHCP_IPV6_ONLY_DEFAULT, the actual value is looked
+     * up in the global configuration; if not specified, it defaults to
+     * %NM_SETTING_IP4_DHCP_IPV6_ONLY_DISABLED.
+     *
+     * Since: 1.52
+     */
+    _nm_setting_property_define_direct_enum(properties_override,
+                                            obj_properties,
+                                            NM_SETTING_IP4_CONFIG_DHCP_IPV6_ONLY,
+                                            PROP_DHCP_IPV6_ONLY,
+                                            NM_TYPE_SETTING_IP4_DHCP_IPV6_ONLY,
+                                            NM_SETTING_IP4_DHCP_IPV6_ONLY_DEFAULT,
+                                            NM_SETTING_PARAM_NONE,
+                                            NULL,
+                                            NMSettingIP4ConfigPrivate,
+                                            dhcp_ipv6_only);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
