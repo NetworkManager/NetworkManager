@@ -50,7 +50,7 @@ meson --version
 export NMTST_SKIP_CHECK_GITLAB_CI=1
 
 # Assert that "$1" is one of the valid values for NM_TEST_SELECT_RUN. die() otherwise.
-check_run_assert() {
+is_run_selected_assert() {
     { set +x; } 2>/dev/null
     local run="$1"
     local a
@@ -83,27 +83,19 @@ check_run_assert() {
 }
 
 [ -z "$NM_TEST_SELECT_RUN" ] && NM_TEST_SELECT_RUN=all
-check_run_assert "$NM_TEST_SELECT_RUN"
+is_run_selected_assert "$NM_TEST_SELECT_RUN"
 
-check_run() {
-    local test_no="$1"
+is_run_selected() {
+    local run="$1"
 
-    check_run_assert "$test_no"
+    is_run_selected_assert "$run"
 
     # Usually, we run the build several times. However, for testing
     # the build script manually, it can be useful to explicitly select
     # one step to run. For example, if step 3 is known to fail, you
     # can still manually run step A by setting NM_TEST_SELECT_RUN=A.
 
-    test "$NM_TEST_SELECT_RUN" = all -o "$NM_TEST_SELECT_RUN" = "$test_no"
-}
-
-check_run_clean() {
-    if ! check_run "$1" ; then
-        return 1
-    fi
-    do_clean
-    return 0
+    test "$NM_TEST_SELECT_RUN" = all -o "$NM_TEST_SELECT_RUN" = "$run"
 }
 
 die_with_testlog() {
@@ -111,27 +103,32 @@ die_with_testlog() {
     exit 1
 }
 
-if check_run_clean meson+gcc+docs+valgrind ; then
+if is_run_selected meson+gcc+docs+valgrind ; then
+    do_clean
     CC=gcc WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh || die_with_testlog
     mv INST/share/gtk-doc/html "$ARTIFACT_DIR/docs-html"
 fi
 
-if check_run_clean meson+clang; then
+if is_run_selected meson+clang; then
+    do_clean
     CC=clang WITH_DOCS=0 contrib/scripts/nm-ci-run.sh || die_with_testlog
 fi
 
-if check_run_clean rpm+meson; then
+if is_run_selected rpm+meson; then
+    do_clean
     test $IS_FEDORA = 1 && ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -w meson || die_with_testlog
 fi
 
-if check_run_clean tarball && [ "$NM_BUILD_TARBALL" = 1 ]; then
+if is_run_selected tarball && [ "$NM_BUILD_TARBALL" = 1 ]; then
+    do_clean
     SIGN_SOURCE=0 ./contrib/fedora/rpm/build_clean.sh -r || die_with_testlog
     mv ./build/meson-dist/NetworkManager-1*.tar.xz "$ARTIFACT_DIR/"
     mv ./contrib/fedora/rpm/latest/SRPMS/NetworkManager-1*.src.rpm "$ARTIFACT_DIR/"
     do_clean
 fi
 
-if check_run_clean tarball+meson; then
+if is_run_selected tarball+meson; then
+    do_clean
     CC=gcc WITH_DOCS=1 CONFIGURE_ONLY=1 contrib/scripts/nm-ci-run.sh || die_with_testlog
 fi
 
@@ -160,7 +157,8 @@ test_subtree() {
     popd
 }
 
-if check_run_clean subtree; then
+if is_run_selected subtree; then
+    do_clean
     for d in c-list c-rbtree c-siphash c-stdaux n-acd n-dhcp4 ; do
         for cc in gcc clang; do
             test_subtree "$d" "$cc"
@@ -172,10 +170,10 @@ fi
 
 if [ "$NM_BUILD_TARBALL" = 1 ]; then
     do_clean
-    if check_run meson+gcc+docs+valgrind ; then
+    if is_run_selected meson+gcc+docs+valgrind ; then
         mv "$ARTIFACT_DIR/docs-html/" ./
     fi
-    if check_run tarball ; then
+    if is_run_selected tarball ; then
         mv \
            "$ARTIFACT_DIR"/NetworkManager-1*.tar.xz \
            "$ARTIFACT_DIR"/NetworkManager-1*.src.rpm \
