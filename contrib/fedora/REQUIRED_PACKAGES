@@ -53,6 +53,7 @@ install \
     dbus-devel \
     dbus-x11 \
     dhclient \
+    ethtool \
     firewalld-filesystem \
     gcc-c++ \
     gettext-devel \
