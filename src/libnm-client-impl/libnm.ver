@@ -2016,6 +2016,8 @@ global:
 	nm_device_ipvlan_get_private;
 	nm_device_ipvlan_get_type;
 	nm_device_ipvlan_get_vepa;
+	nm_setting_ip4_config_get_dhcp_ipv6_only_preferred;
+	nm_setting_ip4_dhcp_ipv6_only_preferred_get_type;
 	nm_setting_ipvlan_get_mode;
 	nm_setting_ipvlan_get_parent;
 	nm_setting_ipvlan_get_private;
