@@ -3588,13 +3588,24 @@ do_write_construct(NMConnection                   *connection,
     } else
         route_ignore = FALSE;
 
-    if ((s_ip4 = nm_connection_get_setting_ip4_config(connection))
-        && nm_setting_ip_config_get_dhcp_dscp(s_ip4)) {
-        set_error_unsupported(error,
-                              connection,
-                              NM_SETTING_IP4_CONFIG_SETTING_NAME "." NM_SETTING_IP_CONFIG_DHCP_DSCP,
-                              FALSE);
-        return FALSE;
+    if ((s_ip4 = nm_connection_get_setting_ip4_config(connection))) {
+        if (nm_setting_ip_config_get_dhcp_dscp(s_ip4)) {
+            set_error_unsupported(error,
+                                  connection,
+                                  NM_SETTING_IP4_CONFIG_SETTING_NAME
+                                  "." NM_SETTING_IP_CONFIG_DHCP_DSCP,
+                                  FALSE);
+            return FALSE;
+        }
+        if (nm_setting_ip4_config_get_dhcp_ipv6_only_preferred(NM_SETTING_IP4_CONFIG(s_ip4))
+            != NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_DEFAULT) {
+            set_error_unsupported(error,
+                                  connection,
+                                  NM_SETTING_IP4_CONFIG_SETTING_NAME
+                                  "." NM_SETTING_IP4_CONFIG_DHCP_IPV6_ONLY_PREFERRED,
+                                  FALSE);
+            return FALSE;
+        }
     }
 
     write_ip4_setting(connection,
