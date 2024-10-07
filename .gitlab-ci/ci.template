@@ -85,6 +85,7 @@ variables:
       - NetworkManager-1*.tar.xz
       - NetworkManager-1*.src.rpm
       - nm-test.log
+      - testlog.txt
 
 .nm_artifacts_debug:
   artifacts:
@@ -92,6 +93,7 @@ variables:
     when: always
     paths:
       - nm-test.log
+      - testlog.txt
 
 #################################################################
 #                                                               #

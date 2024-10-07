@@ -57,11 +57,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-d53edbf2ebdd'
-  CENTOS_TAG:  'tag-c374af7add25'
-  DEBIAN_TAG:  'tag-0e28ea47158f'
-  FEDORA_TAG:  'tag-c374af7add25'
-  UBUNTU_TAG:  'tag-0e28ea47158f'
+  ALPINE_TAG:  'tag-a53799f015bb'
+  CENTOS_TAG:  'tag-0711a92b9f36'
+  DEBIAN_TAG:  'tag-0f5f286d0007'
+  FEDORA_TAG:  'tag-0711a92b9f36'
+  UBUNTU_TAG:  'tag-0f5f286d0007'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
@@ -80,6 +80,7 @@ variables:
       - NetworkManager-1*.tar.xz
       - NetworkManager-1*.src.rpm
       - nm-test.log
+      - testlog.txt
 
 .nm_artifacts_debug:
   artifacts:
@@ -87,6 +88,7 @@ variables:
     when: always
     paths:
       - nm-test.log
+      - testlog.txt
 
 #################################################################
 #                                                               #

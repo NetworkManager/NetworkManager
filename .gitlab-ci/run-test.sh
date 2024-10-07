@@ -109,22 +109,42 @@ check_run_clean() {
     return 0
 }
 
+die_with_testlog() {
+    mv ./build/meson-logs/testlog.txt ./testlog.txt
+    exit 1
+}
+
 if check_run_clean autotools+gcc+docs+valgrind ; then
-    BUILD_TYPE=autotools CC=gcc WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh
+    BUILD_TYPE=autotools CC=gcc WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh || die_with_testlog
     mv build/INST/share/gtk-doc/html "$ARTIFACT_DIR/docs-html"
 fi
 
-check_run_clean meson+gcc+docs+valgrind && BUILD_TYPE=meson     CC=gcc   WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh
-check_run_clean autotools+clang         && BUILD_TYPE=autotools CC=clang WITH_DOCS=0                 contrib/scripts/nm-ci-run.sh
-check_run_clean meson+clang             && BUILD_TYPE=meson     CC=clang WITH_DOCS=0                 contrib/scripts/nm-ci-run.sh
+if check_run_clean meson+gcc+docs+valgrind; then
+    BUILD_TYPE=meson CC=gcc WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh || die_with_testlog
+fi
 
-check_run_clean autotools+gcc+docs+el7+py2 && test $IS_CENTOS_7 = 1 && PYTHON=python2 BUILD_TYPE=autotools CC=gcc WITH_DOCS=1 contrib/scripts/nm-ci-run.sh
+if check_run_clean autotools+clang; then
+    BUILD_TYPE=autotools CC=clang WITH_DOCS=0 contrib/scripts/nm-ci-run.sh || die_with_testlog
+fi
 
-check_run_clean rpm+autotools && test $IS_FEDORA = 1 -o $IS_CENTOS = 1 && ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -W meson
-check_run_clean rpm+meson     && test $IS_FEDORA = 1                   && ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -w meson
+if check_run_clean meson+clang; then
+    BUILD_TYPE=meson CC=clang WITH_DOCS=0 contrib/scripts/nm-ci-run.sh || die_with_testlog
+fi
+
+if check_run_clean rpm+autotools; then
+    if test $IS_FEDORA = 1 -o $IS_CENTOS = 1; then
+        ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -W meson || die_with_testlog
+    fi
+fi
+
+if check_run_clean rpm+meson; then
+    if test $IS_FEDORA = 1; then
+        ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -w meson || die_with_testlog
+    fi
+fi
 
 if check_run_clean tarball && [ "$NM_BUILD_TARBALL" = 1 ]; then
-    SIGN_SOURCE=0 ./contrib/fedora/rpm/build_clean.sh -r
+    SIGN_SOURCE=0 ./contrib/fedora/rpm/build_clean.sh -r || die_with_testlog
     mv ./NetworkManager-1*.tar.xz "$ARTIFACT_DIR/"
     mv ./contrib/fedora/rpm/latest/SRPMS/NetworkManager-1*.src.rpm "$ARTIFACT_DIR/"
     do_clean
