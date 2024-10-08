@@ -1827,6 +1827,29 @@ _prop_get_ipvx_may_fail_cached(NMDevice *self, int addr_family, NMTernary *cache
     return _CACHED_BOOL(cache, _prop_get_ipvx_may_fail(self, addr_family));
 }
 
+static gboolean
+_prop_get_ipv4_dhcp_ipv6_only_preferred(NMDevice *self)
+{
+    NMSettingIP4Config               *s_ip4;
+    NMSettingIP4DhcpIpv6OnlyPreferred ipv6_only;
+
+    s_ip4 = nm_device_get_applied_setting(self, NM_TYPE_SETTING_IP4_CONFIG);
+    if (!s_ip4)
+        return FALSE;
+
+    ipv6_only = nm_setting_ip4_config_get_dhcp_ipv6_only_preferred(s_ip4);
+    if (ipv6_only != NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_DEFAULT)
+        return ipv6_only;
+
+    return nm_config_data_get_connection_default_int64(
+        NM_CONFIG_GET_DATA,
+        NM_CON_DEFAULT("ipv4.dhcp-ipv6-only-preferred"),
+        self,
+        NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_NO,
+        NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_YES,
+        NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_NO);
+}
+
 /**
  * _prop_get_ipvx_dhcp_iaid:
  * @self: the #NMDevice
@@ -11263,7 +11286,8 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
         gboolean               hostname_is_fqdn;
         gboolean               send_client_id;
         guint8                 dscp;
-        gboolean               dscp_explicit = FALSE;
+        gboolean               dscp_explicit  = FALSE;
+        gboolean               ipv6_only_pref = FALSE;
 
         client_id = _prop_get_ipv4_dhcp_client_id(self, connection, hwaddr, &send_client_id);
         dscp      = _prop_get_ipv4_dhcp_dscp(self, &dscp_explicit);
@@ -11280,6 +11304,17 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
         } else {
             hostname_is_fqdn = FALSE;
             hostname         = nm_setting_ip_config_get_dhcp_hostname(s_ip);
+        }
+
+        if (_prop_get_ipv4_dhcp_ipv6_only_preferred(self)) {
+            if (nm_streq0(priv->ipv6_method, NM_SETTING_IP6_CONFIG_METHOD_DISABLED)) {
+                _LOGI_ipdhcp(
+                    addr_family,
+                    "not requesting the \"IPv6-only preferred\" option because IPv6 is disabled");
+            } else {
+                _LOGD_ipdhcp(addr_family, "requesting the \"IPv6-only preferred\" option");
+                ipv6_only_pref = TRUE;
+            }
         }
 
         config = (NMDhcpClientConfig) {
@@ -11302,11 +11337,12 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
             .reject_servers          = reject_servers,
             .v4 =
                 {
-                    .request_broadcast = request_broadcast,
-                    .acd_timeout_msec  = _prop_get_ipv4_dad_timeout(self),
-                    .send_client_id    = send_client_id,
-                    .dscp              = dscp,
-                    .dscp_explicit     = dscp_explicit,
+                    .request_broadcast   = request_broadcast,
+                    .acd_timeout_msec    = _prop_get_ipv4_dad_timeout(self),
+                    .send_client_id      = send_client_id,
+                    .dscp                = dscp,
+                    .dscp_explicit       = dscp_explicit,
+                    .ipv6_only_preferred = ipv6_only_pref,
                 },
             .previous_lease = priv->l3cds[L3_CONFIG_DATA_TYPE_DHCP_X(IS_IPv4)].d,
         };
