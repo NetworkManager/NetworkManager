@@ -1323,7 +1323,7 @@ ip4_start(NMDhcpClient *client, GError **error)
     g_return_val_if_fail(!priv->probe, FALSE);
     g_return_val_if_fail(client_config, FALSE);
 
-    if (!nettools_create(self, &effective_client_id, error))
+    if (!priv->client && !nettools_create(self, &effective_client_id, error))
         return FALSE;
 
     r = n_dhcp4_client_probe_config_new(&config);
