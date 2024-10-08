@@ -1360,6 +1360,8 @@ nm_dhcp_client_start(NMDhcpClient *self, GError **error)
     g_return_val_if_fail(priv->config.uuid, FALSE);
     nm_assert(!priv->effective_client_id);
 
+    priv->is_stopped = FALSE;
+
     IS_IPv4 = NM_IS_IPv4(priv->config.addr_family);
 
     if (!IS_IPv4) {
@@ -1473,6 +1475,7 @@ nm_dhcp_client_stop(NMDhcpClient *self, gboolean release)
     if (priv->is_stopped)
         return;
 
+    nm_clear_pointer(&priv->effective_client_id, g_bytes_unref);
     nm_clear_g_source_inst(&priv->previous_lease_timeout_source);
 
     priv->is_stopped = TRUE;
@@ -1979,8 +1982,6 @@ dispose(GObject *object)
         nm_clear_g_source_inst(&priv->v6.lladdr_timeout_source);
         nm_clear_g_source_inst(&priv->v6.dad_timeout_source);
     }
-
-    nm_clear_pointer(&priv->effective_client_id, g_bytes_unref);
 
     nm_assert(!priv->watch_source);
     nm_assert(!priv->l3cd_next);
