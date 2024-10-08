@@ -12817,6 +12817,9 @@ _dev_sysctl_save_ip6_properties(NMDevice *self)
     if (!ifname)
         return;
 
+    if (!g_file_test("/proc/sys/net/ipv6", G_FILE_TEST_IS_DIR))
+        return;
+
     for (i = 0; i < G_N_ELEMENTS(ip6_properties_to_save); i++) {
         value =
             nm_platform_sysctl_ip_conf_get(platform, AF_INET6, ifname, ip6_properties_to_save[i]);
@@ -12835,6 +12838,9 @@ _dev_sysctl_restore_ip6_properties(NMDevice *self)
     GHashTableIter   iter;
     gpointer         key;
     gpointer         value;
+
+    if (!g_file_test("/proc/sys/net/ipv6", G_FILE_TEST_IS_DIR))
+        return;
 
     g_hash_table_iter_init(&iter, priv->ip6_saved_properties);
     while (g_hash_table_iter_next(&iter, &key, &value))
@@ -16953,6 +16959,9 @@ deactivate_reset_hw_addr(NMDevice *self)
 static void
 ip6_managed_setup(NMDevice *self)
 {
+    if (!g_file_test("/proc/sys/net/ipv6", G_FILE_TEST_IS_DIR))
+        return;
+
     _dev_addrgenmode6_set(self, NM_IN6_ADDR_GEN_MODE_NONE);
     _dev_sysctl_set_disable_ipv6(self, FALSE);
     nm_device_sysctl_ip_conf_set(self, AF_INET6, "accept_ra", "0");
