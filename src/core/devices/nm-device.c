@@ -1824,6 +1824,32 @@ _prop_get_ipvx_may_fail_cached(NMDevice *self, int addr_family, NMTernary *cache
     return _CACHED_BOOL(cache, _prop_get_ipvx_may_fail(self, addr_family));
 }
 
+static gboolean
+_prop_get_ipv4_dhcp_ipv6_only(NMDevice *self)
+{
+    NMSettingIP4Config      *s_ip4;
+    NMSettingIP4DhcpIpv6Only ipv6_only;
+
+    s_ip4 = nm_device_get_applied_setting(self, NM_TYPE_SETTING_IP4_CONFIG);
+    if (!s_ip4)
+        return FALSE;
+
+    ipv6_only = nm_setting_ip4_config_get_dhcp_ipv6_only(s_ip4);
+    if (NM_IN_SET(ipv6_only,
+                  NM_SETTING_IP4_DHCP_IPV6_ONLY_DISABLED,
+                  NM_SETTING_IP4_DHCP_IPV6_ONLY_ENABLED))
+        return ipv6_only;
+
+    nm_assert(ipv6_only == NM_SETTING_IP4_DHCP_IPV6_ONLY_DEFAULT);
+
+    return nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
+                                                       NM_CON_DEFAULT("ipv4.dhcp-ipv6-only"),
+                                                       self,
+                                                       NM_SETTING_IP4_DHCP_IPV6_ONLY_DISABLED,
+                                                       NM_SETTING_IP4_DHCP_IPV6_ONLY_ENABLED,
+                                                       NM_SETTING_IP4_DHCP_IPV6_ONLY_DISABLED);
+}
+
 /**
  * _prop_get_ipvx_dhcp_iaid:
  * @self: the #NMDevice
@@ -11303,6 +11329,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
                     .send_client_id    = send_client_id,
                     .dscp              = dscp,
                     .dscp_explicit     = dscp_explicit,
+                    .ipv6_only         = _prop_get_ipv4_dhcp_ipv6_only(self),
                 },
             .previous_lease = priv->l3cds[L3_CONFIG_DATA_TYPE_DHCP_X(IS_IPv4)].d,
         };
