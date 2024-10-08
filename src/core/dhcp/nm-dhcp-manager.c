@@ -25,6 +25,7 @@
 
 typedef struct {
     const NMDhcpClientFactory *client_factory;
+    guint                      min_v6only_wait;
 } NMDhcpManagerPrivate;
 
 struct _NMDhcpManager {
@@ -203,7 +204,12 @@ nm_dhcp_manager_start_client(NMDhcpManager *self, NMDhcpClientConfig *config, GE
           nm_utils_addr_family_to_char(config->addr_family),
           g_type_name(gtype));
 
-    client = g_object_new(gtype, NM_DHCP_CLIENT_CONFIG, config, NULL);
+    client = g_object_new(gtype,
+                          NM_DHCP_CLIENT_CONFIG,
+                          config,
+                          NM_DHCP_CLIENT_MIN_V6ONLY_WAIT,
+                          priv->min_v6only_wait,
+                          NULL);
 
     /* unfortunately, our implementations work differently per address-family regarding client-id/DUID.
      *
@@ -267,6 +273,7 @@ nm_dhcp_manager_init(NMDhcpManager *self)
     const char                *client;
     int                        i;
     const NMDhcpClientFactory *client_factory = NULL;
+    const char                *str;
 
     for (i = 0; i < (int) G_N_ELEMENTS(_nm_dhcp_manager_factories); i++) {
         const NMDhcpClientFactory *f = _nm_dhcp_manager_factories[i];
@@ -316,6 +323,21 @@ nm_dhcp_manager_init(NMDhcpManager *self)
     }
 
     g_return_if_fail(client_factory);
+
+    /* For testing, the default wait time for the DHCPv IPv6-Only Preferred option
+     * is too long (5 minutes). Allow overriding it from the environment so that we
+     * can execute the tests quicker. */
+    priv->min_v6only_wait = NM_DHCP_MIN_V6ONLY_WAIT_DEFAULT;
+    str                   = g_getenv("NM_DHCP_MIN_V6ONLY_WAIT");
+    if (str) {
+        guint val;
+
+        val = _nm_utils_ascii_str_to_int64(str, 10, 1, G_MAXUINT, 0);
+        if (val != 0 && val != NM_DHCP_MIN_V6ONLY_WAIT_DEFAULT) {
+            priv->min_v6only_wait = val;
+            _LOGI(AF_UNSPEC, "init: MIN_V6ONLY_WAIT overridden with value %u", val);
+        }
+    }
 
     _LOGI(AF_UNSPEC, "init: Using DHCP client '%s'", client_factory->name);
 

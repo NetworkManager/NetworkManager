@@ -23,7 +23,8 @@
 #define NM_DHCP_CLIENT_GET_CLASS(obj) \
     (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_DHCP_CLIENT, NMDhcpClientClass))
 
-#define NM_DHCP_CLIENT_CONFIG "config"
+#define NM_DHCP_CLIENT_CONFIG          "config"
+#define NM_DHCP_CLIENT_MIN_V6ONLY_WAIT "min-v6only-wait"
 
 #define NM_DHCP_CLIENT_NOTIFY "dhcp-notify"
 

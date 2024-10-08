@@ -71,7 +71,7 @@ enum {
 
 static guint signals[LAST_SIGNAL] = {0};
 
-NM_GOBJECT_PROPERTIES_DEFINE(NMDhcpClient, PROP_CONFIG, );
+NM_GOBJECT_PROPERTIES_DEFINE(NMDhcpClient, PROP_CONFIG, PROP_MIN_V6ONLY_WAIT, );
 
 typedef struct _NMDhcpClientPrivate {
     NMDhcpClientConfig config;
@@ -134,6 +134,7 @@ typedef struct _NMDhcpClientPrivate {
     } l3cfg_notify;
 
     pid_t pid;
+    guint min_v6only_wait;
     bool  is_stopped : 1;
 } NMDhcpClientPrivate;
 
@@ -1424,7 +1425,7 @@ nm_dhcp_client_start_ipv6_only_timeout(NMDhcpClient *self, guint timeout)
     nm_assert(priv->config.addr_family == AF_INET);
     nm_assert(!priv->is_stopped);
 
-    timeout = NM_MAX(NM_DHCP_MIN_V6ONLY_WAIT_DEFAULT, timeout);
+    timeout = NM_MAX(priv->min_v6only_wait, timeout);
     _LOGI("received option \"ipv6-only-preferred\": stopping DHCPv4 for %u seconds", timeout);
 
     nm_dhcp_client_stop(self, FALSE);
@@ -1977,6 +1978,9 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
             };
         }
         break;
+    case PROP_MIN_V6ONLY_WAIT:
+        priv->min_v6only_wait = g_value_get_uint(value);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
@@ -2054,6 +2058,14 @@ nm_dhcp_client_class_init(NMDhcpClientClass *client_class)
                              "",
                              "",
                              G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_MIN_V6ONLY_WAIT] =
+        g_param_spec_uint(NM_DHCP_CLIENT_MIN_V6ONLY_WAIT,
+                          "",
+                          "",
+                          1,
+                          G_MAXUINT,
+                          NM_DHCP_MIN_V6ONLY_WAIT_DEFAULT,
+                          G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
