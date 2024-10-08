@@ -935,6 +935,27 @@ nm_dhcp_lease_data_parse_u16(const guint8 *data,
 }
 
 gboolean
+nm_dhcp_lease_data_parse_u32(const guint8 *data,
+                             gsize         n_data,
+                             uint32_t     *out_val,
+                             const char   *iface,
+                             int           addr_family,
+                             guint         option)
+{
+    if (n_data != 4) {
+        nm_dhcp_lease_log_invalid_option(iface,
+                                         addr_family,
+                                         option,
+                                         "invalid option length %lu",
+                                         (unsigned long) n_data);
+        return FALSE;
+    }
+
+    *out_val = unaligned_read_be32(data);
+    return TRUE;
+}
+
+gboolean
 nm_dhcp_lease_data_parse_mtu(const guint8 *data,
                              gsize         n_data,
                              uint16_t     *out_val,

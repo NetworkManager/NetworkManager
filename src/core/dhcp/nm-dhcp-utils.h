@@ -74,6 +74,12 @@ gboolean nm_dhcp_lease_data_parse_u16(const guint8 *data,
                                       const char   *iface,
                                       int           addr_family,
                                       guint         option);
+gboolean nm_dhcp_lease_data_parse_u32(const guint8 *data,
+                                      gsize         n_data,
+                                      uint32_t     *out_val,
+                                      const char   *iface,
+                                      int           addr_family,
+                                      guint         option);
 gboolean nm_dhcp_lease_data_parse_mtu(const guint8 *data,
                                       gsize         n_data,
                                       guint16      *out_val,
