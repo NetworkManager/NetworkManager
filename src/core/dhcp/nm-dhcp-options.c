@@ -113,6 +113,7 @@ const NMDhcpOption _nm_dhcp_option_dhcp4_options[] = {
     REQ(NM_DHCP_OPTION_DHCP4_PXE_CLIENT_ID, "pxe_client_id", FALSE),
     REQ(NM_DHCP_OPTION_DHCP4_UAP_SERVERS, "uap_servers", FALSE),
     REQ(NM_DHCP_OPTION_DHCP4_GEOCONF_CIVIC, "geoconf_civic", FALSE),
+    REQ(NM_DHCP_OPTION_DHCP4_IPV6_ONLY_PREFERRED, "ipv6_only_preferred", FALSE),
     REQ(NM_DHCP_OPTION_DHCP4_NETINFO_SERVER_ADDRESS, "netinfo_server_address", FALSE),
     REQ(NM_DHCP_OPTION_DHCP4_NETINFO_SERVER_TAG, "netinfo_server_tag", FALSE),
     REQ(NM_DHCP_OPTION_DHCP4_DEFAULT_URL, "default_url", FALSE),
@@ -183,11 +184,11 @@ static const NMDhcpOption *const _sorted_options_4[G_N_ELEMENTS(_nm_dhcp_option_
     A(13),  A(53),  A(54),  A(55),  A(57),  A(58),  A(59),  A(60),  A(61),  A(62),  A(63),  A(64),
     A(65),  A(66),  A(67),  A(68),  A(69),  A(70),  A(71),  A(72),  A(73),  A(74),  A(75),  A(76),
     A(77),  A(78),  A(79),  A(80),  A(81),  A(82),  A(83),  A(84),  A(85),  A(86),  A(87),  A(56),
-    A(88),  A(89),  A(90),  A(91),  A(92),  A(93),  A(14),  A(7),   A(94),  A(95),  A(96),  A(97),
+    A(88),  A(89),  A(90),  A(91),  A(92),  A(93),  A(94),  A(14),  A(7),   A(95),  A(96),  A(97),
     A(98),  A(99),  A(100), A(101), A(102), A(103), A(104), A(105), A(106), A(107), A(108), A(109),
     A(110), A(111), A(112), A(113), A(114), A(115), A(116), A(117), A(118), A(119), A(120), A(121),
     A(122), A(123), A(124), A(125), A(126), A(127), A(128), A(129), A(130), A(131), A(132), A(133),
-    A(134), A(15),  A(135), A(136), A(16),  A(137), A(138), A(139), A(140), A(141), A(142),
+    A(134), A(135), A(15),  A(136), A(137), A(16),  A(138), A(139), A(140), A(141), A(142), A(143),
 #undef A
 };
 

@@ -86,6 +86,7 @@ typedef struct _NMDhcpClientPrivate {
 
     GSource *previous_lease_timeout_source;
     GSource *no_lease_timeout_source;
+    GSource *ipv6_only_restart_source;
     GSource *watch_source;
     GBytes  *effective_client_id;
 
@@ -1403,6 +1404,35 @@ nm_dhcp_client_start(NMDhcpClient *self, GError **error)
 
 /*****************************************************************************/
 
+static gboolean
+ipv6_only_restart_timeout_cb(gpointer user_data)
+{
+    NMDhcpClient        *self = user_data;
+    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+
+    nm_clear_g_source_inst(&priv->ipv6_only_restart_source);
+    nm_dhcp_client_start(self, NULL);
+
+    return G_SOURCE_CONTINUE;
+}
+
+void
+nm_dhcp_client_start_ipv6_only_timeout(NMDhcpClient *self, guint timeout)
+{
+    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+
+    nm_assert(priv->config.addr_family == AF_INET);
+    nm_assert(!priv->is_stopped);
+
+    timeout = NM_MAX(NM_DHCP_MIN_V6ONLY_WAIT_DEFAULT, timeout);
+    _LOGI("received option \"ipv6-only-preferred\": stopping DHCPv4 for %u seconds", timeout);
+
+    nm_dhcp_client_stop(self, FALSE);
+    nm_clear_g_source_inst(&priv->no_lease_timeout_source);
+    priv->ipv6_only_restart_source =
+        nm_g_timeout_add_seconds_source(timeout, ipv6_only_restart_timeout_cb, self);
+}
+
 void
 nm_dhcp_client_stop_existing(const char *pid_file, const char *binary_name)
 {
@@ -1477,6 +1507,7 @@ nm_dhcp_client_stop(NMDhcpClient *self, gboolean release)
 
     nm_clear_pointer(&priv->effective_client_id, g_bytes_unref);
     nm_clear_g_source_inst(&priv->previous_lease_timeout_source);
+    nm_clear_g_source_inst(&priv->ipv6_only_restart_source);
 
     priv->is_stopped = TRUE;
 
@@ -1977,6 +2008,7 @@ dispose(GObject *object)
 
     nm_clear_g_source_inst(&priv->previous_lease_timeout_source);
     nm_clear_g_source_inst(&priv->no_lease_timeout_source);
+    nm_clear_g_source_inst(&priv->ipv6_only_restart_source);
 
     if (!NM_IS_IPv4(priv->config.addr_family)) {
         nm_clear_g_source_inst(&priv->v6.lladdr_timeout_source);

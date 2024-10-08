@@ -462,6 +462,10 @@ dhclient_start(NMDhcpClient *client,
               "to LOWDELAY (0x10).");
     }
 
+    if (client_config->v4.ipv6_only) {
+        _LOGW("the dhclient backend does not support the \"IPv6-Only Preferred\" option");
+    }
+
     /* Usually the system bus address is well-known; but if it's supposed
      * to be something else, we need to push it to dhclient, since dhclient
      * sanitizes the environment it gives the action scripts.
