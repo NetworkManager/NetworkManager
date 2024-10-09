@@ -3549,6 +3549,62 @@ read_one_setting_value(KeyfileReaderInfo        *info,
 }
 
 static void
+_read_handle_renamed_properties(KeyfileReaderInfo *info)
+{
+    GKeyFile             *kf    = info->keyfile;
+    const char           *group = info->group;
+    gs_free_error GError *error = NULL;
+
+    if (NM_IN_STRSET(group, "ipv4", "ipv6")) {
+        /* dhcp-send-hostname is stored as dhcp-send-hostname-deprecated
+         * dhcp-send-hostname-v2 is stored as dhcp-send-hostname
+         * Do the conversion back. Also, accept boolean values for -v2 to
+         * maintain backwards compatibility with keyfiles written with the
+         * deprecated property in mind
+         */
+        if (g_key_file_has_key(kf, group, "dhcp-send-hostname", NULL)) {
+            gboolean val_bool;
+            int      val;
+
+            val = g_key_file_get_integer(kf, group, "dhcp-send-hostname", &error);
+            if (error) {
+                g_clear_error(&error);
+                val_bool = g_key_file_get_boolean(kf, group, "dhcp-send-hostname", &error);
+                if (!error)
+                    val = val_bool ? 1 : 0;
+                else
+                    read_handle_warn(info,
+                                     NULL,
+                                     NULL,
+                                     NM_KEYFILE_WARN_SEVERITY_WARN,
+                                     _("invalid value for '%s.dhcp-send-hostname'"),
+                                     info->group);
+            }
+
+            g_key_file_remove_key(kf, group, "dhcp-send-hostname", NULL);
+            if (!error)
+                g_key_file_set_integer(kf, group, "dhcp-send-hostname-v2", val);
+        }
+
+        if (g_key_file_has_key(kf, group, "dhcp-send-hostname-deprecated", NULL)) {
+            gs_free char *val = NULL;
+
+            val = g_key_file_get_value(kf, group, "dhcp-send-hostname-deprecated", NULL);
+            g_key_file_remove_key(kf, group, "dhcp-send-hostname-deprecated", NULL);
+            if (val)
+                g_key_file_set_value(kf, group, "dhcp-send-hostname", val);
+            else
+                read_handle_warn(info,
+                                 NULL,
+                                 NULL,
+                                 NM_KEYFILE_WARN_SEVERITY_WARN,
+                                 _("invalid value for '%s.dhcp-send-hostname-deprecated'"),
+                                 info->group);
+        }
+    }
+}
+
+static void
 _read_setting(KeyfileReaderInfo *info)
 {
     const NMSettInfoSetting   *sett_info;
@@ -3575,6 +3631,8 @@ _read_setting(KeyfileReaderInfo *info)
     setting = g_object_new(type, NULL);
 
     info->setting = setting;
+
+    _read_handle_renamed_properties(info);
 
     sett_info = _nm_setting_class_get_sett_info(NM_SETTING_GET_CLASS(setting));
 
@@ -4088,6 +4146,18 @@ write_setting_value(KeyfileWriterInfo        *info,
 
     g_value_init(&value, G_PARAM_SPEC_VALUE_TYPE(property_info->param_spec));
     g_object_get_property(G_OBJECT(setting), property_info->param_spec->name, &value);
+
+    /* To prevent any confusion from the user regarding the v2 suffix,
+     * dhcp-send-hostname is stored as dhcp-send-hostname-deprecated
+     * and dhcp-send-hostname-v2 is stored as dhcp-send-hostname
+     * in the keyfile.
+     */
+    if (NM_IS_SETTING_IP4_CONFIG(setting) || NM_IS_SETTING_IP6_CONFIG(setting)) {
+        if (nm_streq(key, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME_V2))
+            key = "dhcp-send-hostname";
+        else if (nm_streq(key, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME))
+            key = "dhcp-send-hostname-deprecated";
+    }
 
     if ((!pip || !pip->writer_persist_default)
         && g_param_value_defaults(property_info->param_spec, &value)) {
