@@ -3556,6 +3556,8 @@ _read_setting(KeyfileReaderInfo *info)
     const char                *alias;
     GType                      type;
     guint16                    i;
+    gs_strfreev char         **keys = NULL;
+    gsize                      m, n_keys;
 
     alias = nm_keyfile_plugin_get_setting_name_for_alias(info->group);
     if (!alias)
@@ -3578,91 +3580,116 @@ _read_setting(KeyfileReaderInfo *info)
 
     sett_info = _nm_setting_class_get_sett_info(NM_SETTING_GET_CLASS(setting));
 
-    if (sett_info->detail.gendata_info) {
-        gs_free char **keys = NULL;
-        gsize          k, n_keys;
+    keys = g_key_file_get_keys(info->keyfile, info->group, &n_keys, NULL);
+    if (!keys)
+        n_keys = 0;
 
-        keys = g_key_file_get_keys(info->keyfile, info->group, &n_keys, NULL);
-        if (!keys)
-            n_keys = 0;
-        if (n_keys > 0) {
-            GHashTable *h = _nm_setting_option_hash(setting, TRUE);
+    for (m = 0; m < n_keys; m++) {
+        char         *key   = keys[m];
+        gs_free char *value = NULL;
 
-            nm_strv_sort(keys, n_keys);
-            for (k = 0; k < n_keys; k++) {
-                gs_free char         *key   = keys[k];
-                gs_free_error GError *local = NULL;
-                const GVariantType   *variant_type;
-                GVariant             *variant;
+        value = g_key_file_get_value(info->keyfile, info->group, key, NULL);
 
-                /* a GKeyFile can return duplicate keys, there is just no API to make sense
+        if (nm_streq(key, "dhcp-send-hostname")) {
+            if (value) {
+                const char *new_key = NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME_V2;
+                g_key_file_remove_key(info->keyfile, info->group, key, NULL);
+
+                if (NM_IN_STRSET(value, "true", "false"))
+                    value = g_strdup(nm_streq(value, "true") ? "1" : "0");
+
+                g_key_file_set_value(info->keyfile, info->group, new_key, value);
+            } else {
+                g_key_file_remove_key(info->keyfile, info->group, key, NULL);
+            }
+
+        } else if (nm_streq(key, "dhcp-send-hostname-deprecated")) {
+            if (value) {
+                const char *new_key = NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME;
+                g_key_file_remove_key(info->keyfile, info->group, key, NULL);
+
+                g_key_file_set_value(info->keyfile, info->group, new_key, value);
+            } else {
+                g_key_file_remove_key(info->keyfile, info->group, key, NULL);
+            }
+        }
+    }
+
+    if (sett_info->detail.gendata_info && n_keys > 0) {
+        gsize       k;
+        GHashTable *h = _nm_setting_option_hash(setting, TRUE);
+
+        nm_strv_sort(keys, n_keys);
+        for (k = 0; k < n_keys; k++) {
+            char                 *key   = keys[k];
+            gs_free_error GError *local = NULL;
+            const GVariantType   *variant_type;
+            GVariant             *variant;
+
+            /* a GKeyFile can return duplicate keys, there is just no API to make sense
                  * of them. Skip them. */
-                if (k + 1 < n_keys && nm_streq(key, keys[k + 1]))
-                    continue;
+            if (k + 1 < n_keys && nm_streq(key, keys[k + 1]))
+                continue;
 
-                /* currently, the API is very simple. The setting class just returns
+            /* currently, the API is very simple. The setting class just returns
                  * the desired variant type, and keyfile reader will try to parse
                  * it accordingly. Note, that this does currently not allow, that
                  * a particular key can contain different variant types, nor is it
                  * very flexible in general.
                  *
                  * We add flexibility when we need it. Keep it simple for now. */
-                variant_type =
-                    sett_info->detail.gendata_info->get_variant_type(sett_info, key, &local);
-                if (!variant_type) {
+            variant_type = sett_info->detail.gendata_info->get_variant_type(sett_info, key, &local);
+            if (!variant_type) {
+                if (!read_handle_warn(info,
+                                      key,
+                                      NULL,
+                                      NM_KEYFILE_WARN_SEVERITY_WARN,
+                                      _("invalid key '%s.%s'"),
+                                      info->group,
+                                      key))
+                    break;
+                continue;
+            }
+
+            if (g_variant_type_equal(variant_type, G_VARIANT_TYPE_BOOLEAN)) {
+                gboolean v;
+
+                v = g_key_file_get_boolean(info->keyfile, info->group, key, &local);
+                if (local) {
                     if (!read_handle_warn(info,
                                           key,
-                                          NULL,
+                                          key,
                                           NM_KEYFILE_WARN_SEVERITY_WARN,
-                                          _("invalid key '%s.%s'"),
+                                          _("key '%s.%s' is not boolean"),
                                           info->group,
                                           key))
                         break;
                     continue;
                 }
+                variant = g_variant_new_boolean(v);
+            } else if (g_variant_type_equal(variant_type, G_VARIANT_TYPE_UINT32)) {
+                guint64 v;
 
-                if (g_variant_type_equal(variant_type, G_VARIANT_TYPE_BOOLEAN)) {
-                    gboolean v;
+                v = g_key_file_get_uint64(info->keyfile, info->group, key, &local);
 
-                    v = g_key_file_get_boolean(info->keyfile, info->group, key, &local);
-                    if (local) {
-                        if (!read_handle_warn(info,
-                                              key,
-                                              key,
-                                              NM_KEYFILE_WARN_SEVERITY_WARN,
-                                              _("key '%s.%s' is not boolean"),
-                                              info->group,
-                                              key))
-                            break;
-                        continue;
-                    }
-                    variant = g_variant_new_boolean(v);
-                } else if (g_variant_type_equal(variant_type, G_VARIANT_TYPE_UINT32)) {
-                    guint64 v;
-
-                    v = g_key_file_get_uint64(info->keyfile, info->group, key, &local);
-
-                    if (local) {
-                        if (!read_handle_warn(info,
-                                              key,
-                                              key,
-                                              NM_KEYFILE_WARN_SEVERITY_WARN,
-                                              _("key '%s.%s' is not a uint32"),
-                                              info->group,
-                                              key))
-                            break;
-                        continue;
-                    }
-                    variant = g_variant_new_uint32((guint32) v);
-                } else {
-                    nm_assert_not_reached();
+                if (local) {
+                    if (!read_handle_warn(info,
+                                          key,
+                                          key,
+                                          NM_KEYFILE_WARN_SEVERITY_WARN,
+                                          _("key '%s.%s' is not a uint32"),
+                                          info->group,
+                                          key))
+                        break;
                     continue;
                 }
-
-                g_hash_table_insert(h, g_steal_pointer(&key), g_variant_take_ref(variant));
+                variant = g_variant_new_uint32((guint32) v);
+            } else {
+                nm_assert_not_reached();
+                continue;
             }
-            for (; k < n_keys; k++)
-                g_free(keys[k]);
+
+            g_hash_table_insert(h, g_strdup(key), g_variant_take_ref(variant));
         }
     }
 
@@ -4096,6 +4123,10 @@ write_setting_value(KeyfileWriterInfo        *info,
     }
 
     if (pip && pip->writer) {
+        if (nm_streq(key, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME_V2))
+            key = "dhcp-send-hostname";
+        else if (nm_streq(key, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME))
+            key = "dhcp-send-hostname-deprecated";
         pip->writer(info, setting, key, &value);
         goto out_unset_value;
     }
