@@ -23,7 +23,7 @@ distributions:
   - name: fedora
     tier: 1
     versions:
-      - '41'
+      - '40'
 
   # TIER 2: distribution versions that will or might use the current NM version.
   # Run when doing a release.
@@ -54,7 +54,7 @@ distributions:
   - name: fedora
     tier: 3
     versions:
-      - '40'
+      - '41'
       - '39'
   - name: ubuntu
     tier: 3

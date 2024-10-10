@@ -124,7 +124,20 @@ for distro, versions in distros_info.items():
 
 # Select a Tier1 distro
 tier1_distro, tier1_version = "", ""
+
+for fed_ver_info in distros_info["fedora"]:
+    # We prefer the Fedora version marked as tier1-default
+    if fed_ver_info.get("tier1-default", False):
+        for tier in (tier2, tier3):
+            if fed_ver_info["version"] in tier.get("fedora", []):
+                tier1_distro = "fedora"
+                tier1_version = fed_ver_info["version"]
+                tier["fedora"].remove(fed_ver_info["version"])
+
 for distro in ci_distros:
+    if tier1_distro:
+        break
+
     for tier in (tier2, tier3):
         if distro in tier:
             # Exception: we want to use fedora:latest instead of fedora:rawhide because
@@ -142,8 +155,6 @@ for distro in ci_distros:
             if not tier[distro]:
                 del tier[distro]
             break
-    if tier1_distro:
-        break
 
 if not tier1_distro or not tier1_version:
     print("Warn: no suitable distro for Tier 1 found", file=sys.stderr)
