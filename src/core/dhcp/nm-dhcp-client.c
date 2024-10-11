@@ -93,6 +93,8 @@ typedef struct _NMDhcpClientPrivate {
         struct {
             /* Timer for restarting DHCP after the IPv6-only timeout */
             GSource *ipv6_only_restart_source;
+            /* Minimum value accepted for the IPv6-only option. For test/debug only.*/
+            guint ipv6_only_min_wait;
 
             struct {
                 NML3CfgCommitTypeHandle *l3cfg_commit_handle;
@@ -1442,7 +1444,7 @@ nm_dhcp_client_schedule_ipv6_only_restart(NMDhcpClient *self, guint timeout)
     nm_assert(priv->config.addr_family == AF_INET);
     nm_assert(!priv->is_stopped);
 
-    timeout = NM_MAX(NM_DHCP_MIN_V6ONLY_WAIT_DEFAULT, timeout);
+    timeout = NM_MAX(priv->v4.ipv6_only_min_wait, timeout);
     _LOGI("received option \"ipv6-only-preferred\": stopping DHCPv4 for %u seconds", timeout);
 
     nm_dhcp_client_stop(self, FALSE);
@@ -1972,6 +1974,8 @@ static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
     NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(object);
+    const char          *str;
+    guint                min_wait;
 
     switch (prop_id) {
     case PROP_CONFIG:
@@ -1982,6 +1986,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
          * explicitly initialize the respective union member. */
         if (NM_IS_IPv4(priv->config.addr_family)) {
             priv->v4 = (typeof(priv->v4)) {
+                .ipv6_only_min_wait = NM_DHCP_MIN_V6ONLY_WAIT_DEFAULT,
                 .acd =
                     {
                         .addr                = INADDR_ANY,
@@ -1990,6 +1995,14 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
                         .done_source         = NULL,
                     },
             };
+
+            str = g_getenv("NM_TEST_IPV6_ONLY_MIN_WAIT");
+            if (str) {
+                min_wait = _nm_utils_ascii_str_to_int64(str, 10, 1, G_MAXUINT, 0);
+                if (min_wait != 0) {
+                    priv->v4.ipv6_only_min_wait = min_wait;
+                }
+            }
         } else {
             priv->v6 = (typeof(priv->v6)) {
                 .lladdr_timeout_source = NULL,
