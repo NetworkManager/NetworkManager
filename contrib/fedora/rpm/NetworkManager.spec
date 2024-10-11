@@ -513,6 +513,7 @@ Group: System Environment/Base
 %if %{with split_ifcfg_rh}
 Requires: %{name}-initscripts-ifcfg-rh
 %endif
+Requires: ipcalc
 BuildArch: noarch
 Provides: %{name}-config-routing-rules = %{epoch}:%{version}-%{release}
 Obsoletes: %{name}-config-routing-rules < 1:1.31.0
