@@ -15,6 +15,10 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Remove support for building with Autotools
 * Add IPVLAN interface support
 * Allow to manually configure the authentication of LTE's initial EPS Bearer.
+* Add support for the "IPv6-only preferred" DHCPv4 option (RFC 8925),
+  used to indicate that a host supports an IPv6-only mode and is
+  willing to forgo obtaining an IPv4 address if the network provides
+  IPv6 connectivity.
 
 =============================================
 NetworkManager-1.50
