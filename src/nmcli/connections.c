@@ -3143,9 +3143,6 @@ do_connection_up(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const 
     const char           *pwds       = NULL;
     gs_free_error GError *error      = NULL;
     gs_strfreev char    **arg_arr    = NULL;
-    int                   arg_num;
-    const char *const   **argv_ptr;
-    int                  *argc_ptr;
 
     /*
      * Set default timeout for connection activation.
@@ -3155,8 +3152,6 @@ do_connection_up(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const 
         nmc->timeout = 90;
 
     next_arg(nmc, &argc, &argv, NULL);
-    argv_ptr = &argv;
-    argc_ptr = &argc;
 
     if (argc == 0 && nmc->ask) {
         gs_free char *line = NULL;
@@ -3165,13 +3160,12 @@ do_connection_up(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const 
         g_return_if_fail(!nmc->complete);
 
         line = nmc_readline(&nmc->nmc_config, PROMPT_CONNECTION);
-        nmc_string_to_arg_array(line, NULL, TRUE, &arg_arr, &arg_num);
-        argv_ptr = (const char *const **) &arg_arr;
-        argc_ptr = &arg_num;
+        nmc_string_to_arg_array(line, NULL, TRUE, &arg_arr, &argc);
+        argv = (const char *const *) arg_arr;
     }
 
     if (argc > 0 && !nm_streq(*argv, "ifname")) {
-        connection = get_connection(nmc, argc_ptr, argv_ptr, NULL, NULL, NULL, &error);
+        connection = get_connection(nmc, &argc, &argv, NULL, NULL, NULL, &error);
         if (!connection) {
             g_string_printf(nmc->return_text, _("Error: %s."), error->message);
             nmc->return_value = error->code;
