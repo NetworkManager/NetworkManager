@@ -8,6 +8,8 @@ subject to change and not guaranteed to be compatible with
 the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
+* Store interactive history in `$XDG_CACHE_HOME/nmcli-history` instead of
+  `~/.nmcli-history`
 * Add new ipv4.link-local=fallback to set an IPv4 link-local address
   when no other IPv4 is set.
 * Remove support for building with Autotools
