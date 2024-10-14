@@ -2625,8 +2625,10 @@ test_nm_firewall_nft_stdio_mlag(void)
        "nm-mlag-bond0\012flush table netdev nm-mlag-bond0\012add chain netdev nm-mlag-bond0 "
        "rx-drop-bc-mc-eth2 { type filter hook ingress device eth2 priority filter; }\012delete "
        "chain netdev nm-mlag-bond0 rx-drop-bc-mc-eth2\012add chain netdev nm-mlag-bond0 "
-       "rx-drop-bc-mc-eth1 { type filter hook ingress device eth1 priority filter; }\012delete "
-       "chain netdev nm-mlag-bond0 rx-drop-bc-mc-eth1\012add set netdev nm-mlag-bond0 "
+       "tx-redirect-igmp-reports-eth2 { type filter hook egress device eth2 priority filter + 1; "
+       "}\012delete chain netdev nm-mlag-bond0 tx-redirect-igmp-reports-eth2\012add chain netdev "
+       "nm-mlag-bond0 rx-drop-bc-mc-eth1 { type filter hook ingress device eth1 priority filter; "
+       "}\012delete chain netdev nm-mlag-bond0 rx-drop-bc-mc-eth1\012add set netdev nm-mlag-bond0 "
        "macset-tagged { typeof ether saddr . vlan id; flags dynamic,timeout; }\012add set netdev "
        "nm-mlag-bond0 macset-untagged { typeof ether saddr; flags dynamic,timeout; }\012add chain "
        "netdev nm-mlag-bond0 tx-snoop-source-mac { type filter hook egress device bond0 priority "
@@ -2637,7 +2639,9 @@ test_nm_firewall_nft_stdio_mlag(void)
        "priority filter; }\012add rule netdev nm-mlag-bond0 rx-drop-looped-packets ether saddr . "
        "vlan id @macset-tagged counter drop\012add rule netdev nm-mlag-bond0 "
        "rx-drop-looped-packets ether type vlan counter return\012add rule netdev nm-mlag-bond0 "
-       "rx-drop-looped-packets ether saddr @macset-untagged counter drop\012");
+       "rx-drop-looped-packets ether saddr @macset-untagged counter drop\012add chain netdev "
+       "nm-mlag-bond0 tx-redirect-igmp-reports-eth1 { type filter hook egress device eth1 priority "
+       "filter + 1; }\012delete chain netdev nm-mlag-bond0 tx-redirect-igmp-reports-eth1\012");
 
     _T(TRUE,
        "bond0",
@@ -2649,8 +2653,10 @@ test_nm_firewall_nft_stdio_mlag(void)
        "nm-mlag-bond0\012flush table netdev nm-mlag-bond0\012add chain netdev nm-mlag-bond0 "
        "rx-drop-bc-mc-eth2 { type filter hook ingress device eth2 priority filter; }\012delete "
        "chain netdev nm-mlag-bond0 rx-drop-bc-mc-eth2\012add chain netdev nm-mlag-bond0 "
-       "rx-drop-bc-mc-eth1 { type filter hook ingress device eth1 priority filter; }\012delete "
-       "chain netdev nm-mlag-bond0 rx-drop-bc-mc-eth1\012add set netdev nm-mlag-bond0 "
+       "tx-redirect-igmp-reports-eth2 { type filter hook egress device eth2 priority filter + 1; "
+       "}\012delete chain netdev nm-mlag-bond0 tx-redirect-igmp-reports-eth2\012add chain netdev "
+       "nm-mlag-bond0 rx-drop-bc-mc-eth1 { type filter hook ingress device eth1 priority filter; "
+       "}\012delete chain netdev nm-mlag-bond0 rx-drop-bc-mc-eth1\012add set netdev nm-mlag-bond0 "
        "macset-tagged { typeof ether saddr . vlan id; flags dynamic,timeout; }\012add set netdev "
        "nm-mlag-bond0 macset-untagged { typeof ether saddr; flags dynamic,timeout; }\012add chain "
        "netdev nm-mlag-bond0 tx-snoop-source-mac { type filter hook egress device bond0 priority "
@@ -2661,7 +2667,9 @@ test_nm_firewall_nft_stdio_mlag(void)
        "filter; }\012add rule netdev nm-mlag-bond0 rx-drop-looped-packets ether saddr . vlan id "
        "@macset-tagged drop\012add rule netdev nm-mlag-bond0 rx-drop-looped-packets ether type "
        "vlan return\012add rule netdev nm-mlag-bond0 rx-drop-looped-packets ether saddr "
-       "@macset-untagged drop\012");
+       "@macset-untagged drop\012add chain netdev nm-mlag-bond0 tx-redirect-igmp-reports-eth1 { "
+       "type filter hook egress device eth1 priority filter + 1; }\012delete chain netdev "
+       "nm-mlag-bond0 tx-redirect-igmp-reports-eth1\012");
 
     _T(TRUE,
        "bond0",
@@ -2674,23 +2682,35 @@ test_nm_firewall_nft_stdio_mlag(void)
        "nm-mlag-bond0\012flush table netdev nm-mlag-bond0\012add chain netdev nm-mlag-bond0 "
        "rx-drop-bc-mc-eth4 { type filter hook ingress device eth4 priority filter; }\012delete "
        "chain netdev nm-mlag-bond0 rx-drop-bc-mc-eth4\012add chain netdev nm-mlag-bond0 "
-       "rx-drop-bc-mc-eth5 { type filter hook ingress device eth5 priority filter; }\012delete "
-       "chain netdev nm-mlag-bond0 rx-drop-bc-mc-eth5\012add chain netdev nm-mlag-bond0 "
-       "rx-drop-bc-mc-eth2 { type filter hook ingress device eth2 priority filter; }\012delete "
-       "chain netdev nm-mlag-bond0 rx-drop-bc-mc-eth2\012add chain netdev nm-mlag-bond0 "
-       "rx-drop-bc-mc-eth3 { type filter hook ingress device eth3 priority filter; }\012add rule "
-       "netdev nm-mlag-bond0 rx-drop-bc-mc-eth3 pkttype { broadcast, multicast } drop\012add set "
-       "netdev nm-mlag-bond0 macset-tagged { typeof ether saddr . vlan id; flags dynamic,timeout; "
-       "}\012add set netdev nm-mlag-bond0 macset-untagged { typeof ether saddr; flags "
-       "dynamic,timeout; }\012add chain netdev nm-mlag-bond0 tx-snoop-source-mac { type filter "
-       "hook egress device bond0 priority filter; }\012add rule netdev nm-mlag-bond0 "
-       "tx-snoop-source-mac set update ether saddr . vlan id timeout 5s @macset-tagged "
-       "return\012add rule netdev nm-mlag-bond0 tx-snoop-source-mac set update ether saddr timeout "
-       "5s @macset-untagged\012add chain netdev nm-mlag-bond0 rx-drop-looped-packets { type filter "
-       "hook ingress device bond0 priority filter; }\012add rule netdev nm-mlag-bond0 "
-       "rx-drop-looped-packets ether saddr . vlan id @macset-tagged drop\012add rule netdev "
-       "nm-mlag-bond0 rx-drop-looped-packets ether type vlan return\012add rule netdev "
-       "nm-mlag-bond0 rx-drop-looped-packets ether saddr @macset-untagged drop\012");
+       "tx-redirect-igmp-reports-eth4 { type filter hook egress device eth4 priority filter + 1; "
+       "}\012delete chain netdev nm-mlag-bond0 tx-redirect-igmp-reports-eth4\012add chain netdev "
+       "nm-mlag-bond0 rx-drop-bc-mc-eth5 { type filter hook ingress device eth5 priority filter; "
+       "}\012delete chain netdev nm-mlag-bond0 rx-drop-bc-mc-eth5\012add chain netdev "
+       "nm-mlag-bond0 tx-redirect-igmp-reports-eth5 { type filter hook egress device eth5 priority "
+       "filter + 1; }\012delete chain netdev nm-mlag-bond0 tx-redirect-igmp-reports-eth5\012add "
+       "chain netdev nm-mlag-bond0 rx-drop-bc-mc-eth2 { type filter hook ingress device eth2 "
+       "priority filter; }\012delete chain netdev nm-mlag-bond0 rx-drop-bc-mc-eth2\012add chain "
+       "netdev nm-mlag-bond0 rx-drop-bc-mc-eth3 { type filter hook ingress device eth3 priority "
+       "filter; }\012add rule netdev nm-mlag-bond0 rx-drop-bc-mc-eth3 pkttype { broadcast, "
+       "multicast } drop\012add set netdev nm-mlag-bond0 macset-tagged { typeof ether saddr . vlan "
+       "id; flags dynamic,timeout; }\012add set netdev nm-mlag-bond0 macset-untagged { typeof "
+       "ether saddr; flags dynamic,timeout; }\012add chain netdev nm-mlag-bond0 "
+       "tx-snoop-source-mac { type filter hook egress device bond0 priority filter; }\012add rule "
+       "netdev nm-mlag-bond0 tx-snoop-source-mac set update ether saddr . vlan id timeout 5s "
+       "@macset-tagged return\012add rule netdev nm-mlag-bond0 tx-snoop-source-mac set update "
+       "ether saddr timeout 5s @macset-untagged\012add chain netdev nm-mlag-bond0 "
+       "rx-drop-looped-packets { type filter hook ingress device bond0 priority filter; }\012add "
+       "rule netdev nm-mlag-bond0 rx-drop-looped-packets ether saddr . vlan id @macset-tagged "
+       "drop\012add rule netdev nm-mlag-bond0 rx-drop-looped-packets ether type vlan return\012add "
+       "rule netdev nm-mlag-bond0 rx-drop-looped-packets ether saddr @macset-untagged drop\012add "
+       "chain netdev nm-mlag-bond0 tx-redirect-igmp-reports-eth2 { type filter hook egress device "
+       "eth2 priority filter + 1; }\012delete chain netdev nm-mlag-bond0 "
+       "tx-redirect-igmp-reports-eth2\012add chain netdev nm-mlag-bond0 "
+       "tx-redirect-igmp-reports-eth3 { type filter hook egress device eth3 priority filter + 1; "
+       "}\012add rule netdev nm-mlag-bond0 tx-redirect-igmp-reports-eth3 igmp type { "
+       "membership-report-v1, membership-report-v2, membership-report-v3 } fwd to eth2\012add rule "
+       "netdev nm-mlag-bond0 tx-redirect-igmp-reports-eth3 icmpv6 type { mld-listener-report, "
+       "mld2-listener-report } fwd to eth2\012");
 
     _T(FALSE,
        "bond0",
