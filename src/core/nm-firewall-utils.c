@@ -844,6 +844,18 @@ nm_firewall_nft_stdio_mlag(gboolean           up,
                     chain_name,
                     previous_member);
             _append(&strbuf, "delete chain netdev %s %s", table_name, chain_name);
+
+            chain_name =
+                _strbuf_set_sanitized(&strbuf_1, "tx-redirect-igmp-reports-", previous_member);
+
+            _append(&strbuf,
+                    "add chain netdev %s %s {"
+                    " type filter hook egress device %s priority filter + 1; "
+                    "}",
+                    table_name,
+                    chain_name,
+                    previous_member);
+            _append(&strbuf, "delete chain netdev %s %s", table_name, chain_name);
         }
 
         /* OVS SLB rule 1
@@ -940,6 +952,57 @@ nm_firewall_nft_stdio_mlag(gboolean           up,
                 "add rule netdev %s rx-drop-looped-packets ether saddr @macset-untagged%s drop",
                 table_name,
                 s_counter);
+
+        /* IGMP SNOOPING
+         *
+         * This redirects all IGMP reports to the primary member port. The TOR switches
+         * may prune the multicast tree. If we let the bonding vlan+srcmac hash occur,
+         * then the TOR may send the pruned multicast stream to a bond member port for
+         * which the RX filters will drop (e.g. report out non-primary, stream in
+         * non-primary). If it's known multicast then we must control the pruned tree by
+         * only sending the IGMP reports on a port for which we will accept the traffic,
+         * i.e. the primary member port.
+         */
+        for (i = 0; i < n_active_members; i++) {
+            const char *active_member = active_members[i];
+            const char *chain_name;
+
+            if (!_nft_ifname_valid(active_member))
+                continue;
+
+            chain_name =
+                _strbuf_set_sanitized(&strbuf_1, "tx-redirect-igmp-reports-", active_member);
+
+            _append(&strbuf,
+                    "add chain netdev %s %s {"
+                    " type filter hook egress device %s priority filter + 1; "
+                    "}",
+                    table_name,
+                    chain_name,
+                    active_member);
+            /* first is primary, we clean up in case it was previously a non-primary member */
+            if (i == 0) {
+                _append(&strbuf, "delete chain netdev %s %s", table_name, chain_name);
+                continue;
+            }
+
+            _append(&strbuf,
+                    "add rule netdev %s %s igmp type {"
+                    " membership-report-v1, membership-report-v2, membership-report-v3 "
+                    "}%s fwd to %s",
+                    table_name,
+                    chain_name,
+                    s_counter,
+                    active_members[0]);
+            _append(&strbuf,
+                    "add rule netdev %s %s icmpv6 type {"
+                    " mld-listener-report, mld2-listener-report "
+                    "}%s fwd to %s",
+                    table_name,
+                    chain_name,
+                    s_counter,
+                    active_members[0]);
+        }
     }
 
 out:
