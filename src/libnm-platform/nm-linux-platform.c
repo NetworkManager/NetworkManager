@@ -5550,9 +5550,8 @@ nla_put_failure:
 static int
 _dcb_get_cb(const struct nl_msg *msg, void *arg)
 {
-    static const struct nla_policy policy[] = {
-        [DCB_CMD_GDCBX] = {.type = NLA_U8},
-    };
+    static const struct nla_policy policy[] =
+        {[DCB_CMD_GDCBX] = {.type = NLA_U8}, [DCB_CMD_SDCBX] = {.type = NLA_U8}};
     struct nlattr *tb[G_N_ELEMENTS(policy)];
     guint8        *mode = arg;
 
@@ -5560,7 +5559,11 @@ _dcb_get_cb(const struct nl_msg *msg, void *arg)
         return NL_SKIP;
 
     if (tb[DCB_CMD_GDCBX]) {
+        nm_assert(mode);
+
         *mode = nla_get_u8(tb[DCB_CMD_GDCBX]);
+        return NL_OK;
+    } else if (tb[DCB_CMD_SDCBX]) {
         return NL_OK;
     }
 
@@ -5573,12 +5576,13 @@ _nl_msg_new_dcb_full(uint16_t            nlmsg_type,
                      enum dcbnl_commands command,
                      const char         *ifname,
                      guint8              family,
+                     void               *data,
                      size_t              len)
 {
     nm_auto_nlmsg struct nl_msg *msg = NULL;
     const struct dcbmsg          d   = {.dcb_family = AF_UNSPEC, .cmd = command, .dcb_pad = 0};
 
-    nm_assert(NM_IN_SET(nlmsg_type, RTM_GETDCB));
+    nm_assert(NM_IN_SET(nlmsg_type, RTM_GETDCB, RTM_SETDCB));
     nm_assert(ifname);
 
     msg = nlmsg_alloc_new(len ? nlmsg_total_size(NLMSG_HDRLEN + len) : 0, nlmsg_type, nlmsg_flags);
@@ -5587,6 +5591,10 @@ _nl_msg_new_dcb_full(uint16_t            nlmsg_type,
         goto nla_put_failure;
 
     NLA_PUT_STRING(msg, DCB_ATTR_IFNAME, ifname);
+    if (nlmsg_type == RTM_SETDCB) {
+        guint8 *mode = data;
+        NLA_PUT_U8(msg, DCB_ATTR_DCBX, *mode);
+    }
 
     return g_steal_pointer(&msg);
 
@@ -9760,7 +9768,8 @@ dcb_get_dcbx(NMPlatform *platform, int ifindex, guint8 *mode_out)
     if (!nm_platform_if_indextoname(platform, ifindex, (char *) &ifname))
         g_return_val_if_reached(0);
 
-    nlmsg = _nl_msg_new_dcb_full(RTM_GETDCB, NLM_F_REQUEST, DCB_CMD_GDCBX, ifname, AF_NETLINK, 0);
+    nlmsg =
+        _nl_msg_new_dcb_full(RTM_GETDCB, NLM_F_REQUEST, DCB_CMD_GDCBX, ifname, AF_NETLINK, NULL, 0);
     if (!nlmsg)
         g_return_val_if_reached(0);
 
@@ -9787,6 +9796,56 @@ dcb_get_dcbx(NMPlatform *platform, int ifindex, guint8 *mode_out)
     }
 
     *mode_out = mode;
+
+err:
+    if (sk)
+        nl_socket_free(sk);
+    return FALSE;
+}
+
+static gboolean
+dcb_set_dcbx(NMPlatform *platform, int ifindex, guint8 mode)
+{
+    nm_auto_nlmsg struct nl_msg *nlmsg               = NULL;
+    struct nl_sock              *sk                  = NULL;
+    char                         ifname[NM_IFNAMSIZ] = {0};
+    int                          nle;
+    int                          r;
+
+    if (!nm_platform_if_indextoname(platform, ifindex, (char *) &ifname))
+        g_return_val_if_reached(0);
+
+    nlmsg = _nl_msg_new_dcb_full(RTM_GETDCB,
+                                 NLM_F_REQUEST,
+                                 DCB_CMD_SDCBX,
+                                 ifname,
+                                 AF_NETLINK,
+                                 &mode,
+                                 0);
+    if (!nlmsg)
+        g_return_val_if_reached(0);
+
+    nle = nl_socket_new(&sk, NETLINK_ROUTE, NL_SOCKET_FLAGS_DISABLE_MSG_PEEK, 0, 0);
+    if (nle < 0) {
+        _LOGD("get-dcbx: error opening socket %s (%d)", nm_strerror(nle), nle);
+        goto err;
+    }
+
+    nle = nl_send_auto(sk, nlmsg);
+    if (nle < 0) {
+        _LOGD("get-dcbx: failed sending request: %s (%d)", nm_strerror(nle), nle);
+    }
+
+    r = nl_recvmsgs(sk,
+                    &((const struct nl_cb){
+                        .valid_cb  = _dcb_get_cb,
+                        .valid_arg = NULL,
+                    }));
+
+    if (r < 0) {
+        _LOGD("get-dcbx: recv failed: %s (%d)", nm_strerror(nle), nle);
+        goto err;
+    }
 
 err:
     if (sk)
@@ -12239,6 +12298,7 @@ nm_linux_platform_class_init(NMLinuxPlatformClass *klass)
     platform_class->link_wireguard_change = link_wireguard_change;
 
     platform_class->dcb_get_dcbx = dcb_get_dcbx;
+    platform_class->dcb_set_dcbx = dcb_set_dcbx;
 
     platform_class->infiniband_partition_add    = infiniband_partition_add;
     platform_class->infiniband_partition_delete = infiniband_partition_delete;
