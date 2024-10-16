@@ -615,6 +615,9 @@ typedef struct _NMDevicePrivate {
 
     NMPacrunnerConfId *pacrunner_conf_id;
 
+    const char *ipv4_method;
+    const char *ipv6_method;
+
     struct {
         union {
             const NMDeviceIPState state;
@@ -12756,7 +12759,7 @@ get_ip_method_auto(NMDevice *self, int addr_family)
 }
 
 static void
-activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family, const char *method)
+activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family)
 {
     const int        IS_IPv4 = NM_IS_IPv4(addr_family);
     NMDevicePrivate *priv    = NM_DEVICE_GET_PRIVATE(self);
@@ -12810,27 +12813,27 @@ activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family, const
         if (priv->ipll_data_4.v4.mode == NM_SETTING_IP4_LL_ENABLED)
             _dev_ipll4_start(self);
 
-        if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_AUTO))
+        if (nm_streq(priv->ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_AUTO))
             _dev_ipdhcpx_start(self, AF_INET);
-        else if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)) {
+        else if (nm_streq(priv->ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)) {
             /* pass */
-        } else if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
+        } else if (nm_streq(priv->ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
             _dev_ipshared4_start(self);
-        else if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
+        else if (nm_streq(priv->ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
             priv->ip_data_x[IS_IPv4].is_disabled = TRUE;
-        else if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
+        else if (nm_streq(priv->ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
             /* pass */
         } else
             nm_assert_not_reached();
     }
 
     if (!IS_IPv4) {
-        if (nm_streq(method, NM_SETTING_IP6_CONFIG_METHOD_DISABLED)) {
+        if (nm_streq(priv->ipv6_method, NM_SETTING_IP6_CONFIG_METHOD_DISABLED)) {
             if (!priv->ip_data_x[IS_IPv4].is_disabled) {
                 priv->ip_data_x[IS_IPv4].is_disabled = TRUE;
                 nm_device_sysctl_ip_conf_set(self, AF_INET6, "disable_ipv6", "1");
             }
-        } else if (nm_streq(method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
+        } else if (nm_streq(priv->ipv6_method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
             if (!priv->ip_data_x[IS_IPv4].is_ignore) {
                 priv->ip_data_x[IS_IPv4].is_ignore = TRUE;
                 if (priv->controller) {
@@ -12863,15 +12866,15 @@ activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family, const
         } else {
             _dev_ipll6_start(self);
 
-            if (NM_IN_STRSET(method, NM_SETTING_IP6_CONFIG_METHOD_AUTO))
+            if (NM_IN_STRSET(priv->ipv6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO))
                 _dev_ipac6_start(self);
-            else if (NM_IN_STRSET(method, NM_SETTING_IP6_CONFIG_METHOD_SHARED))
+            else if (NM_IN_STRSET(priv->ipv6_method, NM_SETTING_IP6_CONFIG_METHOD_SHARED))
                 _dev_ipshared6_start(self);
-            else if (nm_streq(method, NM_SETTING_IP6_CONFIG_METHOD_DHCP)) {
+            else if (nm_streq(priv->ipv6_method, NM_SETTING_IP6_CONFIG_METHOD_DHCP)) {
                 priv->ipdhcp_data_6.v6.mode = NM_NDISC_DHCP_LEVEL_MANAGED;
                 _dev_ipdhcpx_start(self, AF_INET6);
             } else
-                nm_assert(NM_IN_STRSET(method,
+                nm_assert(NM_IN_STRSET(priv->ipv6_method,
                                        NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
                                        NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL));
         }
@@ -12972,8 +12975,6 @@ activate_stage3_ip_config(NMDevice *self)
     NMDevicePrivate *priv  = NM_DEVICE_GET_PRIVATE(self);
     NMDeviceClass   *klass = NM_DEVICE_GET_CLASS(self);
     int              ifindex;
-    const char      *ipv4_method;
-    const char      *ipv6_method;
 
     /* stage3 is different from stage1+2.
      *
@@ -13023,17 +13024,17 @@ activate_stage3_ip_config(NMDevice *self)
     }
     nm_assert(ifindex <= 0 || priv->fw_state == FIREWALL_STATE_INITIALIZED);
 
-    ipv4_method = nm_device_get_effective_ip_config_method(self, AF_INET);
-    if (nm_streq(ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
+    priv->ipv4_method = nm_device_get_effective_ip_config_method(self, AF_INET);
+    if (nm_streq(priv->ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
         /* "auto" usually means DHCPv4 or autoconf6, but it doesn't have to be. Subclasses
          * can overwrite it. For example, you cannot run DHCPv4 on PPP/WireGuard links. */
-        ipv4_method = klass->get_ip_method_auto(self, AF_INET);
+        priv->ipv4_method = klass->get_ip_method_auto(self, AF_INET);
     }
 
-    ipv6_method = nm_device_get_effective_ip_config_method(self, AF_INET6);
+    priv->ipv6_method = nm_device_get_effective_ip_config_method(self, AF_INET6);
     if (!g_file_test("/proc/sys/net/ipv6", G_FILE_TEST_IS_DIR)) {
         _NMLOG_ip((nm_device_managed_type_is_external(self)
-                   || NM_IN_STRSET(ipv6_method,
+                   || NM_IN_STRSET(priv->ipv6_method,
                                    NM_SETTING_IP6_CONFIG_METHOD_AUTO,
                                    NM_SETTING_IP6_CONFIG_METHOD_DISABLED,
                                    NM_SETTING_IP6_CONFIG_METHOD_IGNORE))
@@ -13041,9 +13042,9 @@ activate_stage3_ip_config(NMDevice *self)
                       : LOGL_WARN,
                   AF_INET6,
                   "IPv6 not supported by kernel resulting in \"ipv6.method=disabled\"");
-        ipv6_method = NM_SETTING_IP6_CONFIG_METHOD_DISABLED;
-    } else if (nm_streq(ipv6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
-        ipv6_method = klass->get_ip_method_auto(self, AF_INET6);
+        priv->ipv6_method = NM_SETTING_IP6_CONFIG_METHOD_DISABLED;
+    } else if (nm_streq(priv->ipv6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
+        priv->ipv6_method = klass->get_ip_method_auto(self, AF_INET6);
     }
 
     if (priv->ip_data_4.do_reapply) {
@@ -13052,7 +13053,7 @@ activate_stage3_ip_config(NMDevice *self)
         _cleanup_ip_pre(self,
                         AF_INET,
                         CLEANUP_TYPE_KEEP_REAPPLY,
-                        nm_streq(ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_AUTO));
+                        nm_streq(priv->ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_AUTO));
     }
     if (priv->ip_data_6.do_reapply) {
         _LOGD_ip(AF_INET6, "reapply...");
@@ -13060,7 +13061,7 @@ activate_stage3_ip_config(NMDevice *self)
         _cleanup_ip_pre(self,
                         AF_INET6,
                         CLEANUP_TYPE_KEEP_REAPPLY,
-                        nm_streq(ipv6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO));
+                        nm_streq(priv->ipv6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO));
     }
 
     if (priv->state < NM_DEVICE_STATE_IP_CONFIG) {
@@ -13091,7 +13092,7 @@ activate_stage3_ip_config(NMDevice *self)
     if (!nm_device_managed_type_is_external(self)
         && (!klass->ready_for_ip_config || klass->ready_for_ip_config(self, TRUE))) {
         if (priv->ipmanual_data.state_6 == NM_DEVICE_IP_STATE_NONE
-            && !NM_IN_STRSET(ipv6_method,
+            && !NM_IN_STRSET(priv->ipv6_method,
                              NM_SETTING_IP6_CONFIG_METHOD_DISABLED,
                              NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
             /* Ensure the MTU makes sense. If it was below 1280 the kernel would not
@@ -13115,8 +13116,8 @@ activate_stage3_ip_config(NMDevice *self)
         _dev_ipmanual_start(self);
     }
 
-    activate_stage3_ip_config_for_addr_family(self, AF_INET, ipv4_method);
-    activate_stage3_ip_config_for_addr_family(self, AF_INET6, ipv6_method);
+    activate_stage3_ip_config_for_addr_family(self, AF_INET);
+    activate_stage3_ip_config_for_addr_family(self, AF_INET6);
 }
 
 void
@@ -16611,6 +16612,9 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
                                       !!priv->promisc_reset);
         priv->promisc_reset = NM_OPTION_BOOL_DEFAULT;
     }
+
+    priv->ipv4_method = NULL;
+    priv->ipv6_method = NULL;
 
     _cleanup_generic_post(self, reason, cleanup_type);
 }
