@@ -9807,9 +9807,6 @@ dcb_set_dcbx(NMPlatform *platform, const char *const ifname, guint8 mode)
     int                          nle;
     int                          r;
 
-    if (!nm_platform_if_indextoname(platform, ifindex, (char *) &ifname))
-        g_return_val_if_reached(0);
-
     nlmsg = _nl_msg_new_dcb_full(RTM_GETDCB,
                                  NLM_F_REQUEST,
                                  DCB_CMD_SDCBX,
