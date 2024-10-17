@@ -2131,23 +2131,23 @@ nm_platform_dcb_get_dcbx(NMPlatform *self, const char *const name, guint8 *mode_
 }
 
 gboolean
-nm_platform_dcb_set_dcbx(NMPlatform *self, const char *const ifname, guint8 mode)
+nm_platform_dcb_set_dcbx(NMPlatform *self, const char *const name, guint8 mode)
 {
     gboolean ret;
 
     _CHECK_SELF(self, klass, FALSE);
 
-    g_return_val_if_fail(ifindex > 0, FALSE);
+    g_return_val_if_fail(name, FALSE);
 
-    _LOG3D("dcb: setting DCBX mode to %u", mode);
+    _LOG2D("dcb: setting DCBX mode to %u", mode);
 
-    ret = klass->dcb_set_dcbx(self, ifname, mode);
+    ret = klass->dcb_set_dcbx(self, name, mode);
 
     if (_LOGD_ENABLED()) {
         if (!ret) {
-            _LOG3D("dcb: failure while setting dcbx mode");
+            _LOG2D("dcb: failure while setting dcbx mode");
         } else {
-            _LOG3D("dcb: dcbx mode set to %u", mode);
+            _LOG2D("dcb: dcbx mode set to %u", mode);
         }
     }
 
