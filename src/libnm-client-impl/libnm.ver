@@ -2023,4 +2023,12 @@ global:
 	nm_setting_ipvlan_get_vepa;
 	nm_setting_ipvlan_mode_get_type;
 	nm_setting_ipvlan_new;
+	nm_setting_gsm_get_initial_eps_password;
+	nm_setting_gsm_get_initial_eps_username;
+	nm_setting_gsm_get_initial_eps_noauth;
+	nm_setting_gsm_get_initial_eps_refuse_pap;
+	nm_setting_gsm_get_initial_eps_refuse_chap;
+	nm_setting_gsm_get_initial_eps_refuse_eap;
+	nm_setting_gsm_get_initial_eps_refuse_mschap;
+	nm_setting_gsm_get_initial_eps_refuse_mschapv2;
 } libnm_1_50_0;

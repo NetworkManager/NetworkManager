@@ -1389,6 +1389,44 @@
                   dbus-type="b"
                   gprop-type="gboolean"
                   />
+        <property name="initial-eps-bearer-noauth"
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
+        <property name="initial-eps-bearer-password"
+                  is-secret="1"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
+        <property name="initial-eps-bearer-password-flags"
+                  is-secret-flags="1"
+                  dbus-type="u"
+                  gprop-type="NMSettingSecretFlags"
+                  />
+        <property name="initial-eps-bearer-refuse-chap"
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
+        <property name="initial-eps-bearer-refuse-eap"
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
+        <property name="initial-eps-bearer-refuse-mschap"
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
+        <property name="initial-eps-bearer-refuse-mschapv2"
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
+        <property name="initial-eps-bearer-refuse-pap"
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
+        <property name="initial-eps-bearer-username"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="mtu"
                   dbus-type="u"
                   gprop-type="guint"
