@@ -2106,24 +2106,24 @@ nm_platform_link_set_bridge_vlans(NMPlatform                 *self,
 }
 
 gboolean
-nm_platform_dcb_get_dcbx(NMPlatform *self, int ifindex, guint8 *mode_out)
+nm_platform_dcb_get_dcbx(NMPlatform *self, const char *const name, guint8 *mode_out)
 {
     gboolean ret;
 
     _CHECK_SELF(self, klass, FALSE);
 
-    g_return_val_if_fail(ifindex > 0, FALSE);
+    g_return_val_if_fail(name, FALSE);
     g_return_val_if_fail(mode_out, FALSE);
 
-    _LOG3D("dcb: getting DCBX mode");
+    _LOG2D("dcb: getting DCBX mode");
 
-    ret = klass->dcb_get_dcbx(self, ifindex, mode_out);
+    ret = klass->dcb_get_dcbx(self, name, mode_out);
 
     if (_LOGD_ENABLED()) {
         if (!ret) {
-            _LOG3D("dcb: failure while getting dcbx mode");
+            _LOG2D("dcb: failure while getting dcbx mode");
         } else {
-            _LOG3D("dcb: dcbx mode %u", *mode_out);
+            _LOG2D("dcb: dcbx mode %u", *mode_out);
         }
     }
 
