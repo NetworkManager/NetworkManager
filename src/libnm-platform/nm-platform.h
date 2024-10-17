@@ -1240,7 +1240,7 @@ typedef struct {
                              const NMPlatformLink  **out_link,
                              int                    *out_fd);
 
-    gboolean (*dcb_get_dcbx)(NMPlatform *platform, int ifindex, guint8 *mode_out);
+    gboolean (*dcb_get_dcbx)(NMPlatform *platform, const char *const ifname, guint8 *mode_out);
     gboolean (*dcb_set_dcbx)(NMPlatform *platform, int ifindex, guint8 mode);
 
     gboolean (*infiniband_partition_add)(NMPlatform            *self,
