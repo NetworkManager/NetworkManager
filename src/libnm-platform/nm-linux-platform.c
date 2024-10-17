@@ -9800,11 +9800,10 @@ err:
 }
 
 static gboolean
-dcb_set_dcbx(NMPlatform *platform, int ifindex, guint8 mode)
+dcb_set_dcbx(NMPlatform *platform, const char *const ifname, guint8 mode)
 {
-    nm_auto_nlmsg struct nl_msg *nlmsg               = NULL;
-    struct nl_sock              *sk                  = NULL;
-    char                         ifname[NM_IFNAMSIZ] = {0};
+    nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+    struct nl_sock              *sk    = NULL;
     int                          nle;
     int                          r;
 

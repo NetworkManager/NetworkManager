@@ -2131,7 +2131,7 @@ nm_platform_dcb_get_dcbx(NMPlatform *self, int ifindex, guint8 *mode_out)
 }
 
 gboolean
-nm_platform_dcb_set_dcbx(NMPlatform *self, int ifindex, guint8 mode)
+nm_platform_dcb_set_dcbx(NMPlatform *self, const char *const ifname, guint8 mode)
 {
     gboolean ret;
 
@@ -2141,7 +2141,7 @@ nm_platform_dcb_set_dcbx(NMPlatform *self, int ifindex, guint8 mode)
 
     _LOG3D("dcb: setting DCBX mode to %u", mode);
 
-    ret = klass->dcb_set_dcbx(self, ifindex, mode);
+    ret = klass->dcb_set_dcbx(self, ifname, mode);
 
     if (_LOGD_ENABLED()) {
         if (!ret) {
