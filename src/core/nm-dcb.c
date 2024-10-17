@@ -6,6 +6,7 @@
 #include "src/core/nm-default-daemon.h"
 
 #include <sys/wait.h>
+#include <linux/dcbnl.h>
 
 #include "nm-dcb.h"
 #include "libnm-platform/nm-platform.h"
@@ -122,6 +123,7 @@ _dcb_setup(const char   *iface,
 {
     NMSettingDcbFlags flags;
     guint             i;
+    guint8            mode = 0;
 
     g_assert(s_dcb);
 
@@ -219,6 +221,14 @@ _dcb_setup(const char   *iface,
          * priority groups without specifying an entire PG config.
          */
         (void) do_helper(iface, DCBTOOL, run_func, user_data, error, "pg e:0");
+    }
+
+    if (nm_setting_dcb_get_dcbx_os_controlled(s_dcb)) {
+        mode |= DCB_CAP_DCBX_HOST;
+    }
+
+    if (!nm_platform_dcb_set_dcbx(NM_PLATFORM_GET, iface, mode)) {
+        return FALSE;
     }
 
     return TRUE;

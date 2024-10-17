@@ -2091,7 +2091,7 @@ gboolean nm_platform_link_set_bridge_info(NMPlatform                            
                                           const NMPlatformLinkSetBridgeInfoData *bridge_info);
 
 gboolean nm_platform_dcb_get_dcbx(NMPlatform *self, const char* const ifname, guint8 *mode_out);
-gboolean nm_platform_dcb_set_dcbx(NMPlatform *self, const char* const ifname, guint8 mode);
+gboolean nm_platform_dcb_set_dcbx(NMPlatform *self, const char *const ifname, guint8 mode);
 
 char    *nm_platform_link_get_physical_port_id(NMPlatform *self, int ifindex);
 guint    nm_platform_link_get_dev_id(NMPlatform *self, int ifindex);

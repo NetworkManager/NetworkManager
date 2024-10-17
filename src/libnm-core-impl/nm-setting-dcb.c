@@ -45,7 +45,9 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingDcb,
                              PROP_PRIORITY_GROUP_BANDWIDTH,
                              PROP_PRIORITY_BANDWIDTH,
                              PROP_PRIORITY_STRICT_BANDWIDTH,
-                             PROP_PRIORITY_TRAFFIC_CLASS, );
+                             PROP_PRIORITY_TRAFFIC_CLASS,
+
+                             PROP_DCBX_OS_CONTROLLED, );
 
 typedef struct {
     char  *app_fcoe_mode;
@@ -63,6 +65,7 @@ typedef struct {
     gint32 app_fcoe_priority;
     gint32 app_iscsi_priority;
     gint32 app_fip_priority;
+    bool   dcbx_os_controlled;
 } NMSettingDcbPrivate;
 
 /**
@@ -479,6 +482,37 @@ nm_setting_dcb_set_priority_traffic_class(NMSettingDcb *setting,
         priv->priority_traffic_class[user_priority] = traffic_class;
         _notify(setting, PROP_PRIORITY_TRAFFIC_CLASS);
     }
+}
+
+/**
+ * nm_setting_dcb_get_dcbx_os_controlled:
+ * @setting: the #NMSettingDcb
+ *
+ * Returns: whether DCBX is controlled by the OS (true), or the firmware (false).
+ **/
+gboolean
+nm_setting_dcb_get_dcbx_os_controlled(NMSettingDcb *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_DCB(setting), FALSE);
+
+    return NM_SETTING_DCB_GET_PRIVATE(setting)->dcbx_os_controlled;
+}
+
+/**
+ * nm_setting_dcb_set_dcbx_os_controlled:
+ * @setting: the #NMSettingDcb
+ * @os_controlled: whether DCBX should be controlled by the OS
+ **/
+void
+nm_setting_dcb_set_dcbx_os_controlled(NMSettingDcb *setting, gboolean os_controlled)
+{
+    NMSettingDcbPrivate *priv;
+
+    g_return_if_fail(NM_IS_SETTING_DCB(setting));
+
+    priv                     = NM_SETTING_DCB_GET_PRIVATE(setting);
+    priv->dcbx_os_controlled = os_controlled;
+    _notify(setting, PROP_DCBX_OS_CONTROLLED);
 }
 
 /*****************************************************************************/
@@ -1219,6 +1253,23 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
     _nm_properties_override_gobj(properties_override,
                                  obj_properties[PROP_PRIORITY_TRAFFIC_CLASS],
                                  &nm_sett_info_propert_type_dcb_au);
+
+    /**
+     * NMSettingDcb:dcbx-os-controlled:
+     *
+     * Configures whether DCBX is managed by the operating system
+     * or the firmware.
+     *
+     * Since: 1.52
+     **/
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_DCB_DCBX_OS_CONTROLLED,
+                                               PROP_DCBX_OS_CONTROLLED,
+                                               FALSE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingDcbPrivate,
+                                               dcbx_os_controlled);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
