@@ -5635,7 +5635,7 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
         .property_type =                &_pt_gobject_enum,
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_DOWN_ON_POWEROFF,
-        .property_type =                &_pt_gobject_ternary,
+        .property_type =                &_pt_gobject_enum,
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_SECONDARIES,
         .describe_message =
