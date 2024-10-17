@@ -5574,7 +5574,7 @@ static struct nl_msg *
 _nl_msg_new_dcb_full(uint16_t            nlmsg_type,
                      uint16_t            nlmsg_flags,
                      enum dcbnl_commands command,
-                     const char         *ifname,
+                     const char *const   ifname,
                      guint8              family,
                      void               *data,
                      size_t              len)
@@ -9754,19 +9754,15 @@ get_bridge_vlans_cb(const struct nl_msg *msg, void *arg)
 }
 
 static gboolean
-dcb_get_dcbx(NMPlatform *platform, int ifindex, guint8 *mode_out)
+dcb_get_dcbx(NMPlatform *platform, const char *const ifname, guint8 *mode_out)
 {
-    nm_auto_nlmsg struct nl_msg *nlmsg               = NULL;
-    struct nl_sock              *sk                  = NULL;
-    char                         ifname[NM_IFNAMSIZ] = {0};
+    nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+    struct nl_sock              *sk    = NULL;
     int                          nle;
     int                          r;
     guint8                       mode;
 
     nm_assert(mode_out);
-
-    if (!nm_platform_if_indextoname(platform, ifindex, (char *) &ifname))
-        g_return_val_if_reached(0);
 
     nlmsg =
         _nl_msg_new_dcb_full(RTM_GETDCB, NLM_F_REQUEST, DCB_CMD_GDCBX, ifname, AF_NETLINK, NULL, 0);
