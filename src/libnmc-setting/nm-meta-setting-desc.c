@@ -5828,6 +5828,9 @@ static const NMMetaPropertyInfo *const property_infos_DCB[] = {
             .other =                    0,
         ),
     ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_DCBX_OS_CONTROLLED,
+        .property_type =                &_pt_gobject_bool,
+    ),
     NULL
 };
 
