@@ -111,6 +111,7 @@ const NMEthtoolData *const nm_ethtool_data[_NM_ETHTOOL_ID_NUM + 1] = {
     ETHT_DATA(CHANNELS_TX),
     ETHT_DATA(CHANNELS_OTHER),
     ETHT_DATA(CHANNELS_COMBINED),
+    ETHT_DATA(FEC_MODE),
     [_NM_ETHTOOL_ID_NUM] = NULL,
 };
 
@@ -201,6 +202,7 @@ static const guint8 _by_name[_NM_ETHTOOL_ID_NUM] = {
     NM_ETHTOOL_ID_FEATURE_TX_UDP_TNL_SEGMENTATION,
     NM_ETHTOOL_ID_FEATURE_TX_VLAN_STAG_HW_INSERT,
     NM_ETHTOOL_ID_FEATURE_TXVLAN,
+    NM_ETHTOOL_ID_FEC_MODE,
     NM_ETHTOOL_ID_PAUSE_AUTONEG,
     NM_ETHTOOL_ID_PAUSE_RX,
     NM_ETHTOOL_ID_PAUSE_TX,
@@ -305,6 +307,8 @@ nm_ethtool_id_to_type(NMEthtoolID id)
         return NM_ETHTOOL_TYPE_CHANNELS;
     if (nm_ethtool_id_is_eee(id))
         return NM_ETHTOOL_TYPE_EEE;
+    if (nm_ethtool_id_is_fec(id))
+        return NM_ETHTOOL_TYPE_FEC;
 
     return NM_ETHTOOL_TYPE_UNKNOWN;
 }
@@ -319,6 +323,7 @@ nm_ethtool_id_get_variant_type(NMEthtoolID ethtool_id)
         return G_VARIANT_TYPE_BOOLEAN;
     case NM_ETHTOOL_TYPE_CHANNELS:
     case NM_ETHTOOL_TYPE_COALESCE:
+    case NM_ETHTOOL_TYPE_FEC:
     case NM_ETHTOOL_TYPE_RING:
         return G_VARIANT_TYPE_UINT32;
     case NM_ETHTOOL_TYPE_UNKNOWN:

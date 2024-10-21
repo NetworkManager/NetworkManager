@@ -23,6 +23,7 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   ipv4.routed-dns and ipv6.routed-dns properties; when enabled, each
   name server is reached only via the device that specifies it.
 * Support OCI in nm-cloud-setup
+* Added support for ethtool FEC mode
 
 =============================================
 NetworkManager-1.50
