@@ -1068,6 +1068,10 @@
         <property name="channels-combined"
                   format="integer"
                   values="0 - 4294967295" />
+        <property name="fec-mode"
+                  nmcli-description="The Forward Error Correction(FEC) encoding modes to set. Not all devices support all options. May be any combination of auto, off, rs, baser, llrs."
+                  format="flags (NMSettingEthtoolFecMode)"
+                  values="auto (0x2), off (0x4), rs (0x8), baser (0x10), llrs (0x20)" />
     </setting>
     <setting name="generic" >
         <property name="device-handler"

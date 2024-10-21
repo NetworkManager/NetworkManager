@@ -11,6 +11,7 @@
 #include <arpa/inet.h>
 #include <linux/if_ether.h>
 #include <linux/if_infiniband.h>
+#include <linux/ethtool.h>
 
 #include "libnm-core-aux-intern/nm-common-macros.h"
 #include "libnm-glib-aux/nm-enum-utils.h"
@@ -4459,6 +4460,21 @@ _get_fcn_ethtool(ARGS_GET_FCN)
         if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
             s = gettext(s);
         return s;
+    case NM_ETHTOOL_TYPE_FEC:
+        if (!nm_setting_option_get_uint32(setting, nm_ethtool_data[ethtool_id]->optname, &u32)) {
+            NM_SET_OUT(out_is_default, TRUE);
+            return NULL;
+        }
+        s = _nm_utils_enum_to_str_full(nm_setting_ethtool_fec_mode_get_type(),
+                                       (int) (u32 & INT_MAX),
+                                       ", ",
+                                       NULL);
+        if (s == NULL) {
+            NM_SET_OUT(out_is_default, TRUE);
+        }
+        if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
+            s = gettext(s);
+        return s;
     case NM_ETHTOOL_TYPE_UNKNOWN:
         nm_assert_not_reached();
     }
@@ -4469,9 +4485,11 @@ _get_fcn_ethtool(ARGS_GET_FCN)
 static gboolean
 _set_fcn_ethtool(ARGS_SET_FCN)
 {
-    NMEthtoolID ethtool_id = property_info->property_typ_data->subtype.ethtool.ethtool_id;
-    gint64      i64;
-    NMTernary   t;
+    NMEthtoolID   ethtool_id = property_info->property_typ_data->subtype.ethtool.ethtool_id;
+    gint64        i64;
+    NMTernary     t;
+    int           fec_mode         = 0;
+    gs_free char *invalid_fec_mode = NULL;
 
     if (_SET_FCN_DO_RESET_DEFAULT(property_info, modifier, value))
         goto do_unset;
@@ -4512,6 +4530,30 @@ _set_fcn_ethtool(ARGS_SET_FCN)
 
         nm_setting_option_set_boolean(setting, nm_ethtool_data[ethtool_id]->optname, !!t);
         return TRUE;
+    case NM_ETHTOOL_TYPE_FEC:
+        if (_nm_utils_enum_from_str_full(nm_setting_ethtool_fec_mode_get_type(),
+                                         value,
+                                         &fec_mode,
+                                         &invalid_fec_mode,
+                                         NULL)) {
+            nm_setting_option_set_uint32(setting,
+                                         NM_ETHTOOL_OPTNAME_FEC_MODE,
+                                         (uint32_t) (fec_mode & UINT32_MAX));
+            return TRUE;
+        } else {
+            gs_free const char **valid_all = NULL;
+            gs_free const char  *valid_str = NULL;
+
+            valid_all =
+                nm_utils_enum_get_values(nm_setting_ethtool_fec_mode_get_type(), 0, G_MAXUINT);
+            valid_str = g_strjoinv(",", (char **) valid_all);
+            nm_utils_error_set(error,
+                               NM_UTILS_ERROR_INVALID_ARGUMENT,
+                               _("'%s' is not valid FEC modes, valid modes are combinations of %s"),
+                               invalid_fec_mode,
+                               valid_str);
+            return FALSE;
+        }
     case NM_ETHTOOL_TYPE_UNKNOWN:
         nm_assert_not_reached();
     }
@@ -5982,6 +6024,15 @@ static const NMMetaPropertyInfo *const property_infos_ETHTOOL[] = {
     PROPERTY_INFO_ETHTOOL (CHANNELS_TX),
     PROPERTY_INFO_ETHTOOL (CHANNELS_OTHER),
     PROPERTY_INFO_ETHTOOL (CHANNELS_COMBINED),
+    PROPERTY_INFO (NM_ETHTOOL_OPTNAME_FEC_MODE,
+                   "The Forward Error Correction(FEC) encoding modes to set. "
+                   "Not all devices support all options. "
+                   "May be any combination of auto, off, rs, baser, llrs.",
+                   .property_type = &_pt_ethtool,
+                   .property_typ_data =
+                   DEFINE_PROPERTY_TYP_DATA_SUBTYPE
+                      (ethtool, .ethtool_id = NM_ETHTOOL_ID_FEC_MODE)
+                   ),
     NULL,
 };
 

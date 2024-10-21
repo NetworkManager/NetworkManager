@@ -1450,6 +1450,15 @@ write_ethtool_setting(NMConnection *connection, shvarFile *ifcfg, GError **error
                 return FALSE;
             }
         }
+        if (ethtool_id == NM_ETHTOOL_ID_FEC_MODE) {
+            if (nm_setting_option_get_uint32(NM_SETTING(s_ethtool),
+                                             nm_ethtool_data[ethtool_id]->optname,
+                                             &u32)) {
+                nm_sprintf_buf(prop_name, "ethtool.%s", nm_ethtool_data[ethtool_id]->optname);
+                set_error_unsupported(error, connection, prop_name, FALSE);
+                return FALSE;
+            }
+        }
 
         if (!any_option) {
             /* Write an empty dummy "-A" option without arguments. This is to

@@ -1977,3 +1977,9 @@ global:
 	nm_sriov_eswitch_inline_mode_get_type;
 	nm_sriov_eswitch_mode_get_type;
 } libnm_1_44_0;
+
+libnm_1_46_8 {
+global:
+	nm_ethtool_optname_is_fec;
+	nm_setting_ethtool_fec_mode_get_type;
+} libnm_1_46_0;
