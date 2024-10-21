@@ -3623,7 +3623,8 @@ test_roundtrip_ethtool(void)
             optname = nm_ethtool_data[ethtool_id]->optname;
             vtype   = nm_ethtool_id_get_variant_type(ethtool_id);
 
-            if (nm_ethtool_optname_is_channels(optname) || nm_ethtool_optname_is_eee(optname)) {
+            if (nm_ethtool_optname_is_channels(optname) || nm_ethtool_optname_is_eee(optname)
+                || nm_ethtool_optname_is_fec(optname)) {
                 /* Not supported */
                 continue;
             }

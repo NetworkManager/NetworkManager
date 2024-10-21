@@ -1820,6 +1820,46 @@ nmp_utils_ethtool_set_wake_on_lan(int                      ifindex,
     return _ethtool_call_once(ifindex, &wol_info, sizeof(wol_info)) >= 0;
 }
 
+gboolean
+nmp_utils_ethtool_get_fec_mode(int ifindex, uint32_t *fec_mode)
+{
+    int                     r;
+    struct ethtool_fecparam fec_param = {
+        .cmd = ETHTOOL_GFECPARAM,
+        .fec = 0,
+    };
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+
+    if (_ethtool_call_once(ifindex, &fec_param, sizeof(fec_param)) >= 0) {
+        nm_log_dbg(LOGD_PLATFORM, "ethtool[%d]: get FEC options 0x%x", ifindex, fec_param.fec);
+        *fec_mode = fec_param.fec;
+        return TRUE;
+    } else {
+        r = -NM_ERRNO_NATIVE(errno);
+        nm_log_dbg(LOGD_PLATFORM,
+                   "ethtool[%d]: ETHTOOL_GFECPARAM failure get fec mode: (%s)",
+                   ifindex,
+                   nm_strerror_native(-r));
+        return FALSE;
+    }
+}
+
+gboolean
+nmp_utils_ethtool_set_fec_mode(int ifindex, uint32_t fec_mode)
+{
+    struct ethtool_fecparam fec_param = {
+        .cmd = ETHTOOL_SFECPARAM,
+        .fec = fec_mode,
+    };
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+
+    nm_log_dbg(LOGD_PLATFORM, "ethtool[%d]: setting FEC options 0x%x", ifindex, fec_mode);
+
+    return _ethtool_call_once(ifindex, &fec_param, sizeof(fec_param)) >= 0;
+}
+
 /******************************************************************************
  * mii
  *****************************************************************************/

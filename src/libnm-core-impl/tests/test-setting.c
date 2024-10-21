@@ -2379,6 +2379,85 @@ test_ethtool_eee(void)
 /*****************************************************************************/
 
 static void
+test_ethtool_fec(void)
+{
+    gs_unref_object NMConnection   *con     = NULL;
+    gs_unref_object NMConnection   *con2    = NULL;
+    gs_unref_object NMConnection   *con3    = NULL;
+    gs_unref_variant GVariant      *variant = NULL;
+    gs_free_error GError           *error   = NULL;
+    nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
+    NMSettingConnection            *s_con;
+    NMSettingEthtool               *s_ethtool;
+    NMSettingEthtool               *s_ethtool2;
+    NMSettingEthtool               *s_ethtool3;
+    guint32                         out_value;
+    guint32                         expected_fec_mode =
+        NM_SETTING_ETHTOOL_FEC_MODE_AUTO | NM_SETTING_ETHTOOL_FEC_MODE_BASER;
+
+    con =
+        nmtst_create_minimal_connection("ethtool-fec", NULL, NM_SETTING_WIRED_SETTING_NAME, &s_con);
+    s_ethtool = NM_SETTING_ETHTOOL(nm_setting_ethtool_new());
+    nm_connection_add_setting(con, NM_SETTING(s_ethtool));
+
+    nm_setting_option_set_uint32(NM_SETTING(s_ethtool),
+                                 NM_ETHTOOL_OPTNAME_FEC_MODE,
+                                 expected_fec_mode);
+
+    g_assert_true(nm_setting_option_get_uint32(NM_SETTING(s_ethtool),
+                                               NM_ETHTOOL_OPTNAME_FEC_MODE,
+                                               &out_value));
+    g_assert_true(out_value == expected_fec_mode);
+
+    nmtst_connection_normalize(con);
+
+    variant = nm_connection_to_dbus(con, NM_CONNECTION_SERIALIZE_ALL);
+
+    con2 = nm_simple_connection_new_from_dbus(variant, &error);
+    nmtst_assert_success(con2, error);
+
+    s_ethtool2 = NM_SETTING_ETHTOOL(nm_connection_get_setting(con2, NM_TYPE_SETTING_ETHTOOL));
+
+    g_assert_true(nm_setting_option_get_uint32(NM_SETTING(s_ethtool2),
+                                               NM_ETHTOOL_OPTNAME_FEC_MODE,
+                                               &out_value));
+    g_assert_true(out_value == expected_fec_mode);
+
+    nmtst_assert_connection_verifies_without_normalization(con2);
+
+    nmtst_assert_connection_equals(con, FALSE, con2, FALSE);
+
+    con2 = nm_simple_connection_new_from_dbus(variant, &error);
+    nmtst_assert_success(con2, error);
+
+    keyfile = nm_keyfile_write(con, NM_KEYFILE_HANDLER_FLAGS_NONE, NULL, NULL, &error);
+    nmtst_assert_success(keyfile, error);
+
+    con3 = nm_keyfile_read(keyfile,
+                           "/ignored/current/working/directory/for/loading/relative/paths",
+                           NM_KEYFILE_HANDLER_FLAGS_NONE,
+                           NULL,
+                           NULL,
+                           &error);
+    nmtst_assert_success(con3, error);
+
+    nm_keyfile_read_ensure_id(con3, "unused-because-already-has-id");
+    nm_keyfile_read_ensure_uuid(con3, "unused-because-already-has-uuid");
+
+    nmtst_connection_normalize(con3);
+
+    nmtst_assert_connection_equals(con, FALSE, con3, FALSE);
+
+    s_ethtool3 = NM_SETTING_ETHTOOL(nm_connection_get_setting(con3, NM_TYPE_SETTING_ETHTOOL));
+
+    g_assert_true(nm_setting_option_get_uint32(NM_SETTING(s_ethtool3),
+                                               NM_ETHTOOL_OPTNAME_FEC_MODE,
+                                               &out_value));
+    g_assert_true(out_value == expected_fec_mode);
+}
+/*****************************************************************************/
+
+static void
 test_sriov_vf(void)
 {
     NMSriovVF *vf1, *vf2;
@@ -5479,6 +5558,7 @@ main(int argc, char **argv)
     g_test_add_func("/libnm/settings/ethtool/ring", test_ethtool_ring);
     g_test_add_func("/libnm/settings/ethtool/pause", test_ethtool_pause);
     g_test_add_func("/libnm/settings/ethtool/eee", test_ethtool_eee);
+    g_test_add_func("/libnm/settings/ethtool/fec", test_ethtool_fec);
 
     g_test_add_func("/libnm/settings/6lowpan/1", test_6lowpan_1);
 

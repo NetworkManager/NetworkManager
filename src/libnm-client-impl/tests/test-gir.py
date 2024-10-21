@@ -93,6 +93,8 @@ def syms_from_ver(verfile):
     # hardcode it.
     c_syms["nm_ethtool_optname_is_feature"] = "1.20"
     c_syms["nm_setting_bond_port_get_prio"] = "1.44"
+    c_syms["nm_ethtool_optname_is_fec"] = "1.52"
+    c_syms["nm_setting_ethtool_fec_mode_get_type"] = "1.52"
 
     return c_syms
 

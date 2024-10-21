@@ -3607,6 +3607,26 @@ nm_platform_ethtool_set_features(
 }
 
 gboolean
+nm_platform_ethtool_get_fec_mode(NMPlatform *self, int ifindex, uint32_t *fec_mode)
+{
+    _CHECK_SELF_NETNS(self, klass, netns, FALSE);
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+
+    return nmp_utils_ethtool_get_fec_mode(ifindex, fec_mode);
+}
+
+gboolean
+nm_platform_ethtool_set_fec_mode(NMPlatform *self, int ifindex, uint32_t fec_mode)
+{
+    _CHECK_SELF_NETNS(self, klass, netns, FALSE);
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+
+    return nmp_utils_ethtool_set_fec_mode(ifindex, fec_mode);
+}
+
+gboolean
 nm_platform_ethtool_get_link_coalesce(NMPlatform             *self,
                                       int                     ifindex,
                                       NMEthtoolCoalesceState *coalesce)

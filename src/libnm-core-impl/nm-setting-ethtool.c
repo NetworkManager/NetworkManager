@@ -10,6 +10,7 @@
 #include "nm-setting-private.h"
 #include "libnm-base/nm-ethtool-base.h"
 #include "libnm-base/nm-ethtool-utils-base.h"
+#include "libnm-glib-aux/nm-enum-utils.h"
 
 /*****************************************************************************/
 
@@ -120,6 +121,21 @@ gboolean
 nm_ethtool_optname_is_pause(const char *optname)
 {
     return optname && nm_ethtool_id_is_pause(nm_ethtool_id_get_by_name(optname));
+}
+/**
+ * nm_ethtool_optname_is_fec:
+ * @optname: (nullable): the option name to check
+ *
+ * Checks whether @optname is a valid option name for a fec setting.
+ *
+ * Returns: %TRUE, if @optname is valid
+ *
+ * Since: 1.52, 1.46.6
+ */
+gboolean
+nm_ethtool_optname_is_fec(const char *optname)
+{
+    return optname && nm_ethtool_id_is_fec(nm_ethtool_id_get_by_name(optname));
 }
 
 /*****************************************************************************/
@@ -309,6 +325,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     NMTernary          pause_autoneg = NM_TERNARY_DEFAULT;
     NMTernary          pause_tx      = NM_TERNARY_DEFAULT;
     NMTernary          pause_rx      = NM_TERNARY_DEFAULT;
+    guint32            fec_mode      = 0;
 
     len = _nm_setting_option_get_all(setting, &optnames, &variants);
 
@@ -356,6 +373,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
             pause_rx = g_variant_get_boolean(variant);
         else if (NM_IN_SET(ethtool_id, NM_ETHTOOL_ID_PAUSE_TX))
             pause_tx = g_variant_get_boolean(variant);
+        else if (NM_IN_SET(ethtool_id, NM_ETHTOOL_ID_FEC_MODE))
+            fec_mode = g_variant_get_uint32(variant);
     }
 
     if (pause_rx != NM_TERNARY_DEFAULT || pause_tx != NM_TERNARY_DEFAULT) {
@@ -370,6 +389,32 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                            NM_ETHTOOL_OPTNAME_PAUSE_AUTONEG);
             return FALSE;
         }
+    }
+
+    if (fec_mode == NM_SETTING_ETHTOOL_FEC_MODE_NONE
+        || fec_mode >= (_NM_SETTING_ETHTOOL_FEC_MODE_LAST << 1)) {
+        gs_free const char  *cur_fec_mode = NULL;
+        gs_free const char **valid_all    = NULL;
+        gs_free const char  *valid_str    = NULL;
+
+        cur_fec_mode = _nm_utils_enum_to_str_full(nm_setting_ethtool_fec_mode_get_type(),
+                                                  (int) (fec_mode & INT_MAX),
+                                                  ", ",
+                                                  NULL);
+        valid_all = nm_utils_enum_get_values(nm_setting_ethtool_fec_mode_get_type(), 0, G_MAXUINT);
+        valid_str = g_strjoinv(",", (char **) valid_all);
+
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("'%s' is not valid FEC modes, valid modes are combinations of %s"),
+                    cur_fec_mode,
+                    valid_str);
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_ETHTOOL_SETTING_NAME,
+                       NM_ETHTOOL_OPTNAME_FEC_MODE);
+        return FALSE;
     }
 
     return TRUE;
