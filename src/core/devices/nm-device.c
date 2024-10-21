@@ -9485,6 +9485,7 @@ check_connection_compatible(NMDevice     *self,
     NMSettingMatch       *s_match;
     const GSList         *specs;
     gboolean              has_match = FALSE;
+    NMSettingSriov       *s_sriov   = NULL;
 
     klass = NM_DEVICE_GET_CLASS(self);
     if (klass->connection_type_check_compatible) {
@@ -9502,12 +9503,14 @@ check_connection_compatible(NMDevice     *self,
         return FALSE;
     }
 
-    if (!nm_device_has_capability(self, NM_DEVICE_CAP_SRIOV)
-        && nm_connection_get_setting(connection, NM_TYPE_SETTING_SRIOV)) {
-        nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
-                                   "device does not support SR-IOV");
-        return FALSE;
+    if (!nm_device_has_capability(self, NM_DEVICE_CAP_SRIOV)) {
+        s_sriov = (NMSettingSriov *) nm_connection_get_setting(connection, NM_TYPE_SETTING_SRIOV);
+        if (s_sriov && nm_setting_sriov_get_total_vfs(s_sriov)) {
+            nm_utils_error_set_literal(error,
+                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       "device does not support SR-IOV");
+            return FALSE;
+        }
     }
 
     conn_iface = nm_manager_get_connection_iface(NM_MANAGER_GET, connection, NULL, NULL, &local);
@@ -10118,15 +10121,13 @@ activate_stage1_device_prepare(NMDevice *self)
             s_sriov = nm_device_get_applied_setting(self, NM_TYPE_SETTING_SRIOV);
         }
 
-        if (s_sriov) {
+        if (s_sriov && nm_device_has_capability(self, NM_DEVICE_CAP_SRIOV)) {
             nm_auto_freev NMPlatformVF **plat_vfs = NULL;
             gs_free_error GError        *error    = NULL;
             NMSriovVF                   *vf;
             NMTernary                    autoprobe;
             guint                        num;
             guint                        i;
-
-            nm_assert(nm_device_has_capability(self, NM_DEVICE_CAP_SRIOV));
 
             autoprobe = nm_setting_sriov_get_autoprobe_drivers(s_sriov);
             if (autoprobe == NM_TERNARY_DEFAULT) {
