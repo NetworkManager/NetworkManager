@@ -36,12 +36,14 @@ libnm_cloud_setup_core = static_library(
     'nmcs-provider-gcp.c',
     'nmcs-provider-azure.c',
     'nmcs-provider-aliyun.c',
+    'nmcs-provider-oci.c',
     'nmcs-provider.c',
   ),
   dependencies: [
     libnm_dep,
     glib_dep,
     libcurl_dep,
+    jansson_dep,
   ],
 )
 

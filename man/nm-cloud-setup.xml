@@ -184,6 +184,10 @@
         <para><literal>NM_CLOUD_SETUP_ALIYUN</literal>: boolean, whether Alibaba Cloud (Aliyun) support is enabled. Defaults
           to <literal>no</literal>.</para>
       </listitem>
+      <listitem>
+        <para><literal>NM_CLOUD_SETUP_OCI</literal>: boolean, whether Oracle Cloud (OCI) support is enabled. Defaults
+          to <literal>no</literal>.</para>
+      </listitem>
     </itemizedlist>
 
   </refsect1>
@@ -413,6 +417,34 @@ ln -s /etc/systemd/system/timers.target.wants/nm-cloud-setup.timer /usr/lib/syst
           <para>Then the tool configures the system like doing for AWS environment. That is, using source based policy routing
           with the tables/rules 30200/30400. One difference to AWS is that the gateway is also fetched via metadata instead
           of using the first IP address in the subnet.</para>
+        </listitem>
+      </itemizedlist>
+    </refsect2>
+
+    <refsect2>
+      <title>Oracle Cloud (OCI)</title>
+
+      <para>For OCI, the tools tries to fetch configuration from <literal>http://169.254.169.254/</literal>. Currently, it only
+      configures IPv4 and does nothing about IPv6. It will do the following.</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>First fetch <literal>http://169.254.169.254/opc/v2/instance</literal> to determine whether the
+          expected API is present. This determines whether OCI environment is detected and whether to proceed
+          to configure the host using OCI meta data.</para>
+        </listitem>
+        <listitem>
+          <para>Fetch <literal>http://169.254.169.254/opc/v2/vnics</literal> to get the configuration
+          for all the VNICs, getting their MAC address, private IP address, gateway and subnet block.</para>
+        </listitem>
+        <listitem>
+          <para>Then nm-cloud-setup iterates over all interfaces for which it could fetch a configuration.
+          If no ethernet device for the respective MAC address is found, it is skipped.
+          Also, if the device is currently not activated in NetworkManager or if the currently
+          activated profile has a user-data <literal>org.freedesktop.nm-cloud-setup.skip=yes</literal>,
+          it is skipped. Also, there is only one interface and one IP address, the tool does nothing.</para>
+          <para>Then the tool configures the system like doing for AWS environment. That is, using source based policy routing
+          with the tables/rules 30200/30400.</para>
         </listitem>
       </itemizedlist>
     </refsect2>
