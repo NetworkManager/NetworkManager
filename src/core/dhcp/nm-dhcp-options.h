@@ -93,6 +93,7 @@ typedef enum {
     NM_DHCP_OPTION_DHCP4_UAP_SERVERS                    = 98,
     NM_DHCP_OPTION_DHCP4_GEOCONF_CIVIC                  = 99,
     NM_DHCP_OPTION_DHCP4_NEW_TZDB_TIMEZONE              = 101,
+    NM_DHCP_OPTION_DHCP4_IPV6_ONLY_PREFERRED            = 108,
     NM_DHCP_OPTION_DHCP4_NETINFO_SERVER_ADDRESS         = 112,
     NM_DHCP_OPTION_DHCP4_NETINFO_SERVER_TAG             = 113,
     NM_DHCP_OPTION_DHCP4_DEFAULT_URL                    = 114,
@@ -188,7 +189,7 @@ typedef struct {
     bool        include;
 } NMDhcpOption;
 
-extern const NMDhcpOption _nm_dhcp_option_dhcp4_options[143];
+extern const NMDhcpOption _nm_dhcp_option_dhcp4_options[144];
 extern const NMDhcpOption _nm_dhcp_option_dhcp6_options[18];
 
 static inline const char *

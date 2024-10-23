@@ -1648,6 +1648,10 @@
                   dbus-type="s"
                   gprop-type="gchararray"
                   />
+        <property name="dhcp-ipv6-only-preferred"
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="dhcp-reject-servers"
                   dbus-type="as"
                   gprop-type="GStrv"
