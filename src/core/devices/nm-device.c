@@ -15008,6 +15008,8 @@ nm_device_start_ip_check(NMDevice *self)
         const NMPObject      *gw;
         const NML3ConfigData *l3cd;
 
+        _LOGD(LOGD_DEVICE, "starting ping gateway...");
+
         l3cd = priv->l3cfg ? nm_l3cfg_get_combined_l3cd(priv->l3cfg, TRUE) : NULL;
         if (!l3cd) {
             /* pass */
