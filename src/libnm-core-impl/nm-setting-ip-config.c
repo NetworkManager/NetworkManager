@@ -4005,7 +4005,8 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingIPConfig,
                              PROP_DHCP_REJECT_SERVERS,
                              PROP_AUTO_ROUTE_EXT_GW,
                              PROP_REPLACE_LOCAL_RULE,
-                             PROP_DHCP_SEND_RELEASE, );
+                             PROP_DHCP_SEND_RELEASE,
+                             PROP_ROUTED_DNS, );
 
 G_DEFINE_ABSTRACT_TYPE(NMSettingIPConfig, nm_setting_ip_config, NM_TYPE_SETTING)
 
@@ -5480,6 +5481,22 @@ nm_setting_ip_config_get_dhcp_send_release(NMSettingIPConfig *setting)
     return NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->dhcp_send_release;
 }
 
+/**
+ * nm_setting_ip_config_get_routed_dns:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns: the #NMSettingIPConfig:routed-dns property of the setting
+ *
+ * Since: 1.52
+ **/
+NMSettingIPConfigRoutedDns
+nm_setting_ip_config_get_routed_dns(NMSettingIPConfig *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), NM_SETTING_IP_CONFIG_ROUTED_DNS_DEFAULT);
+
+    return NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->routed_dns;
+}
+
 static gboolean
 verify_label(const char *label)
 {
@@ -6197,6 +6214,13 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
                                      NM_STRUCT_OFFSET_ENSURE_TYPE(NMValueStrv,
                                                                   NMSettingIPConfigPrivate,
                                                                   dhcp_reject_servers));
+
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_ROUTED_DNS],
+        &nm_sett_info_propert_type_direct_enum,
+        .direct_offset = NM_STRUCT_OFFSET_ENSURE_TYPE(int, NMSettingIPConfigPrivate, routed_dns),
+        .direct_data.enum_gtype = NM_TYPE_SETTING_IP_CONFIG_ROUTED_DNS);
 
     return properties_override;
 }
@@ -6945,6 +6969,27 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                           NM_TYPE_TERNARY,
                           NM_TERNARY_DEFAULT,
                           G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
+
+    /**
+     * NMSettingIPConfig:routed-dns:
+     *
+     * Whether to add routes for DNS servers. When enabled, NetworkManager adds a route
+     * for each DNS server that is associated with this connection either statically
+     * (defined in the connection profile) or dynamically (for example, retrieved via
+     * DHCP). The route guarantees that the DNS server is reached via this interface. When
+     * set to %NM_SETTING_IP_CONFIG_ROUTED_DNS_DEFAULT, the value from global
+     * configuration is used; if no global default is defined, this feature is disabled.
+     *
+     * Since: 1.52
+     */
+    obj_properties[PROP_ROUTED_DNS] =
+        g_param_spec_int(NM_SETTING_IP_CONFIG_ROUTED_DNS,
+                         "",
+                         "",
+                         NM_SETTING_IP_CONFIG_ROUTED_DNS_DEFAULT,
+                         NM_SETTING_IP_CONFIG_ROUTED_DNS_YES,
+                         NM_SETTING_IP_CONFIG_ROUTED_DNS_DEFAULT,
+                         G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

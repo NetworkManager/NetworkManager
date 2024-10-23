@@ -938,6 +938,9 @@ ipv6.ip6-privacy=0
           <listitem><para>If configured explicitly to 0, the MTU is not reconfigured during device activation unless it is required due to IPv6 constraints. If left unspecified, a DHCP/IPv6 SLAAC provided value is used or a default of 1500.</para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>ipv4.routed-dns</varname></term>
+        </varlistentry>
+        <varlistentry>
           <term><varname>ipv4.dad-timeout</varname></term>
         </varlistentry>
         <varlistentry>
@@ -992,6 +995,9 @@ ipv6.ip6-privacy=0
             is different from explicitly selecting the main table 254, because of how NetworkManager
             removes extraneous routes from the tables.
           </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>ipv6.routed-dns</varname></term>
         </varlistentry>
         <varlistentry>
           <term><varname>ipv6.addr-gen-mode</varname></term>

@@ -1739,6 +1739,10 @@
                   dbus-type="u"
                   gprop-type="guint"
                   />
+        <property name="routed-dns"
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="routes"
                   dbus-type="aau"
                   dbus-deprecated="1"
@@ -1885,6 +1889,10 @@
         <property name="route-table"
                   dbus-type="u"
                   gprop-type="guint"
+                  />
+        <property name="routed-dns"
+                  dbus-type="i"
+                  gprop-type="gint"
                   />
         <property name="routes"
                   dbus-type="a(ayuayu)"

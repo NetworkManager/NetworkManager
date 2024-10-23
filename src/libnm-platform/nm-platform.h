@@ -1321,6 +1321,7 @@ typedef struct {
     int (*ip_route_get)(NMPlatform   *self,
                         int           addr_family,
                         gconstpointer address,
+                        guint32       fwmark,
                         int           oif_ifindex,
                         NMPObject   **out_route);
 
@@ -2432,6 +2433,7 @@ gboolean nm_platform_ip_route_flush(NMPlatform *self, int addr_family, int ifind
 int nm_platform_ip_route_get(NMPlatform   *self,
                              int           addr_family,
                              gconstpointer address,
+                             guint32       fwmark,
                              int           oif_ifindex,
                              NMPObject   **out_route);
 

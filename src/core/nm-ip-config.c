@@ -142,9 +142,9 @@ static void
 _l3cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMIPConfig *self)
 {
     switch (notify_data->notify_type) {
-    case NM_L3_CONFIG_NOTIFY_TYPE_L3CD_CHANGED:
-        if (notify_data->l3cd_changed.commited)
-            _handle_l3cd_changed(self, notify_data->l3cd_changed.l3cd_new);
+    case NM_L3_CONFIG_NOTIFY_TYPE_PRE_COMMIT:
+        if (notify_data->commit.l3cd_changed)
+            _handle_l3cd_changed(self, notify_data->commit.l3cd_new);
         break;
     case NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE:
         _notify_platform(self, notify_data->platform_change_on_idle.obj_type_flags);
