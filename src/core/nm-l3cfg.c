@@ -5390,6 +5390,30 @@ nm_l3cfg_get_best_default_route(NML3Cfg *self, int addr_family, gboolean get_com
     return nm_l3_config_data_get_best_default_route(l3cd, addr_family);
 }
 
+in_addr_t *
+nm_l3cfg_get_configured_ip4_addresses(NML3Cfg *self, gsize *out_len)
+{
+    GArray               *array = NULL;
+    NMDedupMultiIter      iter;
+    const NMPObject      *obj;
+    const NML3ConfigData *l3cd;
+
+    l3cd = nm_l3cfg_get_combined_l3cd(self, FALSE);
+
+    if (!l3cd)
+        return NULL;
+
+    array = g_array_new(FALSE, FALSE, sizeof(in_addr_t));
+
+    nm_l3_config_data_iter_obj_for_each (&iter, l3cd, &obj, NMP_OBJECT_TYPE_IP4_ADDRESS) {
+        in_addr_t tmp = NMP_OBJECT_CAST_IP4_ADDRESS(obj)->address;
+        nm_g_array_append_simple(array, tmp);
+    }
+
+    *out_len = array->len;
+    return NM_CAST_ALIGN(in_addr_t, g_array_free(array, FALSE));
+}
+
 /*****************************************************************************/
 
 gboolean
