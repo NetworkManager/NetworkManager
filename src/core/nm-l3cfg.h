@@ -437,6 +437,8 @@ const NML3ConfigData *nm_l3cfg_get_combined_l3cd(NML3Cfg *self, gboolean get_com
 const NMPObject *
 nm_l3cfg_get_best_default_route(NML3Cfg *self, int addr_family, gboolean get_commited);
 
+in_addr_t *nm_l3cfg_get_configured_ip4_addresses(NML3Cfg *self, gsize *out_len);
+
 /*****************************************************************************/
 
 gboolean nm_l3cfg_has_commited_ip6_addresses_pending_dad(NML3Cfg *self);
