@@ -11,6 +11,7 @@
 #include "nmcs-provider-gcp.h"
 #include "nmcs-provider-azure.h"
 #include "nmcs-provider-aliyun.h"
+#include "nmcs-provider-oci.h"
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 
 /*****************************************************************************/
@@ -104,6 +105,7 @@ _provider_detect(SigTermData *sigterm_data)
         NMCS_TYPE_PROVIDER_GCP,
         NMCS_TYPE_PROVIDER_AZURE,
         NMCS_TYPE_PROVIDER_ALIYUN,
+        NMCS_TYPE_PROVIDER_OCI,
     };
     int    i;
     gulong cancellable_signal_id;

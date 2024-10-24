@@ -800,6 +800,7 @@ endif
 enable_nm_cloud_setup = get_option('nm_cloud_setup')
 if enable_nm_cloud_setup
   assert(libcurl_dep.found(), 'nm-cloud-setup requires libcurl library. Use -Dnm_cloud_setup=false to disable it')
+  assert(jansson_dep.found(), 'nm-cloud-setup requires jansson library. Use -Dnm_cloud_setup=false to disable it')
 endif
 
 enable_docs = get_option('docs')

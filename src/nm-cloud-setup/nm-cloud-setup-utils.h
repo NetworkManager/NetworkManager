@@ -12,6 +12,7 @@
 #define NMCS_ENV_NM_CLOUD_SETUP_AZURE  "NM_CLOUD_SETUP_AZURE"
 #define NMCS_ENV_NM_CLOUD_SETUP_EC2    "NM_CLOUD_SETUP_EC2"
 #define NMCS_ENV_NM_CLOUD_SETUP_GCP    "NM_CLOUD_SETUP_GCP"
+#define NMCS_ENV_NM_CLOUD_SETUP_OCI    "NM_CLOUD_SETUP_OCI"
 #define NMCS_ENV_NM_CLOUD_SETUP_LOG    "NM_CLOUD_SETUP_LOG"
 
 /* Undocumented/internal environment variables for configuring nm-cloud-setup.
@@ -20,6 +21,7 @@
 #define NMCS_ENV_NM_CLOUD_SETUP_AZURE_HOST     "NM_CLOUD_SETUP_AZURE_HOST"
 #define NMCS_ENV_NM_CLOUD_SETUP_EC2_HOST       "NM_CLOUD_SETUP_EC2_HOST"
 #define NMCS_ENV_NM_CLOUD_SETUP_GCP_HOST       "NM_CLOUD_SETUP_GCP_HOST"
+#define NMCS_ENV_NM_CLOUD_SETUP_OCI_HOST       "NM_CLOUD_SETUP_OCI_HOST"
 #define NMCS_ENV_NM_CLOUD_SETUP_MAP_INTERFACES "NM_CLOUD_SETUP_MAP_INTERFACES"
 
 /*****************************************************************************/
