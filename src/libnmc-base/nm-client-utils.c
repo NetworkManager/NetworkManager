@@ -476,7 +476,7 @@ NM_UTILS_LOOKUP_STR_DEFINE(
                          N_("The device is unmanaged because the link is not initialized by udev")),
     NM_UTILS_LOOKUP_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_USER_EXPLICIT,
                          N_("The device is unmanaged by explicit user decision (e.g. 'nmcli device "
-                            "set $DEV managed no'")),
+                            "set $DEV managed no')")),
     NM_UTILS_LOOKUP_ITEM(
         NM_DEVICE_STATE_REASON_UNMANAGED_USER_SETTINGS,
         N_("The device is unmanaged by user decision via settings plugin "
