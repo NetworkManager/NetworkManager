@@ -34,4 +34,7 @@ gboolean nmc_setting_set_property(NMClient              *client,
 
 gboolean setting_details(const NmcConfig *nmc_config, NMSetting *setting, const char *one_prop);
 
+const char *nmc_setting_propname_user_to_libnm(const char *setting_name, const char *prop);
+const char *nmc_setting_propname_libnm_to_user(const char *setting_name, const char *prop);
+
 #endif /* NMC_SETTINGS_H */

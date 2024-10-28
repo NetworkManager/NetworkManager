@@ -1186,6 +1186,7 @@ _normalize_ip_config(NMConnection *self, GHashTable *parameters)
     NMSetting         *setting;
     gboolean           changed = FALSE;
     guint              num, i;
+    int                dhcp_send_hostname_v2;
 
     s_ip4   = nm_connection_get_setting_ip4_config(self);
     s_ip6   = nm_connection_get_setting_ip6_config(self);
@@ -1239,6 +1240,16 @@ _normalize_ip_config(NMConnection *self, GHashTable *parameters)
                              NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
                 for (i = num - 1; i > 0; i--)
                     nm_setting_ip_config_remove_address(s_ip4, i);
+                changed = TRUE;
+            }
+
+            dhcp_send_hostname_v2 = nm_setting_ip_config_get_dhcp_send_hostname_v2(s_ip4);
+            if (dhcp_send_hostname_v2 != NM_TERNARY_DEFAULT
+                && dhcp_send_hostname_v2 != nm_setting_ip_config_get_dhcp_send_hostname(s_ip4)) {
+                g_object_set(s_ip4,
+                             NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME,
+                             dhcp_send_hostname_v2,
+                             NULL);
                 changed = TRUE;
             }
         }
@@ -1313,6 +1324,16 @@ _normalize_ip_config(NMConnection *self, GHashTable *parameters)
                              NM_SETTING_IP6_CONFIG_METHOD_DISABLED)
                 && !nm_setting_ip_config_get_may_fail(s_ip6)) {
                 g_object_set(s_ip6, NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE, NULL);
+                changed = TRUE;
+            }
+
+            dhcp_send_hostname_v2 = nm_setting_ip_config_get_dhcp_send_hostname_v2(s_ip6);
+            if (dhcp_send_hostname_v2 != NM_TERNARY_DEFAULT
+                && dhcp_send_hostname_v2 != nm_setting_ip_config_get_dhcp_send_hostname(s_ip6)) {
+                g_object_set(s_ip6,
+                             NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME,
+                             dhcp_send_hostname_v2,
+                             NULL);
                 changed = TRUE;
             }
         }

@@ -1883,8 +1883,23 @@ split_required_fields_for_con_show(const char *input,
         for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
             if (is_all || is_common
                 || !g_ascii_strcasecmp(s_mutable, nm_meta_setting_infos[i].setting_name)) {
-                if (dot)
+                gs_free char *to_free = NULL;
+
+                if (dot) {
+                    /* If there was a dot we have 'setting.property'. Some properties has different
+                     * name for the user than internally in libnm and D-Bus. Make the conversion
+                     * from user names to libnm names.
+                     */
+                    const char *prop_user = dot + 1;
+                    const char *prop_libnm =
+                        nmc_setting_propname_user_to_libnm(s_mutable, prop_user);
+                    if (prop_user != prop_libnm) {
+                        to_free   = g_strdup_printf("%s.%s", s_mutable, prop_libnm);
+                        s_mutable = to_free;
+                    }
                     *dot = '.';
+                }
+
                 g_string_append(str1, s_mutable);
                 g_string_append_c(str1, ',');
                 found = TRUE;
@@ -4392,7 +4407,7 @@ set_property(NMClient              *client,
     }
 
     /* Don't ask for this property in interactive mode. */
-    disable_options(setting_name, property_name);
+    disable_options(setting_name, nmc_setting_propname_user_to_libnm(setting_name, property_name));
 
     return TRUE;
 }
