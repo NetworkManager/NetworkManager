@@ -206,7 +206,6 @@ nm_modem_emit_signal_new_config(NMModem                  *self,
     nm_assert(NM_IS_MODEM(self));
     nm_assert_addr_family(addr_family);
     nm_assert(!l3cd || NM_IS_L3_CONFIG_DATA(l3cd));
-    nm_assert(!do_auto || addr_family == AF_INET6);
     nm_assert(!iid || addr_family == AF_INET6);
     nm_assert(!error || (!l3cd && !do_auto && !iid));
 
