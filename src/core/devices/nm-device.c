@@ -5588,6 +5588,7 @@ get_ip_iface_identifier(NMDevice *self, NMUtilsIPv6IfaceId *out_iid)
     NMDevicePrivate      *priv     = NM_DEVICE_GET_PRIVATE(self);
     NMPlatform           *platform = nm_device_get_platform(self);
     const NMPlatformLink *pllink;
+    NMPLinkAddress        permanent_hwaddr;
     NMLinkType            link_type;
     const guint8         *hwaddr;
     guint8                pseudo_hwaddr[ETH_ALEN];
@@ -5631,6 +5632,21 @@ get_ip_iface_identifier(NMDevice *self, NMUtilsIPv6IfaceId *out_iid)
             hwaddr_len = G_N_ELEMENTS(pseudo_hwaddr);
             link_type  = NM_LINK_TYPE_ETHERNET;
         }
+    } else if (NM_IN_SET(pllink->type,
+                         NM_LINK_TYPE_VTI6,
+                         NM_LINK_TYPE_IP6TNL,
+                         NM_LINK_TYPE_IP6GRE)) {
+        /* Use the "permanent" 48-bit address to construct a EUI64
+         * according to RFC 4291 Appendix A. */
+        if (!nm_platform_link_get_permanent_address(platform, pllink, &permanent_hwaddr))
+            return FALSE;
+        if (permanent_hwaddr.len < ETH_ALEN)
+            return FALSE;
+
+        memcpy(pseudo_hwaddr, permanent_hwaddr.data, ETH_ALEN);
+        hwaddr     = pseudo_hwaddr;
+        hwaddr_len = ETH_ALEN;
+        link_type  = NM_LINK_TYPE_ETHERNET;
     }
 
     success = nm_utils_get_ipv6_interface_identifier(link_type,
