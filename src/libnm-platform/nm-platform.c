@@ -6566,9 +6566,9 @@ nm_platform_lnk_infiniband_to_string(const NMPlatformLnkInfiniband *lnk, char *b
 const char *
 nm_platform_lnk_ip6tnl_to_string(const NMPlatformLnkIp6Tnl *lnk, char *buf, gsize len)
 {
-    char  str_local[30];
+    char  str_local[30 + NM_INET_ADDRSTRLEN];
     char  str_local1[NM_INET_ADDRSTRLEN];
-    char  str_remote[30];
+    char  str_remote[30 + NM_INET_ADDRSTRLEN];
     char  str_remote1[NM_INET_ADDRSTRLEN];
     char  str_ttl[30];
     char  str_tclass[30];
