@@ -204,6 +204,8 @@ Requires: dbus >= %{dbus_version}
 Requires: glib2 >= %{glib2_version}
 Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
 
+Recommends: iputils
+
 %if 0%{?rhel} == 8
 # Older libndp versions use select() (rh#1933041). On well known distros,
 # choose a version that has the necessary fix.
