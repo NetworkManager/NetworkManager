@@ -3140,6 +3140,15 @@ handle_start_defending:
              * warning and start a timer to retry. This way (of having a timer pending)
              * we also back off and are rate limited from retrying too frequently. */
             _LOGT_acd(acd_data, "start announcing failed to create probe (%s)", failure_reason);
+
+            if (!nm_platform_link_uses_arp(self->priv.platform, self->priv.ifindex)) {
+                _LOGT_acd(
+                    acd_data,
+                    "give up on ACD and never retry since interface '%s' is configured with NOARP",
+                    nmp_object_link_get_ifname(self->priv.plobj));
+                return;
+            }
+
             _l3_acd_data_timeout_schedule(acd_data, ACD_WAIT_TIME_ANNOUNCE_RESTART_MSEC);
             return;
         }
