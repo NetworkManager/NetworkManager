@@ -702,6 +702,17 @@
                   nmcli-description="If greater than zero, delay success of IP addressing until either the timeout is reached, or an IP gateway replies to a ping."
                   format="integer"
                   values="0 - 600" />
+        <property name="ip-ping-timeout"
+                  nmcli-description="If greater than zero, delay success of IP addressing until either the specified timeout (in seconds) is reached, or a target IP address replies to a ping. The property specifies the timeout for the &quot;ip-ping-addresses&quot;. This property is incompatible with &quot;gateway-ping-timeout&quot;, you cannot set these two properties at the same time."
+                  format="integer"
+                  values="0 - 600" />
+        <property name="ip-ping-addresses"
+                  nmcli-description="The property specifies a list of target IP addresses for pinging. When multiple targets are set, NetworkManager will start multiple ping processes in parallel. This property can only be set if connection.ip-ping-timeout is set. The ip-ping-timeout is used to delay the success of IP addressing until either the specified timeout (in seconds) is reached, or an target IP address replies to a ping. Configuring &quot;ip-ping-addresses&quot; may delay reaching the systemd&apos;s network-online.target due to waiting for the ping operations to complete or timeout."
+                  format="list of IPv4 or IPv6 addresses" />
+        <property name="ip-ping-addresses-require-all"
+                  nmcli-description="The property determines whether it is sufficient for any ping check to succeed among &quot;ip-ping-addresses&quot;, or if all ping checks must succeed for &quot;ip-ping-addresses&quot;."
+                  format="choice (NMTernary)"
+                  values="default (-1), false/no (0), true/yes (1)" />
         <property name="metered"
                   nmcli-description="Whether the connection is metered. When updating this property on a currently activated connection, the change takes effect immediately."
                   format="ternary"

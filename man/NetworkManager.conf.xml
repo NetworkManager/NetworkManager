@@ -869,6 +869,10 @@ ipv6.ip6-privacy=0
           <listitem><para>Whether the connection will be brought down before the system is powered off.</para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>connection.ip-ping-addresses-require-all</varname></term>
+          <listitem><para>Whether it is sufficient for any ping check to succeed among the list of target addresses, or if all ping checks must succeed for the entire list of target addresses.</para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>connection.mud-url</varname></term>
           <listitem><para>If unspecified, MUD URL defaults to <literal>"none"</literal>.</para></listitem>
         </varlistentry>

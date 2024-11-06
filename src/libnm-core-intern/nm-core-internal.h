@@ -548,6 +548,8 @@ GPtrArray *_nm_setting_bridge_port_get_vlans(NMSettingBridgePort *setting);
 
 GArray *_nm_setting_connection_get_secondaries(NMSettingConnection *setting);
 
+GArray *_nm_setting_connection_get_ip_ping_addresses(NMSettingConnection *setting);
+
 gboolean nm_setting_connection_permissions_user_allowed_by_uid(NMSettingConnection *setting,
                                                                gulong               uid);
 
