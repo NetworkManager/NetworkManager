@@ -923,6 +923,91 @@ deactivate(NMDevice *device)
 
 /*****************************************************************************/
 
+gboolean
+nm_device_bond_is_slb(NMDevice *device)
+{
+    NMConnection  *connection;
+    NMSettingBond *s_bond;
+
+    connection = nm_device_get_applied_connection(device);
+    if (!connection)
+        return FALSE;
+
+    s_bond = nm_connection_get_setting_bond(connection);
+    if (!s_bond)
+        return FALSE;
+
+    if (!_nm_setting_bond_opt_value_as_intbool(s_bond, NM_SETTING_BOND_OPTION_BALANCE_SLB))
+        return FALSE;
+
+    return TRUE;
+}
+
+gboolean
+nm_device_bond_announce_ports_on_slb(NMDevice *controller, NMDevice *port)
+{
+    NMDeviceBond      *self               = NM_DEVICE_BOND(controller);
+    int                port_ifindex       = nm_device_get_ifindex(port);
+    int                controller_ifindex = nm_device_get_ifindex(controller);
+    NML3Cfg           *l3cfg              = nm_device_get_l3cfg(controller);
+    NMDevice          *bond_controller    = nm_device_get_controller(controller);
+    NML3Cfg           *bridge_l3cfg;
+    gs_free in_addr_t *addrs_array = NULL;
+    gsize              addrs_len;
+
+    addrs_array = nm_l3cfg_get_configured_ip4_addresses(l3cfg, &addrs_len);
+
+    if (addrs_len > 0) {
+        /* the bond has IPs configured, it is not attached to a
+         * bridge then. */
+        if (!nm_bond_manager_send_arp(controller_ifindex,
+                                      -1,
+                                      nm_device_get_platform(port),
+                                      addrs_array,
+                                      addrs_len)) {
+            _LOGT(LOGD_BOND,
+                  "failed to send gARP on port %s (ifindex %d)",
+                  nm_device_get_iface(port),
+                  port_ifindex);
+            return FALSE;
+        }
+    } else if (bond_controller
+               && nm_device_get_device_type(bond_controller) == NM_DEVICE_TYPE_BRIDGE) {
+        /* the bond is attached to a bridge, firts let's check if the bridge has IP
+         * configuration. */
+        bridge_l3cfg = nm_device_get_l3cfg(bond_controller);
+        addrs_array  = nm_l3cfg_get_configured_ip4_addresses(bridge_l3cfg, &addrs_len);
+        if (addrs_len > 0) {
+            /* the bridge has IPs configured, announcing them on the bond */
+            if (!nm_bond_manager_send_arp(controller_ifindex,
+                                          -1,
+                                          nm_device_get_platform(port),
+                                          addrs_array,
+                                          addrs_len)) {
+                _LOGT(LOGD_BOND,
+                      "failed to send gARP on port %s (ifindex %d) on behalf of bridge",
+                      nm_device_get_iface(port),
+                      port_ifindex);
+                return FALSE;
+            }
+        }
+
+        /* we are going to ARP probe the content of the FDB table */
+        if (!nm_bond_manager_send_arp(controller_ifindex,
+                                      nm_device_get_ifindex(bond_controller),
+                                      nm_device_get_platform(port),
+                                      NULL,
+                                      0)) {
+            _LOGT(LOGD_BOND, "failed to send ARP probing with content of FDB table");
+            return FALSE;
+        }
+    }
+
+    return TRUE;
+}
+
+/*****************************************************************************/
+
 static void
 nm_device_bond_init(NMDeviceBond *self)
 {
