@@ -23,6 +23,12 @@ NMBondManager *nm_bond_manager_new(struct _NMPlatform   *platform,
 
 void nm_bond_manager_reapply(NMBondManager *self);
 
+gboolean nm_bond_manager_send_arp(int                 bond_ifindex,
+                                  int                 bridge_ifindex,
+                                  struct _NMPlatform *platform,
+                                  in_addr_t          *addrs_array,
+                                  gsize               addrs_len);
+
 void nm_bond_manager_destroy(NMBondManager *self);
 
 int          nm_bond_manager_get_ifindex(NMBondManager *self);
