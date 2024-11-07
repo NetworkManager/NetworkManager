@@ -2043,4 +2043,6 @@ global:
 	nm_setting_connection_clear_ip_ping_addresses;
 	nm_setting_connection_remove_ip_ping_address_by_value;
 	nm_setting_connection_get_ip_ping_addresses_require_all;
+	nm_setting_ethtool_fec_mode_get_type;
+	nm_ethtool_optname_is_fec;
 } libnm_1_50_0;
