@@ -23,4 +23,7 @@ typedef struct _NMDeviceBondClass NMDeviceBondClass;
 
 GType nm_device_bond_get_type(void);
 
+gboolean nm_device_bond_is_slb(NMDevice *device);
+gboolean nm_device_bond_announce_ports_on_slb(NMDevice *controller, NMDevice *port);
+
 #endif /* NM_DEVICE_BOND_H */
