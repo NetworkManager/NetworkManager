@@ -10411,6 +10411,117 @@ link_get_driver_info(NMPlatform *platform,
 
 /*****************************************************************************/
 
+typedef struct {
+    int     ifindexes_len;
+    int    *ifindexes;
+    GArray *out_fdb_addrs;
+} FdbData;
+
+static int
+parse_fdb_cb(const struct nl_msg *msg, void *arg)
+{
+    struct nlmsghdr               *nlh          = nlmsg_hdr(msg);
+    struct ndmsg                  *ndmsg        = NLMSG_DATA(nlh);
+    int                            from_ifindex = ndmsg->ndm_ifindex;
+    bool                           match        = FALSE;
+    static const struct nla_policy policy[]     = {
+        [NDA_LLADDR] = {.minlen = ETH_ALEN, .maxlen = ETH_ALEN}};
+    struct nlattr *tb[G_N_ELEMENTS(policy)];
+    FdbData       *data = arg;
+
+    for (int i = 0; i < data->ifindexes_len; i++) {
+        int current_ifindex = data->ifindexes[i];
+
+        if (current_ifindex == from_ifindex) {
+            match = TRUE;
+            break;
+        }
+    }
+
+    if (!match)
+        return NL_SKIP;
+
+    if (nlmsg_parse_arr(nlh, sizeof(*ndmsg), tb, policy) < 0)
+        return NL_SKIP;
+
+    if (tb[NDA_LLADDR]) {
+        NMEtherAddr hwaddr;
+        memcpy(hwaddr.ether_addr_octet, nla_data(tb[NDA_LLADDR]), ETH_ALEN);
+        g_array_append_val(data->out_fdb_addrs, hwaddr);
+    }
+
+    return NL_OK;
+}
+
+NMEtherAddr *
+nm_linux_platform_get_link_fdb_table(NMPlatform *platform,
+                                     int        *ifindexes,
+                                     gsize       ifindexes_len,
+                                     gsize      *out_len)
+{
+    int                          nle;
+    struct nl_sock              *sk        = NULL;
+    nm_auto_nlmsg struct nl_msg *msg       = NULL;
+    GArray                      *fdb_addrs = NULL;
+    FdbData                      data;
+    const struct ndmsg           ndm = {
+                  .ndm_family = AF_BRIDGE,
+    };
+
+    nm_assert(ifindexes);
+    nm_assert(ifindexes_len >= 1);
+
+    msg = nlmsg_alloc_new(0, RTM_GETNEIGH, NLM_F_REQUEST | NLM_F_DUMP);
+
+    if (nlmsg_append_struct(msg, &ndm) < 0)
+        goto err;
+
+    nle = nl_socket_new(&sk, NETLINK_ROUTE, NL_SOCKET_FLAGS_DISABLE_MSG_PEEK, 0, 0);
+    if (nle < 0) {
+        _LOGD("get-link-fdb: error opening socket: %s (%d)", nm_strerror(nle), nle);
+        goto err;
+    }
+
+    nle = nl_send_auto(sk, msg);
+    if (nle < 0) {
+        _LOGD("get-link-fdb: failed sending request: %s (%d)", nm_strerror(nle), nle);
+        goto err;
+    }
+
+    fdb_addrs = g_array_new(FALSE, FALSE, sizeof(NMEtherAddr));
+
+    data = ((FdbData) {
+        .ifindexes_len = ifindexes_len,
+        .ifindexes     = ifindexes,
+        .out_fdb_addrs = fdb_addrs,
+    });
+
+    do {
+        nle = nl_recvmsgs(sk,
+                          &((const struct nl_cb) {
+                              .valid_cb  = parse_fdb_cb,
+                              .valid_arg = &data,
+                          }));
+    } while (nle == -EAGAIN);
+
+    if (nle < 0) {
+        _LOGD("get-link-fdb: recv failed: %s (%d)", nm_strerror(nle), nle);
+        goto err;
+    }
+
+    *out_len = fdb_addrs->len;
+    return NM_CAST_ALIGN(NMEtherAddr, g_array_free(fdb_addrs, FALSE));
+
+err:
+    if (sk)
+        nl_socket_free(sk);
+    if (fdb_addrs)
+        g_array_free(fdb_addrs, TRUE);
+    return NULL;
+}
+
+/*****************************************************************************/
+
 static gboolean
 ip4_address_add(NMPlatform *platform,
                 int         ifindex,
