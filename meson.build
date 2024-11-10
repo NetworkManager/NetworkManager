@@ -816,6 +816,7 @@ if enable_nm_cloud_setup
   assert(jansson_dep.found(), 'nm-cloud-setup requires jansson library. Use -Dnm_cloud_setup=false to disable it')
 endif
 
+enable_man = get_option('man')
 enable_docs = get_option('docs')
 
 more_asserts = get_option('more_asserts')
@@ -1001,9 +1002,14 @@ if enable_qt != 'false'
   endif
 endif
 
+# The man/ directory builds a couple targets needed by the docs build too.
+# If we build with docs but no man, then enter the subdir and only build
+# some targets.
+if enable_docs or enable_man
+  subdir('man')
+endif
 if enable_docs
   assert(enable_introspection, '-Ddocs=true requires -Dintrospection=true')
-  subdir('man')
   subdir('docs')
   meson.add_dist_script(
     'tools/meson-dist-data.sh',
@@ -1054,7 +1060,7 @@ meson.add_install_script(
   nm_pkgstatedir,
   nm_mandir,
   nm_sysconfdir,
-  enable_docs ? '1' : '0',
+  enable_man ? '1' : '0',
   enable_ifcfg_rh ? '1' : '0',
   enable_nm_cloud_setup ? '1' : '0',
   install_systemdunitdir ? '1' : '0',

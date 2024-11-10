@@ -7,7 +7,7 @@ nm_pkglibdir="$4"
 nm_pkgstatedir="$5"
 nm_mandir="$6"
 nm_sysconfdir="$7"
-enable_docs="$8"
+enable_man="$8"
 enable_ifcfg_rh="$9"
 enable_nm_cloud_setup="${10}"
 install_systemdunitdir="${11}"
@@ -40,7 +40,7 @@ done
 mkdir -p "${DESTDIR}${nm_pkgstatedir}"
 chmod 0700 "${DESTDIR}${nm_pkgstatedir}"
 
-if [ "$enable_docs" = 1 ]; then
+if [ "$enable_man" = 1 ]; then
 
     for alias in nmtui-connect nmtui-edit nmtui-hostname; do
         ln -fn "${DESTDIR}${nm_mandir}/man1/nmtui.1" "${DESTDIR}${nm_mandir}/man1/${alias}.1"
@@ -58,4 +58,3 @@ if [ "$enable_nm_cloud_setup" = 1 -a "$install_systemdunitdir" = 1 ]; then
     ln -sfn '../pre-up.d/90-nm-cloud-setup.sh' "${DESTDIR}${nm_pkglibdir}/dispatcher.d/no-wait.d/90-nm-cloud-setup.sh"
     ln -sfn 'no-wait.d/90-nm-cloud-setup.sh' "${DESTDIR}${nm_pkglibdir}/dispatcher.d/90-nm-cloud-setup.sh"
 fi
-
