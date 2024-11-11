@@ -16,7 +16,7 @@
 
 
 # see https://docs.gitlab.com/ee/ci/yaml/#includefile
-.templates_sha: &template_sha 98b1218f146a1ec96d65e3ce0041f9a6ec5cb5e6
+.templates_sha: &template_sha 593a0a5fe35a523a646a7efae5471c9759b8fba3
 
 {# Group distros by their common (name,) tuples.#}
 {% set distro_groups = [] %}
@@ -88,6 +88,7 @@ variables:
       - NetworkManager-1*.tar.xz
       - NetworkManager-1*.src.rpm
       - nm-test.log
+      - testlog.txt
 
 .nm_artifacts_debug:
   artifacts:
@@ -95,6 +96,7 @@ variables:
     when: always
     paths:
       - nm-test.log
+      - testlog.txt
 
 #################################################################
 #                                                               #

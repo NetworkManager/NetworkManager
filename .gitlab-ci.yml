@@ -14,7 +14,7 @@
 
 
 # see https://docs.gitlab.com/ee/ci/yaml/#includefile
-.templates_sha: &template_sha 98b1218f146a1ec96d65e3ce0041f9a6ec5cb5e6
+.templates_sha: &template_sha 593a0a5fe35a523a646a7efae5471c9759b8fba3
 
 
 
@@ -60,11 +60,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-759073a4a7c5'
-  CENTOS_TAG:  'tag-8e3ebf909439'
-  DEBIAN_TAG:  'tag-529c288644bc'
-  FEDORA_TAG:  'tag-8e3ebf909439'
-  UBUNTU_TAG:  'tag-529c288644bc'
+  ALPINE_TAG:  'tag-0959c37ef19b'
+  CENTOS_TAG:  'tag-70ac400f2325'
+  DEBIAN_TAG:  'tag-c03f6a5793ce'
+  FEDORA_TAG:  'tag-70ac400f2325'
+  UBUNTU_TAG:  'tag-c03f6a5793ce'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
@@ -83,6 +83,7 @@ variables:
       - NetworkManager-1*.tar.xz
       - NetworkManager-1*.src.rpm
       - nm-test.log
+      - testlog.txt
 
 .nm_artifacts_debug:
   artifacts:
@@ -90,6 +91,7 @@ variables:
     when: always
     paths:
       - nm-test.log
+      - testlog.txt
 
 #################################################################
 #                                                               #
