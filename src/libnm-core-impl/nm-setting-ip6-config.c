@@ -745,9 +745,15 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
     /* ---keyfile---
      * property: addresses
      * variable: address1, address2, ...
-     * format: address/plen
-     * description: List of static IP addresses.
-     * example: address1=abbe::cafe/96 address2=2001::1234
+     * format: address/plen[,gateway]
+     * description: Static IPv6 addresses, one address per variable. The
+     *   variables can also contain the gateway after a comma or semicolon;
+     *   it is recommended to use the "gateway" variable instead.
+     * example: address1=abbe::cafe/96
+     *
+     *          address2=2001::1234/56
+     *
+     *          address1=fd01::2000/64;fd01::1
      * ---end---
      */
     /* ---ifcfg-rh---
@@ -763,7 +769,11 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * property: gateway
      * variable: gateway
      * format: string
-     * description: Gateway IP addresses as a string.
+     * description: Gateway IP address as a string. The gateway can be also specified in one
+     *   of the "address1", "address2", etc. variables after the address, separated by a comma or
+     *   semicolon (for example "address1=fd01::2000/64;fd01::1").
+     *   The value from the "gateway" variable takes precedence over any gateway specified in one
+     *   of the "address*" variables.
      * example: gateway=abbe::1
      * ---end---
      */
