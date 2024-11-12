@@ -9,7 +9,8 @@ interface-name=br0
 [bridge]
 
 [ipv4]
-address1=1.2.3.4/24,1.1.1.1
+address1=1.2.3.4/24
+gateway=1.1.1.1
 method=manual
 
 [ipv6]

@@ -11,9 +11,10 @@ method=disabled
 
 [ipv6]
 addr-gen-mode=default
-address1=abcd::beef/64,dcba::beef
+address1=abcd::beef/64
 dns=1::cafe;
 dns-search=wallaceandgromit.com;
+gateway=dcba::beef
 method=manual
 
 [proxy]
