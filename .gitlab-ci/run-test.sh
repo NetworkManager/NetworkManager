@@ -116,7 +116,9 @@ fi
 
 if is_run_selected rpm+meson; then
     do_clean
-    test $IS_FEDORA = 1 && ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -w meson || die_with_testlog
+    if [[ $IS_FEDORA = 1 ]]; then
+        ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -w meson || die_with_testlog
+    fi
 fi
 
 if is_run_selected tarball && [ "$NM_BUILD_TARBALL" = 1 ]; then
