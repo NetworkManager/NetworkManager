@@ -2510,7 +2510,15 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * property: uuid
      * variable: UUID(+)
      * description: UUID for the connection profile. When missing, NetworkManager
-     *   creates the UUID itself (by hashing the filename).
+     *   creates the UUID by hashing the connection filename.
+     * ---end---
+     */
+    /* ---keyfile---
+     * property: uuid
+     * variable: uuid
+     * description: UUID for the connection profile. When missing, NetworkManager
+     *   creates the UUID by hashing the connection filename.
+     * example: uuid=7bdbe39a-126c-3f94-ac5e-8f156ed38383
      * ---end---
      */
     _nm_setting_property_define_direct_string(properties_override,
