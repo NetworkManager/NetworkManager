@@ -943,6 +943,10 @@ ipv6.ip6-privacy=0
           <listitem><para>If configured explicitly to 0, the MTU is not reconfigured during device activation unless it is required due to IPv6 constraints. If left unspecified, a DHCP/IPv6 SLAAC provided value is used or a default of 1500.</para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>ipv4.forwarding</varname></term>
+          <listitem><para>Whether to configure IPv4 sysctl interface-specific forwarding. When enabled, the interface will act as a router to forward the IPv4 packet from one interface to another. If left unspecified, "auto" is used, so NetworkManager sets the IPv4 forwarding if any shared connection is active, or it will use the kernel default value otherwise. The accepted values are: 0: disabled, 1: enabled, 2: auto, 3: ignored (leave the forwarding unchanged).</para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>ipv4.routed-dns</varname></term>
         </varlistentry>
         <varlistentry>
