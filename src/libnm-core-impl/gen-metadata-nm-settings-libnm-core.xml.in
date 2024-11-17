@@ -1712,6 +1712,10 @@
                   dbus-type="as"
                   gprop-type="GStrv"
                   />
+        <property name="forwarding"
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="gateway"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -1866,6 +1870,10 @@
         <property name="dns-search"
                   dbus-type="as"
                   gprop-type="GStrv"
+                  />
+        <property name="forwarding"
+                  dbus-type="i"
+                  gprop-type="gint"
                   />
         <property name="gateway"
                   dbus-type="s"

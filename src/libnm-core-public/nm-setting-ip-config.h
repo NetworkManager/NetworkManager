@@ -53,6 +53,29 @@ typedef enum {
     NM_SETTING_IP_CONFIG_ROUTED_DNS_YES     = 1,
 } NMSettingIPConfigRoutedDns;
 
+/**
+ * NMSettingIPConfigForwarding:
+ * @NM_SETTING_IP_CONFIG_FORWARDING_DEFAULT: use the global default value
+ * @NM_SETTING_IP_CONFIG_FORWARDING_NO: disable forwarding
+ * @NM_SETTING_IP_CONFIG_FORWARDING_YES: enable forwarding
+ * @NM_SETTING_IP_CONFIG_FORWARDING_AUTO: enable forwarding if any shared
+ *  connection is active, use kernel default otherwise
+ * @NM_SETTING_IP_CONFIG_FORWARDING_IGNORE: leave the forwarding unchanged
+ *
+ * #NMSettingIPConfigForwarding indicates whether to configure sysctl
+ * interface-specific forwarding. When enabled, the interface will act
+ * as a router to forward the packet from one interface to another.
+ *
+ * Since: 1.54
+ */
+typedef enum {
+    NM_SETTING_IP_CONFIG_FORWARDING_DEFAULT = -1,
+    NM_SETTING_IP_CONFIG_FORWARDING_NO      = 0,
+    NM_SETTING_IP_CONFIG_FORWARDING_YES     = 1,
+    NM_SETTING_IP_CONFIG_FORWARDING_AUTO    = 2,
+    NM_SETTING_IP_CONFIG_FORWARDING_IGNORE  = 3,
+} NMSettingIPConfigForwarding;
+
 typedef struct NMIPAddress NMIPAddress;
 
 GType nm_ip_address_get_type(void);
@@ -364,6 +387,7 @@ char *nm_ip_routing_rule_to_string(const NMIPRoutingRule       *self,
 #define NM_SETTING_IP_CONFIG_ROUTED_DNS             "routed-dns"
 #define NM_SETTING_IP_CONFIG_SHARED_DHCP_RANGE      "shared-dhcp-range"
 #define NM_SETTING_IP_CONFIG_SHARED_DHCP_LEASE_TIME "shared-dhcp-lease-time"
+#define NM_SETTING_IP_CONFIG_FORWARDING             "forwarding"
 
 /* these are not real GObject properties. */
 #define NM_SETTING_IP_CONFIG_ROUTING_RULES "routing-rules"
@@ -542,6 +566,8 @@ NM_AVAILABLE_IN_1_52
 const char *nm_setting_ip_config_get_shared_dhcp_range(NMSettingIPConfig *setting);
 NM_AVAILABLE_IN_1_52
 int nm_setting_ip_config_get_shared_dhcp_lease_time(NMSettingIPConfig *setting);
+NM_AVAILABLE_IN_1_54
+NMSettingIPConfigForwarding nm_setting_ip_config_get_forwarding(NMSettingIPConfig *setting);
 
 G_END_DECLS
 

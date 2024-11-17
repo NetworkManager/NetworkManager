@@ -2048,3 +2048,9 @@ global:
 	nm_setting_ethtool_fec_mode_get_type;
 	nm_ethtool_optname_is_fec;
 } libnm_1_50_0;
+
+libnm_1_54_0 {
+global:
+	nm_setting_ip_config_forwarding_get_type;
+	nm_setting_ip_config_get_forwarding;
+} libnm_1_52_0;

@@ -1402,6 +1402,10 @@
                   nmcli-description="If TRUE, a hostname is sent to the DHCP server when acquiring a lease. Some DHCP servers use this hostname to update DNS databases, essentially providing a static hostname for the computer.  If the dhcp-hostname property is NULL and this property is TRUE, the current persistent hostname of the computer is sent. The default value is default (-1). In this case the global value from NetworkManager configuration is looked up. If it&apos;s not set, the value from dhcp-send-hostname-deprecated, which defaults to TRUE, is used for backwards compatibility. In the future this will change and, in absence of a global default, it will always fallback to TRUE."
                   format="choice (NMTernary)"
                   values="default (-1), false/no (0), true/yes (1)" />
+        <property name="forwarding"
+                  nmcli-description="Whether to configure sysctl interface-specific forwarding. When enabled, the interface will act as a router to forward the packet from one interface to another. When set to &quot;default&quot; (-1), the value from global configuration is used; if no global default is defined, &quot;auto&quot; (2) will be used. The accepted values are: &quot;default&quot; (-1): use global default. &quot;no&quot; (0): disabled. &quot;yes&quot; (1): enabled. &quot;auto&quot; (2): enable if any shared connection is active, use kernel default otherwise. &quot;ignore&quot; (3): leave the forwarding unchanged."
+                  format="choice (NMSettingIPConfigForwarding)"
+                  values="default (-1), no (0), yes (1), auto (2), ignore (3)" />
         <property name="dhcp-hostname"
                   nmcli-description="If the &quot;dhcp-send-hostname&quot; property is TRUE, then the specified name will be sent to the DHCP server when acquiring a lease. This property and &quot;dhcp-fqdn&quot; are mutually exclusive and cannot be set at the same time."
                   format="string" />
