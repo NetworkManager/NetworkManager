@@ -53,6 +53,27 @@ typedef enum {
     NM_SETTING_IP_CONFIG_ROUTED_DNS_YES     = 1,
 } NMSettingIPConfigRoutedDns;
 
+/**
+ * NMSettingIPConfigForwarding:
+ * @NM_SETTING_IP_CONFIG_FORWARDING_DEFAULT: use the global default value
+ * @NM_SETTING_IP_CONFIG_FORWARDING_NO: disable sysctl forwarding
+ * @NM_SETTING_IP_CONFIG_FORWARDING_YES: do set sysctl forwarding
+ * @NM_SETTING_IP_CONFIG_FORWARDING_AUTO: do set sysctl forwarding only if method is shared,
+ *  otherwise, do not set sysctl forwarding
+ *
+ * #NMSettingIPConfigForwarding indicates whether to configure sysctl
+ * interface-specific Host/Router behavior. When enabled, the interface will
+ * act as a router to forward the packet from one interface to another.
+ *
+ * Since: 1.52
+ */
+typedef enum {
+    NM_SETTING_IP_CONFIG_FORWARDING_DEFAULT = -1,
+    NM_SETTING_IP_CONFIG_FORWARDING_NO      = 0,
+    NM_SETTING_IP_CONFIG_FORWARDING_YES     = 1,
+    NM_SETTING_IP_CONFIG_FORWARDING_AUTO    = 2,
+} NMSettingIPConfigForwarding;
+
 typedef struct NMIPAddress NMIPAddress;
 
 GType nm_ip_address_get_type(void);
@@ -362,6 +383,7 @@ char *nm_ip_routing_rule_to_string(const NMIPRoutingRule       *self,
 #define NM_SETTING_IP_CONFIG_REPLACE_LOCAL_RULE    "replace-local-rule"
 #define NM_SETTING_IP_CONFIG_DHCP_SEND_RELEASE     "dhcp-send-release"
 #define NM_SETTING_IP_CONFIG_ROUTED_DNS            "routed-dns"
+#define NM_SETTING_IP_CONFIG_FORWADRING            "forwarding"
 
 /* these are not real GObject properties. */
 #define NM_SETTING_IP_CONFIG_ROUTING_RULES "routing-rules"
@@ -536,6 +558,8 @@ NM_AVAILABLE_IN_1_52
 NMSettingIPConfigRoutedDns nm_setting_ip_config_get_routed_dns(NMSettingIPConfig *setting);
 NM_AVAILABLE_IN_1_52
 NMTernary nm_setting_ip_config_get_dhcp_send_hostname_v2(NMSettingIPConfig *setting);
+NM_AVAILABLE_IN_1_52
+NMSettingIPConfigForwarding nm_setting_ip_config_get_forwarding(NMSettingIPConfig *setting);
 
 G_END_DECLS
 
