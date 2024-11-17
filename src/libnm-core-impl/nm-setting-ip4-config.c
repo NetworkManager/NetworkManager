@@ -40,7 +40,8 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_DHCP_CLIENT_ID,
                                   PROP_DHCP_FQDN,
                                   PROP_DHCP_VENDOR_CLASS_IDENTIFIER,
                                   PROP_LINK_LOCAL,
-                                  PROP_DHCP_IPV6_ONLY_PREFERRED, );
+                                  PROP_DHCP_IPV6_ONLY_PREFERRED,
+                                  PROP_FORWARDING, );
 
 typedef struct {
     NMSettingIPConfigPrivate parent;
@@ -50,6 +51,7 @@ typedef struct {
     char  *dhcp_vendor_class_identifier;
     gint32 link_local;
     gint32 dhcp_ipv6_only_preferred;
+    int    forwarding;
 } NMSettingIP4ConfigPrivate;
 
 /**
@@ -166,6 +168,23 @@ nm_setting_ip4_config_get_dhcp_ipv6_only_preferred(NMSettingIP4Config *setting)
                          NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_DEFAULT);
 
     return NM_SETTING_IP4_CONFIG_GET_PRIVATE(setting)->dhcp_ipv6_only_preferred;
+}
+
+/**
+ * nm_setting_ip4_config_get_forwarding:
+ * @setting: the #NMSettingIP4Config
+ *
+ * Returns: the #NMSettingIP4Config:forwading property of the setting
+ *
+ * Since: 1.52
+ **/
+NMSettingIP4ConfigForwarding
+nm_setting_ip4_config_get_forwarding(NMSettingIP4Config *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_IP4_CONFIG(setting),
+                         NM_SETTING_IP4_CONFIG_FORWARDING_DEFAULT);
+
+    return NM_SETTING_IP4_CONFIG_GET_PRIVATE(setting)->forwarding;
 }
 
 static gboolean
@@ -1381,6 +1400,29 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
                                             NULL,
                                             NMSettingIP4ConfigPrivate,
                                             dhcp_ipv6_only_preferred);
+
+    /**
+     * NMSettingIP4Config:forwarding
+     *
+     * Whether to configure IPv4 sysctl interface-specific Host/Router behavior. When enabled, the
+     * interface will act as a router to forward the IPv4 packet from one interface to another based
+     * on the routing rule. When set to %NM_SETTING_IP4_CONFIG_FORWARDING_DEFAULT, the value from
+     * global configuration is used; if no global default is defined, NetworkManager will set
+     * the IPv4 sysctl forwarding only with connection sharing enabled, otherwise, NetworkManager
+     * will not touch the current sysctl value.
+     *
+     * Since: 1.52
+     */
+    _nm_setting_property_define_direct_enum(properties_override,
+                                            obj_properties,
+                                            NM_SETTING_IP4_CONFIG_FORWARDING,
+                                            PROP_FORWARDING,
+                                            NM_TYPE_SETTING_IP4_CONFIG_FORWARDING,
+                                            NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_DEFAULT,
+                                            NM_SETTING_PARAM_NONE,
+                                            NULL,
+                                            NMSettingIP4ConfigPrivate,
+                                            forwarding);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

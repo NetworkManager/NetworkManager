@@ -1872,6 +1872,33 @@ _prop_get_ipv4_dhcp_ipv6_only_preferred(NMDevice *self)
         NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_NO);
 }
 
+static NMSettingIP4ConfigForwarding
+_prop_get_ipv4_forwarding(NMDevice *self)
+{
+    NMSettingIP4Config          *s_ip4;
+    NMSettingIP4ConfigForwarding forwarding;
+
+    g_return_val_if_fail(NM_IS_DEVICE(self), NM_SETTING_IP4_CONFIG_FORWARDING_AUTO);
+
+    s_ip4 = nm_device_get_applied_setting(self, NM_TYPE_SETTING_IP4_CONFIG);
+    if (!s_ip4)
+        return NM_SETTING_IP4_CONFIG_FORWARDING_AUTO;
+
+    forwarding = nm_setting_ip4_config_get_forwarding(s_ip4);
+
+    if (forwarding == NM_SETTING_IP4_CONFIG_FORWARDING_DEFAULT) {
+        forwarding =
+            nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
+                                                        NM_CON_DEFAULT("ipv4.forwarding"),
+                                                        self,
+                                                        NM_SETTING_IP4_CONFIG_FORWARDING_NO,
+                                                        NM_SETTING_IP4_CONFIG_FORWARDING_AUTO,
+                                                        NM_SETTING_IP4_CONFIG_FORWARDING_AUTO);
+    }
+
+    return forwarding;
+}
+
 /**
  * _prop_get_ipvx_dhcp_iaid:
  * @self: the #NMDevice
@@ -13007,6 +13034,10 @@ activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family)
         goto out_devip;
 
     if (IS_IPv4) {
+        NMSettingIP4ConfigForwarding ipv4_forwarding = _prop_get_ipv4_forwarding(self);
+        if (ipv4_forwarding != NM_SETTING_IP4_CONFIG_FORWARDING_AUTO) {
+            nm_device_sysctl_ip_conf_set(self, AF_INET, "forwarding", ipv4_forwarding ? "1" : "0");
+        }
         priv->ipll_data_4.v4.mode = _prop_get_ipv4_link_local(self);
         if (priv->ipll_data_4.v4.mode == NM_SETTING_IP4_LL_ENABLED)
             _dev_ipll4_start(self);

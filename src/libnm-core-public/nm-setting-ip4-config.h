@@ -34,6 +34,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER "dhcp-vendor-class-identifier"
 #define NM_SETTING_IP4_CONFIG_DHCP_IPV6_ONLY_PREFERRED     "dhcp-ipv6-only-preferred"
 #define NM_SETTING_IP4_CONFIG_LINK_LOCAL                   "link-local"
+#define NM_SETTING_IP4_CONFIG_FORWARDING                   "forwarding"
 
 /**
  * NM_SETTING_IP4_CONFIG_METHOD_AUTO:
@@ -121,6 +122,28 @@ typedef enum {
     NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_YES     = 1,
 } NMSettingIP4DhcpIpv6OnlyPreferred;
 
+/**
+ * NMSettingIP4ConfigForwarding:
+ * @NM_SETTING_IP4_CONFIG_FORWARDING_DEFAULT: use the global default value
+ * @NM_SETTING_IP4_CONFIG_FORWARDING_NO: do not set IPv4 sysctl forwarding
+ * @NM_SETTING_IP4_CONFIG_FORWARDING_YES: do set IPv4 sysctl forwarding
+ * @NM_SETTING_IP4_CONFIG_FORWARDING_AUTO: do set IPv4 sysctl forwarding only
+ *  if method is shared, otherwise, do not set sysctl forwarding
+ *
+ * #NMSettingIP4ConfigForwarding indicates whether to configure IPv4 sysctl
+ * interface-specific Host/Router behavior. When enabled, the interface will
+ * act as a router to forward the IPv4 packet from one interface to another
+ * based on the routing rule.
+ *
+ * Since: 1.52
+ */
+typedef enum {
+    NM_SETTING_IP4_CONFIG_FORWARDING_DEFAULT = -1,
+    NM_SETTING_IP4_CONFIG_FORWARDING_NO      = 0,
+    NM_SETTING_IP4_CONFIG_FORWARDING_YES     = 1,
+    NM_SETTING_IP4_CONFIG_FORWARDING_AUTO    = 2,
+} NMSettingIP4ConfigForwarding;
+
 typedef struct _NMSettingIP4ConfigClass NMSettingIP4ConfigClass;
 
 GType nm_setting_ip4_config_get_type(void);
@@ -140,6 +163,9 @@ NMSettingIP4LinkLocal nm_setting_ip4_config_get_link_local(NMSettingIP4Config *s
 NM_AVAILABLE_IN_1_52
 NMSettingIP4DhcpIpv6OnlyPreferred
 nm_setting_ip4_config_get_dhcp_ipv6_only_preferred(NMSettingIP4Config *setting);
+
+NM_AVAILABLE_IN_1_52
+NMSettingIP4ConfigForwarding nm_setting_ip4_config_get_forwarding(NMSettingIP4Config *setting);
 
 G_END_DECLS
 
