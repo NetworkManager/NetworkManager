@@ -4009,7 +4009,8 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingIPConfig,
                              PROP_DHCP_SEND_RELEASE,
                              PROP_ROUTED_DNS,
                              PROP_SHARED_DHCP_RANGE,
-                             PROP_SHARED_DHCP_LEASE_TIME, );
+                             PROP_SHARED_DHCP_LEASE_TIME,
+                             PROP_FORWARDING, );
 
 G_DEFINE_ABSTRACT_TYPE(NMSettingIPConfig, nm_setting_ip_config, NM_TYPE_SETTING)
 
@@ -5559,6 +5560,22 @@ nm_setting_ip_config_get_shared_dhcp_lease_time(NMSettingIPConfig *setting)
     return NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->shared_dhcp_lease_time;
 }
 
+/**
+ * nm_setting_ip_config_get_forwarding:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns: the #NMSettingIPConfig:forwarding property of the setting
+ *
+ * Since: 1.54
+ **/
+NMSettingIPConfigForwarding
+nm_setting_ip_config_get_forwarding(NMSettingIPConfig *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), NM_SETTING_IP_CONFIG_FORWARDING_DEFAULT);
+
+    return NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->forwarding;
+}
+
 static gboolean
 verify_label(const char *label)
 {
@@ -6336,6 +6353,13 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
         &nm_sett_info_propert_type_direct_int32,
         .direct_offset =
             NM_STRUCT_OFFSET_ENSURE_TYPE(gint32, NMSettingIPConfigPrivate, shared_dhcp_lease_time));
+
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_FORWARDING],
+        &nm_sett_info_propert_type_direct_enum,
+        .direct_offset = NM_STRUCT_OFFSET_ENSURE_TYPE(int, NMSettingIPConfigPrivate, forwarding),
+        .direct_data.enum_gtype = NM_TYPE_SETTING_IP_CONFIG_FORWARDING);
 
     return properties_override;
 }
@@ -7118,6 +7142,32 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                          NM_SETTING_IP_CONFIG_ROUTED_DNS_DEFAULT,
                          NM_SETTING_IP_CONFIG_ROUTED_DNS_YES,
                          NM_SETTING_IP_CONFIG_ROUTED_DNS_DEFAULT,
+                         G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
+
+    /**
+     * NMSettingIPConfig:forwarding:
+     *
+     * Whether to configure sysctl interface-specific forwarding. When enabled, the interface
+     * will act as a router to forward the packet from one interface to another. When set to
+     * %NM_SETTING_IP_CONFIG_FORWARDING_DEFAULT, the value from global configuration is used;
+     * if no global default is defined, %NM_SETTING_IP_CONFIG_FORWARDING_AUTO will be used.
+     * The accepted values are:
+     *   %NM_SETTING_IP_CONFIG_FORWARDING_DEFAULT: use global default.
+     *   %NM_SETTING_IP_CONFIG_FORWARDING_NO: disabled.
+     *   %NM_SETTING_IP_CONFIG_FORWARDING_YES: enabled.
+     *   %NM_SETTING_IP_CONFIG_FORWARDING_AUTO: enable if any shared connection is active,
+     *        use kernel default otherwise.
+     *   %NM_SETTING_IP_CONFIG_FORWARDING_IGNORE: leave the forwarding unchanged.
+     *
+     * Since: 1.54
+     */
+    obj_properties[PROP_FORWARDING] =
+        g_param_spec_int(NM_SETTING_IP_CONFIG_FORWARDING,
+                         "",
+                         "",
+                         NM_SETTING_IP_CONFIG_FORWARDING_DEFAULT,
+                         NM_SETTING_IP_CONFIG_FORWARDING_IGNORE,
+                         NM_SETTING_IP_CONFIG_FORWARDING_DEFAULT,
                          G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
     /**                                                  
