@@ -18,6 +18,7 @@
 #include <linux/fib_rules.h>
 #include <linux/ip.h>
 #include <linux/if.h>
+#include <linux/dcbnl.h>
 #include <linux/if_tun.h>
 #include <linux/if_tunnel.h>
 #include <linux/rtnetlink.h>
@@ -2160,6 +2161,55 @@ nm_platform_link_set_bridge_info(NMPlatform                            *self,
     }
 
     return klass->link_set_bridge_info(self, ifindex, bridge_info);
+}
+
+gboolean
+nm_platform_dcb_get_dcbx(NMPlatform *self, const char *const name, guint8 *mode_out)
+{
+    gboolean ret;
+
+    _CHECK_SELF(self, klass, FALSE);
+
+    g_return_val_if_fail(name, FALSE);
+    g_return_val_if_fail(mode_out, FALSE);
+
+    _LOG2D("dcb: getting DCBX mode");
+
+    ret = klass->dcb_get_dcbx(self, name, mode_out);
+
+    if (_LOGD_ENABLED()) {
+        if (!ret) {
+            _LOG2D("dcb: failure while getting dcbx mode");
+        } else {
+            _LOG2D("dcb: dcbx mode %u", *mode_out);
+        }
+    }
+
+    return ret;
+}
+
+gboolean
+nm_platform_dcb_set_dcbx(NMPlatform *self, const char *const name, guint8 mode)
+{
+    gboolean ret;
+
+    _CHECK_SELF(self, klass, FALSE);
+
+    g_return_val_if_fail(name, FALSE);
+
+    _LOG2D("dcb: setting DCBX mode to %u", mode);
+
+    ret = klass->dcb_set_dcbx(self, name, mode);
+
+    if (_LOGD_ENABLED()) {
+        if (!ret) {
+            _LOG2D("dcb: failure while setting dcbx mode");
+        } else {
+            _LOG2D("dcb: dcbx mode set to %u", mode);
+        }
+    }
+
+    return ret;
 }
 
 /**

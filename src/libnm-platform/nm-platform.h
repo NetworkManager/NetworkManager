@@ -1240,6 +1240,9 @@ typedef struct {
                              const NMPlatformLink  **out_link,
                              int                    *out_fd);
 
+    gboolean (*dcb_get_dcbx)(NMPlatform *platform, const char *const ifname, guint8 *mode_out);
+    gboolean (*dcb_set_dcbx)(NMPlatform *platform, const char *const ifname, guint8 mode);
+
     gboolean (*infiniband_partition_add)(NMPlatform            *self,
                                          int                    parent,
                                          int                    p_key,
@@ -2087,6 +2090,9 @@ gboolean nm_platform_link_get_bridge_vlans(NMPlatform            *self,
 gboolean nm_platform_link_set_bridge_info(NMPlatform                            *self,
                                           int                                    ifindex,
                                           const NMPlatformLinkSetBridgeInfoData *bridge_info);
+
+gboolean nm_platform_dcb_get_dcbx(NMPlatform *self, const char *const name, guint8 *mode_out);
+gboolean nm_platform_dcb_set_dcbx(NMPlatform *self, const char *const name, guint8 mode);
 
 char    *nm_platform_link_get_physical_port_id(NMPlatform *self, int ifindex);
 guint    nm_platform_link_get_dev_id(NMPlatform *self, int ifindex);
