@@ -2714,6 +2714,87 @@ class TestNmCloudSetup(unittest.TestCase):
 
         Util.valgrind_check_log(nmc.valgrind_log, "test_gcp")
 
+    @cloud_setup_test
+    def test_oci(self):
+        self._mock_devices()
+
+        oci_meta = "/opc/v2/"
+        self._mock_path(oci_meta + "instance", "{}")
+        self._mock_path(
+            oci_meta + "vnics",
+            """
+        [
+          {
+            "macAddr": "%s",
+            "privateIp": "%s",
+            "subnetCidrBlock": "172.31.16.0/20",
+            "virtualRouterIp": "172.31.16.1",
+            "vlanTag": 810,
+            "vnicId": "ocid1.vnic.oc1.cz-adamov1.foobarbaz"
+          },
+          {
+            "macAddr": "%s",
+            "privateIp": "%s",
+            "subnetCidrBlock": "172.31.166.0/20",
+            "virtualRouterIp": "172.31.166.1",
+            "vlanTag": 700,
+            "vnicId": "ocid1.vnic.oc1.uk-hogwarts.abracadabra"
+          }
+        ]
+        """
+            % (
+                TestNmCloudSetup._mac1,
+                TestNmCloudSetup._ip1,
+                TestNmCloudSetup._mac2,
+                TestNmCloudSetup._ip2,
+            ),
+        )
+
+        # Run nm-cloud-setup for the first time
+        nmc = Util.cmd_call_pexpect(
+            ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
+            [],
+            {
+                "NM_CLOUD_SETUP_OCI_HOST": self.md_url,
+                "NM_CLOUD_SETUP_LOG": "trace",
+                "NM_CLOUD_SETUP_OCI": "yes",
+            },
+        )
+
+        nmc.pexp.expect("provider oci detected")
+        nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        nmc.pexp.expect("get-config: starting")
+        nmc.pexp.expect("get-config: success")
+        nmc.pexp.expect("meta data received")
+        # One of the devices has no IPv4 configuration to be modified
+        nmc.pexp.expect("device has no suitable applied connection. Skip")
+        # The other one was lacking an address set it up.
+        nmc.pexp.expect("some changes were applied for provider oci")
+        nmc.pexp.expect(pexpect.EOF)
+
+        # Run nm-cloud-setup for the second time
+        nmc = Util.cmd_call_pexpect(
+            ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
+            [],
+            {
+                "NM_CLOUD_SETUP_OCI_HOST": self.md_url,
+                "NM_CLOUD_SETUP_LOG": "trace",
+                "NM_CLOUD_SETUP_OCI": "yes",
+            },
+        )
+
+        nmc.pexp.expect("provider oci detected")
+        nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        nmc.pexp.expect("get-config: starting")
+        nmc.pexp.expect("get-config: success")
+        nmc.pexp.expect("meta data received")
+        # No changes this time
+        nmc.pexp.expect('device needs no update to applied connection "con-eth0"')
+        nmc.pexp.expect("no changes were applied for provider oci")
+        nmc.pexp.expect(pexpect.EOF)
+
+        Util.valgrind_check_log(nmc.valgrind_log, "test_oci")
+
 
 ###############################################################################
 
