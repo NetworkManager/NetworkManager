@@ -115,7 +115,8 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
     NMNDisc             *ndisc   = (NMNDisc *) user_data;
     NMNDiscDataInternal *rdata   = ndisc->rdata;
     NMNDiscConfigMap     changed = 0;
-    struct ndp_msgra    *msgra   = ndp_msgra(msg);
+    NMNDiscGateway       gateway;
+    struct ndp_msgra    *msgra = ndp_msgra(msg);
     struct in6_addr      gateway_addr;
     const gint64         now_msec = nm_utils_get_monotonic_timestamp_msec();
     int                  offset;
@@ -174,23 +175,17 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
      * Subsequent router advertisements can represent new default gateways
      * on the network. We should present all of them in router preference
      * order.
-     */
-    {
-        const NMNDiscGateway gateway = {
-            .address     = gateway_addr,
-            .expiry_msec = _nm_ndisc_lifetime_to_expiry(now_msec, ndp_msgra_router_lifetime(msgra)),
-            .preference  = _route_preference_coerce(ndp_msgra_route_preference(msgra)),
-        };
-
-        /* https://tools.ietf.org/html/rfc2461#section-4.2
-         *   > A Lifetime of 0 indicates that the router is not a
-         *   > default router and SHOULD NOT appear on the default
-         *   > router list.
-         * We handle that by tracking a gateway that expires right now. */
-
-        if (nm_ndisc_add_gateway(ndisc, &gateway, now_msec))
-            changed |= NM_NDISC_CONFIG_GATEWAYS;
-    }
+     *
+     * https://tools.ietf.org/html/rfc2461#section-4.2 :
+     * A Lifetime of 0 indicates that the router is not a default router and
+     * SHOULD NOT appear on the default router list.
+     *
+     * We handle that by tracking a gateway that expires right now. */
+    gateway = (NMNDiscGateway) {
+        .address     = gateway_addr,
+        .expiry_msec = _nm_ndisc_lifetime_to_expiry(now_msec, ndp_msgra_router_lifetime(msgra)),
+        .preference  = _route_preference_coerce(ndp_msgra_route_preference(msgra)),
+    };
 
     /* Addresses & Routes */
     ndp_msg_opt_for_each_offset (offset, msg, NDP_MSG_OPT_PREFIX) {
@@ -240,8 +235,23 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
         guint8          plen = ndp_msg_opt_route_prefix_len(msg, offset);
         struct in6_addr network;
 
-        if (plen == 0 || plen > 128)
+        if (plen > 128)
             continue;
+
+        if (plen == 0) {
+            /* https://tools.ietf.org/html/rfc4191#section-3.1 :
+             * When processing a Router Advertisement, a type C host first updates a
+             * ::/0 route based on the Router Lifetime and Default Router Preference
+             * in the Router Advertisement message header. [...] The Router Preference
+             * and Lifetime values in a ::/0 Route Information Option override the
+             * preference and lifetime values in the Router Advertisement header.
+             */
+            gateway.preference =
+                _route_preference_coerce(ndp_msg_opt_route_preference(msg, offset));
+            gateway.expiry_msec =
+                _nm_ndisc_lifetime_to_expiry(now_msec, ndp_msg_opt_route_lifetime(msg, offset));
+            continue;
+        }
 
         nm_ip6_addr_clear_host_address(&network, ndp_msg_opt_route_prefix(msg, offset), plen);
 
@@ -261,6 +271,9 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
                 changed |= NM_NDISC_CONFIG_ROUTES;
         }
     }
+
+    if (nm_ndisc_add_gateway(ndisc, &gateway, now_msec))
+        changed |= NM_NDISC_CONFIG_GATEWAYS;
 
     ndp_msg_opt_for_each_offset (offset, msg, NDP_MSG_OPT_RDNSS) {
         struct in6_addr *addr;
