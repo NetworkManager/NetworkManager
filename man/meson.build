@@ -1,5 +1,52 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
+mans = [
+  ['NetworkManager', '8'],
+  ['NetworkManager-dispatcher', '8'],
+  ['NetworkManager-wait-online.service', '8'],
+  ['NetworkManager.conf', '5'],
+  ['nm-online', '1'],
+  ['nmcli-examples', '7'],
+  ['nmcli', '1'],
+  ['nmtui', '1'],
+  ['nm-initrd-generator', '8'],
+]
+
+if enable_ovs
+  mans += [['nm-openvswitch', '7']]
+endif
+
+if enable_nm_cloud_setup
+  mans += [['nm-cloud-setup', '8']]
+endif
+
+introspection_mans = [
+  ['nm-settings-keyfile', '5'],
+  ['nm-settings-dbus',    '5'],
+  ['nm-settings-nmcli',   '5'],
+]
+
+if enable_ifcfg_rh
+  introspection_mans += [['nm-settings-ifcfg-rh', '5']]
+endif
+
+built_mans = []
+foreach man: mans + introspection_mans
+  name = man[0] + '.' + man[1]
+  if not fs.exists(name)
+    built_mans = []
+    break
+  endif
+
+  built_mans += name
+endforeach
+
+if built_mans.length() > 0
+  install_man(built_mans)
+  subdir_done()
+endif
+
+
 common_ent_file = configure_file(
   input: 'common.ent.in',
   output: '@BASENAME@',
@@ -23,26 +70,6 @@ xsltproc_options = [
 docbook_xls = 'http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl'
 
 mans_xmls = []
-
-mans = [
-  ['NetworkManager', '8'],
-  ['NetworkManager-dispatcher', '8'],
-  ['NetworkManager-wait-online.service', '8'],
-  ['NetworkManager.conf', '5'],
-  ['nm-online', '1'],
-  ['nmcli-examples', '7'],
-  ['nmcli', '1'],
-  ['nmtui', '1'],
-  ['nm-initrd-generator', '8'],
-]
-
-if enable_ovs
-  mans += [['nm-openvswitch', '7']]
-endif
-
-if enable_nm_cloud_setup
-  mans += [['nm-cloud-setup', '8']]
-endif
 
 foreach man: mans
   input = man[0] + '.xml'

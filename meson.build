@@ -12,7 +12,7 @@ project(
     'c_std=gnu11',
     'warning_level=2' # value "2" will add "-Wall" and "-Wextra" to the compiler flags
   ],
-  meson_version: '>= 0.51.0',
+  meson_version: '>= 0.53.0',
 )
 
 nm_name = meson.project_name()
@@ -77,6 +77,7 @@ libnm_version = '@0@.@1@.@2@'.format(current - age, age, revision)
 
 libnm_pkgincludedir = join_paths(nm_includedir, libnm_name)
 
+fs = import('fs')
 gnome = import('gnome')
 i18n = import('i18n')
 pkg = import('pkgconfig')
