@@ -81,6 +81,7 @@ typedef enum /*< flags >*/ {
 #define NM_SETTING_WIRED_WAKE_ON_LAN               "wake-on-lan"
 #define NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD      "wake-on-lan-password"
 #define NM_SETTING_WIRED_ACCEPT_ALL_MAC_ADDRESSES  "accept-all-mac-addresses"
+#define NM_SETTING_WIRED_DCBX_OS_CONTROLLED        "dcbx-os-controlled"
 
 typedef struct _NMSettingWiredClass NMSettingWiredClass;
 
@@ -143,6 +144,11 @@ const char **nm_setting_wired_get_valid_s390_options(NMSettingWired *setting);
 
 NMSettingWiredWakeOnLan nm_setting_wired_get_wake_on_lan(NMSettingWired *setting);
 const char             *nm_setting_wired_get_wake_on_lan_password(NMSettingWired *setting);
+
+NM_AVAILABLE_IN_1_52
+gboolean nm_setting_wired_get_dcbx_os_controlled(NMSettingWired *setting);
+NM_AVAILABLE_IN_1_52
+void nm_setting_wired_set_dcbx_os_controlled(NMSettingWired *setting, gboolean os_controlled);
 
 G_END_DECLS
 

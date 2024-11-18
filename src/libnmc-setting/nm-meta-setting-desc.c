@@ -8340,6 +8340,9 @@ static const NMMetaPropertyInfo *const property_infos_WIRED[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRED_ACCEPT_ALL_MAC_ADDRESSES,
         .property_type =                &_pt_gobject_ternary,
     ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRED_DCBX_OS_CONTROLLED,
+        .property_type =                &_pt_gobject_bool,
+    ),
     NULL
 };
 

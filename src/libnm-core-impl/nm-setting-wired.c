@@ -46,7 +46,8 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingWired,
                              PROP_S390_OPTIONS,
                              PROP_WAKE_ON_LAN,
                              PROP_WAKE_ON_LAN_PASSWORD,
-                             PROP_ACCEPT_ALL_MAC_ADDRESSES, );
+                             PROP_ACCEPT_ALL_MAC_ADDRESSES,
+                             PROP_DCBX_OS_CONTROLLED, );
 
 typedef struct {
     struct {
@@ -68,6 +69,7 @@ typedef struct {
     guint32     speed;
     guint32     mtu;
     bool        auto_negotiate;
+    bool        dcb_dcbx_os_controlled;
 } NMSettingWiredPrivate;
 
 /**
@@ -957,6 +959,41 @@ nm_setting_wired_get_accept_all_mac_addresses(NMSettingWired *setting)
     g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), NM_TERNARY_DEFAULT);
 
     return NM_SETTING_WIRED_GET_PRIVATE(setting)->accept_all_mac_addresses;
+}
+
+/**
+ * nm_setting_wired_get_dcbx_os_controlled:
+ * @setting: the #NMSettingWired
+ *
+ * Returns: whether DCBX is controlled by the OS (true), or the firmware (false).
+ *
+ * Since: 1.52
+ **/
+gboolean
+nm_setting_wired_get_dcbx_os_controlled(NMSettingWired *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), FALSE);
+
+    return NM_SETTING_WIRED_GET_PRIVATE(setting)->dcb_dcbx_os_controlled;
+}
+
+/**
+ * nm_setting_wired_set_dcbx_os_controlled:
+ * @setting: the #NMSettingWired
+ * @os_controlled: whether DCBX should be controlled by the OS
+ *
+ * Since: 1.52
+ **/
+void
+nm_setting_wired_set_dcbx_os_controlled(NMSettingWired *setting, gboolean os_controlled)
+{
+    NMSettingWiredPrivate *priv;
+
+    g_return_if_fail(NM_IS_SETTING_WIRED(setting));
+
+    priv                         = NM_SETTING_WIRED_GET_PRIVATE(setting);
+    priv->dcb_dcbx_os_controlled = os_controlled;
+    _notify(setting, PROP_DCBX_OS_CONTROLLED);
 }
 
 static gboolean
@@ -1886,8 +1923,24 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
                                                     NMSettingWiredPrivate,
                                                     accept_all_mac_addresses);
 
-    g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+    /**
+     * NMSettingWired:dcbx-os-controlled:
+     *
+     * Configures whether DCBX is managed by the operating system
+     * or the firmware.
+     *
+     * Since: 1.52
+     **/
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_WIRED_DCBX_OS_CONTROLLED,
+                                               PROP_DCBX_OS_CONTROLLED,
+                                               FALSE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingWiredPrivate,
+                                               dcb_dcbx_os_controlled);
 
+    g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
     _nm_setting_class_commit(setting_class,
                              NM_META_SETTING_TYPE_WIRED,
                              NULL,

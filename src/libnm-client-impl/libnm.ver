@@ -2045,4 +2045,6 @@ global:
 	nm_setting_connection_get_ip_ping_addresses_require_all;
 	nm_setting_ethtool_fec_mode_get_type;
 	nm_ethtool_optname_is_fec;
+	nm_setting_wired_get_dcbx_os_controlled;
+	nm_setting_wired_set_dcbx_os_controlled;
 } libnm_1_50_0;

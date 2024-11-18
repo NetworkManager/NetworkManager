@@ -953,6 +953,10 @@
                   dbus-type="i"
                   gprop-type="gint"
                   />
+        <property name="dcbx-os-controlled"
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="priority-bandwidth"
                   dbus-type="au"
                   gprop-type="GArray"

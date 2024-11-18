@@ -813,6 +813,10 @@
                   nmcli-description="An array of 8 uint values, where the array index corresponds to the User Priority (0 - 7) and the value indicates the traffic class (0 - 7) to which the priority is mapped."
                   format="list of integers"
                   values="0 - 7" />
+        <property name="dcbx-os-controlled"
+                  nmcli-description="Configures whether DCBX is managed by the operating system or the firmware."
+                  format="boolean"
+                  values="true/yes/on, false/no/off" />
     </setting>
     <setting name="dummy" >
     </setting>
