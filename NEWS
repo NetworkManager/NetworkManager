@@ -24,6 +24,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   name server is reached only via the device that specifies it.
 * Support OCI in nm-cloud-setup
 * Added support for ethtool FEC mode
+* Added property (dcbx-os-controlled) to configure DCBX mode
+  (setting to OS/firmware-controlled)
 
 =============================================
 NetworkManager-1.50
