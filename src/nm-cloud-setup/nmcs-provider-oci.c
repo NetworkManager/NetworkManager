@@ -82,6 +82,8 @@ detect(NMCSProvider *provider, GTask *task)
 
 /*****************************************************************************/
 
+#define _VNIC_WARN(msg) _LOGW("get-config: " msg "(VNIC %s idx=%zu)", vnic_id, i)
+
 static void
 _get_config_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
@@ -112,14 +114,14 @@ _get_config_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 
     for (i = 0; i < json_array_size(vnics); i++) {
         json_t       *vnic, *field;
-        const char   *vnic_id, *val;
+        const char   *vnic_id = "", *val;
         gs_free char *mac = NULL;
         in_addr_t     addr;
         int           prefix;
 
         vnic = json_array_get(vnics, i);
         if (!json_is_object(vnic)) {
-            _LOGW("get-config: JSON parse failure for VNIC at index %zu, ignoring VNIC", i);
+            _VNIC_WARN("JSON parse failure, ignoring VNIC");
             continue;
         }
 
@@ -129,9 +131,7 @@ _get_config_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
         field = json_object_get(vnic, "macAddr");
         val   = field && json_is_string(field) ? json_string_value(field) : NULL;
         if (!val) {
-            _LOGW("get-config: missing or invalid 'macAddr' (VNIC %s idx=%zu), ignoring VNIC",
-                  vnic_id,
-                  i);
+            _VNIC_WARN("missing or invalid 'macAddr', ignoring VNIC");
             continue;
         }
 
@@ -147,7 +147,7 @@ _get_config_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
             config_iface_data->ipv4s_arr    = g_new(in_addr_t, 1);
             config_iface_data->ipv4s_arr[0] = addr;
         } else {
-            _LOGW("get-config: missing or invalid 'privateIp' (VNIC %s idx=%zu)", vnic_id, i);
+            _VNIC_WARN("missing or invalid 'privateIp'");
         }
 
         field = json_object_get(vnic, "virtualRouterIp");
@@ -156,7 +156,7 @@ _get_config_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
             config_iface_data->has_gateway = TRUE;
             config_iface_data->gateway     = addr;
         } else {
-            _LOGW("get-config: missing or invalid 'virtualRouterIp' (VNIC %s idx=%zu)", vnic_id, i);
+            _VNIC_WARN("missing or invalid 'virtualRouterIp'");
         }
 
         field = json_object_get(vnic, "subnetCidrBlock");
@@ -166,7 +166,7 @@ _get_config_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
             config_iface_data->cidr_addr   = addr;
             config_iface_data->cidr_prefix = prefix;
         } else {
-            _LOGW("get-config: missing or invalid 'subnetCidrBlock' (VNIC %s idx=%zu)", vnic_id, i);
+            _VNIC_WARN("missing or invalid 'subnetCidrBlock'");
         }
     }
 
