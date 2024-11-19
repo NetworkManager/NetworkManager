@@ -220,11 +220,4 @@ void nmcs_provider_get_config(NMCSProvider       *provider,
 NMCSProviderGetConfigResult *
 nmcs_provider_get_config_finish(NMCSProvider *provider, GAsyncResult *result, GError **error);
 
-/*****************************************************************************/
-
-/* Forward declare the implemented gtype getters so we can use it at a few places without requiring
- * to include the full header. The other parts of those headers should not be used aside where they
- * are necessary. */
-GType nmcs_provider_aliyun_get_type(void);
-
 #endif /* __NMCS_PROVIDER_H__ */
