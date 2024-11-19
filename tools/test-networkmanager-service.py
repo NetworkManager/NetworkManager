@@ -1666,30 +1666,7 @@ class NetworkManager(ExportedObj):
             raise BusErr.UnknownConnectionException("Connection not found")
 
         con_hash = con_inst.con_hash
-        con_type = NmUtil.con_hash_get_type(con_hash)
-
-        device = self.find_device_first(path=devpath)
-        if not device:
-            if con_type == NM.SETTING_WIRED_SETTING_NAME:
-                device = self.find_device_first(dev_type=WiredDevice)
-            elif con_type == NM.SETTING_WIRELESS_SETTING_NAME:
-                device = self.find_device_first(dev_type=WifiDevice)
-            elif con_type == NM.SETTING_VLAN_SETTING_NAME:
-                ifname = con_hash[NM.SETTING_CONNECTION_SETTING_NAME]["interface-name"]
-                device = VlanDevice(ifname)
-                self.add_device(device)
-            elif con_type == NM.SETTING_VPN_SETTING_NAME:
-                for ac in self.active_connections:
-                    if ac.is_vpn:
-                        continue
-                    if ac.device:
-                        device = ac.device
-                        break
-
-        if not device:
-            raise BusErr.UnknownDeviceException(
-                "No device found for the requested iface."
-            )
+        device = self.find_or_create_device(devpath, con_hash)
 
         # See if we need secrets. For the moment, we only support WPA
         if "802-11-wireless-security" in con_hash:
@@ -1748,9 +1725,7 @@ class NetworkManager(ExportedObj):
         out_signature="ooa{sv}",
     )
     def AddAndActivateConnection2(self, con_hash, devpath, specific_object, options):
-        device = self.find_device_first(
-            path=devpath, require=BusErr.UnknownDeviceException
-        )
+        device = self.find_or_create_device(devpath, con_hash)
         conpath = gl.settings.AddConnection(con_hash)
         return (conpath, self.ActivateConnection(conpath, devpath, specific_object), [])
 
@@ -1873,6 +1848,33 @@ class NetworkManager(ExportedObj):
                 raise TestError("Device not found")
             raise BusErr.UnknownDeviceException("Device not found")
         return r
+
+    def find_or_create_device(self, devpath, con_hash):
+        device = self.find_device_first(path=devpath)
+        if device:
+            return device
+
+        con_type = NmUtil.con_hash_get_type(con_hash)
+        if con_type == NM.SETTING_WIRED_SETTING_NAME:
+            return self.find_device_first(dev_type=WiredDevice)
+
+        if con_type == NM.SETTING_WIRELESS_SETTING_NAME:
+            return self.find_device_first(dev_type=WifiDevice)
+
+        if con_type == NM.SETTING_VLAN_SETTING_NAME:
+            ifname = con_hash[NM.SETTING_CONNECTION_SETTING_NAME]["interface-name"]
+            device = VlanDevice(ifname)
+            self.add_device(device)
+            return device
+
+        if con_type == NM.SETTING_VPN_SETTING_NAME:
+            for ac in self.active_connections:
+                if ac.is_vpn:
+                    continue
+                if ac.device:
+                    return ac.device
+
+        raise BusErr.UnknownDeviceException("Device not found")
 
     def add_device(self, device):
         if self.find_device_first(ident=device.ident, path=device.path) is not None:
