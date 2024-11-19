@@ -391,11 +391,10 @@ _nmc_skip_connection_by_user_data(NMConnection *connection)
 }
 
 static gboolean
-_nmc_skip_connection_by_type(NMConnection *connection)
+_nmc_skip_connection_by_type(NMConnection *connection, const char *connection_type)
 {
-    if (!nm_streq0(nm_connection_get_connection_type(connection), NM_SETTING_WIRED_SETTING_NAME))
+    if (!nm_streq0(nm_connection_get_connection_type(connection), connection_type))
         return TRUE;
-
     if (!nm_connection_get_setting_ip4_config(connection))
         return TRUE;
 
@@ -636,7 +635,7 @@ try_again:
         return any_changes;
     }
 
-    if (_nmc_skip_connection_by_type(applied_connection)) {
+    if (_nmc_skip_connection_by_type(applied_connection, NM_SETTING_WIRED_SETTING_NAME)) {
         _LOGD("config device %s: device has no suitable applied connection. Skip", hwaddr);
         return any_changes;
     }
