@@ -51,6 +51,10 @@ typedef struct {
             bool      has_primary_ip_address : 1;
             bool      ipv4s_arr_ordered : 1;
         } aliyun;
+        struct {
+            guint32     vlan_tag; /* 0 if no VLAN is needed */
+            const char *parent_hwaddr;
+        } oci;
     } priv;
 
 } NMCSProviderGetConfigIfaceData;
