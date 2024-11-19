@@ -845,13 +845,14 @@ PRP_DEVICE_DEVICE_TYPE = "DeviceType"
 PRP_DEVICE_AVAILABLE_CONNECTIONS = "AvailableConnections"
 PRP_DEVICE_LLDP_NEIGHBORS = "LldpNeighbors"
 PRP_DEVICE_INTERFACE_FLAGS = "InterfaceFlags"
+PRP_DEVICE_HW_ADDRESS = "HwAddress"
 
 
 class Device(ExportedObj):
     path_counter_next = 1
     path_prefix = "/org/freedesktop/NetworkManager/Devices/"
 
-    def __init__(self, iface, devtype, ident=None):
+    def __init__(self, iface, devtype, ident=None, hwaddr=""):
         if ident is None:
             ident = iface
 
@@ -863,6 +864,7 @@ class Device(ExportedObj):
         self.dhcp4_config = None
         self.dhcp6_config = None
         self.activation_state_change_delay_ms = 50
+        self.hwaddr = hwaddr
 
         self.prp_state = NM.DeviceState.UNAVAILABLE
 
@@ -890,6 +892,7 @@ class Device(ExportedObj):
             PRP_DEVICE_DEVICE_TYPE: dbus.UInt32(devtype),
             PRP_DEVICE_AVAILABLE_CONNECTIONS: ExportedObj.to_path_array([]),
             PRP_DEVICE_INTERFACE_FLAGS: dbus.UInt32(3),  # up,lower-up
+            PRP_DEVICE_HW_ADDRESS: self.hwaddr,
             PRP_DEVICE_LLDP_NEIGHBORS: dbus.Array(
                 [
                     dbus.Dictionary(
@@ -1166,10 +1169,11 @@ PRP_WIRED_S390_SUBCHANNELS = "S390Subchannels"
 
 class WiredDevice(Device):
     def __init__(self, iface, mac=None, subchannels=None, ident=None):
-        Device.__init__(self, iface, NM.DeviceType.ETHERNET, ident)
-
         if mac is None:
             mac = Util.random_mac(self.ident)
+
+        Device.__init__(self, iface, NM.DeviceType.ETHERNET, ident, hwaddr=mac)
+
         if subchannels is None:
             subchannels = dbus.Array(signature="s")
 
@@ -1212,8 +1216,8 @@ PRP_VLAN_VLAN_ID = "VlanId"
 
 
 class VlanDevice(Device):
-    def __init__(self, iface, ident=None):
-        Device.__init__(self, iface, NM.DeviceType.VLAN, ident)
+    def __init__(self, iface, mac=None, ident=None):
+        Device.__init__(self, iface, NM.DeviceType.VLAN, ident, hwaddr=mac)
 
         props = {
             PRP_VLAN_HW_ADDRESS: Util.random_mac(self.ident),
@@ -1313,10 +1317,10 @@ PRP_WIFI_LAST_SCAN = "LastScan"
 
 class WifiDevice(Device):
     def __init__(self, iface, mac=None, ident=None):
-        Device.__init__(self, iface, NM.DeviceType.WIFI, ident)
-
         if mac is None:
             mac = Util.random_mac(self.ident)
+
+        Device.__init__(self, iface, NM.DeviceType.WIFI, ident, hwaddr=mac)
 
         self.aps = []
         self.scan_cb_id = None
@@ -1807,6 +1811,7 @@ class NetworkManager(ExportedObj):
         iface=_DEFAULT_ARG,
         ip_iface=_DEFAULT_ARG,
         dev_type=_DEFAULT_ARG,
+        hwaddr=_DEFAULT_ARG,
     ):
         r = None
         for d in self.devices:
@@ -1826,6 +1831,9 @@ class NetworkManager(ExportedObj):
             if dev_type is not _DEFAULT_ARG:
                 if not isinstance(d, dev_type):
                     continue
+            if hwaddr is not _DEFAULT_ARG:
+                if d.hwaddr.lower() != hwaddr.lower():
+                    continue
             yield d
 
     def find_device_first(
@@ -1835,11 +1843,17 @@ class NetworkManager(ExportedObj):
         iface=_DEFAULT_ARG,
         ip_iface=_DEFAULT_ARG,
         dev_type=_DEFAULT_ARG,
+        hwaddr=_DEFAULT_ARG,
         require=None,
     ):
         r = None
         for d in self.find_devices(
-            ident=ident, path=path, iface=iface, ip_iface=ip_iface, dev_type=dev_type
+            ident=ident,
+            path=path,
+            iface=iface,
+            ip_iface=ip_iface,
+            dev_type=dev_type,
+            hwaddr=hwaddr,
         ):
             r = d
             break
