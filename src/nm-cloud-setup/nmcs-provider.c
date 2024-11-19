@@ -3,6 +3,8 @@
 #include "libnm-client-aux-extern/nm-default-client.h"
 
 #include "nmcs-provider.h"
+#include "nmcs-provider-aliyun.h"
+#include "nmcs-provider-oci.h"
 
 #include "nm-cloud-setup-utils.h"
 
