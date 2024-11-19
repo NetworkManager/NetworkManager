@@ -1666,30 +1666,16 @@ class NetworkManager(ExportedObj):
             raise BusErr.UnknownConnectionException("Connection not found")
 
         con_hash = con_inst.con_hash
-        con_type = NmUtil.con_hash_get_type(con_hash)
 
-        device = self.find_device_first(path=devpath)
-        if not device:
-            if con_type == NM.SETTING_WIRED_SETTING_NAME:
-                device = self.find_device_first(dev_type=WiredDevice)
-            elif con_type == NM.SETTING_WIRELESS_SETTING_NAME:
-                device = self.find_device_first(dev_type=WifiDevice)
-            elif con_type == NM.SETTING_VLAN_SETTING_NAME:
-                ifname = con_hash[NM.SETTING_CONNECTION_SETTING_NAME]["interface-name"]
-                device = VlanDevice(ifname)
+        device = self.find_device(devpath, con_hash)
+        if device is None:
+            device = self.create_device(con_hash)
+            if device:
+                # Just created the device, it can start activating right away
+                device.activation_state_change_delay_ms = 0
                 self.add_device(device)
-            elif con_type == NM.SETTING_VPN_SETTING_NAME:
-                for ac in self.active_connections:
-                    if ac.is_vpn:
-                        continue
-                    if ac.device:
-                        device = ac.device
-                        break
-
-        if not device:
-            raise BusErr.UnknownDeviceException(
-                "No device found for the requested iface."
-            )
+        if device is None:
+            raise BusErr.UnknownDeviceException("Device not found")
 
         # See if we need secrets. For the moment, we only support WPA
         if "802-11-wireless-security" in con_hash:
@@ -1748,11 +1734,16 @@ class NetworkManager(ExportedObj):
         out_signature="ooa{sv}",
     )
     def AddAndActivateConnection2(self, con_hash, devpath, specific_object, options):
-        device = self.find_device_first(
-            path=devpath, require=BusErr.UnknownDeviceException
-        )
-        conpath = gl.settings.AddConnection(con_hash)
-        return (conpath, self.ActivateConnection(conpath, devpath, specific_object), [])
+        conpath = gl.settings.add_connection(con_hash)
+        try:
+            return (
+                conpath,
+                self.ActivateConnection(conpath, devpath, specific_object),
+                [],
+            )
+        except:
+            gl.settings.delete_connection(conpath)
+            raise
 
     @dbus.service.method(dbus_interface=IFACE_NM, in_signature="o", out_signature="")
     def DeactivateConnection(self, active_connection):
@@ -1873,6 +1864,37 @@ class NetworkManager(ExportedObj):
                 raise TestError("Device not found")
             raise BusErr.UnknownDeviceException("Device not found")
         return r
+
+    def find_device(self, devpath, con_hash):
+        device = self.find_device_first(path=devpath)
+        if device:
+            return device
+
+        con_type = NmUtil.con_hash_get_type(con_hash)
+
+        if con_type == NM.SETTING_WIRED_SETTING_NAME:
+            return self.find_device_first(dev_type=WiredDevice)
+
+        if con_type == NM.SETTING_WIRELESS_SETTING_NAME:
+            return self.find_device_first(dev_type=WifiDevice)
+
+        if con_type == NM.SETTING_VPN_SETTING_NAME:
+            for ac in self.active_connections:
+                if ac.is_vpn:
+                    continue
+                if ac.device:
+                    return ac.device
+
+        return None
+
+    def create_device(self, con_hash):
+        con_type = NmUtil.con_hash_get_type(con_hash)
+
+        if con_type == NM.SETTING_VLAN_SETTING_NAME:
+            ifname = con_hash[NM.SETTING_CONNECTION_SETTING_NAME]["interface-name"]
+            return VlanDevice(ifname)
+
+        return None
 
     def add_device(self, device):
         if self.find_device_first(ident=device.ident, path=device.path) is not None:
@@ -2160,7 +2182,7 @@ class Connection(ExportedObj):
         dbus_interface=IFACE_CONNECTION, in_signature="", out_signature=""
     )
     def Delete(self):
-        gl.settings.delete_connection(self)
+        gl.settings.delete_connection(self.path)
 
     @dbus.service.method(
         dbus_interface=IFACE_CONNECTION, in_signature="a{sa{sv}}", out_signature=""
@@ -2292,7 +2314,7 @@ class Settings(ExportedObj):
             def cb():
                 if hasattr(con_inst, "_remove_next_connection_cb"):
                     del con_inst._remove_next_connection_cb
-                    self.delete_connection(con_inst)
+                    self.delete_connection(con_inst.path)
                 return False
 
             # We will delete the connection right away on an idle handler. However,
@@ -2309,8 +2331,9 @@ class Settings(ExportedObj):
             raise BusErr.UnknownConnectionException("Connection not found")
         self.connections[path].update_connection(con_hash, do_verify_strict)
 
-    def delete_connection(self, con_inst):
-        del self.connections[con_inst.path]
+    def delete_connection(self, path):
+        con_inst = self.get_connection(path)
+        del self.connections[path]
         self._dbus_property_set(
             IFACE_SETTINGS,
             PRP_SETTINGS_CONNECTIONS,
