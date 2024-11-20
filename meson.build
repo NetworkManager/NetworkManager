@@ -963,38 +963,6 @@ data_conf.set('nmstatedir',                              nm_pkgstatedir)
 data_conf.set('sbindir',                                 nm_sbindir)
 data_conf.set('sysconfdir',                              nm_sysconfdir)
 
-# check if we can build setting property documentation
-'''
-build_docs=no
-if test -n "$INTROSPECTION_MAKEFILE"; then
-  # If g-i is installed we know we have python, but we might not have pygobject
-  if ! "$PYTHON" -c 'from gi.repository import GObject' >& /dev/null; then
-    AC_MSG_ERROR(["--enable-introspection aims to build the settings documentation. This requires GObject introspection for python (pygobject)])
-  fi
-
-  AC_PATH_PROG(PERL, perl)
-  if test -z "$PERL"; then
-    AC_MSG_ERROR([--enable-introspection requires perl])
-  fi
-  AC_PATH_PROG(XSLTPROC, xsltproc)
-  if test -z "$XSLTPROC"; then
-    AC_MSG_ERROR([--enable-introspection requires xsltproc])
-  fi
-
-  have_introspection=yes
-  if test "$enable_gtk_doc" = "yes"; then
-    build_docs=yes
-  fi
-else
-  if test "$enable_gtk_doc" = "yes"; then
-    # large parts of the documentation require introspection/pygobject to extract
-    # the documentation out of the source files. You cannot enable gtk-doc without alone.
-    AC_MSG_ERROR(["--with-gtk-doc requires --enable-introspection"])
-  fi
-  have_introspection=no
-fi
-'''
-
 content_files = []
 
 subdir('introspection')
