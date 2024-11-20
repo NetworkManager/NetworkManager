@@ -89,7 +89,6 @@ po_dir = source_root / 'po'
 top_inc = include_directories('.')
 
 perl = find_program('perl')
-xsltproc = find_program('xsltproc')
 
 check_exports = find_program(join_paths(source_root, 'tools', 'check-exports.sh'))
 

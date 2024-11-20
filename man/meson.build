@@ -7,7 +7,7 @@ common_ent_file = configure_file(
 )
 
 xsltproc_options = [
-  xsltproc,
+  find_program('xsltproc'),
   '--output', '@OUTPUT@',
   '--path', meson.current_build_dir(),
   '--xinclude',
