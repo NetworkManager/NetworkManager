@@ -2410,12 +2410,7 @@ class TestNmCloudSetup(unittest.TestCase):
     def test_aliyun(self):
         self._mock_devices()
 
-        _aliyun_meta = "/2016-01-01/meta-data/"
-        _aliyun_macs = _aliyun_meta + "network/interfaces/macs/"
-        self._mock_path(_aliyun_meta, "ami-id\n")
-        self._mock_path(
-            _aliyun_macs, TestNmCloudSetup._mac2 + "\n" + TestNmCloudSetup._mac1
-        )
+        _aliyun_macs = "/2016-01-01/meta-data/network/interfaces/macs/"
         self._mock_path(
             _aliyun_macs + TestNmCloudSetup._mac2 + "/vpc-cidr-block", "172.31.16.0/20"
         )
@@ -2500,19 +2495,14 @@ class TestNmCloudSetup(unittest.TestCase):
     def test_azure(self):
         self._mock_devices()
 
-        _azure_meta = "/metadata/instance"
-        _azure_iface = _azure_meta + "/network/interface/"
+        _azure_iface = "/metadata/instance/network/interface/"
         _azure_query = "?format=text&api-version=2017-04-02"
-        self._mock_path(_azure_meta + _azure_query, "")
-        self._mock_path(_azure_iface + _azure_query, "0\n1\n")
         self._mock_path(
             _azure_iface + "0/macAddress" + _azure_query, TestNmCloudSetup._mac1
         )
         self._mock_path(
             _azure_iface + "1/macAddress" + _azure_query, TestNmCloudSetup._mac2
         )
-        self._mock_path(_azure_iface + "0/ipv4/ipAddress/" + _azure_query, "0\n")
-        self._mock_path(_azure_iface + "1/ipv4/ipAddress/" + _azure_query, "0\n")
         self._mock_path(
             _azure_iface + "0/ipv4/ipAddress/0/privateIpAddress" + _azure_query,
             TestNmCloudSetup._ip1,
@@ -2589,9 +2579,6 @@ class TestNmCloudSetup(unittest.TestCase):
         _ec2_macs = "/2018-09-24/meta-data/network/interfaces/macs/"
         self._mock_path("/latest/meta-data/", "ami-id\n")
         self._mock_path(
-            _ec2_macs, TestNmCloudSetup._mac2 + "\n" + TestNmCloudSetup._mac1
-        )
-        self._mock_path(
             _ec2_macs + TestNmCloudSetup._mac2 + "/subnet-ipv4-cidr-block",
             "172.31.16.0/20",
         )
@@ -2655,15 +2642,10 @@ class TestNmCloudSetup(unittest.TestCase):
     def test_gcp(self):
         self._mock_devices()
 
-        gcp_meta = "/computeMetadata/v1/instance/"
-        gcp_iface = gcp_meta + "network-interfaces/"
-        self._mock_path(gcp_meta + "id", "")
-        self._mock_path(gcp_iface, "0\n1\n")
+        gcp_iface = "/computeMetadata/v1/instance/network-interfaces/"
         self._mock_path(gcp_iface + "0/mac", TestNmCloudSetup._mac1)
         self._mock_path(gcp_iface + "1/mac", TestNmCloudSetup._mac2)
-        self._mock_path(gcp_iface + "0/forwarded-ips/", "0\n")
         self._mock_path(gcp_iface + "0/forwarded-ips/0", TestNmCloudSetup._ip1)
-        self._mock_path(gcp_iface + "1/forwarded-ips/", "0\n")
         self._mock_path(gcp_iface + "1/forwarded-ips/0", TestNmCloudSetup._ip2)
 
         # Run nm-cloud-setup for the first time
