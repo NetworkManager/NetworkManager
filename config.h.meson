@@ -280,3 +280,5 @@
 /* Define to 1 if you have history support from -lreadline. */
 #mesondefine HAVE_READLINE_HISTORY
 
+/* Define if NBFT support is enabled */
+#mesondefine WITH_NBFT

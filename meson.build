@@ -929,6 +929,14 @@ if python.found()
   config_h.set_quoted('TEST_NM_PYTHON', python_path)
 endif
 
+# libnvme (NBFT support)
+enable_nbft = get_option('nbft')
+if enable_nbft
+  libnvme_dep = dependency('libnvme', version: '>= 1.5', required: false)
+  assert(libnvme_dep.found(), 'NBFT support was requested, but the libnvme library is not available. Use -Dnbft=false to build without it.')
+endif
+config_h.set10('WITH_NBFT', enable_nbft)
+
 data_conf = configuration_data()
 data_conf.set('DISTRO_NETWORK_SERVICE',                  (enable_ifcfg_rh ? 'network.service' : ''))
 data_conf.set('NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT',    config_default_logging_audit)

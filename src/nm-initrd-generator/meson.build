@@ -1,19 +1,28 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
+libnmi_deps = [
+    libnm_core_public_dep,
+]
+
+if enable_nbft
+    libnmi_deps += [
+        libnvme_dep
+    ]
+endif
+
 libnmi_core = static_library(
   'nmi-core',
   sources: files(
     'nmi-cmdline-reader.c',
     'nmi-dt-reader.c',
     'nmi-ibft-reader.c',
+    'nmi-nbft-reader.c',
   ),
   include_directories: [
     src_inc,
     top_inc,
   ],
-  dependencies: [
-    libnm_core_public_dep,
-  ],
+  dependencies: libnmi_deps,
 )
 
 executable(
@@ -23,9 +32,7 @@ executable(
     src_inc,
     top_inc,
   ],
-  dependencies: [
-    libnm_core_public_dep,
-  ],
+  dependencies: libnmi_deps,
   link_with: [
     libnmi_core,
     libnm_core_aux_intern,

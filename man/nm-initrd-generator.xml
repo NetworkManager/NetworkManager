@@ -154,6 +154,7 @@
             <member><option>net.ifnames</option></member>
             <member><option>rd.peerdns</option></member>
             <member><option>rd.iscsi.ibft</option></member>
+            <member><option>rd.nvmf.nonbft</option></member>
             <member><option>rd.bootif</option></member>
             <member><option>rd.neednet</option></member>
             <member><option>rd.ethtool</option></member>
