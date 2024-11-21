@@ -327,7 +327,7 @@ _scan_request_ssids_track(NMDeviceWifiPrivate *priv, const GPtrArray *ssids)
         priv->scan_request_ssids_hash = g_hash_table_new(nm_pg_bytes_hash, nm_pg_bytes_equal);
 
     /* Do a little dance. New elements shall keep their order as in @ssids, but all
-     * new elements should be sorted in the list preexisting elements of the list.
+     * new elements should be sorted before preexisting elements of the list.
      * First move the old elements away, and splice them back afterwards. */
     c_list_init(&old_lst_head);
     c_list_splice(&old_lst_head, &priv->scan_request_ssids_lst_head);
@@ -348,6 +348,8 @@ _scan_request_ssids_track(NMDeviceWifiPrivate *priv, const GPtrArray *ssids)
             g_hash_table_add(priv->scan_request_ssids_hash, d);
         } else
             d->timestamp_msec = now_msec;
+
+        c_list_unlink_stale(&d->lst);
         c_list_link_tail(&priv->scan_request_ssids_lst_head, &d->lst);
     }
 
