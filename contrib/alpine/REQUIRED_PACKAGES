@@ -24,6 +24,7 @@ apk add \
     'jansson-dev' \
     'libgudev-dev' \
     'libndp-dev' \
+    'libnvme-dev' \
     'libnl3-dev' \
     'libpsl-dev' \
     'libsoup-dev' \

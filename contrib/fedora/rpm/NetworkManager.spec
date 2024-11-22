@@ -307,6 +307,7 @@ BuildRequires: libubsan
 BuildRequires: firewalld-filesystem
 BuildRequires: iproute
 BuildRequires: iproute-tc
+BuildRequires: libnvme-devel >= 1.5
 
 Provides: %{name}-dispatcher%{?_isa} = %{epoch}:%{version}-%{release}
 

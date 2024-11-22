@@ -54,8 +54,13 @@ _WITH_WERROR=1
 _WITH_LIBTEAM="true"
 _WITH_DOCS="true"
 _WITH_SYSTEMD_LOGIND="true"
+_WITH_NBFT="true"
 if [ $IS_ALPINE = 1 ]; then
     _WITH_SYSTEMD_LOGIND="false"
+fi
+
+if ! pkgconf 'libnvme >= 1.5'; then
+    _WITH_NBFT="false"
 fi
 
 if [ -z "${NMTST_SEED_RAND+x}" ]; then
@@ -180,6 +185,8 @@ meson setup build \
     \
     -D ifcfg_rh=false \
     -D ifupdown=true \
+    \
+    -D nbft=$_WITH_NBFT \
     \
     #end
 

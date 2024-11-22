@@ -56,6 +56,7 @@ install \
     libndp-dev \
     libnewt-dev \
     libnss3-dev \
+    libnvme-dev \
     libpolkit-gobject-1-dev \
     libpsl-dev \
     libreadline-dev \

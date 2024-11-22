@@ -224,6 +224,7 @@ RUN dnf install -y \\
     libasan \\
     libcurl-devel \\
     libndp-devel \\
+    libnvme-devel \\
     libpsl-devel \\
     libselinux-devel \\
     libtool \\
