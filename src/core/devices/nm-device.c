@@ -13053,9 +13053,15 @@ activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family)
             _dev_ipdhcpx_start(self, AF_INET);
         else if (nm_streq(priv->ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)) {
             /* pass */
-        } else if (nm_streq(priv->ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
+        } else if (nm_streq(priv->ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
+            _LOGI(
+                LOGD_DEVICE,
+                "the IPv4 shared method will automatically enable the IPv4 global forwarding, "
+                "user should expect that all the per-interface level IPv4 forwarding settings may "
+                "be changed to match the global setting. Also, all the per-inteface level "
+                "forwarding settings can not be restored when deactivating the shared connection");
             _dev_ipshared4_start(self);
-        else if (nm_streq(priv->ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
+        } else if (nm_streq(priv->ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
             priv->ip_data_x[IS_IPv4].is_disabled = TRUE;
         else if (nm_streq(priv->ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
             /* pass */
@@ -13104,9 +13110,16 @@ activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family)
 
             if (NM_IN_STRSET(priv->ipv6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO))
                 _dev_ipac6_start(self);
-            else if (NM_IN_STRSET(priv->ipv6_method, NM_SETTING_IP6_CONFIG_METHOD_SHARED))
+            else if (NM_IN_STRSET(priv->ipv6_method, NM_SETTING_IP6_CONFIG_METHOD_SHARED)) {
+                _LOGI(
+                    LOGD_DEVICE,
+                    "the IPv6 shared method will automatically enable the IPv6 global forwarding, "
+                    "user should expect that all the per-interface level IPv6 forwarding settings "
+                    "may be changed to match the global setting. Also, all the per-inteface level "
+                    "forwarding settings can not be restored when deactivating the shared "
+                    "connection");
                 _dev_ipshared6_start(self);
-            else if (nm_streq(priv->ipv6_method, NM_SETTING_IP6_CONFIG_METHOD_DHCP)) {
+            } else if (nm_streq(priv->ipv6_method, NM_SETTING_IP6_CONFIG_METHOD_DHCP)) {
                 priv->ipdhcp_data_6.v6.mode = NM_NDISC_DHCP_LEVEL_MANAGED;
                 _dev_ipdhcpx_start(self, AF_INET6);
             } else
