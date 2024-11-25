@@ -13,8 +13,6 @@
 #define NM_OCI_HOST   "169.254.169.254"
 #define NM_OCI_BASE   "http://" NM_OCI_HOST
 
-#define MAX_NIC_INDEX 1
-
 NMCS_DEFINE_HOST_BASE(_oci_base, NMCS_ENV_NM_CLOUD_SETUP_OCI_HOST, NM_OCI_BASE);
 
 #define _oci_uri_concat(...) nmcs_utils_uri_build_concat(_oci_base(), "opc/v2/", __VA_ARGS__)
@@ -95,7 +93,7 @@ _get_config_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     gs_free_error GError           *error    = NULL;
     nm_auto_decref_json json_t     *vnics    = NULL;
     gboolean                        is_baremetal;
-    const char                     *phys_nic_macs[MAX_NIC_INDEX + 1] = {NULL};
+    gs_unref_ptrarray GPtrArray    *phys_nic_macs = NULL;
     GHashTableIter                  h_iter;
     size_t                          i;
 
@@ -125,6 +123,9 @@ _get_config_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
         _LOGI("get-config: empty VNICs metadata, cannot detect instance type");
     }
 
+    if (is_baremetal)
+        phys_nic_macs = g_ptr_array_sized_new(16);
+
     for (i = 0; i < json_array_size(vnics); i++) {
         json_t       *vnic, *field;
         const char   *vnic_id = "", *val;
@@ -153,7 +154,7 @@ _get_config_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
         if (is_baremetal) {
             field     = json_object_get(vnic, "nicIndex");
             nic_index = field && json_is_integer(field) ? json_integer_value(field) : -1;
-            if (nic_index < 0 || nic_index > MAX_NIC_INDEX) {
+            if (nic_index < 0 || nic_index >= 1024) { /* 1024 = random limit to prevent abuse*/
                 _VNIC_WARN("missing or invalid 'nicIndex', ignoring VNIC");
                 continue;
             }
@@ -206,7 +207,10 @@ _get_config_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
             if (is_phys_nic) {
                 config_iface_data->priv.oci.vlan_tag      = 0;
                 config_iface_data->priv.oci.parent_hwaddr = NULL;
-                phys_nic_macs[nic_index]                  = config_iface_data->hwaddr;
+                if (nic_index >= phys_nic_macs->len)
+                    g_ptr_array_set_size(phys_nic_macs,
+                                         NM_MAX((guint) (nic_index + 1), phys_nic_macs->len * 2));
+                phys_nic_macs->pdata[nic_index] = (gpointer) config_iface_data->hwaddr;
             } else {
                 /* We might not have all the physical NICs' MACs yet, save nicIndex for later */
                 config_iface_data->priv.oci.parent_hwaddr = GINT_TO_POINTER((int) nic_index);
@@ -226,7 +230,7 @@ _get_config_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
             if (is_phys_nic)
                 continue;
 
-            if (phys_nic_macs[nic_index] == NULL) {
+            if (nic_index >= phys_nic_macs->len || phys_nic_macs->pdata[nic_index] == NULL) {
                 _LOGW("get-config: physical NIC for nicIndex=%d not found, ignoring VNIC "
                       "(VNIC macAddr=%s)",
                       nic_index,
@@ -235,7 +239,7 @@ _get_config_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
                 continue;
             }
 
-            config_iface_data->priv.oci.parent_hwaddr = g_strdup(phys_nic_macs[nic_index]);
+            config_iface_data->priv.oci.parent_hwaddr = g_strdup(phys_nic_macs->pdata[nic_index]);
         }
     }
 
