@@ -163,13 +163,48 @@ write_test_connection(NMConnection *connection, char **testfile)
 }
 
 static void
-write_test_connection_and_reread(NMConnection *connection, gboolean normalize_connection)
+write_test_connection_and_reread(NMConnection *connection,
+                                 gboolean      normalize_connection,
+                                 const char   *reference)
 {
     gs_free char *testfile = NULL;
 
     g_assert(NM_IS_CONNECTION(connection));
 
     write_test_connection(connection, &testfile);
+
+    if (reference) {
+        gs_free char         *data1 = NULL;
+        gs_free char         *data2 = NULL;
+        gsize                 len1;
+        gsize                 len2;
+        gs_free_error GError *error = NULL;
+        gboolean              success;
+
+        success = g_file_get_contents(testfile, &data1, &len1, &error);
+        nmtst_assert_success(success, error);
+
+        if (nm_streq0(g_getenv("NM_TEST_REGENERATE"), "1")) {
+            success = g_file_set_contents(reference, data1, len1, &error);
+            nmtst_assert_success(success, error);
+        } else {
+            success = g_file_get_contents(reference, &data2, &len2, &error);
+            nmtst_assert_success(success, error);
+
+            if (len1 != len2 || !nm_streq0(data1, data2)) {
+                g_error("The content of \"%s\" (%zu) differs from \"%s\" (%zu). Set "
+                        "NM_TEST_REGENERATE=1 to update the files "
+                        "in place\n\n>>>%s<<<\n\n>>>%s<<<\n",
+                        testfile,
+                        len1,
+                        reference,
+                        len2,
+                        data1,
+                        data2);
+            }
+        }
+    }
+
     assert_reread_and_unlink(connection, normalize_connection, testfile);
 }
 
@@ -408,13 +443,13 @@ add_one_ip_route(NMSettingIPConfig *s_ip,
 static void
 test_write_wired_connection(void)
 {
-    NMTST_UUID_INIT(uuid);
     gs_unref_object NMConnection *connection = NULL;
     NMSettingConnection          *s_con;
     NMSettingWired               *s_wired;
     NMSettingIPConfig            *s_ip4;
     NMSettingIPConfig            *s_ip6;
     NMIPRoute                    *rt;
+    const char                   *uuid        = "9342d47a-1bab-5709-9869-c840b2eac501";
     const char                   *mac         = "99:88:77:66:55:44";
     const char                   *dns1        = "4.2.2.1";
     const char                   *dns2        = "4.2.2.2";
@@ -529,7 +564,7 @@ test_write_wired_connection(void)
     /* DNS searches */
     nm_setting_ip_config_add_dns_search(s_ip6, "wallaceandgromit.com");
 
-    write_test_connection_and_reread(connection, FALSE);
+    write_test_connection_and_reread(connection, FALSE, TEST_KEYFILES_DIR "/Test_Write_Wired");
 }
 
 static void
@@ -573,12 +608,12 @@ test_read_ip6_wired_connection(void)
 static void
 test_write_ip6_wired_connection(void)
 {
-    NMTST_UUID_INIT(uuid);
     gs_unref_object NMConnection *connection = NULL;
     NMSettingConnection          *s_con;
     NMSettingWired               *s_wired;
     NMSettingIPConfig            *s_ip4;
     NMSettingIPConfig            *s_ip6;
+    const char                   *uuid    = "0bef2d09-50a3-56b9-912a-5dc941284e3e";
     const char                   *dns     = "1::cafe";
     const char                   *address = "abcd::beef";
     const char                   *gw      = "dcba::beef";
@@ -634,7 +669,7 @@ test_write_ip6_wired_connection(void)
     /* DNS searches */
     nm_setting_ip_config_add_dns_search(s_ip6, "wallaceandgromit.com");
 
-    write_test_connection_and_reread(connection, FALSE);
+    write_test_connection_and_reread(connection, FALSE, TEST_KEYFILES_DIR "/Test_Write_Wired_IP6");
 }
 
 static void
@@ -746,12 +781,12 @@ test_read_valid_wireless_connection(void)
 static void
 test_write_wireless_connection(void)
 {
-    NMTST_UUID_INIT(uuid);
     gs_unref_object NMConnection *connection = NULL;
     NMSettingConnection          *s_con;
     NMSettingWireless            *s_wireless;
     NMSettingIPConfig            *s_ip4;
     NMSettingIPConfig            *s_ip6;
+    const char                   *uuid  = "e9b337d3-6aa0-552a-822c-4b71c8ddec2e";
     const char                   *bssid = "aa:b9:a1:74:55:44";
     GBytes                       *ssid;
     unsigned char                 tmpssid[] = {0x31, 0x33, 0x33, 0x37};
@@ -809,7 +844,7 @@ test_write_wireless_connection(void)
 
     g_object_set(s_ip6, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
 
-    write_test_connection_and_reread(connection, FALSE);
+    write_test_connection_and_reread(connection, FALSE, TEST_KEYFILES_DIR "/Test_Write_Wireless");
 }
 
 static void
@@ -1181,12 +1216,12 @@ test_read_bt_dun_connection(void)
 static void
 test_write_bt_dun_connection(void)
 {
-    NMTST_UUID_INIT(uuid);
     gs_unref_object NMConnection *connection = NULL;
     NMSettingConnection          *s_con;
     NMSettingBluetooth           *s_bt;
     NMSettingIPConfig            *s_ip4;
     NMSettingGsm                 *s_gsm;
+    const char                   *uuid      = "76c59c25-c27c-57a4-8357-1409491cea45";
     const char                   *bdaddr    = "aa:b9:a1:74:55:44";
     guint64                       timestamp = 0x12344433L;
 
@@ -1242,7 +1277,9 @@ test_write_bt_dun_connection(void)
                  "parliament",
                  NULL);
 
-    write_test_connection_and_reread(connection, TRUE);
+    write_test_connection_and_reread(connection,
+                                     TRUE,
+                                     TEST_KEYFILES_DIR "/Test_Write_Bluetooth_DUN");
 }
 
 static void
@@ -1286,12 +1323,12 @@ test_read_gsm_connection(void)
 static void
 test_write_gsm_connection(void)
 {
-    NMTST_UUID_INIT(uuid);
     gs_unref_object NMConnection *connection = NULL;
     NMSettingConnection          *s_con;
     NMSettingIPConfig            *s_ip4;
     NMSettingGsm                 *s_gsm;
     guint64                       timestamp = 0x12344433L;
+    const char                   *uuid      = "952d369e-52c7-5686-ad8c-37ca7e47f8b2";
 
     connection = nm_simple_connection_new();
 
@@ -1345,7 +1382,7 @@ test_write_gsm_connection(void)
                  "310260",
                  NULL);
 
-    write_test_connection_and_reread(connection, TRUE);
+    write_test_connection_and_reread(connection, TRUE, TEST_KEYFILES_DIR "/Test_Write_GSM");
 }
 
 static void
@@ -1830,12 +1867,12 @@ test_read_infiniband_connection(void)
 static void
 test_write_infiniband_connection(void)
 {
-    NMTST_UUID_INIT(uuid);
     gs_unref_object NMConnection *connection = NULL;
     NMSettingConnection          *s_con;
     NMSettingInfiniband          *s_ib;
     NMSettingIPConfig            *s_ip4;
     NMSettingIPConfig            *s_ip6;
+    const char                   *uuid = "c27325f5-9eff-517a-9d96-d7897785fa5b";
     const char *mac = "99:88:77:66:55:44:ab:bc:cd:de:ef:f0:0a:1b:2c:3d:4e:5f:6f:ba";
 
     connection = nm_simple_connection_new();
@@ -1883,7 +1920,7 @@ test_write_infiniband_connection(void)
     nm_connection_add_setting(connection, NM_SETTING(s_ip6));
     g_object_set(s_ip6, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
 
-    write_test_connection_and_reread(connection, FALSE);
+    write_test_connection_and_reread(connection, FALSE, TEST_KEYFILES_DIR "/Test_Write_Infiniband");
 }
 
 static void
@@ -1922,13 +1959,13 @@ test_read_bridge_main(void)
 static void
 test_write_bridge_main(void)
 {
-    NMTST_UUID_INIT(uuid);
     gs_unref_object NMConnection *connection = NULL;
     NMSettingConnection          *s_con;
     NMSettingBridge              *s_bridge;
     NMSettingWired               *s_wired;
     NMSettingIPConfig            *s_ip4;
     NMSettingIPConfig            *s_ip6;
+    const char                   *uuid = "b23c15e0-815b-5e6e-a5f9-aea49237aa35";
 
     connection = nm_simple_connection_new();
     g_assert(connection);
@@ -1982,7 +2019,9 @@ test_write_bridge_main(void)
     nm_connection_add_setting(connection, NM_SETTING(s_ip6));
     g_object_set(s_ip6, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
 
-    write_test_connection_and_reread(connection, FALSE);
+    write_test_connection_and_reread(connection,
+                                     FALSE,
+                                     TEST_KEYFILES_DIR "/Test_Write_Bridge_Main");
 }
 
 static void
@@ -2022,12 +2061,12 @@ test_read_bridge_component(void)
 static void
 test_write_bridge_component(void)
 {
-    NMTST_UUID_INIT(uuid);
     gs_unref_object NMConnection *connection = NULL;
     NMSettingConnection          *s_con;
     NMSettingBridgePort          *s_port;
     NMSettingWired               *s_wired;
-    const char                   *mac = "99:88:77:66:55:44";
+    const char                   *mac  = "99:88:77:66:55:44";
+    const char                   *uuid = "7c4e34eb-419f-531c-b6ca-486f51a08d1d";
 
     connection = nm_simple_connection_new();
     g_assert(connection);
@@ -2071,7 +2110,9 @@ test_write_bridge_component(void)
                  99,
                  NULL);
 
-    write_test_connection_and_reread(connection, FALSE);
+    write_test_connection_and_reread(connection,
+                                     FALSE,
+                                     TEST_KEYFILES_DIR "/Test_Write_Bridge_Component");
 }
 
 static void
@@ -2423,11 +2464,11 @@ test_read_enum_property(void)
 static void
 test_write_enum_property(void)
 {
-    NMTST_UUID_INIT(uuid);
     gs_unref_object NMConnection *connection = NULL;
     NMSettingConnection          *s_con;
     NMSettingWired               *s_wired;
     NMSettingIPConfig            *s_ip6;
+    const char                   *uuid = "7e4cb57c-33ff-51fc-ae49-4ee414ef0b63";
 
     connection = nm_simple_connection_new();
 
@@ -2461,7 +2502,7 @@ test_write_enum_property(void)
 
     nmtst_connection_normalize(connection);
 
-    write_test_connection_and_reread(connection, FALSE);
+    write_test_connection_and_reread(connection, FALSE, TEST_KEYFILES_DIR "/Test_Write_Enum");
 }
 
 static void
@@ -2482,10 +2523,10 @@ test_read_flags_property(void)
 static void
 test_write_flags_property(void)
 {
-    NMTST_UUID_INIT(uuid);
     gs_unref_object NMConnection *connection = NULL;
     NMSettingConnection          *s_con;
     NMSetting                    *s_gsm;
+    const char                   *uuid = "19febe12-db48-5661-94cc-16529548d772";
 
     connection = nm_simple_connection_new();
 
@@ -2517,7 +2558,7 @@ test_write_flags_property(void)
 
     nmtst_connection_normalize(connection);
 
-    write_test_connection_and_reread(connection, FALSE);
+    write_test_connection_and_reread(connection, FALSE, TEST_KEYFILES_DIR "/Test_Write_Flags");
 }
 
 /*****************************************************************************/
@@ -2586,9 +2627,11 @@ test_write_tc_config(void)
     NMTCAction                   *action;
     GError                       *error = NULL;
 
-    connection =
-        nmtst_create_minimal_connection("Test TC", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
-    s_tc = nm_setting_tc_config_new();
+    connection = nmtst_create_minimal_connection("Test TC",
+                                                 "ed1cb963-ff64-5129-99ca-e05ab3195ce4",
+                                                 NM_SETTING_WIRED_SETTING_NAME,
+                                                 NULL);
+    s_tc       = nm_setting_tc_config_new();
 
     qdisc1 = nm_tc_qdisc_new("fq_codel", TC_H_ROOT, &error);
     nmtst_assert_success(qdisc1, error);
@@ -2622,7 +2665,7 @@ test_write_tc_config(void)
     nm_connection_add_setting(connection, s_tc);
 
     nmtst_connection_normalize(connection);
-    write_test_connection_and_reread(connection, FALSE);
+    write_test_connection_and_reread(connection, FALSE, TEST_KEYFILES_DIR "/Test_Write_TC");
 
     nm_tc_qdisc_unref(qdisc1);
     nm_tc_qdisc_unref(qdisc2);

@@ -1,0 +1,26 @@
+[connection]
+id=T-Mobile Funkadelic 2
+uuid=952d369e-52c7-5686-ad8c-37ca7e47f8b2
+type=gsm
+autoconnect=false
+timestamp=305415219
+
+[gsm]
+apn=internet2.voicestream.com
+device-id=da812de91eec16620b06cd0ca5cbc7ea25245222
+home-only=true
+network-id=254098
+password=parliament2
+pin=123456
+sim-id=89148000000060671234
+sim-operator-id=310260
+username=george.clinton.again
+
+[ipv4]
+method=auto
+
+[ipv6]
+addr-gen-mode=default
+method=auto
+
+[proxy]

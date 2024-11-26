@@ -1,0 +1,19 @@
+[connection]
+id=Work Wired IP6
+uuid=0bef2d09-50a3-56b9-912a-5dc941284e3e
+type=ethernet
+autoconnect=false
+
+[ethernet]
+
+[ipv4]
+method=disabled
+
+[ipv6]
+addr-gen-mode=default
+address1=abcd::beef/64,dcba::beef
+dns=1::cafe;
+dns-search=wallaceandgromit.com;
+method=manual
+
+[proxy]

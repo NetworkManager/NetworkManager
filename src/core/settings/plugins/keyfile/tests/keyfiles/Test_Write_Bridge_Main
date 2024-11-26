@@ -1,0 +1,19 @@
+[connection]
+id=Test Write Bridge Main
+uuid=b23c15e0-815b-5e6e-a5f9-aea49237aa35
+type=bridge
+interface-name=br0
+
+[ethernet]
+
+[bridge]
+
+[ipv4]
+address1=1.2.3.4/24,1.1.1.1
+method=manual
+
+[ipv6]
+addr-gen-mode=default
+method=auto
+
+[proxy]

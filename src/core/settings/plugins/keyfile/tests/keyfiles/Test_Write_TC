@@ -1,0 +1,21 @@
+[connection]
+id=Test TC
+uuid=ed1cb963-ff64-5129-99ca-e05ab3195ce4
+type=ethernet
+
+[ethernet]
+
+[ipv4]
+method=auto
+
+[ipv6]
+addr-gen-mode=default
+method=auto
+
+[proxy]
+
+[tc]
+qdisc.root=handle 1234: fq_codel
+qdisc.ffff:fff1=ingress
+tfilter.1234:=matchall action drop
+tfilter.ffff:=matchall action simple sdata Hello

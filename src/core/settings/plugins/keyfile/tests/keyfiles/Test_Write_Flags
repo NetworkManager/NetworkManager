@@ -1,0 +1,18 @@
+[connection]
+id=Test Write Flags Property
+uuid=19febe12-db48-5661-94cc-16529548d772
+type=gsm
+
+[gsm]
+apn=myapn
+password-flags=6
+username=adfasdfasdf
+
+[ipv4]
+method=auto
+
+[ipv6]
+addr-gen-mode=default
+method=auto
+
+[proxy]

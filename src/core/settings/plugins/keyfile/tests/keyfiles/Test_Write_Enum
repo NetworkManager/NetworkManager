@@ -1,0 +1,16 @@
+[connection]
+id=Test Write Enum Property
+uuid=7e4cb57c-33ff-51fc-ae49-4ee414ef0b63
+type=ethernet
+
+[ethernet]
+
+[ipv4]
+method=auto
+
+[ipv6]
+addr-gen-mode=default
+ip6-privacy=2
+method=auto
+
+[proxy]

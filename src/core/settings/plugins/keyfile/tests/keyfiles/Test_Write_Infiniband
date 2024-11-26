@@ -1,0 +1,19 @@
+[connection]
+id=Work InfiniBand
+uuid=c27325f5-9eff-517a-9d96-d7897785fa5b
+type=infiniband
+autoconnect=false
+
+[infiniband]
+mac-address=99:88:77:66:55:44:AB:BC:CD:DE:EF:F0:0A:1B:2C:3D:4E:5F:6F:BA
+mtu=900
+transport-mode=datagram
+
+[ipv4]
+method=auto
+
+[ipv6]
+addr-gen-mode=default
+method=auto
+
+[proxy]

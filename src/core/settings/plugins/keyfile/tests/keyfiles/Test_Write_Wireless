@@ -1,0 +1,20 @@
+[connection]
+id=Work Wireless
+uuid=e9b337d3-6aa0-552a-822c-4b71c8ddec2e
+type=wifi
+autoconnect=false
+timestamp=305415219
+
+[wifi]
+bssid=AA:B9:A1:74:55:44
+mtu=1000
+ssid=1337
+
+[ipv4]
+method=auto
+
+[ipv6]
+addr-gen-mode=default
+method=auto
+
+[proxy]
