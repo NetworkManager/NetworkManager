@@ -4624,7 +4624,7 @@ _l3_commit_one(NML3Cfg              *self,
     }
 
     if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_NONE)
-        route_table_sync = NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN;
+        route_table_sync = NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN_AND_NM_ROUTES;
 
     if (commit_type == NM_L3_CFG_COMMIT_TYPE_REAPPLY) {
         gs_unref_array GArray *ipv6_temp_addrs_keep = NULL;
@@ -4650,6 +4650,8 @@ _l3_commit_one(NML3Cfg              *self,
         }
 
         if (c_list_is_empty(&self->priv.p->blocked_lst_head_x[IS_IPv4])) {
+            gs_unref_ptrarray GPtrArray *routes_old = NULL;
+
             addresses_prune =
                 nm_platform_ip_address_get_prune_list(self->priv.platform,
                                                       addr_family,
@@ -4657,10 +4659,26 @@ _l3_commit_one(NML3Cfg              *self,
                                                       nm_g_array_data(ipv6_temp_addrs_keep),
                                                       nm_g_array_len(ipv6_temp_addrs_keep));
 
+            if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN_AND_NM_ROUTES) {
+                NMDedupMultiIter iter;
+                const NMPObject *rt_obj;
+
+                routes_old = g_ptr_array_new();
+                nm_l3_config_data_iter_obj_for_each (&iter,
+                                                     l3cd_old,
+                                                     &rt_obj,
+                                                     NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4))
+                    g_ptr_array_add(routes_old, (gpointer) rt_obj);
+
+                nm_platform_route_objs_sort(routes_old, NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY);
+            }
+
             routes_prune = nm_platform_ip_route_get_prune_list(self->priv.platform,
                                                                addr_family,
                                                                self->priv.ifindex,
-                                                               route_table_sync);
+                                                               route_table_sync,
+                                                               routes_old);
+
             _obj_state_zombie_lst_prune_all(self, addr_family);
         }
     } else {

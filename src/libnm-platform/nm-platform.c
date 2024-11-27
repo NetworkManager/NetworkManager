@@ -61,6 +61,8 @@ G_STATIC_ASSERT(sizeof(((NMPlatformLink *) NULL)->l_address.data) == _NM_UTILS_H
 G_STATIC_ASSERT(sizeof(((NMPlatformLink *) NULL)->l_perm_address.data) == _NM_UTILS_HWADDR_LEN_MAX);
 G_STATIC_ASSERT(sizeof(((NMPlatformLink *) NULL)->l_broadcast.data) == _NM_UTILS_HWADDR_LEN_MAX);
 
+static int _route_objs_cmp_values(gconstpointer a, gconstpointer b, gpointer user_data);
+
 static const char *
 _nmp_link_port_data_to_string(NMPortKind                    port_kind,
                               const NMPlatformLinkPortData *port_data,
@@ -4733,11 +4735,24 @@ nm_platform_ip_address_get_prune_list(NMPlatform            *self,
     return result;
 }
 
+static gboolean
+_route_obj_find_bsearch(GPtrArray *sorted_routes_objs, const NMPObject *route_obj)
+{
+    gssize pos =
+        nm_ptrarray_find_bsearch((gconstpointer *) sorted_routes_objs->pdata,
+                                 sorted_routes_objs->len,
+                                 route_obj,
+                                 _route_objs_cmp_values,
+                                 GINT_TO_POINTER((int) NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY));
+    return pos >= 0;
+}
+
 GPtrArray *
 nm_platform_ip_route_get_prune_list(NMPlatform            *self,
                                     int                    addr_family,
                                     int                    ifindex,
-                                    NMIPRouteTableSyncMode route_table_sync)
+                                    NMIPRouteTableSyncMode route_table_sync,
+                                    GPtrArray             *sorted_old_routes_objs)
 {
     NMPLookup                    lookup;
     GPtrArray                   *routes_prune = NULL;
@@ -4752,8 +4767,19 @@ nm_platform_ip_route_get_prune_list(NMPlatform            *self,
     nm_assert(NM_IN_SET(route_table_sync,
                         NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN,
                         NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_EXCEPT_LOCAL,
+                        NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN_AND_NM_ROUTES,
                         NM_IP_ROUTE_TABLE_SYNC_MODE_ALL,
                         NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_PRUNE));
+
+    if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN_AND_NM_ROUTES) {
+        nm_assert(sorted_old_routes_objs);
+        nm_assert(nm_utils_ptrarray_is_sorted(
+            (gconstpointer *) sorted_old_routes_objs->pdata,
+            sorted_old_routes_objs->len,
+            FALSE,
+            _route_objs_cmp_values,
+            GINT_TO_POINTER((int) NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)));
+    }
 
     nmp_lookup_init_object_by_ifindex(&lookup,
                                       NMP_OBJECT_TYPE_IP_ROUTE(NM_IS_IPv4(addr_family)),
@@ -4774,6 +4800,11 @@ nm_platform_ip_route_get_prune_list(NMPlatform            *self,
         switch (route_table_sync) {
         case NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN:
             if (!nm_platform_route_table_is_main(nm_platform_ip_route_get_effective_table(&rt->rx)))
+                continue;
+            break;
+        case NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN_AND_NM_ROUTES:
+            if (!nm_platform_route_table_is_main(nm_platform_ip_route_get_effective_table(&rt->rx))
+                && !_route_obj_find_bsearch(sorted_old_routes_objs, obj))
                 continue;
             break;
         case NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_EXCEPT_LOCAL:
@@ -5229,7 +5260,8 @@ nm_platform_ip_route_flush(NMPlatform *self, int addr_family, int ifindex)
         routes_prune = nm_platform_ip_route_get_prune_list(self,
                                                            AF_INET,
                                                            ifindex,
-                                                           NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_PRUNE);
+                                                           NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_PRUNE,
+                                                           NULL);
         success &= nm_platform_ip_route_sync(self, AF_INET, ifindex, NULL, routes_prune, NULL);
     }
     if (NM_IN_SET(addr_family, AF_UNSPEC, AF_INET6)) {
@@ -5238,7 +5270,8 @@ nm_platform_ip_route_flush(NMPlatform *self, int addr_family, int ifindex)
         routes_prune = nm_platform_ip_route_get_prune_list(self,
                                                            AF_INET6,
                                                            ifindex,
-                                                           NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_PRUNE);
+                                                           NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_PRUNE,
+                                                           NULL);
         success &= nm_platform_ip_route_sync(self, AF_INET6, ifindex, NULL, routes_prune, NULL);
     }
     return success;
@@ -8528,6 +8561,45 @@ nm_platform_lnk_wireguard_cmp(const NMPlatformLnkWireGuard *a, const NMPlatformL
     NM_CMP_FIELD_MEMCMP(a, b, private_key);
     NM_CMP_FIELD_MEMCMP(a, b, public_key);
     return 0;
+}
+
+static int
+_route_objs_cmp_values(gconstpointer a, gconstpointer b, gpointer user_data)
+{
+    const NMPObject         *a_obj    = a;
+    const NMPObject         *b_obj    = b;
+    NMPlatformIPRouteCmpType cmp_type = GPOINTER_TO_INT(user_data);
+
+    nm_assert(a_obj && b_obj);
+    nm_assert(NMP_OBJECT_CAST_IP_ROUTE(a_obj) && NMP_OBJECT_CAST_IP_ROUTE(b_obj));
+
+    if (NMP_OBJECT_GET_ADDR_FAMILY(a_obj) != NMP_OBJECT_GET_ADDR_FAMILY(b_obj)) {
+        return NMP_OBJECT_GET_ADDR_FAMILY(a_obj) == AF_INET ? 1 : -1;
+    } else if (NMP_OBJECT_GET_ADDR_FAMILY(a_obj) == AF_INET) {
+        return nm_platform_ip4_route_cmp(NMP_OBJECT_CAST_IP4_ROUTE(a_obj),
+                                         NMP_OBJECT_CAST_IP4_ROUTE(b_obj),
+                                         cmp_type);
+    } else {
+        return nm_platform_ip6_route_cmp(NMP_OBJECT_CAST_IP6_ROUTE(a_obj),
+                                         NMP_OBJECT_CAST_IP6_ROUTE(b_obj),
+                                         cmp_type);
+    }
+}
+
+static int
+_route_objs_cmp(gconstpointer a, gconstpointer b, gpointer user_data)
+{
+    nm_assert(a && b);
+
+    return _route_objs_cmp_values(*((const NMPObject **) a), *((const NMPObject **) b), user_data);
+}
+
+void
+nm_platform_route_objs_sort(GPtrArray *routes_objs, NMPlatformIPRouteCmpType cmp_type)
+{
+    nm_assert(routes_objs);
+
+    g_ptr_array_sort_with_data(routes_objs, _route_objs_cmp, GINT_TO_POINTER((int) cmp_type));
 }
 
 void
