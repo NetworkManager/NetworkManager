@@ -2386,7 +2386,8 @@ int nm_platform_ip6_route_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatf
 GPtrArray *nm_platform_ip_route_get_prune_list(NMPlatform            *self,
                                                int                    addr_family,
                                                int                    ifindex,
-                                               NMIPRouteTableSyncMode route_table_sync);
+                                               NMIPRouteTableSyncMode route_table_sync,
+                                               GPtrArray             *old_routes_objs);
 
 gboolean nm_platform_ip_route_sync(NMPlatform *self,
                                    int         addr_family,
@@ -2491,6 +2492,8 @@ int nm_platform_lnk_vxlan_cmp(const NMPlatformLnkVxlan *a, const NMPlatformLnkVx
 int nm_platform_lnk_wireguard_cmp(const NMPlatformLnkWireGuard *a, const NMPlatformLnkWireGuard *b);
 
 GHashTable *nm_platform_ip4_address_addr_to_hash(NMPlatform *self, int ifindex);
+
+void nm_platform_route_objs_sort(GPtrArray *routes_objs, NMPlatformIPRouteCmpType cmp_type);
 
 int nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
                               const NMPlatformIP4Route *b,

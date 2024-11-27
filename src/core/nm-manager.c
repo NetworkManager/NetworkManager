@@ -462,21 +462,24 @@ static GVariant *
 _version_info_get(void)
 {
     const guint32 arr[] = {
+        /* The array contains as first element NM_VERSION, which can be
+         * used to numerically compare the version (see also NM_ENCODE_VERSION,
+         * nm_utils_version(), nm_encode_version() and nm_decode_version(). */
         NM_VERSION,
-    };
 
-    /* The array contains as first element NM_VERSION, which can be
-     * used to numerically compare the version (see also NM_ENCODE_VERSION,
-     * nm_utils_version(), nm_encode_version() and nm_decode_version().
-     *
-     * The following elements of the array are a bitfield of capabilities.
-     * These capabilities should only depend on compile-time abilities
-     * (unlike NM_MANAGER_CAPABILITIES, NMCapability). The supported values
-     * are from NMVersionInfoCapability enum. This way to expose capabilities
-     * is more cumbersome but more efficient compared to NM_MANAGER_CAPABILITIES.
-     * As such, it is cheap to add capabilities for something, where you would
-     * avoid it as NM_MANAGER_CAPABILITIES due to the overhead.
-     */
+        /* The following elements of the array are a bitfield of capabilities.
+         * These capabilities should only depend on compile-time abilities
+         * (unlike NM_MANAGER_CAPABILITIES, NMCapability). The supported values
+         * are from NMVersionInfoCapability enum. This way to expose capabilities
+         * is more cumbersome but more efficient compared to NM_MANAGER_CAPABILITIES.
+         * As such, it is cheap to add capabilities for something, where you would
+         * avoid it as NM_MANAGER_CAPABILITIES due to the overhead.
+         *
+         * Each of the array's elements has 32 bits. This means that capabilities
+         * with index 0-31 goes to element #1, with index 32-63 to element #2,
+         * with index 64-95 to element #3 and so on. */
+        1 << NM_VERSION_INFO_CAPABILITY_SYNC_ROUTE_WITH_TABLE,
+    };
 
     return nm_g_variant_new_au(arr, G_N_ELEMENTS(arr));
 }
