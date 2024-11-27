@@ -4774,8 +4774,8 @@ nm_client_save_hostname(NMClient     *client,
  * @hostname: (nullable): the new persistent hostname to set, or %NULL to
  *   clear any existing persistent hostname
  * @cancellable: a #GCancellable, or %NULL
- * @callback: (scope async): callback to be called when the operation completes
- * @user_data: (closure): caller-specific data passed to @callback
+ * @callback: (scope async) (closure user_data): callback to be called when the operation completes
+ * @user_data: caller-specific data passed to @callback
  *
  * Requests that the machine's persistent hostname be set to the specified value
  * or cleared.
@@ -5772,8 +5772,8 @@ _add_connection_call(NMClient                     *self,
  *   added, not the object itself
  * @save_to_disk: whether to immediately save the connection to disk
  * @cancellable: a #GCancellable, or %NULL
- * @callback: (scope async): callback to be called when the add operation completes
- * @user_data: (closure): caller-specific data passed to @callback
+ * @callback: (scope async) (closure user_data): callback to be called when the add operation completes
+ * @user_data: caller-specific data passed to @callback
  *
  * Requests that the remote settings service add the given settings to a new
  * connection.  If @save_to_disk is %TRUE, the connection is immediately written
@@ -5845,8 +5845,8 @@ nm_client_add_connection_finish(NMClient *client, GAsyncResult *result, GError *
  *   not yet provide AddConnection2(). By setting this to %FALSE, the function
  *   under the hood always calls AddConnection2().
  * @cancellable: a #GCancellable, or %NULL
- * @callback: (scope async): callback to be called when the add operation completes
- * @user_data: (closure): caller-specific data passed to @callback
+ * @callback: (scope async) (closure user_data): callback to be called when the add operation completes
+ * @user_data: caller-specific data passed to @callback
  *
  * Call AddConnection2() D-Bus API asynchronously.
  *
@@ -5972,8 +5972,8 @@ nm_client_load_connections(NMClient     *client,
  * @client: the %NMClient
  * @filenames: (array zero-terminated=1): %NULL-terminated array of filenames to load
  * @cancellable: a #GCancellable, or %NULL
- * @callback: (scope async): callback to be called when the operation completes
- * @user_data: (closure): caller-specific data passed to @callback
+ * @callback: (scope async) (closure user_data): callback to be called when the operation completes
+ * @user_data: caller-specific data passed to @callback
  *
  * Requests that the remote settings service asynchronously load or reload the
  * given files, adding or updating the connections described within.
@@ -6087,8 +6087,8 @@ nm_client_reload_connections(NMClient *client, GCancellable *cancellable, GError
  * nm_client_reload_connections_async:
  * @client: the #NMClient
  * @cancellable: a #GCancellable, or %NULL
- * @callback: (scope async): callback to be called when the reload operation completes
- * @user_data: (closure): caller-specific data passed to @callback
+ * @callback: (scope async) (closure user_data): callback to be called when the reload operation completes
+ * @user_data: caller-specific data passed to @callback
  *
  * Requests that the remote settings service begin reloading all connection
  * files from disk, adding, updating, and removing connections until the
@@ -6444,8 +6444,8 @@ checkpoint_create_cb(GObject *object, GAsyncResult *result, gpointer user_data)
  * @rollback_timeout: the rollback timeout in seconds
  * @flags: creation flags
  * @cancellable: a #GCancellable, or %NULL
- * @callback: (scope async): callback to be called when the add operation completes
- * @user_data: (closure): caller-specific data passed to @callback
+ * @callback: (scope async) (closure user_data): callback to be called when the add operation completes
+ * @user_data: caller-specific data passed to @callback
  *
  * Creates a checkpoint of the current networking configuration
  * for given interfaces. An empty @devices argument means all
@@ -6517,8 +6517,8 @@ nm_client_checkpoint_create_finish(NMClient *client, GAsyncResult *result, GErro
  * @client: the %NMClient
  * @checkpoint_path: the D-Bus path for the checkpoint
  * @cancellable: a #GCancellable, or %NULL
- * @callback: (scope async): callback to be called when the add operation completes
- * @user_data: (closure): caller-specific data passed to @callback
+ * @callback: (scope async) (closure user_data): callback to be called when the add operation completes
+ * @user_data: caller-specific data passed to @callback
  *
  * Destroys an existing checkpoint without performing a rollback.
  *
@@ -6577,8 +6577,8 @@ nm_client_checkpoint_destroy_finish(NMClient *client, GAsyncResult *result, GErr
  * @client: the %NMClient
  * @checkpoint_path: the D-Bus path to the checkpoint
  * @cancellable: a #GCancellable, or %NULL
- * @callback: (scope async): callback to be called when the add operation completes
- * @user_data: (closure): caller-specific data passed to @callback
+ * @callback: (scope async) (closure user_data): callback to be called when the add operation completes
+ * @user_data: caller-specific data passed to @callback
  *
  * Performs the rollback of a checkpoint before the timeout is reached.
  *
@@ -6659,8 +6659,8 @@ nm_client_checkpoint_rollback_finish(NMClient *client, GAsyncResult *result, GEr
  * @add_timeout: the timeout in seconds counting from now.
  *   Set to zero, to disable the timeout.
  * @cancellable: a #GCancellable, or %NULL
- * @callback: (scope async): callback to be called when the add operation completes
- * @user_data: (closure): caller-specific data passed to @callback
+ * @callback: (scope async) (closure user_data): callback to be called when the add operation completes
+ * @user_data: caller-specific data passed to @callback
  *
  * Resets the timeout for the checkpoint with path @checkpoint_path
  * to @timeout_add.
@@ -6724,8 +6724,8 @@ nm_client_checkpoint_adjust_rollback_timeout_finish(NMClient     *client,
  * @client: the %NMClient
  * @flags: flags indicating what to reload.
  * @cancellable: a #GCancellable, or %NULL
- * @callback: (scope async): callback to be called when the add operation completes
- * @user_data: (closure): caller-specific data passed to @callback
+ * @callback: (scope async) (closure user_data): callback to be called when the add operation completes
+ * @user_data: caller-specific data passed to @callback
  *
  * Reload NetworkManager's configuration and perform certain updates, like
  * flushing caches or rewriting external state to disk. This is similar to
