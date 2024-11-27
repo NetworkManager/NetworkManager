@@ -970,8 +970,8 @@ nm_secret_agent_old_unregister_finish(NMSecretAgentOld *self, GAsyncResult *resu
  * @setting_name: the name of the secret setting
  * @hints: (array zero-terminated=1): hints to the agent
  * @flags: flags that modify the behavior of the request
- * @callback: (scope async): a callback, to be invoked when the operation is done
- * @user_data: (closure): caller-specific data to be passed to @callback
+ * @callback: (scope async) (closure user_data): a callback, to be invoked when the operation is done
+ * @user_data: caller-specific data to be passed to @callback
  *
  * Asynchronously retrieves secrets belonging to @connection for the
  * setting @setting_name.  @flags indicate specific behavior that the secret
@@ -1010,8 +1010,8 @@ nm_secret_agent_old_get_secrets(NMSecretAgentOld              *self,
  * nm_secret_agent_old_save_secrets: (virtual save_secrets)
  * @self: a #NMSecretAgentOld
  * @connection: a #NMConnection
- * @callback: (scope async): a callback, to be invoked when the operation is done
- * @user_data: (closure): caller-specific data to be passed to @callback
+ * @callback: (scope async) (closure user_data): a callback, to be invoked when the operation is done
+ * @user_data: caller-specific data to be passed to @callback
  *
  * Asynchronously ensures that all secrets inside @connection are stored to
  * disk.
@@ -1037,8 +1037,8 @@ nm_secret_agent_old_save_secrets(NMSecretAgentOld               *self,
  * nm_secret_agent_old_delete_secrets: (virtual delete_secrets)
  * @self: a #NMSecretAgentOld
  * @connection: a #NMConnection
- * @callback: (scope async): a callback, to be invoked when the operation is done
- * @user_data: (closure): caller-specific data to be passed to @callback
+ * @callback: (scope async) (closure user_data): a callback, to be invoked when the operation is done
+ * @user_data: caller-specific data to be passed to @callback
  *
  * Asynchronously asks the agent to delete all saved secrets belonging to
  * @connection.
