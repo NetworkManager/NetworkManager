@@ -191,8 +191,8 @@ nmp_object_type_to_flags(NMPObjectType obj_type)
  * @NM_IP_ROUTE_TABLE_SYNC_MODE_NONE: indicate an invalid setting.
  * @NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN: only the main table is synced. For all
  *   other tables, NM won't delete any extra routes.
- * @NM_IP_ROUTE_TABLE_SYNC_MODE_FULL: NM will sync all tables, except the
- *   local table (255).
+ * @NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_EXCEPT_LOCAL: NM will sync all tables, except
+ *   the local table (255).
  * @NM_IP_ROUTE_TABLE_SYNC_MODE_ALL: NM will sync all tables, including the
  *   local table (255).
  * @NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_PRUNE: NM will sync all tables (including
@@ -202,7 +202,7 @@ nmp_object_type_to_flags(NMPObjectType obj_type)
 typedef enum {
     NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
     NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN,
-    NM_IP_ROUTE_TABLE_SYNC_MODE_FULL,
+    NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_EXCEPT_LOCAL,
     NM_IP_ROUTE_TABLE_SYNC_MODE_ALL,
     NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_PRUNE,
 } NMIPRouteTableSyncMode;

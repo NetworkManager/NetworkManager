@@ -4751,7 +4751,7 @@ nm_platform_ip_route_get_prune_list(NMPlatform            *self,
     nm_assert(NM_IN_SET(addr_family, AF_INET, AF_INET6));
     nm_assert(NM_IN_SET(route_table_sync,
                         NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN,
-                        NM_IP_ROUTE_TABLE_SYNC_MODE_FULL,
+                        NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_EXCEPT_LOCAL,
                         NM_IP_ROUTE_TABLE_SYNC_MODE_ALL,
                         NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_PRUNE));
 
@@ -4776,7 +4776,7 @@ nm_platform_ip_route_get_prune_list(NMPlatform            *self,
             if (!nm_platform_route_table_is_main(nm_platform_ip_route_get_effective_table(&rt->rx)))
                 continue;
             break;
-        case NM_IP_ROUTE_TABLE_SYNC_MODE_FULL:
+        case NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_EXCEPT_LOCAL:
             if (nm_platform_ip_route_get_effective_table(&rt->rx) == RT_TABLE_LOCAL)
                 continue;
             break;
