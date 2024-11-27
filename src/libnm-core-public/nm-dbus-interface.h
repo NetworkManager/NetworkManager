@@ -94,16 +94,19 @@
 
 /**
  * NMVersionInfoCapability:
- * %_NM_VERSION_INFO_CAPABILITY_UNUSED: a dummy capability. It has no meaning,
- *   don't use it.
+ * @NM_VERSION_INFO_CAPABILITY_SYNC_ROUTE_WITH_TABLE: Contains the fix to a bug that
+ *   caused that routes in table other than main were not removed on reapply nor
+ *   on connection down.
+ *   https://issues.redhat.com/browse/RHEL-66262
+ *   https://issues.redhat.com/browse/RHEL-67324
  *
- * Currently no enum values are defined. These capabilities are exposed
- * on D-Bus in the "VersionInfo" bit field.
+ * The numeric values represent the bit index of the capability. These capabilities
+ * can be queried in the "VersionInfo" D-Bus property.
  *
  * Since: 1.42
  */
 typedef enum {
-    _NM_VERSION_INFO_CAPABILITY_UNUSED = 0x7FFFFFFFu,
+    NM_VERSION_INFO_CAPABILITY_SYNC_ROUTE_WITH_TABLE = 0,
 } NMVersionInfoCapability;
 
 /**
