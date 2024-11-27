@@ -3919,15 +3919,18 @@ _l3cfg_routed_dns(NML3Cfg *self, NML3ConfigData *l3cd)
                  * table sync mode to FULL, to clear the DNS routes added
                  * previously. */
                 self->priv.dns_route_added_x[IS_IPv4] = FALSE;
-                nm_l3_config_data_set_route_table_sync(l3cd,
-                                                       addr_family,
-                                                       NM_IP_ROUTE_TABLE_SYNC_MODE_FULL);
+                nm_l3_config_data_set_route_table_sync(
+                    l3cd,
+                    addr_family,
+                    NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_EXCEPT_LOCAL);
             }
             continue;
         }
 
         nameservers = nm_l3_config_data_get_nameservers(l3cd, addr_family, &len);
-        nm_l3_config_data_set_route_table_sync(l3cd, addr_family, NM_IP_ROUTE_TABLE_SYNC_MODE_FULL);
+        nm_l3_config_data_set_route_table_sync(l3cd,
+                                               addr_family,
+                                               NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_EXCEPT_LOCAL);
 
         for (i = 0; i < len; i++) {
             nm_auto_nmpobj NMPObject *obj = NULL;
@@ -3977,9 +3980,10 @@ _l3cfg_routed_dns(NML3Cfg *self, NML3ConfigData *l3cd)
                       nm_platform_ip4_route_to_string(&route_new.r4, route_buf, sizeof(route_buf)));
 
                 nm_l3_config_data_add_route_4(l3cd, &route_new.r4);
-                nm_l3_config_data_set_route_table_sync(l3cd,
-                                                       AF_INET,
-                                                       NM_IP_ROUTE_TABLE_SYNC_MODE_FULL);
+                nm_l3_config_data_set_route_table_sync(
+                    l3cd,
+                    AF_INET,
+                    NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_EXCEPT_LOCAL);
                 route_added = TRUE;
             } else {
                 route_new.r6 = (NMPlatformIP6Route) {
