@@ -2744,7 +2744,7 @@ class TestNmCloudSetup(unittest.TestCase):
             "subnetCidrBlock": "172.31.166.0/20",
             "virtualRouterIp": "172.31.166.1",
             "vlanTag": 700,
-            "vnicId": "ocid1.vnic.oc1.uk-hogwarts.abracadabra"
+            "vnicId": "ocid1.vnic.oc1.uk-hogwarts.expelliarmus"
           }
         ]
         """
@@ -2800,7 +2800,6 @@ class TestNmCloudSetup(unittest.TestCase):
         nmc.pexp.expect(pexpect.EOF)
 
         Util.valgrind_check_log(nmc.valgrind_log, "test_oci")
-
 
 ###############################################################################
 
