@@ -615,3 +615,46 @@ again:
     NM_SET_OUT(out_version_id_changed, FALSE);
     return TRUE;
 }
+
+/*****************************************************************************/
+
+typedef struct {
+    GMainLoop          *main_loop;
+    GError            **error;
+    NMActiveConnection *active_connection;
+} AddAndActivateData;
+
+static void
+_nmcs_add_and_activate_cb(GObject *source, GAsyncResult *result, gpointer user_data)
+{
+    AddAndActivateData *data = user_data;
+
+    data->active_connection =
+        nm_client_add_and_activate_connection_finish(NM_CLIENT(source), result, data->error);
+    g_main_loop_quit(data->main_loop);
+}
+
+NMActiveConnection *
+nmcs_add_and_activate(NMClient     *client,
+                      GCancellable *sigterm_cancellable,
+                      NMConnection *connection,
+                      GError      **error)
+{
+    nm_auto_unref_gmainloop GMainLoop *main_loop = g_main_loop_new(NULL, FALSE);
+    AddAndActivateData                 data      = {
+                             .main_loop = main_loop,
+                             .error     = error,
+    };
+
+    nm_client_add_and_activate_connection_async(client,
+                                                connection,
+                                                NULL,
+                                                NULL,
+                                                sigterm_cancellable,
+                                                _nmcs_add_and_activate_cb,
+                                                &data);
+
+    g_main_loop_run(main_loop);
+
+    return data.active_connection;
+}
