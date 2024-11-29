@@ -2801,7 +2801,6 @@ class TestNmCloudSetup(unittest.TestCase):
 
         Util.valgrind_check_log(nmc.valgrind_log, "test_oci")
 
-
 ###############################################################################
 
 
