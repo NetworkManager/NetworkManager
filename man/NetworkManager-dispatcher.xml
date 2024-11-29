@@ -50,9 +50,10 @@
       NetworkManager-dispatcher will execute scripts in the
       <filename>/{etc,usr/lib}/NetworkManager/dispatcher.d</filename>
       directory or subdirectories in
-      alphabetical order in response to network events.  Each script should
-      be a regular executable file owned by root.  Furthermore, it must not be
-      writable by group or other, and not setuid.
+      alphabetical order in response to network events. Files in <filename>/etc</filename>
+      take precedence over identically-named files in <filename>/usr/lib</filename>.
+      Each script should be a regular executable file owned by root.  Furthermore, it must
+      not be writable by group or other, and not setuid.
     </para>
     <para>
       Each script receives two arguments, the first being the interface name of the
