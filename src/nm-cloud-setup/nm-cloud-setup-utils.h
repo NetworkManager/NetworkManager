@@ -153,6 +153,11 @@ NMConnection *nmcs_device_get_applied_connection(NMDevice     *device,
                                                  guint64      *version_id,
                                                  GError      **error);
 
+NMActiveConnection *nmcs_add_and_activate(NMClient     *client,
+                                          GCancellable *sigterm_cancellable,
+                                          NMConnection *connection,
+                                          GError      **error);
+
 gboolean nmcs_device_reapply(NMDevice     *device,
                              GCancellable *sigterm_cancellable,
                              NMConnection *connection,
