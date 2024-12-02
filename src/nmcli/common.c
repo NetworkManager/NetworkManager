@@ -1138,7 +1138,7 @@ nmc_rl_gen_func_ifnames(const char *text, int state)
 char *nmc_rl_pre_input_deftext;
 
 int
-nmc_rl_set_deftext(_NMC_RL_STARTUPHOOK_ARGS)
+nmc_rl_set_deftext(void)
 {
     if (nmc_rl_pre_input_deftext && rl_startup_hook) {
         rl_insert_text(nmc_rl_pre_input_deftext);
