@@ -137,6 +137,9 @@ config_h.set10('HAVE_DECL_REALLOCARRAY', cc.has_function('reallocarray', prefix:
 config_h.set10('HAVE_DECL_EXPLICIT_BZERO', cc.has_function('explicit_bzero', prefix: '#include <string.h>'))
 config_h.set10('HAVE_DECL_MEMFD_CREATE', cc.has_function('memfd_create', prefix: '#include <sys/mman.h>'))
 
+config_h.set10('HAVE_DLVSYM', cc.has_function('dlvsym', prefix: '''#define _GNU_SOURCE
+                                                                   #include <dlfcn.h>'''))
+
 # types
 config_h.set('SIZEOF_PID_T', cc.sizeof('pid_t', prefix : '#include <sys/types.h>'))
 config_h.set('SIZEOF_UID_T', cc.sizeof('uid_t', prefix : '#include <sys/types.h>'))

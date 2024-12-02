@@ -10,6 +10,7 @@
 #if WITH_NBFT
 
 #include <libnvme.h>
+#include <dlfcn.h>
 
 #include "libnm-log-core/nm-logging.h"
 #include "libnm-core-intern/nm-core-internal.h"
@@ -30,6 +31,34 @@ is_valid_addr(int family, const char *addr)
 {
     return (addr && strlen(addr) > 0 && !nm_streq(addr, "0.0.0.0") && !nm_streq(addr, "::")
             && nm_utils_ipaddr_valid(family, addr));
+}
+
+static int (*_nvme_nbft_read)(struct nbft_info **nbft, const char *filename);
+static void (*_nvme_nbft_free)(struct nbft_info *nbft);
+
+static void *
+load_libnvme(void)
+{
+    void *handle;
+
+    handle = dlopen("libnvme.so.1", RTLD_LAZY);
+    if (!handle)
+        return NULL;
+
+#if HAVE_DLVSYM
+    _nvme_nbft_read = dlvsym(handle, "nvme_nbft_read", "LIBNVME_1_5");
+    _nvme_nbft_free = dlvsym(handle, "nvme_nbft_free", "LIBNVME_1_5");
+#else
+    /* no dlvsym() in musl */
+    _nvme_nbft_read = dlsym(handle, "nvme_nbft_read");
+    _nvme_nbft_free = dlsym(handle, "nvme_nbft_free");
+#endif
+
+    if (!_nvme_nbft_read || !_nvme_nbft_free) {
+        dlclose(handle);
+        return NULL;
+    }
+    return handle;
 }
 
 static NMConnection *
@@ -225,12 +254,13 @@ parse_hfi(struct nbft_info_hfi *hfi, int iface_idx, char **hostname)
 NMConnection **
 nmi_nbft_reader_parse(const char *sysfs_dir, char **hostname)
 {
-    GPtrArray            *a;
-    gs_free char         *path  = NULL;
-    gs_free_error GError *error = NULL;
-    GDir                 *dir;
-    const char           *entry_name;
-    int                   idx = 1;
+    nm_auto_unref_ptrarray GPtrArray *a     = NULL;
+    gs_free char                     *path  = NULL;
+    gs_free_error GError             *error = NULL;
+    GDir                             *dir;
+    void                             *libnvme_handle = NULL;
+    const char                       *entry_name;
+    int                               idx = 1;
 
     g_return_val_if_fail(sysfs_dir != NULL, NULL);
     path = g_build_filename(sysfs_dir, "firmware", "acpi", "tables", NULL);
@@ -250,8 +280,14 @@ nmi_nbft_reader_parse(const char *sysfs_dir, char **hostname)
         if (!g_str_has_prefix(entry_name, "NBFT"))
             continue;
 
+        /* attempt to load libnvme only on the first table match, saving some I/O */
+        if (!libnvme_handle && !(libnvme_handle = load_libnvme())) {
+            g_dir_close(dir);
+            return NULL;
+        }
+
         entry_path = g_build_filename(path, entry_name, NULL);
-        ret        = nvme_nbft_read(&nbft, entry_path);
+        ret        = _nvme_nbft_read(&nbft, entry_path);
         if (ret) {
             _LOGW(LOGD_CORE, "Error parsing NBFT table %s: %m", entry_path);
             continue;
@@ -274,10 +310,11 @@ nmi_nbft_reader_parse(const char *sysfs_dir, char **hostname)
                 g_ptr_array_add(a, connection);
         }
 
-        nvme_nbft_free(nbft);
+        _nvme_nbft_free(nbft);
     }
 
     g_dir_close(dir);
+    dlclose(libnvme_handle);
     g_ptr_array_add(a, NULL); /* trailing NULL-delimiter */
     return (NMConnection **) g_ptr_array_free(a, FALSE);
 }

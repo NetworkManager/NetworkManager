@@ -282,3 +282,6 @@
 
 /* Define if NBFT support is enabled */
 #mesondefine WITH_NBFT
+
+/* Define to 1 if dlvsym() is available */
+#mesondefine HAVE_DLVSYM
