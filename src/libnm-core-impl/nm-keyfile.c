@@ -939,6 +939,31 @@ _build_list_create(GKeyFile     *keyfile,
 }
 
 static void
+gateway_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
+{
+    const char   *setting_name = nm_setting_get_name(setting);
+    gs_free char *gateway      = NULL;
+    const char   *old_gateway;
+
+    gateway = nm_keyfile_plugin_kf_get_string(info->keyfile, setting_name, key, NULL);
+    if (!gateway)
+        return;
+
+    old_gateway = nm_setting_ip_config_get_gateway(NM_SETTING_IP_CONFIG(setting));
+    if (old_gateway && !nm_streq0(gateway, old_gateway)) {
+        read_handle_warn(info,
+                         key,
+                         NM_SETTING_IP_CONFIG_GATEWAY,
+                         NM_KEYFILE_WARN_SEVERITY_WARN,
+                         _("ignoring gateway \"%s\" from \"address*\" keys because the "
+                           "\"gateway\" key is set"),
+                         old_gateway);
+    }
+
+    g_object_set(setting, NM_SETTING_IP_CONFIG_GATEWAY, gateway, NULL);
+}
+
+static void
 ip_address_or_route_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *setting_key)
 {
     const char                  *setting_name = nm_setting_get_name(setting);
@@ -3055,6 +3080,7 @@ static const ParseInfoSetting *const parse_infos[_NM_META_SETTING_TYPE_NUM] = {
                                 .parser              = ip_dns_parser,
                                 .writer              = dns_writer, ),
             PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_DNS_OPTIONS, .always_write = TRUE, ),
+            PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_GATEWAY, .parser = gateway_parser, ),
             PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_ROUTES,
                                 .parser_no_check_key = TRUE,
                                 .parser              = ip_address_or_route_parser,
@@ -3082,6 +3108,7 @@ static const ParseInfoSetting *const parse_infos[_NM_META_SETTING_TYPE_NUM] = {
                                 .parser              = ip_dns_parser,
                                 .writer              = dns_writer, ),
             PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_DNS_OPTIONS, .always_write = TRUE, ),
+            PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_GATEWAY, .parser = gateway_parser, ),
             PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_ROUTES,
                                 .parser_no_check_key = TRUE,
                                 .parser              = ip_address_or_route_parser,

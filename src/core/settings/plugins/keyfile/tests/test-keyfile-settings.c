@@ -404,6 +404,34 @@ test_read_valid_wired_connection(void)
 }
 
 static void
+test_read_duplicate_gateways(void)
+{
+    gs_unref_object NMConnection *connection = NULL;
+    NMSettingIPConfig            *s_ip4;
+    NMSettingIPConfig            *s_ip6;
+
+    NMTST_EXPECT_NM_WARN(
+        "*ipv4* ignoring gateway * from \"address*\" keys because the \"gateway\" key is set*");
+    NMTST_EXPECT_NM_WARN(
+        "*ipv6* ignoring gateway * from \"address*\" keys because the \"gateway\" key is set*");
+    connection = keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/Test_Duplicate_Gateways");
+    g_test_assert_expected_messages();
+
+    s_ip4 = nm_connection_get_setting_ip4_config(connection);
+    g_assert(s_ip4);
+    g_assert_cmpint(nm_setting_ip_config_get_num_addresses(s_ip4), ==, 2);
+    check_ip_address(s_ip4, 0, "192.168.0.5", 24);
+    check_ip_address(s_ip4, 1, "192.0.2.1", 16);
+    g_assert_cmpstr(nm_setting_ip_config_get_gateway(s_ip4), ==, "192.168.0.253");
+
+    s_ip6 = nm_connection_get_setting_ip6_config(connection);
+    g_assert(s_ip6);
+    g_assert_cmpint(nm_setting_ip_config_get_num_addresses(s_ip6), ==, 1);
+    check_ip_address(s_ip6, 0, "fd01::1", 64);
+    g_assert_cmpstr(nm_setting_ip_config_get_gateway(s_ip6), ==, "fd01::bbbb");
+}
+
+static void
 add_one_ip_address(NMSettingIPConfig *s_ip, const char *addr, guint32 prefix)
 {
     NMIPAddress          *ip_addr;
@@ -2898,6 +2926,8 @@ main(int argc, char **argv)
     /* The tests */
     g_test_add_func("/keyfile/test_read_valid_wired_connection", test_read_valid_wired_connection);
     g_test_add_func("/keyfile/test_write_wired_connection", test_write_wired_connection);
+
+    g_test_add_func("/keyfile/test_read_duplicate_gateways", test_read_duplicate_gateways);
 
     g_test_add_func("/keyfile/test_read_ip6_wired_connection", test_read_ip6_wired_connection);
     g_test_add_func("/keyfile/test_write_ip6_wired_connection", test_write_ip6_wired_connection);
