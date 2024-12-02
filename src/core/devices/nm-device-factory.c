@@ -147,7 +147,7 @@ nm_device_factory_get_connection_iface(NMDeviceFactory *factory,
         g_set_error(error,
                     NM_MANAGER_ERROR,
                     NM_MANAGER_ERROR_FAILED,
-                    "failed to determine interface name: error determine name for %s",
+                    "failed to determine interface name for %s",
                     nm_connection_get_connection_type(connection));
         return NULL;
     }
