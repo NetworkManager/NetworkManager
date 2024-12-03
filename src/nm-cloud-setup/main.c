@@ -198,13 +198,11 @@ _map_interfaces_parse(void)
 }
 
 static const char *
-_device_get_hwaddr(NMDeviceEthernet *device)
+_device_get_hwaddr(NMDevice *device)
 {
     static const NMUtilsNamedValue *gl_map_interfaces_map = NULL;
     static gsize                    gl_initialized        = 0;
     const NMUtilsNamedValue        *map                   = NULL;
-
-    nm_assert(NM_IS_DEVICE_ETHERNET(device));
 
     /* Network interfaces in cloud environments are identified by their permanent
      * MAC address.
@@ -238,7 +236,11 @@ _device_get_hwaddr(NMDeviceEthernet *device)
         return NULL;
     }
 
-    return nm_device_ethernet_get_permanent_hw_address(device);
+    if (NM_IS_DEVICE_ETHERNET(device)) {
+        return nm_device_ethernet_get_permanent_hw_address(NM_DEVICE_ETHERNET(device));
+    } else {
+        return nm_device_get_hw_address(device);
+    }
 }
 
 static char **
@@ -263,7 +265,7 @@ _nmc_get_ethernet_hwaddrs(NMClient *nmc)
         if (nm_device_get_state(device) < NM_DEVICE_STATE_UNAVAILABLE)
             continue;
 
-        hwaddr = _device_get_hwaddr(NM_DEVICE_ETHERNET(device));
+        hwaddr = _device_get_hwaddr(device);
         if (!hwaddr)
             continue;
 
@@ -305,7 +307,7 @@ _nmc_get_device_by_hwaddr(NMClient *nmc, const char *hwaddr)
         if (!NM_IS_DEVICE_ETHERNET(device))
             continue;
 
-        hwaddr_dev = _device_get_hwaddr(NM_DEVICE_ETHERNET(device));
+        hwaddr_dev = _device_get_hwaddr(device);
         if (!hwaddr_dev)
             continue;
 
