@@ -442,6 +442,10 @@ _nmc_mangle_connection(NMDevice                             *device,
         guint len;
         guint j;
 
+        // FIXME:
+        // We don't check if the connection already contains the addrs/routes/rules we're
+        // about to add are already present. We should!
+
         len = nm_setting_ip_config_get_num_addresses(remote_s_ip);
         for (j = 0; j < len; j++) {
             g_ptr_array_add(addrs_new,
