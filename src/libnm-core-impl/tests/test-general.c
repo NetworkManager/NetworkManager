@@ -11567,6 +11567,87 @@ test_dnsname(void)
     _t_dnsname_0("[fe80::18]:53%lo#hoge.com");
 }
 
+static void
+_t_dnsname2_0(const char *str)
+{
+    NMDnsServer server = {};
+    gboolean    ret;
+
+    ret = nm_utils_dnsname_parse2(AF_UNSPEC, str, &server, TRUE);
+
+    g_assert(!ret);
+}
+
+#define _t_dnsname2_1(str, af, scheme, addr, port, sname, ifname) \
+    __t_dnsname2_1((str),                                         \
+                   (AF_##af),                                     \
+                   (NM_DNS_URI_SCHEME_##scheme),                  \
+                   (addr),                                        \
+                   (port),                                        \
+                   (sname),                                       \
+                   (ifname))
+
+static void
+__t_dnsname2_1(const char    *str,
+               int            addr_family,
+               NMDnsUriScheme scheme,
+               const char    *addr,
+               int            port,
+               const char    *sname,
+               const char    *ifname)
+{
+    NMDnsServer dns = {};
+    char        addrstr[NM_INET_ADDRSTRLEN];
+    gboolean    ret;
+
+    ret = nm_utils_dnsname_parse2(AF_UNSPEC, str, &dns, TRUE);
+    g_assert(ret);
+
+    g_assert_cmpint(addr_family, ==, dns.addr_family);
+    g_assert_cmpint(port, ==, dns.port);
+    g_assert_cmpstr(sname, ==, dns.servername);
+    g_assert_cmpstr(ifname ?: "", ==, dns.interface);
+
+    nm_inet_ntop(dns.addr_family, &dns.addr, addrstr);
+    g_assert_cmpstr(addrstr, ==, addr);
+}
+
+static void
+test_dnsname2(void)
+{
+    /* clang-format off */
+    _t_dnsname2_1("tls://8.8.8.8",            INET,  DOT,   "8.8.8.8",            -1, NULL,        NULL);
+    _t_dnsname2_1("tls://1.2.3.4#name",       INET,  DOT,   "1.2.3.4",            -1, "name",      NULL);
+    _t_dnsname2_1("tls://1.2.3.4#a.b.c",      INET,  DOT,   "1.2.3.4",            -1, "a.b.c",     NULL);
+    _t_dnsname2_1("tls://1.2.3.4:53",         INET,  DOT,   "1.2.3.4",            53, NULL,        NULL);
+    _t_dnsname2_1("tls://1.2.3.4:53#foobar",  INET,  DOT,   "1.2.3.4",            53, "foobar",    NULL);
+    _t_dnsname2_1("tls://192.168.120.250:99", INET,  DOT,   "192.168.120.250",    99, NULL,        NULL);
+    _t_dnsname2_1("udp://8.8.8.8:65535",      INET,  UDP,   "8.8.8.8",         65535, NULL,        NULL);
+
+    _t_dnsname2_1("udp://[fd01::1]",          INET6, UDP,   "fd01::1",            -1, NULL,        NULL);
+    _t_dnsname2_1("tls://[fd01::2]:5353",     INET6, UDP,   "fd01::2",          5353, NULL,        NULL);
+    _t_dnsname2_1("tls://[::1]#name",         INET6, UDP,   "::1",                -1, "name",      NULL);
+    _t_dnsname2_1("tls://[::2]:65535#name",   INET6, UDP,   "::2",             65535, "name",      NULL);
+    _t_dnsname2_1("udp://[::ffff:1.2.3.4]",   INET6, UDP,   "::ffff:1.2.3.4",     -1, NULL,        NULL);
+    _t_dnsname2_1("tls://[fe80::1%eth0]",     INET6, UDP,   "fe80::1",            -1, NULL,        "eth0");
+    _t_dnsname2_1("tls://[fe80::2%en1]:53#a", INET6, UDP,   "fe80::2",            53, "a",         "en1");
+
+    _t_dnsname2_1("192.168.10.1",             INET,  NONE,  "192.168.10.1",       -1, NULL,        NULL);
+    _t_dnsname2_1("fd01::1234",               INET6, NONE,  "fd01::1234",         -1, NULL,        NULL);
+    /* clang-format on */
+
+    _t_dnsname2_0("http://8.8.8.8");          /* unsupported schema */
+    _t_dnsname2_0("udp://1.2.3.4#name");      /* servername not supported for plain UDP */
+    _t_dnsname2_0("tls://1.2.3");             /* invalid address */
+    _t_dnsname2_0("tls://fd01::1");           /* IPv6 requires brackets */
+    _t_dnsname2_0("tls://[fd13:a:aaaa]");     /* invalid address */
+    _t_dnsname2_0("tls://1.2.3.4:1:1");       /* invalid syntax */
+    _t_dnsname2_0("tls://1.2.3.4#name#name"); /* invalid syntax */
+    _t_dnsname2_0("tls://1.2.3.4%eth0");      /* interface only allowed for IPv6 */
+    _t_dnsname2_0("tls://[2001::1%eth0]");    /* interface only allowed for IPv6 link-local */
+    _t_dnsname2_0("tls://[2001::1%a234567890123456]"); /* interface name too long */
+}
+
 /*****************************************************************************/
 
 static void
@@ -11944,6 +12025,7 @@ main(int argc, char **argv)
     g_test_add_func("/core/general/test_direct_string_is_refstr", test_direct_string_is_refstr);
     g_test_add_func("/core/general/test_connection_path", test_connection_path);
     g_test_add_func("/core/general/test_dnsname", test_dnsname);
+    g_test_add_func("/core/general/test_dnsname2", test_dnsname2);
     g_test_add_func("/core/general/test_dhcp_iaid_hexstr", test_dhcp_iaid_hexstr);
 
     return g_test_run();

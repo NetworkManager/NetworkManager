@@ -301,11 +301,42 @@ NMMptcpFlags nm_mptcp_flags_normalize(NMMptcpFlags flags);
 
 /*****************************************************************************/
 
+typedef enum {
+    NM_DNS_URI_SCHEME_UNKNOWN,
+    NM_DNS_URI_SCHEME_NONE,
+    NM_DNS_URI_SCHEME_UDP,
+    NM_DNS_URI_SCHEME_DOT,
+} NMDnsUriScheme;
+
+typedef struct {
+    NMIPAddr       addr;
+    const char    *servername;
+    char           interface[16];
+    NMDnsUriScheme scheme;
+    int            addr_family;
+    int            port;
+} NMDnsServer;
+
+gboolean nm_utils_dnsname_parse2(int          addr_family,
+                                 const char  *str,
+                                 NMDnsServer *out_dns,
+                                 gboolean     allow_interface);
+
 gboolean nm_utils_dnsname_parse(int                          addr_family,
                                 const char                  *dns,
                                 int                         *out_addr_family,
                                 gpointer /* (NMIPAddr **) */ out_addr,
                                 const char                 **out_servername);
+
+static inline const char *
+nm_utils_dnsname_get_plain(const char *str)
+{
+    if (NM_STR_HAS_PREFIX(str, "tls://"))
+        return NULL;
+    if (NM_STR_HAS_PREFIX(str, "udp://"))
+        return str + NM_STRLEN("udp://");
+    return str;
+}
 
 #define nm_utils_dnsname_parse_assert(addr_family, dns, out_addr_family, out_addr, out_servername) \
     ({                                                                                             \

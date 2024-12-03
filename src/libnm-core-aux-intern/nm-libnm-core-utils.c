@@ -594,6 +594,116 @@ nm_utils_dnsname_parse(int                          addr_family,
     return TRUE;
 }
 
+gboolean
+nm_utils_dnsname_parse2(int          addr_family,
+                        const char  *str,
+                        NMDnsServer *dns,
+                        gboolean     allow_interface)
+{
+    gs_free char *addr_port_heap = NULL;
+    gs_free char *addr_heap      = NULL;
+    const char   *p_addr_port;
+    const char   *p_addr;
+    const char   *p_name;
+    const char   *p_port;
+    NMDnsServer   dns_stack;
+
+    nm_assert_addr_family_or_unspec(addr_family);
+
+    if (!dns)
+        dns = &dns_stack;
+
+    if (!str)
+        return FALSE;
+
+    *dns = (NMDnsServer) {
+        .port = -1,
+    };
+
+    if (NM_STR_HAS_PREFIX(str, "tls://")) {
+        dns->scheme = NM_DNS_URI_SCHEME_DOT;
+        str += NM_STRLEN("tls://");
+    } else if (NM_STR_HAS_PREFIX(str, "udp://")) {
+        dns->scheme = NM_DNS_URI_SCHEME_UDP;
+        str += NM_STRLEN("udp://");
+    } else {
+        dns->scheme = NM_DNS_URI_SCHEME_NONE;
+        return nm_utils_dnsname_parse(addr_family,
+                                      str,
+                                      &dns->addr_family,
+                                      &dns->addr,
+                                      &dns->servername);
+    }
+
+    p_addr_port = str;
+    p_name      = strrchr(p_addr_port, '#');
+    if (p_name) {
+        p_addr_port = nm_strndup_a(100, p_addr_port, p_name - p_addr_port, &addr_port_heap);
+        p_name++;
+        if (*p_name == '\0') {
+            /* "ADDR#" empty DoT SNI name is not allowed. */
+            return FALSE;
+        }
+        dns->servername = p_name;
+    }
+
+    if (addr_family != AF_INET && *p_addr_port == '[') {
+        const char *p_end;
+
+        addr_family = AF_INET6;
+        p_addr_port++;
+        p_end = strchr(p_addr_port, ']');
+        if (!p_end)
+            return FALSE;
+        p_addr = nm_strndup_a(100, p_addr_port, p_end - p_addr_port, &addr_heap);
+
+        if (allow_interface) {
+            char *p_perc;
+
+            p_perc = strchr(p_addr, '%');
+            if (p_perc) {
+                *p_perc = '\0';
+                p_perc++;
+                if (strlen(p_perc) + 1 > sizeof(dns->interface))
+                    return FALSE;
+                g_strlcpy(dns->interface, p_perc, sizeof(dns->interface));
+            }
+        }
+
+        p_end++;
+        if (*p_end == ':') {
+            p_end++;
+            dns->port = _nm_utils_ascii_str_to_int64(p_end, 10, 0, 65535, G_MAXINT32);
+            if (dns->port == G_MAXINT32)
+                return FALSE;
+        }
+    } else {
+        addr_family = AF_INET;
+        p_addr      = p_addr_port;
+        p_port      = strchr(p_addr_port, ':');
+        if (p_port) {
+            p_addr = nm_strndup_a(100, p_addr_port, p_port - p_addr_port, &addr_heap);
+            p_port++;
+            dns->port = _nm_utils_ascii_str_to_int64(p_port, 10, 0, 65535, G_MAXINT32);
+            if (dns->port == G_MAXINT32)
+                return FALSE;
+        }
+    }
+
+    if (!nm_inet_parse_bin(addr_family, p_addr, &dns->addr_family, &dns->addr))
+        return FALSE;
+
+    if (dns->scheme != NM_DNS_URI_SCHEME_DOT && dns->servername)
+        return FALSE;
+
+    /* For now, allow the interface only for IPv6 link-local addresses */
+    if (dns->interface[0]
+        && (dns->addr_family != AF_INET6 || !IN6_IS_ADDR_LINKLOCAL(&dns->addr.addr6)))
+        return FALSE;
+
+    return TRUE;
+}
+
 const char *
 nm_utils_dnsname_construct(int                                    addr_family,
                            gconstpointer /* (const NMIPAddr *) */ addr,
