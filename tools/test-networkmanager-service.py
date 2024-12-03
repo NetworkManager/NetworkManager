@@ -429,6 +429,7 @@ IFACE_AGENT = "org.freedesktop.NetworkManager.SecretAgent"
 IFACE_WIRED = "org.freedesktop.NetworkManager.Device.Wired"
 IFACE_MODEM = "org.freedesktop.NetworkManager.Device.Modem"
 IFACE_VLAN = "org.freedesktop.NetworkManager.Device.Vlan"
+IFACE_MACVLAN = "org.freedesktop.NetworkManager.Device.Macvlan"
 IFACE_WIFI_AP = "org.freedesktop.NetworkManager.AccessPoint"
 IFACE_ACTIVE_CONNECTION = "org.freedesktop.NetworkManager.Connection.Active"
 IFACE_VPN_CONNECTION = "org.freedesktop.NetworkManager.VPN.Connection"
@@ -611,6 +612,7 @@ class NmUtil:
         t = s_con[NM.SETTING_CONNECTION_TYPE]
         if t not in [
             NM.SETTING_GSM_SETTING_NAME,
+            NM.SETTING_MACVLAN_SETTING_NAME,
             NM.SETTING_VLAN_SETTING_NAME,
             NM.SETTING_VPN_SETTING_NAME,
             NM.SETTING_WIMAX_SETTING_NAME,
@@ -1206,6 +1208,15 @@ class ModemDevice(Device):
         }
 
         self.dbus_interface_add(IFACE_MODEM, props)
+
+
+###############################################################################
+
+
+class MacvlanDevice(Device):
+    def __init__(self, iface, mac=None):
+        Device.__init__(self, iface, NM.DeviceType.MACVLAN, hwaddr=mac)
+        self.dbus_interface_add(IFACE_MACVLAN, {})
 
 
 ###############################################################################
