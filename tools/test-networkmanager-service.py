@@ -1860,6 +1860,21 @@ class NetworkManager(ExportedObj):
         if con_type == NM.SETTING_WIRELESS_SETTING_NAME:
             return self.find_device_first(dev_type=WifiDevice)
 
+        if con_type == NM.SETTING_MACVLAN_SETTING_NAME:
+            ifname = con_hash[NM.SETTING_CONNECTION_SETTING_NAME]["interface-name"]
+            mac = con_hash[NM.SETTING_WIRED_SETTING_NAME]["cloned-mac-address"]
+            hwaddr = "%02X:%02X:%02X:%02X:%02X:%02X" % (
+                mac[0],
+                mac[1],
+                mac[2],
+                mac[3],
+                mac[4],
+                mac[5],
+            )
+            device = MacvlanDevice(ifname, hwaddr)
+            self.add_device(device)
+            return device
+
         if con_type == NM.SETTING_VLAN_SETTING_NAME:
 
             iface = con_hash[NM.SETTING_CONNECTION_SETTING_NAME].get("interface-name")
