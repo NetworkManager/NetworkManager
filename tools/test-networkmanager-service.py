@@ -1951,6 +1951,19 @@ class NetworkManager(ExportedObj):
 
             return VlanDevice(iface, mac=hwaddr)
 
+        if con_type == NM.SETTING_MACVLAN_SETTING_NAME:
+            ifname = con_hash[NM.SETTING_CONNECTION_SETTING_NAME]["interface-name"]
+            mac = con_hash[NM.SETTING_WIRED_SETTING_NAME]["cloned-mac-address"]
+            hwaddr = "%02X:%02X:%02X:%02X:%02X:%02X" % (
+                mac[0],
+                mac[1],
+                mac[2],
+                mac[3],
+                mac[4],
+                mac[5],
+            )
+            return MacvlanDevice(ifname, hwaddr)
+
         return None
 
     def add_device(self, device):
