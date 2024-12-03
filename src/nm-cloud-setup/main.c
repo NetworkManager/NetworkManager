@@ -242,7 +242,7 @@ _device_get_hwaddr(NMDeviceEthernet *device)
 }
 
 static char **
-_nmc_get_hwaddrs(NMClient *nmc)
+_nmc_get_ethernet_hwaddrs(NMClient *nmc)
 {
     gs_unref_ptrarray GPtrArray *hwaddrs = NULL;
     const GPtrArray             *devices;
@@ -352,7 +352,7 @@ _get_config(GCancellable *sigterm_cancellable, NMCSProvider *provider, NMClient 
     };
     gs_strfreev char **hwaddrs = NULL;
 
-    hwaddrs = _nmc_get_hwaddrs(nmc);
+    hwaddrs = _nmc_get_ethernet_hwaddrs(nmc);
 
     nmcs_provider_get_config(provider,
                              TRUE,
