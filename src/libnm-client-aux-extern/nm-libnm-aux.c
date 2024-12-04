@@ -169,14 +169,11 @@ nmc_client_has_version_info_capability(NMClient *nmc, NMVersionInfoCapability ca
     len--;
     ver++;
 
-    idx = (gsize) capability;
-    if (idx >= G_MAXSIZE - 31u)
-        return FALSE;
+    idx    = (gsize) capability;
+    idx_hi = idx / 32u;
+    idx_lo = idx % 32u;
 
-    idx_hi = ((idx + 31u) / 32u);
-    idx_lo = (idx % 32u);
-
-    if (idx_hi > len)
+    if (idx_hi >= len)
         return FALSE;
 
     return NM_FLAGS_ANY(ver[idx_hi], (1ull << idx_lo));
