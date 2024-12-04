@@ -939,6 +939,31 @@ _build_list_create(GKeyFile     *keyfile,
 }
 
 static void
+gateway_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
+{
+    const char   *setting_name = nm_setting_get_name(setting);
+    gs_free char *gateway      = NULL;
+    const char   *old_gateway;
+
+    gateway = nm_keyfile_plugin_kf_get_string(info->keyfile, setting_name, key, NULL);
+    if (!gateway)
+        return;
+
+    old_gateway = nm_setting_ip_config_get_gateway(NM_SETTING_IP_CONFIG(setting));
+    if (old_gateway && !nm_streq0(gateway, old_gateway)) {
+        read_handle_warn(info,
+                         key,
+                         NM_SETTING_IP_CONFIG_GATEWAY,
+                         NM_KEYFILE_WARN_SEVERITY_WARN,
+                         _("ignoring gateway \"%s\" from \"address*\" keys because the "
+                           "\"gateway\" key is set"),
+                         old_gateway);
+    }
+
+    g_object_set(setting, NM_SETTING_IP_CONFIG_GATEWAY, gateway, NULL);
+}
+
+static void
 ip_address_or_route_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *setting_key)
 {
     const char                  *setting_name = nm_setting_get_name(setting);
@@ -2263,11 +2288,7 @@ ip6_addr_gen_mode_writer(KeyfileWriterInfo *info,
 }
 
 static void
-write_ip_values(GKeyFile   *file,
-                const char *setting_name,
-                GPtrArray  *array,
-                const char *gateway,
-                gboolean    is_route)
+write_ip_values(GKeyFile *file, const char *setting_name, GPtrArray *array, gboolean is_route)
 {
     if (array->len > 0) {
         nm_auto_str_buf NMStrBuf output = NM_STR_BUF_INIT(2 * INET_ADDRSTRLEN + 10, FALSE);
@@ -2300,7 +2321,7 @@ write_ip_values(GKeyFile   *file,
 
                 addr = nm_ip_address_get_address(address);
                 plen = nm_ip_address_get_prefix(address);
-                gw   = (i == 0) ? gateway : NULL;
+                gw   = NULL;
             }
 
             nm_str_buf_set_size(&output, 0, FALSE, FALSE);
@@ -2351,11 +2372,10 @@ addr_writer(KeyfileWriterInfo *info, NMSetting *setting, const char *key, const 
 {
     GPtrArray  *array;
     const char *setting_name = nm_setting_get_name(setting);
-    const char *gateway      = nm_setting_ip_config_get_gateway(NM_SETTING_IP_CONFIG(setting));
 
     array = (GPtrArray *) g_value_get_boxed(value);
     if (array && array->len)
-        write_ip_values(info->keyfile, setting_name, array, gateway, FALSE);
+        write_ip_values(info->keyfile, setting_name, array, FALSE);
 }
 
 static void
@@ -2366,7 +2386,7 @@ route_writer(KeyfileWriterInfo *info, NMSetting *setting, const char *key, const
 
     array = (GPtrArray *) g_value_get_boxed(value);
     if (array && array->len)
-        write_ip_values(info->keyfile, setting_name, array, NULL, TRUE);
+        write_ip_values(info->keyfile, setting_name, array, TRUE);
 }
 
 static void
@@ -3060,7 +3080,7 @@ static const ParseInfoSetting *const parse_infos[_NM_META_SETTING_TYPE_NUM] = {
                                 .parser              = ip_dns_parser,
                                 .writer              = dns_writer, ),
             PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_DNS_OPTIONS, .always_write = TRUE, ),
-            PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_GATEWAY, .writer_skip = TRUE, ),
+            PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_GATEWAY, .parser = gateway_parser, ),
             PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_ROUTES,
                                 .parser_no_check_key = TRUE,
                                 .parser              = ip_address_or_route_parser,
@@ -3088,7 +3108,7 @@ static const ParseInfoSetting *const parse_infos[_NM_META_SETTING_TYPE_NUM] = {
                                 .parser              = ip_dns_parser,
                                 .writer              = dns_writer, ),
             PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_DNS_OPTIONS, .always_write = TRUE, ),
-            PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_GATEWAY, .writer_skip = TRUE, ),
+            PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_GATEWAY, .parser = gateway_parser, ),
             PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_ROUTES,
                                 .parser_no_check_key = TRUE,
                                 .parser              = ip_address_or_route_parser,

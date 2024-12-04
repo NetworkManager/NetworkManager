@@ -1,0 +1,17 @@
+[connection]
+id=Test Duplicate Gateways
+uuid=5e2a7b1e-e4c8-4964-88c4-ca7255471aa1
+type=802-3-ethernet
+autoconnect=true
+timestamp=6654332
+
+[ipv4]
+method=manual
+address1=192.168.0.5/24;192.168.0.254
+address2=192.0.2.1/16
+gateway=192.168.0.253
+
+[ipv6]
+method=manual
+gateway=fd01::bbbb
+address1=fd01::1/64;fd01::aaaa

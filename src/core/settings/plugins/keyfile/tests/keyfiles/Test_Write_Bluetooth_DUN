@@ -1,0 +1,24 @@
+[connection]
+id=T-Mobile Funkadelic
+uuid=76c59c25-c27c-57a4-8357-1409491cea45
+type=bluetooth
+autoconnect=false
+timestamp=305415219
+
+[gsm]
+apn=internet2.voicestream.com
+password=parliament
+username=george.clinton
+
+[bluetooth]
+bdaddr=AA:B9:A1:74:55:44
+type=dun
+
+[ipv4]
+method=auto
+
+[ipv6]
+addr-gen-mode=default
+method=auto
+
+[proxy]

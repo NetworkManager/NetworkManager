@@ -659,6 +659,7 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
 
     /* ---keyfile---
      * property: dns
+     * variable: dns
      * format: list of DNS IP addresses
      * description: List of DNS servers.
      * example: dns=1.2.3.4;8.8.8.8;8.8.4.4;
@@ -685,9 +686,15 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
     /* ---keyfile---
      * property: addresses
      * variable: address1, address2, ...
-     * format: address/plen
-     * description: List of static IP addresses.
-     * example: address1=192.168.100.100/24 address2=10.1.1.5/24
+     * format: address/prefix-length[,gateway]
+     * description: Static IPv4 addresses, one address per variable. The
+     *   variables can also contain the gateway after a comma or semicolon;
+     *   it is recommended to use the "gateway" variable instead.
+     * example: address1=192.168.100.100/24
+     *
+     *          address2=10.1.1.5/16
+     *
+     *          address1=192.168.100.100/24,192.168.100.1
      * ---end---
      */
     /* ---ifcfg-rh---
@@ -702,8 +709,12 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * property: gateway
      * variable: gateway
      * format: string
-     * description: Gateway IP addresses as a string.
-     * example: gateway=192.168.100.1
+     * description: Gateway IP address as a string. The gateway can be also specified in one
+     *   of the "address1", "address2", etc. variables after the address, separated by a comma or
+     *   semicolon (for example "address1=192.168.100.1/24,192.168.100.254").
+     *   The value from the "gateway" variable takes precedence over any gateway specified in one
+     *   of the "address*" variables.
+     * example: gateway=192.168.100.254
      * ---end---
      */
     /* ---ifcfg-rh---
@@ -745,7 +756,8 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * variable: routing-rule1, routing-rule2, ...
      * format: routing rule string
      * description: Routing rules as defined with `ip rule add`, but with mandatory
-     *    fixed priority.
+     *    fixed priority. The "lookup" and "table" options don't support a table name,
+     *    only a number.
      * example: routing-rule1=priority 5 from 192.167.4.0/24 table 45
      * ---end---
      */
@@ -1299,7 +1311,8 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      *   A comma separated list of routing rules for policy routing. The format
      *   is based on <command>ip rule add</command> syntax and mostly compatible.
      *   One difference is that routing rules in NetworkManager always need a
-     *   fixed priority.
+     *   fixed priority. Also, the "lookup" and "table" options don't support a
+     *   table name, only a number.
      *   </para>
      *   <para>
      *   Example: <literal>priority 5 from 192.167.4.0/24 table 45</literal>

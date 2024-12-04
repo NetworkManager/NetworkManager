@@ -1,0 +1,14 @@
+[connection]
+id=Test Write Bridge Component
+uuid=7c4e34eb-419f-531c-b6ca-486f51a08d1d
+type=ethernet
+controller=br0
+port-type=bridge
+
+[ethernet]
+mac-address=99:88:77:66:55:44
+mtu=1300
+
+[bridge-port]
+path-cost=99
+priority=3
