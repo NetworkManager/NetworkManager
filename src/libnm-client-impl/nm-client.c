@@ -6314,7 +6314,7 @@ nm_client_get_capabilities(NMClient *client, gsize *length)
  *
  * If available, the first element in the array is NM_VERSION which
  * encodes the daemon version as "(major << 16 | minor << 8 | micro)".
- * The following elements are a bitfield of %NMVersionInfoCapabilities
+ * The following elements are a bitfield of %NMVersionInfoCapability
  * that indicate that the daemon supports a certain capability.
  *
  * Returns: (transfer none) (array length=length): the
@@ -8311,7 +8311,7 @@ nm_client_class_init(NMClientClass *client_class)
      * Expose version info and capabilities of NetworkManager. If non-empty,
      * the first element is NM_VERSION, which encodes the version of the
      * daemon as "(major << 16 | minor << 8 | micro)". The following elements
-     * is a bitfields of %NMVersionInfoCapabilities. If a bit is set, then
+     * is a bitfields of %NMVersionInfoCapability. If a bit is set, then
      * the running NetworkManager has the respective capability.
      *
      * Since: 1.42
