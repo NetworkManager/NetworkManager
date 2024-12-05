@@ -1259,7 +1259,7 @@ load_global_dns(GKeyFile *keyfile, gboolean internal)
         if (strv) {
             nm_strv_cleanup(strv, TRUE, TRUE, TRUE);
             for (i = 0, j = 0; strv[i]; i++) {
-                if (nm_inet_is_valid(AF_INET, strv[i]) || nm_inet_is_valid(AF_INET6, strv[i]))
+                if (nm_utils_dnsname_parse2(AF_UNSPEC, strv[i], NULL, TRUE))
                     strv[j++] = strv[i];
                 else
                     g_free(strv[i]);

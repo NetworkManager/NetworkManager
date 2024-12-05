@@ -853,13 +853,31 @@ add_global_config(NMDnsDnsmasq            *self,
         const char *const *servers = nm_global_dns_domain_get_servers(domain);
         const char        *name    = nm_global_dns_domain_get_name(domain);
 
-        g_return_if_fail(name);
+        nm_assert(name);
 
         for (j = 0; servers && servers[j]; j++) {
-            if (!strcmp(name, "*"))
-                add_dnsmasq_nameserver(self, dnsmasq_servers, servers[j], NULL);
-            else
-                add_dnsmasq_nameserver(self, dnsmasq_servers, servers[j], name);
+            NMDnsServer   dns;
+            gs_free char *str = NULL;
+            char          addr[NM_INET_ADDRSTRLEN];
+
+            if (!nm_utils_dnsname_parse2(AF_UNSPEC, servers[j], &dns, TRUE))
+                continue;
+
+            if (dns.scheme != NM_DNS_URI_SCHEME_NONE && dns.scheme != NM_DNS_URI_SCHEME_UDP)
+                continue;
+
+            if (dns.port != -1 && dns.port != 53)
+                continue;
+
+            if (dns.interface[0]) {
+                str = g_strdup_printf("%s%%%s",
+                                      nm_inet_ntop(dns.addr_family, &dns.addr, addr),
+                                      dns.interface);
+            } else {
+                str = g_strdup_printf("%s", nm_inet_ntop(dns.addr_family, &dns.addr, addr));
+            }
+
+            add_dnsmasq_nameserver(self, dnsmasq_servers, str, nm_streq(name, "*") ? NULL : name);
         }
     }
 }

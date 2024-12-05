@@ -275,6 +275,7 @@ NMGlobalDnsDomain *nm_global_dns_config_lookup_domain(const NMGlobalDnsConfig *d
                                                       const char              *name);
 const char        *nm_global_dns_domain_get_name(const NMGlobalDnsDomain *domain);
 const char *const *nm_global_dns_domain_get_servers(const NMGlobalDnsDomain *domain);
+
 const char *const *nm_global_dns_domain_get_options(const NMGlobalDnsDomain *domain);
 gboolean           nm_global_dns_config_is_internal(const NMGlobalDnsConfig *dns_config);
 gboolean           nm_global_dns_config_is_empty(const NMGlobalDnsConfig *dns_config);
