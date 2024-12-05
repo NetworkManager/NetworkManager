@@ -1575,8 +1575,24 @@ managed=1
           <term><varname>servers</varname></term>
           <listitem>
             <para>
-             A list of addresses of DNS servers to be used for the given domain.
-           </para>
+             A list of addresses of DNS servers to be used for the
+             given domain. Each server can be specified either as a
+             plain IP address or with a URI syntax. When it is
+             specified as an URI, the following forms are supported:
+            </para>
+            <para>
+             <simplelist type="horiz" columns="1">
+               <member>dns+udp://<varname>ADDRESS</varname>[:<varname>PORT</varname>]                 : DNS</member>
+               <member>dns+tls://<varname>ADDRESS</varname>[:<varname>PORT</varname>][#<varname>SERVERNAME]</varname>    : DNS over TLS</member>
+             </simplelist>
+            </para>
+            <para>
+              <varname>ADDRESS</varname> is an IPv4 or IPv6
+              address. When it is IPv6, it must be enclosed in square
+              brackets ('[' and ']'). When it is a IPv6 link-local
+              address, the address should be followed by a percent
+              sign ('%') and an interface name.
+            </para>
           </listitem>
         </varlistentry>
         <varlistentry>
