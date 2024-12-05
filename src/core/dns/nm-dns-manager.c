@@ -1291,8 +1291,16 @@ merge_global_dns_config(NMResolvConfData *rc, NMGlobalDnsConfig *global_conf)
     if (!servers)
         return TRUE;
 
-    for (i = 0; servers[i]; i++)
-        add_string_item(rc->nameservers, servers[i], TRUE);
+    for (i = 0; servers[i]; i++) {
+        const char   *addrstr;
+        gs_free char *to_free = NULL;
+
+        /* TODO: support IPv6 link-local addresses with scope id */
+        if (!nm_utils_dns_uri_get_plain(AF_UNSPEC, servers[i], &addrstr, &to_free, NULL))
+            continue;
+
+        add_string_item(rc->nameservers, addrstr, TRUE);
+    }
 
     return TRUE;
 }
