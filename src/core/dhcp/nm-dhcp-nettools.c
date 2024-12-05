@@ -1484,7 +1484,10 @@ stop(NMDhcpClient *client, gboolean release)
     NMDhcpNettoolsPrivate *priv = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
 
     if (release) {
-        if (n_dhcp4_client_probe_release(priv->probe))
+        /* After we receive a lease from server, it doesn't matter if we completed ACD,
+         * we should send the release message. */
+        if (nm_dhcp_client_get_lease(client, FALSE)
+            && n_dhcp4_client_probe_release(priv->probe) < 0)
             _LOGT("dhcp-client4: failed to send request with RELEASE message");
     }
 
