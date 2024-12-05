@@ -1255,7 +1255,7 @@ compute_hash(NMDnsManager *self, const NMGlobalDnsConfig *global, guint8 buffer[
 }
 
 static gboolean
-merge_global_dns_config(NMResolvConfData *rc, NMGlobalDnsConfig *global_conf)
+merge_global_dns_config(NMDnsManager *self, NMResolvConfData *rc, NMGlobalDnsConfig *global_conf)
 {
     NMGlobalDnsDomain *default_domain;
     const char *const *searches;
@@ -1291,8 +1291,17 @@ merge_global_dns_config(NMResolvConfData *rc, NMGlobalDnsConfig *global_conf)
     if (!servers)
         return TRUE;
 
-    for (i = 0; servers[i]; i++)
-        add_string_item(rc->nameservers, servers[i], TRUE);
+    for (i = 0; servers[i]; i++) {
+        const char   *server_plain;
+        gs_free char *to_free = NULL;
+
+        server_plain = nm_utils_dns_uri_get_plain(servers[i], &to_free);
+        if (server_plain) {
+            add_string_item(rc->nameservers, server_plain, TRUE);
+        } else {
+            _LOGT("ignoring global DNS server \"%s\" in resolv.conf", servers[i]);
+        }
+    }
 
     return TRUE;
 }
@@ -1354,7 +1363,7 @@ _collect_resolv_conf_data(NMDnsManager      *self,
     priv = NM_DNS_MANAGER_GET_PRIVATE(self);
 
     if (global_config)
-        merge_global_dns_config(&rc, global_config);
+        merge_global_dns_config(self, &rc, global_config);
 
     if (!global_config || !nm_global_dns_config_lookup_domain(global_config, "*")) {
         nm_auto_str_buf NMStrBuf tmp_strbuf = NM_STR_BUF_INIT(0, FALSE);
