@@ -1291,8 +1291,17 @@ merge_global_dns_config(NMResolvConfData *rc, NMGlobalDnsConfig *global_conf)
     if (!servers)
         return TRUE;
 
-    for (i = 0; servers[i]; i++)
-        add_string_item(rc->nameservers, servers[i], TRUE);
+    for (i = 0; servers[i]; i++) {
+        const char   *server_plain;
+        gs_free char *to_free = NULL;
+
+        server_plain = nm_utils_dns_uri_get_plain(servers[i], &to_free);
+        if (server_plain) {
+            add_string_item(rc->nameservers, server_plain, TRUE);
+        } else {
+            // XXX warning?
+        }
+    }
 
     return TRUE;
 }
