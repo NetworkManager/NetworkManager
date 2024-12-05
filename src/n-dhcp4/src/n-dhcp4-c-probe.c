@@ -1332,6 +1332,10 @@ int n_dhcp4_client_probe_release(NDhcp4ClientProbe *probe) {
         _c_cleanup_(n_dhcp4_outgoing_freep) NDhcp4Outgoing *request_out = NULL;
         int r;
 
+        if (probe->connection.state != N_DHCP4_C_CONNECTION_STATE_DRAINING
+                && probe->connection.state != N_DHCP4_C_CONNECTION_STATE_UDP)
+                return -ENOTRECOVERABLE;
+
         r = n_dhcp4_c_connection_release_new(&probe->connection, &request_out, NULL);
         if (r)
                 return r;
