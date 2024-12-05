@@ -154,6 +154,7 @@ main(int argc, char *argv[])
     gint64                                      carrier_timeout_sec = 0;
     gs_unref_array GArray                      *confs               = NULL;
     guint                                       i;
+    gs_strfreev char                          **global_dns_servers = NULL;
 
     option_context = g_option_context_new(
         "-- [ip=...] [rd.route=...] [bridge=...] [bond=...] [team=...] [vlan=...] "
@@ -193,7 +194,8 @@ main(int argc, char *argv[])
                                            sysfs_dir,
                                            (const char *const *) remaining,
                                            &hostname,
-                                           &carrier_timeout_sec);
+                                           &carrier_timeout_sec,
+                                           &global_dns_servers);
 
     confs = g_array_new(FALSE, FALSE, sizeof(NMUtilsNamedValue));
     g_array_set_clear_func(confs, (GDestroyNotify) nm_utils_named_value_clear_with_g_free);
@@ -228,6 +230,36 @@ main(int argc, char *argv[])
 
         v = (NMUtilsNamedValue) {
             .name      = g_strdup_printf("%s/15-carrier-timeout.conf", run_config_dir),
+            .value_str = g_key_file_to_data(keyfile, NULL, NULL),
+        };
+        g_array_append_val(confs, v);
+    }
+
+    if (global_dns_servers) {
+        nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
+        NMUtilsNamedValue               v;
+        gs_free char                   *value = NULL;
+
+        value = g_strjoinv(",", global_dns_servers);
+
+        keyfile = g_key_file_new();
+        g_key_file_set_list_separator(keyfile, NM_CONFIG_KEYFILE_LIST_SEPARATOR);
+
+        g_key_file_set_value(keyfile,
+                             NM_CONFIG_KEYFILE_GROUP_GLOBAL_DNS,
+                             NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_OPTIONS,
+                             "");
+        g_key_file_set_value(keyfile,
+                             NM_CONFIG_KEYFILE_GROUPPREFIX_GLOBAL_DNS_DOMAIN "*",
+                             NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_DOMAIN_SERVERS,
+                             value);
+
+        if (!dump_to_stdout) {
+            add_keyfile_comment(keyfile, "from \"rd.net.dns\"");
+        }
+
+        v = (NMUtilsNamedValue) {
+            .name      = g_strdup_printf("%s/16-global-dns.conf", run_config_dir),
             .value_str = g_key_file_to_data(keyfile, NULL, NULL),
         };
         g_array_append_val(confs, v);

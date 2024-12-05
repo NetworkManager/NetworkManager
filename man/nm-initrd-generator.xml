@@ -157,6 +157,7 @@
             <member><option>rd.bootif</option></member>
             <member><option>rd.neednet</option></member>
             <member><option>rd.ethtool</option></member>
+            <member><option>rd.net.dns</option></member>
             <member><option>rd.net.timeout.dhcp</option></member>
             <member><option>rd.net.dhcp.retry</option></member>
             <member><option>rd.net.dhcp.vendor-class</option></member>
@@ -230,6 +231,22 @@
         <option>rd.net.dhcp.dscp</option>={<replaceable>CS0</replaceable>|<replaceable>CS4</replaceable>|<replaceable>CS6</replaceable>}
         kernel command line option to set a specific DSCP (TOS) value
         in the IP header of DHCP messages.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>NetworkManager supports the
+        <option>rd.net.dns</option>=<replaceable>SERVER</replaceable>
+        kernel command line option to configure a global (non
+        interface-specific) DNS server. The option can be specified
+        multiple time to add more than one server. Each server can be
+        specified as a plain IP or as an URI according to the
+        description in the "global-dns-domains sections" paragraph of
+        <link
+        linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>. For
+        example: <literal>rd.net.dns=2001:db8::1</literal>,
+        <literal>rd.net.dns=dns+tls://192.0.2.0</literal>,
+        <literal>rd.net.dns=dns+tls://[2001:db8::2]:5353#example.org</literal>.
         </para>
       </listitem>
 

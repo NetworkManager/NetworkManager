@@ -23,7 +23,7 @@
 
 /*****************************************************************************/
 
-#define _parse(ARGV, out_hostname, out_carrier_timeout_sec)                            \
+#define _parse(ARGV, out_hostname, out_carrier_timeout_sec, _out_global_dns_servers)   \
     ({                                                                                 \
         const char *const *const _ARGV                    = (ARGV);                    \
         char **const             _out_hostname            = (out_hostname);            \
@@ -34,26 +34,28 @@
                                                 TEST_INITRD_DIR "/sysfs",              \
                                                 _ARGV,                                 \
                                                 _out_hostname,                         \
-                                                _out_carrier_timeout_sec);             \
+                                                _out_carrier_timeout_sec,              \
+                                                _out_global_dns_servers);              \
                                                                                        \
         g_assert(_connections);                                                        \
                                                                                        \
         _connections;                                                                  \
     })
 
-#define _parse_cons(ARGV)                                                                    \
-    ({                                                                                       \
-        GHashTable   *_con_connections;                                                      \
-        gs_free char *_con_hostname            = NULL;                                       \
-        gint64        _con_carrier_timeout_sec = 0;                                          \
-                                                                                             \
-        _con_connections = _parse((ARGV),                                                    \
-                                  nmtst_get_rand_bool() ? &_con_hostname : NULL,             \
-                                  nmtst_get_rand_bool() ? &_con_carrier_timeout_sec : NULL); \
-        g_assert_cmpstr(_con_hostname, ==, NULL);                                            \
-        g_assert_cmpint(_con_carrier_timeout_sec, ==, 0);                                    \
-                                                                                             \
-        _con_connections;                                                                    \
+#define _parse_cons(ARGV)                                                                   \
+    ({                                                                                      \
+        GHashTable   *_con_connections;                                                     \
+        gs_free char *_con_hostname            = NULL;                                      \
+        gint64        _con_carrier_timeout_sec = 0;                                         \
+                                                                                            \
+        _con_connections = _parse((ARGV),                                                   \
+                                  nmtst_get_rand_bool() ? &_con_hostname : NULL,            \
+                                  nmtst_get_rand_bool() ? &_con_carrier_timeout_sec : NULL, \
+                                  NULL);                                                    \
+        g_assert_cmpstr(_con_hostname, ==, NULL);                                           \
+        g_assert_cmpint(_con_carrier_timeout_sec, ==, 0);                                   \
+                                                                                            \
+        _con_connections;                                                                   \
     })
 
 #define _parse_con(ARGV, connection_name)                                        \
@@ -154,7 +156,7 @@ test_dhcp_with_hostname(void)
     gs_free char                  *hostname            = NULL;
     gint64                         carrier_timeout_sec = 0;
 
-    connections = _parse(ARGV, &hostname, &carrier_timeout_sec);
+    connections = _parse(ARGV, &hostname, &carrier_timeout_sec, NULL);
     g_assert_cmpint(g_hash_table_size(connections), ==, 1);
     g_assert_cmpstr(hostname, ==, "host1");
     g_assert_cmpint(carrier_timeout_sec, ==, 0);
@@ -424,7 +426,7 @@ test_if_ip4_manual(void)
     gs_free char                  *hostname            = NULL;
     gint64                         carrier_timeout_sec = 0;
 
-    connections = _parse(ARGV, &hostname, &carrier_timeout_sec);
+    connections = _parse(ARGV, &hostname, &carrier_timeout_sec, NULL);
     g_assert_cmpint(g_hash_table_size(connections), ==, 2);
     g_assert_cmpstr(hostname, ==, "hostname1.example.com");
     g_assert_cmpint(carrier_timeout_sec, ==, 0);
@@ -505,7 +507,7 @@ test_if_ip4_auto(void)
     gs_free char                  *hostname            = NULL;
     gint64                         carrier_timeout_sec = 0;
 
-    connections = _parse(ARGV, &hostname, &carrier_timeout_sec);
+    connections = _parse(ARGV, &hostname, &carrier_timeout_sec, NULL);
     g_assert_cmpint(g_hash_table_size(connections), ==, 1);
     g_assert_cmpstr(hostname, ==, "myhostname");
     g_assert_cmpint(carrier_timeout_sec, ==, 0);
@@ -596,7 +598,7 @@ test_if_ip6_manual(void)
     gs_free char                  *hostname            = NULL;
     gint64                         carrier_timeout_sec = 0;
 
-    connections = _parse(ARGV, &hostname, &carrier_timeout_sec);
+    connections = _parse(ARGV, &hostname, &carrier_timeout_sec, NULL);
     g_assert_cmpint(g_hash_table_size(connections), ==, 1);
     g_assert_cmpstr(hostname, ==, "hostname0.example.com");
     g_assert_cmpint(carrier_timeout_sec, ==, 0);
@@ -684,7 +686,7 @@ test_if_mac_ifname(void)
     gs_free char                  *hostname            = NULL;
     gint64                         carrier_timeout_sec = 0;
 
-    connections = _parse(ARGV, &hostname, &carrier_timeout_sec);
+    connections = _parse(ARGV, &hostname, &carrier_timeout_sec, NULL);
     g_assert_cmpint(g_hash_table_size(connections), ==, 1);
     g_assert_cmpstr(hostname, ==, "hostname0");
     g_assert_cmpint(carrier_timeout_sec, ==, 0);
@@ -1840,7 +1842,7 @@ test_rd_znet(void)
     gs_free char *hostname            = NULL;
     gint64        carrier_timeout_sec = 0;
 
-    connections = _parse(ARGV, &hostname, &carrier_timeout_sec);
+    connections = _parse(ARGV, &hostname, &carrier_timeout_sec, NULL);
     g_assert_cmpint(g_hash_table_size(connections), ==, 2);
     g_assert_cmpstr(hostname, ==, "foo.example.com");
     g_assert_cmpint(carrier_timeout_sec, ==, 0);
@@ -1927,7 +1929,7 @@ test_rd_znet_legacy(void)
     gs_free char        *hostname            = NULL;
     gint64               carrier_timeout_sec = 0;
 
-    connections = _parse(ARGV, &hostname, &carrier_timeout_sec);
+    connections = _parse(ARGV, &hostname, &carrier_timeout_sec, NULL);
     g_assert_cmpint(g_hash_table_size(connections), ==, 2);
     g_assert_cmpstr(hostname, ==, "foo.example.com");
     g_assert_cmpint(carrier_timeout_sec, ==, 0);
@@ -2006,7 +2008,7 @@ test_rd_znet_ifnames(void)
     gint64               carrier_timeout_sec = 0;
     const char *const   *v_subchannels;
 
-    connections = _parse(ARGV, &hostname, &carrier_timeout_sec);
+    connections = _parse(ARGV, &hostname, &carrier_timeout_sec, NULL);
     g_assert_cmpint(g_hash_table_size(connections), ==, 2);
 
     connection = g_hash_table_lookup(connections, "zeth0");
@@ -2281,7 +2283,7 @@ test_nameserver(void)
     gs_free char      *hostname            = NULL;
     gint64             carrier_timeout_sec = 0;
 
-    connections = _parse(ARGV, &hostname, &carrier_timeout_sec);
+    connections = _parse(ARGV, &hostname, &carrier_timeout_sec, NULL);
     g_assert_cmpint(g_hash_table_size(connections), ==, 3);
     g_assert_cmpstr(hostname, ==, "foo.example.com");
     g_assert_cmpint(carrier_timeout_sec, ==, 0);
@@ -2460,10 +2462,36 @@ test_carrier_timeout(void)
     gs_free char                  *hostname            = NULL;
     gint64                         carrier_timeout_sec = 0;
 
-    connections = _parse(ARGV, &hostname, &carrier_timeout_sec);
+    connections = _parse(ARGV, &hostname, &carrier_timeout_sec, NULL);
     g_assert_cmpint(g_hash_table_size(connections), ==, 0);
     g_assert_cmpstr(hostname, ==, NULL);
     g_assert_cmpint(carrier_timeout_sec, ==, 20);
+}
+
+static void
+test_global_dns(void)
+{
+    gs_unref_hashtable GHashTable *connections        = NULL;
+    const char *const             *ARGV               = NM_MAKE_STRV("rd.net.dns=dns+tls://8.8.8.8",
+                                           "rd.net.dns=1.1.1.1",
+                                           "rd.net.dns=foobar",
+                                           "rd.net.dns=dns+tls://[fd01::1]:35#name");
+    gs_free char                  *hostname           = NULL;
+    gs_strfreev char             **global_dns_servers = NULL;
+    gint64                         carrier_timeout_sec = 0;
+
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.net.dns: invalid server 'foobar'");
+    connections = _parse(ARGV, &hostname, &carrier_timeout_sec, &global_dns_servers);
+    g_test_assert_expected_messages();
+
+    g_assert_cmpint(g_hash_table_size(connections), ==, 0);
+    g_assert_cmpstr(hostname, ==, NULL);
+    g_assert_cmpint(carrier_timeout_sec, ==, 0);
+    g_assert(global_dns_servers != NULL);
+    g_assert_cmpstr(global_dns_servers[0], ==, "dns+tls://8.8.8.8");
+    g_assert_cmpstr(global_dns_servers[1], ==, "1.1.1.1");
+    g_assert_cmpstr(global_dns_servers[2], ==, "dns+tls://[fd01::1]:35#name");
+    g_assert_cmpstr(global_dns_servers[3], ==, NULL);
 }
 
 #define _ethtool_check_inval(arg)                                 \
@@ -2686,6 +2714,7 @@ main(int argc, char **argv)
     g_test_add_func("/initrd/cmdline/carrier_timeout", test_carrier_timeout);
     g_test_add_func("/initrd/cmdline/rd_ethtool", test_rd_ethtool);
     g_test_add_func("/initrd/cmdline/plain_equal_char", test_plain_equal_char);
+    g_test_add_func("/initrd/cmdline/global_dns", test_global_dns);
 
     return g_test_run();
 }
