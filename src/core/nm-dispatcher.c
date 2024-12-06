@@ -50,6 +50,10 @@
     }                                                         \
     G_STMT_END
 
+#define SYSTEMD_DBUS_SERVICE   "org.freedesktop.systemd1"
+#define SYSTEMD_DBUS_PATH      "/org/freedesktop/systemd1"
+#define SYSTEMD_DBUS_INTERFACE "org.freedesktop.systemd1.Manager"
+
 /*****************************************************************************/
 
 /* Type for generic callback function; must be cast to either
@@ -789,6 +793,10 @@ _dispatcher_call(NMDispatcherAction    action,
     gs_unref_variant GVariant *parameters_floating = NULL;
     gboolean                   is_action2          = TRUE;
 
+    gs_unref_variant GVariant *dbus_unit = NULL;
+    gs_unref_variant GVariant *jobs_list = NULL;
+    gs_free_error GError *sd_err = NULL;
+
     g_return_val_if_fail(!blocking || (!callback && !user_data), FALSE);
 
     NM_SET_OUT(out_call_id, NULL);
@@ -835,6 +843,56 @@ _dispatcher_call(NMDispatcherAction    action,
                                                 l3cd,
                                                 TRUE);
     start_at_msec       = nm_utils_get_monotonic_timestamp_msec();
+
+    dbus_unit = g_dbus_connection_call_sync(gl.dbus_connection,
+                                       SYSTEMD_DBUS_SERVICE,
+				       SYSTEMD_DBUS_PATH,
+				       SYSTEMD_DBUS_INTERFACE,
+				       "GetUnit",
+				       g_variant_new("(s)", "dbus.service"),
+				       G_VARIANT_TYPE("(o)"),
+				       G_DBUS_CALL_FLAGS_NONE,
+				       CALL_TIMEOUT,
+				       NULL,
+				       &sd_err);
+     if (sd_err) {
+	_LOG2W(request_id, log_ifname, log_con_uuid,
+	       "GetUnit failed: %s", sd_err->message);
+	g_clear_error(&sd_err);
+     }
+
+	jobs_list = g_dbus_connection_call_sync(gl.dbus_connection,
+					SYSTEMD_DBUS_SERVICE,
+					SYSTEMD_DBUS_PATH,
+					SYSTEMD_DBUS_INTERFACE,
+					"ListJobs",
+					NULL,
+					G_VARIANT_TYPE("(a(usssoo))"),
+					G_DBUS_CALL_FLAGS_NONE,
+					CALL_TIMEOUT,
+					NULL,
+					&sd_err);
+     if (sd_err) {
+	_LOG2W(request_id, log_ifname, log_con_uuid,
+	       "ListJobs failed: %s", sd_err->message);
+	g_clear_error(&sd_err);
+     }
+
+     if (dbus_unit && jobs_list) {
+	const char *job_type, *job_path, *unit_path;
+	gs_unref_variant GVariant *all_jobs = NULL;
+	GVariantIter jobs;
+
+	g_variant_get(dbus_unit, "(&o)", &unit_path);
+	g_variant_get(jobs_list, "(@a(usssoo))", &all_jobs);
+	g_variant_iter_init(&jobs, all_jobs);
+	while (g_variant_iter_loop(&jobs, "(us&sso&o)", NULL, NULL, &job_type, NULL, NULL, &job_path)) {
+		/* If a stop job is queued for dbus.service, do nothing. */
+		if (g_str_equal(job_path, unit_path) && g_str_equal(job_type, "stop"))
+			return FALSE;
+	}
+     }
+
 
     /* Send the action to the dispatcher */
     if (blocking) {
