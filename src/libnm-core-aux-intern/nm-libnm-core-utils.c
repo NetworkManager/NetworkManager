@@ -617,15 +617,9 @@ nm_utils_dns_uri_parse(int addr_family, const char *str, NMDnsServer *dns)
         .port = -1,
     };
 
-    if (NM_STR_HAS_PREFIX(str, "tls://")) {
-        dns->scheme = NM_DNS_URI_SCHEME_DOT;
-        str += NM_STRLEN("tls://");
-    } else if (NM_STR_HAS_PREFIX(str, "dns+tls://")) {
+    if (NM_STR_HAS_PREFIX(str, "dns+tls://")) {
         dns->scheme = NM_DNS_URI_SCHEME_DOT;
         str += NM_STRLEN("dns+tls://");
-    } else if (NM_STR_HAS_PREFIX(str, "udp://")) {
-        dns->scheme = NM_DNS_URI_SCHEME_UDP;
-        str += NM_STRLEN("udp://");
     } else if (NM_STR_HAS_PREFIX(str, "dns+udp://")) {
         dns->scheme = NM_DNS_URI_SCHEME_UDP;
         str += NM_STRLEN("dns+udp://");
@@ -798,7 +792,7 @@ nm_utils_dns_uri_normalize(int addr_family, const char *str, char **out_free)
         ret = g_strdup_printf("%s", addrstr);
         break;
     case NM_DNS_URI_SCHEME_UDP:
-        ret = g_strdup_printf("udp://%s%s%s%s%s%s%s",
+        ret = g_strdup_printf("dns+udp://%s%s%s%s%s%s%s",
                               dns.addr_family == AF_INET6 ? "[" : "",
                               addrstr,
                               dns.interface[0] ? "%%" : "",
@@ -808,7 +802,7 @@ nm_utils_dns_uri_normalize(int addr_family, const char *str, char **out_free)
                               dns.port != -1 ? portstr : "");
         break;
     case NM_DNS_URI_SCHEME_DOT:
-        ret = g_strdup_printf("tls://%s%s%s%s%s%s%s%s%s",
+        ret = g_strdup_printf("dns+tls://%s%s%s%s%s%s%s%s%s",
                               dns.addr_family == AF_INET6 ? "[" : "",
                               addrstr,
                               dns.interface[0] ? "%%" : "",

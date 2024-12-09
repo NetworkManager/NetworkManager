@@ -11616,38 +11616,38 @@ static void
 test_dns_uri_parse(void)
 {
     /* clang-format off */
-    t_dns_1("tls://8.8.8.8",                   INET,  DOT,  "8.8.8.8",            -1, NULL,      NULL);
-    t_dns_1("dns+tls://8.8.8.8",               INET,  DOT,  "8.8.8.8",            -1, NULL,      NULL);
-    t_dns_1("tls://1.2.3.4#name",              INET,  DOT,  "1.2.3.4",            -1, "name",    NULL);
-    t_dns_1("tls://1.2.3.4#a.b.c",             INET,  DOT,  "1.2.3.4",            -1, "a.b.c",   NULL);
-    t_dns_1("tls://1.2.3.4:53",                INET,  DOT,  "1.2.3.4",            53, NULL,      NULL);
-    t_dns_1("dns+tls://1.2.3.4:53#foobar",     INET,  DOT,  "1.2.3.4",            53, "foobar",  NULL);
-    t_dns_1("tls://192.168.120.250:99",        INET,  DOT,  "192.168.120.250",    99, NULL,      NULL);
-    t_dns_1("udp://8.8.8.8:65535",             INET,  UDP,  "8.8.8.8",         65535, NULL,      NULL);
+    t_dns_1("dns+tls://8.8.8.8",                   INET,  DOT,  "8.8.8.8",            -1, NULL,      NULL);
+    t_dns_1("dns+tls://8.8.8.8",                   INET,  DOT,  "8.8.8.8",            -1, NULL,      NULL);
+    t_dns_1("dns+tls://1.2.3.4#name",              INET,  DOT,  "1.2.3.4",            -1, "name",    NULL);
+    t_dns_1("dns+tls://1.2.3.4#a.b.c",             INET,  DOT,  "1.2.3.4",            -1, "a.b.c",   NULL);
+    t_dns_1("dns+tls://1.2.3.4:53",                INET,  DOT,  "1.2.3.4",            53, NULL,      NULL);
+    t_dns_1("dns+tls://1.2.3.4:53#foobar",         INET,  DOT,  "1.2.3.4",            53, "foobar",  NULL);
+    t_dns_1("dns+tls://192.168.120.250:99",        INET,  DOT,  "192.168.120.250",    99, NULL,      NULL);
+    t_dns_1("dns+udp://8.8.8.8:65535",             INET,  UDP,  "8.8.8.8",         65535, NULL,      NULL);
 
-    t_dns_1("dns+udp://[fd01::1]",             INET6, UDP,  "fd01::1",            -1, NULL,      NULL);
-    t_dns_1("tls://[fd01::2]:5353",            INET6, UDP,  "fd01::2",          5353, NULL,      NULL);
-    t_dns_1("tls://[::1]#name",                INET6, UDP,  "::1",                -1, "name",    NULL);
-    t_dns_1("tls://[::2]:65535#name",          INET6, UDP,  "::2",             65535, "name",    NULL);
-    t_dns_1("udp://[::ffff:1.2.3.4]",          INET6, UDP,  "::ffff:1.2.3.4",     -1, NULL,      NULL);
-    t_dns_1("tls://[fe80::1%eth0]",            INET6, UDP,  "fe80::1",            -1, NULL,      "eth0");
-    t_dns_1("tls://[fe80::2%en1]:53#a",        INET6, UDP,  "fe80::2",            53, "a",       "en1");
-    t_dns_1("tls://[fe80::1%en3456789012345]", INET6, UDP,  "fe80::1",            -1, NULL, "en3456789012345");
+    t_dns_1("dns+udp://[fd01::1]",                 INET6, UDP,  "fd01::1",            -1, NULL,      NULL);
+    t_dns_1("dns+tls://[fd01::2]:5353",            INET6, UDP,  "fd01::2",          5353, NULL,      NULL);
+    t_dns_1("dns+tls://[::1]#name",                INET6, UDP,  "::1",                -1, "name",    NULL);
+    t_dns_1("dns+tls://[::2]:65535#name",          INET6, UDP,  "::2",             65535, "name",    NULL);
+    t_dns_1("dns+udp://[::ffff:1.2.3.4]",          INET6, UDP,  "::ffff:1.2.3.4",     -1, NULL,      NULL);
+    t_dns_1("dns+tls://[fe80::1%eth0]",            INET6, UDP,  "fe80::1",            -1, NULL,      "eth0");
+    t_dns_1("dns+tls://[fe80::2%en1]:53#a",        INET6, UDP,  "fe80::2",            53, "a",       "en1");
+    t_dns_1("dns+tls://[fe80::1%en3456789012345]", INET6, UDP,  "fe80::1",            -1, NULL, "en3456789012345");
 
-    t_dns_1("192.168.10.1",                    INET,  NONE, "192.168.10.1",       -1, NULL,      NULL);
-    t_dns_1("fd01::1234",                      INET6, NONE, "fd01::1234",         -1, NULL,      NULL);
+    t_dns_1("192.168.10.1",                        INET,  NONE, "192.168.10.1",       -1, NULL,      NULL);
+    t_dns_1("fd01::1234",                          INET6, NONE, "fd01::1234",         -1, NULL,      NULL);
     /* clang-format on */
 
-    t_dns_0("http://8.8.8.8");                   /* unsupported schema */
-    t_dns_0("udp://1.2.3.4#name");               /* servername not supported for plain UDP */
-    t_dns_0("dns+tls://1.2.3");                  /* invalid address */
-    t_dns_0("tls://fd01::1");                    /* IPv6 requires brackets */
-    t_dns_0("tls://[fd13:a:aaaa]");              /* invalid address */
-    t_dns_0("tls://1.2.3.4:1:1");                /* invalid syntax */
-    t_dns_0("tls://1.2.3.4#name#name");          /* invalid syntax */
-    t_dns_0("tls://1.2.3.4%eth0");               /* interface only allowed for IPv6 */
-    t_dns_0("tls://[2001::1%eth0]");             /* interface only allowed for IPv6 link-local */
-    t_dns_0("tls://[fe80::1%en34567890123456]"); /* interface name too long */
+    t_dns_0("http://8.8.8.8");                       /* unsupported schema */
+    t_dns_0("dns+udp://1.2.3.4#name");               /* servername not supported for plain UDP */
+    t_dns_0("dns+tls://1.2.3");                      /* invalid address */
+    t_dns_0("dns+tls://fd01::1");                    /* IPv6 requires brackets */
+    t_dns_0("dns+tls://[fd13:a:aaaa]");              /* invalid address */
+    t_dns_0("dns+tls://1.2.3.4:1:1");                /* invalid syntax */
+    t_dns_0("dns+tls://1.2.3.4#name#name");          /* invalid syntax */
+    t_dns_0("dns+tls://1.2.3.4%eth0");               /* interface only allowed for IPv6 */
+    t_dns_0("dns+tls://[2001::1%eth0]");             /* interface only allowed for IPv6 link-local */
+    t_dns_0("dns+tls://[fe80::1%en34567890123456]"); /* interface name too long */
 }
 
 static void
@@ -11664,8 +11664,8 @@ static void
 test_dns_uri_normalize(void)
 {
     t_dns_uri_normalize("8.8.8.8", "8.8.8.8");
-    t_dns_uri_normalize("dns+tls://[2001:0:0::1234]:999#name", "tls://[2001::1234]:999#name");
-    t_dns_uri_normalize("udp://[0::1]:0123", "udp://[::1]:123");
+    t_dns_uri_normalize("dns+tls://[2001:0:0::1234]:999#name", "dns+tls://[2001::1234]:999#name");
+    t_dns_uri_normalize("dns+udp://[0::1]:0123", "dns+udp://[::1]:123");
     t_dns_uri_normalize("8.8.8.888", NULL);
 }
 

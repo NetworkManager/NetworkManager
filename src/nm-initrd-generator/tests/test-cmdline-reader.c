@@ -2472,10 +2472,10 @@ static void
 test_global_dns(void)
 {
     gs_unref_hashtable GHashTable *connections         = NULL;
-    const char *const             *ARGV                = NM_MAKE_STRV("rd.net.dns=tls://8.8.8.8",
+    const char *const             *ARGV                = NM_MAKE_STRV("rd.net.dns=dns+tls://8.8.8.8",
                                            "rd.net.dns=1.1.1.1",
                                            "rd.net.dns=foobar",
-                                           "rd.net.dns=tls://[fd01::1]:35#name");
+                                           "rd.net.dns=dns+tls://[fd01::1]:35#name");
     gs_free char                  *hostname            = NULL;
     gs_strfreev char             **global_dns_servers  = NULL;
     gint64                         carrier_timeout_sec = 0;
@@ -2488,9 +2488,9 @@ test_global_dns(void)
     g_assert_cmpstr(hostname, ==, NULL);
     g_assert_cmpint(carrier_timeout_sec, ==, 0);
     g_assert(global_dns_servers != NULL);
-    g_assert_cmpstr(global_dns_servers[0], ==, "tls://8.8.8.8");
+    g_assert_cmpstr(global_dns_servers[0], ==, "dns+tls://8.8.8.8");
     g_assert_cmpstr(global_dns_servers[1], ==, "1.1.1.1");
-    g_assert_cmpstr(global_dns_servers[2], ==, "tls://[fd01::1]:35#name");
+    g_assert_cmpstr(global_dns_servers[2], ==, "dns+tls://[fd01::1]:35#name");
     g_assert_cmpstr(global_dns_servers[3], ==, NULL);
 }
 
