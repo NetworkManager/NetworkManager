@@ -12,9 +12,9 @@
 static void
 empty_range_valid_for_null_addresses(void)
 {
-    gs_unref_ptrarray GPtrArray          *addresses = NULL;
-    gs_free_error GError                 *error     = NULL;
-    gboolean                              result;
+    gs_unref_ptrarray GPtrArray *addresses = NULL;
+    gs_free_error GError        *error     = NULL;
+    gboolean                     result;
 
     result = nm_utils_validate_shared_dhcp_range("", addresses, &error);
 
@@ -25,11 +25,11 @@ empty_range_valid_for_null_addresses(void)
 static void
 empty_range_valid_for_empty_addresses(void)
 {
-    gs_unref_ptrarray GPtrArray          *addresses = NULL;
-    gs_free_error GError                 *error     = NULL;
-    gboolean                              result;
-    
-    addresses = g_ptr_array_new_with_free_func(g_free);
+    gs_unref_ptrarray GPtrArray *addresses = NULL;
+    gs_free_error GError        *error     = NULL;
+    gboolean                     result;
+
+    addresses = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_address_unref);
 
     result = nm_utils_validate_shared_dhcp_range("", addresses, &error);
 
@@ -40,14 +40,12 @@ empty_range_valid_for_empty_addresses(void)
 static void
 valid_range_for_single_address(void)
 {
-    nm_auto_unref_ip_address NMIPAddress *address   = NULL;
-    gs_unref_ptrarray GPtrArray          *addresses = NULL;
-    gs_free_error GError                 *error     = NULL;
-    gboolean                              result;
-    
-    addresses = g_ptr_array_new_with_free_func(g_free);
-    address = nm_ip_address_new(AF_INET, "192.168.0.1", 24, &error);
-    g_ptr_array_add(addresses, nm_ip_address_dup(address));
+    gs_unref_ptrarray GPtrArray *addresses = NULL;
+    gs_free_error GError        *error     = NULL;
+    gboolean                     result;
+
+    addresses = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_address_unref);
+    g_ptr_array_add(addresses, nm_ip_address_new(AF_INET, "192.168.0.1", 24, NULL));
 
     result = nm_utils_validate_shared_dhcp_range("192.168.0.2,192.168.0.254", addresses, &error);
 
@@ -58,17 +56,13 @@ valid_range_for_single_address(void)
 static void
 valid_range_for_second_address(void)
 {
-    nm_auto_unref_ip_address NMIPAddress *address1  = NULL;
-    nm_auto_unref_ip_address NMIPAddress *address2  = NULL;
-    gs_unref_ptrarray GPtrArray          *addresses = NULL;
-    gs_free_error GError                 *error     = NULL;
-    gboolean                              result;
+    gs_unref_ptrarray GPtrArray *addresses = NULL;
+    gs_free_error GError        *error     = NULL;
+    gboolean                     result;
 
-    addresses = g_ptr_array_new_with_free_func(g_free);
-    address1 = nm_ip_address_new(AF_INET, "192.168.0.1", 24, &error);
-    address2 = nm_ip_address_new(AF_INET, "192.168.1.254", 24, &error);
-    g_ptr_array_add(addresses, nm_ip_address_dup(address1));
-    g_ptr_array_add(addresses, nm_ip_address_dup(address2));
+    addresses = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_address_unref);
+    g_ptr_array_add(addresses, nm_ip_address_new(AF_INET, "192.168.0.1", 24, &error));
+    g_ptr_array_add(addresses, nm_ip_address_new(AF_INET, "192.168.1.254", 24, &error));
 
     result = nm_utils_validate_shared_dhcp_range("192.168.1.2,192.168.1.254", addresses, &error);
 
@@ -79,9 +73,9 @@ valid_range_for_second_address(void)
 static void
 invalid_null_range_for_null_addresses(void)
 {
-    gs_unref_ptrarray GPtrArray          *addresses = NULL;
-    gs_free_error GError                 *error     = NULL;
-    gboolean                              result;
+    gs_unref_ptrarray GPtrArray *addresses = NULL;
+    gs_free_error GError        *error     = NULL;
+    gboolean                     result;
 
     result = nm_utils_validate_shared_dhcp_range(NULL, addresses, &error);
 
@@ -92,11 +86,11 @@ invalid_null_range_for_null_addresses(void)
 static void
 invalid_null_range_for_empty_addresses(void)
 {
-    gs_unref_ptrarray GPtrArray          *addresses = NULL;
-    gs_free_error GError                 *error     = NULL;
-    gboolean                              result;
+    gs_unref_ptrarray GPtrArray *addresses = NULL;
+    gs_free_error GError        *error     = NULL;
+    gboolean                     result;
 
-    addresses = g_ptr_array_new_with_free_func(g_free);
+    addresses = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_address_unref);
 
     result = nm_utils_validate_shared_dhcp_range("192.168.1.2,192.168.1.254", addresses, &error);
 
@@ -107,10 +101,9 @@ invalid_null_range_for_empty_addresses(void)
 static void
 any_range_invalid_for_null_addresses(void)
 {
-    nm_auto_unref_ip_address NMIPAddress *address   = NULL;
-    gs_unref_ptrarray GPtrArray          *addresses = NULL;
-    gs_free_error GError                 *error     = NULL;
-    gboolean                              result;
+    gs_unref_ptrarray GPtrArray *addresses = NULL;
+    gs_free_error GError        *error     = NULL;
+    gboolean                     result;
 
     result = nm_utils_validate_shared_dhcp_range("192.168.1.2,192.168.1.254", addresses, &error);
 
@@ -121,12 +114,11 @@ any_range_invalid_for_null_addresses(void)
 static void
 any_range_invalid_for_empty_addresses(void)
 {
-    nm_auto_unref_ip_address NMIPAddress *address   = NULL;
-    gs_unref_ptrarray GPtrArray          *addresses = NULL;
-    gs_free_error GError                 *error     = NULL;
-    gboolean                              result;
+    gs_unref_ptrarray GPtrArray *addresses = NULL;
+    gs_free_error GError        *error     = NULL;
+    gboolean                     result;
 
-    addresses = g_ptr_array_new_with_free_func(g_free);
+    addresses = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_address_unref);
 
     result = nm_utils_validate_shared_dhcp_range("192.168.1.2,192.168.1.254", addresses, &error);
 
@@ -137,14 +129,12 @@ any_range_invalid_for_empty_addresses(void)
 static void
 invalid_range_xyz(void)
 {
-    nm_auto_unref_ip_address NMIPAddress *address   = NULL;
-    gs_unref_ptrarray GPtrArray          *addresses = NULL;
-    gs_free_error GError                 *error     = NULL;
-    gboolean                              result;
-    
-    addresses = g_ptr_array_new_with_free_func(g_free);
-    address = nm_ip_address_new(AF_INET, "192.168.0.1", 24, &error);
-    g_ptr_array_add(addresses, nm_ip_address_dup(address));
+    gs_unref_ptrarray GPtrArray *addresses = NULL;
+    gs_free_error GError        *error     = NULL;
+    gboolean                     result;
+
+    addresses = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_address_unref);
+    g_ptr_array_add(addresses, nm_ip_address_new(AF_INET, "192.168.0.1", 24, NULL));
 
     result = nm_utils_validate_shared_dhcp_range("xyz", addresses, &error);
 
@@ -155,14 +145,12 @@ invalid_range_xyz(void)
 static void
 invalid_range_single_comma(void)
 {
-    nm_auto_unref_ip_address NMIPAddress *address   = NULL;
-    gs_unref_ptrarray GPtrArray          *addresses = NULL;
-    gs_free_error GError                 *error     = NULL;
-    gboolean                              result;
-    
-    addresses = g_ptr_array_new_with_free_func(g_free);
-    address = nm_ip_address_new(AF_INET, "192.168.0.1", 24, &error);
-    g_ptr_array_add(addresses, nm_ip_address_dup(address));
+    gs_unref_ptrarray GPtrArray *addresses = NULL;
+    gs_free_error GError        *error     = NULL;
+    gboolean                     result;
+
+    addresses = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_address_unref);
+    g_ptr_array_add(addresses, nm_ip_address_new(AF_INET, "192.168.0.1", 24, NULL));
 
     result = nm_utils_validate_shared_dhcp_range(",", addresses, &error);
 
@@ -173,14 +161,12 @@ invalid_range_single_comma(void)
 static void
 invalid_first_address_of_range(void)
 {
-    nm_auto_unref_ip_address NMIPAddress *address   = NULL;
-    gs_unref_ptrarray GPtrArray          *addresses = NULL;
-    gs_free_error GError                 *error     = NULL;
-    gboolean                              result;
-    
-    addresses = g_ptr_array_new_with_free_func(g_free);
-    address = nm_ip_address_new(AF_INET, "192.168.0.1", 24, &error);
-    g_ptr_array_add(addresses, nm_ip_address_dup(address));
+    gs_unref_ptrarray GPtrArray *addresses = NULL;
+    gs_free_error GError        *error     = NULL;
+    gboolean                     result;
+
+    addresses = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_address_unref);
+    g_ptr_array_add(addresses, nm_ip_address_new(AF_INET, "192.168.0.1", 24, NULL));
 
     result = nm_utils_validate_shared_dhcp_range("xyz,192.168.0.100", addresses, &error);
 
@@ -191,14 +177,12 @@ invalid_first_address_of_range(void)
 static void
 invalid_second_address_of_range(void)
 {
-    nm_auto_unref_ip_address NMIPAddress *address   = NULL;
-    gs_unref_ptrarray GPtrArray          *addresses = NULL;
-    gs_free_error GError                 *error     = NULL;
-    gboolean                              result;
-    
-    addresses = g_ptr_array_new_with_free_func(g_free);
-    address = nm_ip_address_new(AF_INET, "192.168.0.1", 24, &error);
-    g_ptr_array_add(addresses, nm_ip_address_dup(address));
+    gs_unref_ptrarray GPtrArray *addresses = NULL;
+    gs_free_error GError        *error     = NULL;
+    gboolean                     result;
+
+    addresses = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_address_unref);
+    g_ptr_array_add(addresses, nm_ip_address_new(AF_INET, "192.168.0.1", 24, NULL));
 
     result = nm_utils_validate_shared_dhcp_range("192.168.0.100,xyz", addresses, &error);
 
@@ -209,14 +193,12 @@ invalid_second_address_of_range(void)
 static void
 invalid_inverted_range(void)
 {
-    nm_auto_unref_ip_address NMIPAddress *address   = NULL;
-    gs_unref_ptrarray GPtrArray          *addresses = NULL;
-    gs_free_error GError                 *error     = NULL;
-    gboolean                              result;
-    
-    addresses = g_ptr_array_new_with_free_func(g_free);
-    address = nm_ip_address_new(AF_INET, "192.168.0.1", 24, &error);
-    g_ptr_array_add(addresses, nm_ip_address_dup(address));
+    gs_unref_ptrarray GPtrArray *addresses = NULL;
+    gs_free_error GError        *error     = NULL;
+    gboolean                     result;
+
+    addresses = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_address_unref);
+    g_ptr_array_add(addresses, nm_ip_address_new(AF_INET, "192.168.0.1", 24, NULL));
 
     result = nm_utils_validate_shared_dhcp_range("192.168.0.200,192.168.0.100", addresses, &error);
 
@@ -227,14 +209,12 @@ invalid_inverted_range(void)
 static void
 invalid_range_outside_address_space(void)
 {
-    nm_auto_unref_ip_address NMIPAddress *address   = NULL;
-    gs_unref_ptrarray GPtrArray          *addresses = NULL;
-    gs_free_error GError                 *error     = NULL;
-    gboolean                              result;
-    
-    addresses = g_ptr_array_new_with_free_func(g_free);
-    address = nm_ip_address_new(AF_INET, "192.168.0.1", 24, &error);
-    g_ptr_array_add(addresses, nm_ip_address_dup(address));
+    gs_unref_ptrarray GPtrArray *addresses = NULL;
+    gs_free_error GError        *error     = NULL;
+    gboolean                     result;
+
+    addresses = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_address_unref);
+    g_ptr_array_add(addresses, nm_ip_address_new(AF_INET, "192.168.0.1", 24, NULL));
 
     result = nm_utils_validate_shared_dhcp_range("192.168.1.2,192.168.1.100", addresses, &error);
 
@@ -247,8 +227,8 @@ invalid_range_outside_address_space(void)
 static void
 valid_zero_lease_time(void)
 {
-    GError *error = NULL;
-    gboolean result;
+    gs_free_error GError *error = NULL;
+    gboolean              result;
 
     result = nm_utils_validate_shared_dhcp_lease_time(0, &error);
 
@@ -259,8 +239,8 @@ valid_zero_lease_time(void)
 static void
 minimal_valid_lease_time(void)
 {
-    GError *error = NULL;
-    gboolean result;
+    gs_free_error GError *error = NULL;
+    gboolean              result;
 
     result = nm_utils_validate_shared_dhcp_lease_time(NM_MIN_FINITE_LEASE_TIME, &error);
 
@@ -271,8 +251,8 @@ minimal_valid_lease_time(void)
 static void
 middle_valid_lease_time(void)
 {
-    GError *error = NULL;
-    gboolean result;
+    gs_free_error GError *error = NULL;
+    gboolean              result;
 
     result = nm_utils_validate_shared_dhcp_lease_time((NM_MIN_FINITE_LEASE_TIME + NM_MAX_FINITE_LEASE_TIME) / 2, &error);
 
@@ -283,8 +263,8 @@ middle_valid_lease_time(void)
 static void
 maximal_valid_lease_time(void)
 {
-    GError *error = NULL;
-    gboolean result;
+    gs_free_error GError *error = NULL;
+    gboolean              result;
 
     result = nm_utils_validate_shared_dhcp_lease_time(NM_MAX_FINITE_LEASE_TIME, &error);
 
@@ -295,8 +275,8 @@ maximal_valid_lease_time(void)
 static void
 infinite_lease_time(void)
 {
-    GError *error = NULL;
-    gboolean result;
+    gs_free_error GError *error = NULL;
+    gboolean              result;
 
     result = nm_utils_validate_shared_dhcp_lease_time(G_MAXINT32, &error);
 
@@ -307,8 +287,8 @@ infinite_lease_time(void)
 static void
 too_small_lease_time(void)
 {
-    GError *error = NULL;
-    gboolean result;
+    gs_free_error GError *error = NULL;
+    gboolean              result;
 
     result = nm_utils_validate_shared_dhcp_lease_time(1, &error);
 
@@ -319,8 +299,8 @@ too_small_lease_time(void)
 static void
 too_large_lease_time(void)
 {
-    GError *error = NULL;
-    gboolean result;
+    gs_free_error GError *error = NULL;
+    gboolean              result;
 
     result = nm_utils_validate_shared_dhcp_lease_time(NM_MAX_FINITE_LEASE_TIME + 1, &error);
 
