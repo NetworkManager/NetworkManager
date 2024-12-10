@@ -3935,10 +3935,10 @@ _l3cfg_routed_dns(NML3Cfg *self, NML3ConfigData *l3cd)
             NMPlatformIPXRoute        route_new;
             char                      addr_buf[INET6_ADDRSTRLEN];
             char                      route_buf[128];
-            NMIPAddr                  addr;
+            NMDnsServer               dns;
             int                       r;
 
-            if (!nm_utils_dnsname_parse_assert(addr_family, nameservers[i], NULL, &addr, NULL))
+            if (!nm_utils_dns_uri_parse(addr_family, nameservers[i], &dns))
                 continue;
 
             /* Find the gateway to the DNS over the current interface. When
@@ -3947,13 +3947,13 @@ _l3cfg_routed_dns(NML3Cfg *self, NML3ConfigData *l3cd)
              * the table containing DNS routes. */
             r = nm_platform_ip_route_get(self->priv.platform,
                                          addr_family,
-                                         &addr,
+                                         &dns.addr,
                                          DNS_ROUTES_FWMARK_TABLE_PRIO,
                                          self->priv.ifindex,
                                          &obj);
             if (r < 0) {
                 _LOGT("could not get route to DNS %s",
-                      nm_inet_ntop(addr_family, addr.addr_ptr, addr_buf));
+                      nm_inet_ntop(addr_family, dns.addr.addr_ptr, addr_buf));
                 continue;
             }
 
@@ -3961,7 +3961,7 @@ _l3cfg_routed_dns(NML3Cfg *self, NML3ConfigData *l3cd)
 
             if (IS_IPv4) {
                 route_new.r4 = (NMPlatformIP4Route) {
-                    .network       = addr.addr4,
+                    .network       = dns.addr.addr4,
                     .plen          = 32,
                     .table_any     = FALSE,
                     .metric_any    = TRUE,
@@ -3973,7 +3973,7 @@ _l3cfg_routed_dns(NML3Cfg *self, NML3ConfigData *l3cd)
                 nm_platform_ip_route_normalize(addr_family, &route_new.rx);
 
                 _LOGT("route to %s: %s",
-                      nm_inet4_ntop(addr.addr4, addr_buf),
+                      nm_inet4_ntop(dns.addr.addr4, addr_buf),
                       nm_platform_ip4_route_to_string(&route_new.r4, route_buf, sizeof(route_buf)));
 
                 nm_l3_config_data_add_route_4(l3cd, &route_new.r4);
@@ -3983,7 +3983,7 @@ _l3cfg_routed_dns(NML3Cfg *self, NML3ConfigData *l3cd)
                 route_added = TRUE;
             } else {
                 route_new.r6 = (NMPlatformIP6Route) {
-                    .network       = addr.addr6,
+                    .network       = dns.addr.addr6,
                     .plen          = 128,
                     .table_any     = FALSE,
                     .metric_any    = TRUE,
@@ -3995,7 +3995,7 @@ _l3cfg_routed_dns(NML3Cfg *self, NML3ConfigData *l3cd)
                 nm_platform_ip_route_normalize(addr_family, &route_new.rx);
 
                 _LOGT("route to %s: %s",
-                      nm_inet6_ntop(&addr.addr6, addr_buf),
+                      nm_inet6_ntop(&dns.addr.addr6, addr_buf),
                       nm_platform_ip6_route_to_string(&route_new.r6, route_buf, sizeof(route_buf)));
 
                 nm_l3_config_data_add_route_6(l3cd, &route_new.r6);

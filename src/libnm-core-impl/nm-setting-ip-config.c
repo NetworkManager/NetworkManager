@@ -4093,7 +4093,7 @@ _ip_config_add_dns(NMSettingIPConfig *setting, const char *dns)
 
     priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
 
-    s = nm_utils_dnsname_normalize(NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting), dns, &s_free);
+    s = nm_utils_dns_uri_normalize(NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting), dns, &s_free);
     if (!s)
         s = dns;
 
@@ -5575,11 +5575,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         for (i = 0; i < priv->dns->len; i++) {
             const char *dns = priv->dns->pdata[i];
 
-            if (!nm_utils_dnsname_parse(NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting),
-                                        dns,
-                                        NULL,
-                                        NULL,
-                                        NULL)) {
+            if (!nm_utils_dns_uri_parse(NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting), dns, NULL)) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,

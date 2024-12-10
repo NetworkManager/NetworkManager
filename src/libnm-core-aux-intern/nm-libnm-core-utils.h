@@ -336,7 +336,6 @@ const char *nm_utils_dns_uri_get_plain(const char *str, char **out_free);
                                        (out_addr_family),                                          \
                                        (out_addr),                                                 \
                                        (out_servername));                                          \
-        nm_assert(_good);                                                                          \
         _good;                                                                                     \
     })
 

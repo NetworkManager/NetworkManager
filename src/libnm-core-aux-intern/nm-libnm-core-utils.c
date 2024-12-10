@@ -789,8 +789,7 @@ nm_utils_dns_uri_normalize(int addr_family, const char *str, char **out_free)
 
     switch (dns.scheme) {
     case NM_DNS_URI_SCHEME_NONE:
-        ret = g_strdup_printf("%s", addrstr);
-        break;
+        return nm_utils_dnsname_normalize(addr_family, str, out_free);
     case NM_DNS_URI_SCHEME_UDP:
         ret = g_strdup_printf("dns+udp://%s%s%s%s%s%s%s",
                               dns.addr_family == AF_INET6 ? "[" : "",

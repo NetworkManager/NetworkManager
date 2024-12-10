@@ -887,6 +887,7 @@ add_ip_config(NMDnsDnsmasq *self, GVariantBuilder *servers, const NMDnsConfigIPD
     for (i = 0; i < num; i++) {
         NMIPAddr a;
 
+        // XXX
         if (!nm_utils_dnsname_parse_assert(ip_data->addr_family, strarr[i], NULL, &a, NULL))
             continue;
 

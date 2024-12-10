@@ -451,20 +451,27 @@ get_property_ip4(GObject *object, guint prop_id, GValue *value, GParamSpec *pspe
             for (i = 0; i < len; i++) {
                 in_addr_t a;
 
-                if (!nm_utils_dnsname_parse_assert(AF_INET, strarr[i], NULL, &a, NULL))
-                    continue;
-
-                if (prop_id == PROP_IP4_NAMESERVERS)
+                if (prop_id == PROP_IP4_NAMESERVERS) {
+                    if (!nm_utils_dnsname_parse_assert(AF_INET, strarr[i], NULL, &a, NULL))
+                        continue;
                     g_variant_builder_add(&builder, "u", a);
-                else {
+                } else {
                     GVariantBuilder nested_builder;
 
-                    nm_inet4_ntop(a, addr_str);
                     g_variant_builder_init(&nested_builder, G_VARIANT_TYPE("a{sv}"));
-                    g_variant_builder_add(&nested_builder,
-                                          "{sv}",
-                                          "address",
-                                          g_variant_new_string(addr_str));
+                    if (nm_utils_dnsname_parse_assert(AF_INET, strarr[i], NULL, &a, NULL)) {
+                        nm_inet4_ntop(a, addr_str);
+                        g_variant_builder_add(&nested_builder,
+                                              "{sv}",
+                                              "address",
+                                              g_variant_new_string(addr_str));
+                    }
+                    if (nm_utils_dns_uri_parse(AF_INET, strarr[i], NULL)) {
+                        g_variant_builder_add(&nested_builder,
+                                              "{sv}",
+                                              "uri",
+                                              g_variant_new_string(strarr[i]));
+                    }
                     g_variant_builder_add(&builder, "a{sv}", &nested_builder);
                 }
             }

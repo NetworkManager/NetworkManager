@@ -169,6 +169,7 @@ create_dm_cmd_line(const char           *iface,
         for (i = 0; i < n; i++) {
             in_addr_t a;
 
+            // XXX
             if (!nm_utils_dnsname_parse_assert(AF_INET, strarr[i], NULL, &a, NULL))
                 continue;
 
