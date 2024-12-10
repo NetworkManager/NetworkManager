@@ -46,11 +46,12 @@ struct _NMGlobalDnsDomain {
 };
 
 struct _NMGlobalDnsConfig {
-    char       **searches;
-    char       **options;
-    GHashTable  *domains;
-    const char **domain_list;
-    gboolean     internal;
+    char                      **searches;
+    char                      **options;
+    GHashTable                 *domains;
+    const char                **domain_list;
+    gboolean                    internal;
+    NMGlobalDnsUseConnectionDns use_connection_dns;
 };
 
 /*****************************************************************************/
@@ -939,6 +940,14 @@ next:
 
 /*****************************************************************************/
 
+NMGlobalDnsUseConnectionDns
+nm_global_dns_config_get_use_connection_dns(const NMGlobalDnsConfig *dns_config)
+{
+    g_return_val_if_fail(dns_config, NM_GLOBAL_DNS_USE_CONNECTION_DNS_NO);
+
+    return dns_config->use_connection_dns;
+}
+
 const char *const *
 nm_global_dns_config_get_searches(const NMGlobalDnsConfig *dns_config)
 {
@@ -1036,6 +1045,8 @@ nm_global_dns_config_cmp(const NMGlobalDnsConfig *a,
 
     NM_CMP_SELF(a, b);
 
+    NM_CMP_DIRECT(a->use_connection_dns, b->use_connection_dns);
+
     NM_CMP_RETURN(
         nm_strv_cmp_n(a->searches ?: NM_STRV_EMPTY(), -1, b->searches ?: NM_STRV_EMPTY(), -1));
 
@@ -1095,6 +1106,10 @@ nm_global_dns_config_update_checksum(const NMGlobalDnsConfig *dns_config, GCheck
                                !dns_config->options,
                                !dns_config->domain_list);
     g_checksum_update(sum, (guchar *) &v8, 1);
+
+    g_checksum_update(sum,
+                      (guchar *) &dns_config->use_connection_dns,
+                      sizeof(dns_config->use_connection_dns));
 
     if (dns_config->searches) {
         for (i = 0; dns_config->searches[i]; i++)
@@ -1189,6 +1204,7 @@ load_global_dns(GKeyFile *keyfile, gboolean internal)
     int                g, i, j, domain_prefix_len;
     gboolean           default_found = FALSE;
     char             **strv;
+    char              *str;
 
     if (internal) {
         group         = NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS;
@@ -1239,6 +1255,24 @@ load_global_dns(GKeyFile *keyfile, gboolean internal)
         else {
             strv[j]             = NULL;
             dns_config->options = strv;
+        }
+    }
+
+    str = g_key_file_get_string(keyfile,
+                                group,
+                                NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_USE_CONNECTION_DNS,
+                                NULL);
+    if (str) {
+        if (nm_streq(str, "yes")) {
+            dns_config->use_connection_dns = NM_GLOBAL_DNS_USE_CONNECTION_DNS_YES;
+        } else if (nm_streq(str, "no")) {
+            dns_config->use_connection_dns = NM_GLOBAL_DNS_USE_CONNECTION_DNS_NO;
+        } else {
+            nm_log_warn(LOGD_CORE,
+                        "%s global DNS configuration has invalid value for 'use-connection-dns', "
+                        "assuming 'no'",
+                        internal ? "internal" : "user");
+            dns_config->use_connection_dns = NM_GLOBAL_DNS_USE_CONNECTION_DNS_NO;
         }
     }
 

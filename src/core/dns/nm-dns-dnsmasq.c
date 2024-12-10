@@ -892,8 +892,9 @@ add_ip_config(NMDnsDnsmasq *self, GVariantBuilder *servers, const NMDnsConfigIPD
 
         ip_addr_to_string(ip_data->addr_family, &a, iface, ip_addr_to_string_buf);
 
-        if (!ip_data->domains.has_default_route_explicit && ip_data->domains.has_default_route)
+        if (!ip_data->domains.has_default_route_explicit && ip_data->domains.has_default_route) {
             add_dnsmasq_nameserver(self, servers, ip_addr_to_string_buf, NULL);
+        }
         if (ip_data->domains.search) {
             for (j = 0; ip_data->domains.search[j]; j++) {
                 domain = nm_utils_parse_dns_domain(ip_data->domains.search[j], NULL);
@@ -920,17 +921,22 @@ create_update_args(NMDnsDnsmasq            *self,
                    const CList             *ip_data_lst_head,
                    const char              *hostdomain)
 {
-    GVariantBuilder          servers;
-    const NMDnsConfigIPData *ip_data;
+    GVariantBuilder             servers;
+    const NMDnsConfigIPData    *ip_data;
+    NMGlobalDnsUseConnectionDns use_conn = NM_GLOBAL_DNS_USE_CONNECTION_DNS_NO;
 
     g_variant_builder_init(&servers, G_VARIANT_TYPE("aas"));
 
-    if (global_config)
+    if (global_config) {
         add_global_config(self, &servers, global_config);
+        use_conn = nm_global_dns_config_get_use_connection_dns(global_config);
+    }
 
-    if (!global_config || !nm_global_dns_config_lookup_domain(global_config, "*")) {
-        c_list_for_each_entry (ip_data, ip_data_lst_head, ip_data_lst)
+    if (!global_config || !nm_global_dns_config_lookup_domain(global_config, "*")
+        || use_conn == NM_GLOBAL_DNS_USE_CONNECTION_DNS_YES) {
+        c_list_for_each_entry (ip_data, ip_data_lst_head, ip_data_lst) {
             add_ip_config(self, &servers, ip_data);
+        }
     }
 
     return g_variant_new("(aas)", &servers);

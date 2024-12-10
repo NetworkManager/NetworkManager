@@ -905,7 +905,8 @@ static const ConfigGroup config_groups[] = {
     {
         .group = NM_CONFIG_KEYFILE_GROUP_GLOBAL_DNS,
         .keys  = NM_MAKE_STRV(NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_OPTIONS,
-                             NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_SEARCHES, ),
+                             NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_SEARCHES,
+                             NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_USE_CONNECTION_DNS, ),
     },
     {
         .group     = NM_CONFIG_KEYFILE_GROUPPREFIX_GLOBAL_DNS_DOMAIN,

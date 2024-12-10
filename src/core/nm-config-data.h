@@ -267,6 +267,11 @@ gboolean nm_config_data_is_intern_atomic_group(const NMConfigData *self, const c
 
 GKeyFile *nm_config_data_clone_keyfile_intern(const NMConfigData *self);
 
+typedef enum {
+    NM_GLOBAL_DNS_USE_CONNECTION_DNS_NO,
+    NM_GLOBAL_DNS_USE_CONNECTION_DNS_YES,
+} NMGlobalDnsUseConnectionDns;
+
 const char *const *nm_global_dns_config_get_searches(const NMGlobalDnsConfig *dns_config);
 const char *const *nm_global_dns_config_get_options(const NMGlobalDnsConfig *dns_config);
 guint              nm_global_dns_config_get_num_domains(const NMGlobalDnsConfig *dns_config);
@@ -287,6 +292,9 @@ void               nm_global_dns_config_free(NMGlobalDnsConfig *dns_config);
 
 NMGlobalDnsConfig *nm_global_dns_config_from_dbus(const GValue *value, GError **error);
 void               nm_global_dns_config_to_dbus(const NMGlobalDnsConfig *dns_config, GValue *value);
+
+NMGlobalDnsUseConnectionDns
+nm_global_dns_config_get_use_connection_dns(const NMGlobalDnsConfig *dns_config);
 
 void nm_config_data_get_warnings(const NMConfigData *self, GPtrArray *warnings);
 
