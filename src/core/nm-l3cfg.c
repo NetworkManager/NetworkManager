@@ -4660,15 +4660,17 @@ _l3_commit_one(NML3Cfg              *self,
                                                       nm_g_array_len(ipv6_temp_addrs_keep));
 
             if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN_AND_NM_ROUTES) {
-                NMDedupMultiIter iter;
-                const NMPObject *rt_obj;
+                GHashTableIter h_iter;
+                ObjStateData  *obj_state;
 
-                routes_old = g_ptr_array_new();
-                nm_l3_config_data_iter_obj_for_each (&iter,
-                                                     l3cd_old,
-                                                     &rt_obj,
-                                                     NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4))
-                    g_ptr_array_add(routes_old, (gpointer) rt_obj);
+                /* Get list of all the routes that were configured by us */
+                routes_old = g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
+                g_hash_table_iter_init(&h_iter, self->priv.p->obj_state_hash);
+                while (g_hash_table_iter_next(&h_iter, (gpointer *) &obj_state, NULL)) {
+                    if (NMP_OBJECT_GET_TYPE(obj_state->obj) == NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4)
+                        && obj_state->os_nm_configured)
+                        g_ptr_array_add(routes_old, (gpointer) nmp_object_ref(obj_state->obj));
+                }
 
                 nm_platform_route_objs_sort(routes_old, NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY);
             }
