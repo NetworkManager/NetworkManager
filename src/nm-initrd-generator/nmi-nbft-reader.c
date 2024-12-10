@@ -61,45 +61,57 @@ load_libnvme(void)
     return handle;
 }
 
-static NMConnection *
-parse_hfi(struct nbft_info_hfi *hfi, int iface_idx, char **hostname)
+static char *
+format_conn_name(const char *table_name, struct nbft_info_hfi *hfi, gboolean is_vlan)
 {
-    gs_unref_object NMConnection         *connection;
-    NMSetting                            *s_connection;
-    NMSetting                            *s_wired;
-    gs_free char                         *hwaddr = NULL;
-    gs_free char                         *ifname = NULL;
-    gs_unref_object NMSetting            *s_ip4  = NULL;
-    gs_unref_object NMSetting            *s_ip6  = NULL;
-    nm_auto_unref_ip_address NMIPAddress *ipaddr = NULL;
-    gs_free_error GError                 *error  = NULL;
-    int                                   family = AF_UNSPEC;
-    NMIPAddr                              addr_bin;
+    if (is_vlan) {
+        nm_assert(hfi->tcp_info.vlan > 0);
+        return g_strdup_printf("%s connection HFI %d VLAN %d",
+                               table_name,
+                               hfi->index,
+                               hfi->tcp_info.vlan);
+    } else
+        return g_strdup_printf("%s connection HFI %d", table_name, hfi->index);
+}
 
-    /* Pre-checks */
-    if (!nm_inet_parse_bin_full(family, FALSE, hfi->tcp_info.ipaddr, &family, &addr_bin)) {
-        _LOGW(LOGD_CORE, "NBFT: Malformed IP address: '%s'", hfi->tcp_info.ipaddr);
-        return NULL;
+static NMConnection *
+find_conn_for_wired_mac(GPtrArray *a, const char *hwaddr)
+{
+    guint i;
+
+    for (i = 0; i < a->len; i++) {
+        NMConnection   *con = a->pdata[i];
+        NMSettingWired *s_wired;
+
+        if (!nm_connection_is_type(con, NM_SETTING_WIRED_SETTING_NAME))
+            continue;
+        s_wired = nm_connection_get_setting_wired(con);
+        if (!s_wired)
+            continue;
+        if (nm_streq(hwaddr, nm_setting_wired_get_mac_address(s_wired)))
+            return con;
     }
+    return NULL;
+}
 
-    ifname = g_strdup_printf("NBFT connection %d", iface_idx);
-    hwaddr = g_strdup_printf("%02x:%02x:%02x:%02x:%02x:%02x",
-                             hfi->tcp_info.mac_addr[0],
-                             hfi->tcp_info.mac_addr[1],
-                             hfi->tcp_info.mac_addr[2],
-                             hfi->tcp_info.mac_addr[3],
-                             hfi->tcp_info.mac_addr[4],
-                             hfi->tcp_info.mac_addr[5]);
+static NMConnection *
+create_wired_conn(struct nbft_info_hfi *hfi,
+                  const char           *conn_name,
+                  const char           *hwaddr,
+                  gboolean              is_vlan)
+{
+    NMConnection *connection;
+    NMSetting    *s_connection;
+    NMSetting    *s_wired;
 
-    /* Create new connection */
     connection = nm_simple_connection_new();
 
     s_connection = nm_setting_connection_new();
     g_object_set(s_connection,
                  NM_SETTING_CONNECTION_TYPE,
-                 NM_SETTING_WIRED_SETTING_NAME,
+                 is_vlan ? NM_SETTING_VLAN_SETTING_NAME : NM_SETTING_WIRED_SETTING_NAME,
                  NM_SETTING_CONNECTION_ID,
-                 ifname,
+                 conn_name,
                  NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY,
                  NMI_AUTOCONNECT_PRIORITY_FIRMWARE,
                  NULL);
@@ -110,7 +122,80 @@ parse_hfi(struct nbft_info_hfi *hfi, int iface_idx, char **hostname)
     g_object_set(s_wired, NM_SETTING_WIRED_MAC_ADDRESS, hwaddr, NULL);
     nm_connection_add_setting(connection, s_wired);
 
-    /* TODO: hfi->tcp_info.vlan */
+    return connection;
+}
+
+static void
+parse_hfi(GPtrArray *a, struct nbft_info_hfi *hfi, const char *table_name, char **hostname)
+{
+    gs_unref_object NMConnection         *connection = NULL;
+    NMConnection                         *parent_connection;
+    NMSetting                            *s_vlan;
+    gs_free char                         *hwaddr    = NULL;
+    gs_free char                         *conn_name = NULL;
+    gs_unref_object NMSetting            *s_ip4     = NULL;
+    gs_unref_object NMSetting            *s_ip6     = NULL;
+    nm_auto_unref_ip_address NMIPAddress *ipaddr    = NULL;
+    guint                                 prefix;
+    gs_free_error GError                 *error  = NULL;
+    int                                   family = AF_UNSPEC;
+    NMIPAddr                              addr_bin;
+
+    /* Pre-checks */
+    if (!nm_inet_parse_bin_full(family, FALSE, hfi->tcp_info.ipaddr, &family, &addr_bin)) {
+        _LOGW(LOGD_CORE, "NBFT: Malformed IP address: '%s'", hfi->tcp_info.ipaddr);
+        return;
+    }
+
+    /* MAC address */
+    hwaddr = g_strdup_printf("%02X:%02X:%02X:%02X:%02X:%02X",
+                             hfi->tcp_info.mac_addr[0],
+                             hfi->tcp_info.mac_addr[1],
+                             hfi->tcp_info.mac_addr[2],
+                             hfi->tcp_info.mac_addr[3],
+                             hfi->tcp_info.mac_addr[4],
+                             hfi->tcp_info.mac_addr[5]);
+
+    /* First check if we need VLANs */
+    if (hfi->tcp_info.vlan > 0) {
+        parent_connection = find_conn_for_wired_mac(a, hwaddr);
+        if (!parent_connection) {
+            /* Create new parent wired connection */
+            conn_name         = format_conn_name(table_name, hfi, FALSE);
+            parent_connection = create_wired_conn(hfi, conn_name, hwaddr, FALSE);
+
+            s_ip4 = nm_setting_ip4_config_new();
+            s_ip6 = nm_setting_ip6_config_new();
+            g_object_set(s_ip4,
+                         NM_SETTING_IP_CONFIG_METHOD,
+                         NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
+                         NULL);
+            g_object_set(s_ip6,
+                         NM_SETTING_IP_CONFIG_METHOD,
+                         NM_SETTING_IP6_CONFIG_METHOD_DISABLED,
+                         NULL);
+            nm_connection_add_setting(parent_connection, g_steal_pointer(&s_ip4));
+            nm_connection_add_setting(parent_connection, g_steal_pointer(&s_ip6));
+
+            if (!nm_connection_normalize(parent_connection, NULL, NULL, &error)) {
+                _LOGW(LOGD_CORE, "Generated an invalid connection: %s", error->message);
+                g_object_unref(parent_connection);
+                return;
+            }
+            g_ptr_array_add(a, parent_connection);
+        }
+
+        conn_name  = format_conn_name(table_name, hfi, TRUE);
+        connection = create_wired_conn(hfi, conn_name, hwaddr, TRUE);
+
+        s_vlan = nm_setting_vlan_new();
+        g_object_set(s_vlan, NM_SETTING_VLAN_ID, hfi->tcp_info.vlan, NULL);
+        nm_connection_add_setting(connection, s_vlan);
+    } else {
+        /* No VLANS */
+        conn_name  = format_conn_name(table_name, hfi, FALSE);
+        connection = create_wired_conn(hfi, conn_name, hwaddr, FALSE);
+    }
 
     /* IP addresses */
     s_ip4 = nm_setting_ip4_config_new();
@@ -149,7 +234,7 @@ parse_hfi(struct nbft_info_hfi *hfi, int iface_idx, char **hostname)
                       hfi->tcp_info.ipaddr,
                       hfi->tcp_info.subnet_mask_prefix,
                       error->message);
-                return NULL;
+                return;
             }
             nm_setting_ip_config_add_address(NM_SETTING_IP_CONFIG(s_ip4), ipaddr);
             if (is_valid_addr(AF_INET, hfi->tcp_info.gateway_ipaddr)) {
@@ -204,7 +289,7 @@ parse_hfi(struct nbft_info_hfi *hfi, int iface_idx, char **hostname)
                       hfi->tcp_info.ipaddr,
                       prefix,
                       error->message);
-                return NULL;
+                return;
             }
             nm_setting_ip_config_add_address(NM_SETTING_IP_CONFIG(s_ip6), ipaddr);
             if (is_valid_addr(AF_INET6, hfi->tcp_info.gateway_ipaddr)) {
@@ -246,9 +331,10 @@ parse_hfi(struct nbft_info_hfi *hfi, int iface_idx, char **hostname)
 
     if (!nm_connection_normalize(connection, NULL, NULL, &error)) {
         _LOGW(LOGD_CORE, "Generated an invalid connection: %s", error->message);
-        return NULL;
+        return;
     }
-    return g_steal_pointer(&connection);
+
+    g_ptr_array_add(a, g_steal_pointer(&connection));
 }
 
 NMConnection **
@@ -260,7 +346,6 @@ nmi_nbft_reader_parse(const char *sysfs_dir, char **hostname)
     GDir                             *dir;
     void                             *libnvme_handle = NULL;
     const char                       *entry_name;
-    int                               idx = 1;
 
     g_return_val_if_fail(sysfs_dir != NULL, NULL);
     path = g_build_filename(sysfs_dir, "firmware", "acpi", "tables", NULL);
@@ -293,9 +378,7 @@ nmi_nbft_reader_parse(const char *sysfs_dir, char **hostname)
             continue;
         }
 
-        for (hfi = nbft->hfi_list; hfi && *hfi; hfi++, idx++) {
-            NMConnection *connection;
-
+        for (hfi = nbft->hfi_list; hfi && *hfi; hfi++) {
             if (!nm_streq((*hfi)->transport, "tcp")) {
                 _LOGW(LOGD_CORE,
                       "NBFT table %s, HFI descriptor %d: unsupported transport type '%s'",
@@ -304,10 +387,7 @@ nmi_nbft_reader_parse(const char *sysfs_dir, char **hostname)
                       (*hfi)->transport);
                 continue;
             }
-
-            connection = parse_hfi(*hfi, idx, hostname);
-            if (connection)
-                g_ptr_array_add(a, connection);
+            parse_hfi(a, *hfi, entry_name, hostname);
         }
 
         _nvme_nbft_free(nbft);
@@ -316,7 +396,7 @@ nmi_nbft_reader_parse(const char *sysfs_dir, char **hostname)
     g_dir_close(dir);
     dlclose(libnvme_handle);
     g_ptr_array_add(a, NULL); /* trailing NULL-delimiter */
-    return (NMConnection **) g_ptr_array_free(a, FALSE);
+    return (NMConnection **) g_ptr_array_free(g_steal_pointer(&a), FALSE);
 }
 
 #else /* WITH_NBFT */
