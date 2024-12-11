@@ -1241,6 +1241,7 @@ _parent_device_l3cd_add_gateway_route(NML3ConfigData *l3cd,
             .gateway    = parent_gw.addr4,
             .rt_source  = NM_IP_CONFIG_SOURCE_VPN,
             .metric_any = TRUE,
+            .table_any  = TRUE,
         };
     } else {
         route.r6 = (NMPlatformIP6Route){
@@ -1250,6 +1251,7 @@ _parent_device_l3cd_add_gateway_route(NML3ConfigData *l3cd,
             .gateway    = parent_gw.addr6,
             .rt_source  = NM_IP_CONFIG_SOURCE_VPN,
             .metric_any = TRUE,
+            .table_any  = TRUE,
         };
     }
     nm_l3_config_data_add_route(l3cd, addr_family, NULL, &route.rx);
@@ -1266,6 +1268,7 @@ _parent_device_l3cd_add_gateway_route(NML3ConfigData *l3cd,
                 .plen       = 32,
                 .rt_source  = NM_IP_CONFIG_SOURCE_VPN,
                 .metric_any = TRUE,
+                .table_any  = TRUE,
             };
         } else {
             route.r6 = (NMPlatformIP6Route){
@@ -1273,6 +1276,7 @@ _parent_device_l3cd_add_gateway_route(NML3ConfigData *l3cd,
                 .plen       = 128,
                 .rt_source  = NM_IP_CONFIG_SOURCE_VPN,
                 .metric_any = TRUE,
+                .table_any  = TRUE,
             };
         }
         nm_l3_config_data_add_route(l3cd, addr_family, NULL, &route.rx);
