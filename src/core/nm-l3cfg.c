@@ -3919,15 +3919,18 @@ _l3cfg_routed_dns(NML3Cfg *self, NML3ConfigData *l3cd)
                  * table sync mode to FULL, to clear the DNS routes added
                  * previously. */
                 self->priv.dns_route_added_x[IS_IPv4] = FALSE;
-                nm_l3_config_data_set_route_table_sync(l3cd,
-                                                       addr_family,
-                                                       NM_IP_ROUTE_TABLE_SYNC_MODE_FULL);
+                nm_l3_config_data_set_route_table_sync(
+                    l3cd,
+                    addr_family,
+                    NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_EXCEPT_LOCAL);
             }
             continue;
         }
 
         nameservers = nm_l3_config_data_get_nameservers(l3cd, addr_family, &len);
-        nm_l3_config_data_set_route_table_sync(l3cd, addr_family, NM_IP_ROUTE_TABLE_SYNC_MODE_FULL);
+        nm_l3_config_data_set_route_table_sync(l3cd,
+                                               addr_family,
+                                               NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_EXCEPT_LOCAL);
 
         for (i = 0; i < len; i++) {
             nm_auto_nmpobj NMPObject *obj = NULL;
@@ -3977,9 +3980,10 @@ _l3cfg_routed_dns(NML3Cfg *self, NML3ConfigData *l3cd)
                       nm_platform_ip4_route_to_string(&route_new.r4, route_buf, sizeof(route_buf)));
 
                 nm_l3_config_data_add_route_4(l3cd, &route_new.r4);
-                nm_l3_config_data_set_route_table_sync(l3cd,
-                                                       AF_INET,
-                                                       NM_IP_ROUTE_TABLE_SYNC_MODE_FULL);
+                nm_l3_config_data_set_route_table_sync(
+                    l3cd,
+                    AF_INET,
+                    NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_EXCEPT_LOCAL);
                 route_added = TRUE;
             } else {
                 route_new.r6 = (NMPlatformIP6Route) {
@@ -5129,7 +5133,7 @@ _l3_commit_one(NML3Cfg              *self,
     }
 
     if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_NONE)
-        route_table_sync = NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN;
+        route_table_sync = NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN_AND_NM_ROUTES;
 
     if (any_dirty)
         _obj_states_track_prune_dirty(self, TRUE);
@@ -5158,6 +5162,8 @@ _l3_commit_one(NML3Cfg              *self,
         }
 
         if (c_list_is_empty(&self->priv.p->blocked_lst_head_x[IS_IPv4])) {
+            gs_unref_ptrarray GPtrArray *routes_old = NULL;
+
             addresses_prune =
                 nm_platform_ip_address_get_prune_list(self->priv.platform,
                                                       addr_family,
@@ -5165,10 +5171,28 @@ _l3_commit_one(NML3Cfg              *self,
                                                       nm_g_array_data(ipv6_temp_addrs_keep),
                                                       nm_g_array_len(ipv6_temp_addrs_keep));
 
+            if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN_AND_NM_ROUTES) {
+                GHashTableIter h_iter;
+                ObjStateData  *obj_state;
+
+                /* Get list of all the routes that were configured by us */
+                routes_old = g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
+                g_hash_table_iter_init(&h_iter, self->priv.p->obj_state_hash);
+                while (g_hash_table_iter_next(&h_iter, (gpointer *) &obj_state, NULL)) {
+                    if (NMP_OBJECT_GET_TYPE(obj_state->obj) == NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4)
+                        && obj_state->os_nm_configured)
+                        g_ptr_array_add(routes_old, (gpointer) nmp_object_ref(obj_state->obj));
+                }
+
+                nm_platform_route_objs_sort(routes_old, NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY);
+            }
+
             routes_prune = nm_platform_ip_route_get_prune_list(self->priv.platform,
                                                                addr_family,
                                                                self->priv.ifindex,
-                                                               route_table_sync);
+                                                               route_table_sync,
+                                                               routes_old);
+
             _obj_state_zombie_lst_prune_all(self, addr_family);
         }
     } else {
