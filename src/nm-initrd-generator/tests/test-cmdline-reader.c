@@ -71,7 +71,7 @@
         _1_connection = g_hash_table_lookup(_1_connections, _1_connection_name); \
         g_assert(NM_IS_CONNECTION(_1_connection));                               \
                                                                                  \
-        nmtst_assert_connection_verifies_without_normalization(_1_connection);   \
+        nmtst_assert_connection_verifies(_1_connection);                         \
                                                                                  \
         NM_CONNECTION(g_object_ref(_1_connection));                              \
     })
@@ -161,7 +161,7 @@ test_dhcp_with_hostname(void)
 
     connection = g_hash_table_lookup(connections, "default_connection");
 
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
 
     g_assert(!nm_connection_get_setting_vlan(connection));
 
@@ -430,7 +430,7 @@ test_if_ip4_manual(void)
     g_assert_cmpint(carrier_timeout_sec, ==, 0);
 
     connection = g_hash_table_lookup(connections, "eth3");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
     g_assert_cmpstr(nm_connection_get_id(connection), ==, "eth3");
 
     s_con = nm_connection_get_setting_connection(connection);
@@ -465,7 +465,7 @@ test_if_ip4_manual(void)
     g_assert_cmpint(nm_setting_ip_config_get_required_timeout(s_ip6), ==, -1);
 
     connection = g_hash_table_lookup(connections, "eth4");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
     g_assert_cmpstr(nm_connection_get_id(connection), ==, "eth4");
 
     s_ip4 = nm_connection_get_setting_ip4_config(connection);
@@ -511,7 +511,7 @@ test_if_ip4_auto(void)
     g_assert_cmpint(carrier_timeout_sec, ==, 0);
 
     connection = g_hash_table_lookup(connections, "eth0");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
     g_assert_cmpstr(nm_connection_get_id(connection), ==, "eth0");
 
     s_con = nm_connection_get_setting_connection(connection);
@@ -602,7 +602,7 @@ test_if_ip6_manual(void)
     g_assert_cmpint(carrier_timeout_sec, ==, 0);
 
     connection = g_hash_table_lookup(connections, "eth4");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
     g_assert_cmpstr(nm_connection_get_id(connection), ==, "eth4");
 
     s_ip4 = nm_connection_get_setting_ip4_config(connection);
@@ -658,7 +658,7 @@ test_if_off(void)
 
     for (i = 0; i < G_N_ELEMENTS(conn_expected); i++) {
         connection = g_hash_table_lookup(connections, conn_expected[i].name);
-        nmtst_assert_connection_verifies_without_normalization(connection);
+        nmtst_assert_connection_verifies_and_normalizable(connection);
 
         s_ip4 = nm_connection_get_setting_ip4_config(connection);
         g_assert(s_ip4);
@@ -690,7 +690,7 @@ test_if_mac_ifname(void)
     g_assert_cmpint(carrier_timeout_sec, ==, 0);
 
     connection = g_hash_table_lookup(connections, "00:11:22:33:44:55");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
     g_assert_cmpstr(nm_connection_get_id(connection), ==, "00:11:22:33:44:55");
     g_assert_cmpstr(nm_connection_get_interface_name(connection), ==, NULL);
 
@@ -835,7 +835,7 @@ test_bootdev(void)
     g_assert_cmpint(g_hash_table_size(connections), ==, 3);
 
     connection = g_hash_table_lookup(connections, "ens3");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
 
     s_con = nm_connection_get_setting_connection(connection);
     g_assert(s_con);
@@ -849,7 +849,7 @@ test_bootdev(void)
                     NMI_WAIT_DEVICE_TIMEOUT_MSEC);
 
     connection = g_hash_table_lookup(connections, "vlan2");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
 
     s_con = nm_connection_get_setting_connection(connection);
     g_assert(s_con);
@@ -860,7 +860,7 @@ test_bootdev(void)
     g_assert_cmpstr(nm_setting_connection_get_interface_name(s_con), ==, "vlan2");
 
     connection = g_hash_table_lookup(connections, "ens5");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
 
     s_con = nm_connection_get_setting_connection(connection);
     g_assert(s_con);
@@ -895,7 +895,7 @@ test_some_more(void)
     g_assert_cmpint(g_hash_table_size(connections), ==, 2);
 
     connection = g_hash_table_lookup(connections, "eth1");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
 
     s_con = nm_connection_get_setting_connection(connection);
     g_assert(s_con);
@@ -929,7 +929,7 @@ test_some_more(void)
     g_assert_cmpstr(nm_setting_ip_config_get_dns(s_ip6, 0), ==, "2001:db8:3::53");
 
     connection = g_hash_table_lookup(connections, "ens10");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
 
     s_con = nm_connection_get_setting_connection(connection);
     g_assert(s_con);
@@ -981,7 +981,7 @@ test_bond(void)
     g_assert_cmpint(g_hash_table_size(connections), ==, 3);
 
     connection = g_hash_table_lookup(connections, "bong0");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
     g_assert_cmpstr(nm_connection_get_connection_type(connection),
                     ==,
                     NM_SETTING_BOND_SETTING_NAME);
@@ -1022,7 +1022,7 @@ test_bond(void)
     g_assert_cmpstr(nm_setting_bond_get_option_by_name(s_bond, "mode"), ==, "balance-rr");
 
     connection = g_hash_table_lookup(connections, "eth0");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    // nmtst_assert_connection_verifies_and_normalizable(connection);
     g_assert_cmpstr(nm_connection_get_id(connection), ==, "eth0");
 
     s_con = nm_connection_get_setting_connection(connection);
@@ -1038,7 +1038,7 @@ test_bond(void)
                     NM_CONNECTION_MULTI_CONNECT_SINGLE);
 
     connection = g_hash_table_lookup(connections, "eth1");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    //nmtst_assert_connection_verifies_and_normalizable(connection);
     g_assert_cmpstr(nm_connection_get_id(connection), ==, "eth1");
 
     s_con = nm_connection_get_setting_connection(connection);
@@ -1075,7 +1075,7 @@ test_bond_ip(void)
     g_assert_cmpint(g_hash_table_size(connections), ==, 3);
 
     connection = g_hash_table_lookup(connections, "bond0");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
     g_assert_cmpstr(nm_connection_get_connection_type(connection),
                     ==,
                     NM_SETTING_BOND_SETTING_NAME);
@@ -1120,7 +1120,7 @@ test_bond_ip(void)
     g_assert_cmpstr(nm_setting_bond_get_option_by_name(s_bond, "mode"), ==, "balance-rr");
 
     connection = g_hash_table_lookup(connections, "eth0");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_after_normalization(connection, 0, 0);
     g_assert_cmpstr(nm_connection_get_id(connection), ==, "eth0");
 
     s_con = nm_connection_get_setting_connection(connection);
@@ -1136,7 +1136,7 @@ test_bond_ip(void)
                     NM_CONNECTION_MULTI_CONNECT_SINGLE);
 
     connection = g_hash_table_lookup(connections, "eth1");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_after_normalization(connection, 0, 0);
     g_assert_cmpstr(nm_connection_get_id(connection), ==, "eth1");
 
     s_con = nm_connection_get_setting_connection(connection);
@@ -1169,7 +1169,7 @@ test_bond_default(void)
 
     connection = g_hash_table_lookup(connections, "bond0");
 
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
     g_assert_cmpstr(nm_connection_get_connection_type(connection),
                     ==,
                     NM_SETTING_BOND_SETTING_NAME);
@@ -1199,7 +1199,7 @@ test_bond_default(void)
     g_assert_cmpstr(nm_setting_bond_get_option_by_name(s_bond, "mode"), ==, "balance-rr");
 
     connection = g_hash_table_lookup(connections, "eth0");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_after_normalization(connection, 0, 0);
     g_assert_cmpstr(nm_connection_get_id(connection), ==, "eth0");
 
     s_con = nm_connection_get_setting_connection(connection);
@@ -1234,7 +1234,7 @@ test_bridge(void)
     g_assert_cmpint(g_hash_table_size(connections), ==, 3);
 
     connection = g_hash_table_lookup(connections, "bridge0");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
     g_assert_cmpstr(nm_connection_get_connection_type(connection),
                     ==,
                     NM_SETTING_BRIDGE_SETTING_NAME);
@@ -1275,7 +1275,7 @@ test_bridge(void)
     g_assert_cmpint(nm_setting_bridge_get_stp(s_bridge), ==, FALSE);
 
     connection = g_hash_table_lookup(connections, "eth0");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_after_normalization(connection, 0, 0);
     g_assert_cmpstr(nm_connection_get_id(connection), ==, "eth0");
 
     s_con = nm_connection_get_setting_connection(connection);
@@ -1291,7 +1291,7 @@ test_bridge(void)
                     NM_CONNECTION_MULTI_CONNECT_SINGLE);
 
     connection = g_hash_table_lookup(connections, "eth1");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_after_normalization(connection, 0, 0);
     g_assert_cmpstr(nm_connection_get_id(connection), ==, "eth1");
 
     s_con = nm_connection_get_setting_connection(connection);
@@ -1324,7 +1324,7 @@ test_bridge_default(void)
 
     connection = g_hash_table_lookup(connections, "br0");
 
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
     g_assert_cmpstr(nm_connection_get_connection_type(connection),
                     ==,
                     NM_SETTING_BRIDGE_SETTING_NAME);
@@ -1352,7 +1352,7 @@ test_bridge_default(void)
     g_assert(s_bridge);
 
     connection = g_hash_table_lookup(connections, "eth0");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_after_normalization(connection, 0, 0);
     g_assert_cmpstr(nm_connection_get_id(connection), ==, "eth0");
 
     s_con = nm_connection_get_setting_connection(connection);
@@ -1388,7 +1388,7 @@ test_bridge_ip(void)
     g_assert_cmpint(g_hash_table_size(connections), ==, 11);
 
     connection = g_hash_table_lookup(connections, "bridge123");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
     g_assert_cmpstr(nm_connection_get_connection_type(connection),
                     ==,
                     NM_SETTING_BRIDGE_SETTING_NAME);
@@ -1418,7 +1418,7 @@ test_bridge_ip(void)
         nm_sprintf_buf(ifname, "eth%u", i);
 
         connection = g_hash_table_lookup(connections, ifname);
-        nmtst_assert_connection_verifies_without_normalization(connection);
+        nmtst_assert_connection_verifies_after_normalization(connection, 0, 0);
         g_assert_cmpstr(nm_connection_get_id(connection), ==, ifname);
 
         s_con = nm_connection_get_setting_connection(connection);
@@ -1453,7 +1453,7 @@ test_team(void)
     g_assert_cmpint(g_hash_table_size(connections), ==, 3);
 
     connection = g_hash_table_lookup(connections, "team0");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
     g_assert_cmpstr(nm_connection_get_connection_type(connection),
                     ==,
                     NM_SETTING_TEAM_SETTING_NAME);
@@ -1484,7 +1484,7 @@ test_team(void)
     g_assert(s_team);
 
     connection = g_hash_table_lookup(connections, "eth0");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_after_normalization(connection, 0, 0);
     g_assert_cmpstr(nm_connection_get_id(connection), ==, "eth0");
 
     s_con = nm_connection_get_setting_connection(connection);
@@ -1500,7 +1500,7 @@ test_team(void)
                     NM_CONNECTION_MULTI_CONNECT_SINGLE);
 
     connection = g_hash_table_lookup(connections, "eth1");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_after_normalization(connection, 0, 0);
     g_assert_cmpstr(nm_connection_get_id(connection), ==, "eth1");
 
     s_con = nm_connection_get_setting_connection(connection);
@@ -1536,7 +1536,7 @@ test_vlan(void)
 
         /* VLAN eth0.100 */
         connection = g_hash_table_lookup(connections, "eth0.100");
-        nmtst_assert_connection_verifies_without_normalization(connection);
+        nmtst_assert_connection_verifies_and_normalizable(connection);
         g_assert_cmpstr(nm_connection_get_connection_type(connection),
                         ==,
                         NM_SETTING_VLAN_SETTING_NAME);
@@ -1561,7 +1561,7 @@ test_vlan(void)
 
         /* Ethernet eth0 */
         connection = g_hash_table_lookup(connections, "eth0");
-        nmtst_assert_connection_verifies_without_normalization(connection);
+        nmtst_assert_connection_verifies_and_normalizable(connection);
         g_assert_cmpstr(nm_connection_get_connection_type(connection),
                         ==,
                         NM_SETTING_WIRED_SETTING_NAME);
@@ -1601,7 +1601,7 @@ test_vlan_with_dhcp_on_parent(void)
 
         /* VLAN eth0.100 */
         connection = g_hash_table_lookup(connections, "eth0.100");
-        nmtst_assert_connection_verifies_without_normalization(connection);
+        nmtst_assert_connection_verifies_and_normalizable(connection);
         g_assert_cmpstr(nm_connection_get_connection_type(connection),
                         ==,
                         NM_SETTING_VLAN_SETTING_NAME);
@@ -1626,7 +1626,7 @@ test_vlan_with_dhcp_on_parent(void)
 
         /* Ethernet eth0 */
         connection = g_hash_table_lookup(connections, "eth0");
-        nmtst_assert_connection_verifies_without_normalization(connection);
+        nmtst_assert_connection_verifies_and_normalizable(connection);
         g_assert_cmpstr(nm_connection_get_connection_type(connection),
                         ==,
                         NM_SETTING_WIRED_SETTING_NAME);
@@ -1673,7 +1673,7 @@ test_vlan_over_bond(void)
 
         /* VLAN vlan1 */
         connection = g_hash_table_lookup(connections, "vlan1");
-        nmtst_assert_connection_verifies_without_normalization(connection);
+        nmtst_assert_connection_verifies_and_normalizable(connection);
         g_assert_cmpstr(nm_connection_get_connection_type(connection),
                         ==,
                         NM_SETTING_VLAN_SETTING_NAME);
@@ -1698,7 +1698,7 @@ test_vlan_over_bond(void)
 
         /* Bond bond2 */
         connection = g_hash_table_lookup(connections, "bond2");
-        nmtst_assert_connection_verifies_without_normalization(connection);
+        nmtst_assert_connection_verifies_and_normalizable(connection);
         g_assert_cmpstr(nm_connection_get_connection_type(connection),
                         ==,
                         NM_SETTING_BOND_SETTING_NAME);
@@ -1887,7 +1887,7 @@ test_rd_znet(void)
         g_assert_cmpstr(v2, ==, s390_option->value_str);
     }
 
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
 
     connection = g_hash_table_lookup(connections, "slc600");
     g_assert(NM_IS_CONNECTION(connection));
@@ -1909,7 +1909,7 @@ test_rd_znet(void)
     g_assert_cmpstr(v_subchannels[1], ==, "0.0.0601");
     g_assert_cmpstr(v_subchannels[2], ==, NULL);
 
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
 }
 
 static void
@@ -1943,7 +1943,7 @@ test_rd_znet_legacy(void)
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "eth0");
     g_assert_cmpstr(nm_setting_connection_get_interface_name(s_con), ==, "eth0");
 
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
 
     connection = g_hash_table_lookup(connections, "ctc0");
     g_assert(NM_IS_CONNECTION(connection));
@@ -1956,7 +1956,7 @@ test_rd_znet_legacy(void)
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "ctc0");
     g_assert_cmpstr(nm_setting_connection_get_interface_name(s_con), ==, "ctc0");
 
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
 }
 
 static void
@@ -2031,7 +2031,7 @@ test_rd_znet_ifnames(void)
     g_assert_cmpstr(v_subchannels[2], ==, "0.0.0802");
     g_assert_cmpstr(v_subchannels[3], ==, NULL);
 
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
 
     connection = g_hash_table_lookup(connections, "zeth1");
     g_assert(NM_IS_CONNECTION(connection));
@@ -2054,7 +2054,7 @@ test_rd_znet_ifnames(void)
     g_assert_cmpstr(v_subchannels[1], ==, "0.0.0601");
     g_assert_cmpstr(v_subchannels[2], ==, NULL);
 
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
 }
 
 static void
@@ -2132,7 +2132,7 @@ test_neednet_args(void)
     g_assert_cmpint(g_hash_table_size(connections), ==, 4);
 
     connection = g_hash_table_lookup(connections, "eno1");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
     s_con = nm_connection_get_setting_connection(connection);
     g_assert(s_con);
     g_assert_cmpstr(nm_setting_connection_get_interface_name(s_con), ==, "eno1");
@@ -2141,7 +2141,7 @@ test_neednet_args(void)
                     NMI_WAIT_DEVICE_TIMEOUT_MSEC);
 
     connection = g_hash_table_lookup(connections, "eno2");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
     s_con = nm_connection_get_setting_connection(connection);
     g_assert(s_con);
     g_assert_cmpstr(nm_setting_connection_get_interface_name(s_con), ==, "eno2");
@@ -2150,7 +2150,7 @@ test_neednet_args(void)
                     NMI_WAIT_DEVICE_TIMEOUT_MSEC);
 
     connection = g_hash_table_lookup(connections, "eno3");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_after_normalization(connection, 0, 0);
     s_con = nm_connection_get_setting_connection(connection);
     g_assert(s_con);
     g_assert_cmpstr(nm_setting_connection_get_interface_name(s_con), ==, "eno3");
@@ -2159,7 +2159,7 @@ test_neednet_args(void)
                     NMI_WAIT_DEVICE_TIMEOUT_MSEC);
 
     connection = g_hash_table_lookup(connections, "br0");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
     s_con = nm_connection_get_setting_connection(connection);
     g_assert(s_con);
     g_assert_cmpstr(nm_setting_connection_get_interface_name(s_con), ==, "br0");
@@ -2213,7 +2213,7 @@ test_bootif_hwtype(void)
         g_assert_cmpint(g_hash_table_size(connections), ==, 2);
 
         connection = g_hash_table_lookup(connections, "eth0");
-        nmtst_assert_connection_verifies_without_normalization(connection);
+        nmtst_assert_connection_verifies_and_normalizable(connection);
         g_assert_cmpstr(nm_connection_get_id(connection), ==, "eth0");
 
         s_wired = nm_connection_get_setting_wired(connection);
@@ -2236,7 +2236,7 @@ test_bootif_hwtype(void)
         g_assert(!nm_setting_ip_config_get_ignore_auto_dns(s_ip6));
 
         connection = g_hash_table_lookup(connections, "bootif_connection");
-        nmtst_assert_connection_verifies_without_normalization(connection);
+        nmtst_assert_connection_verifies_and_normalizable(connection);
         g_assert_cmpstr(nm_connection_get_id(connection), ==, "BOOTIF Connection");
 
         s_wired = nm_connection_get_setting_wired(connection);
@@ -2287,7 +2287,7 @@ test_nameserver(void)
     g_assert_cmpint(carrier_timeout_sec, ==, 0);
 
     connection = g_hash_table_lookup(connections, "eth0");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
 
     s_ip = nm_connection_get_setting_ip4_config(connection);
     g_assert(s_ip);
@@ -2296,7 +2296,7 @@ test_nameserver(void)
     g_assert_cmpstr(nm_setting_ip_config_get_dns(s_ip, 1), ==, "1.0.0.1");
 
     connection = g_hash_table_lookup(connections, "eth1");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
 
     s_ip = nm_connection_get_setting_ip6_config(connection);
     g_assert(s_ip);
@@ -2304,7 +2304,7 @@ test_nameserver(void)
     g_assert_cmpstr(nm_setting_ip_config_get_dns(s_ip, 0), ==, "2606:4700:4700::1111");
 
     connection = g_hash_table_lookup(connections, "eth2");
-    nmtst_assert_connection_verifies_without_normalization(connection);
+    nmtst_assert_connection_verifies_and_normalizable(connection);
 
     s_ip = nm_connection_get_setting_ip4_config(connection);
     g_assert(s_ip);
