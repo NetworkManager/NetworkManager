@@ -264,22 +264,43 @@ construct_ip_items(GPtrArray *items, int addr_family, GVariant *ip_config, const
         g_variant_unref(val);
     }
 
-    val = g_variant_lookup_value(ip_config,
-                                 "nameservers",
-                                 addr_family == AF_INET ? G_VARIANT_TYPE("au")
-                                                        : G_VARIANT_TYPE("aay"));
+    /* For name servers, prefer the new key and fall back to the old one. */
+    val = g_variant_lookup_value(ip_config, "nameservers-full", G_VARIANT_TYPE("as"));
     if (val) {
-        gs_strfreev char **v = NULL;
+        nm_auto_unref_ptrarray GPtrArray *arr = NULL;
+        GVariantIter                      iter;
+        const char                       *str;
 
-        if (addr_family == AF_INET)
-            v = nm_utils_ip4_dns_from_variant(val);
-        else
-            v = nm_utils_ip6_dns_from_variant(val);
+        arr = g_ptr_array_new_full(g_variant_n_children(val) + 1, NULL);
+        g_variant_iter_init(&iter, val);
+        while (g_variant_iter_next(&iter, "&s", &str)) {
+            g_ptr_array_add(arr, (gpointer) str);
+        }
+        g_ptr_array_add(arr, NULL);
+
         _items_add_strv(items,
                         prefix,
                         addr_family == AF_INET ? "IP4_NAMESERVERS" : "IP6_NAMESERVERS",
-                        NM_CAST_STRV_CC(v));
+                        (const char *const *) arr->pdata);
         g_variant_unref(val);
+    } else {
+        val = g_variant_lookup_value(ip_config,
+                                     "nameservers",
+                                     addr_family == AF_INET ? G_VARIANT_TYPE("au")
+                                                            : G_VARIANT_TYPE("aay"));
+        if (val) {
+            gs_strfreev char **v = NULL;
+
+            if (addr_family == AF_INET)
+                v = nm_utils_ip4_dns_from_variant(val);
+            else
+                v = nm_utils_ip6_dns_from_variant(val);
+            _items_add_strv(items,
+                            prefix,
+                            addr_family == AF_INET ? "IP4_NAMESERVERS" : "IP6_NAMESERVERS",
+                            NM_CAST_STRV_CC(v));
+            g_variant_unref(val);
+        }
     }
 
     val = g_variant_lookup_value(ip_config, "domains", G_VARIANT_TYPE_STRING_ARRAY);
