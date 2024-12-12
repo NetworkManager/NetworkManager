@@ -247,6 +247,20 @@ dump_ip_to_props(const NML3ConfigData *l3cd, int addr_family, GVariantBuilder *b
     }
     g_variant_builder_add(builder, "{sv}", "addresses", g_variant_builder_end(&int_builder));
 
+    /* We used to send name servers as a entry with key "nameservers" and binary
+     * value. That no longer works because name servers can be URIs. Send the
+     * value as an array of strings.
+     * To avoid problems when the NM and NM-dispatcher version don't match (right
+     * after an upgrade or downgrade), still send the old key in the old format,
+     * and introduce a new key for the new format. */
+    g_variant_builder_init(&int_builder, G_VARIANT_TYPE("as"));
+    strarr = nm_l3_config_data_get_nameservers(l3cd, addr_family, &n);
+    for (i = 0; i < n; i++)
+        g_variant_builder_add(&int_builder, "s", strarr[i]);
+    g_variant_builder_add(builder, "{sv}", "nameservers-full", g_variant_builder_end(&int_builder));
+
+    /* Old format for nameservers. This can be removed in the future when it's
+     * expected that both NM and NM-dispatcher support the new format.*/
     if (IS_IPv4)
         g_variant_builder_init(&int_builder, G_VARIANT_TYPE("au"));
     else
