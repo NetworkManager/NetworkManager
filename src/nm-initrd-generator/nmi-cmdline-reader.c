@@ -1279,7 +1279,7 @@ reader_parse_ethtool(Reader *reader, char *argument)
 }
 
 static void
-_normalize_conn(gpointer key, gpointer value, gpointer user_data)
+_fixup_ip_sett(gpointer key, gpointer value, gpointer user_data)
 {
     NMConnection      *connection = value;
     NMSettingIPConfig *s_ip4 = NULL, *s_ip6 = NULL;
@@ -1316,8 +1316,6 @@ _normalize_conn(gpointer key, gpointer value, gpointer user_data)
                          NULL);
         }
     }
-
-    nm_connection_normalize(connection, NULL, NULL, NULL);
 }
 
 static void
@@ -1620,7 +1618,7 @@ nmi_cmdline_reader_parse(const char        *etc_connections_dir,
         _LOGW(LOGD_CORE, "Mismatch between rd.znet_ifname and rd.znet");
     }
 
-    g_hash_table_foreach(reader->hash, _normalize_conn, NULL);
+    g_hash_table_foreach(reader->hash, _fixup_ip_sett, NULL);
 
     NM_SET_OUT(hostname, g_steal_pointer(&reader->hostname));
 
