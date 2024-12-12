@@ -69,10 +69,14 @@ typedef struct {
     /**
      * get_connection_parent:
      * @factory: the #NMDeviceFactory
-     * @connection: the #NMConnection to return the parent name for, if supported
+     * @connection: the #NMConnection (possibly incomplete) to return the parent name for, if supported
      *
      * Given a connection, returns the parent interface name, parent connection
      * UUID, or parent device permanent hardware address for @connection.
+     *
+     * Note that @connection is not necessarily a valid connection.
+     * It might be called during AddAndActivate before the connection is
+     * completed and normalized.
      *
      * Returns: the parent interface name, parent connection UUID, parent
      *   device permanent hardware address, or %NULL
@@ -82,11 +86,15 @@ typedef struct {
     /**
      * get_connection_iface:
      * @factory: the #NMDeviceFactory
-     * @connection: the #NMConnection to return the interface name for
+     * @connection: the #NMConnection (possibly incomplete) to return the interface name for
      * @parent_iface: optional parent interface name for virtual devices
      *
      * Given a connection, returns the interface name that a device activating
      * that connection would have.
+     *
+     * Note that @connection is not necessarily a valid connection.
+     * It might be called during AddAndActivate before the connection is
+     * completed and normalized.
      *
      * Returns: the interface name, or %NULL
      */
