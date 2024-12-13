@@ -477,17 +477,19 @@ get_connection_iface(NMDeviceFactory *factory, NMConnection *connection, const c
     g_return_val_if_fail(nm_connection_is_type(connection, NM_SETTING_INFINIBAND_SETTING_NAME),
                          NULL);
 
-    s_infiniband = nm_connection_get_setting_infiniband(connection);
-    g_assert(s_infiniband);
-
     if (!parent_iface)
         return NULL;
 
-    g_return_val_if_fail(g_strcmp0(parent_iface, nm_setting_infiniband_get_parent(s_infiniband))
-                             == 0,
-                         NULL);
+    s_infiniband = nm_connection_get_setting_infiniband(connection);
+    if (s_infiniband) {
+        g_return_val_if_fail(g_strcmp0(parent_iface, nm_setting_infiniband_get_parent(s_infiniband))
+                                 == 0,
+                             NULL);
 
-    return g_strdup(nm_setting_infiniband_get_virtual_interface_name(s_infiniband));
+        return g_strdup(nm_setting_infiniband_get_virtual_interface_name(s_infiniband));
+    } else {
+        return NULL;
+    }
 }
 
 NM_DEVICE_FACTORY_DEFINE_INTERNAL(
