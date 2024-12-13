@@ -276,7 +276,10 @@ httpd = SocketHTTPServer(
     allow_default=allow_default,
 )
 
-print("Listening on http://%s:%d" % (httpd.server_address[0], httpd.server_address[1]))
+if fileno is None:
+    print(
+        "Listening on http://%s:%d" % (httpd.server_address[0], httpd.server_address[1])
+    )
 httpd.server_activate()
 
 httpd.serve_forever()
