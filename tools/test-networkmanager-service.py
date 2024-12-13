@@ -1891,8 +1891,65 @@ class NetworkManager(ExportedObj):
         con_type = NmUtil.con_hash_get_type(con_hash)
 
         if con_type == NM.SETTING_VLAN_SETTING_NAME:
-            ifname = con_hash[NM.SETTING_CONNECTION_SETTING_NAME]["interface-name"]
-            return VlanDevice(ifname)
+            iface = con_hash[NM.SETTING_CONNECTION_SETTING_NAME].get("interface-name")
+            parent_iface = con_hash[NM.SETTING_VLAN_SETTING_NAME].get("parent")
+
+            if NM.SETTING_WIRED_SETTING_NAME in con_hash:
+                mac = con_hash[NM.SETTING_WIRED_SETTING_NAME].get("mac-address")
+            else:
+                mac = None
+            if mac is not None:
+                parent_hwaddr = "%02X:%02X:%02X:%02X:%02X:%02X" % (
+                    mac[0],
+                    mac[1],
+                    mac[2],
+                    mac[3],
+                    mac[4],
+                    mac[5],
+                )
+            else:
+                parent_hwaddr = _DEFAULT_ARG
+
+            parent_ident = parent_iface if parent_iface is not None else _DEFAULT_ARG
+            parent_device = self.find_device_first(
+                dev_type=WiredDevice, hwaddr=parent_hwaddr, ident=parent_ident
+            )
+            if parent_device is None:
+                parent_device = self.find_device_first(
+                    dev_type=MacvlanDevice, hwaddr=parent_hwaddr, ident=parent_ident
+                )
+            if parent_device is None:
+                raise BusErr.UnknownDeviceException("Parent device not found")
+
+            if parent_hwaddr is None:
+                parent_hwaddr = parent_device.hwaddr
+
+            if NM.SETTING_WIRED_SETTING_NAME in con_hash:
+                mac = con_hash[NM.SETTING_WIRED_SETTING_NAME].get("cloned-mac-address")
+            else:
+                mac = None
+            if mac is not None:
+                hwaddr = "%02X:%02X:%02X:%02X:%02X:%02X" % (
+                    mac[0],
+                    mac[1],
+                    mac[2],
+                    mac[3],
+                    mac[4],
+                    mac[5],
+                )
+            else:
+                hwaddr = None
+
+            if parent_iface is None:
+                parent_iface = parent_device.ident
+
+            if iface is None:
+                iface = "%s.%d" % (
+                    parent_iface,
+                    con_hash[NM.SETTING_VLAN_SETTING_NAME]["id"],
+                )
+
+            return VlanDevice(iface, mac=hwaddr)
 
         return None
 
