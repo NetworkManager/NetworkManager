@@ -1125,113 +1125,6 @@ class NMTestContext:
     def async_append_job(self, async_job):
         self._async_jobs.append(async_job)
 
-    def run_post(self):
-        self.async_wait()
-
-        self.srv_shutdown()
-
-        self._calling_num = None
-
-        results = self.ctx_results
-        self.ctx_results = None
-
-        if len(results) == 0:
-            return
-
-        skip_test_for_l10n_diff = self._skip_test_for_l10n_diff
-        self._skip_test_for_l10n_diff = None
-
-        filename = os.path.abspath(
-            PathConfiguration.srcdir()
-            + "/test-client.check-on-disk/"
-            + self.testMethodName
-            + ".expected"
-        )
-
-        regenerate = conf.get(ENV_NM_TEST_REGENERATE)
-
-        content_expect, results_expect = Util.file_read_expected(filename)
-
-        if results_expect is None:
-            if not regenerate:
-                self.fail(
-                    "Failed to parse expected file '%s'. Let the test write the file by rerunning with NM_TEST_REGENERATE=1"
-                    % (filename)
-                )
-        else:
-            for i in range(0, min(len(results_expect), len(results))):
-                n = results[i]
-                if results_expect[i] == n["content"]:
-                    continue
-                if regenerate:
-                    continue
-                if n["ignore_l10n_diff"]:
-                    skip_test_for_l10n_diff.append(n["test_name"])
-                    continue
-                print(
-                    "\n\n\nThe file '%s' does not have the expected content:"
-                    % (filename)
-                )
-                print("ACTUAL OUTPUT:\n[[%s]]\n" % (n["content"]))
-                print("EXPECT OUTPUT:\n[[%s]]\n" % (results_expect[i]))
-                print(
-                    "Let the test write the file by rerunning with NM_TEST_REGENERATE=1"
-                )
-                print(
-                    "See howto in %s for details.\n"
-                    % (PathConfiguration.canonical_script_filename())
-                )
-                sys.stdout.flush()
-                self.fail(
-                    "Unexpected output of command, expected %s. Rerun test with NM_TEST_REGENERATE=1 to regenerate files"
-                    % (filename)
-                )
-            if len(results_expect) != len(results):
-                if not regenerate:
-                    print(
-                        "\n\n\nThe number of tests in %s does not match the expected content (%s vs %s):"
-                        % (filename, len(results_expect), len(results))
-                    )
-                    if len(results_expect) < len(results):
-                        print(
-                            "ACTUAL OUTPUT:\n[[%s]]\n"
-                            % (results[len(results_expect)]["content"])
-                        )
-                    else:
-                        print(
-                            "EXPECT OUTPUT:\n[[%s]]\n" % (results_expect[len(results)])
-                        )
-                    print(
-                        "Let the test write the file by rerunning with NM_TEST_REGENERATE=1"
-                    )
-                    print(
-                        "See howto in %s for details.\n"
-                        % (PathConfiguration.canonical_script_filename())
-                    )
-                    sys.stdout.flush()
-                    self.fail(
-                        "Unexpected output of command, expected %s. Rerun test with NM_TEST_REGENERATE=1 to regenerate files"
-                        % (filename)
-                    )
-
-        if regenerate:
-            content_new = b"".join([r["content"] for r in results])
-            if content_new != content_expect:
-                try:
-                    with open(filename, "wb") as content_file:
-                        content_file.write(content_new)
-                except Exception as e:
-                    self.fail("Failure to write '%s': %s" % (filename, e))
-
-        if skip_test_for_l10n_diff:
-            # nmcli loads translations from the installation path. This failure commonly
-            # happens because you did not install the binary in the --prefix, before
-            # running the test. Hence, translations are not available or differ.
-            raise unittest.SkipTest(
-                "Skipped asserting for localized tests %s. Set NM_TEST_CLIENT_CHECK_L10N=1 to force fail."
-                % (",".join(skip_test_for_l10n_diff))
-            )
-
 
 ###############################################################################
 
@@ -1241,6 +1134,7 @@ class TestNmcli(unittest.TestCase):
         Util.skip_without_dbus_session()
         Util.skip_without_NM()
         self.ctx = NMTestContext(self._testMethodName)
+        self._skip_test_for_l10n_diff = []
 
     def call_nmcli_l(
         self,
@@ -1501,18 +1395,124 @@ class TestNmcli(unittest.TestCase):
 
         self.ctx.async_start(wait_all=sync_barrier)
 
+    def run_post(self):
+        self.ctx.async_wait()
+        self.ctx.srv_shutdown()
+
+        self.ctx._calling_num = None
+
+        results = self.ctx.ctx_results
+        self.ctx.ctx_results = None
+
+        if len(results) == 0:
+            return
+
+        skip_test_for_l10n_diff = self._skip_test_for_l10n_diff
+        self._skip_test_for_l10n_diff = None
+
+        filename = os.path.abspath(
+            PathConfiguration.srcdir()
+            + "/test-client.check-on-disk/"
+            + self._testMethodName
+            + ".expected"
+        )
+
+        regenerate = conf.get(ENV_NM_TEST_REGENERATE)
+
+        content_expect, results_expect = Util.file_read_expected(filename)
+
+        if results_expect is None:
+            if not regenerate:
+                self.fail(
+                    "Failed to parse expected file '%s'. Let the test write the file by rerunning with NM_TEST_REGENERATE=1"
+                    % (filename)
+                )
+        else:
+            for i in range(0, min(len(results_expect), len(results))):
+                n = results[i]
+                if results_expect[i] == n["content"]:
+                    continue
+                if regenerate:
+                    continue
+                if n["ignore_l10n_diff"]:
+                    skip_test_for_l10n_diff.append(n["test_name"])
+                    continue
+                print(
+                    "\n\n\nThe file '%s' does not have the expected content:"
+                    % (filename)
+                )
+                print("ACTUAL OUTPUT:\n[[%s]]\n" % (n["content"]))
+                print("EXPECT OUTPUT:\n[[%s]]\n" % (results_expect[i]))
+                print(
+                    "Let the test write the file by rerunning with NM_TEST_REGENERATE=1"
+                )
+                print(
+                    "See howto in %s for details.\n"
+                    % (PathConfiguration.canonical_script_filename())
+                )
+                sys.stdout.flush()
+                self.fail(
+                    "Unexpected output of command, expected %s. Rerun test with NM_TEST_REGENERATE=1 to regenerate files"
+                    % (filename)
+                )
+            if len(results_expect) != len(results):
+                if not regenerate:
+                    print(
+                        "\n\n\nThe number of tests in %s does not match the expected content (%s vs %s):"
+                        % (filename, len(results_expect), len(results))
+                    )
+                    if len(results_expect) < len(results):
+                        print(
+                            "ACTUAL OUTPUT:\n[[%s]]\n"
+                            % (results[len(results_expect)]["content"])
+                        )
+                    else:
+                        print(
+                            "EXPECT OUTPUT:\n[[%s]]\n" % (results_expect[len(results)])
+                        )
+                    print(
+                        "Let the test write the file by rerunning with NM_TEST_REGENERATE=1"
+                    )
+                    print(
+                        "See howto in %s for details.\n"
+                        % (PathConfiguration.canonical_script_filename())
+                    )
+                    sys.stdout.flush()
+                    self.fail(
+                        "Unexpected output of command, expected %s. Rerun test with NM_TEST_REGENERATE=1 to regenerate files"
+                        % (filename)
+                    )
+
+        if regenerate:
+            content_new = b"".join([r["content"] for r in results])
+            if content_new != content_expect:
+                try:
+                    with open(filename, "wb") as content_file:
+                        content_file.write(content_new)
+                except Exception as e:
+                    self.fail("Failure to write '%s': %s" % (filename, e))
+
+        if skip_test_for_l10n_diff:
+            # nmcli loads translations from the installation path. This failure commonly
+            # happens because you did not install the binary in the --prefix, before
+            # running the test. Hence, translations are not available or differ.
+            raise unittest.SkipTest(
+                "Skipped asserting for localized tests %s. Set NM_TEST_CLIENT_CHECK_L10N=1 to force fail."
+                % (",".join(skip_test_for_l10n_diff))
+            )
+
     def nm_test(func):
         def f(self):
             self.ctx.srv_start()
             func(self)
-            self.ctx.run_post()
+            self.run_post()
 
         return f
 
     def nm_test_no_dbus(func):
         def f(self):
             func(self)
-            self.ctx.run_post()
+            self.run_post()
 
         return f
 
@@ -2369,7 +2369,8 @@ class TestNmCloudSetup(unittest.TestCase):
                 func(self)
             except Exception as e:
                 error = e
-            self.ctx.run_post()
+            self.ctx.async_wait()
+            self.ctx.srv_shutdown()
 
             self.md_conn.close()
             p.stdin.close()
