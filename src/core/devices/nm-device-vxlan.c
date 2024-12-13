@@ -777,9 +777,10 @@ get_connection_parent(NMDeviceFactory *factory, NMConnection *connection)
     g_return_val_if_fail(nm_connection_is_type(connection, NM_SETTING_VXLAN_SETTING_NAME), NULL);
 
     s_vxlan = nm_connection_get_setting_vxlan(connection);
-    g_assert(s_vxlan);
-
-    return nm_setting_vxlan_get_parent(s_vxlan);
+    if (s_vxlan)
+        return nm_setting_vxlan_get_parent(s_vxlan);
+    else
+        return NULL;
 }
 
 NM_DEVICE_FACTORY_DEFINE_INTERNAL(
