@@ -267,6 +267,7 @@ _nm_utils_complete_generic_with_params(NMPlatform          *platform,
     va_list                        ap;
     const char                    *p_val;
     const char                    *p_key;
+    gboolean                       valid;
 
     g_assert(fallback_id_prefix);
     g_return_if_fail(ifname_prefix == NULL || ifname == NULL);
@@ -315,7 +316,8 @@ _nm_utils_complete_generic_with_params(NMPlatform          *platform,
         g_hash_table_insert(parameters, (char *) p_key, (char *) p_val);
     }
     va_end(ap);
-    nm_connection_normalize(connection, parameters, NULL, NULL);
+    valid = nm_connection_normalize(connection, parameters, NULL, NULL);
+    nm_assert(valid);
 }
 
 /*****************************************************************************/
