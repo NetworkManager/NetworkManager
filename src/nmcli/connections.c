@@ -6013,7 +6013,9 @@ read_properties:
      * Keep asking until there's no more things to ask for. */
     do {
         /* This ensures all settings that make sense are present. */
+        NM_PRAGMA_WARNING_DISABLE("-Wunused-result")
         nm_connection_normalize(connection, NULL, NULL, NULL);
+        NM_PRAGMA_WARNING_REENABLE
     } while (nmc->ask && questionnaire_one_optional(nmc, connection));
 
     /* Mandatory settings. No good reason to check this other than guarding the user
