@@ -205,7 +205,7 @@ nmcs_provider_get_config_iface_data_create(NMCSProviderGetConfigTaskData *get_co
             .has_primary_ip_address = FALSE,
         };
     } else if (G_OBJECT_TYPE(get_config_data->self) == nmcs_provider_oci_get_type()) {
-        iface_data->priv.oci = (typeof(iface_data->priv.oci)){
+        iface_data->priv.oci = (typeof(iface_data->priv.oci)) {
             .vlan_tag      = 0,
             .parent_hwaddr = NULL,
         };

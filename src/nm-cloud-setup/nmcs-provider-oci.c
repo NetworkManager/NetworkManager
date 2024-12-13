@@ -128,7 +128,7 @@ _get_config_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     for (i = 0; i < json_array_size(vnics); i++) {
         json_t       *vnic, *field;
         const char   *vnic_id = "", *val;
-        gs_free char *mac = NULL;
+        gs_free char *mac     = NULL;
         in_addr_t     addr;
         int           prefix;
         json_int_t    nic_index = -1, vlan_tag = -1;
