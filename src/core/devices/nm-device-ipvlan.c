@@ -444,18 +444,18 @@ get_connection_parent(NMDeviceFactory *factory, NMConnection *connection)
     g_return_val_if_fail(nm_connection_is_type(connection, NM_SETTING_IPVLAN_SETTING_NAME), NULL);
 
     s_ipvlan = _nm_connection_get_setting(connection, NM_TYPE_SETTING_IPVLAN);
-    nm_assert(s_ipvlan);
-
-    parent = nm_setting_ipvlan_get_parent(s_ipvlan);
-    if (parent)
-        return parent;
+    if (s_ipvlan) {
+        parent = nm_setting_ipvlan_get_parent(s_ipvlan);
+        if (parent)
+            return parent;
+    }
 
     /* Try the hardware address from the IPVLAN connection's hardware setting */
     s_wired = nm_connection_get_setting_wired(connection);
     if (s_wired)
         return nm_setting_wired_get_mac_address(s_wired);
-
-    return NULL;
+    else
+        return NULL;
 }
 
 NM_DEVICE_FACTORY_DEFINE_INTERNAL(

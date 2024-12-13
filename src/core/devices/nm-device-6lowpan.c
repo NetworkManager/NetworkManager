@@ -276,9 +276,10 @@ get_connection_parent(NMDeviceFactory *factory, NMConnection *connection)
     g_return_val_if_fail(nm_connection_is_type(connection, NM_SETTING_6LOWPAN_SETTING_NAME), NULL);
 
     s_6lowpan = NM_SETTING_6LOWPAN(nm_connection_get_setting(connection, NM_TYPE_SETTING_6LOWPAN));
-    g_assert(s_6lowpan);
-
-    return nm_setting_6lowpan_get_parent(s_6lowpan);
+    if (s_6lowpan)
+        return nm_setting_6lowpan_get_parent(s_6lowpan);
+    else
+        return NULL;
 }
 
 NM_DEVICE_FACTORY_DEFINE_INTERNAL(
