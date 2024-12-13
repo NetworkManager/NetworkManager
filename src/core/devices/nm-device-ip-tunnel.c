@@ -1369,9 +1369,10 @@ get_connection_parent(NMDeviceFactory *factory, NMConnection *connection)
                          NULL);
 
     s_ip_tunnel = nm_connection_get_setting_ip_tunnel(connection);
-    g_assert(s_ip_tunnel);
-
-    return nm_setting_ip_tunnel_get_parent(s_ip_tunnel);
+    if (s_ip_tunnel)
+        return nm_setting_ip_tunnel_get_parent(s_ip_tunnel);
+    else
+        return NULL;
 }
 
 NM_DEVICE_FACTORY_DEFINE_INTERNAL(

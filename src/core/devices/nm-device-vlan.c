@@ -618,18 +618,18 @@ get_connection_parent(NMDeviceFactory *factory, NMConnection *connection)
     g_return_val_if_fail(nm_connection_is_type(connection, NM_SETTING_VLAN_SETTING_NAME), NULL);
 
     s_vlan = nm_connection_get_setting_vlan(connection);
-    g_assert(s_vlan);
-
-    parent = nm_setting_vlan_get_parent(s_vlan);
-    if (parent)
-        return parent;
+    if (s_vlan) {
+        parent = nm_setting_vlan_get_parent(s_vlan);
+        if (parent)
+            return parent;
+    }
 
     /* Try the hardware address from the VLAN connection's hardware setting */
     s_wired = nm_connection_get_setting_wired(connection);
     if (s_wired)
         return nm_setting_wired_get_mac_address(s_wired);
-
-    return NULL;
+    else
+        return NULL;
 }
 
 static char *
