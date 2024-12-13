@@ -17,6 +17,8 @@ typedef struct {
      * dictionary. */
     const char *hwaddr;
 
+    struct _NMCSProvider *provider;
+
     struct _NMCSProviderGetConfigTaskData *get_config_data;
 
     in_addr_t *ipv4s_arr;
