@@ -380,9 +380,10 @@ get_connection_parent(NMDeviceFactory *factory, NMConnection *connection)
     nm_assert(nm_connection_is_type(connection, NM_SETTING_PPPOE_SETTING_NAME));
 
     s_pppoe = nm_connection_get_setting_pppoe(connection);
-    nm_assert(s_pppoe);
-
-    return nm_setting_pppoe_get_parent(s_pppoe);
+    if (s_pppoe)
+        return nm_setting_pppoe_get_parent(s_pppoe);
+    else
+        return NULL;
 }
 
 NM_DEVICE_FACTORY_DEFINE_INTERNAL(
