@@ -385,17 +385,6 @@ get_connection_parent(NMDeviceFactory *factory, NMConnection *connection)
     return nm_setting_pppoe_get_parent(s_pppoe);
 }
 
-static char *
-get_connection_iface(NMDeviceFactory *factory, NMConnection *connection, const char *parent_iface)
-{
-    nm_assert(nm_connection_is_type(connection, NM_SETTING_PPPOE_SETTING_NAME));
-
-    if (!parent_iface)
-        return NULL;
-
-    return g_strdup(nm_connection_get_interface_name(connection));
-}
-
 NM_DEVICE_FACTORY_DEFINE_INTERNAL(
     PPP,
     Ppp,
@@ -403,6 +392,5 @@ NM_DEVICE_FACTORY_DEFINE_INTERNAL(
     NM_DEVICE_FACTORY_DECLARE_LINK_TYPES(NM_LINK_TYPE_PPP)
         NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES(NM_SETTING_PPPOE_SETTING_NAME),
     factory_class->get_connection_parent = get_connection_parent;
-    factory_class->get_connection_iface  = get_connection_iface;
     factory_class->create_device         = create_device;
     factory_class->match_connection      = match_connection;);
