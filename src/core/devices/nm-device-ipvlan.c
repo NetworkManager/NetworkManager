@@ -458,24 +458,6 @@ get_connection_parent(NMDeviceFactory *factory, NMConnection *connection)
     return NULL;
 }
 
-static char *
-get_connection_iface(NMDeviceFactory *factory, NMConnection *connection, const char *parent_iface)
-{
-    NMSettingIpvlan *s_ipvlan;
-    const char      *ifname;
-
-    g_return_val_if_fail(nm_connection_is_type(connection, NM_SETTING_IPVLAN_SETTING_NAME), NULL);
-
-    s_ipvlan = _nm_connection_get_setting(connection, NM_TYPE_SETTING_IPVLAN);
-    nm_assert(s_ipvlan);
-
-    if (!parent_iface)
-        return NULL;
-
-    ifname = nm_connection_get_interface_name(connection);
-    return g_strdup(ifname);
-}
-
 NM_DEVICE_FACTORY_DEFINE_INTERNAL(
     IPVLAN,
     Ipvlan,
@@ -483,5 +465,4 @@ NM_DEVICE_FACTORY_DEFINE_INTERNAL(
     NM_DEVICE_FACTORY_DECLARE_LINK_TYPES(NM_LINK_TYPE_IPVLAN)
         NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES(NM_SETTING_IPVLAN_SETTING_NAME),
     factory_class->create_device         = create_device;
-    factory_class->get_connection_parent = get_connection_parent;
-    factory_class->get_connection_iface  = get_connection_iface;);
+    factory_class->get_connection_parent = get_connection_parent;);
