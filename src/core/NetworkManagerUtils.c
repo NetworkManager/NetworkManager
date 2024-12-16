@@ -338,7 +338,6 @@ nm_utils_complete_generic(NMPlatform          *platform,
     char                          *id;
     char                          *generated_ifname;
     gs_unref_hashtable GHashTable *parameters = NULL;
-    gboolean                       valid;
 
     g_return_if_fail(ifname_prefix == NULL || ifname == NULL);
 
@@ -386,8 +385,13 @@ nm_utils_complete_generic(NMPlatform          *platform,
         parameters = NULL;
     }
 
-    valid = nm_connection_normalize(connection, parameters, NULL, NULL);
-    nm_assert(valid);
+    NM_PRAGMA_WARNING_DISABLE("-Wunused-result")
+    /* We ignore the result, because the caller validates the connection.
+     * The only reason we do a normalization attempt here is
+     * NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD.
+     * Could we perhaps, one day, get rid of it? */
+    nm_connection_normalize(connection, parameters, NULL, NULL);
+    NM_PRAGMA_WARNING_REENABLE
 }
 
 /*****************************************************************************/
