@@ -1315,7 +1315,7 @@ handle_settings(NMModemOfono *self, GVariant *v_dict)
             }
             any_good = TRUE;
             _LOGI("DNS: %s", array[i]);
-            nm_l3_config_data_add_nameserver_detail(priv->l3cd_4, AF_INET, &address_network, NULL);
+            nm_l3_config_data_add_nameserver_addr(priv->l3cd_4, AF_INET, &address_network);
         }
         if (!any_good) {
             _LOGW("Settings: 'DomainNameServers': none specified");
