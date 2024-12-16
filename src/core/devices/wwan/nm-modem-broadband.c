@@ -1162,7 +1162,7 @@ stage3_ip_config_start(NMModem *modem, int addr_family, NMModemIPMethod ip_metho
         dns = mm_bearer_ip_config_get_dns(self->_priv.ipv4_config);
         for (i = 0; dns && dns[i]; i++) {
             if (nm_inet_parse_bin(AF_INET, dns[i], NULL, &address_network) && address_network > 0) {
-                nm_l3_config_data_add_nameserver_detail(l3cd, AF_INET, &address_network, NULL);
+                nm_l3_config_data_add_nameserver_addr(l3cd, AF_INET, &address_network);
                 _LOGI("  DNS %s", dns[i]);
             }
         }
@@ -1281,7 +1281,7 @@ stage3_ip_config_start(NMModem *modem, int addr_family, NMModemIPMethod ip_metho
             struct in6_addr addr;
 
             if (inet_pton(AF_INET6, dns[i], &addr)) {
-                nm_l3_config_data_add_nameserver_detail(l3cd, AF_INET6, &addr, NULL);
+                nm_l3_config_data_add_nameserver_addr(l3cd, AF_INET6, &addr);
                 _LOGI("  DNS %s", dns[i]);
             }
         }

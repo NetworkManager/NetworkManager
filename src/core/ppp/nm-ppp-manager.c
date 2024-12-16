@@ -583,7 +583,7 @@ impl_ppp_manager_set_ip4_config(NMDBusObject                      *obj,
 
     if (g_variant_lookup(config_dict, NM_PPP_IP4_CONFIG_DNS, "au", &iter)) {
         while (g_variant_iter_next(iter, "u", &u32))
-            nm_l3_config_data_add_nameserver_detail(l3cd, AF_INET, &u32, NULL);
+            nm_l3_config_data_add_nameserver_addr(l3cd, AF_INET, &u32);
         g_variant_iter_free(iter);
     }
 
