@@ -1137,7 +1137,7 @@ int n_dhcp4_client_probe_transition_decline(NDhcp4ClientProbe *probe, NDhcp4Inco
                 if (r)
                         return r;
 
-                r = n_dhcp4_c_connection_start_request(&probe->connection, request, ns_now);
+                r = n_dhcp4_c_connection_send_request(&probe->connection, request, ns_now);
                 if (r)
                         return r;
                 else
@@ -1340,7 +1340,7 @@ int n_dhcp4_client_probe_release(NDhcp4ClientProbe *probe) {
         if (r)
                 return r;
 
-        r = n_dhcp4_c_connection_start_request(&probe->connection, request_out, 0);
+        r = n_dhcp4_c_connection_send_request(&probe->connection, request_out, 0);
         if (r)
                 return r;
 
