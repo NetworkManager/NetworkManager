@@ -205,10 +205,7 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex        *multi_idx,
     }
 
     for (i = 0; i < rdata->dns_servers_n; i++) {
-        nm_l3_config_data_add_nameserver_detail(l3cd,
-                                                AF_INET6,
-                                                &rdata->dns_servers[i].address,
-                                                NULL);
+        nm_l3_config_data_add_nameserver_addr(l3cd, AF_INET6, &rdata->dns_servers[i].address);
     }
 
     for (i = 0; i < rdata->dns_domains_n; i++)
