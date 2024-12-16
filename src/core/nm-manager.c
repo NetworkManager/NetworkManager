@@ -6403,17 +6403,11 @@ nm_manager_activate_connection(NMManager             *self,
  * @sett_conn: the #NMSettingsConnection to be activated, or %NULL if there
  *   is only a partial activation.
  * @connection: the partial #NMConnection to be activated (if @sett_conn is unspecified)
- * @device_path: the object path of the device to be activated, or NULL
- * @out_device: on successful return, the #NMDevice to be activated with @connection
- *   The caller may pass in a device which shortcuts the lookup by path.
- *   In this case, the passed in device must have the matching @device_path
- *   already.
- * @out_is_vpn: on successful return, %TRUE if @connection is a VPN connection
  * @error: location to store an error on failure
  *
- * Performs basic validation on an activation request, including ensuring that
- * the requestor is a valid Unix process, is not disallowed in @connection
- * permissions, and that a device exists that can activate @connection.
+ * Performs basic permission validation on an activation request: Ensures that
+ * the requestor is a valid Unix process and is not disallowed in @connection
+ * permissions.
  *
  * Returns: on success, the #NMAuthSubject representing the requestor, or
  *   %NULL on error
@@ -6423,13 +6417,8 @@ validate_activation_request(NMManager             *self,
                             GDBusMethodInvocation *context,
                             NMSettingsConnection  *sett_conn,
                             NMConnection          *connection,
-                            const char            *device_path,
-                            NMDevice             **out_device,
-                            gboolean              *out_is_vpn,
                             GError               **error)
 {
-    NMDevice                      *device  = NULL;
-    gboolean                       is_vpn  = FALSE;
     gs_unref_object NMAuthSubject *subject = NULL;
 
     nm_assert(!sett_conn || NM_IS_SETTINGS_CONNECTION(sett_conn));
@@ -6437,8 +6426,6 @@ validate_activation_request(NMManager             *self,
     nm_assert(sett_conn || connection);
     nm_assert(!connection || !sett_conn
               || connection == nm_settings_connection_get_connection(sett_conn));
-    nm_assert(out_device);
-    nm_assert(out_is_vpn);
 
     if (!connection)
         connection = nm_settings_connection_get_connection(sett_conn);
@@ -6459,6 +6446,48 @@ validate_activation_request(NMManager             *self,
                                              NM_MANAGER_ERROR_PERMISSION_DENIED,
                                              error))
         return NULL;
+    return g_steal_pointer(&subject);
+}
+
+/**
+ * find_device_for_activation:
+ * @self: the #NMManager
+ * @sett_conn: the #NMSettingsConnection to be activated, or %NULL if there
+ *   is only a partial activation.
+ * @connection: the partial #NMConnection to be activated (if @sett_conn is unspecified)
+ * @device_path: the object path of the device to be activated, or NULL
+ * @out_device: on successful return, the #NMDevice to be activated with @connection
+ *   The caller may pass in a device which shortcuts the lookup by path.
+ *   In this case, the passed in device must have the matching @device_path
+ *   already.
+ * @out_is_vpn: on successful return, %TRUE if @connection is a VPN connection
+ * @error: location to store an error on failure
+ *
+ * Looks up a device that can activate @connection, or indicates the
+ * connection is a VPN connection that does not require a connection.
+ *
+ * Returns: %TRUE if the device could be find or connection doesn't
+ *   need one, %FALSE otherwise
+ */
+static gboolean
+find_device_for_activation(NMManager            *self,
+                           NMSettingsConnection *sett_conn,
+                           NMConnection         *connection,
+                           const char           *device_path,
+                           NMDevice            **out_device,
+                           gboolean             *out_is_vpn,
+                           GError              **error)
+{
+    gboolean  is_vpn = FALSE;
+    NMDevice *device = NULL;
+
+    nm_assert(!sett_conn || NM_IS_SETTINGS_CONNECTION(sett_conn));
+    nm_assert(!connection || NM_IS_CONNECTION(connection));
+    nm_assert(sett_conn || connection);
+    nm_assert(!connection || !sett_conn
+              || connection == nm_settings_connection_get_connection(sett_conn));
+    nm_assert(out_device);
+    nm_assert(out_is_vpn);
 
     is_vpn = _connection_is_vpn(connection);
 
@@ -6475,7 +6504,7 @@ validate_activation_request(NMManager             *self,
                                 NM_MANAGER_ERROR,
                                 NM_MANAGER_ERROR_UNKNOWN_DEVICE,
                                 "Device not found");
-            return NULL;
+            return FALSE;
         }
     } else if (!is_vpn) {
         gs_free_error GError *local = NULL;
@@ -6497,13 +6526,13 @@ validate_activation_request(NMManager             *self,
                             NM_MANAGER_ERROR_UNKNOWN_DEVICE,
                             "No suitable device found for this connection (%s).",
                             local->message);
-                return NULL;
+                return FALSE;
             }
 
             /* Look for an existing device with the connection's interface name */
             iface = nm_manager_get_connection_iface(self, connection, NULL, NULL, error);
             if (!iface)
-                return NULL;
+                return FALSE;
 
             device = find_device_by_iface(self, iface, connection, NULL, NULL);
             if (!device) {
@@ -6511,7 +6540,7 @@ validate_activation_request(NMManager             *self,
                                     NM_MANAGER_ERROR,
                                     NM_MANAGER_ERROR_UNKNOWN_DEVICE,
                                     "Failed to find a compatible device for this connection");
-                return NULL;
+                return FALSE;
             }
         }
     }
@@ -6520,7 +6549,8 @@ validate_activation_request(NMManager             *self,
 
     *out_device = device;
     *out_is_vpn = is_vpn;
-    return g_steal_pointer(&subject);
+
+    return TRUE;
 }
 
 /*****************************************************************************/
@@ -6637,16 +6667,13 @@ impl_manager_activate_connection(NMDBusObject                      *obj,
             goto error;
     }
 
-    subject = validate_activation_request(self,
-                                          invocation,
-                                          sett_conn,
-                                          NULL,
-                                          device_path,
-                                          &device,
-                                          &is_vpn,
-                                          &error);
+    subject = validate_activation_request(self, invocation, sett_conn, NULL, &error);
     if (!subject)
         goto error;
+
+    if (!find_device_for_activation(self, sett_conn, NULL, device_path, &device, &is_vpn, &error)) {
+        goto error;
+    }
 
     active = _new_active_connection(self,
                                     is_vpn,
@@ -6920,16 +6947,19 @@ impl_manager_add_and_activate_connection(NMDBusObject                      *obj,
                                         NM_SETTING_PARSE_FLAGS_STRICT,
                                         NULL);
 
-    subject = validate_activation_request(self,
-                                          invocation,
-                                          NULL,
-                                          incompl_conn,
-                                          device_path,
-                                          &device,
-                                          &is_vpn,
-                                          &error);
+    subject = validate_activation_request(self, invocation, NULL, incompl_conn, &error);
     if (!subject)
         goto error;
+
+    if (!find_device_for_activation(self,
+                                    NULL,
+                                    incompl_conn,
+                                    device_path,
+                                    &device,
+                                    &is_vpn,
+                                    &error)) {
+        goto error;
+    }
 
     if (is_vpn) {
         /* Try to fill the VPN's connection setting and name at least */
