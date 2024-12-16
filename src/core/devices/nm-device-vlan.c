@@ -379,8 +379,7 @@ complete_connection(NMDevice            *device,
                               NULL,
                               _("VLAN connection"),
                               NULL,
-                              NULL,
-                              TRUE);
+                              NULL);
 
     s_vlan = nm_connection_get_setting_vlan(connection);
     if (!s_vlan) {

@@ -917,8 +917,7 @@ complete_connection(NMModem             *modem,
                                   NULL,
                                   _("GSM connection"),
                                   NULL,
-                                  NULL,
-                                  FALSE); /* No IPv6 yet by default */
+                                  NULL);
 
         return TRUE;
     }
@@ -938,8 +937,7 @@ complete_connection(NMModem             *modem,
                                   NULL,
                                   _("CDMA connection"),
                                   NULL,
-                                  iface,
-                                  FALSE); /* No IPv6 yet by default */
+                                  iface);
 
         return TRUE;
     }

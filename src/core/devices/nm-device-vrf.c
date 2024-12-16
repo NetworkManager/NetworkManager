@@ -184,8 +184,7 @@ complete_connection(NMDevice            *device,
                               NULL,
                               _("VRF connection"),
                               NULL,
-                              NULL,
-                              TRUE);
+                              NULL);
 
     s_vrf = _nm_connection_get_setting(connection, NM_TYPE_SETTING_VRF);
     if (!s_vrf) {

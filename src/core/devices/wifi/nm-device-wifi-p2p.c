@@ -319,8 +319,7 @@ complete_connection(NMDevice            *device,
                               setting_name,
                               setting_name,
                               NULL,
-                              NULL,
-                              TRUE);
+                              NULL);
 
     return TRUE;
 }

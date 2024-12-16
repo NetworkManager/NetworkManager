@@ -94,8 +94,7 @@ complete_connection(NMDevice            *device,
                               NULL,
                               _("Bond connection"),
                               "bond",
-                              NULL,
-                              TRUE);
+                              NULL);
 
     _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_BOND);
 

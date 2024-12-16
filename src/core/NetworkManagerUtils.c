@@ -250,23 +250,19 @@ nm_utils_ppp_ip_methods_enabled(NMConnection *connection,
 /*****************************************************************************/
 
 void
-_nm_utils_complete_generic_with_params(NMPlatform          *platform,
-                                       NMConnection        *connection,
-                                       const char          *ctype,
-                                       NMConnection *const *existing_connections,
-                                       const char          *preferred_id,
-                                       const char          *fallback_id_prefix,
-                                       const char          *ifname_prefix,
-                                       const char          *ifname,
-                                       ...)
+nm_utils_complete_generic(NMPlatform          *platform,
+                          NMConnection        *connection,
+                          const char          *ctype,
+                          NMConnection *const *existing_connections,
+                          const char          *preferred_id,
+                          const char          *fallback_id_prefix,
+                          const char          *ifname_prefix,
+                          const char          *ifname)
 {
     NMSettingConnection           *s_con;
     char                          *id;
     char                          *generated_ifname;
     gs_unref_hashtable GHashTable *parameters = NULL;
-    va_list                        ap;
-    const char                    *p_val;
-    const char                    *p_key;
     gboolean                       valid;
 
     g_assert(fallback_id_prefix);
@@ -302,20 +298,19 @@ _nm_utils_complete_generic_with_params(NMPlatform          *platform,
         g_free(generated_ifname);
     }
 
-    /* Normalize */
-    va_start(ap, ifname);
-    while ((p_key = va_arg(ap, const char *))) {
-        p_val = va_arg(ap, const char *);
-        if (!p_val) {
-            if (parameters)
-                g_hash_table_remove(parameters, p_key);
-            continue;
-        }
-        if (!parameters)
-            parameters = g_hash_table_new(nm_str_hash, g_str_equal);
-        g_hash_table_insert(parameters, (char *) p_key, (char *) p_val);
+    if (nm_connection_get_setting_adsl(connection) || nm_connection_get_setting_cdma(connection)
+        || nm_connection_get_setting_gsm(connection)
+        || nm_connection_get_setting_olpc_mesh(connection)
+        || nm_connection_get_setting_pppoe(connection)
+        || nm_connection_get_setting_vpn(connection)) {
+        parameters = g_hash_table_new(nm_str_hash, g_str_equal);
+        g_hash_table_insert(parameters,
+                            NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD,
+                            NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
+    } else {
+        parameters = NULL;
     }
-    va_end(ap);
+
     valid = nm_connection_normalize(connection, parameters, NULL, NULL);
     nm_assert(valid);
 }
