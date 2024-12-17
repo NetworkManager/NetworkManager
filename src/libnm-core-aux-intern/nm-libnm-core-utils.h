@@ -341,6 +341,32 @@ const char *nm_utils_dnsname_normalize(int addr_family, const char *dns, char **
 
 /*****************************************************************************/
 
+typedef enum {
+    NM_DNS_URI_SCHEME_UNKNOWN,
+    NM_DNS_URI_SCHEME_NONE,
+    NM_DNS_URI_SCHEME_UDP,
+    NM_DNS_URI_SCHEME_DOT,
+} NMDnsUriScheme;
+
+typedef struct {
+    NMIPAddr       addr;
+    const char    *servername;
+    char           interface[NM_IFNAMSIZ];
+    NMDnsUriScheme scheme;
+    int            addr_family;
+    int            port;
+} NMDnsServer;
+
+gboolean    nm_utils_dns_uri_parse(int addr_family, const char *str, NMDnsServer *out_dns);
+gboolean    nm_utils_dns_uri_get_plain(int          addr_family,
+                                       const char  *str,
+                                       const char **out_addrstr,
+                                       char       **out_addrstr_free,
+                                       NMIPAddr    *out_addr);
+const char *nm_utils_dns_uri_normalize(int addr_family, const char *str, char **out_free);
+
+/*****************************************************************************/
+
 gboolean nm_setting_ovs_other_config_check_key(const char *key, GError **error);
 gboolean nm_setting_ovs_other_config_check_val(const char *val, GError **error);
 
