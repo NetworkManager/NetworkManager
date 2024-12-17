@@ -102,7 +102,6 @@ create_dm_cmd_line(const char           *iface,
     char                          first[INET_ADDRSTRLEN];
     char                          last[INET_ADDRSTRLEN];
     char                          listen_address_s[INET_ADDRSTRLEN];
-    char                          sbuf_addr[INET_ADDRSTRLEN];
     gs_free char                 *error_desc = NULL;
     const char                   *dm_binary;
     const NMPlatformIP4Address   *listen_address;
@@ -191,13 +190,14 @@ create_dm_cmd_line(const char           *iface,
         nm_gstring_prepare(&s);
         g_string_append(s, "--dhcp-option=option:dns-server");
         for (i = 0; i < n; i++) {
-            in_addr_t a;
+            const char   *addrstr;
+            gs_free char *to_free = NULL;
 
-            if (!nm_utils_dnsname_parse_assert(AF_INET, strarr[i], NULL, &a, NULL))
+            if (!nm_utils_dns_uri_get_plain(AF_INET, strarr[i], &addrstr, &to_free, NULL))
                 continue;
 
             g_string_append_c(s, ',');
-            g_string_append(s, nm_inet4_ntop(a, sbuf_addr));
+            g_string_append(s, addrstr);
         }
         nm_strv_ptrarray_take_gstring(cmd, &s);
     }

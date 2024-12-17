@@ -166,25 +166,32 @@ _notify_update_prop_nameservers(NMClient               *client,
 
             g_variant_iter_init(&iter, value);
             while (g_variant_iter_next(&iter, "a{sv}", &iter_v)) {
-                const char *key;
-                GVariant   *val;
+                const char   *key;
+                GVariant     *val;
+                gs_free char *nameserver = NULL;
 
                 while (g_variant_iter_next(iter_v, "{&sv}", &key, &val)) {
-                    if (nm_streq(key, "address")) {
+                    if (nm_streq(key, "address") && !nameserver) {
                         gs_free char *val_str = NULL;
 
                         if (!g_variant_is_of_type(val, G_VARIANT_TYPE_STRING))
                             goto next;
                         if (!nm_inet_parse_str(AF_INET, g_variant_get_string(val, NULL), &val_str))
                             goto next;
-                        if (!arr)
-                            arr = g_ptr_array_new();
-                        g_ptr_array_add(arr, g_steal_pointer(&val_str));
-                        goto next;
+                        nameserver = g_steal_pointer(&val_str);
+                    } else if (nm_streq(key, "uri")) {
+                        nameserver = g_variant_dup_string(val, NULL);
                     }
 next:
                     g_variant_unref(val);
                 }
+
+                if (nameserver) {
+                    if (!arr)
+                        arr = g_ptr_array_new();
+                    g_ptr_array_add(arr, g_steal_pointer(&nameserver));
+                }
+
                 g_variant_iter_free(iter_v);
             }
             if (arr && arr->len > 0)
