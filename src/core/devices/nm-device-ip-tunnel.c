@@ -400,7 +400,6 @@ complete_connection(NMDevice            *device,
                               NM_SETTING_IP_TUNNEL_SETTING_NAME,
                               existing_connections,
                               NULL,
-                              _("IP tunnel connection"),
                               NULL,
                               NULL);
 

@@ -1638,7 +1638,6 @@ complete_connection(NMDevice            *device,
                                   NM_SETTING_VETH_SETTING_NAME,
                                   existing_connections,
                                   NULL,
-                                  _("Veth connection"),
                                   "veth",
                                   NULL);
 
@@ -1695,7 +1694,6 @@ complete_connection(NMDevice            *device,
         s_pppoe ? NM_SETTING_PPPOE_SETTING_NAME : NM_SETTING_WIRED_SETTING_NAME,
         existing_connections,
         NULL,
-        s_pppoe ? _("PPPoE connection") : _("Wired connection"),
         NULL,
         nm_setting_wired_get_mac_address(s_wired) ? NULL : nm_device_get_iface(device));
 

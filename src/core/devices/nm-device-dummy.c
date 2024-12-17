@@ -53,7 +53,6 @@ complete_connection(NMDevice            *device,
                               NM_SETTING_DUMMY_SETTING_NAME,
                               existing_connections,
                               NULL,
-                              _("Dummy connection"),
                               NULL,
                               nm_device_get_ip_iface(device));
 

@@ -317,7 +317,6 @@ complete_connection(NMDevice            *device,
                               NM_SETTING_WIFI_P2P_SETTING_NAME,
                               existing_connections,
                               setting_name,
-                              setting_name,
                               NULL,
                               NULL);
 

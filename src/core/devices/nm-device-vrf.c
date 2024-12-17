@@ -182,7 +182,6 @@ complete_connection(NMDevice            *device,
                               NM_SETTING_VRF_SETTING_NAME,
                               existing_connections,
                               NULL,
-                              _("VRF connection"),
                               NULL,
                               NULL);
 

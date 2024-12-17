@@ -64,7 +64,6 @@ complete_connection(NMDevice            *device,
                               NM_SETTING_LOOPBACK_SETTING_NAME,
                               existing_connections,
                               NULL,
-                              _("Loopback connection"),
                               NULL,
                               nm_device_get_ip_iface(device));
 

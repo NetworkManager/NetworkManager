@@ -162,7 +162,6 @@ complete_connection(NMDevice            *device,
                               NM_SETTING_BRIDGE_SETTING_NAME,
                               existing_connections,
                               NULL,
-                              _("Bridge connection"),
                               "bridge",
                               NULL);
 

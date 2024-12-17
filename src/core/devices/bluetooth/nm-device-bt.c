@@ -270,7 +270,7 @@ complete_connection(NMDevice            *device,
     NMSettingCdma      *s_cdma;
     NMSettingSerial    *s_serial;
     NMSettingPpp       *s_ppp;
-    const char         *fallback_prefix = NULL, *preferred = NULL;
+    const char         *preferred = NULL;
 
     s_gsm    = nm_connection_get_setting_gsm(connection);
     s_cdma   = nm_connection_get_setting_cdma(connection);
@@ -312,8 +312,6 @@ complete_connection(NMDevice            *device,
                      NM_SETTING_BLUETOOTH_TYPE,
                      NM_SETTING_BLUETOOTH_TYPE_NAP,
                      NULL);
-
-        fallback_prefix = _("NAP connection");
     } else if (is_pan) {
         /* Make sure the device supports PAN */
         if (!(priv->capabilities & NM_BT_CAPABILITY_NAP)) {
@@ -347,8 +345,6 @@ complete_connection(NMDevice            *device,
                      NM_SETTING_BLUETOOTH_TYPE,
                      NM_SETTING_BLUETOOTH_TYPE_PANU,
                      NULL);
-
-        fallback_prefix = _("PAN connection");
     } else if (is_dun) {
         /* Make sure the device supports PAN */
         if (!(priv->capabilities & NM_BT_CAPABILITY_DUN)) {
@@ -378,13 +374,8 @@ complete_connection(NMDevice            *device,
                      NM_SETTING_BLUETOOTH_TYPE_DUN,
                      NULL);
 
-        if (s_gsm) {
-            fallback_prefix = _("GSM connection");
-        } else {
-            fallback_prefix = _("CDMA connection");
-            if (!nm_setting_cdma_get_number(s_cdma))
-                g_object_set(G_OBJECT(s_cdma), NM_SETTING_CDMA_NUMBER, "#777", NULL);
-        }
+        if (!s_gsm && !nm_setting_cdma_get_number(s_cdma))
+            g_object_set(G_OBJECT(s_cdma), NM_SETTING_CDMA_NUMBER, "#777", NULL);
     } else {
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
@@ -402,7 +393,6 @@ complete_connection(NMDevice            *device,
                               NM_SETTING_BLUETOOTH_SETTING_NAME,
                               existing_connections,
                               preferred,
-                              fallback_prefix,
                               NULL,
                               NULL);
 

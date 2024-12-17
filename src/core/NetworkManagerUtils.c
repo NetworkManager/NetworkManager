@@ -71,15 +71,65 @@ nm_utils_get_shared_wifi_permission(NMConnection *connection)
 
 /*****************************************************************************/
 
+static const char *
+_prefix_from_connection_type(const char *ctype)
+{
+    g_return_val_if_fail(ctype, NULL);
+
+    if (nm_streq(ctype, NM_SETTING_6LOWPAN_SETTING_NAME))
+        return _("6LOWPAN connection");
+    if (nm_streq(ctype, NM_SETTING_BOND_SETTING_NAME))
+        return _("Bond connection");
+    if (nm_streq(ctype, NM_SETTING_BRIDGE_SETTING_NAME))
+        return _("Bridge connection");
+    if (nm_streq(ctype, NM_SETTING_DUMMY_SETTING_NAME))
+        return _("Dummy connection");
+    if (nm_streq(ctype, NM_SETTING_VETH_SETTING_NAME))
+        return _("Veth connection");
+    if (nm_streq(ctype, NM_SETTING_INFINIBAND_SETTING_NAME))
+        return _("InfiniBand connection");
+    if (nm_streq(ctype, NM_SETTING_IP_TUNNEL_SETTING_NAME))
+        return _("IP tunnel connection");
+    if (nm_streq(ctype, NM_SETTING_LOOPBACK_SETTING_NAME))
+        return _("Loopback connection");
+    if (nm_streq(ctype, NM_SETTING_MACVLAN_SETTING_NAME))
+        return _("MACVLAN connection");
+    if (nm_streq(ctype, NM_SETTING_TUN_SETTING_NAME))
+        return _("TUN connection");
+    if (nm_streq(ctype, NM_SETTING_VLAN_SETTING_NAME))
+        return _("VLAN connection");
+    if (nm_streq(ctype, NM_SETTING_VRF_SETTING_NAME))
+        return _("VRF connection");
+    if (nm_streq(ctype, NM_SETTING_VXLAN_SETTING_NAME))
+        return _("VXLAN connection");
+    if (nm_streq(ctype, NM_SETTING_WPAN_SETTING_NAME))
+        return _("WPAN connection");
+    if (nm_streq(ctype, NM_SETTING_TEAM_SETTING_NAME))
+        return _("Team connection");
+    if (nm_streq(ctype, NM_SETTING_ADSL_SETTING_NAME))
+        return _("ADSL connection");
+    if (nm_streq(ctype, NM_SETTING_WIRED_SETTING_NAME))
+        return _("Wired connection");
+    if (nm_streq(ctype, NM_SETTING_PPPOE_SETTING_NAME))
+        return _("PPPoE connection");
+    if (nm_streq(ctype, NM_SETTING_VPN_SETTING_NAME))
+        return _("VPN connection");
+    if (nm_streq(ctype, NM_SETTING_OLPC_MESH_SETTING_NAME))
+        return _("Mesh");
+
+    g_return_val_if_reached(ctype);
+}
+
 static char *
-get_new_connection_name(NMConnection *const *existing_connections,
-                        const char          *preferred,
-                        const char          *fallback_prefix)
+get_new_connection_name(NMConnection        *connection,
+                        NMConnection *const *existing_connections,
+                        const char          *preferred)
 {
     gs_free const char **existing_names = NULL;
     guint                i, existing_len = 0;
-
-    g_assert(fallback_prefix);
+    const char          *fallback_prefix;
+    const char          *ctype;
+    NMSettingBluetooth  *s_bt;
 
     if (existing_connections) {
         existing_len   = NM_PTRARRAY_LEN(existing_connections);
@@ -107,6 +157,32 @@ get_new_connection_name(NMConnection *const *existing_connections,
     /* Return the preferred name if it was unique */
     if (preferred)
         return g_strdup(preferred);
+
+    if (nm_connection_get_setting_gsm(connection)) {
+        /* Includes mobile broadband and Bluetooth DUN. */
+        fallback_prefix = _("GSM connection");
+    } else if (nm_connection_get_setting_cdma(connection)) {
+        /* Includes mobile broadband and Bluetooth DUN. */
+        fallback_prefix = _("CDMA connection");
+    } else if (nm_connection_get_setting_wireless(connection)
+               || nm_connection_get_setting(connection, NM_TYPE_SETTING_WIFI_P2P)) {
+        /* The AP or peer name. */
+        fallback_prefix = preferred;
+    } else {
+        s_bt = nm_connection_get_setting_bluetooth(connection);
+        if (s_bt) {
+            /* Bluetooth is a special snowflake. */
+            if (nm_streq0(nm_setting_bluetooth_get_connection_type(s_bt),
+                          NM_SETTING_BLUETOOTH_TYPE_NAP)) {
+                fallback_prefix = _("NAP connection");
+            } else {
+                fallback_prefix = _("PANU connection");
+            }
+        } else {
+            ctype           = nm_connection_get_connection_type(connection);
+            fallback_prefix = _prefix_from_connection_type(ctype);
+        }
+    }
 
     /* Otherwise, find the next available unique connection name using the given
      * connection name template.
@@ -255,7 +331,6 @@ nm_utils_complete_generic(NMPlatform          *platform,
                           const char          *ctype,
                           NMConnection *const *existing_connections,
                           const char          *preferred_id,
-                          const char          *fallback_id_prefix,
                           const char          *ifname_prefix,
                           const char          *ifname)
 {
@@ -265,11 +340,11 @@ nm_utils_complete_generic(NMPlatform          *platform,
     gs_unref_hashtable GHashTable *parameters = NULL;
     gboolean                       valid;
 
-    g_assert(fallback_id_prefix);
     g_return_if_fail(ifname_prefix == NULL || ifname == NULL);
 
     s_con = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_CONNECTION);
-    g_object_set(G_OBJECT(s_con), NM_SETTING_CONNECTION_TYPE, ctype, NULL);
+    if (ctype)
+        g_object_set(G_OBJECT(s_con), NM_SETTING_CONNECTION_TYPE, ctype, NULL);
 
     if (!nm_setting_connection_get_uuid(s_con)) {
         char uuid[37];
@@ -282,7 +357,7 @@ nm_utils_complete_generic(NMPlatform          *platform,
 
     /* Add a connection ID if absent */
     if (!nm_setting_connection_get_id(s_con)) {
-        id = get_new_connection_name(existing_connections, preferred_id, fallback_id_prefix);
+        id = get_new_connection_name(connection, existing_connections, preferred_id);
         g_object_set(G_OBJECT(s_con), NM_SETTING_CONNECTION_ID, id, NULL);
         g_free(id);
     }

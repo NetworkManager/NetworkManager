@@ -28,7 +28,6 @@ void nm_utils_complete_generic(NMPlatform          *platform,
                                const char          *ctype,
                                NMConnection *const *existing_connections,
                                const char          *preferred_id,
-                               const char          *fallback_id_prefix,
                                const char          *ifname_prefix,
                                const char          *ifname);
 

@@ -362,7 +362,6 @@ complete_connection(NMDevice            *device,
                               NM_SETTING_MACVLAN_SETTING_NAME,
                               existing_connections,
                               NULL,
-                              _("MACVLAN connection"),
                               NULL,
                               NULL);
 

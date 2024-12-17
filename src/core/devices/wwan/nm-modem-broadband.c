@@ -915,7 +915,6 @@ complete_connection(NMModem             *modem,
                                   NM_SETTING_GSM_SETTING_NAME,
                                   existing_connections,
                                   NULL,
-                                  _("GSM connection"),
                                   NULL,
                                   NULL);
 
@@ -935,7 +934,6 @@ complete_connection(NMModem             *modem,
                                   NM_SETTING_CDMA_SETTING_NAME,
                                   existing_connections,
                                   NULL,
-                                  _("CDMA connection"),
                                   NULL,
                                   iface);
 

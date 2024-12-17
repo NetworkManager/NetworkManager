@@ -157,7 +157,6 @@ complete_connection(NMDevice            *device,
         NM_SETTING_INFINIBAND_SETTING_NAME,
         existing_connections,
         NULL,
-        _("InfiniBand connection"),
         NULL,
         nm_setting_infiniband_get_mac_address(s_infiniband) ? NULL : nm_device_get_iface(device));
 

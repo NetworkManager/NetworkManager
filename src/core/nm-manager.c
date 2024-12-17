@@ -6950,7 +6950,6 @@ impl_manager_add_and_activate_connection(NMDBusObject                      *obj,
                                   NM_SETTING_VPN_SETTING_NAME,
                                   conns,
                                   NULL,
-                                  _("VPN connection"),
                                   NULL,
                                   NULL);
     } else {

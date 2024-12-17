@@ -159,7 +159,6 @@ complete_connection(NMDevice            *device,
                               NM_SETTING_6LOWPAN_SETTING_NAME,
                               existing_connections,
                               NULL,
-                              _("6LOWPAN connection"),
                               NULL,
                               NULL);
 

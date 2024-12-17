@@ -382,7 +382,6 @@ complete_connection(NMDevice            *device,
                               NM_SETTING_VXLAN_SETTING_NAME,
                               existing_connections,
                               NULL,
-                              _("VXLAN connection"),
                               NULL,
                               NULL);
 

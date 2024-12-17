@@ -115,7 +115,6 @@ complete_connection(NMDevice            *device,
                               NM_SETTING_ADSL_SETTING_NAME,
                               existing_connections,
                               NULL,
-                              _("ADSL connection"),
                               NULL,
                               NULL);
     return TRUE;

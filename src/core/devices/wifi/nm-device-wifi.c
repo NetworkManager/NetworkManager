@@ -1294,7 +1294,6 @@ complete_connection(NMDevice            *device,
         NM_SETTING_WIRELESS_SETTING_NAME,
         existing_connections,
         ssid_utf8,
-        ssid_utf8,
         NULL,
         nm_setting_wireless_get_mac_address(s_wifi) ? NULL : nm_device_get_iface(device));
 
