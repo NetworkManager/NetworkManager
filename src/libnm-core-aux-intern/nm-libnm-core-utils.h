@@ -312,35 +312,6 @@ NMMptcpFlags nm_mptcp_flags_normalize(NMMptcpFlags flags);
 
 /*****************************************************************************/
 
-gboolean nm_utils_dnsname_parse(int                          addr_family,
-                                const char                  *dns,
-                                int                         *out_addr_family,
-                                gpointer /* (NMIPAddr **) */ out_addr,
-                                const char                 **out_servername);
-
-#define nm_utils_dnsname_parse_assert(addr_family, dns, out_addr_family, out_addr, out_servername) \
-    ({                                                                                             \
-        gboolean _good;                                                                            \
-                                                                                                   \
-        _good = nm_utils_dnsname_parse((addr_family),                                              \
-                                       (dns),                                                      \
-                                       (out_addr_family),                                          \
-                                       (out_addr),                                                 \
-                                       (out_servername));                                          \
-        nm_assert(_good);                                                                          \
-        _good;                                                                                     \
-    })
-
-const char *nm_utils_dnsname_construct(int                                    addr_family,
-                                       gconstpointer /* (const NMIPAddr *) */ addr,
-                                       const char                            *server_name,
-                                       char                                  *result,
-                                       gsize                                  result_len);
-
-const char *nm_utils_dnsname_normalize(int addr_family, const char *dns, char **out_free);
-
-/*****************************************************************************/
-
 typedef enum {
     NM_DNS_URI_SCHEME_UNKNOWN,
     NM_DNS_URI_SCHEME_NONE,
