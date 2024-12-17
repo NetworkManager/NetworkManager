@@ -232,9 +232,8 @@ create_and_realize(NMDevice              *device,
         g_set_error(error,
                     NM_DEVICE_ERROR,
                     NM_DEVICE_ERROR_FAILED,
-                    "unsupported MACVLAN mode %u in connection %s",
-                    nm_setting_macvlan_get_mode(s_macvlan),
-                    nm_connection_get_uuid(connection));
+                    "unsupported MACVLAN mode %u",
+                    nm_setting_macvlan_get_mode(s_macvlan));
         return FALSE;
     }
     lnk.no_promisc = !nm_setting_macvlan_get_promiscuous(s_macvlan);
