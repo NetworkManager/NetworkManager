@@ -11617,7 +11617,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
     /* Take the NML3ConfigData from the previous lease (if any) that was passed to the NMDhcpClient.
      * This may be the old lease only used during the duration of a reapply until we get the
      * new lease. */
-    previous_lease = nm_dhcp_client_get_lease(priv->ipdhcp_data_x[IS_IPv4].client);
+    previous_lease = nm_dhcp_client_get_lease(priv->ipdhcp_data_x[IS_IPv4].client, TRUE);
 
     if (!priv->ipdhcp_data_x[IS_IPv4].config) {
         priv->ipdhcp_data_x[IS_IPv4].config = nm_dhcp_config_new(addr_family, previous_lease);

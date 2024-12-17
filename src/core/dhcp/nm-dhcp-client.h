@@ -246,7 +246,7 @@ const NMDhcpClientConfig *nm_dhcp_client_get_config(NMDhcpClient *self);
 
 pid_t nm_dhcp_client_get_pid(NMDhcpClient *self);
 
-const NML3ConfigData *nm_dhcp_client_get_lease(NMDhcpClient *self);
+const NML3ConfigData *nm_dhcp_client_get_lease(NMDhcpClient *self, gboolean ignore_acd_pending);
 
 void nm_dhcp_client_stop(NMDhcpClient *self, gboolean release);
 
