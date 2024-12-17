@@ -449,22 +449,27 @@ get_property_ip4(GObject *object, guint prop_id, GValue *value, GParamSpec *pspe
             else
                 g_variant_builder_init(&builder, G_VARIANT_TYPE("aa{sv}"));
             for (i = 0; i < len; i++) {
-                in_addr_t a;
+                NMIPAddr a;
 
-                if (!nm_utils_dnsname_parse_assert(AF_INET, strarr[i], NULL, &a, NULL))
-                    continue;
-
-                if (prop_id == PROP_IP4_NAMESERVERS)
+                if (prop_id == PROP_IP4_NAMESERVERS) {
+                    if (!nm_dns_uri_parse_plain(AF_INET, strarr[i], NULL, &a))
+                        continue;
                     g_variant_builder_add(&builder, "u", a);
-                else {
+                } else {
                     GVariantBuilder nested_builder;
+                    char            addrstr[NM_INET_ADDRSTRLEN];
 
-                    nm_inet4_ntop(a, addr_str);
                     g_variant_builder_init(&nested_builder, G_VARIANT_TYPE("a{sv}"));
+                    if (nm_dns_uri_parse_plain(AF_INET, strarr[i], addrstr, NULL)) {
+                        g_variant_builder_add(&nested_builder,
+                                              "{sv}",
+                                              "address",
+                                              g_variant_new_string(addrstr));
+                    }
                     g_variant_builder_add(&nested_builder,
                                           "{sv}",
-                                          "address",
-                                          g_variant_new_string(addr_str));
+                                          "uri",
+                                          g_variant_new_string(strarr[i]));
                     g_variant_builder_add(&builder, "a{sv}", &nested_builder);
                 }
             }
@@ -692,12 +697,13 @@ get_property_ip6(GObject *object, guint prop_id, GValue *value, GParamSpec *pspe
         else {
             g_variant_builder_init(&builder, G_VARIANT_TYPE("aay"));
             for (i = 0; i < len; i++) {
-                struct in6_addr a;
+                NMIPAddr a;
 
-                if (!nm_utils_dnsname_parse_assert(AF_INET6, strarr[i], NULL, &a, NULL))
+                /* TODO: expose the full URI as well */
+                if (!nm_dns_uri_parse_plain(AF_INET6, strarr[i], NULL, &a))
                     continue;
 
-                g_variant_builder_add(&builder, "@ay", nm_g_variant_new_ay_in6addr(&a));
+                g_variant_builder_add(&builder, "@ay", nm_g_variant_new_ay_in6addr(&a.addr6));
             }
             g_value_take_variant(value, g_variant_builder_end(&builder));
         }

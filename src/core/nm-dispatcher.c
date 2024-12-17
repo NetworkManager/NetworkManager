@@ -255,7 +255,7 @@ dump_ip_to_props(const NML3ConfigData *l3cd, int addr_family, GVariantBuilder *b
     for (i = 0; i < n; i++) {
         NMIPAddr a;
 
-        if (!nm_utils_dnsname_parse_assert(addr_family, strarr[i], NULL, &a, NULL))
+        if (!nm_dns_uri_parse_plain(addr_family, strarr[i], NULL, &a))
             continue;
 
         if (IS_IPv4)

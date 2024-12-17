@@ -2056,9 +2056,8 @@ make_ip4_setting(shvarFile *ifcfg,
          * Pick up just IPv4 addresses (IPv6 addresses are taken by make_ip6_setting())
          */
         for (i = 1; i < 10000; i++) {
-            int      af;
-            NMIPAddr ip;
-            char     tag[256];
+            NMDnsServer dns;
+            char        tag[256];
 
             numbered_tag(tag, "DNS", i);
             nm_clear_g_free(&value);
@@ -2066,14 +2065,16 @@ make_ip4_setting(shvarFile *ifcfg,
             if (!v)
                 break;
 
-            if (!nm_utils_dnsname_parse(AF_UNSPEC, v, &af, &ip, NULL)) {
+            if (!nm_dns_uri_parse(AF_UNSPEC, v, &dns)) {
                 g_set_error(error,
                             NM_SETTINGS_ERROR,
                             NM_SETTINGS_ERROR_INVALID_CONNECTION,
                             "Invalid DNS server address '%s'",
                             v);
                 return NULL;
-            } else if (af == AF_INET) {
+            }
+
+            if (dns.addr_family == AF_INET) {
                 if (!nm_setting_ip_config_add_dns(s_ip4, v))
                     PARSE_WARNING("duplicate DNS server %s", tag);
             } else {
@@ -2606,9 +2607,8 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
      * Pick up just IPv6 addresses (IPv4 addresses are taken by make_ip4_setting())
      */
     for (i = 1; i < 10000; i++) {
-        int      af;
-        NMIPAddr ip;
-        char     tag[256];
+        NMDnsServer dns;
+        char        tag[256];
 
         numbered_tag(tag, "DNS", i);
         nm_clear_g_free(&value);
@@ -2616,7 +2616,7 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
         if (!v)
             break;
 
-        if (!nm_utils_dnsname_parse(AF_UNSPEC, v, &af, &ip, NULL)) {
+        if (!nm_dns_uri_parse(AF_UNSPEC, v, &dns)) {
             if (is_disabled)
                 continue;
             g_set_error(error,
@@ -2625,7 +2625,8 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
                         "Invalid DNS server address '%s'",
                         v);
             return NULL;
-        } else if (af == AF_INET6) {
+        }
+        if (dns.addr_family == AF_INET6) {
             if (is_disabled) {
                 PARSE_WARNING("ignore DNS server addresses with method disabled/ignore");
                 break;

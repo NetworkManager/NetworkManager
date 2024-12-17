@@ -1577,19 +1577,17 @@ ip_config_to_iwd_config(int addr_family, GKeyFile *file, NMSettingIPConfig *s_ip
     if (num) {
         nm_str_buf_reset(&strbuf);
         for (i = 0; i < num; i++) {
-            char     sbuf[NM_INET_ADDRSTRLEN];
-            NMIPAddr a;
+            char addrstr[NM_INET_ADDRSTRLEN];
 
-            if (!nm_utils_dnsname_parse_assert(addr_family,
-                                               nm_setting_ip_config_get_dns(s_ip, i),
-                                               NULL,
-                                               &a,
-                                               NULL))
+            if (!nm_dns_uri_parse_plain(addr_family,
+                                        nm_setting_ip_config_get_dns(s_ip, i),
+                                        addrstr,
+                                        NULL))
                 continue;
 
             if (strbuf.len > 0)
                 nm_str_buf_append_c(&strbuf, ' ');
-            nm_str_buf_append(&strbuf, nm_inet_ntop(addr_family, &a, sbuf));
+            nm_str_buf_append(&strbuf, addrstr);
         }
         /* It doesn't matter whether we add the DNS under [IPv4] or [IPv6]
          * except that with method=auto the list will override the

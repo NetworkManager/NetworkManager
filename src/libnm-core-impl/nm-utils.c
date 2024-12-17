@@ -1309,11 +1309,11 @@ nm_utils_dns_to_variant(int addr_family, const char *const *dns, gssize len)
 
         /* We can only represent the IP address on the legacy property "ipv[46].dns".
          * Expose what we can. */
-        if (!nm_utils_dnsname_parse(addr_family, dns[i], NULL, &ip, NULL))
+        if (!nm_dns_uri_parse_plain(addr_family, dns[i], NULL, &ip))
             continue;
 
         if (IS_IPv4)
-            g_variant_builder_add(&builder, "u", ip);
+            g_variant_builder_add(&builder, "u", ip.addr4);
         else
             g_variant_builder_add(&builder, "@ay", nm_g_variant_new_ay_in6addr(&ip.addr6));
     }

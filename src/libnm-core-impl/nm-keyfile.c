@@ -1157,7 +1157,7 @@ ip_dns_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
     addr_family = NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting);
 
     for (i = 0, n = 0; i < length; i++) {
-        if (!nm_utils_dnsname_parse(addr_family, list[i], NULL, NULL, NULL)) {
+        if (!nm_dns_uri_parse(addr_family, list[i], NULL)) {
             if (!read_handle_warn(info,
                                   key,
                                   key,
