@@ -396,13 +396,24 @@ update_add_ip_config(NMDnsSystemdResolved    *self,
 
     strarr = nm_l3_config_data_get_nameservers(ip_data->l3cd, ip_data->addr_family, &n);
     for (i = 0; i < n; i++) {
-        const char *server_name;
-        NMIPAddr    a;
+        NMDnsServer dns_server;
 
-        if (!nm_utils_dnsname_parse_assert(ip_data->addr_family, strarr[i], NULL, &a, &server_name))
+        if (!nm_dns_uri_parse(ip_data->addr_family, strarr[i], &dns_server))
             continue;
 
-        if (server_name) {
+        if (!NM_IN_SET(dns_server.scheme,
+                       NM_DNS_URI_SCHEME_TLS,
+                       NM_DNS_URI_SCHEME_NONE,
+                       NM_DNS_URI_SCHEME_UDP)) {
+            /* In systemd-resolved, the use of DNS-over-TLS can't be controlled
+             * for each name server; it is controlled via a per-link knob.
+             * Therefore, we pass all the addresses we know about and then let
+             * systemd-resolved decide whether to use DoT, based on the
+             * "connection.dns-over-tls" property. */
+            continue;
+        }
+
+        if (dns_server.servername) {
             NM_SET_OUT(out_require_dns_ex, TRUE);
             if (priv->has_set_link_dns_ex == FALSE) {
                 /* The caller won't care about this result anymore. We can skip setting it. */
@@ -413,15 +424,19 @@ update_add_ip_config(NMDnsSystemdResolved    *self,
         if (dns_ex) {
             g_variant_builder_open(dns_ex, G_VARIANT_TYPE("(iayqs)"));
             g_variant_builder_add(dns_ex, "i", ip_data->addr_family);
-            g_variant_builder_add_value(dns_ex, nm_g_variant_new_ay((gconstpointer) &a, addr_size));
+            g_variant_builder_add_value(
+                dns_ex,
+                nm_g_variant_new_ay((gconstpointer) &dns_server.addr, addr_size));
             g_variant_builder_add(dns_ex, "q", 0);
-            g_variant_builder_add(dns_ex, "s", server_name ?: "");
+            g_variant_builder_add(dns_ex, "s", dns_server.servername ?: "");
             g_variant_builder_close(dns_ex);
         }
         if (dns) {
             g_variant_builder_open(dns, G_VARIANT_TYPE("(iay)"));
             g_variant_builder_add(dns, "i", ip_data->addr_family);
-            g_variant_builder_add_value(dns, nm_g_variant_new_ay((gconstpointer) &a, addr_size));
+            g_variant_builder_add_value(
+                dns,
+                nm_g_variant_new_ay((gconstpointer) &dns_server.addr, addr_size));
             g_variant_builder_close(dns);
         }
         has_config = TRUE;

@@ -1103,14 +1103,14 @@ nm_ndisc_set_config(NMNDisc *ndisc, const NML3ConfigData *l3cd)
     if (l3cd)
         strvarr = nm_l3_config_data_get_nameservers(l3cd, AF_INET6, &len);
     for (i = 0; i < len; i++) {
-        struct in6_addr  a;
+        NMIPAddr         a;
         NMNDiscDNSServer n;
 
-        if (!nm_utils_dnsname_parse_assert(AF_INET6, strvarr[i], NULL, &a, NULL))
+        if (!nm_dns_uri_parse_plain(AF_INET6, strvarr[i], NULL, &a))
             continue;
 
         n = (NMNDiscDNSServer) {
-            .address     = a,
+            .address     = a.addr6,
             .expiry_msec = _nm_ndisc_lifetime_to_expiry(NM_NDISC_EXPIRY_BASE_TIMESTAMP,
                                                         NM_NDISC_ROUTER_LIFETIME),
         };

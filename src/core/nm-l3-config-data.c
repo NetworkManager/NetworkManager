@@ -1460,8 +1460,7 @@ nm_l3_config_data_add_nameserver(NML3ConfigData *self, int addr_family, const ch
     if (NM_MORE_ASSERTS > 5) {
         gs_free char *s_free = NULL;
 
-        nm_assert(
-            nm_streq0(nm_utils_dnsname_normalize(addr_family, nameserver, &s_free), nameserver));
+        nm_assert(nm_streq0(nm_dns_uri_normalize(addr_family, nameserver, &s_free), nameserver));
     }
 
     p_arr = &self->nameservers_x[NM_IS_IPv4(addr_family)];
