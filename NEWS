@@ -27,6 +27,10 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Add new ipv4.shared-dhcp-range and ipv4.shared-dhcp-lease-time,
   which allows you to customize the DHCP range and lease time offered
   by DHCP server in `shared` connection method.
+* DNS servers can now be specified with a URI-like syntax which supports
+  DNS over TLS name servers.
+* The initrd-generator understands the "rd.net.dns" option to configure
+  global name servers.
 
 =============================================
 NetworkManager-1.50
