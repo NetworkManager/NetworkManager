@@ -810,6 +810,299 @@ nm_utils_dnsname_normalize(int addr_family, const char *dns, char **out_free)
 
 /*****************************************************************************/
 
+/*
+ * nm_dns_uri_parse:
+ * @addr_family: the address family, or AF_UNSPEC to autodetect it
+ * @str: the name server URI string to parse
+ * @dns: the name server descriptor to fill, or %NULL
+ *
+ * Parses the given name server URI string. Each name server is represented
+ * by the following grammar:
+ *
+ *   NAMESERVER   := { PLAIN | TLS_URI | UDP_URI }
+ *   PLAIN        := { ipv4address | ipv6address } [ '#' SERVERNAME ]
+ *   TLS_URI      := 'dns+tls://' URI_ADDRESS [ ':' PORT ] [ '#' SERVERNAME ]
+ *   UDP_URI      := 'dns+udp://' URI_ADDRESS [ ':' PORT ]
+ *   URI_ADDRESS  := { ipv4address | '[' ipv6address [ '%' ifname ] ']' }
+ *
+ * Examples:
+ *
+ *   192.0.2.0
+ *   192.0.2.0#example.com
+ *   2001:db8::1
+ *   dns+tls://192.0.2.0
+ *   dns+tls://[2001:db8::1]
+ *   dns+tls://192.0.2.0:53#example.com
+ *   dns+udp://[fe80::1%enp1s0]
+ *
+ * Note that on return, the lifetime of the members in the @dns struct is
+ * the same as the input string @str.
+ *
+ * Returns: %TRUE on success, %FALSE on failure
+ */
+gboolean
+nm_dns_uri_parse(int addr_family, const char *str, NMDnsServer *dns)
+{
+    NMDnsServer   dns_stack;
+    gs_free char *addr_port_heap = NULL;
+    gs_free char *addr_heap      = NULL;
+    const char   *addr_port;
+    const char   *addr;
+    const char   *name;
+    const char   *port;
+
+    nm_assert_addr_family_or_unspec(addr_family);
+
+    if (!dns)
+        dns = &dns_stack;
+
+    if (!str)
+        return FALSE;
+
+    *dns = (NMDnsServer) {
+        .port = -1,
+    };
+
+    if (NM_STR_HAS_PREFIX(str, "dns+tls://")) {
+        dns->scheme = NM_DNS_URI_SCHEME_TLS;
+        str += NM_STRLEN("dns+tls://");
+    } else if (NM_STR_HAS_PREFIX(str, "dns+udp://")) {
+        dns->scheme = NM_DNS_URI_SCHEME_UDP;
+        str += NM_STRLEN("dns+udp://");
+    } else {
+        name = strchr(str, '#');
+        if (name) {
+            str = nm_strndup_a(200, str, name - str, &addr_heap);
+            name++;
+        }
+
+        if (name && name[0] == '\0') {
+            /* empty DoT server name is not allowed */
+            return FALSE;
+        }
+
+        if (!nm_inet_parse_bin(addr_family, str, &dns->addr_family, &dns->addr))
+            return FALSE;
+
+        dns->servername = name;
+        dns->scheme     = NM_DNS_URI_SCHEME_NONE;
+
+        return TRUE;
+    }
+
+    addr_port = str;
+    name      = strrchr(addr_port, '#');
+    if (name) {
+        addr_port = nm_strndup_a(100, addr_port, name - addr_port, &addr_port_heap);
+        name++;
+        if (*name == '\0') {
+            /* empty DoT server name not allowed */
+            return FALSE;
+        }
+        dns->servername = name;
+    }
+
+    if (addr_family != AF_INET && *addr_port == '[') {
+        const char *end;
+        char       *perc;
+
+        addr_family = AF_INET6;
+        addr_port++;
+        end = strchr(addr_port, ']');
+        if (!end)
+            return FALSE;
+        addr = nm_strndup_a(100, addr_port, end - addr_port, &addr_heap);
+
+        /* IPv6 link-local scope-id */
+        perc = strchr(addr, '%');
+        if (perc) {
+            *perc = '\0';
+            if (g_strlcpy(dns->interface, perc + 1, sizeof(dns->interface))
+                >= sizeof(dns->interface))
+                return FALSE;
+        }
+
+        /* port */
+        end++;
+        if (*end == ':') {
+            end++;
+            dns->port = _nm_utils_ascii_str_to_int64(end, 10, 0, 65535, G_MAXINT32);
+            if (dns->port == G_MAXINT32)
+                return FALSE;
+        }
+    } else if (addr_family != AF_INET6) {
+        /* square brackets are mandatory for IPv6, so it must be IPv4 */
+
+        addr_family = AF_INET;
+        addr        = addr_port;
+
+        /* port */
+        port = strchr(addr_port, ':');
+        if (port) {
+            addr = nm_strndup_a(100, addr_port, port - addr_port, &addr_heap);
+            port++;
+            dns->port = _nm_utils_ascii_str_to_int64(port, 10, 0, 65535, G_MAXINT32);
+            if (dns->port == G_MAXINT32)
+                return FALSE;
+        }
+    } else {
+        return FALSE;
+    }
+
+    if (!nm_inet_parse_bin(addr_family, addr, &dns->addr_family, &dns->addr))
+        return FALSE;
+
+    if (dns->scheme != NM_DNS_URI_SCHEME_TLS && dns->servername)
+        return FALSE;
+
+    /* For now, allow the interface only for IPv6 link-local addresses */
+    if (dns->interface[0]
+        && (dns->addr_family != AF_INET6 || !IN6_IS_ADDR_LINKLOCAL(&dns->addr.addr6)))
+        return FALSE;
+
+    return TRUE;
+}
+
+/* @nm_dns_uri_parse_plain:
+ * @addr_family: the address family, or AF_UNSPEC to autodetect it
+ * @str: the name server URI string
+ * @out_addrstr: the buffer to fill with the address string on return,
+ *   or %NULL. Must be of size at least NM_INET_ADDRSTRLEN.
+ * @out_addr: the %NMIPAddr struct to fill on return, or %NULL
+ *
+ * Returns whether the string contains a "plain" (DNS over UDP on port 53)
+ * name server. In such case, it fills the arguments with the address
+ * of the name server.
+ *
+ * Returns: %TRUE on success, %FALSE if the string can't be parsed or
+ *   if it's not a plain name server.
+ */
+gboolean
+nm_dns_uri_parse_plain(int addr_family, const char *str, char *out_addrstr, NMIPAddr *out_addr)
+{
+    NMDnsServer dns;
+
+    if (!nm_dns_uri_parse(addr_family, str, &dns))
+        return FALSE;
+
+    switch (dns.scheme) {
+    case NM_DNS_URI_SCHEME_TLS:
+        return FALSE;
+    case NM_DNS_URI_SCHEME_NONE:
+        NM_SET_OUT(out_addr, dns.addr);
+        if (out_addrstr) {
+            nm_inet_ntop(dns.addr_family, &dns.addr, out_addrstr);
+        }
+        return TRUE;
+    case NM_DNS_URI_SCHEME_UDP:
+        if (dns.port != -1 && dns.port != 53)
+            return FALSE;
+        if (dns.interface[0])
+            return FALSE;
+        NM_SET_OUT(out_addr, dns.addr);
+        if (out_addrstr) {
+            nm_inet_ntop(dns.addr_family, &dns.addr, out_addrstr);
+        }
+        return TRUE;
+    case NM_DNS_URI_SCHEME_UNKNOWN:
+    default:
+        return FALSE;
+    }
+}
+
+/* @nm_dns_uri_normalize:
+ * @addr_family: the address family, or AF_UNSPEC to autodetect it
+ * @str: the name server URI string
+ * @out_free: the newly-allocated string to set on return, or %NULL
+ *
+ * Returns the "normal" representation for the given name server URI.
+ * Note that a plain name server (DNS over UDP on port 53) is always
+ * represented in the "legacy" (non-URI) form.
+ *
+ * Returns: the normalized DNS URI
+ */
+const char *
+nm_dns_uri_normalize(int addr_family, const char *str, char **out_free)
+{
+    NMDnsServer dns;
+    char        addrstr[NM_INET_ADDRSTRLEN];
+    char        portstr[32];
+    char       *ret;
+    gsize       len;
+
+    nm_assert_addr_family_or_unspec(addr_family);
+    nm_assert(str);
+    nm_assert(out_free && !*out_free);
+
+    if (!nm_dns_uri_parse(addr_family, str, &dns))
+        return NULL;
+
+    nm_inet_ntop(dns.addr_family, &dns.addr, addrstr);
+
+    if (dns.port != -1) {
+        nm_assert(dns.port >= 0 && dns.port <= 65535);
+        g_snprintf(portstr, sizeof(portstr), "%d", dns.port);
+    }
+
+    switch (dns.scheme) {
+    case NM_DNS_URI_SCHEME_NONE:
+        len = strlen(addrstr);
+        /* In the vast majority of cases, the name is in fact normalized. Check
+         * whether it is, and don't duplicate the string. */
+        if (strncmp(str, addrstr, len) == 0) {
+            if (dns.servername) {
+                if (str[len] == '#' && nm_streq(&str[len + 1], dns.servername))
+                    return str;
+            } else {
+                if (str[len] == '\0')
+                    return str;
+            }
+        }
+
+        if (!dns.servername)
+            ret = g_strdup(addrstr);
+        else
+            ret = g_strconcat(addrstr, "#", dns.servername, NULL);
+        break;
+    case NM_DNS_URI_SCHEME_UDP:
+        if (dns.interface[0] || dns.port != -1) {
+            ret = g_strdup_printf("dns+udp://%s%s%s%s%s%s%s",
+                                  dns.addr_family == AF_INET6 ? "[" : "",
+                                  addrstr,
+                                  dns.interface[0] ? "%" : "",
+                                  dns.interface[0] ? dns.interface : "",
+                                  dns.addr_family == AF_INET6 ? "]" : "",
+                                  dns.port != -1 ? ":" : "",
+                                  dns.port != -1 ? portstr : "");
+            break;
+        }
+        ret = g_strdup_printf("%s%s%s", addrstr, dns.servername ? "#" : "", dns.servername ?: "");
+        break;
+    case NM_DNS_URI_SCHEME_TLS:
+        ret = g_strdup_printf("dns+tls://%s%s%s%s%s%s%s%s%s",
+                              dns.addr_family == AF_INET6 ? "[" : "",
+                              addrstr,
+                              dns.interface[0] ? "%%" : "",
+                              dns.interface[0] ? dns.interface : "",
+                              dns.addr_family == AF_INET6 ? "]" : "",
+                              dns.port != -1 ? ":" : "",
+                              dns.port != -1 ? portstr : "",
+                              dns.servername ? "#" : "",
+                              dns.servername ?: "");
+        break;
+    case NM_DNS_URI_SCHEME_UNKNOWN:
+    default:
+        nm_assert_not_reached();
+        ret = NULL;
+    }
+
+    *out_free = ret;
+
+    return ret;
+}
+
+/*****************************************************************************/
+
 /**
  * nm_setting_ovs_other_config_check_key:
  * @key: (nullable): the key to check
