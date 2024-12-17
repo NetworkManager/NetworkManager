@@ -281,9 +281,12 @@ nm_dhcp_client_create_options_dict(NMDhcpClient *self, gboolean static_keys)
 }
 
 const NML3ConfigData *
-nm_dhcp_client_get_lease(NMDhcpClient *self)
+nm_dhcp_client_get_lease(NMDhcpClient *self, gboolean acd_completed)
 {
-    return NM_DHCP_CLIENT_GET_PRIVATE(self)->l3cd_curr;
+    if (acd_completed)
+        return NM_DHCP_CLIENT_GET_PRIVATE(self)->l3cd_curr;
+    else
+        return NM_DHCP_CLIENT_GET_PRIVATE(self)->l3cd_next;
 }
 
 /*****************************************************************************/
