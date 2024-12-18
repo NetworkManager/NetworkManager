@@ -241,6 +241,8 @@ nm_ether_addr_is_zero(const NMEtherAddr *a)
     return nm_memeq(a, &nm_ether_addr_zero, sizeof(NMEtherAddr));
 }
 
+guint nm_ether_addr_hash(const NMEtherAddr *a);
+
 /*****************************************************************************/
 
 struct ether_addr;
