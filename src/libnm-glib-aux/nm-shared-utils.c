@@ -58,6 +58,17 @@ nm_ether_addr_from_string(NMEtherAddr *addr, const char *str)
     return addr;
 }
 
+guint
+nm_ether_addr_hash(const NMEtherAddr *a)
+{
+    NMHashState h;
+
+    nm_hash_init(&h, 1947951703u);
+    nm_hash_update(&h, a, sizeof(NMEtherAddr));
+
+    return nm_hash_complete(&h);
+}
+
 /*****************************************************************************/
 
 /**
