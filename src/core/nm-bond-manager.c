@@ -6,8 +6,13 @@
 
 #include <linux/if.h>
 
+#include <linux/if_ether.h>
+#include <linux/if_packet.h>
+#include <sys/socket.h>
+
 #include "NetworkManagerUtils.h"
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
+#include "libnm-platform/nm-linux-platform.h"
 #include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-platform/nm-platform.h"
 #include "libnm-platform/nmp-object.h"
@@ -91,6 +96,32 @@ struct _NMBondManager {
                                                     \
         (_self && NM_IS_PLATFORM(_self->platform)); \
     })
+
+/*****************************************************************************/
+
+#define IP_ADDR_LEN 4
+
+#define ARP_OP_GARP 0x0001
+#define ARP_OP_RARP 0x0003
+
+#define ARP_HW_TYPE_ETH 0x0001
+
+#define ARP_PROTOCOL_IPV4 0x0800
+
+typedef struct _nm_packed {
+    char    s_addr[ETH_ALEN];
+    char    d_addr[ETH_ALEN];
+    guint16 eth_type;
+    guint16 hw_type;
+    guint16 protocol;
+    guint8  addr_len;
+    guint8  ip_len;
+    guint16 op;
+    char    s_hw_addr[ETH_ALEN];
+    char    s_ip_addr[IP_ADDR_LEN];
+    char    d_hw_addr[ETH_ALEN];
+    char    d_ip_addr[IP_ADDR_LEN];
+} ARPPacket;
 
 /*****************************************************************************/
 
@@ -837,6 +868,89 @@ void
 nm_bond_manager_reapply(NMBondManager *self)
 {
     _reconfigure_check(self, TRUE);
+}
+
+gboolean
+nm_bond_manager_send_arp(int                 bond_ifindex,
+                         int                 bridge_ifindex,
+                         struct _NMPlatform *platform,
+                         in_addr_t          *addrs_array,
+                         gsize               addrs_len)
+{
+    struct sockaddr_ll addr = {
+        .sll_family   = AF_PACKET,
+        .sll_protocol = htons(ETH_P_ARP),
+        .sll_ifindex  = bond_ifindex,
+    };
+    ARPPacket         data;
+    const guint8     *hwaddr;
+    gsize             hwaddrlen    = 0;
+    nm_auto_close int sockfd       = -1;
+    bool              announce_fdb = FALSE;
+
+    nm_assert(NM_IS_PLATFORM(platform));
+    nm_assert(bond_ifindex);
+
+    /* if the bridge_ifindex is specified is because we want to
+     * announce the FDB table content from the bridge */
+    if (bridge_ifindex > 0)
+        announce_fdb = TRUE;
+
+    sockfd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
+    if (sockfd < 0)
+        return FALSE;
+
+    hwaddr = nm_platform_link_get_address(platform, bond_ifindex, &hwaddrlen);
+    /* infiniband interfaces not supported */
+    if (hwaddrlen > ETH_ALEN)
+        return FALSE;
+
+    /* common ARP options to be configured */
+    memset(data.d_addr, 0xff, ETH_ALEN);
+    data.eth_type = htons(ETH_P_ARP);
+    data.hw_type  = htons(ARP_HW_TYPE_ETH);
+    data.protocol = htons(ARP_PROTOCOL_IPV4);
+    data.addr_len = ETH_ALEN;
+    data.ip_len   = IP_ADDR_LEN;
+
+    if (announce_fdb) {
+        /* if we are announcing the FDB we do a RARP, we don't set the
+         * source/dest IPv4 address */
+        int                   ifindexes[] = {bridge_ifindex, bond_ifindex};
+        int                   i;
+        gs_free NMEtherAddr **fdb_addrs = NULL;
+
+        fdb_addrs = nm_linux_platform_get_link_fdb_table(platform, ifindexes, 2);
+        /* we want to send a Reverse ARP (RARP) packet */
+        data.op = htons(ARP_OP_RARP);
+
+        i = 0;
+        while (fdb_addrs[i] != NULL) {
+            NMEtherAddr *tmp_hwaddr = fdb_addrs[i];
+            memcpy(data.s_hw_addr, tmp_hwaddr, ETH_ALEN);
+            memcpy(data.d_hw_addr, tmp_hwaddr, ETH_ALEN);
+            memcpy(data.s_addr, tmp_hwaddr, ETH_ALEN);
+            g_free(tmp_hwaddr);
+            if (sendto(sockfd, &data, sizeof(data), 0, (struct sockaddr *) &addr, sizeof(addr)) < 0)
+                return FALSE;
+            i++;
+        }
+    } else {
+        /* we want to send a Gratuitous ARP (GARP) packet */
+        data.op = htons(ARP_OP_GARP);
+        memcpy(data.s_addr, hwaddr, hwaddrlen);
+        memcpy(data.s_hw_addr, hwaddr, hwaddrlen);
+        for (int i = 0; i < addrs_len; i++) {
+            const in_addr_t tmp_addr = addrs_array[i];
+
+            unaligned_write_ne32(data.s_ip_addr, tmp_addr);
+            unaligned_write_ne32(data.d_ip_addr, tmp_addr);
+            if (sendto(sockfd, &data, sizeof(data), 0, (struct sockaddr *) &addr, sizeof(addr)) < 0)
+                return FALSE;
+        }
+    }
+
+    return TRUE;
 }
 
 /*****************************************************************************/
