@@ -181,7 +181,7 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
      * SHOULD NOT appear on the default router list.
      *
      * We handle that by tracking a gateway that expires right now. */
-    gateway = (NMNDiscGateway) {
+    gateway = (NMNDiscGateway){
         .address     = gateway_addr,
         .expiry_msec = _nm_ndisc_lifetime_to_expiry(now_msec, ndp_msgra_router_lifetime(msgra)),
         .preference  = _route_preference_coerce(ndp_msgra_route_preference(msgra)),
