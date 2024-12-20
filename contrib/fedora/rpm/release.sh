@@ -28,7 +28,8 @@
 #   * Run in a "clean" environment, i.e. no unusual environment variables set, on a recent
 #     Fedora, with suitable dependencies installed.
 #
-#   * First, ensure that you have ssh keys for "master.gnome.org" installed (and ssh-agent running).
+#   * First, ensure that you have a valid Gitlab's private token for gitlab.freedestkop.org
+#     stored in ~/.config/nm-release-token, or pass one with --gitlab-token argument.
 #     Also, ensure you have a GPG key that you want to use for signing. Also, have gpg-agent running
 #     and possibly configure `git config --get user.signingkey` for the proper key.
 #
@@ -40,9 +41,13 @@
 #
 # Run with --no-test to do the actual release.
 
-die() {
+fail_msg() {
     echo -n "FAIL: "
     echo_color 31 "$@"
+}
+
+die() {
+    fail_msg "$@"
     exit 1
 }
 
@@ -64,6 +69,7 @@ print_usage() {
     echo "     [--no-check-gitlab] \\"
     echo "     [--no-check-news] \\"
     echo "     [--no-warn-publish-docs] \\"
+    echo "     [--gitlab-token <private_gitlab_token>] \\"
 }
 
 die_help() {
@@ -245,6 +251,11 @@ while [ "$#" -ge 1 ]; do
             ;;
         --help|-h)
             die_help
+            ;;
+        --gitlab-token)
+            [ "$#" -ge 1 ] || die_usage "provide a value for --gitlab-token"
+            GITLAB_TOKEN="$1"
+            shift
             ;;
         devel|rc1|rc|major|major-post|minor)
             [ -z "$RELEASE_MODE" ] || die_usage "duplicate release-mode"
@@ -528,27 +539,25 @@ case "$RELEASE_MODE" in
 esac
 
 build_tag() {
-    git checkout "$BUILD_TAG" || die "failed to checkout $BUILD_TAG"
+    local BUILD_TAG="$1"
+    local TAR_FILE="NetworkManager-$2.tar.xz"
+    local SUM_FILE="$TAR_FILE.sha256sum"
 
+    git checkout "$BUILD_TAG" || die "failed to checkout $BUILD_TAG"
     ./contrib/fedora/rpm/build_clean.sh -r || die "build release failed"
 
-    test -f "./$RELEASE_FILE" \
-    || die "release file \"./$RELEASE_FILE\" not found"
-
-    cp "./$RELEASE_FILE" /tmp/ || die "failed to copy release tarball to /tmp"
-
-    if test -f "./$RELEASE_FILE.sig" ; then
-        cp "./$RELEASE_FILE.sig" /tmp/ || die "failed to copy signature for tarball to /tmp"
-    fi
+    cp "./$TAR_FILE" /tmp/ || die "failed to copy release tarball to /tmp"
+    sha256sum "$TAR_FILE" > "/tmp/$SUM_FILE" || die "failed to copy signature for tarball to /tmp"
 
     git clean -fdx
 }
 
-RELEASE_FILES=()
+RELEASE_TAR_VERSIONS=()
+RELEASE_TAGS=()
 if [ -n "$BUILD_TAG" ]; then
-    RELEASE_FILE="NetworkManager-$TAR_VERSION.tar.xz"
-    RELEASE_FILES+=("$RELEASE_FILE")
-    build_tag
+    build_tag "$BUILD_TAG" "$TAR_VERSION"
+    RELEASE_TAR_VERSIONS+=("$TAR_VERSION")
+    RELEASE_TAGS+=("$BUILD_TAG")
 fi
 git checkout -B "$CUR_BRANCH" "$TMP_BRANCH" || die "cannot checkout $CUR_BRANCH"
 
@@ -558,9 +567,6 @@ if [ "$RELEASE_MODE" = rc1 ]; then
     git branch "$RELEASE_BRANCH" "$TMP_BRANCH" || die "cannot checkout $CUR_BRANCH"
     BRANCHES+=( "$RELEASE_BRANCH" )
     CLEANUP_REFS+=( "refs/heads/$RELEASE_BRANCH" )
-fi
-
-if [ "$RELEASE_MODE" = rc1 ]; then
     git checkout "$TMP_BRANCH"
     b="${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 2)).0"
     set_version_number "${VERSION_ARR[0]}" "$((${VERSION_ARR[1]} + 2))" 0
@@ -570,29 +576,86 @@ if [ "$RELEASE_MODE" = rc1 ]; then
     CLEANUP_REFS+=("refs/tags/$b-dev")
     BUILD_TAG="$b-dev"
     TAR_VERSION="$b"
-    RELEASE_FILE="NetworkManager-$TAR_VERSION.tar.xz"
-    RELEASE_FILES+=("$RELEASE_FILE")
-    build_tag
+    build_tag "$BUILD_TAG" "$TAR_VERSION"
+    RELEASE_TAR_VERSIONS+=("$TAR_VERSION")
+    RELEASE_TAGS+=("$BUILD_TAG")
     git checkout -B "$CUR_BRANCH" "$TMP_BRANCH" || die "cannot checkout $CUR_BRANCH"
 fi
 
-if ! [ "$DRY_RUN" = 0 ]; then
-    ssh master.gnome.org true || die "failed to \`ssh master.gnome.org\`"
+if [[ $GITLAB_TOKEN == "" ]]; then
+    [[ -r ~/.config/nm-release-token ]] || die "cannot read ~/.config/nm-release-token"
+    GITLAB_TOKEN=$(< ~/.config/nm-release-token)
 fi
 
-for r in "${RELEASE_FILES[@]}"; do
-    do_command rsync -va --append-verify -P "/tmp/$r" master.gnome.org: || die "failed to rsync \"/tmp/$r\""
-done
+# This step is not necessary for authentication, we use it only to provide a meaningful error message.
+curl --request GET --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+    "https://gitlab.freedesktop.org/api/v4/personal_access_tokens/self" &>/dev/null \
+    || die "failed to authenticate at gitlab.freedesktop.org with the private token"
 
 do_command git push "$ORIGIN" "${BRANCHES[@]}" || die "failed to to push branches ${BRANCHES[@]} to $ORIGIN"
 
-FAIL=0
-for r in "${RELEASE_FILES[@]}"; do
-    do_command ssh master.gnome.org ftpadmin install --unattended "$r" || FAIL=1
+CREATE_RELEASE_FAIL=0
+for I in "${!RELEASE_TAR_VERSIONS[@]}"; do
+    TAR_FILE="NetworkManager-${RELEASE_TAR_VERSIONS[$I]}.tar.xz"
+    SUM_FILE="$TAR_FILE.sha256sum"
+    BUILD_TAG="${RELEASE_TAGS["$I"]}"
+    FAIL=0
+
+    # upload tarball and checksum file as generic packages
+    for F in "$TAR_FILE" "$SUM_FILE"; do
+        do_command curl --location --fail-with-body --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+            --upload-file "/tmp/$F" \
+            "https://gitlab.freedesktop.org/api/v4/projects/411/packages/generic/NetworkManager/$BUILD_TAG/$F" \
+            || FAIL=1
+
+        if [[ $FAIL = 1 ]]; then
+            fail_msg "failed to upload $F"
+            CREATE_RELEASE_FAIL=1
+            break
+        fi
+    done
+
+    [[ $FAIL = 1 ]] && continue
+
+    # create release
+    do_command curl --location  --header 'Content-Type: application/json' --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+         --request POST "https://gitlab.freedesktop.org/api/v4/projects/411/releases" \
+         --data "$(cat <<END
+            {
+                "name": "NetworkManager $BUILD_TAG",
+                "tag_name": "$BUILD_TAG", 
+                "assets": {
+                    "links": [
+                        {
+                            "name": "NetworkManager $BUILD_TAG tarball with docs",
+                            "url": "https://gitlab.freedesktop.org/api/v4/projects/411/packages/generic/NetworkManager/$BUILD_TAG/$TAR_FILE",
+                            "direct_asset_path": "/$TAR_FILE",
+                            "link_type":"package"
+                        },
+                        {
+                            "name": "NetworkManager $BUILD_TAG tarball sha256sum",
+                            "url": "https://gitlab.freedesktop.org/api/v4/projects/411/packages/generic/NetworkManager/$BUILD_TAG/$SUM_FILE",
+                            "direct_asset_path": "/$SUM_FILE",
+                            "link_type":"package"
+                        },
+                        {
+                            "name": "NEWS",
+                            "url": "https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/blob/$BUILD_TAG/NEWS?ref_type=tags",
+                            "direct_asset_path": "/NEWS",
+                            "link_type":"other"
+                        }
+                    ]
+                }
+            }
+END
+            )" || FAIL=1
+
+    if [[ $? != 0 ]]; then
+        fail_msg "failed to create NetworkManager $BUILD_TAG release"
+        CREATE_RELEASE_FAIL=1
+        continue
+    fi
 done
-if [ "$FAIL" = 1 ]; then
-    die "ftpadmin install failed. This was the last step. Invoke the command manually"
-fi
 
 CLEANUP_CHECKOUT_BRANCH=
 if [ "$DRY_RUN" = 0 ]; then
@@ -602,4 +665,8 @@ else
     H="$(git rev-parse "$CUR_BRANCH")"
     git checkout -B "$CUR_BRANCH" "$CUR_HEAD" || die "cannot reset $CUR_BRANCH to $CUR_HEAD"
     echo "delete reference. Restore with $(echo_color 36 -n git checkout -B "\"$CUR_BRANCH\"" "$H")"
+fi
+
+if [[ $CREATE_RELEASE_FAIL == 1 ]]; then
+    die "failed creating the release at gitlab.freedesktop.org. This was the last step, create it manually from the web UI"
 fi
