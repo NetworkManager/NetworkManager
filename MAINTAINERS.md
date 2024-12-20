@@ -191,7 +191,9 @@ release type that you specify, like devel, rc1, rc, major, major-post, etc.
 Run the script with `--help` to see all options.
 
 Notes:
-- You need access to master.gnome.org, see [here](https://handbook.gnome.org/infrastructure/accounts.html).
+- You need a private token from gitlab.freedesktop.org with 'api' level access
+  to the project. It can be saved to `~/.config/nm-release-token` or passed to
+  the `--gitlab-token` argument of `release.sh`.
 - The GPG key used to sign the tags must be exported to a keyserver.
 
 Versioning scheme, automatically handled by the script (version numbers are
@@ -203,7 +205,7 @@ called MAJOR.MINOR.MICRO):
   number less, and MICRO is >= 90).
 
 The main differences between the different kind of releases are:
-- Development releases: for depelopment and testing purposes only.
+- Development releases: for development and testing purposes only.
 - Release candidates (RC): stabilization phase before a stable release. Normally
   there are one or two RCs with ~2 weeks cadence. More RCs can be releases if
   they are needed.
