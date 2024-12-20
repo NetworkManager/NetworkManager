@@ -483,20 +483,21 @@ nm_utils_validate_shared_dhcp_range(const char *shared_dhcp_range,
                                     GPtrArray  *addresses,
                                     GError    **error)
 {
-    char        *start_address_str;
-    char        *end_address_str;
-    NMIPAddress *interface_address_with_prefix;
-    NMIPAddr     interface_address;
-    NMIPAddr     start_address;
-    NMIPAddr     end_address;
-    guint32      i;
-    guint32      mask;
-    guint32      prefix_length;
-    guint32      start_network;
-    guint32      end_network;
-    guint32      interface_network;
-    guint32      start_ip_length;
-    bool         range_is_in_interface_network;
+    char         *start_address_str;
+    char         *end_address_str;
+    NMIPAddress  *interface_address_with_prefix;
+    NMIPAddr      interface_address;
+    NMIPAddr      start_address;
+    NMIPAddr      end_address;
+    guint32       i;
+    guint32       mask;
+    guint32       prefix_length;
+    guint32       start_network;
+    guint32       end_network;
+    guint32       interface_network;
+    guint32       start_ip_length;
+    bool          range_is_in_interface_network;
+    gs_free char *to_free = NULL;
 
     g_return_val_if_fail(!error || !(*error), FALSE);
 
@@ -538,7 +539,7 @@ nm_utils_validate_shared_dhcp_range(const char *shared_dhcp_range,
         return FALSE;
     }
 
-    start_address_str = strndupa(shared_dhcp_range, start_ip_length);
+    start_address_str = nm_strndup_a(200, shared_dhcp_range, start_ip_length, &to_free);
     ++end_address_str; /* end address is pointing to ',', shift it to the actual address */
 
     if (!nm_inet_parse_bin(AF_INET, start_address_str, NULL, &start_address)) {
