@@ -848,4 +848,11 @@ void nm_device_clear_dns_lookup_data(NMDevice *self, const char *reason);
 
 gboolean nm_device_get_allow_autoconnect_on_external(NMDevice *self);
 
+void _routing_rules_sync(NMConnection *applied_connection,
+                         NMTernary     set_mode,
+                         gpointer      user_tag_1,
+                         gpointer      user_tag_2,
+                         GPtrArray    *extra_rules,
+                         NMNetns      *netns);
+
 #endif /* __NETWORKMANAGER_DEVICE_H__ */

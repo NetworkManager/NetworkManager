@@ -2279,6 +2279,13 @@ _dbus_signal_ip_config_cb(NMVpnConnection *self, int addr_family, GVariant *dict
 
     _l3cfg_l3cd_set(self, L3CD_TYPE_IP_X(IS_IPv4), l3cd);
 
+    _routing_rules_sync(_get_applied_connection(self),
+                        NM_TERNARY_TRUE,
+                        &priv->ip_data_4,
+                        &priv->ip_data_6,
+                        NULL,
+                        priv->netns);
+
     _check_complete(self, TRUE);
 }
 
