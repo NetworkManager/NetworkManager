@@ -160,7 +160,9 @@ def git_ref_commit_body(ref):
 def git_ref_commit_body_get_fixes(ref):
     body = git_ref_commit_body(ref)
     result = []
-    for mo in re.finditer(re_bin("^\\s*[fF]ixes: *([0-9a-z]+)\\b"), body, flags=re.MULTILINE):
+    for mo in re.finditer(
+        re_bin("^\\s*[fF]ixes: *([0-9a-z]+)\\b"), body, flags=re.MULTILINE
+    ):
         c = mo.group(1).decode("ascii")
         h = git_ref_exists(c)
         if h:
@@ -169,7 +171,9 @@ def git_ref_commit_body_get_fixes(ref):
         # The commit that contains a "Fixes:" line, can also contain an "Ignore-Fixes:" line
         # to disable it. This only makes sense with refs/notes/bugs notes, to fix up a wrong
         # annotation.
-        for mo in re.finditer(re_bin("^\\s*Ignore-[fF]ixes: *([0-9a-z]+)\\b"), body, flags=re.MULTILINE):
+        for mo in re.finditer(
+            re_bin("^\\s*Ignore-[fF]ixes: *([0-9a-z]+)\\b"), body, flags=re.MULTILINE
+        ):
             c = mo.group(1).decode("ascii")
             h = git_ref_exists(c)
             try:
