@@ -133,7 +133,7 @@ check_gitlab_pipeline() {
     local SHA="$2"
     local PIPELINE_ID
 
-    PIPELINE_ID="$(curl --no-progress-meter "https://gitlab.freedesktop.org/api/v4/projects/411/pipelines?ref=$BRANCH&sha=$SHA&order_by=id" 2>/dev/null | jq '.[0].id')"
+    PIPELINE_ID="$(curl --no-progress-meter "https://gitlab.freedesktop.org/api/v4/projects/411/pipelines?ref=$BRANCH&sha=$SHA&source=push&order_by=id" 2>/dev/null | jq '.[0].id')"
     if ! [[ $PIPELINE_ID =~ [0-9]+ ]] ; then
         echo "Cannot find pipeline for branch $BRANCH. Check \"https://gitlab.freedesktop.org/NetworkManager/NetworkManager/pipelines?page=1&scope=branches&ref=$BRANCH\""
         return 1
