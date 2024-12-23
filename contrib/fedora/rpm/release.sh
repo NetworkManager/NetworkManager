@@ -75,7 +75,7 @@ print_usage() {
 die_help() {
     print_usage
     echo
-    sed -e '/^# /,/# Run with --no-test/!d' -e 's/^#\($\| \)/  /' "$BASH_SOURCE"
+    sed -e '2,/^$/!d' -e 's/^#\($\| \)/  /' "$BASH_SOURCE"
     exit 0
 }
 
