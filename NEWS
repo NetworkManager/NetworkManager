@@ -1,12 +1,22 @@
+===============================================
+NetworkManager-1.50.1
+Overview of changes since NetworkManager-1.50.0
+===============================================
+
+* nmcli: fix handling of connection.down-on-poweroff property
+* sriov: only validate sriov capacity when enabled
+* wwan: fix crash with IPv4 and method=auto
+* dns: fix deleting internal global DNS configuration
+* wifi: fix list corruption when scanning with explicit SSID
+* bonding: steer IGMP queries to the active bond balance-slb primary port
+* remove routes added by NM on reapply
+* never retry ACD on NOARP interfaces
+* support IPv6 EUI64 link-local address for ipv6 tunnels
+
 =============================================
 NetworkManager-1.50
 Overview of changes since NetworkManager-1.48
 =============================================
-
-This is a snapshot of NetworkManager development. The API is
-subject to change and not guaranteed to be compatible with
-the later release.
-USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 * The support for "dhclient" has been deprecated, not built unless
   explicitely enabled, and will be removed in a future release.
