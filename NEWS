@@ -1,4 +1,29 @@
 ===============================================
+NetworkManager-1.46.4
+Overview of changes since NetworkManager-1.46.2
+===============================================
+
+* ovs: wait for the link to be ready before activating
+* lldp: fix crash dereferencing NULL pointer during debug logging
+* also use /etc/hosts for hostname resolution
+* retry hostname resolution when it fails
+* retry hostname resolution when it fails
+* cloud-setup: azure: ensure that primary address is placed first
+* dhcp: remove the address synchronously on lease expiry
+* fix validation of ovs-dpdk interface name
+* fix bug when deactivating port connections asynchronously
+* nmcli: fix handling of connection.down-on-poweroff property
+* sriov: only validate sriov capacity when enabled
+* wwan: fix crash with IPv4 and method=auto
+* dns: fix deleting internal global DNS configuration
+* wifi: fix list corruption when scanning with explicit SSID
+* bonding: steer IGMP queries to the active bond balance-slb primary port
+* bonding: send ARP announcement on bonding-slb link/carrier down
+* remove routes added by NM on reapply
+* libnm: expose HSR data properly
+* fix various minor bugs
+
+===============================================
 NetworkManager-1.46.2
 Overview of changes since NetworkManager-1.46.0
 ===============================================
