@@ -27,10 +27,6 @@ distributions:
 
   # TIER 2: distribution versions that will or might use the current NM version.
   # Run when doing a release.
-  - name: centos
-    tier: 2
-    versions:
-      - 'stream9'
   - name: ubuntu
     tier: 2
     versions:
@@ -38,36 +34,25 @@ distributions:
   - name: alpine
     tier: 2
     versions:
-      - 'latest'  # only 'latest' is supported by ci-templates: https://gitlab.freedesktop.org/freedesktop/ci-templates/-/issues/71
-  
+      - '3.20'
+
   # TIER 3: distribution versions not in EOL but don't use the current NM version.
   # Run when doing a release, but a failure won't be blocking for the release.
-  - name: fedora
-    tier: 3
-    versions:
-      - '39'
-      - 'rawhide'
-  - name: centos
-    tier: 3
-    versions:
-      - 'stream8'
   - name: ubuntu
     tier: 3
     versions:
-      - '20.04'
       - '22.04'
-      - 'rolling' # latest non-LTS
-      - 'devel'
+      - '20.04'
   - name: debian
     tier: 3
     versions:
-      - '11'
       - '12'
-      - 'sid'
-      - 'testing'
-  
-  # only 'latest' supported by ci-templates
-  # - name: alpine
-  #   tier: 3
-  #   versions:
-  #     - 'edge'
+  - name: alpine
+    tier: 3
+    versions:
+      - '3.19'
+      - '3.18'
+  - name: centos
+    tier: 3
+    versions:
+      - 'stream9'
