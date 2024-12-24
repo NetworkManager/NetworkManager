@@ -380,7 +380,8 @@ fi
 
 if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
     # The release process changed a bit in nm-1-50, so previous versions has to be compared to nm-1-48, not to main
-    cmp <(git show "$ORIGIN/nm-1-48:contrib/fedora/rpm/release.sh") "$BASH_SOURCE_ABSOLUTE" || die "$BASH_SOURCE is not identical to \`git show \"$ORIGIN/nm-1-48:contrib/fedora/rpm/release.sh\"\`"
+    # Before nm-1-48 the build was done with autotools, not meson. There are small differences because of that, so compare to nm-1-46.
+    cmp <(git show "$ORIGIN/nm-1-46:contrib/fedora/rpm/release.sh") "$BASH_SOURCE_ABSOLUTE" || die "$BASH_SOURCE is not identical to \`git show \"$ORIGIN/nm-1-46:contrib/fedora/rpm/release.sh\"\`"
 fi
 
 if ! check_news "$RELEASE_MODE" "@{VERSION_ARR[@]}" ; then
