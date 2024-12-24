@@ -161,6 +161,20 @@ for distro in ci_distros:
 if not tier1_distro or not tier1_version:
     print("Warn: no suitable distro for Tier 1 found", file=sys.stderr)
 
+# Always add CentOS Stream at least as Tier 3
+for centos_ver_info in distros_info["centos"]:
+    version = centos_ver_info["version"]
+    found = False
+
+    if tier1_distro == "centos" and tier1_version == version:
+        found = True
+    for tier in (tier2, tier3):
+        if "centos" in tier and version in tier["centos"]:
+            found = True
+            break
+
+    if not found:
+        tier3.setdefault("centos", []).append(version)
 
 # Print the config.yml needed for the corresponding stable branch
 branch = "main" if nm_version == "main" else "nm-" + nm_version.replace(".", "-")
