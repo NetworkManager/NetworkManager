@@ -15,9 +15,6 @@ fedora:
 - version: 40
   support: 2025-05-13
   nm: 1.46
-- version: 39
-  support: 2024-11-12
-  nm: 1.44
 
 # CentOS Stream
 centos:
@@ -80,6 +77,10 @@ ubuntu:
 - version: devel
   support: yes
   nm: main
+- version: 24.10
+  name: oracular
+  support: 2025-07-10
+  nm: 1.48
 - version: 24.04
   name: noble
   support: 2029-05-31
@@ -130,6 +131,9 @@ alpine:
 - version: edge
   support: yes
   nm: main
+- version: 3.21
+  support: 2026-11-01
+  nm: 1.50
 - version: 3.20
   support: 2026-04-01
   nm: 1.46
@@ -139,6 +143,3 @@ alpine:
 - version: 3.18
   support: 2025-05-09
   nm: 1.42
-- version: 3.17
-  support: 2024-11-22
-  nm: 1.40

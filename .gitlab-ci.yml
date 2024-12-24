@@ -60,11 +60,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-0959c37ef19b'
-  CENTOS_TAG:  'tag-70ac400f2325'
-  DEBIAN_TAG:  'tag-c03f6a5793ce'
-  FEDORA_TAG:  'tag-70ac400f2325'
-  UBUNTU_TAG:  'tag-c03f6a5793ce'
+  ALPINE_TAG:  'tag-490e97b0b9c7'
+  CENTOS_TAG:  'tag-4a2c52092329'
+  DEBIAN_TAG:  'tag-aef8f2fd2198'
+  FEDORA_TAG:  'tag-4a2c52092329'
+  UBUNTU_TAG:  'tag-aef8f2fd2198'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
@@ -212,15 +212,15 @@ tier3:fedora:40@prep:
       when: manual
       allow_failure: true
 
-tier3:fedora:39@prep:
+tier3:ubuntu:24.10@prep:
   extends:
-    - .fdo.container-build@fedora
+    - .fdo.container-build@ubuntu
   stage: prep
   variables:
     GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '39'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-    FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
+    FDO_DISTRIBUTION_VERSION: '24.10'
+    FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
+    FDO_DISTRIBUTION_EXEC: $UBUNTU_EXEC
   rules:
     - if: $CI_PIPELINE_SOURCE != 'schedule'
       when: manual
@@ -282,6 +282,20 @@ tier3:debian:12@prep:
       when: manual
       allow_failure: true
 
+tier3:alpine:3.21@prep:
+  extends:
+    - .fdo.container-build@alpine
+  stage: prep
+  variables:
+    GIT_STRATEGY: none
+    FDO_DISTRIBUTION_VERSION: '3.21'
+    FDO_DISTRIBUTION_TAG: $ALPINE_TAG
+    FDO_DISTRIBUTION_EXEC: $ALPINE_EXEC
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
+      when: manual
+      allow_failure: true
+
 tier3:alpine:3.20@prep:
   extends:
     - .fdo.container-build@alpine
@@ -317,20 +331,6 @@ tier3:alpine:3.18@prep:
   variables:
     GIT_STRATEGY: none
     FDO_DISTRIBUTION_VERSION: '3.18'
-    FDO_DISTRIBUTION_TAG: $ALPINE_TAG
-    FDO_DISTRIBUTION_EXEC: $ALPINE_EXEC
-  rules:
-    - if: $CI_PIPELINE_SOURCE != 'schedule'
-      when: manual
-      allow_failure: true
-
-tier3:alpine:3.17@prep:
-  extends:
-    - .fdo.container-build@alpine
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '3.17'
     FDO_DISTRIBUTION_TAG: $ALPINE_TAG
     FDO_DISTRIBUTION_EXEC: $ALPINE_EXEC
   rules:
@@ -475,17 +475,17 @@ t_fedora:40:
   rules:
     - if: $CI_PIPELINE_SOURCE != 'schedule'
 
-t_fedora:39:
+t_ubuntu:24.10:
   extends:
     - .build@template
-    - .fdo.distribution-image@fedora
+    - .fdo.distribution-image@ubuntu
     - .nm_artifacts_debug
   stage: tier3
   variables:
-    FDO_DISTRIBUTION_VERSION: '39'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+    FDO_DISTRIBUTION_VERSION: '24.10'
+    FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
   needs:
-    - "tier3:fedora:39@prep"
+    - "tier3:ubuntu:24.10@prep"
   rules:
     - if: $CI_PIPELINE_SOURCE != 'schedule'
 
@@ -545,6 +545,20 @@ t_debian:12:
   rules:
     - if: $CI_PIPELINE_SOURCE != 'schedule'
 
+t_alpine:3.21:
+  extends:
+    - .build@template
+    - .fdo.distribution-image@alpine
+    - .nm_artifacts_debug
+  stage: tier3
+  variables:
+    FDO_DISTRIBUTION_VERSION: '3.21'
+    FDO_DISTRIBUTION_TAG: $ALPINE_TAG
+  needs:
+    - "tier3:alpine:3.21@prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
+
 t_alpine:3.20:
   extends:
     - .build@template
@@ -584,20 +598,6 @@ t_alpine:3.18:
     FDO_DISTRIBUTION_TAG: $ALPINE_TAG
   needs:
     - "tier3:alpine:3.18@prep"
-  rules:
-    - if: $CI_PIPELINE_SOURCE != 'schedule'
-
-t_alpine:3.17:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@alpine
-    - .nm_artifacts_debug
-  stage: tier3
-  variables:
-    FDO_DISTRIBUTION_VERSION: '3.17'
-    FDO_DISTRIBUTION_TAG: $ALPINE_TAG
-  needs:
-    - "tier3:alpine:3.17@prep"
   rules:
     - if: $CI_PIPELINE_SOURCE != 'schedule'
 
