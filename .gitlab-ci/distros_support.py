@@ -133,6 +133,8 @@ for fed_ver_info in distros_info["fedora"]:
                 tier1_distro = "fedora"
                 tier1_version = fed_ver_info["version"]
                 tier["fedora"].remove(fed_ver_info["version"])
+                if not tier["fedora"]:
+                    del tier["fedora"]
 
 for distro in ci_distros:
     if tier1_distro:
