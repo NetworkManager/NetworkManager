@@ -1459,7 +1459,7 @@ _prop_get_connection_mptcp_flags(NMDevice *self)
 
     if (!NM_FLAGS_HAS(mptcp_flags, NM_MPTCP_FLAGS_DISABLED)) {
         if (!NM_FLAGS_HAS(mptcp_flags, NM_MPTCP_FLAGS_ALSO_WITHOUT_SYSCTL)) {
-            guint32 v;
+            gint32 v;
 
             /* If enabled, but without "also-without-sysctl", then MPTCP is still
              * disabled, if the sysctl says so...
