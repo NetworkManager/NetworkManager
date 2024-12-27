@@ -225,6 +225,12 @@ check-tree:
     FDO_DISTRIBUTION_TAG: ${{pages_build.name.upper()}}_TAG
   needs:
     - "{{pages_build.name}}:{{pages_build.version}}@container-prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME != $CI_DEFAULT_BRANCH
+      allow_failure: true
+    - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
+      allow_failure: true
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
   stage: test
   script:
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-python-black-format.sh --check

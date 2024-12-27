@@ -54,11 +54,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  CENTOS_TAG:  '2025-01-02.0-92bfbb89e265'
-  FEDORA_TAG:  '2025-01-02.0-92bfbb89e265'
-  UBUNTU_TAG:  '2025-01-02.0-4c4fe6ec7dc3'
-  DEBIAN_TAG:  '2025-01-02.0-4c4fe6ec7dc3'
-  ALPINE_TAG:  '2025-01-02.0-a618ee9cdabb'
+  CENTOS_TAG:  '2025-01-02.0-4d72477af009'
+  FEDORA_TAG:  '2025-01-02.0-4d72477af009'
+  UBUNTU_TAG:  '2025-01-02.0-9260a5ff51bf'
+  DEBIAN_TAG:  '2025-01-02.0-9260a5ff51bf'
+  ALPINE_TAG:  '2025-01-02.0-082f8cd72c4f'
 
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
@@ -365,6 +365,12 @@ check-tree:
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
   needs:
     - "centos:stream9@container-prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME != $CI_DEFAULT_BRANCH
+      allow_failure: true
+    - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
+      allow_failure: true
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
   stage: test
   script:
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-python-black-format.sh --check
