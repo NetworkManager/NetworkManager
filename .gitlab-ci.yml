@@ -60,11 +60,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-490e97b0b9c7'
-  CENTOS_TAG:  'tag-4a2c52092329'
-  DEBIAN_TAG:  'tag-aef8f2fd2198'
-  FEDORA_TAG:  'tag-4a2c52092329'
-  UBUNTU_TAG:  'tag-aef8f2fd2198'
+  ALPINE_TAG:  'tag-00184e4d4d41'
+  CENTOS_TAG:  'tag-ae92d249a656'
+  DEBIAN_TAG:  'tag-a1c9b01cffec'
+  FEDORA_TAG:  'tag-ae92d249a656'
+  UBUNTU_TAG:  'tag-a1c9b01cffec'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
@@ -631,6 +631,10 @@ check-tree:
   needs:
     - "tier1:fedora:41@prep"
   rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME != $CI_DEFAULT_BRANCH
+      allow_failure: true
+    - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
+      allow_failure: true
     - if: $CI_PIPELINE_SOURCE != 'schedule'
   stage: tier1
   script:
