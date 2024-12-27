@@ -203,6 +203,12 @@ check-tree:
     FDO_DISTRIBUTION_TAG: ${{default_distro.name.upper()}}_TAG
   needs:
     - "tier{{default_distro.tier}}:{{default_distro.name}}:{{default_distro.versions[0]}}@prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME != $CI_DEFAULT_BRANCH
+      allow_failure: true
+    - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
+      allow_failure: true
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
   stage: tier1
   script:
     - date '+%Y%m%d-%H%M%S'; clang-format --version
