@@ -8,62 +8,40 @@
 #
 
 # We're happy to rebuild all containers when one changes.
-.default_tag: &default_tag '2023-01-18.0'
+.default_tag: &default_tag '2025-01-02.0'
 
 
 # The list of all distributions we want to create job for.
 # The template generates manual jobs for all these.
 distributions:
+  - name: centos
+    tag: *default_tag
+    base_type: fedora
+    versions:
+      - 'stream9'
   - name: fedora
     tag: *default_tag
     base_type: fedora
     versions:
-      - '30'
-      - '31'
-      - '32'
-      - '33'
-      - '34'
-      - '35'
-      - '36'
-      - '37'
       - '38'
   - name: ubuntu
     tag: *default_tag
     base_type: debian
     versions:
-      - '18.04'
       - '20.04'
       - '22.04'
-      - 'devel'
-      - 'rolling'
   - name: debian
     tag: *default_tag
     base_type: debian
     versions:
-      - '9'
-      - '10'
-      - '11'
-      - 'testing'
-      - 'sid'
-  - name: centos
-    tag: *default_tag
-    base_type: fedora
-    versions:
-      - '7.5.1804'
-      - '7.6.1810'
-      - '7.7.1908'
-      - '7.8.2003'
-      - '7.9.2009'
-      - '8.1.1911'
-      - '8.2.2004'
-      - '8.3.2011'
+      - '12'
   - name: alpine
     tag: *default_tag
     base_type: alpine
     versions:
-      - 'latest'
+      - '3.18'
 
 # specifies which of the above distros is used as source for pages
 pages_build:
-  name: fedora
-  version: '37'
+  name: centos
+  version: 'stream9'

@@ -54,16 +54,16 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  FEDORA_TAG:  '2023-01-18.0-bc3e00986166'
-  UBUNTU_TAG:  '2023-01-18.0-e34ece339d30'
-  DEBIAN_TAG:  '2023-01-18.0-e34ece339d30'
-  CENTOS_TAG:  '2023-01-18.0-bc3e00986166'
-  ALPINE_TAG:  '2023-01-18.0-be90fbdd1fc2'
+  CENTOS_TAG:  '2025-01-02.0-92bfbb89e265'
+  FEDORA_TAG:  '2025-01-02.0-92bfbb89e265'
+  UBUNTU_TAG:  '2025-01-02.0-4c4fe6ec7dc3'
+  DEBIAN_TAG:  '2025-01-02.0-4c4fe6ec7dc3'
+  ALPINE_TAG:  '2025-01-02.0-a618ee9cdabb'
 
+  CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   UBUNTU_EXEC: 'bash .gitlab-ci/debian-install.sh'
   DEBIAN_EXEC: 'bash .gitlab-ci/debian-install.sh'
-  CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
 
 .nm_artifacts:
@@ -94,85 +94,15 @@ variables:
 # Build a container for each distribution + version. The ci-templates
 # will re-use the containers if the tag doesn't change.
 
-fedora:30@container-prep:
+centos:stream9@container-prep:
   extends:
-    - .fdo.container-build@fedora
+    - .fdo.container-build@centos
   stage: prep
   variables:
     GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '30'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-    FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
-
-fedora:31@container-prep:
-  extends:
-    - .fdo.container-build@fedora
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '31'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-    FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
-
-fedora:32@container-prep:
-  extends:
-    - .fdo.container-build@fedora
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '32'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-    FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
-
-fedora:33@container-prep:
-  extends:
-    - .fdo.container-build@fedora
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '33'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-    FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
-
-fedora:34@container-prep:
-  extends:
-    - .fdo.container-build@fedora
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '34'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-    FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
-
-fedora:35@container-prep:
-  extends:
-    - .fdo.container-build@fedora
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '35'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-    FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
-
-fedora:36@container-prep:
-  extends:
-    - .fdo.container-build@fedora
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '36'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-    FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
-
-fedora:37@container-prep:
-  extends:
-    - .fdo.container-build@fedora
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '37'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-    FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
+    FDO_DISTRIBUTION_VERSION: 'stream9'
+    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
+    FDO_DISTRIBUTION_EXEC: $CENTOS_EXEC
 
 fedora:38@container-prep:
   extends:
@@ -183,16 +113,6 @@ fedora:38@container-prep:
     FDO_DISTRIBUTION_VERSION: '38'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
     FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
-
-ubuntu:18.04@container-prep:
-  extends:
-    - .fdo.container-build@ubuntu
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '18.04'
-    FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
-    FDO_DISTRIBUTION_EXEC: $UBUNTU_EXEC
 
 ubuntu:20.04@container-prep:
   extends:
@@ -214,163 +134,23 @@ ubuntu:22.04@container-prep:
     FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
     FDO_DISTRIBUTION_EXEC: $UBUNTU_EXEC
 
-ubuntu:devel@container-prep:
-  extends:
-    - .fdo.container-build@ubuntu
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: 'devel'
-    FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
-    FDO_DISTRIBUTION_EXEC: $UBUNTU_EXEC
-
-ubuntu:rolling@container-prep:
-  extends:
-    - .fdo.container-build@ubuntu
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: 'rolling'
-    FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
-    FDO_DISTRIBUTION_EXEC: $UBUNTU_EXEC
-
-debian:9@container-prep:
+debian:12@container-prep:
   extends:
     - .fdo.container-build@debian
   stage: prep
   variables:
     GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '9'
+    FDO_DISTRIBUTION_VERSION: '12'
     FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
     FDO_DISTRIBUTION_EXEC: $DEBIAN_EXEC
 
-debian:10@container-prep:
-  extends:
-    - .fdo.container-build@debian
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '10'
-    FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
-    FDO_DISTRIBUTION_EXEC: $DEBIAN_EXEC
-
-debian:11@container-prep:
-  extends:
-    - .fdo.container-build@debian
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '11'
-    FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
-    FDO_DISTRIBUTION_EXEC: $DEBIAN_EXEC
-
-debian:testing@container-prep:
-  extends:
-    - .fdo.container-build@debian
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: 'testing'
-    FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
-    FDO_DISTRIBUTION_EXEC: $DEBIAN_EXEC
-
-debian:sid@container-prep:
-  extends:
-    - .fdo.container-build@debian
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: 'sid'
-    FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
-    FDO_DISTRIBUTION_EXEC: $DEBIAN_EXEC
-
-centos:7.5.1804@container-prep:
-  extends:
-    - .fdo.container-build@centos
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '7.5.1804'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-    FDO_DISTRIBUTION_EXEC: $CENTOS_EXEC
-
-centos:7.6.1810@container-prep:
-  extends:
-    - .fdo.container-build@centos
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '7.6.1810'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-    FDO_DISTRIBUTION_EXEC: $CENTOS_EXEC
-
-centos:7.7.1908@container-prep:
-  extends:
-    - .fdo.container-build@centos
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '7.7.1908'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-    FDO_DISTRIBUTION_EXEC: $CENTOS_EXEC
-
-centos:7.8.2003@container-prep:
-  extends:
-    - .fdo.container-build@centos
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '7.8.2003'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-    FDO_DISTRIBUTION_EXEC: $CENTOS_EXEC
-
-centos:7.9.2009@container-prep:
-  extends:
-    - .fdo.container-build@centos
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '7.9.2009'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-    FDO_DISTRIBUTION_EXEC: $CENTOS_EXEC
-
-centos:8.1.1911@container-prep:
-  extends:
-    - .fdo.container-build@centos
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '8.1.1911'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-    FDO_DISTRIBUTION_EXEC: $CENTOS_EXEC
-
-centos:8.2.2004@container-prep:
-  extends:
-    - .fdo.container-build@centos
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '8.2.2004'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-    FDO_DISTRIBUTION_EXEC: $CENTOS_EXEC
-
-centos:8.3.2011@container-prep:
-  extends:
-    - .fdo.container-build@centos
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '8.3.2011'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-    FDO_DISTRIBUTION_EXEC: $CENTOS_EXEC
-
-alpine:latest@container-prep:
+alpine:3.18@container-prep:
   extends:
     - .fdo.container-build@alpine
   stage: prep
   variables:
     GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: 'latest'
+    FDO_DISTRIBUTION_VERSION: '3.18'
     FDO_DISTRIBUTION_TAG: $ALPINE_TAG
     FDO_DISTRIBUTION_EXEC: $ALPINE_EXEC
 
@@ -408,77 +188,14 @@ alpine:latest@container-prep:
   only:
     - schedules
 
-fedora:30@container-clean:
+centos:stream9@container-clean:
   extends:
     - .container-clean
   variables:
     GIT_STRATEGY: none
-    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/fedora/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: '30'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-
-fedora:31@container-clean:
-  extends:
-    - .container-clean
-  variables:
-    GIT_STRATEGY: none
-    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/fedora/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: '31'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-
-fedora:32@container-clean:
-  extends:
-    - .container-clean
-  variables:
-    GIT_STRATEGY: none
-    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/fedora/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: '32'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-
-fedora:33@container-clean:
-  extends:
-    - .container-clean
-  variables:
-    GIT_STRATEGY: none
-    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/fedora/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: '33'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-
-fedora:34@container-clean:
-  extends:
-    - .container-clean
-  variables:
-    GIT_STRATEGY: none
-    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/fedora/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: '34'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-
-fedora:35@container-clean:
-  extends:
-    - .container-clean
-  variables:
-    GIT_STRATEGY: none
-    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/fedora/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: '35'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-
-fedora:36@container-clean:
-  extends:
-    - .container-clean
-  variables:
-    GIT_STRATEGY: none
-    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/fedora/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: '36'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-
-fedora:37@container-clean:
-  extends:
-    - .container-clean
-  variables:
-    GIT_STRATEGY: none
-    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/fedora/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: '37'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/centos/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
+    FDO_DISTRIBUTION_VERSION: 'stream9'
+    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
 
 fedora:38@container-clean:
   extends:
@@ -488,15 +205,6 @@ fedora:38@container-clean:
     CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/fedora/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
     FDO_DISTRIBUTION_VERSION: '38'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-
-ubuntu:18.04@container-clean:
-  extends:
-    - .container-clean
-  variables:
-    GIT_STRATEGY: none
-    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/ubuntu/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: '18.04'
-    FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
 
 ubuntu:20.04@container-clean:
   extends:
@@ -516,148 +224,22 @@ ubuntu:22.04@container-clean:
     FDO_DISTRIBUTION_VERSION: '22.04'
     FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
 
-ubuntu:devel@container-clean:
-  extends:
-    - .container-clean
-  variables:
-    GIT_STRATEGY: none
-    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/ubuntu/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: 'devel'
-    FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
-
-ubuntu:rolling@container-clean:
-  extends:
-    - .container-clean
-  variables:
-    GIT_STRATEGY: none
-    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/ubuntu/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: 'rolling'
-    FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
-
-debian:9@container-clean:
+debian:12@container-clean:
   extends:
     - .container-clean
   variables:
     GIT_STRATEGY: none
     CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/debian/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: '9'
+    FDO_DISTRIBUTION_VERSION: '12'
     FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
 
-debian:10@container-clean:
-  extends:
-    - .container-clean
-  variables:
-    GIT_STRATEGY: none
-    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/debian/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: '10'
-    FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
-
-debian:11@container-clean:
-  extends:
-    - .container-clean
-  variables:
-    GIT_STRATEGY: none
-    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/debian/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: '11'
-    FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
-
-debian:testing@container-clean:
-  extends:
-    - .container-clean
-  variables:
-    GIT_STRATEGY: none
-    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/debian/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: 'testing'
-    FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
-
-debian:sid@container-clean:
-  extends:
-    - .container-clean
-  variables:
-    GIT_STRATEGY: none
-    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/debian/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: 'sid'
-    FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
-
-centos:7.5.1804@container-clean:
-  extends:
-    - .container-clean
-  variables:
-    GIT_STRATEGY: none
-    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/centos/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: '7.5.1804'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-
-centos:7.6.1810@container-clean:
-  extends:
-    - .container-clean
-  variables:
-    GIT_STRATEGY: none
-    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/centos/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: '7.6.1810'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-
-centos:7.7.1908@container-clean:
-  extends:
-    - .container-clean
-  variables:
-    GIT_STRATEGY: none
-    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/centos/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: '7.7.1908'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-
-centos:7.8.2003@container-clean:
-  extends:
-    - .container-clean
-  variables:
-    GIT_STRATEGY: none
-    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/centos/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: '7.8.2003'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-
-centos:7.9.2009@container-clean:
-  extends:
-    - .container-clean
-  variables:
-    GIT_STRATEGY: none
-    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/centos/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: '7.9.2009'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-
-centos:8.1.1911@container-clean:
-  extends:
-    - .container-clean
-  variables:
-    GIT_STRATEGY: none
-    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/centos/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: '8.1.1911'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-
-centos:8.2.2004@container-clean:
-  extends:
-    - .container-clean
-  variables:
-    GIT_STRATEGY: none
-    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/centos/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: '8.2.2004'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-
-centos:8.3.2011@container-clean:
-  extends:
-    - .container-clean
-  variables:
-    GIT_STRATEGY: none
-    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/centos/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: '8.3.2011'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-
-alpine:latest@container-clean:
+alpine:3.18@container-clean:
   extends:
     - .container-clean
   variables:
     GIT_STRATEGY: none
     CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/alpine/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: 'latest'
+    FDO_DISTRIBUTION_VERSION: '3.18'
     FDO_DISTRIBUTION_TAG: $ALPINE_TAG
 
 
@@ -685,100 +267,16 @@ alpine:latest@container-clean:
 #################################################################
 
 
-t_fedora:30:
+t_centos:stream9:
   extends:
     - .build@template
-    - .fdo.distribution-image@fedora
-    - .nm_artifacts_debug
-  variables:
-    FDO_DISTRIBUTION_VERSION: '30'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-  needs:
-    - "fedora:30@container-prep"
-  when: manual
-
-t_fedora:31:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@fedora
-    - .nm_artifacts_debug
-  variables:
-    FDO_DISTRIBUTION_VERSION: '31'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-  needs:
-    - "fedora:31@container-prep"
-  when: manual
-
-t_fedora:32:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@fedora
-    - .nm_artifacts_debug
-  variables:
-    FDO_DISTRIBUTION_VERSION: '32'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-  needs:
-    - "fedora:32@container-prep"
-  when: manual
-
-t_fedora:33:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@fedora
-    - .nm_artifacts_debug
-  variables:
-    FDO_DISTRIBUTION_VERSION: '33'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-  needs:
-    - "fedora:33@container-prep"
-  when: manual
-
-t_fedora:34:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@fedora
-    - .nm_artifacts_debug
-  variables:
-    FDO_DISTRIBUTION_VERSION: '34'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-  needs:
-    - "fedora:34@container-prep"
-  when: manual
-
-t_fedora:35:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@fedora
-    - .nm_artifacts_debug
-  variables:
-    FDO_DISTRIBUTION_VERSION: '35'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-  needs:
-    - "fedora:35@container-prep"
-  when: manual
-
-t_fedora:36:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@fedora
-    - .nm_artifacts_debug
-  variables:
-    FDO_DISTRIBUTION_VERSION: '36'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-  needs:
-    - "fedora:36@container-prep"
-  when: manual
-
-t_fedora:37:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@fedora
+    - .fdo.distribution-image@centos
     - .nm_artifacts
   variables:
-    FDO_DISTRIBUTION_VERSION: '37'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+    FDO_DISTRIBUTION_VERSION: 'stream9'
+    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
   needs:
-    - "fedora:37@container-prep"
+    - "centos:stream9@container-prep"
 
 t_fedora:38:
   extends:
@@ -790,18 +288,6 @@ t_fedora:38:
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
   needs:
     - "fedora:38@container-prep"
-  when: manual
-
-t_ubuntu:18.04:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@ubuntu
-    - .nm_artifacts_debug
-  variables:
-    FDO_DISTRIBUTION_VERSION: '18.04'
-    FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
-  needs:
-    - "ubuntu:18.04@container-prep"
   when: manual
 
 t_ubuntu:20.04:
@@ -828,196 +314,28 @@ t_ubuntu:22.04:
     - "ubuntu:22.04@container-prep"
   when: manual
 
-t_ubuntu:devel:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@ubuntu
-    - .nm_artifacts_debug
-  variables:
-    FDO_DISTRIBUTION_VERSION: 'devel'
-    FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
-  needs:
-    - "ubuntu:devel@container-prep"
-  when: manual
-
-t_ubuntu:rolling:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@ubuntu
-    - .nm_artifacts_debug
-  variables:
-    FDO_DISTRIBUTION_VERSION: 'rolling'
-    FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
-  needs:
-    - "ubuntu:rolling@container-prep"
-  when: manual
-
-t_debian:9:
+t_debian:12:
   extends:
     - .build@template
     - .fdo.distribution-image@debian
     - .nm_artifacts_debug
   variables:
-    FDO_DISTRIBUTION_VERSION: '9'
+    FDO_DISTRIBUTION_VERSION: '12'
     FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
   needs:
-    - "debian:9@container-prep"
+    - "debian:12@container-prep"
   when: manual
 
-t_debian:10:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@debian
-    - .nm_artifacts_debug
-  variables:
-    FDO_DISTRIBUTION_VERSION: '10'
-    FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
-  needs:
-    - "debian:10@container-prep"
-  when: manual
-
-t_debian:11:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@debian
-    - .nm_artifacts_debug
-  variables:
-    FDO_DISTRIBUTION_VERSION: '11'
-    FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
-  needs:
-    - "debian:11@container-prep"
-  when: manual
-
-t_debian:testing:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@debian
-    - .nm_artifacts_debug
-  variables:
-    FDO_DISTRIBUTION_VERSION: 'testing'
-    FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
-  needs:
-    - "debian:testing@container-prep"
-  when: manual
-
-t_debian:sid:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@debian
-    - .nm_artifacts_debug
-  variables:
-    FDO_DISTRIBUTION_VERSION: 'sid'
-    FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
-  needs:
-    - "debian:sid@container-prep"
-  when: manual
-
-t_centos:7.5.1804:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@centos
-    - .nm_artifacts_debug
-  variables:
-    FDO_DISTRIBUTION_VERSION: '7.5.1804'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-  needs:
-    - "centos:7.5.1804@container-prep"
-  when: manual
-
-t_centos:7.6.1810:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@centos
-    - .nm_artifacts_debug
-  variables:
-    FDO_DISTRIBUTION_VERSION: '7.6.1810'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-  needs:
-    - "centos:7.6.1810@container-prep"
-  when: manual
-
-t_centos:7.7.1908:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@centos
-    - .nm_artifacts_debug
-  variables:
-    FDO_DISTRIBUTION_VERSION: '7.7.1908'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-  needs:
-    - "centos:7.7.1908@container-prep"
-  when: manual
-
-t_centos:7.8.2003:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@centos
-    - .nm_artifacts_debug
-  variables:
-    FDO_DISTRIBUTION_VERSION: '7.8.2003'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-  needs:
-    - "centos:7.8.2003@container-prep"
-  when: manual
-
-t_centos:7.9.2009:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@centos
-    - .nm_artifacts_debug
-  variables:
-    FDO_DISTRIBUTION_VERSION: '7.9.2009'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-  needs:
-    - "centos:7.9.2009@container-prep"
-  when: manual
-
-t_centos:8.1.1911:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@centos
-    - .nm_artifacts_debug
-  variables:
-    FDO_DISTRIBUTION_VERSION: '8.1.1911'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-  needs:
-    - "centos:8.1.1911@container-prep"
-  when: manual
-
-t_centos:8.2.2004:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@centos
-    - .nm_artifacts_debug
-  variables:
-    FDO_DISTRIBUTION_VERSION: '8.2.2004'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-  needs:
-    - "centos:8.2.2004@container-prep"
-  when: manual
-
-t_centos:8.3.2011:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@centos
-    - .nm_artifacts_debug
-  variables:
-    FDO_DISTRIBUTION_VERSION: '8.3.2011'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-  needs:
-    - "centos:8.3.2011@container-prep"
-  when: manual
-
-t_alpine:latest:
+t_alpine:3.18:
   extends:
     - .build@template
     - .fdo.distribution-image@alpine
     - .nm_artifacts_debug
   variables:
-    FDO_DISTRIBUTION_VERSION: 'latest'
+    FDO_DISTRIBUTION_VERSION: '3.18'
     FDO_DISTRIBUTION_TAG: $ALPINE_TAG
   needs:
-    - "alpine:latest@container-prep"
+    - "alpine:3.18@container-prep"
   when: manual
 
 #################################################################
@@ -1028,12 +346,12 @@ t_alpine:latest:
 
 check-patch:
   extends:
-    - .fdo.distribution-image@fedora
+    - .fdo.distribution-image@centos
   variables:
-    FDO_DISTRIBUTION_VERSION: '37'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+    FDO_DISTRIBUTION_VERSION: 'stream9'
+    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
   needs:
-    - "fedora:37@container-prep"
+    - "centos:stream9@container-prep"
   stage: test
   script:
     - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh
@@ -1041,12 +359,12 @@ check-patch:
 
 check-tree:
   extends:
-    - .fdo.distribution-image@fedora
+    - .fdo.distribution-image@centos
   variables:
-    FDO_DISTRIBUTION_VERSION: '37'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+    FDO_DISTRIBUTION_VERSION: 'stream9'
+    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
   needs:
-    - "fedora:37@container-prep"
+    - "centos:stream9@container-prep"
   stage: test
   script:
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-python-black-format.sh --check
@@ -1065,9 +383,9 @@ pages:
   only:
     - main
   dependencies:
-    - t_fedora:37
+    - t_centos:stream9
   needs:
-    - t_fedora:37
+    - t_centos:stream9
 
 triage:issues:
   stage: triage
