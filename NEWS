@@ -1,4 +1,22 @@
 ===============================================
+NetworkManager-1.42.10
+Overview of changes since NetworkManager-1.42.8
+===============================================
+
+* Extend connection matching function for UUID in controller
+* Dispatch `dns-change` dispatcher event
+* Disable IPv6 when disabled in kernel
+* Skip VLAN filtering resetting if no vlan change changed when doing reapply
+* Checkpoint: Allow rollback on internal global DNS
+* Checkpoint: preserve in-memory state of connections
+* lldp: fix crash dereferencing NULL pointer during debug logging
+* Also use /etc/hosts for hostname resolution
+* Retry hostname resolution when it fails
+* sriov: only validate sriov capacity when enabled
+* Fix handling of OVS interfaces with netdev datapath and cloned MAC
+* Other minor fixes
+
+===============================================
 NetworkManager-1.42.8
 Overview of changes since NetworkManager-1.42.6
 ===============================================
