@@ -905,7 +905,8 @@ fw_call_cleanup(NMVpnConnection *self)
 static void
 vpn_cleanup(NMVpnConnection *self, NMDevice *parent_dev)
 {
-    const char *iface;
+    NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
+    const char             *iface;
 
     /* Remove zone from firewall */
     iface = nm_vpn_connection_get_ip_iface(self, FALSE);
@@ -917,6 +918,8 @@ vpn_cleanup(NMVpnConnection *self, NMDevice *parent_dev)
     fw_call_cleanup(self);
 
     _l3cfg_l3cd_clear_all(self);
+
+    nm_routing_rules_sync(_get_applied_connection(self), NM_TERNARY_FALSE, NULL, NULL, priv->netns);
 }
 
 static void
@@ -1242,6 +1245,7 @@ _parent_device_l3cd_add_gateway_route(NML3ConfigData *l3cd,
             .gateway    = parent_gw.addr4,
             .rt_source  = NM_IP_CONFIG_SOURCE_VPN,
             .metric_any = TRUE,
+            .table_any  = TRUE,
         };
     } else {
         route.r6 = (NMPlatformIP6Route){
@@ -1251,6 +1255,7 @@ _parent_device_l3cd_add_gateway_route(NML3ConfigData *l3cd,
             .gateway    = parent_gw.addr6,
             .rt_source  = NM_IP_CONFIG_SOURCE_VPN,
             .metric_any = TRUE,
+            .table_any  = TRUE,
         };
     }
     nm_l3_config_data_add_route(l3cd, addr_family, NULL, &route.rx);
@@ -1267,6 +1272,7 @@ _parent_device_l3cd_add_gateway_route(NML3ConfigData *l3cd,
                 .plen       = 32,
                 .rt_source  = NM_IP_CONFIG_SOURCE_VPN,
                 .metric_any = TRUE,
+                .table_any  = TRUE,
             };
         } else {
             route.r6 = (NMPlatformIP6Route){
@@ -1274,6 +1280,7 @@ _parent_device_l3cd_add_gateway_route(NML3ConfigData *l3cd,
                 .plen       = 128,
                 .rt_source  = NM_IP_CONFIG_SOURCE_VPN,
                 .metric_any = TRUE,
+                .table_any  = TRUE,
             };
         }
         nm_l3_config_data_add_route(l3cd, addr_family, NULL, &route.rx);
@@ -2225,6 +2232,8 @@ _dbus_signal_ip_config_cb(NMVpnConnection *self, int addr_family, GVariant *dict
     }
 
     _l3cfg_l3cd_set(self, L3CD_TYPE_IP_X(IS_IPv4), l3cd);
+
+    nm_routing_rules_sync(_get_applied_connection(self), NM_TERNARY_TRUE, NULL, NULL, priv->netns);
 
     _check_complete(self, TRUE);
 }
