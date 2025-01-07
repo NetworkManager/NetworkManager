@@ -183,9 +183,8 @@ create_and_realize(NMDevice              *device,
         g_set_error(error,
                     NM_DEVICE_ERROR,
                     NM_DEVICE_ERROR_FAILED,
-                    "unsupported IPVLAN mode %u in connection %s",
-                    nm_setting_ipvlan_get_mode(s_ipvlan),
-                    nm_connection_get_uuid(connection));
+                    "unsupported IPVLAN mode %u",
+                    nm_setting_ipvlan_get_mode(s_ipvlan));
         return FALSE;
     }
     lnk.mode         = setting_mode_to_platform(nm_setting_ipvlan_get_mode(s_ipvlan));
