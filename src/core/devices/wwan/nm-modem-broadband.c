@@ -917,8 +917,7 @@ complete_connection(NMModem             *modem,
                                   NULL,
                                   _("GSM connection"),
                                   NULL,
-                                  NULL,
-                                  TRUE);
+                                  NULL);
 
         return TRUE;
     }
@@ -938,8 +937,7 @@ complete_connection(NMModem             *modem,
                                   NULL,
                                   _("CDMA connection"),
                                   NULL,
-                                  iface,
-                                  TRUE);
+                                  iface);
 
         return TRUE;
     }

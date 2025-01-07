@@ -23,60 +23,14 @@ void nm_utils_ppp_ip_methods_enabled(NMConnection *connection,
                                      gboolean     *out_ip4_enabled,
                                      gboolean     *out_ip6_enabled);
 
-void _nm_utils_complete_generic_with_params(NMPlatform          *platform,
-                                            NMConnection        *connection,
-                                            const char          *ctype,
-                                            NMConnection *const *existing_connections,
-                                            const char          *preferred_id,
-                                            const char          *fallback_id_prefix,
-                                            const char          *ifname_prefix,
-                                            const char          *ifname,
-                                            ...) G_GNUC_NULL_TERMINATED;
-
-#define nm_utils_complete_generic_with_params(platform,             \
-                                              connection,           \
-                                              ctype,                \
-                                              existing_connections, \
-                                              preferred_id,         \
-                                              fallback_id_prefix,   \
-                                              ifname_prefix,        \
-                                              ifname,               \
-                                              ...)                  \
-    _nm_utils_complete_generic_with_params(platform,                \
-                                           connection,              \
-                                           ctype,                   \
-                                           existing_connections,    \
-                                           preferred_id,            \
-                                           fallback_id_prefix,      \
-                                           ifname_prefix,           \
-                                           ifname,                  \
-                                           ##__VA_ARGS__,           \
-                                           NULL)
-
-static inline void
-nm_utils_complete_generic(NMPlatform          *platform,
-                          NMConnection        *connection,
-                          const char          *ctype,
-                          NMConnection *const *existing_connections,
-                          const char          *preferred_id,
-                          const char          *fallback_id_prefix,
-                          const char          *ifname_prefix,
-                          const char          *ifname,
-                          gboolean             default_enable_ipv6)
-{
-    nm_utils_complete_generic_with_params(platform,
-                                          connection,
-                                          ctype,
-                                          existing_connections,
-                                          preferred_id,
-                                          fallback_id_prefix,
-                                          ifname_prefix,
-                                          ifname,
-                                          NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD,
-                                          default_enable_ipv6
-                                              ? NM_SETTING_IP6_CONFIG_METHOD_AUTO
-                                              : NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
-}
+void nm_utils_complete_generic(NMPlatform          *platform,
+                               NMConnection        *connection,
+                               const char          *ctype,
+                               NMConnection *const *existing_connections,
+                               const char          *preferred_id,
+                               const char          *fallback_id_prefix,
+                               const char          *ifname_prefix,
+                               const char          *ifname);
 
 typedef gboolean(NMUtilsMatchFilterFunc)(NMConnection *connection, gpointer user_data);
 
