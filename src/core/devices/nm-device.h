@@ -821,4 +821,10 @@ nm_device_get_hostname_from_dns_lookup(NMDevice *self, int addr_family, gboolean
 
 void nm_device_clear_dns_lookup_data(NMDevice *self, const char *reason);
 
+void nm_routing_rules_sync(NMConnection *applied_connection,
+                           NMTernary     set_mode,
+                           GPtrArray *(*get_extra_rules)(NMDevice *self),
+                           NMDevice *self,
+                           NMNetns  *netns);
+
 #endif /* __NETWORKMANAGER_DEVICE_H__ */
