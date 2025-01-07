@@ -365,8 +365,7 @@ complete_connection(NMDevice            *device,
                               NULL,
                               _("MACVLAN connection"),
                               NULL,
-                              NULL,
-                              TRUE);
+                              NULL);
 
     s_macvlan = nm_connection_get_setting_macvlan(connection);
     if (!s_macvlan) {

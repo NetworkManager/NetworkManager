@@ -402,8 +402,7 @@ complete_connection(NMDevice            *device,
                               NULL,
                               _("IP tunnel connection"),
                               NULL,
-                              NULL,
-                              TRUE);
+                              NULL);
 
     s_ip_tunnel = nm_connection_get_setting_ip_tunnel(connection);
     if (!s_ip_tunnel) {

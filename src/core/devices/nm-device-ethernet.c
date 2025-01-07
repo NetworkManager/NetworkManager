@@ -1640,8 +1640,7 @@ complete_connection(NMDevice            *device,
                                   NULL,
                                   _("Veth connection"),
                                   "veth",
-                                  NULL,
-                                  TRUE);
+                                  NULL);
 
         s_veth = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_VETH);
 
@@ -1698,8 +1697,7 @@ complete_connection(NMDevice            *device,
         NULL,
         s_pppoe ? _("PPPoE connection") : _("Wired connection"),
         NULL,
-        nm_setting_wired_get_mac_address(s_wired) ? NULL : nm_device_get_iface(device),
-        s_pppoe ? FALSE : TRUE); /* No IPv6 by default yet for PPPoE */
+        nm_setting_wired_get_mac_address(s_wired) ? NULL : nm_device_get_iface(device));
 
     return TRUE;
 }

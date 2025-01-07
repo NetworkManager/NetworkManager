@@ -161,8 +161,7 @@ complete_connection(NMDevice            *device,
                               NULL,
                               _("6LOWPAN connection"),
                               NULL,
-                              NULL,
-                              TRUE);
+                              NULL);
 
     s_6lowpan = NM_SETTING_6LOWPAN(nm_connection_get_setting(connection, NM_TYPE_SETTING_6LOWPAN));
     if (!s_6lowpan) {

@@ -159,8 +159,7 @@ complete_connection(NMDevice            *device,
         NULL,
         _("InfiniBand connection"),
         NULL,
-        nm_setting_infiniband_get_mac_address(s_infiniband) ? NULL : nm_device_get_iface(device),
-        TRUE);
+        nm_setting_infiniband_get_mac_address(s_infiniband) ? NULL : nm_device_get_iface(device));
 
     if (!nm_setting_infiniband_get_transport_mode(s_infiniband))
         g_object_set(G_OBJECT(s_infiniband),

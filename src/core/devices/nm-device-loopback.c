@@ -59,14 +59,14 @@ complete_connection(NMDevice            *device,
                     NMConnection *const *existing_connections,
                     GError             **error)
 {
-    nm_utils_complete_generic_with_params(nm_device_get_platform(device),
-                                          connection,
-                                          NM_SETTING_LOOPBACK_SETTING_NAME,
-                                          existing_connections,
-                                          NULL,
-                                          _("Loopback connection"),
-                                          NULL,
-                                          nm_device_get_ip_iface(device));
+    nm_utils_complete_generic(nm_device_get_platform(device),
+                              connection,
+                              NM_SETTING_LOOPBACK_SETTING_NAME,
+                              existing_connections,
+                              NULL,
+                              _("Loopback connection"),
+                              NULL,
+                              nm_device_get_ip_iface(device));
 
     _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_LOOPBACK);
 

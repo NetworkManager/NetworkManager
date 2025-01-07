@@ -1296,8 +1296,7 @@ complete_connection(NMDevice            *device,
         ssid_utf8,
         ssid_utf8,
         NULL,
-        nm_setting_wireless_get_mac_address(s_wifi) ? NULL : nm_device_get_iface(device),
-        TRUE);
+        nm_setting_wireless_get_mac_address(s_wifi) ? NULL : nm_device_get_iface(device));
 
     if (hidden)
         g_object_set(s_wifi, NM_SETTING_WIRELESS_HIDDEN, TRUE, NULL);
