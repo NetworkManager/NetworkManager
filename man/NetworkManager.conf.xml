@@ -1547,6 +1547,29 @@ managed=1
            </para>
           </listitem>
         </varlistentry>
+        <varlistentry>
+          <term><varname>resolve-mode</varname></term>
+          <listitem>
+            <para>
+             String indicating how DNS servers retrieved from global configuration and connections
+             should be used. <literal>backup</literal> - Indicates that they can be freely merged
+             and used for the same purposes. <literal>prefer</literal> - Forbids DNS servers
+             retrieved from connections to be used for general queries that are not subdomains of
+             domains set by connection. <literal>exclusive</literal> - Forbids use of connection
+             DNS servers for any query. Currently relevant only for Dnsconfd plugin.
+           </para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>certification-authority</varname></term>
+          <listitem>
+            <para>
+             String specifying absolute path to bundle of CA certificates that must be used for
+             validation of certificates presented by DNS servers when encrypted DNS is used.
+             Currently relevant only for Dnsconfd plugin.
+           </para>
+          </listitem>
+        </varlistentry>
       </variablelist>
     </para>
   </refsect1>
