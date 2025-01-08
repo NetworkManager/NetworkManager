@@ -262,6 +262,12 @@ detect_dirname() {
         # the unpacked tarball (that is, stripping the suffix).
         for T in $(ls -1 "$BUILD_TYPE"*"$suffix" 2>/dev/null); do
             D="${T%$suffix}"
+            # At some point FEDPKG changed the behavior of "prep" command
+            # now it generates the directory with "-build" suffix and the
+            # real directory inside. We just move it out.
+            rm -rf $D
+            mv $D-build/$D .
+            rm -rf $D-build
             [[ -d "$D" ]] && DIRS=("${DIRS[@]}" "$D")
         done
     done
