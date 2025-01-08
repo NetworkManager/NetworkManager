@@ -120,6 +120,13 @@ typedef enum {
 
 } NMConfigChangeFlags;
 
+typedef enum {
+    NM_DNS_RESOLVE_MODE_BACKUP    = 0,
+    NM_DNS_RESOLVE_MODE_PREFER    = 1,
+    NM_DNS_RESOLVE_MODE_EXCLUSIVE = 2,
+    _NM_NUM_DNS_RESOLVE_MODES     = 3
+} NMDnsResolveMode;
+
 typedef struct _NMConfigDataClass NMConfigDataClass;
 
 typedef struct _NMGlobalDnsConfig NMGlobalDnsConfig;
@@ -269,6 +276,9 @@ GKeyFile *nm_config_data_clone_keyfile_intern(const NMConfigData *self);
 
 const char *const *nm_global_dns_config_get_searches(const NMGlobalDnsConfig *dns_config);
 const char *const *nm_global_dns_config_get_options(const NMGlobalDnsConfig *dns_config);
+const char *nm_global_dns_config_get_certification_authority(const NMGlobalDnsConfig *dns_config);
+guint       nm_global_dns_config_get_resolve_mode(const NMGlobalDnsConfig *dns_config);
+
 guint              nm_global_dns_config_get_num_domains(const NMGlobalDnsConfig *dns_config);
 NMGlobalDnsDomain *nm_global_dns_config_get_domain(const NMGlobalDnsConfig *dns_config, guint i);
 NMGlobalDnsDomain *nm_global_dns_config_lookup_domain(const NMGlobalDnsConfig *dns_config,
