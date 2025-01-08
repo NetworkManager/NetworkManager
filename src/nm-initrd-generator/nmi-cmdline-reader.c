@@ -36,10 +36,11 @@ typedef struct {
     GHashTable   *znet_ifnames;
 
     /* Parameters to be set for all connections */
-    gboolean ignore_auto_dns;
-    int      dhcp_timeout;
-    char    *dhcp4_vci;
-    char    *dhcp_dscp;
+    gboolean   ignore_auto_dns;
+    int        dhcp_timeout;
+    char      *dhcp4_vci;
+    char      *dhcp_dscp;
+    GPtrArray *global_dns;
 
     gint64 carrier_timeout_sec;
 } Reader;
@@ -69,6 +70,7 @@ reader_destroy(Reader *reader, gboolean free_hash)
 
     g_ptr_array_unref(reader->array);
     g_ptr_array_unref(reader->vlan_parents);
+    nm_clear_pointer(&reader->global_dns, g_ptr_array_unref);
     g_hash_table_unref(reader->explicit_ip_connections);
     hash = g_steal_pointer(&reader->hash);
     nm_clear_g_free(&reader->hostname);
@@ -1220,6 +1222,21 @@ reader_parse_rd_znet(Reader *reader, char *argument, gboolean net_ifnames)
 }
 
 static void
+reader_parse_global_dns(Reader *reader, char *argument)
+{
+    if (!nm_dns_uri_parse(AF_UNSPEC, argument, NULL)) {
+        _LOGW(LOGD_CORE, "rd.net.dns: invalid server '%s'", argument);
+        return;
+    }
+
+    if (!reader->global_dns) {
+        reader->global_dns = g_ptr_array_new_with_free_func(g_free);
+    }
+
+    g_ptr_array_add(reader->global_dns, g_strdup(argument));
+}
+
+static void
 reader_parse_ethtool(Reader *reader, char *argument)
 {
     NMConnection   *connection;
@@ -1392,7 +1409,8 @@ nmi_cmdline_reader_parse(const char        *etc_connections_dir,
                          const char        *sysfs_dir,
                          const char *const *argv,
                          char             **hostname,
-                         gint64            *carrier_timeout_sec)
+                         gint64            *carrier_timeout_sec,
+                         char            ***global_dns_servers)
 {
     Reader                      *reader;
     const char                  *tag;
@@ -1509,6 +1527,8 @@ nmi_cmdline_reader_parse(const char        *etc_connections_dir,
             bootif_val = g_strdup(argument);
         } else if (nm_streq(tag, "rd.ethtool")) {
             reader_parse_ethtool(reader, argument);
+        } else if (nm_streq(tag, "rd.net.dns")) {
+            reader_parse_global_dns(reader, argument);
         }
     }
 
@@ -1625,6 +1645,16 @@ nmi_cmdline_reader_parse(const char        *etc_connections_dir,
     NM_SET_OUT(hostname, g_steal_pointer(&reader->hostname));
 
     NM_SET_OUT(carrier_timeout_sec, reader->carrier_timeout_sec);
+
+    if (reader->global_dns) {
+        if (global_dns_servers) {
+            g_ptr_array_add(reader->global_dns, NULL);
+            *global_dns_servers = (char **) g_ptr_array_free(reader->global_dns, FALSE);
+            reader->global_dns  = NULL;
+        }
+    } else {
+        NM_SET_OUT(global_dns_servers, NULL);
+    }
 
     return reader_destroy(reader, FALSE);
 }

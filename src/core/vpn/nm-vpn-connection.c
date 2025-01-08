@@ -2060,14 +2060,14 @@ _dbus_signal_ip_config_cb(NMVpnConnection *self, int addr_family, GVariant *dict
     if (IS_IPv4) {
         if (g_variant_lookup(dict, NM_VPN_PLUGIN_IP4_CONFIG_DNS, "au", &var_iter)) {
             while (g_variant_iter_next(var_iter, "u", &u32))
-                nm_l3_config_data_add_nameserver_detail(l3cd, addr_family, &u32, NULL);
+                nm_l3_config_data_add_nameserver_addr(l3cd, addr_family, &u32);
             g_variant_iter_free(var_iter);
         }
     } else {
         if (g_variant_lookup(dict, NM_VPN_PLUGIN_IP6_CONFIG_DNS, "aay", &var_iter)) {
             while (g_variant_iter_next(var_iter, "@ay", &v)) {
                 if (nm_ip_addr_set_from_variant(AF_INET6, &v_addr, v, NULL))
-                    nm_l3_config_data_add_nameserver_detail(l3cd, addr_family, &v_addr, NULL);
+                    nm_l3_config_data_add_nameserver_addr(l3cd, addr_family, &v_addr);
                 g_variant_unref(v);
             }
             g_variant_iter_free(var_iter);

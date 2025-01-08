@@ -157,7 +157,7 @@ lease_to_ip6_config(NMDhcpSystemd *self, sd_dhcp6_lease *lease, gint32 ts, GErro
         for (i = 0; i < num; i++) {
             nm_inet6_ntop(&dns[i], addr_str);
             g_string_append(nm_gstring_add_space_delimiter(str), addr_str);
-            nm_l3_config_data_add_nameserver_detail(l3cd, AF_INET6, &dns[i], NULL);
+            nm_l3_config_data_add_nameserver_addr(l3cd, AF_INET6, &dns[i]);
         }
         nm_dhcp_option_add_option(options,
                                   TRUE,

@@ -499,7 +499,7 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
         for (s = dns; dns && *s; s++) {
             if (inet_pton(AF_INET, *s, &tmp_addr) > 0) {
                 if (tmp_addr) {
-                    nm_l3_config_data_add_nameserver_detail(l3cd, AF_INET, &tmp_addr, NULL);
+                    nm_l3_config_data_add_nameserver_addr(l3cd, AF_INET, &tmp_addr);
                     _LOG2I(LOGD_DHCP4, iface, "  nameserver '%s'", *s);
                 }
             } else
@@ -704,7 +704,7 @@ nm_dhcp_utils_ip6_config_from_options(NMDedupMultiIndex *multi_idx,
         for (s = dns; dns && *s; s++) {
             if (inet_pton(AF_INET6, *s, &tmp_addr) > 0) {
                 if (!IN6_IS_ADDR_UNSPECIFIED(&tmp_addr)) {
-                    nm_l3_config_data_add_nameserver_detail(l3cd, AF_INET6, &tmp_addr, NULL);
+                    nm_l3_config_data_add_nameserver_addr(l3cd, AF_INET6, &tmp_addr);
                     _LOG2I(LOGD_DHCP6, iface, "  nameserver '%s'", *s);
                 }
             } else

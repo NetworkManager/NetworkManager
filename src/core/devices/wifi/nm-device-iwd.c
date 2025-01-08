@@ -3739,7 +3739,7 @@ nm_device_iwd_parse_netconfig(NMDeviceIwd *self, int addr_family, GVariantIter *
             if (inet_pton(addr_family, str_value, &dns_bin) != 1)
                 goto param_error;
 
-            nm_l3_config_data_add_nameserver_detail(l3cd, addr_family, &dns_bin, NULL);
+            nm_l3_config_data_add_nameserver_addr(l3cd, addr_family, &dns_bin);
             nm_l3_config_data_set_dns_priority(l3cd, addr_family, NM_DNS_PRIORITY_DEFAULT_NORMAL);
         }
     }

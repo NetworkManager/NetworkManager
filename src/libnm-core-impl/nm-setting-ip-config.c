@@ -4095,7 +4095,7 @@ _ip_config_add_dns(NMSettingIPConfig *setting, const char *dns)
 
     priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
 
-    s = nm_utils_dnsname_normalize(NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting), dns, &s_free);
+    s = nm_dns_uri_normalize(NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting), dns, &s_free);
     if (!s)
         s = dns;
 
@@ -4186,7 +4186,7 @@ nm_setting_ip_config_remove_dns_by_value(NMSettingIPConfig *setting, const char 
         gs_free char *s_free = NULL;
         const char   *s;
 
-        s = nm_utils_dnsname_normalize(NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting), dns, &s_free);
+        s = nm_dns_uri_normalize(NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting), dns, &s_free);
         if (s && !nm_streq(dns, s))
             idx = nm_strv_ptrarray_find_first(priv->dns, dns);
     }
@@ -5615,11 +5615,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         for (i = 0; i < priv->dns->len; i++) {
             const char *dns = priv->dns->pdata[i];
 
-            if (!nm_utils_dnsname_parse(NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting),
-                                        dns,
-                                        NULL,
-                                        NULL,
-                                        NULL)) {
+            if (!nm_dns_uri_parse(NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting), dns, NULL)) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -6510,11 +6506,16 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
     /**
      * NMSettingIPConfig:dns:
      *
-     * Array of IP addresses of DNS servers.
+     * Array of DNS servers.
      *
-     * For DoT (DNS over TLS), the SNI server name can be specified by appending
-     * "#example.com" to the IP address of the DNS server. This currently only has
-     * effect when using systemd-resolved.
+     * Each server can be specified either as a plain IP address (optionally followed
+     * by a "#" and the SNI server name for DNS over TLS) or with a URI syntax.
+     *
+     * When it is specified as an URI, the following forms are supported:
+     * dns+udp://ADDRESS[:PORT], dns+tls://ADDRESS[:PORT][#SERVERNAME] .
+     *
+     * When using the URI syntax, IPv6 addresses must be enclosed in square
+     * brackets ('[', ']').
      **/
     obj_properties[PROP_DNS] =
         g_param_spec_boxed(NM_SETTING_IP_CONFIG_DNS,

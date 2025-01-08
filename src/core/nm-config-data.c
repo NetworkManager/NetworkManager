@@ -1259,10 +1259,19 @@ load_global_dns(GKeyFile *keyfile, gboolean internal)
         if (strv) {
             nm_strv_cleanup(strv, TRUE, TRUE, TRUE);
             for (i = 0, j = 0; strv[i]; i++) {
-                if (nm_inet_is_valid(AF_INET, strv[i]) || nm_inet_is_valid(AF_INET6, strv[i]))
-                    strv[j++] = strv[i];
-                else
+                gs_free char *to_free = NULL;
+
+                if (nm_dns_uri_normalize(AF_UNSPEC, strv[i], &to_free)) {
+                    if (to_free) {
+                        g_free(strv[i]);
+                        strv[j++] = g_steal_pointer(&to_free);
+                    } else {
+                        strv[j++] = strv[i];
+                    }
+                } else {
+                    nm_log_dbg(LOGD_CORE, "invalid global name server \"%s\"", strv[i]);
                     g_free(strv[i]);
+                }
             }
             if (j == 0)
                 g_free(strv);

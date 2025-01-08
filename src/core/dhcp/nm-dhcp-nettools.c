@@ -387,7 +387,7 @@ lease_parse_address_list(NDhcp4ClientLease       *lease,
                                                  nm_inet4_ntop(addr, addr_str));
                 continue;
             }
-            nm_l3_config_data_add_nameserver_detail(l3cd, AF_INET, &addr, NULL);
+            nm_l3_config_data_add_nameserver_addr(l3cd, AF_INET, &addr);
             break;
         case NM_DHCP_OPTION_DHCP4_NIS_SERVERS:
             nm_l3_config_data_add_nis_server(l3cd, addr);

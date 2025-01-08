@@ -11397,176 +11397,179 @@ test_connection_path(void)
 /*****************************************************************************/
 
 static void
-_t_dnsname_1(const char *str, const char *exp_addr, const char *exp_server_name)
+t_dns_0(const char *str)
 {
-    int           addr_family;
-    NMIPAddr      exp_addr_bin;
-    gboolean      addr_family_request;
-    gboolean      r;
-    int           detect_addr_family;
-    NMIPAddr      detect_addr;
-    const char   *detect_server_name;
-    int          *p_detect_addr_family = &detect_addr_family;
-    NMIPAddr     *p_detect_addr        = &detect_addr;
-    const char  **p_detect_server_name = &detect_server_name;
-    char          str_construct_buf[100];
-    char          str_construct_buf2[100];
-    const char   *str_construct;
-    const char   *str_construct2;
-    gsize         l;
-    const char   *str_normalized;
-    gs_free char *str_normalized_alloc = NULL;
+    NMDnsServer server = {};
+    gboolean    ret;
 
-    g_assert(str);
-    g_assert(exp_addr);
+    ret = nm_dns_uri_parse(AF_UNSPEC, str, &server);
 
-    r = nm_inet_parse_bin(AF_UNSPEC, exp_addr, &addr_family, &exp_addr_bin);
-    g_assert(r);
-    g_assert(NM_IN_SET(addr_family, AF_INET, AF_INET6));
-
-    addr_family_request = nmtst_get_rand_bool();
-    if (nmtst_get_rand_bool())
-        p_detect_addr = NULL;
-    if ((addr_family_request || !p_detect_addr) && nmtst_get_rand_bool())
-        p_detect_addr_family = NULL;
-    if (nmtst_get_rand_bool())
-        p_detect_server_name = NULL;
-
-    r = nm_utils_dnsname_parse(addr_family_request ? addr_family : AF_UNSPEC,
-                               str,
-                               p_detect_addr_family,
-                               p_detect_addr,
-                               p_detect_server_name);
-    g_assert(r);
-
-    if (p_detect_addr_family)
-        g_assert_cmpint(addr_family, ==, detect_addr_family);
-    if (p_detect_addr)
-        g_assert_cmpstr(nmtst_inet_to_string(addr_family, &detect_addr), ==, exp_addr);
-    if (p_detect_server_name)
-        g_assert_cmpstr(detect_server_name, ==, exp_server_name);
-
-    r = nm_utils_dnsname_parse(addr_family == AF_INET ? AF_INET6 : AF_INET,
-                               str,
-                               p_detect_addr_family,
-                               p_detect_addr,
-                               p_detect_server_name);
-    g_assert(!r);
-
-    /* Construct the expected value. */
-    str_construct = nm_utils_dnsname_construct(addr_family,
-                                               &exp_addr_bin,
-                                               exp_server_name,
-                                               str_construct_buf,
-                                               sizeof(str_construct_buf));
-    g_assert(str_construct);
-    g_assert(str_construct == str_construct_buf);
-    g_assert(strlen(str_construct) < sizeof(str_construct_buf));
-
-    /* Check that a too short buffer causes truncation. */
-    l              = nmtst_get_rand_uint32() % (strlen(str_construct) + 10);
-    str_construct2 = nm_utils_dnsname_construct(addr_family,
-                                                &exp_addr_bin,
-                                                exp_server_name,
-                                                str_construct_buf2,
-                                                l);
-    if (str_construct2) {
-        g_assert(str_construct2 == str_construct_buf2);
-        g_assert_cmpstr(str_construct2, ==, str_construct);
-        g_assert(l > strlen(str_construct));
-    } else
-        g_assert(l <= strlen(str_construct));
-
-    if (!nm_streq(str_construct, str)) {
-        _t_dnsname_1(str_construct, exp_addr, exp_server_name);
-    }
-
-    str_normalized = nm_utils_dnsname_normalize(nmtst_get_rand_bool() ? addr_family : AF_UNSPEC,
-                                                str,
-                                                &str_normalized_alloc);
-    g_assert(str_normalized);
-    if (str_normalized_alloc) {
-        g_assert(str_normalized == str_normalized_alloc);
-        g_assert_cmpstr(str_normalized, !=, str);
-    } else {
-        g_assert(str == str_normalized);
-    }
-    g_assert_cmpstr(str_normalized, ==, str_construct);
-
-    nm_clear_g_free(&str_normalized_alloc);
-    str_normalized = nm_utils_dnsname_normalize(addr_family == AF_INET ? AF_INET6 : AF_INET,
-                                                str,
-                                                &str_normalized_alloc);
-    g_assert(!str_normalized);
-    g_assert(!str_normalized_alloc);
+    g_assert(!ret);
 }
 
 static void
-_t_dnsname_0(const char *str)
+dns_uri_parse_ok(const char    *str,
+                 int            addr_family,
+                 NMDnsUriScheme scheme,
+                 const char    *addr,
+                 int            port,
+                 const char    *sname,
+                 const char    *ifname)
 {
-    gboolean      addr_family_request;
-    int           detect_addr_family;
-    NMIPAddr      detect_addr;
-    const char   *detect_server_name;
-    int          *p_detect_addr_family = &detect_addr_family;
-    NMIPAddr     *p_detect_addr        = &detect_addr;
-    const char  **p_detect_server_name = &detect_server_name;
-    const char   *str_normalized;
-    gs_free char *str_normalized_alloc = NULL;
-    gboolean      r;
+    NMDnsServer dns = {};
+    char        addrstr[NM_INET_ADDRSTRLEN];
+    gboolean    ret;
 
-    g_assert(str);
+    for (int i = 0; i < 2; i++) {
+        gboolean af_unspec = i;
 
-    addr_family_request = nmtst_get_rand_bool();
-    if (nmtst_get_rand_bool())
-        p_detect_addr = NULL;
-    if ((addr_family_request || !p_detect_addr) && nmtst_get_rand_bool())
-        p_detect_addr_family = NULL;
-    if (nmtst_get_rand_bool())
-        p_detect_server_name = NULL;
+        ret = nm_dns_uri_parse(af_unspec ? AF_UNSPEC : addr_family, str, &dns);
+        g_assert(ret);
 
-    r = nm_utils_dnsname_parse(addr_family_request ? nmtst_rand_select(AF_INET, AF_INET6)
-                                                   : AF_UNSPEC,
-                               str,
-                               p_detect_addr_family,
-                               p_detect_addr,
-                               p_detect_server_name);
-    g_assert(!r);
+        g_assert_cmpint(addr_family, ==, dns.addr_family);
+        g_assert_cmpint(port, ==, dns.port);
+        g_assert_cmpstr(sname, ==, dns.servername);
+        g_assert_cmpstr(ifname ?: "", ==, dns.interface);
 
-    str_normalized = nm_utils_dnsname_normalize(nmtst_rand_select(AF_UNSPEC, AF_INET, AF_INET6),
-                                                str,
-                                                &str_normalized_alloc);
-    g_assert(!str_normalized);
-    g_assert(!str_normalized_alloc);
+        nm_inet_ntop(dns.addr_family, &dns.addr, addrstr);
+        g_assert_cmpstr(addrstr, ==, addr);
+
+        /* Parse with the wrong address family must fail */
+        ret = nm_dns_uri_parse(addr_family == AF_INET ? AF_INET6 : AF_INET, str, &dns);
+        g_assert(!ret);
+    }
+}
+
+#define t_dns_1(str, af, scheme, addr, port, sname, ifname) \
+    dns_uri_parse_ok((str),                                 \
+                     (AF_##af),                             \
+                     (NM_DNS_URI_SCHEME_##scheme),          \
+                     (addr),                                \
+                     (port),                                \
+                     (sname),                               \
+                     (ifname))
+
+static void
+test_dns_uri_parse(void)
+{
+    /* clang-format off */
+    t_dns_1("dns+tls://8.8.8.8",                   INET,  TLS,  "8.8.8.8",            -1, NULL,      NULL);
+    t_dns_1("dns+tls://8.8.8.8",                   INET,  TLS,  "8.8.8.8",            -1, NULL,      NULL);
+    t_dns_1("dns+tls://1.2.3.4#name",              INET,  TLS,  "1.2.3.4",            -1, "name",    NULL);
+    t_dns_1("dns+tls://1.2.3.4#a.b.c",             INET,  TLS,  "1.2.3.4",            -1, "a.b.c",   NULL);
+    t_dns_1("dns+tls://1.2.3.4:53",                INET,  TLS,  "1.2.3.4",            53, NULL,      NULL);
+    t_dns_1("dns+tls://1.2.3.4:53#foobar",         INET,  TLS,  "1.2.3.4",            53, "foobar",  NULL);
+    t_dns_1("dns+tls://192.168.120.250:99",        INET,  TLS,  "192.168.120.250",    99, NULL,      NULL);
+    t_dns_1("dns+udp://8.8.8.8:65535",             INET,  UDP,  "8.8.8.8",         65535, NULL,      NULL);
+
+    t_dns_1("dns+udp://[fd01::1]",                 INET6, UDP,  "fd01::1",            -1, NULL,      NULL);
+    t_dns_1("dns+tls://[fd01::2]:5353",            INET6, UDP,  "fd01::2",          5353, NULL,      NULL);
+    t_dns_1("dns+tls://[::1]#name",                INET6, UDP,  "::1",                -1, "name",    NULL);
+    t_dns_1("dns+tls://[::2]:65535#name",          INET6, UDP,  "::2",             65535, "name",    NULL);
+    t_dns_1("dns+udp://[::ffff:1.2.3.4]",          INET6, UDP,  "::ffff:1.2.3.4",     -1, NULL,      NULL);
+    t_dns_1("dns+tls://[fe80::1%eth0]",            INET6, UDP,  "fe80::1",            -1, NULL,      "eth0");
+    t_dns_1("dns+tls://[fe80::2%en1]:53#a",        INET6, UDP,  "fe80::2",            53, "a",       "en1");
+    t_dns_1("dns+tls://[fe80::1%en3456789012345]", INET6, UDP,  "fe80::1",            -1, NULL, "en3456789012345");
+
+    t_dns_1("1.2.3.4",                             INET,  NONE, "1.2.3.4",            -1, NULL,      NULL);
+    t_dns_1("1.2.3.4#foo",                         INET,  NONE, "1.2.3.4",            -1, "foo",     NULL);
+    t_dns_1("1::#x",                               INET6, NONE, "1::",                -1, "x",       NULL);
+    t_dns_1("1::0#x",                              INET6, NONE, "1::",                -1, "x",       NULL);
+    t_dns_1("192.168.0.1",                         INET,  NONE, "192.168.0.1",        -1, NULL,      NULL);
+    t_dns_1("192.168.0.1#tst.com",                 INET,  NONE, "192.168.0.1",        -1, "tst.com", NULL);
+    t_dns_1("fe80::18",                            INET6, NONE, "fe80::18",           -1, NULL,      NULL);
+    t_dns_1("fe80::18#foo.com",                    INET6, NONE, "fe80::18",           -1, "foo.com", NULL);
+    /* clang-format on */
+
+    t_dns_0("http://8.8.8.8");              /* unsupported schema */
+    t_dns_0("dns+udp://1.2.3.4#name");      /* servername not supported for plain UDP */
+    t_dns_0("dns+tls://1.2.3");             /* invalid address */
+    t_dns_0("dns+tls://fd01::1");           /* IPv6 requires brackets */
+    t_dns_0("dns+tls://[fd13:a:aaaa]");     /* invalid address */
+    t_dns_0("dns+tls://1.2.3.4:1:1");       /* invalid syntax */
+    t_dns_0("dns+tls://1.2.3.4#name#name"); /* invalid syntax */
+    t_dns_0("dns+tls://1.2.3.4%eth0");      /* interface only allowed for IPv6 */
+    t_dns_0("dns+tls://[2001::1%eth0]");    /* interface only allowed for IPv6 link-local */
+    t_dns_0("dns+tls://[fe80::1%en34567890123456]"); /* interface name too long */
+    t_dns_0("1.2.3.4#");
+    t_dns_0("1::0#");
+    t_dns_0("192.168.0.1:53");
+    t_dns_0("192.168.0.1:53#example.com");
+    t_dns_0("fe80::18%19");
+    t_dns_0("fe80::18%lo");
+    t_dns_0("[fe80::18]:53");
+    t_dns_0("[fe80::18]:53%19");
+    t_dns_0("[fe80::18]:53%lo");
+    t_dns_0("fe80::18%19#hoge.com");
+    t_dns_0("[fe80::18]:53#hoge.com");
+    t_dns_0("[fe80::18]:53%19");
+    t_dns_0("[fe80::18]:53%19#hoge.com");
+    t_dns_0("[fe80::18]:53%lo");
+    t_dns_0("[fe80::18]:53%lo#hoge.com");
 }
 
 static void
-test_dnsname(void)
+test_dns_uri_parse_plain(void)
 {
-    _t_dnsname_1("1.2.3.4", "1.2.3.4", NULL);
-    _t_dnsname_1("1.2.3.4#foo", "1.2.3.4", "foo");
-    _t_dnsname_1("1::#x", "1::", "x");
-    _t_dnsname_1("1::0#x", "1::", "x");
-    _t_dnsname_1("192.168.0.1", "192.168.0.1", NULL);
-    _t_dnsname_1("192.168.0.1#test.com", "192.168.0.1", "test.com");
-    _t_dnsname_1("fe80::18", "fe80::18", NULL);
-    _t_dnsname_1("fe80::18#hoge.com", "fe80::18", "hoge.com");
+    struct {
+        const char *input;
+        int         input_af;
+        gboolean    result;
+        const char *addrstr;
+    } values[] = {
+        {"1.2.3.4", AF_INET, TRUE, "1.2.3.4"},
+        {"1.2.3.4", AF_INET6, FALSE, NULL},
+        {"1.2.3.4", AF_UNSPEC, TRUE, "1.2.3.4"},
+        {"1234:5555:ffff:dddd::4321", AF_INET, FALSE, NULL},
+        {"1234:5555:ffff:dddd::4321", AF_INET6, TRUE, "1234:5555:ffff:dddd::4321"},
+        {"1234:5555:ffff:dddd::4321", AF_UNSPEC, TRUE, "1234:5555:ffff:dddd::4321"},
+        {"192.0.2.1#example.com", AF_INET, TRUE, "192.0.2.1"},
+        {"192.0.2.1#example.com", AF_UNSPEC, TRUE, "192.0.2.1"},
+        {"192.0.2.1#example.com", AF_INET6, FALSE, NULL},
+        {"dns+tls://1.2.3.4", AF_INET, FALSE, NULL},
+        {"dns+tls://[fd01::1]", AF_INET, FALSE, NULL},
+        {"dns+udp://1.2.3.4:53", AF_INET, TRUE, "1.2.3.4"},
+        {"dns+udp://1.2.3.4:54", AF_INET, FALSE, NULL},
+        {"dns+udp://[fd01::1]", AF_INET6, TRUE, "fd01::1"},
+        {"dns+udp://[fd01::1]:53", AF_INET6, TRUE, "fd01::1"},
+        {"dns+udp://[fd01::1]:60000", AF_INET, FALSE, NULL},
+    };
+    guint i;
 
-    _t_dnsname_0("1.2.3.4#");
-    _t_dnsname_0("1::0#");
-    _t_dnsname_0("192.168.0.1:53");
-    _t_dnsname_0("192.168.0.1:53#example.com");
-    _t_dnsname_0("fe80::18%19");
-    _t_dnsname_0("fe80::18%lo");
-    _t_dnsname_0("[fe80::18]:53");
-    _t_dnsname_0("[fe80::18]:53%19");
-    _t_dnsname_0("[fe80::18]:53%lo");
-    _t_dnsname_0("fe80::18%19#hoge.com");
-    _t_dnsname_0("[fe80::18]:53#hoge.com");
-    _t_dnsname_0("[fe80::18]:53%19");
-    _t_dnsname_0("[fe80::18]:53%19#hoge.com");
-    _t_dnsname_0("[fe80::18]:53%lo");
-    _t_dnsname_0("[fe80::18]:53%lo#hoge.com");
+    for (i = 0; i < G_N_ELEMENTS(values); i++) {
+        char     addrstr[NM_INET_ADDRSTRLEN];
+        gboolean result;
+        NMIPAddr addr;
+
+        result = nm_dns_uri_parse_plain(values[i].input_af, values[i].input, addrstr, &addr);
+        g_assert_cmpint(result, ==, values[i].result);
+        if (result) {
+            char buf[NM_INET_ADDRSTRLEN];
+
+            nm_inet_ntop(strchr(addrstr, ':') ? AF_INET6 : AF_INET, addr.addr_ptr, buf);
+            g_assert_cmpstr(buf, ==, addrstr);
+            g_assert_cmpstr(addrstr, ==, values[i].addrstr);
+        }
+    }
+}
+
+static void
+t_dns_uri_normalize(const char *input, const char *expected)
+{
+    const char   *str;
+    gs_free char *str_free = NULL;
+
+    str = nm_dns_uri_normalize(AF_UNSPEC, input, &str_free);
+    g_assert_cmpstr(str, ==, expected);
+}
+
+static void
+test_dns_uri_normalize(void)
+{
+    t_dns_uri_normalize("8.8.8.8", "8.8.8.8");
+    t_dns_uri_normalize("dns+tls://[2001:0:0::1234]:999#name", "dns+tls://[2001::1234]:999#name");
+    t_dns_uri_normalize("dns+udp://[0::1]:0123", "dns+udp://[::1]:123");
+    t_dns_uri_normalize("8.8.8.888", NULL);
 }
 
 /*****************************************************************************/
@@ -11945,7 +11948,9 @@ main(int argc, char **argv)
     g_test_add_func("/core/general/test_system_encodings", test_system_encodings);
     g_test_add_func("/core/general/test_direct_string_is_refstr", test_direct_string_is_refstr);
     g_test_add_func("/core/general/test_connection_path", test_connection_path);
-    g_test_add_func("/core/general/test_dnsname", test_dnsname);
+    g_test_add_func("/core/general/test_dns_uri_parse", test_dns_uri_parse);
+    g_test_add_func("/core/general/test_dns_uri_get_legacy", test_dns_uri_parse_plain);
+    g_test_add_func("/core/general/test_dns_uri_normalize", test_dns_uri_normalize);
     g_test_add_func("/core/general/test_dhcp_iaid_hexstr", test_dhcp_iaid_hexstr);
 
     return g_test_run();

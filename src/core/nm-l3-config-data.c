@@ -1460,8 +1460,7 @@ nm_l3_config_data_add_nameserver(NML3ConfigData *self, int addr_family, const ch
     if (NM_MORE_ASSERTS > 5) {
         gs_free char *s_free = NULL;
 
-        nm_assert(
-            nm_streq0(nm_utils_dnsname_normalize(addr_family, nameserver, &s_free), nameserver));
+        nm_assert(nm_streq0(nm_dns_uri_normalize(addr_family, nameserver, &s_free), nameserver));
     }
 
     p_arr = &self->nameservers_x[NM_IS_IPv4(addr_family)];
@@ -1474,27 +1473,16 @@ nm_l3_config_data_add_nameserver(NML3ConfigData *self, int addr_family, const ch
 }
 
 gboolean
-nm_l3_config_data_add_nameserver_detail(NML3ConfigData *self,
-                                        int             addr_family,
-                                        gconstpointer   addr_bin,
-                                        const char     *server_name)
+nm_l3_config_data_add_nameserver_addr(NML3ConfigData *self, int addr_family, gconstpointer addr_bin)
 {
-    gs_free char *s_free = NULL;
-    char         *s;
-    gsize         l;
+    char addrstr[NM_INET_ADDRSTRLEN];
 
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
     nm_assert_addr_family(addr_family);
     nm_assert(addr_bin);
 
-    l = (NM_INET_ADDRSTRLEN + 2u) + (server_name ? strlen(server_name) : 0u);
-
-    s = nm_malloc_maybe_a(300, l, &s_free);
-
-    if (!nm_utils_dnsname_construct(addr_family, addr_bin, server_name, s, l))
-        nm_assert_not_reached();
-
-    return nm_l3_config_data_add_nameserver(self, addr_family, s);
+    nm_inet_ntop(addr_family, addr_bin, addrstr);
+    return nm_l3_config_data_add_nameserver(self, addr_family, addrstr);
 }
 
 gboolean
