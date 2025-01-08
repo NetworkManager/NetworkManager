@@ -32,6 +32,11 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * The initrd-generator understands the "rd.net.dns" option to configure
   global name servers.
 * Drop support for the "dhcpcanon" DHCP client.
+* global-dns configuration section now has 2 additional keys: "resolve-mode"
+  and "certification-authority".
+* Dnsconfd plugin can now be used for configuration of system-wide DNS
+  caching resolver. If dnsconfd plugin is enabled and ipvX.routed-dns is
+  set to -1 then adding routes is by default enabled.
 
 =============================================
 NetworkManager-1.50
