@@ -4009,11 +4009,12 @@ _l3cfg_routed_dns(NML3Cfg *self, NML3ConfigData *l3cd)
 
         if (route_added) {
             NMPlatformRoutingRule rule;
+            NMPObject             rule_obj;
 
             /* Add a routing rule that selects the table when not using the
              * special fwmark. Note that the rule is shared between all
-             * devices that use DNS routes. At the moment there is no cleanup
-             * mechanism: once added the rule stays forever. */
+             * devices that use DNS routes. There is no cleanup mechanism:
+             * once added the rule stays forever. */
             rule = ((NMPlatformRoutingRule) {
                 .addr_family = addr_family,
                 .flags       = FIB_RULE_INVERT,
@@ -4025,9 +4026,17 @@ _l3cfg_routed_dns(NML3Cfg *self, NML3ConfigData *l3cd)
                 .protocol    = RTPROT_STATIC,
             });
 
-            /* FIXME: don't add the rule every time */
-            nmp_global_tracker_track_rule(self->priv.global_tracker, &rule, 10, self, NULL);
-            nmp_global_tracker_sync(self->priv.global_tracker, NMP_OBJECT_TYPE_ROUTING_RULE, TRUE);
+            nmp_object_stackinit(&rule_obj, NMP_OBJECT_TYPE_ROUTING_RULE, &rule);
+
+            if (!nm_platform_lookup_obj(self->priv.platform,
+                                        NMP_CACHE_ID_TYPE_OBJECT_TYPE,
+                                        &rule_obj)) {
+                _LOGT("adding rule to DNS routing table");
+                nmp_global_tracker_track_rule(self->priv.global_tracker, &rule, 10, self, NULL);
+                nmp_global_tracker_sync(self->priv.global_tracker,
+                                        NMP_OBJECT_TYPE_ROUTING_RULE,
+                                        TRUE);
+            }
         }
 
         self->priv.dns_route_added_x[IS_IPv4] = route_added;
