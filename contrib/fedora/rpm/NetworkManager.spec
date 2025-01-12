@@ -204,6 +204,7 @@ Requires(postun): systemd
 Requires: dbus >= %{dbus_version}
 Requires: glib2 >= %{glib2_version}
 Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
+Requires: libbpf
 
 Recommends: iputils
 
@@ -308,6 +309,9 @@ BuildRequires: firewalld-filesystem
 BuildRequires: iproute
 BuildRequires: iproute-tc
 BuildRequires: libnvme-devel >= 1.5
+BuildRequires: libbpf-devel
+BuildRequires: libxdp-devel
+BuildRequires: bpftool
 
 Provides: %{name}-dispatcher%{?_isa} = %{epoch}:%{version}-%{release}
 
