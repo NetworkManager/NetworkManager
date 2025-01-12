@@ -198,6 +198,7 @@ Requires(postun): systemd
 Requires: dbus >= %{dbus_version}
 Requires: glib2 >= %{glib2_version}
 Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
+Requires: libbpf
 
 %if 0%{?rhel} == 8
 # Older libndp versions use select() (rh#1933041). On well known distros,
@@ -246,6 +247,7 @@ Conflicts: NetworkManager-dispatcher-routing-rules <= 1:1.47.5-3
 %endif
 
 BuildRequires: gcc
+BuildRequires: clang
 BuildRequires: pkgconfig
 BuildRequires: meson
 BuildRequires: gettext-devel >= 0.19.8
@@ -300,6 +302,9 @@ BuildRequires: firewalld-filesystem
 BuildRequires: iproute
 BuildRequires: iproute-tc
 BuildRequires: libnvme-devel >= 1.5
+BuildRequires: libbpf-devel
+BuildRequires: libxdp-devel
+BuildRequires: bpftool
 
 Provides: %{name}-dispatcher%{?_isa} = %{epoch}:%{version}-%{release}
 
