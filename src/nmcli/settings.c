@@ -246,10 +246,11 @@ wireless_band_channel_changed_cb(GObject *object, GParamSpec *pspec, gpointer us
 
     mode = nm_setting_wireless_get_mode(NM_SETTING_WIRELESS(object));
     if (!mode || !*mode || strcmp(mode, NM_SETTING_WIRELESS_MODE_INFRA) == 0) {
-        nmc_print(_("Warning: %s.%s set to '%s', but it might be ignored in infrastructure mode\n"),
-                  nm_setting_get_name(NM_SETTING(s_wireless)),
-                  g_param_spec_get_name(pspec),
-                  value);
+        nmc_printerr(
+            _("Warning: %s.%s set to '%s', but it might be ignored in infrastructure mode\n"),
+            nm_setting_get_name(NM_SETTING(s_wireless)),
+            g_param_spec_get_name(pspec),
+            value);
     }
 }
 
@@ -266,9 +267,9 @@ connection_controller_changed_cb(GObject *object, GParamSpec *pspec, gpointer us
         s_ipv4 = nm_connection_get_setting_by_name(connection, NM_SETTING_IP4_CONFIG_SETTING_NAME);
         s_ipv6 = nm_connection_get_setting_by_name(connection, NM_SETTING_IP6_CONFIG_SETTING_NAME);
         if (s_ipv4 || s_ipv6) {
-            nmc_print(_("Warning: setting %s.%s requires removing ipv4 and ipv6 settings\n"),
-                      nm_setting_get_name(NM_SETTING(s_con)),
-                      g_param_spec_get_name(pspec));
+            nmc_printerr(_("Warning: setting %s.%s requires removing ipv4 and ipv6 settings\n"),
+                         nm_setting_get_name(NM_SETTING(s_con)),
+                         g_param_spec_get_name(pspec));
             tmp_str = nmc_get_user_input(_("Do you want to remove them? [yes] "));
             if (!tmp_str || matches(tmp_str, "yes")) {
                 if (s_ipv4)
@@ -376,8 +377,8 @@ _set_fcn_precheck_connection_secondaries(NMClient   *client,
         if (nm_utils_is_uuid(*iter)) {
             con = nmc_find_connection(connections, "uuid", *iter, NULL, FALSE);
             if (!con) {
-                nmc_print(_("Warning: %s is not an UUID of any existing connection profile\n"),
-                          *iter);
+                nmc_printerr(_("Warning: %s is not an UUID of any existing connection profile\n"),
+                             *iter);
             } else {
                 /* Currently, NM only supports VPN connections as secondaries */
                 if (!nm_connection_is_type(con, NM_SETTING_VPN_SETTING_NAME)) {
@@ -434,13 +435,13 @@ _env_warn_fcn_handle(
 
     switch (warn_level) {
     case NM_META_ENV_WARN_LEVEL_WARN:
-        nmc_print(_("Warning: %s\n"), m);
+        nmc_printerr(_("Warning: %s\n"), m);
         return;
     case NM_META_ENV_WARN_LEVEL_INFO:
         nmc_print(_("Info: %s\n"), m);
         return;
     }
-    nmc_print(_("Error: %s\n"), m);
+    nmc_printerr(_("Error: %s\n"), m);
 }
 
 static NMDevice *const *

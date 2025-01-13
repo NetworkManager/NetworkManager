@@ -933,7 +933,7 @@ do_general_hostname(const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
 
     hostname = *argv;
     if (next_arg(nmc, &argc, &argv, NULL) == 0)
-        nmc_print("Warning: ignoring extra garbage after '%s' hostname\n", hostname);
+        nmc_printerr("Warning: ignoring extra garbage after '%s' hostname\n", hostname);
 
     nmc->should_wait++;
     nm_client_save_hostname_async(nmc->client, hostname, NULL, save_hostname_cb, nmc);
