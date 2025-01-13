@@ -119,8 +119,10 @@ tier{{distro.tier}}:{{distro.name}}:{{version}}@prep:
     FDO_DISTRIBUTION_TAG: ${{distro.name.upper()}}_TAG
     FDO_DISTRIBUTION_EXEC: ${{distro.name.upper()}}_EXEC
   rules:
+{% if distro.tier == 1 %}
+    - if: $CI_PIPELINE_SOURCE != 'schedule' || $SCHEDULED_PIPELINE_NAME == "weekly"
+{% else %}
     - if: $CI_PIPELINE_SOURCE != 'schedule'
-{% if distro.tier > 1 %}
       when: manual
       allow_failure: true
 {% endif %}
@@ -253,12 +255,13 @@ triage:issues:
 
 coverity:
   extends:
-    - .fdo.distribution-image@fedora
+    - .fdo.distribution-image@{{default_distro.name}}
   variables:
-    FDO_DISTRIBUTION_VERSION: '40'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+    FDO_DISTRIBUTION_VERSION: '{{default_distro.versions[0]}}'
+    FDO_DISTRIBUTION_TAG: ${{default_distro.name.upper()}}_TAG
   stage: coverity
-  needs: []
+  needs:
+    - "tier{{default_distro.tier}}:{{default_distro.name}}:{{default_distro.versions[0]}}@prep"
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $SCHEDULED_PIPELINE_NAME == "weekly"
   script:

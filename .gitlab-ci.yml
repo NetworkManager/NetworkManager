@@ -60,11 +60,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-490e97b0b9c7'
-  CENTOS_TAG:  'tag-4a2c52092329'
-  DEBIAN_TAG:  'tag-aef8f2fd2198'
-  FEDORA_TAG:  'tag-4a2c52092329'
-  UBUNTU_TAG:  'tag-aef8f2fd2198'
+  ALPINE_TAG:  'tag-28624746b6b1'
+  CENTOS_TAG:  'tag-ca7bb4b2cd94'
+  DEBIAN_TAG:  'tag-37f5e32f6021'
+  FEDORA_TAG:  'tag-ca7bb4b2cd94'
+  UBUNTU_TAG:  'tag-37f5e32f6021'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
@@ -112,7 +112,7 @@ tier1:fedora:41@prep:
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
     FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
   rules:
-    - if: $CI_PIPELINE_SOURCE != 'schedule'
+    - if: $CI_PIPELINE_SOURCE != 'schedule' || $SCHEDULED_PIPELINE_NAME == "weekly"
 
 tier2:fedora:rawhide@prep:
   extends:
@@ -674,10 +674,11 @@ coverity:
   extends:
     - .fdo.distribution-image@fedora
   variables:
-    FDO_DISTRIBUTION_VERSION: '40'
+    FDO_DISTRIBUTION_VERSION: '41'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
   stage: coverity
-  needs: []
+  needs:
+    - "tier1:fedora:41@prep"
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $SCHEDULED_PIPELINE_NAME == "weekly"
   script:
