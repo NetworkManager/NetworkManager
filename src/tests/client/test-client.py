@@ -86,6 +86,9 @@ ENV_NM_TEST_REGENERATE = "NM_TEST_REGENERATE"
 # numbers enabled.
 ENV_NM_TEST_WITH_LINENO = "NM_TEST_WITH_LINENO"
 
+# Log pexpect output to stderr, for debuging
+ENV_NM_TEST_LOG_PEXPECT = "NM_TEST_LOG_PEXPECT"
+
 ENV_NM_TEST_ASAN_OPTIONS = "NM_TEST_ASAN_OPTIONS"
 ENV_NM_TEST_LSAN_OPTIONS = "NM_TEST_LSAN_OPTIONS"
 ENV_NM_TEST_UBSAN_OPTIONS = "NM_TEST_UBSAN_OPTIONS"
@@ -689,7 +692,9 @@ class Util:
         argv, valgrind_log = Util.cmd_create_argv(cmd_path, args)
         env = Util.cmd_create_env(extra_env=extra_env)
 
-        pexp = pexpect.spawn(argv[0], argv[1:], timeout=10, env=env)
+        pexp = pexpect.spawn(argv[0], argv[1:], timeout=10, env=env, encoding="utf-8")
+        if conf.get(ENV_NM_TEST_LOG_PEXPECT):
+            pexp.logfile = sys.stderr
 
         pexp.str_last_chars = 100000
 
@@ -775,6 +780,8 @@ class Configuration:
             v = Util.is_bool(os.environ.get(ENV_NM_TEST_REGENERATE, None))
         elif name == ENV_NM_TEST_WITH_LINENO:
             v = Util.is_bool(os.environ.get(ENV_NM_TEST_WITH_LINENO, None))
+        elif name == ENV_NM_TEST_LOG_PEXPECT:
+            v = Util.is_bool(os.environ.get(ENV_NM_TEST_LOG_PEXPECT, None))
         elif name == ENV_NM_TEST_VALGRIND:
             if self.get(ENV_NM_TEST_REGENERATE):
                 v = False
