@@ -3510,9 +3510,9 @@ do_connection_down(const NMCCommand *cmd, NmCli *nmc, int argc, const char *cons
         active = found_active_cons->pdata[i];
 
         if (!nm_client_deactivate_connection(nmc->client, active, NULL, &error)) {
-            nmc_print(_("Connection '%s' deactivation failed: %s\n"),
-                      nm_active_connection_get_id(active),
-                      error->message);
+            nmc_printerr(_("Connection '%s' deactivation failed: %s\n"),
+                         nm_active_connection_get_id(active),
+                         error->message);
             g_clear_error(&error);
 
             if (info) {
@@ -3999,8 +3999,8 @@ normalized_controller_for_port(const GPtrArray *connections,
     }
 
     if (!out_controller) {
-        nmc_print(_("Warning: controller='%s' doesn't refer to any existing profile.\n"),
-                  controller);
+        nmc_printerr(_("Warning: controller='%s' doesn't refer to any existing profile.\n"),
+                     controller);
         out_controller = controller;
         if (out_type)
             *out_type = type;
@@ -6944,7 +6944,7 @@ load_history_cmds(const char *uuid)
     kf       = g_key_file_new();
     if (!g_key_file_load_from_file(kf, filename, G_KEY_FILE_KEEP_COMMENTS, &err)) {
         if (g_error_matches(err, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_PARSE))
-            nmc_print("Warning: %s parse error: %s\n", filename, err->message);
+            nmc_printerr("Warning: %s parse error: %s\n", filename, err->message);
         g_key_file_free(kf);
         g_free(filename);
         return;
@@ -6983,7 +6983,7 @@ save_history_cmds(const char *uuid)
     if (!g_key_file_load_from_file(kf, filename, G_KEY_FILE_KEEP_COMMENTS, &error)) {
         if (!g_error_matches(error, G_FILE_ERROR, G_FILE_ERROR_NOENT)
             && !g_error_matches(error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND)) {
-            nmc_print("Warning: %s parse error: %s\n", filename, error->message);
+            nmc_printerr("Warning: %s parse error: %s\n", filename, error->message);
             return;
         }
         g_clear_error(&error);
@@ -7256,7 +7256,7 @@ editor_main_help(const char *command)
                         "is not saved, the user is asked to confirm the action.\n"));
             break;
         default:
-            nmc_print(_("Unknown command: '%s'\n"), command);
+            nmc_printerr(_("Unknown command: '%s'\n"), command);
             break;
         }
     }
@@ -7393,7 +7393,7 @@ editor_sub_usage(const char *command)
                         "is not saved, the user is asked to confirm the action.\n"));
             break;
         default:
-            nmc_print(_("Unknown command: '%s'\n"), command);
+            nmc_printerr(_("Unknown command: '%s'\n"), command);
             break;
         }
     }
@@ -7477,7 +7477,7 @@ progress_activation_editor_cb(gpointer user_data)
     } else if (ac_state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED
                || dev_state == NM_DEVICE_STATE_FAILED) {
         nmc_terminal_erase_line();
-        nmc_print(_("Error: Connection activation failed.\n"));
+        nmc_printerr(_("Error: Connection activation failed.\n"));
         goto finish;
     }
 
@@ -7704,9 +7704,9 @@ property_edit_submenu(NmCli               *nmc,
                                                   prop_val_user,
                                                   &tmp_err);
             if (!set_result) {
-                nmc_print(_("Error: failed to set '%s' property: %s\n"),
-                          prop_name,
-                          tmp_err->message);
+                nmc_printerr(_("Error: failed to set '%s' property: %s\n"),
+                             prop_name,
+                             tmp_err->message);
                 g_clear_error(&tmp_err);
             }
             break;
@@ -7723,9 +7723,9 @@ property_edit_submenu(NmCli               *nmc,
                                           NM_META_ACCESSOR_MODIFIER_SET,
                                           prop_val_user,
                                           &tmp_err)) {
-                nmc_print(_("Error: failed to set '%s' property: %s\n"),
-                          prop_name,
-                          tmp_err->message);
+                nmc_printerr(_("Error: failed to set '%s' property: %s\n"),
+                             prop_name,
+                             tmp_err->message);
                 g_clear_error(&tmp_err);
             }
             break;
@@ -7738,7 +7738,7 @@ property_edit_submenu(NmCli               *nmc,
                                                             : NM_META_ACCESSOR_MODIFIER_SET),
                                           cmd_property_arg,
                                           &tmp_err)) {
-                nmc_print(_("Error: %s\n"), tmp_err->message);
+                nmc_printerr(_("Error: %s\n"), tmp_err->message);
                 g_clear_error(&tmp_err);
             }
             break;
@@ -7757,7 +7757,7 @@ property_edit_submenu(NmCli               *nmc,
                          || matches(cmd_property_arg, "all"))
                     editor_show_connection(connection, nmc);
                 else
-                    nmc_print(_("Unknown command argument: '%s'\n"), cmd_property_arg);
+                    nmc_printerr(_("Unknown command argument: '%s'\n"), cmd_property_arg);
             } else {
                 gs_free char *prop_val = NULL;
 
@@ -7785,7 +7785,7 @@ property_edit_submenu(NmCli               *nmc,
 
         case NMC_EDITOR_SUB_CMD_UNKNOWN:
         default:
-            nmc_print(_("Unknown command: '%s'\n"), cmd_property_user);
+            nmc_printerr(_("Unknown command: '%s'\n"), cmd_property_user);
             break;
         }
     }
@@ -7863,7 +7863,7 @@ ask_check_setting(const NmcConfig                         *nmc_config,
                                           valid_settings_main,
                                           valid_settings_port,
                                           &err))) {
-        nmc_print(_("Error: invalid setting name; %s\n"), err->message);
+        nmc_printerr(_("Error: invalid setting name; %s\n"), err->message);
         g_clear_error(&err);
     }
     return setting_name;
@@ -7888,7 +7888,7 @@ ask_check_property(const NmcConfig *nmc_config,
 
     prop_name = nmc_string_is_valid(prop_name_user, valid_props, &tmp_err);
     if (!prop_name)
-        nmc_print(_("Error: property %s\n"), tmp_err->message);
+        nmc_printerr(_("Error: property %s\n"), tmp_err->message);
 
     return prop_name;
 }
@@ -8098,15 +8098,15 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                                                   NM_META_ACCESSOR_MODIFIER_ADD,
                                                   prop_val_user,
                                                   &tmp_err)) {
-                        nmc_print(_("Error: failed to set '%s' property: %s\n"),
-                                  prop_name,
-                                  tmp_err->message);
+                        nmc_printerr(_("Error: failed to set '%s' property: %s\n"),
+                                     prop_name,
+                                     tmp_err->message);
                         g_clear_error(&tmp_err);
                     }
                 } else {
-                    nmc_print(_("Error: no setting selected; valid are [%s]\n"),
-                              valid_settings_str);
-                    nmc_print(_("use 'goto <setting>' first, or 'set <setting>.<property>'\n"));
+                    nmc_printerr(_("Error: no setting selected; valid are [%s]\n"),
+                                 valid_settings_str);
+                    nmc_printerr(_("use 'goto <setting>' first, or 'set <setting>.<property>'\n"));
                 }
             } else {
                 gs_free char              *prop_name  = NULL;
@@ -8126,9 +8126,10 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                                                             valid_settings_port);
                         ss         = ss_created;
                         if (!ss) {
-                            nmc_print(_("Error: invalid setting argument '%s'; valid are [%s]\n"),
-                                      cmd_arg_s,
-                                      valid_settings_str);
+                            nmc_printerr(
+                                _("Error: invalid setting argument '%s'; valid are [%s]\n"),
+                                cmd_arg_s,
+                                valid_settings_str);
                             break;
                         }
                     }
@@ -8136,14 +8137,14 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                     if (menu_ctx.curr_setting)
                         ss = menu_ctx.curr_setting;
                     else {
-                        nmc_print(_("Error: missing setting for '%s' property\n"), cmd_arg_p);
+                        nmc_printerr(_("Error: missing setting for '%s' property\n"), cmd_arg_p);
                         break;
                     }
                 }
 
                 prop_name = is_property_valid(ss, cmd_arg_p, &tmp_err);
                 if (!prop_name) {
-                    nmc_print(_("Error: invalid property: %s\n"), tmp_err->message);
+                    nmc_printerr(_("Error: invalid property: %s\n"), tmp_err->message);
                     g_clear_error(&tmp_err);
                     break;
                 }
@@ -8173,9 +8174,9 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                                                         : NM_META_ACCESSOR_MODIFIER_SET,
                                               cmd_arg_v,
                                               &tmp_err)) {
-                    nmc_print(_("Error: failed to set '%s' property: %s\n"),
-                              prop_name,
-                              tmp_err->message);
+                    nmc_printerr(_("Error: failed to set '%s' property: %s\n"),
+                                 prop_name,
+                                 tmp_err->message);
                     g_clear_error(&tmp_err);
                 }
 
@@ -8206,7 +8207,7 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
 
                     setting_info = nm_meta_setting_info_editor_find_by_name(setting_name, FALSE);
                     if (!setting_info) {
-                        nmc_print(_("Error: unknown setting '%s'\n"), setting_name);
+                        nmc_printerr(_("Error: unknown setting '%s'\n"), setting_name);
                         break;
                     }
 
@@ -8278,13 +8279,14 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                                                   NM_META_ACCESSOR_MODIFIER_SET,
                                                   NULL,
                                                   &tmp_err)) {
-                        nmc_print(_("Error: failed to remove value of '%s': %s\n"),
-                                  prop_name,
-                                  tmp_err->message);
+                        nmc_printerr(_("Error: failed to remove value of '%s': %s\n"),
+                                     prop_name,
+                                     tmp_err->message);
                         g_clear_error(&tmp_err);
                     }
                 } else
-                    nmc_print(_("Error: no argument given; valid are [%s]\n"), valid_settings_str);
+                    nmc_printerr(_("Error: no argument given; valid are [%s]\n"),
+                                 valid_settings_str);
             } else {
                 NMSetting *ss = NULL;
                 gboolean   descr_all;
@@ -8306,9 +8308,10 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                             nmc_print(_("Setting '%s' is not present in the connection.\n"),
                                       user_s);
                         } else {
-                            nmc_print(_("Error: invalid setting argument '%s'; valid are [%s]\n"),
-                                      user_s,
-                                      valid_settings_str);
+                            nmc_printerr(
+                                _("Error: invalid setting argument '%s'; valid are [%s]\n"),
+                                user_s,
+                                valid_settings_str);
                         }
                         break;
                     }
@@ -8340,9 +8343,9 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                                                                 : NM_META_ACCESSOR_MODIFIER_SET,
                                                       cmd_arg_v ? cmd_arg_v : NULL,
                                                       &tmp_err)) {
-                            nmc_print(_("Error: failed to remove value of '%s': %s\n"),
-                                      prop_name,
-                                      tmp_err->message);
+                            nmc_printerr(_("Error: failed to remove value of '%s': %s\n"),
+                                         prop_name,
+                                         tmp_err->message);
                         }
                     } else {
                         NMSetting *s_tmp;
@@ -8366,8 +8369,8 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                                 nmc_tab_completion.setting = NULL; /* for TAB completion */
                             }
                         } else {
-                            nmc_print(_("Error: %s properties, nor it is a setting name.\n"),
-                                      tmp_err->message);
+                            nmc_printerr(_("Error: %s properties, nor it is a setting name.\n"),
+                                         tmp_err->message);
                         }
                     }
                 }
@@ -8390,9 +8393,9 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                     /* Show property description */
                     print_property_description(menu_ctx.curr_setting, prop_name);
                 } else {
-                    nmc_print(_("Error: no setting selected; valid are [%s]\n"),
-                              valid_settings_str);
-                    nmc_print(
+                    nmc_printerr(_("Error: no setting selected; valid are [%s]\n"),
+                                 valid_settings_str);
+                    nmc_printerr(
                         _("use 'goto <setting>' first, or 'describe <setting>.<property>'\n"));
                 }
             } else {
@@ -8414,9 +8417,10 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                                                     valid_settings_main,
                                                     valid_settings_port);
                         if (!ss) {
-                            nmc_print(_("Error: invalid setting argument '%s'; valid are [%s]\n"),
-                                      user_s,
-                                      valid_settings_str);
+                            nmc_printerr(
+                                _("Error: invalid setting argument '%s'; valid are [%s]\n"),
+                                user_s,
+                                valid_settings_str);
                             break;
                         }
                         ss_free = ss;
@@ -8425,9 +8429,9 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                     ss = menu_ctx.curr_setting;
 
                 if (!ss) {
-                    nmc_print(_("Error: no setting selected; valid are [%s]\n"),
-                              valid_settings_str);
-                    nmc_print(
+                    nmc_printerr(_("Error: no setting selected; valid are [%s]\n"),
+                                 valid_settings_str);
+                    nmc_printerr(
                         _("use 'goto <setting>' first, or 'describe <setting>.<property>'\n"));
                 } else if (descr_all) {
                     /* Show description for all properties */
@@ -8451,9 +8455,9 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                         if (s_tmp)
                             print_setting_description(s_tmp);
                         else {
-                            nmc_print(_("Error: invalid property: %s, "
-                                        "neither a valid setting name.\n"),
-                                      tmp_err->message);
+                            nmc_printerr(_("Error: invalid property: %s, "
+                                           "neither a valid setting name.\n"),
+                                         tmp_err->message);
                         }
                     }
                 }
@@ -8481,13 +8485,13 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                                                   valid_settings_port,
                                                   NULL);
                         if (!s_name) {
-                            nmc_print(_("Error: unknown setting: '%s'\n"), user_s);
+                            nmc_printerr(_("Error: unknown setting: '%s'\n"), user_s);
                             break;
                         }
                         ss = nm_connection_get_setting_by_name(connection, s_name);
                         if (!ss) {
-                            nmc_print(_("Error: '%s' setting not present in the connection\n"),
-                                      s_name);
+                            nmc_printerr(_("Error: '%s' setting not present in the connection\n"),
+                                         s_name);
                             break;
                         }
                     } else
@@ -8518,9 +8522,9 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                                 /* Print the whole setting */
                                 editor_show_setting(s_tmp, nmc);
                             } else
-                                nmc_print(_("Error: invalid property: %s%s\n"),
-                                          err->message,
-                                          cmd_arg_s ? "" : _(", neither a valid setting name"));
+                                nmc_printerr(_("Error: invalid property: %s%s\n"),
+                                             err->message,
+                                             cmd_arg_s ? "" : _(", neither a valid setting name"));
                             g_clear_error(&err);
                         }
                     }
@@ -8536,7 +8540,7 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
         case NMC_EDITOR_MAIN_CMD_VERIFY:
             /* Verify current setting or the whole connection */
             if (cmd_arg && !nm_streq(cmd_arg, "all") && !nm_streq(cmd_arg, "fix")) {
-                nmc_print(_("Invalid verify option: %s\n"), cmd_arg);
+                nmc_printerr(_("Invalid verify option: %s\n"), cmd_arg);
                 break;
             }
 
@@ -8544,9 +8548,9 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                 gs_free_error GError *tmp_err = NULL;
 
                 nm_setting_verify(menu_ctx.curr_setting, NULL, &tmp_err);
-                nmc_print(_("Verify setting '%s': %s\n"),
-                          nm_setting_get_name(menu_ctx.curr_setting),
-                          tmp_err ? tmp_err->message : "OK");
+                nmc_printerr(_("Verify setting '%s': %s\n"),
+                             nm_setting_get_name(menu_ctx.curr_setting),
+                             tmp_err ? tmp_err->message : "OK");
             } else {
                 gs_free_error GError *tmp_err = NULL;
                 gboolean              fixed   = TRUE;
@@ -8559,9 +8563,15 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                     g_clear_error(&tmp_err);
                     fixed = nm_connection_normalize(connection, NULL, &modified, &tmp_err);
                 }
-                nmc_print(_("Verify connection: %s\n"), tmp_err ? tmp_err->message : "OK");
+
+                if (tmp_err) {
+                    nmc_printerr(_("Verify connection: %s\n"), tmp_err->message);
+                } else {
+                    nmc_print(_("Verify connection: %s\n"), "OK");
+                }
+
                 if (!fixed)
-                    nmc_print(_("The error cannot be fixed automatically.\n"));
+                    nmc_printerr(_("The error cannot be fixed automatically.\n"));
             }
             break;
 
@@ -8581,7 +8591,7 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                     else if (matches(cmd_arg, "persistent"))
                         temporary = FALSE;
                     else {
-                        nmc_print(_("Error: invalid argument '%s'\n"), cmd_arg);
+                        nmc_printerr(_("Error: invalid argument '%s'\n"), cmd_arg);
                         break;
                     }
                 }
@@ -8638,20 +8648,20 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                 g_source_destroy(source);
 
                 if (nmc_editor_error) {
-                    nmc_print(_("Error: Failed to save '%s' (%s) connection: %s\n"),
-                              nm_connection_get_id(connection),
-                              nm_connection_get_uuid(connection),
-                              nmc_editor_error->message);
+                    nmc_printerr(_("Error: Failed to save '%s' (%s) connection: %s\n"),
+                                 nm_connection_get_id(connection),
+                                 nm_connection_get_uuid(connection),
+                                 nmc_editor_error->message);
                     g_error_free(nmc_editor_error);
                 } else if (timeout) {
-                    nmc_print(_("Error: Timeout saving '%s' (%s) connection\n"),
-                              nm_connection_get_id(connection),
-                              nm_connection_get_uuid(connection));
+                    nmc_printerr(_("Error: Timeout saving '%s' (%s) connection\n"),
+                                 nm_connection_get_id(connection),
+                                 nm_connection_get_uuid(connection));
                 } else {
-                    nmc_print(!rem_con ? _("Connection '%s' (%s) successfully saved.\n")
-                                       : _("Connection '%s' (%s) successfully updated.\n"),
-                              nm_connection_get_id(connection),
-                              nm_connection_get_uuid(connection));
+                    nmc_printerr(!rem_con ? _("Connection '%s' (%s) successfully saved.\n")
+                                          : _("Connection '%s' (%s) successfully updated.\n"),
+                                 nm_connection_get_id(connection),
+                                 nm_connection_get_uuid(connection));
 
                     con_tmp = nm_client_get_connection_by_uuid(nmc->client,
                                                                nm_connection_get_uuid(connection));
@@ -8683,9 +8693,9 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                 nmc_editor_cb_called = FALSE;
                 nmc_editor_error     = NULL;
             } else {
-                nmc_print(_("Error: connection verification failed: %s\n"),
-                          err1 ? err1->message : _("(unknown error)"));
-                nmc_print(_("You may try running 'verify fix' to fix errors.\n"));
+                nmc_printerr(_("Error: connection verification failed: %s\n"),
+                             err1 ? err1->message : _("(unknown error)"));
+                nmc_printerr(_("You may try running 'verify fix' to fix errors.\n"));
             }
 
             g_clear_error(&err1);
@@ -8708,11 +8718,11 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
 
             if (is_connection_dirty(connection, rem_con)) {
                 /* TRANSLATORS: do not translate 'save', leave it as it is */
-                nmc_print(_("Error: connection is not saved. Type 'save' first.\n"));
+                nmc_printerr(_("Error: connection is not saved. Type 'save' first.\n"));
                 break;
             }
             if (!nm_connection_verify(NM_CONNECTION(rem_con), &tmp_err)) {
-                nmc_print(_("Error: connection is not valid: %s\n"), tmp_err->message);
+                nmc_printerr(_("Error: connection is not valid: %s\n"), tmp_err->message);
                 g_clear_error(&tmp_err);
                 break;
             }
@@ -8728,7 +8738,7 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                                          NULL,
                                          activate_connection_editor_cb,
                                          &tmp_err)) {
-                nmc_print(_("Error: Cannot activate connection: %s.\n"), tmp_err->message);
+                nmc_printerr(_("Error: Cannot activate connection: %s.\n"), tmp_err->message);
                 g_clear_error(&tmp_err);
                 break;
             }
@@ -8737,10 +8747,10 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                 g_main_context_iteration(NULL, TRUE);
 
             if (nmc_editor_error) {
-                nmc_print(_("Error: Failed to activate '%s' (%s) connection: %s\n"),
-                          nm_connection_get_id(connection),
-                          nm_connection_get_uuid(connection),
-                          nmc_editor_error->message);
+                nmc_printerr(_("Error: Failed to activate '%s' (%s) connection: %s\n"),
+                             nm_connection_get_id(connection),
+                             nm_connection_get_uuid(connection),
+                             nmc_editor_error->message);
                 g_error_free(nmc_editor_error);
             } else {
                 nmc_readline(&nmc->nmc_config,
@@ -8779,7 +8789,7 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                 GError  *tmp_err = NULL;
                 gboolean bb;
                 if (!nmc_string_to_bool(cmd_arg_v ? g_strstrip(cmd_arg_v) : "", &bb, &tmp_err)) {
-                    nmc_print(_("Error: status-line: %s\n"), tmp_err->message);
+                    nmc_printerr(_("Error: status-line: %s\n"), tmp_err->message);
                     g_clear_error(&tmp_err);
                 } else
                     nmc->editor_status_line = bb;
@@ -8787,7 +8797,7 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                 GError  *tmp_err = NULL;
                 gboolean bb;
                 if (!nmc_string_to_bool(cmd_arg_v ? g_strstrip(cmd_arg_v) : "", &bb, &tmp_err)) {
-                    nmc_print(_("Error: save-confirmation: %s\n"), tmp_err->message);
+                    nmc_printerr(_("Error: save-confirmation: %s\n"), tmp_err->message);
                     g_clear_error(&tmp_err);
                 } else
                     nmc->editor_save_confirmation = bb;
@@ -8795,7 +8805,7 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                 GError  *tmp_err = NULL;
                 gboolean bb;
                 if (!nmc_string_to_bool(cmd_arg_v ? g_strstrip(cmd_arg_v) : "", &bb, &tmp_err)) {
-                    nmc_print(_("Error: show-secrets: %s\n"), tmp_err->message);
+                    nmc_printerr(_("Error: show-secrets: %s\n"), tmp_err->message);
                     g_clear_error(&tmp_err);
                 } else
                     nmc->nmc_config_mutable.show_secrets = bb;
@@ -8811,9 +8821,9 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                           nmc->editor_save_confirmation ? "yes" : "no",
                           nmc->nmc_config.show_secrets ? "yes" : "no");
             } else
-                nmc_print(_("Invalid configuration option '%s'; allowed [%s]\n"),
-                          cmd_arg_v ?: "",
-                          "status-line, save-confirmation, show-secrets");
+                nmc_printerr(_("Invalid configuration option '%s'; allowed [%s]\n"),
+                             cmd_arg_v ?: "",
+                             "status-line, save-confirmation, show-secrets");
 
             break;
 
@@ -8827,7 +8837,7 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
 
         case NMC_EDITOR_MAIN_CMD_UNKNOWN:
         default:
-            nmc_print(_("Unknown command: '%s'\n"), cmd_user);
+            nmc_printerr(_("Unknown command: '%s'\n"), cmd_user);
             break;
         }
     }
@@ -9075,10 +9085,11 @@ do_connection_edit(const NMCCommand *cmd, NmCli *nmc, int argc, const char *cons
         connection_type = nm_setting_connection_get_connection_type(s_con);
 
         if (type)
-            nmc_print(_("Warning: editing existing connection '%s'; 'type' argument is ignored\n"),
-                      nm_connection_get_id(connection));
+            nmc_printerr(
+                _("Warning: editing existing connection '%s'; 'type' argument is ignored\n"),
+                nm_connection_get_id(connection));
         if (con_name)
-            nmc_print(
+            nmc_printerr(
                 _("Warning: editing existing connection '%s'; 'con-name' argument is ignored\n"),
                 nm_connection_get_id(connection));
 
@@ -9106,9 +9117,9 @@ do_connection_edit(const NMCCommand *cmd, NmCli *nmc, int argc, const char *cons
             gs_free char *type_ask = NULL;
 
             if (!type)
-                nmc_print(_("Valid connection types: %s\n"), tmp_str);
+                nmc_printerr(_("Valid connection types: %s\n"), tmp_str);
             else
-                nmc_print(_("Error: invalid connection type; %s\n"), err1->message);
+                nmc_printerr(_("Error: invalid connection type; %s\n"), err1->message);
             g_clear_error(&err1);
 
             type_ask = nmc_readline(&nmc->nmc_config, EDITOR_PROMPT_CON_TYPE);
