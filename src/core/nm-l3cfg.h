@@ -24,6 +24,8 @@
 
 #define NM_L3CFG_SIGNAL_NOTIFY "l3cfg-notify"
 
+#define NM_DNS_ROUTES_FWMARK_TABLE_PRIO 20053
+
 typedef enum _nm_packed {
     _NM_L3_ACD_DEFEND_TYPE_NONE,
     NM_L3_ACD_DEFEND_TYPE_NEVER,
