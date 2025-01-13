@@ -332,20 +332,24 @@ no-auto-default=*
         <para><literal>systemd-resolved</literal>: NetworkManager will
         push the DNS configuration to systemd-resolved</para>
 
+        <para><literal>dnsconfd</literal>: NetworkManager will
+        push the DNS configuration to dnsconfd</para> and by default set ipvX.routed-dns to
+        yes, so servers are contacted through right interfaces.
+
         <para><literal>none</literal>: NetworkManager will not
         modify resolv.conf. This implies
         <literal>rc-manager</literal>&nbsp;<literal>unmanaged</literal></para>
 
-        <para>Note that the plugins <literal>dnsmasq</literal> and <literal>systemd-resolved</literal>
-        are caching local nameservers.
+        <para>Note that the plugins <literal>dnsmasq</literal>,<literal>systemd-resolved</literal>
+        and <literal>dnsconfd</literal> are caching local nameservers.
         Hence, when NetworkManager writes <filename>&nmrundir;/resolv.conf</filename>
         and <filename>/etc/resolv.conf</filename> (according to <literal>rc-manager</literal>
         setting below), the name server there will be localhost only.
         NetworkManager also writes a file <filename>&nmrundir;/no-stub-resolv.conf</filename>
         that contains the original name servers pushed to the DNS plugin.</para>
 
-        <para>When using <literal>dnsmasq</literal> and <literal>systemd-resolved</literal>,
-        per-connection added dns servers will always be queried using
+        <para>When using <literal>dnsmasq</literal>,<literal>systemd-resolved</literal> and
+        <literal>dnsconfd</literal> per-connection added dns servers will always be queried using
         the device the connection has been activated on.</para>
         </listitem>
       </varlistentry>

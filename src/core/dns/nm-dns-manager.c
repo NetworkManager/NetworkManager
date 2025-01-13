@@ -32,6 +32,7 @@
 #include "nm-config.h"
 #include "nm-dbus-object.h"
 #include "nm-dns-dnsmasq.h"
+#include "nm-dns-dnsconfd.h"
 #include "nm-dns-plugin.h"
 #include "nm-dns-systemd-resolved.h"
 #include "nm-ip-config.h"
@@ -2525,6 +2526,12 @@ again:
             priv->plugin   = nm_dns_dnsmasq_new();
             plugin_changed = TRUE;
         }
+    } else if (nm_streq0(mode, "dnsconfd")) {
+        if (force_reload_plugin || !NM_IS_DNS_DNSCONFD(priv->plugin)) {
+            _clear_plugin(self);
+            priv->plugin   = nm_dns_dnsconfd_new();
+            plugin_changed = TRUE;
+        }
     } else {
         if (!NM_IN_STRSET(mode, "none", "default")) {
             if (mode) {
@@ -2541,7 +2548,7 @@ again:
 
     if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_AUTO) {
         rc_manager_was_auto = TRUE;
-        if (nm_streq(mode, "systemd-resolved"))
+        if (nm_streq(mode, "systemd-resolved") || nm_streq(mode, "dnsconfd"))
             rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED;
         else if (HAS_RESOLVCONF && g_file_test(RESOLVCONF_PATH, G_FILE_TEST_IS_EXECUTABLE)) {
             /* We detect /sbin/resolvconf only at this stage. That means, if you install

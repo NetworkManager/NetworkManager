@@ -3899,8 +3899,6 @@ out_ip4_address:
 
 /*****************************************************************************/
 
-#define DNS_ROUTES_FWMARK_TABLE_PRIO 20053
-
 static gboolean
 _l3cfg_routed_dns_equal(GPtrArray *routes_old, GPtrArray *routes_new)
 {
@@ -3945,7 +3943,7 @@ _l3cfg_routed_dns_get_existing_routes(NML3Cfg *self, int addr_family)
         const NMPObject *obj = c_list_entry(iter, NMDedupMultiEntry, lst_entries)->obj;
 
         if (nm_platform_route_table_uncoerce(obj->ipx_route.rx.table_coerced, FALSE)
-            != DNS_ROUTES_FWMARK_TABLE_PRIO)
+            != NM_DNS_ROUTES_FWMARK_TABLE_PRIO)
             continue;
 
         if (!routes)
@@ -4000,7 +3998,7 @@ _l3cfg_routed_dns_apply(NML3Cfg *self, const NML3ConfigData *l3cd)
             r = nm_platform_ip_route_get(self->priv.platform,
                                          addr_family,
                                          &dns.addr,
-                                         DNS_ROUTES_FWMARK_TABLE_PRIO,
+                                         NM_DNS_ROUTES_FWMARK_TABLE_PRIO,
                                          self->priv.ifindex,
                                          &obj);
             if (r < 0) {
@@ -4013,14 +4011,15 @@ _l3cfg_routed_dns_apply(NML3Cfg *self, const NML3ConfigData *l3cd)
 
             if (IS_IPv4) {
                 route_new.r4 = (NMPlatformIP4Route) {
-                    .ifindex       = self->priv.ifindex,
-                    .network       = dns.addr.addr4,
-                    .plen          = 32,
-                    .table_any     = FALSE,
-                    .metric_any    = TRUE,
-                    .table_coerced = nm_platform_route_table_coerce(DNS_ROUTES_FWMARK_TABLE_PRIO),
-                    .gateway       = route->r4.gateway,
-                    .rt_source     = NM_IP_CONFIG_SOURCE_USER,
+                    .ifindex    = self->priv.ifindex,
+                    .network    = dns.addr.addr4,
+                    .plen       = 32,
+                    .table_any  = FALSE,
+                    .metric_any = TRUE,
+                    .table_coerced =
+                        nm_platform_route_table_coerce(NM_DNS_ROUTES_FWMARK_TABLE_PRIO),
+                    .gateway   = route->r4.gateway,
+                    .rt_source = NM_IP_CONFIG_SOURCE_USER,
                 };
 
                 nm_platform_ip_route_normalize(addr_family, &route_new.rx);
@@ -4033,14 +4032,15 @@ _l3cfg_routed_dns_apply(NML3Cfg *self, const NML3ConfigData *l3cd)
                 g_ptr_array_add(new_routes, obj_new);
             } else {
                 route_new.r6 = (NMPlatformIP6Route) {
-                    .ifindex       = self->priv.ifindex,
-                    .network       = dns.addr.addr6,
-                    .plen          = 128,
-                    .table_any     = FALSE,
-                    .metric_any    = TRUE,
-                    .table_coerced = nm_platform_route_table_coerce(DNS_ROUTES_FWMARK_TABLE_PRIO),
-                    .gateway       = route->r6.gateway,
-                    .rt_source     = NM_IP_CONFIG_SOURCE_USER,
+                    .ifindex    = self->priv.ifindex,
+                    .network    = dns.addr.addr6,
+                    .plen       = 128,
+                    .table_any  = FALSE,
+                    .metric_any = TRUE,
+                    .table_coerced =
+                        nm_platform_route_table_coerce(NM_DNS_ROUTES_FWMARK_TABLE_PRIO),
+                    .gateway   = route->r6.gateway,
+                    .rt_source = NM_IP_CONFIG_SOURCE_USER,
                 };
 
                 nm_platform_ip_route_normalize(addr_family, &route_new.rx);
@@ -4065,9 +4065,9 @@ _l3cfg_routed_dns_apply(NML3Cfg *self, const NML3ConfigData *l3cd)
             rule = ((NMPlatformRoutingRule) {
                 .addr_family = addr_family,
                 .flags       = FIB_RULE_INVERT,
-                .priority    = DNS_ROUTES_FWMARK_TABLE_PRIO,
-                .table       = DNS_ROUTES_FWMARK_TABLE_PRIO,
-                .fwmark      = DNS_ROUTES_FWMARK_TABLE_PRIO,
+                .priority    = NM_DNS_ROUTES_FWMARK_TABLE_PRIO,
+                .table       = NM_DNS_ROUTES_FWMARK_TABLE_PRIO,
+                .fwmark      = NM_DNS_ROUTES_FWMARK_TABLE_PRIO,
                 .fwmask      = 0xffffffff,
                 .action      = FR_ACT_TO_TBL,
                 .protocol    = RTPROT_STATIC,
