@@ -1010,9 +1010,9 @@ static const char *message_type_to_str(uint8_t type) {
         }
 }
 
-static int n_dhcp4_c_connection_send_request(NDhcp4CConnection *connection,
-                                             NDhcp4Outgoing *request,
-                                             uint64_t timestamp) {
+int n_dhcp4_c_connection_send_request(NDhcp4CConnection *connection,
+                                      NDhcp4Outgoing *request,
+                                      uint64_t timestamp) {
         char server_addr[INET_ADDRSTRLEN];
         char client_addr[INET_ADDRSTRLEN];
         char error_msg[128];
