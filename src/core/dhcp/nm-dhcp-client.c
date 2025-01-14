@@ -280,10 +280,25 @@ nm_dhcp_client_create_options_dict(NMDhcpClient *self, gboolean static_keys)
     return options;
 }
 
+/**
+ * nm_dhcp_client_get_lease():
+ * @self: the client
+ * @ignore_acd_pending: FALSE means to only return the lease that already
+ * passed ACD, thus it is in use by us. TRUE means to return a new lease
+ * that might still be pending of Address Collision Detection (ACD) check,
+ * if there is one, or return the current lease that passed ACD if not.
+ *
+ * Returns the current lease that passed ACD or a pending lease still under
+ * ACD check.
+ *
+ */
 const NML3ConfigData *
-nm_dhcp_client_get_lease(NMDhcpClient *self)
+nm_dhcp_client_get_lease(NMDhcpClient *self, gboolean ignore_acd_pending)
 {
-    return NM_DHCP_CLIENT_GET_PRIVATE(self)->l3cd_curr;
+    if (ignore_acd_pending)
+        return NM_DHCP_CLIENT_GET_PRIVATE(self)->l3cd_curr;
+    else
+        return NM_DHCP_CLIENT_GET_PRIVATE(self)->l3cd_next;
 }
 
 /*****************************************************************************/
