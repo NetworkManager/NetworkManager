@@ -5424,7 +5424,7 @@ _nl_msg_new_link_set_linkinfo_vlan(struct nl_msg          *msg,
                     if (!(qos = nla_nest_start(msg, IFLA_VLAN_INGRESS_QOS)))
                         goto nla_put_failure;
                 }
-                NLA_PUT(msg, i, sizeof(ingress_qos[i]), &ingress_qos[i]);
+                NLA_PUT(msg, IFLA_VLAN_QOS_MAPPING, sizeof(ingress_qos[i]), &ingress_qos[i]);
             }
         }
 
@@ -5441,7 +5441,7 @@ _nl_msg_new_link_set_linkinfo_vlan(struct nl_msg          *msg,
                     if (!(qos = nla_nest_start(msg, IFLA_VLAN_EGRESS_QOS)))
                         goto nla_put_failure;
                 }
-                NLA_PUT(msg, i, sizeof(egress_qos[i]), &egress_qos[i]);
+                NLA_PUT(msg, IFLA_VLAN_QOS_MAPPING, sizeof(egress_qos[i]), &egress_qos[i]);
             }
         }
 
