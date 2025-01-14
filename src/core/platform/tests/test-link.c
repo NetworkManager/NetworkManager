@@ -2263,7 +2263,7 @@ test_software_detect_add(const char *testpath, NMLinkType link_type, int test_mo
 }
 
 /*****************************************************************************/
-/*
+
 static void
 _assert_xgress_qos_mappings_impl(int ifindex, gboolean is_ingress_map, int n_entries, int n, ...)
 {
@@ -2343,8 +2343,7 @@ _assert_vlan_flags(int ifindex, _NMVlanFlags flags)
     g_assert(plnk);
     g_assert_cmpint(plnk->flags, ==, flags);
 }
-*/
-/*
+
 static void
 test_vlan_set_xgress(void)
 {
@@ -2359,7 +2358,6 @@ test_vlan_set_xgress(void)
                              PARENT_NAME);
     ifindex =
         nmtstp_assert_wait_for_link(NM_PLATFORM_GET, DEVICE_NAME, NM_LINK_TYPE_VLAN, 100)->ifindex;
-
 
     g_assert(nm_platform_link_vlan_set_ingress_map(NM_PLATFORM_GET, ifindex, 4, 5));
     _assert_ingress_qos_mappings(ifindex, 1, 4, 5);
@@ -2390,7 +2388,6 @@ test_vlan_set_xgress(void)
 
     g_assert(nm_platform_link_vlan_set_ingress_map(NM_PLATFORM_GET, ifindex, 9, 4));
     _assert_ingress_qos_mappings(ifindex, 3, 0, 5, 3, 8, 4, 5);
-
 
     g_assert(nm_platform_link_vlan_set_egress_map(NM_PLATFORM_GET, ifindex, 7, 3));
     _assert_egress_qos_mappings(ifindex, 1, 7, 3);
@@ -2693,7 +2690,7 @@ test_vlan_set_xgress(void)
     nmtstp_link_delete(NULL, -1, ifindex, DEVICE_NAME, TRUE);
     nmtstp_link_delete(NULL, -1, ifindex_parent, PARENT_NAME, TRUE);
 }
-*/
+
 /*****************************************************************************/
 
 static void
@@ -4107,7 +4104,7 @@ _nmtstp_setup_tests(void)
         test_software_detect_add("/link/software/detect/wireguard/1", NM_LINK_TYPE_WIREGUARD, 1);
         test_software_detect_add("/link/software/detect/wireguard/2", NM_LINK_TYPE_WIREGUARD, 2);
 
-        //       g_test_add_func("/link/software/vlan/set-xgress", test_vlan_set_xgress);
+        g_test_add_func("/link/software/vlan/set-xgress", test_vlan_set_xgress);
 
         g_test_add_func("/link/set-properties", test_link_set_properties);
 
