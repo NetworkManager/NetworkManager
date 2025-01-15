@@ -173,7 +173,6 @@ meson setup build \
     -D teamdctl=$_WITH_LIBTEAM \
     \
     -D dhclient=/bin/nowhere/dhclient \
-    -D dhcpcanon=/bin/nowhere/dhcpcanon \
     -D dhcpcd=/bin/nowhere/dhcpd \
     \
     -D netconfig=/bin/nowhere/netconfig \

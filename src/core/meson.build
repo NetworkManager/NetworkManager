@@ -120,7 +120,6 @@ libNetworkManager = static_library(
     'devices/nm-lldp-listener.c',
     'dhcp/nm-dhcp-dhclient.c',
     'dhcp/nm-dhcp-dhclient-utils.c',
-    'dhcp/nm-dhcp-dhcpcanon.c',
     'dhcp/nm-dhcp-dhcpcd.c',
     'dhcp/nm-dhcp-listener.c',
     'dns/nm-dns-dnsmasq.c',

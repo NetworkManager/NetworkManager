@@ -369,7 +369,6 @@ meson setup\
     -Dnft="${D_SBINDIR}/nft" \
     -Diptables="${D_SBINDIR}/iptables" \
     -Ddhclient="${D_SBINDIR}/dhclient" \
-    -Ddhcpcanon=no \
     -Ddhcpcd=no \
     -Dconfig_dhcp_default="$P_DHCP_DEFAULT" \
     "-Dcrypto=$P_CRYPTO" \

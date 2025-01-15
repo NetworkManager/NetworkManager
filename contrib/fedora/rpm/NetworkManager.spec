@@ -602,7 +602,6 @@ Preferably use nmcli instead.
 %else
 	-Ddhclient=no \
 %endif
-	-Ddhcpcanon=no \
 	-Ddhcpcd=no \
 	-Dcrypto=gnutls \
 %if %{with debug}

@@ -31,9 +31,6 @@ const NMDhcpClientFactory *const _nm_dhcp_manager_factories[6] = {
      * the first available plugin. */
 
     &_nm_dhcp_client_factory_internal,
-#if WITH_DHCPCANON
-    &_nm_dhcp_client_factory_dhcpcanon,
-#endif
 #if WITH_DHCPCD
     &_nm_dhcp_client_factory_dhcpcd,
 #endif

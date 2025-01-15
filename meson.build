@@ -632,7 +632,7 @@ config_h.set10('WITH_OFONO', enable_ofono)
 config_dhcp_default = get_option('config_dhcp_default')
 config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_DHCP', config_dhcp_default)
 dhcp_summary = ''
-foreach client : [ 'dhclient', 'dhcpcd', 'dhcpcanon' ]
+foreach client : [ 'dhclient', 'dhcpcd' ]
   client_path = get_option(client)
   client_enable = (client_path != 'no')
   if client_enable
