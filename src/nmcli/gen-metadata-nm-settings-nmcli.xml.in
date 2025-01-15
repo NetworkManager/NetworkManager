@@ -1403,7 +1403,7 @@
                   format="choice (NMTernary)"
                   values="default (-1), false/no (0), true/yes (1)" />
         <property name="forwarding"
-                  nmcli-description="Whether to configure sysctl interface-specific forwarding. When enabled, the interface will act as a router to forward the packet from one interface to another. When set to &quot;default&quot; (-1), the value from global configuration is used; if no global default is defined, &quot;auto&quot; (2) will be used. The accepted values are: &quot;default&quot; (-1): use global default. &quot;no&quot; (0): disabled. &quot;yes&quot; (1): enabled. &quot;auto&quot; (2): enable if any shared connection is active, use kernel default otherwise. &quot;ignore&quot; (3): leave the forwarding unchanged."
+                  nmcli-description="Whether to configure sysctl interface-specific forwarding. When enabled, the interface will act as a router to forward the packet from one interface to another. When set to &quot;default&quot; (-1), the value from global configuration is used; if no global default is defined, &quot;auto&quot; (2) will be used. The &quot;forwarding&quot; property is ignored when &quot;method&quot; is set to &quot;shared&quot;, because forwarding is always enabled in this case. The accepted values are: &quot;default&quot; (-1): use global default. &quot;no&quot; (0): disabled. &quot;yes&quot; (1): enabled. &quot;auto&quot; (2): enable if any shared connection is active, use kernel default otherwise. &quot;ignore&quot; (3): leave the forwarding unchanged."
                   format="choice (NMSettingIPConfigForwarding)"
                   values="default (-1), no (0), yes (1), auto (2), ignore (3)" />
         <property name="dhcp-hostname"
