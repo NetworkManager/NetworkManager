@@ -167,11 +167,10 @@ plugins-=remove-me
       </varlistentry>
       <varlistentry>
         <term><varname>dhcp</varname></term>
-        <listitem><para>This key sets up what DHCP client
-        NetworkManager will use. Allowed values depend on build configuration and
-        typically include <literal>internal</literal> and <literal>dhcpcd</literal>.
-        Support for unmaintained <literal>dhclient</literal> client has been deprecated
-        and disabled by default.</para>
+        <listitem><para>This key sets up what DHCP client NetworkManager will
+        use. Allowed values depend on build configuration; this version of
+        NetworkManager was built with support for the following clients:
+        &NM_DHCP_CLIENTS_ENABLED_TEXT;.</para>
         <para>The <literal>internal</literal> client is built-in, while other options
         may require an external DHCP client to be installed.</para>
         <para>If this key is missing, <literal>&NM_CONFIG_DEFAULT_MAIN_DHCP;</literal>

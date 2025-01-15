@@ -631,6 +631,7 @@ config_h.set10('WITH_OFONO', enable_ofono)
 # DHCP client support
 config_dhcp_default = get_option('config_dhcp_default')
 config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_DHCP', config_dhcp_default)
+config_dhcp_clients_enabled = [ 'internal' ]
 dhcp_summary = ''
 foreach client : [ 'dhclient', 'dhcpcd' ]
   client_path = get_option(client)
@@ -662,6 +663,7 @@ foreach client : [ 'dhclient', 'dhcpcd' ]
   dhcp_summary += ('  ' + client + ': ' + client_enable.to_string())
   if (client_enable)
     dhcp_summary += (' ' + client_path)
+    config_dhcp_clients_enabled += client
   endif
   if (client == 'dhclient')
     dhcp_summary += ' (deprecated)'
@@ -935,6 +937,7 @@ data_conf.set('NM_CONFIG_DEFAULT_MAIN_DHCP',             config_dhcp_default)
 data_conf.set('NM_CONFIG_DEFAULT_MAIN_RC_MANAGER',       config_dns_rc_manager_default)
 data_conf.set('NM_CONFIG_DEFAULT_MAIN_MIGRATE_IFCFG_RH_TEXT', config_migrate_ifcfg_rh_default)
 data_conf.set('NM_CONFIG_DEFAULT_WIFI_BACKEND_TEXT',     config_wifi_backend_default)
+data_conf.set('NM_DHCP_CLIENTS_ENABLED',                 ', '.join(config_dhcp_clients_enabled))
 data_conf.set('NM_MAJOR_VERSION',                        nm_major_version)
 data_conf.set('NM_MICRO_VERSION',                        nm_micro_version)
 data_conf.set('NM_MINOR_VERSION',                        nm_minor_version)
