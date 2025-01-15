@@ -31,6 +31,7 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   DNS over TLS name servers.
 * The initrd-generator understands the "rd.net.dns" option to configure
   global name servers.
+* Drop support for the "dhcpcanon" DHCP client.
 
 =============================================
 NetworkManager-1.50

@@ -4,9 +4,6 @@
 /* Define to path of dhclient binary */
 #mesondefine DHCLIENT_PATH
 
-/* Define to path of dhcpcanon binary */
-#mesondefine DHCPCANON_PATH
-
 /* Define to path of dhcpcd binary */
 #mesondefine DHCPCD_PATH
 
@@ -223,9 +220,6 @@
 
 /* Define if you have dhclient */
 #mesondefine WITH_DHCLIENT
-
-/* Define if you have dhcpcanon */
-#mesondefine WITH_DHCPCANON
 
 /* Define if you have dhcpcd */
 #mesondefine WITH_DHCPCD
