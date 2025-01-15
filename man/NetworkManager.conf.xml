@@ -174,9 +174,7 @@ plugins-=remove-me
         <para>The <literal>internal</literal> client is built-in, while other options
         may require an external DHCP client to be installed.</para>
         <para>If this key is missing, <literal>&NM_CONFIG_DEFAULT_MAIN_DHCP;</literal>
-        is used with a fallback to other suppored clients in this order:
-        <literal>internal</literal>, <literal>dhcpcd</literal>,
-        <literal>dhclient</literal>.</para></listitem>
+        is used with a fallback to other supported clients.</para></listitem>
       </varlistentry>
       <varlistentry>
         <term><varname>no-auto-default</varname></term>
