@@ -7151,6 +7151,8 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      * will act as a router to forward the packet from one interface to another. When set to
      * %NM_SETTING_IP_CONFIG_FORWARDING_DEFAULT, the value from global configuration is used;
      * if no global default is defined, %NM_SETTING_IP_CONFIG_FORWARDING_AUTO will be used.
+     * The #NMSettingIPConfig:forwarding property is ignored when #NMSettingIPConfig:method
+     * is set to "shared", because forwarding is always enabled in this case.
      * The accepted values are:
      *   %NM_SETTING_IP_CONFIG_FORWARDING_DEFAULT: use global default.
      *   %NM_SETTING_IP_CONFIG_FORWARDING_NO: disabled.
