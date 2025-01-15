@@ -854,4 +854,8 @@ void nm_routing_rules_sync(NMConnection *applied_connection,
                            NMDevice *self,
                            NMNetns  *netns);
 
+NMSettingIPConfigForwarding nm_device_get_ipv4_forwarding(NMDevice *self);
+
+const char *nm_device_get_effective_ip_config_method(NMDevice *self, int addr_family);
+
 #endif /* __NETWORKMANAGER_DEVICE_H__ */
