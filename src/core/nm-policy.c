@@ -18,6 +18,7 @@
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device.h"
 #include "devices/nm-device-factory.h"
+#include "devices/nm-device-private.h"
 #include "dns/nm-dns-manager.h"
 #include "nm-act-request.h"
 #include "nm-auth-utils.h"
@@ -97,7 +98,7 @@ typedef struct {
     bool updating_dns : 1;
 
     GArray *ip6_prefix_delegations; /* pool of ip6 prefixes delegated to all devices */
-
+    guint32 shared_active_count;    /* keep track of the number of active shared connections */
 } NMPolicyPrivate;
 
 struct _NMPolicy {
@@ -2012,6 +2013,67 @@ unblock_autoconnect_for_ports_for_sett_conn(NMPolicy *self, NMSettingsConnection
 }
 
 static void
+refresh_forwarding(NMPolicy *self, NMDevice *device, gboolean is_ipv4_method_shared)
+{
+    NMDevice        *tmp_device;
+    NMDeviceState    state = nm_device_get_state(device);
+    NMPolicyPrivate *priv  = NM_POLICY_GET_PRIVATE(self);
+    const CList     *tmp_lst;
+    gint32           default_forwarding_v4;
+    const char      *new_value = NULL;
+    gboolean         first_or_last_shared =
+        is_ipv4_method_shared
+        && (priv->shared_active_count == 0
+            || (priv->shared_active_count == 1 && state == NM_DEVICE_STATE_ACTIVATED));
+
+    default_forwarding_v4 = nm_platform_sysctl_get_int32(
+        NM_PLATFORM_GET,
+        NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv4/conf/default/forwarding"),
+        0);
+
+    new_value = priv->shared_active_count ? "1" : (default_forwarding_v4 ? "1" : "0");
+
+    if (first_or_last_shared) {
+        nm_manager_for_each_device (priv->manager, tmp_device, tmp_lst) {
+            NMDeviceState               device_state;
+            NMSettingIPConfigForwarding ipv4_forwarding;
+
+            device_state = nm_device_get_state(tmp_device);
+            if (device_state != NM_DEVICE_STATE_ACTIVATED)
+                continue;
+
+            ipv4_forwarding = nm_device_get_ipv4_forwarding(tmp_device);
+
+            if (ipv4_forwarding == NM_SETTING_IP_CONFIG_FORWARDING_AUTO
+                || (device == tmp_device && is_ipv4_method_shared)) {
+                gs_free char *sysctl_value = NULL;
+
+                sysctl_value = nm_device_sysctl_ip_conf_get(tmp_device, AF_INET, "forwarding");
+
+                if (!nm_streq0(sysctl_value, new_value))
+                    nm_device_sysctl_ip_conf_set(tmp_device, AF_INET, "forwarding", new_value);
+            }
+        }
+    } else {
+        NMSettingIPConfigForwarding ipv4_forwarding;
+
+        if (state != NM_DEVICE_STATE_ACTIVATED)
+            return;
+
+        ipv4_forwarding = nm_device_get_ipv4_forwarding(device);
+
+        if (ipv4_forwarding == NM_SETTING_IP_CONFIG_FORWARDING_AUTO || is_ipv4_method_shared) {
+            gs_free char *sysctl_value = NULL;
+
+            sysctl_value = nm_device_sysctl_ip_conf_get(device, AF_INET, "forwarding");
+
+            if (!nm_streq0(sysctl_value, new_value))
+                nm_device_sysctl_ip_conf_set(device, AF_INET, "forwarding", new_value);
+        }
+    }
+}
+
+static void
 activate_port_or_children_connections(NMPolicy *self,
                                       NMDevice *device,
                                       gboolean  activate_children_connections_only)
@@ -2155,8 +2217,9 @@ device_state_changed(NMDevice           *device,
     NMPolicyPrivate      *priv = user_data;
     NMPolicy             *self = _PRIV_TO_SELF(priv);
     NMActiveConnection   *ac;
-    NMSettingsConnection *sett_conn = nm_device_get_settings_connection(device);
-    NMSettingConnection  *s_con     = NULL;
+    NMSettingsConnection *sett_conn             = nm_device_get_settings_connection(device);
+    NMSettingConnection  *s_con                 = NULL;
+    gboolean              is_ipv4_method_shared = FALSE;
 
     switch (nm_device_state_reason_check(reason)) {
     case NM_DEVICE_STATE_REASON_GSM_SIM_PIN_REQUIRED:
@@ -2304,6 +2367,13 @@ device_state_changed(NMDevice           *device,
         update_system_hostname(self, "routing and dns", TRUE);
         nm_dns_manager_end_updates(priv->dns_manager, __func__);
 
+        is_ipv4_method_shared = nm_streq0(nm_device_get_effective_ip_config_method(device, AF_INET),
+                                          NM_SETTING_IP4_CONFIG_METHOD_SHARED);
+
+        if (is_ipv4_method_shared)
+            priv->shared_active_count++;
+        refresh_forwarding(self, device, is_ipv4_method_shared);
+
         break;
     case NM_DEVICE_STATE_UNMANAGED:
     case NM_DEVICE_STATE_UNAVAILABLE:
@@ -2314,6 +2384,13 @@ device_state_changed(NMDevice           *device,
         if (sett_conn) {
             NMSettingsAutoconnectBlockedReason blocked_reason =
                 NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_NONE;
+
+            is_ipv4_method_shared =
+                nm_streq0(nm_device_get_effective_ip_config_method(device, AF_INET),
+                          NM_SETTING_IP4_CONFIG_METHOD_SHARED);
+            if (old_state == NM_DEVICE_STATE_ACTIVATED && is_ipv4_method_shared)
+                priv->shared_active_count--;
+            refresh_forwarding(self, device, is_ipv4_method_shared);
 
             switch (nm_device_state_reason_check(reason)) {
             case NM_DEVICE_STATE_REASON_USER_REQUESTED:
