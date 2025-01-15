@@ -633,7 +633,7 @@ config_dhcp_default = get_option('config_dhcp_default')
 config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_DHCP', config_dhcp_default)
 config_dhcp_clients_enabled = [ 'internal' ]
 dhcp_summary = ''
-foreach client : [ 'dhclient', 'dhcpcd' ]
+foreach client : [ 'dhcpcd', 'dhclient' ]
   client_path = get_option(client)
   client_enable = (client_path != 'no')
   if client_enable
