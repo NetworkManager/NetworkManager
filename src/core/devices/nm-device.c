@@ -2101,8 +2101,8 @@ _prop_get_ipvx_dhcp_send_hostname(NMDevice *self, int addr_family)
     return send_hostname_v2;
 }
 
-static NMSettingIPConfigForwarding
-_prop_get_ipv4_forwarding(NMDevice *self)
+NMSettingIPConfigForwarding
+nm_device_get_ipv4_forwarding(NMDevice *self)
 {
     NMSettingIPConfig          *s_ip;
     NMSettingIPConfigForwarding forwarding;
@@ -13080,7 +13080,7 @@ activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family)
         goto out_devip;
 
     if (IS_IPv4) {
-        NMSettingIPConfigForwarding ipv4_forwarding = _prop_get_ipv4_forwarding(self);
+        NMSettingIPConfigForwarding ipv4_forwarding = nm_device_get_ipv4_forwarding(self);
 
         if (ipv4_forwarding != NM_SETTING_IP_CONFIG_FORWARDING_AUTO) {
             nm_device_sysctl_ip_conf_set(self, AF_INET, "forwarding", ipv4_forwarding ? "1" : "0");
@@ -13515,19 +13515,6 @@ _dev_ipshared4_init(NMDevice *self)
     }
 
     if (nm_platform_sysctl_get_int32(nm_device_get_platform(self),
-                                     NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv4/ip_forward"),
-                                     -1)
-        == 1) {
-        /* nothing to do. */
-    } else if (!nm_platform_sysctl_set(nm_device_get_platform(self),
-                                       NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv4/ip_forward"),
-                                       "1")) {
-        errsv = errno;
-        _LOGW_ipshared(AF_INET, "error enabling IPv4 forwarding: %s", nm_strerror_native(errsv));
-        return FALSE;
-    }
-
-    if (nm_platform_sysctl_get_int32(nm_device_get_platform(self),
                                      NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv4/ip_dynaddr"),
                                      -1)
         == 1) {
@@ -13855,6 +13842,8 @@ _cleanup_ip_pre(NMDevice *self, int addr_family, CleanupType cleanup_type, gbool
 
     _dev_ip_state_cleanup(self, AF_UNSPEC, keep_reapply);
     _dev_ip_state_cleanup(self, addr_family, keep_reapply);
+
+    nm_device_sysctl_ip_conf_set(self, addr_family, "forwarding", "0");
 }
 
 gboolean

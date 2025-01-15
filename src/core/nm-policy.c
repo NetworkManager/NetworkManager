@@ -18,6 +18,7 @@
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device.h"
 #include "devices/nm-device-factory.h"
+#include "devices/nm-device-private.h"
 #include "dns/nm-dns-manager.h"
 #include "nm-act-request.h"
 #include "nm-auth-utils.h"
@@ -2019,6 +2020,51 @@ unblock_autoconnect_for_ports_for_sett_conn(NMPolicy *self, NMSettingsConnection
 }
 
 static void
+refresh_forwarding(NMPolicy *self)
+{
+    NMPolicyPrivate    *priv = NM_POLICY_GET_PRIVATE(self);
+    const CList        *tmp_lst;
+    NMDevice           *device;
+    gboolean            any_shared_active = false;
+    NMActiveConnection *ac;
+
+    nm_manager_for_each_active_connection (priv->manager, ac, tmp_lst) {
+        NMDevice          *to_device;
+        NMSettingIPConfig *s_ip4;
+
+        to_device = nm_active_connection_get_device(ac);
+        if (to_device) {
+            s_ip4 = nm_device_get_applied_setting(to_device, NM_TYPE_SETTING_IP4_CONFIG);
+            if (s_ip4) {
+                const char *method = nm_setting_ip_config_get_method(s_ip4);
+                if (method && nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
+                    any_shared_active = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    nm_manager_for_each_device (priv->manager, device, tmp_lst) {
+        NMDeviceState               state;
+        NMSettingIPConfigForwarding ipv4_forwarding;
+
+        state = nm_device_get_state(device);
+        if (state != NM_DEVICE_STATE_ACTIVATED)
+            continue;
+
+        ipv4_forwarding = nm_device_get_ipv4_forwarding(device);
+
+        if (ipv4_forwarding == NM_SETTING_IP_CONFIG_FORWARDING_AUTO) {
+            nm_device_sysctl_ip_conf_set(device,
+                                         AF_INET,
+                                         "forwarding",
+                                         any_shared_active ? "1" : "0");
+        }
+    }
+}
+
+static void
 activate_port_or_children_connections(NMPolicy *self,
                                       NMDevice *device,
                                       gboolean  activate_children_connections_only)
@@ -2315,6 +2361,7 @@ device_state_changed(NMDevice           *device,
         update_ip6_routing(self, TRUE);
         update_system_hostname(self, "routing and dns", TRUE);
         nm_dns_manager_end_updates(priv->dns_manager, __func__);
+        refresh_forwarding(self);
 
         break;
     case NM_DEVICE_STATE_UNMANAGED:
@@ -2372,6 +2419,7 @@ device_state_changed(NMDevice           *device,
 
         /* Device is now available for auto-activation */
         nm_policy_device_recheck_auto_activate_schedule(self, device);
+        refresh_forwarding(self);
         break;
 
     case NM_DEVICE_STATE_PREPARE:
