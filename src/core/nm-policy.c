@@ -2029,18 +2029,17 @@ refresh_forwarding(NMPolicy *self)
     NMActiveConnection *ac;
 
     nm_manager_for_each_active_connection (priv->manager, ac, tmp_lst) {
-        NMDevice          *to_device;
         NMSettingIPConfig *s_ip;
+        NMDevice          *to_device = nm_active_connection_get_device(ac);
 
-        to_device = nm_active_connection_get_device(ac);
         if (to_device) {
             s_ip = nm_device_get_applied_setting(to_device, NM_TYPE_SETTING_IP4_CONFIG);
-            nm_assert(s_ip);
-
-            if (nm_streq0(nm_device_get_effective_ip_config_method(to_device, AF_INET),
-                          NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
-                any_shared_active = true;
-                break;
+            if (s_ip) {
+                if (nm_streq0(nm_device_get_effective_ip_config_method(to_device, AF_INET),
+                              NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
+                    any_shared_active = true;
+                    break;
+                }
             }
         }
     }
