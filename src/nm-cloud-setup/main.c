@@ -742,7 +742,7 @@ _oci_new_vlan_dev(SigTermData                          *sigterm_data,
     gs_free char                       *connection_id     = NULL;
     char                               *ifname            = NULL;
     const char                         *ip4_config_method;
-    NMSettingUser                      *s_user;
+    NMSetting                          *s_user;
 
     connection = nm_simple_connection_new();
 
@@ -799,7 +799,10 @@ _oci_new_vlan_dev(SigTermData                          *sigterm_data,
 
     s_user = nm_setting_user_new();
     nm_connection_add_setting(connection, s_user);
-    nm_setting_user_set_data(NM_SETTING_USER(s_user), NM_USER_TAG_ORIGIN, "nm-cloud-setup", NULL);
+    nm_setting_user_set_data(NM_SETTING_USER(s_user),
+                             "org.freedesktop.NetworkManager.origin",
+                             "nm-cloud-setup",
+                             NULL);
 
     _nmc_mangle_connection(NULL, connection, result, config_data, NULL, NULL);
 

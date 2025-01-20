@@ -6490,7 +6490,7 @@ find_device_for_activation(NMManager            *self,
     nm_assert(out_is_vpn);
 
     if (!connection)
-	connection = nm_settings_connection_get_connection(sett_conn);
+        connection = nm_settings_connection_get_connection(sett_conn);
 
     is_vpn = _connection_is_vpn(connection);
 
