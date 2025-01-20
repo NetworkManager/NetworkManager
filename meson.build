@@ -5,7 +5,7 @@ project(
 # NOTE: When incrementing version also add corresponding
 #       NM_VERSION_x_y_z macros in
 #       "src/libnm-core-public/nm-version-macros.h.in"
-  version: '1.51.5',
+  version: '1.51.6',
   license: 'GPL2+',
   default_options: [
     'buildtype=debugoptimized',
