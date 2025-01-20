@@ -143,8 +143,7 @@ complete_connection(NMDevice            *device,
                               NULL,
                               _("TUN connection"),
                               NULL,
-                              NULL,
-                              TRUE);
+                              NULL);
 
     s_tun = nm_connection_get_setting_tun(connection);
     if (!s_tun) {

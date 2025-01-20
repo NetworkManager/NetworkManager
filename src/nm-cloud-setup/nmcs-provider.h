@@ -17,6 +17,8 @@ typedef struct {
      * dictionary. */
     const char *hwaddr;
 
+    struct _NMCSProvider *provider;
+
     struct _NMCSProviderGetConfigTaskData *get_config_data;
 
     in_addr_t *ipv4s_arr;
@@ -51,6 +53,10 @@ typedef struct {
             bool      has_primary_ip_address : 1;
             bool      ipv4s_arr_ordered : 1;
         } aliyun;
+        struct {
+            guint32     vlan_tag; /* 0 if no VLAN is needed */
+            const char *parent_hwaddr;
+        } oci;
     } priv;
 
 } NMCSProviderGetConfigIfaceData;
@@ -219,12 +225,5 @@ void nmcs_provider_get_config(NMCSProvider       *provider,
 
 NMCSProviderGetConfigResult *
 nmcs_provider_get_config_finish(NMCSProvider *provider, GAsyncResult *result, GError **error);
-
-/*****************************************************************************/
-
-/* Forward declare the implemented gtype getters so we can use it at a few places without requiring
- * to include the full header. The other parts of those headers should not be used aside where they
- * are necessary. */
-GType nmcs_provider_aliyun_get_type(void);
 
 #endif /* __NMCS_PROVIDER_H__ */

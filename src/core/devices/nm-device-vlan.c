@@ -379,8 +379,7 @@ complete_connection(NMDevice            *device,
                               NULL,
                               _("VLAN connection"),
                               NULL,
-                              NULL,
-                              TRUE);
+                              NULL);
 
     s_vlan = nm_connection_get_setting_vlan(connection);
     if (!s_vlan) {
@@ -618,43 +617,35 @@ get_connection_parent(NMDeviceFactory *factory, NMConnection *connection)
     g_return_val_if_fail(nm_connection_is_type(connection, NM_SETTING_VLAN_SETTING_NAME), NULL);
 
     s_vlan = nm_connection_get_setting_vlan(connection);
-    g_assert(s_vlan);
-
-    parent = nm_setting_vlan_get_parent(s_vlan);
-    if (parent)
-        return parent;
+    if (s_vlan) {
+        parent = nm_setting_vlan_get_parent(s_vlan);
+        if (parent)
+            return parent;
+    }
 
     /* Try the hardware address from the VLAN connection's hardware setting */
     s_wired = nm_connection_get_setting_wired(connection);
     if (s_wired)
         return nm_setting_wired_get_mac_address(s_wired);
-
-    return NULL;
+    else
+        return NULL;
 }
 
 static char *
 get_connection_iface(NMDeviceFactory *factory, NMConnection *connection, const char *parent_iface)
 {
-    const char    *ifname;
     NMSettingVlan *s_vlan;
 
     g_return_val_if_fail(nm_connection_is_type(connection, NM_SETTING_VLAN_SETTING_NAME), NULL);
 
-    s_vlan = nm_connection_get_setting_vlan(connection);
-    g_assert(s_vlan);
-
     if (!parent_iface)
         return NULL;
 
-    ifname = nm_connection_get_interface_name(connection);
-    if (ifname)
-        return g_strdup(ifname);
-
-    /* If the connection doesn't specify the interface name for the VLAN
-     * device, we create one for it using the VLAN ID and the parent
-     * interface's name.
-     */
-    return nmp_utils_new_vlan_name(parent_iface, nm_setting_vlan_get_id(s_vlan));
+    s_vlan = nm_connection_get_setting_vlan(connection);
+    if (s_vlan)
+        return nmp_utils_new_vlan_name(parent_iface, nm_setting_vlan_get_id(s_vlan));
+    else
+        return NULL;
 }
 
 NM_DEVICE_FACTORY_DEFINE_INTERNAL(

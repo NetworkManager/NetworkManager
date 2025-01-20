@@ -402,8 +402,7 @@ complete_connection(NMDevice            *device,
                               NULL,
                               _("IP tunnel connection"),
                               NULL,
-                              NULL,
-                              TRUE);
+                              NULL);
 
     s_ip_tunnel = nm_connection_get_setting_ip_tunnel(connection);
     if (!s_ip_tunnel) {
@@ -1369,29 +1368,10 @@ get_connection_parent(NMDeviceFactory *factory, NMConnection *connection)
                          NULL);
 
     s_ip_tunnel = nm_connection_get_setting_ip_tunnel(connection);
-    g_assert(s_ip_tunnel);
-
-    return nm_setting_ip_tunnel_get_parent(s_ip_tunnel);
-}
-
-static char *
-get_connection_iface(NMDeviceFactory *factory, NMConnection *connection, const char *parent_iface)
-{
-    const char        *ifname;
-    NMSettingIPTunnel *s_ip_tunnel;
-
-    g_return_val_if_fail(nm_connection_is_type(connection, NM_SETTING_IP_TUNNEL_SETTING_NAME),
-                         NULL);
-
-    s_ip_tunnel = nm_connection_get_setting_ip_tunnel(connection);
-    g_assert(s_ip_tunnel);
-
-    if (nm_setting_ip_tunnel_get_parent(s_ip_tunnel) && !parent_iface)
+    if (s_ip_tunnel)
+        return nm_setting_ip_tunnel_get_parent(s_ip_tunnel);
+    else
         return NULL;
-
-    ifname = nm_connection_get_interface_name(connection);
-
-    return g_strdup(ifname);
 }
 
 NM_DEVICE_FACTORY_DEFINE_INTERNAL(
@@ -1409,5 +1389,4 @@ NM_DEVICE_FACTORY_DEFINE_INTERNAL(
                                          NM_LINK_TYPE_VTI6)
         NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES(NM_SETTING_IP_TUNNEL_SETTING_NAME),
     factory_class->create_device         = create_device;
-    factory_class->get_connection_parent = get_connection_parent;
-    factory_class->get_connection_iface  = get_connection_iface;);
+    factory_class->get_connection_parent = get_connection_parent;);

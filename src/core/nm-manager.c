@@ -2522,7 +2522,7 @@ return_ifname_fom_connection:
         g_set_error(error,
                     NM_MANAGER_ERROR,
                     NM_MANAGER_ERROR_FAILED,
-                    "failed to determine interface name: error determine name for %s",
+                    "failed to determine interface name for a %s",
                     nm_connection_get_connection_type(connection));
     }
     return iface;
@@ -6403,17 +6403,11 @@ nm_manager_activate_connection(NMManager             *self,
  * @sett_conn: the #NMSettingsConnection to be activated, or %NULL if there
  *   is only a partial activation.
  * @connection: the partial #NMConnection to be activated (if @sett_conn is unspecified)
- * @device_path: the object path of the device to be activated, or NULL
- * @out_device: on successful return, the #NMDevice to be activated with @connection
- *   The caller may pass in a device which shortcuts the lookup by path.
- *   In this case, the passed in device must have the matching @device_path
- *   already.
- * @out_is_vpn: on successful return, %TRUE if @connection is a VPN connection
  * @error: location to store an error on failure
  *
- * Performs basic validation on an activation request, including ensuring that
- * the requestor is a valid Unix process, is not disallowed in @connection
- * permissions, and that a device exists that can activate @connection.
+ * Performs basic permission validation on an activation request: Ensures that
+ * the requestor is a valid Unix process and is not disallowed in @connection
+ * permissions.
  *
  * Returns: on success, the #NMAuthSubject representing the requestor, or
  *   %NULL on error
@@ -6423,13 +6417,8 @@ validate_activation_request(NMManager             *self,
                             GDBusMethodInvocation *context,
                             NMSettingsConnection  *sett_conn,
                             NMConnection          *connection,
-                            const char            *device_path,
-                            NMDevice             **out_device,
-                            gboolean              *out_is_vpn,
                             GError               **error)
 {
-    NMDevice                      *device  = NULL;
-    gboolean                       is_vpn  = FALSE;
     gs_unref_object NMAuthSubject *subject = NULL;
 
     nm_assert(!sett_conn || NM_IS_SETTINGS_CONNECTION(sett_conn));
@@ -6437,8 +6426,6 @@ validate_activation_request(NMManager             *self,
     nm_assert(sett_conn || connection);
     nm_assert(!connection || !sett_conn
               || connection == nm_settings_connection_get_connection(sett_conn));
-    nm_assert(out_device);
-    nm_assert(out_is_vpn);
 
     if (!connection)
         connection = nm_settings_connection_get_connection(sett_conn);
@@ -6459,6 +6446,51 @@ validate_activation_request(NMManager             *self,
                                              NM_MANAGER_ERROR_PERMISSION_DENIED,
                                              error))
         return NULL;
+    return g_steal_pointer(&subject);
+}
+
+/**
+ * find_device_for_activation:
+ * @self: the #NMManager
+ * @sett_conn: the #NMSettingsConnection to be activated, or %NULL if there
+ *   is only a partial activation.
+ * @connection: the partial #NMConnection to be activated (if @sett_conn is unspecified)
+ * @device_path: the object path of the device to be activated, or NULL
+ * @out_device: on successful return, the #NMDevice to be activated with @connection
+ *   The caller may pass in a device which shortcuts the lookup by path.
+ *   In this case, the passed in device must have the matching @device_path
+ *   already.
+ * @out_is_vpn: on successful return, %TRUE if @connection is a VPN connection
+ * @error: location to store an error on failure
+ *
+ * Looks up a device that can activate @connection, or indicates the
+ * connection is a VPN connection that does not require a device.
+ *
+ * Returns: %TRUE if the device could be find or connection doesn't
+ *   need one, %FALSE otherwise
+ */
+static gboolean
+find_device_for_activation(NMManager            *self,
+                           NMSettingsConnection *sett_conn,
+                           NMConnection         *connection,
+                           const char           *device_path,
+                           NMDevice            **out_device,
+                           gboolean             *out_is_vpn,
+                           GError              **error)
+{
+    gboolean  is_vpn = FALSE;
+    NMDevice *device = NULL;
+
+    nm_assert(!sett_conn || NM_IS_SETTINGS_CONNECTION(sett_conn));
+    nm_assert(!connection || NM_IS_CONNECTION(connection));
+    nm_assert(sett_conn || connection);
+    nm_assert(!connection || !sett_conn
+              || connection == nm_settings_connection_get_connection(sett_conn));
+    nm_assert(out_device);
+    nm_assert(out_is_vpn);
+
+    if (!connection)
+	connection = nm_settings_connection_get_connection(sett_conn);
 
     is_vpn = _connection_is_vpn(connection);
 
@@ -6475,7 +6507,7 @@ validate_activation_request(NMManager             *self,
                                 NM_MANAGER_ERROR,
                                 NM_MANAGER_ERROR_UNKNOWN_DEVICE,
                                 "Device not found");
-            return NULL;
+            return FALSE;
         }
     } else if (!is_vpn) {
         gs_free_error GError *local = NULL;
@@ -6497,30 +6529,22 @@ validate_activation_request(NMManager             *self,
                             NM_MANAGER_ERROR_UNKNOWN_DEVICE,
                             "No suitable device found for this connection (%s).",
                             local->message);
-                return NULL;
+                return FALSE;
             }
 
             /* Look for an existing device with the connection's interface name */
             iface = nm_manager_get_connection_iface(self, connection, NULL, NULL, error);
             if (!iface)
-                return NULL;
+                return FALSE;
 
             device = find_device_by_iface(self, iface, connection, NULL, NULL);
-            if (!device) {
-                g_set_error_literal(error,
-                                    NM_MANAGER_ERROR,
-                                    NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-                                    "Failed to find a compatible device for this connection");
-                return NULL;
-            }
         }
     }
 
-    nm_assert(is_vpn || NM_IS_DEVICE(device));
-
     *out_device = device;
     *out_is_vpn = is_vpn;
-    return g_steal_pointer(&subject);
+
+    return TRUE;
 }
 
 /*****************************************************************************/
@@ -6637,16 +6661,20 @@ impl_manager_activate_connection(NMDBusObject                      *obj,
             goto error;
     }
 
-    subject = validate_activation_request(self,
-                                          invocation,
-                                          sett_conn,
-                                          NULL,
-                                          device_path,
-                                          &device,
-                                          &is_vpn,
-                                          &error);
+    subject = validate_activation_request(self, invocation, sett_conn, NULL, &error);
     if (!subject)
         goto error;
+
+    if (!find_device_for_activation(self, sett_conn, NULL, device_path, &device, &is_vpn, &error))
+        goto error;
+
+    if (!device && !is_vpn) {
+        g_set_error_literal(&error,
+                            NM_MANAGER_ERROR,
+                            NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+                            "Failed to find a compatible device for this connection");
+        goto error;
+    }
 
     active = _new_active_connection(self,
                                     is_vpn,
@@ -6675,6 +6703,10 @@ impl_manager_activate_connection(NMDBusObject                      *obj,
     return;
 
 error:
+    if (device && nm_device_is_software(device)) {
+        if (_check_remove_dev_on_link_deleted(self, device))
+            remove_device(self, device, FALSE);
+    }
     if (sett_conn) {
         nm_audit_log_connection_op(NM_AUDIT_OP_CONN_ACTIVATE,
                                    sett_conn,
@@ -6767,6 +6799,7 @@ _add_and_activate_auth_done(NMManager                      *self,
                             const char                     *error_desc)
 {
     NMManagerPrivate *priv;
+    NMDevice         *device;
     GError           *error = NULL;
 
     if (!success) {
@@ -6779,6 +6812,12 @@ _add_and_activate_auth_done(NMManager                      *self,
                                    nm_active_connection_get_subject(active),
                                    error->message);
         g_dbus_method_invocation_take_error(invocation, error);
+
+        device = nm_active_connection_get_device(active);
+        if (device && nm_device_is_software(device)) {
+            if (_check_remove_dev_on_link_deleted(self, device))
+                remove_device(self, device, FALSE);
+        }
         return;
     }
 
@@ -6920,44 +6959,25 @@ impl_manager_add_and_activate_connection(NMDBusObject                      *obj,
                                         NM_SETTING_PARSE_FLAGS_STRICT,
                                         NULL);
 
-    subject = validate_activation_request(self,
-                                          invocation,
-                                          NULL,
-                                          incompl_conn,
-                                          device_path,
-                                          &device,
-                                          &is_vpn,
-                                          &error);
+    subject = validate_activation_request(self, invocation, NULL, incompl_conn, &error);
     if (!subject)
         goto error;
 
-    if (is_vpn) {
-        /* Try to fill the VPN's connection setting and name at least */
-        if (!nm_connection_get_setting_vpn(incompl_conn)) {
-            error = g_error_new_literal(NM_CONNECTION_ERROR,
-                                        NM_CONNECTION_ERROR_MISSING_SETTING,
-                                        "VPN connections require a 'vpn' setting");
-            g_prefix_error(&error, "%s: ", NM_SETTING_VPN_SETTING_NAME);
-            goto error;
-        }
+    if (!find_device_for_activation(self,
+                                    NULL,
+                                    incompl_conn,
+                                    device_path,
+                                    &device,
+                                    &is_vpn,
+                                    &error)) {
+        goto error;
+    }
 
-        conns = nm_settings_connections_array_to_connections(
-            nm_settings_get_connections(priv->settings, NULL),
-            -1);
+    conns = nm_settings_connections_array_to_connections(
+        nm_settings_get_connections(priv->settings, NULL),
+        -1);
 
-        nm_utils_complete_generic(priv->platform,
-                                  incompl_conn,
-                                  NM_SETTING_VPN_SETTING_NAME,
-                                  conns,
-                                  NULL,
-                                  _("VPN connection"),
-                                  NULL,
-                                  NULL,
-                                  FALSE); /* No IPv6 by default for now */
-    } else {
-        conns = nm_settings_connections_array_to_connections(
-            nm_settings_get_connections(priv->settings, NULL),
-            -1);
+    if (device) {
         /* Let each device subclass complete the connection */
         if (!nm_device_complete_connection(device,
                                            incompl_conn,
@@ -6965,9 +6985,32 @@ impl_manager_add_and_activate_connection(NMDBusObject                      *obj,
                                            conns,
                                            &error))
             goto error;
-    }
+    } else {
+        nm_utils_complete_generic(priv->platform,
+                                  incompl_conn,
+                                  nm_connection_get_connection_type(incompl_conn),
+                                  conns,
+                                  is_vpn ? _("VPN connection") : NULL,
+                                  nm_connection_get_connection_type(incompl_conn),
+                                  NULL,
+                                  NULL);
 
-    nm_assert(_nm_connection_verify(incompl_conn, NULL) == NM_SETTING_VERIFY_SUCCESS);
+        if (!nm_connection_verify(incompl_conn, &error))
+            goto error;
+
+        if (!is_vpn && !device) {
+            nm_assert(nm_connection_is_virtual(incompl_conn));
+
+            device = system_create_virtual_device(self, incompl_conn);
+            if (!device) {
+                g_set_error_literal(&error,
+                                    NM_MANAGER_ERROR,
+                                    NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+                                    "Failed to create a device for this connection");
+                goto error;
+            }
+        }
+    }
 
     active = _new_active_connection(self,
                                     is_vpn,

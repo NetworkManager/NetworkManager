@@ -232,9 +232,8 @@ create_and_realize(NMDevice              *device,
         g_set_error(error,
                     NM_DEVICE_ERROR,
                     NM_DEVICE_ERROR_FAILED,
-                    "unsupported MACVLAN mode %u in connection %s",
-                    nm_setting_macvlan_get_mode(s_macvlan),
-                    nm_connection_get_uuid(connection));
+                    "unsupported MACVLAN mode %u",
+                    nm_setting_macvlan_get_mode(s_macvlan));
         return FALSE;
     }
     lnk.no_promisc = !nm_setting_macvlan_get_promiscuous(s_macvlan);
@@ -365,8 +364,7 @@ complete_connection(NMDevice            *device,
                               NULL,
                               _("MACVLAN connection"),
                               NULL,
-                              NULL,
-                              TRUE);
+                              NULL);
 
     s_macvlan = nm_connection_get_setting_macvlan(connection);
     if (!s_macvlan) {
@@ -590,36 +588,18 @@ get_connection_parent(NMDeviceFactory *factory, NMConnection *connection)
     g_return_val_if_fail(nm_connection_is_type(connection, NM_SETTING_MACVLAN_SETTING_NAME), NULL);
 
     s_macvlan = nm_connection_get_setting_macvlan(connection);
-    g_assert(s_macvlan);
-
-    parent = nm_setting_macvlan_get_parent(s_macvlan);
-    if (parent)
-        return parent;
+    if (s_macvlan) {
+        parent = nm_setting_macvlan_get_parent(s_macvlan);
+        if (parent)
+            return parent;
+    }
 
     /* Try the hardware address from the MACVLAN connection's hardware setting */
     s_wired = nm_connection_get_setting_wired(connection);
     if (s_wired)
         return nm_setting_wired_get_mac_address(s_wired);
-
-    return NULL;
-}
-
-static char *
-get_connection_iface(NMDeviceFactory *factory, NMConnection *connection, const char *parent_iface)
-{
-    NMSettingMacvlan *s_macvlan;
-    const char       *ifname;
-
-    g_return_val_if_fail(nm_connection_is_type(connection, NM_SETTING_MACVLAN_SETTING_NAME), NULL);
-
-    s_macvlan = nm_connection_get_setting_macvlan(connection);
-    g_assert(s_macvlan);
-
-    if (!parent_iface)
+    else
         return NULL;
-
-    ifname = nm_connection_get_interface_name(connection);
-    return g_strdup(ifname);
 }
 
 NM_DEVICE_FACTORY_DEFINE_INTERNAL(
@@ -629,5 +609,4 @@ NM_DEVICE_FACTORY_DEFINE_INTERNAL(
     NM_DEVICE_FACTORY_DECLARE_LINK_TYPES(NM_LINK_TYPE_MACVLAN, NM_LINK_TYPE_MACVTAP)
         NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES(NM_SETTING_MACVLAN_SETTING_NAME),
     factory_class->create_device         = create_device;
-    factory_class->get_connection_parent = get_connection_parent;
-    factory_class->get_connection_iface  = get_connection_iface;);
+    factory_class->get_connection_parent = get_connection_parent;);

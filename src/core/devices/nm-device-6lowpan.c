@@ -161,8 +161,7 @@ complete_connection(NMDevice            *device,
                               NULL,
                               _("6LOWPAN connection"),
                               NULL,
-                              NULL,
-                              TRUE);
+                              NULL);
 
     s_6lowpan = NM_SETTING_6LOWPAN(nm_connection_get_setting(connection, NM_TYPE_SETTING_6LOWPAN));
     if (!s_6lowpan) {
@@ -276,27 +275,10 @@ get_connection_parent(NMDeviceFactory *factory, NMConnection *connection)
     g_return_val_if_fail(nm_connection_is_type(connection, NM_SETTING_6LOWPAN_SETTING_NAME), NULL);
 
     s_6lowpan = NM_SETTING_6LOWPAN(nm_connection_get_setting(connection, NM_TYPE_SETTING_6LOWPAN));
-    g_assert(s_6lowpan);
-
-    return nm_setting_6lowpan_get_parent(s_6lowpan);
-}
-
-static char *
-get_connection_iface(NMDeviceFactory *factory, NMConnection *connection, const char *parent_iface)
-{
-    NMSetting6Lowpan *s_6lowpan;
-    const char       *ifname;
-
-    g_return_val_if_fail(nm_connection_is_type(connection, NM_SETTING_6LOWPAN_SETTING_NAME), NULL);
-
-    s_6lowpan = NM_SETTING_6LOWPAN(nm_connection_get_setting(connection, NM_TYPE_SETTING_6LOWPAN));
-    g_assert(s_6lowpan);
-
-    if (!parent_iface)
+    if (s_6lowpan)
+        return nm_setting_6lowpan_get_parent(s_6lowpan);
+    else
         return NULL;
-
-    ifname = nm_connection_get_interface_name(connection);
-    return g_strdup(ifname);
 }
 
 NM_DEVICE_FACTORY_DEFINE_INTERNAL(
@@ -306,5 +288,4 @@ NM_DEVICE_FACTORY_DEFINE_INTERNAL(
     NM_DEVICE_FACTORY_DECLARE_LINK_TYPES(NM_LINK_TYPE_6LOWPAN)
         NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES(NM_SETTING_6LOWPAN_SETTING_NAME),
     factory_class->create_device         = create_device;
-    factory_class->get_connection_parent = get_connection_parent;
-    factory_class->get_connection_iface  = get_connection_iface;);
+    factory_class->get_connection_parent = get_connection_parent;);

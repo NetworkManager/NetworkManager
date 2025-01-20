@@ -86,6 +86,9 @@ ENV_NM_TEST_REGENERATE = "NM_TEST_REGENERATE"
 # numbers enabled.
 ENV_NM_TEST_WITH_LINENO = "NM_TEST_WITH_LINENO"
 
+# Log pexpect output to stderr, for debuging
+ENV_NM_TEST_LOG_PEXPECT = "NM_TEST_LOG_PEXPECT"
+
 ENV_NM_TEST_ASAN_OPTIONS = "NM_TEST_ASAN_OPTIONS"
 ENV_NM_TEST_LSAN_OPTIONS = "NM_TEST_LSAN_OPTIONS"
 ENV_NM_TEST_UBSAN_OPTIONS = "NM_TEST_UBSAN_OPTIONS"
@@ -689,7 +692,9 @@ class Util:
         argv, valgrind_log = Util.cmd_create_argv(cmd_path, args)
         env = Util.cmd_create_env(extra_env=extra_env)
 
-        pexp = pexpect.spawn(argv[0], argv[1:], timeout=10, env=env)
+        pexp = pexpect.spawn(argv[0], argv[1:], timeout=10, env=env, encoding="utf-8")
+        if conf.get(ENV_NM_TEST_LOG_PEXPECT):
+            pexp.logfile = sys.stderr
 
         pexp.str_last_chars = 100000
 
@@ -775,6 +780,8 @@ class Configuration:
             v = Util.is_bool(os.environ.get(ENV_NM_TEST_REGENERATE, None))
         elif name == ENV_NM_TEST_WITH_LINENO:
             v = Util.is_bool(os.environ.get(ENV_NM_TEST_WITH_LINENO, None))
+        elif name == ENV_NM_TEST_LOG_PEXPECT:
+            v = Util.is_bool(os.environ.get(ENV_NM_TEST_LOG_PEXPECT, None))
         elif name == ENV_NM_TEST_VALGRIND:
             if self.get(ENV_NM_TEST_REGENERATE):
                 v = False
@@ -1125,113 +1132,6 @@ class NMTestContext:
     def async_append_job(self, async_job):
         self._async_jobs.append(async_job)
 
-    def run_post(self):
-        self.async_wait()
-
-        self.srv_shutdown()
-
-        self._calling_num = None
-
-        results = self.ctx_results
-        self.ctx_results = None
-
-        if len(results) == 0:
-            return
-
-        skip_test_for_l10n_diff = self._skip_test_for_l10n_diff
-        self._skip_test_for_l10n_diff = None
-
-        filename = os.path.abspath(
-            PathConfiguration.srcdir()
-            + "/test-client.check-on-disk/"
-            + self.testMethodName
-            + ".expected"
-        )
-
-        regenerate = conf.get(ENV_NM_TEST_REGENERATE)
-
-        content_expect, results_expect = Util.file_read_expected(filename)
-
-        if results_expect is None:
-            if not regenerate:
-                self.fail(
-                    "Failed to parse expected file '%s'. Let the test write the file by rerunning with NM_TEST_REGENERATE=1"
-                    % (filename)
-                )
-        else:
-            for i in range(0, min(len(results_expect), len(results))):
-                n = results[i]
-                if results_expect[i] == n["content"]:
-                    continue
-                if regenerate:
-                    continue
-                if n["ignore_l10n_diff"]:
-                    skip_test_for_l10n_diff.append(n["test_name"])
-                    continue
-                print(
-                    "\n\n\nThe file '%s' does not have the expected content:"
-                    % (filename)
-                )
-                print("ACTUAL OUTPUT:\n[[%s]]\n" % (n["content"]))
-                print("EXPECT OUTPUT:\n[[%s]]\n" % (results_expect[i]))
-                print(
-                    "Let the test write the file by rerunning with NM_TEST_REGENERATE=1"
-                )
-                print(
-                    "See howto in %s for details.\n"
-                    % (PathConfiguration.canonical_script_filename())
-                )
-                sys.stdout.flush()
-                self.fail(
-                    "Unexpected output of command, expected %s. Rerun test with NM_TEST_REGENERATE=1 to regenerate files"
-                    % (filename)
-                )
-            if len(results_expect) != len(results):
-                if not regenerate:
-                    print(
-                        "\n\n\nThe number of tests in %s does not match the expected content (%s vs %s):"
-                        % (filename, len(results_expect), len(results))
-                    )
-                    if len(results_expect) < len(results):
-                        print(
-                            "ACTUAL OUTPUT:\n[[%s]]\n"
-                            % (results[len(results_expect)]["content"])
-                        )
-                    else:
-                        print(
-                            "EXPECT OUTPUT:\n[[%s]]\n" % (results_expect[len(results)])
-                        )
-                    print(
-                        "Let the test write the file by rerunning with NM_TEST_REGENERATE=1"
-                    )
-                    print(
-                        "See howto in %s for details.\n"
-                        % (PathConfiguration.canonical_script_filename())
-                    )
-                    sys.stdout.flush()
-                    self.fail(
-                        "Unexpected output of command, expected %s. Rerun test with NM_TEST_REGENERATE=1 to regenerate files"
-                        % (filename)
-                    )
-
-        if regenerate:
-            content_new = b"".join([r["content"] for r in results])
-            if content_new != content_expect:
-                try:
-                    with open(filename, "wb") as content_file:
-                        content_file.write(content_new)
-                except Exception as e:
-                    self.fail("Failure to write '%s': %s" % (filename, e))
-
-        if skip_test_for_l10n_diff:
-            # nmcli loads translations from the installation path. This failure commonly
-            # happens because you did not install the binary in the --prefix, before
-            # running the test. Hence, translations are not available or differ.
-            raise unittest.SkipTest(
-                "Skipped asserting for localized tests %s. Set NM_TEST_CLIENT_CHECK_L10N=1 to force fail."
-                % (",".join(skip_test_for_l10n_diff))
-            )
-
 
 ###############################################################################
 
@@ -1241,6 +1141,7 @@ class TestNmcli(unittest.TestCase):
         Util.skip_without_dbus_session()
         Util.skip_without_NM()
         self.ctx = NMTestContext(self._testMethodName)
+        self._skip_test_for_l10n_diff = []
 
     def call_nmcli_l(
         self,
@@ -1501,18 +1402,124 @@ class TestNmcli(unittest.TestCase):
 
         self.ctx.async_start(wait_all=sync_barrier)
 
+    def run_post(self):
+        self.ctx.async_wait()
+        self.ctx.srv_shutdown()
+
+        self.ctx._calling_num = None
+
+        results = self.ctx.ctx_results
+        self.ctx.ctx_results = None
+
+        if len(results) == 0:
+            return
+
+        skip_test_for_l10n_diff = self._skip_test_for_l10n_diff
+        self._skip_test_for_l10n_diff = None
+
+        filename = os.path.abspath(
+            PathConfiguration.srcdir()
+            + "/test-client.check-on-disk/"
+            + self._testMethodName
+            + ".expected"
+        )
+
+        regenerate = conf.get(ENV_NM_TEST_REGENERATE)
+
+        content_expect, results_expect = Util.file_read_expected(filename)
+
+        if results_expect is None:
+            if not regenerate:
+                self.fail(
+                    "Failed to parse expected file '%s'. Let the test write the file by rerunning with NM_TEST_REGENERATE=1"
+                    % (filename)
+                )
+        else:
+            for i in range(0, min(len(results_expect), len(results))):
+                n = results[i]
+                if results_expect[i] == n["content"]:
+                    continue
+                if regenerate:
+                    continue
+                if n["ignore_l10n_diff"]:
+                    skip_test_for_l10n_diff.append(n["test_name"])
+                    continue
+                print(
+                    "\n\n\nThe file '%s' does not have the expected content:"
+                    % (filename)
+                )
+                print("ACTUAL OUTPUT:\n[[%s]]\n" % (n["content"]))
+                print("EXPECT OUTPUT:\n[[%s]]\n" % (results_expect[i]))
+                print(
+                    "Let the test write the file by rerunning with NM_TEST_REGENERATE=1"
+                )
+                print(
+                    "See howto in %s for details.\n"
+                    % (PathConfiguration.canonical_script_filename())
+                )
+                sys.stdout.flush()
+                self.fail(
+                    "Unexpected output of command, expected %s. Rerun test with NM_TEST_REGENERATE=1 to regenerate files"
+                    % (filename)
+                )
+            if len(results_expect) != len(results):
+                if not regenerate:
+                    print(
+                        "\n\n\nThe number of tests in %s does not match the expected content (%s vs %s):"
+                        % (filename, len(results_expect), len(results))
+                    )
+                    if len(results_expect) < len(results):
+                        print(
+                            "ACTUAL OUTPUT:\n[[%s]]\n"
+                            % (results[len(results_expect)]["content"])
+                        )
+                    else:
+                        print(
+                            "EXPECT OUTPUT:\n[[%s]]\n" % (results_expect[len(results)])
+                        )
+                    print(
+                        "Let the test write the file by rerunning with NM_TEST_REGENERATE=1"
+                    )
+                    print(
+                        "See howto in %s for details.\n"
+                        % (PathConfiguration.canonical_script_filename())
+                    )
+                    sys.stdout.flush()
+                    self.fail(
+                        "Unexpected output of command, expected %s. Rerun test with NM_TEST_REGENERATE=1 to regenerate files"
+                        % (filename)
+                    )
+
+        if regenerate:
+            content_new = b"".join([r["content"] for r in results])
+            if content_new != content_expect:
+                try:
+                    with open(filename, "wb") as content_file:
+                        content_file.write(content_new)
+                except Exception as e:
+                    self.fail("Failure to write '%s': %s" % (filename, e))
+
+        if skip_test_for_l10n_diff:
+            # nmcli loads translations from the installation path. This failure commonly
+            # happens because you did not install the binary in the --prefix, before
+            # running the test. Hence, translations are not available or differ.
+            raise unittest.SkipTest(
+                "Skipped asserting for localized tests %s. Set NM_TEST_CLIENT_CHECK_L10N=1 to force fail."
+                % (",".join(skip_test_for_l10n_diff))
+            )
+
     def nm_test(func):
         def f(self):
             self.ctx.srv_start()
             func(self)
-            self.ctx.run_post()
+            self.run_post()
 
         return f
 
     def nm_test_no_dbus(func):
         def f(self):
             func(self)
-            self.ctx.run_post()
+            self.run_post()
 
         return f
 
@@ -2369,7 +2376,8 @@ class TestNmCloudSetup(unittest.TestCase):
                 func(self)
             except Exception as e:
                 error = e
-            self.ctx.run_post()
+            self.ctx.async_wait()
+            self.ctx.srv_shutdown()
 
             self.md_conn.close()
             p.stdin.close()
@@ -2711,6 +2719,195 @@ class TestNmCloudSetup(unittest.TestCase):
         nmc.pexp.expect(pexpect.EOF)
 
         Util.valgrind_check_log(nmc.valgrind_log, "test_gcp")
+
+    @cloud_setup_test
+    def test_oci(self):
+        self._mock_devices()
+
+        oci_meta = "/opc/v2/"
+        self._mock_path(oci_meta + "instance", "{}")
+        self._mock_path(
+            oci_meta + "vnics",
+            """
+        [
+          {
+            "macAddr": "%s",
+            "privateIp": "%s",
+            "subnetCidrBlock": "172.31.16.0/20",
+            "virtualRouterIp": "172.31.16.1",
+            "vlanTag": 810,
+            "vnicId": "ocid1.vnic.oc1.cz-adamov1.foobarbaz"
+          },
+          {
+            "macAddr": "%s",
+            "privateIp": "%s",
+            "subnetCidrBlock": "172.31.166.0/20",
+            "virtualRouterIp": "172.31.166.1",
+            "vlanTag": 700,
+            "vnicId": "ocid1.vnic.oc1.uk-hogwarts.expelliarmus"
+          }
+        ]
+        """
+            % (
+                TestNmCloudSetup._mac1,
+                TestNmCloudSetup._ip1,
+                TestNmCloudSetup._mac2,
+                TestNmCloudSetup._ip2,
+            ),
+        )
+
+        # Run nm-cloud-setup for the first time
+        nmc = Util.cmd_call_pexpect(
+            ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
+            [],
+            {
+                "NM_CLOUD_SETUP_OCI_HOST": self.md_url,
+                "NM_CLOUD_SETUP_LOG": "trace",
+                "NM_CLOUD_SETUP_OCI": "yes",
+            },
+        )
+
+        nmc.pexp.expect("provider oci detected")
+        nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        nmc.pexp.expect("get-config: starting")
+        nmc.pexp.expect("get-config: success")
+        nmc.pexp.expect("meta data received")
+        # One of the devices has no IPv4 configuration to be modified
+        nmc.pexp.expect("device has no suitable applied connection. Skip")
+        # The other one was lacking an address set it up.
+        nmc.pexp.expect("some changes were applied for provider oci")
+        nmc.pexp.expect(pexpect.EOF)
+
+        # Run nm-cloud-setup for the second time
+        nmc = Util.cmd_call_pexpect(
+            ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
+            [],
+            {
+                "NM_CLOUD_SETUP_OCI_HOST": self.md_url,
+                "NM_CLOUD_SETUP_LOG": "trace",
+                "NM_CLOUD_SETUP_OCI": "yes",
+            },
+        )
+
+        nmc.pexp.expect("provider oci detected")
+        nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        nmc.pexp.expect("get-config: starting")
+        nmc.pexp.expect("get-config: success")
+        nmc.pexp.expect("meta data received")
+        # No changes this time
+        nmc.pexp.expect('device needs no update to applied connection "con-eth0"')
+        nmc.pexp.expect("no changes were applied for provider oci")
+        nmc.pexp.expect(pexpect.EOF)
+
+        Util.valgrind_check_log(nmc.valgrind_log, "test_oci")
+
+    @cloud_setup_test
+    def test_oci_vlans(self):
+        self._mock_devices()
+
+        oci_meta = "/opc/v2/"
+        self._mock_path(oci_meta + "instance", "{}")
+        self._mock_path(
+            oci_meta + "vnics",
+            """
+        [
+          {
+            "macAddr": "%s",
+            "privateIp": "%s",
+            "subnetCidrBlock": "172.31.16.0/20",
+            "virtualRouterIp": "172.31.16.1",
+            "vlanTag": 0,
+            "nicIndex": 0,
+            "vnicId": "ocid1.vnic.oc1.cz-adamov1.foobarbaz"
+          },
+          {
+            "macAddr": "%s",
+            "privateIp": "%s",
+            "subnetCidrBlock": "172.31.166.0/20",
+            "virtualRouterIp": "172.31.166.1",
+            "vlanTag": 0,
+            "nicIndex": 1,
+            "vnicId": "ocid1.vnic.oc1.uk-hogwarts.expelliarmus"
+          },
+          {
+            "macAddr": "C0:00:00:00:00:10",
+            "privateIp": "172.31.10.10",
+            "subnetCidrBlock": "172.31.10.0/20",
+            "virtualRouterIp": "172.31.10.1",
+            "vlanTag": 700,
+            "nicIndex": 0,
+            "vnicId": "ocid1.vnic.oc1.uk-hogwarts.keka"
+          }
+        ]
+        """
+            % (
+                TestNmCloudSetup._mac1,
+                TestNmCloudSetup._ip1,
+                TestNmCloudSetup._mac2,
+                TestNmCloudSetup._ip2,
+            ),
+        )
+
+        # Run nm-cloud-setup for the first time
+        nmc = Util.cmd_call_pexpect(
+            ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
+            [],
+            {
+                "NM_CLOUD_SETUP_OCI_HOST": self.md_url,
+                "NM_CLOUD_SETUP_LOG": "trace",
+                "NM_CLOUD_SETUP_OCI": "yes",
+            },
+        )
+
+        nmc.pexp.expect("provider oci detected")
+        nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        nmc.pexp.expect("get-config: starting")
+        nmc.pexp.expect("get-config: success")
+        nmc.pexp.expect("meta data received")
+
+        # No configuration for the ethernets
+        nmc.pexp.expect('configuring "eth0"')
+        nmc.pexp.expect("device has no suitable applied connection. Skip")
+
+        # Setting up the VLAN
+        nmc.pexp.expect(
+            "creating macvlan2 connection for VLAN 700 on CC:00:00:00:00:01..."
+        )
+        nmc.pexp.expect("creating vlan connection for VLAN 700 on C0:00:00:00:00:10...")
+
+        nmc.pexp.expect("some changes were applied for provider oci")
+        nmc.pexp.expect(pexpect.EOF)
+
+        # TODO: Actually check the contents of the connection
+        # Probably needs changes to the mock service API
+        conn_macvlan = self.ctx.srv.findConnections(con_id="connection-3")
+        assert conn_macvlan is not None
+        conn_vlan = self.ctx.srv.findConnections(con_id="connection-4")
+        assert conn_vlan is not None
+
+        # Run nm-cloud-setup for the second time
+        nmc = Util.cmd_call_pexpect(
+            ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
+            [],
+            {
+                "NM_CLOUD_SETUP_OCI_HOST": self.md_url,
+                "NM_CLOUD_SETUP_LOG": "trace",
+                "NM_CLOUD_SETUP_OCI": "yes",
+            },
+        )
+
+        # Just the same ol' thing, just no changes this time
+        nmc.pexp.expect("provider oci detected")
+        nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        nmc.pexp.expect("get-config: starting")
+        nmc.pexp.expect("get-config: success")
+        nmc.pexp.expect("meta data received")
+        nmc.pexp.expect('configuring "eth0"')
+        nmc.pexp.expect("device has no suitable applied connection. Skip")
+        nmc.pexp.expect("no changes were applied for provider oci")
+        nmc.pexp.expect(pexpect.EOF)
+
+        Util.valgrind_check_log(nmc.valgrind_log, "test_oci_vlans")
 
 
 ###############################################################################
