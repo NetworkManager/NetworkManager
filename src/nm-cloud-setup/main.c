@@ -295,7 +295,7 @@ _nmc_get_ethernet_hwaddrs(NMClient *nmc)
 }
 
 static NMDevice *
-_nmc_get_device_by_hwaddr(NMClient *nmc, NMDeviceType device_type, const char *hwaddr)
+_nmc_get_device_by_hwaddr(NMClient *nmc, const GType type_device, const char *hwaddr)
 {
     const GPtrArray *devices;
     guint            i;
@@ -307,7 +307,7 @@ _nmc_get_device_by_hwaddr(NMClient *nmc, NMDeviceType device_type, const char *h
         const char   *hwaddr_dev;
         gs_free char *s = NULL;
 
-        if (nm_device_get_device_type(device) != device_type)
+        if (!G_TYPE_CHECK_INSTANCE_TYPE(device, type_device))
             continue;
 
         hwaddr_dev = _device_get_hwaddr(device);
@@ -712,7 +712,7 @@ _config_ethernet(SigTermData                          *sigterm_data,
     gs_unref_object NMDevice *device = NULL;
 
     device = nm_g_object_ref(
-        _nmc_get_device_by_hwaddr(nmc, NM_DEVICE_TYPE_ETHERNET, config_data->hwaddr));
+        _nmc_get_device_by_hwaddr(nmc, NM_TYPE_DEVICE_ETHERNET, config_data->hwaddr));
     if (!device) {
         _LOGD("config device %s: skip because device not found", config_data->hwaddr);
         return FALSE;
@@ -895,14 +895,14 @@ _config_one(SigTermData                       *sigterm_data,
                                            config_data,
                                            nmc,
                                            result,
-                                           NM_DEVICE_TYPE_MACVLAN,
+                                           NM_TYPE_DEVICE_MACVLAN,
                                            NM_SETTING_MACVLAN_SETTING_NAME,
                                            config_data->priv.oci.parent_hwaddr);
         any_changes += _oci_config_vnic_dev(sigterm_data,
                                             config_data,
                                             nmc,
                                             result,
-                                            NM_DEVICE_TYPE_VLAN,
+                                            NM_TYPE_DEVICE_VLAN,
                                             NM_SETTING_VLAN_SETTING_NAME,
                                             config_data->hwaddr);
 
