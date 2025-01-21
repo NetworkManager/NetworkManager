@@ -6005,7 +6005,7 @@ nm_utils_is_localhost(const char *name)
 }
 
 gboolean
-nm_utils_is_specific_hostname(const char *name)
+nm_utils_is_specific_hostname(const char *name, bool allow_localhost = FALSE)
 {
     if (nm_str_is_empty(name))
         return FALSE;
@@ -6016,7 +6016,7 @@ nm_utils_is_specific_hostname(const char *name)
         return FALSE;
     }
 
-    if (nm_utils_is_localhost(name))
+    if (!allow_localhost && nm_utils_is_localhost(name))
         return FALSE;
 
     /* FIXME: properly validate the hostname, like systemd's hostname_is_valid() */
