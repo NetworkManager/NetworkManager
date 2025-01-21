@@ -6,6 +6,8 @@ Overview of changes since NetworkManager-1.48.14
 * Support routing rules for VPN connections.
 * Place the route to the VPN gateway into the table defined by the
   "ipv{4,6}.route-table" properties.
+* Fix error handling rp_filter when kernel don't support MPTCP.
+* Fix configuration of VLAN QoS mappings.
 
 ===============================================
 NetworkManager-1.48.14
