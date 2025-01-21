@@ -1,4 +1,13 @@
 ===============================================
+NetworkManager-1.48.16
+Overview of changes since NetworkManager-1.48.14
+===============================================
+
+* Support routing rules for VPN connections.
+* Place the route to the VPN gateway into the table defined by the
+  "ipv{4,6}.route-table" properties.
+
+===============================================
 NetworkManager-1.48.14
 Overview of changes since NetworkManager-1.48.12
 ===============================================
