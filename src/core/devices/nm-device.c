@@ -13082,7 +13082,9 @@ activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family)
     if (IS_IPv4) {
         NMSettingIPConfigForwarding ipv4_forwarding = nm_device_get_ipv4_forwarding(self);
 
-        if (ipv4_forwarding != NM_SETTING_IP_CONFIG_FORWARDING_AUTO) {
+        if (NM_IN_SET(ipv4_forwarding,
+                      NM_SETTING_IP_CONFIG_FORWARDING_NO,
+                      NM_SETTING_IP_CONFIG_FORWARDING_YES)) {
             nm_device_sysctl_ip_conf_set(self, AF_INET, "forwarding", ipv4_forwarding ? "1" : "0");
         }
         priv->ipll_data_4.v4.mode = _prop_get_ipv4_link_local(self);

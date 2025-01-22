@@ -7153,8 +7153,10 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      * if no global default is defined, %NM_SETTING_IP_CONFIG_FORWARDING_AUTO will be used,
      * NetworkManager will set the IPv4 forwarding if any shared connection is active and
      * NetworkManager will disable the IPv4 forwarding if no shared connection is active.
-     * The accepted values are: -1: use gloal default, 0: disabled, 1: enabled, 2: auto,
-     * 3: ignored (leave the forwarding unchanged).
+     * The accepted values are: %NM_SETTING_IP_CONFIG_FORWARDING_DEFAULT: use gloal default,
+     * %NM_SETTING_IP_CONFIG_FORWARDING_NO: disabled, NM_SETTING_IP_CONFIG_FORWARDING_YES: enabled,
+     * %NM_SETTING_IP_CONFIG_FORWARDING_AUTO: auto, %NM_SETTING_IP_CONFIG_FORWARDING_IGNORE: ignored
+     * (leave the forwarding unchanged).
      *
      * Since: 1.52
      */
@@ -7163,7 +7165,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                          "",
                          "",
                          NM_SETTING_IP_CONFIG_FORWARDING_DEFAULT,
-                         NM_SETTING_IP_CONFIG_FORWARDING_AUTO,
+                         NM_SETTING_IP_CONFIG_FORWARDING_IGNORE,
                          NM_SETTING_IP_CONFIG_FORWARDING_DEFAULT,
                          G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
