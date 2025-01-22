@@ -2640,8 +2640,8 @@ int nm_utils_getpagesize(void);
 
 /*****************************************************************************/
 
-extern const char _nm_hexchar_table_lower[16];
-extern const char _nm_hexchar_table_upper[16];
+extern const char _nm_hexchar_table_lower[];
+extern const char _nm_hexchar_table_upper[];
 
 static inline char
 nm_hexchar(int x, gboolean upper_case)
