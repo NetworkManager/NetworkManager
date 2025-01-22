@@ -15,7 +15,7 @@ ssize_t string_table_lookup(const char * const *table, size_t len, const char *k
 
 /* For basic lookup tables with strictly enumerated entries */
 #define _DEFINE_STRING_TABLE_LOOKUP_TO_STRING(name,type,scope)          \
-        scope const char *name##_to_string(type i) {                    \
+        scope const char* name##_to_string(type i) {                    \
                 if (i < 0 || i >= (type) ELEMENTSOF(name##_table))      \
                         return NULL;                                    \
                 return name##_table[i];                                 \
@@ -47,10 +47,8 @@ ssize_t string_table_lookup(const char * const *table, size_t len, const char *k
                         s = strdup(name##_table[i]);                    \
                         if (!s)                                         \
                                 return -ENOMEM;                         \
-                } else {                                                \
-                        if (asprintf(&s, "%i", i) < 0)                  \
-                                return -ENOMEM;                         \
-                }                                                       \
+                } else if (asprintf(&s, "%i", i) < 0)                   \
+                        return -ENOMEM;                                 \
                 *str = s;                                               \
                 return 0;                                               \
         }
@@ -103,7 +101,7 @@ ssize_t string_table_lookup(const char * const *table, size_t len, const char *k
         _DEFINE_STRING_TABLE_LOOKUP_FROM_STRING_FALLBACK(name,type,max,static)
 
 #define DUMP_STRING_TABLE(name,type,max)                                \
-        do {                                                            \
+        ({                                                              \
                 flockfile(stdout);                                      \
                 for (type _k = 0; _k < (max); _k++) {                   \
                         const char *_t;                                 \
@@ -114,4 +112,5 @@ ssize_t string_table_lookup(const char * const *table, size_t len, const char *k
                         fputc_unlocked('\n', stdout);                   \
                 }                                                       \
                 funlockfile(stdout);                                    \
-        } while (false)
+                0;                                                      \
+        })

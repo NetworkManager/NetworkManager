@@ -108,12 +108,12 @@ int sd_event_run(sd_event *e, uint64_t usec);
 int sd_event_loop(sd_event *e);
 int sd_event_exit(sd_event *e, int code);
 
-int sd_event_now(sd_event *e, clockid_t clock, uint64_t *usec);
+int sd_event_now(sd_event *e, clockid_t clock, uint64_t *ret);
 
 int sd_event_get_fd(sd_event *e);
 int sd_event_get_state(sd_event *e);
-int sd_event_get_tid(sd_event *e, pid_t *tid);
-int sd_event_get_exit_code(sd_event *e, int *code);
+int sd_event_get_tid(sd_event *e, pid_t *ret);
+int sd_event_get_exit_code(sd_event *e, int *ret);
 int sd_event_set_watchdog(sd_event *e, int b);
 int sd_event_get_watchdog(sd_event *e);
 int sd_event_get_iteration(sd_event *e, uint64_t *ret);
@@ -123,33 +123,33 @@ sd_event_source* sd_event_source_ref(sd_event_source *s);
 sd_event_source* sd_event_source_unref(sd_event_source *s);
 sd_event_source* sd_event_source_disable_unref(sd_event_source *s);
 
-sd_event *sd_event_source_get_event(sd_event_source *s);
+sd_event* sd_event_source_get_event(sd_event_source *s);
 void* sd_event_source_get_userdata(sd_event_source *s);
 void* sd_event_source_set_userdata(sd_event_source *s, void *userdata);
 
 int sd_event_source_set_description(sd_event_source *s, const char *description);
-int sd_event_source_get_description(sd_event_source *s, const char **description);
+int sd_event_source_get_description(sd_event_source *s, const char **ret);
 int sd_event_source_set_prepare(sd_event_source *s, sd_event_handler_t callback);
 int sd_event_source_get_pending(sd_event_source *s);
-int sd_event_source_get_priority(sd_event_source *s, int64_t *priority);
+int sd_event_source_get_priority(sd_event_source *s, int64_t *ret);
 int sd_event_source_set_priority(sd_event_source *s, int64_t priority);
-int sd_event_source_get_enabled(sd_event_source *s, int *enabled);
+int sd_event_source_get_enabled(sd_event_source *s, int *ret);
 int sd_event_source_set_enabled(sd_event_source *s, int enabled);
 int sd_event_source_get_io_fd(sd_event_source *s);
 int sd_event_source_set_io_fd(sd_event_source *s, int fd);
 int sd_event_source_get_io_fd_own(sd_event_source *s);
 int sd_event_source_set_io_fd_own(sd_event_source *s, int own);
-int sd_event_source_get_io_events(sd_event_source *s, uint32_t* events);
+int sd_event_source_get_io_events(sd_event_source *s, uint32_t *ret);
 int sd_event_source_set_io_events(sd_event_source *s, uint32_t events);
-int sd_event_source_get_io_revents(sd_event_source *s, uint32_t* revents);
-int sd_event_source_get_time(sd_event_source *s, uint64_t *usec);
+int sd_event_source_get_io_revents(sd_event_source *s, uint32_t *ret);
+int sd_event_source_get_time(sd_event_source *s, uint64_t *ret);
 int sd_event_source_set_time(sd_event_source *s, uint64_t usec);
 int sd_event_source_set_time_relative(sd_event_source *s, uint64_t usec);
-int sd_event_source_get_time_accuracy(sd_event_source *s, uint64_t *usec);
+int sd_event_source_get_time_accuracy(sd_event_source *s, uint64_t *ret);
 int sd_event_source_set_time_accuracy(sd_event_source *s, uint64_t usec);
-int sd_event_source_get_time_clock(sd_event_source *s, clockid_t *clock);
+int sd_event_source_get_time_clock(sd_event_source *s, clockid_t *ret);
 int sd_event_source_get_signal(sd_event_source *s);
-int sd_event_source_get_child_pid(sd_event_source *s, pid_t *pid);
+int sd_event_source_get_child_pid(sd_event_source *s, pid_t *ret);
 int sd_event_source_get_child_pidfd(sd_event_source *s);
 int sd_event_source_get_child_pidfd_own(sd_event_source *s);
 int sd_event_source_set_child_pidfd_own(sd_event_source *s, int own);
@@ -161,6 +161,7 @@ int sd_event_source_send_child_signal(sd_event_source *s, int sig, const siginfo
 int sd_event_source_send_child_signal(sd_event_source *s, int sig, const void *si, unsigned flags);
 #endif
 int sd_event_source_get_inotify_mask(sd_event_source *s, uint32_t *ret);
+int sd_event_source_get_inotify_path(sd_event_source *s, const char **ret);
 int sd_event_source_set_memory_pressure_type(sd_event_source *e, const char *ty);
 int sd_event_source_set_memory_pressure_period(sd_event_source *s, uint64_t threshold_usec, uint64_t window_usec);
 int sd_event_source_set_destroy_callback(sd_event_source *s, sd_event_destroy_t callback);

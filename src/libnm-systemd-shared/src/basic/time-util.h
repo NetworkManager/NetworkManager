@@ -71,12 +71,16 @@ typedef enum TimestampStyle {
 
 #define TIME_T_MAX (time_t)((UINTMAX_C(1) << ((sizeof(time_t) << 3) - 1)) - 1)
 
-#define DUAL_TIMESTAMP_NULL ((struct dual_timestamp) {})
-#define TRIPLE_TIMESTAMP_NULL ((struct triple_timestamp) {})
+#define DUAL_TIMESTAMP_NULL ((dual_timestamp) {})
+#define DUAL_TIMESTAMP_INFINITY ((dual_timestamp) { USEC_INFINITY, USEC_INFINITY })
+#define TRIPLE_TIMESTAMP_NULL ((triple_timestamp) {})
+
+#define TIMESPEC_OMIT ((const struct timespec) { .tv_nsec = UTIME_OMIT })
 
 usec_t now(clockid_t clock);
 nsec_t now_nsec(clockid_t clock);
 
+usec_t map_clock_usec_raw(usec_t from, usec_t from_base, usec_t to_base);
 usec_t map_clock_usec(usec_t from, clockid_t from_clock, clockid_t to_clock);
 
 dual_timestamp* dual_timestamp_now(dual_timestamp *ts);
@@ -173,8 +177,8 @@ usec_t usec_shift_clock(usec_t, clockid_t from, clockid_t to);
 
 int get_timezone(char **ret);
 
-time_t mktime_or_timegm(struct tm *tm, bool utc);
-struct tm *localtime_or_gmtime_r(const time_t *t, struct tm *tm, bool utc);
+int mktime_or_timegm_usec(struct tm *tm, bool utc, usec_t *ret);
+int localtime_or_gmtime_usec(usec_t t, bool utc, struct tm *ret);
 
 uint32_t usec_to_jiffies(usec_t usec);
 usec_t jiffies_to_usec(uint32_t jiffies);
@@ -184,11 +188,7 @@ bool in_utc_timezone(void);
 static inline usec_t usec_add(usec_t a, usec_t b) {
         /* Adds two time values, and makes sure USEC_INFINITY as input results as USEC_INFINITY in output,
          * and doesn't overflow. */
-
-        if (a > USEC_INFINITY - b) /* overflow check */
-                return USEC_INFINITY;
-
-        return a + b;
+        return saturate_add(a, b, USEC_INFINITY);
 }
 
 static inline usec_t usec_sub_unsigned(usec_t timestamp, usec_t delta) {
