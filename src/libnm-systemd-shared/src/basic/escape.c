@@ -365,6 +365,8 @@ char* xescape_full(const char *s, const char *bad, size_t console_width, XEscape
         char *ans, *t, *prev, *prev2;
         const char *f;
 
+        assert(s);
+
         /* Escapes all chars in bad, in addition to \ and all special chars, in \xFF style escaping. May be
          * reversed with cunescape(). If XESCAPE_8_BIT is specified, characters >= 127 are let through
          * unchanged. This corresponds to non-ASCII printable characters in pre-unicode encodings.
@@ -397,7 +399,7 @@ char* xescape_full(const char *s, const char *bad, size_t console_width, XEscape
 
                 if ((unsigned char) *f < ' ' ||
                     (!FLAGS_SET(flags, XESCAPE_8_BIT) && (unsigned char) *f >= 127) ||
-                    *f == '\\' || strchr(bad, *f)) {
+                    *f == '\\' || (bad && strchr(bad, *f))) {
                         if ((size_t) (t - ans) + 4 + 3 * force_ellipsis > console_width)
                                 break;
 
@@ -437,7 +439,7 @@ char* xescape_full(const char *s, const char *bad, size_t console_width, XEscape
 
 char* escape_non_printable_full(const char *str, size_t console_width, XEscapeFlags flags) {
         if (FLAGS_SET(flags, XESCAPE_8_BIT))
-                return xescape_full(str, "", console_width, flags);
+                return xescape_full(str, /* bad= */ NULL, console_width, flags);
         else
                 return utf8_escape_non_printable_full(str,
                                                       console_width,
@@ -450,6 +452,12 @@ char* octescape(const char *s, size_t len) {
         /* Escapes all chars in bad, in addition to \ and " chars, in \nnn style escaping. */
 
         assert(s || len == 0);
+
+        if (len == SIZE_MAX)
+                len = strlen(s);
+
+        if (len > (SIZE_MAX - 1) / 4)
+                return NULL;
 
         t = buf = new(char, len * 4 + 1);
         if (!buf)

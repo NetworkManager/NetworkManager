@@ -39,8 +39,8 @@ typedef struct IteratedCache IteratedCache;   /* Caches the iterated order of on
  * by hashmap users, so the definition has to be here. Do not use its fields
  * directly. */
 typedef struct {
-        unsigned idx;         /* index of an entry to be iterated next */
         const void *next_key; /* expected value of that entry's key pointer */
+        unsigned idx;         /* index of an entry to be iterated next */
 #if ENABLE_DEBUG_HASHMAP
         unsigned put_count;   /* hashmap's put_count recorded at start of iteration */
         unsigned rem_count;   /* hashmap's rem_count in previous iteration */
@@ -130,13 +130,18 @@ HashmapBase* _hashmap_copy(HashmapBase *h  HASHMAP_DEBUG_PARAMS);
 int _hashmap_ensure_allocated(Hashmap **h, const struct hash_ops *hash_ops  HASHMAP_DEBUG_PARAMS);
 int _hashmap_ensure_put(Hashmap **h, const struct hash_ops *hash_ops, const void *key, void *value  HASHMAP_DEBUG_PARAMS);
 int _ordered_hashmap_ensure_allocated(OrderedHashmap **h, const struct hash_ops *hash_ops  HASHMAP_DEBUG_PARAMS);
+int _hashmap_ensure_replace(Hashmap **h, const struct hash_ops *hash_ops, const void *key, void *value  HASHMAP_DEBUG_PARAMS);
 
 #define hashmap_ensure_allocated(h, ops) _hashmap_ensure_allocated(h, ops  HASHMAP_DEBUG_SRC_ARGS)
 #define hashmap_ensure_put(s, ops, key, value) _hashmap_ensure_put(s, ops, key, value  HASHMAP_DEBUG_SRC_ARGS)
 #define ordered_hashmap_ensure_allocated(h, ops) _ordered_hashmap_ensure_allocated(h, ops  HASHMAP_DEBUG_SRC_ARGS)
+#define hashmap_ensure_replace(s, ops, key, value) _hashmap_ensure_replace(s, ops, key, value  HASHMAP_DEBUG_SRC_ARGS)
 
 int _ordered_hashmap_ensure_put(OrderedHashmap **h, const struct hash_ops *hash_ops, const void *key, void *value  HASHMAP_DEBUG_PARAMS);
 #define ordered_hashmap_ensure_put(s, ops, key, value) _ordered_hashmap_ensure_put(s, ops, key, value  HASHMAP_DEBUG_SRC_ARGS)
+
+int _ordered_hashmap_ensure_replace(OrderedHashmap **h, const struct hash_ops *hash_ops, const void *key, void *value  HASHMAP_DEBUG_PARAMS);
+#define ordered_hashmap_ensure_replace(s, ops, key, value) _ordered_hashmap_ensure_replace(s, ops, key, value  HASHMAP_DEBUG_SRC_ARGS)
 
 IteratedCache* _hashmap_iterated_cache_new(HashmapBase *h);
 static inline IteratedCache* hashmap_iterated_cache_new(Hashmap *h) {
@@ -407,6 +412,14 @@ static inline int ordered_hashmap_dump_sorted(OrderedHashmap *h, void ***ret, si
 }
 static inline int set_dump_sorted(Set *h, void ***ret, size_t *ret_n) {
         return _hashmap_dump_sorted(HASHMAP_BASE(h), ret, ret_n);
+}
+
+int _hashmap_dump_keys_sorted(HashmapBase *h, void ***ret, size_t *ret_n);
+static inline int hashmap_dump_keys_sorted(Hashmap *h, void ***ret, size_t *ret_n) {
+        return _hashmap_dump_keys_sorted(HASHMAP_BASE(h), ret, ret_n);
+}
+static inline int ordered_hashmap_dump_keys_sorted(OrderedHashmap *h, void ***ret, size_t *ret_n) {
+        return _hashmap_dump_keys_sorted(HASHMAP_BASE(h), ret, ret_n);
 }
 
 /*

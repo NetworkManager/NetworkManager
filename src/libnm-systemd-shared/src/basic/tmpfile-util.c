@@ -118,6 +118,17 @@ int fmkostemp_safe(char *pattern, const char *mode, FILE **ret_f) {
         return 0;
 }
 
+void unlink_tempfilep(char (*p)[]) {
+        assert(p);
+
+        /* If the file is created with mkstemp(), it will (almost always) change the suffix.
+         * Treat this as a sign that the file was successfully created. We ignore both the rare case
+         * where the original suffix is used and unlink failures. */
+
+        if (!endswith(*p, ".XXXXXX"))
+                (void) unlink(*p);
+}
+
 static int tempfn_build(const char *p, const char *pre, const char *post, bool child, char **ret) {
         _cleanup_free_ char *d = NULL, *fn = NULL, *nf = NULL, *result = NULL;
         size_t len_pre, len_post, len_add;
@@ -330,28 +341,7 @@ int fopen_tmpfile_linkable(const char *target, int flags, char **ret_path, FILE 
         return 0;
 }
 
-static int link_fd(int fd, int newdirfd, const char *newpath) {
-        int r;
-
-        assert(fd >= 0);
-        assert(newdirfd >= 0 || newdirfd == AT_FDCWD);
-        assert(newpath);
-
-        /* Try symlinking via /proc/fd/ first. */
-        r = RET_NERRNO(linkat(AT_FDCWD, FORMAT_PROC_FD_PATH(fd), newdirfd, newpath, AT_SYMLINK_FOLLOW));
-        if (r != -ENOENT)
-                return r;
-
-        /* Fall back to symlinking via AT_EMPTY_PATH as fallback (this requires CAP_DAC_READ_SEARCH and a
-         * more recent kernel, but does not require /proc/ mounted) */
-        if (proc_mounted() != 0)
-                return r;
-
-        return RET_NERRNO(linkat(fd, "", newdirfd, newpath, AT_EMPTY_PATH));
-}
-
 int link_tmpfile_at(int fd, int dir_fd, const char *path, const char *target, LinkTmpfileFlags flags) {
-        _cleanup_free_ char *tmp = NULL;
         int r;
 
         assert(fd >= 0);
@@ -370,33 +360,14 @@ int link_tmpfile_at(int fd, int dir_fd, const char *path, const char *target, Li
                         r = RET_NERRNO(renameat(dir_fd, path, dir_fd, target));
                 else
                         r = rename_noreplace(dir_fd, path, dir_fd, target);
-                if (r < 0)
-                        return r;
         } else {
-
-                r = link_fd(fd, dir_fd, target);
-                if (r != -EEXIST || !FLAGS_SET(flags, LINK_TMPFILE_REPLACE))
-                        return r;
-
-                /* So the target already exists and we were asked to replace it. That sucks a bit, since the kernel's
-                 * linkat() logic does not allow that. We work-around this by linking the file to a random name
-                 * first, and then renaming that to the final name. This reintroduces the race O_TMPFILE kinda is
-                 * trying to fix, but at least the vulnerability window (i.e. where the file is linked into the file
-                 * system under a temporary name) is very short. */
-
-                r = tempfn_random(target, NULL, &tmp);
-                if (r < 0)
-                        return r;
-
-                if (link_fd(fd, dir_fd, tmp) < 0)
-                        return -EEXIST; /* propagate original error */
-
-                r = RET_NERRNO(renameat(dir_fd, tmp, dir_fd, target));
-                if (r < 0) {
-                        (void) unlinkat(dir_fd, tmp, 0);
-                        return r;
-                }
+                if (FLAGS_SET(flags, LINK_TMPFILE_REPLACE))
+                        r = linkat_replace(fd, /* oldpath= */ NULL, dir_fd, target);
+                else
+                        r = link_fd(fd, dir_fd, target);
         }
+        if (r < 0)
+                return r;
 
         if (FLAGS_SET(flags, LINK_TMPFILE_SYNC)) {
                 r = fsync_full(fd);

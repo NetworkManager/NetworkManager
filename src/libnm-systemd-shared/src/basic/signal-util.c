@@ -14,11 +14,7 @@
 #include "string-util.h"
 
 int reset_all_signal_handlers(void) {
-        static const struct sigaction sa = {
-                .sa_handler = SIG_DFL,
-                .sa_flags = SA_RESTART,
-        };
-        int r = 0;
+        int ret = 0, r;
 
         for (int sig = 1; sig < _NSIG; sig++) {
 
@@ -26,14 +22,14 @@ int reset_all_signal_handlers(void) {
                 if (IN_SET(sig, SIGKILL, SIGSTOP))
                         continue;
 
-                /* On Linux the first two RT signals are reserved by
-                 * glibc, and sigaction() will return EINVAL for them. */
-                if (sigaction(sig, &sa, NULL) < 0)
-                        if (errno != EINVAL && r >= 0)
-                                r = -errno;
+                /* On Linux the first two RT signals are reserved by glibc, and sigaction() will return
+                 * EINVAL for them. */
+                r = RET_NERRNO(sigaction(sig, &sigaction_default, NULL));
+                if (r != -EINVAL)
+                        RET_GATHER(ret, r);
         }
 
-        return r;
+        return ret;
 }
 
 int reset_signal_mask(void) {
@@ -57,10 +53,7 @@ int sigaction_many_internal(const struct sigaction *sa, ...) {
                 if (sig == 0)
                         continue;
 
-                if (sigaction(sig, sa, NULL) < 0) {
-                        if (r >= 0)
-                                r = -errno;
-                }
+                RET_GATHER(r, RET_NERRNO(sigaction(sig, sa, NULL)));
         }
 
         va_end(ap);
@@ -87,7 +80,7 @@ static int sigset_add_many_ap(sigset_t *ss, va_list ap) {
         return r;
 }
 
-int sigset_add_many(sigset_t *ss, ...) {
+int sigset_add_many_internal(sigset_t *ss, ...) {
         va_list ap;
         int r;
 
@@ -98,7 +91,7 @@ int sigset_add_many(sigset_t *ss, ...) {
         return r;
 }
 
-int sigprocmask_many(int how, sigset_t *old, ...) {
+int sigprocmask_many_internal(int how, sigset_t *old, ...) {
         va_list ap;
         sigset_t ss;
         int r;
@@ -113,10 +106,7 @@ int sigprocmask_many(int how, sigset_t *old, ...) {
         if (r < 0)
                 return r;
 
-        if (sigprocmask(how, &ss, old) < 0)
-                return -errno;
-
-        return 0;
+        return RET_NERRNO(sigprocmask(how, &ss, old));
 }
 
 static const char *const static_signal_table[] = {
@@ -157,7 +147,7 @@ static const char *const static_signal_table[] = {
 
 DEFINE_PRIVATE_STRING_TABLE_LOOKUP(static_signal, int);
 
-const char *signal_to_string(int signo) {
+const char* signal_to_string(int signo) {
         static thread_local char buf[STRLEN("RTMIN+") + DECIMAL_STR_MAX(int)];
         const char *name;
 
@@ -274,7 +264,7 @@ int pop_pending_signal_internal(int sig, ...) {
         if (r < 0)
                 return r;
 
-        r = sigtimedwait(&ss, NULL, &(struct timespec) { 0, 0 });
+        r = sigtimedwait(&ss, NULL, &(const struct timespec) {});
         if (r < 0) {
                 if (errno == EAGAIN)
                         return 0;
@@ -300,4 +290,35 @@ void propagate_signal(int sig, siginfo_t *siginfo) {
 
         if (rt_tgsigqueueinfo(p, gettid(), sig, siginfo) < 0)
                 assert_se(kill(p, sig) >= 0);
+}
+
+const struct sigaction sigaction_ignore = {
+        .sa_handler = SIG_IGN,
+        .sa_flags = SA_RESTART,
+};
+
+const struct sigaction sigaction_default = {
+        .sa_handler = SIG_DFL,
+        .sa_flags = SA_RESTART,
+};
+
+const struct sigaction sigaction_nop_nocldstop = {
+        .sa_handler = nop_signal_handler,
+        .sa_flags = SA_NOCLDSTOP|SA_RESTART,
+};
+
+int parse_signo(const char *s, int *ret) {
+        int sig, r;
+
+        r = safe_atoi(s, &sig);
+        if (r < 0)
+                return r;
+
+        if (!SIGNAL_VALID(sig))
+                return -EINVAL;
+
+        if (ret)
+                *ret = sig;
+
+        return 0;
 }

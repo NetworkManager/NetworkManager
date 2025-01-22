@@ -11,11 +11,13 @@
 #include "escape.h"
 #include "extract-word.h"
 #include "fileio.h"
+#include "gunicode.h"
 #include "memory-util.h"
 #include "nulstr-util.h"
 #include "sort-util.h"
 #include "string-util.h"
 #include "strv.h"
+#include "utf8.h"
 
 char* strv_find(char * const *l, const char *name) {
         assert(name);
@@ -62,6 +64,68 @@ char* strv_find_startswith(char * const *l, const char *name) {
         }
 
         return NULL;
+}
+
+static char* strv_find_closest_prefix(char * const *l, const char *name) {
+        size_t best_distance = SIZE_MAX;
+        char *best = NULL;
+
+        assert(name);
+
+        STRV_FOREACH(s, l) {
+                char *e = startswith(*s, name);
+                if (!e)
+                        continue;
+
+                size_t n = strlen(e);
+                if (n < best_distance) {
+                        best_distance = n;
+                        best = *s;
+                }
+        }
+
+        return best;
+}
+
+static char* strv_find_closest_by_levenshtein(char * const *l, const char *name) {
+        ssize_t best_distance = SSIZE_MAX;
+        char *best = NULL;
+
+        assert(name);
+
+        STRV_FOREACH(i, l) {
+                ssize_t distance;
+
+                distance = strlevenshtein(*i, name);
+                if (distance < 0) {
+                        log_debug_errno(distance, "Failed to determine Levenshtein distance between %s and %s: %m", *i, name);
+                        return NULL;
+                }
+
+                if (distance > 5) /* If the distance is just too far off, don't make a bad suggestion */
+                        continue;
+
+                if (distance < best_distance) {
+                        best_distance = distance;
+                        best = *i;
+                }
+        }
+
+        return best;
+}
+
+char* strv_find_closest(char * const *l, const char *name) {
+        assert(name);
+
+        /* Be more helpful to the user, and give a hint what the user might have wanted to type. We search
+         * with two mechanisms: a simple prefix match and – if that didn't yield results –, a Levenshtein
+         * word distance based match. */
+
+        char *found = strv_find_closest_prefix(l, name);
+        if (found)
+                return found;
+
+        return strv_find_closest_by_levenshtein(l, name);
 }
 
 char* strv_find_first_field(char * const *needles, char * const *haystack) {
@@ -200,20 +264,18 @@ char** strv_new_internal(const char *x, ...) {
 
 int strv_extend_strv(char ***a, char * const *b, bool filter_duplicates) {
         size_t p, q, i = 0;
-        char **t;
 
         assert(a);
 
-        if (strv_isempty(b))
+        q = strv_length(b);
+        if (q == 0)
                 return 0;
 
         p = strv_length(*a);
-        q = strv_length(b);
-
         if (p >= SIZE_MAX - q)
                 return -ENOMEM;
 
-        t = reallocarray(*a, GREEDY_ALLOC_ROUND_UP(p + q + 1), sizeof(char *));
+        char **t = reallocarray(*a, GREEDY_ALLOC_ROUND_UP(p + q + 1), sizeof(char *));
         if (!t)
                 return -ENOMEM;
 
@@ -242,21 +304,77 @@ rollback:
         return -ENOMEM;
 }
 
-int strv_extend_strv_concat(char ***a, char * const *b, const char *suffix) {
+int strv_extend_strv_consume(char ***a, char **b, bool filter_duplicates) {
+        _cleanup_strv_free_ char **b_consume = b;
+        size_t p, q, i;
+
+        assert(a);
+
+        q = strv_length(b);
+        if (q == 0)
+                return 0;
+
+        p = strv_length(*a);
+        if (p == 0) {
+                strv_free_and_replace(*a, b_consume);
+
+                if (filter_duplicates)
+                        strv_uniq(*a);
+
+                return strv_length(*a);
+        }
+
+        if (p >= SIZE_MAX - q)
+                return -ENOMEM;
+
+        char **t = reallocarray(*a, GREEDY_ALLOC_ROUND_UP(p + q + 1), sizeof(char *));
+        if (!t)
+                return -ENOMEM;
+
+        t[p] = NULL;
+        *a = t;
+
+        if (!filter_duplicates) {
+                *mempcpy_typesafe(t + p, b, q) = NULL;
+                i = q;
+        } else {
+                i = 0;
+
+                STRV_FOREACH(s, b) {
+                        if (strv_contains(t, *s)) {
+                                free(*s);
+                                continue;
+                        }
+
+                        t[p+i] = *s;
+
+                        i++;
+                        t[p+i] = NULL;
+                }
+        }
+
+        assert(i <= q);
+
+        b_consume = mfree(b_consume);
+
+        return (int) i;
+}
+
+int strv_extend_strv_biconcat(char ***a, const char *prefix, const char* const *b, const char *suffix) {
         int r;
+
+        assert(a);
 
         STRV_FOREACH(s, b) {
                 char *v;
 
-                v = strjoin(*s, suffix);
+                v = strjoin(strempty(prefix), *s, suffix);
                 if (!v)
                         return -ENOMEM;
 
-                r = strv_push(a, v);
-                if (r < 0) {
-                        free(v);
+                r = strv_consume(a, v);
+                if (r < 0)
                         return r;
-                }
         }
 
         return 0;
@@ -322,7 +440,7 @@ int strv_split_full(char ***t, const char *s, const char *separators, ExtractFla
 }
 
 int strv_split_and_extend_full(char ***t, const char *s, const char *separators, bool filter_duplicates, ExtractFlags flags) {
-        _cleanup_strv_free_ char **l = NULL;
+        char **l;
         int r;
 
         assert(t);
@@ -332,7 +450,7 @@ int strv_split_and_extend_full(char ***t, const char *s, const char *separators,
         if (r < 0)
                 return r;
 
-        r = strv_extend_strv(t, l, filter_duplicates);
+        r = strv_extend_strv_consume(t, l, filter_duplicates);
         if (r < 0)
                 return r;
 
@@ -358,7 +476,7 @@ int strv_split_colon_pairs(char ***t, const char *s) {
 
                 const char *p = tuple;
                 r = extract_many_words(&p, ":", EXTRACT_CUNESCAPE|EXTRACT_UNESCAPE_SEPARATORS,
-                                       &first, &second, NULL);
+                                       &first, &second);
                 if (r < 0)
                         return r;
                 if (r == 0)
@@ -706,6 +824,21 @@ char** strv_sort(char **l) {
         return l;
 }
 
+char** strv_sort_uniq(char **l) {
+        if (strv_isempty(l))
+                return l;
+
+        char **tail = strv_sort(l), *prev = NULL;
+        STRV_FOREACH(i, l)
+                if (streq_ptr(*i, prev))
+                        free(*i);
+                else
+                        *(tail++) = prev = *i;
+
+        *tail = NULL;
+        return l;
+}
+
 int strv_compare(char * const *a, char * const *b) {
         int r;
 
@@ -726,6 +859,26 @@ int strv_compare(char * const *a, char * const *b) {
         }
 
         return 0;
+}
+
+bool strv_equal_ignore_order(char **a, char **b) {
+
+        /* Just like strv_equal(), but doesn't care about the order of elements or about redundant entries
+         * (i.e. it's even ok if the number of entries in the array differ, as long as the difference just
+         * consists of repititions) */
+
+        if (a == b)
+                return true;
+
+        STRV_FOREACH(i, a)
+                if (!strv_contains(b, *i))
+                        return false;
+
+        STRV_FOREACH(i, b)
+                if (!strv_contains(a, *i))
+                        return false;
+
+        return true;
 }
 
 void strv_print_full(char * const *l, const char *prefix) {
@@ -910,9 +1063,15 @@ int fputstrv(FILE *f, char * const *l, const char *separator, bool *space) {
         return 0;
 }
 
+DEFINE_PRIVATE_HASH_OPS_FULL(string_strv_hash_ops, char, string_hash_func, string_compare_func, free, char*, strv_free);
+
 static int string_strv_hashmap_put_internal(Hashmap *h, const char *key, const char *value) {
         char **l;
         int r;
+
+        assert(h);
+        assert(key);
+        assert(value);
 
         l = hashmap_get(h, key);
         if (l) {
@@ -941,6 +1100,7 @@ static int string_strv_hashmap_put_internal(Hashmap *h, const char *key, const c
                 r = hashmap_put(h, t, l2);
                 if (r < 0)
                         return r;
+
                 TAKE_PTR(t);
                 TAKE_PTR(l2);
         }
@@ -950,6 +1110,10 @@ static int string_strv_hashmap_put_internal(Hashmap *h, const char *key, const c
 
 int _string_strv_hashmap_put(Hashmap **h, const char *key, const char *value  HASHMAP_DEBUG_PARAMS) {
         int r;
+
+        assert(h);
+        assert(key);
+        assert(value);
 
         r = _hashmap_ensure_allocated(h, &string_strv_hash_ops  HASHMAP_DEBUG_PASS_ARGS);
         if (r < 0)
@@ -961,6 +1125,10 @@ int _string_strv_hashmap_put(Hashmap **h, const char *key, const char *value  HA
 int _string_strv_ordered_hashmap_put(OrderedHashmap **h, const char *key, const char *value  HASHMAP_DEBUG_PARAMS) {
         int r;
 
+        assert(h);
+        assert(key);
+        assert(value);
+
         r = _ordered_hashmap_ensure_allocated(h, &string_strv_hash_ops  HASHMAP_DEBUG_PASS_ARGS);
         if (r < 0)
                 return r;
@@ -968,4 +1136,90 @@ int _string_strv_ordered_hashmap_put(OrderedHashmap **h, const char *key, const 
         return string_strv_hashmap_put_internal(PLAIN_HASHMAP(*h), key, value);
 }
 
-DEFINE_HASH_OPS_FULL(string_strv_hash_ops, char, string_hash_func, string_compare_func, free, char*, strv_free);
+int strv_rebreak_lines(char **l, size_t width, char ***ret) {
+        _cleanup_strv_free_ char **broken = NULL;
+        int r;
+
+        assert(ret);
+
+        /* Implements a simple UTF-8 line breaking algorithm
+         *
+         * Goes through all entries in *l, and line-breaks each line that is longer than the specified
+         * character width. Breaks at the end of words/beginning of whitespace. Lines that do not contain whitespace are not
+         * broken. Retains whitespace at beginning of lines, removes it at end of lines. */
+
+        if (width == SIZE_MAX) { /* NOP? */
+                broken = strv_copy(l);
+                if (!broken)
+                        return -ENOMEM;
+
+                *ret = TAKE_PTR(broken);
+                return 0;
+        }
+
+        STRV_FOREACH(i, l) {
+                const char *start = *i, *whitespace_begin = NULL, *whitespace_end = NULL;
+                bool in_prefix = true; /* still in the whitespace in the beginning of the line? */
+                size_t w = 0;
+
+                for (const char *p = start; *p != 0; p = utf8_next_char(p)) {
+                        if (strchr(NEWLINE, *p)) {
+                                in_prefix = true;
+                                whitespace_begin = whitespace_end = NULL;
+                                w = 0;
+                        } else if (strchr(WHITESPACE, *p)) {
+                                if (!in_prefix && (!whitespace_begin || whitespace_end)) {
+                                        whitespace_begin = p;
+                                        whitespace_end = NULL;
+                                }
+                        } else {
+                                if (whitespace_begin && !whitespace_end)
+                                        whitespace_end = p;
+
+                                in_prefix = false;
+                        }
+
+                        int cw = utf8_char_console_width(p);
+                        if (cw < 0) {
+                                log_debug_errno(cw, "Comment to line break contains invalid UTF-8, ignoring.");
+                                cw = 1;
+                        }
+
+                        w += cw;
+
+                        if (w > width && whitespace_begin && whitespace_end) {
+                                _cleanup_free_ char *truncated = NULL;
+
+                                truncated = strndup(start, whitespace_begin - start);
+                                if (!truncated)
+                                        return -ENOMEM;
+
+                                r = strv_consume(&broken, TAKE_PTR(truncated));
+                                if (r < 0)
+                                        return r;
+
+                                p = start = whitespace_end;
+                                whitespace_begin = whitespace_end = NULL;
+                                w = cw;
+                        }
+                }
+
+                /* Process rest of the line */
+                assert(start);
+                if (in_prefix) /* Never seen anything non-whitespace? Generate empty line! */
+                        r = strv_extend(&broken, "");
+                else if (whitespace_begin && !whitespace_end) { /* Ends in whitespace? Chop it off! */
+                        _cleanup_free_ char *truncated = strndup(start, whitespace_begin - start);
+                        if (!truncated)
+                                return -ENOMEM;
+
+                        r = strv_consume(&broken, TAKE_PTR(truncated));
+                } else /* Otherwise use line as is */
+                        r = strv_extend(&broken, start);
+                if (r < 0)
+                        return r;
+        }
+
+        *ret = TAKE_PTR(broken);
+        return 0;
+}

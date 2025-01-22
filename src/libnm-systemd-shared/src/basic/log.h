@@ -18,25 +18,26 @@ struct signalfd_siginfo;
 
 typedef enum LogTarget{
         LOG_TARGET_CONSOLE,
-        LOG_TARGET_CONSOLE_PREFIXED,
         LOG_TARGET_KMSG,
         LOG_TARGET_JOURNAL,
-        LOG_TARGET_JOURNAL_OR_KMSG,
         LOG_TARGET_SYSLOG,
+        LOG_TARGET_CONSOLE_PREFIXED,
+        LOG_TARGET_JOURNAL_OR_KMSG,
         LOG_TARGET_SYSLOG_OR_KMSG,
         LOG_TARGET_AUTO, /* console if stderr is not journal, JOURNAL_OR_KMSG otherwise */
         LOG_TARGET_NULL,
-        _LOG_TARGET_MAX,
+        _LOG_TARGET_SINGLE_MAX = LOG_TARGET_SYSLOG + 1,
+        _LOG_TARGET_MAX = LOG_TARGET_NULL + 1,
         _LOG_TARGET_INVALID = -EINVAL,
 } LogTarget;
 
 /* This log level disables logging completely. It can only be passed to log_set_max_level() and cannot be
- * used a regular log level. */
+ * used as a regular log level. */
 #define LOG_NULL (LOG_EMERG - 1)
+assert_cc(LOG_NULL == -1);
 
-/* Note to readers: << and >> have lower precedence (are evaluated earlier) than & and | */
-#define SYNTHETIC_ERRNO(num)                (1 << 30 | (num))
-#define IS_SYNTHETIC_ERRNO(val)             ((val) >> 30 & 1)
+#define SYNTHETIC_ERRNO(num)                (abs(num) | (1 << 30))
+#define IS_SYNTHETIC_ERRNO(val)             (((val) >> 30) == 1)
 #define ERRNO_VALUE(val)                    (abs(val) & ~(1 << 30))
 
 /* The callback function to be invoked when syntax warnings are seen
@@ -48,7 +49,7 @@ static inline void clear_log_syntax_callback(dummy_t *dummy) {
           set_log_syntax_callback(/* cb= */ NULL, /* userdata= */ NULL);
 }
 
-const char *log_target_to_string(LogTarget target) _const_;
+const char* log_target_to_string(LogTarget target) _const_;
 LogTarget log_target_from_string(const char *s) _pure_;
 void log_set_target(LogTarget target);
 void log_set_target_and_open(LogTarget target);
@@ -56,9 +57,10 @@ int log_set_target_from_string(const char *e);
 LogTarget log_get_target(void) _pure_;
 void log_settle_target(void);
 
-void log_set_max_level(int level);
+int log_set_max_level(int level);
 int log_set_max_level_from_string(const char *e);
 int log_get_max_level(void) _pure_;
+int log_max_levels_to_string(int level, char **ret);
 
 void log_set_facility(int facility);
 
@@ -83,6 +85,7 @@ int log_show_tid_from_string(const char *e);
 assert_cc(STRLEN(__FILE__) > STRLEN(RELATIVE_SOURCE_PATH) + 1);
 #define PROJECT_FILE (&__FILE__[STRLEN(RELATIVE_SOURCE_PATH) + 1])
 
+bool stderr_is_journal(void);
 int log_open(void);
 void log_close(void);
 void log_forget_fds(void);
@@ -298,9 +301,10 @@ int log_emergency_level(void);
 #define log_dump(level, buffer)                                         \
         log_dump_internal(level, 0, PROJECT_FILE, __LINE__, __func__, buffer)
 
-#define log_oom() log_oom_internal(LOG_ERR, PROJECT_FILE, __LINE__, __func__)
-#define log_oom_debug() log_oom_internal(LOG_DEBUG, PROJECT_FILE, __LINE__, __func__)
-#define log_oom_warning() log_oom_internal(LOG_WARNING, PROJECT_FILE, __LINE__, __func__)
+#define log_oom_full(level) log_oom_internal(level, PROJECT_FILE, __LINE__, __func__)
+#define log_oom()           log_oom_full(LOG_ERR)
+#define log_oom_debug()     log_oom_full(LOG_DEBUG)
+#define log_oom_warning()   log_oom_full(LOG_WARNING)
 
 bool log_on_console(void) _pure_;
 
@@ -357,6 +361,18 @@ int log_syntax_invalid_utf8_internal(
                 const char *func,
                 const char *rvalue);
 
+int log_syntax_parse_error_internal(
+                const char *unit,
+                const char *config_file,
+                unsigned config_line,
+                int error,
+                bool critical, /* When true, propagate the passed error, otherwise this always returns 0. */
+                const char *file,
+                int line,
+                const char *func,
+                const char *lvalue,
+                const char *rvalue);
+
 #define log_syntax(unit, level, config_file, config_line, error, ...)   \
         ({                                                              \
                 int _level = (level), _e = (error);                     \
@@ -373,6 +389,12 @@ int log_syntax_invalid_utf8_internal(
                         : -EINVAL;                                      \
         })
 
+#define log_syntax_parse_error_full(unit, config_file, config_line, error, critical, lvalue, rvalue) \
+        log_syntax_parse_error_internal(unit, config_file, config_line, error, critical, PROJECT_FILE, __LINE__, __func__, lvalue, rvalue)
+
+#define log_syntax_parse_error(unit, config_file, config_line, error, lvalue, rvalue) \
+        log_syntax_parse_error_full(unit, config_file, config_line, error, /* critical = */ false, lvalue, rvalue)
+
 #define DEBUG_LOGGING _unlikely_(log_get_max_level() >= LOG_DEBUG)
 
 void log_setup(void);
@@ -383,7 +405,7 @@ typedef struct LogRateLimit {
         RateLimit ratelimit;
 } LogRateLimit;
 
-#define log_ratelimit_internal(_level, _error, _ratelimit, _format, _file, _line, _func, ...)        \
+#define log_ratelimit_internal(_level, _error, _ratelimit, _file, _line, _func, _format, ...)        \
 ({                                                                              \
         int _log_ratelimit_error = (_error);                                    \
         int _log_ratelimit_level = (_level);                                    \
@@ -407,7 +429,7 @@ typedef struct LogRateLimit {
         ({                                                              \
                 int _level = (level), _e = (error);                     \
                 _e = (log_get_max_level() >= LOG_PRI(_level))           \
-                        ? log_ratelimit_internal(_level, _e, _ratelimit, format, PROJECT_FILE, __LINE__, __func__, ##__VA_ARGS__) \
+                        ? log_ratelimit_internal(_level, _e, _ratelimit, PROJECT_FILE, __LINE__, __func__, format, ##__VA_ARGS__) \
                         : -ERRNO_VALUE(_e);                             \
                 _e < 0 ? _e : -ESTRPIPE;                                \
         })
@@ -429,8 +451,8 @@ typedef struct LogRateLimit {
 #define log_ratelimit_error_errno(error, ...)     log_ratelimit_full_errno(LOG_ERR,     error, __VA_ARGS__)
 #define log_ratelimit_emergency_errno(error, ...) log_ratelimit_full_errno(log_emergency_level(), error, __VA_ARGS__)
 
-const char *_log_set_prefix(const char *prefix, bool force);
-static inline const char *_log_unset_prefixp(const char **p) {
+const char* _log_set_prefix(const char *prefix, bool force);
+static inline const char* _log_unset_prefixp(const char **p) {
         assert(p);
         _log_set_prefix(*p, true);
         return NULL;
@@ -488,6 +510,15 @@ DEFINE_TRIVIAL_CLEANUP_FUNC(LogContext*, log_context_unref);
 size_t log_context_num_contexts(void);
 /* Returns the number of fields in all attached log contexts. */
 size_t log_context_num_fields(void);
+
+static inline void _reset_log_level(int *saved_log_level) {
+        assert(saved_log_level);
+
+        log_set_max_level(*saved_log_level);
+}
+
+#define LOG_CONTEXT_SET_LOG_LEVEL(level) \
+        _cleanup_(_reset_log_level) _unused_ int _saved_log_level_ = log_set_max_level(level);
 
 #define LOG_CONTEXT_PUSH(...) \
         LOG_CONTEXT_PUSH_STRV(STRV_MAKE(__VA_ARGS__))

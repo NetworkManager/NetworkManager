@@ -23,7 +23,7 @@ bool emoji_enabled(void) {
         return cached_emoji_enabled;
 }
 
-const char *special_glyph_full(SpecialGlyph code, bool force_utf) {
+const char* special_glyph_full(SpecialGlyph code, bool force_utf) {
 
         /* A list of a number of interesting unicode glyphs we can use to decorate our output. It's probably wise to be
          * conservative here, and primarily stick to the glyphs defined in the eurlatgr font, so that display still
@@ -41,6 +41,8 @@ const char *special_glyph_full(SpecialGlyph code, bool force_utf) {
                         [SPECIAL_GLYPH_TREE_SPACE]              = "  ",
                         [SPECIAL_GLYPH_TREE_TOP]                = ",-",
                         [SPECIAL_GLYPH_VERTICAL_DOTTED]         = ":",
+                        [SPECIAL_GLYPH_HORIZONTAL_DOTTED]       = "-",
+                        [SPECIAL_GLYPH_HORIZONTAL_FAT]          = "=",
                         [SPECIAL_GLYPH_TRIANGULAR_BULLET]       = ">",
                         [SPECIAL_GLYPH_BLACK_CIRCLE]            = "*",
                         [SPECIAL_GLYPH_WHITE_CIRCLE]            = "*",
@@ -74,6 +76,12 @@ const char *special_glyph_full(SpecialGlyph code, bool force_utf) {
                         [SPECIAL_GLYPH_SPARKLES]                = "*",
                         [SPECIAL_GLYPH_LOW_BATTERY]             = "!",
                         [SPECIAL_GLYPH_WARNING_SIGN]            = "!",
+                        [SPECIAL_GLYPH_RED_CIRCLE]              = "o",
+                        [SPECIAL_GLYPH_YELLOW_CIRCLE]           = "o",
+                        [SPECIAL_GLYPH_BLUE_CIRCLE]             = "o",
+                        [SPECIAL_GLYPH_GREEN_CIRCLE]            = "o",
+                        [SPECIAL_GLYPH_SUPERHERO]               = "S",
+                        [SPECIAL_GLYPH_IDCARD]                  = "@",
                 },
 
                 /* UTF-8 */
@@ -87,6 +95,8 @@ const char *special_glyph_full(SpecialGlyph code, bool force_utf) {
 
                         /* Single glyphs in both cases */
                         [SPECIAL_GLYPH_VERTICAL_DOTTED]         = u8"┆",
+                        [SPECIAL_GLYPH_HORIZONTAL_DOTTED]       = u8"┄",
+                        [SPECIAL_GLYPH_HORIZONTAL_FAT]          = u8"━",
                         [SPECIAL_GLYPH_TRIANGULAR_BULLET]       = u8"‣",
                         [SPECIAL_GLYPH_BLACK_CIRCLE]            = u8"●",
                         [SPECIAL_GLYPH_WHITE_CIRCLE]            = u8"○",
@@ -136,6 +146,13 @@ const char *special_glyph_full(SpecialGlyph code, bool force_utf) {
                         [SPECIAL_GLYPH_WARNING_SIGN]            = u8"⚠️",
                         [SPECIAL_GLYPH_COMPUTER_DISK]           = u8"💽",
                         [SPECIAL_GLYPH_WORLD]                   = u8"🌍",
+
+                        [SPECIAL_GLYPH_RED_CIRCLE]              = u8"🔴",
+                        [SPECIAL_GLYPH_YELLOW_CIRCLE]           = u8"🟡",
+                        [SPECIAL_GLYPH_BLUE_CIRCLE]             = u8"🔵",
+                        [SPECIAL_GLYPH_GREEN_CIRCLE]            = u8"🟢",
+                        [SPECIAL_GLYPH_SUPERHERO]               = u8"🦸",
+                        [SPECIAL_GLYPH_IDCARD]                  = u8"🪪",
                 },
         };
 

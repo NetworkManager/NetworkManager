@@ -28,11 +28,7 @@ typedef enum {
         WRITE_STRING_FILE_MODE_0600                  = 1 << 10,
         WRITE_STRING_FILE_MODE_0444                  = 1 << 11,
         WRITE_STRING_FILE_SUPPRESS_REDUNDANT_VIRTUAL = 1 << 12,
-
-        /* And before you wonder, why write_string_file_atomic_label_ts() is a separate function instead of just one
-           more flag here: it's about linking: we don't want to pull -lselinux into all users of write_string_file()
-           and friends. */
-
+        WRITE_STRING_FILE_LABEL                      = 1 << 13,
 } WriteStringFileFlags;
 
 typedef enum {
@@ -51,22 +47,21 @@ DIR* take_fdopendir(int *dfd);
 FILE* open_memstream_unlocked(char **ptr, size_t *sizeloc);
 FILE* fmemopen_unlocked(void *buf, size_t size, const char *mode);
 
-int write_string_stream_ts(FILE *f, const char *line, WriteStringFileFlags flags, const struct timespec *ts);
+int write_string_stream_full(FILE *f, const char *line, WriteStringFileFlags flags, const struct timespec *ts);
 static inline int write_string_stream(FILE *f, const char *line, WriteStringFileFlags flags) {
-        return write_string_stream_ts(f, line, flags, NULL);
-}
-int write_string_file_ts_at(int dir_fd, const char *fn, const char *line, WriteStringFileFlags flags, const struct timespec *ts);
-static inline int write_string_file_ts(const char *fn, const char *line, WriteStringFileFlags flags, const struct timespec *ts) {
-        return write_string_file_ts_at(AT_FDCWD, fn, line, flags, ts);
-}
-static inline int write_string_file_at(int dir_fd, const char *fn, const char *line, WriteStringFileFlags flags) {
-        return write_string_file_ts_at(dir_fd, fn, line, flags, NULL);
-}
-static inline int write_string_file(const char *fn, const char *line, WriteStringFileFlags flags) {
-        return write_string_file_ts(fn, line, flags, NULL);
+        return write_string_stream_full(f, line, flags, NULL);
 }
 
+int write_string_file_full(int dir_fd, const char *fn, const char *line, WriteStringFileFlags flags, const struct timespec *ts, const char *label_fn);
+static inline int write_string_file_at(int dir_fd, const char *fn, const char *line, WriteStringFileFlags flags) {
+        return write_string_file_full(dir_fd, fn, line, flags, NULL, NULL);
+}
+static inline int write_string_file(const char *fn, const char *line, WriteStringFileFlags flags) {
+        return write_string_file_at(AT_FDCWD, fn, line, flags);
+}
 int write_string_filef(const char *fn, WriteStringFileFlags flags, const char *format, ...) _printf_(3, 4);
+
+int write_base64_file_at(int dir_fd, const char *fn, const struct iovec *data, WriteStringFileFlags flags);
 
 int read_one_line_file_at(int dir_fd, const char *filename, char **ret);
 static inline int read_one_line_file(const char *filename, char **ret) {
@@ -99,11 +94,11 @@ static inline int verify_file(const char *fn, const char *blob, bool accept_extr
         return verify_file_at(AT_FDCWD, fn, blob, accept_extra_nl);
 }
 
-int executable_is_script(const char *path, char **interpreter);
+int script_get_shebang_interpreter(const char *path, char **ret);
 
 int get_proc_field(const char *filename, const char *pattern, const char *terminator, char **field);
 
-DIR *xopendirat(int dirfd, const char *name, int flags);
+DIR* xopendirat(int dir_fd, const char *name, int flags);
 
 typedef enum XfopenFlags {
         XFOPEN_UNLOCKED = 1 << 0, /* call __fsetlocking(FSETLOCKING_BYCALLER) after opened */
@@ -144,6 +139,7 @@ int write_timestamp_file_atomic(const char *fn, usec_t n);
 int read_timestamp_file(const char *fn, usec_t *ret);
 
 int fputs_with_separator(FILE *f, const char *s, const char *separator, bool *space);
+int fputs_with_newline(FILE *f, const char *s);
 
 typedef enum ReadLineFlags {
         READ_LINE_ONLY_NUL  = 1 << 0,
@@ -152,22 +148,20 @@ typedef enum ReadLineFlags {
 } ReadLineFlags;
 
 int read_line_full(FILE *f, size_t limit, ReadLineFlags flags, char **ret);
+static inline int read_line(FILE *f, size_t limit, char **ret) {
+        return read_line_full(f, limit, 0, ret);
+}
+static inline int read_nul_string(FILE *f, size_t limit, char **ret) {
+        return read_line_full(f, limit, READ_LINE_ONLY_NUL, ret);
+}
+
+int read_stripped_line(FILE *f, size_t limit, char **ret);
 
 static inline bool file_offset_beyond_memory_size(off_t x) {
         if (x < 0) /* off_t is signed, filter that out */
                 return false;
         return (uint64_t) x > (uint64_t) SIZE_MAX;
 }
-
-static inline int read_line(FILE *f, size_t limit, char **ret) {
-        return read_line_full(f, limit, 0, ret);
-}
-
-static inline int read_nul_string(FILE *f, size_t limit, char **ret) {
-        return read_line_full(f, limit, READ_LINE_ONLY_NUL, ret);
-}
-
-int read_stripped_line(FILE *f, size_t limit, char **ret);
 
 int safe_fgetc(FILE *f, char *ret);
 
