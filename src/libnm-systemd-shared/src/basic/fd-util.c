@@ -2,9 +2,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#if WANT_LINUX_FS_H
-#include <linux/fs.h>
-#endif
+#include <linux/kcmp.h>
 #include <linux/magic.h>
 #include <sys/ioctl.h>
 #include <sys/resource.h>
@@ -17,6 +15,7 @@
 #include "fileio.h"
 #include "fs-util.h"
 #include "io-util.h"
+#include "log.h"
 #include "macro.h"
 #include "missing_fcntl.h"
 #include "missing_fs.h"
@@ -29,7 +28,6 @@
 #include "sort-util.h"
 #include "stat-util.h"
 #include "stdio-util.h"
-#include "tmpfile-util.h"
 
 /* The maximum number of iterations in the loop to close descriptors in the fallback case
  * when /proc/self/fd/ is inaccessible. */
@@ -1003,13 +1001,13 @@ int fd_verify_safe_flags_full(int fd, int extra_flags) {
         if (flags < 0)
                 return -errno;
 
-        unexpected_flags = flags & ~(O_ACCMODE|O_NOFOLLOW|RAW_O_LARGEFILE|extra_flags);
+        unexpected_flags = flags & ~(O_ACCMODE_STRICT|O_NOFOLLOW|RAW_O_LARGEFILE|extra_flags);
         if (unexpected_flags != 0)
                 return log_debug_errno(SYNTHETIC_ERRNO(EREMOTEIO),
                                        "Unexpected flags set for extrinsic fd: 0%o",
                                        (unsigned) unexpected_flags);
 
-        return flags & (O_ACCMODE | extra_flags); /* return the flags variable, but remove the noise */
+        return flags & (O_ACCMODE_STRICT | extra_flags); /* return the flags variable, but remove the noise */
 }
 
 int read_nr_open(void) {
@@ -1086,30 +1084,27 @@ int path_is_root_at(int dir_fd, const char *path) {
 }
 
 int fds_are_same_mount(int fd1, int fd2) {
-        STRUCT_NEW_STATX_DEFINE(st1);
-        STRUCT_NEW_STATX_DEFINE(st2);
+        struct statx sx1 = {}, sx2 = {}; /* explicitly initialize the struct to make msan silent. */
         int r;
 
         assert(fd1 >= 0);
         assert(fd2 >= 0);
 
-        r = statx_fallback(fd1, "", AT_EMPTY_PATH, STATX_TYPE|STATX_INO|STATX_MNT_ID, &st1.sx);
-        if (r < 0)
-                return r;
+        if (statx(fd1, "", AT_EMPTY_PATH, STATX_TYPE|STATX_INO|STATX_MNT_ID, &sx1) < 0)
+                return -errno;
 
-        r = statx_fallback(fd2, "", AT_EMPTY_PATH, STATX_TYPE|STATX_INO|STATX_MNT_ID, &st2.sx);
-        if (r < 0)
-                return r;
+        if (statx(fd2, "", AT_EMPTY_PATH, STATX_TYPE|STATX_INO|STATX_MNT_ID, &sx2) < 0)
+                return -errno;
 
         /* First, compare inode. If these are different, the fd does not point to the root directory "/". */
-        if (!statx_inode_same(&st1.sx, &st2.sx))
+        if (!statx_inode_same(&sx1, &sx2))
                 return false;
 
         /* Note, statx() does not provide the mount ID and path_get_mnt_id_at() does not work when an old
          * kernel is used. In that case, let's assume that we do not have such spurious mount points in an
          * early boot stage, and silently skip the following check. */
 
-        if (!FLAGS_SET(st1.nsx.stx_mask, STATX_MNT_ID)) {
+        if (!FLAGS_SET(sx1.stx_mask, STATX_MNT_ID)) {
                 int mntid;
 
                 r = path_get_mnt_id_at_fallback(fd1, "", &mntid);
@@ -1117,11 +1112,11 @@ int fds_are_same_mount(int fd1, int fd2) {
                         return r;
                 assert(mntid >= 0);
 
-                st1.nsx.stx_mnt_id = mntid;
-                st1.nsx.stx_mask |= STATX_MNT_ID;
+                sx1.stx_mnt_id = mntid;
+                sx1.stx_mask |= STATX_MNT_ID;
         }
 
-        if (!FLAGS_SET(st2.nsx.stx_mask, STATX_MNT_ID)) {
+        if (!FLAGS_SET(sx2.stx_mask, STATX_MNT_ID)) {
                 int mntid;
 
                 r = path_get_mnt_id_at_fallback(fd2, "", &mntid);
@@ -1129,15 +1124,15 @@ int fds_are_same_mount(int fd1, int fd2) {
                         return r;
                 assert(mntid >= 0);
 
-                st2.nsx.stx_mnt_id = mntid;
-                st2.nsx.stx_mask |= STATX_MNT_ID;
+                sx2.stx_mnt_id = mntid;
+                sx2.stx_mask |= STATX_MNT_ID;
         }
 
-        return statx_mount_same(&st1.nsx, &st2.nsx);
+        return statx_mount_same(&sx1, &sx2);
 }
 
 const char* accmode_to_string(int flags) {
-        switch (flags & O_ACCMODE) {
+        switch (flags & O_ACCMODE_STRICT) {
         case O_RDONLY:
                 return "ro";
         case O_WRONLY:

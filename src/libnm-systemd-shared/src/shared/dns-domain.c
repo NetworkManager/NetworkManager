@@ -13,6 +13,7 @@
 #include "hostname-util.h"
 #include "idn-util.h"
 #include "in-addr-util.h"
+#include "log.h"
 #include "macro.h"
 #include "parse-util.h"
 #include "string-util.h"
@@ -924,9 +925,12 @@ int dns_name_from_wire_format(const uint8_t **data, size_t *len, char **ret) {
                 const char *label;
                 uint8_t c;
 
-                /* Unterminated name */
+                /* RFC 4704 § 4: fully qualified domain names include the terminating
+                 * zero-length label, partial names don't. According to the RFC, DHCPv6
+                 * servers should always send the fully qualified name, but that's not
+                 * true in practice. Also accept partial names. */
                 if (optlen == 0)
-                        return -EBADMSG;
+                        break;
 
                 /* RFC 1035 § 3.1 total length of encoded name is limited to 255 octets */
                 if (*len - optlen > 255)
@@ -1383,7 +1387,7 @@ int dns_name_apply_idna(const char *name, char **ret) {
                 r = sym_idn2_lookup_u8((uint8_t*) name, (uint8_t**) &t,
                                        IDN2_NFC_INPUT | IDN2_TRANSITIONAL);
 
-        log_debug("idn2_lookup_u8: %s %s %s", name, special_glyph(SPECIAL_GLYPH_ARROW_RIGHT), t);
+        log_debug("idn2_lookup_u8: %s %s %s", name, glyph(GLYPH_ARROW_RIGHT), t);
         if (r == IDN2_OK) {
                 if (!startswith(name, "xn--")) {
                         _cleanup_free_ char *s = NULL;
@@ -1398,8 +1402,8 @@ int dns_name_apply_idna(const char *name, char **ret) {
 
                         if (!streq_ptr(name, s)) {
                                 log_debug("idn2 roundtrip failed: \"%s\" %s \"%s\" %s \"%s\", ignoring.",
-                                          name, special_glyph(SPECIAL_GLYPH_ARROW_RIGHT), t,
-                                          special_glyph(SPECIAL_GLYPH_ARROW_RIGHT), s);
+                                          name, glyph(GLYPH_ARROW_RIGHT), t,
+                                          glyph(GLYPH_ARROW_RIGHT), s);
                                 *ret = NULL;
                                 return 0;
                         }
