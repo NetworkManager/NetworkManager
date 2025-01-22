@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <linux/ipv6.h>
+#include <linux/netfilter/nf_tables.h>
 #include <net/if.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,6 +13,7 @@
 #include "errno-list.h"
 #include "extract-word.h"
 #include "locale-util.h"
+#include "log.h"
 #include "macro.h"
 #include "missing_network.h"
 #include "parse-util.h"
@@ -527,7 +529,7 @@ int safe_atollu_full(const char *s, unsigned base, unsigned long long *ret_llu) 
         return 0;
 }
 
-int safe_atolli(const char *s, long long int *ret_lli) {
+int safe_atolli(const char *s, long long *ret_lli) {
         unsigned base = 0;
         char *x = NULL;
         long long l;
@@ -777,18 +779,14 @@ int parse_loadavg_fixed_point(const char *s, loadavg_t *ret) {
 /* Limitations are described in https://www.netfilter.org/projects/nftables/manpage.html and
  * https://bugzilla.netfilter.org/show_bug.cgi?id=1175 */
 bool nft_identifier_valid(const char *id) {
-        if (!id)
+        if (isempty(id))
                 return false;
 
-        size_t len = strlen(id);
-        if (len == 0 || len > 31)
+        if (strlen(id) >= NFT_NAME_MAXLEN)
                 return false;
 
         if (!ascii_isalpha(id[0]))
                 return false;
 
-        for (size_t i = 1; i < len; i++)
-                if (!ascii_isalpha(id[i]) && !ascii_isdigit(id[i]) && !IN_SET(id[i], '/', '\\', '_', '.'))
-                        return false;
-        return true;
+        return in_charset(id + 1, ALPHANUMERICAL "/\\_.");
 }

@@ -28,6 +28,8 @@ extern const struct namespace_info {
 
 NamespaceType clone_flag_to_namespace_type(unsigned long clone_flag);
 
+bool namespace_type_supported(NamespaceType type);
+
 int pidref_namespace_open_by_type(const PidRef *pidref, NamespaceType type);
 int namespace_open_by_type(NamespaceType type);
 
@@ -86,7 +88,8 @@ static inline bool userns_shift_range_valid(uid_t shift, uid_t range) {
 int parse_userns_uid_range(const char *s, uid_t *ret_uid_shift, uid_t *ret_uid_range);
 
 int userns_acquire_empty(void);
-int userns_acquire(const char *uid_map, const char *gid_map);
+int userns_acquire(const char *uid_map, const char *gid_map, bool setgroups_deny);
+int userns_acquire_self_root(void);
 int userns_enter_and_pin(int userns_fd, pid_t *ret_pid);
 
 int userns_get_base_uid(int userns_fd, uid_t *ret_uid, gid_t *ret_gid);

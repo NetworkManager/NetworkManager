@@ -11,6 +11,7 @@
 #include <sys/auxv.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
+#include <threads.h>
 
 #include "alloc-util.h"
 #include "env-util.h"
@@ -19,9 +20,9 @@
 #include "fileio.h"
 #include "io-util.h"
 #include "iovec-util.h"
+#include "log.h"
 #include "missing_random.h"
 #include "missing_syscall.h"
-#include "missing_threads.h"
 #include "parse-util.h"
 #include "pidfd-util.h"
 #include "process-util.h"

@@ -12,6 +12,7 @@
 #include "extract-word.h"
 #include "fileio.h"
 #include "gunicode.h"
+#include "log.h"
 #include "memory-util.h"
 #include "nulstr-util.h"
 #include "sort-util.h"
@@ -631,7 +632,7 @@ int strv_insert(char ***l, size_t position, char *value) {
         n = strv_length(*l);
         position = MIN(position, n);
 
-        /* check for overflow and increase*/
+        /* check for overflow and increase */
         if (n > SIZE_MAX - 2)
                 return -ENOMEM;
         m = n + 2;
@@ -861,11 +862,11 @@ int strv_compare(char * const *a, char * const *b) {
         return 0;
 }
 
-bool strv_equal_ignore_order(char **a, char **b) {
+bool strv_equal_ignore_order(char * const *a, char * const *b) {
 
         /* Just like strv_equal(), but doesn't care about the order of elements or about redundant entries
          * (i.e. it's even ok if the number of entries in the array differ, as long as the difference just
-         * consists of repititions) */
+         * consists of repetitions). */
 
         if (a == b)
                 return true;
@@ -976,14 +977,16 @@ bool strv_fnmatch_full(
 }
 
 char** strv_skip(char **l, size_t n) {
-
         while (n > 0) {
                 if (strv_isempty(l))
-                        return l;
+                        return NULL;
 
                 l++, n--;
         }
 
+        /* To simplify callers, always return NULL instead of a zero-item array. */
+        if (strv_isempty(l))
+                return NULL;
         return l;
 }
 
@@ -1063,7 +1066,22 @@ int fputstrv(FILE *f, char * const *l, const char *separator, bool *space) {
         return 0;
 }
 
-DEFINE_PRIVATE_HASH_OPS_FULL(string_strv_hash_ops, char, string_hash_func, string_compare_func, free, char*, strv_free);
+void string_strv_hashmap_remove(Hashmap *h, const char *key, const char *value) {
+        assert(key);
+
+        if (value) {
+                char **l = hashmap_get(h, key);
+                if (!l)
+                        return;
+
+                strv_remove(l, value);
+                if (!strv_isempty(l))
+                        return;
+        }
+
+        _unused_ _cleanup_free_ char *key_free = NULL;
+        strv_free(hashmap_remove2(h, key, (void**) &key_free));
+}
 
 static int string_strv_hashmap_put_internal(Hashmap *h, const char *key, const char *value) {
         char **l;
@@ -1115,7 +1133,7 @@ int _string_strv_hashmap_put(Hashmap **h, const char *key, const char *value  HA
         assert(key);
         assert(value);
 
-        r = _hashmap_ensure_allocated(h, &string_strv_hash_ops  HASHMAP_DEBUG_PASS_ARGS);
+        r = _hashmap_ensure_allocated(h, &string_hash_ops_free_strv_free  HASHMAP_DEBUG_PASS_ARGS);
         if (r < 0)
                 return r;
 
@@ -1129,7 +1147,7 @@ int _string_strv_ordered_hashmap_put(OrderedHashmap **h, const char *key, const 
         assert(key);
         assert(value);
 
-        r = _ordered_hashmap_ensure_allocated(h, &string_strv_hash_ops  HASHMAP_DEBUG_PASS_ARGS);
+        r = _ordered_hashmap_ensure_allocated(h, &string_hash_ops_free_strv_free  HASHMAP_DEBUG_PASS_ARGS);
         if (r < 0)
                 return r;
 
@@ -1222,4 +1240,25 @@ int strv_rebreak_lines(char **l, size_t width, char ***ret) {
 
         *ret = TAKE_PTR(broken);
         return 0;
+}
+
+char** strv_filter_prefix(char * const *l, const char *prefix) {
+
+        /* Allocates a copy of 'l', but only copies over entries starting with 'prefix' */
+
+        if (isempty(prefix))
+                return strv_copy(l);
+
+        _cleanup_strv_free_ char **f = NULL;
+        size_t sz = 0;
+
+        STRV_FOREACH(i, l) {
+                if (!startswith(*i, prefix))
+                        continue;
+
+                if (strv_extend_with_size(&f, &sz, *i) < 0)
+                        return NULL;
+        }
+
+        return TAKE_PTR(f);
 }

@@ -11,6 +11,7 @@
 #include "errno-util.h"
 #include "escape.h"
 #include "extract-word.h"
+#include "log.h"
 #include "macro.h"
 #include "parse-util.h"
 #include "path-util.h"
@@ -546,7 +547,7 @@ char* strv_env_get_n(char * const *l, const char *name, size_t k, ReplaceEnvFlag
                         return NULL;
 
                 t = strndupa_safe(name, k);
-                return getenv(t);
+                return secure_getenv(t);
         };
 
         return NULL;
@@ -695,7 +696,7 @@ int replace_env_full(
         _cleanup_strv_free_ char **unset_variables = NULL, **bad_variables = NULL;
         const char *e, *word = format, *test_value = NULL; /* test_value is initialized to appease gcc */
         _cleanup_free_ char *s = NULL;
-        char ***pu, ***pb, *k;
+        char ***pu, ***pb;
         size_t i, len = 0; /* len is initialized to appease gcc */
         int nest = 0, r;
 
@@ -717,32 +718,23 @@ int replace_env_full(
 
                 case CURLY:
                         if (*e == '{') {
-                                k = strnappend(s, word, e-word-1);
-                                if (!k)
+                                if (!strextendn(&s, word, e-word-1))
                                         return -ENOMEM;
-
-                                free_and_replace(s, k);
 
                                 word = e-1;
                                 state = VARIABLE;
                                 nest++;
 
                         } else if (*e == '$') {
-                                k = strnappend(s, word, e-word);
-                                if (!k)
+                                if (!strextendn(&s, word, e-word))
                                         return -ENOMEM;
-
-                                free_and_replace(s, k);
 
                                 word = e+1;
                                 state = WORD;
 
                         } else if (FLAGS_SET(flags, REPLACE_ENV_ALLOW_BRACELESS) && strchr(VALID_BASH_ENV_NAME_CHARS, *e)) {
-                                k = strnappend(s, word, e-word-1);
-                                if (!k)
+                                if (!strextendn(&s, word, e-word-1))
                                         return -ENOMEM;
-
-                                free_and_replace(s, k);
 
                                 word = e-1;
                                 state = VARIABLE_RAW;
@@ -1114,7 +1106,7 @@ int getenv_steal_erase(const char *name, char **ret) {
          * it from there. Usecase: reading passwords from the env block (which is a bad idea, but useful for
          * testing, and given that people are likely going to misuse this, be thorough) */
 
-        e = getenv(name);
+        e = secure_getenv(name);
         if (!e) {
                 if (ret)
                         *ret = NULL;
@@ -1136,25 +1128,6 @@ int getenv_steal_erase(const char *name, char **ret) {
                 *ret = TAKE_PTR(a);
 
         return 1;
-}
-
-int set_full_environment(char **env) {
-        int r;
-
-        clearenv();
-
-        STRV_FOREACH(e, env) {
-                _cleanup_free_ char *k = NULL, *v = NULL;
-
-                r = split_pair(*e, "=", &k, &v);
-                if (r < 0)
-                        return r;
-
-                if (setenv(k, v, /* overwrite= */ true) < 0)
-                        return -errno;
-        }
-
-        return 0;
 }
 
 int setenvf(const char *name, bool overwrite, const char *valuef, ...) {

@@ -4,13 +4,13 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
-#include <linux/fs.h>
 
 #include "bitfield.h"
 #include "chattr-util.h"
 #include "errno-util.h"
 #include "fd-util.h"
 #include "fs-util.h"
+#include "log.h"
 #include "macro.h"
 #include "string-util.h"
 
