@@ -19,6 +19,13 @@
 #include "nm-active-connection.h"
 #include "nm-l3cfg.h"
 
+typedef enum {
+    DNSCONFD_PLUGIN_IDLE             = 0,
+    DNSCONFD_PLUGIN_WAIT_CONNECT     = 1,
+    DNSCONFD_PLUGIN_WAIT_UPDATE_DONE = 2,
+    DNSCONFD_PLUGIN_WAIT_SERIAL      = 3
+} DnsconfdPluginState;
+
 typedef struct {
     GDBusConnection *dbus_connection;
     GCancellable    *update_cancellable;
@@ -26,6 +33,13 @@ typedef struct {
     guint            name_owner_changed_id;
     GCancellable    *name_owner_cancellable;
     GVariant        *latest_update_args;
+
+    guint         awaited_configuration_serial;
+    guint         present_configuration_serial;
+    guint         properties_changed_id;
+    GCancellable *serial_cancellable;
+
+    DnsconfdPluginState plugin_state;
 } NMDnsDnsconfdPrivate;
 
 struct _NMDnsDnsconfd {
@@ -52,13 +66,123 @@ typedef enum { CONNECTION_FAIL, CONNECTION_SUCCESS, CONNECTION_WAIT } Connection
 /*****************************************************************************/
 
 static void
+dnsconfd_serial_changed(NMDnsDnsconfd *self, guint new_serial)
+{
+    NMDnsDnsconfdPrivate *priv         = NM_DNS_DNSCONFD_GET_PRIVATE(self);
+    priv->present_configuration_serial = new_serial;
+    if (priv->plugin_state == DNSCONFD_PLUGIN_WAIT_SERIAL
+        && priv->awaited_configuration_serial == new_serial) {
+        priv->plugin_state = DNSCONFD_PLUGIN_IDLE;
+        /* Update finished, serials match */
+        _LOGT("serials match, update finished");
+    }
+
+    _nm_dns_plugin_update_pending_maybe_changed(NM_DNS_PLUGIN(self));
+}
+
+static void
+dnsconfd_properties_changed(GDBusConnection *connection,
+                            const char      *sender_name,
+                            const char      *object_path,
+                            const char      *interface_name,
+                            const char      *signal_name,
+                            GVariant        *parameters,
+                            gpointer         user_data)
+{
+    NMDnsDnsconfd             *self               = user_data;
+    gs_unref_variant GVariant *updated_properties = NULL;
+    guint                      new_serial;
+
+    if (!g_variant_is_of_type(parameters, G_VARIANT_TYPE("(sa{sv}as)"))) {
+        _LOGW("received properties changed signal but the type is wrong");
+        return;
+    }
+
+    g_variant_get(parameters, "(&s@a{sv}as)", NULL, &updated_properties, NULL);
+
+    if (!g_variant_lookup(updated_properties, "configuration_serial", "u", &new_serial)) {
+        _LOGT("properties changed but they do not contain new serial");
+        return;
+    }
+    _LOGT("properties changed and contain new serial %u", new_serial);
+
+    dnsconfd_serial_changed(self, new_serial);
+}
+
+static void
+dnsconfd_serial_retrieval_done(GObject *source_object, GAsyncResult *res, gpointer user_data)
+{
+    NMDnsDnsconfd             *self;
+    NMDnsDnsconfdPrivate      *priv;
+    gs_free_error GError      *error              = NULL;
+    gs_unref_variant GVariant *response           = NULL;
+    gs_unref_variant GVariant *new_serial_variant = NULL;
+    guint                      new_serial;
+
+    response = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source_object), res, &error);
+    if (nm_utils_error_is_cancelled(error))
+        return;
+
+    self = user_data;
+    priv = NM_DNS_DNSCONFD_GET_PRIVATE(self);
+
+    nm_clear_g_cancellable(&priv->serial_cancellable);
+
+    g_variant_get(response, "(v)", &new_serial_variant);
+
+    g_variant_get(new_serial_variant, "u", &new_serial);
+
+    _LOGT("serial retrieval done %u", new_serial);
+
+    dnsconfd_serial_changed(self, new_serial);
+}
+
+static gboolean
+subscribe_serial(NMDnsDnsconfd *self)
+{
+    NMDnsDnsconfdPrivate *priv = NM_DNS_DNSCONFD_GET_PRIVATE(self);
+
+    priv->properties_changed_id =
+        g_dbus_connection_signal_subscribe(priv->dbus_connection,
+                                           priv->name_owner,
+                                           "org.freedesktop.DBus.Properties",
+                                           "PropertiesChanged",
+                                           "/com/redhat/dnsconfd",
+                                           "com.redhat.dnsconfd.Manager",
+                                           G_DBUS_SIGNAL_FLAGS_NONE,
+                                           dnsconfd_properties_changed,
+                                           self,
+                                           NULL);
+    if (!priv->properties_changed_id) {
+        return FALSE;
+    }
+
+    nm_clear_g_cancellable(&priv->serial_cancellable);
+
+    g_dbus_connection_call(
+        priv->dbus_connection,
+        priv->name_owner,
+        "/com/redhat/dnsconfd",
+        "org.freedesktop.DBus.Properties",
+        "Get",
+        g_variant_new("(ss)", "com.redhat.dnsconfd.Manager", "configuration_serial"),
+        NULL,
+        G_DBUS_CALL_FLAGS_NONE,
+        -1,
+        priv->serial_cancellable,
+        dnsconfd_serial_retrieval_done,
+        self);
+    return TRUE;
+}
+
+static void
 dnsconfd_update_done(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
     NMDnsDnsconfd             *self;
     NMDnsDnsconfdPrivate      *priv;
     gs_free_error GError      *error    = NULL;
     gs_unref_variant GVariant *response = NULL;
-    gboolean                   all_ok   = FALSE;
+    guint                      awaited_serial;
     char                      *dnsconfd_message;
 
     response = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source_object), res, &error);
@@ -76,12 +200,27 @@ dnsconfd_update_done(GObject *source_object, GAsyncResult *res, gpointer user_da
 
     /* By using &s we will get pointer to char data contained
      * in variant and thus no freing of dnsconfd_message is required */
-    g_variant_get(response, "(b&s)", &all_ok, &dnsconfd_message);
-    if (all_ok) {
-        _LOGT("dnsconfd update successful");
-    } else {
-        _LOGW("dnsconfd update failed: %s", dnsconfd_message);
+    g_variant_get(response, "(u&s)", &awaited_serial, &dnsconfd_message);
+
+    if (!awaited_serial) {
+        _LOGW("dnsconfd refused update: %s", dnsconfd_message);
+        priv->plugin_state = DNSCONFD_PLUGIN_IDLE;
+        _nm_dns_plugin_update_pending_maybe_changed(NM_DNS_PLUGIN(self));
+        return;
     }
+
+    priv->awaited_configuration_serial = awaited_serial;
+    _LOGT("dnsconfd accepted update, awaited serial is %u", awaited_serial);
+
+    if (priv->awaited_configuration_serial == priv->present_configuration_serial) {
+        /* Serials match, update finished */
+        priv->plugin_state = DNSCONFD_PLUGIN_IDLE;
+        _LOGT("after update serials match");
+    } else {
+        priv->plugin_state = DNSCONFD_PLUGIN_WAIT_SERIAL;
+        _LOGT("after update serials don't match, waiting");
+    }
+
     _nm_dns_plugin_update_pending_maybe_changed(NM_DNS_PLUGIN(self));
 }
 
@@ -93,9 +232,8 @@ is_default_interface_explicit(const CList *ip_data_lst_head)
     NMDnsConfigIPData *ip_data;
     gboolean           is_routing;
 
-    /* if there is ~. specified in either searches or domains then default interface is explicit
-     * AFAIK it should not be passible to pass "." through DHCP and thus we will check only
-     * searches */
+    /* If there is "~." specified in any connection's active ipvX.search setting then default
+     * interface is explicit */
 
     c_list_for_each_entry (ip_data, ip_data_lst_head, ip_data_lst) {
         strv_domains =
@@ -106,6 +244,8 @@ is_default_interface_explicit(const CList *ip_data_lst_head)
             }
         }
     }
+    /* AFAIK it should not be passible to pass "." through DHCP and thus we will check only
+     * searches */
     return FALSE;
 }
 
@@ -122,7 +262,7 @@ gather_interface_domains(NMDnsConfigIPData *ip_data,
     GPtrArray         *routing_ptr_array = g_ptr_array_sized_new(5);
     GPtrArray         *search_ptr_array  = g_ptr_array_sized_new(5);
 
-    /* searches have higher priority than domains (dynamically retrieved) */
+    /* Searches have higher priority than domains (dynamically retrieved) */
     strv_domains = nm_l3_config_data_get_searches(ip_data->l3cd, ip_data->addr_family, &n_domains);
     if (!n_domains) {
         strv_domains =
@@ -137,7 +277,7 @@ gather_interface_domains(NMDnsConfigIPData *ip_data,
         }
     }
 
-    /* if there has been specified search like ~. then we will not be adding . and respect
+    /* If there has been specified search like "~." then we will not be adding "." and respect
      * users wishes */
     if (!is_default_explicit
         && nm_l3_config_data_get_best_default_route(ip_data->l3cd, ip_data->addr_family)) {
@@ -146,7 +286,7 @@ gather_interface_domains(NMDnsConfigIPData *ip_data,
     g_ptr_array_add(routing_ptr_array, NULL);
     g_ptr_array_add(search_ptr_array, NULL);
 
-    /* when array would be empty we will simply return NULL */
+    /* When array would be empty we will simply return NULL */
     *routing_domains =
         (const char **) g_ptr_array_free(routing_ptr_array, (routing_ptr_array->len == 1));
     *search_domains =
@@ -181,7 +321,7 @@ get_networks(NMDnsConfigIPData *ip_data, char ***networks)
     }
 
     g_ptr_array_add(ptr_array, NULL);
-    /* if array would be empty then return NULL */
+    /* If array would be empty then return NULL */
     *networks = (char **) g_ptr_array_free(ptr_array, ptr_array->len == 1);
 }
 
@@ -240,7 +380,7 @@ server_builder_append_base(GVariantBuilder   *argument_builder,
 
     g_variant_builder_open(argument_builder, G_VARIANT_TYPE("a{sv}"));
 
-    /* no freeing needed in this section as builder takes ownership of all data */
+    /* No freeing needed in this section as builder takes ownership of all data */
 
     g_variant_builder_add(argument_builder,
                           "{sv}",
@@ -282,7 +422,7 @@ parse_global_config(const NMGlobalDnsConfig *global_config,
     const char        *name;
     const char        *routing_domains[2] = {0};
     const char *const *searches           = nm_global_dns_config_get_searches(global_config);
-    /* ca can be specified only in global config, but if it is, then we must set it for
+    /* CA can be specified only in global config, but if it is, then we must set it for
      * all servers the same, because we do not support multiple certification authorities
      * (backend limitation) */
     *ca           = nm_global_dns_config_get_certification_authority(global_config);
@@ -314,7 +454,7 @@ static void
 send_dnsconfd_update(NMDnsDnsconfd *self)
 {
     NMDnsDnsconfdPrivate *priv = NM_DNS_DNSCONFD_GET_PRIVATE(self);
-    /* it is safe to clear cancellable here even if it is not initialized,
+    /* It is safe to clear cancellable here even if it is not initialized,
      * as g_object_new initializes private part with zeros and nm_clear_g_cancellable
      * checks whether the variable != NULL */
     nm_clear_g_cancellable(&priv->update_cancellable);
@@ -332,7 +472,6 @@ send_dnsconfd_update(NMDnsDnsconfd *self)
                            priv->update_cancellable,
                            dnsconfd_update_done,
                            self);
-    _nm_dns_plugin_update_pending_maybe_changed(NM_DNS_PLUGIN(self));
 }
 
 static void
@@ -350,11 +489,28 @@ name_owner_changed(NMDnsDnsconfd *self, const char *name_owner)
 
     if (!name_owner) {
         _LOGD("D-Bus name for dnsconfd disappeared");
+        if (priv->plugin_state == DNSCONFD_PLUGIN_WAIT_UPDATE_DONE
+            || priv->plugin_state == DNSCONFD_PLUGIN_WAIT_SERIAL) {
+            /* We were waiting for either serial or confirmation of update and name
+             * disappeared, thus we need to retransmit */
+            priv->plugin_state = DNSCONFD_PLUGIN_WAIT_CONNECT;
+            _nm_dns_plugin_update_pending_maybe_changed(NM_DNS_PLUGIN(self));
+        }
         return;
     }
 
     _LOGT("D-Bus name for dnsconfd got owner %s", name_owner);
-    send_dnsconfd_update(self);
+
+    if (!subscribe_serial(self)) {
+        /* This means that in time between new name and subscribe serial call
+         * we lost the name again thus wait again */
+        priv->plugin_state = DNSCONFD_PLUGIN_WAIT_CONNECT;
+        _LOGT("subscription failed, waiting to connect");
+    } else {
+        priv->plugin_state = DNSCONFD_PLUGIN_WAIT_UPDATE_DONE;
+        _LOGT("sending update and waiting for its finish");
+        send_dnsconfd_update(self);
+    }
 
     _nm_dns_plugin_update_pending_maybe_changed(NM_DNS_PLUGIN(self));
 }
@@ -447,7 +603,7 @@ parse_all_interface_config(GVariantBuilder *argument_builder,
     gboolean              explicit_default = is_default_interface_explicit(ip_data_lst_head);
 
     c_list_for_each_entry (ip_data, ip_data_lst_head, ip_data_lst) {
-        /* no need to free insides of routing and search domains, as they point to data
+        /* No need to free insides of routing and search domains, as they point to data
          * owned elsewhere on the other hand networks are created by us and thus we need to also
          * free the data */
         gs_free const char **routing_domains = NULL;
@@ -463,7 +619,7 @@ parse_all_interface_config(GVariantBuilder *argument_builder,
         act_request = nm_device_get_act_request(device);
         active_connection = NM_ACTIVE_CONNECTION(act_request);
 
-        /* presume that when we have server of this interface then the interface has to have
+        /* Presume that when we have server of this interface then the interface has to have
          * an active connection */
         nm_assert(active_connection);
 
@@ -528,7 +684,7 @@ update(NMDnsPlugin             *plugin,
 
     args = g_variant_builder_end(&argument_builder);
     if (nm_logging_get_level(LOGD_DNS) <= LOGL_TRACE) {
-        /* knowing how the update looks will be immensely helpful during debugging */
+        /* Knowing how the update looks will be immensely helpful during debugging */
         debug_string = g_variant_print(args, TRUE);
         _LOGT("arguments variant is composed like: %s", debug_string);
         g_free(debug_string);
@@ -539,18 +695,30 @@ update(NMDnsPlugin             *plugin,
 
     all_connected = ensure_all_connected(self);
 
+    /* We need to consider only whether we are connected, because newer update call
+     * overrides the old one */
+    if (all_connected != CONNECTION_SUCCESS) {
+        priv->plugin_state = DNSCONFD_PLUGIN_WAIT_CONNECT;
+        _LOGT("not connected, waiting to connect");
+    } else {
+        priv->plugin_state = DNSCONFD_PLUGIN_WAIT_UPDATE_DONE;
+        _LOGT("connected, waiting for update to finish");
+    }
+
     if (all_connected == CONNECTION_FAIL) {
         nm_utils_error_set(error,
                            NM_UTILS_ERROR_UNKNOWN,
                            "no D-Bus connection available to talk to dnsconfd");
-        /* not connected to dbus, can do nothing here */
+        /* Not connected to dbus, can do nothing here */
         return FALSE;
     } else if (all_connected == CONNECTION_WAIT) {
-        /* we do not have name owner yet, and have to wait */
+        /* We do not have name owner yet, and have to wait */
         return TRUE;
     }
 
     send_dnsconfd_update(self);
+
+    _nm_dns_plugin_update_pending_maybe_changed(NM_DNS_PLUGIN(self));
 
     return TRUE;
 }
@@ -563,7 +731,9 @@ stop(NMDnsPlugin *plugin)
 
     nm_clear_g_cancellable(&priv->update_cancellable);
     nm_clear_g_cancellable(&priv->name_owner_cancellable);
+    nm_clear_g_cancellable(&priv->serial_cancellable);
     nm_clear_g_dbus_connection_signal(priv->dbus_connection, &priv->name_owner_changed_id);
+    nm_clear_g_dbus_connection_signal(priv->dbus_connection, &priv->properties_changed_id);
 }
 
 static gboolean
@@ -571,12 +741,13 @@ _update_pending_detect(NMDnsDnsconfd *self)
 {
     NMDnsDnsconfdPrivate *priv = NM_DNS_DNSCONFD_GET_PRIVATE(self);
 
-    if (priv->update_cancellable) {
-        /* update in progress */
-        return TRUE;
+    if (priv->plugin_state == DNSCONFD_PLUGIN_IDLE) {
+        /* We are waiting for nothing */
+        return FALSE;
     }
 
-    return FALSE;
+    /* Update in progress */
+    return TRUE;
 }
 
 static gboolean
