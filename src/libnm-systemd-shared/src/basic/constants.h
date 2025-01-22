@@ -42,9 +42,6 @@
 #define DEFAULT_START_LIMIT_INTERVAL (10*USEC_PER_SEC)
 #define DEFAULT_START_LIMIT_BURST 5
 
-/* Wait for 1.5 seconds at maximum for freeze operation */
-#define FREEZE_TIMEOUT (1500 * USEC_PER_MSEC)
-
 /* The default time after which exit-on-idle services exit. This
  * should be kept lower than the watchdog timeout, because otherwise
  * the watchdog pings will keep the loop busy. */
@@ -67,17 +64,11 @@
         "/usr/local/lib/" n "\0"                \
         "/usr/lib/" n "\0"
 
-#define CONF_PATHS_USR(n)                       \
+#define CONF_PATHS(n)                           \
         "/etc/" n,                              \
         "/run/" n,                              \
         "/usr/local/lib/" n,                    \
         "/usr/lib/" n
-
-#define CONF_PATHS(n)                           \
-        CONF_PATHS_USR(n)
-
-#define CONF_PATHS_USR_STRV(n)                  \
-        STRV_MAKE(CONF_PATHS_USR(n))
 
 #define CONF_PATHS_STRV(n)                      \
         STRV_MAKE(CONF_PATHS(n))
@@ -94,4 +85,5 @@
 /* Path where systemd-oomd listens for varlink connections from user managers to report changes in ManagedOOM settings. */
 #define VARLINK_ADDR_PATH_MANAGED_OOM_USER "/run/systemd/oom/io.systemd.ManagedOOM"
 
-#define KERNEL_BASELINE_VERSION "4.15"
+/* Recommended baseline - see README for details */
+#define KERNEL_BASELINE_VERSION "5.7"

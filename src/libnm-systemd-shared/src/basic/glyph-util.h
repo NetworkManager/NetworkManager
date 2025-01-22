@@ -55,22 +55,24 @@ typedef enum SpecialGlyph {
         SPECIAL_GLYPH_YELLOW_CIRCLE,
         SPECIAL_GLYPH_BLUE_CIRCLE,
         SPECIAL_GLYPH_GREEN_CIRCLE,
+        SPECIAL_GLYPH_SUPERHERO,
+        SPECIAL_GLYPH_IDCARD,
         _SPECIAL_GLYPH_MAX,
         _SPECIAL_GLYPH_INVALID = -EINVAL,
 } SpecialGlyph;
 
 bool emoji_enabled(void);
 
-const char *special_glyph_full(SpecialGlyph code, bool force_utf) _const_;
+const char* special_glyph_full(SpecialGlyph code, bool force_utf) _const_;
 
-static inline const char *special_glyph(SpecialGlyph code) {
+static inline const char* special_glyph(SpecialGlyph code) {
         return special_glyph_full(code, false);
 }
 
-static inline const char *special_glyph_check_mark(bool b) {
+static inline const char* special_glyph_check_mark(bool b) {
         return b ? special_glyph(SPECIAL_GLYPH_CHECK_MARK) : special_glyph(SPECIAL_GLYPH_CROSS_MARK);
 }
 
-static inline const char *special_glyph_check_mark_space(bool b) {
+static inline const char* special_glyph_check_mark_space(bool b) {
         return b ? special_glyph(SPECIAL_GLYPH_CHECK_MARK) : " ";
 }

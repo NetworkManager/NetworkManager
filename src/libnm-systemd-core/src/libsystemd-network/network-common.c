@@ -3,7 +3,7 @@
 #include "nm-sd-adapt-core.h"
 
 #include "env-util.h"
-#include "format-util.h"
+#include "format-ifname.h"
 #include "network-common.h"
 #include "socket-util.h"
 #include "unaligned.h"

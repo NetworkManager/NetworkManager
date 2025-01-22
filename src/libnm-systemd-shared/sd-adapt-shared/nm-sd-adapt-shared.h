@@ -116,6 +116,11 @@ raw_getpid(void)
 #define ALTIFNAMSIZ 128
 #endif
 
+/* kernel cb12fd8e0dabb9a1c8aef55a6a41e2c255fcdf4b (6.8) */
+#ifndef PID_FS_MAGIC
+#define PID_FS_MAGIC 0x50494446
+#endif
+
 #define HAVE_LINUX_TIME_TYPES_H 0
 
 #ifndef __COMPAR_FN_T

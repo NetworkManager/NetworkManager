@@ -714,7 +714,7 @@ static int device_tag(sd_device *device, const char *tag, bool add) {
         assert(device);
         assert(tag);
 
-        r = device_get_device_id(device, &id);
+        r = sd_device_get_device_id(device, &id);
         if (r < 0)
                 return r;
 
@@ -801,7 +801,7 @@ static int device_get_db_path(sd_device *device, char **ret) {
         assert(device);
         assert(ret);
 
-        r = device_get_device_id(device, &id);
+        r = sd_device_get_device_id(device, &id);
         if (r < 0)
                 return r;
 
