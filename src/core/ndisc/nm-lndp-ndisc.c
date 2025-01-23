@@ -218,10 +218,22 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 
         /* Address */
         if (r_plen == 64 && ndp_msg_opt_prefix_flag_auto_addr_conf(msg, offset)) {
-            const guint32 valid_time = ndp_msg_opt_prefix_valid_time(msg, offset);
-            const guint32 preferred_time =
-                NM_MIN(ndp_msg_opt_prefix_preferred_time(msg, offset), valid_time);
-            const NMNDiscAddress address = {
+            const guint32  valid_time     = ndp_msg_opt_prefix_valid_time(msg, offset);
+            const guint32  preferred_time = ndp_msg_opt_prefix_preferred_time(msg, offset);
+            NMNDiscAddress address;
+
+            /*
+             * RFC 4862 Section 5.5.3 states:
+             * c)  If the preferred lifetime is greater than the valid lifetime,
+             * silently ignore the Prefix Information option. A node MAY wish to
+             * log a system management error in this case.
+             */
+            if (preferred_time > valid_time) {
+                _LOGW("skipping PIO - preferred lifetime > valid lifetime");
+                continue;
+            }
+
+            address = (NMNDiscAddress) {
                 .address               = r_network,
                 .expiry_msec           = _nm_ndisc_lifetime_to_expiry(now_msec, valid_time),
                 .expiry_preferred_msec = _nm_ndisc_lifetime_to_expiry(now_msec, preferred_time),
