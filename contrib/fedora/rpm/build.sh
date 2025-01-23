@@ -149,7 +149,7 @@ TEMPBASE="$(basename "$TEMP")"
 if [[ "$SOURCE_FROM_GIT" == "1" ]]; then
     mkdir -p "$TEMP/SOURCES"
     SOURCE="$TEMP/SOURCES/NetworkManager-${VERSION}.tar.xz"
-    (cd "$GITDIR" && git archive --prefix="NetworkManager-$VERSION"/ "$COMMIT_FULL") | xz > "$SOURCE"
+    (cd "$GITDIR" && git archive --prefix="NetworkManager-$VERSION"/ "$COMMIT_FULL") | xz -1 > "$SOURCE"
 fi
 
 LOG "VERSION=$VERSION"
