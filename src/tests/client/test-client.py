@@ -688,31 +688,6 @@ class Util:
         return argv, valgrind_log
 
     @staticmethod
-    def cmd_call_pexpect(cmd_path, args, extra_env):
-        argv, valgrind_log = Util.cmd_create_argv(cmd_path, args)
-        env = Util.cmd_create_env(extra_env=extra_env)
-
-        pexp = pexpect.spawn(argv[0], argv[1:], timeout=10, env=env, encoding="utf-8")
-        if conf.get(ENV_NM_TEST_LOG_PEXPECT):
-            pexp.logfile = sys.stderr
-
-        pexp.str_last_chars = 100000
-
-        typ = collections.namedtuple("CallPexpect", ["pexp", "valgrind_log"])
-        return typ(pexp, valgrind_log)
-
-    @staticmethod
-    def cmd_call_pexpect_nmcli(args, extra_env={}):
-        extra_env = extra_env.copy()
-        extra_env.update({"NO_COLOR": "1"})
-
-        return Util.cmd_call_pexpect(
-            ENV_NM_TEST_CLIENT_NMCLI_PATH,
-            args,
-            extra_env,
-        )
-
-    @staticmethod
     def get_nmcli_version():
         ver = NM.utils_version()
         micro = ver & 0xFF
@@ -1076,6 +1051,7 @@ class NMTestContext:
         self._calling_num = {}
         self._skip_test_for_l10n_diff = []
         self._async_jobs = []
+        self._nmc = None
         self.ctx_results = []
         self.srv = None
 
@@ -1133,6 +1109,61 @@ class NMTestContext:
 
     def async_append_job(self, async_job):
         self._async_jobs.append(async_job)
+
+    def cmd_call_pexpect(self, cmd_path, args, extra_env):
+        if self._nmc is not None:
+            raise Exception("Unfinished pexpect run exists")
+
+        argv, valgrind_log = Util.cmd_create_argv(cmd_path, args)
+        env = Util.cmd_create_env(extra_env=extra_env)
+
+        pexp = pexpect.spawn(argv[0], argv[1:], timeout=10, env=env, encoding="utf-8")
+        if conf.get(ENV_NM_TEST_LOG_PEXPECT):
+            pexp.logfile = sys.stderr
+
+        pexp.str_last_chars = 100000
+
+        typ = collections.namedtuple("CallPexpect", ["pexp", "valgrind_log"])
+        self._nmc = typ(pexp, valgrind_log)
+        return pexp
+
+    def cmd_call_pexpect_nmcli(self, args, extra_env={}):
+        extra_env = extra_env.copy()
+        extra_env.update({"NO_COLOR": "1"})
+
+        return self.cmd_call_pexpect(
+            ENV_NM_TEST_CLIENT_NMCLI_PATH,
+            args,
+            extra_env,
+        )
+
+    def cmd_close_pexpect(self, pexp=None, signal=None):
+        if self._nmc is None:
+            raise Exception("No pexpect run exists")
+
+        if signal is not None:
+            pexp.kill(signal)
+        pexp.expect(pexpect.EOF)
+        pexp.close()
+
+        valgrind_log = self._nmc.valgrind_log
+        self._nmc = None
+        return (pexp.exitstatus, pexp.signalstatus, valgrind_log)
+
+    def pexpect_cleanup(self):
+        if self._nmc is None:
+            return
+
+        (exitstatus, signalstatus, _valgrind_log) = self.cmd_close_pexpect(
+            self._nmc.pexp
+        )
+        if signalstatus is not None:
+            print(
+                "*** pexpect'd process killed by %s ***"
+                % Util.signal_no_to_str(signalstatus)
+            )
+        if exitstatus is not None:
+            print("*** pexpect'd process exited with status = %d ***" % exitstatus)
 
 
 ###############################################################################
@@ -1407,6 +1438,7 @@ class TestNmcli(unittest.TestCase):
     def run_post(self):
         self.ctx.async_wait()
         self.ctx.srv_shutdown()
+        self.ctx.pexpect_cleanup()
 
         self.ctx._calling_num = None
 
@@ -2193,26 +2225,31 @@ class TestNmcli(unittest.TestCase):
     @Util.skip_without_pexpect
     @nm_test
     def test_ask_mode(self):
-        nmc = Util.cmd_call_pexpect_nmcli(["--ask", "c", "add"])
-        nmc.pexp.expect("Connection type:")
-        nmc.pexp.sendline("ethernet")
-        nmc.pexp.expect("Interface name:")
-        nmc.pexp.sendline("eth0")
-        nmc.pexp.expect("There are 3 optional settings for Wired Ethernet.")
-        nmc.pexp.expect(r"Do you want to provide them\? \(yes/no\) \[yes]")
-        nmc.pexp.sendline("no")
-        nmc.pexp.expect("There are 2 optional settings for IPv4 protocol.")
-        nmc.pexp.expect(r"Do you want to provide them\? \(yes/no\) \[yes]")
-        nmc.pexp.sendline("no")
-        nmc.pexp.expect("There are 2 optional settings for IPv6 protocol.")
-        nmc.pexp.expect(r"Do you want to provide them\? \(yes/no\) \[yes]")
-        nmc.pexp.sendline("no")
-        nmc.pexp.expect("There are 4 optional settings for Proxy.")
-        nmc.pexp.expect(r"Do you want to provide them\? \(yes/no\) \[yes]")
-        nmc.pexp.sendline("no")
-        nmc.pexp.expect(r"Connection 'ethernet' \(.*\) successfully added.")
-        nmc.pexp.expect(pexpect.EOF)
-        Util.valgrind_check_log(nmc.valgrind_log, "test_ask_mode")
+        pexp = self.ctx.cmd_call_pexpect_nmcli(["--ask", "c", "add"])
+        pexp.expect("Connection type:")
+        pexp.sendline("ethernet")
+        pexp.expect("Interface name:")
+        pexp.sendline("eth0")
+        pexp.expect("There are 3 optional settings for Wired Ethernet.")
+        pexp.expect(r"Do you want to provide them\? \(yes/no\) \[yes]")
+        pexp.sendline("no")
+        pexp.expect("There are 2 optional settings for IPv4 protocol.")
+        pexp.expect(r"Do you want to provide them\? \(yes/no\) \[yes]")
+        pexp.sendline("no")
+        pexp.expect("There are 2 optional settings for IPv6 protocol.")
+        pexp.expect(r"Do you want to provide them\? \(yes/no\) \[yes]")
+        pexp.sendline("no")
+        pexp.expect("There are 4 optional settings for Proxy.")
+        pexp.expect(r"Do you want to provide them\? \(yes/no\) \[yes]")
+        pexp.sendline("no")
+        pexp.expect(r"Connection 'ethernet' \(.*\) successfully added.")
+        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        Util.valgrind_check_log(valgrind_log, "test_ask_mode")
+        self.assertIsNone(
+            signalstatus,
+            "Unexpectedly got " + Util.signal_no_to_str(signalstatus or 0),
+        )
+        self.assertEqual(exitstatus, 0, "Unexpectedly returned a non-zero status")
 
     @Util.skip_without_pexpect
     @nm_test
@@ -2223,26 +2260,26 @@ class TestNmcli(unittest.TestCase):
             "DBUS_SESSION_BUS_ADDRESS": "very:invalid",
         }
 
-        nmc = Util.cmd_call_pexpect_nmcli(
+        pexp = self.ctx.cmd_call_pexpect_nmcli(
             ["--offline", "--ask", "c", "add"], extra_env=no_dbus_env
         )
-        nmc.pexp.expect("Connection type:")
-        nmc.pexp.sendline("ethernet")
-        nmc.pexp.expect("Interface name:")
-        nmc.pexp.sendline("eth0")
-        nmc.pexp.expect("There are 3 optional settings for Wired Ethernet.")
-        nmc.pexp.expect(r"Do you want to provide them\? \(yes/no\) \[yes]")
-        nmc.pexp.sendline("no")
-        nmc.pexp.expect("There are 2 optional settings for IPv4 protocol.")
-        nmc.pexp.expect(r"Do you want to provide them\? \(yes/no\) \[yes]")
-        nmc.pexp.sendline("no")
-        nmc.pexp.expect("There are 2 optional settings for IPv6 protocol.")
-        nmc.pexp.expect(r"Do you want to provide them\? \(yes/no\) \[yes]")
-        nmc.pexp.sendline("no")
-        nmc.pexp.expect("There are 4 optional settings for Proxy.")
-        nmc.pexp.expect(r"Do you want to provide them\? \(yes/no\) \[yes]")
-        nmc.pexp.sendline("no")
-        nmc.pexp.expect(
+        pexp.expect("Connection type:")
+        pexp.sendline("ethernet")
+        pexp.expect("Interface name:")
+        pexp.sendline("eth0")
+        pexp.expect("There are 3 optional settings for Wired Ethernet.")
+        pexp.expect(r"Do you want to provide them\? \(yes/no\) \[yes]")
+        pexp.sendline("no")
+        pexp.expect("There are 2 optional settings for IPv4 protocol.")
+        pexp.expect(r"Do you want to provide them\? \(yes/no\) \[yes]")
+        pexp.sendline("no")
+        pexp.expect("There are 2 optional settings for IPv6 protocol.")
+        pexp.expect(r"Do you want to provide them\? \(yes/no\) \[yes]")
+        pexp.sendline("no")
+        pexp.expect("There are 4 optional settings for Proxy.")
+        pexp.expect(r"Do you want to provide them\? \(yes/no\) \[yes]")
+        pexp.sendline("no")
+        pexp.expect(
             r"\[connection\]\r\n"
             r"id=ethernet\r\n"
             r"uuid=.*\r\n"
@@ -2260,43 +2297,58 @@ class TestNmcli(unittest.TestCase):
             r"\r\n"
             r"\[proxy\]\r\n"
         )
-        nmc.pexp.expect(pexpect.EOF)
-        Util.valgrind_check_log(nmc.valgrind_log, "test_ask_offline")
+        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        Util.valgrind_check_log(valgrind_log, "test_ask_offline")
+        self.assertIsNone(
+            signalstatus,
+            "Unexpectedly got " + Util.signal_no_to_str(signalstatus or 0),
+        )
+        self.assertEqual(exitstatus, 0, "Unexpectedly returned a non-zero status")
 
     @Util.skip_without_pexpect
     @nm_test
     def test_monitor(self):
         def start_mon(self):
-            nmc = Util.cmd_call_pexpect_nmcli(["monitor"])
-            nmc.pexp.expect("NetworkManager is running")
-            return nmc
+            pexp = self.ctx.cmd_call_pexpect_nmcli(["monitor"])
+            pexp.expect("NetworkManager is running")
+            return pexp
 
-        def end_mon(self, nmc):
-            nmc.pexp.kill(signal.SIGINT)
-            nmc.pexp.expect(pexpect.EOF)
-            Util.valgrind_check_log(nmc.valgrind_log, "test_monitor")
+        def end_mon(self, pexp):
+            (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(
+                pexp, signal=signal.SIGINT
+            )
+            Util.valgrind_check_log(valgrind_log, "test_monitor")
+            self.assertIsNone(
+                signalstatus,
+                "Unexpectedly got " + Util.signal_no_to_str(signalstatus or 0),
+            )
+            self.assertEqual(
+                exitstatus,
+                128 + signal.SIGINT,
+                "Unexpectedly returned a non-zero status",
+            )
 
-        nmc = start_mon(self)
+        pexp = start_mon(self)
 
         self.ctx.srv.op_AddObj("WiredDevice", iface="eth0")
-        nmc.pexp.expect("eth0: device created\r\n")
+        pexp.expect("eth0: device created\r\n")
 
         self.ctx.srv.addConnection(
             {"connection": {"type": "802-3-ethernet", "id": "con-1"}}
         )
-        nmc.pexp.expect("con-1: connection profile created\r\n")
+        pexp.expect("con-1: connection profile created\r\n")
 
-        end_mon(self, nmc)
+        end_mon(self, pexp)
 
-        nmc = start_mon(self)
+        pexp = start_mon(self)
         self.ctx.srv_shutdown()
         Util.pexpect_expect_all(
-            nmc.pexp,
+            pexp,
             "con-1: connection profile removed",
             "eth0: device removed",
         )
-        nmc.pexp.expect("NetworkManager is stopped")
-        end_mon(self, nmc)
+        pexp.expect("NetworkManager is stopped")
+        end_mon(self, pexp)
 
     @nm_test_no_dbus  # we need dbus, but we need to pass arguments to srv_start
     def test_version_warn(self):
@@ -2380,6 +2432,7 @@ class TestNmCloudSetup(unittest.TestCase):
                 error = e
             self.ctx.async_wait()
             self.ctx.srv_shutdown()
+            self.ctx.pexpect_cleanup()
 
             self.md_conn.close()
             p.stdin.close()
@@ -2462,7 +2515,8 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         # Run nm-cloud-setup for the first time
-        nmc = Util.cmd_call_pexpect(
+
+        pexp = self.ctx.cmd_call_pexpect(
             ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
             [],
             {
@@ -2472,19 +2526,25 @@ class TestNmCloudSetup(unittest.TestCase):
             },
         )
 
-        nmc.pexp.expect("provider aliyun detected")
-        nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
-        nmc.pexp.expect("get-config: start fetching meta data")
-        nmc.pexp.expect("get-config: success")
-        nmc.pexp.expect("meta data received")
+        pexp.expect("provider aliyun detected")
+        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect("get-config: start fetching meta data")
+        pexp.expect("get-config: success")
+        pexp.expect("meta data received")
         # One of the devices has no IPv4 configuration to be modified
-        nmc.pexp.expect("device has no suitable applied connection. Skip")
+        pexp.expect("device has no suitable applied connection. Skip")
         # The other one was lacking an address set it up.
-        nmc.pexp.expect("some changes were applied for provider aliyun")
-        nmc.pexp.expect(pexpect.EOF)
+        pexp.expect("some changes were applied for provider aliyun")
+        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        Util.valgrind_check_log(valgrind_log, "test_aliyun")
+        self.assertIsNone(
+            signalstatus,
+            "Unexpectedly got " + Util.signal_no_to_str(signalstatus or 0),
+        )
+        self.assertEqual(exitstatus, 0, "Unexpectedly returned a non-zero status")
 
         # Run nm-cloud-setup for the second time
-        nmc = Util.cmd_call_pexpect(
+        pexp = self.ctx.cmd_call_pexpect(
             ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
             [],
             {
@@ -2494,17 +2554,21 @@ class TestNmCloudSetup(unittest.TestCase):
             },
         )
 
-        nmc.pexp.expect("provider aliyun detected")
-        nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
-        nmc.pexp.expect("get-config: starting")
-        nmc.pexp.expect("get-config: success")
-        nmc.pexp.expect("meta data received")
+        pexp.expect("provider aliyun detected")
+        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect("get-config: starting")
+        pexp.expect("get-config: success")
+        pexp.expect("meta data received")
         # No changes this time
-        nmc.pexp.expect('device needs no update to applied connection "con-eth0"')
-        nmc.pexp.expect("no changes were applied for provider aliyun")
-        nmc.pexp.expect(pexpect.EOF)
-
-        Util.valgrind_check_log(nmc.valgrind_log, "test_aliyun")
+        pexp.expect('device needs no update to applied connection "con-eth0"')
+        pexp.expect("no changes were applied for provider aliyun")
+        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        Util.valgrind_check_log(valgrind_log, "test_aliyun")
+        self.assertIsNone(
+            signalstatus,
+            "Unexpectedly got " + Util.signal_no_to_str(signalstatus or 0),
+        )
+        self.assertEqual(exitstatus, 0, "Unexpectedly returned a non-zero status")
 
     @cloud_setup_test
     def test_azure(self):
@@ -2541,7 +2605,7 @@ class TestNmCloudSetup(unittest.TestCase):
         self._mock_path(_azure_iface + "1/ipv4/subnet/0/prefix/" + _azure_query, "20")
 
         # Run nm-cloud-setup for the first time
-        nmc = Util.cmd_call_pexpect(
+        pexp = self.ctx.cmd_call_pexpect(
             ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
             [],
             {
@@ -2551,26 +2615,32 @@ class TestNmCloudSetup(unittest.TestCase):
             },
         )
 
-        nmc.pexp.expect("provider azure detected")
-        nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
-        nmc.pexp.expect("found azure interfaces: 2")
-        nmc.pexp.expect(r"interface\[0]: found a matching device with hwaddr")
-        nmc.pexp.expect(
+        pexp.expect("provider azure detected")
+        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect("found azure interfaces: 2")
+        pexp.expect(r"interface\[0]: found a matching device with hwaddr")
+        pexp.expect(
             r"interface\[0]: (received subnet address|received subnet prefix 20)"
         )
-        nmc.pexp.expect(
+        pexp.expect(
             r"interface\[0]: (received subnet address|received subnet prefix 20)"
         )
-        nmc.pexp.expect("get-config: success")
-        nmc.pexp.expect("meta data received")
+        pexp.expect("get-config: success")
+        pexp.expect("meta data received")
         # One of the devices has no IPv4 configuration to be modified
-        nmc.pexp.expect("device has no suitable applied connection. Skip")
+        pexp.expect("device has no suitable applied connection. Skip")
         # The other one was lacking an address set it up.
-        nmc.pexp.expect("some changes were applied for provider azure")
-        nmc.pexp.expect(pexpect.EOF)
+        pexp.expect("some changes were applied for provider azure")
+        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        Util.valgrind_check_log(valgrind_log, "test_azure")
+        self.assertIsNone(
+            signalstatus,
+            "Unexpectedly got " + Util.signal_no_to_str(signalstatus or 0),
+        )
+        self.assertEqual(exitstatus, 0, "Unexpectedly returned a non-zero status")
 
         # Run nm-cloud-setup for the second time
-        nmc = Util.cmd_call_pexpect(
+        pexp = self.ctx.cmd_call_pexpect(
             ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
             [],
             {
@@ -2580,17 +2650,21 @@ class TestNmCloudSetup(unittest.TestCase):
             },
         )
 
-        nmc.pexp.expect("provider azure detected")
-        nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
-        nmc.pexp.expect("get-config: starting")
-        nmc.pexp.expect("get-config: success")
-        nmc.pexp.expect("meta data received")
+        pexp.expect("provider azure detected")
+        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect("get-config: starting")
+        pexp.expect("get-config: success")
+        pexp.expect("meta data received")
         # No changes this time
-        nmc.pexp.expect('device needs no update to applied connection "con-eth0"')
-        nmc.pexp.expect("no changes were applied for provider azure")
-        nmc.pexp.expect(pexpect.EOF)
-
-        Util.valgrind_check_log(nmc.valgrind_log, "test_azure")
+        pexp.expect('device needs no update to applied connection "con-eth0"')
+        pexp.expect("no changes were applied for provider azure")
+        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        Util.valgrind_check_log(valgrind_log, "test_azure")
+        self.assertIsNone(
+            signalstatus,
+            "Unexpectedly got " + Util.signal_no_to_str(signalstatus or 0),
+        )
+        self.assertEqual(exitstatus, 0, "Unexpectedly returned a non-zero status")
 
     @cloud_setup_test
     def test_ec2(self):
@@ -2617,7 +2691,7 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         # Run nm-cloud-setup for the first time
-        nmc = Util.cmd_call_pexpect(
+        pexp = self.ctx.cmd_call_pexpect(
             ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
             [],
             {
@@ -2627,19 +2701,25 @@ class TestNmCloudSetup(unittest.TestCase):
             },
         )
 
-        nmc.pexp.expect("provider ec2 detected")
-        nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
-        nmc.pexp.expect("get-config: starting")
-        nmc.pexp.expect("get-config: success")
-        nmc.pexp.expect("meta data received")
+        pexp.expect("provider ec2 detected")
+        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect("get-config: starting")
+        pexp.expect("get-config: success")
+        pexp.expect("meta data received")
         # One of the devices has no IPv4 configuration to be modified
-        nmc.pexp.expect("device has no suitable applied connection. Skip")
+        pexp.expect("device has no suitable applied connection. Skip")
         # The other one was lacking an address set it up.
-        nmc.pexp.expect("some changes were applied for provider ec2")
-        nmc.pexp.expect(pexpect.EOF)
+        pexp.expect("some changes were applied for provider ec2")
+        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        Util.valgrind_check_log(valgrind_log, "test_ec2")
+        self.assertIsNone(
+            signalstatus,
+            "Unexpectedly got " + Util.signal_no_to_str(signalstatus or 0),
+        )
+        self.assertEqual(exitstatus, 0, "Unexpectedly returned a non-zero status")
 
         # Run nm-cloud-setup for the second time
-        nmc = Util.cmd_call_pexpect(
+        pexp = self.ctx.cmd_call_pexpect(
             ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
             [],
             {
@@ -2649,17 +2729,21 @@ class TestNmCloudSetup(unittest.TestCase):
             },
         )
 
-        nmc.pexp.expect("provider ec2 detected")
-        nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
-        nmc.pexp.expect("get-config: starting")
-        nmc.pexp.expect("get-config: success")
-        nmc.pexp.expect("meta data received")
+        pexp.expect("provider ec2 detected")
+        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect("get-config: starting")
+        pexp.expect("get-config: success")
+        pexp.expect("meta data received")
         # No changes this time
-        nmc.pexp.expect('device needs no update to applied connection "con-eth0"')
-        nmc.pexp.expect("no changes were applied for provider ec2")
-        nmc.pexp.expect(pexpect.EOF)
-
-        Util.valgrind_check_log(nmc.valgrind_log, "test_ec2")
+        pexp.expect('device needs no update to applied connection "con-eth0"')
+        pexp.expect("no changes were applied for provider ec2")
+        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        Util.valgrind_check_log(valgrind_log, "test_ec2")
+        self.assertIsNone(
+            signalstatus,
+            "Unexpectedly got " + Util.signal_no_to_str(signalstatus or 0),
+        )
+        self.assertEqual(exitstatus, 0, "Unexpectedly returned a non-zero status")
 
     @cloud_setup_test
     def test_gcp(self):
@@ -2677,7 +2761,7 @@ class TestNmCloudSetup(unittest.TestCase):
         self._mock_path(gcp_iface + "1/forwarded-ips/0", TestNmCloudSetup._ip2)
 
         # Run nm-cloud-setup for the first time
-        nmc = Util.cmd_call_pexpect(
+        pexp = self.ctx.cmd_call_pexpect(
             ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
             [],
             {
@@ -2687,20 +2771,26 @@ class TestNmCloudSetup(unittest.TestCase):
             },
         )
 
-        nmc.pexp.expect("provider GCP detected")
-        nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
-        nmc.pexp.expect("found GCP interfaces: 2")
-        nmc.pexp.expect(r"GCP interface\[0]: found a requested device with hwaddr")
-        nmc.pexp.expect("get-config: success")
-        nmc.pexp.expect("meta data received")
+        pexp.expect("provider GCP detected")
+        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect("found GCP interfaces: 2")
+        pexp.expect(r"GCP interface\[0]: found a requested device with hwaddr")
+        pexp.expect("get-config: success")
+        pexp.expect("meta data received")
         # One of the devices has no IPv4 configuration to be modified
-        nmc.pexp.expect("device has no suitable applied connection. Skip")
+        pexp.expect("device has no suitable applied connection. Skip")
         # The other one was lacking an address set it up.
-        nmc.pexp.expect("some changes were applied for provider GCP")
-        nmc.pexp.expect(pexpect.EOF)
+        pexp.expect("some changes were applied for provider GCP")
+        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        Util.valgrind_check_log(valgrind_log, "test_gcp")
+        self.assertIsNone(
+            signalstatus,
+            "Unexpectedly got " + Util.signal_no_to_str(signalstatus or 0),
+        )
+        self.assertEqual(exitstatus, 0, "Unexpectedly returned a non-zero status")
 
         # Run nm-cloud-setup for the second time
-        nmc = Util.cmd_call_pexpect(
+        pexp = self.ctx.cmd_call_pexpect(
             ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
             [],
             {
@@ -2710,17 +2800,21 @@ class TestNmCloudSetup(unittest.TestCase):
             },
         )
 
-        nmc.pexp.expect("provider GCP detected")
-        nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
-        nmc.pexp.expect("get-config: starting")
-        nmc.pexp.expect("get-config: success")
-        nmc.pexp.expect("meta data received")
+        pexp.expect("provider GCP detected")
+        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect("get-config: starting")
+        pexp.expect("get-config: success")
+        pexp.expect("meta data received")
         # No changes this time
-        nmc.pexp.expect('device needs no update to applied connection "con-eth0"')
-        nmc.pexp.expect("no changes were applied for provider GCP")
-        nmc.pexp.expect(pexpect.EOF)
-
-        Util.valgrind_check_log(nmc.valgrind_log, "test_gcp")
+        pexp.expect('device needs no update to applied connection "con-eth0"')
+        pexp.expect("no changes were applied for provider GCP")
+        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        Util.valgrind_check_log(valgrind_log, "test_gcp")
+        self.assertIsNone(
+            signalstatus,
+            "Unexpectedly got " + Util.signal_no_to_str(signalstatus or 0),
+        )
+        self.assertEqual(exitstatus, 0, "Unexpectedly returned a non-zero status")
 
     @cloud_setup_test
     def test_oci(self):
@@ -2759,7 +2853,7 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         # Run nm-cloud-setup for the first time
-        nmc = Util.cmd_call_pexpect(
+        pexp = self.ctx.cmd_call_pexpect(
             ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
             [],
             {
@@ -2769,19 +2863,25 @@ class TestNmCloudSetup(unittest.TestCase):
             },
         )
 
-        nmc.pexp.expect("provider oci detected")
-        nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
-        nmc.pexp.expect("get-config: starting")
-        nmc.pexp.expect("get-config: success")
-        nmc.pexp.expect("meta data received")
+        pexp.expect("provider oci detected")
+        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect("get-config: starting")
+        pexp.expect("get-config: success")
+        pexp.expect("meta data received")
         # One of the devices has no IPv4 configuration to be modified
-        nmc.pexp.expect("device has no suitable applied connection. Skip")
+        pexp.expect("device has no suitable applied connection. Skip")
         # The other one was lacking an address set it up.
-        nmc.pexp.expect("some changes were applied for provider oci")
-        nmc.pexp.expect(pexpect.EOF)
+        pexp.expect("some changes were applied for provider oci")
+        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        Util.valgrind_check_log(valgrind_log, "test_oci")
+        self.assertIsNone(
+            signalstatus,
+            "Unexpectedly got " + Util.signal_no_to_str(signalstatus or 0),
+        )
+        self.assertEqual(exitstatus, 0, "Unexpectedly returned a non-zero status")
 
         # Run nm-cloud-setup for the second time
-        nmc = Util.cmd_call_pexpect(
+        pexp = self.ctx.cmd_call_pexpect(
             ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
             [],
             {
@@ -2791,17 +2891,21 @@ class TestNmCloudSetup(unittest.TestCase):
             },
         )
 
-        nmc.pexp.expect("provider oci detected")
-        nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
-        nmc.pexp.expect("get-config: starting")
-        nmc.pexp.expect("get-config: success")
-        nmc.pexp.expect("meta data received")
+        pexp.expect("provider oci detected")
+        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect("get-config: starting")
+        pexp.expect("get-config: success")
+        pexp.expect("meta data received")
         # No changes this time
-        nmc.pexp.expect('device needs no update to applied connection "con-eth0"')
-        nmc.pexp.expect("no changes were applied for provider oci")
-        nmc.pexp.expect(pexpect.EOF)
-
-        Util.valgrind_check_log(nmc.valgrind_log, "test_oci")
+        pexp.expect('device needs no update to applied connection "con-eth0"')
+        pexp.expect("no changes were applied for provider oci")
+        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        Util.valgrind_check_log(valgrind_log, "test_oci")
+        self.assertIsNone(
+            signalstatus,
+            "Unexpectedly got " + Util.signal_no_to_str(signalstatus or 0),
+        )
+        self.assertEqual(exitstatus, 0, "Unexpectedly returned a non-zero status")
 
     @cloud_setup_test
     def test_oci_vlans(self):
@@ -2851,7 +2955,7 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         # Run nm-cloud-setup for the first time
-        nmc = Util.cmd_call_pexpect(
+        pexp = self.ctx.cmd_call_pexpect(
             ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
             [],
             {
@@ -2861,24 +2965,28 @@ class TestNmCloudSetup(unittest.TestCase):
             },
         )
 
-        nmc.pexp.expect("provider oci detected")
-        nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
-        nmc.pexp.expect("get-config: starting")
-        nmc.pexp.expect("get-config: success")
-        nmc.pexp.expect("meta data received")
+        pexp.expect("provider oci detected")
+        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect("get-config: starting")
+        pexp.expect("get-config: success")
+        pexp.expect("meta data received")
 
         # No configuration for the ethernets
-        nmc.pexp.expect('configuring "eth0"')
-        nmc.pexp.expect("device has no suitable applied connection. Skip")
+        pexp.expect('configuring "eth0"')
+        pexp.expect("device has no suitable applied connection. Skip")
 
         # Setting up the VLAN
-        nmc.pexp.expect(
-            "creating macvlan2 connection for VLAN 700 on CC:00:00:00:00:01..."
-        )
-        nmc.pexp.expect("creating vlan connection for VLAN 700 on C0:00:00:00:00:10...")
+        pexp.expect("creating macvlan2 connection for VLAN 700 on CC:00:00:00:00:01...")
+        pexp.expect("creating vlan connection for VLAN 700 on C0:00:00:00:00:10...")
+        pexp.expect("some changes were applied for provider oci")
 
-        nmc.pexp.expect("some changes were applied for provider oci")
-        nmc.pexp.expect(pexpect.EOF)
+        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        Util.valgrind_check_log(valgrind_log, "test_oci_vlans")
+        self.assertIsNone(
+            signalstatus,
+            "Unexpectedly got " + Util.signal_no_to_str(signalstatus or 0),
+        )
+        self.assertEqual(exitstatus, 0, "Unexpectedly returned a non-zero status")
 
         # TODO: Actually check the contents of the connection
         # Probably needs changes to the mock service API
@@ -2888,7 +2996,7 @@ class TestNmCloudSetup(unittest.TestCase):
         assert conn_vlan is not None
 
         # Run nm-cloud-setup for the second time
-        nmc = Util.cmd_call_pexpect(
+        pexp = self.ctx.cmd_call_pexpect(
             ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
             [],
             {
@@ -2899,17 +3007,22 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         # Just the same ol' thing, just no changes this time
-        nmc.pexp.expect("provider oci detected")
-        nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
-        nmc.pexp.expect("get-config: starting")
-        nmc.pexp.expect("get-config: success")
-        nmc.pexp.expect("meta data received")
-        nmc.pexp.expect('configuring "eth0"')
-        nmc.pexp.expect("device has no suitable applied connection. Skip")
-        nmc.pexp.expect("no changes were applied for provider oci")
-        nmc.pexp.expect(pexpect.EOF)
+        pexp.expect("provider oci detected")
+        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect("get-config: starting")
+        pexp.expect("get-config: success")
+        pexp.expect("meta data received")
+        pexp.expect('configuring "eth0"')
+        pexp.expect("device has no suitable applied connection. Skip")
+        pexp.expect("no changes were applied for provider oci")
 
-        Util.valgrind_check_log(nmc.valgrind_log, "test_oci_vlans")
+        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        Util.valgrind_check_log(valgrind_log, "test_oci_vlans")
+        self.assertIsNone(
+            signalstatus,
+            "Unexpectedly got " + Util.signal_no_to_str(signalstatus or 0),
+        )
+        self.assertEqual(exitstatus, 0, "Unexpectedly returned a non-zero status")
 
 
 ###############################################################################
