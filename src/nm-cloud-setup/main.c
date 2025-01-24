@@ -6,6 +6,10 @@
 
 #include <linux/rtnetlink.h>
 
+#include <execinfo.h>
+#include <signal.h>
+#include <stdlib.h>
+
 #include "nm-cloud-setup-utils.h"
 #include "nmcs-provider-ec2.h"
 #include "nmcs-provider-gcp.h"
@@ -953,6 +957,17 @@ sigterm_handler(gpointer user_data)
 
 /*****************************************************************************/
 
+static void
+croak(int signum)
+{
+	static void *buffer[512];
+	int len;
+
+	len = backtrace(buffer, sizeof(buffer)/sizeof(buffer[0]));
+	backtrace_symbols_fd(buffer, len, STDOUT_FILENO);
+	exit(-signum);
+}
+
 int
 main(int argc, const char *const *argv)
 {
@@ -963,6 +978,9 @@ main(int argc, const char *const *argv)
     nm_auto_free_nmcs_provider_get_config_result NMCSProviderGetConfigResult *result = NULL;
     gs_free_error GError                                                     *error  = NULL;
     SigTermData                                                               sigterm_data;
+
+       signal(SIGSEGV, croak);
+       signal(SIGABRT, croak);
 
     _nm_logging_enabled_init(g_getenv(NMCS_ENV_NM_CLOUD_SETUP_LOG));
 
