@@ -3341,8 +3341,8 @@ msgstr "Förväntat värde av typen \"aa{sv}\""
 
 #: src/libnm-core-impl/nm-utils.c:2359
 #, c-format
-msgid "IP address requires fields \"dest\" and \"prefix\" (idx=%u)"
-msgstr "IP-adressen kräver fälten \"dest\" och \"prefix\" (idx=%u)"
+msgid "IP address requires fields \"address\" and \"prefix\" (idx=%u)"
+msgstr "IP-adressen kräver fälten \"address\" och \"prefix\" (idx=%u)"
 
 #: src/libnm-core-impl/nm-utils.c:2538
 #, c-format

@@ -3478,8 +3478,8 @@ msgstr "Ожидалось значение типа \"aa{sv}\""
 
 #: src/libnm-core-impl/nm-utils.c:2361
 #, c-format
-msgid "IP address requires fields \"dest\" and \"prefix\" (idx=%u)"
-msgstr "Для адреса IP необходимы поля \"dest\" и \"prefix\" (idx=%u)"
+msgid "IP address requires fields \"address\" and \"prefix\" (idx=%u)"
+msgstr "Для адреса IP необходимы поля \"address\" и \"prefix\" (idx=%u)"
 
 #: src/libnm-core-impl/nm-utils.c:2540
 #, c-format

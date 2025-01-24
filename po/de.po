@@ -3588,7 +3588,7 @@ msgstr "Ein Wert wurde für »%s« erwartet\n"
 
 #: src/libnm-core-impl/nm-utils.c:2361
 #, c-format
-msgid "IP address requires fields \"dest\" and \"prefix\" (idx=%u)"
+msgid "IP address requires fields \"address\" and \"prefix\" (idx=%u)"
 msgstr ""
 
 #: src/libnm-core-impl/nm-utils.c:2540

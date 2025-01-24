@@ -2358,7 +2358,7 @@ _nm_utils_ip_addresses_from_variant(GVariant *value, int family, bool strict, GE
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                            _("IP address requires fields \"dest\" and \"prefix\" (idx=%u)"),
+                            _("IP address requires fields \"address\" and \"prefix\" (idx=%u)"),
                             i);
                 return NULL;
             }

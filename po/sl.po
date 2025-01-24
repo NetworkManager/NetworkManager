@@ -3662,8 +3662,8 @@ msgstr "Napaka: '%s' ni veljaven argument za možnost '%s'."
 
 #: src/libnm-core-impl/nm-utils.c:2361
 #, fuzzy, c-format
-msgid "IP address requires fields \"dest\" and \"prefix\" (idx=%u)"
-msgstr "Naslov IP zahteva polja »dest« in »prefix« (idx=%u)"
+msgid "IP address requires fields \"address\" and \"prefix\" (idx=%u)"
+msgstr "Naslov IP zahteva polja »address« in »prefix« (idx=%u)"
 
 #: src/libnm-core-impl/nm-utils.c:2540
 #, fuzzy, c-format
