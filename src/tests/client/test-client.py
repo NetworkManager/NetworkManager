@@ -738,7 +738,7 @@ class Configuration:
             )
             if not os.path.isdir(v):
                 raise Exception("Missing builddir. Set NM_TEST_CLIENT_BUILDDIR?")
-        elif name == ENV_NM_TEST_CLIENT_NMCLI_PATH:
+        elif name == "ENV_NM_TEST_CLIENT_NMCLI_UNCHECKED_PATH":
             v = os.environ.get(ENV_NM_TEST_CLIENT_NMCLI_PATH, None)
             if v is None:
                 try:
@@ -747,6 +747,8 @@ class Configuration:
                     )
                 except:
                     pass
+        elif name == ENV_NM_TEST_CLIENT_NMCLI_PATH:
+            v = self.get("ENV_NM_TEST_CLIENT_NMCLI_UNCHECKED_PATH")
             if not os.path.exists(v):
                 raise Exception("Missing nmcli binary. Set NM_TEST_CLIENT_NMCLI_PATH?")
         elif name == ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH:
@@ -811,7 +813,7 @@ class Configuration:
             v = os.environ.get(name, None)
             if v is None:
                 v = os.path.abspath(
-                    os.path.dirname(self.get(ENV_NM_TEST_CLIENT_NMCLI_PATH))
+                    os.path.dirname(self.get("ENV_NM_TEST_CLIENT_NMCLI_UNCHECKED_PATH"))
                     + "/../../libtool"
                 )
                 if not os.path.isfile(v):
