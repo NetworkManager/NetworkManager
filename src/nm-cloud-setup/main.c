@@ -833,7 +833,7 @@ _oci_config_vnic_dev(SigTermData                          *sigterm_data,
                      const NMCSProviderGetConfigIfaceData *config_data,
                      NMClient                             *nmc,
                      const NMCSProviderGetConfigResult    *result,
-                     NMDeviceType                          device_type,
+                     const GType                           device_type,
                      const char                           *connection_type,
                      const char                           *parent_hwaddr)
 {
