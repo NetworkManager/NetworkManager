@@ -693,7 +693,8 @@ class Util:
         env = Util.cmd_create_env(extra_env=extra_env)
 
         pexp = pexpect.spawn(argv[0], argv[1:], timeout=10, env=env, encoding="utf-8")
-        if conf.get(ENV_NM_TEST_LOG_PEXPECT):
+        #if conf.get(ENV_NM_TEST_LOG_PEXPECT):
+        if True:
             pexp.logfile = sys.stderr
 
         pexp.str_last_chars = 100000
