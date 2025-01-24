@@ -304,13 +304,19 @@ _nmc_get_device_by_hwaddr(NMClient *nmc, const GType type_device, const char *hw
     const GPtrArray *devices;
     guint            i;
 
+    g_printerr("%s(%d): X14\n", __func__, __LINE__);
     devices = nm_client_get_devices(nmc);
 
+    g_printerr("%s(%d): X15\n", __func__, __LINE__);
     for (i = 0; i < devices->len; i++) {
         NMDevice     *device = devices->pdata[i];
         const char   *hwaddr_dev;
         gs_free char *s = NULL;
 
+    g_printerr("%s(%d): X16 i=%d\n", __func__, __LINE__, i);
+    g_printerr("%s(%d): X17 type_device=%ld\n", __func__, __LINE__, type_device);
+    g_printerr("%s(%d): X17 device=%p\n", __func__, __LINE__, device);
+    g_printerr("%s(%d): X17 cnt=%d\n", __func__, __LINE__, ((GObject *)device)->ref_count);
         if (!G_TYPE_CHECK_INSTANCE_TYPE(device, type_device))
             continue;
 
@@ -598,11 +604,13 @@ _config_existing(SigTermData                          *sigterm_data,
     gboolean                      any_changes;
     gboolean                      maybe_no_preserved_external_ip;
 
+    g_printerr("%s(%d): X9\n", __func__, __LINE__);
     _LOGD("config device %s: configuring \"%s\" (%s)...",
           hwaddr,
           nm_device_get_iface(device) ?: "/unknown/",
           nm_object_get_path(NM_OBJECT(device)));
 
+    g_printerr("%s(%d): X10\n", __func__, __LINE__);
     try_count   = 0;
     any_changes = FALSE;
 
@@ -715,13 +723,16 @@ _config_ethernet(SigTermData                          *sigterm_data,
 {
     gs_unref_object NMDevice *device = NULL;
 
+    g_printerr("%s(%d): X6\n", __func__, __LINE__);
     device = nm_g_object_ref(
         _nmc_get_device_by_hwaddr(nmc, NM_TYPE_DEVICE_ETHERNET, config_data->hwaddr));
+    g_printerr("%s(%d): X7\n", __func__, __LINE__);
     if (!device) {
         _LOGD("config device %s: skip because device not found", config_data->hwaddr);
         return FALSE;
     }
 
+    g_printerr("%s(%d): X8\n", __func__, __LINE__);
     return _config_existing(sigterm_data,
                             config_data,
                             nmc,
@@ -748,12 +759,14 @@ _oci_new_vlan_dev(SigTermData                          *sigterm_data,
     const char                         *ip4_config_method;
     NMSetting                          *s_user;
 
+    g_printerr("%s(%d): X13\n", __func__, __LINE__);
     connection = nm_simple_connection_new();
 
     macvlan_name  = g_strdup_printf("macvlan%ld", config_data->iface_idx);
     connection_id = g_strdup_printf("%s%ld", connection_type, config_data->iface_idx);
 
     if (strcmp(connection_type, NM_SETTING_MACVLAN_SETTING_NAME) == 0) {
+    g_printerr("%s(%d): X14\n", __func__, __LINE__);
         nm_connection_add_setting(connection,
                                   g_object_new(NM_TYPE_SETTING_MACVLAN,
                                                NM_SETTING_MACVLAN_MODE,
@@ -767,6 +780,7 @@ _oci_new_vlan_dev(SigTermData                          *sigterm_data,
         ip4_config_method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
         ifname            = macvlan_name;
     } else if (strcmp(connection_type, NM_SETTING_VLAN_SETTING_NAME) == 0) {
+    g_printerr("%s(%d): X15\n", __func__, __LINE__);
         nm_connection_add_setting(connection,
                                   g_object_new(NM_TYPE_SETTING_VLAN,
                                                NM_SETTING_VLAN_PARENT,
@@ -776,9 +790,11 @@ _oci_new_vlan_dev(SigTermData                          *sigterm_data,
                                                NULL));
         ip4_config_method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
     } else {
+    g_printerr("%s(%d): X16\n", __func__, __LINE__);
         g_return_val_if_reached(FALSE);
     }
 
+    g_printerr("%s(%d): X17\n", __func__, __LINE__);
     nm_connection_add_setting(connection,
                               g_object_new(NM_TYPE_SETTING_CONNECTION,
                                            NM_SETTING_CONNECTION_ID,
@@ -801,6 +817,7 @@ _oci_new_vlan_dev(SigTermData                          *sigterm_data,
                                            hwaddr,
                                            NULL));
 
+    g_printerr("%s(%d): X18\n", __func__, __LINE__);
     s_user = nm_setting_user_new();
     nm_connection_add_setting(connection, s_user);
     nm_setting_user_set_data(NM_SETTING_USER(s_user),
@@ -808,6 +825,7 @@ _oci_new_vlan_dev(SigTermData                          *sigterm_data,
                              "nm-cloud-setup",
                              NULL);
 
+    g_printerr("%s(%d): X19\n", __func__, __LINE__);
     _nmc_mangle_connection(NULL, connection, result, config_data, NULL, NULL);
 
     _LOGD("config device %s: creating %s connection for VLAN %d on %s...",
@@ -816,6 +834,7 @@ _oci_new_vlan_dev(SigTermData                          *sigterm_data,
           config_data->priv.oci.vlan_tag,
           parent_hwaddr);
 
+    g_printerr("%s(%d): X20\n", __func__, __LINE__);
     active_connection = nmcs_add_and_activate(nmc, NULL, connection, &error);
     if (active_connection == NULL) {
         if (!nm_utils_error_is_cancelled(error)) {
@@ -824,6 +843,7 @@ _oci_new_vlan_dev(SigTermData                          *sigterm_data,
         return FALSE;
     }
 
+    g_printerr("%s(%d): X21\n", __func__, __LINE__);
     _LOGD("config device %s: connection \"%s\" (%s) created",
           hwaddr,
           nm_active_connection_get_id(active_connection),
@@ -843,11 +863,20 @@ _oci_config_vnic_dev(SigTermData                          *sigterm_data,
 {
     gs_unref_object NMDevice *device = NULL;
 
+    g_printerr("%s(%d): X11\n", __func__, __LINE__);
+    g_printerr("%s(%d): X11 type=%ld\n", __func__, __LINE__, device_type);
+    g_printerr("%s(%d): X11 config_data=%p\n", __func__, __LINE__, config_data);
+    g_printerr("%s(%d): X11 nmc=%p\n", __func__, __LINE__, nmc);
+    g_printerr("%s(%d): X11 hwaddr=%p\n", __func__, __LINE__, config_data->hwaddr);
+    g_printerr("%s(%d): X11 hwaddr={%s}\n", __func__, __LINE__, config_data->hwaddr);
+    g_printerr("%s(%d): X11 dev=%p\n", __func__, __LINE__, _nmc_get_device_by_hwaddr(nmc, device_type, config_data->hwaddr));
     device = nm_g_object_ref(_nmc_get_device_by_hwaddr(nmc, device_type, config_data->hwaddr));
     if (device) {
+    g_printerr("%s(%d): X12\n", __func__, __LINE__);
         /* There is a device. Modify and reapply the currently applied connection. */
         return _config_existing(sigterm_data, config_data, nmc, result, connection_type, device);
     } else {
+    g_printerr("%s(%d): X13\n", __func__, __LINE__);
         /* There is no device, but we're configuring a VLAN.
 	 * We can just go ahead and create one with a new connection. */
         return _oci_new_vlan_dev(sigterm_data,
@@ -857,6 +886,7 @@ _oci_config_vnic_dev(SigTermData                          *sigterm_data,
                                  connection_type,
                                  parent_hwaddr);
     }
+    g_printerr("%s(%d): X14\n", __func__, __LINE__);
 }
 
 static gboolean
@@ -869,17 +899,20 @@ _config_one(SigTermData                       *sigterm_data,
     const NMCSProviderGetConfigIfaceData *config_data = result->iface_datas_arr[idx];
     gboolean                              any_changes;
 
+    g_printerr("%s(%d): X2\n", __func__, __LINE__);
     g_main_context_iteration(NULL, FALSE);
 
     if (g_cancellable_is_cancelled(sigterm_data->cancellable))
         return FALSE;
 
+    g_printerr("%s(%d): X3\n", __func__, __LINE__);
     if (!nmcs_provider_get_config_iface_data_is_valid(config_data)) {
         _LOGD("config device %s: skip because meta data not successfully fetched",
               config_data->hwaddr);
         return FALSE;
     }
 
+    g_printerr("%s(%d): X4\n", __func__, __LINE__);
     if (config_data->iface_idx >= 100) {
         /* since we use the iface_idx to select a table number, the range is limited from
          * 0 to 99. Note that the providers are required to provide increasing numbers,
@@ -889,6 +922,7 @@ _config_one(SigTermData                       *sigterm_data,
         return FALSE;
     }
 
+    g_printerr("%s(%d): X5\n", __func__, __LINE__);
     if (NMCS_IS_PROVIDER_OCI(provider) && config_data->priv.oci.vlan_tag != 0) {
         if (config_data->priv.oci.parent_hwaddr == NULL) {
             _LOGW("config device %s: has vlan id %d but no parent device",
@@ -898,6 +932,8 @@ _config_one(SigTermData                       *sigterm_data,
         }
 
         /* MACVLAN first, because VLAN is on top of it. */
+    g_printerr("%s(%d): X6\n", __func__, __LINE__);
+        _nmc_get_device_by_hwaddr(nmc, NM_TYPE_DEVICE_ETHERNET, config_data->hwaddr);
         any_changes = _oci_config_vnic_dev(sigterm_data,
                                            config_data,
                                            nmc,
@@ -905,6 +941,7 @@ _config_one(SigTermData                       *sigterm_data,
                                            NM_TYPE_DEVICE_MACVLAN,
                                            NM_SETTING_MACVLAN_SETTING_NAME,
                                            config_data->priv.oci.parent_hwaddr);
+    g_printerr("%s(%d): X7\n", __func__, __LINE__);
         any_changes += _oci_config_vnic_dev(sigterm_data,
                                             config_data,
                                             nmc,
@@ -914,9 +951,11 @@ _config_one(SigTermData                       *sigterm_data,
                                             config_data->hwaddr);
 
     } else {
+    g_printerr("%s(%d): X8\n", __func__, __LINE__);
         any_changes = _config_ethernet(sigterm_data, config_data, nmc, result);
     }
 
+    g_printerr("%s(%d): X9\n", __func__, __LINE__);
     return any_changes;
 }
 
@@ -929,10 +968,14 @@ _config_all(SigTermData                       *sigterm_data,
     gboolean any_changes = FALSE;
     guint    i;
 
+    g_printerr("%s(%d): X0\n", __func__, __LINE__);
+
     for (i = 0; i < result->n_iface_datas; i++) {
         if (_config_one(sigterm_data, provider, nmc, result, i))
             any_changes = TRUE;
     }
+
+    g_printerr("%s(%d): X1\n", __func__, __LINE__);
 
     return any_changes;
 }
