@@ -1518,7 +1518,7 @@ managed=1
           <listitem><para>If set, controls what body content
           NetworkManager checks for when requesting the URI for
           connectivity checking.  Note that this only compares
-          that the HTTP response starts with the specifid text,
+          that the HTTP response starts with the specified text,
           it does not compare the exact string. This behavior
           might change in the future, so avoid relying on it.
           If missing, the response defaults to "NetworkManager is online".
