@@ -158,6 +158,8 @@
             <member><option>rd.neednet</option></member>
             <member><option>rd.ethtool</option></member>
             <member><option>rd.net.dns</option></member>
+            <member><option>rd.net.dns-backend</option></member>
+            <member><option>rd.net.dns-resolve-mode</option></member>
             <member><option>rd.net.timeout.dhcp</option></member>
             <member><option>rd.net.dhcp.retry</option></member>
             <member><option>rd.net.dhcp.vendor-class</option></member>
@@ -228,9 +230,13 @@
 
       <listitem>
         <para>NetworkManager supports the
-        <option>rd.net.dhcp.dscp</option>={<replaceable>CS0</replaceable>|<replaceable>CS4</replaceable>|<replaceable>CS6</replaceable>}
-        kernel command line option to set a specific DSCP (TOS) value
-        in the IP header of DHCP messages.
+        <option>rd.net.dns-backend</option>=<replaceable>VALUE</replaceable>
+        kernel command line option to configure the DNS processing
+        mode. See the description of the <literal>"dns"</literal> key in
+        the <literal>"main section"</literal> paragraph of <link
+        linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>. For
+        example: <literal>rd.net.dns-backend=systemd-resolved</literal>,
+        <literal>rd.net.dns-backend=dnsconfd</literal>
         </para>
       </listitem>
 
@@ -247,6 +253,17 @@
         example: <literal>rd.net.dns=2001:db8::1</literal>,
         <literal>rd.net.dns=dns+tls://192.0.2.0</literal>,
         <literal>rd.net.dns=dns+tls://[2001:db8::2]:5353#example.org</literal>.
+        In addition, it supports configuring the <literal>"resolve-mode"</literal>
+        key in the global DNS configuration via the
+        <option>rd.net.dns-resolve-mode</option> command line option.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>NetworkManager supports the
+        <option>rd.net.dhcp.dscp</option>={<replaceable>CS0</replaceable>|<replaceable>CS4</replaceable>|<replaceable>CS6</replaceable>}
+        kernel command line option to set a specific DSCP (TOS) value
+        in the IP header of DHCP messages.
         </para>
       </listitem>
 
