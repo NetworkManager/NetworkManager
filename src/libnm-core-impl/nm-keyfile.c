@@ -18,6 +18,7 @@
 #include <linux/if_ether.h>
 #include <linux/if_infiniband.h>
 
+#include "libnm-glib-aux/nm-keyfile-aux.h"
 #include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-glib-aux/nm-secret-utils.h"
@@ -2502,7 +2503,7 @@ wired_s390_options_writer_full(KeyfileWriterInfo        *info,
         /* groups in the keyfile are ordered. When we are about to add [ethernet-s390-options],
          * we want to also have an [ethernet] group, first. */
 
-        nm_keyfile_add_group(info->keyfile, setting_alias ?: NM_SETTING_WIRED_SETTING_NAME);
+        nm_key_file_add_group(info->keyfile, setting_alias ?: NM_SETTING_WIRED_SETTING_NAME);
     }
 
     for (i = 0; i < n; i++) {
@@ -4475,7 +4476,7 @@ nm_keyfile_write(NMConnection         *connection,
             || g_key_file_has_group(info.keyfile, setting_name)) {
             /* we have a section for the setting. Nothing to do. */
         } else {
-            nm_keyfile_add_group(info.keyfile, setting_alias ?: setting_name);
+            nm_key_file_add_group(info.keyfile, setting_alias ?: setting_name);
         }
 
         if (NM_IS_SETTING_WIREGUARD(setting)) {
