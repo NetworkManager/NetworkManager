@@ -7150,13 +7150,14 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      * Whether to configure sysctl interface-specific forwarding. When enabled, the interface
      * will act as a router to forward the packet from one interface to another. When set to
      * %NM_SETTING_IP_CONFIG_FORWARDING_DEFAULT, the value from global configuration is used;
-     * if no global default is defined, %NM_SETTING_IP_CONFIG_FORWARDING_AUTO will be used,
-     * NetworkManager will set the IPv4 forwarding if any shared connection is active and
-     * NetworkManager will disable the IPv4 forwarding if no shared connection is active.
-     * The accepted values are: %NM_SETTING_IP_CONFIG_FORWARDING_DEFAULT: use gloal default,
-     * %NM_SETTING_IP_CONFIG_FORWARDING_NO: disabled, NM_SETTING_IP_CONFIG_FORWARDING_YES: enabled,
-     * %NM_SETTING_IP_CONFIG_FORWARDING_AUTO: auto, %NM_SETTING_IP_CONFIG_FORWARDING_IGNORE: ignored
-     * (leave the forwarding unchanged).
+     * if no global default is defined, %NM_SETTING_IP_CONFIG_FORWARDING_AUTO will be used.
+     * The accepted values are:
+     *   %NM_SETTING_IP_CONFIG_FORWARDING_DEFAULT: use global default.
+     *   %NM_SETTING_IP_CONFIG_FORWARDING_NO: disabled.
+     *   %NM_SETTING_IP_CONFIG_FORWARDING_YES: enabled.
+     *   %NM_SETTING_IP_CONFIG_FORWARDING_AUTO: enable if any shared connection is active,
+     *        disable otherwise.
+     *   %NM_SETTING_IP_CONFIG_FORWARDING_IGNORE: leave the forwarding unchanged.
      *
      * Since: 1.52
      */
