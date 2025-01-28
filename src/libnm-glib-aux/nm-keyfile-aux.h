@@ -58,4 +58,6 @@ void nm_key_file_db_prune(NMKeyFileDB *self,
 
 /*****************************************************************************/
 
+void nm_key_file_add_group(GKeyFile *keyfile, const char *group);
+
 #endif /* __NM_KEYFILE_AUX_H__ */
