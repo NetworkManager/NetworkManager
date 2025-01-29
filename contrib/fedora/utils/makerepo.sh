@@ -265,9 +265,11 @@ detect_dirname() {
             # At some point FEDPKG changed the behavior of "prep" command
             # now it generates the directory with "-build" suffix and the
             # real directory inside. We just move it out.
-            rm -rf $D
-            mv $D-build/$D .
-            rm -rf $D-build
+            if [ -d "$D-build" ]; then
+                rm -rf "$D"
+                mv "$D-build/$D" .
+                rm -rf "$D-build"
+            fi
             [[ -d "$D" ]] && DIRS=("${DIRS[@]}" "$D")
         done
     done
