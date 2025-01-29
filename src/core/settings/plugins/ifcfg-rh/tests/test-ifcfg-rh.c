@@ -9521,18 +9521,24 @@ do_svUnescape_combine_ansi(GString                *str_val,
 static void
 test_svUnescape(void)
 {
-#define V0(v_value, v_expected)                                       \
-    {                                                                 \
-        .val = "" v_value "", .exp = v_expected, .can_concat = FALSE, \
+#define V0(v_value, v_expected)      \
+    {                                \
+        .val        = "" v_value "", \
+        .exp        = v_expected,    \
+        .can_concat = FALSE,         \
     }
-#define V1(v_value, v_expected)                                              \
-    {                                                                        \
-        .val = "" v_value "", .exp = v_expected, .can_concat = !!v_expected, \
+#define V1(v_value, v_expected)      \
+    {                                \
+        .val        = "" v_value "", \
+        .exp        = v_expected,    \
+        .can_concat = !!v_expected,  \
     }
-#define V2(v_value, v_expected)                                      \
-    {                                                                \
-        .val = "" v_value "", .exp = v_expected, .can_concat = TRUE, \
-        .needs_ascii_separator = TRUE,                               \
+#define V2(v_value, v_expected)                 \
+    {                                           \
+        .val                   = "" v_value "", \
+        .exp                   = v_expected,    \
+        .can_concat            = TRUE,          \
+        .needs_ascii_separator = TRUE,          \
     }
     const UnescapeTestData data_full[] = {
         V1("", ""),
