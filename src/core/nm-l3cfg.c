@@ -4079,10 +4079,7 @@ _l3cfg_routed_dns_apply(NML3Cfg *self, const NML3ConfigData *l3cd)
                                         NMP_CACHE_ID_TYPE_OBJECT_TYPE,
                                         &rule_obj)) {
                 _LOGT("adding rule to DNS routing table");
-                nmp_global_tracker_track_rule(self->priv.global_tracker, &rule, 10, self, NULL);
-                nmp_global_tracker_sync(self->priv.global_tracker,
-                                        NMP_OBJECT_TYPE_ROUTING_RULE,
-                                        TRUE);
+                nm_platform_routing_rule_add(self->priv.platform, NMP_NLM_FLAG_ADD, &rule);
             }
         }
 
