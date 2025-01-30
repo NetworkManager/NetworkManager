@@ -5828,7 +5828,22 @@ _nl_msg_new_route(uint16_t nlmsg_type, uint16_t nlmsg_flags, const NMPObject *ob
 
     /* We currently don't have need for multi-hop routes... */
     if (IS_IPv4) {
-        NLA_PUT(msg, RTA_GATEWAY, addr_len, &obj->ip4_route.gateway);
+        if (!obj->ip4_route.gateway && obj->ip4_route.via.addr_family) {
+            struct rtvia *rtvia;
+
+            rtvia = nla_data(nla_reserve(
+                msg,
+                RTA_VIA,
+                sizeof(*rtvia) + nm_utils_addr_family_to_size(obj->ip4_route.via.addr_family)));
+            if (!rtvia)
+                goto nla_put_failure;
+            rtvia->rtvia_family = obj->ip4_route.via.addr_family;
+            memcpy(rtvia->rtvia_addr,
+                   obj->ip4_route.via.addr.addr_ptr,
+                   nm_utils_addr_family_to_size(obj->ip4_route.via.addr_family));
+        } else {
+            NLA_PUT(msg, RTA_GATEWAY, addr_len, &obj->ip4_route.gateway);
+        }
     } else {
         if (!IN6_IS_ADDR_UNSPECIFIED(&obj->ip6_route.gateway))
             NLA_PUT(msg, RTA_GATEWAY, addr_len, &obj->ip6_route.gateway);
