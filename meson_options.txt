@@ -46,6 +46,9 @@ option('nm_cloud_setup', type: 'boolean', value: true, description: 'Build nm-cl
 option('bluez5_dun', type: 'boolean', value: false, description: 'enable Bluez5 DUN support')
 option('ebpf', type: 'combo', choices: ['auto', 'true', 'false'], description: 'Enable eBPF support')
 option('nbft', type: 'boolean', value: true, description: 'Enable NBFT support in the initrd generator')
+option('clat', type: 'boolean', value: true, description: 'Build with CLAT support')
+option('bpf-compiler', type : 'combo', choices : ['auto', 'clang', 'gcc'],
+       description : 'compiler used to build BPF programs')
 
 # configuration plugins
 option('config_plugins_default', type: 'string', value: '', description: 'Default configuration option for main.plugins setting, used as fallback if the configuration option is unset')
