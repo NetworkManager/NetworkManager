@@ -498,6 +498,16 @@ gboolean nm_l3_config_data_set_network_id(NML3ConfigData *self, const char *netw
 
 const char *nm_l3_config_data_get_network_id(const NML3ConfigData *self);
 
+gboolean nm_l3_config_data_set_pref64_valid(NML3ConfigData *self, gboolean val);
+
+gboolean nm_l3_config_data_get_pref64_valid(const NML3ConfigData *self, gboolean *out_val);
+
+gboolean nm_l3_config_data_get_pref64(const NML3ConfigData *self,
+                                      struct in6_addr      *out_prefix,
+                                      guint32              *out_plen);
+
+gboolean nm_l3_config_data_set_pref64(NML3ConfigData *self, struct in6_addr prefix, guint32 plen);
+
 NMMptcpFlags nm_l3_config_data_get_mptcp_flags(const NML3ConfigData *self);
 
 gboolean nm_l3_config_data_set_mptcp_flags(NML3ConfigData *self, NMMptcpFlags mptcp_flags);
