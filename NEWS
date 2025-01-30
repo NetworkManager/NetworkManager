@@ -40,6 +40,7 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * New <Select...> button in nmtui that allows users to chose from list of
   available devices when creating connection profiles for physical interfaces
   (Ethernet, Wi-Fi, etc.).
+* Add support for CLAT (464XLAT) using a BPF program.
 
 =============================================
 NetworkManager-1.56
