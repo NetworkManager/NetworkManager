@@ -50,6 +50,9 @@ struct _NML3ConfigData {
         const NMPObject *best_default_route_x[2];
     };
 
+    struct in6_addr pref64_prefix;
+    guint32         pref64_plen;
+
     GArray *wins;
     GArray *nis_servers;
 
@@ -167,6 +170,8 @@ struct _NML3ConfigData {
 
     bool routed_dns_4 : 1;
     bool routed_dns_6 : 1;
+
+    bool pref64_valid : 1;
 };
 
 /*****************************************************************************/
@@ -519,6 +524,12 @@ nm_l3_config_data_log(const NML3ConfigData *self,
                 _L("nis-domain: %s", self->nis_domain->str);
         }
 
+        if (!IS_IPv4 && self->pref64_valid) {
+            _L("pref64_prefix: %s/%d",
+               nm_utils_inet6_ntop(&self->pref64_prefix, sbuf_addr),
+               self->pref64_plen);
+        }
+
         if (self->dhcp_lease_x[IS_IPv4]) {
             gs_free NMUtilsNamedValue *options_free = NULL;
             NMUtilsNamedValue          options_buffer[30];
@@ -715,6 +726,7 @@ nm_l3_config_data_new(NMDedupMultiIndex *multi_idx, int ifindex, NMIPConfigSourc
         .ndisc_retrans_timer_msec_set   = FALSE,
         .allow_routes_without_address_4 = TRUE,
         .allow_routes_without_address_6 = TRUE,
+        .pref64_valid                   = FALSE,
     };
 
     _idx_type_init(&self->idx_addresses_4, NMP_OBJECT_TYPE_IP4_ADDRESS);
@@ -1947,6 +1959,54 @@ nm_l3_config_data_set_network_id(NML3ConfigData *self, const char *value)
     return nm_ref_string_reset_str(&self->network_id, value);
 }
 
+gboolean
+nm_l3_config_data_set_pref64_valid(NML3ConfigData *self, gboolean val)
+{
+    if (self->pref64_valid == val)
+        return FALSE;
+    self->pref64_valid = val;
+    return TRUE;
+}
+
+gboolean
+nm_l3_config_data_get_pref64_valid(const NML3ConfigData *self, gboolean *out_val)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+
+    NM_SET_OUT(out_val, self->pref64_valid);
+    return TRUE;
+}
+
+gboolean
+nm_l3_config_data_get_pref64(const NML3ConfigData *self,
+                             struct in6_addr      *out_prefix,
+                             guint32              *out_plen)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+
+    if (!self->pref64_valid)
+        return FALSE;
+    NM_SET_OUT(out_prefix, self->pref64_prefix);
+    NM_SET_OUT(out_plen, self->pref64_plen);
+    return TRUE;
+}
+
+gboolean
+nm_l3_config_data_set_pref64(NML3ConfigData *self, struct in6_addr prefix, guint32 plen)
+{
+    if (self->pref64_valid) {
+        if (self->pref64_plen == plen
+            && nm_ip6_addr_same_prefix(&self->pref64_prefix, &prefix, plen)) {
+            return FALSE;
+        }
+    } else {
+        self->pref64_valid = TRUE;
+    }
+    self->pref64_prefix = prefix;
+    self->pref64_plen   = plen;
+    return TRUE;
+}
+
 NMMptcpFlags
 nm_l3_config_data_get_mptcp_flags(const NML3ConfigData *self)
 {
@@ -2498,6 +2558,13 @@ nm_l3_config_data_cmp_full(const NML3ConfigData *a,
 
         NM_CMP_DIRECT_UNSAFE(a->routed_dns_4, b->routed_dns_4);
         NM_CMP_DIRECT_UNSAFE(a->routed_dns_6, b->routed_dns_6);
+
+        NM_CMP_DIRECT(!!a->pref64_valid, !!b->pref64_valid);
+        if (a->pref64_valid) {
+            NM_CMP_DIRECT(a->pref64_plen, b->pref64_plen);
+            NM_CMP_RETURN_DIRECT(
+                nm_ip6_addr_same_prefix_cmp(&a->pref64_prefix, &b->pref64_prefix, a->pref64_plen));
+        }
 
         NM_CMP_FIELD(a, b, source);
     }
@@ -3553,6 +3620,12 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
         self->routed_dns_4 = TRUE;
     if (src->routed_dns_6)
         self->routed_dns_6 = TRUE;
+
+    if (src->pref64_valid) {
+        self->pref64_prefix = src->pref64_prefix;
+        self->pref64_plen   = src->pref64_plen;
+        self->pref64_valid  = src->pref64_valid;
+    }
 }
 
 NML3ConfigData *
