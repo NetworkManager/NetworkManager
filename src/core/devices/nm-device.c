@@ -1361,6 +1361,8 @@ _prop_get_ipvx_routed_dns(NMDevice *self, int addr_family)
     NMSettingIPConfig         *s_ip;
     NMSettingIPConfigRoutedDns val;
     int                        IS_IPv4;
+    const char                *dns_mode;
+    NMSettingIPConfigRoutedDns fallback_value = NM_SETTING_IP_CONFIG_ROUTED_DNS_NO;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), NM_SETTING_IP_CONFIG_ROUTED_DNS_NO);
     IS_IPv4 = NM_IS_IPv4(addr_family);
@@ -1375,13 +1377,18 @@ _prop_get_ipvx_routed_dns(NMDevice *self, int addr_family)
     if (val != NM_SETTING_IP_CONFIG_ROUTED_DNS_DEFAULT)
         return val;
 
+    dns_mode = nm_config_data_get_dns_mode(nm_config_get_data(nm_config_get()));
+    if (nm_streq0(dns_mode, "dnsconfd")) {
+        fallback_value = NM_SETTING_IP_CONFIG_ROUTED_DNS_YES;
+    }
+
     return nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
                                                        IS_IPv4 ? NM_CON_DEFAULT("ipv4.routed-dns")
                                                                : NM_CON_DEFAULT("ipv6.routed-dns"),
                                                        self,
                                                        NM_SETTING_IP_CONFIG_ROUTED_DNS_NO,
                                                        NM_SETTING_IP_CONFIG_ROUTED_DNS_YES,
-                                                       NM_SETTING_IP_CONFIG_ROUTED_DNS_NO);
+                                                       fallback_value);
 }
 
 static NMSettingConnectionMdns
