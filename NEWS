@@ -11,6 +11,7 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * nmcli now supports viewing and managing WireGuard peers.
 * Support reapplying the "sriov.vfs" property as long as
   "sriov.total-vfs" is not changed.
+* Added support for CLAT (464XLAT) using a BPF program.
 
 =============================================
 NetworkManager-1.54
