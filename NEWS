@@ -23,6 +23,7 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   the 802.1X certificates and keys set in the connection.
 * Introduce a libnm function that can be used by VPN plugins to check
   user permissions on certificate and keys.
+* Add support for CLAT (464XLAT) using a BPF program.
 
 =============================================
 NetworkManager-1.56
