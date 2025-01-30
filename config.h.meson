@@ -294,3 +294,6 @@
 
 /* Define to 1 if dlvsym() is available */
 #mesondefine HAVE_DLVSYM
+
+/* Define to 1 if you want CLAT support. */
+#mesondefine HAVE_CLAT
