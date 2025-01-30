@@ -29,6 +29,7 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Use an internal implementation of the ping functionality when the
   "connection.gateway-ping-timeout" or "connection.ip-ping-addresses"
   properties are set, instead of relying on the "ping" tool.  
+* Add support for CLAT (464XLAT) using a BPF program.
 
 =============================================
 NetworkManager-1.56
