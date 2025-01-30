@@ -514,6 +514,15 @@ if enable_selinux
 endif
 config_h.set10('HAVE_SELINUX', enable_selinux)
 
+# CLAT support
+enable_clat = get_option('clat')
+if enable_clat
+  libbpf = dependency('libbpf', version: '>= 0.1.0', required: false)
+  assert(libbpf.found(), 'You must have libbpf installed to build. Use -Dclat=false to disable use of it')
+  libxdp = dependency('libxdp', version: '>= 0.1.0', required: false)
+endif
+config_h.set10('HAVE_CLAT', enable_clat)
+
 # libaudit support
 libaudit = get_option('libaudit')
 enable_libaudit = libaudit.contains('yes')
@@ -1181,5 +1190,6 @@ output +=      'have-nss: ' + crypto_nss_dep.found().to_string() + ')\n'
 output += '  sanitizers: ' + get_option('b_sanitize') + '\n'
 output += '  Mozilla Public Suffix List: ' + enable_libpsl.to_string() + '\n'
 output += '  vapi: ' + enable_vapi.to_string() + '\n'
+output += '  clat: ' + enable_clat.to_string() + '\n'
 output += '  readline: ' + with_readline + '\n'
 message(output)
