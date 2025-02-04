@@ -189,7 +189,8 @@ if [[ $IGNORE_DIRTY != 1 ]]; then
 fi
 
 get_version_meson() {
-    meson introspect "$GITDIR/build" --projectinfo | jq -r .version
+    meson introspect "$GITDIR/build" --projectinfo |
+        python -c 'import json, sys; print(json.load(sys.stdin)["version"])'
 }
 
 if [[ $NO_DIST != 1 ]]; then
