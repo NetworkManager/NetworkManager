@@ -222,7 +222,7 @@ if [[ $NO_DIST != 1 ]]; then
         -Dnft=/usr/bin/nft \
         || die "Error meson setup"
 
-    VERSION="${VERSION:-$(get_version_meson || die "Could not read $VERSION")}"
+    VERSION="${VERSION:-$(get_version_meson || die "Could not read VERSION")}"
     TEST_FLAG=""
     if [[ $QUICK == 1 ]]; then
         TEST_FLAG="--no-tests"
