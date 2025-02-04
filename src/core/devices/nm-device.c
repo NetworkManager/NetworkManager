@@ -13851,8 +13851,6 @@ _cleanup_ip_pre(NMDevice *self, int addr_family, CleanupType cleanup_type, gbool
 
     _dev_ip_state_cleanup(self, AF_UNSPEC, keep_reapply);
     _dev_ip_state_cleanup(self, addr_family, keep_reapply);
-
-    nm_device_sysctl_ip_conf_set(self, addr_family, "forwarding", "0");
 }
 
 gboolean
@@ -16904,6 +16902,7 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
     NMDevicePrivate *priv;
     NMDeviceClass   *klass = NM_DEVICE_GET_CLASS(self);
     int              ifindex;
+    gint32           default_forwarding_v4;
 
     g_return_if_fail(NM_IS_DEVICE(self));
 
@@ -16925,6 +16924,15 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
         _dev_sysctl_set_disable_ipv6(self, TRUE);
         nm_device_sysctl_ip_conf_set(self, AF_INET6, "use_tempaddr", "0");
     }
+
+    default_forwarding_v4 = nm_platform_sysctl_get_int32(
+        nm_device_get_platform(self),
+        NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv4/conf/default/forwarding"),
+        0);
+    nm_device_sysctl_ip_conf_set(self,
+                                 AF_INET,
+                                 "forwarding",
+                                 default_forwarding_v4 == 1 ? "1" : "0");
 
     /* Call device type-specific deactivation */
     if (klass->deactivate)
