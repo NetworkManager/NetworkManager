@@ -88,6 +88,4 @@ const char *nm_keyfile_key_encode(const char *name, char **out_to_free);
 
 const char *nm_keyfile_key_decode(const char *key, char **out_to_free);
 
-void nm_keyfile_add_group(GKeyFile *keyfile, const char *group);
-
 #endif /* __NM_KEYFILE_UTILS_H__ */

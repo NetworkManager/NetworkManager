@@ -682,22 +682,3 @@ nm_keyfile_key_decode(const char *key, char **out_to_free)
 #endif
     return name;
 }
-
-void
-nm_keyfile_add_group(GKeyFile *keyfile, const char *group)
-{
-    nm_assert(keyfile);
-    nm_assert(group);
-
-    /* You can only call this function if the group doesn't exist yet.
-     * Because, we are about to add a dummy key, so we would have to
-     * be sure that the key doesn't exist. */
-    nm_assert(!g_key_file_has_group(keyfile, group));
-
-    /* Ensure the group is present.
-     * There is no API for that, so add and remove a dummy key.
-     * For a profile it matters whether a setting is present or not,
-     * and we need to ensure that we persist the presence of the setting to keyfile*/
-    g_key_file_set_value(keyfile, group, ".X", "1");
-    g_key_file_remove_key(keyfile, group, ".X", NULL);
-}
