@@ -88,7 +88,7 @@ install \
     vala \
     valgrind \
     which \
-    "${EXTRA_PACKAGES[@]}"
+    #end
 
 # some packages don't exist in certain distributions. Install them one-by-one, and ignore errors.
 install_ignore_missing \
@@ -105,4 +105,4 @@ install_ignore_missing \
     python36-pexpect \
     qt-devel \
     vala-devel \
-    #end
+    "${EXTRA_PACKAGES[@]}"
