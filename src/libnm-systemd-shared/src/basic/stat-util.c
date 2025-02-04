@@ -22,6 +22,7 @@
 #include "missing_fs.h"
 #include "missing_magic.h"
 #include "missing_syscall.h"
+#include "mountpoint-util.h"
 #include "nulstr-util.h"
 #include "parse-util.h"
 #include "stat-util.h"
@@ -33,6 +34,7 @@ static int verify_stat_at(
                 bool follow,
                 int (*verify_func)(const struct stat *st),
                 bool verify) {
+
         struct stat st;
         int r;
 
@@ -158,25 +160,9 @@ int dir_is_empty_at(int dir_fd, const char *path, bool ignore_hidden_or_backup) 
         struct dirent *buf;
         size_t m;
 
-        if (path) {
-                assert(dir_fd >= 0 || dir_fd == AT_FDCWD);
-
-                fd = openat(dir_fd, path, O_RDONLY|O_DIRECTORY|O_CLOEXEC);
-                if (fd < 0)
-                        return -errno;
-        } else if (dir_fd == AT_FDCWD) {
-                fd = open(".", O_RDONLY|O_DIRECTORY|O_CLOEXEC);
-                if (fd < 0)
-                        return -errno;
-        } else {
-                /* Note that DUPing is not enough, as the internal pointer would still be shared and moved
-                 * getedents64(). */
-                assert(dir_fd >= 0);
-
-                fd = fd_reopen(dir_fd, O_RDONLY|O_DIRECTORY|O_CLOEXEC);
-                if (fd < 0)
-                        return fd;
-        }
+        fd = xopenat(dir_fd, path, O_DIRECTORY|O_CLOEXEC);
+        if (fd < 0)
+                return fd;
 
         /* Allocate space for at least 3 full dirents, since every dir has at least two entries ("."  +
          * ".."), and only once we have seen if there's a third we know whether the dir is empty or not. If
@@ -231,7 +217,7 @@ int null_or_empty_path_with_root(const char *fn, const char *root) {
          * When looking under root_dir, we can't expect /dev/ to be mounted,
          * so let's see if the path is a (possibly dangling) symlink to /dev/null. */
 
-        if (path_equal_ptr(path_startswith(fn, root ?: "/"), "dev/null"))
+        if (path_equal(path_startswith(fn, root ?: "/"), "dev/null"))
                 return true;
 
         r = chase_and_stat(fn, root, CHASE_PREFIX_ROOT, NULL, &st);
@@ -241,7 +227,7 @@ int null_or_empty_path_with_root(const char *fn, const char *root) {
         return null_or_empty(&st);
 }
 
-static int fd_is_read_only_fs(int fd) {
+int fd_is_read_only_fs(int fd) {
         struct statvfs st;
 
         assert(fd >= 0);
@@ -271,22 +257,108 @@ int path_is_read_only_fs(const char *path) {
 
         return fd_is_read_only_fs(fd);
 }
-#endif /* NM_IGNORED */
 
 int inode_same_at(int fda, const char *filea, int fdb, const char *fileb, int flags) {
-        struct stat a, b;
+        struct stat sta, stb;
+        int r;
 
         assert(fda >= 0 || fda == AT_FDCWD);
         assert(fdb >= 0 || fdb == AT_FDCWD);
+        assert((flags & ~(AT_EMPTY_PATH|AT_SYMLINK_NOFOLLOW|AT_NO_AUTOMOUNT)) == 0);
 
-        if (fstatat(fda, strempty(filea), &a, flags) < 0)
-                return log_debug_errno(errno, "Cannot stat %s: %m", filea);
+        /* Refuse an unset filea or fileb early unless AT_EMPTY_PATH is set */
+        if ((isempty(filea) || isempty(fileb)) && !FLAGS_SET(flags, AT_EMPTY_PATH))
+                return -EINVAL;
 
-        if (fstatat(fdb, strempty(fileb), &b, flags) < 0)
-                return log_debug_errno(errno, "Cannot stat %s: %m", fileb);
+        /* Shortcut: comparing the same fd with itself means we can return true */
+        if (fda >= 0 && fda == fdb && isempty(filea) && isempty(fileb) && FLAGS_SET(flags, AT_SYMLINK_NOFOLLOW))
+                return true;
 
-        return stat_inode_same(&a, &b);
+        _cleanup_close_ int pin_a = -EBADF, pin_b = -EBADF;
+        if (!FLAGS_SET(flags, AT_NO_AUTOMOUNT)) {
+                /* Let's try to use the name_to_handle_at() AT_HANDLE_FID API to identify identical
+                 * inodes. We have to issue multiple calls on the same file for that (first, to acquire the
+                 * FID, and then to check if .st_dev is actually the same). Hence let's pin the inode in
+                 * between via O_PATH, unless we already have an fd for it. */
+
+                if (!isempty(filea)) {
+                        pin_a = openat(fda, filea, O_PATH|O_CLOEXEC|(FLAGS_SET(flags, AT_SYMLINK_NOFOLLOW) ? O_NOFOLLOW : 0));
+                        if (pin_a < 0)
+                                return -errno;
+
+                        fda = pin_a;
+                        filea = NULL;
+                        flags |= AT_EMPTY_PATH;
+                }
+
+                if (!isempty(fileb)) {
+                        pin_b = openat(fdb, fileb, O_PATH|O_CLOEXEC|(FLAGS_SET(flags, AT_SYMLINK_NOFOLLOW) ? O_NOFOLLOW : 0));
+                        if (pin_b < 0)
+                                return -errno;
+
+                        fdb = pin_b;
+                        fileb = NULL;
+                        flags |= AT_EMPTY_PATH;
+                }
+
+                int ntha_flags = (flags & AT_EMPTY_PATH) | (FLAGS_SET(flags, AT_SYMLINK_NOFOLLOW) ? 0 : AT_SYMLINK_FOLLOW);
+                _cleanup_free_ struct file_handle *ha = NULL, *hb = NULL;
+                int mntida = -1, mntidb = -1;
+
+                r = name_to_handle_at_try_fid(
+                                fda,
+                                filea,
+                                &ha,
+                                &mntida,
+                                ntha_flags);
+                if (r < 0) {
+                        if (is_name_to_handle_at_fatal_error(r))
+                                return r;
+
+                        goto fallback;
+                }
+
+                r = name_to_handle_at_try_fid(
+                                fdb,
+                                fileb,
+                                &hb,
+                                &mntidb,
+                                ntha_flags);
+                if (r < 0) {
+                        if (is_name_to_handle_at_fatal_error(r))
+                                return r;
+
+                        goto fallback;
+                }
+
+                /* Now compare the two file handles */
+                if (!file_handle_equal(ha, hb))
+                        return false;
+
+                /* If the file handles are the same and they come from the same mount ID? Great, then we are
+                 * good, they are definitely the same */
+                if (mntida == mntidb)
+                        return true;
+
+                /* File handles are the same, they are not on the same mount id. This might either be because
+                 * they are on two entirely different file systems, that just happen to have the same FIDs
+                 * (because they originally where created off the same disk images), or it could be because
+                 * they are located on two distinct bind mounts of the same fs. To check that, let's look at
+                 * .st_rdev of the inode. We simply reuse the fallback codepath for that, since it checks
+                 * exactly that (it checks slightly more, but we don't care.) */
+        }
+
+fallback:
+        if (fstatat(fda, strempty(filea), &sta, flags) < 0)
+                return log_debug_errno(errno, "Cannot stat %s: %m", strna(filea));
+
+        if (fstatat(fdb, strempty(fileb), &stb, flags) < 0)
+                return log_debug_errno(errno, "Cannot stat %s: %m", strna(fileb));
+
+        return stat_inode_same(&sta, &stb);
 }
+#endif /* NM_IGNORED */
+
 
 bool is_fs_type(const struct statfs *s, statfs_f_type_t magic_value) {
         assert(s);
@@ -369,8 +441,7 @@ bool stat_inode_same(const struct stat *a, const struct stat *b) {
         /* Returns if the specified stat structure references the same (though possibly modified) inode. Does
          * a thorough check, comparing inode nr, backing device and if the inode is still of the same type. */
 
-        return a && b &&
-                (a->st_mode & S_IFMT) != 0 && /* We use the check for .st_mode if the structure was ever initialized */
+        return stat_is_set(a) && stat_is_set(b) &&
                 ((a->st_mode ^ b->st_mode) & S_IFMT) == 0 &&  /* same inode type */
                 a->st_dev == b->st_dev &&
                 a->st_ino == b->st_ino;
@@ -399,9 +470,8 @@ bool statx_inode_same(const struct statx *a, const struct statx *b) {
 
         /* Same as stat_inode_same() but for struct statx */
 
-        return a && b &&
+        return statx_is_set(a) && statx_is_set(b) &&
                 FLAGS_SET(a->stx_mask, STATX_TYPE|STATX_INO) && FLAGS_SET(b->stx_mask, STATX_TYPE|STATX_INO) &&
-                (a->stx_mode & S_IFMT) != 0 &&
                 ((a->stx_mode ^ b->stx_mode) & S_IFMT) == 0 &&
                 a->stx_dev_major == b->stx_dev_major &&
                 a->stx_dev_minor == b->stx_dev_minor &&
@@ -409,7 +479,7 @@ bool statx_inode_same(const struct statx *a, const struct statx *b) {
 }
 
 bool statx_mount_same(const struct new_statx *a, const struct new_statx *b) {
-        if (!a || !b)
+        if (!new_statx_is_set(a) || !new_statx_is_set(b))
                 return false;
 
         /* if we have the mount ID, that's all we need */
@@ -545,6 +615,8 @@ const char* inode_type_to_string(mode_t m) {
                 return "sock";
         }
 
+        /* Note anonymous inodes in the kernel will have a zero type. Hence fstat() of an eventfd() will
+         * return an .st_mode where we'll return NULL here! */
         return NULL;
 }
 

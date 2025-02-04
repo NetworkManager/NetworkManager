@@ -1,26 +1,10 @@
-/* SPDX-License-Identifier: LGPL-2.1-or-later */
+/* SPDX-License-Identifier: LGPL-2.0-or-later */
 
-/* Parts of this file are based on the GLIB utf8 validation functions. The
- * original license text follows. */
-
-/* gutf8.c - Operations on UTF-8 strings.
+/* Parts of this file are based on the GLIB utf8 validation functions. The original copyright follows.
  *
+ * gutf8.c - Operations on UTF-8 strings.
  * Copyright (C) 1999 Tom Tromey
  * Copyright (C) 2000 Red Hat, Inc.
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Library General Public License for more details.
- *
- * You should have received a copy of the GNU Library General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "nm-sd-adapt-shared.h"
@@ -148,30 +132,30 @@ bool utf8_is_printable_newline(const char* str, size_t length, bool allow_newlin
         return true;
 }
 
-char *utf8_is_valid_n(const char *str, size_t len_bytes) {
+char* utf8_is_valid_n(const char *str, size_t len_bytes) {
         /* Check if the string is composed of valid utf8 characters. If length len_bytes is given, stop after
          * len_bytes. Otherwise, stop at NUL. */
 
         assert(str);
 
-        for (const char *p = str; len_bytes != SIZE_MAX ? (size_t) (p - str) < len_bytes : *p != '\0'; ) {
+        for (size_t i = 0; len_bytes != SIZE_MAX ? i < len_bytes : str[i] != '\0'; ) {
                 int len;
 
-                if (_unlikely_(*p == '\0') && len_bytes != SIZE_MAX)
+                if (_unlikely_(str[i] == '\0'))
                         return NULL; /* embedded NUL */
 
-                len = utf8_encoded_valid_unichar(p,
-                                                 len_bytes != SIZE_MAX ? len_bytes - (p - str) : SIZE_MAX);
+                len = utf8_encoded_valid_unichar(str + i,
+                                                 len_bytes != SIZE_MAX ? len_bytes - i : SIZE_MAX);
                 if (_unlikely_(len < 0))
                         return NULL; /* invalid character */
 
-                p += len;
+                i += len;
         }
 
         return (char*) str;
 }
 
-char *utf8_escape_invalid(const char *str) {
+char* utf8_escape_invalid(const char *str) {
         char *p, *s;
 
         assert(str);
@@ -198,7 +182,7 @@ char *utf8_escape_invalid(const char *str) {
 }
 
 #if 0 /* NM_IGNORED */
-static int utf8_char_console_width(const char *str) {
+int utf8_char_console_width(const char *str) {
         char32_t c;
         int r;
 
@@ -206,12 +190,15 @@ static int utf8_char_console_width(const char *str) {
         if (r < 0)
                 return r;
 
+        if (c == '\t')
+                return 8; /* Assume a tab width of 8 */
+
         /* TODO: we should detect combining characters */
 
         return unichar_iswide(c) ? 2 : 1;
 }
 
-char *utf8_escape_non_printable_full(const char *str, size_t console_width, bool force_ellipsis) {
+char* utf8_escape_non_printable_full(const char *str, size_t console_width, bool force_ellipsis) {
         char *p, *s, *prev_s;
         size_t n = 0; /* estimated print width */
 
@@ -288,33 +275,18 @@ char *utf8_escape_non_printable_full(const char *str, size_t console_width, bool
 }
 #endif /* NM_IGNORED */
 
-char *ascii_is_valid(const char *str) {
-        /* Check whether the string consists of valid ASCII bytes,
-         * i.e values between 0 and 127, inclusive. */
+char* ascii_is_valid_n(const char *str, size_t len) {
+        /* Check whether the string consists of valid ASCII bytes, i.e values between 1 and 127, inclusive.
+         * Stops at len, or NUL byte if len is SIZE_MAX. */
 
         assert(str);
 
-        for (const char *p = str; *p; p++)
-                if ((unsigned char) *p >= 128)
+        for (size_t i = 0; len != SIZE_MAX ? i < len : str[i] != '\0'; i++)
+                if ((unsigned char) str[i] >= 128 || str[i] == '\0')
                         return NULL;
 
         return (char*) str;
 }
-
-#if 0 /* NM_IGNORED */
-char *ascii_is_valid_n(const char *str, size_t len) {
-        /* Very similar to ascii_is_valid(), but checks exactly len
-         * bytes and rejects any NULs in that range. */
-
-        assert(str);
-
-        for (size_t i = 0; i < len; i++)
-                if ((unsigned char) str[i] >= 128 || str[i] == 0)
-                        return NULL;
-
-        return (char*) str;
-}
-#endif /* NM_IGNORED */
 
 int utf8_to_ascii(const char *str, char replacement_char, char **ret) {
         /* Convert to a string that has only ASCII chars, replacing anything that is not ASCII
@@ -392,7 +364,7 @@ size_t utf8_encode_unichar(char *out_utf8, char32_t g) {
 }
 
 #if 0 /* NM_IGNORED */
-char *utf16_to_utf8(const char16_t *s, size_t length /* bytes! */) {
+char* utf16_to_utf8(const char16_t *s, size_t length /* bytes! */) {
         const uint8_t *f;
         char *r, *t;
 
@@ -536,6 +508,10 @@ size_t char16_strlen(const char16_t *s) {
 
         return n;
 }
+
+size_t char16_strsize(const char16_t *s) {
+        return s ? (char16_strlen(s) + 1) * sizeof(*s) : 0;
+}
 #endif /* NM_IGNORED */
 
 /* expected size used to encode one unicode char */
@@ -619,11 +595,14 @@ size_t utf8_n_codepoints(const char *str) {
 }
 
 size_t utf8_console_width(const char *str) {
-        size_t n = 0;
+
+        if (isempty(str))
+                return 0;
 
         /* Returns the approximate width a string will take on screen when printed on a character cell
          * terminal/console. */
 
+        size_t n = 0;
         while (*str) {
                 int w;
 

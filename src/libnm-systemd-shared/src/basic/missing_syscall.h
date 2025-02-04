@@ -22,6 +22,7 @@
 
 #include "macro.h"
 #include "missing_keyctl.h"
+#include "missing_sched.h"
 #include "missing_stat.h"
 #include "missing_syscall_def.h"
 
@@ -81,12 +82,7 @@ static inline int missing_ioprio_set(int which, int who, int ioprio) {
 
 #if !HAVE_MEMFD_CREATE
 static inline int missing_memfd_create(const char *name, unsigned int flags) {
-#  ifdef __NR_memfd_create
         return syscall(__NR_memfd_create, name, flags);
-#  else
-        errno = ENOSYS;
-        return -1;
-#  endif
 }
 
 #  define memfd_create missing_memfd_create
@@ -98,12 +94,7 @@ static inline int missing_memfd_create(const char *name, unsigned int flags) {
 #if !HAVE_GETRANDOM
 /* glibc says getrandom() returns ssize_t */
 static inline ssize_t missing_getrandom(void *buffer, size_t count, unsigned flags) {
-#  ifdef __NR_getrandom
         return syscall(__NR_getrandom, buffer, count, flags);
-#  else
-        errno = ENOSYS;
-        return -1;
-#  endif
 }
 
 #  define getrandom missing_getrandom
@@ -150,12 +141,7 @@ static inline int missing_name_to_handle_at(int fd, const char *name, struct fil
 
 #if !HAVE_SETNS
 static inline int missing_setns(int fd, int nstype) {
-#  ifdef __NR_setns
         return syscall(__NR_setns, fd, nstype);
-#  else
-        errno = ENOSYS;
-        return -1;
-#  endif
 }
 
 #  define setns missing_setns
@@ -175,12 +161,7 @@ static inline pid_t raw_getpid(void) {
 
 #if !HAVE_RENAMEAT2
 static inline int missing_renameat2(int oldfd, const char *oldname, int newfd, const char *newname, unsigned flags) {
-#  ifdef __NR_renameat2
         return syscall(__NR_renameat2, oldfd, oldname, newfd, newname, flags);
-#  else
-        errno = ENOSYS;
-        return -1;
-#  endif
 }
 
 #  define renameat2 missing_renameat2
@@ -190,12 +171,7 @@ static inline int missing_renameat2(int oldfd, const char *oldname, int newfd, c
 
 #if !HAVE_KCMP
 static inline int missing_kcmp(pid_t pid1, pid_t pid2, int type, unsigned long idx1, unsigned long idx2) {
-#  if defined __NR_kcmp && __NR_kcmp >= 0
         return syscall(__NR_kcmp, pid1, pid2, type, idx1, idx2);
-#  else
-        errno = ENOSYS;
-        return -1;
-#  endif
 }
 
 #  define kcmp missing_kcmp
@@ -205,34 +181,19 @@ static inline int missing_kcmp(pid_t pid1, pid_t pid2, int type, unsigned long i
 
 #if !HAVE_KEYCTL
 static inline long missing_keyctl(int cmd, unsigned long arg2, unsigned long arg3, unsigned long arg4, unsigned long arg5) {
-#  if defined __NR_keyctl && __NR_keyctl >= 0
         return syscall(__NR_keyctl, cmd, arg2, arg3, arg4, arg5);
-#  else
-        errno = ENOSYS;
-        return -1;
-#  endif
 
 #  define keyctl missing_keyctl
 }
 
 static inline key_serial_t missing_add_key(const char *type, const char *description, const void *payload, size_t plen, key_serial_t ringid) {
-#  if defined __NR_add_key && __NR_add_key >= 0
         return syscall(__NR_add_key, type, description, payload, plen, ringid);
-#  else
-        errno = ENOSYS;
-        return -1;
-#  endif
 
 #  define add_key missing_add_key
 }
 
 static inline key_serial_t missing_request_key(const char *type, const char *description, const char * callout_info, key_serial_t destringid) {
-#  if defined __NR_request_key && __NR_request_key >= 0
         return syscall(__NR_request_key, type, description, callout_info, destringid);
-#  else
-        errno = ENOSYS;
-        return -1;
-#  endif
 
 #  define request_key missing_request_key
 }
@@ -344,12 +305,7 @@ static inline long missing_get_mempolicy(int *mode, unsigned long *nodemask,
 
 #if !HAVE_PIDFD_SEND_SIGNAL
 static inline int missing_pidfd_send_signal(int fd, int sig, siginfo_t *info, unsigned flags) {
-#  ifdef __NR_pidfd_send_signal
         return syscall(__NR_pidfd_send_signal, fd, sig, info, flags);
-#  else
-        errno = ENOSYS;
-        return -1;
-#  endif
 }
 
 #  define pidfd_send_signal missing_pidfd_send_signal
@@ -357,12 +313,7 @@ static inline int missing_pidfd_send_signal(int fd, int sig, siginfo_t *info, un
 
 #if !HAVE_PIDFD_OPEN
 static inline int missing_pidfd_open(pid_t pid, unsigned flags) {
-#  ifdef __NR_pidfd_open
         return syscall(__NR_pidfd_open, pid, flags);
-#  else
-        errno = ENOSYS;
-        return -1;
-#  endif
 }
 
 #  define pidfd_open missing_pidfd_open
@@ -671,6 +622,17 @@ static inline ssize_t missing_getdents64(int fd, void *buffer, size_t length) {
 
 #  define getdents64 missing_getdents64
 #endif
+
+/* ======================================================================= */
+
+#if !HAVE_SCHED_SETATTR
+
+static inline ssize_t missing_sched_setattr(pid_t pid, struct sched_attr *attr, unsigned int flags) {
+        return syscall(__NR_sched_setattr, pid, attr, flags);
+}
+
+#  define sched_setattr missing_sched_setattr
+#endif
 #endif /* NM_IGNORED */
 
 /* ======================================================================= */
@@ -686,3 +648,21 @@ int __clone2(int (*fn)(void *), void *stack_base, size_t stack_size, int flags, 
  * at build time) and just define it. Once the kernel drops ia64 support, we can drop this too. */
 #define HAVE_CLONE 1
 #endif
+
+/* ======================================================================= */
+
+#if 0 /* NM_IGNORED */
+#if !HAVE_QUOTACTL_FD
+
+static inline int missing_quotactl_fd(int fd, int cmd, int id, void *addr) {
+#if defined __NR_quotactl_fd
+        return syscall(__NR_quotactl_fd, fd, cmd, id, addr);
+#else
+        errno = ENOSYS;
+        return -1;
+#endif
+}
+
+#  define quotactl_fd missing_quotactl_fd
+#endif
+#endif /* NM_IGNORED */

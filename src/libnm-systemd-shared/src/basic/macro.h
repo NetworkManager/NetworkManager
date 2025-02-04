@@ -30,60 +30,6 @@
 #define _function_no_sanitize_float_cast_overflow_
 #endif
 
-#if (defined (__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))) || defined (__clang__)
-/* Temporarily disable some warnings */
-#define DISABLE_WARNING_DEPRECATED_DECLARATIONS                         \
-        _Pragma("GCC diagnostic push");                                 \
-        _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
-
-#define DISABLE_WARNING_FORMAT_NONLITERAL                               \
-        _Pragma("GCC diagnostic push");                                 \
-        _Pragma("GCC diagnostic ignored \"-Wformat-nonliteral\"")
-
-#define DISABLE_WARNING_MISSING_PROTOTYPES                              \
-        _Pragma("GCC diagnostic push");                                 \
-        _Pragma("GCC diagnostic ignored \"-Wmissing-prototypes\"")
-
-#define DISABLE_WARNING_NONNULL                                         \
-        _Pragma("GCC diagnostic push");                                 \
-        _Pragma("GCC diagnostic ignored \"-Wnonnull\"")
-
-#define DISABLE_WARNING_SHADOW                                          \
-        _Pragma("GCC diagnostic push");                                 \
-        _Pragma("GCC diagnostic ignored \"-Wshadow\"")
-
-#define DISABLE_WARNING_INCOMPATIBLE_POINTER_TYPES                      \
-        _Pragma("GCC diagnostic push");                                 \
-        _Pragma("GCC diagnostic ignored \"-Wincompatible-pointer-types\"")
-
-#if HAVE_WSTRINGOP_TRUNCATION
-#  define DISABLE_WARNING_STRINGOP_TRUNCATION                           \
-        _Pragma("GCC diagnostic push");                                 \
-        _Pragma("GCC diagnostic ignored \"-Wstringop-truncation\"")
-#else
-#  define DISABLE_WARNING_STRINGOP_TRUNCATION                           \
-        _Pragma("GCC diagnostic push")
-#endif
-
-#define DISABLE_WARNING_TYPE_LIMITS                                     \
-        _Pragma("GCC diagnostic push");                                 \
-        _Pragma("GCC diagnostic ignored \"-Wtype-limits\"")
-
-#define DISABLE_WARNING_ADDRESS                                         \
-        _Pragma("GCC diagnostic push");                                 \
-        _Pragma("GCC diagnostic ignored \"-Waddress\"")
-
-#define REENABLE_WARNING                                                \
-        _Pragma("GCC diagnostic pop")
-#else
-#define DISABLE_WARNING_DECLARATION_AFTER_STATEMENT
-#define DISABLE_WARNING_FORMAT_NONLITERAL
-#define DISABLE_WARNING_MISSING_PROTOTYPES
-#define DISABLE_WARNING_NONNULL
-#define DISABLE_WARNING_SHADOW
-#define REENABLE_WARNING
-#endif
-
 /* test harness */
 #define EXIT_TEST_SKIP 77
 
@@ -256,15 +202,9 @@ static inline int __coverity_check_and_return__(int condition) {
 #define PTR_TO_UINT64(p) ((uint64_t) ((uintptr_t) (p)))
 #define UINT64_TO_PTR(u) ((void *) ((uintptr_t) (u)))
 
-#define PTR_TO_SIZE(p) ((size_t) ((uintptr_t) (p)))
-#define SIZE_TO_PTR(u) ((void *) ((uintptr_t) (u)))
-
 #define CHAR_TO_STR(x) ((char[2]) { x, 0 })
 
 #define char_array_0(x) x[sizeof(x)-1] = 0;
-
-#define sizeof_field(struct_type, member) sizeof(((struct_type *) 0)->member)
-#define endoffsetof_field(struct_type, member) (offsetof(struct_type, member) + sizeof_field(struct_type, member))
 
 /* Maximum buffer size needed for formatting an unsigned integer type as hex, including space for '0x'
  * prefix and trailing NUL suffix. */
@@ -310,15 +250,6 @@ static inline int __coverity_check_and_return__(int condition) {
 
 /* Pointers range from NULL to POINTER_MAX */
 #define POINTER_MAX ((void*) UINTPTR_MAX)
-
-#define _FOREACH_ARRAY(i, array, num, m, end)                           \
-        for (typeof(array[0]) *i = (array), *end = ({                   \
-                                typeof(num) m = (num);                  \
-                                (i && m > 0) ? i + m : NULL;            \
-                        }); end && i < end; i++)
-
-#define FOREACH_ARRAY(i, array, num)                                    \
-        _FOREACH_ARRAY(i, array, num, UNIQ_T(m, UNIQ), UNIQ_T(end, UNIQ))
 
 #define _DEFINE_TRIVIAL_REF_FUNC(type, name, scope)             \
         scope type *name##_ref(type *p) {                       \

@@ -37,4 +37,6 @@ int event_add_time_change(sd_event *e, sd_event_source **ret, sd_event_io_handle
 
 #if 0 /* NM_IGNORED */
 int event_add_child_pidref(sd_event *e, sd_event_source **s, const PidRef *pid, int options, sd_event_child_handler_t callback, void *userdata);
+
+dual_timestamp* event_dual_timestamp_now(sd_event *e, dual_timestamp *ts);
 #endif /* NM_IGNORED */

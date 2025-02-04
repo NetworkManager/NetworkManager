@@ -61,7 +61,22 @@ bool in6_addr_is_ipv4_mapped_address(const struct in6_addr *a);
 bool in4_addr_equal(const struct in_addr *a, const struct in_addr *b);
 bool in6_addr_equal(const struct in6_addr *a, const struct in6_addr *b);
 int in_addr_equal(int family, const union in_addr_union *a, const union in_addr_union *b);
-int in_addr_prefix_intersect(int family, const union in_addr_union *a, unsigned aprefixlen, const union in_addr_union *b, unsigned bprefixlen);
+bool in4_addr_prefix_intersect(
+                const struct in_addr *a,
+                unsigned aprefixlen,
+                const struct in_addr *b,
+                unsigned bprefixlen);
+bool in6_addr_prefix_intersect(
+                const struct in6_addr *a,
+                unsigned aprefixlen,
+                const struct in6_addr *b,
+                unsigned bprefixlen);
+int in_addr_prefix_intersect(
+                int family,
+                const union in_addr_union *a,
+                unsigned aprefixlen,
+                const union in_addr_union *b,
+                unsigned bprefixlen);
 int in_addr_prefix_next(int family, union in_addr_union *u, unsigned prefixlen);
 int in_addr_prefix_nth(int family, union in_addr_union *u, unsigned prefixlen, uint64_t nth);
 int in_addr_random_prefix(int family, union in_addr_union *u, unsigned prefixlen_fixed_part, unsigned prefixlen);
@@ -166,9 +181,9 @@ typedef enum InAddrPrefixLenMode {
         PREFIXLEN_REFUSE, /* Fail with -ENOANO if prefixlen is not specified. */
 } InAddrPrefixLenMode;
 
-int in_addr_prefix_from_string_auto_internal(const char *p, InAddrPrefixLenMode mode, int *ret_family, union in_addr_union *ret_prefix, unsigned char *ret_prefixlen);
+int in_addr_prefix_from_string_auto_full(const char *p, InAddrPrefixLenMode mode, int *ret_family, union in_addr_union *ret_prefix, unsigned char *ret_prefixlen);
 static inline int in_addr_prefix_from_string_auto(const char *p, int *ret_family, union in_addr_union *ret_prefix, unsigned char *ret_prefixlen) {
-        return in_addr_prefix_from_string_auto_internal(p, PREFIXLEN_FULL, ret_family, ret_prefix, ret_prefixlen);
+        return in_addr_prefix_from_string_auto_full(p, PREFIXLEN_FULL, ret_family, ret_prefix, ret_prefixlen);
 }
 
 static inline size_t FAMILY_ADDRESS_SIZE(int family) {

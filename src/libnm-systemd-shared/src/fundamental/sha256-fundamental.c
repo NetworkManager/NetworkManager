@@ -23,15 +23,9 @@
    License along with the GNU C Library; if not, see
    <https://www.gnu.org/licenses/>.  */
 
-#include <stdbool.h>
-#if SD_BOOT
-#  include "efi-string.h"
-#else
-#  include <string.h>
-#endif
-
 #include "macro-fundamental.h"
-#include "sha256.h"
+#include "memory-util-fundamental.h"
+#include "sha256-fundamental.h"
 #include "unaligned-fundamental.h"
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__

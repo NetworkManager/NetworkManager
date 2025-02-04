@@ -17,10 +17,6 @@
 
 #if 0 /* NM_IGNORED */
 int reset_all_signal_handlers(void) {
-        static const struct sigaction sa = {
-                .sa_handler = SIG_DFL,
-                .sa_flags = SA_RESTART,
-        };
         int ret = 0, r;
 
         for (int sig = 1; sig < _NSIG; sig++) {
@@ -31,7 +27,7 @@ int reset_all_signal_handlers(void) {
 
                 /* On Linux the first two RT signals are reserved by glibc, and sigaction() will return
                  * EINVAL for them. */
-                r = RET_NERRNO(sigaction(sig, &sa, NULL));
+                r = RET_NERRNO(sigaction(sig, &sigaction_default, NULL));
                 if (r != -EINVAL)
                         RET_GATHER(ret, r);
         }
@@ -154,7 +150,7 @@ static const char *const static_signal_table[] = {
 
 DEFINE_PRIVATE_STRING_TABLE_LOOKUP(static_signal, int);
 
-const char *signal_to_string(int signo) {
+const char* signal_to_string(int signo) {
         static thread_local char buf[STRLEN("RTMIN+") + DECIMAL_STR_MAX(int)];
         const char *name;
 
@@ -271,7 +267,7 @@ int pop_pending_signal_internal(int sig, ...) {
         if (r < 0)
                 return r;
 
-        r = sigtimedwait(&ss, NULL, &(struct timespec) { 0, 0 });
+        r = sigtimedwait(&ss, NULL, &(const struct timespec) {});
         if (r < 0) {
                 if (errno == EAGAIN)
                         return 0;
@@ -297,5 +293,36 @@ void propagate_signal(int sig, siginfo_t *siginfo) {
 
         if (rt_tgsigqueueinfo(p, gettid(), sig, siginfo) < 0)
                 assert_se(kill(p, sig) >= 0);
+}
+
+const struct sigaction sigaction_ignore = {
+        .sa_handler = SIG_IGN,
+        .sa_flags = SA_RESTART,
+};
+
+const struct sigaction sigaction_default = {
+        .sa_handler = SIG_DFL,
+        .sa_flags = SA_RESTART,
+};
+
+const struct sigaction sigaction_nop_nocldstop = {
+        .sa_handler = nop_signal_handler,
+        .sa_flags = SA_NOCLDSTOP|SA_RESTART,
+};
+
+int parse_signo(const char *s, int *ret) {
+        int sig, r;
+
+        r = safe_atoi(s, &sig);
+        if (r < 0)
+                return r;
+
+        if (!SIGNAL_VALID(sig))
+                return -EINVAL;
+
+        if (ret)
+                *ret = sig;
+
+        return 0;
 }
 #endif /* NM_IGNORED */

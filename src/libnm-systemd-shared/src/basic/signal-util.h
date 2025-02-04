@@ -12,19 +12,13 @@ int sigaction_many_internal(const struct sigaction *sa, ...);
 
 #define ignore_signals(...)                                             \
         sigaction_many_internal(                                        \
-                        &(const struct sigaction) {                     \
-                                .sa_handler = SIG_IGN,                  \
-                                .sa_flags = SA_RESTART                  \
-                        },                                              \
+                        &sigaction_ignore,                              \
                         __VA_ARGS__,                                    \
                         -1)
 
 #define default_signals(...)                                            \
         sigaction_many_internal(                                        \
-                        &(const struct sigaction) {                     \
-                                .sa_handler = SIG_DFL,                  \
-                                .sa_flags = SA_RESTART                  \
-                        },                                              \
+                        &sigaction_default,                             \
                         __VA_ARGS__,                                    \
                         -1)
 
@@ -34,10 +28,10 @@ int sigaction_many_internal(const struct sigaction *sa, ...);
 int sigset_add_many_internal(sigset_t *ss, ...);
 #define sigset_add_many(...) sigset_add_many_internal(__VA_ARGS__, -1)
 
-int sigprocmask_many_internal(int how, sigset_t *old, ...);
+int sigprocmask_many_internal(int how, sigset_t *ret_old_mask, ...);
 #define sigprocmask_many(...) sigprocmask_many_internal(__VA_ARGS__, -1)
 
-const char *signal_to_string(int i) _const_;
+const char* signal_to_string(int i) _const_;
 int signal_from_string(const char *s) _pure_;
 
 void nop_signal_handler(int sig);
@@ -52,6 +46,7 @@ static inline void block_signals_reset(sigset_t *ss) {
                 assert_se(sigprocmask_many(SIG_BLOCK, &_t, __VA_ARGS__) >= 0);     \
                 _t;                                                                \
         })
+#define SIGNO_INVALID (-EINVAL)
 
 static inline bool SIGNAL_VALID(int signo) {
         return signo > 0 && signo < _NSIG;
@@ -70,3 +65,9 @@ int pop_pending_signal_internal(int sig, ...);
 #define pop_pending_signal(...) pop_pending_signal_internal(__VA_ARGS__, -1)
 
 void propagate_signal(int sig, siginfo_t *siginfo);
+
+extern const struct sigaction sigaction_ignore;
+extern const struct sigaction sigaction_default;
+extern const struct sigaction sigaction_nop_nocldstop;
+
+int parse_signo(const char *s, int *ret);
