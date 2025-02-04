@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+set -o pipefail
 
 die() {
     echo "$*" >&2
