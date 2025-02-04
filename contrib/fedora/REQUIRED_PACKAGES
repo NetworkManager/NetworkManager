@@ -25,12 +25,6 @@ install() {
     fi
 }
 
-install_ignore_missing() {
-    for p; do
-        install "$p" || :
-    done
-}
-
 if test "$NM_NO_EXTRA" != 1; then
     # these packages are convenient for developing, but not necessary
     # for CI testing.
@@ -90,8 +84,9 @@ install \
     which \
     #end
 
-# some packages don't exist in certain distributions. Install them one-by-one, and ignore errors.
-install_ignore_missing \
+# Some packages don't exist in certain distributions. Ignore errors
+# installing them, but still drag them in when available.
+install --skip-unavailable \
     black \
     dbus-python \
     iproute-tc \
