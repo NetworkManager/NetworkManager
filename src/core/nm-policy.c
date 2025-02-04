@@ -2055,10 +2055,17 @@ refresh_forwarding(NMPolicy *self)
         ipv4_forwarding = nm_device_get_ipv4_forwarding(device);
 
         if (ipv4_forwarding == NM_SETTING_IP_CONFIG_FORWARDING_AUTO) {
+            gint32 default_forwarding_v4;
+
+            default_forwarding_v4 = nm_platform_sysctl_get_int32(
+                nm_device_get_platform(device),
+                NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv4/conf/default/forwarding"),
+                0);
             nm_device_sysctl_ip_conf_set(device,
                                          AF_INET,
                                          "forwarding",
-                                         any_shared_active ? "1" : "0");
+                                         any_shared_active ? "1"
+                                                           : (default_forwarding_v4 ? "1" : "0"));
         }
     }
 }
