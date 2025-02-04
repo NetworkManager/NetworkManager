@@ -46,7 +46,6 @@ install \
     clang \
     dbus-devel \
     dbus-x11 \
-    dhclient \
     ethtool \
     firewalld-filesystem \
     gcc-c++ \
@@ -77,7 +76,6 @@ install \
     readline-devel \
     rpm-build \
     systemd-devel \
-    teamd-devel \
     util-linux \
     vala \
     valgrind \
@@ -89,6 +87,7 @@ install \
 install --skip-unavailable \
     black \
     dbus-python \
+    dhclient \
     iproute-tc \
     libasan \
     libpsl-devel \
@@ -99,5 +98,6 @@ install --skip-unavailable \
     python-gobject-base \
     python36-pexpect \
     qt-devel \
+    teamd-devel \
     vala-devel \
     "${EXTRA_PACKAGES[@]}"
