@@ -2907,6 +2907,123 @@ class TestNmCloudSetup(unittest.TestCase):
         )
         self.assertEqual(exitstatus, 0, "Unexpectedly returned a non-zero status")
 
+    @cloud_setup_test
+    def test_oci_vlans(self):
+        self._mock_devices()
+
+        oci_meta = "/opc/v2/"
+        self._mock_path(oci_meta + "instance", "{}")
+        self._mock_path(
+            oci_meta + "vnics",
+            """
+        [
+          {
+            "macAddr": "%s",
+            "privateIp": "%s",
+            "subnetCidrBlock": "172.31.16.0/20",
+            "virtualRouterIp": "172.31.16.1",
+            "vlanTag": 0,
+            "nicIndex": 0,
+            "vnicId": "ocid1.vnic.oc1.cz-adamov1.foobarbaz"
+          },
+          {
+            "macAddr": "%s",
+            "privateIp": "%s",
+            "subnetCidrBlock": "172.31.166.0/20",
+            "virtualRouterIp": "172.31.166.1",
+            "vlanTag": 0,
+            "nicIndex": 1,
+            "vnicId": "ocid1.vnic.oc1.uk-hogwarts.expelliarmus"
+          },
+          {
+            "macAddr": "C0:00:00:00:00:10",
+            "privateIp": "172.31.10.10",
+            "subnetCidrBlock": "172.31.10.0/20",
+            "virtualRouterIp": "172.31.10.1",
+            "vlanTag": 700,
+            "nicIndex": 0,
+            "vnicId": "ocid1.vnic.oc1.uk-hogwarts.keka"
+          }
+        ]
+        """
+            % (
+                TestNmCloudSetup._mac1,
+                TestNmCloudSetup._ip1,
+                TestNmCloudSetup._mac2,
+                TestNmCloudSetup._ip2,
+            ),
+        )
+
+        # Run nm-cloud-setup for the first time
+        pexp = self.ctx.cmd_call_pexpect(
+            ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
+            [],
+            {
+                "NM_CLOUD_SETUP_OCI_HOST": self.md_url,
+                "NM_CLOUD_SETUP_LOG": "trace",
+                "NM_CLOUD_SETUP_OCI": "yes",
+            },
+        )
+
+        pexp.expect("provider oci detected")
+        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect("get-config: starting")
+        pexp.expect("get-config: success")
+        pexp.expect("meta data received")
+
+        # No configuration for the ethernets
+        pexp.expect('configuring "eth0"')
+        pexp.expect("device has no suitable applied connection. Skip")
+
+        # Setting up the VLAN
+        pexp.expect("creating macvlan2 connection for VLAN 700 on CC:00:00:00:00:01...")
+        pexp.expect("creating vlan connection for VLAN 700 on C0:00:00:00:00:10...")
+        pexp.expect("some changes were applied for provider oci")
+
+        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        Util.valgrind_check_log(valgrind_log, "test_oci_vlans")
+        self.assertIsNone(
+            signalstatus,
+            "Unexpectedly got " + Util.signal_no_to_str(signalstatus or 0),
+        )
+        self.assertEqual(exitstatus, 0, "Unexpectedly returned a non-zero status")
+
+        # TODO: Actually check the contents of the connection
+        # Probably needs changes to the mock service API
+        conn_macvlan = self.ctx.srv.findConnections(con_id="connection-3")
+        assert conn_macvlan is not None
+        conn_vlan = self.ctx.srv.findConnections(con_id="connection-4")
+        assert conn_vlan is not None
+
+        # Run nm-cloud-setup for the second time
+        pexp = self.ctx.cmd_call_pexpect(
+            ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
+            [],
+            {
+                "NM_CLOUD_SETUP_OCI_HOST": self.md_url,
+                "NM_CLOUD_SETUP_LOG": "trace",
+                "NM_CLOUD_SETUP_OCI": "yes",
+            },
+        )
+
+        # Just the same ol' thing, just no changes this time
+        pexp.expect("provider oci detected")
+        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect("get-config: starting")
+        pexp.expect("get-config: success")
+        pexp.expect("meta data received")
+        pexp.expect('configuring "eth0"')
+        pexp.expect("device has no suitable applied connection. Skip")
+        pexp.expect("no changes were applied for provider oci")
+
+        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        Util.valgrind_check_log(valgrind_log, "test_oci_vlans")
+        self.assertIsNone(
+            signalstatus,
+            "Unexpectedly got " + Util.signal_no_to_str(signalstatus or 0),
+        )
+        self.assertEqual(exitstatus, 0, "Unexpectedly returned a non-zero status")
+
 
 ###############################################################################
 
