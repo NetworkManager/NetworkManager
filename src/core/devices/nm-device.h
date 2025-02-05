@@ -858,4 +858,6 @@ NMSettingIPConfigForwarding nm_device_get_ipv4_forwarding(NMDevice *self);
 
 const char *nm_device_get_effective_ip_config_method(NMDevice *self, int addr_family);
 
+char *nm_device_sysctl_ip_conf_get(NMDevice *self, int addr_family, const char *property);
+
 #endif /* __NETWORKMANAGER_DEVICE_H__ */
