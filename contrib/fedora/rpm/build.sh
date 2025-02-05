@@ -3,6 +3,7 @@
 #set -vx
 set -e
 set -o pipefail
+set -x
 
 # Set arguments via environment variables.
 # Argument can be omitted and defaults will be detected.
