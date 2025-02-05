@@ -59,7 +59,7 @@ typedef enum {
  * @NM_SETTING_IP_CONFIG_FORWARDING_NO: disable forwarding
  * @NM_SETTING_IP_CONFIG_FORWARDING_YES: enable forwarding
  * @NM_SETTING_IP_CONFIG_FORWARDING_AUTO: enable forwarding if any shared
- *  connection is active, disable otherwise
+ *  connection is active, use kernel default otherwise
  * @NM_SETTING_IP_CONFIG_FORWARDING_IGNORE: leave the forwarding unchanged
  *
  * #NMSettingIPConfigForwarding indicates whether to configure sysctl

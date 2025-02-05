@@ -7156,7 +7156,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      *   %NM_SETTING_IP_CONFIG_FORWARDING_NO: disabled.
      *   %NM_SETTING_IP_CONFIG_FORWARDING_YES: enabled.
      *   %NM_SETTING_IP_CONFIG_FORWARDING_AUTO: enable if any shared connection is active,
-     *        disable otherwise.
+     *        use kernel default otherwise.
      *   %NM_SETTING_IP_CONFIG_FORWARDING_IGNORE: leave the forwarding unchanged.
      *
      * Since: 1.52
