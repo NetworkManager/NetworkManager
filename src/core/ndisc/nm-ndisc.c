@@ -109,7 +109,8 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex        *multi_idx,
                       int                       ifindex,
                       const NMNDiscData        *rdata,
                       NMSettingIP6ConfigPrivacy ip6_privacy,
-                      NMUtilsIPv6IfaceId       *token)
+                      NMUtilsIPv6IfaceId       *token,
+                      const char               *network_id)
 {
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
     guint32                                 ifa_flags;
@@ -218,6 +219,8 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex        *multi_idx,
     nm_l3_config_data_set_ip6_mtu(l3cd, rdata->mtu);
     if (token)
         nm_l3_config_data_set_ip6_token(l3cd, *token);
+    if (network_id)
+        nm_l3_config_data_set_network_id(l3cd, network_id);
 
     return g_steal_pointer(&l3cd);
 }
@@ -437,7 +440,8 @@ nm_ndisc_emit_config_change(NMNDisc *self, NMNDiscConfigMap changed)
                                  nm_l3cfg_get_ifindex(priv->config.l3cfg),
                                  rdata,
                                  priv->config.ip6_privacy,
-                                 priv->iid_is_token ? &priv->iid : NULL);
+                                 priv->iid_is_token ? &priv->iid : NULL,
+                                 priv->config.network_id);
     l3cd = nm_l3_config_data_seal(l3cd);
 
     if (!nm_l3_config_data_equal(priv->l3cd, l3cd))
