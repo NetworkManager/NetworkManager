@@ -282,6 +282,7 @@ struct _NML3ConfigData *nm_ndisc_data_to_l3cd(NMDedupMultiIndex        *multi_id
                                               int                       ifindex,
                                               const NMNDiscData        *rdata,
                                               NMSettingIP6ConfigPrivacy ip6_privacy,
-                                              NMUtilsIPv6IfaceId       *token);
+                                              NMUtilsIPv6IfaceId       *token,
+                                              const char               *network_id);
 
 #endif /* __NETWORKMANAGER_NDISC_H__ */
