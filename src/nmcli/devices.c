@@ -4113,7 +4113,7 @@ generate_wpa_key(char *key, size_t len)
         int c;
 
         do {
-            c = nm_random_u64_range_full(48, 122, TRUE);
+            c = nm_random_u64_range(48, 122);
             /* skip characters that look similar */
         } while (NM_IN_SET(c, '1', 'l', 'I', '0', 'O', 'Q', '8', 'B', '5', 'S')
                  || !g_ascii_isalnum(c));
@@ -4136,7 +4136,7 @@ generate_wep_key(char *key, size_t len)
     for (i = 0; i < 10; i++) {
         int digit;
 
-        digit  = nm_random_u64_range_full(0, 16, TRUE);
+        digit  = nm_random_u64_range(0, 16);
         key[i] = hexdigits[digit];
     }
     key[10] = '\0';

@@ -2834,10 +2834,7 @@ _host_id_read(guint8 **out_host_id, gsize *out_host_id_len)
         int    base64_save  = 0;
         gsize  len;
 
-        if (nm_random_get_crypto_bytes(rnd_buf, sizeof(rnd_buf)) < 0)
-            nm_random_get_bytes_full(rnd_buf, sizeof(rnd_buf), &success);
-        else
-            success = TRUE;
+        nm_random_get_bytes(rnd_buf, sizeof(rnd_buf));
 
         /* Our key is really binary data. But since we anyway generate a random seed
          * (with 32 random bytes), don't write it in binary, but instead create
@@ -2858,12 +2855,9 @@ _host_id_read(guint8 **out_host_id, gsize *out_host_id_len)
 
         secret_arr = _host_id_hash_v2(new_content, len, sha256_digest);
         secret_len = NM_UTILS_CHECKSUM_LENGTH_SHA256;
+        success    = TRUE;
 
-        if (!success)
-            nm_log_warn(LOGD_CORE,
-                        "secret-key: failure to generate good random data for secret-key (use "
-                        "non-persistent key)");
-        else if (nm_utils_get_testing()) {
+        if (nm_utils_get_testing()) {
             /* for test code, we don't write the generated secret-key to disk. */
         } else if (!nm_utils_file_set_contents(SECRET_KEY_FILE,
                                                (const char *) new_content,
@@ -3738,7 +3732,7 @@ _hw_addr_eth_complete(struct ether_addr *addr,
 
     nm_assert((ouis == NULL) ^ (ouis_len != 0));
     if (ouis) {
-        oui = ouis[nm_random_u64_range(ouis_len)];
+        oui = ouis[nm_random_u64_range(0, ouis_len)];
         g_free(ouis);
     } else {
         if (!nm_utils_hwaddr_aton(current_mac_address, &oui, ETH_ALEN))

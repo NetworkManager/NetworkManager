@@ -988,9 +988,8 @@ announce_router(NMNDisc *ndisc)
 
         /* Schedule next initial announcement retransmit. */
         priv->send_ra_id =
-            g_timeout_add_seconds(nm_random_u64_range_full(NM_NDISC_ROUTER_ADVERT_DELAY,
-                                                           NM_NDISC_ROUTER_ADVERT_INITIAL_INTERVAL,
-                                                           FALSE),
+            g_timeout_add_seconds(nm_random_u64_range(NM_NDISC_ROUTER_ADVERT_DELAY,
+                                                      NM_NDISC_ROUTER_ADVERT_INITIAL_INTERVAL),
                                   (GSourceFunc) announce_router,
                                   ndisc);
     } else {
@@ -1024,9 +1023,10 @@ announce_router_initial(NMNDisc *ndisc)
     /* Schedule the initial send rather early. Clamp the delay by minimal
      * delay and not the initial advert internal so that we start fast. */
     if (G_LIKELY(!priv->send_ra_id)) {
-        priv->send_ra_id = g_timeout_add_seconds(nm_random_u64_range(NM_NDISC_ROUTER_ADVERT_DELAY),
-                                                 (GSourceFunc) announce_router,
-                                                 ndisc);
+        priv->send_ra_id =
+            g_timeout_add_seconds(nm_random_u64_range(0, NM_NDISC_ROUTER_ADVERT_DELAY),
+                                  (GSourceFunc) announce_router,
+                                  ndisc);
     }
 }
 
@@ -1042,7 +1042,7 @@ announce_router_solicited(NMNDisc *ndisc)
         nm_clear_g_source(&priv->send_ra_id);
 
     if (!priv->send_ra_id) {
-        priv->send_ra_id = g_timeout_add(nm_random_u64_range(NM_NDISC_ROUTER_ADVERT_DELAY_MS),
+        priv->send_ra_id = g_timeout_add(nm_random_u64_range(0, NM_NDISC_ROUTER_ADVERT_DELAY_MS),
                                          (GSourceFunc) announce_router,
                                          ndisc);
     }

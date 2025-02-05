@@ -197,10 +197,7 @@ test_nm_random(void)
         if (begin >= end)
             continue;
 
-        if (begin == 0 && nmtst_get_rand_bool())
-            x = nm_random_u64_range(end);
-        else
-            x = nm_random_u64_range_full(begin, end, nmtst_get_rand_bool());
+        x = nm_random_u64_range(begin, end);
 
         g_assert_cmpuint(x, >=, begin);
         g_assert_cmpuint(x, <, end);
