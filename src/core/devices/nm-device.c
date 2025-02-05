@@ -16925,6 +16925,8 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
         nm_device_sysctl_ip_conf_set(self, AF_INET6, "use_tempaddr", "0");
     }
 
+    /* Restoring the device's forwarding to the sysctl default is necessary because
+     * `refresh_forwarding()` only updates forwarding on activated devices. */
     default_forwarding_v4 = nm_platform_sysctl_get_int32(
         nm_device_get_platform(self),
         NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv4/conf/default/forwarding"),
