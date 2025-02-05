@@ -295,7 +295,7 @@ _nmc_get_ethernet_hwaddrs(NMClient *nmc)
 }
 
 static NMDevice *
-_nmc_get_device_by_hwaddr(NMClient *nmc, const GType type_device, const char *hwaddr)
+_nmc_get_device_by_hwaddr(NMClient *nmc, const char *hwaddr)
 {
     const GPtrArray *devices;
     guint            i;
@@ -307,7 +307,7 @@ _nmc_get_device_by_hwaddr(NMClient *nmc, const GType type_device, const char *hw
         const char   *hwaddr_dev;
         gs_free char *s = NULL;
 
-        if (!G_TYPE_CHECK_INSTANCE_TYPE(device, type_device))
+        if (!NM_IS_DEVICE_ETHERNET(device))
             continue;
 
         hwaddr_dev = _device_get_hwaddr(device);
@@ -589,7 +589,7 @@ _config_one(SigTermData                       *sigterm_data,
     if (g_cancellable_is_cancelled(sigterm_data->cancellable))
         return FALSE;
 
-    device = nm_g_object_ref(_nmc_get_device_by_hwaddr(nmc, NM_DEVICE_TYPE_ETHERNET, hwaddr));
+    device = nm_g_object_ref(_nmc_get_device_by_hwaddr(nmc, hwaddr));
     if (!device) {
         _LOGD("config device %s: skip because device not found", hwaddr);
         return FALSE;
