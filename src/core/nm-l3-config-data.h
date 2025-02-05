@@ -486,6 +486,10 @@ NMUtilsIPv6IfaceId nm_l3_config_data_get_ip6_token(const NML3ConfigData *self);
 
 gboolean nm_l3_config_data_set_ip6_token(NML3ConfigData *self, NMUtilsIPv6IfaceId ipv6_token);
 
+gboolean nm_l3_config_data_set_network_id(NML3ConfigData *self, const char *network_id);
+
+const char *nm_l3_config_data_get_network_id(const NML3ConfigData *self);
+
 NMMptcpFlags nm_l3_config_data_get_mptcp_flags(const NML3ConfigData *self);
 
 gboolean nm_l3_config_data_set_mptcp_flags(NML3ConfigData *self, NMMptcpFlags mptcp_flags);
