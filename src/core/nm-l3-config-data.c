@@ -121,6 +121,7 @@ struct _NML3ConfigData {
     NMSettingConnectionLlmnr      llmnr;
     NMSettingConnectionDnsOverTls dns_over_tls;
     NMUtilsIPv6IfaceId            ip6_token;
+    NMRefString                  *network_id;
 
     NML3ConfigDatFlags flags;
 
@@ -592,6 +593,10 @@ nm_l3_config_data_log(const NML3ConfigData *self,
            nm_utils_inet6_interface_identifier_to_token(&self->ip6_token, sbuf_addr));
     }
 
+    if (self->network_id) {
+        _L("network-id: %s", self->network_id->str);
+    }
+
     if (self->metered != NM_TERNARY_DEFAULT)
         _L("metered: %s", self->metered ? "yes" : "no");
 
@@ -810,6 +815,7 @@ nm_l3_config_data_unref(const NML3ConfigData *self)
     nm_ref_string_unref(mutable->nis_domain);
     nm_ref_string_unref(mutable->proxy_pac_url);
     nm_ref_string_unref(mutable->proxy_pac_script);
+    nm_ref_string_unref(mutable->network_id);
 
     nm_g_slice_free(mutable);
 }
@@ -1925,6 +1931,22 @@ nm_l3_config_data_set_ip6_token(NML3ConfigData *self, NMUtilsIPv6IfaceId ipv6_to
     return TRUE;
 }
 
+const char *
+nm_l3_config_data_get_network_id(const NML3ConfigData *self)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+
+    return nm_ref_string_get_str(self->network_id);
+}
+
+gboolean
+nm_l3_config_data_set_network_id(NML3ConfigData *self, const char *value)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
+
+    return nm_ref_string_reset_str(&self->network_id, value);
+}
+
 NMMptcpFlags
 nm_l3_config_data_get_mptcp_flags(const NML3ConfigData *self)
 {
@@ -2451,6 +2473,7 @@ nm_l3_config_data_cmp_full(const NML3ConfigData *a,
     if (NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_OTHER)) {
         NM_CMP_DIRECT(a->flags, b->flags);
         NM_CMP_DIRECT(a->ip6_token.id, b->ip6_token.id);
+        NM_CMP_DIRECT_REF_STRING(a->network_id, b->network_id);
         NM_CMP_DIRECT(a->mtu, b->mtu);
         NM_CMP_DIRECT(a->ip6_mtu, b->ip6_mtu);
         NM_CMP_DIRECT_UNSAFE(a->metered, b->metered);
@@ -3463,6 +3486,9 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
 
     if (self->ip6_token.id == 0)
         self->ip6_token.id = src->ip6_token.id;
+
+    if (!self->network_id)
+        self->network_id = nm_ref_string_ref(src->network_id);
 
     self->metered = NM_MAX((NMTernary) self->metered, (NMTernary) src->metered);
 
