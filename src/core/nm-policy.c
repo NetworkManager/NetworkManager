@@ -2015,12 +2015,17 @@ unblock_autoconnect_for_ports_for_sett_conn(NMPolicy *self, NMSettingsConnection
 static void
 refresh_forwarding(NMPolicy *self)
 {
+    NMActiveConnection *ac;
+    NMDevice           *device;
     NMPolicyPrivate    *priv = NM_POLICY_GET_PRIVATE(self);
     const CList        *tmp_lst;
-    NMDevice           *device;
     gboolean            any_shared_active = false;
-    NMActiveConnection *ac;
+    gint32              default_forwarding_v4;
+    const char         *new_value = NULL;
 
+    /* FIXME: This implementation is still inefficient because refresh_forwarding()
+     * is called every time a device goes up or down, requiring a full scan of all
+     * active connections to determine if any shared connection is active. */
     nm_manager_for_each_active_connection (priv->manager, ac, tmp_lst) {
         NMSettingIPConfig *s_ip;
         NMDevice          *to_device = nm_active_connection_get_device(ac);
@@ -2037,6 +2042,13 @@ refresh_forwarding(NMPolicy *self)
         }
     }
 
+    default_forwarding_v4 = nm_platform_sysctl_get_int32(
+        NM_PLATFORM_GET,
+        NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv4/conf/default/forwarding"),
+        0);
+
+    new_value = any_shared_active ? "1" : (default_forwarding_v4 ? "1" : "0");
+
     nm_manager_for_each_device (priv->manager, device, tmp_lst) {
         NMDeviceState               state;
         NMSettingIPConfigForwarding ipv4_forwarding;
@@ -2048,17 +2060,12 @@ refresh_forwarding(NMPolicy *self)
         ipv4_forwarding = nm_device_get_ipv4_forwarding(device);
 
         if (ipv4_forwarding == NM_SETTING_IP_CONFIG_FORWARDING_AUTO) {
-            gint32 default_forwarding_v4;
+            gs_free char *sysctl_value = NULL;
 
-            default_forwarding_v4 = nm_platform_sysctl_get_int32(
-                nm_device_get_platform(device),
-                NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv4/conf/default/forwarding"),
-                0);
-            nm_device_sysctl_ip_conf_set(device,
-                                         AF_INET,
-                                         "forwarding",
-                                         any_shared_active ? "1"
-                                                           : (default_forwarding_v4 ? "1" : "0"));
+            sysctl_value = nm_device_sysctl_ip_conf_get(device, AF_INET, "forwarding");
+
+            if (!nm_streq0(sysctl_value, new_value))
+                nm_device_sysctl_ip_conf_set(device, AF_INET, "forwarding", new_value);
         }
     }
 }
