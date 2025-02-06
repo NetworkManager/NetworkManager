@@ -225,6 +225,10 @@ nm_l3_config_data_equal(const NML3ConfigData *a, const NML3ConfigData *b)
 
 /*****************************************************************************/
 
+const NMPObject *nm_l3_config_data_get_direct_route_for_host(const NML3ConfigData *self,
+                                                             int                   addr_family,
+                                                             gconstpointer         host);
+
 const NMDedupMultiIdxType *nm_l3_config_data_lookup_index(const NML3ConfigData *self,
                                                           NMPObjectType         obj_type);
 
