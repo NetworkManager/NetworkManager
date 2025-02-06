@@ -2907,6 +2907,7 @@ class TestNmCloudSetup(unittest.TestCase):
         )
         self.assertEqual(exitstatus, 0, "Unexpectedly returned a non-zero status")
 
+
 ###############################################################################
 
 
