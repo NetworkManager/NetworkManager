@@ -2514,8 +2514,10 @@ nm_l3_config_data_cmp_full(const NML3ConfigData *a,
 
 /*****************************************************************************/
 
-static const NMPObject *
-_data_get_direct_route_for_host(const NML3ConfigData *self, int addr_family, gconstpointer host)
+const NMPObject *
+nm_l3_config_data_get_direct_route_for_host(const NML3ConfigData *self,
+                                            int                   addr_family,
+                                            gconstpointer         host)
 {
     const int                 IS_IPv4        = NM_IS_IPv4(addr_family);
     const NMPObject          *best_route_obj = NULL;
@@ -2673,7 +2675,7 @@ nm_l3_config_data_add_dependent_onlink_routes(NML3ConfigData *self, int addr_fam
         if (NM_FLAGS_HAS(route_src->rx.r_rtm_flags, (unsigned) RTNH_F_ONLINK))
             continue;
 
-        if (_data_get_direct_route_for_host(self, addr_family, p_gateway))
+        if (nm_l3_config_data_get_direct_route_for_host(self, addr_family, p_gateway))
             continue;
 
         new_route = nmp_object_clone(obj_src, FALSE);
