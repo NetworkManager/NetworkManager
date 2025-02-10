@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+set -o pipefail
 
 die() {
     echo "$*" >&2
@@ -189,7 +191,8 @@ if [[ $IGNORE_DIRTY != 1 ]]; then
 fi
 
 get_version_meson() {
-    meson introspect "$GITDIR/build" --projectinfo | jq -r .version
+    meson introspect "$GITDIR/build" --projectinfo |
+        python -c 'import json, sys; print(json.load(sys.stdin)["version"])'
 }
 
 if [[ $NO_DIST != 1 ]]; then
@@ -222,7 +225,7 @@ if [[ $NO_DIST != 1 ]]; then
         -Dnft=/usr/bin/nft \
         || die "Error meson setup"
 
-    VERSION="${VERSION:-$(get_version_meson || die "Could not read $VERSION")}"
+    VERSION="${VERSION:-$(get_version_meson || die "Could not read VERSION")}"
     TEST_FLAG=""
     if [[ $QUICK == 1 ]]; then
         TEST_FLAG="--no-tests"

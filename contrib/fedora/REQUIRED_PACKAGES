@@ -25,12 +25,6 @@ install() {
     fi
 }
 
-install_ignore_missing() {
-    for p; do
-        install "$p" || :
-    done
-}
-
 if test "$NM_NO_EXTRA" != 1; then
     # these packages are convenient for developing, but not necessary
     # for CI testing.
@@ -52,7 +46,6 @@ install \
     clang \
     dbus-devel \
     dbus-x11 \
-    dhclient \
     ethtool \
     firewalld-filesystem \
     gcc-c++ \
@@ -83,17 +76,18 @@ install \
     readline-devel \
     rpm-build \
     systemd-devel \
-    teamd-devel \
     util-linux \
     vala \
     valgrind \
     which \
-    "${EXTRA_PACKAGES[@]}"
+    #end
 
-# some packages don't exist in certain distributions. Install them one-by-one, and ignore errors.
-install_ignore_missing \
+# Some packages don't exist in certain distributions. Ignore errors
+# installing them, but still drag them in when available.
+install --skip-unavailable \
     black \
     dbus-python \
+    dhclient \
     iproute-tc \
     libasan \
     libpsl-devel \
@@ -104,5 +98,6 @@ install_ignore_missing \
     python-gobject-base \
     python36-pexpect \
     qt-devel \
+    teamd-devel \
     vala-devel \
-    #end
+    "${EXTRA_PACKAGES[@]}"
