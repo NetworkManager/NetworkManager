@@ -92,6 +92,9 @@ _get_config_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     gs_unref_bytes GBytes          *response = NULL;
     gs_free_error GError           *error    = NULL;
     nm_auto_decref_json json_t     *vnics    = NULL;
+    gboolean                        is_baremetal;
+    gs_unref_ptrarray GPtrArray    *phys_nic_macs = NULL;
+    GHashTableIter                  h_iter;
     size_t                          i;
 
     nm_http_client_poll_req_finish(NM_HTTP_CLIENT(source), result, NULL, &response, &error);
@@ -112,12 +115,24 @@ _get_config_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
         goto out;
     }
 
+    if (json_array_size(vnics) > 0) {
+        is_baremetal = NULL != json_object_get(json_array_get(vnics, 0), "nicIndex");
+        _LOGI("get-config: detected %s instance", is_baremetal ? "baremetal" : "VM");
+    } else {
+        is_baremetal = FALSE;
+        _LOGI("get-config: empty VNICs metadata, cannot detect instance type");
+    }
+
+    if (is_baremetal)
+        phys_nic_macs = g_ptr_array_sized_new(16);
+
     for (i = 0; i < json_array_size(vnics); i++) {
         json_t       *vnic, *field;
         const char   *vnic_id = "", *val;
         gs_free char *mac     = NULL;
         in_addr_t     addr;
         int           prefix;
+        json_int_t    nic_index = -1, vlan_tag = -1;
 
         vnic = json_array_get(vnics, i);
         if (!json_is_object(vnic)) {
@@ -130,12 +145,28 @@ _get_config_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 
         field = json_object_get(vnic, "macAddr");
         val   = field && json_is_string(field) ? json_string_value(field) : NULL;
-        if (!val) {
+        mac   = val ? nmcs_utils_hwaddr_normalize(val, json_string_length(field)) : NULL;
+        if (!mac) {
             _VNIC_WARN("missing or invalid 'macAddr', ignoring VNIC");
             continue;
         }
 
-        mac               = nmcs_utils_hwaddr_normalize(val, json_string_length(field));
+        if (is_baremetal) {
+            field     = json_object_get(vnic, "nicIndex");
+            nic_index = field && json_is_integer(field) ? json_integer_value(field) : -1;
+            if (nic_index < 0 || nic_index >= 1024) { /* 1024 = random limit to prevent abuse*/
+                _VNIC_WARN("missing or invalid 'nicIndex', ignoring VNIC");
+                continue;
+            }
+
+            field    = json_object_get(vnic, "vlanTag");
+            vlan_tag = field && json_is_integer(field) ? json_integer_value(field) : -1;
+            if (vlan_tag < 0) {
+                _VNIC_WARN("missing or invalid 'vlanTag', ignoring VNIC");
+                continue;
+            }
+        }
+
         config_iface_data = nmcs_provider_get_config_iface_data_create(get_config_data, FALSE, mac);
         config_iface_data->iface_idx = i;
 
@@ -167,6 +198,48 @@ _get_config_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
             config_iface_data->cidr_prefix = prefix;
         } else {
             _VNIC_WARN("missing or invalid 'subnetCidrBlock'");
+        }
+
+        if (is_baremetal) {
+            gboolean is_phys_nic = vlan_tag == 0;
+
+            /* In baremetal instances, configure VNICs' VLAN (physical NICs don't need it) */
+            if (is_phys_nic) {
+                config_iface_data->priv.oci.vlan_tag      = 0;
+                config_iface_data->priv.oci.parent_hwaddr = NULL;
+                if (nic_index >= phys_nic_macs->len)
+                    g_ptr_array_set_size(phys_nic_macs,
+                                         NM_MAX((guint) (nic_index + 1), phys_nic_macs->len * 2));
+                phys_nic_macs->pdata[nic_index] = (gpointer) config_iface_data->hwaddr;
+            } else {
+                /* We might not have all the physical NICs' MACs yet, save nicIndex for later */
+                config_iface_data->priv.oci.parent_hwaddr = GINT_TO_POINTER((int) nic_index);
+                config_iface_data->priv.oci.vlan_tag      = vlan_tag;
+            }
+        }
+    }
+
+    if (is_baremetal) {
+        g_hash_table_iter_init(&h_iter, get_config_data->result_dict);
+
+        /* Now that all the metadata is processed we should have all the physical NICs' MACs */
+        while (g_hash_table_iter_next(&h_iter, NULL, (gpointer *) &config_iface_data)) {
+            bool is_phys_nic = config_iface_data->priv.oci.vlan_tag == 0;
+            int  nic_index   = GPOINTER_TO_INT(config_iface_data->priv.oci.parent_hwaddr);
+
+            if (is_phys_nic)
+                continue;
+
+            if (nic_index >= phys_nic_macs->len || phys_nic_macs->pdata[nic_index] == NULL) {
+                _LOGW("get-config: physical NIC for nicIndex=%d not found, ignoring VNIC "
+                      "(VNIC macAddr=%s)",
+                      nic_index,
+                      config_iface_data->hwaddr);
+                g_hash_table_iter_remove(&h_iter);
+                continue;
+            }
+
+            config_iface_data->priv.oci.parent_hwaddr = g_strdup(phys_nic_macs->pdata[nic_index]);
         }
     }
 
