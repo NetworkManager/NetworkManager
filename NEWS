@@ -1,4 +1,10 @@
 ===============================================
+NetworkManager-1.48.18
+Overview of changes since NetworkManager-1.48.16
+===============================================
+* Support configuring veth interfaces in nmtui.
+
+===============================================
 NetworkManager-1.48.16
 Overview of changes since NetworkManager-1.48.14
 ===============================================
