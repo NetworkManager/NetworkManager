@@ -4699,6 +4699,12 @@ found_better:
         if (nm_g_hash_table_contains(exclude_devices, device))
             continue;
 
+        if (!nm_device_is_available(device,
+                                    for_user_request
+                                        ? NM_DEVICE_CHECK_DEV_AVAILABLE_FOR_USER_REQUEST
+                                        : NM_DEVICE_CHECK_DEV_AVAILABLE_NONE))
+            continue;
+
         /* determine the priority of this device. Currently, this priority is independent
          * of the profile (connection) and the device's details (aside the state).
          *
