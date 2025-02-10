@@ -98,7 +98,7 @@ typedef struct {
     bool updating_dns : 1;
 
     GArray *ip6_prefix_delegations; /* pool of ip6 prefixes delegated to all devices */
-
+    guint32 shared_active_count;    /* keep track of the number of active shared connections */
 } NMPolicyPrivate;
 
 struct _NMPolicy {
@@ -2015,39 +2015,18 @@ unblock_autoconnect_for_ports_for_sett_conn(NMPolicy *self, NMSettingsConnection
 static void
 refresh_forwarding(NMPolicy *self)
 {
-    NMActiveConnection *ac;
-    NMDevice           *device;
-    NMPolicyPrivate    *priv = NM_POLICY_GET_PRIVATE(self);
-    const CList        *tmp_lst;
-    gboolean            any_shared_active = false;
-    gint32              default_forwarding_v4;
-    const char         *new_value = NULL;
-
-    /* FIXME: This implementation is still inefficient because refresh_forwarding()
-     * is called every time a device goes up or down, requiring a full scan of all
-     * active connections to determine if any shared connection is active. */
-    nm_manager_for_each_active_connection (priv->manager, ac, tmp_lst) {
-        NMSettingIPConfig *s_ip;
-        NMDevice          *to_device = nm_active_connection_get_device(ac);
-
-        if (to_device) {
-            s_ip = nm_device_get_applied_setting(to_device, NM_TYPE_SETTING_IP4_CONFIG);
-            if (s_ip) {
-                if (nm_streq0(nm_device_get_effective_ip_config_method(to_device, AF_INET),
-                              NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
-                    any_shared_active = true;
-                    break;
-                }
-            }
-        }
-    }
+    NMDevice        *device;
+    NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
+    const CList     *tmp_lst;
+    gint32           default_forwarding_v4;
+    const char      *new_value = NULL;
 
     default_forwarding_v4 = nm_platform_sysctl_get_int32(
         NM_PLATFORM_GET,
         NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv4/conf/default/forwarding"),
         0);
 
-    new_value = any_shared_active ? "1" : (default_forwarding_v4 ? "1" : "0");
+    new_value = priv->shared_active_count ? "1" : (default_forwarding_v4 ? "1" : "0");
 
     nm_manager_for_each_device (priv->manager, device, tmp_lst) {
         NMDeviceState               state;
@@ -2362,6 +2341,10 @@ device_state_changed(NMDevice           *device,
         update_ip6_routing(self, TRUE);
         update_system_hostname(self, "routing and dns", TRUE);
         nm_dns_manager_end_updates(priv->dns_manager, __func__);
+
+        if (nm_streq0(nm_device_get_effective_ip_config_method(device, AF_INET),
+                      NM_SETTING_IP4_CONFIG_METHOD_SHARED))
+            priv->shared_active_count++;
         refresh_forwarding(self);
 
         break;
@@ -2374,6 +2357,11 @@ device_state_changed(NMDevice           *device,
         if (sett_conn) {
             NMSettingsAutoconnectBlockedReason blocked_reason =
                 NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_NONE;
+
+            if (old_state == NM_DEVICE_STATE_ACTIVATED
+                && nm_streq0(nm_device_get_effective_ip_config_method(device, AF_INET),
+                             NM_SETTING_IP4_CONFIG_METHOD_SHARED))
+                priv->shared_active_count--;
 
             switch (nm_device_state_reason_check(reason)) {
             case NM_DEVICE_STATE_REASON_USER_REQUESTED:
