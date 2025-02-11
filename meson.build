@@ -172,18 +172,10 @@ if enable_ld_gc
 endif
 
 enable_lto = get_option('b_lto')
-if enable_lto
-  if  cc.get_id() == 'clang'
-    clang_version = cc.version()
-    if clang_version <= '18.0.0'
-      error('Clang version should be greater then 18.0.0 got : ' + clang_version)
-    endif
-  else
-    # Meson already adds '-flto'
-    lto_flag = '-flto-partition=none'
-    assert(cc.has_argument(lto_flag), '-flto-partition=none not supported. Disable link-time optimization with -Db_lto=false.')
-    common_flags += lto_flag
-    common_ldflags += lto_flag
+if enable_lto and cc.get_id() == 'clang'
+  clang_version = cc.version()
+  if clang_version <= '18.0.0'
+    error('Clang version should be greater then 18.0.0 got : ' + clang_version)
   endif
 endif
 

@@ -164,11 +164,6 @@
 %global ebpf_enabled "no"
 %endif
 
-# Fedora 33 enables LTO by default by setting CFLAGS="-flto -ffat-lto-objects".
-# However, we also require "-flto -flto-partition=none", so disable Fedora's
-# default and use our configure option --with-lto instead.
-%define _lto_cflags %{nil}
-
 ###############################################################################
 
 Name: NetworkManager
