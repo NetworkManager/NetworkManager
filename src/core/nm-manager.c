@@ -4537,6 +4537,7 @@ nm_manager_get_best_device_for_connection(NMManager            *self,
                                           NMConnection         *connection,
                                           gboolean              for_user_request,
                                           GHashTable           *exclude_devices,
+                                          NMActiveConnection  **out_device_ac,
                                           GError              **error)
 {
     NMManagerPrivate       *priv = NM_MANAGER_GET_PRIVATE(self);
@@ -4561,6 +4562,8 @@ nm_manager_get_best_device_for_connection(NMManager            *self,
     nm_assert(sett_conn || connection);
     nm_assert(!connection || !sett_conn
               || connection == nm_settings_connection_get_connection(sett_conn));
+
+    NM_SET_OUT(out_device_ac, NULL);
 
     if (!connection)
         connection = nm_settings_connection_get_connection(sett_conn);
@@ -4687,8 +4690,10 @@ found_better:
             }
         }
 
-        if (ac_device)
+        if (ac_device) {
+            NM_SET_OUT(out_device_ac, ac);
             return ac_device;
+        }
     }
 
     /* Pick the first device that's compatible with the connection. */
@@ -5342,6 +5347,7 @@ find_ports(NMManager            *manager,
                                                                     NULL,
                                                                     for_user_request,
                                                                     devices,
+                                                                    NULL,
                                                                     NULL);
 
             if (!ports) {
@@ -6520,6 +6526,7 @@ find_device_for_activation(NMManager            *self,
                                                            sett_conn,
                                                            connection,
                                                            TRUE,
+                                                           NULL,
                                                            NULL,
                                                            &local);
         if (!device) {
