@@ -1,9 +1,9 @@
 =============================================
-NetworkManager-1.52
+NetworkManager-1.52-rc1
 Overview of changes since NetworkManager-1.50
 =============================================
 
-This is a snapshot of NetworkManager development. The API is
+This is a NetworkManager release candidate. The API is
 subject to change and not guaranteed to be compatible with
 the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
