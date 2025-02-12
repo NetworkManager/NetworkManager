@@ -880,12 +880,11 @@ nms_keyfile_plugin_update_connection(NMSKeyfilePlugin   *self,
                                      NMConnection      **out_connection,
                                      GError            **error)
 {
-    NMSKeyfilePluginPrivate      *priv             = NMS_KEYFILE_PLUGIN_GET_PRIVATE(self);
-    NMSKeyfileStorage            *storage          = NMS_KEYFILE_STORAGE(storage_x);
-    gs_unref_object NMConnection *connection_clone = NULL;
-    gs_unref_object NMConnection *reread           = NULL;
-    gs_free char                 *full_filename    = NULL;
-    gs_free_error GError         *local            = NULL;
+    NMSKeyfilePluginPrivate      *priv          = NMS_KEYFILE_PLUGIN_GET_PRIVATE(self);
+    NMSKeyfileStorage            *storage       = NMS_KEYFILE_STORAGE(storage_x);
+    gs_unref_object NMConnection *reread        = NULL;
+    gs_free char                 *full_filename = NULL;
+    gs_free_error GError         *local         = NULL;
     struct timespec               mtime;
     const char                   *previous_filename;
     gboolean                      reread_same;
@@ -946,7 +945,7 @@ nms_keyfile_plugin_update_connection(NMSKeyfilePlugin   *self,
             &local)) {
         _LOGW("commit: failure to write %s (%s) to \"%s\": %s",
               uuid,
-              nm_connection_get_id(connection_clone),
+              nm_connection_get_id(connection),
               previous_filename,
               local->message);
         g_propagate_error(error, g_steal_pointer(&local));
