@@ -61,7 +61,11 @@ G_DEFINE_TYPE(NMDnsDnsconfd, nm_dns_dnsconfd, NM_TYPE_DNS_PLUGIN)
 
 #define DNSCONFD_DBUS_SERVICE "com.redhat.dnsconfd"
 
-typedef enum { CONNECTION_FAIL, CONNECTION_SUCCESS, CONNECTION_WAIT } ConnectionState;
+typedef enum {
+    CONNECTION_FAIL,
+    CONNECTION_SUCCESS,
+    CONNECTION_WAIT,
+} ConnectionState;
 
 /*****************************************************************************/
 
@@ -704,6 +708,8 @@ update(NMDnsPlugin             *plugin,
         _LOGT("connected, waiting for update to finish");
     }
 
+    _nm_dns_plugin_update_pending_maybe_changed(plugin);
+
     if (all_connected == CONNECTION_FAIL) {
         nm_utils_error_set(error,
                            NM_UTILS_ERROR_UNKNOWN,
@@ -716,8 +722,6 @@ update(NMDnsPlugin             *plugin,
     }
 
     send_dnsconfd_update(self);
-
-    _nm_dns_plugin_update_pending_maybe_changed(NM_DNS_PLUGIN(self));
 
     return TRUE;
 }
