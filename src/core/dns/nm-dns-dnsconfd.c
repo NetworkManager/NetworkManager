@@ -700,7 +700,10 @@ update(NMDnsPlugin             *plugin,
 
     /* We need to consider only whether we are connected, because newer update call
      * overrides the old one */
-    if (all_connected != CONNECTION_SUCCESS) {
+    if (all_connected == CONNECTION_FAIL) {
+        priv->plugin_state = DNSCONFD_PLUGIN_IDLE;
+        _LOGT("failed to connect");
+    } else if (all_connected == CONNECTION_WAIT) {
         priv->plugin_state = DNSCONFD_PLUGIN_WAIT_CONNECT;
         _LOGT("not connected, waiting to connect");
     } else {
