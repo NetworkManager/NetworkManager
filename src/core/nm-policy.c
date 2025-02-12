@@ -1873,8 +1873,7 @@ unblock_autoconnect_for_children(NMPolicy   *self,
                                  const char *parent_device,
                                  const char *parent_uuid_settings,
                                  const char *parent_uuid_applied,
-                                 const char *parent_mac_addr,
-                                 gboolean    reset_devcon_autoconnect)
+                                 const char *parent_mac_addr)
 {
     NMPolicyPrivate             *priv = NM_POLICY_GET_PRIVATE(self);
     NMSettingsConnection *const *connections;
@@ -1915,10 +1914,8 @@ unblock_autoconnect_for_children(NMPolicy   *self,
                           parent_mac_addr))
             continue;
 
-        if (reset_devcon_autoconnect) {
-            if (nm_manager_devcon_autoconnect_retries_reset(priv->manager, NULL, sett_conn))
-                changed = TRUE;
-        }
+        if (nm_manager_devcon_autoconnect_retries_reset(priv->manager, NULL, sett_conn))
+            changed = TRUE;
 
         /* unblock the devices associated with that connection */
         if (nm_manager_devcon_autoconnect_blocked_reason_set(
@@ -1940,8 +1937,7 @@ static void
 unblock_autoconnect_for_ports(NMPolicy   *self,
                               const char *master_device,
                               const char *master_uuid_settings,
-                              const char *master_uuid_applied,
-                              gboolean    reset_devcon_autoconnect)
+                              const char *master_uuid_applied)
 {
     NMPolicyPrivate             *priv = NM_POLICY_GET_PRIVATE(self);
     NMSettingsConnection *const *connections;
@@ -1959,7 +1955,6 @@ unblock_autoconnect_for_ports(NMPolicy   *self,
                               "\"",
                               ""));
 
-    changed     = FALSE;
     connections = nm_settings_get_connections(priv->settings, NULL);
     for (i = 0; connections[i]; i++) {
         NMSettingsConnection *sett_conn = connections[i];
@@ -1975,10 +1970,8 @@ unblock_autoconnect_for_ports(NMPolicy   *self,
         if (!NM_IN_STRSET(slave_master, master_device, master_uuid_applied, master_uuid_settings))
             continue;
 
-        if (reset_devcon_autoconnect) {
-            if (nm_manager_devcon_autoconnect_retries_reset(priv->manager, NULL, sett_conn))
-                changed = TRUE;
-        }
+        if (nm_manager_devcon_autoconnect_retries_reset(priv->manager, NULL, sett_conn))
+            changed = TRUE;
 
         /* unblock the devices associated with that connection */
         if (nm_manager_devcon_autoconnect_blocked_reason_set(
@@ -2013,7 +2006,7 @@ unblock_autoconnect_for_ports_for_sett_conn(NMPolicy *self, NMSettingsConnection
     master_uuid_settings = nm_setting_connection_get_uuid(s_con);
     master_device        = nm_setting_connection_get_interface_name(s_con);
 
-    unblock_autoconnect_for_ports(self, master_device, master_uuid_settings, NULL, TRUE);
+    unblock_autoconnect_for_ports(self, master_device, master_uuid_settings, NULL);
 }
 
 static void
@@ -2026,7 +2019,6 @@ activate_port_or_children_connections(NMPolicy *self,
     const char   *controller_uuid_applied  = NULL;
     const char   *parent_mac_addr          = NULL;
     NMActRequest *req;
-    gboolean      internal_activation = FALSE;
 
     controller_device = nm_device_get_iface(device);
     nm_assert(controller_device);
@@ -2037,7 +2029,6 @@ activate_port_or_children_connections(NMPolicy *self,
     if (req) {
         NMConnection         *connection;
         NMSettingsConnection *sett_conn;
-        NMAuthSubject        *subject;
 
         sett_conn = nm_active_connection_get_settings_connection(NM_ACTIVE_CONNECTION(req));
         if (sett_conn)
@@ -2049,25 +2040,19 @@ activate_port_or_children_connections(NMPolicy *self,
 
         if (nm_streq0(controller_uuid_settings, controller_uuid_applied))
             controller_uuid_applied = NULL;
-
-        subject = nm_active_connection_get_subject(NM_ACTIVE_CONNECTION(req));
-        internal_activation =
-            subject && (nm_auth_subject_get_subject_type(subject) == NM_AUTH_SUBJECT_TYPE_INTERNAL);
     }
 
     if (!activate_children_connections_only) {
         unblock_autoconnect_for_ports(self,
                                       controller_device,
                                       controller_uuid_settings,
-                                      controller_uuid_applied,
-                                      !internal_activation);
+                                      controller_uuid_applied);
     }
     unblock_autoconnect_for_children(self,
                                      controller_device,
                                      controller_uuid_settings,
                                      controller_uuid_applied,
-                                     parent_mac_addr,
-                                     !internal_activation);
+                                     parent_mac_addr);
 }
 
 static gboolean
