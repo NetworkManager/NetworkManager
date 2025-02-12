@@ -5283,6 +5283,7 @@ ensure_controller_active_connection(NMManager            *self,
 typedef struct {
     NMSettingsConnection *connection;
     NMDevice             *device;
+    gboolean              ac_found;
 } PortConnectionInfo;
 
 /**
@@ -5332,6 +5333,7 @@ find_ports(NMManager            *manager,
         NMDevice             *controller_device     = NULL;
         NMDevice             *port_device;
         NMSettingsConnection *candidate = all_connections[i];
+        NMActiveConnection   *candidate_ac;
 
         find_controller(manager,
                         nm_settings_connection_get_connection(candidate),
@@ -5347,8 +5349,17 @@ find_ports(NMManager            *manager,
                                                                     NULL,
                                                                     for_user_request,
                                                                     devices,
-                                                                    NULL,
+                                                                    &candidate_ac,
                                                                     NULL);
+
+            nm_log_err(
+                LOGD_CORE,
+                " find ports: controller conn %s, port conn %s, port dev %s, AC %p, AC state %d",
+                nm_settings_connection_get_id(sett_conn),
+                nm_settings_connection_get_id(candidate),
+                port_device ? nm_device_get_iface(port_device) : NULL,
+                candidate_ac,
+                candidate_ac ? nm_active_connection_get_state(candidate_ac) : -1);
 
             if (!ports) {
                 /* what we allocate is quite likely much too large. Don't bother, it is only
@@ -5360,6 +5371,9 @@ find_ports(NMManager            *manager,
             ports[n_ports++] = (PortConnectionInfo) {
                 .connection = candidate,
                 .device     = port_device,
+                .ac_found   = candidate_ac
+                            && nm_active_connection_get_state(candidate_ac)
+                                   <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
             };
 
             if (port_device)
@@ -5486,6 +5500,19 @@ autoconnect_ports(NMManager            *self,
                       "will NOT activate port connection '%s' (%s) as a dependency for controller "
                       "'%s' (%s): "
                       "no compatible device found",
+                      nm_settings_connection_get_id(port->connection),
+                      nm_settings_connection_get_uuid(port->connection),
+                      nm_settings_connection_get_id(controller_connection),
+                      nm_settings_connection_get_uuid(controller_connection));
+                continue;
+            }
+
+            if (port->ac_found) {
+                _LOGW(LOGD_CORE,
+                      "will NOT activate port connection '%s' (%s) as a dependency for "
+                      "controller "
+                      "'%s' (%s): "
+                      "an active connection already exists",
                       nm_settings_connection_get_id(port->connection),
                       nm_settings_connection_get_uuid(port->connection),
                       nm_settings_connection_get_id(controller_connection),
