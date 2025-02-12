@@ -66,8 +66,6 @@ else
     debuginfo-install -y glib2
 fi
 
-contrib/scripts/nm-ci-patch-gtkdoc.sh || true
-
 if [ -x /usr/bin/ninja ] && ! [ -x /usr/bin/ninja-build ]; then
     ln -s /usr/bin/ninja-build /usr/bin/ninja
 fi
