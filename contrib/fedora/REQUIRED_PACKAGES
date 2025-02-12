@@ -91,17 +91,12 @@ install \
 # some packages don't exist in certain distributions. Install them one-by-one, and ignore errors.
 install_ignore_missing \
     black \
-    dbus-python \
     dhclient \
     iproute-tc \
     libasan \
     libpsl-devel \
     libubsan \
     libvala-devel \
-    pexpect \
-    pygobject3-base \
-    python-gobject-base \
-    python36-pexpect \
     qt-devel \
     teamd-devel \
     vala-devel \
