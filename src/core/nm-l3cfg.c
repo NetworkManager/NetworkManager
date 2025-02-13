@@ -372,6 +372,8 @@ G_DEFINE_TYPE(NML3Cfg, nm_l3cfg, G_TYPE_OBJECT)
 #define _NETNS_WATCHER_IP_ADDR_TAG(self, addr_family) \
     ((gconstpointer) & (((char *) self)[1 + NM_IS_IPv4(addr_family)]))
 
+#define _NETNS_WATCHER_MPTCP_IPV6_TAG(self) ((gconstpointer) & (((char *) self)[3]))
+
 /*****************************************************************************/
 
 #define _NMLOG_DOMAIN      LOGD_CORE
@@ -4960,7 +4962,7 @@ next:
     }
 
 out:
-    nm_netns_watcher_remove_all(self->priv.netns, TAG, FALSE);
+nm_netns_watcher_remove_all(self->priv.netns, TAG, FALSE);
 }
 /*****************************************************************************/
 
@@ -4971,6 +4973,29 @@ _global_tracker_mptcp_untrack(NML3Cfg *self, int addr_family)
                                           _MPTCP_TAG(self, NM_IS_IPv4(addr_family)),
                                           FALSE,
                                           TRUE);
+}
+
+static void
+mptcp_ipv6_addr_cb(NMNetns                       *netns,
+                   NMNetnsWatcherType             watcher_type,
+                   const NMNetnsWatcherData      *watcher_data,
+                   gconstpointer                  tag,
+                   const NMNetnsWatcherEventData *event_data,
+                   gpointer                       user_data)
+{
+    NML3Cfg *self = user_data;
+
+    if (event_data->ip_addr.change_type == NM_PLATFORM_SIGNAL_REMOVED)
+        return;
+
+    nm_assert(NMP_OBJECT_GET_TYPE(event_data->ip_addr.obj) == NMP_OBJECT_TYPE_IP6_ADDRESS);
+
+    if (event_data->ip_addr.obj->ip6_address.n_ifa_flags & IFA_F_TENTATIVE)
+        return;
+
+    _LOGE("mptcp: address is now non tentative");
+    nm_l3cfg_commit_on_idle_schedule(self, NM_L3_CFG_COMMIT_TYPE_AUTO);
+    // remove the watcher, also in finalize
 }
 
 static gboolean
@@ -5051,6 +5076,8 @@ _l3_commit_mptcp_af(NML3Cfg          *self,
                                                         self->priv.p->combined_l3cd_commited,
                                                         addr_family,
                                                         (const NMPlatformIPAddress **) &addr) {
+                const NMPObject *obj;
+
                 /* We want to evaluate the  with-{loopback,link_local}-{4,6} flags based on the actual
                  * ifa_scope that the address will have once we configure it.
                  * "addr" is an address we want to configure, we expect that it will
@@ -5075,6 +5102,32 @@ _l3_commit_mptcp_af(NML3Cfg          *self,
                         }
                     }
                     break;
+                }
+
+                obj = nm_platform_ip_address_get(self->priv.platform,
+                                                 addr_family,
+                                                 self->priv.ifindex,
+                                                 addr);
+                if (!obj) {
+                    _LOGE("mptcp: skipping address not yet configured in platform");
+                    goto skip_addr;
+                }
+                if (!IS_IPv4 && (obj->ip6_address.n_ifa_flags & IFA_F_TENTATIVE)) {
+                    NMNetnsWatcherData watcher_data = {};
+
+                    watcher_data.ip_addr.addr.addr_family = AF_INET6;
+                    watcher_data.ip_addr.addr.addr.addr6 = addr->a6.address;
+
+                    _LOGE("mptcp: skipping tentative address");
+
+                    nm_netns_watcher_add(self->priv.netns,
+                                         NM_NETNS_WATCHER_TYPE_IP_ADDR,
+                                         &watcher_data,
+                                         _NETNS_WATCHER_MPTCP_IPV6_TAG(self),
+                                         mptcp_ipv6_addr_cb,
+                                         self);
+
+                    goto skip_addr;
                 }
 
                 a.addr = nm_ip_addr_init(addr_family, addr->ax.address_ptr);
