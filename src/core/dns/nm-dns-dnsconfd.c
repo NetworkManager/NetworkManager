@@ -333,29 +333,8 @@ get_networks(NMDnsConfigIPData *ip_data, char ***networks)
 static void
 server_builder_append_interface_info(GVariantBuilder *argument_builder,
                                      const char      *interface,
-                                     char           **networks,
-                                     const char      *connection_id,
-                                     const char      *connection_uuid,
-                                     const char      *dbus_path)
+                                     char           **networks)
 {
-    if (connection_id) {
-        g_variant_builder_add(argument_builder,
-                              "{sv}",
-                              "connection-id",
-                              g_variant_new("s", connection_id));
-    }
-    if (connection_uuid) {
-        g_variant_builder_add(argument_builder,
-                              "{sv}",
-                              "connection-uuid",
-                              g_variant_new("s", connection_uuid));
-    }
-    if (dbus_path) {
-        g_variant_builder_add(argument_builder,
-                              "{sv}",
-                              "connection-object",
-                              g_variant_new("s", dbus_path));
-    }
     if (interface) {
         g_variant_builder_add(argument_builder, "{sv}", "interface", g_variant_new("s", interface));
     }
@@ -593,18 +572,11 @@ parse_all_interface_config(GVariantBuilder *argument_builder,
                            const CList     *ip_data_lst_head,
                            const char      *ca)
 {
-    NMDnsConfigIPData    *ip_data;
-    const char *const    *dns_server_strings;
-    guint                 nameserver_count;
-    const char           *ifname;
-    NMDevice             *device;
-    NMActiveConnection   *active_connection;
-    NMSettingsConnection *settings_connection;
-    NMActRequest         *act_request;
-    const char           *connection_id;
-    const char           *connection_uuid;
-    const char           *dbus_path;
-    gboolean              explicit_default = is_default_interface_explicit(ip_data_lst_head);
+    NMDnsConfigIPData *ip_data;
+    const char *const *dns_server_strings;
+    guint              nameserver_count;
+    const char        *ifname;
+    gboolean           explicit_default = is_default_interface_explicit(ip_data_lst_head);
 
     c_list_for_each_entry (ip_data, ip_data_lst_head, ip_data_lst) {
         /* No need to free insides of routing and search domains, as they point to data
@@ -619,23 +591,7 @@ parse_all_interface_config(GVariantBuilder *argument_builder,
                                                                &nameserver_count);
         if (!nameserver_count)
             continue;
-        ifname      = nm_platform_link_get_name(NM_PLATFORM_GET, ip_data->data->ifindex);
-        device      = nm_manager_get_device_by_ifindex(NM_MANAGER_GET, ip_data->data->ifindex);
-        act_request = nm_device_get_act_request(device);
-        active_connection = NM_ACTIVE_CONNECTION(act_request);
-
-        /* Presume that when we have server of this interface then the interface has to have
-         * an active connection */
-        nm_assert(active_connection);
-
-        settings_connection = nm_active_connection_get_settings_connection(active_connection);
-        connection_id       = nm_settings_connection_get_id(settings_connection);
-        connection_uuid     = nm_settings_connection_get_uuid(settings_connection);
-        dbus_path           = nm_dbus_object_get_path_still_exported(NM_DBUS_OBJECT(act_request));
-
-        /* dbus_path also should be set, because if we are parsing this connection then we
-         * expect it to be active and exported on dbus */
-        nm_assert(dbus_path && dbus_path[0] != 0);
+        ifname = nm_platform_link_get_name(NM_PLATFORM_GET, ip_data->data->ifindex);
 
         gather_interface_domains(ip_data, explicit_default, &routing_domains, &search_domains);
         get_networks(ip_data, &networks);
@@ -647,12 +603,7 @@ parse_all_interface_config(GVariantBuilder *argument_builder,
                                            routing_domains,
                                            search_domains,
                                            ca)) {
-                server_builder_append_interface_info(argument_builder,
-                                                     ifname,
-                                                     networks,
-                                                     connection_id,
-                                                     connection_uuid,
-                                                     dbus_path);
+                server_builder_append_interface_info(argument_builder, ifname, networks);
             }
         }
     }
