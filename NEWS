@@ -37,6 +37,7 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Dnsconfd plugin can now be used for configuration of system-wide DNS
   caching resolver. If dnsconfd plugin is enabled and ipvX.routed-dns is
   set to -1 then adding routes is by default enabled.
+* Add "shared" method to the IPv6 configuration options in nmtui.
 
 =============================================
 NetworkManager-1.50
