@@ -5051,6 +5051,8 @@ _l3_commit_mptcp_af(NML3Cfg          *self,
                                                         self->priv.p->combined_l3cd_commited,
                                                         addr_family,
                                                         (const NMPlatformIPAddress **) &addr) {
+                const NMPObject *obj;
+
                 /* We want to evaluate the  with-{loopback,link_local}-{4,6} flags based on the actual
                  * ifa_scope that the address will have once we configure it.
                  * "addr" is an address we want to configure, we expect that it will
@@ -5077,6 +5079,16 @@ _l3_commit_mptcp_af(NML3Cfg          *self,
                     break;
                 }
 
+                obj = nm_platform_ip_address_get(self->priv.platform,
+                                                 addr_family,
+                                                 self->priv.ifindex,
+                                                 addr);
+                if (!obj) {
+                    /* The address is not yet configured in platform, typically due to
+                     * IPv4 DAD; skip it for now otherwise the kernel will try to use
+                     * the endpoint, it will fail, and it will never try it again. */
+                    goto skip_addr;
+                }
                 a.addr = nm_ip_addr_init(addr_family, addr->ax.address_ptr);
 
                 /* We track the address with different priorities, that depends
