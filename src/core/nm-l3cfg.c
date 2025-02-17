@@ -370,6 +370,8 @@ G_DEFINE_TYPE(NML3Cfg, nm_l3cfg, G_TYPE_OBJECT)
 #define _NETNS_WATCHER_IP_ADDR_TAG(self, addr_family) \
     ((gconstpointer) & (((char *) self)[1 + NM_IS_IPv4(addr_family)]))
 
+#define _NETNS_WATCHER_MPTCP_IPV6_TAG(self) ((gconstpointer) & (((char *) self)[3]))
+
 /*****************************************************************************/
 
 #define _NMLOG_DOMAIN      LOGD_CORE
@@ -4777,6 +4779,30 @@ _global_tracker_mptcp_untrack(NML3Cfg *self, int addr_family)
                                           TRUE);
 }
 
+static void
+mptcp_ipv6_addr_cb(NMNetns                       *netns,
+                   NMNetnsWatcherType             watcher_type,
+                   const NMNetnsWatcherData      *watcher_data,
+                   gconstpointer                  tag,
+                   const NMNetnsWatcherEventData *event_data,
+                   gpointer                       user_data)
+{
+    NML3Cfg *self = user_data;
+
+    if (event_data->ip_addr.change_type == NM_PLATFORM_SIGNAL_REMOVED)
+        return;
+
+    nm_assert(NMP_OBJECT_GET_TYPE(event_data->ip_addr.obj) == NMP_OBJECT_TYPE_IP6_ADDRESS);
+
+    if (event_data->ip_addr.obj->ip6_address.n_ifa_flags & IFA_F_TENTATIVE)
+        return;
+
+    /* We are inside the handler for a platform event, we should not
+     * perform other operations on platform synchronously. Schedule a
+     * commit in a idle handler. */
+    nm_l3cfg_commit_on_idle_schedule(self, NM_L3_CFG_COMMIT_TYPE_AUTO);
+}
+
 static gboolean
 _l3_commit_mptcp_af(NML3Cfg          *self,
                     NML3CfgCommitType commit_type,
@@ -4893,6 +4919,24 @@ _l3_commit_mptcp_af(NML3Cfg          *self,
                      * the endpoint, it will fail, and it will never try it again. */
                     goto skip_addr;
                 }
+                if (!IS_IPv4 && (obj->ip6_address.n_ifa_flags & IFA_F_TENTATIVE)) {
+                    NMNetnsWatcherData watcher_data = {};
+
+                    /* The endpoint is not usable when the address is tentative.
+                     * Watch the address until it becomes non-tentative and then
+                     * schedule a new commit. */
+                    watcher_data.ip_addr.addr.addr_family = AF_INET6;
+                    watcher_data.ip_addr.addr.addr.addr6  = addr->a6.address;
+
+                    nm_netns_watcher_add(self->priv.netns,
+                                         NM_NETNS_WATCHER_TYPE_IP_ADDR,
+                                         &watcher_data,
+                                         _NETNS_WATCHER_MPTCP_IPV6_TAG(self),
+                                         mptcp_ipv6_addr_cb,
+                                         self);
+                    goto skip_addr;
+                }
+
                 a.addr = nm_ip_addr_init(addr_family, addr->ax.address_ptr);
 
                 /* We track the address with different priorities, that depends
@@ -4920,6 +4964,8 @@ skip_addr:
                 (void) 0;
             }
         }
+
+        nm_netns_watcher_remove_dirty(self->priv.netns, _NETNS_WATCHER_MPTCP_IPV6_TAG(self));
 
         if (!any_tracked) {
             /* We need to make it known that this ifindex is used. Track a dummy object. */
@@ -5650,6 +5696,7 @@ finalize(GObject *object)
     if (self->priv.netns) {
         nm_netns_watcher_remove_all(self->priv.netns, _NETNS_WATCHER_IP_ADDR_TAG(self, AF_INET));
         nm_netns_watcher_remove_all(self->priv.netns, _NETNS_WATCHER_IP_ADDR_TAG(self, AF_INET6));
+        nm_netns_watcher_remove_all(self->priv.netns, _NETNS_WATCHER_MPTCP_IPV6_TAG(self));
     }
 
     nm_prioq_destroy(&self->priv.p->failedobj_prioq);
