@@ -1021,6 +1021,22 @@ nm_g_variant_equal(GVariant *a, GVariant *b)
 
 /*****************************************************************************/
 
+#if defined(__GNUC__) && (__GNUC__ >= 12)
+#define _NM_BACKPORT_SYMBOL_IMPL(version,                                                        \
+                                 return_type,                                                    \
+                                 orig_func,                                                      \
+                                 versioned_func,                                                 \
+                                 args_typed,                                                     \
+                                 args)                                                           \
+    return_type versioned_func args_typed;                                                       \
+                                                                                                 \
+    __attribute__((__symver__(                                                                   \
+        G_STRINGIFY(orig_func) "@" G_STRINGIFY(version)))) return_type versioned_func args_typed \
+    {                                                                                            \
+        return orig_func args;                                                                   \
+    }                                                                                            \
+    return_type orig_func args_typed;
+#else
 #define _NM_BACKPORT_SYMBOL_IMPL(version,                                                       \
                                  return_type,                                                   \
                                  orig_func,                                                     \
@@ -1035,6 +1051,7 @@ nm_g_variant_equal(GVariant *a, GVariant *b)
     return_type orig_func args_typed;                                                           \
     __asm__(".symver " G_STRINGIFY(versioned_func) ", " G_STRINGIFY(orig_func) "@" G_STRINGIFY( \
         version))
+#endif
 
 #define NM_BACKPORT_SYMBOL(version, return_type, func, args_typed, args) \
     _NM_BACKPORT_SYMBOL_IMPL(version, return_type, func, _##func##_##version, args_typed, args)
