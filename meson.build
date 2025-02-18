@@ -173,13 +173,13 @@ endif
 
 enable_lto = get_option('b_lto')
 if enable_lto
-  if  cc.get_id() == 'clang'
-    clang_version = cc.version()
-    if clang_version <= '18.0.0'
-      error('Clang version should be greater then 18.0.0 got : ' + clang_version)
+  cc_version = cc.version()
+  if cc.get_id() == 'clang'
+    if cc_version <= '18.0.0'
+      error('Clang version should be greater than 18.0.0, got : ' + cc_version)
     endif
-  else
-    # Meson already adds '-flto'
+  elif cc_version < '12.0'
+    # GCC < 12 breaks libnm symbol versioning with LTO, use workarounds
     lto_flag = '-flto-partition=none'
     assert(cc.has_argument(lto_flag), '-flto-partition=none not supported. Disable link-time optimization with -Db_lto=false.')
     common_flags += lto_flag
