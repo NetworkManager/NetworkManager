@@ -140,6 +140,8 @@ out:
 
 /*****************************************************************************/
 
+static const NMUtilsNamedValue *gl_interfaces_map = NULL;
+
 static NMUtilsNamedValue *
 _map_interfaces_parse(void)
 {
@@ -200,9 +202,7 @@ _map_interfaces_parse(void)
 static const char *
 _device_get_hwaddr(NMDevice *device)
 {
-    static const NMUtilsNamedValue *gl_map_interfaces_map = NULL;
-    static gsize                    gl_initialized        = 0;
-    const NMUtilsNamedValue        *map                   = NULL;
+    const NMUtilsNamedValue *map = NULL;
 
     nm_assert(NM_IS_DEVICE_ETHERNET(device) || NM_IS_DEVICE_MACVLAN(device)
               || NM_IS_DEVICE_VLAN(device));
@@ -216,12 +216,7 @@ _device_get_hwaddr(NMDevice *device)
          * pretend that device with ip-interface "$INTERFACE" has the specified permanent
          * MAC address. */
 
-        if (g_once_init_enter(&gl_initialized)) {
-            gl_map_interfaces_map = _map_interfaces_parse();
-            g_once_init_leave(&gl_initialized, 1);
-        }
-
-        map = gl_map_interfaces_map;
+        map = gl_interfaces_map;
         if (G_UNLIKELY(map)) {
             const char *const iface = nm_device_get_iface(NM_DEVICE(device));
 
@@ -1005,6 +1000,9 @@ main(int argc, const char *const *argv)
         _LOGI("NetworkManager is not running");
         goto done;
     }
+
+    /* Initialize map used in test scenarios. */
+    gl_interfaces_map = _map_interfaces_parse();
 
     result = _get_config(sigterm_cancellable, provider, nmc);
     if (!result)
