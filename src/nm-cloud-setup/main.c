@@ -736,6 +736,9 @@ _oci_new_vlan_dev(SigTermData                          *sigterm_data,
     gs_free char                       *macvlan_name      = NULL;
     gs_free char                       *connection_id     = NULL;
     char                               *ifname            = NULL;
+    const char                         *macvlan_parent    = NULL;
+    const char                         *wired_mac_addr    = NULL;
+    const NMUtilsNamedValue            *map               = NULL;
     const char                         *ip4_config_method;
     NMSetting                          *s_user;
 
@@ -744,11 +747,29 @@ _oci_new_vlan_dev(SigTermData                          *sigterm_data,
     macvlan_name  = g_strdup_printf("macvlan%ld", config_data->iface_idx);
     connection_id = g_strdup_printf("%s%ld", connection_type, config_data->iface_idx);
 
+    wired_mac_addr = parent_hwaddr;
     if (strcmp(connection_type, NM_SETTING_MACVLAN_SETTING_NAME) == 0) {
+        map = gl_interfaces_map;
+        if (G_UNLIKELY(map)) {
+            for (; map->name; map++) {
+                if (nm_streq(map->value_str, parent_hwaddr)) {
+                    /* Use macvlan.parent instead of wired.mac-address
+			     * for parent matching, because currently the MAC
+			     * addresses in NM-CI are wrong. */
+                    macvlan_parent = map->name;
+                    wired_mac_addr = NULL;
+                    break;
+                }
+            }
+        }
+
         nm_connection_add_setting(connection,
                                   g_object_new(NM_TYPE_SETTING_MACVLAN,
                                                NM_SETTING_MACVLAN_MODE,
                                                NM_SETTING_MACVLAN_MODE_VEPA,
+                                               /* Only used for testing! */
+                                               NM_SETTING_MACVLAN_PARENT,
+                                               macvlan_parent,
                                                NULL));
         nm_connection_add_setting(connection,
                                   g_object_new(NM_TYPE_SETTING_IP6_CONFIG,
@@ -784,10 +805,11 @@ _oci_new_vlan_dev(SigTermData                          *sigterm_data,
                                            NM_SETTING_IP_CONFIG_METHOD,
                                            ip4_config_method,
                                            NULL));
+
     nm_connection_add_setting(connection,
                               g_object_new(NM_TYPE_SETTING_WIRED,
                                            NM_SETTING_WIRED_MAC_ADDRESS,
-                                           parent_hwaddr,
+                                           wired_mac_addr,
                                            NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
                                            hwaddr,
                                            NULL));
