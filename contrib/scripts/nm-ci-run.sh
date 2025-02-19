@@ -167,6 +167,7 @@ meson setup build \
     -D libpsl=false \
     -D vapi=false \
     -D introspection=$_WITH_DOCS \
+    -D man=$_WITH_DOCS \
     -D qt=false \
     -D crypto=$_WITH_CRYPTO \
     -D docs=$_WITH_DOCS \
