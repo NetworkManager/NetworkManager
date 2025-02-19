@@ -32,6 +32,8 @@ typedef struct {
     char            *name_owner;
     guint            name_owner_changed_id;
     GCancellable    *name_owner_cancellable;
+    bool             was_start_tried;
+    GCancellable    *start_cancellable;
     GVariant        *latest_update_args;
 
     guint         awaited_configuration_serial;
@@ -483,6 +485,7 @@ name_owner_changed(NMDnsDnsconfd *self, const char *name_owner)
     }
 
     _LOGT("D-Bus name for dnsconfd got owner %s", name_owner);
+    priv->was_start_tried = FALSE;
 
     if (!subscribe_serial(self)) {
         /* This means that in time between new name and subscribe serial call
@@ -527,6 +530,33 @@ get_name_owner_cb(const char *name_owner, GError *error, gpointer user_data)
     name_owner_changed(user_data, name_owner);
 }
 
+static void
+dnsconfd_start_done(GObject *source_object, GAsyncResult *res, gpointer user_data)
+{
+    NMDnsDnsconfd             *self;
+    NMDnsDnsconfdPrivate      *priv;
+    gs_free_error GError      *error    = NULL;
+    gs_unref_variant GVariant *response = NULL;
+
+    response = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source_object), res, &error);
+    if (nm_utils_error_is_cancelled(error))
+        return;
+
+    self = user_data;
+    priv = NM_DNS_DNSCONFD_GET_PRIVATE(self);
+    nm_clear_g_cancellable(&priv->start_cancellable);
+
+    if (!res) {
+        g_dbus_error_strip_remote_error(error);
+        _LOGW("failed to start Dnsconfd %s", error->message);
+    } else {
+        _LOGT("succesfully started Dnsconfd");
+    }
+
+    /* No update maybe changed or state change, as this is handled by the name owner callbacks
+     * which should be triggered right after this */
+}
+
 static ConnectionState
 ensure_all_connected(NMDnsDnsconfd *self)
 {
@@ -562,6 +592,19 @@ ensure_all_connected(NMDnsDnsconfd *self)
                                                priv->name_owner_cancellable,
                                                get_name_owner_cb,
                                                self);
+    }
+
+    if (!priv->was_start_tried) {
+        _LOGT("attempting to start Dnsconfd via DBus");
+        priv->was_start_tried = TRUE;
+        nm_clear_g_cancellable(&priv->start_cancellable);
+        priv->start_cancellable = g_cancellable_new();
+        nm_dbus_connection_call_start_service_by_name(priv->dbus_connection,
+                                                      DNSCONFD_DBUS_SERVICE,
+                                                      -1,
+                                                      priv->start_cancellable,
+                                                      dnsconfd_start_done,
+                                                      self);
     }
 
     return CONNECTION_WAIT;
@@ -689,6 +732,7 @@ stop(NMDnsPlugin *plugin)
     nm_clear_g_cancellable(&priv->update_cancellable);
     nm_clear_g_cancellable(&priv->name_owner_cancellable);
     nm_clear_g_cancellable(&priv->serial_cancellable);
+    nm_clear_g_cancellable(&priv->start_cancellable);
     nm_clear_g_dbus_connection_signal(priv->dbus_connection, &priv->name_owner_changed_id);
     nm_clear_g_dbus_connection_signal(priv->dbus_connection, &priv->properties_changed_id);
 }
