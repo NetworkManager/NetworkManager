@@ -1,12 +1,17 @@
 =============================================
-NetworkManager-1.52-rc1
-Overview of changes since NetworkManager-1.50
+NetworkManager-1.54
+Overview of changes since NetworkManager-1.52
 =============================================
 
-This is a NetworkManager release candidate. The API is
+This is a snapshot of NetworkManager development. The API is
 subject to change and not guaranteed to be compatible with
 the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
+
+=============================================
+NetworkManager-1.52
+Overview of changes since NetworkManager-1.50
+=============================================
 
 * Store interactive history in `$XDG_CACHE_HOME/nmcli-history` instead of
   `~/.nmcli-history`
