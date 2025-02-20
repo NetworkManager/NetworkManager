@@ -98,7 +98,7 @@ void nm_netns_watcher_add(NMNetns                  *self,
                           NMNetnsWatcherCallback    callback,
                           gpointer                  user_data);
 
-void
-nm_netns_watcher_remove_all(NMNetns *self, gconstpointer tag, gboolean all /* or only dirty */);
+void nm_netns_watcher_remove_all(NMNetns *self, gconstpointer tag);
+void nm_netns_watcher_remove_dirty(NMNetns *self, gconstpointer tag);
 
 #endif /* __NM_NETNS_H__ */
