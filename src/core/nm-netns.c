@@ -1369,8 +1369,8 @@ nm_netns_watcher_remove_handle(NMNetns *self, NMNetnsWatcherHandle *handle)
         g_object_unref(self);
 }
 
-void
-nm_netns_watcher_remove_all(NMNetns *self, gconstpointer tag, gboolean all)
+static void
+watcher_remove(NMNetns *self, gconstpointer tag, gboolean all)
 {
     NMNetnsPrivate       *priv;
     WatcherByTag         *watcher_by_tag;
@@ -1418,6 +1418,21 @@ nm_netns_watcher_remove_all(NMNetns *self, gconstpointer tag, gboolean all)
             return;
         }
     }
+}
+
+void
+nm_netns_watcher_remove_all(NMNetns *self, gconstpointer tag)
+{
+    watcher_remove(self, tag, TRUE);
+}
+
+/* Similar to nm_netns_watcher_remove_all(), but removes only watchers
+ * that were marked as "dirty" in a previous call of this function and were
+ * not added back via nm_netns_watcher_add() in the meantime. */
+void
+nm_netns_watcher_remove_dirty(NMNetns *self, gconstpointer tag)
+{
+    watcher_remove(self, tag, FALSE);
 }
 
 /*****************************************************************************/
