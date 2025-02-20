@@ -1941,7 +1941,7 @@ unblock_autoconnect_for_ports(NMPolicy   *self,
 {
     NMPolicyPrivate             *priv = NM_POLICY_GET_PRIVATE(self);
     NMSettingsConnection *const *connections;
-    gboolean                     changed;
+    gboolean                     changed = FALSE;
     guint                        i;
 
     _LOGT(LOGD_CORE,
