@@ -207,39 +207,38 @@ _device_get_hwaddr(NMDevice *device)
     nm_assert(NM_IS_DEVICE_ETHERNET(device) || NM_IS_DEVICE_MACVLAN(device)
               || NM_IS_DEVICE_VLAN(device));
 
-    /* Network interfaces in cloud environments are identified by their permanent
-     * MAC address.
-     *
-     * For testing, we can set NMCS_ENV_NM_CLOUD_SETUP_MAP_INTERFACES
-     * to a ';' separate list of "$INTERFACE=$HWADDR", which means that we
-     * pretend that device with ip-interface "$INTERFACE" has the specified permanent
-     * MAC address. */
+    if (NM_IS_DEVICE_ETHERNET(device)) {
+        /* Ethernet interfaces in cloud environments are identified by their permanent
+         * MAC address.
+         *
+         * For testing, we can set NMCS_ENV_NM_CLOUD_SETUP_MAP_INTERFACES
+         * to a ';' separate list of "$INTERFACE=$HWADDR", which means that we
+         * pretend that device with ip-interface "$INTERFACE" has the specified permanent
+         * MAC address. */
 
-    if (g_once_init_enter(&gl_initialized)) {
-        gl_map_interfaces_map = _map_interfaces_parse();
-        g_once_init_leave(&gl_initialized, 1);
-    }
-
-    map = gl_map_interfaces_map;
-    if (G_UNLIKELY(map)) {
-        const char *const iface = nm_device_get_iface(NM_DEVICE(device));
-
-        /* For testing, the device<->hwaddr is remapped and the actual permanent
-         * MAC address of the device ignored. This mapping is configured via
-         * NMCS_ENV_NM_CLOUD_SETUP_MAP_INTERFACES environment variable. */
-
-        if (!iface)
-            return NULL;
-
-        for (; map->name; map++) {
-            if (nm_streq(map->name, iface))
-                return map->value_str;
+        if (g_once_init_enter(&gl_initialized)) {
+            gl_map_interfaces_map = _map_interfaces_parse();
+            g_once_init_leave(&gl_initialized, 1);
         }
 
-        return NULL;
-    }
+        map = gl_map_interfaces_map;
+        if (G_UNLIKELY(map)) {
+            const char *const iface = nm_device_get_iface(NM_DEVICE(device));
 
-    if (NM_IS_DEVICE_ETHERNET(device)) {
+            /* For testing, the device<->hwaddr is remapped and the actual permanent
+             * MAC address of the device ignored. This mapping is configured via
+             * NMCS_ENV_NM_CLOUD_SETUP_MAP_INTERFACES environment variable. */
+            if (!iface)
+                return NULL;
+
+            for (; map->name; map++) {
+                if (nm_streq(map->name, iface))
+                    return map->value_str;
+            }
+
+            return NULL;
+        }
+
         return nm_device_ethernet_get_permanent_hw_address(NM_DEVICE_ETHERNET(device));
     } else {
         return nm_device_get_hw_address(device);
