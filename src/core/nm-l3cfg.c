@@ -4764,7 +4764,7 @@ next:
     }
 
 out:
-    nm_netns_watcher_remove_all(self->priv.netns, TAG, FALSE);
+    nm_netns_watcher_remove_dirty(self->priv.netns, TAG);
 }
 /*****************************************************************************/
 
@@ -5636,12 +5636,8 @@ finalize(GObject *object)
     gboolean changed;
 
     if (self->priv.netns) {
-        nm_netns_watcher_remove_all(self->priv.netns,
-                                    _NETNS_WATCHER_IP_ADDR_TAG(self, AF_INET),
-                                    TRUE);
-        nm_netns_watcher_remove_all(self->priv.netns,
-                                    _NETNS_WATCHER_IP_ADDR_TAG(self, AF_INET6),
-                                    TRUE);
+        nm_netns_watcher_remove_all(self->priv.netns, _NETNS_WATCHER_IP_ADDR_TAG(self, AF_INET));
+        nm_netns_watcher_remove_all(self->priv.netns, _NETNS_WATCHER_IP_ADDR_TAG(self, AF_INET6));
     }
 
     nm_prioq_destroy(&self->priv.p->failedobj_prioq);
