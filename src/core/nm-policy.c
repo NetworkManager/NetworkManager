@@ -960,7 +960,7 @@ update_system_hostname(NMPolicy *self, const char *msg, gboolean reset_retry_int
 
     /* Try a persistent hostname first */
     configured_hostname = nm_hostname_manager_get_static_hostname(priv->hostname_manager);
-    if (configured_hostname && nm_utils_is_specific_hostname(configured_hostname)) {
+    if (configured_hostname && nm_utils_is_not_empty_hostname(configured_hostname)) {
         _set_hostname(self, configured_hostname, "from system configuration", FALSE);
         priv->dhcp_hostname = FALSE;
         return;
