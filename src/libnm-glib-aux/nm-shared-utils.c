@@ -6004,8 +6004,8 @@ nm_utils_is_localhost(const char *name)
     return FALSE;
 }
 
-gboolean
-nm_utils_is_specific_hostname(const char *name)
+static gboolean
+_nm_utils_check_hostname(const char *name, bool allow_localhost)
 {
     if (nm_str_is_empty(name))
         return FALSE;
@@ -6016,12 +6016,24 @@ nm_utils_is_specific_hostname(const char *name)
         return FALSE;
     }
 
-    if (nm_utils_is_localhost(name))
+    if (!allow_localhost && nm_utils_is_localhost(name))
         return FALSE;
 
     /* FIXME: properly validate the hostname, like systemd's hostname_is_valid() */
 
     return TRUE;
+}
+
+gboolean
+nm_utils_is_specific_hostname(const char *name)
+{
+    return _nm_utils_check_hostname(name, FALSE);
+}
+
+gboolean
+nm_utils_is_not_empty_hostname(const char *name)
+{
+    return _nm_utils_check_hostname(name, TRUE);
 }
 
 /*****************************************************************************/

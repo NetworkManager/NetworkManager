@@ -3419,6 +3419,7 @@ char *_nm_utils_format_variant_attributes(GHashTable                          *a
 gboolean nm_utils_is_localhost(const char *name);
 
 gboolean nm_utils_is_specific_hostname(const char *name);
+gboolean nm_utils_is_not_empty_hostname(const char *name);
 
 struct passwd;
 
