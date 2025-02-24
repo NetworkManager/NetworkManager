@@ -271,8 +271,7 @@ no-auto-default=*
             Set the management mode of the hostname. This parameter will
             affect only the transient hostname. If a valid static hostname is set,
             NetworkManager will skip the update of the hostname despite the value of
-            this option. An hostname empty or equal to 'localhost', 'localhost6',
-            'localhost.localdomain' or 'localhost6.localdomain' is considered invalid.
+            this option. A hostname empty or equal to '(none)' is considered invalid.
           </para>
           <para><literal>default</literal>: NetworkManager will update the
           hostname with the one provided via DHCP or reverse DNS lookup of the
