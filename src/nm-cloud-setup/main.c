@@ -421,12 +421,11 @@ _nmc_mangle_connection(NMDevice                             *device,
     NM_SET_OUT(out_skipped_single_addr, FALSE);
     NM_SET_OUT(out_changed, FALSE);
 
-    if (strcmp(nm_connection_get_connection_type(connection), NM_SETTING_MACVLAN_SETTING_NAME)
-        == 0) {
+    if (nm_streq(nm_connection_get_connection_type(connection), NM_SETTING_MACVLAN_SETTING_NAME)) {
         /* The MACVLAN just sits in between, no L3 configuration on it */
         return;
-    } else if (strcmp(nm_connection_get_connection_type(connection), NM_SETTING_VLAN_SETTING_NAME)
-               != 0) {
+    } else if (!nm_streq(nm_connection_get_connection_type(connection),
+                         NM_SETTING_VLAN_SETTING_NAME)) {
         /* Preserve existing L3 configuration if not a VLAN */
         if (device) {
             if ((ac = nm_device_get_active_connection(device))
@@ -747,14 +746,14 @@ _oci_new_vlan_dev(SigTermData                          *sigterm_data,
     connection_id = g_strdup_printf("%s%ld", connection_type, config_data->iface_idx);
 
     wired_mac_addr = parent_hwaddr;
-    if (strcmp(connection_type, NM_SETTING_MACVLAN_SETTING_NAME) == 0) {
+    if (nm_streq(connection_type, NM_SETTING_MACVLAN_SETTING_NAME)) {
+        /* In NM-ci, use macvlan.parent instead of wired.mac-address for parent matching
+         * because we are faking the MAC addresses via NM_CLOUD_SETUP_MAP_INTERFACES.
+         * The daemon still needs the real MAC, not the mapped one, so it won't work. */
         map = gl_interfaces_map;
         if (G_UNLIKELY(map)) {
             for (; map->name; map++) {
                 if (nm_streq(map->value_str, parent_hwaddr)) {
-                    /* Use macvlan.parent instead of wired.mac-address
-                     * for parent matching, because currently the MAC
-                     * addresses in NM-CI are wrong. */
                     macvlan_parent = map->name;
                     wired_mac_addr = NULL;
                     break;
@@ -766,7 +765,6 @@ _oci_new_vlan_dev(SigTermData                          *sigterm_data,
                                   g_object_new(NM_TYPE_SETTING_MACVLAN,
                                                NM_SETTING_MACVLAN_MODE,
                                                NM_SETTING_MACVLAN_MODE_VEPA,
-                                               /* Only used for testing! */
                                                NM_SETTING_MACVLAN_PARENT,
                                                macvlan_parent,
                                                NULL));
@@ -777,7 +775,7 @@ _oci_new_vlan_dev(SigTermData                          *sigterm_data,
                                                NULL));
         ip4_config_method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
         ifname            = macvlan_name;
-    } else if (strcmp(connection_type, NM_SETTING_VLAN_SETTING_NAME) == 0) {
+    } else if (nm_streq(connection_type, NM_SETTING_VLAN_SETTING_NAME)) {
         nm_connection_add_setting(connection,
                                   g_object_new(NM_TYPE_SETTING_VLAN,
                                                NM_SETTING_VLAN_PARENT,
@@ -861,7 +859,7 @@ _oci_config_vnic_dev(SigTermData                          *sigterm_data,
         return _config_existing(sigterm_data, config_data, nmc, result, connection_type, device);
     } else {
         /* There is no device, but we're configuring a VLAN.
-	 * We can just go ahead and create one with a new connection. */
+         * We can just go ahead and create one with a new connection. */
         return _oci_new_vlan_dev(sigterm_data,
                                  config_data,
                                  nmc,
