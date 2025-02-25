@@ -25,6 +25,12 @@ install() {
     fi
 }
 
+install_ignore_missing() {
+    for p; do
+        install "$p" || :
+    done
+}
+
 if test "$NM_NO_EXTRA" != 1; then
     # these packages are convenient for developing, but not necessary
     # for CI testing.
@@ -82,21 +88,15 @@ install \
     which \
     #end
 
-# Some packages don't exist in certain distributions. Ignore errors
-# installing them, but still drag them in when available.
-install --skip-unavailable \
+# some packages don't exist in certain distributions. Install them one-by-one, and ignore errors.
+install_ignore_missing \
     black \
-    dbus-python \
     dhclient \
     iproute-tc \
     libasan \
     libpsl-devel \
     libubsan \
     libvala-devel \
-    pexpect \
-    pygobject3-base \
-    python-gobject-base \
-    python36-pexpect \
     qt-devel \
     teamd-devel \
     vala-devel \

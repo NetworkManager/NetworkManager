@@ -39,7 +39,7 @@ fi
 fi
 
 
-NM_NO_EXTRA=1 NM_INSTALL="yum install -y" ./contrib/fedora/REQUIRED_PACKAGES
+NM_NO_EXTRA=1 NM_INSTALL="yum install -y --allowerasing" ./contrib/fedora/REQUIRED_PACKAGES
 yum install -y glibc-langpack-pl ccache clang
 
 # containers have "tsflags=nodocs" in /etc/dnf/dnf.conf. We need /usr/shared/gtk-doc/html
@@ -65,8 +65,6 @@ if command -v dnf &>/dev/null; then
 else
     debuginfo-install -y glib2
 fi
-
-contrib/scripts/nm-ci-patch-gtkdoc.sh || true
 
 if [ -x /usr/bin/ninja ] && ! [ -x /usr/bin/ninja-build ]; then
     ln -s /usr/bin/ninja-build /usr/bin/ninja
