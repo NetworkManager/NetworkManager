@@ -1419,6 +1419,9 @@ _check_and_add_domain(GPtrArray **p_arr, const char *domain)
     if (domain[0] == '.' || strstr(domain, ".."))
         return FALSE;
 
+    if (!g_utf8_validate(domain, -1, NULL))
+        return FALSE;
+
     len = strlen(domain);
     if (domain[len - 1] == '.') {
         copy   = g_strndup(domain, len - 1);
