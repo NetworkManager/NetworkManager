@@ -1,0 +1,26 @@
+[Unit]
+Description=NetworkManager Wait Online (initrd)
+DefaultDependencies=no
+Requires=NetworkManager-initrd.service
+After=NetworkManager-initrd.service
+Before=network-online.target
+ConditionPathExists=/etc/initrd-release
+ConditionPathExists=/run/NetworkManager/initrd/neednet
+
+[Service]
+# `nm-online -s` waits until the point when NetworkManager logs
+# "startup complete". That is when startup actions are settled and
+# devices and profiles reached a conclusive activated or deactivated
+# state. It depends on which profiles are configured to autoconnect and
+# also depends on profile settings like ipv4.may-fail/ipv6.may-fail,
+# which affect when a profile is considered fully activated.
+# Check NetworkManager logs to find out why wait-online takes a certain
+# time.
+
+Type=oneshot
+ExecStart=@bindir@/nm-online -s -q
+RemainAfterExit=yes
+Environment=NM_ONLINE_TIMEOUT=3600
+
+[Install]
+WantedBy=initrd.target network-online.target
