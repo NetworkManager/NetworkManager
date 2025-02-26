@@ -49,7 +49,8 @@ NMWifiAP *nm_wifi_ap_new_from_properties(const struct _NMSupplicantBssInfo *bss_
 NMWifiAP *nm_wifi_ap_new_fake_from_connection(NMConnection *connection);
 
 gboolean nm_wifi_ap_update_from_properties(NMWifiAP                          *ap,
-                                           const struct _NMSupplicantBssInfo *bss_info);
+                                           const struct _NMSupplicantBssInfo *bss_info,
+                                           gboolean                          update_signal);
 
 gboolean nm_wifi_ap_check_compatible(NMWifiAP *self, NMConnection *connection);
 

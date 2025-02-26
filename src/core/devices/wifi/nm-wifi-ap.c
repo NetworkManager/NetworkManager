@@ -388,7 +388,7 @@ nm_wifi_ap_get_rsn_flags(const NMWifiAP *self)
 /*****************************************************************************/
 
 gboolean
-nm_wifi_ap_update_from_properties(NMWifiAP *ap, const NMSupplicantBssInfo *bss_info)
+nm_wifi_ap_update_from_properties(NMWifiAP *ap, const NMSupplicantBssInfo *bss_info, gboolean update_signal)
 {
     NMWifiAPPrivate *priv;
     gboolean         changed = FALSE;
@@ -410,7 +410,11 @@ nm_wifi_ap_update_from_properties(NMWifiAP *ap, const NMSupplicantBssInfo *bss_i
 
     changed |= nm_wifi_ap_set_flags(ap, bss_info->ap_flags);
     changed |= nm_wifi_ap_set_mode(ap, bss_info->mode);
-    changed |= nm_wifi_ap_set_strength(ap, bss_info->signal_percent);
+    if (update_signal) {
+        /* code */
+        changed |= nm_wifi_ap_set_strength(ap, bss_info->signal_percent);
+    }
+    
     changed |= nm_wifi_ap_set_freq(ap, bss_info->frequency);
     changed |= nm_wifi_ap_set_ssid(ap, bss_info->ssid);
 
@@ -760,7 +764,7 @@ nm_wifi_ap_new_from_properties(const NMSupplicantBssInfo *bss_info)
     NMWifiAP *ap;
 
     ap = g_object_new(NM_TYPE_WIFI_AP, NULL);
-    nm_wifi_ap_update_from_properties(ap, bss_info);
+    nm_wifi_ap_update_from_properties(ap, bss_info, TRUE);
     return ap;
 }
 
