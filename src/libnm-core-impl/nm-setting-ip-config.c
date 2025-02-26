@@ -5566,7 +5566,7 @@ nm_setting_ip_config_get_shared_dhcp_lease_time(NMSettingIPConfig *setting)
  *
  * Returns: the #NMSettingIPConfig:forwarding property of the setting
  *
- * Since: 1.52
+ * Since: 1.54
  **/
 NMSettingIPConfigForwarding
 nm_setting_ip_config_get_forwarding(NMSettingIPConfig *setting)
@@ -7159,7 +7159,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      *        use kernel default otherwise.
      *   %NM_SETTING_IP_CONFIG_FORWARDING_IGNORE: leave the forwarding unchanged.
      *
-     * Since: 1.52
+     * Since: 1.54
      */
     obj_properties[PROP_FORWARDING] =
         g_param_spec_int(NM_SETTING_IP_CONFIG_FORWARDING,
