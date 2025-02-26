@@ -1,0 +1,27 @@
+[Unit]
+Description=NetworkManager Configuration (initrd)
+DefaultDependencies=no
+Wants=systemd-journald.socket
+After=systemd-journald.socket
+Before=systemd-udevd.service systemd-udev-trigger.service
+ConditionPathExists=/etc/initrd-release
+
+[Service]
+Type=oneshot
+ExecStartPre=/bin/sh -c "rm -f /run/NetworkManager/system-connections/*"
+ExecStart=/bin/sh -c "@libexecdir@/nm-initrd-generator -- $(cat /proc/cmdline)"
+ExecStartPost=/bin/sh -c ' \
+    for i in /{usr/lib,run,etc}/NetworkManager/system-connections/*; do \
+        [ -f "$i" ] || continue; \
+        mkdir -p /run/NetworkManager/initrd; \
+        : > /run/NetworkManager/initrd/neednet; \
+        break; \
+    done; \
+    if [ -s /run/NetworkManager/initrd/hostname ]; then \
+        cat /run/NetworkManager/initrd/hostname > /proc/sys/kernel/hostname; \
+    fi \
+'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=initrd.target

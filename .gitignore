@@ -84,6 +84,9 @@ test-*.trs
 /data/org.freedesktop.NetworkManager.policy.in
 /data/nm-sudo.service
 /data/nm-priv-helper.service
+/data/NetworkManager-config-initrd.service
+/data/NetworkManager-initrd.service
+/data/NetworkManager-wait-online-initrd.service
 
 /docs/api/version.xml
 /docs/api/settings-spec.html

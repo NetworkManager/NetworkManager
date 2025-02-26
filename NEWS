@@ -8,6 +8,8 @@ subject to change and not guaranteed to be compatible with
 the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
+* Added systemd services to provide networking in the initrd.
+
 =============================================
 NetworkManager-1.52
 Overview of changes since NetworkManager-1.50
