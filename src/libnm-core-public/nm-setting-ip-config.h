@@ -66,7 +66,7 @@ typedef enum {
  * interface-specific forwarding. When enabled, the interface will act
  * as a router to forward the packet from one interface to another.
  *
- * Since: 1.52
+ * Since: 1.54
  */
 typedef enum {
     NM_SETTING_IP_CONFIG_FORWARDING_DEFAULT = -1,
@@ -566,7 +566,7 @@ NM_AVAILABLE_IN_1_52
 const char *nm_setting_ip_config_get_shared_dhcp_range(NMSettingIPConfig *setting);
 NM_AVAILABLE_IN_1_52
 int nm_setting_ip_config_get_shared_dhcp_lease_time(NMSettingIPConfig *setting);
-NM_AVAILABLE_IN_1_52
+NM_AVAILABLE_IN_1_54
 NMSettingIPConfigForwarding nm_setting_ip_config_get_forwarding(NMSettingIPConfig *setting);
 
 G_END_DECLS
