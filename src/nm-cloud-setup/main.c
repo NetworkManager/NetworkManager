@@ -140,6 +140,8 @@ out:
 
 /*****************************************************************************/
 
+static const NMUtilsNamedValue *gl_interfaces_map = NULL;
+
 static NMUtilsNamedValue *
 _map_interfaces_parse(void)
 {
@@ -200,46 +202,38 @@ _map_interfaces_parse(void)
 static const char *
 _device_get_hwaddr(NMDevice *device)
 {
-    static const NMUtilsNamedValue *gl_map_interfaces_map = NULL;
-    static gsize                    gl_initialized        = 0;
-    const NMUtilsNamedValue        *map                   = NULL;
+    const NMUtilsNamedValue *map = NULL;
 
     nm_assert(NM_IS_DEVICE_ETHERNET(device) || NM_IS_DEVICE_MACVLAN(device)
               || NM_IS_DEVICE_VLAN(device));
 
-    /* Network interfaces in cloud environments are identified by their permanent
-     * MAC address.
-     *
-     * For testing, we can set NMCS_ENV_NM_CLOUD_SETUP_MAP_INTERFACES
-     * to a ';' separate list of "$INTERFACE=$HWADDR", which means that we
-     * pretend that device with ip-interface "$INTERFACE" has the specified permanent
-     * MAC address. */
+    if (NM_IS_DEVICE_ETHERNET(device)) {
+        /* Ethernet interfaces in cloud environments are identified by their permanent
+         * MAC address.
+         *
+         * For testing, we can set NMCS_ENV_NM_CLOUD_SETUP_MAP_INTERFACES
+         * to a ';' separate list of "$INTERFACE=$HWADDR", which means that we
+         * pretend that device with ip-interface "$INTERFACE" has the specified permanent
+         * MAC address. */
 
-    if (g_once_init_enter(&gl_initialized)) {
-        gl_map_interfaces_map = _map_interfaces_parse();
-        g_once_init_leave(&gl_initialized, 1);
-    }
+        map = gl_interfaces_map;
+        if (G_UNLIKELY(map)) {
+            const char *const iface = nm_device_get_iface(NM_DEVICE(device));
 
-    map = gl_map_interfaces_map;
-    if (G_UNLIKELY(map)) {
-        const char *const iface = nm_device_get_iface(NM_DEVICE(device));
+            /* For testing, the device<->hwaddr is remapped and the actual permanent
+             * MAC address of the device ignored. This mapping is configured via
+             * NMCS_ENV_NM_CLOUD_SETUP_MAP_INTERFACES environment variable. */
+            if (!iface)
+                return NULL;
 
-        /* For testing, the device<->hwaddr is remapped and the actual permanent
-         * MAC address of the device ignored. This mapping is configured via
-         * NMCS_ENV_NM_CLOUD_SETUP_MAP_INTERFACES environment variable. */
+            for (; map->name; map++) {
+                if (nm_streq(map->name, iface))
+                    return map->value_str;
+            }
 
-        if (!iface)
             return NULL;
-
-        for (; map->name; map++) {
-            if (nm_streq(map->name, iface))
-                return map->value_str;
         }
 
-        return NULL;
-    }
-
-    if (NM_IS_DEVICE_ETHERNET(device)) {
         return nm_device_ethernet_get_permanent_hw_address(NM_DEVICE_ETHERNET(device));
     } else {
         return nm_device_get_hw_address(device);
@@ -295,7 +289,7 @@ _nmc_get_ethernet_hwaddrs(NMClient *nmc)
 }
 
 static NMDevice *
-_nmc_get_device_by_hwaddr(NMClient *nmc, const char *hwaddr)
+_nmc_get_device_by_hwaddr(NMClient *nmc, const GType type_device, const char *hwaddr)
 {
     const GPtrArray *devices;
     guint            i;
@@ -307,7 +301,7 @@ _nmc_get_device_by_hwaddr(NMClient *nmc, const char *hwaddr)
         const char   *hwaddr_dev;
         gs_free char *s = NULL;
 
-        if (!NM_IS_DEVICE_ETHERNET(device))
+        if (!G_TYPE_CHECK_INSTANCE_TYPE(device, type_device))
             continue;
 
         hwaddr_dev = _device_get_hwaddr(device);
@@ -427,12 +421,21 @@ _nmc_mangle_connection(NMDevice                             *device,
     NM_SET_OUT(out_skipped_single_addr, FALSE);
     NM_SET_OUT(out_changed, FALSE);
 
+    if (nm_streq(nm_connection_get_connection_type(connection), NM_SETTING_MACVLAN_SETTING_NAME)) {
+        /* The MACVLAN just sits in between, no L3 configuration on it */
+        return;
+    } else if (!nm_streq(nm_connection_get_connection_type(connection),
+                         NM_SETTING_VLAN_SETTING_NAME)) {
+        /* Preserve existing L3 configuration if not a VLAN */
+        if (device) {
+            if ((ac = nm_device_get_active_connection(device))
+                && (remote_connection = NM_CONNECTION(nm_active_connection_get_connection(ac))))
+                remote_s_ip = nm_connection_get_setting_ip4_config(remote_connection);
+        }
+    }
+
     s_ip = nm_connection_get_setting_ip4_config(connection);
     nm_assert(NM_IS_SETTING_IP4_CONFIG(s_ip));
-
-    if ((ac = nm_device_get_active_connection(device))
-        && (remote_connection = NM_CONNECTION(nm_active_connection_get_connection(ac))))
-        remote_s_ip = nm_connection_get_setting_ip4_config(remote_connection);
 
     addrs_new = g_ptr_array_new_full(config_data->ipv4s_len, (GDestroyNotify) nm_ip_address_unref);
     rules_new =
@@ -566,54 +569,31 @@ _nmc_mangle_connection(NMDevice                             *device,
 /*****************************************************************************/
 
 static gboolean
-_config_one(SigTermData                       *sigterm_data,
-            NMClient                          *nmc,
-            const NMCSProviderGetConfigResult *result,
-            guint                              idx)
+_config_existing(SigTermData                          *sigterm_data,
+                 const NMCSProviderGetConfigIfaceData *config_data,
+                 NMClient                             *nmc,
+                 const NMCSProviderGetConfigResult    *result,
+                 const char                           *connection_type,
+                 NMDevice                             *device)
 {
-    const NMCSProviderGetConfigIfaceData *config_data        = result->iface_datas_arr[idx];
-    const char                           *hwaddr             = config_data->hwaddr;
-    gs_unref_object NMDevice             *device             = NULL;
-    gs_unref_object NMConnection         *applied_connection = NULL;
-    guint64                               applied_version_id;
-    gs_free_error GError                 *error = NULL;
-    gboolean                              changed;
-    gboolean                              skipped_single_addr;
-    gboolean                              version_id_changed;
-    guint                                 try_count;
-    gboolean                              any_changes = FALSE;
-    gboolean                              maybe_no_preserved_external_ip;
-
-    g_main_context_iteration(NULL, FALSE);
-
-    if (g_cancellable_is_cancelled(sigterm_data->cancellable))
-        return FALSE;
-
-    device = nm_g_object_ref(_nmc_get_device_by_hwaddr(nmc, hwaddr));
-    if (!device) {
-        _LOGD("config device %s: skip because device not found", hwaddr);
-        return FALSE;
-    }
-
-    if (!nmcs_provider_get_config_iface_data_is_valid(config_data)) {
-        _LOGD("config device %s: skip because meta data not successfully fetched", hwaddr);
-        return FALSE;
-    }
-
-    if (config_data->iface_idx >= 100) {
-        /* since we use the iface_idx to select a table number, the range is limited from
-         * 0 to 99. Note that the providers are required to provide increasing numbers,
-         * so this means we bail out after the first 100 devices.  */
-        _LOGD("config device %s: skip because number of supported interfaces reached", hwaddr);
-        return FALSE;
-    }
+    const char                   *hwaddr             = config_data->hwaddr;
+    gs_unref_object NMConnection *applied_connection = NULL;
+    guint64                       applied_version_id;
+    gs_free_error GError         *error = NULL;
+    gboolean                      changed;
+    gboolean                      skipped_single_addr;
+    gboolean                      version_id_changed;
+    guint                         try_count;
+    gboolean                      any_changes;
+    gboolean                      maybe_no_preserved_external_ip;
 
     _LOGD("config device %s: configuring \"%s\" (%s)...",
           hwaddr,
           nm_device_get_iface(device) ?: "/unknown/",
           nm_object_get_path(NM_OBJECT(device)));
 
-    try_count = 0;
+    try_count   = 0;
+    any_changes = FALSE;
 
 try_again:
     g_clear_object(&applied_connection);
@@ -638,7 +618,7 @@ try_again:
         return any_changes;
     }
 
-    if (_nmc_skip_connection_by_type(applied_connection, NM_SETTING_WIRED_SETTING_NAME)) {
+    if (_nmc_skip_connection_by_type(applied_connection, connection_type)) {
         _LOGD("config device %s: device has no suitable applied connection. Skip", hwaddr);
         return any_changes;
     }
@@ -705,7 +685,7 @@ try_again:
                   nm_connection_get_uuid(applied_connection),
                   error->message);
         }
-        return any_changes;
+        return TRUE;
     }
 
     _LOGD("config device %s: connection \"%s\" (%s) reapplied",
@@ -713,17 +693,254 @@ try_again:
           nm_connection_get_id(applied_connection),
           nm_connection_get_uuid(applied_connection));
 
+    return TRUE;
+}
+
+static gboolean
+_config_ethernet(SigTermData                          *sigterm_data,
+                 const NMCSProviderGetConfigIfaceData *config_data,
+                 NMClient                             *nmc,
+                 const NMCSProviderGetConfigResult    *result)
+{
+    gs_unref_object NMDevice *device = NULL;
+
+    device = nm_g_object_ref(
+        _nmc_get_device_by_hwaddr(nmc, NM_TYPE_DEVICE_ETHERNET, config_data->hwaddr));
+    if (!device) {
+        _LOGD("config device %s: skip because device not found", config_data->hwaddr);
+        return FALSE;
+    }
+
+    return _config_existing(sigterm_data,
+                            config_data,
+                            nmc,
+                            result,
+                            NM_SETTING_WIRED_SETTING_NAME,
+                            device);
+}
+
+static gboolean
+_oci_new_vlan_dev(SigTermData                          *sigterm_data,
+                  const NMCSProviderGetConfigIfaceData *config_data,
+                  NMClient                             *nmc,
+                  const NMCSProviderGetConfigResult    *result,
+                  const char                           *connection_type,
+                  const char                           *parent_hwaddr)
+{
+    const char                         *hwaddr            = config_data->hwaddr;
+    gs_unref_object NMConnection       *connection        = NULL;
+    gs_unref_object NMActiveConnection *active_connection = NULL;
+    gs_free_error GError               *error             = NULL;
+    gs_free char                       *macvlan_name      = NULL;
+    gs_free char                       *connection_id     = NULL;
+    char                               *ifname            = NULL;
+    const char                         *macvlan_parent    = NULL;
+    const char                         *wired_mac_addr    = NULL;
+    const NMUtilsNamedValue            *map               = NULL;
+    const char                         *ip4_config_method;
+    NMSetting                          *s_user;
+
+    connection = nm_simple_connection_new();
+
+    macvlan_name  = g_strdup_printf("macvlan%ld", config_data->iface_idx);
+    connection_id = g_strdup_printf("%s%ld", connection_type, config_data->iface_idx);
+
+    wired_mac_addr = parent_hwaddr;
+    if (nm_streq(connection_type, NM_SETTING_MACVLAN_SETTING_NAME)) {
+        /* In NM-ci, use macvlan.parent instead of wired.mac-address for parent matching
+         * because we are faking the MAC addresses via NM_CLOUD_SETUP_MAP_INTERFACES.
+         * The daemon still needs the real MAC, not the mapped one, so it won't work. */
+        map = gl_interfaces_map;
+        if (G_UNLIKELY(map)) {
+            for (; map->name; map++) {
+                if (nm_streq(map->value_str, parent_hwaddr)) {
+                    macvlan_parent = map->name;
+                    wired_mac_addr = NULL;
+                    break;
+                }
+            }
+        }
+
+        nm_connection_add_setting(connection,
+                                  g_object_new(NM_TYPE_SETTING_MACVLAN,
+                                               NM_SETTING_MACVLAN_MODE,
+                                               NM_SETTING_MACVLAN_MODE_VEPA,
+                                               NM_SETTING_MACVLAN_PARENT,
+                                               macvlan_parent,
+                                               NULL));
+        nm_connection_add_setting(connection,
+                                  g_object_new(NM_TYPE_SETTING_IP6_CONFIG,
+                                               NM_SETTING_IP_CONFIG_METHOD,
+                                               NM_SETTING_IP6_CONFIG_METHOD_DISABLED,
+                                               NULL));
+        ip4_config_method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
+        ifname            = macvlan_name;
+    } else if (nm_streq(connection_type, NM_SETTING_VLAN_SETTING_NAME)) {
+        nm_connection_add_setting(connection,
+                                  g_object_new(NM_TYPE_SETTING_VLAN,
+                                               NM_SETTING_VLAN_PARENT,
+                                               macvlan_name,
+                                               NM_SETTING_VLAN_ID,
+                                               config_data->priv.oci.vlan_tag,
+                                               NULL));
+        ip4_config_method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
+    } else {
+        g_return_val_if_reached(FALSE);
+    }
+
+    nm_connection_add_setting(connection,
+                              g_object_new(NM_TYPE_SETTING_CONNECTION,
+                                           NM_SETTING_CONNECTION_ID,
+                                           connection_id,
+                                           NM_SETTING_CONNECTION_TYPE,
+                                           connection_type,
+                                           NM_SETTING_CONNECTION_INTERFACE_NAME,
+                                           ifname,
+                                           NULL));
+    nm_connection_add_setting(connection,
+                              g_object_new(NM_TYPE_SETTING_IP4_CONFIG,
+                                           NM_SETTING_IP_CONFIG_METHOD,
+                                           ip4_config_method,
+                                           NULL));
+
+    nm_connection_add_setting(connection,
+                              g_object_new(NM_TYPE_SETTING_WIRED,
+                                           NM_SETTING_WIRED_MAC_ADDRESS,
+                                           wired_mac_addr,
+                                           NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
+                                           hwaddr,
+                                           NULL));
+
+    s_user = nm_setting_user_new();
+    nm_connection_add_setting(connection, s_user);
+    nm_setting_user_set_data(NM_SETTING_USER(s_user),
+                             "org.freedesktop.NetworkManager.origin",
+                             "nm-cloud-setup",
+                             NULL);
+
+    _nmc_mangle_connection(NULL, connection, result, config_data, NULL, NULL);
+
+    _LOGD("config device %s: creating %s connection for VLAN %d on %s...",
+          hwaddr,
+          ifname ?: connection_type,
+          config_data->priv.oci.vlan_tag,
+          parent_hwaddr);
+
+    active_connection = nmcs_add_and_activate(nmc, NULL, connection, &error);
+    if (active_connection == NULL) {
+        if (!nm_utils_error_is_cancelled(error)) {
+            _LOGD("config device %s: failure to activate connection: %s", hwaddr, error->message);
+        }
+        return FALSE;
+    }
+
+    _LOGD("config device %s: connection \"%s\" (%s) created",
+          hwaddr,
+          nm_active_connection_get_id(active_connection),
+          nm_active_connection_get_uuid(active_connection));
+
+    return TRUE;
+}
+
+static gboolean
+_oci_config_vnic_dev(SigTermData                          *sigterm_data,
+                     const NMCSProviderGetConfigIfaceData *config_data,
+                     NMClient                             *nmc,
+                     const NMCSProviderGetConfigResult    *result,
+                     const GType                           device_type,
+                     const char                           *connection_type,
+                     const char                           *parent_hwaddr)
+{
+    gs_unref_object NMDevice *device = NULL;
+
+    device = nm_g_object_ref(_nmc_get_device_by_hwaddr(nmc, device_type, config_data->hwaddr));
+    if (device) {
+        /* There is a device. Modify and reapply the currently applied connection. */
+        return _config_existing(sigterm_data, config_data, nmc, result, connection_type, device);
+    } else {
+        /* There is no device, but we're configuring a VLAN.
+         * We can just go ahead and create one with a new connection. */
+        return _oci_new_vlan_dev(sigterm_data,
+                                 config_data,
+                                 nmc,
+                                 result,
+                                 connection_type,
+                                 parent_hwaddr);
+    }
+}
+
+static gboolean
+_config_one(SigTermData                       *sigterm_data,
+            NMCSProvider                      *provider,
+            NMClient                          *nmc,
+            const NMCSProviderGetConfigResult *result,
+            guint                              idx)
+{
+    const NMCSProviderGetConfigIfaceData *config_data = result->iface_datas_arr[idx];
+    gboolean                              any_changes;
+
+    g_main_context_iteration(NULL, FALSE);
+
+    if (g_cancellable_is_cancelled(sigterm_data->cancellable))
+        return FALSE;
+
+    if (!nmcs_provider_get_config_iface_data_is_valid(config_data)) {
+        _LOGD("config device %s: skip because meta data not successfully fetched",
+              config_data->hwaddr);
+        return FALSE;
+    }
+
+    if (config_data->iface_idx >= 100) {
+        /* since we use the iface_idx to select a table number, the range is limited from
+         * 0 to 99. Note that the providers are required to provide increasing numbers,
+         * so this means we bail out after the first 100 devices.  */
+        _LOGD("config device %s: skip because number of supported interfaces reached",
+              config_data->hwaddr);
+        return FALSE;
+    }
+
+    if (NMCS_IS_PROVIDER_OCI(provider) && config_data->priv.oci.vlan_tag != 0) {
+        if (config_data->priv.oci.parent_hwaddr == NULL) {
+            _LOGW("config device %s: has vlan id %d but no parent device",
+                  config_data->hwaddr,
+                  config_data->priv.oci.vlan_tag);
+            return FALSE;
+        }
+
+        /* MACVLAN first, because VLAN is on top of it. */
+        any_changes = _oci_config_vnic_dev(sigterm_data,
+                                           config_data,
+                                           nmc,
+                                           result,
+                                           NM_TYPE_DEVICE_MACVLAN,
+                                           NM_SETTING_MACVLAN_SETTING_NAME,
+                                           config_data->priv.oci.parent_hwaddr);
+        any_changes += _oci_config_vnic_dev(sigterm_data,
+                                            config_data,
+                                            nmc,
+                                            result,
+                                            NM_TYPE_DEVICE_VLAN,
+                                            NM_SETTING_VLAN_SETTING_NAME,
+                                            config_data->hwaddr);
+
+    } else {
+        any_changes = _config_ethernet(sigterm_data, config_data, nmc, result);
+    }
+
     return any_changes;
 }
 
 static gboolean
-_config_all(SigTermData *sigterm_data, NMClient *nmc, const NMCSProviderGetConfigResult *result)
+_config_all(SigTermData                       *sigterm_data,
+            NMCSProvider                      *provider,
+            NMClient                          *nmc,
+            const NMCSProviderGetConfigResult *result)
 {
     gboolean any_changes = FALSE;
     guint    i;
 
     for (i = 0; i < result->n_iface_datas; i++) {
-        if (_config_one(sigterm_data, nmc, result, i))
+        if (_config_one(sigterm_data, provider, nmc, result, i))
             any_changes = TRUE;
     }
 
@@ -804,11 +1021,14 @@ main(int argc, const char *const *argv)
         goto done;
     }
 
+    /* Initialize map used in test scenarios. */
+    gl_interfaces_map = _map_interfaces_parse();
+
     result = _get_config(sigterm_cancellable, provider, nmc);
     if (!result)
         goto done;
 
-    if (_config_all(&sigterm_data, nmc, result))
+    if (_config_all(&sigterm_data, provider, nmc, result))
         _LOGI("some changes were applied for provider %s", nmcs_provider_get_name(provider));
     else
         _LOGD("no changes were applied for provider %s", nmcs_provider_get_name(provider));

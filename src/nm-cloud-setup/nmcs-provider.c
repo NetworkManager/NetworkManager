@@ -188,6 +188,7 @@ nmcs_provider_get_config_iface_data_create(NMCSProviderGetConfigTaskData *get_co
 
     iface_data  = g_slice_new(NMCSProviderGetConfigIfaceData);
     *iface_data = (NMCSProviderGetConfigIfaceData) {
+        .provider        = g_object_ref(get_config_data->self),
         .get_config_data = get_config_data,
         .hwaddr          = g_strdup(hwaddr),
         .iface_idx       = -1,
@@ -202,6 +203,11 @@ nmcs_provider_get_config_iface_data_create(NMCSProviderGetConfigTaskData *get_co
     if (G_OBJECT_TYPE(get_config_data->self) == nmcs_provider_aliyun_get_type()) {
         iface_data->priv.aliyun = (typeof(iface_data->priv.aliyun)) {
             .has_primary_ip_address = FALSE,
+        };
+    } else if (G_OBJECT_TYPE(get_config_data->self) == nmcs_provider_oci_get_type()) {
+        iface_data->priv.oci = (typeof(iface_data->priv.oci)) {
+            .vlan_tag      = 0,
+            .parent_hwaddr = NULL,
         };
     }
 
@@ -220,6 +226,9 @@ _iface_data_free(gpointer data)
     g_free(iface_data->ipv4s_arr);
     nm_g_ptr_array_unref(iface_data->iproutes);
     g_free((char *) iface_data->hwaddr);
+    if (G_OBJECT_TYPE(iface_data->provider) == nmcs_provider_oci_get_type())
+        g_free((char *) iface_data->priv.oci.parent_hwaddr);
+    g_clear_object(&iface_data->provider);
 
     nm_g_slice_free(iface_data);
 }

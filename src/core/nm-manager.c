@@ -2594,7 +2594,7 @@ nm_manager_remove_device(NMManager *self, const char *ifname, NMDeviceType devic
  * Returns: A #NMDevice that was just realized; %NULL if none
  */
 static NMDevice *
-system_create_virtual_device(NMManager *self, NMConnection *connection)
+system_create_virtual_device(NMManager *self, NMConnection *connection, GError **error)
 {
     NMManagerPrivate            *priv = NM_MANAGER_GET_PRIVATE(self);
     NMDeviceFactory             *factory;
@@ -2605,20 +2605,20 @@ system_create_virtual_device(NMManager *self, NMConnection *connection)
     NMDevice                    *device = NULL;
     NMDevice                    *parent = NULL;
     NMDevice                    *dev_candidate;
-    gs_free_error GError        *error = NULL;
-    NMLogLevel                   log_level;
 
     g_return_val_if_fail(NM_IS_MANAGER(self), NULL);
     g_return_val_if_fail(NM_IS_CONNECTION(connection), NULL);
 
-    iface = nm_manager_get_connection_iface(self, connection, &parent, &parent_spec, &error);
-    if (!iface) {
-        _LOG3D(LOGD_DEVICE, connection, "can't get a name of a virtual device: %s", error->message);
+    iface = nm_manager_get_connection_iface(self, connection, &parent, &parent_spec, error);
+    if (!iface)
         return NULL;
-    }
 
     if (parent_spec && !parent) {
-        /* parent is not ready, wait */
+        g_set_error(error,
+                    NM_MANAGER_ERROR,
+                    NM_MANAGER_ERROR_DEPENDENCY_FAILED,
+                    "Parent device for '%s' not available",
+                    iface);
         return NULL;
     }
 
@@ -2626,7 +2626,11 @@ system_create_virtual_device(NMManager *self, NMConnection *connection)
     c_list_for_each_entry (dev_candidate, &priv->devices_lst_head, devices_lst) {
         if (nm_device_check_connection_compatible(dev_candidate, connection, FALSE, NULL)) {
             if (nm_device_is_real(dev_candidate)) {
-                _LOG3D(LOGD_DEVICE, connection, "already created virtual interface name %s", iface);
+                g_set_error(error,
+                            NM_MANAGER_ERROR,
+                            NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+                            "Device named '%s' already exists",
+                            iface);
                 return NULL;
             }
 
@@ -2640,27 +2644,22 @@ system_create_virtual_device(NMManager *self, NMConnection *connection)
 
         factory = nm_device_factory_manager_find_factory_for_connection(connection);
         if (!factory) {
-            _LOG3E(LOGD_DEVICE,
-                   connection,
-                   "(%s) NetworkManager plugin for '%s' unavailable",
-                   iface,
-                   nm_connection_get_connection_type(connection));
+            g_set_error(error,
+                        NM_MANAGER_ERROR,
+                        NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+                        "'%s' plugin for '%s' unavailable",
+                        nm_connection_get_connection_type(connection),
+                        iface);
             return NULL;
         }
 
-        device = nm_device_factory_create_device(factory, iface, NULL, connection, NULL, &error);
-        if (!device) {
-            _LOG3W(LOGD_DEVICE, connection, "factory can't create the device: %s", error->message);
+        device = nm_device_factory_create_device(factory, iface, NULL, connection, NULL, error);
+        if (!device)
             return NULL;
-        }
 
         _LOG3D(LOGD_DEVICE, connection, "create virtual device %s", nm_device_get_iface(device));
 
-        if (!add_device(self, device, &error)) {
-            _LOG3W(LOGD_DEVICE,
-                   connection,
-                   "can't register the device with manager: %s",
-                   error->message);
+        if (!add_device(self, device, error)) {
             g_object_unref(device);
             return NULL;
         }
@@ -2679,10 +2678,8 @@ system_create_virtual_device(NMManager *self, NMConnection *connection)
         return device;
     }
 
-    if (!find_controller(self, connection, device, NULL, NULL, NULL, &error)) {
-        _LOG3D(LOGD_DEVICE, connection, "skip activation: %s", error->message);
+    if (!find_controller(self, connection, device, NULL, NULL, NULL, error))
         return device;
-    }
 
     /* Create backing resources if the device has any autoconnect connections */
     connections = nm_settings_get_connections_sorted_by_autoconnect_priority(priv->settings, NULL);
@@ -2699,18 +2696,8 @@ system_create_virtual_device(NMManager *self, NMConnection *connection)
             continue;
 
         /* Create any backing resources the device needs */
-        if (!nm_device_create_and_realize(device, connection, parent, &error)) {
-            log_level =
-                g_error_matches(error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_MISSING_DEPENDENCIES)
-                    ? LOGL_DEBUG
-                    : LOGL_ERR;
-            _NMLOG3(log_level,
-                    LOGD_DEVICE,
-                    connection,
-                    "couldn't create the device: %s",
-                    error->message);
+        if (!nm_device_create_and_realize(device, connection, parent, error))
             return NULL;
-        }
 
         retry_connections_for_parent_device(self, device);
         break;
@@ -2751,8 +2738,9 @@ retry_connections_for_parent_device(NMManager *self, NMDevice *device)
 static void
 connection_changed(NMManager *self, NMSettingsConnection *sett_conn)
 {
-    NMConnection *connection;
-    NMDevice     *device;
+    NMConnection         *connection;
+    NMDevice             *device;
+    gs_free_error GError *error = NULL;
 
     if (NM_FLAGS_ANY(nm_settings_connection_get_flags(sett_conn),
                      NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
@@ -2764,9 +2752,11 @@ connection_changed(NMManager *self, NMSettingsConnection *sett_conn)
     if (!nm_connection_is_virtual(connection))
         return;
 
-    device = system_create_virtual_device(self, connection);
-    if (!device)
+    device = system_create_virtual_device(self, connection, &error);
+    if (!device) {
+        _LOG3D(LOGD_DEVICE, connection, "Can't create a virtual device: %s", error->message);
         return;
+    }
 
     /* Maybe the device that was created was needed by some other
      * connection's device (parent of a VLAN). Let the connections
@@ -6548,17 +6538,8 @@ find_device_for_activation(NMManager            *self,
                 return FALSE;
 
             device = find_device_by_iface(self, iface, connection, NULL, NULL);
-            if (!device) {
-                g_set_error_literal(error,
-                                    NM_MANAGER_ERROR,
-                                    NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-                                    "Failed to find a compatible device for this connection");
-                return FALSE;
-            }
         }
     }
-
-    nm_assert(is_vpn || NM_IS_DEVICE(device));
 
     *out_device = device;
     *out_is_vpn = is_vpn;
@@ -6684,7 +6665,14 @@ impl_manager_activate_connection(NMDBusObject                      *obj,
     if (!subject)
         goto error;
 
-    if (!find_device_for_activation(self, sett_conn, NULL, device_path, &device, &is_vpn, &error)) {
+    if (!find_device_for_activation(self, sett_conn, NULL, device_path, &device, &is_vpn, &error))
+        goto error;
+
+    if (!device && !is_vpn) {
+        g_set_error_literal(&error,
+                            NM_MANAGER_ERROR,
+                            NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+                            "Failed to find a compatible device for this connection");
         goto error;
     }
 
@@ -6807,6 +6795,7 @@ _add_and_activate_auth_done(NMManager                      *self,
                             const char                     *error_desc)
 {
     NMManagerPrivate *priv;
+    NMDevice         *device;
     GError           *error = NULL;
 
     if (!success) {
@@ -6819,6 +6808,14 @@ _add_and_activate_auth_done(NMManager                      *self,
                                    nm_active_connection_get_subject(active),
                                    error->message);
         g_dbus_method_invocation_take_error(invocation, error);
+
+        device = nm_active_connection_get_device(active);
+        if (device && nm_device_is_software(device)
+            && !nm_device_managed_type_is_external_or_assume(device)
+            && _check_remove_dev_on_link_deleted(self, device)) {
+            remove_device(self, device, FALSE);
+        }
+
         return;
     }
 
@@ -6974,32 +6971,11 @@ impl_manager_add_and_activate_connection(NMDBusObject                      *obj,
         goto error;
     }
 
-    if (is_vpn) {
-        /* Try to fill the VPN's connection setting and name at least */
-        if (!nm_connection_get_setting_vpn(incompl_conn)) {
-            error = g_error_new_literal(NM_CONNECTION_ERROR,
-                                        NM_CONNECTION_ERROR_MISSING_SETTING,
-                                        "VPN connections require a 'vpn' setting");
-            g_prefix_error(&error, "%s: ", NM_SETTING_VPN_SETTING_NAME);
-            goto error;
-        }
+    conns = nm_settings_connections_array_to_connections(
+        nm_settings_get_connections(priv->settings, NULL),
+        -1);
 
-        conns = nm_settings_connections_array_to_connections(
-            nm_settings_get_connections(priv->settings, NULL),
-            -1);
-
-        nm_utils_complete_generic(priv->platform,
-                                  incompl_conn,
-                                  NM_SETTING_VPN_SETTING_NAME,
-                                  conns,
-                                  NULL,
-                                  _("VPN connection"),
-                                  NULL,
-                                  NULL);
-    } else {
-        conns = nm_settings_connections_array_to_connections(
-            nm_settings_get_connections(priv->settings, NULL),
-            -1);
+    if (device) {
         /* Let each device subclass complete the connection */
         if (!nm_device_complete_connection(device,
                                            incompl_conn,
@@ -7007,9 +6983,27 @@ impl_manager_add_and_activate_connection(NMDBusObject                      *obj,
                                            conns,
                                            &error))
             goto error;
-    }
+    } else {
+        nm_utils_complete_generic(priv->platform,
+                                  incompl_conn,
+                                  nm_connection_get_connection_type(incompl_conn),
+                                  conns,
+                                  is_vpn ? _("VPN connection") : NULL,
+                                  nm_connection_get_connection_type(incompl_conn),
+                                  NULL,
+                                  NULL);
 
-    nm_assert(_nm_connection_verify(incompl_conn, NULL) == NM_SETTING_VERIFY_SUCCESS);
+        if (!nm_connection_verify(incompl_conn, &error))
+            goto error;
+
+        if (!is_vpn && !device) {
+            nm_assert(nm_connection_is_virtual(incompl_conn));
+
+            device = system_create_virtual_device(self, incompl_conn, &error);
+            if (!device)
+                goto error;
+        }
+    }
 
     active = _new_active_connection(self,
                                     is_vpn,
