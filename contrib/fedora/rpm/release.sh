@@ -559,9 +559,11 @@ if [[ $GITLAB_TOKEN == "" ]]; then
 fi
 
 # This step is not necessary for authentication, we use it only to provide a meaningful error message.
-curl --request GET --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
-    "https://gitlab.freedesktop.org/api/v4/personal_access_tokens/self" &>/dev/null \
-    || die "failed to authenticate at gitlab.freedesktop.org with the private token"
+GITLAB_USER_ID=$(curl --request GET --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+                      "https://gitlab.freedesktop.org/api/v4/personal_access_tokens/self" 2>/dev/null | jq ".user_id" || true)
+if [ -z "$GITLAB_USER_ID" ] || [ "$GITLAB_USER_ID" = "null" ]; then
+    die "failed to authenticate to gitlab.freedesktop.org with the private token"
+fi
 
 do_command git push "$ORIGIN" "${BRANCHES[@]}" || die "failed to to push branches ${BRANCHES[@]} to $ORIGIN"
 
