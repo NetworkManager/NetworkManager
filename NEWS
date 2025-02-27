@@ -1,4 +1,13 @@
 ===============================================
+NetworkManager-1.50.3
+Overview of changes since NetworkManager-1.50.2
+===============================================
+
+* Wait configuring MPTCP endpoints until DAD has completed.
+* Properly autoconnect OVS ports at boot.
+* Allow configuring "shared" IPv6 method in nmtui.
+
+===============================================
 NetworkManager-1.50.2
 Overview of changes since NetworkManager-1.50.1
 ===============================================
