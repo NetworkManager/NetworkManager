@@ -3769,7 +3769,7 @@ nms_ifcfg_rh_writer_write_connection(NMConnection                   *connection,
      *
      * FIXME: a much better solution might be, to re-read the connection only based
      * on the in-memory representation of what we collected above. But the reader
-     * does not yet allow to inject the configuration. */
+     * does not yet allow one to inject the configuration. */
     if (out_reread || out_reread_same) {
         gs_unref_object NMConnection *reread      = NULL;
         gboolean                      reread_same = FALSE;

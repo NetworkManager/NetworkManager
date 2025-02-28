@@ -1580,7 +1580,7 @@ managed=1
   <refsect1>
     <title><literal>global-dns-domain</literal> sections</title>
     <para>Sections with a name starting with the "global-dns-domain-"
-    prefix allow to define global DNS configuration for specific
+    prefix allow one to define global DNS configuration for specific
     domains.  The part of section name after "global-dns-domain-"
     specifies the domain name a section applies to (for example, a
     section could be named "global-dns-domain-foobar.com").  More

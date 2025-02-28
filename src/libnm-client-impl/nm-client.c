@@ -7684,7 +7684,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         } else {
             NMClientInstanceFlags flags = v_uint;
 
-            /* After object construction, we only allow to toggle certain flags and
+            /* After object construction, we only allow one to toggle certain flags and
              * ignore all other flags. */
 
             if ((priv->instance_flags ^ flags)

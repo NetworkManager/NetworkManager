@@ -975,7 +975,7 @@ nm_memcpy(void *restrict dest, const void *restrict src, size_t n)
  * side-effects. */
 #define NM_IN_SET_SE(x, ...) _NM_IN_SET(NM_UNIQ, |, typeof(x), x, __VA_ARGS__)
 
-/* the *_TYPED forms allow to explicitly select the type of "x". This is useful
+/* the *_TYPED forms allow one to explicitly select the type of "x". This is useful
  * if "x" doesn't support typeof (bitfields) or you want to gracefully convert
  * a type using automatic type conversion rules (but not forcing the conversion
  * with a cast). */

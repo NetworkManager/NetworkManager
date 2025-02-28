@@ -89,7 +89,7 @@ typedef enum {
      * long as NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID differs. */
     NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID,
 
-    /* compare two routes as kernel would allow to add them with
+    /* compare two routes as kernel would allow one to add them with
      * `ip route append`. In other words, kernel does not allow you to
      * add two routes (at the same time) which compare equal according
      * to NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID.

@@ -149,7 +149,7 @@ _entry_unpack(const NMDedupMultiEntry    *entry,
     nm_assert(NM_IN_SET(*out_lookup_head, FALSE, TRUE));
     ASSERT_idx_type(*out_idx_type);
 
-    /* for lookup of the head, we allow to omit object, but only
+    /* for lookup of the head, we allow one to omit object, but only
      * if the idx_type does not partition the objects. Otherwise, we
      * require a obj to compare. */
     nm_assert(!*out_lookup_head || (*out_obj || !(*out_idx_type)->klass->idx_obj_partition_equal));

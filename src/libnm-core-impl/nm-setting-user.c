@@ -15,7 +15,7 @@
  * SECTION:nm-setting-user
  * @short_description: Describes user properties
  *
- * The #NMSettingUser object is a #NMSetting subclass that allow to attach
+ * The #NMSettingUser object is a #NMSetting subclass that allows one to attach
  * arbitrary user data to #NMConnection objects.
  **/
 
