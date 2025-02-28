@@ -611,7 +611,7 @@ nmtstc_context_object_new_valist(GType       gtype,
         sync        = TRUE;
         inside_loop = FALSE;
     } else {
-        /* The caller allows to iterate the main context. On that point,
+        /* The caller allows one to iterate the main context. On that point,
          * we can both use the synchronous and the asynchronous initialization,
          * both should yield the same result. Choose one randomly. */
         sync        = nmtst_get_rand_bool();

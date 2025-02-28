@@ -203,7 +203,7 @@ Overview of changes since NetworkManager-1.42
   lead to unexpected behaviors in case of multiconnect profiles.
 * Set VLAN filtering options on bridge via netlink instead of sysfs.
 * nm-cloud-setup now supports IMDSv2 on Amazon EC2.
-* nmtui now allows to enable or disable Wi-Fi and WWAN radios.
+* nmtui now allows one to enable or disable Wi-Fi and WWAN radios.
 * Honor ignore-carrier=no for bond/bridge/team devices.
 * Add version mismatch warning when running nmcli commands.
 
@@ -368,7 +368,7 @@ Overview of changes since NetworkManager-1.38
 * NetworkManager reads the kernel command line "/proc/cmdline" for several
   purposes, including "nm.debug" for enabling debugging and the
   "match.kernel-command-line" setting in the profile. NetworkManager now
-  first looks now for "/run/NetworkManager/proc-cmdline", which allows to
+  first looks now for "/run/NetworkManager/proc-cmdline", which allows one to
   overwrite the command line.
 * Improve the reapply of non-bridge properties.
 * Honor adding a Bluetooth NAP connection with all available methods.
@@ -441,7 +441,7 @@ Overview of changes since NetworkManager-1.36
 * Workaround libcurl blocking NetworkManager while resolving DNS names.
 * nmcli: indicate missing Wi-Fi hardware when showing rfkill setting.
 * nmcli: add connection migrate command to move a profile to a specified
-  settings plugin. This allows to convert profiles in the deprecated ifcfg-rh
+  settings plugin. This allows one to convert profiles in the deprecated ifcfg-rh
   format to keyfile.
 * Set "src" attribute for routes from DHCPv4 to the leased address. This
   helps with source address selection.
@@ -573,7 +573,7 @@ and 1.32.12 are also present in NetworkManager-1.34:
 * core: fix adding stale local routes when address changes.
 * initrd: tag generated profiles with origin in user data.
 * core: introduce "allowed-connections" option to disallow
-  profiles on a device. This allows to filter out profiles
+  profiles on a device. This allows one to filter out profiles
   that originate from initrd.
 * core: introduce "keep-configuration" device option to forcefully
   activate a profile on start.
@@ -634,7 +634,7 @@ Overview of changes since NetworkManager-1.30
   'nm-daemon-helper' binary is spawned to perform the lookup using
   the 'dns' NSS module.
 * dhcp: honor "ID_NET_DHCP_BROADCAST" udev attribute to set the broadcast flag.
-  This allows to configure devices in udev for which DHCPOFFER messages are to be
+  This allows one to configure devices in udev for which DHCPOFFER messages are to be
   broadcast.
 * firewall: add nftables firewall backend for configuring IPv4 NAT with shared
   mode. Now two backends are supported, "iptables" and "nftables". The default
@@ -894,16 +894,16 @@ This is a new stable release of NetworkManager.  Notable changes include:
   in allowed-ips.
 * Rework implementation of settings plugins and how profiles are presisted
   to disk. This is a large internal refactoring of the settings plugins that
-  allows to migrate a connection profile between plugins.
+  allows one to migrate a connection profile between plugins.
 * In-memory profiles are now only handled by keyfile plugin and will also be
-  persisted to /run directory. This allows to restart NetworkManager without
+  persisted to /run directory. This allows one to restart NetworkManager without
   loosing these profiles and it provides a file-system based API for creating
   in-memory profiles.
 * Keyfile plugin now supports a read-only directory of profiles under directory
   "/usr/lib/NetworkManager/system-connections". Such profiles still can be modified
   and deleted via D-Bus, which results in writing profiles to /etc or /run that
   shadow the read-only files.
-* Add new D-Bus method AddConnection2() that allows to block autoconnect of
+* Add new D-Bus method AddConnection2() that allows one to block autoconnect of
   the profile at the moment when creating the profile. Also add support for
   this API to libnm.
 * Add flag "no-reapply" to Update2() D-Bus method. Normally, when a connection

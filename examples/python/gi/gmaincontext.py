@@ -188,7 +188,7 @@ def create_nmc(dbus_connection):
     # which has an overhead.
     #
     # Also, split the GObject creation and the init_async() call in two.
-    # That allows to pass construct-only parameters, in particular like
+    # That allows one to pass construct-only parameters, in particular like
     # the instance_flags.
 
     # Create a separate context for the NMClient. The NMClient is strongly

@@ -508,7 +508,7 @@ struct _NMPlatformIP6Route {
      * Kernel clears the host part of src/src_plen.
      *
      * src/src_plen is part of the ID of a route just like network/plen. That is,
-     * Not only `ip route append`, but also `ip route add` allows to add routes that only
+     * Not only `ip route append`, but also `ip route add` allows one to add routes that only
      * differ in their src/src_plen.
      */
     struct in6_addr src;

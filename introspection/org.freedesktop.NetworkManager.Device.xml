@@ -321,7 +321,7 @@
     <!--
         Reapply:
         @connection: The optional connection settings that will be reapplied on the device. If empty, the currently active settings-connection will be used. The connection cannot arbitrarily differ from the current applied-connection otherwise the call will fail. Only certain changes are supported, like adding or removing IP addresses.
-        @version_id: If non-zero, the current version id of the applied-connection must match. The current version id can be retrieved via GetAppliedConnection. This optional argument allows to catch concurrent modifications between the GetAppliedConnection call and Reapply.
+        @version_id: If non-zero, the current version id of the applied-connection must match. The current version id can be retrieved via GetAppliedConnection. This optional argument allows one to catch concurrent modifications between the GetAppliedConnection call and Reapply.
         @flags: Flags which would modify the behavior of the Reapply call. Invalid flags are rejected.
 
         Attempts to update the configuration of a device without deactivating it.
@@ -337,7 +337,7 @@
         settings-connection, or call Reapply. The Reapply call allows you to
         directly update the applied-connection and reconfigure the device. Reapply
         can also be useful if the currently applied-connection is equal to the
-        connection that is about to be reapplied. This allows to reconfigure the
+        connection that is about to be reapplied. This allows one to reconfigure the
         device and revert external changes like removing or adding an IP address
         (which NetworkManager doesn't revert automatically because it is assumed
         that the user made these changes intentionally outside of NetworkManager).

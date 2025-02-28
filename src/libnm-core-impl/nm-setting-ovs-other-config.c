@@ -19,7 +19,7 @@
  * SECTION:nm-setting-ovs-other-config
  * @short_description: Other-config settings for OVS
  *
- * The #NMSettingOvsOtherConfig object is a #NMSetting subclass that allows to
+ * The #NMSettingOvsOtherConfig object is a #NMSetting subclass that allows one to
  * configure other_config settings for OVS. See also "other_config" in the
  * "ovs-vswitchd.conf.db" manual for the keys that OVS supports.
  **/

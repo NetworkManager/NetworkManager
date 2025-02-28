@@ -1014,7 +1014,7 @@ typedef enum {
  *   checkpoints is allowed, however, if an older checkpoint
  *   that references overlapping devices gets rolled back, it will
  *   automatically destroy this checkpoint during rollback. This
- *   allows to create several overlapping checkpoints in parallel,
+ *   allows one to create several overlapping checkpoints in parallel,
  *   and rollback to them at will. With the special case that
  *   rolling back to an older checkpoint will invalidate all
  *   overlapping younger checkpoints. This opts-in that the

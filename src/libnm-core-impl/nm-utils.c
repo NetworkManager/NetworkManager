@@ -1345,7 +1345,7 @@ nm_utils_ip4_dns_from_variant(GVariant *value)
  * @strict: whether to parse in strict mode or best-effort mode
  * @error: the error location
  *
- * Like #nm_utils_ip4_dns_from_variant, but allows to parse in strict mode. In
+ * Like #nm_utils_ip4_dns_from_variant, but allows one to parse in strict mode. In
  * strict mode, parsing is aborted on first error and %NULL is returned.
  *
  * Returns: (transfer full) (type utf8): a %NULL-terminated array of IP address
@@ -1467,9 +1467,9 @@ nm_utils_ip4_addresses_from_variant(GVariant *value, char **out_gateway)
  * @strict: whether to parse in strict mode or best-effort mode
  * @error: the error location
  *
- * Like #nm_utils_ip4_addresses_from_variant, but allows to parse in strict mode. In
+ * Like #nm_utils_ip4_addresses_from_variant, but allows one to parse in strict mode. In
  * strict mode, parsing is aborted on first error and %NULL is returned. It also
- * allows to parse the address-labels at the same time than the addresses.
+ * allows one to parse the address-labels at the same time than the addresses.
  *
  * The labels need to be processed at the same time than the addresses, inside
  * this function, because if there are invalid addresses they are filtered out,
@@ -1648,7 +1648,7 @@ nm_utils_ip4_routes_from_variant(GVariant *value)
  * @strict: whether to parse in strict mode or best-effort mode
  * @error: the error location
  *
- * Like #nm_utils_ip4_routes_from_variant, but allows to parse in strict mode. In
+ * Like #nm_utils_ip4_routes_from_variant, but allows one to parse in strict mode. In
  * strict mode, parsing is aborted on first error and %NULL is returned.
  *
  * Returns: (transfer full) (element-type NMIPRoute): a newly allocated
@@ -1799,7 +1799,7 @@ nm_utils_ip6_dns_from_variant(GVariant *value)
  * @strict: whether to parse in strict mode or best-effort mode
  * @error: the error location
  *
- * Like #nm_utils_ip6_dns_from_variant, but allows to parse in strict mode. In
+ * Like #nm_utils_ip6_dns_from_variant, but allows one to parse in strict mode. In
  * strict mode, parsing is aborted on first error and %NULL is returned.
  *
  * Returns: (transfer full) (type utf8): a %NULL-terminated array of IP address
@@ -1942,7 +1942,7 @@ nm_utils_ip6_addresses_from_variant(GVariant *value, char **out_gateway)
  * @strict: whether to parse in strict mode or best-effort mode
  * @error: the error location
  *
- * Like #nm_utils_ip6_addresses_from_variant, but allows to parse in strict mode. In
+ * Like #nm_utils_ip6_addresses_from_variant, but allows one to parse in strict mode. In
  * strict mode, parsing is aborted on first error and %NULL is returned.
  *
  * Returns: (transfer full) (element-type NMIPAddress): a newly allocated
@@ -2124,7 +2124,7 @@ nm_utils_ip6_routes_from_variant(GVariant *value)
  * @strict: whether to parse in strict mode or best-effort mode
  * @error: the error location
  *
- * Like #nm_utils_ip6_routes_from_variant, but allows to parse in strict mode. In
+ * Like #nm_utils_ip6_routes_from_variant, but allows one to parse in strict mode. In
  * strict mode, parsing is aborted on first error and %NULL is returned.
  *
  * Returns: (transfer full) (element-type NMIPRoute): a newly allocated
@@ -2315,7 +2315,7 @@ nm_utils_ip_addresses_from_variant(GVariant *value, int family)
  * @strict: whether to parse in strict mode or best-effort mode
  * @error: the error location
  *
- * Like #nm_utils_ip_addresses_from_variant, but allows to parse in strict mode. In
+ * Like #nm_utils_ip_addresses_from_variant, but allows one to parse in strict mode. In
  * strict mode, parsing is aborted on first error and %NULL is returned.
  *
  * Returns: (transfer full) (element-type NMIPAddress): a newly allocated
@@ -2493,7 +2493,7 @@ nm_utils_ip_routes_from_variant(GVariant *value, int family)
  * @strict: whether to parse in strict mode or best-effort mode
  * @error: the error location
  *
- * Like #nm_utils_ip_routes_from_variant, but allows to parse in strict mode. In
+ * Like #nm_utils_ip_routes_from_variant, but allows one to parse in strict mode. In
  * strict mode, parsing is aborted on first error and %NULL is returned.
  *
  * Returns: (transfer full) (element-type NMIPRoute): a newly allocated

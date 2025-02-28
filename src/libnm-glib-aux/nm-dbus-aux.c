@@ -459,7 +459,7 @@ _bus_get_cb(GObject *source, GAsyncResult *result, gpointer user_data)
  *
  * This calls g_bus_get(), but iterates the current (thread-default) GMainContext
  * until the response is ready. As such, it's similar to g_bus_get_sync(),
- * but it allows to cancel the operation (without having multiple threads).
+ * but it allows one to cancel the operation (without having multiple threads).
  *
  * Returns: (transfer full): the new #GDBusConnection or %NULL on error.
  */

@@ -2294,7 +2294,7 @@ _l3_acd_data_timeout_schedule(AcdData *acd_data, gint64 timeout_msec)
      * expect timeouts in certain states.
      *
      * That means, scheduling a timeout is only correct if we are in a certain
-     * state, which allows to handle timeouts. This assert checks for that to
+     * state, which allows one to handle timeouts. This assert checks for that to
      * ensure we don't call a timeout in an unexpected state. */
     nm_assert(NM_IN_SET(acd_data->info.state,
                         NM_L3_ACD_ADDR_STATE_PROBING,

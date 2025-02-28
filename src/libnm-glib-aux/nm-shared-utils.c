@@ -2898,7 +2898,7 @@ nm_utils_buf_utf8safe_unescape(const char             *str,
  *
  * Depending on @flags, valid UTF-8 characters are not escaped at all
  * (except the escape character '\\'). This is the difference to g_strescape(),
- * which escapes all non-ASCII characters. This allows to pass on
+ * which escapes all non-ASCII characters. This allows one to pass on
  * valid UTF-8 characters as-is and can be directly shown to the user
  * as UTF-8 -- with exception of the backslash escape character,
  * invalid UTF-8 sequences, and other (depending on @flags).
@@ -3113,7 +3113,7 @@ nm_utils_str_utf8safe_unescape(const char *str, NMUtilsStrUtf8SafeFlags flags, c
  *
  * Depending on @flags, valid UTF-8 characters are not escaped at all
  * (except the escape character '\\'). This is the difference to g_strescape(),
- * which escapes all non-ASCII characters. This allows to pass on
+ * which escapes all non-ASCII characters. This allows one to pass on
  * valid UTF-8 characters as-is and can be directly shown to the user
  * as UTF-8 -- with exception of the backslash escape character,
  * invalid UTF-8 sequences, and other (depending on @flags).

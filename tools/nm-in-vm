@@ -17,7 +17,7 @@ set -e
 #
 # Options (they MUST go before the command):
 #  -v | --vm: name of the VM to run the command on (by default 'nm').
-#             This allows to have more than one VM at the same time
+#             This allows one to have more than one VM at the same time
 #  -h | --help: show this text
 #
 # NetworkManager directories:

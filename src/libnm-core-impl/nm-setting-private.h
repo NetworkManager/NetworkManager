@@ -555,7 +555,7 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
  *
  *    _nm_setting_get_private(setting, sett_info, property_info->direct_offset)
  *
- * which allows to generically handle the property operations (like get, set, compare).
+ * which allows one to generically handle the property operations (like get, set, compare).
  */
 
 #define _nm_setting_property_define_direct_boolean(properties_override,                        \

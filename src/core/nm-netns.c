@@ -75,7 +75,7 @@ typedef struct {
     /* Indexes the watcher handles. */
     GHashTable *watcher_idx;
 
-    /* An index of WatcherByTag. It allows to lookup watcher handles by tag.
+    /* An index of WatcherByTag. It allows one to lookup watcher handles by tag.
      * Handles without tag are not indexed. */
     GHashTable *watcher_by_tag_idx;
 
