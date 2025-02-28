@@ -1,12 +1,7 @@
 =============================================
-NetworkManager-1.52-rc1
+NetworkManager-1.52
 Overview of changes since NetworkManager-1.50
 =============================================
-
-This is a NetworkManager release candidate. The API is
-subject to change and not guaranteed to be compatible with
-the later release.
-USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 * Store interactive history in `$XDG_CACHE_HOME/nmcli-history` instead of
   `~/.nmcli-history`
@@ -38,6 +33,11 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   caching resolver. If dnsconfd plugin is enabled and ipvX.routed-dns is
   set to -1 then adding routes is by default enabled.
 * Add "shared" method to the IPv6 configuration options in nmtui.
+* Fix a bug that prevented the activation of bond and bridge's ports in some cases
+* Fix a bug that prevented the activation of OVS interfaces in some cases
+* Fix MTPCP endpoint creation for IPv4 with DAD and IPv6 tentative addresses
+* Fix some VPN routes not being added to the table specified in ipv4/6.routing-table.
+  This fix allow to use policy routing to mitigate Tunnelvision attacks.
 
 =============================================
 NetworkManager-1.50
