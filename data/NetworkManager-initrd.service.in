@@ -1,0 +1,32 @@
+[Unit]
+Description=NetworkManager (initrd)
+DefaultDependencies=no
+Wants=systemd-udev-trigger.service network.target
+After=systemd-udev-trigger.service network-pre.target dbus.service NetworkManager-config-initrd.service
+Before=network.target
+BindsTo=dbus.service
+ConditionPathExists=/etc/initrd-release
+ConditionPathExists=/run/NetworkManager/initrd/neednet
+ConditionPathExistsGlob=|/usr/lib/NetworkManager/system-connections/*
+ConditionPathExistsGlob=|/run/NetworkManager/system-connections/*
+ConditionPathExistsGlob=|/etc/NetworkManager/system-connections/*
+
+[Service]
+Type=dbus
+BusName=org.freedesktop.NetworkManager
+ExecReload=/usr/bin/busctl call org.freedesktop.NetworkManager /org/freedesktop/NetworkManager org.freedesktop.NetworkManager Reload u 0
+ExecStart=@sbindir@/NetworkManager
+# NM doesn't want systemd to kill its children for it
+KillMode=process
+Environment=NM_CONFIG_ENABLE_TAG=initrd
+Restart=on-failure
+ProtectSystem=true
+ProtectHome=read-only
+
+[Install]
+WantedBy=initrd.target
+# We want to enable NetworkManager-wait-online-initrd.service whenever this
+# service is enabled. NetworkManager-wait-online-initrd.service has
+# WantedBy=network-online.target, so enabling it only has an effect if
+# network-online.target itself is enabled or pulled in by some other unit.
+Also=NetworkManager-config-initrd.service NetworkManager-wait-online-initrd.service

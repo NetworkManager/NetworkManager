@@ -2211,8 +2211,10 @@ device_state_changed(NMDevice           *device,
                 con_v = nm_settings_connection_get_last_secret_agent_version_id(sett_conn);
                 if (con_v == 0 || con_v == nm_agent_manager_get_agent_version_id(priv->agent_mgr)) {
                     _LOGD(LOGD_DEVICE,
-                          "block-autoconnect: connection '%s' now blocked from autoconnect due to "
-                          "no secrets",
+                          "block-autoconnect: connection[" NM_HASH_OBFUSCATE_PTR_FMT
+                          "] (%s) now blocked from "
+                          "autoconnect due to no secrets",
+                          NM_HASH_OBFUSCATE_PTR(sett_conn),
                           nm_settings_connection_get_id(sett_conn));
                     nm_settings_connection_autoconnect_blocked_reason_set(
                         sett_conn,
@@ -2230,10 +2232,10 @@ device_state_changed(NMDevice           *device,
                  * be marked as blocked when it fails with dependency-failed.
                  */
                 _LOGD(LOGD_DEVICE,
-                      "block-autoconnect: connection[%p] (%s) now blocked from autoconnect due to "
-                      "failed "
-                      "dependency",
-                      sett_conn,
+                      "block-autoconnect: connection[" NM_HASH_OBFUSCATE_PTR_FMT
+                      "] (%s) now blocked "
+                      "from autoconnect due to failed dependency",
+                      NM_HASH_OBFUSCATE_PTR(sett_conn),
                       nm_settings_connection_get_id(sett_conn));
                 nm_manager_devcon_autoconnect_blocked_reason_set(
                     priv->manager,
@@ -2255,16 +2257,17 @@ device_state_changed(NMDevice           *device,
                     /* blocked */
                 } else if (tries != NM_AUTOCONNECT_RETRIES_FOREVER) {
                     _LOGD(LOGD_DEVICE,
-                          "autoconnect: connection[%p] (%s): failed to autoconnect; %u tries left",
-                          sett_conn,
+                          "autoconnect: connection[" NM_HASH_OBFUSCATE_PTR_FMT "] (%s): failed to "
+                          "autoconnect; %u tries left",
+                          NM_HASH_OBFUSCATE_PTR(sett_conn),
                           nm_settings_connection_get_id(sett_conn),
                           tries - 1u);
                     _connection_autoconnect_retries_set(self, device, sett_conn, tries - 1u);
                 } else {
                     _LOGD(LOGD_DEVICE,
-                          "autoconnect: connection[%p] (%s) failed to autoconnect; infinite tries "
-                          "left",
-                          sett_conn,
+                          "autoconnect: connection[" NM_HASH_OBFUSCATE_PTR_FMT "] (%s) failed to "
+                          "autoconnect; infinite tries left",
+                          NM_HASH_OBFUSCATE_PTR(sett_conn),
                           nm_settings_connection_get_id(sett_conn));
                 }
             }
