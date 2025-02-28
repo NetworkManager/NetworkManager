@@ -39,12 +39,12 @@ fi
 fi
 
 
-NM_NO_EXTRA=1 NM_INSTALL="yum install -y" ./contrib/fedora/REQUIRED_PACKAGES
-yum install -y glibc-langpack-pl ccache clang
+NM_NO_EXTRA=1 ./contrib/fedora/REQUIRED_PACKAGES
+dnf install -y glibc-langpack-pl ccache clang
 
 # containers have "tsflags=nodocs" in /etc/dnf/dnf.conf. We need /usr/shared/gtk-doc/html
 # to generate proper documentation.
-yum reinstall -y --setopt='tsflags=' glib2-doc
+dnf reinstall -y --setopt='tsflags=' glib2-doc
 
 if [ $IS_FEDORA = 1 ]; then
     FEDORA_VERSION=$(cat /etc/os-release | grep '^VERSION_ID=' | sed s\/"VERSION_ID="\/\/)

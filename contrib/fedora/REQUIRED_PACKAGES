@@ -4,15 +4,12 @@
 # NetworkManager on Fedora and RHEL.
 #
 # Not all of these packages are available, depending
-# on your distribution/release. But yum will happily
-# skip them.
+# on your distribution/release. But the script will skip them.
 #
 # Not all of these packages are strictly speaking necessary.
 # This is a generous list of related packages.
 
 set -xe
-
-DNF="$(command -v dnf &>/dev/null && echo dnf || echo yum)"
 
 SUDO=
 [ "$EUID" -eq 0 ] || SUDO=sudo
@@ -21,7 +18,7 @@ install() {
     if [ "$NM_INSTALL" != "" ]; then
         $NM_INSTALL "$@"
     else
-        $SUDO "$DNF" install -y "$@"
+        $SUDO dnf install -y "$@"
     fi
 }
 
