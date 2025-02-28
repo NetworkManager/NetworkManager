@@ -237,7 +237,7 @@ rpmbuild --define "_topdir $TEMP" $RPM_BUILD_OPTION "$TEMPSPEC" $NM_RPMBUILD_ARG
 LS_EXTRA=()
 
 if [ "$SIGN_SOURCE" = 1 ]; then
-    SIGNKEY="$(git config --get user.signingkey)"
+    SIGNKEY="$(git config --get user.signingkey || :)"
     if [ "$SIGNKEY" != "" ]; then
         SIGNKEY="--local-user $(printf '%q' "$SIGNKEY")"
     fi
