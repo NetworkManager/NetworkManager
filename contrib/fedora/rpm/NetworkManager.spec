@@ -43,7 +43,7 @@
 
 %global real_version_major %(printf '%s' '%{real_version}' | sed -n 's/^\\([1-9][0-9]*\\.[0-9][0-9]*\\)\\.[0-9][0-9]*$/\\1/p')
 
-%global systemd_units NetworkManager.service NetworkManager-wait-online.service NetworkManager-dispatcher.service nm-priv-helper.service NetworkManager-config-initrd.service NetworkManager-initrd.service NetworkManager-wait-online-initrd.service
+%global systemd_units NetworkManager.service NetworkManager-wait-online.service NetworkManager-dispatcher.service nm-priv-helper.service
 
 %global systemd_units_cloud_setup nm-cloud-setup.service nm-cloud-setup.timer
 
@@ -760,6 +760,11 @@ rm -f %{buildroot}%{_libdir}/*.la
 rm -f %{buildroot}%{_libdir}/pppd/%{ppp_version}/*.la
 rm -f %{buildroot}%{nmplugindir}/*.la
 
+# Don't use the *-initrd.service files yet, wait dracut to support them
+rm -f %{_unitdir}/NetworkManager-config-initrd.service
+rm -f %{_unitdir}/NetworkManager-initrd.service
+rm -f %{_unitdir}/NetworkManager-wait-online-initrd.service
+
 # Ensure the documentation timestamps are constant to avoid multilib conflicts
 find %{buildroot}%{_datadir}/gtk-doc -exec touch --reference meson.build '{}' \+
 
@@ -829,7 +834,7 @@ if [ $1 -eq 0 ]; then
     # Don't kill networking entirely just on package remove
     #/bin/systemctl stop NetworkManager.service >/dev/null 2>&1 || :
 fi
-%systemd_preun NetworkManager-wait-online.service NetworkManager-dispatcher.service nm-priv-helper.service NetworkManager-config-initrd.service NetworkManager-initrd.service NetworkManager-wait-online-initrd.service
+%systemd_preun NetworkManager-wait-online.service NetworkManager-dispatcher.service nm-priv-helper.service
 
 
 %if %{with ifcfg_rh}
@@ -927,9 +932,6 @@ fi
 %{_unitdir}/NetworkManager-wait-online.service
 %{_unitdir}/NetworkManager-dispatcher.service
 %{_unitdir}/nm-priv-helper.service
-%{_unitdir}/NetworkManager-config-initrd.service
-%{_unitdir}/NetworkManager-initrd.service
-%{_unitdir}/NetworkManager-wait-online-initrd.service
 %dir %{_datadir}/doc/NetworkManager/examples
 %{_datadir}/doc/NetworkManager/examples/server.conf
 %if %{with ifcfg_warning} || %{with ifcfg_migrate}
