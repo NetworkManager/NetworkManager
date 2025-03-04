@@ -1759,6 +1759,10 @@
                   nmcli-description="The tx queue size (number of tx descriptors) for DPDK ports. Must be zero or a power of 2 between 1 and 4096, and supported by the hardware. Defaults to zero which means to leave the parameter in OVS unspecified and effectively configures 2048 descriptors."
                   format="integer"
                   values="0 - 4096" />
+        <property name="lsc-interrupt"
+                  nmcli-description="Configures the Link State Change (LSC) detection mode for the OVS DPDK interface. When set to &quot;default&quot; (-1), NetworkManager doesn&apos;t change the default value configured by Open vSwitch. &quot;enabled&quot; (1) enables interrupts. &quot;disabled&quot; (0) disables interrupts, thus setting the interface in poll mode."
+                  format="choice (NMSettingOvsDpdkLscInterrupt)"
+                  values="default (-1), disabled (0), enabled (1)" />
     </setting>
     <setting name="ovs-external-ids" >
     </setting>

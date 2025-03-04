@@ -2120,6 +2120,10 @@
                   dbus-type="s"
                   gprop-type="gchararray"
                   />
+        <property name="lsc-interrupt"
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="n-rxq"
                   dbus-type="u"
                   gprop-type="guint"

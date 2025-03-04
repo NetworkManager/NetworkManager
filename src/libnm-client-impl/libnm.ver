@@ -2048,3 +2048,9 @@ global:
 	nm_setting_ethtool_fec_mode_get_type;
 	nm_ethtool_optname_is_fec;
 } libnm_1_50_0;
+
+libnm_1_54_0 {
+global:
+	nm_setting_ovs_dpdk_get_lsc_interrupt;
+	nm_setting_ovs_dpdk_lsc_interrupt_get_type;
+} libnm_1_52_0;
