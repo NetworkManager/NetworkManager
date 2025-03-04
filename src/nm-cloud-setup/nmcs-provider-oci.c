@@ -141,10 +141,10 @@ _get_config_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
         }
 
         field   = json_object_get(vnic, "vnicId");
-        vnic_id = field && json_is_string(field) ? json_string_value(field) : "";
+        vnic_id = json_is_string(field) ? json_string_value(field) : "";
 
         field = json_object_get(vnic, "macAddr");
-        val   = field && json_is_string(field) ? json_string_value(field) : NULL;
+        val   = json_is_string(field) ? json_string_value(field) : NULL;
         mac   = val ? nmcs_utils_hwaddr_normalize(val, json_string_length(field)) : NULL;
         if (!mac) {
             _VNIC_WARN("missing or invalid 'macAddr', ignoring VNIC");
@@ -153,14 +153,14 @@ _get_config_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 
         if (is_baremetal) {
             field     = json_object_get(vnic, "nicIndex");
-            nic_index = field && json_is_integer(field) ? json_integer_value(field) : -1;
+            nic_index = json_is_integer(field) ? json_integer_value(field) : -1;
             if (nic_index < 0 || nic_index >= 1024) { /* 1024 = random limit to prevent abuse*/
                 _VNIC_WARN("missing or invalid 'nicIndex', ignoring VNIC");
                 continue;
             }
 
             field    = json_object_get(vnic, "vlanTag");
-            vlan_tag = field && json_is_integer(field) ? json_integer_value(field) : -1;
+            vlan_tag = json_is_integer(field) ? json_integer_value(field) : -1;
             if (vlan_tag < 0) {
                 _VNIC_WARN("missing or invalid 'vlanTag', ignoring VNIC");
                 continue;
@@ -171,7 +171,7 @@ _get_config_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
         config_iface_data->iface_idx = i;
 
         field = json_object_get(vnic, "privateIp");
-        val   = field && json_is_string(field) ? json_string_value(field) : NULL;
+        val   = json_is_string(field) ? json_string_value(field) : NULL;
         if (val && nm_inet_parse_bin(AF_INET, val, NULL, &addr)) {
             config_iface_data->has_ipv4s    = TRUE;
             config_iface_data->ipv4s_len    = 1;
@@ -182,7 +182,7 @@ _get_config_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
         }
 
         field = json_object_get(vnic, "virtualRouterIp");
-        val   = field && json_is_string(field) ? json_string_value(field) : NULL;
+        val   = json_is_string(field) ? json_string_value(field) : NULL;
         if (val && nm_inet_parse_bin(AF_INET, val, NULL, &addr)) {
             config_iface_data->has_gateway = TRUE;
             config_iface_data->gateway     = addr;
@@ -191,7 +191,7 @@ _get_config_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
         }
 
         field = json_object_get(vnic, "subnetCidrBlock");
-        val   = field && json_is_string(field) ? json_string_value(field) : NULL;
+        val   = json_is_string(field) ? json_string_value(field) : NULL;
         if (val && nm_inet_parse_with_prefix_bin(AF_INET, val, NULL, &addr, &prefix)) {
             config_iface_data->has_cidr    = TRUE;
             config_iface_data->cidr_addr   = addr;
