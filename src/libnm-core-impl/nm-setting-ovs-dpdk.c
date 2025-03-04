@@ -22,7 +22,11 @@
 
 /*****************************************************************************/
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_DEVARGS, PROP_N_RXQ, PROP_N_RXQ_DESC, PROP_N_TXQ_DESC, );
+NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_DEVARGS,
+                                  PROP_N_RXQ,
+                                  PROP_N_RXQ_DESC,
+                                  PROP_N_TXQ_DESC,
+                                  PROP_LSC_INTERRUPT, );
 
 /**
  * NMSettingOvsDpdk:
@@ -36,6 +40,7 @@ struct _NMSettingOvsDpdk {
     guint32 n_rxq;
     guint32 n_rxq_desc;
     guint32 n_txq_desc;
+    int     lsc_interrupt;
 };
 
 struct _NMSettingOvsDpdkClass {
@@ -108,6 +113,22 @@ nm_setting_ovs_dpdk_get_n_txq_desc(NMSettingOvsDpdk *self)
     g_return_val_if_fail(NM_IS_SETTING_OVS_DPDK(self), 0);
 
     return self->n_txq_desc;
+}
+
+/**
+ * nm_setting_ovs_dpdk_get_lsc_interrupt:
+ * @self: the #NMSettingOvsDpdk
+ *
+ * Returns: the #NMSettingOvsDpdk:lsc-interrupt property of the setting
+ *
+ * Since: 1.54
+ **/
+NMSettingOvsDpdkLscInterrupt
+nm_setting_ovs_dpdk_get_lsc_interrupt(NMSettingOvsDpdk *self)
+{
+    g_return_val_if_fail(NM_IS_SETTING_OVS_DPDK(self), NM_SETTING_OVS_DPDK_LSC_INTERRUPT_DEFAULT);
+
+    return self->lsc_interrupt;
 }
 
 /*****************************************************************************/
@@ -256,6 +277,29 @@ nm_setting_ovs_dpdk_class_init(NMSettingOvsDpdkClass *klass)
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingOvsDpdk,
                                               n_txq_desc);
+
+    /**
+     * NMSettingOvsDpdk:lsc-interrupt:
+     *
+     * Configures the Link State Change (LSC) detection mode for the OVS DPDK interface.
+     * When set to %NM_SETTING_OVS_DPDK_LSC_INTERRUPT_DEFAULT, NetworkManager doesn't
+     * change the default value configured by Open vSwitch.
+     * %NM_SETTING_OVS_DPDK_LSC_INTERRUPT_ENABLED enables interrupts.
+     * %NM_SETTING_OVS_DPDK_LSC_INTERRUPT_DISABLED disables interrupts, thus setting the
+     * interface in poll mode.
+     *
+     * Since: 1.54
+     **/
+    _nm_setting_property_define_direct_enum(properties_override,
+                                            obj_properties,
+                                            NM_SETTING_OVS_DPDK_LSC_INTERRUPT,
+                                            PROP_LSC_INTERRUPT,
+                                            NM_TYPE_SETTING_OVS_DPDK_LSC_INTERRUPT,
+                                            NM_SETTING_OVS_DPDK_LSC_INTERRUPT_DEFAULT,
+                                            NM_SETTING_PARAM_NONE,
+                                            NULL,
+                                            NMSettingOvsDpdk,
+                                            lsc_interrupt);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

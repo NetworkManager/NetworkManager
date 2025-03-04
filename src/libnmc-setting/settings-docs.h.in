@@ -301,6 +301,7 @@
 #define DESCRIBE_DOC_NM_SETTING_OVS_BRIDGE_RSTP_ENABLE N_("Enable or disable RSTP.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_BRIDGE_STP_ENABLE N_("Enable or disable STP.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_DPDK_DEVARGS N_("Open vSwitch DPDK device arguments.")
+#define DESCRIBE_DOC_NM_SETTING_OVS_DPDK_LSC_INTERRUPT N_("Configures the Link State Change (LSC) detection mode for the OVS DPDK interface. When set to \"default\" (-1), NetworkManager doesn't change the default value configured by Open vSwitch. \"enabled\" (1) enables interrupts. \"disabled\" (0) disables interrupts, thus setting the interface in poll mode.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_DPDK_N_RXQ N_("Open vSwitch DPDK number of rx queues. Defaults to zero which means to leave the parameter in OVS unspecified and effectively configures one queue.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_DPDK_N_RXQ_DESC N_("The rx queue size (number of rx descriptors) for DPDK ports. Must be zero or a power of 2 between 1 and 4096, and supported by the hardware. Defaults to zero which means to leave the parameter in OVS unspecified and effectively configures 2048 descriptors.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_DPDK_N_TXQ_DESC N_("The tx queue size (number of tx descriptors) for DPDK ports. Must be zero or a power of 2 between 1 and 4096, and supported by the hardware. Defaults to zero which means to leave the parameter in OVS unspecified and effectively configures 2048 descriptors.")

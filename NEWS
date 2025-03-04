@@ -8,7 +8,9 @@ subject to change and not guaranteed to be compatible with
 the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
-* Added systemd services to provide networking in the initrd.
+* Add systemd services to provide networking in the initrd.
+* Introduce a new "ovs-dpdk.lsc-interrupt" property to configure the
+  Link State Change (LSC) detection mode for OVS DPDK interfaces.
 
 =============================================
 NetworkManager-1.52

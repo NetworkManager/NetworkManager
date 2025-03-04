@@ -7306,7 +7306,10 @@ static const NMMetaPropertyInfo *const property_infos_OVS_DPDK[] = {
    PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_DPDK_N_TXQ_DESC,
         .property_type =                &_pt_gobject_int,
    ),
-    NULL
+   PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_DPDK_LSC_INTERRUPT,
+        .property_type =                &_pt_gobject_enum,
+   ),
+   NULL
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE

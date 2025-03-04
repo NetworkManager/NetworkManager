@@ -27,12 +27,30 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_OVS_DPDK_SETTING_NAME "ovs-dpdk"
 
-#define NM_SETTING_OVS_DPDK_DEVARGS    "devargs"
-#define NM_SETTING_OVS_DPDK_N_RXQ      "n-rxq"
-#define NM_SETTING_OVS_DPDK_N_RXQ_DESC "n-rxq-desc"
-#define NM_SETTING_OVS_DPDK_N_TXQ_DESC "n-txq-desc"
+#define NM_SETTING_OVS_DPDK_DEVARGS       "devargs"
+#define NM_SETTING_OVS_DPDK_N_RXQ         "n-rxq"
+#define NM_SETTING_OVS_DPDK_N_RXQ_DESC    "n-rxq-desc"
+#define NM_SETTING_OVS_DPDK_N_TXQ_DESC    "n-txq-desc"
+#define NM_SETTING_OVS_DPDK_LSC_INTERRUPT "lsc-interrupt"
 
 typedef struct _NMSettingOvsDpdkClass NMSettingOvsDpdkClass;
+
+/**
+ * NMSettingOvsDpdkLscInterrupt:
+ * @NM_SETTING_OVS_DPDK_LSC_INTERRUPT_DEFAULT: leave the value set to Open vSwitch default
+ * @NM_SETTING_OVS_DPDK_LSC_INTERRUPT_DISABLED: interrupt disabled (poll mode)
+ * @NM_SETTING_OVS_DPDK_LSC_INTERRUPT_ENABLED: interrupt enabled
+ *
+ * #NMSettingOvsDpdkLscInterrupt indicates whether the interface uses interrupts
+ * or poll mode for Link State Change (LSC) detection on the OVS DPDK interface.
+ *
+ * Since: 1.54
+ */
+typedef enum {
+    NM_SETTING_OVS_DPDK_LSC_INTERRUPT_DEFAULT  = -1,
+    NM_SETTING_OVS_DPDK_LSC_INTERRUPT_DISABLED = 0,
+    NM_SETTING_OVS_DPDK_LSC_INTERRUPT_ENABLED  = 1,
+} NMSettingOvsDpdkLscInterrupt;
 
 NM_AVAILABLE_IN_1_20
 GType nm_setting_ovs_dpdk_get_type(void);
@@ -47,6 +65,8 @@ NM_AVAILABLE_IN_1_42
 guint32 nm_setting_ovs_dpdk_get_n_rxq_desc(NMSettingOvsDpdk *self);
 NM_AVAILABLE_IN_1_42
 guint32 nm_setting_ovs_dpdk_get_n_txq_desc(NMSettingOvsDpdk *self);
+NM_AVAILABLE_IN_1_54
+NMSettingOvsDpdkLscInterrupt nm_setting_ovs_dpdk_get_lsc_interrupt(NMSettingOvsDpdk *self);
 
 G_END_DECLS
 

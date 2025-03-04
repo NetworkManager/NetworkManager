@@ -903,15 +903,17 @@ _insert_interface(json_t       *params,
         s_ovs_patch = nm_connection_get_setting_ovs_patch(interface);
 
     if (s_ovs_dpdk) {
-        const char *devargs;
-        guint32     n_rxq;
-        guint32     n_rxq_desc;
-        guint32     n_txq_desc;
+        const char                  *devargs;
+        guint32                      n_rxq;
+        guint32                      n_rxq_desc;
+        guint32                      n_txq_desc;
+        NMSettingOvsDpdkLscInterrupt lsc_int;
 
         devargs    = nm_setting_ovs_dpdk_get_devargs(s_ovs_dpdk);
         n_rxq      = nm_setting_ovs_dpdk_get_n_rxq(s_ovs_dpdk);
         n_rxq_desc = nm_setting_ovs_dpdk_get_n_rxq_desc(s_ovs_dpdk);
         n_txq_desc = nm_setting_ovs_dpdk_get_n_txq_desc(s_ovs_dpdk);
+        lsc_int    = nm_setting_ovs_dpdk_get_lsc_interrupt(s_ovs_dpdk);
 
         dpdk_array = json_array();
 
@@ -931,6 +933,17 @@ _insert_interface(json_t       *params,
             json_array_append_new(
                 dpdk_array,
                 json_pack("[s,s]", "n_txq_desc", nm_sprintf_buf(sbuf, "%u", n_txq_desc)));
+        }
+
+        switch (lsc_int) {
+        case NM_SETTING_OVS_DPDK_LSC_INTERRUPT_DEFAULT:
+            break;
+        case NM_SETTING_OVS_DPDK_LSC_INTERRUPT_ENABLED:
+            json_array_append_new(dpdk_array, json_pack("[s,s]", "dpdk-lsc-interrupt", "true"));
+            break;
+        case NM_SETTING_OVS_DPDK_LSC_INTERRUPT_DISABLED:
+            json_array_append_new(dpdk_array, json_pack("[s,s]", "dpdk-lsc-interrupt", "false"));
+            break;
         }
 
         json_array_append_new(options, dpdk_array);
