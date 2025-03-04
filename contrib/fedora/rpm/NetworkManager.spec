@@ -761,9 +761,9 @@ rm -f %{buildroot}%{_libdir}/pppd/%{ppp_version}/*.la
 rm -f %{buildroot}%{nmplugindir}/*.la
 
 # Don't use the *-initrd.service files yet, wait dracut to support them
-rm -f %{_unitdir}/NetworkManager-config-initrd.service
-rm -f %{_unitdir}/NetworkManager-initrd.service
-rm -f %{_unitdir}/NetworkManager-wait-online-initrd.service
+rm -f %{buildroot}%{_unitdir}/NetworkManager-config-initrd.service
+rm -f %{buildroot}%{_unitdir}/NetworkManager-initrd.service
+rm -f %{buildroot}%{_unitdir}/NetworkManager-wait-online-initrd.service
 
 # Ensure the documentation timestamps are constant to avoid multilib conflicts
 find %{buildroot}%{_datadir}/gtk-doc -exec touch --reference meson.build '{}' \+
