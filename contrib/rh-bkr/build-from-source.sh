@@ -33,7 +33,7 @@ if grep -q --quiet Coughlan /etc/redhat-release; then
     # And for RHEL10
     else
         rpmkeys --import /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
-        YUM_ARGS+=('--repofrompath=buildroot,http://download.devel.redhat.com/rhel-$releasever/nightly/BUILDROOT-$releasever-Public-Beta/latest-BUILDROOT-$releasever-RHEL-$releasever/compose/Buildroot/$basearch/os')
+        YUM_ARGS+=('--repofrompath=buildroot,http://download.devel.redhat.com/rhel-$releasever/nightly/BUILDROOT-$releasever/latest-BUILDROOT-$releasever-RHEL-$releasever/compose/Buildroot/$basearch/os')
     fi
     YUM_ARGS+=('--nogpg')
 fi
