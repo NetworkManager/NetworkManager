@@ -4689,16 +4689,10 @@ found_better:
         if (nm_g_hash_table_contains(exclude_devices, device))
             continue;
 
-        /* During startup, NM performs a cleanup of the ovsdb to remove previous entries.
-         * Before the device is suitable for the connection, it must have ovsdb->ready set
-         * to TRUE. Performing this check in all kind of interfaces is too agressive and leads
-         * to race conditions, e.g when a non-virtual bond port gets a carrier, preventing the
-         * device to be a good candidate for the connection. */
-        if (nm_device_get_device_type(device) == NM_DEVICE_TYPE_OVS_INTERFACE
-            && !nm_device_is_available(device,
-                                       for_user_request
-                                           ? NM_DEVICE_CHECK_DEV_AVAILABLE_FOR_USER_REQUEST
-                                           : NM_DEVICE_CHECK_DEV_AVAILABLE_NONE))
+        if (!nm_device_is_available(device,
+                                    for_user_request
+                                        ? NM_DEVICE_CHECK_DEV_AVAILABLE_FOR_USER_REQUEST
+                                        : NM_DEVICE_CHECK_DEV_AVAILABLE_NONE))
             continue;
 
         /* determine the priority of this device. Currently, this priority is independent
