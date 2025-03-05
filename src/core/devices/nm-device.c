@@ -880,6 +880,7 @@ static void device_ifindex_changed_cb(NMManager *manager, NMDevice *device_chang
 static gboolean device_link_changed(gpointer user_data);
 static gboolean _get_maybe_ipv6_disabled(NMDevice *self);
 static void     deactivate_ready(NMDevice *self, NMDeviceStateReason reason);
+static void     carrier_disconnected_action_cancel(NMDevice *self);
 
 /*****************************************************************************/
 
@@ -5018,6 +5019,10 @@ _set_ifindex(NMDevice *self, int ifindex, gboolean is_ip_ifindex)
     *p_ifindex = ifindex;
 
     ip_ifindex_new = nm_device_get_ip_ifindex(self);
+
+    /* the ifindex changed; forget about any carrier change event for
+     * the previous ifindex */
+    carrier_disconnected_action_cancel(self);
 
     if (priv->l3cfg) {
         if (ip_ifindex_new <= 0 || ip_ifindex_new != nm_l3cfg_get_ifindex(priv->l3cfg)) {
