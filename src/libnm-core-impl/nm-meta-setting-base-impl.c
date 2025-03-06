@@ -51,6 +51,7 @@
 #include "nm-setting-ovs-port.h"
 #include "nm-setting-ppp.h"
 #include "nm-setting-pppoe.h"
+#include "nm-setting-prefix-delegation.h"
 #include "nm-setting-proxy.h"
 #include "nm-setting-serial.h"
 #include "nm-setting-tc-config.h"
@@ -484,6 +485,13 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
             .setting_name      = NM_SETTING_PPP_SETTING_NAME,
             .get_setting_gtype = nm_setting_ppp_get_type,
         },
+    [NM_META_SETTING_TYPE_PREFIX_DELEGATION] =
+        {
+            .meta_type         = NM_META_SETTING_TYPE_PREFIX_DELEGATION,
+            .setting_priority  = NM_SETTING_PRIORITY_IP,
+            .setting_name      = NM_SETTING_PREFIX_DELEGATION_SETTING_NAME,
+            .get_setting_gtype = nm_setting_prefix_delegation_get_type,
+        },
     [NM_META_SETTING_TYPE_PROXY] =
         {
             .meta_type         = NM_META_SETTING_TYPE_PROXY,
@@ -698,6 +706,7 @@ const NMMetaSettingType nm_meta_setting_types_by_priority[] = {
     NM_META_SETTING_TYPE_HOSTNAME,
     NM_META_SETTING_TYPE_IP4_CONFIG,
     NM_META_SETTING_TYPE_IP6_CONFIG,
+    NM_META_SETTING_TYPE_PREFIX_DELEGATION,
     NM_META_SETTING_TYPE_PROXY,
     NM_META_SETTING_TYPE_TC_CONFIG,
 

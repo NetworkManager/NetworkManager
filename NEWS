@@ -9,6 +9,9 @@ the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 * Added systemd services to provide networking in the initrd.
+* Add a new "prefix-delegation" setting containing a "subnet-id"
+  property that specifies the subnet to choose on the downstream
+  interface when using IPv6 prefix delegation.
 
 =============================================
 NetworkManager-1.52

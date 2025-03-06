@@ -41,6 +41,7 @@ libnm_core_settings_sources = files(
   'nm-setting-ovs-port.c',
   'nm-setting-ppp.c',
   'nm-setting-pppoe.c',
+  'nm-setting-prefix-delegation.c',
   'nm-setting-proxy.c',
   'nm-setting-serial.c',
   'nm-setting-sriov.c',

@@ -54,6 +54,7 @@ SETTING_OVS_PORT_*          parent="NM.SettingOvsPort"              name="SETTIN
 SETTING_PARAM_*             parent="NM.Setting"                     name="SETTING_PARAM_(.+)"
 SETTING_PPPOE_*             parent="NM.SettingPppoe"                name="SETTING_PPPOE_(.+)"
 SETTING_PPP_*               parent="NM.SettingPpp"                  name="SETTING_PPP_(.+)"
+SETTING_PREFIX_DELEGATION_* parent="NM.SettingPrefixDelegation"     name="SETTING_PREFIX_DELEGATION_(.+)"
 SETTING_PROXY_*             parent="NM.SettingProxy"                name="SETTING_PROXY_(.+)"
 SETTING_SERIAL_*            parent="NM.SettingSerial"               name="SETTING_SERIAL_(.+)"
 SETTING_SRIOV_*             parent="NM.SettingSriov"                name="SETTING_SRIOV_(.+)"
