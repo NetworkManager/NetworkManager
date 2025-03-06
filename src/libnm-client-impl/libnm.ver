@@ -2055,4 +2055,7 @@ global:
 	nm_setting_ip_config_get_forwarding;
 	nm_setting_ovs_dpdk_get_lsc_interrupt;
 	nm_setting_ovs_dpdk_lsc_interrupt_get_type;
+	nm_setting_prefix_delegation_get_subnet_id;
+	nm_setting_prefix_delegation_get_type;
+	nm_setting_prefix_delegation_new;
 } libnm_1_52_0;

@@ -46,6 +46,7 @@ libnm_core_headers = files(
   'nm-setting-ovs-port.h',
   'nm-setting-ppp.h',
   'nm-setting-pppoe.h',
+  'nm-setting-prefix-delegation.h',
   'nm-setting-proxy.h',
   'nm-setting-serial.h',
   'nm-setting-sriov.h',

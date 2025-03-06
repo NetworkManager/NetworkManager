@@ -11,6 +11,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Add systemd services to provide networking in the initrd.
 * Introduce a new "ovs-dpdk.lsc-interrupt" property to configure the
   Link State Change (LSC) detection mode for OVS DPDK interfaces.
+* Add a new "prefix-delegation" setting containing a "subnet-id"
+  property that specifies the subnet to choose on the downstream
+  interface when using IPv6 prefix delegation.
 
 =============================================
 NetworkManager-1.52
