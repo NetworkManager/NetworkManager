@@ -212,6 +212,7 @@ if [[ $NO_DIST != 1 ]]; then
         -Ddocs=true \
         -Dintrospection=true \
         -Difcfg_rh=true \
+        -Difcfg_rh_deprecation_override=true \
         -Difupdown=true \
         -Dconfig_logging_backend_default=syslog \
         -Dconfig_wifi_backend_default=wpa_supplicant \

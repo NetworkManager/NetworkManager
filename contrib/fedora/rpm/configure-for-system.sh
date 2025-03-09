@@ -404,6 +404,7 @@ meson setup\
     -Dtests=yes \
     -Dvalgrind=no \
     -Difcfg_rh=true \
+    -Difcfg_rh_deprecation_override=true \
     -Difupdown=false \
     $(args_enable "$P_PPP"                    -Dppp=true  -Dpppd="$D_SBINDIR/pppd" -Dpppd_plugin_dir="$D_LIBDIR/pppd/$P_PPP_VERSION") \
     $(args_enable "$(bool_not_true "$P_PPP")" -Dppp=false                                                                           ) \

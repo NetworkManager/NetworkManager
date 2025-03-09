@@ -302,6 +302,10 @@ glib_dep = declare_dependency(
 
 enable_ifcfg_rh = get_option('ifcfg_rh')
 
+if enable_ifcfg_rh
+  assert(get_option('ifcfg_rh_deprecation_override'), 'The ifcfg-rh support is deprecated and will be removed in a future version of NetworkManager. Use "-Difcfg_rh_deprecation_override=true" to continue using it.')
+endif
+
 config_migrate_ifcfg_rh_default = get_option('config_migrate_ifcfg_rh_default').to_string()
 if config_migrate_ifcfg_rh_default == 'true'
   assert(enable_ifcfg_rh, 'ifcfg-rh migration can be enabled by default only when the ifcfg-rh plugin is enabled')

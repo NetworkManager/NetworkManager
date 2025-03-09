@@ -695,6 +695,7 @@ Preferably use nmcli instead.
 	-Dvalgrind=no \
 %if %{with ifcfg_rh}
 	-Difcfg_rh=true \
+	-Difcfg_rh_deprecation_override=true \
 %else
 	-Difcfg_rh=false \
 %endif
