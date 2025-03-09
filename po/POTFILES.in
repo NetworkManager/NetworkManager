@@ -95,6 +95,7 @@ src/libnm-core-impl/nm-setting-hsr.c
 src/libnm-core-impl/nm-setting-infiniband.c
 src/libnm-core-impl/nm-setting-ip-config.c
 src/libnm-core-impl/nm-setting-ip-tunnel.c
+src/libnm-core-impl/nm-setting-ipvlan.c
 src/libnm-core-impl/nm-setting-ip4-config.c
 src/libnm-core-impl/nm-setting-ip6-config.c
 src/libnm-core-impl/nm-setting-loopback.c
