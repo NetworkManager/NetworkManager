@@ -11355,6 +11355,13 @@ _dev_ipdhcpx_notify(NMDhcpClient *client, const NMDhcpClientNotifyData *notify_d
     switch (notify_data->notify_type) {
     case NM_DHCP_CLIENT_NOTIFY_TYPE_PREFIX_DELEGATED:
         nm_assert(!IS_IPv4);
+        if (notify_data->prefix_delegated.prefix->plen == 0
+            || notify_data->prefix_delegated.prefix->plen > 64) {
+            _LOGW_ipdhcp(addr_family,
+                         "ignoring invalid prefix-delegation with length %u",
+                         notify_data->prefix_delegated.prefix->plen);
+            return;
+        }
         /* Just re-emit. The device just contributes the prefix to the
          * pool in NMPolicy, which decides about subnet allocation
          * on the shared devices. */
