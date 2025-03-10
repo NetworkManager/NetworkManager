@@ -23,6 +23,7 @@
 #include "nm-active-connection.h"
 #include "nm-act-request.h"
 #include "dns/nm-dns-manager.h"
+#include "nm-firewall-utils.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceWireGuard
 #include "nm-device-logging.h"
@@ -1300,6 +1301,53 @@ create_and_realize(NMDevice              *device,
     return TRUE;
 }
 
+typedef struct {
+    NMDeviceWireGuard         *self;
+    GCancellable              *cancellable;
+    NMDeviceDeactivateCallback callback;
+    gpointer                   callback_user_data;
+} DeactivateData;
+
+static void
+deactivate_cb_on_idle(gpointer user_data, GCancellable *cancellable)
+{
+    gs_unref_object NMDeviceWireGuard *self = NULL;
+    NMDeviceWireGuardPrivate          *priv;
+    NMDeviceDeactivateCallback         callback;
+    gpointer                           callback_user_data;
+    gs_free_error GError              *cancelled_error = NULL;
+
+    nm_utils_user_data_unpack(user_data, &self, &callback, &callback_user_data);
+    priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
+
+    if (!g_cancellable_set_error_if_cancelled(cancellable, &cancelled_error)) {
+        //NMIPConfig *ip6_addrs = nm_device_get_ip6_config(NM_DEVICE(self));
+        const char *ip_iface  = nm_device_get_ip_iface(NM_DEVICE(self));
+
+        nm_assert(priv->auto_default_route_fwmark);
+        nm_assert(ip_iface);
+        //nm_assert(ip6_addrs);
+        nm_firewall_config_set_wg_rule(ip_iface, /*ip6_addrs,*/ priv->auto_default_route_fwmark, FALSE);
+    }
+
+    callback(NM_DEVICE(self), cancelled_error, callback_user_data);
+}
+
+static void
+deactivate_async(NMDevice                  *device,
+                 GCancellable              *cancellable,
+                 NMDeviceDeactivateCallback callback,
+                 gpointer                   callback_user_data)
+{
+    NMDeviceWireGuard *self = NM_DEVICE_WIREGUARD(device);
+    gpointer           user_data;
+
+    _LOGT(LOGD_CORE, "deactivate: start async");
+
+    user_data = nm_utils_user_data_pack(g_object_ref(self), callback, callback_user_data);
+    nm_utils_invoke_on_idle(cancellable, deactivate_cb_on_idle, user_data);
+}
+
 /*****************************************************************************/
 
 static void
@@ -1763,11 +1811,28 @@ _get_dev2_ip_config(NMDeviceWireGuard *self, int addr_family)
 }
 
 static void
+_configure_firewall(NMDeviceWireGuard *self, int addr_family)
+{
+    NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
+    const char               *ip_iface;
+
+    if (addr_family != AF_INET6 || !priv->auto_default_route_enabled_6)
+        return;
+
+    ip_iface  = nm_device_get_ip_iface(NM_DEVICE(self));
+    nm_assert(priv->auto_default_route_fwmark);
+    nm_assert(ip_iface);
+
+    nm_firewall_config_set_wg_rule(ip_iface, /*ip6_addrs,*/ priv->auto_default_route_fwmark, TRUE);
+}
+
+static void
 act_stage3_ip_config(NMDevice *device, int addr_family)
 {
     nm_auto_unref_l3cd const NML3ConfigData *l3cd = NULL;
 
     l3cd = _get_dev2_ip_config(NM_DEVICE_WIREGUARD(device), addr_family);
+    _configure_firewall(NM_DEVICE_WIREGUARD(device), addr_family);
     nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_READY, l3cd);
 }
 
@@ -2018,6 +2083,7 @@ nm_device_wireguard_class_init(NMDeviceWireGuardClass *klass)
 
     device_class->state_changed                                 = device_state_changed;
     device_class->create_and_realize                            = create_and_realize;
+    device_class->deactivate_async                              = deactivate_async;
     device_class->act_stage2_config                             = act_stage2_config;
     device_class->act_stage2_config_also_for_external_or_assume = TRUE;
     device_class->act_stage3_ip_config                          = act_stage3_ip_config;
