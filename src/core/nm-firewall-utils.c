@@ -215,6 +215,13 @@ _share_iptables_call_v(const char *const *argv)
 #define _share_iptables_call(...) \
     _share_iptables_call_v(NM_MAKE_STRV("" IPTABLES_PATH "", "--wait", "2", __VA_ARGS__))
 
+#define _ipxtables_call(family, ...)                                                   \
+    _iptables_call_v(                                                                  \
+        NM_MAKE_STRV((family == AF_INET ? "" IPTABLES_PATH "" : "" IP6TABLES_PATH ""), \
+                     "--wait",                                                         \
+                     "2",                                                              \
+                     __VA_ARGS__))
+
 static gboolean
 _share_iptables_chain_op(const char *table, const char *chain, const char *op)
 {
@@ -756,6 +763,85 @@ _fw_nft_set_shared_construct(gboolean up, const char *ip_iface, in_addr_t addr, 
     return nm_str_buf_finalize_to_gbytes(&strbuf);
 }
 
+static GBytes *
+_fw_nft_wg_default_construct(const char *ip_iface, int family, int fwmark, gboolean up)
+{
+    nm_auto_str_buf NMStrBuf strbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_1000, FALSE);
+    gs_free char            *table_name = NULL;
+    const char              *family_str = family == AF_INET ? "ip" : "ip6";
+
+    table_name = _share_iptables_get_name(FALSE, "nm-wg", ip_iface);
+
+    _fw_nft_append_cmd_table(&strbuf, family_str, table_name, up);
+
+    if (up) {
+        _append(&strbuf,
+                "add chain %s %s premangle {"
+                " type filter hook prerouting priority mangle; policy accept; "
+                " meta l4proto udp meta mark set ct mark; "
+                "};",
+                family_str,
+                table_name);
+
+        _append(&strbuf,
+                "add chain %s %s postmangle {"
+                " type filter hook postrouting priority mangle; policy accept; "
+                " meta l4proto udp mark 0x%08x ct mark set meta mark; "
+                "};",
+                family_str,
+                table_name,
+                fwmark);
+    }
+
+    return nm_str_buf_finalize_to_gbytes(&strbuf);
+}
+
+static void
+_fw_iptables_wg_configure(const char *ip_iface, int family, int fwmark, gboolean up)
+{
+    gs_free char *comment_name = NULL;
+    char          fwmark_str[11];
+
+    comment_name = _share_iptables_get_name(FALSE, "nm-wg", ip_iface);
+    g_snprintf(fwmark_str, sizeof(fwmark_str), "%" G_GUINT32_FORMAT, fwmark);
+
+    nm_assert(strlen(fwmark_str) > 0);
+
+    _ipxtables_call(family,
+                    "--table",
+                    "mangle",
+                    up ? "--insert" : "--delete",
+                    "POSTROUTING",
+                    "--match",
+                    "mark",
+                    "--mark",
+                    fwmark_str,
+                    "--protocol",
+                    "udp",
+                    "--jump",
+                    "CONNMARK",
+                    "--save-mark",
+                    "-m",
+                    "comment",
+                    "--comment",
+                    comment_name);
+
+    _ipxtables_call(family,
+                    "--table",
+                    "mangle",
+                    up ? "--insert" : "--delete",
+                    "PREROUTING",
+                    "--protocol",
+                    "udp",
+                    "--jump",
+                    "CONNMARK",
+                    "--restore-mark",
+                    "-m",
+                    "comment",
+                    "--comment",
+                    comment_name);
+}
+
 /*****************************************************************************/
 
 GBytes *
@@ -1046,6 +1132,30 @@ nm_firewall_config_free(NMFirewallConfig *self)
 }
 
 /*****************************************************************************/
+void
+nm_firewall_config_set_wg_rule(const char *ifname, int family, int fwmark, gboolean up)
+{
+    nm_assert(NM_IN_SET(family, AF_INET, AF_INET6));
+
+    switch (nm_firewall_utils_get_backend()) {
+    case NM_FIREWALL_BACKEND_NFTABLES:
+    {
+        gs_unref_bytes GBytes *stdin_buf = NULL;
+
+        stdin_buf = _fw_nft_wg_default_construct(ifname, family, fwmark, up);
+        _fw_nft_call_sync(stdin_buf, NULL);
+        break;
+    }
+    case NM_FIREWALL_BACKEND_IPTABLES:
+        _fw_iptables_wg_configure(ifname, family, fwmark, up);
+        break;
+    case NM_FIREWALL_BACKEND_NONE:
+        break;
+    default:
+        nm_assert_not_reached();
+        break;
+    }
+}
 
 void
 nm_firewall_config_apply_sync(NMFirewallConfig *self, gboolean up)
