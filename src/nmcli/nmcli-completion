@@ -49,7 +49,10 @@ _nmcli()
         cur=''
     fi
 
-    output="$(nmcli --complete-args "${words[@]}" 2>/dev/null)"
+    # If the user set an alias like `nmcli=nmcli --some-arguments`, then --complete-args
+    # might give unexpected behaviours. Use `command` to ensure that aliases are ignored
+    # and the nmcli binary is used directly.
+    output="$(command nmcli --complete-args "${words[@]}" 2>/dev/null)"
 
     # Bail out early if we're completing a file name
     if [ $? = 65 ]; then
