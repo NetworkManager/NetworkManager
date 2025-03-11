@@ -13457,6 +13457,8 @@ _dev_ipsharedx_cleanup(NMDevice *self, int addr_family)
         nm_clear_l3cd(&priv->ipshared_data_4.v4.l3cd);
 
         _dev_l3_register_l3cds_set_one(self, L3_CONFIG_DATA_TYPE_SHARED_4, NULL, FALSE);
+    } else {
+        _dev_l3_register_l3cds_set_one(self, L3_CONFIG_DATA_TYPE_PD_6, NULL, FALSE);
     }
 
     _dev_ipsharedx_set_state(self, addr_family, NM_DEVICE_IP_STATE_NONE);
