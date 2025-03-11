@@ -806,14 +806,14 @@ _fw_nft_wg_default_construct(const char       *ip_iface,
         _append(&strbuf,
                 "add chain %s %s premangle {"
                 " type filter hook prerouting priority mangle; policy accept; "
-                " meta l4proto udp meta mark set ct mark"
+                " meta l4proto udp meta mark set ct mark; "
                 "};",
                 family_str,
                 table_name);
         _append(&strbuf,
                 "add chain %s %s postmangle {"
                 " type filter hook postrouting priority mangle; policy accept; "
-                " meta l4proto udp mark %#010x ct mark set meta mark"
+                " meta l4proto udp mark 0x%08x ct mark set meta mark; "
                 "};",
                 family_str,
                 table_name,
