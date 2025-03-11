@@ -179,7 +179,7 @@ _share_iptables_get_name(gboolean is_iptables_chain, const char *prefix, const c
 /*****************************************************************************/
 
 static gboolean
-_share_iptables_call_v(const char *const *argv)
+_iptables_call_v(const char *const *argv)
 {
     gs_free_error GError *error    = NULL;
     gs_free char         *argv_str = NULL;
@@ -213,7 +213,10 @@ _share_iptables_call_v(const char *const *argv)
 }
 
 #define _share_iptables_call(...) \
-    _share_iptables_call_v(NM_MAKE_STRV("" IPTABLES_PATH "", "--wait", "2", __VA_ARGS__))
+    _iptables_call_v(NM_MAKE_STRV("" IPTABLES_PATH "", "--wait", "2", __VA_ARGS__))
+
+#define _ip6tables_call(...) \
+    _iptables_call_v(NM_MAKE_STRV("" IP6TABLES_PATH "", "--wait", "2", __VA_ARGS__))
 
 static gboolean
 _share_iptables_chain_op(const char *table, const char *chain, const char *op)
@@ -1078,7 +1081,8 @@ _firewall_backend_detect(void)
 {
     if (g_file_test(NFT_PATH, G_FILE_TEST_IS_EXECUTABLE))
         return NM_FIREWALL_BACKEND_NFTABLES;
-    if (g_file_test(IPTABLES_PATH, G_FILE_TEST_IS_EXECUTABLE))
+    if (g_file_test(IPTABLES_PATH, G_FILE_TEST_IS_EXECUTABLE)
+        && g_file_test(IP6TABLES_PATH, G_FILE_TEST_IS_EXECUTABLE))
         return NM_FIREWALL_BACKEND_IPTABLES;
 
     return NM_FIREWALL_BACKEND_NFTABLES;
