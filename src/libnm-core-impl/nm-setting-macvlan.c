@@ -251,7 +251,7 @@ nm_setting_macvlan_class_init(NMSettingMacvlanClass *klass)
     /**
      * NMSettingMacvlan:promiscuous:
      *
-     * Whether the interface should be put in promiscuous mode.
+     * Whether the parent interface should be put in promiscuous mode (true by default).
      *
      * Since: 1.2
      **/

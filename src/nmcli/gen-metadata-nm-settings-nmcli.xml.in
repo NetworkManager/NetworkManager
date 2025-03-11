@@ -1698,7 +1698,7 @@
                   format="choice (NMSettingMacvlanMode)"
                   values="vepa (1), bridge (2), private (3), passthru (4), source (5)" />
         <property name="promiscuous"
-                  nmcli-description="Whether the interface should be put in promiscuous mode."
+                  nmcli-description="Whether the parent interface should be put in promiscuous mode (true by default)."
                   format="boolean"
                   values="true/yes/on, false/no/off" />
         <property name="tap"
