@@ -723,6 +723,7 @@ default_paths = ['/sbin', '/usr/sbin']
 
 # 0: cmdline option, 1: paths, 2: fallback
 progs = [['iptables', default_paths, '/usr/sbin/iptables'],
+         ['ip6tables', default_paths, '/usr/sbin/ip6tables'],
          ['nft',      default_paths, '/usr/sbin/nft'],
          ['dnsmasq',  default_paths, ''],
          ['modprobe', default_paths, '/sbin/modprobe']
@@ -1125,7 +1126,7 @@ endif
 output += '\n'
 output += '  jansson: ' + jansson_msg + '\n'
 output += '  iptables: ' + config_h.get('IPTABLES_PATH') + '\n'
-output += '  ip6tables: ' + config_h.get('IPTABLES_PATH') + '\n'
+output += '  ip6tables: ' + config_h.get('IP6TABLES_PATH') + '\n'
 output += '  nft: ' + config_h.get('NFT_PATH') + '\n'
 output += '  modprobe: ' + config_h.get('MODPROBE_PATH') + '\n'
 output += '  modemmanager-1: ' + enable_modem_manager.to_string() + '\n'
