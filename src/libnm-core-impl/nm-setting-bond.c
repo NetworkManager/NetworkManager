@@ -1118,7 +1118,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                     NM_CONNECTION_ERROR,
                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
                     _("'%s' option is only valid with mode '%s'"),
-                    NM_SETTING_BOND_OPTION_LACP_RATE,
+                    NM_SETTING_BOND_OPTION_LACP_ACTIVE,
                     "802.3ad");
         g_prefix_error(error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
         return FALSE;
