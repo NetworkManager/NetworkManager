@@ -597,6 +597,7 @@ Preferably use nmcli instead.
 %endif
 	-Dnft=%{_sbindir}/nft \
 	-Diptables=%{_sbindir}/iptables \
+	-Dip6tables=%{_sbindir}/ip6tables \
 %if %{with dhclient}
 	-Ddhclient=%{_sbindir}/dhclient \
 %else
