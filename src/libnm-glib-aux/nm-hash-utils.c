@@ -190,6 +190,27 @@ nm_pint_equal(gconstpointer a, gconstpointer b)
     return s1 == s2 || (s1 && s2 && *s1 == *s2);
 }
 
+/* GHashFunc for GHashTable keys that are a pointer to a guint64 */
+guint
+nm_puint64_hash(gconstpointer p)
+{
+    const guint64 *s = p;
+
+    if (!s)
+        return nm_hash_static(298377461u);
+    return nm_hash_val(1208815757u, *s);
+}
+
+/* GEqualFunc for GHashTable keys that are a pointer to a guint64 */
+gboolean
+nm_puint64_equal(gconstpointer a, gconstpointer b)
+{
+    const guint64 *s1 = a;
+    const guint64 *s2 = a;
+
+    return s1 == s2 || (s1 && s2 && *s1 == *s2);
+}
+
 guint
 nm_pdirect_hash(gconstpointer p)
 {
