@@ -6,6 +6,7 @@ option('dbus_conf_dir', type: 'string', value: '', description: 'where D-Bus sys
 option('kernel_firmware_dir', type: 'string', value: '/lib/firmware', description: 'where kernel firmware directory is (default is /lib/firmware)')
 option('runtime_dir', type: 'string', value: '', description: 'Directory for transient runtime state [default: LOCALSTATEDIR/run or /run]')
 option('iptables', type: 'string', value: '', description: 'path to iptables')
+option('ip6tables', type: 'string', value: '', description: 'path to ip6tables')
 option('nft', type: 'string', value: '', description: 'path to nft')
 option('dnsmasq', type: 'string', value: '', description: 'path to dnsmasq')
 option('modprobe', type: 'string', value: '', description: 'path to modprobe')
