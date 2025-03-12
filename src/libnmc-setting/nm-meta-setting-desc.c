@@ -1005,8 +1005,16 @@ _get_fcn_gobject_int(ARGS_GET_FCN)
     case 16:
         if (is_uint64)
             return_str = g_strdup_printf("0x%" G_GINT64_MODIFIER "x", v.u64);
-        else
-            return_str = g_strdup_printf("0x%" G_GINT64_MODIFIER "x", (guint64) v.i64);
+        else {
+            if (property_info->property_typ_data
+                && property_info->property_typ_data->subtype.gobject_int
+                       .print_hex_negative_as_base10
+                && v.i64 < 0) {
+                return_str = g_strdup_printf("%" G_GINT64_FORMAT, v.i64);
+            } else {
+                return_str = g_strdup_printf("0x%" G_GINT64_MODIFIER "x", (guint64) v.i64);
+            }
+        }
         break;
     default:
         return_str = NULL;
@@ -1421,6 +1429,11 @@ _set_fcn_gobject_int(ARGS_SET_FCN)
     }
 
     nm_meta_property_int_get_range(property_info, &min, &max);
+
+    /* See the comment on "print_hex_negative_as_base10" */
+    nm_assert(!property_info->property_typ_data
+              || !property_info->property_typ_data->subtype.gobject_int.print_hex_negative_as_base10
+              || (!is_uint64 && min.i64 > -10));
 
     if (is_uint64)
         v.u64 = _nm_utils_ascii_str_to_uint64(value, base, min.u64, max.u64, 0);
