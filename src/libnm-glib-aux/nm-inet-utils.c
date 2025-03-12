@@ -238,6 +238,42 @@ nm_ip6_addr_clear_host_address(struct in6_addr *dst, const struct in6_addr *src,
     return dst;
 }
 
+/**
+ * nm_ip6_addr_get_subnet_id:
+ * @addr: the IPv6 address
+ * @plen: the prefix length
+ *
+ * Given an IPv6 address and a prefix length, returns the subnet ID,
+ * defined as follows:
+ *
+ * |     plen bits   | (64 - plen) bits |          64 bits              |
+ * +-----------------+------------------+-------------------------------+
+ * |      prefix     |    subnet ID     |        interface ID           |
+ * +-----------------+------------------+-------------------------------+
+ *
+ * The prefix length must be a value between 0 and 64.
+ */
+guint64
+nm_ip6_addr_get_subnet_id(struct in6_addr *addr, guint8 plen)
+{
+    int     nbits = 64 - plen;
+    guint64 res   = 0;
+    guint64 tmp;
+    guint64 i;
+
+    g_return_val_if_fail(addr, 0);
+    g_return_val_if_fail(plen <= 64, 0);
+
+    for (i = 0; i < 2 && nbits > 0; i++, nbits -= 32) {
+        tmp = htonl(addr->s6_addr32[1 - i]);
+        tmp = tmp & ((1ULL << NM_MIN(32U, (guint) nbits)) - 1);
+        tmp = tmp << (32 * i);
+        res += tmp;
+    }
+
+    return res;
+}
+
 int
 nm_ip6_addr_same_prefix_cmp(const struct in6_addr *addr_a,
                             const struct in6_addr *addr_b,

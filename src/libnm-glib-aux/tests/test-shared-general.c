@@ -398,6 +398,53 @@ test_nm_ip4_addr_netmask_from_prefix(void)
 /*****************************************************************************/
 
 static void
+test_nm_ip6_addr_get_subnet_id(void)
+{
+#define check_subnet_id(_addrstr, _plen, _subnet_id)                              \
+    {                                                                             \
+        struct in6_addr addr;                                                     \
+                                                                                  \
+        addr = nmtst_inet6_from_string(_addrstr);                                 \
+        g_assert_cmpint(nm_ip6_addr_get_subnet_id(&addr, _plen), ==, _subnet_id); \
+    }
+
+    check_subnet_id("aaaa:bbbb:cccc:ffff::", 64, 0);
+    check_subnet_id("aaaa:bbbb:cccc:fffe::", 63, 0);
+    check_subnet_id("aaaa:bbbb:cccc:ffff::", 63, 1);
+    check_subnet_id("aaaa:bbbb:cccc:fffc::", 62, 0);
+    check_subnet_id("aaaa:bbbb:cccc:fffd::", 62, 1);
+    check_subnet_id("aaaa:bbbb:cccc:fffe::", 62, 2);
+    check_subnet_id("aaaa:bbbb:cccc:ffff::", 62, 3);
+    check_subnet_id("aaaa:bbbb:cccc:fff8::", 61, 0);
+    check_subnet_id("aaaa:bbbb:cccc:ffff::", 61, 7);
+    check_subnet_id("aaaa:bbbb:cccc:fff0::", 60, 0);
+    check_subnet_id("aaaa:bbbb:cccc:fff2::", 60, 2);
+    check_subnet_id("aaaa:bbbb:cccc:ffff::", 60, 15);
+    check_subnet_id("aaaa:bbbb:cccc:0000::", 48, 0);
+    check_subnet_id("aaaa:bbbb:cccc:f000::", 48, 61440);
+    check_subnet_id("aaaa:bbbb:cccc:ffff::", 48, 65535);
+    check_subnet_id("aaaa:bbbb:cccc:0000::", 46, 0);
+    check_subnet_id("aaaa:bbbb:cccc:0001::", 46, 1);
+    check_subnet_id("aaaa:bbbb:ccce:5555::", 46, 152917);
+    check_subnet_id("aaaa:bbbb:0000:0000::", 32, 0);
+    check_subnet_id("aaaa:bbbb:0000:0001::", 32, 1);
+    check_subnet_id("aaaa:bbbb:0001:0001::", 32, 65537);
+    check_subnet_id("aaaa:bbbb:ffff:ffff::", 32, 0xffffffff);
+    check_subnet_id("aaaa:bbb8:0000:0000::", 30, 0);
+    check_subnet_id("aaaa:bbb8:0000:0001::", 30, 1);
+    check_subnet_id("aaaa:bbb8:0001:0001::", 30, 65537);
+    check_subnet_id("aaaa:bbbb:0000:0000::", 30, 0x300000000ULL);
+    check_subnet_id("aaaa:bbbb:0001:0001::", 30, 0x300010001ULL);
+    check_subnet_id("aaaa:bbbb:0001:0001::", 8, 0xAABBBB00010001ULL);
+    check_subnet_id("abaa:bbbb:0001:0001::", 7, 0x1AABBBB00010001ULL);
+    check_subnet_id("abaa:bbbb:0001:0001::", 0, 0xABAABBBB00010001ULL);
+    check_subnet_id("abaa:bbbb:0001:0001:5555:5555:5555:5555", 0, 0xABAABBBB00010001ULL);
+    check_subnet_id("::", 0, 0);
+}
+
+/*****************************************************************************/
+
+static void
 test_unaligned(void)
 {
     int shift;
@@ -2864,6 +2911,7 @@ main(int argc, char **argv)
     g_test_add_func("/general/test_nm_ip4_addr_is_loopback", test_nm_ip4_addr_is_loopback);
     g_test_add_func("/general/test_nm_ip4_addr_netmask_from_prefix",
                     test_nm_ip4_addr_netmask_from_prefix);
+    g_test_add_func("/general/test_nm_ip6_addr_get_subnet_id", test_nm_ip6_addr_get_subnet_id);
     g_test_add_func("/general/test_unaligned", test_unaligned);
     g_test_add_func("/general/test_strv_cmp", test_strv_cmp);
     g_test_add_func("/general/test_strstrip_avoid_copy", test_strstrip_avoid_copy);
