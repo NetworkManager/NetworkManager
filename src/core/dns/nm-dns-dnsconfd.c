@@ -72,18 +72,25 @@ typedef enum {
 /*****************************************************************************/
 
 static void
+dnsconfd_change_plugin_state(NMDnsDnsconfd *self, DnsconfdPluginState new_state)
+{
+    NMDnsDnsconfdPrivate *priv = NM_DNS_DNSCONFD_GET_PRIVATE(self);
+
+    priv->plugin_state = new_state;
+    _nm_dns_plugin_update_pending_maybe_changed(NM_DNS_PLUGIN(self));
+}
+
+static void
 dnsconfd_serial_changed(NMDnsDnsconfd *self, guint new_serial)
 {
     NMDnsDnsconfdPrivate *priv         = NM_DNS_DNSCONFD_GET_PRIVATE(self);
     priv->present_configuration_serial = new_serial;
     if (priv->plugin_state == DNSCONFD_PLUGIN_WAIT_SERIAL
         && priv->awaited_configuration_serial == new_serial) {
-        priv->plugin_state = DNSCONFD_PLUGIN_IDLE;
+        dnsconfd_change_plugin_state(self, DNSCONFD_PLUGIN_IDLE);
         /* Update finished, serials match */
         _LOGT("serials match, update finished");
     }
-
-    _nm_dns_plugin_update_pending_maybe_changed(NM_DNS_PLUGIN(self));
 }
 
 static void
@@ -134,8 +141,7 @@ dnsconfd_serial_retrieval_done(GObject *source_object, GAsyncResult *res, gpoint
 
     if (!response) {
         _LOGW("dnsconfd serial retrieval failed: %s", error->message);
-        priv->plugin_state = DNSCONFD_PLUGIN_IDLE;
-        _nm_dns_plugin_update_pending_maybe_changed(NM_DNS_PLUGIN(self));
+        dnsconfd_change_plugin_state(self, DNSCONFD_PLUGIN_IDLE);
         return;
     }
 
@@ -210,8 +216,7 @@ dnsconfd_update_done(GObject *source_object, GAsyncResult *res, gpointer user_da
 
     if (!response) {
         _LOGW("dnsconfd update failed: %s", error->message);
-        priv->plugin_state = DNSCONFD_PLUGIN_IDLE;
-        _nm_dns_plugin_update_pending_maybe_changed(NM_DNS_PLUGIN(self));
+        dnsconfd_change_plugin_state(self, DNSCONFD_PLUGIN_IDLE);
         return;
     }
 
@@ -221,8 +226,7 @@ dnsconfd_update_done(GObject *source_object, GAsyncResult *res, gpointer user_da
 
     if (!awaited_serial) {
         _LOGW("dnsconfd refused update: %s", dnsconfd_message);
-        priv->plugin_state = DNSCONFD_PLUGIN_IDLE;
-        _nm_dns_plugin_update_pending_maybe_changed(NM_DNS_PLUGIN(self));
+        dnsconfd_change_plugin_state(self, DNSCONFD_PLUGIN_IDLE);
         return;
     }
 
@@ -231,14 +235,12 @@ dnsconfd_update_done(GObject *source_object, GAsyncResult *res, gpointer user_da
 
     if (priv->awaited_configuration_serial == priv->present_configuration_serial) {
         /* Serials match, update finished */
-        priv->plugin_state = DNSCONFD_PLUGIN_IDLE;
+        dnsconfd_change_plugin_state(self, DNSCONFD_PLUGIN_IDLE);
         _LOGT("after update serials match");
     } else {
-        priv->plugin_state = DNSCONFD_PLUGIN_WAIT_SERIAL;
+        dnsconfd_change_plugin_state(self, DNSCONFD_PLUGIN_WAIT_SERIAL);
         _LOGT("after update serials don't match, waiting");
     }
-
-    _nm_dns_plugin_update_pending_maybe_changed(NM_DNS_PLUGIN(self));
 }
 
 static gboolean
@@ -489,8 +491,7 @@ name_owner_changed(NMDnsDnsconfd *self, const char *name_owner)
             || priv->plugin_state == DNSCONFD_PLUGIN_WAIT_SERIAL) {
             /* We were waiting for either serial or confirmation of update and name
              * disappeared, thus we need to retransmit */
-            priv->plugin_state = DNSCONFD_PLUGIN_WAIT_CONNECT;
-            _nm_dns_plugin_update_pending_maybe_changed(NM_DNS_PLUGIN(self));
+            dnsconfd_change_plugin_state(self, DNSCONFD_PLUGIN_WAIT_CONNECT);
         }
         return;
     }
@@ -501,15 +502,13 @@ name_owner_changed(NMDnsDnsconfd *self, const char *name_owner)
     if (!subscribe_serial(self)) {
         /* This means that in time between new name and subscribe serial call
          * we lost the name again thus wait again */
-        priv->plugin_state = DNSCONFD_PLUGIN_WAIT_CONNECT;
+        dnsconfd_change_plugin_state(self, DNSCONFD_PLUGIN_WAIT_CONNECT);
         _LOGT("subscription failed, waiting to connect");
     } else {
-        priv->plugin_state = DNSCONFD_PLUGIN_WAIT_UPDATE_DONE;
+        dnsconfd_change_plugin_state(self, DNSCONFD_PLUGIN_WAIT_UPDATE_DONE);
         _LOGT("sending update and waiting for its finish");
         send_dnsconfd_update(self);
     }
-
-    _nm_dns_plugin_update_pending_maybe_changed(NM_DNS_PLUGIN(self));
 }
 
 static void
@@ -706,17 +705,15 @@ update(NMDnsPlugin             *plugin,
     /* We need to consider only whether we are connected, because newer update call
      * overrides the old one */
     if (all_connected == CONNECTION_FAIL) {
-        priv->plugin_state = DNSCONFD_PLUGIN_IDLE;
+        dnsconfd_change_plugin_state(self, DNSCONFD_PLUGIN_IDLE);
         _LOGT("failed to connect");
     } else if (all_connected == CONNECTION_WAIT) {
-        priv->plugin_state = DNSCONFD_PLUGIN_WAIT_CONNECT;
+        dnsconfd_change_plugin_state(self, DNSCONFD_PLUGIN_WAIT_CONNECT);
         _LOGT("not connected, waiting to connect");
     } else {
-        priv->plugin_state = DNSCONFD_PLUGIN_WAIT_UPDATE_DONE;
+        dnsconfd_change_plugin_state(self, DNSCONFD_PLUGIN_WAIT_UPDATE_DONE);
         _LOGT("connected, waiting for update to finish");
     }
-
-    _nm_dns_plugin_update_pending_maybe_changed(plugin);
 
     if (all_connected == CONNECTION_FAIL) {
         nm_utils_error_set(error,
