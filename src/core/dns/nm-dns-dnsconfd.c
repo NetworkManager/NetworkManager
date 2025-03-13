@@ -132,6 +132,13 @@ dnsconfd_serial_retrieval_done(GObject *source_object, GAsyncResult *res, gpoint
     self = user_data;
     priv = NM_DNS_DNSCONFD_GET_PRIVATE(self);
 
+    if (!response) {
+        _LOGW("dnsconfd serial retrieval failed: %s", error->message);
+        priv->plugin_state = DNSCONFD_PLUGIN_IDLE;
+        _nm_dns_plugin_update_pending_maybe_changed(NM_DNS_PLUGIN(self));
+        return;
+    }
+
     nm_clear_g_cancellable(&priv->serial_cancellable);
 
     g_variant_get(response, "(v)", &new_serial_variant);
@@ -201,8 +208,12 @@ dnsconfd_update_done(GObject *source_object, GAsyncResult *res, gpointer user_da
 
     nm_clear_g_cancellable(&priv->update_cancellable);
 
-    if (!response)
+    if (!response) {
         _LOGW("dnsconfd update failed: %s", error->message);
+        priv->plugin_state = DNSCONFD_PLUGIN_IDLE;
+        _nm_dns_plugin_update_pending_maybe_changed(NM_DNS_PLUGIN(self));
+        return;
+    }
 
     /* By using &s we will get pointer to char data contained
      * in variant and thus no freing of dnsconfd_message is required */
