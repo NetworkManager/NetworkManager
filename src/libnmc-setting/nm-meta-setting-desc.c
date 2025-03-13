@@ -11,7 +11,6 @@
 #include <arpa/inet.h>
 #include <linux/if_ether.h>
 #include <linux/if_infiniband.h>
-#include <linux/ethtool.h>
 
 #include "libnm-core-aux-intern/nm-common-macros.h"
 #include "libnm-glib-aux/nm-enum-utils.h"
