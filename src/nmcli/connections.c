@@ -5236,9 +5236,70 @@ nmc_process_connection_properties(NmCli              *nmc,
                                   gboolean            allow_setting_removal,
                                   GError            **error)
 {
+    const char *const   *args;
+    gs_free const char **to_free = NULL;
+
     /* First check if we have a port-type, as this would mean we will not
      * have ip properties but possibly others, port-type specific.
+     * Then check connection.type, as port-type might be deduced from it.
      */
+    if (!nmc->complete) {
+        const char       **dst;
+        const char *const *src;
+        const char        *option;
+
+        to_free = g_malloc(*argc * sizeof(const char *) + 1);
+        args = dst = to_free;
+
+        for (src = *argv; src < *argv + *argc - 1; src += 2) {
+            option = (**src == '+' || **src == '-') ? *src + 1 : *src;
+            if (NM_IN_STRSET(option,
+                             "connection.port-type",
+                             "port-type",
+                             "connection.slave-type",
+                             "slave-type")) {
+                dst[0] = src[0];
+                dst[1] = src[1];
+                dst += 2;
+            }
+        }
+        for (src = *argv; src < *argv + *argc - 1; src += 2) {
+            option = (**src == '+' || **src == '-') ? *src + 1 : *src;
+            if (NM_IN_STRSET(option, "connection.type", "type")) {
+                dst[0] = src[0];
+                dst[1] = src[1];
+                dst += 2;
+            }
+        }
+        for (src = *argv; src < *argv + *argc - 1; src += 2) {
+            option = (**src == '+' || **src == '-') ? *src + 1 : *src;
+            if (!NM_IN_STRSET(option,
+                              "connection.port-type",
+                              "port-type",
+                              "connection.slave-type",
+                              "slave-type",
+                              "connection.type",
+                              "type")) {
+                dst[0] = src[0];
+                dst[1] = src[1];
+                dst += 2;
+            }
+        }
+        if (*argc % 2 == 1) {
+            /* If we have an odd number of args, copy the last one. It will raise
+             * a "missing value" error later. */
+            *dst = *argv[*argc - 1];
+            dst += 1;
+        }
+        *dst = NULL; /* NULL terminated as expected by get_value() */
+    } else {
+        /* Don't reorder if we are doing CLI argument completion, as it might give
+         * unexpected results */
+        args = *argv;
+    }
+
+    *argv += *argc; /* Leave the pointer after the last argument */
+
     /* Go through arguments and set properties */
     do {
         const NMMetaSettingValidPartItem *const *type_settings;
@@ -5267,11 +5328,7 @@ nmc_process_connection_properties(NmCli              *nmc,
             return FALSE;
         }
 
-        nm_assert(argv);
-        nm_assert(*argv);
-        nm_assert(**argv);
-
-        option_orig = **argv;
+        option_orig = *args;
 
         switch (option_orig[0]) {
         case '+':
@@ -5294,7 +5351,7 @@ nmc_process_connection_properties(NmCli              *nmc,
             const char *setting_name;
 
             (*argc)--;
-            (*argv)++;
+            args++;
 
             if (*argc == 1 && nmc->complete) {
                 complete_existing_setting(nmc, connection, value);
@@ -5309,9 +5366,9 @@ nmc_process_connection_properties(NmCli              *nmc,
                 return FALSE;
             }
 
-            setting_name = **argv;
+            setting_name = *args;
             (*argc)--;
-            (*argv)++;
+            args++;
 
             ss = is_setting_valid(connection, type_settings, port_settings, setting_name);
             if (!ss) {
@@ -5358,8 +5415,8 @@ nmc_process_connection_properties(NmCli              *nmc,
             }
 
             (*argc)--;
-            (*argv)++;
-            if (!get_value(&value, argc, argv, option_orig, error))
+            args++;
+            if (!get_value(&value, argc, &args, option_orig, error))
                 return FALSE;
 
             if (!*argc && nmc->complete) {
@@ -5463,8 +5520,8 @@ nmc_process_connection_properties(NmCli              *nmc,
             complete_property_name(nmc, connection, modifier, option, NULL);
 
         (*argc)--;
-        (*argv)++;
-        if (!get_value(&value, argc, argv, option_orig, error))
+        args++;
+        if (!get_value(&value, argc, &args, option_orig, error))
             return FALSE;
 
         if (!*argc && nmc->complete)
