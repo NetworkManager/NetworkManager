@@ -12,12 +12,12 @@ void nmc_monitor_connections(NmCli *nmc);
 
 const char *nmc_connection_check_deprecated(NMConnection *c);
 
-gboolean nmc_process_connection_properties(NmCli              *nmc,
-                                           NMConnection       *connection,
-                                           int                *argc,
-                                           const char *const **argv,
-                                           gboolean            allow_remove_setting,
-                                           GError            **error);
+gboolean nmc_process_connection_properties(NmCli             *nmc,
+                                           NMConnection      *connection,
+                                           int                argc,
+                                           const char *const *args,
+                                           gboolean           allow_remove_setting,
+                                           GError           **error);
 
 NMMetaColor nmc_active_connection_state_to_color(NMActiveConnection *ac);
 
