@@ -4615,8 +4615,11 @@ set_connection_type(NmCli            *nmc,
                     gboolean          allow_reset,
                     GError          **error)
 {
-    GError     *local     = NULL;
-    const char *port_type = NULL;
+    NMSettingConnection *s_con     = nm_connection_get_setting_connection(con);
+    GError              *local     = NULL;
+    const char          *port_type = NULL;
+
+    nm_assert(s_con);
 
     value = check_valid_name_toplevel(value, &port_type, &local);
     if (!value) {
@@ -4631,7 +4634,7 @@ set_connection_type(NmCli            *nmc,
         return FALSE;
     }
 
-    if (port_type) {
+    if (!nm_setting_connection_get_port_type(s_con) && port_type) {
         if (!set_property(nmc->client,
                           con,
                           NM_SETTING_CONNECTION_SETTING_NAME,
