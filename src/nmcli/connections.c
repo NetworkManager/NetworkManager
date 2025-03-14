@@ -3861,6 +3861,11 @@ check_valid_name_toplevel(const char *val, const char **port_type, GError **erro
         return NM_SETTING_WIRED_SETTING_NAME;
     }
 
+    if (nm_streq(str, "ovs-port"))
+        NM_SET_OUT(port_type, NM_SETTING_OVS_BRIDGE_SETTING_NAME);
+    else if (nm_streq(str, "ovs-interface"))
+        NM_SET_OUT(port_type, NM_SETTING_OVS_PORT_SETTING_NAME);
+
     setting_info = nm_meta_setting_info_editor_find_by_name(str, TRUE);
     if (setting_info)
         return setting_info->general->setting_name;
