@@ -39,13 +39,13 @@ typedef struct {
  * note that this object will be unrefed after the callback has returned, use
  * g_object_ref()/g_object_unref() if you want to use this object after the callback
  * has returned
- * @secrets: the #GVariant of type %NM_VARIANT_TYPE_CONNECTION containing the requested
+ * @secrets: (nullable): the #GVariant of type %NM_VARIANT_TYPE_CONNECTION containing the requested
  * secrets (as created by nm_connection_to_dbus() for example).  Each key in @secrets
  * should be the name of a #NMSetting object (like "802-11-wireless-security")
  * and each value should be an %NM_VARIANT_TYPE_SETTING variant.  The sub-dicts
  * map string:value, where the string is the setting property name (like "psk")
  * and the value is the secret
- * @error: if the secrets request failed, give a descriptive error here
+ * @error: (nullable): if the secrets request failed, give a descriptive error here
  * @user_data: caller-specific data to be passed to the function
  *
  * Called as a result of a request by NM to retrieve secrets.  When the
@@ -90,7 +90,7 @@ typedef void (*NMSecretAgentOldGetSecretsFunc)(NMSecretAgentOld *agent,
  * note that this object will be unrefed after the callback has returned, use
  * g_object_ref()/g_object_unref() if you want to use this object after the callback
  * has returned
- * @error: if the saving secrets failed, give a descriptive error here
+ * @error: (nullable): if the saving secrets failed, give a descriptive error here
  * @user_data: caller-specific data to be passed to the function
  *
  * Called as a result of a request by NM to save secrets.  When the
@@ -109,7 +109,7 @@ typedef void (*NMSecretAgentOldSaveSecretsFunc)(NMSecretAgentOld *agent,
  * note that this object will be unrefed after the callback has returned, use
  * g_object_ref()/g_object_unref() if you want to use this object after the callback
  * has returned
- * @error: if the deleting secrets failed, give a descriptive error here
+ * @error: (nullable): if the deleting secrets failed, give a descriptive error here
  * @user_data: caller-specific data to be passed to the function
  *
  * Called as a result of a request by NM to delete secrets.  When the
