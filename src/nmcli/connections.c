@@ -5262,10 +5262,11 @@ nmc_process_connection_properties(NmCli              *nmc,
         for (src = *argv; src < *argv + *argc - 1; src += 2) {
             option = (**src == '+' || **src == '-') ? *src + 1 : *src;
             if (NM_IN_STRSET(option,
-                             "connection.port-type",
-                             "port-type",
-                             "connection.slave-type",
-                             "slave-type")) {
+                             NM_SETTING_CONNECTION_SETTING_NAME "." NM_SETTING_CONNECTION_PORT_TYPE,
+                             "port-type", /* alias */
+                             NM_SETTING_CONNECTION_SETTING_NAME
+                             "." NM_SETTING_CONNECTION_SLAVE_TYPE,
+                             "slave-type" /* alias */)) {
                 dst[0] = src[0];
                 dst[1] = src[1];
                 dst += 2;
@@ -5273,7 +5274,9 @@ nmc_process_connection_properties(NmCli              *nmc,
         }
         for (src = *argv; src < *argv + *argc - 1; src += 2) {
             option = (**src == '+' || **src == '-') ? *src + 1 : *src;
-            if (NM_IN_STRSET(option, "connection.type", "type")) {
+            if (NM_IN_STRSET(option,
+                             NM_SETTING_CONNECTION_SETTING_NAME "." NM_SETTING_CONNECTION_TYPE,
+                             "type" /* alias */)) {
                 dst[0] = src[0];
                 dst[1] = src[1];
                 dst += 2;
@@ -5281,13 +5284,14 @@ nmc_process_connection_properties(NmCli              *nmc,
         }
         for (src = *argv; src < *argv + *argc - 1; src += 2) {
             option = (**src == '+' || **src == '-') ? *src + 1 : *src;
-            if (!NM_IN_STRSET(option,
-                              "connection.port-type",
-                              "port-type",
-                              "connection.slave-type",
-                              "slave-type",
-                              "connection.type",
-                              "type")) {
+            if (!NM_IN_STRSET(
+                    option,
+                    NM_SETTING_CONNECTION_SETTING_NAME "." NM_SETTING_CONNECTION_PORT_TYPE,
+                    "port-type",
+                    NM_SETTING_CONNECTION_SETTING_NAME "." NM_SETTING_CONNECTION_SLAVE_TYPE,
+                    "slave-type",
+                    NM_SETTING_CONNECTION_SETTING_NAME "." NM_SETTING_CONNECTION_TYPE,
+                    "type")) {
                 dst[0] = src[0];
                 dst[1] = src[1];
                 dst += 2;
