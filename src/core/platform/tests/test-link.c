@@ -15,6 +15,7 @@
 #include "libnm-base/nm-ethtool-base.h"
 #include "libnm-platform/nmp-object.h"
 #include "libnm-platform/nmp-netns.h"
+#include "libnm-platform/nmp-ethtool-ioctl.h"
 #include "libnm-platform/nm-platform-utils.h"
 
 #include "test-common.h"
@@ -3183,10 +3184,10 @@ test_netns_general(gpointer fixture, gconstpointer test_data)
      * Work around that and skip asserts that are known to fail. */
     ethtool_support = nmtstp_run_command("ethtool -i dummy1_ > /dev/null") == 0;
     if (ethtool_support) {
-        g_assert(nmp_utils_ethtool_get_driver_info(
+        g_assert(nmp_ethtool_ioctl_get_driver_info(
             nmtstp_link_get_typed(platform_1, 0, "dummy1_", NM_LINK_TYPE_DUMMY)->ifindex,
             &driver_info));
-        g_assert(nmp_utils_ethtool_get_driver_info(
+        g_assert(nmp_ethtool_ioctl_get_driver_info(
             nmtstp_link_get_typed(platform_1, 0, "dummy2a", NM_LINK_TYPE_DUMMY)->ifindex,
             &driver_info));
         g_assert_cmpint(nmtstp_run_command("ethtool -i dummy1_ > /dev/null"), ==, 0);
@@ -3197,10 +3198,10 @@ test_netns_general(gpointer fixture, gconstpointer test_data)
     g_assert(nm_platform_netns_push(platform_2, &netns_tmp));
 
     if (ethtool_support) {
-        g_assert(nmp_utils_ethtool_get_driver_info(
+        g_assert(nmp_ethtool_ioctl_get_driver_info(
             nmtstp_link_get_typed(platform_2, 0, "dummy1_", NM_LINK_TYPE_DUMMY)->ifindex,
             &driver_info));
-        g_assert(nmp_utils_ethtool_get_driver_info(
+        g_assert(nmp_ethtool_ioctl_get_driver_info(
             nmtstp_link_get_typed(platform_2, 0, "dummy2b", NM_LINK_TYPE_DUMMY)->ifindex,
             &driver_info));
         g_assert_cmpint(nmtstp_run_command("ethtool -i dummy1_ > /dev/null"), ==, 0);
@@ -4031,7 +4032,7 @@ test_ethtool_features_get(void)
 
         _LOGT(">>> ethtool-features-get RUN %u (do-set=%s", i_run, do_set ? "set" : "reset");
 
-        features = nmp_utils_ethtool_get_features(IFINDEX);
+        features = nmp_ethtool_ioctl_get_features(IFINDEX);
         g_ptr_array_add(gfree_keeper, features);
 
         ethtool_features_dump(features);
@@ -4044,7 +4045,7 @@ test_ethtool_features_get(void)
             features  = gfree_keeper->pdata[i_run * 2 - 1];
         }
 
-        nmp_utils_ethtool_set_features(IFINDEX, features, requested, do_set);
+        nmp_ethtool_ioctl_set_features(IFINDEX, features, requested, do_set);
     }
 }
 

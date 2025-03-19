@@ -12,6 +12,7 @@ libnm_platform = static_library(
     'nmp-netns.c',
     'nmp-object.c',
     'nmp-plobj.c',
+    'nmp-ethtool-ioctl.c',
     'devlink/nm-devlink.c',
     'wifi/nm-wifi-utils-nl80211.c',
     'wifi/nm-wifi-utils.c',
