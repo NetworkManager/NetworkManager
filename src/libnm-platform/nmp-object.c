@@ -16,6 +16,7 @@
 #include "libnm-platform/nm-platform-utils.h"
 #include "libnm-platform/wifi/nm-wifi-utils.h"
 #include "libnm-platform/wpan/nm-wpan-utils.h"
+#include "libnm-platform/nmp-ethtool-ioctl.h"
 
 /*****************************************************************************/
 
@@ -647,7 +648,7 @@ _link_get_driver(struct udev_device *udevice, const char *kind, int ifindex)
     if (ifindex > 0) {
         NMPUtilsEthtoolDriverInfo driver_info;
 
-        if (nmp_utils_ethtool_get_driver_info(ifindex, &driver_info)) {
+        if (nmp_ethtool_ioctl_get_driver_info(ifindex, &driver_info)) {
             if (driver_info.driver[0])
                 return g_intern_string(driver_info.driver);
         }
