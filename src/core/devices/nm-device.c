@@ -778,6 +778,7 @@ typedef struct _NMDevicePrivate {
     char     *prop_ip_iface; /* IP interface D-Bus property */
     GList    *ping_operations;
     GSource  *ping_timeout;
+    bool      refresh_forwarding_done : 1;
 } NMDevicePrivate;
 
 G_DEFINE_ABSTRACT_TYPE(NMDevice, nm_device, NM_TYPE_DBUS_OBJECT)
@@ -16857,6 +16858,8 @@ _cleanup_generic_post(NMDevice *self, NMDeviceStateReason reason, CleanupType cl
     priv->v4_route_table_all_sync_before = FALSE;
     priv->v6_route_table_all_sync_before = FALSE;
 
+    priv->refresh_forwarding_done = FALSE;
+
     priv->mtu_force_set_done = FALSE;
 
     priv->needs_ip6_subnet = FALSE;
@@ -18874,6 +18877,19 @@ nm_device_get_hostname_from_dns_lookup(NMDevice *self, int addr_family, gboolean
     }
 
     return nm_assert_unreachable_val(NULL);
+}
+
+gboolean
+nm_device_get_refresh_forwarding_done(NMDevice *self)
+{
+    return NM_DEVICE_GET_PRIVATE(self)->refresh_forwarding_done;
+}
+
+void
+nm_device_set_refresh_forwarding_done(NMDevice *self, gboolean is_refresh_forwarding_done)
+{
+    NMDevicePrivate *priv         = NM_DEVICE_GET_PRIVATE(self);
+    priv->refresh_forwarding_done = is_refresh_forwarding_done;
 }
 
 /*****************************************************************************/

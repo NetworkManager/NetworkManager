@@ -860,4 +860,8 @@ const char *nm_device_get_effective_ip_config_method(NMDevice *self, int addr_fa
 
 char *nm_device_sysctl_ip_conf_get(NMDevice *self, int addr_family, const char *property);
 
+gboolean nm_device_get_refresh_forwarding_done(NMDevice *self);
+
+void nm_device_set_refresh_forwarding_done(NMDevice *self, gboolean is_refresh_forwarding_done);
+
 #endif /* __NETWORKMANAGER_DEVICE_H__ */
