@@ -3803,7 +3803,7 @@ check_valid_name(const char                              *val,
 }
 
 static const char *
-check_valid_name_toplevel(const char *val, const char **port_type, GError **error)
+check_valid_name_toplevel(const char *val, GError **error)
 {
     gs_unref_ptrarray GPtrArray   *tmp_arr = NULL;
     const NMMetaSettingInfoEditor *setting_info;
@@ -3811,8 +3811,6 @@ check_valid_name_toplevel(const char *val, const char **port_type, GError **erro
     GType                          gtype   = G_TYPE_INVALID;
     const char                    *str;
     int                            i;
-
-    NM_SET_OUT(port_type, NULL);
 
     /* Create a temporary array that can be used in nmc_string_is_valid() */
     tmp_arr = g_ptr_array_sized_new(32);
@@ -3847,17 +3845,6 @@ check_valid_name_toplevel(const char *val, const char **port_type, GError **erro
             g_set_error(error, 1, 0, _("'%s' not among [%s]"), val, err_str);
         }
         return NULL;
-    }
-
-    if (nm_streq(str, "bond-slave")) {
-        NM_SET_OUT(port_type, NM_SETTING_BOND_SETTING_NAME);
-        return NM_SETTING_WIRED_SETTING_NAME;
-    } else if (nm_streq(str, "bridge-slave")) {
-        NM_SET_OUT(port_type, NM_SETTING_BRIDGE_SETTING_NAME);
-        return NM_SETTING_WIRED_SETTING_NAME;
-    } else if (nm_streq(str, "team-slave")) {
-        NM_SET_OUT(port_type, NM_SETTING_TEAM_SETTING_NAME);
-        return NM_SETTING_WIRED_SETTING_NAME;
     }
 
     setting_info = nm_meta_setting_info_editor_find_by_name(str, TRUE);
@@ -3929,7 +3916,6 @@ _strip_controller_prefix(const char *controller, const char *(**func)(NMConnecti
  * @connections: list af all connections
  * @controller: UUID, ifname or ID of the controller connection
  * @type: virtual connection type (bond, team, bridge, ...) or %NULL
- * @out_type: type of the connection that matched
  *
  * Check whether controller is a valid interface name, UUID or ID of some connection,
  * possibly of a specified @type.
@@ -3941,15 +3927,13 @@ _strip_controller_prefix(const char *controller, const char *(**func)(NMConnecti
 static const char *
 normalized_controller_for_port(const GPtrArray *connections,
                                const char      *controller,
-                               const char      *type,
-                               const char     **out_type)
+                               const char      *type)
 {
     NMConnection        *connection;
     NMSettingConnection *s_con;
     const char          *con_type = NULL, *id, *uuid, *ifname;
     guint                i;
     const char          *found_by_id    = NULL;
-    const char          *out_type_by_id = NULL;
     const char          *out_controller = NULL;
     const char *(*func)(NMConnection *) = NULL;
 
@@ -3967,8 +3951,6 @@ normalized_controller_for_port(const GPtrArray *connections,
         if (func) {
             /* There was a prefix; only compare to that type. */
             if (nm_streq0(controller, func(connection))) {
-                if (out_type)
-                    *out_type = con_type;
                 if (func == nm_connection_get_id)
                     out_controller = nm_connection_get_uuid(connection);
                 else
@@ -3981,29 +3963,20 @@ normalized_controller_for_port(const GPtrArray *connections,
             ifname = nm_connection_get_interface_name(connection);
             if (NM_IN_STRSET(controller, uuid, ifname)) {
                 out_controller = controller;
-                if (out_type)
-                    *out_type = con_type;
                 break;
             }
-            if (!found_by_id && nm_streq0(controller, id)) {
-                out_type_by_id = con_type;
-                found_by_id    = uuid;
-            }
+            if (!found_by_id && nm_streq0(controller, id))
+                found_by_id = uuid;
         }
     }
 
-    if (!out_controller) {
+    if (!out_controller)
         out_controller = found_by_id;
-        if (out_type)
-            *out_type = out_type_by_id;
-    }
 
     if (!out_controller) {
         nmc_printerr(_("Warning: controller='%s' doesn't refer to any existing profile.\n"),
                      controller);
         out_controller = controller;
-        if (out_type)
-            *out_type = type;
     }
 
     return out_controller;
@@ -4615,10 +4588,9 @@ set_connection_type(NmCli            *nmc,
                     gboolean          allow_reset,
                     GError          **error)
 {
-    GError     *local     = NULL;
-    const char *port_type = NULL;
+    GError *local = NULL;
 
-    value = check_valid_name_toplevel(value, &port_type, &local);
+    value = check_valid_name_toplevel(value, &local);
     if (!value) {
         if (!allow_reset)
             return TRUE;
@@ -4629,18 +4601,6 @@ set_connection_type(NmCli            *nmc,
                     local->message);
         g_clear_error(&local);
         return FALSE;
-    }
-
-    if (port_type) {
-        if (!set_property(nmc->client,
-                          con,
-                          NM_SETTING_CONNECTION_SETTING_NAME,
-                          NM_SETTING_CONNECTION_PORT_TYPE,
-                          port_type,
-                          NM_META_ACCESSOR_MODIFIER_SET,
-                          error)) {
-            return FALSE;
-        }
     }
 
     if (!set_property(nmc->client,
@@ -4707,17 +4667,7 @@ set_connection_controller(NmCli            *nmc,
 
     port_type   = nm_setting_connection_get_port_type(s_con);
     connections = nmc_get_connections(nmc);
-    value       = normalized_controller_for_port(connections, value, port_type, &port_type);
-
-    if (!set_property(nmc->client,
-                      con,
-                      NM_SETTING_CONNECTION_SETTING_NAME,
-                      NM_SETTING_CONNECTION_PORT_TYPE,
-                      port_type,
-                      NM_META_ACCESSOR_MODIFIER_SET,
-                      error)) {
-        return FALSE;
-    }
+    value       = normalized_controller_for_port(connections, value, port_type);
 
     return set_property(nmc->client,
                         con,
@@ -5236,9 +5186,6 @@ nmc_process_connection_properties(NmCli              *nmc,
                                   gboolean            allow_setting_removal,
                                   GError            **error)
 {
-    /* First check if we have a port-type, as this would mean we will not
-     * have ip properties but possibly others, port-type specific.
-     */
     /* Go through arguments and set properties */
     do {
         const NMMetaSettingValidPartItem *const *type_settings;
@@ -5980,7 +5927,7 @@ read_properties:
 
     /* Traditionally, we didn't ask for these options for ethernet ports. They don't
      * make much sense, since these are likely to be set by the controller anyway. */
-    if (nm_setting_connection_get_port_type(s_con)) {
+    if (nm_setting_connection_get_port_type(s_con) || nm_setting_connection_get_controller(s_con)) {
         disable_options(NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_MTU);
         disable_options(NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_MAC_ADDRESS);
         disable_options(NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_CLONED_MAC_ADDRESS);
@@ -9110,7 +9057,7 @@ do_connection_edit(const NMCCommand *cmd, NmCli *nmc, int argc, const char *cons
             return;
         }
 
-        connection_type = check_valid_name_toplevel(type, &port_type, &err1);
+        connection_type = check_valid_name_toplevel(type, &err1);
         tmp_str         = get_valid_options_string_toplevel();
 
         while (!connection_type) {
@@ -9124,7 +9071,7 @@ do_connection_edit(const NMCCommand *cmd, NmCli *nmc, int argc, const char *cons
 
             type_ask = nmc_readline(&nmc->nmc_config, EDITOR_PROMPT_CON_TYPE);
             type = type_ask = nm_strstrip(type_ask);
-            connection_type = check_valid_name_toplevel(type_ask, &port_type, &err1);
+            connection_type = check_valid_name_toplevel(type_ask, &err1);
         }
         nm_clear_g_free(&tmp_str);
 
