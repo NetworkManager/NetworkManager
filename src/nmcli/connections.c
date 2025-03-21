@@ -3916,6 +3916,7 @@ _strip_controller_prefix(const char *controller, const char *(**func)(NMConnecti
  * @connections: list af all connections
  * @controller: UUID, ifname or ID of the controller connection
  * @type: virtual connection type (bond, team, bridge, ...) or %NULL
+ * @out_type: type of the connection that matched
  *
  * Check whether controller is a valid interface name, UUID or ID of some connection,
  * possibly of a specified @type.
@@ -3927,13 +3928,15 @@ _strip_controller_prefix(const char *controller, const char *(**func)(NMConnecti
 static const char *
 normalized_controller_for_port(const GPtrArray *connections,
                                const char      *controller,
-                               const char      *type)
+                               const char      *type,
+                               const char     **out_type)
 {
     NMConnection        *connection;
     NMSettingConnection *s_con;
     const char          *con_type = NULL, *id, *uuid, *ifname;
     guint                i;
     const char          *found_by_id    = NULL;
+    const char          *out_type_by_id = NULL;
     const char          *out_controller = NULL;
     const char *(*func)(NMConnection *) = NULL;
 
@@ -3951,6 +3954,8 @@ normalized_controller_for_port(const GPtrArray *connections,
         if (func) {
             /* There was a prefix; only compare to that type. */
             if (nm_streq0(controller, func(connection))) {
+                if (out_type)
+                    *out_type = con_type;
                 if (func == nm_connection_get_id)
                     out_controller = nm_connection_get_uuid(connection);
                 else
@@ -3963,20 +3968,29 @@ normalized_controller_for_port(const GPtrArray *connections,
             ifname = nm_connection_get_interface_name(connection);
             if (NM_IN_STRSET(controller, uuid, ifname)) {
                 out_controller = controller;
+                if (out_type)
+                    *out_type = con_type;
                 break;
             }
-            if (!found_by_id && nm_streq0(controller, id))
-                found_by_id = uuid;
+            if (!found_by_id && nm_streq0(controller, id)) {
+                out_type_by_id = con_type;
+                found_by_id    = uuid;
+            }
         }
     }
 
-    if (!out_controller)
+    if (!out_controller) {
         out_controller = found_by_id;
+        if (out_type)
+            *out_type = out_type_by_id;
+    }
 
     if (!out_controller) {
         nmc_printerr(_("Warning: controller='%s' doesn't refer to any existing profile.\n"),
                      controller);
         out_controller = controller;
+        if (out_type)
+            *out_type = type;
     }
 
     return out_controller;
@@ -4667,7 +4681,7 @@ set_connection_controller(NmCli            *nmc,
 
     port_type   = nm_setting_connection_get_port_type(s_con);
     connections = nmc_get_connections(nmc);
-    value       = normalized_controller_for_port(connections, value, port_type);
+    value       = normalized_controller_for_port(connections, value, port_type, NULL);
 
     return set_property(nmc->client,
                         con,
@@ -5186,6 +5200,9 @@ nmc_process_connection_properties(NmCli              *nmc,
                                   gboolean            allow_setting_removal,
                                   GError            **error)
 {
+    NMSettingConnection *s_con;
+    const char          *controller;
+
     /* Go through arguments and set properties */
     do {
         const NMMetaSettingValidPartItem *const *type_settings;
@@ -5421,6 +5438,38 @@ nmc_process_connection_properties(NmCli              *nmc,
             return FALSE;
 
     } while (*argc);
+
+    /* Bond, bridge and team ports must specify their port-type. If the user didn't
+     * set it, find the controller device and use its type as port-type.
+     * The daemon doesn't do this because the device might not exist, but let's do
+     * it here for user's convenience. If the controller doesn't exist, the daemon
+     * will raise a "missing port-type" error.
+     * For OVS ports this is not needed, the port-type is implicit from the type and
+     * the daemon knows how to handle it. */
+    s_con = nm_connection_get_setting_connection(connection);
+    nm_assert(s_con);
+    controller = nm_setting_connection_get_controller(s_con);
+    if (controller && !nm_setting_connection_get_port_type(s_con)) {
+        const char *port_type = NULL;
+
+        controller =
+            normalized_controller_for_port(nmc_get_connections(nmc), controller, NULL, &port_type);
+        nm_assert(controller); /* This was already successful, so it should not fail here */
+        if (NM_IN_STRSET(port_type,
+                         NM_SETTING_BOND_SETTING_NAME,
+                         NM_SETTING_BRIDGE_SETTING_NAME,
+                         NM_SETTING_TEAM_SETTING_NAME)) {
+            if (!set_property(nmc->client,
+                              connection,
+                              NM_SETTING_CONNECTION_SETTING_NAME,
+                              NM_SETTING_CONNECTION_PORT_TYPE,
+                              port_type,
+                              NM_META_ACCESSOR_MODIFIER_SET,
+                              error)) {
+                return FALSE;
+            }
+        }
+    }
 
     return TRUE;
 }
