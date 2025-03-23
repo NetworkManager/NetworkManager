@@ -6,25 +6,8 @@
 from __future__ import print_function, unicode_literals
 import xml.etree.ElementTree as ET
 import argparse
-import os
 import gi
 import re
-
-gi.require_version("GIRepository", "2.0")
-from gi.repository import GIRepository
-
-try:
-    libs = os.environ["LD_LIBRARY_PATH"].split(":")
-    libs.reverse()
-    for lib in libs:
-        GIRepository.Repository.prepend_library_path(lib)
-except AttributeError:
-    # An old GI version, that has no prepend_library_path
-    # It's alright, it probably interprets LD_LIBRARY_PATH
-    # correctly.
-    pass
-except KeyError:
-    pass
 
 gi.require_version("NM", "1.0")
 from gi.repository import NM, GObject
@@ -355,13 +338,6 @@ def main(gir_path_str, output_path_str, output_target):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-l",
-        "--lib-path",
-        metavar="PATH",
-        action="append",
-        help="path to scan for shared libraries",
-    )
-    parser.add_argument(
         "-g",
         "--gir",
         metavar="FILE",
@@ -383,9 +359,5 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-
-    if args.lib_path:
-        for lib in args.lib_path:
-            GIRepository.Repository.prepend_library_path(lib)
 
     main(args.gir, args.output, args.target)

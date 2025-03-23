@@ -209,7 +209,6 @@ if enable_introspection
         'LD_LIBRARY_PATH=' + ld_library_path,
         python_path,
         gen_gir_cmd,
-        '--lib-path', meson.current_build_dir(),
         '--gir', libnm_gir[0],
         '--output', '@OUTPUT@',
         '--target', name
