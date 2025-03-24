@@ -317,3 +317,108 @@ nmp_ethtool_set_pause(struct nl_sock            *genl_sock,
 nla_put_failure:
     g_return_val_if_reached(FALSE);
 }
+
+/*****************************************************************************/
+/* EEE                                                                       */
+/*****************************************************************************/
+
+enum {
+    ETHTOOL_A_EEE_UNSPEC,
+    ETHTOOL_A_EEE_HEADER,     /* nest - _A_HEADER_* */
+    ETHTOOL_A_EEE_MODES_OURS, /* bitset */
+    ETHTOOL_A_EEE_MODES_PEER, /* bitset */
+    ETHTOOL_A_EEE_ACTIVE,     /* u8 */
+    ETHTOOL_A_EEE_ENABLED,    /* u8 */
+
+    /* add new constants above here */
+    __ETHTOOL_A_EEE_CNT,
+    ETHTOOL_A_EEE_MAX = (__ETHTOOL_A_EEE_CNT - 1)
+};
+
+static int
+ethtool_parse_eee(const struct nl_msg *msg, void *data)
+{
+    NMEthtoolEEEState             *eee      = data;
+    static const struct nla_policy policy[] = {
+        [ETHTOOL_A_EEE_ENABLED] = {.type = NLA_U8},
+    };
+    struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
+    struct nlattr     *tb[G_N_ELEMENTS(policy)];
+
+    *eee = (NMEthtoolEEEState) {};
+
+    if (nla_parse_arr(tb, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), policy) < 0)
+        return NL_SKIP;
+
+    if (tb[ETHTOOL_A_EEE_ENABLED])
+        eee->enabled = !!nla_get_u8(tb[ETHTOOL_A_EEE_ENABLED]);
+
+    return NL_OK;
+}
+
+gboolean
+nmp_ethtool_get_eee(struct nl_sock    *genl_sock,
+                    guint16            family_id,
+                    int                ifindex,
+                    NMEthtoolEEEState *eee)
+{
+    nm_auto_nlmsg struct nl_msg *msg     = NULL;
+    gs_free char                *err_msg = NULL;
+    int                          r;
+
+    g_return_val_if_fail(eee, FALSE);
+
+    _LOGT("get-eee: start");
+    *eee = (NMEthtoolEEEState) {};
+
+    msg = ethtool_create_msg(family_id,
+                             ifindex,
+                             ETHTOOL_MSG_EEE_GET,
+                             ETHTOOL_A_EEE_HEADER,
+                             "get-eee");
+    if (!msg)
+        return FALSE;
+
+    r = ethtool_send_and_recv(genl_sock, ifindex, msg, ethtool_parse_eee, eee, &err_msg, "get-eee");
+    if (r < 0)
+        return FALSE;
+
+    _LOGT("get-eee: enabled %d", eee->enabled);
+
+    return TRUE;
+}
+
+gboolean
+nmp_ethtool_set_eee(struct nl_sock          *genl_sock,
+                    guint16                  family_id,
+                    int                      ifindex,
+                    const NMEthtoolEEEState *eee)
+{
+    nm_auto_nlmsg struct nl_msg *msg     = NULL;
+    gs_free char                *err_msg = NULL;
+    int                          r;
+
+    g_return_val_if_fail(eee, FALSE);
+
+    _LOGT("set-eee: enabled %d", eee->enabled);
+
+    msg = ethtool_create_msg(family_id,
+                             ifindex,
+                             ETHTOOL_MSG_EEE_SET,
+                             ETHTOOL_A_EEE_HEADER,
+                             "set-eee");
+    if (!msg)
+        return FALSE;
+
+    NLA_PUT_U8(msg, ETHTOOL_A_EEE_ENABLED, eee->enabled);
+
+    r = ethtool_send_and_recv(genl_sock, ifindex, msg, NULL, NULL, &err_msg, "set-eee");
+    if (r < 0)
+        return FALSE;
+
+    _LOGT("set-eee: succeeded");
+
+    return TRUE;
+nla_put_failure:
+    g_return_val_if_reached(FALSE);
+}

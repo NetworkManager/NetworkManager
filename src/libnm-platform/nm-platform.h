@@ -1348,6 +1348,8 @@ typedef struct {
 
     gboolean (*ethtool_get_pause)(NMPlatform *self, int ifindex, NMEthtoolPauseState *pause);
     gboolean (*ethtool_set_pause)(NMPlatform *self, int ifindex, const NMEthtoolPauseState *pause);
+    gboolean (*ethtool_get_eee)(NMPlatform *self, int ifindex, NMEthtoolEEEState *eee);
+    gboolean (*ethtool_set_eee)(NMPlatform *self, int ifindex, const NMEthtoolEEEState *eee);
 
 } NMPlatformClass;
 

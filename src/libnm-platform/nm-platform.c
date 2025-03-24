@@ -3737,7 +3737,7 @@ nm_platform_ethtool_get_eee(NMPlatform *self, int ifindex, NMEthtoolEEEState *ee
     g_return_val_if_fail(ifindex > 0, FALSE);
     g_return_val_if_fail(eee, FALSE);
 
-    return nmp_ethtool_ioctl_get_eee(ifindex, eee);
+    return klass->ethtool_get_eee(self, ifindex, eee);
 }
 
 gboolean
@@ -3746,8 +3746,9 @@ nm_platform_ethtool_set_eee(NMPlatform *self, int ifindex, const NMEthtoolEEESta
     _CHECK_SELF_NETNS(self, klass, netns, FALSE);
 
     g_return_val_if_fail(ifindex > 0, FALSE);
+    g_return_val_if_fail(eee, FALSE);
 
-    return nmp_ethtool_ioctl_set_eee(ifindex, eee);
+    return klass->ethtool_set_eee(self, ifindex, eee);
 }
 /*****************************************************************************/
 
