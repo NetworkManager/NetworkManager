@@ -3671,7 +3671,7 @@ nm_platform_ethtool_get_ring(NMPlatform *self, int ifindex, NMEthtoolRingState *
     g_return_val_if_fail(ifindex > 0, FALSE);
     g_return_val_if_fail(ring, FALSE);
 
-    return nmp_ethtool_ioctl_get_ring(ifindex, ring);
+    return klass->ethtool_get_ring(self, ifindex, ring);
 }
 
 gboolean
@@ -3680,8 +3680,9 @@ nm_platform_ethtool_set_ring(NMPlatform *self, int ifindex, const NMEthtoolRingS
     _CHECK_SELF_NETNS(self, klass, netns, FALSE);
 
     g_return_val_if_fail(ifindex > 0, FALSE);
+    g_return_val_if_fail(ring, FALSE);
 
-    return nmp_ethtool_ioctl_set_ring(ifindex, ring);
+    return klass->ethtool_set_ring(self, ifindex, ring);
 }
 
 gboolean

@@ -23,4 +23,13 @@ gboolean nmp_ethtool_set_eee(struct nl_sock          *genl_sock,
                              int                      ifindex,
                              const NMEthtoolEEEState *eee);
 
+gboolean nmp_ethtool_get_ring(struct nl_sock     *genl_sock,
+                              guint16             family_id,
+                              int                 ifindex,
+                              NMEthtoolRingState *ring);
+gboolean nmp_ethtool_set_ring(struct nl_sock           *genl_sock,
+                              guint16                   family_id,
+                              int                       ifindex,
+                              const NMEthtoolRingState *ring);
+
 #endif /* __NMP_ETHTOOL_H__ */

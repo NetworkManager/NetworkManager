@@ -11877,6 +11877,28 @@ ethtool_set_eee(NMPlatform *platform, int ifindex, const NMEthtoolEEEState *eee)
                                eee);
 }
 
+static gboolean
+ethtool_get_ring(NMPlatform *platform, int ifindex, NMEthtoolRingState *ring)
+{
+    NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+
+    return nmp_ethtool_get_ring(priv->sk_genl_sync,
+                                genl_get_family_id(platform, NMP_GENL_FAMILY_TYPE_ETHTOOL),
+                                ifindex,
+                                ring);
+}
+
+static gboolean
+ethtool_set_ring(NMPlatform *platform, int ifindex, const NMEthtoolRingState *ring)
+{
+    NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+
+    return nmp_ethtool_set_ring(priv->sk_genl_sync,
+                                genl_get_family_id(platform, NMP_GENL_FAMILY_TYPE_ETHTOOL),
+                                ifindex,
+                                ring);
+}
+
 /*****************************************************************************/
 
 static void
@@ -12381,4 +12403,6 @@ nm_linux_platform_class_init(NMLinuxPlatformClass *klass)
     platform_class->ethtool_get_pause = ethtool_get_pause;
     platform_class->ethtool_set_eee   = ethtool_set_eee;
     platform_class->ethtool_get_eee   = ethtool_get_eee;
+    platform_class->ethtool_set_ring  = ethtool_set_ring;
+    platform_class->ethtool_get_ring  = ethtool_get_ring;
 }

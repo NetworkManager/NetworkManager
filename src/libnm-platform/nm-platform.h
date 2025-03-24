@@ -1350,7 +1350,8 @@ typedef struct {
     gboolean (*ethtool_set_pause)(NMPlatform *self, int ifindex, const NMEthtoolPauseState *pause);
     gboolean (*ethtool_get_eee)(NMPlatform *self, int ifindex, NMEthtoolEEEState *eee);
     gboolean (*ethtool_set_eee)(NMPlatform *self, int ifindex, const NMEthtoolEEEState *eee);
-
+    gboolean (*ethtool_get_ring)(NMPlatform *self, int ifindex, NMEthtoolRingState *ring);
+    gboolean (*ethtool_set_ring)(NMPlatform *self, int ifindex, const NMEthtoolRingState *ring);
 } NMPlatformClass;
 
 /* NMPlatform signals

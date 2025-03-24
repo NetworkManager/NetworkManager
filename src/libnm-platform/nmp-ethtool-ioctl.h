@@ -42,10 +42,6 @@ gboolean nmp_ethtool_ioctl_get_coalesce(int ifindex, NMEthtoolCoalesceState *coa
 
 gboolean nmp_ethtool_ioctl_set_coalesce(int ifindex, const NMEthtoolCoalesceState *coalesce);
 
-gboolean nmp_ethtool_ioctl_get_ring(int ifindex, NMEthtoolRingState *ring);
-
-gboolean nmp_ethtool_ioctl_set_ring(int ifindex, const NMEthtoolRingState *ring);
-
 gboolean nmp_ethtool_ioctl_get_channels(int ifindex, NMEthtoolChannelsState *channels);
 
 gboolean nmp_ethtool_ioctl_set_channels(int ifindex, const NMEthtoolChannelsState *channels);
