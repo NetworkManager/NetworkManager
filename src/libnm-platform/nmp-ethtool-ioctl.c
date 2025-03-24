@@ -968,66 +968,6 @@ nmp_ethtool_ioctl_set_coalesce(int ifindex, const NMEthtoolCoalesceState *coales
 }
 
 gboolean
-nmp_ethtool_ioctl_get_ring(int ifindex, NMEthtoolRingState *ring)
-{
-    struct ethtool_ringparam eth_data;
-
-    g_return_val_if_fail(ifindex > 0, FALSE);
-    g_return_val_if_fail(ring, FALSE);
-
-    eth_data.cmd = ETHTOOL_GRINGPARAM;
-
-    if (_ethtool_call_once(ifindex, &eth_data, sizeof(eth_data)) < 0) {
-        nm_log_trace(LOGD_PLATFORM,
-                     "ethtool[%d]: %s: failure getting ring settings",
-                     ifindex,
-                     "get-ring");
-        return FALSE;
-    }
-
-    *ring = (NMEthtoolRingState) {
-        .rx_pending       = eth_data.rx_pending,
-        .rx_jumbo_pending = eth_data.rx_jumbo_pending,
-        .rx_mini_pending  = eth_data.rx_mini_pending,
-        .tx_pending       = eth_data.tx_pending,
-    };
-
-    nm_log_trace(LOGD_PLATFORM,
-                 "ethtool[%d]: %s: retrieved kernel ring settings",
-                 ifindex,
-                 "get-ring");
-    return TRUE;
-}
-
-gboolean
-nmp_ethtool_ioctl_set_ring(int ifindex, const NMEthtoolRingState *ring)
-{
-    struct ethtool_ringparam eth_data;
-
-    g_return_val_if_fail(ifindex > 0, FALSE);
-    g_return_val_if_fail(ring, FALSE);
-
-    eth_data = (struct ethtool_ringparam) {
-        .cmd              = ETHTOOL_SRINGPARAM,
-        .rx_pending       = ring->rx_pending,
-        .rx_jumbo_pending = ring->rx_jumbo_pending,
-        .rx_mini_pending  = ring->rx_mini_pending,
-        .tx_pending       = ring->tx_pending,
-    };
-
-    if (_ethtool_call_once(ifindex, &eth_data, sizeof(eth_data)) < 0) {
-        nm_log_trace(LOGD_PLATFORM,
-                     "ethtool[%d]: %s: failure setting ring settings",
-                     ifindex,
-                     "set-ring");
-        return FALSE;
-    }
-
-    nm_log_trace(LOGD_PLATFORM, "ethtool[%d]: %s: set kernel ring settings", ifindex, "set-ring");
-    return TRUE;
-}
-
-gboolean
 nmp_ethtool_ioctl_get_channels(int ifindex, NMEthtoolChannelsState *channels)
 {
     struct ethtool_channels eth_data;
