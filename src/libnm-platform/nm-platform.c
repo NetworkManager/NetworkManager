@@ -3715,7 +3715,7 @@ nm_platform_ethtool_get_pause(NMPlatform *self, int ifindex, NMEthtoolPauseState
     g_return_val_if_fail(ifindex > 0, FALSE);
     g_return_val_if_fail(pause, FALSE);
 
-    return nmp_ethtool_ioctl_get_pause(ifindex, pause);
+    return klass->ethtool_get_pause(self, ifindex, pause);
 }
 
 gboolean
@@ -3724,8 +3724,9 @@ nm_platform_ethtool_set_pause(NMPlatform *self, int ifindex, const NMEthtoolPaus
     _CHECK_SELF_NETNS(self, klass, netns, FALSE);
 
     g_return_val_if_fail(ifindex > 0, FALSE);
+    g_return_val_if_fail(pause, FALSE);
 
-    return nmp_ethtool_ioctl_set_pause(ifindex, pause);
+    return klass->ethtool_set_pause(self, ifindex, pause);
 }
 
 gboolean
