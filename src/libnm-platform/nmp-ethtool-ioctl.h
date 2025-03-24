@@ -50,10 +50,6 @@ gboolean nmp_ethtool_ioctl_get_channels(int ifindex, NMEthtoolChannelsState *cha
 
 gboolean nmp_ethtool_ioctl_set_channels(int ifindex, const NMEthtoolChannelsState *channels);
 
-gboolean nmp_ethtool_ioctl_get_pause(int ifindex, NMEthtoolPauseState *pause);
-
-gboolean nmp_ethtool_ioctl_set_pause(int ifindex, const NMEthtoolPauseState *pause);
-
 gboolean nmp_ethtool_ioctl_get_eee(int ifindex, NMEthtoolEEEState *eee);
 
 gboolean nmp_ethtool_ioctl_set_eee(int ifindex, const NMEthtoolEEEState *eee);

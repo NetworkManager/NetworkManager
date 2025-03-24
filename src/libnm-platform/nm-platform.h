@@ -1346,6 +1346,9 @@ typedef struct {
 
     GPtrArray *(*mptcp_addrs_dump)(NMPlatform *self);
 
+    gboolean (*ethtool_get_pause)(NMPlatform *self, int ifindex, NMEthtoolPauseState *pause);
+    gboolean (*ethtool_set_pause)(NMPlatform *self, int ifindex, const NMEthtoolPauseState *pause);
+
 } NMPlatformClass;
 
 /* NMPlatform signals

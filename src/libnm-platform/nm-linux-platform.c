@@ -41,6 +41,7 @@
 #include "libnm-platform/nm-netlink.h"
 #include "libnm-platform/nm-platform-utils.h"
 #include "libnm-platform/nmp-netns.h"
+#include "libnm-platform/nmp-ethtool.h"
 #include "libnm-platform/nmp-ethtool-ioctl.h"
 #include "libnm-platform/devlink/nm-devlink.h"
 #include "libnm-platform/wifi/nm-wifi-utils-wext.h"
@@ -11832,6 +11833,30 @@ mptcp_addrs_dump(NMPlatform *platform)
 
 /*****************************************************************************/
 
+static gboolean
+ethtool_get_pause(NMPlatform *platform, int ifindex, NMEthtoolPauseState *pause)
+{
+    NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+
+    return nmp_ethtool_get_pause(priv->sk_genl_sync,
+                                 genl_get_family_id(platform, NMP_GENL_FAMILY_TYPE_ETHTOOL),
+                                 ifindex,
+                                 pause);
+}
+
+static gboolean
+ethtool_set_pause(NMPlatform *platform, int ifindex, const NMEthtoolPauseState *pause)
+{
+    NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+
+    return nmp_ethtool_set_pause(priv->sk_genl_sync,
+                                 genl_get_family_id(platform, NMP_GENL_FAMILY_TYPE_ETHTOOL),
+                                 ifindex,
+                                 pause);
+}
+
+/*****************************************************************************/
+
 static void
 cache_update_link_udev(NMPlatform *platform, int ifindex, struct udev_device *udevice)
 {
@@ -12329,4 +12354,7 @@ nm_linux_platform_class_init(NMLinuxPlatformClass *klass)
     platform_class->genl_get_family_id = genl_get_family_id;
     platform_class->mptcp_addr_update  = mptcp_addr_update;
     platform_class->mptcp_addrs_dump   = mptcp_addrs_dump;
+
+    platform_class->ethtool_set_pause = ethtool_set_pause;
+    platform_class->ethtool_get_pause = ethtool_get_pause;
 }

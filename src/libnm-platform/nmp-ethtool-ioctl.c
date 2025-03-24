@@ -1091,64 +1091,6 @@ nmp_ethtool_ioctl_set_channels(int ifindex, const NMEthtoolChannelsState *channe
 }
 
 gboolean
-nmp_ethtool_ioctl_get_pause(int ifindex, NMEthtoolPauseState *pause)
-{
-    struct ethtool_pauseparam          eth_data;
-    nm_auto_socket_handle SocketHandle shandle = SOCKET_HANDLE_INIT(ifindex);
-
-    g_return_val_if_fail(ifindex > 0, FALSE);
-    g_return_val_if_fail(pause, FALSE);
-
-    eth_data.cmd = ETHTOOL_GPAUSEPARAM;
-    if (_ethtool_call_handle(&shandle, &eth_data, sizeof(struct ethtool_pauseparam)) != 0) {
-        nm_log_trace(LOGD_PLATFORM,
-                     "ethtool[%d]: %s: failure getting pause settings",
-                     ifindex,
-                     "get-pause");
-        return FALSE;
-    }
-
-    *pause = (NMEthtoolPauseState) {
-        .autoneg = eth_data.autoneg == 1,
-        .rx      = eth_data.rx_pause == 1,
-        .tx      = eth_data.tx_pause == 1,
-    };
-
-    nm_log_trace(LOGD_PLATFORM,
-                 "ethtool[%d]: %s: retrieved kernel pause settings",
-                 ifindex,
-                 "get-pause");
-    return TRUE;
-}
-
-gboolean
-nmp_ethtool_ioctl_set_pause(int ifindex, const NMEthtoolPauseState *pause)
-{
-    struct ethtool_pauseparam          eth_data;
-    nm_auto_socket_handle SocketHandle shandle = SOCKET_HANDLE_INIT(ifindex);
-
-    g_return_val_if_fail(ifindex > 0, FALSE);
-    g_return_val_if_fail(pause, FALSE);
-
-    eth_data = (struct ethtool_pauseparam) {
-        .cmd      = ETHTOOL_SPAUSEPARAM,
-        .autoneg  = pause->autoneg ? 1 : 0,
-        .rx_pause = pause->rx ? 1 : 0,
-        .tx_pause = pause->tx ? 1 : 0,
-    };
-
-    if (_ethtool_call_handle(&shandle, &eth_data, sizeof(struct ethtool_pauseparam)) != 0) {
-        nm_log_trace(LOGD_PLATFORM,
-                     "ethtool[%d]: %s: failure setting pause settings",
-                     ifindex,
-                     "set-pause");
-        return FALSE;
-    }
-    nm_log_trace(LOGD_PLATFORM, "ethtool[%d]: %s: set kernel puase settings", ifindex, "set-pause");
-    return TRUE;
-}
-
-gboolean
 nmp_ethtool_ioctl_get_eee(int ifindex, NMEthtoolEEEState *eee)
 {
     struct ethtool_eee                 eth_data;
