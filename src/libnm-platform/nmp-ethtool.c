@@ -422,3 +422,138 @@ nmp_ethtool_set_eee(struct nl_sock          *genl_sock,
 nla_put_failure:
     g_return_val_if_reached(FALSE);
 }
+
+/*****************************************************************************/
+/* RINGS                                                                     */
+/*****************************************************************************/
+
+enum {
+    ETHTOOL_A_RINGS_UNSPEC,
+    ETHTOOL_A_RINGS_HEADER,       /* nest - _A_HEADER_* */
+    ETHTOOL_A_RINGS_RX_MAX,       /* u32 */
+    ETHTOOL_A_RINGS_RX_MINI_MAX,  /* u32 */
+    ETHTOOL_A_RINGS_RX_JUMBO_MAX, /* u32 */
+    ETHTOOL_A_RINGS_TX_MAX,       /* u32 */
+    ETHTOOL_A_RINGS_RX,           /* u32 */
+    ETHTOOL_A_RINGS_RX_MINI,      /* u32 */
+    ETHTOOL_A_RINGS_RX_JUMBO,     /* u32 */
+    ETHTOOL_A_RINGS_TX,           /* u32 */
+
+    /* add new constants above here */
+    __ETHTOOL_A_RINGS_CNT,
+    ETHTOOL_A_RINGS_MAX = (__ETHTOOL_A_RINGS_CNT - 1)
+};
+
+static int
+ethtool_parse_ring(const struct nl_msg *msg, void *data)
+{
+    NMEthtoolRingState            *ring     = data;
+    static const struct nla_policy policy[] = {
+        [ETHTOOL_A_RINGS_RX]       = {.type = NLA_U32},
+        [ETHTOOL_A_RINGS_RX_MINI]  = {.type = NLA_U32},
+        [ETHTOOL_A_RINGS_RX_JUMBO] = {.type = NLA_U32},
+        [ETHTOOL_A_RINGS_TX]       = {.type = NLA_U32},
+    };
+    struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
+    struct nlattr     *tb[G_N_ELEMENTS(policy)];
+
+    *ring = (NMEthtoolRingState) {};
+
+    if (nla_parse_arr(tb, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), policy) < 0)
+        return NL_SKIP;
+
+    if (tb[ETHTOOL_A_RINGS_RX])
+        ring->rx_pending = nla_get_u32(tb[ETHTOOL_A_RINGS_RX]);
+    if (tb[ETHTOOL_A_RINGS_RX_MINI])
+        ring->rx_mini_pending = nla_get_u32(tb[ETHTOOL_A_RINGS_RX_MINI]);
+    if (tb[ETHTOOL_A_RINGS_RX_JUMBO])
+        ring->rx_jumbo_pending = nla_get_u32(tb[ETHTOOL_A_RINGS_RX_JUMBO]);
+    if (tb[ETHTOOL_A_RINGS_TX])
+        ring->tx_pending = nla_get_u32(tb[ETHTOOL_A_RINGS_TX]);
+
+    return NL_OK;
+}
+
+gboolean
+nmp_ethtool_get_ring(struct nl_sock     *genl_sock,
+                     guint16             family_id,
+                     int                 ifindex,
+                     NMEthtoolRingState *ring)
+{
+    nm_auto_nlmsg struct nl_msg *msg     = NULL;
+    gs_free char                *err_msg = NULL;
+    int                          r;
+
+    g_return_val_if_fail(ring, FALSE);
+
+    _LOGT("get-ring: start");
+    *ring = (NMEthtoolRingState) {};
+
+    msg = ethtool_create_msg(family_id,
+                             ifindex,
+                             ETHTOOL_MSG_RINGS_GET,
+                             ETHTOOL_A_RINGS_HEADER,
+                             "get-ring");
+    if (!msg)
+        return FALSE;
+
+    r = ethtool_send_and_recv(genl_sock,
+                              ifindex,
+                              msg,
+                              ethtool_parse_ring,
+                              ring,
+                              &err_msg,
+                              "get-ring");
+    if (r < 0)
+        return FALSE;
+
+    _LOGT("get-ring: rx %u rx-mini %u rx-jumbo %u tx %u",
+          ring->rx_pending,
+          ring->rx_mini_pending,
+          ring->rx_jumbo_pending,
+          ring->tx_pending);
+
+    return TRUE;
+}
+
+gboolean
+nmp_ethtool_set_ring(struct nl_sock           *genl_sock,
+                     guint16                   family_id,
+                     int                       ifindex,
+                     const NMEthtoolRingState *ring)
+{
+    nm_auto_nlmsg struct nl_msg *msg     = NULL;
+    gs_free char                *err_msg = NULL;
+    int                          r;
+
+    g_return_val_if_fail(ring, FALSE);
+
+    _LOGT("set-ring: rx %u rx-mini %u rx-jumbo %u tx %u",
+          ring->rx_pending,
+          ring->rx_mini_pending,
+          ring->rx_jumbo_pending,
+          ring->tx_pending);
+
+    msg = ethtool_create_msg(family_id,
+                             ifindex,
+                             ETHTOOL_MSG_RINGS_SET,
+                             ETHTOOL_A_RINGS_HEADER,
+                             "set-ring");
+    if (!msg)
+        return FALSE;
+
+    NLA_PUT_U32(msg, ETHTOOL_A_RINGS_RX, ring->rx_pending);
+    NLA_PUT_U32(msg, ETHTOOL_A_RINGS_RX_MINI, ring->rx_mini_pending);
+    NLA_PUT_U32(msg, ETHTOOL_A_RINGS_RX_JUMBO, ring->rx_jumbo_pending);
+    NLA_PUT_U32(msg, ETHTOOL_A_RINGS_TX, ring->tx_pending);
+
+    r = ethtool_send_and_recv(genl_sock, ifindex, msg, NULL, NULL, &err_msg, "set-ring");
+    if (r < 0)
+        return FALSE;
+
+    _LOGT("set-ring: succeeded");
+
+    return TRUE;
+nla_put_failure:
+    g_return_val_if_reached(FALSE);
+}
