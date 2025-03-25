@@ -397,6 +397,12 @@
 #define NM_AVAILABLE_IN_1_48
 #endif
 
+#if NM_VERSION_MAX_ALLOWED < NM_VERSION_1_48_18
+#define NM_AVAILABLE_IN_1_48_18 G_UNAVAILABLE(1, 48.18)
+#else
+#define NM_AVAILABLE_IN_1_48_18
+#endif
+
 /*
  * Synchronous API for calling D-Bus in libnm is deprecated. See
  * https://networkmanager.dev/docs/libnm/latest/usage.html#sync-api
