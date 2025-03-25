@@ -24,7 +24,10 @@ NMFirewallConfig *nm_firewall_config_new_shared(const char *ip_iface, in_addr_t 
 
 void nm_firewall_config_free(NMFirewallConfig *self);
 
-void nm_firewall_config_set_wg_rule(const char *ifname, int family, int fwmark, gboolean up);
+void nm_firewall_config_set_wg_rule(const char        *ifname,
+                                    NMSettingIPConfig *ip_config,
+                                    int                fwmark,
+                                    gboolean           up);
 
 void nm_firewall_config_apply_sync(NMFirewallConfig *self, gboolean up);
 
