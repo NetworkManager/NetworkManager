@@ -112,6 +112,14 @@ contrib/fedora/rpm/NetworkManager.conf for how to enable debug logging
 in NetworkManager.
 
 
+Requirements
+------------
+
+NetworkManager requires:
+
+- Linux kernel >= 5.6 for some ethtool options (pause, eee, ring)
+
+
 Documentation
 -------------
 
