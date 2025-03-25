@@ -8,6 +8,7 @@
 
 #include "nm-firewall-utils.h"
 
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-glib-aux/nm-io-utils.h"
 #include "libnm-platform/nm-platform.h"
@@ -764,17 +765,42 @@ _fw_nft_set_shared_construct(gboolean up, const char *ip_iface, in_addr_t addr, 
 }
 
 static GBytes *
-_fw_nft_wg_default_construct(const char *ip_iface, int family, int fwmark, gboolean up)
+_fw_nft_wg_default_construct(const char        *ip_iface,
+                             NMSettingIPConfig *ip_config,
+                             int                fwmark,
+                             gboolean           up)
 {
     nm_auto_str_buf NMStrBuf strbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_1000, FALSE);
     gs_free char            *table_name = NULL;
-    const char              *family_str = family == AF_INET ? "ip" : "ip6";
+    const char              *family_str;
 
     table_name = _share_iptables_get_name(FALSE, "nm-wg", ip_iface);
+    family_str = nm_setting_ip_config_get_addr_family(ip_config) == AF_INET ? "ip" : "ip6";
 
     _fw_nft_append_cmd_table(&strbuf, family_str, table_name, up);
 
     if (up) {
+        guint n_addresses = nm_setting_ip_config_get_num_addresses(ip_config);
+
+        if (n_addresses) {
+            _append(&strbuf, "add chain %s %s preraw {", family_str, table_name);
+
+            for (guint i = 0; i < n_addresses; i++) {
+                NMIPAddress *addr = nm_setting_ip_config_get_address(ip_config, i);
+
+                _append(&strbuf,
+                        " iifname != \"%s\" "
+                        " %s daddr %s "
+                        " fib saddr type != local "
+                        "drop;",
+                        ip_iface,
+                        family_str,
+                        nm_ip_address_get_address(addr));
+            }
+
+            _append(&strbuf, "};");
+        }
+
         _append(&strbuf,
                 "add chain %s %s premangle {"
                 " type filter hook prerouting priority mangle; policy accept; "
@@ -797,15 +823,46 @@ _fw_nft_wg_default_construct(const char *ip_iface, int family, int fwmark, gbool
 }
 
 static void
-_fw_iptables_wg_configure(const char *ip_iface, int family, int fwmark, gboolean up)
+_fw_iptables_wg_configure(const char        *ip_iface,
+                          NMSettingIPConfig *ip_config,
+                          int                fwmark,
+                          gboolean           up)
 {
     gs_free char *comment_name = NULL;
     char          fwmark_str[11];
+    int           family      = nm_setting_ip_config_get_addr_family(ip_config);
+    guint         n_addresses = nm_setting_ip_config_get_num_addresses(ip_config);
 
     comment_name = _share_iptables_get_name(FALSE, "nm-wg", ip_iface);
     g_snprintf(fwmark_str, sizeof(fwmark_str), "%" G_GUINT32_FORMAT, fwmark);
 
     nm_assert(strlen(fwmark_str) > 0);
+
+    for (guint i = 0; i < n_addresses; i++) {
+        NMIPAddress *addr = nm_setting_ip_config_get_address(ip_config, i);
+
+        _ipxtables_call(family,
+                        "--table",
+                        "raw",
+                        up ? "--insert" : "--delete",
+                        "PREROUTING",
+                        "!",
+                        "--in-interface",
+                        ip_iface,
+                        "--destination",
+                        nm_ip_address_get_address(addr),
+                        "--match",
+                        "addrtype",
+                        "!",
+                        "--src-type",
+                        "LOCAL",
+                        "-j",
+                        "DROP",
+                        "-m",
+                        "comment",
+                        "--comment",
+                        comment_name);
+    }
 
     _ipxtables_call(family,
                     "--table",
@@ -1133,21 +1190,22 @@ nm_firewall_config_free(NMFirewallConfig *self)
 
 /*****************************************************************************/
 void
-nm_firewall_config_set_wg_rule(const char *ifname, int family, int fwmark, gboolean up)
+nm_firewall_config_set_wg_rule(const char        *ifname,
+                               NMSettingIPConfig *ip_config,
+                               int                fwmark,
+                               gboolean           up)
 {
-    nm_assert(NM_IN_SET(family, AF_INET, AF_INET6));
-
     switch (nm_firewall_utils_get_backend()) {
     case NM_FIREWALL_BACKEND_NFTABLES:
     {
         gs_unref_bytes GBytes *stdin_buf = NULL;
 
-        stdin_buf = _fw_nft_wg_default_construct(ifname, family, fwmark, up);
+        stdin_buf = _fw_nft_wg_default_construct(ifname, ip_config, fwmark, up);
         _fw_nft_call_sync(stdin_buf, NULL);
         break;
     }
     case NM_FIREWALL_BACKEND_IPTABLES:
-        _fw_iptables_wg_configure(ifname, family, fwmark, up);
+        _fw_iptables_wg_configure(ifname, ip_config, fwmark, up);
         break;
     case NM_FIREWALL_BACKEND_NONE:
         break;
