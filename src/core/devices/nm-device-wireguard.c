@@ -1212,18 +1212,37 @@ static void
 _configure_firewall(NMDeviceWireGuard *self, int addr_family, gboolean up)
 {
     NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
+    NMConnection             *connection;
+    NMSettingIPConfig        *ip_config;
     const char               *ip_iface;
 
-    if (addr_family == AF_INET && !priv->auto_default_route_enabled_4)
-        return;
-    else if (addr_family == AF_INET6 && !priv->auto_default_route_enabled_6)
-        return;
+    connection = nm_device_get_applied_connection(NM_DEVICE(self));
+    ip_iface   = nm_device_get_ip_iface(NM_DEVICE(self));
 
-    ip_iface = nm_device_get_ip_iface(NM_DEVICE(self));
-    nm_assert(priv->auto_default_route_fwmark);
+    nm_assert(connection);
     nm_assert(ip_iface);
 
-    nm_firewall_config_set_wg_rule(ip_iface, addr_family, priv->auto_default_route_fwmark, up);
+    switch (addr_family) {
+    case AF_INET:
+        if (!priv->auto_default_route_enabled_4)
+            return;
+
+        ip_config = nm_connection_get_setting_ip4_config(connection);
+        break;
+    case AF_INET6:
+        if (!priv->auto_default_route_enabled_4)
+            return;
+
+        ip_config = nm_connection_get_setting_ip6_config(connection);
+        break;
+    default:
+        nm_assert_not_reached();
+    }
+
+    nm_assert(ip_config);
+    nm_assert(priv->auto_default_route_fwmark);
+
+    nm_firewall_config_set_wg_rule(ip_iface, ip_config, priv->auto_default_route_fwmark, up);
 }
 
 /*****************************************************************************/
