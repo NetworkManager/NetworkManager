@@ -3595,7 +3595,7 @@ nm_platform_ethtool_get_link_settings(NMPlatform               *self,
 /*****************************************************************************/
 
 NMEthtoolFeatureStates *
-nm_platform_ethtool_get_link_features(NMPlatform *self, int ifindex)
+nm_platform_ethtool_get_features(NMPlatform *self, int ifindex)
 {
     _CHECK_SELF_NETNS(self, klass, netns, NULL);
 
@@ -3640,9 +3640,7 @@ nm_platform_ethtool_set_fec_mode(NMPlatform *self, int ifindex, uint32_t fec_mod
 }
 
 gboolean
-nm_platform_ethtool_get_link_coalesce(NMPlatform             *self,
-                                      int                     ifindex,
-                                      NMEthtoolCoalesceState *coalesce)
+nm_platform_ethtool_get_coalesce(NMPlatform *self, int ifindex, NMEthtoolCoalesceState *coalesce)
 {
     _CHECK_SELF_NETNS(self, klass, netns, FALSE);
 
@@ -3665,7 +3663,7 @@ nm_platform_ethtool_set_coalesce(NMPlatform                   *self,
 }
 
 gboolean
-nm_platform_ethtool_get_link_ring(NMPlatform *self, int ifindex, NMEthtoolRingState *ring)
+nm_platform_ethtool_get_ring(NMPlatform *self, int ifindex, NMEthtoolRingState *ring)
 {
     _CHECK_SELF_NETNS(self, klass, netns, FALSE);
 
@@ -3686,9 +3684,7 @@ nm_platform_ethtool_set_ring(NMPlatform *self, int ifindex, const NMEthtoolRingS
 }
 
 gboolean
-nm_platform_ethtool_get_link_channels(NMPlatform             *self,
-                                      int                     ifindex,
-                                      NMEthtoolChannelsState *channels)
+nm_platform_ethtool_get_channels(NMPlatform *self, int ifindex, NMEthtoolChannelsState *channels)
 {
     _CHECK_SELF_NETNS(self, klass, netns, FALSE);
 
@@ -3711,7 +3707,7 @@ nm_platform_ethtool_set_channels(NMPlatform                   *self,
 }
 
 gboolean
-nm_platform_ethtool_get_link_pause(NMPlatform *self, int ifindex, NMEthtoolPauseState *pause)
+nm_platform_ethtool_get_pause(NMPlatform *self, int ifindex, NMEthtoolPauseState *pause)
 {
     _CHECK_SELF_NETNS(self, klass, netns, FALSE);
 
@@ -3722,17 +3718,6 @@ nm_platform_ethtool_get_link_pause(NMPlatform *self, int ifindex, NMEthtoolPause
 }
 
 gboolean
-nm_platform_ethtool_get_link_eee(NMPlatform *self, int ifindex, NMEthtoolEEEState *eee)
-{
-    _CHECK_SELF_NETNS(self, klass, netns, FALSE);
-
-    g_return_val_if_fail(ifindex > 0, FALSE);
-    g_return_val_if_fail(eee, FALSE);
-
-    return nmp_utils_ethtool_get_eee(ifindex, eee);
-}
-
-gboolean
 nm_platform_ethtool_set_pause(NMPlatform *self, int ifindex, const NMEthtoolPauseState *pause)
 {
     _CHECK_SELF_NETNS(self, klass, netns, FALSE);
@@ -3740,6 +3725,17 @@ nm_platform_ethtool_set_pause(NMPlatform *self, int ifindex, const NMEthtoolPaus
     g_return_val_if_fail(ifindex > 0, FALSE);
 
     return nmp_utils_ethtool_set_pause(ifindex, pause);
+}
+
+gboolean
+nm_platform_ethtool_get_eee(NMPlatform *self, int ifindex, NMEthtoolEEEState *eee)
+{
+    _CHECK_SELF_NETNS(self, klass, netns, FALSE);
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+    g_return_val_if_fail(eee, FALSE);
+
+    return nmp_utils_ethtool_get_eee(ifindex, eee);
 }
 
 gboolean
