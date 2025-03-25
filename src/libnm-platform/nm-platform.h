@@ -2631,7 +2631,7 @@ gboolean nm_platform_ethtool_get_link_settings(NMPlatform               *self,
                                                guint32                  *out_speed,
                                                NMPlatformLinkDuplexType *out_duplex);
 
-NMEthtoolFeatureStates *nm_platform_ethtool_get_link_features(NMPlatform *self, int ifindex);
+NMEthtoolFeatureStates *nm_platform_ethtool_get_features(NMPlatform *self, int ifindex);
 gboolean                nm_platform_ethtool_set_features(
                    NMPlatform                   *self,
                    int                           ifindex,
@@ -2639,22 +2639,20 @@ gboolean                nm_platform_ethtool_set_features(
                    const NMOptionBool *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */,
                    gboolean            do_set /* or reset */);
 
-gboolean nm_platform_ethtool_get_link_coalesce(NMPlatform             *self,
-                                               int                     ifindex,
-                                               NMEthtoolCoalesceState *coalesce);
+gboolean
+nm_platform_ethtool_get_coalesce(NMPlatform *self, int ifindex, NMEthtoolCoalesceState *coalesce);
 
 gboolean nm_platform_ethtool_set_coalesce(NMPlatform                   *self,
                                           int                           ifindex,
                                           const NMEthtoolCoalesceState *coalesce);
 
-gboolean nm_platform_ethtool_get_link_ring(NMPlatform *self, int ifindex, NMEthtoolRingState *ring);
+gboolean nm_platform_ethtool_get_ring(NMPlatform *self, int ifindex, NMEthtoolRingState *ring);
 
 gboolean
 nm_platform_ethtool_set_ring(NMPlatform *self, int ifindex, const NMEthtoolRingState *ring);
 
-gboolean nm_platform_ethtool_get_link_channels(NMPlatform             *self,
-                                               int                     ifindex,
-                                               NMEthtoolChannelsState *channels);
+gboolean
+nm_platform_ethtool_get_channels(NMPlatform *self, int ifindex, NMEthtoolChannelsState *channels);
 
 gboolean nm_platform_ethtool_set_channels(NMPlatform                   *self,
                                           int                           ifindex,
@@ -2664,10 +2662,9 @@ gboolean nm_platform_ethtool_get_fec_mode(NMPlatform *self, int ifindex, uint32_
 
 gboolean nm_platform_ethtool_set_fec_mode(NMPlatform *self, int ifindex, uint32_t fec_mode);
 
-gboolean
-nm_platform_ethtool_get_link_pause(NMPlatform *self, int ifindex, NMEthtoolPauseState *pause);
+gboolean nm_platform_ethtool_get_pause(NMPlatform *self, int ifindex, NMEthtoolPauseState *pause);
 
-gboolean nm_platform_ethtool_get_link_eee(NMPlatform *self, int ifindex, NMEthtoolEEEState *eee);
+gboolean nm_platform_ethtool_get_eee(NMPlatform *self, int ifindex, NMEthtoolEEEState *eee);
 
 gboolean
 nm_platform_ethtool_set_pause(NMPlatform *self, int ifindex, const NMEthtoolPauseState *pause);
