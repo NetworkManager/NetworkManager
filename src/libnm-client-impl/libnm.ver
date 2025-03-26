@@ -2008,3 +2008,9 @@ global:
 	nm_setting_wireless_channel_width_get_type;
 	nm_setting_wireless_get_channel_width;
 } libnm_1_48_0;
+
+libnm_1_50_4 {
+global:
+	nm_ethtool_optname_is_fec;
+	nm_setting_ethtool_fec_mode_get_type;
+} libnm_1_50_0;
