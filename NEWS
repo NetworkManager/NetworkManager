@@ -203,7 +203,7 @@ Overview of changes since NetworkManager-1.42
   lead to unexpected behaviors in case of multiconnect profiles.
 * Set VLAN filtering options on bridge via netlink instead of sysfs.
 * nm-cloud-setup now supports IMDSv2 on Amazon EC2.
-* nmtui now allows one to enable or disable Wi-Fi and WWAN radios.
+* nmtui now supports enabling/disabling Wi-Fi and WWAN radios.
 * Honor ignore-carrier=no for bond/bridge/team devices.
 * Add version mismatch warning when running nmcli commands.
 

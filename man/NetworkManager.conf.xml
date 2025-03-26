@@ -1374,7 +1374,7 @@ managed=1
               scanning. This defaults to <literal>yes</literal> in which case
               a random, locally-administered MAC address will be used.
               The setting <literal>wifi.scan-generate-mac-address-mask</literal>
-              allows one to influence the generated MAC address to use certain vendor
+              can be used to influence the generated MAC address to use certain vendor
               OUIs.
               If disabled, the MAC address during scanning is left unchanged to
               whatever is configured.
@@ -1398,7 +1398,7 @@ managed=1
           <listitem>
             <para>
               Like the per-connection settings <literal>ethernet.generate-mac-address-mask</literal>
-              and <literal>wifi.generate-mac-address-mask</literal>, this allows one to configure the
+              and <literal>wifi.generate-mac-address-mask</literal>, this can be used to configure the
               generated MAC addresses during scanning. See <citerefentry><refentrytitle>nm-settings-nmcli</refentrytitle><manvolnum>5</manvolnum></citerefentry>
               for details.
             </para>
