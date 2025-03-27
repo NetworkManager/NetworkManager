@@ -128,7 +128,7 @@ _share_iptables_subnet_to_str(char      buf[static _SHARE_IPTABLES_SUBNET_TO_STR
 }
 
 static char *
-_share_iptables_get_name(gboolean is_iptables_chain, const char *prefix, const char *ip_iface)
+_iptables_get_name(gboolean is_iptables_chain, const char *prefix, const char *ip_iface)
 {
     NMStrBuf strbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_40, FALSE);
     gsize    ip_iface_len;
@@ -252,7 +252,7 @@ _share_iptables_set_masquerade_sync(gboolean up, const char *ip_iface, in_addr_t
     char          str_subnet[_SHARE_IPTABLES_SUBNET_TO_STR_LEN];
     gs_free char *comment_name = NULL;
 
-    comment_name = _share_iptables_get_name(FALSE, "nm-shared", ip_iface);
+    comment_name = _iptables_get_name(FALSE, "nm-shared", ip_iface);
 
     _share_iptables_subnet_to_str(str_subnet, addr, plen);
     _share_iptables_call("--table",
@@ -385,9 +385,9 @@ _share_iptables_set_shared_sync(gboolean up, const char *ip_iface, in_addr_t add
     gs_free char *chain_input   = NULL;
     gs_free char *chain_forward = NULL;
 
-    comment_name  = _share_iptables_get_name(FALSE, "nm-shared", ip_iface);
-    chain_input   = _share_iptables_get_name(TRUE, "nm-sh-in", ip_iface);
-    chain_forward = _share_iptables_get_name(TRUE, "nm-sh-fw", ip_iface);
+    comment_name  = _iptables_get_name(FALSE, "nm-shared", ip_iface);
+    chain_input   = _iptables_get_name(TRUE, "nm-sh-in", ip_iface);
+    chain_forward = _iptables_get_name(TRUE, "nm-sh-fw", ip_iface);
 
     if (up)
         _share_iptables_set_shared_chains_add(chain_input, chain_forward, ip_iface, addr, plen);
@@ -699,7 +699,7 @@ _fw_nft_set_shared_construct(gboolean up, const char *ip_iface, in_addr_t addr, 
     gs_free char            *table_name = NULL;
     char                     str_subnet[_SHARE_IPTABLES_SUBNET_TO_STR_LEN];
 
-    table_name = _share_iptables_get_name(FALSE, "nm-shared", ip_iface);
+    table_name = _iptables_get_name(FALSE, "nm-shared", ip_iface);
 
     _share_iptables_subnet_to_str(str_subnet, addr, plen);
 
@@ -774,7 +774,7 @@ _fw_nft_wg_default_construct(const char        *ip_iface,
     gs_free char            *table_name = NULL;
     const char              *family_str;
 
-    table_name = _share_iptables_get_name(FALSE, "nm-wg", ip_iface);
+    table_name = _iptables_get_name(FALSE, "nm-wg", ip_iface);
     family_str = nm_setting_ip_config_get_addr_family(ip_config) == AF_INET ? "ip" : "ip6";
 
     _fw_nft_append_cmd_table(&strbuf, family_str, table_name, up);
@@ -833,7 +833,7 @@ _fw_iptables_wg_configure(const char        *ip_iface,
     int           family      = nm_setting_ip_config_get_addr_family(ip_config);
     guint         n_addresses = nm_setting_ip_config_get_num_addresses(ip_config);
 
-    comment_name = _share_iptables_get_name(FALSE, "nm-wg", ip_iface);
+    comment_name = _iptables_get_name(FALSE, "nm-wg", ip_iface);
     g_snprintf(fwmark_str, sizeof(fwmark_str), "%" G_GUINT32_FORMAT, fwmark);
 
     nm_assert(strlen(fwmark_str) > 0);
