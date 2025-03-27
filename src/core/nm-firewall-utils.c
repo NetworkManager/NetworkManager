@@ -213,9 +213,6 @@ _iptables_call_v(const char *const *argv)
     return TRUE;
 }
 
-#define _share_iptables_call(...) \
-    _iptables_call_v(NM_MAKE_STRV("" IPTABLES_PATH "", "--wait", "2", __VA_ARGS__))
-
 #define _ipxtables_call(family, ...)                                                   \
     _iptables_call_v(                                                                  \
         NM_MAKE_STRV((family == AF_INET ? "" IPTABLES_PATH "" : "" IP6TABLES_PATH ""), \
@@ -226,7 +223,7 @@ _iptables_call_v(const char *const *argv)
 static gboolean
 _share_iptables_chain_op(const char *table, const char *chain, const char *op)
 {
-    return _share_iptables_call("--table", table, op, chain);
+    return _ipxtables_call(AF_INET, "--table", table, op, chain);
 }
 
 static gboolean
@@ -255,21 +252,22 @@ _share_iptables_set_masquerade_sync(gboolean up, const char *ip_iface, in_addr_t
     comment_name = _iptables_get_name(FALSE, "nm-shared", ip_iface);
 
     _share_iptables_subnet_to_str(str_subnet, addr, plen);
-    _share_iptables_call("--table",
-                         "nat",
-                         up ? "--insert" : "--delete",
-                         "POSTROUTING",
-                         "--source",
-                         str_subnet,
-                         "!",
-                         "--destination",
-                         str_subnet,
-                         "--jump",
-                         "MASQUERADE",
-                         "-m",
-                         "comment",
-                         "--comment",
-                         comment_name);
+    _ipxtables_call(AF_INET,
+                    "--table",
+                    "nat",
+                    up ? "--insert" : "--delete",
+                    "POSTROUTING",
+                    "--source",
+                    str_subnet,
+                    "!",
+                    "--destination",
+                    str_subnet,
+                    "--jump",
+                    "MASQUERADE",
+                    "-m",
+                    "comment",
+                    "--comment",
+                    comment_name);
 }
 
 static void
@@ -305,70 +303,76 @@ _share_iptables_set_shared_chains_add(const char *chain_input,
     _share_iptables_chain_add("filter", chain_input);
 
     for (i = 0; i < (int) G_N_ELEMENTS(input_params); i++) {
-        _share_iptables_call("--table",
-                             "filter",
-                             "--append",
-                             chain_input,
-                             "--protocol",
-                             input_params[i][0],
-                             "--destination-port",
-                             input_params[i][1],
-                             "--jump",
-                             "ACCEPT");
+        _ipxtables_call(AF_INET,
+                        "--table",
+                        "filter",
+                        "--append",
+                        chain_input,
+                        "--protocol",
+                        input_params[i][0],
+                        "--destination-port",
+                        input_params[i][1],
+                        "--jump",
+                        "ACCEPT");
     }
 
     _share_iptables_chain_add("filter", chain_forward);
 
-    _share_iptables_call("--table",
-                         "filter",
-                         "--append",
-                         chain_forward,
-                         "--destination",
-                         str_subnet,
-                         "--out-interface",
-                         ip_iface,
-                         "--match",
-                         "state",
-                         "--state",
-                         "ESTABLISHED,RELATED",
-                         "--jump",
-                         "ACCEPT");
-    _share_iptables_call("--table",
-                         "filter",
-                         "--append",
-                         chain_forward,
-                         "--source",
-                         str_subnet,
-                         "--in-interface",
-                         ip_iface,
-                         "--jump",
-                         "ACCEPT");
-    _share_iptables_call("--table",
-                         "filter",
-                         "--append",
-                         chain_forward,
-                         "--in-interface",
-                         ip_iface,
-                         "--out-interface",
-                         ip_iface,
-                         "--jump",
-                         "ACCEPT");
-    _share_iptables_call("--table",
-                         "filter",
-                         "--append",
-                         chain_forward,
-                         "--out-interface",
-                         ip_iface,
-                         "--jump",
-                         "REJECT");
-    _share_iptables_call("--table",
-                         "filter",
-                         "--append",
-                         chain_forward,
-                         "--in-interface",
-                         ip_iface,
-                         "--jump",
-                         "REJECT");
+    _ipxtables_call(AF_INET,
+                    "--table",
+                    "filter",
+                    "--append",
+                    chain_forward,
+                    "--destination",
+                    str_subnet,
+                    "--out-interface",
+                    ip_iface,
+                    "--match",
+                    "state",
+                    "--state",
+                    "ESTABLISHED,RELATED",
+                    "--jump",
+                    "ACCEPT");
+    _ipxtables_call(AF_INET,
+                    "--table",
+                    "filter",
+                    "--append",
+                    chain_forward,
+                    "--source",
+                    str_subnet,
+                    "--in-interface",
+                    ip_iface,
+                    "--jump",
+                    "ACCEPT");
+    _ipxtables_call(AF_INET,
+                    "--table",
+                    "filter",
+                    "--append",
+                    chain_forward,
+                    "--in-interface",
+                    ip_iface,
+                    "--out-interface",
+                    ip_iface,
+                    "--jump",
+                    "ACCEPT");
+    _ipxtables_call(AF_INET,
+                    "--table",
+                    "filter",
+                    "--append",
+                    chain_forward,
+                    "--out-interface",
+                    ip_iface,
+                    "--jump",
+                    "REJECT");
+    _ipxtables_call(AF_INET,
+                    "--table",
+                    "filter",
+                    "--append",
+                    chain_forward,
+                    "--in-interface",
+                    ip_iface,
+                    "--jump",
+                    "REJECT");
 }
 
 static void
@@ -392,29 +396,31 @@ _share_iptables_set_shared_sync(gboolean up, const char *ip_iface, in_addr_t add
     if (up)
         _share_iptables_set_shared_chains_add(chain_input, chain_forward, ip_iface, addr, plen);
 
-    _share_iptables_call("--table",
-                         "filter",
-                         up ? "--insert" : "--delete",
-                         "INPUT",
-                         "--in-interface",
-                         ip_iface,
-                         "--jump",
-                         chain_input,
-                         "-m",
-                         "comment",
-                         "--comment",
-                         comment_name);
+    _ipxtables_call(AF_INET,
+                    "--table",
+                    "filter",
+                    up ? "--insert" : "--delete",
+                    "INPUT",
+                    "--in-interface",
+                    ip_iface,
+                    "--jump",
+                    chain_input,
+                    "-m",
+                    "comment",
+                    "--comment",
+                    comment_name);
 
-    _share_iptables_call("--table",
-                         "filter",
-                         up ? "--insert" : "--delete",
-                         "FORWARD",
-                         "--jump",
-                         chain_forward,
-                         "-m",
-                         "comment",
-                         "--comment",
-                         comment_name);
+    _ipxtables_call(AF_INET,
+                    "--table",
+                    "filter",
+                    up ? "--insert" : "--delete",
+                    "FORWARD",
+                    "--jump",
+                    chain_forward,
+                    "-m",
+                    "comment",
+                    "--comment",
+                    comment_name);
 
     if (!up)
         _share_iptables_set_shared_chains_delete(chain_input, chain_forward);
