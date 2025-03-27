@@ -16902,10 +16902,11 @@ _cleanup_generic_post(NMDevice *self, NMDeviceStateReason reason, CleanupType cl
 static void
 nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanup_type)
 {
-    NMDevicePrivate *priv;
-    NMDeviceClass   *klass = NM_DEVICE_GET_CLASS(self);
-    int              ifindex;
-    gint32           default_forwarding_v4;
+    NMDevicePrivate   *priv;
+    NMDeviceClass     *klass = NM_DEVICE_GET_CLASS(self);
+    NMSettingIPConfig *s_ip;
+    int                ifindex;
+    gboolean           is_forwarding_ignore = FALSE;
 
     g_return_if_fail(NM_IS_DEVICE(self));
 
@@ -16928,16 +16929,24 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
         nm_device_sysctl_ip_conf_set(self, AF_INET6, "use_tempaddr", "0");
     }
 
-    /* Restoring the device's forwarding to the sysctl default is necessary because
-     * `refresh_forwarding()` only updates forwarding on activated devices. */
-    default_forwarding_v4 = nm_platform_sysctl_get_int32(
-        nm_device_get_platform(self),
-        NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv4/conf/default/forwarding"),
-        0);
-    nm_device_sysctl_ip_conf_set(self,
-                                 AF_INET,
-                                 "forwarding",
-                                 default_forwarding_v4 == 1 ? "1" : "0");
+    s_ip = nm_device_get_applied_setting(self, NM_TYPE_SETTING_IP4_CONFIG);
+    if (s_ip && nm_setting_ip_config_get_forwarding(s_ip) == NM_SETTING_IP_CONFIG_FORWARDING_IGNORE)
+        is_forwarding_ignore = TRUE;
+
+    if (!is_forwarding_ignore) {
+        gint32 default_forwarding_v4;
+
+        /* Restoring the device's forwarding to the sysctl default is necessary because
+        * `refresh_forwarding()` only updates forwarding on activated devices. */
+        default_forwarding_v4 = nm_platform_sysctl_get_int32(
+            nm_device_get_platform(self),
+            NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv4/conf/default/forwarding"),
+            0);
+        nm_device_sysctl_ip_conf_set(self,
+                                     AF_INET,
+                                     "forwarding",
+                                     default_forwarding_v4 == 1 ? "1" : "0");
+    }
 
     /* Call device type-specific deactivation */
     if (klass->deactivate)
