@@ -185,7 +185,7 @@ _share_iptables_call_v(const char *const *argv)
     gs_free char         *argv_str = NULL;
     int                   status;
 
-    nm_log_dbg(LOGD_SHARING, "iptables: %s", (argv_str = g_strjoinv(" ", (char **) argv)));
+    nm_log_dbg(LOGD_FIREWALL, "iptables: %s", (argv_str = g_strjoinv(" ", (char **) argv)));
 
     if (!g_spawn_sync("/",
                       (char **) argv,
@@ -197,7 +197,7 @@ _share_iptables_call_v(const char *const *argv)
                       NULL,
                       &status,
                       &error)) {
-        nm_log_warn(LOGD_SHARING,
+        nm_log_warn(LOGD_FIREWALL,
                     "iptables: error executing command %s: %s",
                     argv[0],
                     error->message);
@@ -205,7 +205,7 @@ _share_iptables_call_v(const char *const *argv)
     }
 
     if (!g_spawn_check_exit_status(status, &error)) {
-        nm_log_warn(LOGD_SHARING, "iptables: command %s failed: %s", argv[0], error->message);
+        nm_log_warn(LOGD_FIREWALL, "iptables: command %s failed: %s", argv[0], error->message);
         return FALSE;
     }
 
@@ -460,18 +460,18 @@ _fw_nft_call_communicate_cb(GObject *source, GAsyncResult *result, gpointer user
         /* on any error, the process might still be running. We need to abort it in
          * the background... */
         if (!nm_utils_error_is_cancelled(error)) {
-            nm_log_dbg(LOGD_SHARING,
+            nm_log_dbg(LOGD_FIREWALL,
                        "firewall: nft[%s]: communication failed: %s. Kill process",
                        call_data->identifier,
                        error->message);
         } else if (!call_data->timeout_source) {
-            nm_log_dbg(LOGD_SHARING,
+            nm_log_dbg(LOGD_FIREWALL,
                        "firewall: nft[%s]: communication timed out. Kill process",
                        call_data->identifier);
             nm_clear_error(&error);
             nm_utils_error_set(&error, NM_UTILS_ERROR_UNKNOWN, "timeout communicating with nft");
         } else {
-            nm_log_dbg(LOGD_SHARING,
+            nm_log_dbg(LOGD_FIREWALL,
                        "firewall: nft[%s]: communication cancelled. Kill process",
                        call_data->identifier);
         }
@@ -485,7 +485,7 @@ _fw_nft_call_communicate_cb(GObject *source, GAsyncResult *result, gpointer user
             nm_g_subprocess_terminate_in_background(call_data->subprocess, 200);
         }
     } else if (g_subprocess_get_successful(call_data->subprocess)) {
-        nm_log_dbg(LOGD_SHARING, "firewall: nft[%s]: command successful", call_data->identifier);
+        nm_log_dbg(LOGD_FIREWALL, "firewall: nft[%s]: command successful", call_data->identifier);
     } else {
         char          buf[NM_UTILS_GET_PROCESS_EXIT_STATUS_BUF_LEN];
         gs_free char *ss_stdout    = NULL;
@@ -498,7 +498,7 @@ _fw_nft_call_communicate_cb(GObject *source, GAsyncResult *result, gpointer user
 
         nm_utils_get_process_exit_status_desc_buf(status, buf, sizeof(buf));
 
-        nm_log_warn(LOGD_SHARING,
+        nm_log_warn(LOGD_FIREWALL,
                     "firewall: nft[%s]: command %s:%s%s%s%s%s%s%s",
                     call_data->identifier,
                     buf,
@@ -534,7 +534,7 @@ _fw_nft_call_cancelled_cb(GCancellable *cancellable, gpointer user_data)
     if (call_data->cancellable_id == 0)
         return;
 
-    nm_log_dbg(LOGD_SHARING, "firewall: nft[%s]: operation cancelled", call_data->identifier);
+    nm_log_dbg(LOGD_FIREWALL, "firewall: nft[%s]: operation cancelled", call_data->identifier);
 
     nm_clear_g_signal_handler(g_task_get_cancellable(call_data->task), &call_data->cancellable_id);
     nm_clear_g_cancellable(&call_data->intern_cancellable);
@@ -546,7 +546,7 @@ _fw_nft_call_timeout_cb(gpointer user_data)
     FwNftCallData *call_data = user_data;
 
     nm_clear_g_source_inst(&call_data->timeout_source);
-    nm_log_dbg(LOGD_SHARING,
+    nm_log_dbg(LOGD_FIREWALL,
                "firewall: nft[%s]: cancel operation after timeout",
                call_data->identifier);
 
@@ -573,7 +573,7 @@ nm_firewall_nft_call(GBytes             *stdin_buf,
         .timeout_source = NULL,
     };
 
-    nm_log_trace(LOGD_SHARING,
+    nm_log_trace(LOGD_FIREWALL,
                  "firewall: nft: call command: [ '%s' ]",
                  nm_utils_buf_utf8safe_escape_bytes(stdin_buf,
                                                     NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL,
@@ -585,7 +585,7 @@ nm_firewall_nft_call(GBytes             *stdin_buf,
                                                           call_data,
                                                           NULL);
         if (call_data->cancellable_id == 0) {
-            nm_log_dbg(LOGD_SHARING, "firewall: nft: already cancelled");
+            nm_log_dbg(LOGD_FIREWALL, "firewall: nft: already cancelled");
             nm_utils_error_set_cancelled(&error, FALSE, NULL);
             _fw_nft_call_data_free(call_data, g_steal_pointer(&error));
             return;
@@ -602,14 +602,14 @@ nm_firewall_nft_call(GBytes             *stdin_buf,
                                                          &error);
 
     if (!call_data->subprocess) {
-        nm_log_dbg(LOGD_SHARING, "firewall: nft: spawning nft failed: %s", error->message);
+        nm_log_dbg(LOGD_FIREWALL, "firewall: nft: spawning nft failed: %s", error->message);
         _fw_nft_call_data_free(call_data, g_steal_pointer(&error));
         return;
     }
 
     call_data->identifier = g_strdup(g_subprocess_get_identifier(call_data->subprocess));
 
-    nm_log_dbg(LOGD_SHARING, "firewall: nft[%s]: communicate with nft", call_data->identifier);
+    nm_log_dbg(LOGD_FIREWALL, "firewall: nft[%s]: communicate with nft", call_data->identifier);
 
     nm_shutdown_wait_obj_register_object(call_data->task, "nft-call");
 
@@ -1124,7 +1124,7 @@ again:
         if (!g_atomic_int_compare_and_exchange(&backend, NM_FIREWALL_BACKEND_UNKNOWN, b))
             goto again;
 
-        nm_log_dbg(LOGD_SHARING,
+        nm_log_dbg(LOGD_FIREWALL,
                    "firewall: use %s backend%s%s%s%s%s%s%s",
                    FirewallBackends[b - 1].name,
                    NM_PRINT_FMT_QUOTED(FirewallBackends[b - 1].path,
