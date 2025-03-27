@@ -466,13 +466,13 @@ _fw_nft_call_communicate_cb(GObject *source, GAsyncResult *result, gpointer user
                        error->message);
         } else if (!call_data->timeout_source) {
             nm_log_dbg(LOGD_SHARING,
-                       "firewall: ntf[%s]: communication timed out. Kill process",
+                       "firewall: nft[%s]: communication timed out. Kill process",
                        call_data->identifier);
             nm_clear_error(&error);
             nm_utils_error_set(&error, NM_UTILS_ERROR_UNKNOWN, "timeout communicating with nft");
         } else {
             nm_log_dbg(LOGD_SHARING,
-                       "firewall: ntf[%s]: communication cancelled. Kill process",
+                       "firewall: nft[%s]: communication cancelled. Kill process",
                        call_data->identifier);
         }
 
