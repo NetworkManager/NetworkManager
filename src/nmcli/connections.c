@@ -6073,7 +6073,7 @@ finish:
 /* Functions for readline TAB completion in editor */
 
 #if HAVE_EDITLINE_READLINE
-#define uuid_display_hook ((void (*)(void)) NULL)
+#define uuid_display_hook ((void (*)(char **, int,  int)) NULL)
 #else
 static void
 uuid_display_hook(char **array, int len, int max_len)
