@@ -143,7 +143,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         --no-auto-with-test)
             # by default, the script adds "-w test" (unless the command line contains
-            # "-w test" or "-W test"). This flags allows to suppress that automatism.
+            # "-w test" or "-W test"). This flag suppresses that automatism.
             # It's really only useful to test the spec file's internal default for the
             # "test" option. Otherwise, you can always just explicitly select "-w test"
             # or "-W test".

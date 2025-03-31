@@ -115,9 +115,9 @@
       <title>nm-cloud-setup.service systemd unit</title>
       <para>Usually <command>/usr/libexec/nm-cloud-setup</command> is not run directly,
       but only by <command>systemctl restart nm-cloud-setup.service</command>. This
-      ensures that the tool only runs once at any time. It also allows to integrate
-      with the nm-cloud-setup systemd timer,
-      and to enable/disable the service via systemd.</para>
+      ensures that the tool only runs once at any time.
+      The unit is also used by the nm-cloud-setup systemd timer and allows
+      enabling/disabling the service via systemd.</para>
 
       <para>As you need to set environment variable to configure nm-cloud-setup binary,
       you can do so via systemd override files. Try <command>systemctl edit nm-cloud-setup.service</command>.</para>

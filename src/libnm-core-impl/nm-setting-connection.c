@@ -2533,7 +2533,7 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * NMSettingConnection:stable-id:
      *
      * This represents the identity of the connection used for various purposes.
-     * It allows to configure multiple profiles to share the identity. Also,
+     * It allows configuring multiple profiles to share the identity. Also,
      * the stable-id can contain placeholders that are substituted dynamically and
      * deterministically depending on the context.
      *

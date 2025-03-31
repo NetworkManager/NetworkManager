@@ -20,7 +20,7 @@
  * SECTION:nm-setting-ovs-external-ids
  * @short_description: External-IDs for OVS database
  *
- * The #NMSettingOvsExternalIDs object is a #NMSetting subclass that allow to
+ * The #NMSettingOvsExternalIDs object is a #NMSetting subclass that allows one to
  * configure external ids for OVS.
  **/
 

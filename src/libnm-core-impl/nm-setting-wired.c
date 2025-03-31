@@ -1575,7 +1575,7 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      *
      * With #NMSettingWired:cloned-mac-address setting "random" or "stable",
      * by default all bits of the MAC address are scrambled and a locally-administered,
-     * unicast MAC address is created. This property allows to specify that certain bits
+     * unicast MAC address is created. This property allows one to specify that certain bits
      * are fixed. Note that the least significant bit of the first MAC address will
      * always be unset to create a unicast MAC address.
      *

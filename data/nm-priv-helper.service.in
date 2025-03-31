@@ -2,8 +2,8 @@
 Description=NetworkManager Privileged Helper
 
 #
-# nm-priv-helper exists for privilege separation. It allows to run
-# NetworkManager without certain capabilities, and ask nm-priv-helper
+# nm-priv-helper exists for privilege separation. It allows NetworkManager
+# to run without certain capabilities, and ask nm-priv-helper
 # for special operations where more privileges are required.
 #
 

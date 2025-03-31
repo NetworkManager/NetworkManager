@@ -395,7 +395,7 @@ ip6_start(NMDhcpClient *client, const struct in6_addr *ll_addr, GError **error)
     prefix_delegation = FALSE;
     if (client_config->v6.needed_prefixes > 0) {
         if (client_config->v6.needed_prefixes > 1) {
-            /* FIXME: systemd-networkd API only allows to request a
+            /* FIXME: systemd-networkd API only allows requesting a
              * single prefix */
             _LOGW("dhcp-client6: only one prefix request is supported");
         }

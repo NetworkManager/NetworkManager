@@ -162,7 +162,7 @@ typedef enum {
     NM_META_ACCESSOR_GET_OUT_FLAGS_NONE = 0,
     NM_META_ACCESSOR_GET_OUT_FLAGS_STRV = (1LL << 0),
 
-    /* the property allows to be hidden, if and only if, it's value is set to the
+    /* the property allows one to be hidden, if and only if, it's value is set to the
      * default. This should only be set by new properties, to preserve behavior
      * of old properties, which were always printed. */
     NM_META_ACCESSOR_GET_OUT_FLAGS_HIDE = (1LL << 1),

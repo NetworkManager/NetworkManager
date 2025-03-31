@@ -1830,7 +1830,7 @@ _config_init(NMNDiscConfig *config, const NMNDiscConfig *src)
     nm_assert(config);
     g_return_if_fail(src);
 
-    /* we only allow to set @config if it was cleared (or is not yet initialized). */
+    /* we only allow one to set @config if it was cleared (or is not yet initialized). */
     nm_assert(!config->l3cfg);
     nm_assert(!config->ifname);
     nm_assert(!config->network_id);

@@ -89,7 +89,7 @@ typedef enum {
      * long as NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID differs. */
     NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID,
 
-    /* compare two routes as kernel would allow to add them with
+    /* compare two routes as kernel would allow one to add them with
      * `ip route append`. In other words, kernel does not allow you to
      * add two routes (at the same time) which compare equal according
      * to NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID.
@@ -508,7 +508,7 @@ struct _NMPlatformIP6Route {
      * Kernel clears the host part of src/src_plen.
      *
      * src/src_plen is part of the ID of a route just like network/plen. That is,
-     * Not only `ip route append`, but also `ip route add` allows to add routes that only
+     * Not only `ip route append`, but also `ip route add` allows one to add routes that only
      * differ in their src/src_plen.
      */
     struct in6_addr src;

@@ -2376,7 +2376,7 @@ nm_device_is_software(NMDevice *device)
  *   settings with or %NULL to reuse existing
  * @version_id: zero or the expected version id of the applied connection.
  *   If specified and the version id mismatches, the call fails without
- *   modification. This allows to catch concurrent accesses.
+ *   modification. This allows one to catch concurrent accesses.
  * @flags: always set this to zero
  * @cancellable: a #GCancellable, or %NULL
  * @error: location for a #GError, or %NULL
@@ -2430,7 +2430,7 @@ nm_device_reapply(NMDevice     *device,
  *   settings with or %NULL to reuse existing
  * @version_id: zero or the expected version id of the applied
  *   connection. If specified and the version id mismatches, the call
- *   fails without modification. This allows to catch concurrent
+ *   fails without modification. This allows one to catch concurrent
  *   accesses.
  * @flags: always set this to zero
  * @cancellable: a #GCancellable, or %NULL

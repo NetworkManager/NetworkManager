@@ -1356,7 +1356,7 @@ nmtstp_check_platform_full(NMPlatform *platform, guint32 obj_type_flags, gboolea
                     /* For IPv4, it also does not reliably always work. This may
                      * be a bug we want to fix. For now, ignore the check.
                      *
-                     * a) Kernel can wrongly allow to configure the same route twice.
+                     * a) Kernel can wrongly allow one to configure the same route twice.
                      * That means, the same route is visible in `ip route` output,
                      * meaning, it would be added twice to the platform cache.
                      * At least due to that problem, may the weak-id not be properly sorted.
@@ -1364,7 +1364,7 @@ nmtstp_check_platform_full(NMPlatform *platform, guint32 obj_type_flags, gboolea
                      * a bug of kernel allowing to configure the exact same route twice.
                      *
                      * b) See https://bugzilla.redhat.com/show_bug.cgi?id=2162315 which is
-                     * a bug where kernel does allow to configure single-hop routes that differ by
+                     * a bug where kernel does allow one to configure single-hop routes that differ by
                      * their next-hop weight, but on the netlink API those routes look the same.
                      *
                      * Due to a) and b), the platform cache may contain only one instance

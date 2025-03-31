@@ -560,7 +560,7 @@ dnsconfd_start_done(GObject *source_object, GAsyncResult *res, gpointer user_dat
         g_dbus_error_strip_remote_error(error);
         _LOGW("failed to start Dnsconfd %s", error->message);
     } else {
-        _LOGT("succesfully started Dnsconfd");
+        _LOGT("successfully started Dnsconfd");
     }
 
     /* No update maybe changed or state change, as this is handled by the name owner callbacks
