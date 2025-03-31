@@ -1899,7 +1899,7 @@ _dbus_signal_config_cb(NMVpnConnection *self, GVariant *dict)
     _LOGD("config: reply received (IPv4:%s(%s), IPv6:%s(%s))",
           priv->ip_data_4.enabled ? "on" : "off",
           priv->ip_data_4.method_auto ? "auto" : "disabled",
-          priv->ip_data_4.enabled ? "on" : "off",
+          priv->ip_data_6.enabled ? "on" : "off",
           priv->ip_data_6.method_auto ? "auto" : "disabled");
 
     if (!priv->ip_data_4.method_auto)
