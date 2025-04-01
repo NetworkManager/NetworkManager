@@ -368,6 +368,7 @@ meson setup\
     $(args_enable "$P_TEST" --werror) \
     -Dnft="${D_SBINDIR}/nft" \
     -Diptables="${D_SBINDIR}/iptables" \
+    -Dip6tables="${D_SBINDIR}/ip6tables" \
     -Ddhclient="${D_SBINDIR}/dhclient" \
     -Ddhcpcd=no \
     -Dconfig_dhcp_default="$P_DHCP_DEFAULT" \

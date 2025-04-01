@@ -67,6 +67,9 @@
 /* Define to path of iptables binary */
 #mesondefine IPTABLES_PATH
 
+/* Define to path of ip6tables binary */
+#mesondefine IP6TABLES_PATH
+
 /* Define to path of nft binary */
 #mesondefine NFT_PATH
 
