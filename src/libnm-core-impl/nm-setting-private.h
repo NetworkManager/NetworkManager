@@ -193,6 +193,7 @@ typedef struct {
     int         replace_local_rule;
     int         dhcp_send_release;
     int         routed_dns;
+    int         forwarding;
     int         dhcp_send_hostname_v2;
     gint32      required_timeout;
     gint32      dad_timeout;
