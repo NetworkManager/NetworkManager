@@ -8,6 +8,7 @@
 
 #include "nm-firewall-utils.h"
 
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-glib-aux/nm-io-utils.h"
 #include "libnm-platform/nm-platform.h"
@@ -127,7 +128,7 @@ _share_iptables_subnet_to_str(char      buf[static _SHARE_IPTABLES_SUBNET_TO_STR
 }
 
 static char *
-_share_iptables_get_name(gboolean is_iptables_chain, const char *prefix, const char *ip_iface)
+_iptables_get_name(gboolean is_iptables_chain, const char *prefix, const char *ip_iface)
 {
     NMStrBuf strbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_40, FALSE);
     gsize    ip_iface_len;
@@ -179,13 +180,13 @@ _share_iptables_get_name(gboolean is_iptables_chain, const char *prefix, const c
 /*****************************************************************************/
 
 static gboolean
-_share_iptables_call_v(const char *const *argv)
+_iptables_call_v(const char *const *argv)
 {
     gs_free_error GError *error    = NULL;
     gs_free char         *argv_str = NULL;
     int                   status;
 
-    nm_log_dbg(LOGD_SHARING, "iptables: %s", (argv_str = g_strjoinv(" ", (char **) argv)));
+    nm_log_dbg(LOGD_FIREWALL, "iptables: %s", (argv_str = g_strjoinv(" ", (char **) argv)));
 
     if (!g_spawn_sync("/",
                       (char **) argv,
@@ -197,7 +198,7 @@ _share_iptables_call_v(const char *const *argv)
                       NULL,
                       &status,
                       &error)) {
-        nm_log_warn(LOGD_SHARING,
+        nm_log_warn(LOGD_FIREWALL,
                     "iptables: error executing command %s: %s",
                     argv[0],
                     error->message);
@@ -205,20 +206,24 @@ _share_iptables_call_v(const char *const *argv)
     }
 
     if (!g_spawn_check_exit_status(status, &error)) {
-        nm_log_warn(LOGD_SHARING, "iptables: command %s failed: %s", argv[0], error->message);
+        nm_log_warn(LOGD_FIREWALL, "iptables: command %s failed: %s", argv[0], error->message);
         return FALSE;
     }
 
     return TRUE;
 }
 
-#define _share_iptables_call(...) \
-    _share_iptables_call_v(NM_MAKE_STRV("" IPTABLES_PATH "", "--wait", "2", __VA_ARGS__))
+#define _ipxtables_call(family, ...)                                                   \
+    _iptables_call_v(                                                                  \
+        NM_MAKE_STRV((family == AF_INET ? "" IPTABLES_PATH "" : "" IP6TABLES_PATH ""), \
+                     "--wait",                                                         \
+                     "2",                                                              \
+                     __VA_ARGS__))
 
 static gboolean
 _share_iptables_chain_op(const char *table, const char *chain, const char *op)
 {
-    return _share_iptables_call("--table", table, op, chain);
+    return _ipxtables_call(AF_INET, "--table", table, op, chain);
 }
 
 static gboolean
@@ -244,24 +249,25 @@ _share_iptables_set_masquerade_sync(gboolean up, const char *ip_iface, in_addr_t
     char          str_subnet[_SHARE_IPTABLES_SUBNET_TO_STR_LEN];
     gs_free char *comment_name = NULL;
 
-    comment_name = _share_iptables_get_name(FALSE, "nm-shared", ip_iface);
+    comment_name = _iptables_get_name(FALSE, "nm-shared", ip_iface);
 
     _share_iptables_subnet_to_str(str_subnet, addr, plen);
-    _share_iptables_call("--table",
-                         "nat",
-                         up ? "--insert" : "--delete",
-                         "POSTROUTING",
-                         "--source",
-                         str_subnet,
-                         "!",
-                         "--destination",
-                         str_subnet,
-                         "--jump",
-                         "MASQUERADE",
-                         "-m",
-                         "comment",
-                         "--comment",
-                         comment_name);
+    _ipxtables_call(AF_INET,
+                    "--table",
+                    "nat",
+                    up ? "--insert" : "--delete",
+                    "POSTROUTING",
+                    "--source",
+                    str_subnet,
+                    "!",
+                    "--destination",
+                    str_subnet,
+                    "--jump",
+                    "MASQUERADE",
+                    "-m",
+                    "comment",
+                    "--comment",
+                    comment_name);
 }
 
 static void
@@ -297,70 +303,76 @@ _share_iptables_set_shared_chains_add(const char *chain_input,
     _share_iptables_chain_add("filter", chain_input);
 
     for (i = 0; i < (int) G_N_ELEMENTS(input_params); i++) {
-        _share_iptables_call("--table",
-                             "filter",
-                             "--append",
-                             chain_input,
-                             "--protocol",
-                             input_params[i][0],
-                             "--destination-port",
-                             input_params[i][1],
-                             "--jump",
-                             "ACCEPT");
+        _ipxtables_call(AF_INET,
+                        "--table",
+                        "filter",
+                        "--append",
+                        chain_input,
+                        "--protocol",
+                        input_params[i][0],
+                        "--destination-port",
+                        input_params[i][1],
+                        "--jump",
+                        "ACCEPT");
     }
 
     _share_iptables_chain_add("filter", chain_forward);
 
-    _share_iptables_call("--table",
-                         "filter",
-                         "--append",
-                         chain_forward,
-                         "--destination",
-                         str_subnet,
-                         "--out-interface",
-                         ip_iface,
-                         "--match",
-                         "state",
-                         "--state",
-                         "ESTABLISHED,RELATED",
-                         "--jump",
-                         "ACCEPT");
-    _share_iptables_call("--table",
-                         "filter",
-                         "--append",
-                         chain_forward,
-                         "--source",
-                         str_subnet,
-                         "--in-interface",
-                         ip_iface,
-                         "--jump",
-                         "ACCEPT");
-    _share_iptables_call("--table",
-                         "filter",
-                         "--append",
-                         chain_forward,
-                         "--in-interface",
-                         ip_iface,
-                         "--out-interface",
-                         ip_iface,
-                         "--jump",
-                         "ACCEPT");
-    _share_iptables_call("--table",
-                         "filter",
-                         "--append",
-                         chain_forward,
-                         "--out-interface",
-                         ip_iface,
-                         "--jump",
-                         "REJECT");
-    _share_iptables_call("--table",
-                         "filter",
-                         "--append",
-                         chain_forward,
-                         "--in-interface",
-                         ip_iface,
-                         "--jump",
-                         "REJECT");
+    _ipxtables_call(AF_INET,
+                    "--table",
+                    "filter",
+                    "--append",
+                    chain_forward,
+                    "--destination",
+                    str_subnet,
+                    "--out-interface",
+                    ip_iface,
+                    "--match",
+                    "state",
+                    "--state",
+                    "ESTABLISHED,RELATED",
+                    "--jump",
+                    "ACCEPT");
+    _ipxtables_call(AF_INET,
+                    "--table",
+                    "filter",
+                    "--append",
+                    chain_forward,
+                    "--source",
+                    str_subnet,
+                    "--in-interface",
+                    ip_iface,
+                    "--jump",
+                    "ACCEPT");
+    _ipxtables_call(AF_INET,
+                    "--table",
+                    "filter",
+                    "--append",
+                    chain_forward,
+                    "--in-interface",
+                    ip_iface,
+                    "--out-interface",
+                    ip_iface,
+                    "--jump",
+                    "ACCEPT");
+    _ipxtables_call(AF_INET,
+                    "--table",
+                    "filter",
+                    "--append",
+                    chain_forward,
+                    "--out-interface",
+                    ip_iface,
+                    "--jump",
+                    "REJECT");
+    _ipxtables_call(AF_INET,
+                    "--table",
+                    "filter",
+                    "--append",
+                    chain_forward,
+                    "--in-interface",
+                    ip_iface,
+                    "--jump",
+                    "REJECT");
 }
 
 static void
@@ -377,36 +389,38 @@ _share_iptables_set_shared_sync(gboolean up, const char *ip_iface, in_addr_t add
     gs_free char *chain_input   = NULL;
     gs_free char *chain_forward = NULL;
 
-    comment_name  = _share_iptables_get_name(FALSE, "nm-shared", ip_iface);
-    chain_input   = _share_iptables_get_name(TRUE, "nm-sh-in", ip_iface);
-    chain_forward = _share_iptables_get_name(TRUE, "nm-sh-fw", ip_iface);
+    comment_name  = _iptables_get_name(FALSE, "nm-shared", ip_iface);
+    chain_input   = _iptables_get_name(TRUE, "nm-sh-in", ip_iface);
+    chain_forward = _iptables_get_name(TRUE, "nm-sh-fw", ip_iface);
 
     if (up)
         _share_iptables_set_shared_chains_add(chain_input, chain_forward, ip_iface, addr, plen);
 
-    _share_iptables_call("--table",
-                         "filter",
-                         up ? "--insert" : "--delete",
-                         "INPUT",
-                         "--in-interface",
-                         ip_iface,
-                         "--jump",
-                         chain_input,
-                         "-m",
-                         "comment",
-                         "--comment",
-                         comment_name);
+    _ipxtables_call(AF_INET,
+                    "--table",
+                    "filter",
+                    up ? "--insert" : "--delete",
+                    "INPUT",
+                    "--in-interface",
+                    ip_iface,
+                    "--jump",
+                    chain_input,
+                    "-m",
+                    "comment",
+                    "--comment",
+                    comment_name);
 
-    _share_iptables_call("--table",
-                         "filter",
-                         up ? "--insert" : "--delete",
-                         "FORWARD",
-                         "--jump",
-                         chain_forward,
-                         "-m",
-                         "comment",
-                         "--comment",
-                         comment_name);
+    _ipxtables_call(AF_INET,
+                    "--table",
+                    "filter",
+                    up ? "--insert" : "--delete",
+                    "FORWARD",
+                    "--jump",
+                    chain_forward,
+                    "-m",
+                    "comment",
+                    "--comment",
+                    comment_name);
 
     if (!up)
         _share_iptables_set_shared_chains_delete(chain_input, chain_forward);
@@ -460,19 +474,19 @@ _fw_nft_call_communicate_cb(GObject *source, GAsyncResult *result, gpointer user
         /* on any error, the process might still be running. We need to abort it in
          * the background... */
         if (!nm_utils_error_is_cancelled(error)) {
-            nm_log_dbg(LOGD_SHARING,
+            nm_log_dbg(LOGD_FIREWALL,
                        "firewall: nft[%s]: communication failed: %s. Kill process",
                        call_data->identifier,
                        error->message);
         } else if (!call_data->timeout_source) {
-            nm_log_dbg(LOGD_SHARING,
-                       "firewall: ntf[%s]: communication timed out. Kill process",
+            nm_log_dbg(LOGD_FIREWALL,
+                       "firewall: nft[%s]: communication timed out. Kill process",
                        call_data->identifier);
             nm_clear_error(&error);
             nm_utils_error_set(&error, NM_UTILS_ERROR_UNKNOWN, "timeout communicating with nft");
         } else {
-            nm_log_dbg(LOGD_SHARING,
-                       "firewall: ntf[%s]: communication cancelled. Kill process",
+            nm_log_dbg(LOGD_FIREWALL,
+                       "firewall: nft[%s]: communication cancelled. Kill process",
                        call_data->identifier);
         }
 
@@ -485,7 +499,7 @@ _fw_nft_call_communicate_cb(GObject *source, GAsyncResult *result, gpointer user
             nm_g_subprocess_terminate_in_background(call_data->subprocess, 200);
         }
     } else if (g_subprocess_get_successful(call_data->subprocess)) {
-        nm_log_dbg(LOGD_SHARING, "firewall: nft[%s]: command successful", call_data->identifier);
+        nm_log_dbg(LOGD_FIREWALL, "firewall: nft[%s]: command successful", call_data->identifier);
     } else {
         char          buf[NM_UTILS_GET_PROCESS_EXIT_STATUS_BUF_LEN];
         gs_free char *ss_stdout    = NULL;
@@ -498,7 +512,7 @@ _fw_nft_call_communicate_cb(GObject *source, GAsyncResult *result, gpointer user
 
         nm_utils_get_process_exit_status_desc_buf(status, buf, sizeof(buf));
 
-        nm_log_warn(LOGD_SHARING,
+        nm_log_warn(LOGD_FIREWALL,
                     "firewall: nft[%s]: command %s:%s%s%s%s%s%s%s",
                     call_data->identifier,
                     buf,
@@ -534,7 +548,7 @@ _fw_nft_call_cancelled_cb(GCancellable *cancellable, gpointer user_data)
     if (call_data->cancellable_id == 0)
         return;
 
-    nm_log_dbg(LOGD_SHARING, "firewall: nft[%s]: operation cancelled", call_data->identifier);
+    nm_log_dbg(LOGD_FIREWALL, "firewall: nft[%s]: operation cancelled", call_data->identifier);
 
     nm_clear_g_signal_handler(g_task_get_cancellable(call_data->task), &call_data->cancellable_id);
     nm_clear_g_cancellable(&call_data->intern_cancellable);
@@ -546,7 +560,7 @@ _fw_nft_call_timeout_cb(gpointer user_data)
     FwNftCallData *call_data = user_data;
 
     nm_clear_g_source_inst(&call_data->timeout_source);
-    nm_log_dbg(LOGD_SHARING,
+    nm_log_dbg(LOGD_FIREWALL,
                "firewall: nft[%s]: cancel operation after timeout",
                call_data->identifier);
 
@@ -573,7 +587,7 @@ nm_firewall_nft_call(GBytes             *stdin_buf,
         .timeout_source = NULL,
     };
 
-    nm_log_trace(LOGD_SHARING,
+    nm_log_trace(LOGD_FIREWALL,
                  "firewall: nft: call command: [ '%s' ]",
                  nm_utils_buf_utf8safe_escape_bytes(stdin_buf,
                                                     NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL,
@@ -585,7 +599,7 @@ nm_firewall_nft_call(GBytes             *stdin_buf,
                                                           call_data,
                                                           NULL);
         if (call_data->cancellable_id == 0) {
-            nm_log_dbg(LOGD_SHARING, "firewall: nft: already cancelled");
+            nm_log_dbg(LOGD_FIREWALL, "firewall: nft: already cancelled");
             nm_utils_error_set_cancelled(&error, FALSE, NULL);
             _fw_nft_call_data_free(call_data, g_steal_pointer(&error));
             return;
@@ -602,14 +616,14 @@ nm_firewall_nft_call(GBytes             *stdin_buf,
                                                          &error);
 
     if (!call_data->subprocess) {
-        nm_log_dbg(LOGD_SHARING, "firewall: nft: spawning nft failed: %s", error->message);
+        nm_log_dbg(LOGD_FIREWALL, "firewall: nft: spawning nft failed: %s", error->message);
         _fw_nft_call_data_free(call_data, g_steal_pointer(&error));
         return;
     }
 
     call_data->identifier = g_strdup(g_subprocess_get_identifier(call_data->subprocess));
 
-    nm_log_dbg(LOGD_SHARING, "firewall: nft[%s]: communicate with nft", call_data->identifier);
+    nm_log_dbg(LOGD_FIREWALL, "firewall: nft[%s]: communicate with nft", call_data->identifier);
 
     nm_shutdown_wait_obj_register_object(call_data->task, "nft-call");
 
@@ -691,7 +705,7 @@ _fw_nft_set_shared_construct(gboolean up, const char *ip_iface, in_addr_t addr, 
     gs_free char            *table_name = NULL;
     char                     str_subnet[_SHARE_IPTABLES_SUBNET_TO_STR_LEN];
 
-    table_name = _share_iptables_get_name(FALSE, "nm-shared", ip_iface);
+    table_name = _iptables_get_name(FALSE, "nm-shared", ip_iface);
 
     _share_iptables_subnet_to_str(str_subnet, addr, plen);
 
@@ -754,6 +768,141 @@ _fw_nft_set_shared_construct(gboolean up, const char *ip_iface, in_addr_t addr, 
     }
 
     return nm_str_buf_finalize_to_gbytes(&strbuf);
+}
+
+static GBytes *
+_fw_nft_wg_default_construct(const char        *ip_iface,
+                             NMSettingIPConfig *ip_config,
+                             int                fwmark,
+                             gboolean           up)
+{
+    nm_auto_str_buf NMStrBuf strbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_1000, FALSE);
+    gs_free char            *table_name = NULL;
+    const char              *family_str;
+
+    table_name = _iptables_get_name(FALSE, "nm-wg", ip_iface);
+    family_str = nm_setting_ip_config_get_addr_family(ip_config) == AF_INET ? "ip" : "ip6";
+
+    _fw_nft_append_cmd_table(&strbuf, family_str, table_name, up);
+
+    if (up) {
+        guint n_addresses = nm_setting_ip_config_get_num_addresses(ip_config);
+
+        if (n_addresses) {
+            _append(&strbuf, "add chain %s %s preraw {", family_str, table_name);
+
+            for (guint i = 0; i < n_addresses; i++) {
+                NMIPAddress *addr = nm_setting_ip_config_get_address(ip_config, i);
+
+                _append(&strbuf,
+                        " iifname != \"%s\" "
+                        " %s daddr %s "
+                        " fib saddr type != local "
+                        "drop;",
+                        ip_iface,
+                        family_str,
+                        nm_ip_address_get_address(addr));
+            }
+
+            _append(&strbuf, "};");
+        }
+
+        _append(&strbuf,
+                "add chain %s %s premangle {"
+                " type filter hook prerouting priority mangle; policy accept; "
+                " meta l4proto udp meta mark set ct mark; "
+                "};",
+                family_str,
+                table_name);
+
+        _append(&strbuf,
+                "add chain %s %s postmangle {"
+                " type filter hook postrouting priority mangle; policy accept; "
+                " meta l4proto udp mark 0x%08x ct mark set meta mark; "
+                "};",
+                family_str,
+                table_name,
+                fwmark);
+    }
+
+    return nm_str_buf_finalize_to_gbytes(&strbuf);
+}
+
+static void
+_fw_iptables_wg_configure(const char        *ip_iface,
+                          NMSettingIPConfig *ip_config,
+                          int                fwmark,
+                          gboolean           up)
+{
+    gs_free char *comment_name = NULL;
+    char          fwmark_str[11];
+    int           family      = nm_setting_ip_config_get_addr_family(ip_config);
+    guint         n_addresses = nm_setting_ip_config_get_num_addresses(ip_config);
+
+    comment_name = _iptables_get_name(FALSE, "nm-wg", ip_iface);
+    g_snprintf(fwmark_str, sizeof(fwmark_str), "%" G_GUINT32_FORMAT, fwmark);
+
+    nm_assert(strlen(fwmark_str) > 0);
+
+    for (guint i = 0; i < n_addresses; i++) {
+        NMIPAddress *addr = nm_setting_ip_config_get_address(ip_config, i);
+
+        _ipxtables_call(family,
+                        "--table",
+                        "raw",
+                        up ? "--insert" : "--delete",
+                        "PREROUTING",
+                        "!",
+                        "--in-interface",
+                        ip_iface,
+                        "--destination",
+                        nm_ip_address_get_address(addr),
+                        "--match",
+                        "addrtype",
+                        "!",
+                        "--src-type",
+                        "LOCAL",
+                        "-j",
+                        "DROP",
+                        "-m",
+                        "comment",
+                        "--comment",
+                        comment_name);
+    }
+
+    _ipxtables_call(family,
+                    "--table",
+                    "mangle",
+                    up ? "--insert" : "--delete",
+                    "POSTROUTING",
+                    "--match",
+                    "mark",
+                    "--mark",
+                    fwmark_str,
+                    "--protocol",
+                    "udp",
+                    "--jump",
+                    "CONNMARK",
+                    "--save-mark",
+                    "-m",
+                    "comment",
+                    "--comment",
+                    comment_name);
+
+    _ipxtables_call(family,
+                    "--table",
+                    "mangle",
+                    up ? "--insert" : "--delete",
+                    "PREROUTING",
+                    "--protocol",
+                    "udp",
+                    "--jump",
+                    "CONNMARK",
+                    "--restore-mark",
+                    "-m",
+                    "comment",
+                    "--comment",
+                    comment_name);
 }
 
 /*****************************************************************************/
@@ -1046,6 +1195,31 @@ nm_firewall_config_free(NMFirewallConfig *self)
 }
 
 /*****************************************************************************/
+void
+nm_firewall_config_set_wg_rule(const char        *ifname,
+                               NMSettingIPConfig *ip_config,
+                               int                fwmark,
+                               gboolean           up)
+{
+    switch (nm_firewall_utils_get_backend()) {
+    case NM_FIREWALL_BACKEND_NFTABLES:
+    {
+        gs_unref_bytes GBytes *stdin_buf = NULL;
+
+        stdin_buf = _fw_nft_wg_default_construct(ifname, ip_config, fwmark, up);
+        _fw_nft_call_sync(stdin_buf, NULL);
+        break;
+    }
+    case NM_FIREWALL_BACKEND_IPTABLES:
+        _fw_iptables_wg_configure(ifname, ip_config, fwmark, up);
+        break;
+    case NM_FIREWALL_BACKEND_NONE:
+        break;
+    default:
+        nm_assert_not_reached();
+        break;
+    }
+}
 
 void
 nm_firewall_config_apply_sync(NMFirewallConfig *self, gboolean up)
@@ -1124,7 +1298,7 @@ again:
         if (!g_atomic_int_compare_and_exchange(&backend, NM_FIREWALL_BACKEND_UNKNOWN, b))
             goto again;
 
-        nm_log_dbg(LOGD_SHARING,
+        nm_log_dbg(LOGD_FIREWALL,
                    "firewall: use %s backend%s%s%s%s%s%s%s",
                    FirewallBackends[b - 1].name,
                    NM_PRINT_FMT_QUOTED(FirewallBackends[b - 1].path,

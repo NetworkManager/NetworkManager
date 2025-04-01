@@ -23,6 +23,7 @@
 #include "nm-active-connection.h"
 #include "nm-act-request.h"
 #include "dns/nm-dns-manager.h"
+#include "nm-firewall-utils.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceWireGuard
 #include "nm-device-logging.h"
@@ -1207,6 +1208,40 @@ skip:
     *out_allowed_ips_data = g_steal_pointer(&allowed_ips);
 }
 
+static void
+_configure_firewall(NMDeviceWireGuard *self, NMConnection *connection, int addr_family, gboolean up)
+{
+    NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
+    const char               *ip_iface;
+    NMSettingIPConfig        *ip_config;
+
+    ip_iface = nm_device_get_ip_iface(NM_DEVICE(self));
+
+    nm_assert(ip_iface);
+
+    switch (addr_family) {
+    case AF_INET:
+        if (!priv->auto_default_route_enabled_4)
+            return;
+
+        ip_config = nm_connection_get_setting_ip4_config(connection);
+        break;
+    case AF_INET6:
+        if (!priv->auto_default_route_enabled_6)
+            return;
+
+        ip_config = nm_connection_get_setting_ip6_config(connection);
+        break;
+    default:
+        nm_assert_not_reached();
+    }
+
+    nm_assert(ip_config);
+    nm_assert(priv->auto_default_route_fwmark);
+
+    nm_firewall_config_set_wg_rule(ip_iface, ip_config, priv->auto_default_route_fwmark, up);
+}
+
 /*****************************************************************************/
 
 static void
@@ -1298,6 +1333,18 @@ create_and_realize(NMDevice              *device,
     }
 
     return TRUE;
+}
+
+static void
+deactivate(NMDevice *device)
+{
+    NMDeviceWireGuard *self       = NM_DEVICE_WIREGUARD(device);
+    NMConnection      *connection = nm_device_get_applied_connection(NM_DEVICE(self));
+
+    if (connection) {
+        _configure_firewall(self, connection, AF_INET, FALSE);
+        _configure_firewall(self, connection, AF_INET6, FALSE);
+    }
 }
 
 /*****************************************************************************/
@@ -1768,6 +1815,10 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
     nm_auto_unref_l3cd const NML3ConfigData *l3cd = NULL;
 
     l3cd = _get_dev2_ip_config(NM_DEVICE_WIREGUARD(device), addr_family);
+    _configure_firewall(NM_DEVICE_WIREGUARD(device),
+                        nm_device_get_applied_connection(device),
+                        addr_family,
+                        TRUE);
     nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_READY, l3cd);
 }
 
@@ -1866,6 +1917,10 @@ reapply_connection(NMDevice *device, NMConnection *con_old, NMConnection *con_ne
 
     if (state >= NM_DEVICE_STATE_CONFIG) {
         priv->auto_default_route_refresh = TRUE;
+
+        _configure_firewall(self, con_old, AF_INET, FALSE);
+        _configure_firewall(self, con_old, AF_INET6, FALSE);
+
         link_config(NM_DEVICE_WIREGUARD(device), "reapply", LINK_CONFIG_MODE_REAPPLY, NULL);
     }
 
@@ -2018,6 +2073,7 @@ nm_device_wireguard_class_init(NMDeviceWireGuardClass *klass)
 
     device_class->state_changed                                 = device_state_changed;
     device_class->create_and_realize                            = create_and_realize;
+    device_class->deactivate                                    = deactivate;
     device_class->act_stage2_config                             = act_stage2_config;
     device_class->act_stage2_config_also_for_external_or_assume = TRUE;
     device_class->act_stage3_ip_config                          = act_stage3_ip_config;
