@@ -182,12 +182,12 @@ id
 path
 uuid
 <<<
-size: 6579
+size: 6622
 location: src/tests/client/test-client.py:test_003()/14
 cmd: $NMCLI con s con-gsm1
 lang: C
 returncode: 0
-stdout: 6446 bytes
+stdout: 6489 bytes
 >>>
 connection.id:                          con-gsm1
 connection.uuid:                        UUID-con-gsm1-REPLACED-REPLACED-REPL
@@ -324,18 +324,19 @@ gsm.initial-eps-bearer-refuse-pap:      no
 gsm.initial-eps-bearer-refuse-chap:     no
 gsm.initial-eps-bearer-refuse-mschap:   no
 gsm.initial-eps-bearer-refuse-mschapv2: no
+gsm.device-uid:                         --
 proxy.method:                           none
 proxy.browser-only:                     no
 proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 6622
+size: 6665
 location: src/tests/client/test-client.py:test_003()/15
 cmd: $NMCLI con s con-gsm1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6479 bytes
+stdout: 6522 bytes
 >>>
 connection.id:                          con-gsm1
 connection.uuid:                        UUID-con-gsm1-REPLACED-REPLACED-REPL
@@ -472,48 +473,49 @@ gsm.initial-eps-bearer-refuse-pap:      nie
 gsm.initial-eps-bearer-refuse-chap:     nie
 gsm.initial-eps-bearer-refuse-mschap:   nie
 gsm.initial-eps-bearer-refuse-mschapv2: nie
+gsm.device-uid:                         --
 proxy.method:                           none
 proxy.browser-only:                     nie
 proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 584
+size: 585
 location: src/tests/client/test-client.py:test_003()/16
 cmd: $NMCLI -g all con s con-gsm1
 lang: C
 returncode: 0
-stdout: 445 bytes
+stdout: 446 bytes
 >>>
 connection:con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:::::::-1:-1:-1::0:0::-1:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::: :0::::-1:0::-1:-1:-1:no:no::::0:yes:-1:-1:::0x0:no:yes:-1:-1::-1:0::-1::0
 ipv6:auto::::0::::-1:0::-1:-1:-1:no:no:no:yes:-1:-1:0:0:default:0:auto::::0:yes:-1::0x0:-1:
 serial:5:8:even:1:100
-gsm:no:::<hidden>:0:xyz.con-gsm1::<hidden>:0:no::::auto:no:::<hidden>:0:yes:no:no:no:no:no
+gsm:no:::<hidden>:0:xyz.con-gsm1::<hidden>:0:no::::auto:no:::<hidden>:0:yes:no:no:no:no:no:
 proxy:none:no::
 
 <<<
-size: 594
+size: 595
 location: src/tests/client/test-client.py:test_003()/17
 cmd: $NMCLI -g all con s con-gsm1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 445 bytes
+stdout: 446 bytes
 >>>
 connection:con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:::::::-1:-1:-1::0:0::-1:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::: :0::::-1:0::-1:-1:-1:no:no::::0:yes:-1:-1:::0x0:no:yes:-1:-1::-1:0::-1::0
 ipv6:auto::::0::::-1:0::-1:-1:-1:no:no:no:yes:-1:-1:0:0:default:0:auto::::0:yes:-1::0x0:-1:
 serial:5:8:even:1:100
-gsm:no:::<hidden>:0:xyz.con-gsm1::<hidden>:0:no::::auto:no:::<hidden>:0:yes:no:no:no:no:no
+gsm:no:::<hidden>:0:xyz.con-gsm1::<hidden>:0:no::::auto:no:::<hidden>:0:yes:no:no:no:no:no:
 proxy:none:no::
 
 <<<
-size: 6567
+size: 6610
 location: src/tests/client/test-client.py:test_003()/18
 cmd: $NMCLI con s con-gsm2
 lang: C
 returncode: 0
-stdout: 6434 bytes
+stdout: 6477 bytes
 >>>
 connection.id:                          con-gsm2
 connection.uuid:                        UUID-con-gsm2-REPLACED-REPLACED-REPL
@@ -650,18 +652,19 @@ gsm.initial-eps-bearer-refuse-pap:      no
 gsm.initial-eps-bearer-refuse-chap:     no
 gsm.initial-eps-bearer-refuse-mschap:   no
 gsm.initial-eps-bearer-refuse-mschapv2: no
+gsm.device-uid:                         --
 proxy.method:                           none
 proxy.browser-only:                     no
 proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 6610
+size: 6653
 location: src/tests/client/test-client.py:test_003()/19
 cmd: $NMCLI con s con-gsm2
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6467 bytes
+stdout: 6510 bytes
 >>>
 connection.id:                          con-gsm2
 connection.uuid:                        UUID-con-gsm2-REPLACED-REPLACED-REPL
@@ -798,332 +801,7 @@ gsm.initial-eps-bearer-refuse-pap:      nie
 gsm.initial-eps-bearer-refuse-chap:     nie
 gsm.initial-eps-bearer-refuse-mschap:   nie
 gsm.initial-eps-bearer-refuse-mschapv2: nie
-proxy.method:                           none
-proxy.browser-only:                     nie
-proxy.pac-url:                          --
-proxy.pac-script:                       --
-
-<<<
-size: 572
-location: src/tests/client/test-client.py:test_003()/20
-cmd: $NMCLI -g all con s con-gsm2
-lang: C
-returncode: 0
-stdout: 433 bytes
->>>
-connection:con-gsm2:UUID-con-gsm2-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:::::::-1:-1:-1::0:0::-1:unknown:default:-1:-1:-1:0x0:-1:-1
-ipv4:auto::: :0::::-1:0::-1:-1:-1:no:no::::0:yes:-1:-1:::0x0:no:yes:-1:-1::-1:0::-1::0
-ipv6:auto::::0::::-1:0::-1:-1:-1:no:no:no:yes:-1:-1:0:0:default:0:auto::::0:yes:-1::0x0:-1:
-serial:5:8:even:1:100
-gsm:no:::<hidden>:0:::<hidden>:0:no::::auto:no:::<hidden>:0:yes:no:no:no:no:no
-proxy:none:no::
-
-<<<
-size: 582
-location: src/tests/client/test-client.py:test_003()/21
-cmd: $NMCLI -g all con s con-gsm2
-lang: pl_PL.UTF-8
-returncode: 0
-stdout: 433 bytes
->>>
-connection:con-gsm2:UUID-con-gsm2-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:::::::-1:-1:-1::0:0::-1:unknown:default:-1:-1:-1:0x0:-1:-1
-ipv4:auto::: :0::::-1:0::-1:-1:-1:no:no::::0:yes:-1:-1:::0x0:no:yes:-1:-1::-1:0::-1::0
-ipv6:auto::::0::::-1:0::-1:-1:-1:no:no:no:yes:-1:-1:0:0:default:0:auto::::0:yes:-1::0x0:-1:
-serial:5:8:even:1:100
-gsm:no:::<hidden>:0:::<hidden>:0:no::::auto:no:::<hidden>:0:yes:no:no:no:no:no
-proxy:none:no::
-
-<<<
-size: 6567
-location: src/tests/client/test-client.py:test_003()/22
-cmd: $NMCLI con s con-gsm3
-lang: C
-returncode: 0
-stdout: 6434 bytes
->>>
-connection.id:                          con-gsm3
-connection.uuid:                        UUID-con-gsm3-REPLACED-REPLACED-REPL
-connection.stable-id:                   --
-connection.type:                        gsm
-connection.interface-name:              --
-connection.autoconnect:                 no
-connection.autoconnect-priority:        0
-connection.autoconnect-retries:         -1 (default)
-connection.multi-connect:               0 (default)
-connection.auth-retries:                -1
-connection.timestamp:                   0
-connection.permissions:                 --
-connection.zone:                        --
-connection.controller:                  --
-connection.master:                      --
-connection.slave-type:                  --
-connection.port-type:                   --
-connection.autoconnect-slaves:          -1 (default)
-connection.autoconnect-ports:           -1 (default)
-connection.down-on-poweroff:            -1 (default)
-connection.secondaries:                 --
-connection.gateway-ping-timeout:        0
-connection.ip-ping-timeout:             0
-connection.ip-ping-addresses:           --
-connection.ip-ping-addresses-require-all:-1 (default)
-connection.metered:                     unknown
-connection.lldp:                        default
-connection.mdns:                        -1 (default)
-connection.llmnr:                       -1 (default)
-connection.dns-over-tls:                -1 (default)
-connection.mptcp-flags:                 0x0 (default)
-connection.wait-device-timeout:         -1
-connection.wait-activation-delay:       -1
-ipv4.method:                            auto
-ipv4.dns:                               --
-ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
-ipv4.dns-priority:                      0
-ipv4.addresses:                         --
-ipv4.gateway:                           --
-ipv4.routes:                            --
-ipv4.route-metric:                      -1
-ipv4.route-table:                       0 (unspec)
-ipv4.routing-rules:                     --
-ipv4.replace-local-rule:                -1 (default)
-ipv4.dhcp-send-release:                 -1 (default)
-ipv4.routed-dns:                        -1 (default)
-ipv4.ignore-auto-routes:                no
-ipv4.ignore-auto-dns:                   no
-ipv4.dhcp-client-id:                    --
-ipv4.dhcp-iaid:                         --
-ipv4.dhcp-dscp:                         --
-ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname-deprecated:     yes
-ipv4.dhcp-send-hostname:                -1 (default)
-ipv4.forwarding:                        -1 (default)
-ipv4.dhcp-hostname:                     --
-ipv4.dhcp-fqdn:                         --
-ipv4.dhcp-hostname-flags:               0x0 (none)
-ipv4.never-default:                     no
-ipv4.may-fail:                          yes
-ipv4.required-timeout:                  -1 (default)
-ipv4.dad-timeout:                       -1 (default)
-ipv4.dhcp-vendor-class-identifier:      --
-ipv4.dhcp-ipv6-only-preferred:          -1 (default)
-ipv4.link-local:                        0 (default)
-ipv4.dhcp-reject-servers:               --
-ipv4.auto-route-ext-gw:                 -1 (default)
-ipv4.shared-dhcp-range:                 --
-ipv4.shared-dhcp-lease-time:            0 (default)
-ipv6.method:                            auto
-ipv6.dns:                               --
-ipv6.dns-search:                        --
-ipv6.dns-options:                       --
-ipv6.dns-priority:                      0
-ipv6.addresses:                         --
-ipv6.gateway:                           --
-ipv6.routes:                            --
-ipv6.route-metric:                      -1
-ipv6.route-table:                       0 (unspec)
-ipv6.routing-rules:                     --
-ipv6.replace-local-rule:                -1 (default)
-ipv6.dhcp-send-release:                 -1 (default)
-ipv6.routed-dns:                        -1 (default)
-ipv6.ignore-auto-routes:                no
-ipv6.ignore-auto-dns:                   no
-ipv6.never-default:                     no
-ipv6.may-fail:                          yes
-ipv6.required-timeout:                  -1 (default)
-ipv6.ip6-privacy:                       -1 (default)
-ipv6.temp-valid-lifetime:               0 (default)
-ipv6.temp-preferred-lifetime:           0 (default)
-ipv6.addr-gen-mode:                     default
-ipv6.ra-timeout:                        0 (default)
-ipv6.mtu:                               auto
-ipv6.dhcp-pd-hint:                      --
-ipv6.dhcp-duid:                         --
-ipv6.dhcp-iaid:                         --
-ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname-deprecated:     yes
-ipv6.dhcp-send-hostname:                -1 (default)
-ipv6.dhcp-hostname:                     --
-ipv6.dhcp-hostname-flags:               0x0 (none)
-ipv6.auto-route-ext-gw:                 -1 (default)
-ipv6.token:                             --
-serial.baud:                            5
-serial.bits:                            8
-serial.parity:                          even
-serial.stopbits:                        1
-serial.send-delay:                      100
-gsm.auto-config:                        no
-gsm.number:                             --
-gsm.username:                           --
-gsm.password:                           <hidden>
-gsm.password-flags:                     0 (none)
-gsm.apn:                                ""
-gsm.network-id:                         --
-gsm.pin:                                <hidden>
-gsm.pin-flags:                          0 (none)
-gsm.home-only:                          no
-gsm.device-id:                          --
-gsm.sim-id:                             --
-gsm.sim-operator-id:                    --
-gsm.mtu:                                auto
-gsm.initial-eps-bearer-configure:       no
-gsm.initial-eps-bearer-apn:             --
-gsm.initial-eps-bearer-username:        --
-gsm.initial-eps-bearer-password:        <hidden>
-gsm.initial-eps-bearer-password-flags:  0 (none)
-gsm.initial-eps-bearer-noauth:          yes
-gsm.initial-eps-bearer-refuse-eap:      no
-gsm.initial-eps-bearer-refuse-pap:      no
-gsm.initial-eps-bearer-refuse-chap:     no
-gsm.initial-eps-bearer-refuse-mschap:   no
-gsm.initial-eps-bearer-refuse-mschapv2: no
-proxy.method:                           none
-proxy.browser-only:                     no
-proxy.pac-url:                          --
-proxy.pac-script:                       --
-
-<<<
-size: 6610
-location: src/tests/client/test-client.py:test_003()/23
-cmd: $NMCLI con s con-gsm3
-lang: pl_PL.UTF-8
-returncode: 0
-stdout: 6467 bytes
->>>
-connection.id:                          con-gsm3
-connection.uuid:                        UUID-con-gsm3-REPLACED-REPLACED-REPL
-connection.stable-id:                   --
-connection.type:                        gsm
-connection.interface-name:              --
-connection.autoconnect:                 nie
-connection.autoconnect-priority:        0
-connection.autoconnect-retries:         -1 (default)
-connection.multi-connect:               0 (default)
-connection.auth-retries:                -1
-connection.timestamp:                   0
-connection.permissions:                 --
-connection.zone:                        --
-connection.controller:                  --
-connection.master:                      --
-connection.slave-type:                  --
-connection.port-type:                   --
-connection.autoconnect-slaves:          -1 (default)
-connection.autoconnect-ports:           -1 (default)
-connection.down-on-poweroff:            -1 (default)
-connection.secondaries:                 --
-connection.gateway-ping-timeout:        0
-connection.ip-ping-timeout:             0
-connection.ip-ping-addresses:           --
-connection.ip-ping-addresses-require-all:-1 (default)
-connection.metered:                     nieznane
-connection.lldp:                        default
-connection.mdns:                        -1 (default)
-connection.llmnr:                       -1 (default)
-connection.dns-over-tls:                -1 (default)
-connection.mptcp-flags:                 0x0 (default)
-connection.wait-device-timeout:         -1
-connection.wait-activation-delay:       -1
-ipv4.method:                            auto
-ipv4.dns:                               --
-ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
-ipv4.dns-priority:                      0
-ipv4.addresses:                         --
-ipv4.gateway:                           --
-ipv4.routes:                            --
-ipv4.route-metric:                      -1
-ipv4.route-table:                       0 (unspec)
-ipv4.routing-rules:                     --
-ipv4.replace-local-rule:                -1 (default)
-ipv4.dhcp-send-release:                 -1 (default)
-ipv4.routed-dns:                        -1 (default)
-ipv4.ignore-auto-routes:                nie
-ipv4.ignore-auto-dns:                   nie
-ipv4.dhcp-client-id:                    --
-ipv4.dhcp-iaid:                         --
-ipv4.dhcp-dscp:                         --
-ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname-deprecated:     tak
-ipv4.dhcp-send-hostname:                -1 (default)
-ipv4.forwarding:                        -1 (default)
-ipv4.dhcp-hostname:                     --
-ipv4.dhcp-fqdn:                         --
-ipv4.dhcp-hostname-flags:               0x0 (none)
-ipv4.never-default:                     nie
-ipv4.may-fail:                          tak
-ipv4.required-timeout:                  -1 (default)
-ipv4.dad-timeout:                       -1 (default)
-ipv4.dhcp-vendor-class-identifier:      --
-ipv4.dhcp-ipv6-only-preferred:          -1 (default)
-ipv4.link-local:                        0 (default)
-ipv4.dhcp-reject-servers:               --
-ipv4.auto-route-ext-gw:                 -1 (default)
-ipv4.shared-dhcp-range:                 --
-ipv4.shared-dhcp-lease-time:            0 (default)
-ipv6.method:                            auto
-ipv6.dns:                               --
-ipv6.dns-search:                        --
-ipv6.dns-options:                       --
-ipv6.dns-priority:                      0
-ipv6.addresses:                         --
-ipv6.gateway:                           --
-ipv6.routes:                            --
-ipv6.route-metric:                      -1
-ipv6.route-table:                       0 (unspec)
-ipv6.routing-rules:                     --
-ipv6.replace-local-rule:                -1 (default)
-ipv6.dhcp-send-release:                 -1 (default)
-ipv6.routed-dns:                        -1 (default)
-ipv6.ignore-auto-routes:                nie
-ipv6.ignore-auto-dns:                   nie
-ipv6.never-default:                     nie
-ipv6.may-fail:                          tak
-ipv6.required-timeout:                  -1 (default)
-ipv6.ip6-privacy:                       -1 (default)
-ipv6.temp-valid-lifetime:               0 (default)
-ipv6.temp-preferred-lifetime:           0 (default)
-ipv6.addr-gen-mode:                     default
-ipv6.ra-timeout:                        0 (default)
-ipv6.mtu:                               automatyczne
-ipv6.dhcp-pd-hint:                      --
-ipv6.dhcp-duid:                         --
-ipv6.dhcp-iaid:                         --
-ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname-deprecated:     tak
-ipv6.dhcp-send-hostname:                -1 (default)
-ipv6.dhcp-hostname:                     --
-ipv6.dhcp-hostname-flags:               0x0 (none)
-ipv6.auto-route-ext-gw:                 -1 (default)
-ipv6.token:                             --
-serial.baud:                            5
-serial.bits:                            8
-serial.parity:                          even
-serial.stopbits:                        1
-serial.send-delay:                      100
-gsm.auto-config:                        nie
-gsm.number:                             --
-gsm.username:                           --
-gsm.password:                           <hidden>
-gsm.password-flags:                     0 (brak)
-gsm.apn:                                ""
-gsm.network-id:                         --
-gsm.pin:                                <hidden>
-gsm.pin-flags:                          0 (brak)
-gsm.home-only:                          nie
-gsm.device-id:                          --
-gsm.sim-id:                             --
-gsm.sim-operator-id:                    --
-gsm.mtu:                                automatyczne
-gsm.initial-eps-bearer-configure:       nie
-gsm.initial-eps-bearer-apn:             --
-gsm.initial-eps-bearer-username:        --
-gsm.initial-eps-bearer-password:        <hidden>
-gsm.initial-eps-bearer-password-flags:  0 (brak)
-gsm.initial-eps-bearer-noauth:          tak
-gsm.initial-eps-bearer-refuse-eap:      nie
-gsm.initial-eps-bearer-refuse-pap:      nie
-gsm.initial-eps-bearer-refuse-chap:     nie
-gsm.initial-eps-bearer-refuse-mschap:   nie
-gsm.initial-eps-bearer-refuse-mschapv2: nie
+gsm.device-uid:                         --
 proxy.method:                           none
 proxy.browser-only:                     nie
 proxy.pac-url:                          --
@@ -1131,32 +809,360 @@ proxy.pac-script:                       --
 
 <<<
 size: 573
-location: src/tests/client/test-client.py:test_003()/24
-cmd: $NMCLI -g all con s con-gsm3
+location: src/tests/client/test-client.py:test_003()/20
+cmd: $NMCLI -g all con s con-gsm2
 lang: C
 returncode: 0
 stdout: 434 bytes
 >>>
-connection:con-gsm3:UUID-con-gsm3-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:::::::-1:-1:-1::0:0::-1:unknown:default:-1:-1:-1:0x0:-1:-1
+connection:con-gsm2:UUID-con-gsm2-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:::::::-1:-1:-1::0:0::-1:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::: :0::::-1:0::-1:-1:-1:no:no::::0:yes:-1:-1:::0x0:no:yes:-1:-1::-1:0::-1::0
 ipv6:auto::::0::::-1:0::-1:-1:-1:no:no:no:yes:-1:-1:0:0:default:0:auto::::0:yes:-1::0x0:-1:
 serial:5:8:even:1:100
-gsm:no:::<hidden>:0: ::<hidden>:0:no::::auto:no:::<hidden>:0:yes:no:no:no:no:no
+gsm:no:::<hidden>:0:::<hidden>:0:no::::auto:no:::<hidden>:0:yes:no:no:no:no:no:
 proxy:none:no::
 
 <<<
 size: 583
-location: src/tests/client/test-client.py:test_003()/25
-cmd: $NMCLI -g all con s con-gsm3
+location: src/tests/client/test-client.py:test_003()/21
+cmd: $NMCLI -g all con s con-gsm2
 lang: pl_PL.UTF-8
 returncode: 0
 stdout: 434 bytes
+>>>
+connection:con-gsm2:UUID-con-gsm2-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:::::::-1:-1:-1::0:0::-1:unknown:default:-1:-1:-1:0x0:-1:-1
+ipv4:auto::: :0::::-1:0::-1:-1:-1:no:no::::0:yes:-1:-1:::0x0:no:yes:-1:-1::-1:0::-1::0
+ipv6:auto::::0::::-1:0::-1:-1:-1:no:no:no:yes:-1:-1:0:0:default:0:auto::::0:yes:-1::0x0:-1:
+serial:5:8:even:1:100
+gsm:no:::<hidden>:0:::<hidden>:0:no::::auto:no:::<hidden>:0:yes:no:no:no:no:no:
+proxy:none:no::
+
+<<<
+size: 6610
+location: src/tests/client/test-client.py:test_003()/22
+cmd: $NMCLI con s con-gsm3
+lang: C
+returncode: 0
+stdout: 6477 bytes
+>>>
+connection.id:                          con-gsm3
+connection.uuid:                        UUID-con-gsm3-REPLACED-REPLACED-REPL
+connection.stable-id:                   --
+connection.type:                        gsm
+connection.interface-name:              --
+connection.autoconnect:                 no
+connection.autoconnect-priority:        0
+connection.autoconnect-retries:         -1 (default)
+connection.multi-connect:               0 (default)
+connection.auth-retries:                -1
+connection.timestamp:                   0
+connection.permissions:                 --
+connection.zone:                        --
+connection.controller:                  --
+connection.master:                      --
+connection.slave-type:                  --
+connection.port-type:                   --
+connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
+connection.down-on-poweroff:            -1 (default)
+connection.secondaries:                 --
+connection.gateway-ping-timeout:        0
+connection.ip-ping-timeout:             0
+connection.ip-ping-addresses:           --
+connection.ip-ping-addresses-require-all:-1 (default)
+connection.metered:                     unknown
+connection.lldp:                        default
+connection.mdns:                        -1 (default)
+connection.llmnr:                       -1 (default)
+connection.dns-over-tls:                -1 (default)
+connection.mptcp-flags:                 0x0 (default)
+connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
+ipv4.method:                            auto
+ipv4.dns:                               --
+ipv4.dns-search:                        --
+ipv4.dns-options:                       ""
+ipv4.dns-priority:                      0
+ipv4.addresses:                         --
+ipv4.gateway:                           --
+ipv4.routes:                            --
+ipv4.route-metric:                      -1
+ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
+ipv4.replace-local-rule:                -1 (default)
+ipv4.dhcp-send-release:                 -1 (default)
+ipv4.routed-dns:                        -1 (default)
+ipv4.ignore-auto-routes:                no
+ipv4.ignore-auto-dns:                   no
+ipv4.dhcp-client-id:                    --
+ipv4.dhcp-iaid:                         --
+ipv4.dhcp-dscp:                         --
+ipv4.dhcp-timeout:                      0 (default)
+ipv4.dhcp-send-hostname-deprecated:     yes
+ipv4.dhcp-send-hostname:                -1 (default)
+ipv4.forwarding:                        -1 (default)
+ipv4.dhcp-hostname:                     --
+ipv4.dhcp-fqdn:                         --
+ipv4.dhcp-hostname-flags:               0x0 (none)
+ipv4.never-default:                     no
+ipv4.may-fail:                          yes
+ipv4.required-timeout:                  -1 (default)
+ipv4.dad-timeout:                       -1 (default)
+ipv4.dhcp-vendor-class-identifier:      --
+ipv4.dhcp-ipv6-only-preferred:          -1 (default)
+ipv4.link-local:                        0 (default)
+ipv4.dhcp-reject-servers:               --
+ipv4.auto-route-ext-gw:                 -1 (default)
+ipv4.shared-dhcp-range:                 --
+ipv4.shared-dhcp-lease-time:            0 (default)
+ipv6.method:                            auto
+ipv6.dns:                               --
+ipv6.dns-search:                        --
+ipv6.dns-options:                       --
+ipv6.dns-priority:                      0
+ipv6.addresses:                         --
+ipv6.gateway:                           --
+ipv6.routes:                            --
+ipv6.route-metric:                      -1
+ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
+ipv6.replace-local-rule:                -1 (default)
+ipv6.dhcp-send-release:                 -1 (default)
+ipv6.routed-dns:                        -1 (default)
+ipv6.ignore-auto-routes:                no
+ipv6.ignore-auto-dns:                   no
+ipv6.never-default:                     no
+ipv6.may-fail:                          yes
+ipv6.required-timeout:                  -1 (default)
+ipv6.ip6-privacy:                       -1 (default)
+ipv6.temp-valid-lifetime:               0 (default)
+ipv6.temp-preferred-lifetime:           0 (default)
+ipv6.addr-gen-mode:                     default
+ipv6.ra-timeout:                        0 (default)
+ipv6.mtu:                               auto
+ipv6.dhcp-pd-hint:                      --
+ipv6.dhcp-duid:                         --
+ipv6.dhcp-iaid:                         --
+ipv6.dhcp-timeout:                      0 (default)
+ipv6.dhcp-send-hostname-deprecated:     yes
+ipv6.dhcp-send-hostname:                -1 (default)
+ipv6.dhcp-hostname:                     --
+ipv6.dhcp-hostname-flags:               0x0 (none)
+ipv6.auto-route-ext-gw:                 -1 (default)
+ipv6.token:                             --
+serial.baud:                            5
+serial.bits:                            8
+serial.parity:                          even
+serial.stopbits:                        1
+serial.send-delay:                      100
+gsm.auto-config:                        no
+gsm.number:                             --
+gsm.username:                           --
+gsm.password:                           <hidden>
+gsm.password-flags:                     0 (none)
+gsm.apn:                                ""
+gsm.network-id:                         --
+gsm.pin:                                <hidden>
+gsm.pin-flags:                          0 (none)
+gsm.home-only:                          no
+gsm.device-id:                          --
+gsm.sim-id:                             --
+gsm.sim-operator-id:                    --
+gsm.mtu:                                auto
+gsm.initial-eps-bearer-configure:       no
+gsm.initial-eps-bearer-apn:             --
+gsm.initial-eps-bearer-username:        --
+gsm.initial-eps-bearer-password:        <hidden>
+gsm.initial-eps-bearer-password-flags:  0 (none)
+gsm.initial-eps-bearer-noauth:          yes
+gsm.initial-eps-bearer-refuse-eap:      no
+gsm.initial-eps-bearer-refuse-pap:      no
+gsm.initial-eps-bearer-refuse-chap:     no
+gsm.initial-eps-bearer-refuse-mschap:   no
+gsm.initial-eps-bearer-refuse-mschapv2: no
+gsm.device-uid:                         --
+proxy.method:                           none
+proxy.browser-only:                     no
+proxy.pac-url:                          --
+proxy.pac-script:                       --
+
+<<<
+size: 6653
+location: src/tests/client/test-client.py:test_003()/23
+cmd: $NMCLI con s con-gsm3
+lang: pl_PL.UTF-8
+returncode: 0
+stdout: 6510 bytes
+>>>
+connection.id:                          con-gsm3
+connection.uuid:                        UUID-con-gsm3-REPLACED-REPLACED-REPL
+connection.stable-id:                   --
+connection.type:                        gsm
+connection.interface-name:              --
+connection.autoconnect:                 nie
+connection.autoconnect-priority:        0
+connection.autoconnect-retries:         -1 (default)
+connection.multi-connect:               0 (default)
+connection.auth-retries:                -1
+connection.timestamp:                   0
+connection.permissions:                 --
+connection.zone:                        --
+connection.controller:                  --
+connection.master:                      --
+connection.slave-type:                  --
+connection.port-type:                   --
+connection.autoconnect-slaves:          -1 (default)
+connection.autoconnect-ports:           -1 (default)
+connection.down-on-poweroff:            -1 (default)
+connection.secondaries:                 --
+connection.gateway-ping-timeout:        0
+connection.ip-ping-timeout:             0
+connection.ip-ping-addresses:           --
+connection.ip-ping-addresses-require-all:-1 (default)
+connection.metered:                     nieznane
+connection.lldp:                        default
+connection.mdns:                        -1 (default)
+connection.llmnr:                       -1 (default)
+connection.dns-over-tls:                -1 (default)
+connection.mptcp-flags:                 0x0 (default)
+connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
+ipv4.method:                            auto
+ipv4.dns:                               --
+ipv4.dns-search:                        --
+ipv4.dns-options:                       ""
+ipv4.dns-priority:                      0
+ipv4.addresses:                         --
+ipv4.gateway:                           --
+ipv4.routes:                            --
+ipv4.route-metric:                      -1
+ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
+ipv4.replace-local-rule:                -1 (default)
+ipv4.dhcp-send-release:                 -1 (default)
+ipv4.routed-dns:                        -1 (default)
+ipv4.ignore-auto-routes:                nie
+ipv4.ignore-auto-dns:                   nie
+ipv4.dhcp-client-id:                    --
+ipv4.dhcp-iaid:                         --
+ipv4.dhcp-dscp:                         --
+ipv4.dhcp-timeout:                      0 (default)
+ipv4.dhcp-send-hostname-deprecated:     tak
+ipv4.dhcp-send-hostname:                -1 (default)
+ipv4.forwarding:                        -1 (default)
+ipv4.dhcp-hostname:                     --
+ipv4.dhcp-fqdn:                         --
+ipv4.dhcp-hostname-flags:               0x0 (none)
+ipv4.never-default:                     nie
+ipv4.may-fail:                          tak
+ipv4.required-timeout:                  -1 (default)
+ipv4.dad-timeout:                       -1 (default)
+ipv4.dhcp-vendor-class-identifier:      --
+ipv4.dhcp-ipv6-only-preferred:          -1 (default)
+ipv4.link-local:                        0 (default)
+ipv4.dhcp-reject-servers:               --
+ipv4.auto-route-ext-gw:                 -1 (default)
+ipv4.shared-dhcp-range:                 --
+ipv4.shared-dhcp-lease-time:            0 (default)
+ipv6.method:                            auto
+ipv6.dns:                               --
+ipv6.dns-search:                        --
+ipv6.dns-options:                       --
+ipv6.dns-priority:                      0
+ipv6.addresses:                         --
+ipv6.gateway:                           --
+ipv6.routes:                            --
+ipv6.route-metric:                      -1
+ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
+ipv6.replace-local-rule:                -1 (default)
+ipv6.dhcp-send-release:                 -1 (default)
+ipv6.routed-dns:                        -1 (default)
+ipv6.ignore-auto-routes:                nie
+ipv6.ignore-auto-dns:                   nie
+ipv6.never-default:                     nie
+ipv6.may-fail:                          tak
+ipv6.required-timeout:                  -1 (default)
+ipv6.ip6-privacy:                       -1 (default)
+ipv6.temp-valid-lifetime:               0 (default)
+ipv6.temp-preferred-lifetime:           0 (default)
+ipv6.addr-gen-mode:                     default
+ipv6.ra-timeout:                        0 (default)
+ipv6.mtu:                               automatyczne
+ipv6.dhcp-pd-hint:                      --
+ipv6.dhcp-duid:                         --
+ipv6.dhcp-iaid:                         --
+ipv6.dhcp-timeout:                      0 (default)
+ipv6.dhcp-send-hostname-deprecated:     tak
+ipv6.dhcp-send-hostname:                -1 (default)
+ipv6.dhcp-hostname:                     --
+ipv6.dhcp-hostname-flags:               0x0 (none)
+ipv6.auto-route-ext-gw:                 -1 (default)
+ipv6.token:                             --
+serial.baud:                            5
+serial.bits:                            8
+serial.parity:                          even
+serial.stopbits:                        1
+serial.send-delay:                      100
+gsm.auto-config:                        nie
+gsm.number:                             --
+gsm.username:                           --
+gsm.password:                           <hidden>
+gsm.password-flags:                     0 (brak)
+gsm.apn:                                ""
+gsm.network-id:                         --
+gsm.pin:                                <hidden>
+gsm.pin-flags:                          0 (brak)
+gsm.home-only:                          nie
+gsm.device-id:                          --
+gsm.sim-id:                             --
+gsm.sim-operator-id:                    --
+gsm.mtu:                                automatyczne
+gsm.initial-eps-bearer-configure:       nie
+gsm.initial-eps-bearer-apn:             --
+gsm.initial-eps-bearer-username:        --
+gsm.initial-eps-bearer-password:        <hidden>
+gsm.initial-eps-bearer-password-flags:  0 (brak)
+gsm.initial-eps-bearer-noauth:          tak
+gsm.initial-eps-bearer-refuse-eap:      nie
+gsm.initial-eps-bearer-refuse-pap:      nie
+gsm.initial-eps-bearer-refuse-chap:     nie
+gsm.initial-eps-bearer-refuse-mschap:   nie
+gsm.initial-eps-bearer-refuse-mschapv2: nie
+gsm.device-uid:                         --
+proxy.method:                           none
+proxy.browser-only:                     nie
+proxy.pac-url:                          --
+proxy.pac-script:                       --
+
+<<<
+size: 574
+location: src/tests/client/test-client.py:test_003()/24
+cmd: $NMCLI -g all con s con-gsm3
+lang: C
+returncode: 0
+stdout: 435 bytes
 >>>
 connection:con-gsm3:UUID-con-gsm3-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:::::::-1:-1:-1::0:0::-1:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::: :0::::-1:0::-1:-1:-1:no:no::::0:yes:-1:-1:::0x0:no:yes:-1:-1::-1:0::-1::0
 ipv6:auto::::0::::-1:0::-1:-1:-1:no:no:no:yes:-1:-1:0:0:default:0:auto::::0:yes:-1::0x0:-1:
 serial:5:8:even:1:100
-gsm:no:::<hidden>:0: ::<hidden>:0:no::::auto:no:::<hidden>:0:yes:no:no:no:no:no
+gsm:no:::<hidden>:0: ::<hidden>:0:no::::auto:no:::<hidden>:0:yes:no:no:no:no:no:
+proxy:none:no::
+
+<<<
+size: 584
+location: src/tests/client/test-client.py:test_003()/25
+cmd: $NMCLI -g all con s con-gsm3
+lang: pl_PL.UTF-8
+returncode: 0
+stdout: 435 bytes
+>>>
+connection:con-gsm3:UUID-con-gsm3-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:::::::-1:-1:-1::0:0::-1:unknown:default:-1:-1:-1:0x0:-1:-1
+ipv4:auto::: :0::::-1:0::-1:-1:-1:no:no::::0:yes:-1:-1:::0x0:no:yes:-1:-1::-1:0::-1::0
+ipv6:auto::::0::::-1:0::-1:-1:-1:no:no:no:yes:-1:-1:0:0:default:0:auto::::0:yes:-1::0x0:-1:
+serial:5:8:even:1:100
+gsm:no:::<hidden>:0: ::<hidden>:0:no::::auto:no:::<hidden>:0:yes:no:no:no:no:no:
 proxy:none:no::
 
 <<<

@@ -1393,6 +1393,10 @@
                   dbus-type="s"
                   gprop-type="gchararray"
                   />
+        <property name="device-uid"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="home-only"
                   dbus-type="b"
                   gprop-type="gboolean"

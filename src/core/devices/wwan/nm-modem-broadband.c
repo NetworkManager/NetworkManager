@@ -1649,6 +1649,8 @@ nm_modem_broadband_new(GObject *object, GError **error)
                         driver,
                         NM_MODEM_OPERATOR_CODE,
                         operator_code,
+                        NM_MODEM_DEVICE_UID,
+                        mm_modem_get_device(modem_iface),
                         NULL);
 }
 

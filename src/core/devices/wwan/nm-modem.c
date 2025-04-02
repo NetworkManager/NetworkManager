@@ -39,7 +39,8 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMModem,
                              PROP_IP_TYPES,
                              PROP_SIM_OPERATOR_ID,
                              PROP_OPERATOR_CODE,
-                             PROP_APN, );
+                             PROP_APN,
+                             PROP_DEVICE_UID, );
 
 enum {
     PPP_STATS,
@@ -78,6 +79,7 @@ typedef struct _NMModemPrivate {
     char           *sim_operator_id;
     char           *operator_code;
     char           *apn;
+    char           *device_uid;
 
     NMPPPManager *ppp_manager;
     NMPppMgr     *ppp_mgr;
@@ -618,6 +620,12 @@ nm_modem_get_apn(NMModem *self)
     return NM_MODEM_GET_PRIVATE(self)->apn;
 }
 
+const char *
+nm_modem_get_device_uid(NMModem *self)
+{
+    return NM_MODEM_GET_PRIVATE(self)->device_uid;
+}
+
 /*****************************************************************************/
 
 static void
@@ -1117,6 +1125,22 @@ nm_modem_check_connection_compatible(NMModem *self, NMConnection *connection, GE
                 nm_utils_error_set_literal(error,
                                            NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
                                            "device has differing device-id than GSM profile");
+                return FALSE;
+            }
+        }
+
+        str = nm_setting_gsm_get_device_uid(s_gsm);
+        if (str) {
+            if (!priv->device_uid) {
+                nm_utils_error_set_literal(error,
+                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                           "GSM profile has device-uid, device does not");
+                return FALSE;
+            }
+            if (!nm_streq(str, priv->device_uid)) {
+                nm_utils_error_set_literal(error,
+                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                           "device has differing device-uid than GSM profile");
                 return FALSE;
             }
         }
@@ -1644,6 +1668,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_APN:
         g_value_set_string(value, priv->apn);
         break;
+    case PROP_DEVICE_UID:
+        g_value_set_string(value, priv->device_uid);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
@@ -1698,6 +1725,10 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     case PROP_OPERATOR_CODE:
         /* construct-only */
         priv->operator_code = g_value_dup_string(value);
+        break;
+    case PROP_DEVICE_UID:
+        /* construct-only */
+        priv->device_uid = g_value_dup_string(value);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -1758,6 +1789,7 @@ finalize(GObject *object)
     g_free(priv->sim_operator_id);
     g_free(priv->operator_code);
     g_free(priv->apn);
+    g_free(priv->device_uid);
 
     G_OBJECT_CLASS(nm_modem_parent_class)->finalize(object);
 }
@@ -1862,6 +1894,13 @@ nm_modem_class_init(NMModemClass *klass)
 
     obj_properties[PROP_APN] =
         g_param_spec_string(NM_MODEM_APN, "", "", NULL, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
+    obj_properties[PROP_DEVICE_UID] =
+        g_param_spec_string(NM_MODEM_DEVICE_UID,
+                            "",
+                            "",
+                            NULL,
+                            G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

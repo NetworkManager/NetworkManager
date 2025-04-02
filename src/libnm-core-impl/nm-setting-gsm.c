@@ -47,7 +47,8 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_AUTO_CONFIG,
                                   PROP_INITIAL_EPS_REFUSE_PAP,
                                   PROP_INITIAL_EPS_REFUSE_CHAP,
                                   PROP_INITIAL_EPS_REFUSE_MSCHAP,
-                                  PROP_INITIAL_EPS_REFUSE_MSCHAPV2, );
+                                  PROP_INITIAL_EPS_REFUSE_MSCHAPV2,
+                                  PROP_DEVICE_UID, );
 
 typedef struct {
     char   *number;
@@ -75,6 +76,7 @@ typedef struct {
     bool    auto_config;
     bool    home_only;
     bool    initial_eps_config;
+    char   *device_uid;
 } NMSettingGsmPrivate;
 
 /**
@@ -463,6 +465,22 @@ nm_setting_gsm_get_initial_eps_refuse_mschapv2(NMSettingGsm *setting)
     g_return_val_if_fail(NM_IS_SETTING_GSM(setting), FALSE);
 
     return NM_SETTING_GSM_GET_PRIVATE(setting)->initial_eps_refuse_mschapv2;
+}
+
+/**
+ * nm_setting_gsm_get_device_uid:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: the #NMSettingGsm:device-uid property of the setting
+ *
+ * Since: 1.56
+ **/
+const char *
+nm_setting_gsm_get_device_uid(NMSettingGsm *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_GSM(setting), NULL);
+
+    return NM_SETTING_GSM_GET_PRIVATE(setting)->device_uid;
 }
 
 static gboolean
@@ -1148,6 +1166,26 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
                                                NM_SETTING_PARAM_NONE,
                                                NMSettingGsmPrivate,
                                                initial_eps_refuse_mschapv2);
+
+    /**
+     * NMSettingGsm:device-uid:
+     *
+     * The device UID (as given by the WWAN management service) which this
+     * connection applies to. In contrast to #NMSettingGsm:device-id, which is
+     * an inherent property of the connected device, this setting refers to
+     * a property set by a UDEV-rule. Refer to the "Common udev tags" ->
+     * "ID_MM_PHYSDEV_UID" documentation of ModemManager. If given, the
+     * connection will only apply to the specified device.
+     *
+     * Since: 1.56
+     **/
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_GSM_DEVICE_UID,
+                                              PROP_DEVICE_UID,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingGsmPrivate,
+                                              device_uid);
 
     /* Ignore incoming deprecated properties */
     _nm_properties_override_dbus(properties_override,
