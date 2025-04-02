@@ -276,13 +276,17 @@ parse_hfi(GPtrArray *a, struct nbft_info_hfi *hfi, const char *table_name, char 
                          NM_SETTING_IP_CONFIG_METHOD,
                          NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
                          NULL);
-            /* FIXME: buggy firmware implementations may report prefix=0 for v6 addresses,
-             *        reported as https://github.com/timberland-sig/edk2/issues/37
-             */
-            ipaddr = nm_ip_address_new_binary(AF_INET6,
-                                              &addr_bin,
-                                              hfi->tcp_info.subnet_mask_prefix,
-                                              &error);
+            prefix = hfi->tcp_info.subnet_mask_prefix;
+            if (prefix == 0) {
+                /* Buggy firmware implementations may report prefix=0 for v6 addresses,
+                 * let's fall back to /64.
+                 */
+                _LOGW(LOGD_CORE,
+                      "NBFT: Invalid IPv6 prefix %d, using /64 as a fallback.",
+                      hfi->tcp_info.subnet_mask_prefix);
+                prefix = 64;
+            }
+            ipaddr = nm_ip_address_new_binary(AF_INET6, &addr_bin, prefix, &error);
             if (!ipaddr) {
                 _LOGW(LOGD_CORE,
                       "Cannot parse IP %s/%u: %s",
