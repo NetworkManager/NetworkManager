@@ -3359,6 +3359,8 @@ nm_connection_get_virtual_device_description(NMConnection *connection)
         display_type = _("TUN/TAP");
     else if (nm_streq(type, NM_SETTING_VETH_SETTING_NAME))
         display_type = _("Veth");
+    else if (nm_streq(type, NM_SETTING_LOOPBACK_SETTING_NAME))
+        display_type = _("Loopback");
 
     if (!iface || !display_type)
         return NULL;

@@ -35,6 +35,7 @@
 #include "nmt-page-ip-tunnel.h"
 #include "nmt-page-ip4.h"
 #include "nmt-page-ip6.h"
+#include "nmt-page-loopback.h"
 #include "nmt-page-macsec.h"
 #include "nmt-page-ppp.h"
 #include "nmt-page-team.h"
@@ -376,6 +377,8 @@ nmt_editor_constructed(GObject *object)
         page = nmt_page_vlan_new(priv->edit_connection, deventry);
     else if (nm_connection_is_type(priv->edit_connection, NM_SETTING_WIRED_SETTING_NAME))
         page = nmt_page_ethernet_new(priv->edit_connection, deventry);
+    else if (nm_connection_is_type(priv->edit_connection, NM_SETTING_LOOPBACK_SETTING_NAME))
+        page = nmt_page_loopback_new(priv->edit_connection, deventry);
     else if (nm_connection_is_type(priv->edit_connection, NM_SETTING_WIRELESS_SETTING_NAME))
         page = nmt_page_wifi_new(priv->edit_connection, deventry);
     else if (nm_connection_is_type(priv->edit_connection, NM_SETTING_IP_TUNNEL_SETTING_NAME))

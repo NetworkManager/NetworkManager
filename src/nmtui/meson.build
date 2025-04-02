@@ -28,6 +28,7 @@ executable(
     'nmt-page-ip4.c',
     'nmt-page-ip6.c',
     'nmt-page-ip-tunnel.c',
+    'nmt-page-loopback.c',
     'nmt-page-macsec.c',
     'nmt-page-ppp.c',
     'nmt-page-team.c',

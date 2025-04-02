@@ -180,6 +180,7 @@ src/nmtui/nmt-page-infiniband.c
 src/nmtui/nmt-page-ip-tunnel.c
 src/nmtui/nmt-page-ip4.c
 src/nmtui/nmt-page-ip6.c
+src/nmtui/nmt-page-loopback.c
 src/nmtui/nmt-page-macsec.c
 src/nmtui/nmt-page-ppp.c
 src/nmtui/nmt-page-team-port.c
