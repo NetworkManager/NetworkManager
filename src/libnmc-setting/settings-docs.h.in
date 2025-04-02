@@ -503,4 +503,5 @@
 #define DESCRIBE_DOC_NM_SETTING_LOOPBACK_MTU N_("If non-zero, only transmit packets of the specified size or smaller, breaking larger packets up into multiple Ethernet frames.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_EXTERNAL_IDS_DATA N_("A dictionary of key/value pairs with external-ids for OVS.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_OTHER_CONFIG_DATA N_("A dictionary of key/value pairs with other_config settings for OVS. See also \"other_config\" in the \"ovs-vswitchd.conf.db\" manual for the keys that OVS supports.")
+#define DESCRIBE_DOC_NM_SETTING_PREFIX_DELEGATION_SUBNET_ID N_("The subnet ID to use on the interface from the prefix delegation received via an upstream interface. Set to a value between 0 and 0xffffffff (2^32 - 1) to indicate a specific subnet ID; or set to -1 to automatically choose an available subnet ID.")
 #define DESCRIBE_DOC_NM_SETTING_VETH_PEER N_("This property specifies the peer interface name of the veth. This property is mandatory.")

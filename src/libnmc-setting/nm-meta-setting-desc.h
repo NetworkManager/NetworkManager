@@ -293,9 +293,21 @@ struct _NMMetaPropertyTypData {
                                    int                       value);
         } gobject_enum;
         struct {
-            NMMetaSignUnsignInt64          min;
-            NMMetaSignUnsignInt64          max;
-            guint                          base;
+            NMMetaSignUnsignInt64 min;
+            NMMetaSignUnsignInt64 max;
+            guint                 base;
+
+            /* Normally, when a property has "base = 16", it is printed
+             * as unsigned even if the gtype is signed. For some properties,
+             * we want to print the hexadecimal representation for positive
+             * values, and the base10 representation with minus sign for negative
+             * values. A typical use case is to encode the default value as
+             * "-1" and use positive values as a hexadecimal number. To avoid
+             * ambiguity when setting the value via nmcli, the property minimum
+             * allowed value should not be <= -10.
+             */
+            bool print_hex_negative_as_base10;
+
             const NMMetaUtilsIntValueInfo *value_infos;
         } gobject_int;
         struct {

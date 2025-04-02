@@ -58,6 +58,7 @@
 #include "nm-setting-ovs-port.h"
 #include "nm-setting-ppp.h"
 #include "nm-setting-pppoe.h"
+#include "nm-setting-prefix-delegation.h"
 #include "nm-setting-proxy.h"
 #include "nm-setting-serial.h"
 #include "nm-setting-sriov.h"

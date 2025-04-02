@@ -2315,6 +2315,14 @@
                   gprop-type="gchararray"
                   />
     </setting>
+    <setting name="prefix-delegation"
+             gtype="NMSettingPrefixDelegation"
+             >
+        <property name="subnet-id"
+                  dbus-type="x"
+                  gprop-type="gint64"
+                  />
+    </setting>
     <setting name="proxy"
              gtype="NMSettingProxy"
              >

@@ -1005,8 +1005,16 @@ _get_fcn_gobject_int(ARGS_GET_FCN)
     case 16:
         if (is_uint64)
             return_str = g_strdup_printf("0x%" G_GINT64_MODIFIER "x", v.u64);
-        else
-            return_str = g_strdup_printf("0x%" G_GINT64_MODIFIER "x", (guint64) v.i64);
+        else {
+            if (property_info->property_typ_data
+                && property_info->property_typ_data->subtype.gobject_int
+                       .print_hex_negative_as_base10
+                && v.i64 < 0) {
+                return_str = g_strdup_printf("%" G_GINT64_FORMAT, v.i64);
+            } else {
+                return_str = g_strdup_printf("0x%" G_GINT64_MODIFIER "x", (guint64) v.i64);
+            }
+        }
         break;
     default:
         return_str = NULL;
@@ -1421,6 +1429,11 @@ _set_fcn_gobject_int(ARGS_SET_FCN)
     }
 
     nm_meta_property_int_get_range(property_info, &min, &max);
+
+    /* See the comment on "print_hex_negative_as_base10" */
+    nm_assert(!property_info->property_typ_data
+              || !property_info->property_typ_data->subtype.gobject_int.print_hex_negative_as_base10
+              || (!is_uint64 && min.i64 > -10));
 
     if (is_uint64)
         v.u64 = _nm_utils_ascii_str_to_uint64(value, base, min.u64, max.u64, 0);
@@ -7482,6 +7495,19 @@ static const NMMetaPropertyInfo *const property_infos_PPPOE[] = {
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_PREFIX_DELEGATION
+static const NMMetaPropertyInfo *const property_infos_PREFIX_DELEGATION[] = {
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_PREFIX_DELEGATION_SUBNET_ID,
+        .property_type =                &_pt_gobject_int,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
+            .base         = 16,
+            .print_hex_negative_as_base10 = TRUE,
+        ),
+    ),
+    NULL
+};
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_PROXY
 static const NMMetaPropertyInfo *const property_infos_PROXY[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_PROXY_METHOD,
@@ -8938,6 +8964,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_OVS_PORT            N_("Open vSwitch port settings")
 #define SETTING_PRETTY_NAME_PPP                 N_("PPP settings")
 #define SETTING_PRETTY_NAME_PPPOE               N_("PPPoE")
+#define SETTING_PRETTY_NAME_PREFIX_DELEGATION   N_("Prefix delegation settings")
 #define SETTING_PRETTY_NAME_PROXY               N_("Proxy")
 #define SETTING_PRETTY_NAME_SERIAL              N_("Serial settings")
 #define SETTING_PRETTY_NAME_SRIOV               N_("SR-IOV settings")
@@ -9155,6 +9182,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
             NM_META_SETTING_VALID_PART_ITEM (OVS_PATCH,             FALSE),
             NM_META_SETTING_VALID_PART_ITEM (IP4_CONFIG,            FALSE),
             NM_META_SETTING_VALID_PART_ITEM (IP6_CONFIG,            FALSE),
+            NM_META_SETTING_VALID_PART_ITEM (PREFIX_DELEGATION,     FALSE),
             NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
             NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
         ),
@@ -9185,6 +9213,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
         ),
     ),
     SETTING_INFO (PPP),
+    SETTING_INFO (PREFIX_DELEGATION),
     SETTING_INFO (PROXY,
         .setting_init_fcn =             _setting_init_fcn_proxy,
     ),
@@ -9313,6 +9342,7 @@ static const NMMetaSettingValidPartItem *const valid_settings_noport[] = {
     NM_META_SETTING_VALID_PART_ITEM(MATCH, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(IP4_CONFIG, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(IP6_CONFIG, FALSE),
+    NM_META_SETTING_VALID_PART_ITEM(PREFIX_DELEGATION, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(HOSTNAME, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(LINK, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(TC_CONFIG, FALSE),

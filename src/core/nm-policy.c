@@ -155,17 +155,15 @@ static gboolean  hostname_retry_cb(gpointer user_data);
 
 typedef struct {
     NMPlatformIP6Address prefix;
-    NMDevice            *device;      /* The requesting ("uplink") device */
-    guint64              next_subnet; /* Cache of the next subnet number to be
-                                       * assigned from this prefix */
-    GHashTable          *subnets;     /* ifindex -> NMPlatformIP6Address */
+    NMDevice            *device;                   /* The requesting ("uplink") device */
+    GHashTable          *map_subnet_id_to_ifindex; /* (guint64 *) subnet_id -> int ifindex */
+    GHashTable          *map_ifindex_to_subnet; /* int ifindex -> (NMPlatformIP6Address *) prefix */
 } IP6PrefixDelegation;
 
 static void
-_clear_ip6_subnet(gpointer key, gpointer value, gpointer user_data)
+clear_ip6_subnet(int ifindex, NMPlatformIP6Address *subnet)
 {
-    NMPlatformIP6Address *subnet = value;
-    NMDevice *device = nm_manager_get_device_by_ifindex(NM_MANAGER_GET, GPOINTER_TO_INT(key));
+    NMDevice *device = nm_manager_get_device_by_ifindex(NM_MANAGER_GET, ifindex);
 
     if (device) {
         /* We can not remove a subnet we already started announcing.
@@ -174,6 +172,12 @@ _clear_ip6_subnet(gpointer key, gpointer value, gpointer user_data)
         nm_device_use_ip6_subnet(device, subnet);
     }
     g_slice_free(NMPlatformIP6Address, subnet);
+}
+
+static void
+clear_ip6_subnet_entry(gpointer key, gpointer value, gpointer user_data)
+{
+    clear_ip6_subnet(GPOINTER_TO_INT(key), value);
 }
 
 static void
@@ -187,8 +191,9 @@ clear_ip6_prefix_delegation(gpointer data)
           nm_inet6_ntop(&delegation->prefix.address, sbuf),
           delegation->prefix.plen);
 
-    g_hash_table_foreach(delegation->subnets, _clear_ip6_subnet, NULL);
-    g_hash_table_destroy(delegation->subnets);
+    g_hash_table_foreach(delegation->map_ifindex_to_subnet, clear_ip6_subnet_entry, NULL);
+    g_hash_table_destroy(delegation->map_ifindex_to_subnet);
+    g_hash_table_destroy(delegation->map_subnet_id_to_ifindex);
 }
 
 static void
@@ -215,46 +220,112 @@ expire_ip6_delegations(NMPolicy *self)
 static gboolean
 ip6_subnet_from_delegation(IP6PrefixDelegation *delegation, NMDevice *device)
 {
-    NMPlatformIP6Address *subnet;
-    int                   ifindex = nm_device_get_ifindex(device);
-    char                  sbuf[NM_INET_ADDRSTRLEN];
+    NMPlatformIP6Address      *subnet;
+    int                        ifindex = nm_device_get_ifindex(device);
+    char                       sbuf[NM_INET_ADDRSTRLEN];
+    NMSettingPrefixDelegation *s_pd;
+    gint64                     wanted_subnet_id = -1;
+    guint64                    num_subnets;
+    guint64                    old_subnet_id;
 
-    subnet = g_hash_table_lookup(delegation->subnets, GINT_TO_POINTER(ifindex));
-    if (!subnet) {
-        /* Check for out-of-prefixes condition. */
-        if (delegation->next_subnet >= (1 << (64 - delegation->prefix.plen))) {
-            _LOGD(LOGD_IP6,
-                  "ipv6-pd: no more prefixes in %s/%d",
-                  nm_inet6_ntop(&delegation->prefix.address, sbuf),
-                  delegation->prefix.plen);
-            return FALSE;
-        }
+    nm_assert(delegation->prefix.plen > 0 && delegation->prefix.plen <= 64);
 
-        /* Allocate a new subnet. */
-        subnet = g_slice_new0(NMPlatformIP6Address);
-        g_hash_table_insert(delegation->subnets, GINT_TO_POINTER(ifindex), subnet);
-
-        subnet->plen = 64;
-        subnet->address.s6_addr32[0] =
-            delegation->prefix.address.s6_addr32[0] | htonl(delegation->next_subnet >> 32);
-        subnet->address.s6_addr32[1] =
-            delegation->prefix.address.s6_addr32[1] | htonl(delegation->next_subnet);
-
-        /* Out subnet pool management is pretty unsophisticated. We only add
-         * the subnets and index them by ifindex. That keeps the implementation
-         * simple and the dead entries make it easy to reuse the same subnet on
-         * subsequent activations. On the other hand they may waste the subnet
-         * space. */
-        delegation->next_subnet++;
+    s_pd = nm_device_get_applied_setting(device, NM_TYPE_SETTING_PREFIX_DELEGATION);
+    if (s_pd) {
+        wanted_subnet_id = nm_setting_prefix_delegation_get_subnet_id(s_pd);
     }
 
+    /* Try to use the cached subnet assigned to the interface */
+    subnet = g_hash_table_lookup(delegation->map_ifindex_to_subnet, GINT_TO_POINTER(ifindex));
+    if (subnet) {
+        old_subnet_id = nm_ip6_addr_get_subnet_id(&subnet->address, delegation->prefix.plen);
+        if (wanted_subnet_id != -1 && wanted_subnet_id != old_subnet_id) {
+            /* The device had a subnet assigned before, but now wants a
+             * different subnet-id. Release the old subnet and continue below
+             * to get a new one. */
+            clear_ip6_subnet(ifindex, subnet);
+            subnet = NULL;
+            g_hash_table_remove(delegation->map_ifindex_to_subnet, GINT_TO_POINTER(ifindex));
+            g_hash_table_remove(delegation->map_subnet_id_to_ifindex, &old_subnet_id);
+        } else {
+            goto subnet_found;
+        }
+    }
+
+    /* Check for out-of-prefixes condition */
+    num_subnets = 1 << (64 - delegation->prefix.plen);
+    if (nm_g_hash_table_size(delegation->map_subnet_id_to_ifindex) >= num_subnets) {
+        _LOGD(LOGD_IP6,
+              "ipv6-pd: no more prefixes in %s/%u",
+              nm_inet6_ntop(&delegation->prefix.address, sbuf),
+              delegation->prefix.plen);
+        return FALSE;
+    }
+
+    /* Try to honor the "prefix-delegation.subnet-id" property */
+    if (wanted_subnet_id >= 0) {
+        gpointer  value;
+        NMDevice *other_device;
+
+        if (g_hash_table_lookup_extended(delegation->map_subnet_id_to_ifindex,
+                                         &wanted_subnet_id,
+                                         NULL,
+                                         &value)) {
+            other_device = nm_manager_get_device_by_ifindex(NM_MANAGER_GET, GPOINTER_TO_INT(value));
+            _LOGW(LOGD_IP6,
+                  "ipv6-pd: subnet-id 0x%" G_GINT64_MODIFIER
+                  "x wanted by device %s is already in use by "
+                  "device %s (ifindex %d)",
+                  (guint64) wanted_subnet_id,
+                  nm_device_get_iface(device),
+                  other_device ? nm_device_get_ip_iface(other_device) : NULL,
+                  GPOINTER_TO_INT(value));
+            wanted_subnet_id = -1;
+        }
+    }
+
+    /* If we don't have a subnet-id yet, find the first one available */
+    if (wanted_subnet_id < 0) {
+        guint64 i;
+
+        for (i = 0; i < num_subnets; i++) {
+            if (!g_hash_table_lookup_extended(delegation->map_subnet_id_to_ifindex,
+                                              &i,
+                                              NULL,
+                                              NULL)) {
+                wanted_subnet_id = (gint64) i;
+                break;
+            }
+        }
+
+        if (wanted_subnet_id < 0) {
+            /* We already verified that there are available subnets, this should not happen */
+            return nm_assert_unreachable_val(FALSE);
+        }
+    }
+
+    /* Allocate a new subnet */
+    subnet = g_slice_new0(NMPlatformIP6Address);
+    g_hash_table_insert(delegation->map_ifindex_to_subnet, GINT_TO_POINTER(ifindex), subnet);
+    g_hash_table_insert(delegation->map_subnet_id_to_ifindex,
+                        nm_memdup(&wanted_subnet_id, sizeof(guint64)),
+                        GINT_TO_POINTER(ifindex));
+
+    subnet->plen = 64;
+    subnet->address.s6_addr32[0] =
+        delegation->prefix.address.s6_addr32[0] | htonl(wanted_subnet_id >> 32);
+    subnet->address.s6_addr32[1] =
+        delegation->prefix.address.s6_addr32[1] | htonl(wanted_subnet_id);
+
+subnet_found:
     subnet->timestamp = delegation->prefix.timestamp;
     subnet->lifetime  = delegation->prefix.lifetime;
     subnet->preferred = delegation->prefix.preferred;
 
     _LOGD(LOGD_IP6,
-          "ipv6-pd: %s allocated from a /%d prefix on %s",
+          "ipv6-pd: %s/64 (subnet-id 0x%" G_GINT64_MODIFIER "x) allocated from a /%d prefix on %s",
           nm_inet6_ntop(&subnet->address, sbuf),
+          (guint64) wanted_subnet_id,
           delegation->prefix.plen,
           nm_device_get_iface(device));
 
@@ -345,8 +416,9 @@ device_ip6_prefix_delegated(NMDevice                   *device,
     if (i == priv->ip6_prefix_delegations->len) {
         /* Allocate a delegation for new prefix. */
         delegation = nm_g_array_append_new(priv->ip6_prefix_delegations, IP6PrefixDelegation);
-        delegation->subnets     = g_hash_table_new(nm_direct_hash, NULL);
-        delegation->next_subnet = 0;
+        delegation->map_subnet_id_to_ifindex =
+            g_hash_table_new_full(nm_puint64_hash, nm_puint64_equal, g_free, NULL);
+        delegation->map_ifindex_to_subnet = g_hash_table_new(nm_direct_hash, NULL);
     }
 
     delegation->device = device;

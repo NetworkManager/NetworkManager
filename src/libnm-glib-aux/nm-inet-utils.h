@@ -218,6 +218,8 @@ nm_ip4_addr_clear_host_address(in_addr_t addr, guint32 plen)
 const struct in6_addr *
 nm_ip6_addr_clear_host_address(struct in6_addr *dst, const struct in6_addr *src, guint32 plen);
 
+guint64 nm_ip6_addr_get_subnet_id(struct in6_addr *addr, guint8 plen);
+
 /*****************************************************************************/
 
 static inline int

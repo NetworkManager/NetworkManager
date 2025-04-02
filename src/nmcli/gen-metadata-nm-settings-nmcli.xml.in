@@ -1912,6 +1912,12 @@
                   format="flags (NMSettingSecretFlags)"
                   values="none (0x0), agent-owned (0x1), not-saved (0x2), not-required (0x4)" />
     </setting>
+    <setting name="prefix-delegation" >
+        <property name="subnet-id"
+                  nmcli-description="The subnet ID to use on the interface from the prefix delegation received via an upstream interface. Set to a value between 0 and 0xffffffff (2^32 - 1) to indicate a specific subnet ID; or set to -1 to automatically choose an available subnet ID."
+                  format="integer"
+                  values="-1 - 4294967295" />
+    </setting>
     <setting name="proxy" >
         <property name="method"
                   alias="method"

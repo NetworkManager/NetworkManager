@@ -52,6 +52,7 @@ typedef struct _NMSettingOvsPatch         NMSettingOvsPatch;
 typedef struct _NMSettingOvsPort          NMSettingOvsPort;
 typedef struct _NMSettingPpp              NMSettingPpp;
 typedef struct _NMSettingPppoe            NMSettingPppoe;
+typedef struct _NMSettingPrefixDelegation NMSettingPrefixDelegation;
 typedef struct _NMSettingProxy            NMSettingProxy;
 typedef struct _NMSettingSerial           NMSettingSerial;
 typedef struct _NMSettingSriov            NMSettingSriov;
