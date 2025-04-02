@@ -882,7 +882,7 @@ nm_bond_manager_send_arp(int                 bond_ifindex,
         .sll_protocol = htons(ETH_P_ARP),
         .sll_ifindex  = bond_ifindex,
     };
-    ARPPacket         data;
+    ARPPacket         data = {0};
     const guint8     *hwaddr;
     gsize             hwaddrlen    = 0;
     nm_auto_close int sockfd       = -1;
@@ -940,6 +940,7 @@ nm_bond_manager_send_arp(int                 bond_ifindex,
         data.op = htons(ARP_OP_GARP);
         memcpy(data.s_addr, hwaddr, hwaddrlen);
         memcpy(data.s_hw_addr, hwaddr, hwaddrlen);
+        memset(data.d_hw_addr, 0xff, ETH_ALEN);
         for (int i = 0; i < addrs_len; i++) {
             const in_addr_t tmp_addr = addrs_array[i];
 
