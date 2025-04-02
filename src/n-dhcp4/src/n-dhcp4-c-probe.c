@@ -1140,8 +1140,6 @@ int n_dhcp4_client_probe_transition_decline(NDhcp4ClientProbe *probe, NDhcp4Inco
                 r = n_dhcp4_c_connection_send_request(&probe->connection, request, ns_now);
                 if (r)
                         return r;
-                else
-                        request = NULL; /* consumed */
 
                 n_dhcp4_client_lease_unlink(probe->current_lease);
                 probe->current_lease = n_dhcp4_client_lease_unref(probe->current_lease);
@@ -1346,7 +1344,6 @@ int n_dhcp4_client_probe_release(NDhcp4ClientProbe *probe) {
 
         probe->state = N_DHCP4_CLIENT_PROBE_STATE_INIT;
         n_dhcp4_client_lease_unlink(probe->current_lease);
-        request_out = NULL;
 
         return 0;
 }
