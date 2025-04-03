@@ -4291,7 +4291,7 @@ rta_multipath_done:
             initrwnd = nla_get_u32(mtb[RTAX_INITRWND]);
         if (mtb[RTAX_MTU])
             mtu = nla_get_u32(mtb[RTAX_MTU]);
-        if (mtb[RTAX_RTO_MIN]) {
+        if (mtb[RTAX_RTO_MIN] && NM_FLAGS_HAS(lock, 1U << RTAX_RTO_MIN)) {
             rto_min     = nla_get_u32(mtb[RTAX_RTO_MIN]);
             rto_min_set = TRUE;
         }
@@ -5638,12 +5638,19 @@ nla_put_failure:
 static guint32
 ip_route_get_lock_flag(const NMPlatformIPRoute *route)
 {
-    return (((guint32) route->lock_window) << RTAX_WINDOW)
-           | (((guint32) route->lock_cwnd) << RTAX_CWND)
-           | (((guint32) route->lock_initcwnd) << RTAX_INITCWND)
-           | (((guint32) route->lock_initrwnd) << RTAX_INITRWND)
-           | (((guint32) route->lock_mtu) << RTAX_MTU)
-           | (((guint32) route->lock_mss) << RTAX_ADVMSS);
+    guint32 ret;
+
+    ret = (((guint32) route->lock_window) << RTAX_WINDOW)
+          | (((guint32) route->lock_cwnd) << RTAX_CWND)
+          | (((guint32) route->lock_initcwnd) << RTAX_INITCWND)
+          | (((guint32) route->lock_initrwnd) << RTAX_INITRWND)
+          | (((guint32) route->lock_mtu) << RTAX_MTU)
+          | (((guint32) route->lock_mss) << RTAX_ADVMSS);
+
+    /* the rto-min value is ignored by kernel unless the lock flag is set */
+    ret |= (((guint32) route->rto_min_set) << RTAX_RTO_MIN);
+
+    return ret;
 }
 
 static gboolean
