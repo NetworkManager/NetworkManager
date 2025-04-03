@@ -432,7 +432,7 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
     [NM_META_SETTING_TYPE_OVS_DPDK] =
         {
             .meta_type         = NM_META_SETTING_TYPE_OVS_DPDK,
-            .setting_priority  = NM_SETTING_PRIORITY_HW_BASE,
+            .setting_priority  = NM_SETTING_PRIORITY_AUX,
             .setting_name      = NM_SETTING_OVS_DPDK_SETTING_NAME,
             .get_setting_gtype = nm_setting_ovs_dpdk_get_type,
         },
@@ -460,7 +460,7 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
     [NM_META_SETTING_TYPE_OVS_PATCH] =
         {
             .meta_type         = NM_META_SETTING_TYPE_OVS_PATCH,
-            .setting_priority  = NM_SETTING_PRIORITY_HW_BASE,
+            .setting_priority  = NM_SETTING_PRIORITY_AUX,
             .setting_name      = NM_SETTING_OVS_PATCH_SETTING_NAME,
             .get_setting_gtype = nm_setting_ovs_patch_get_type,
         },
@@ -664,9 +664,7 @@ const NMMetaSettingType nm_meta_setting_types_by_priority[] = {
     NM_META_SETTING_TYPE_MACSEC,
     NM_META_SETTING_TYPE_MACVLAN,
     NM_META_SETTING_TYPE_OVS_BRIDGE,
-    NM_META_SETTING_TYPE_OVS_DPDK,
     NM_META_SETTING_TYPE_OVS_INTERFACE,
-    NM_META_SETTING_TYPE_OVS_PATCH,
     NM_META_SETTING_TYPE_OVS_PORT,
     NM_META_SETTING_TYPE_TEAM,
     NM_META_SETTING_TYPE_TUN,
@@ -696,8 +694,10 @@ const NMMetaSettingType nm_meta_setting_types_by_priority[] = {
     NM_META_SETTING_TYPE_ETHTOOL,
     NM_META_SETTING_TYPE_LINK,
     NM_META_SETTING_TYPE_MATCH,
+    NM_META_SETTING_TYPE_OVS_DPDK,
     NM_META_SETTING_TYPE_OVS_EXTERNAL_IDS,
     NM_META_SETTING_TYPE_OVS_OTHER_CONFIG,
+    NM_META_SETTING_TYPE_OVS_PATCH,
     NM_META_SETTING_TYPE_PPP,
     NM_META_SETTING_TYPE_PPPOE,
     NM_META_SETTING_TYPE_TEAM_PORT,

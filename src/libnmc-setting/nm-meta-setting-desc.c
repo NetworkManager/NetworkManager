@@ -9166,12 +9166,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
             NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
         ),
     ),
-    SETTING_INFO (OVS_DPDK,
-        .valid_parts = NM_META_SETTING_VALID_PARTS (
-            NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
-            NM_META_SETTING_VALID_PART_ITEM (OVS_DPDK,              TRUE),
-        ),
-    ),
+    SETTING_INFO (OVS_DPDK),
     SETTING_INFO_EMPTY (OVS_OTHER_CONFIG),
     SETTING_INFO_EMPTY (OVS_EXTERNAL_IDS),
     SETTING_INFO (OVS_INTERFACE,
@@ -9187,12 +9182,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
             NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
         ),
     ),
-    SETTING_INFO (OVS_PATCH,
-        .valid_parts = NM_META_SETTING_VALID_PARTS (
-            NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
-            NM_META_SETTING_VALID_PART_ITEM (OVS_PATCH,             TRUE),
-        ),
-    ),
+    SETTING_INFO (OVS_PATCH),
     SETTING_INFO (OVS_PORT,
         .valid_parts = NM_META_SETTING_VALID_PARTS (
             NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
