@@ -367,6 +367,8 @@ guint _nm_platform_signal_id_get(NMPlatformSignalIdType signal_type);
     /* RTA_METRICS.RTAX_QUICKACK (iproute2: quickack) */                                  \
     bool quickack : 1;                                                                    \
                                                                                           \
+    bool rto_min_set : 1;                                                                 \
+                                                                                          \
     /* if TRUE, the "metric" field is interpreted as an offset that is added to a default
      * metric. For example, form a DHCP lease we don't know the actually used metric, because
      * that is determined by upper layers (the configuration). However, we have a default
