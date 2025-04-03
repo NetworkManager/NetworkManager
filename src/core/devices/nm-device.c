@@ -2546,10 +2546,13 @@ _ethtool_fec_set(NMDevice         *self,
         fec_mode = g_variant_get_uint32(variant);
     }
 
-    nm_platform_ethtool_get_fec_mode(platform, ethtool_state->ifindex, &old_fec_mode);
-
     /* The NM_SETTING_ETHTOOL_FEC_MODE_NONE is query only value, hence do nothing. */
     if (!fec_mode || fec_mode == NM_SETTING_ETHTOOL_FEC_MODE_NONE) {
+        return;
+    }
+
+    if (!nm_platform_ethtool_get_fec_mode(platform, ethtool_state->ifindex, &old_fec_mode)) {
+        _LOGW(LOGD_DEVICE, "ethtool: failure setting FEC %d: cannot get current value", fec_mode);
         return;
     }
 
