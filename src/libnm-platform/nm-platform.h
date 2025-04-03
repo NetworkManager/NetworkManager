@@ -314,6 +314,7 @@ guint _nm_platform_signal_id_get(NMPlatformSignalIdType signal_type);
     guint32 initrwnd;                                                                     \
                                                                                           \
     /* RTA_METRICS.RTAX_RTO_MIN (iproute2: rto_min) */                                    \
+    /* Valid only when 'rto_min_set' is true. */                                           \
     guint32 rto_min;                                                                      \
                                                                                           \
     /* RTA_METRICS.RTAX_MTU (iproute2: mtu) */                                            \
@@ -366,6 +367,10 @@ guint _nm_platform_signal_id_get(NMPlatformSignalIdType signal_type);
                                                                                           \
     /* RTA_METRICS.RTAX_QUICKACK (iproute2: quickack) */                                  \
     bool quickack : 1;                                                                    \
+                                                                                          \
+    /* RTA_METRICS.RTAX_RTO_MIN (iproute2: rto_min) */                                    \
+    /* If true, the 'rto_min' value is valid. */                                            \
+    bool rto_min_set : 1;                                                                 \
                                                                                           \
     /* if TRUE, the "metric" field is interpreted as an offset that is added to a default
      * metric. For example, form a DHCP lease we don't know the actually used metric, because
