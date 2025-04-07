@@ -821,7 +821,7 @@ _oci_new_vlan_dev(SigTermData                          *sigterm_data,
           config_data->priv.oci.vlan_tag,
           parent_hwaddr);
 
-    active_connection = nmcs_add_and_activate(nmc, NULL, connection, &error);
+    active_connection = nmcs_add_and_activate(nmc, NULL, NULL, connection, &error);
     if (active_connection == NULL) {
         if (!nm_utils_error_is_cancelled(error)) {
             _LOGD("config device %s: failure to activate connection: %s", hwaddr, error->message);
