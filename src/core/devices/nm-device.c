@@ -2633,19 +2633,20 @@ _ethtool_fec_set(NMDevice         *self,
 
     g_hash_table_iter_init(&iter, hash);
     while (g_hash_table_iter_next(&iter, (gpointer *) &name, (gpointer *) &variant)) {
-        NMEthtoolID ethtool_id = nm_ethtool_id_get_by_name(name);
-
-        if (!nm_ethtool_id_is_fec(ethtool_id))
-            continue;
-
-        nm_assert(g_variant_is_of_type(variant, G_VARIANT_TYPE_UINT32));
-        fec_mode = g_variant_get_uint32(variant);
+        if (nm_ethtool_id_is_fec(nm_ethtool_id_get_by_name(name))) {
+            nm_assert(g_variant_is_of_type(variant, G_VARIANT_TYPE_UINT32));
+            fec_mode = g_variant_get_uint32(variant);
+            break;
+        }
     }
-
-    nm_platform_ethtool_get_fec_mode(platform, ethtool_state->ifindex, &old_fec_mode);
 
     /* The NM_SETTING_ETHTOOL_FEC_MODE_NONE is query only value, hence do nothing. */
     if (!fec_mode || fec_mode == NM_SETTING_ETHTOOL_FEC_MODE_NONE) {
+        return;
+    }
+
+    if (!nm_platform_ethtool_get_fec_mode(platform, ethtool_state->ifindex, &old_fec_mode)) {
+        _LOGW(LOGD_DEVICE, "ethtool: failure setting FEC %d: cannot get current value", fec_mode);
         return;
     }
 
