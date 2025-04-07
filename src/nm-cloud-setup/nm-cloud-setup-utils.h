@@ -155,6 +155,7 @@ NMConnection *nmcs_device_get_applied_connection(NMDevice     *device,
 
 NMActiveConnection *nmcs_add_and_activate(NMClient     *client,
                                           GCancellable *sigterm_cancellable,
+                                          NMDevice     *device,
                                           NMConnection *connection,
                                           GError      **error);
 
