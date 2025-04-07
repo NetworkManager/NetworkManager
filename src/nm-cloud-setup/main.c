@@ -691,6 +691,24 @@ try_again:
     return TRUE;
 }
 
+static NMConnection *
+_new_connection(void)
+{
+    NMConnection *connection = NULL;
+    NMSetting    *s_user;
+
+    connection = nm_simple_connection_new();
+
+    s_user = nm_setting_user_new();
+    nm_connection_add_setting(connection, s_user);
+    nm_setting_user_set_data(NM_SETTING_USER(s_user),
+                             "org.freedesktop.NetworkManager.origin",
+                             "nm-cloud-setup",
+                             NULL);
+
+    return connection;
+}
+
 static gboolean
 _config_ethernet(SigTermData                          *sigterm_data,
                  const NMCSProviderGetConfigIfaceData *config_data,
@@ -733,9 +751,8 @@ _oci_new_vlan_dev(SigTermData                          *sigterm_data,
     const char                         *wired_mac_addr    = NULL;
     const NMUtilsNamedValue            *map               = NULL;
     const char                         *ip4_config_method;
-    NMSetting                          *s_user;
 
-    connection = nm_simple_connection_new();
+    connection = _new_connection();
 
     macvlan_name  = g_strdup_printf("macvlan%ld", config_data->iface_idx);
     connection_id = g_strdup_printf("%s%ld", connection_type, config_data->iface_idx);
@@ -805,13 +822,6 @@ _oci_new_vlan_dev(SigTermData                          *sigterm_data,
                                            NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
                                            hwaddr,
                                            NULL));
-
-    s_user = nm_setting_user_new();
-    nm_connection_add_setting(connection, s_user);
-    nm_setting_user_set_data(NM_SETTING_USER(s_user),
-                             "org.freedesktop.NetworkManager.origin",
-                             "nm-cloud-setup",
-                             NULL);
 
     _nmc_mangle_connection(NULL, connection, result, config_data, NULL, NULL);
 
