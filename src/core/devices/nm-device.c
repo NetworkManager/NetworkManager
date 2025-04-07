@@ -15088,8 +15088,8 @@ respawn_ping_cb(gpointer user_data)
     nm_clear_g_source_inst(&ping_op->watch);
 
     if (!spawn_ping_for_operation(self, ping_op)) {
-        cleanup_ping_operation(ping_op);
         priv->ping_operations = g_list_remove(priv->ping_operations, ping_op);
+        cleanup_ping_operation(ping_op);
 
         if (g_list_length(priv->ping_operations) == 0) {
             ip_check_pre_up(self);
@@ -15132,7 +15132,6 @@ ip_check_ping_watch_cb(GPid pid, int status, gpointer user_data)
 
     if (success) {
         if (ping_op->ping_addresses_require_all) {
-            cleanup_ping_operation(ping_op);
             priv->ping_operations = g_list_remove(priv->ping_operations, ping_op);
             if (g_list_length(priv->ping_operations) == 0) {
                 _LOGD(ping_op->log_domain,
@@ -15142,6 +15141,7 @@ ip_check_ping_watch_cb(GPid pid, int status, gpointer user_data)
                     nm_clear_g_source_inst(&priv->ping_timeout);
                 ip_check_pre_up(self);
             }
+            cleanup_ping_operation(ping_op);
         } else {
             nm_assert(priv->ping_operations);
 
