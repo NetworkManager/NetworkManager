@@ -649,7 +649,7 @@ nmcs_add_and_activate(NMClient     *client,
 
     nm_client_add_and_activate_connection_async(client,
                                                 connection,
-                                                NULL,
+                                                device,
                                                 NULL,
                                                 sigterm_cancellable,
                                                 _nmcs_add_and_activate_cb,
