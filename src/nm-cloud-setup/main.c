@@ -882,6 +882,7 @@ _config_one(SigTermData                       *sigterm_data,
             guint                              idx)
 {
     const NMCSProviderGetConfigIfaceData *config_data = result->iface_datas_arr[idx];
+    gboolean                              allow_new_connections;
     gboolean                              any_changes;
 
     g_main_context_iteration(NULL, FALSE);
@@ -904,7 +905,12 @@ _config_one(SigTermData                       *sigterm_data,
         return FALSE;
     }
 
-    if (NMCS_IS_PROVIDER_OCI(provider) && config_data->priv.oci.vlan_tag != 0) {
+    /* Default on on OCI, with an environment variable serving as a chicken bit. */
+    allow_new_connections =
+        _nm_utils_ascii_str_to_bool(g_getenv(NMCS_ENV_NM_CLOUD_SETUP_ALLOW_NEW_CONN),
+                                    NMCS_IS_PROVIDER_OCI(provider));
+
+    if (allow_new_connections && config_data->priv.oci.vlan_tag != 0) {
         if (config_data->priv.oci.parent_hwaddr == NULL) {
             _LOGW("config device %s: has vlan id %d but no parent device",
                   config_data->hwaddr,
