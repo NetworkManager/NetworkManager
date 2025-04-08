@@ -180,6 +180,7 @@ _notify_update_prop_nameservers(NMClient               *client,
                             goto next;
                         nameserver = g_steal_pointer(&val_str);
                     } else if (nm_streq(key, "uri")) {
+                        g_free(nameserver);
                         nameserver = g_variant_dup_string(val, NULL);
                     }
 next:
