@@ -1327,6 +1327,10 @@
                   dbus-type="u"
                   is-setting-option="1"
                   />
+        <property name="fec-mode"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
     </setting>
     <setting name="generic"
              gtype="NMSettingGeneric"
