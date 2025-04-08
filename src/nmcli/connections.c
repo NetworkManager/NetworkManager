@@ -3861,6 +3861,11 @@ check_valid_name_toplevel(const char *val, const char **port_type, GError **erro
         return NM_SETTING_WIRED_SETTING_NAME;
     }
 
+    if (nm_streq(str, "ovs-port"))
+        NM_SET_OUT(port_type, NM_SETTING_OVS_BRIDGE_SETTING_NAME);
+    else if (NM_IN_STRSET(str, "ovs-interface", "ovs-patch"))
+        NM_SET_OUT(port_type, NM_SETTING_OVS_PORT_SETTING_NAME);
+
     setting_info = nm_meta_setting_info_editor_find_by_name(str, TRUE);
     if (setting_info)
         return setting_info->general->setting_name;
@@ -4616,8 +4621,11 @@ set_connection_type(NmCli            *nmc,
                     gboolean          allow_reset,
                     GError          **error)
 {
-    GError     *local     = NULL;
-    const char *port_type = NULL;
+    NMSettingConnection *s_con     = nm_connection_get_setting_connection(con);
+    GError              *local     = NULL;
+    const char          *port_type = NULL;
+
+    nm_assert(s_con);
 
     value = check_valid_name_toplevel(value, &port_type, &local);
     if (!value) {
@@ -4632,7 +4640,7 @@ set_connection_type(NmCli            *nmc,
         return FALSE;
     }
 
-    if (port_type) {
+    if (!nm_setting_connection_get_port_type(s_con) && port_type) {
         if (!set_property(nmc->client,
                           con,
                           NM_SETTING_CONNECTION_SETTING_NAME,
@@ -5237,9 +5245,74 @@ nmc_process_connection_properties(NmCli              *nmc,
                                   gboolean            allow_setting_removal,
                                   GError            **error)
 {
+    const char *const   *args;
+    gs_free const char **to_free = NULL;
+
     /* First check if we have a port-type, as this would mean we will not
      * have ip properties but possibly others, port-type specific.
+     * Then check connection.type, as port-type might be deduced from it.
      */
+    if (!nmc->complete) {
+        const char       **dst;
+        const char *const *src;
+        const char        *option;
+
+        to_free = g_malloc(*argc * sizeof(const char *) + 1);
+        args = dst = to_free;
+
+        for (src = *argv; src < *argv + *argc - 1; src += 2) {
+            option = (**src == '+' || **src == '-') ? *src + 1 : *src;
+            if (NM_IN_STRSET(option,
+                             NM_SETTING_CONNECTION_SETTING_NAME "." NM_SETTING_CONNECTION_PORT_TYPE,
+                             "port-type", /* alias */
+                             NM_SETTING_CONNECTION_SETTING_NAME
+                             "." NM_SETTING_CONNECTION_SLAVE_TYPE,
+                             "slave-type" /* alias */)) {
+                dst[0] = src[0];
+                dst[1] = src[1];
+                dst += 2;
+            }
+        }
+        for (src = *argv; src < *argv + *argc - 1; src += 2) {
+            option = (**src == '+' || **src == '-') ? *src + 1 : *src;
+            if (NM_IN_STRSET(option,
+                             NM_SETTING_CONNECTION_SETTING_NAME "." NM_SETTING_CONNECTION_TYPE,
+                             "type" /* alias */)) {
+                dst[0] = src[0];
+                dst[1] = src[1];
+                dst += 2;
+            }
+        }
+        for (src = *argv; src < *argv + *argc - 1; src += 2) {
+            option = (**src == '+' || **src == '-') ? *src + 1 : *src;
+            if (!NM_IN_STRSET(
+                    option,
+                    NM_SETTING_CONNECTION_SETTING_NAME "." NM_SETTING_CONNECTION_PORT_TYPE,
+                    "port-type",
+                    NM_SETTING_CONNECTION_SETTING_NAME "." NM_SETTING_CONNECTION_SLAVE_TYPE,
+                    "slave-type",
+                    NM_SETTING_CONNECTION_SETTING_NAME "." NM_SETTING_CONNECTION_TYPE,
+                    "type")) {
+                dst[0] = src[0];
+                dst[1] = src[1];
+                dst += 2;
+            }
+        }
+        if (*argc % 2 == 1) {
+            /* If we have an odd number of args, copy the last one. It will raise
+             * a "missing value" error later. */
+            *dst = *argv[*argc - 1];
+            dst += 1;
+        }
+        *dst = NULL; /* NULL terminated as expected by get_value() */
+    } else {
+        /* Don't reorder if we are doing CLI argument completion, as it might give
+         * unexpected results */
+        args = *argv;
+    }
+
+    *argv += *argc; /* Leave the pointer after the last argument */
+
     /* Go through arguments and set properties */
     do {
         const NMMetaSettingValidPartItem *const *type_settings;
@@ -5268,11 +5341,7 @@ nmc_process_connection_properties(NmCli              *nmc,
             return FALSE;
         }
 
-        nm_assert(argv);
-        nm_assert(*argv);
-        nm_assert(**argv);
-
-        option_orig = **argv;
+        option_orig = *args;
 
         switch (option_orig[0]) {
         case '+':
@@ -5295,7 +5364,7 @@ nmc_process_connection_properties(NmCli              *nmc,
             const char *setting_name;
 
             (*argc)--;
-            (*argv)++;
+            args++;
 
             if (*argc == 1 && nmc->complete) {
                 complete_existing_setting(nmc, connection, value);
@@ -5310,9 +5379,9 @@ nmc_process_connection_properties(NmCli              *nmc,
                 return FALSE;
             }
 
-            setting_name = **argv;
+            setting_name = *args;
             (*argc)--;
-            (*argv)++;
+            args++;
 
             ss = is_setting_valid(connection, type_settings, port_settings, setting_name);
             if (!ss) {
@@ -5359,8 +5428,8 @@ nmc_process_connection_properties(NmCli              *nmc,
             }
 
             (*argc)--;
-            (*argv)++;
-            if (!get_value(&value, argc, argv, option_orig, error))
+            args++;
+            if (!get_value(&value, argc, &args, option_orig, error))
                 return FALSE;
 
             if (!*argc && nmc->complete) {
@@ -5464,8 +5533,8 @@ nmc_process_connection_properties(NmCli              *nmc,
             complete_property_name(nmc, connection, modifier, option, NULL);
 
         (*argc)--;
-        (*argv)++;
-        if (!get_value(&value, argc, argv, option_orig, error))
+        args++;
+        if (!get_value(&value, argc, &args, option_orig, error))
             return FALSE;
 
         if (!*argc && nmc->complete)
