@@ -4005,8 +4005,10 @@ normalized_controller_for_port(const GPtrArray *connections,
     }
 
     if (!out_controller) {
-        nmc_printerr(_("Warning: controller='%s' doesn't refer to any existing profile.\n"),
-                     controller);
+        nmc_printerr(
+            _("Warning: controller '%s' doesn't refer to any existing profile of type '%s'.\n"),
+            controller,
+            type);
         out_controller = controller;
         if (out_type)
             *out_type = type;
