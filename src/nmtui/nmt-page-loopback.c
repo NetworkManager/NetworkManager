@@ -14,7 +14,6 @@
 #include "nmt-page-loopback.h"
 
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
-#include "nmt-device-entry.h"
 #include "nmt-mtu-entry.h"
 
 G_DEFINE_TYPE(NmtPageLoopback, nmt_page_loopback, NMT_TYPE_EDITOR_PAGE_DEVICE)
@@ -27,9 +26,9 @@ nmt_page_loopback_init(NmtPageLoopback *loopback)
 {}
 
 NmtEditorPage *
-nmt_page_loopback_new(NMConnection *conn, NmtDeviceEntry *deventry)
+nmt_page_loopback_new(NMConnection *conn)
 {
-    return g_object_new(NMT_TYPE_PAGE_LOOPBACK, "connection", conn, "device-entry", deventry, NULL);
+    return g_object_new(NMT_TYPE_PAGE_LOOPBACK, "connection", conn, NULL);
 }
 
 static void

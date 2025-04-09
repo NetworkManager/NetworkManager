@@ -28,6 +28,6 @@ typedef struct {
 
 GType nmt_page_loopback_get_type(void);
 
-NmtEditorPage *nmt_page_loopback_new(NMConnection *conn, NmtDeviceEntry *deventry);
+NmtEditorPage *nmt_page_loopback_new(NMConnection *conn);
 
 #endif /* NMT_PAGE_LOOPBACK_H */
