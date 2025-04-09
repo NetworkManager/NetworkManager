@@ -300,13 +300,13 @@ add_sections_for_page(NmtEditor *editor, NmtEditorGrid *grid, NmtEditorPage *pag
 static void
 nmt_editor_constructed(GObject *object)
 {
-    NmtEditor           *editor = NMT_EDITOR(object);
-    NmtEditorPrivate    *priv   = NMT_EDITOR_GET_PRIVATE(editor);
+    NmtEditor           *editor   = NMT_EDITOR(object);
+    NmtEditorPrivate    *priv     = NMT_EDITOR_GET_PRIVATE(editor);
+    NmtDeviceEntry      *deventry = NULL;
     NMSettingConnection *s_con;
     NmtNewtWidget       *vbox, *widget, *buttons;
     NmtEditorGrid       *grid;
     const char          *deventry_label;
-    NmtDeviceEntry      *deventry;
     GType                hardware_type;
     const char          *port_type;
     NmtEditorPage       *page;
@@ -338,22 +338,26 @@ nmt_editor_constructed(GObject *object)
     else
         hardware_type = priv->type_data->device_type;
 
-    /* For connections involving multiple network devices, clarify which one
-     * NMSettingConnection:interface-name refers to.
-     */
-    if (nm_connection_is_type(priv->edit_connection, NM_SETTING_PPPOE_SETTING_NAME))
-        deventry_label = _("Ethernet device");
-    else
-        deventry_label = _("Device");
+    if (nm_connection_is_type(priv->edit_connection, NM_SETTING_LOOPBACK_SETTING_NAME)) {
+        g_object_set(s_con, NM_SETTING_CONNECTION_INTERFACE_NAME, "lo", NULL);
+    } else {
+        /* For connections involving multiple network devices, clarify which one
+        * NMSettingConnection:interface-name refers to.
+        */
+        if (nm_connection_is_type(priv->edit_connection, NM_SETTING_PPPOE_SETTING_NAME))
+            deventry_label = _("Ethernet device");
+        else
+            deventry_label = _("Device");
 
-    widget = nmt_device_entry_new(deventry_label, 40, hardware_type);
-    nmt_editor_grid_append(grid, NULL, widget, NULL);
-    deventry = NMT_DEVICE_ENTRY(widget);
-    g_object_bind_property(s_con,
-                           NM_SETTING_CONNECTION_INTERFACE_NAME,
-                           deventry,
-                           "interface-name",
-                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+        widget = nmt_device_entry_new(deventry_label, 40, hardware_type);
+        nmt_editor_grid_append(grid, NULL, widget, NULL);
+        deventry = NMT_DEVICE_ENTRY(widget);
+        g_object_bind_property(s_con,
+                               NM_SETTING_CONNECTION_INTERFACE_NAME,
+                               deventry,
+                               "interface-name",
+                               G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+    }
 
     nmt_editor_grid_append(grid, NULL, nmt_newt_separator_new(), NULL);
 
@@ -378,7 +382,7 @@ nmt_editor_constructed(GObject *object)
     else if (nm_connection_is_type(priv->edit_connection, NM_SETTING_WIRED_SETTING_NAME))
         page = nmt_page_ethernet_new(priv->edit_connection, deventry);
     else if (nm_connection_is_type(priv->edit_connection, NM_SETTING_LOOPBACK_SETTING_NAME))
-        page = nmt_page_loopback_new(priv->edit_connection, deventry);
+        page = nmt_page_loopback_new(priv->edit_connection);
     else if (nm_connection_is_type(priv->edit_connection, NM_SETTING_WIRELESS_SETTING_NAME))
         page = nmt_page_wifi_new(priv->edit_connection, deventry);
     else if (nm_connection_is_type(priv->edit_connection, NM_SETTING_IP_TUNNEL_SETTING_NAME))
