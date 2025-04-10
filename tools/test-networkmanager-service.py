@@ -868,7 +868,7 @@ class Device(ExportedObj):
         self.activation_state_change_delay_ms = 50
         self.hwaddr = hwaddr is None if "" else hwaddr
 
-        self.prp_state = NM.DeviceState.UNAVAILABLE
+        self.prp_state = NM.DeviceState.DISCONNECTED
 
         if devtype == NM.DeviceType.MODEM:
             udi = "/org/freedesktop/ModemManager1/Modem/0"
