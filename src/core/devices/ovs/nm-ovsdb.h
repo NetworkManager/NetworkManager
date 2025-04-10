@@ -54,7 +54,8 @@ void nm_ovsdb_set_reapply(NMOvsdb                 *self,
                           NMSettingOvsExternalIDs *s_external_ids_old,
                           NMSettingOvsExternalIDs *s_external_ids_new,
                           NMSettingOvsOtherConfig *s_other_config_old,
-                          NMSettingOvsOtherConfig *s_other_config_new);
+                          NMSettingOvsOtherConfig *s_other_config_new,
+                          NMOptionBool             mcast_snooping_enable);
 
 gboolean nm_ovsdb_is_ready(NMOvsdb *self);
 

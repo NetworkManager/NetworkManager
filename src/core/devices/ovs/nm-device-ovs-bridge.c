@@ -113,6 +113,7 @@ nm_device_ovs_reapply_connection(NMDevice *self, NMConnection *con_old, NMConnec
 {
     NMDeviceType device_type;
     GType        type;
+    NMOptionBool mcast_snooping_enable = NM_OPTION_BOOL_DEFAULT;
 
     nm_assert(NM_IS_DEVICE(self));
     nm_assert(g_type_parent(G_TYPE_FROM_INSTANCE(self)) == NM_TYPE_DEVICE);
@@ -128,8 +129,15 @@ nm_device_ovs_reapply_connection(NMDevice *self, NMConnection *con_old, NMConnec
     else if (type == NM_TYPE_DEVICE_OVS_PORT)
         device_type = NM_DEVICE_TYPE_OVS_PORT;
     else {
+        NMSettingOvsBridge *s_ovs_bridge;
+
         nm_assert(type == NM_TYPE_DEVICE_OVS_BRIDGE);
         device_type = NM_DEVICE_TYPE_OVS_BRIDGE;
+
+        s_ovs_bridge = nm_connection_get_setting_ovs_bridge(con_new);
+        if (s_ovs_bridge) {
+            mcast_snooping_enable = nm_setting_ovs_bridge_get_mcast_snooping_enable(s_ovs_bridge);
+        }
     }
 
     nm_ovsdb_set_reapply(nm_ovsdb_get(),
@@ -139,7 +147,31 @@ nm_device_ovs_reapply_connection(NMDevice *self, NMConnection *con_old, NMConnec
                          _nm_connection_get_setting(con_old, NM_TYPE_SETTING_OVS_EXTERNAL_IDS),
                          _nm_connection_get_setting(con_new, NM_TYPE_SETTING_OVS_EXTERNAL_IDS),
                          _nm_connection_get_setting(con_old, NM_TYPE_SETTING_OVS_OTHER_CONFIG),
-                         _nm_connection_get_setting(con_new, NM_TYPE_SETTING_OVS_OTHER_CONFIG));
+                         _nm_connection_get_setting(con_new, NM_TYPE_SETTING_OVS_OTHER_CONFIG),
+                         mcast_snooping_enable);
+}
+
+static gboolean
+can_reapply_change(NMDevice   *device,
+                   const char *setting_name,
+                   NMSetting  *s_old,
+                   NMSetting  *s_new,
+                   GHashTable *diffs,
+                   GError    **error)
+{
+    NMDeviceClass *device_class = NM_DEVICE_CLASS(nm_device_ovs_bridge_parent_class);
+
+    if (nm_streq(setting_name, NM_SETTING_OVS_BRIDGE_SETTING_NAME)) {
+        if (!nm_device_hash_check_invalid_keys(diffs,
+                                               NM_SETTING_OVS_BRIDGE_SETTING_NAME,
+                                               error,
+                                               NM_SETTING_OVS_BRIDGE_MCAST_SNOOPING_ENABLE))
+            return FALSE;
+
+        return TRUE;
+    }
+
+    return device_class->can_reapply_change(device, setting_name, s_old, s_new, diffs, error);
 }
 
 /*****************************************************************************/
@@ -180,6 +212,7 @@ nm_device_ovs_bridge_class_init(NMDeviceOvsBridgeClass *klass)
     device_class->ready_for_ip_config                 = ready_for_ip_config;
     device_class->attach_port                         = attach_port;
     device_class->detach_port                         = detach_port;
+    device_class->can_reapply_change                  = can_reapply_change;
     device_class->can_reapply_change_ovs_external_ids = TRUE;
     device_class->reapply_connection                  = nm_device_ovs_reapply_connection;
 }

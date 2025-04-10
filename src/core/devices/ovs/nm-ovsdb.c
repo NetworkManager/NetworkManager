@@ -104,6 +104,7 @@ typedef union {
         NMDeviceType device_type;
         char        *ifname;
         char        *connection_uuid;
+        NMOptionBool mcast_snooping_enable;
         GHashTable  *external_ids_old;
         GHashTable  *external_ids_new;
         GHashTable  *other_config_old;
@@ -242,24 +243,23 @@ static void     cleanup_check_ready(NMOvsdb *self);
             },                                                    \
     }))
 
-#define OVSDB_METHOD_PAYLOAD_SET_REAPPLY(xdevice_type,                               \
-                                         xifname,                                    \
-                                         xconnection_uuid,                           \
-                                         xexternal_ids_old,                          \
-                                         xexternal_ids_new,                          \
-                                         xother_config_old,                          \
-                                         xother_config_new)                          \
-    (&((const OvsdbMethodPayload) {                                                  \
-        .set_reapply =                                                               \
-            {                                                                        \
-                .device_type      = xdevice_type,                                    \
-                .ifname           = (char *) NM_CONSTCAST(char, (xifname)),          \
-                .connection_uuid  = (char *) NM_CONSTCAST(char, (xconnection_uuid)), \
-                .external_ids_old = (xexternal_ids_old),                             \
-                .external_ids_new = (xexternal_ids_new),                             \
-                .other_config_old = (xother_config_old),                             \
-                .other_config_new = (xother_config_new),                             \
-            },                                                                       \
+#define OVSDB_METHOD_PAYLOAD_SET_REAPPLY(xdevice_type,                                            \
+                                         xifname,                                                 \
+                                         xconnection_uuid,                                        \
+                                         xexternal_ids_old,                                       \
+                                         xexternal_ids_new,                                       \
+                                         xother_config_old,                                       \
+                                         xother_config_new,                                       \
+                                         xmcast_snooping_enable)                                  \
+    (&((const OvsdbMethodPayload) {                                                               \
+        .set_reapply = {.device_type           = xdevice_type,                                    \
+                        .ifname                = (char *) NM_CONSTCAST(char, (xifname)),          \
+                        .connection_uuid       = (char *) NM_CONSTCAST(char, (xconnection_uuid)), \
+                        .external_ids_old      = (xexternal_ids_old),                             \
+                        .external_ids_new      = (xexternal_ids_new),                             \
+                        .other_config_old      = (xother_config_old),                             \
+                        .other_config_new      = (xother_config_new),                             \
+                        .mcast_snooping_enable = (xmcast_snooping_enable)},                       \
     }))
 
 /*****************************************************************************/
@@ -479,6 +479,8 @@ ovsdb_call_method(NMOvsdb                  *self,
         call->payload.set_reapply.device_type     = payload->set_reapply.device_type;
         call->payload.set_reapply.ifname          = g_strdup(payload->set_reapply.ifname);
         call->payload.set_reapply.connection_uuid = g_strdup(payload->set_reapply.connection_uuid);
+        call->payload.set_reapply.mcast_snooping_enable =
+            payload->set_reapply.mcast_snooping_enable;
         call->payload.set_reapply.external_ids_old =
             nm_g_hash_table_ref(payload->set_reapply.external_ids_old);
         call->payload.set_reapply.external_ids_new =
@@ -1568,6 +1570,23 @@ ovsdb_next_command(NMOvsdb *self)
                                         NULL,
                                         call->payload.set_reapply.other_config_old,
                                         call->payload.set_reapply.other_config_new);
+
+            if (call->payload.set_reapply.mcast_snooping_enable != NM_OPTION_BOOL_DEFAULT) {
+                json_array_append_new(
+                    params,
+                    json_pack("{s:s, s:s, s:{s: b}, s:[[s, s, s]]}",
+                              "op",
+                              "update",
+                              "table",
+                              "Bridge",
+                              "row",
+                              "mcast_snooping_enable",
+                              call->payload.set_reapply.mcast_snooping_enable,
+                              "where",
+                              "name",
+                              "==",
+                              call->payload.set_reapply.ifname));
+            }
 
             json_array_append_new(
                 params,
@@ -2992,12 +3011,16 @@ nm_ovsdb_set_reapply(NMOvsdb                 *self,
                      NMSettingOvsExternalIDs *s_external_ids_old,
                      NMSettingOvsExternalIDs *s_external_ids_new,
                      NMSettingOvsOtherConfig *s_other_config_old,
-                     NMSettingOvsOtherConfig *s_other_config_new)
+                     NMSettingOvsOtherConfig *s_other_config_new,
+                     NMOptionBool             mcast_snooping_enable)
 {
     gs_unref_hashtable GHashTable *external_ids_old = NULL;
     gs_unref_hashtable GHashTable *external_ids_new = NULL;
     gs_unref_hashtable GHashTable *other_config_old = NULL;
     gs_unref_hashtable GHashTable *other_config_new = NULL;
+
+    nm_assert(mcast_snooping_enable == NM_OPTION_BOOL_DEFAULT
+              || device_type == NM_DEVICE_TYPE_OVS_BRIDGE);
 
     external_ids_old =
         s_external_ids_old
@@ -3028,7 +3051,8 @@ nm_ovsdb_set_reapply(NMOvsdb                 *self,
                                                        external_ids_old,
                                                        external_ids_new,
                                                        other_config_old,
-                                                       other_config_new));
+                                                       other_config_new,
+                                                       mcast_snooping_enable));
 }
 
 /*****************************************************************************/
