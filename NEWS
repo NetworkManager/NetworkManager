@@ -15,6 +15,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   property that specifies the subnet to choose on the downstream
   interface when using IPv6 prefix delegation.
 * Add support for configuring the loopback interface in nmtui.
+* Most of the properties of ovs-bridge and ovs-port connections can
+  now be reapplied at runtime without bringing the connection down.
 
 =============================================
 NetworkManager-1.52
