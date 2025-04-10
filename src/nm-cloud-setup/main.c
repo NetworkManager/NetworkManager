@@ -387,17 +387,6 @@ _nmc_skip_connection_by_user_data(NMConnection *connection)
     return FALSE;
 }
 
-static gboolean
-_nmc_skip_connection_by_type(NMConnection *connection, const char *connection_type)
-{
-    if (!nm_streq0(nm_connection_get_connection_type(connection), connection_type))
-        return TRUE;
-    if (!nm_connection_get_setting_ip4_config(connection))
-        return TRUE;
-
-    return FALSE;
-}
-
 static void
 _nmc_mangle_connection(NMDevice                             *device,
                        NMConnection                         *connection,
@@ -618,8 +607,14 @@ try_again:
         return any_changes;
     }
 
-    if (_nmc_skip_connection_by_type(applied_connection, connection_type)) {
-        _LOGD("config device %s: device has no suitable applied connection. Skip", hwaddr);
+    if (!nm_streq0(nm_connection_get_connection_type(applied_connection), connection_type)) {
+        _LOGD("config device %s: skip applied connection due to type mismatch", hwaddr);
+        return any_changes;
+    }
+
+    if (!nm_connection_get_setting_ip4_config(applied_connection)) {
+        _LOGD("config device %s: skip applied connection due to missing IPv4 configuration",
+              hwaddr);
         return any_changes;
     }
 

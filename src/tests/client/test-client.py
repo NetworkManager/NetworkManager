@@ -2532,7 +2532,7 @@ class TestNmCloudSetup(unittest.TestCase):
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
         # One of the devices has no IPv4 configuration to be modified
-        pexp.expect("device has no suitable applied connection. Skip")
+        pexp.expect("skip applied connection due to missing IPv4 configuration")
         # The other one was lacking an address set it up.
         pexp.expect("some changes were applied for provider aliyun")
         (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
@@ -2628,7 +2628,7 @@ class TestNmCloudSetup(unittest.TestCase):
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
         # One of the devices has no IPv4 configuration to be modified
-        pexp.expect("device has no suitable applied connection. Skip")
+        pexp.expect("skip applied connection due to missing IPv4 configuration")
         # The other one was lacking an address set it up.
         pexp.expect("some changes were applied for provider azure")
         (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
@@ -2707,7 +2707,7 @@ class TestNmCloudSetup(unittest.TestCase):
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
         # One of the devices has no IPv4 configuration to be modified
-        pexp.expect("device has no suitable applied connection. Skip")
+        pexp.expect("skip applied connection due to missing IPv4 configuration")
         # The other one was lacking an address set it up.
         pexp.expect("some changes were applied for provider ec2")
         (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
@@ -2778,7 +2778,7 @@ class TestNmCloudSetup(unittest.TestCase):
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
         # One of the devices has no IPv4 configuration to be modified
-        pexp.expect("device has no suitable applied connection. Skip")
+        pexp.expect("skip applied connection due to missing IPv4 configuration")
         # The other one was lacking an address set it up.
         pexp.expect("some changes were applied for provider GCP")
         (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
@@ -2869,7 +2869,7 @@ class TestNmCloudSetup(unittest.TestCase):
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
         # One of the devices has no IPv4 configuration to be modified
-        pexp.expect("device has no suitable applied connection. Skip")
+        pexp.expect("skip applied connection due to missing IPv4 configuration")
         # The other one was lacking an address set it up.
         pexp.expect("some changes were applied for provider oci")
         (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
@@ -2973,7 +2973,7 @@ class TestNmCloudSetup(unittest.TestCase):
 
         # No configuration for the ethernets
         pexp.expect('configuring "eth0"')
-        pexp.expect("device has no suitable applied connection. Skip")
+        pexp.expect("skip applied connection due to missing IPv4 configuration")
 
         # Setting up the VLAN
         pexp.expect("creating macvlan2 connection for VLAN 700 on CC:00:00:00:00:01...")
@@ -3013,7 +3013,7 @@ class TestNmCloudSetup(unittest.TestCase):
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
         pexp.expect('configuring "eth0"')
-        pexp.expect("device has no suitable applied connection. Skip")
+        pexp.expect("skip applied connection due to missing IPv4 configuration")
         pexp.expect("no changes were applied for provider oci")
 
         (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
