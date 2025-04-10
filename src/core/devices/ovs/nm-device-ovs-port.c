@@ -256,6 +256,32 @@ detach_port(NMDevice                  *device,
     return ret;
 }
 
+static gboolean
+can_reapply_change(NMDevice   *device,
+                   const char *setting_name,
+                   NMSetting  *s_old,
+                   NMSetting  *s_new,
+                   GHashTable *diffs,
+                   GError    **error)
+{
+    NMDeviceClass *device_class = NM_DEVICE_CLASS(nm_device_ovs_port_parent_class);
+
+    if (nm_streq(setting_name, NM_SETTING_OVS_PORT_SETTING_NAME)) {
+        return nm_device_hash_check_invalid_keys(diffs,
+                                                 NM_SETTING_OVS_PORT_SETTING_NAME,
+                                                 error,
+                                                 NM_SETTING_OVS_PORT_TAG,
+                                                 NM_SETTING_OVS_PORT_VLAN_MODE,
+                                                 NM_SETTING_OVS_PORT_BOND_UPDELAY,
+                                                 NM_SETTING_OVS_PORT_BOND_DOWNDELAY,
+                                                 NM_SETTING_OVS_PORT_LACP,
+                                                 NM_SETTING_OVS_PORT_BOND_MODE,
+                                                 NM_SETTING_OVS_PORT_TRUNKS);
+    }
+
+    return device_class->can_reapply_change(device, setting_name, s_old, s_new, diffs, error);
+}
+
 /*****************************************************************************/
 
 static void
@@ -293,6 +319,7 @@ nm_device_ovs_port_class_init(NMDeviceOvsPortClass *klass)
     device_class->ready_for_ip_config                 = ready_for_ip_config;
     device_class->attach_port                         = attach_port;
     device_class->detach_port                         = detach_port;
+    device_class->can_reapply_change                  = can_reapply_change;
     device_class->can_reapply_change_ovs_external_ids = TRUE;
     device_class->reapply_connection                  = nm_device_ovs_reapply_connection;
 }
