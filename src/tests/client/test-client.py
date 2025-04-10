@@ -3071,6 +3071,89 @@ class TestNmCloudSetup(unittest.TestCase):
         )
         self.assertEqual(exitstatus, 0, "Unexpectedly returned a non-zero status")
 
+    @cloud_setup_test
+    def test_oci_vm_vnic(self):
+        # One device unconnected, and one with a connection that needs changes
+        self._mock_devices()
+        self._mock_connection2()
+
+        oci_meta = "/opc/v2/"
+        self._mock_path(oci_meta + "instance", "{}")
+        self._mock_path(
+            oci_meta + "vnics",
+            """
+        [
+          {
+            "macAddr": "%s",
+            "privateIp": "%s",
+            "subnetCidrBlock": "172.31.16.0/20",
+            "virtualRouterIp": "172.31.16.1",
+            "vlanTag": 1337,
+            "vnicId": "ocid1.vnic.oc1.cz-adamov1.foobarbaz"
+          },
+          {
+            "macAddr": "%s",
+            "privateIp": "%s",
+            "subnetCidrBlock": "172.31.166.0/20",
+            "virtualRouterIp": "172.31.166.1",
+            "vlanTag": 8086,
+            "vnicId": "ocid1.vnic.oc1.uk-hogwarts.expelliarmus"
+          }
+        ]
+        """
+            % (
+                TestNmCloudSetup._mac1,
+                TestNmCloudSetup._ip1,
+                TestNmCloudSetup._mac2,
+                TestNmCloudSetup._ip2,
+            ),
+        )
+
+        pexp = self.ctx.cmd_call_pexpect(
+            ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
+            [],
+            {
+                "NM_CLOUD_SETUP_OCI_HOST": self.md_url,
+                "NM_CLOUD_SETUP_LOG": "trace",
+                "NM_CLOUD_SETUP_OCI": "yes",
+            },
+        )
+
+        pexp.expect("provider oci detected")
+        pexp.expect(
+            "found interfaces: %s, %s"
+            % (TestNmCloudSetup._mac1.upper(), TestNmCloudSetup._mac2.upper())
+        )
+        pexp.expect("get-config: starting")
+        pexp.expect("get-config: success")
+        pexp.expect("meta data received")
+
+        # First device lacks a connection: a new one will be created
+        pexp.expect('config device eth0: connection "connection-2"')
+
+        # Second device is skipped because it's activated without IPv4
+        pexp.expect(
+            "config device CC:00:00:00:00:02: skip applied connection due to missing IPv4 configuration"
+        )
+
+        # Finished!
+        pexp.expect("some changes were applied for provider oci")
+
+        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        Util.valgrind_check_log(valgrind_log, "test_oci_vm_vnic")
+        self.assertIsNone(
+            signalstatus,
+            "Unexpectedly got " + Util.signal_no_to_str(signalstatus or 0),
+        )
+        self.assertEqual(exitstatus, 0, "Unexpectedly returned a non-zero status")
+
+        # TODO: Actually check the contents of the connection
+        # Probably needs changes to the mock service API
+        conn_macvlan = self.ctx.srv.findConnections(con_id="connection-3")
+        assert conn_macvlan is not None
+        conn_vlan = self.ctx.srv.findConnections(con_id="connection-4")
+        assert conn_vlan is not None
+
 
 ###############################################################################
 
