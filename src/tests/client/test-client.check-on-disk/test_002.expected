@@ -1,87 +1,89 @@
-size: 376
+size: 382
 location: src/tests/client/test-client.py:test_002()/1
 cmd: $NMCLI d
 lang: C
 returncode: 0
-stdout: 258 bytes
+stdout: 264 bytes
 >>>
-DEVICE  TYPE      STATE        CONNECTION 
-eth0    ethernet  unavailable  --         
-eth1    ethernet  unavailable  --         
-wlan0   wifi      unavailable  --         
-wlan1   wifi      unavailable  --         
-wlan1   wifi      unavailable  --         
+DEVICE  TYPE      STATE         CONNECTION 
+eth0    ethernet  disconnected  --         
+eth1    ethernet  disconnected  --         
+wlan0   wifi      disconnected  --         
+wlan1   wifi      disconnected  --         
+wlan1   wifi      disconnected  --         
 
 <<<
-size: 391
+size: 390
 location: src/tests/client/test-client.py:test_002()/2
 cmd: $NMCLI d
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 263 bytes
+stdout: 262 bytes
 >>>
-DEVICE  TYPE      STATE        CONNECTION 
-eth0    ethernet  niedostępne  --         
-eth1    ethernet  niedostępne  --         
-wlan0   wifi      niedostępne  --         
-wlan1   wifi      niedostępne  --         
-wlan1   wifi      niedostępne  --         
+DEVICE  TYPE      STATE       CONNECTION 
+eth0    ethernet  rozłączono  --         
+eth1    ethernet  rozłączono  --         
+wlan0   wifi      rozłączono  --         
+wlan1   wifi      rozłączono  --         
+wlan1   wifi      rozłączono  --         
 
 <<<
-size: 977
+size: 983
 location: src/tests/client/test-client.py:test_002()/3
 cmd: $NMCLI -f all d
 lang: C
 returncode: 0
-stdout: 852 bytes
+stdout: 858 bytes
 >>>
-DEVICE  TYPE      STATE        IP4-CONNECTIVITY  IP6-CONNECTIVITY  DBUS-PATH                                  CONNECTION  CON-UUID  CON-PATH 
-eth0    ethernet  unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/1  --          --        --       
-eth1    ethernet  unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/2  --          --        --       
-wlan0   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/3  --          --        --       
-wlan1   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/4  --          --        --       
-wlan1   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/5  --          --        --       
+DEVICE  TYPE      STATE         IP4-CONNECTIVITY  IP6-CONNECTIVITY  DBUS-PATH                                  CONNECTION  CON-UUID  CON-PATH 
+eth0    ethernet  disconnected  unknown           unknown           /org/freedesktop/NetworkManager/Devices/1  --          --        --       
+eth1    ethernet  disconnected  unknown           unknown           /org/freedesktop/NetworkManager/Devices/2  --          --        --       
+wlan0   wifi      disconnected  unknown           unknown           /org/freedesktop/NetworkManager/Devices/3  --          --        --       
+wlan1   wifi      disconnected  unknown           unknown           /org/freedesktop/NetworkManager/Devices/4  --          --        --       
+wlan1   wifi      disconnected  unknown           unknown           /org/freedesktop/NetworkManager/Devices/5  --          --        --       
 
 <<<
-size: 992
+size: 991
 location: src/tests/client/test-client.py:test_002()/4
 cmd: $NMCLI -f all d
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 857 bytes
+stdout: 856 bytes
 >>>
-DEVICE  TYPE      STATE        IP4-CONNECTIVITY  IP6-CONNECTIVITY  DBUS-PATH                                  CONNECTION  CON-UUID  CON-PATH 
-eth0    ethernet  niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/1  --          --        --       
-eth1    ethernet  niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/2  --          --        --       
-wlan0   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/3  --          --        --       
-wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/4  --          --        --       
-wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/5  --          --        --       
+DEVICE  TYPE      STATE       IP4-CONNECTIVITY  IP6-CONNECTIVITY  DBUS-PATH                                  CONNECTION  CON-UUID  CON-PATH 
+eth0    ethernet  rozłączono  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/1  --          --        --       
+eth1    ethernet  rozłączono  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/2  --          --        --       
+wlan0   wifi      rozłączono  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/3  --          --        --       
+wlan1   wifi      rozłączono  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/4  --          --        --       
+wlan1   wifi      rozłączono  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/5  --          --        --       
 
 <<<
-size: 738
+size: 791
 location: src/tests/client/test-client.py:test_002()/5
 cmd: $NMCLI 
 lang: C
 returncode: 0
-stdout: 621 bytes
+stdout: 674 bytes
 >>>
-eth0: unavailable
+eth0: disconnected
 	"eth0"
+	1 connection available
 	ethernet (virtual), 65:2E:D3:9E:0A:0D, hw
 
-eth1: unavailable
+eth1: disconnected
 	"eth1"
+	1 connection available
 	ethernet (virtual), 47:D5:6B:65:FD:6A, hw
 
-wlan0: unavailable
+wlan0: disconnected
 	"wlan0"
 	wifi (virtual), 3D:99:1D:8B:74:4D, hw
 
-wlan1: unavailable
+wlan1: disconnected
 	"wlan1"
 	wifi (virtual), 99:09:77:FD:FE:1D, hw
 
-wlan1: unavailable
+wlan1: disconnected
 	"wlan1"
 	wifi (virtual), 5D:30:4A:EC:3F:61, hw
 
@@ -94,30 +96,32 @@ Use "nmcli device show" to get complete information about known devices and
 Consult nmcli(1) and nmcli-examples(7) manual pages for complete usage details.
 
 <<<
-size: 811
+size: 873
 location: src/tests/client/test-client.py:test_002()/6
 cmd: $NMCLI 
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 684 bytes
+stdout: 746 bytes
 >>>
-eth0: niedostępne
+eth0: rozłączono
 	"eth0"
+	1 połączenie jest dostępne
 	ethernet (virtual), 65:2E:D3:9E:0A:0D, sprzęt
 
-eth1: niedostępne
+eth1: rozłączono
 	"eth1"
+	1 połączenie jest dostępne
 	ethernet (virtual), 47:D5:6B:65:FD:6A, sprzęt
 
-wlan0: niedostępne
+wlan0: rozłączono
 	"wlan0"
 	wifi (virtual), 3D:99:1D:8B:74:4D, sprzęt
 
-wlan1: niedostępne
+wlan1: rozłączono
 	"wlan1"
 	wifi (virtual), 99:09:77:FD:FE:1D, sprzęt
 
-wlan1: niedostępne
+wlan1: rozłączono
 	"wlan1"
 	wifi (virtual), 5D:30:4A:EC:3F:61, sprzęt
 
