@@ -2446,7 +2446,7 @@ class TestNmCloudSetup(unittest.TestCase):
 
     def _mock_devices(self):
         # Add a device with an active connection that has IPv4 configured
-        self.ctx.srv.op_AddObj("WiredDevice", iface="eth0", mac="cc:00:00:00:00:01")
+        self.ctx.srv.op_AddObj("WiredDevice", iface="eth0", mac=self._mac1)
         self.ctx.srv.addAndActivateConnection(
             {
                 "connection": {"type": "802-3-ethernet", "id": "con-eth0"},
@@ -2457,7 +2457,7 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         # The second connection has no IPv4
-        self.ctx.srv.op_AddObj("WiredDevice", iface="eth1", mac="cc:00:00:00:00:02")
+        self.ctx.srv.op_AddObj("WiredDevice", iface="eth1", mac=self._mac2)
         self.ctx.srv.addAndActivateConnection(
             {"connection": {"type": "802-3-ethernet", "id": "con-eth1"}},
             "/org/freedesktop/NetworkManager/Devices/2",
@@ -2527,7 +2527,10 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         pexp.expect("provider aliyun detected")
-        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect(
+            "found interfaces: %s, %s"
+            % (TestNmCloudSetup._mac1.upper(), TestNmCloudSetup._mac2.upper())
+        )
         pexp.expect("get-config: start fetching meta data")
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
@@ -2555,7 +2558,10 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         pexp.expect("provider aliyun detected")
-        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect(
+            "found interfaces: %s, %s"
+            % (TestNmCloudSetup._mac1.upper(), TestNmCloudSetup._mac2.upper())
+        )
         pexp.expect("get-config: starting")
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
@@ -2616,7 +2622,10 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         pexp.expect("provider azure detected")
-        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect(
+            "found interfaces: %s, %s"
+            % (TestNmCloudSetup._mac1.upper(), TestNmCloudSetup._mac2.upper())
+        )
         pexp.expect("found azure interfaces: 2")
         pexp.expect(r"interface\[0]: found a matching device with hwaddr")
         pexp.expect(
@@ -2651,7 +2660,10 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         pexp.expect("provider azure detected")
-        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect(
+            "found interfaces: %s, %s"
+            % (TestNmCloudSetup._mac1.upper(), TestNmCloudSetup._mac2.upper())
+        )
         pexp.expect("get-config: starting")
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
@@ -2702,7 +2714,10 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         pexp.expect("provider ec2 detected")
-        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect(
+            "found interfaces: %s, %s"
+            % (TestNmCloudSetup._mac1.upper(), TestNmCloudSetup._mac2.upper())
+        )
         pexp.expect("get-config: starting")
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
@@ -2730,7 +2745,10 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         pexp.expect("provider ec2 detected")
-        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect(
+            "found interfaces: %s, %s"
+            % (TestNmCloudSetup._mac1.upper(), TestNmCloudSetup._mac2.upper())
+        )
         pexp.expect("get-config: starting")
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
@@ -2772,7 +2790,10 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         pexp.expect("provider GCP detected")
-        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect(
+            "found interfaces: %s, %s"
+            % (TestNmCloudSetup._mac1.upper(), TestNmCloudSetup._mac2.upper())
+        )
         pexp.expect("found GCP interfaces: 2")
         pexp.expect(r"GCP interface\[0]: found a requested device with hwaddr")
         pexp.expect("get-config: success")
@@ -2801,7 +2822,10 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         pexp.expect("provider GCP detected")
-        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect(
+            "found interfaces: %s, %s"
+            % (TestNmCloudSetup._mac1.upper(), TestNmCloudSetup._mac2.upper())
+        )
         pexp.expect("get-config: starting")
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
@@ -2864,7 +2888,10 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         pexp.expect("provider oci detected")
-        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect(
+            "found interfaces: %s, %s"
+            % (TestNmCloudSetup._mac1.upper(), TestNmCloudSetup._mac2.upper())
+        )
         pexp.expect("get-config: starting")
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
@@ -2892,7 +2919,10 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         pexp.expect("provider oci detected")
-        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect(
+            "found interfaces: %s, %s"
+            % (TestNmCloudSetup._mac1.upper(), TestNmCloudSetup._mac2.upper())
+        )
         pexp.expect("get-config: starting")
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
@@ -2966,7 +2996,10 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         pexp.expect("provider oci detected")
-        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect(
+            "found interfaces: %s, %s"
+            % (TestNmCloudSetup._mac1.upper(), TestNmCloudSetup._mac2.upper())
+        )
         pexp.expect("get-config: starting")
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
@@ -2976,7 +3009,10 @@ class TestNmCloudSetup(unittest.TestCase):
         pexp.expect("skip applied connection due to missing IPv4 configuration")
 
         # Setting up the VLAN
-        pexp.expect("creating macvlan2 connection for VLAN 700 on CC:00:00:00:00:01...")
+        pexp.expect(
+            "creating macvlan2 connection for VLAN 700 on %s..."
+            % (TestNmCloudSetup._mac1.upper())
+        )
         pexp.expect("creating vlan connection for VLAN 700 on C0:00:00:00:00:10...")
         pexp.expect("some changes were applied for provider oci")
 
@@ -3008,7 +3044,10 @@ class TestNmCloudSetup(unittest.TestCase):
 
         # Just the same ol' thing, just no changes this time
         pexp.expect("provider oci detected")
-        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect(
+            "found interfaces: %s, %s"
+            % (TestNmCloudSetup._mac1.upper(), TestNmCloudSetup._mac2.upper())
+        )
         pexp.expect("get-config: starting")
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
