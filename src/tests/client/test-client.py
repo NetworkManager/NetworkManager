@@ -2445,8 +2445,11 @@ class TestNmCloudSetup(unittest.TestCase):
         return f
 
     def _mock_devices(self):
-        # Add a device with an active connection that has IPv4 configured
         self.ctx.srv.op_AddObj("WiredDevice", iface="eth0", mac=self._mac1)
+        self.ctx.srv.op_AddObj("WiredDevice", iface="eth1", mac=self._mac2)
+
+    def _mock_connection1(self):
+        # Active connection that has IPv4 configured for device1
         self.ctx.srv.addAndActivateConnection(
             {
                 "connection": {"type": "802-3-ethernet", "id": "con-eth0"},
@@ -2456,8 +2459,8 @@ class TestNmCloudSetup(unittest.TestCase):
             delay=0,
         )
 
+    def _mock_connection2(self):
         # The second connection has no IPv4
-        self.ctx.srv.op_AddObj("WiredDevice", iface="eth1", mac=self._mac2)
         self.ctx.srv.addAndActivateConnection(
             {"connection": {"type": "802-3-ethernet", "id": "con-eth1"}},
             "/org/freedesktop/NetworkManager/Devices/2",
@@ -2465,13 +2468,18 @@ class TestNmCloudSetup(unittest.TestCase):
             delay=0,
         )
 
+    def _mock_connections(self):
+        self._mock_devices()
+        self._mock_connection1()
+        self._mock_connection2()
+
     def _mock_path(self, path, body):
         self.md_conn.request("PUT", path, body=body)
         self.md_conn.getresponse().read()
 
     @cloud_setup_test
     def test_aliyun(self):
-        self._mock_devices()
+        self._mock_connections()
 
         _aliyun_meta = "/2016-01-01/meta-data/"
         _aliyun_macs = _aliyun_meta + "network/interfaces/macs/"
@@ -2578,7 +2586,7 @@ class TestNmCloudSetup(unittest.TestCase):
 
     @cloud_setup_test
     def test_azure(self):
-        self._mock_devices()
+        self._mock_connections()
 
         _azure_meta = "/metadata/instance"
         _azure_iface = _azure_meta + "/network/interface/"
@@ -2680,7 +2688,7 @@ class TestNmCloudSetup(unittest.TestCase):
 
     @cloud_setup_test
     def test_ec2(self):
-        self._mock_devices()
+        self._mock_connections()
 
         _ec2_macs = "/2018-09-24/meta-data/network/interfaces/macs/"
         self._mock_path("/latest/meta-data/", "ami-id\n")
@@ -2765,7 +2773,7 @@ class TestNmCloudSetup(unittest.TestCase):
 
     @cloud_setup_test
     def test_gcp(self):
-        self._mock_devices()
+        self._mock_connections()
 
         gcp_meta = "/computeMetadata/v1/instance/"
         gcp_iface = gcp_meta + "network-interfaces/"
@@ -2842,7 +2850,7 @@ class TestNmCloudSetup(unittest.TestCase):
 
     @cloud_setup_test
     def test_oci(self):
-        self._mock_devices()
+        self._mock_connections()
 
         oci_meta = "/opc/v2/"
         self._mock_path(oci_meta + "instance", "{}")
@@ -2939,7 +2947,7 @@ class TestNmCloudSetup(unittest.TestCase):
 
     @cloud_setup_test
     def test_oci_vlans(self):
-        self._mock_devices()
+        self._mock_connections()
 
         oci_meta = "/opc/v2/"
         self._mock_path(oci_meta + "instance", "{}")
