@@ -637,6 +637,7 @@ _nmcs_add_and_activate_cb(GObject *source, GAsyncResult *result, gpointer user_d
 NMActiveConnection *
 nmcs_add_and_activate(NMClient     *client,
                       GCancellable *sigterm_cancellable,
+                      NMDevice     *device,
                       NMConnection *connection,
                       GError      **error)
 {
@@ -648,7 +649,7 @@ nmcs_add_and_activate(NMClient     *client,
 
     nm_client_add_and_activate_connection_async(client,
                                                 connection,
-                                                NULL,
+                                                device,
                                                 NULL,
                                                 sigterm_cancellable,
                                                 _nmcs_add_and_activate_cb,

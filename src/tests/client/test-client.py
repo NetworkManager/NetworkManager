@@ -2445,8 +2445,11 @@ class TestNmCloudSetup(unittest.TestCase):
         return f
 
     def _mock_devices(self):
-        # Add a device with an active connection that has IPv4 configured
-        self.ctx.srv.op_AddObj("WiredDevice", iface="eth0", mac="cc:00:00:00:00:01")
+        self.ctx.srv.op_AddObj("WiredDevice", iface="eth0", mac=self._mac1)
+        self.ctx.srv.op_AddObj("WiredDevice", iface="eth1", mac=self._mac2)
+
+    def _mock_connection1(self):
+        # Active connection that has IPv4 configured for device1
         self.ctx.srv.addAndActivateConnection(
             {
                 "connection": {"type": "802-3-ethernet", "id": "con-eth0"},
@@ -2456,8 +2459,8 @@ class TestNmCloudSetup(unittest.TestCase):
             delay=0,
         )
 
+    def _mock_connection2(self):
         # The second connection has no IPv4
-        self.ctx.srv.op_AddObj("WiredDevice", iface="eth1", mac="cc:00:00:00:00:02")
         self.ctx.srv.addAndActivateConnection(
             {"connection": {"type": "802-3-ethernet", "id": "con-eth1"}},
             "/org/freedesktop/NetworkManager/Devices/2",
@@ -2465,13 +2468,18 @@ class TestNmCloudSetup(unittest.TestCase):
             delay=0,
         )
 
+    def _mock_connections(self):
+        self._mock_devices()
+        self._mock_connection1()
+        self._mock_connection2()
+
     def _mock_path(self, path, body):
         self.md_conn.request("PUT", path, body=body)
         self.md_conn.getresponse().read()
 
     @cloud_setup_test
     def test_aliyun(self):
-        self._mock_devices()
+        self._mock_connections()
 
         _aliyun_meta = "/2016-01-01/meta-data/"
         _aliyun_macs = _aliyun_meta + "network/interfaces/macs/"
@@ -2527,12 +2535,15 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         pexp.expect("provider aliyun detected")
-        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect(
+            "found interfaces: %s, %s"
+            % (TestNmCloudSetup._mac1.upper(), TestNmCloudSetup._mac2.upper())
+        )
         pexp.expect("get-config: start fetching meta data")
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
         # One of the devices has no IPv4 configuration to be modified
-        pexp.expect("device has no suitable applied connection. Skip")
+        pexp.expect("skip applied connection due to missing IPv4 configuration")
         # The other one was lacking an address set it up.
         pexp.expect("some changes were applied for provider aliyun")
         (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
@@ -2555,7 +2566,10 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         pexp.expect("provider aliyun detected")
-        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect(
+            "found interfaces: %s, %s"
+            % (TestNmCloudSetup._mac1.upper(), TestNmCloudSetup._mac2.upper())
+        )
         pexp.expect("get-config: starting")
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
@@ -2572,7 +2586,7 @@ class TestNmCloudSetup(unittest.TestCase):
 
     @cloud_setup_test
     def test_azure(self):
-        self._mock_devices()
+        self._mock_connections()
 
         _azure_meta = "/metadata/instance"
         _azure_iface = _azure_meta + "/network/interface/"
@@ -2616,7 +2630,10 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         pexp.expect("provider azure detected")
-        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect(
+            "found interfaces: %s, %s"
+            % (TestNmCloudSetup._mac1.upper(), TestNmCloudSetup._mac2.upper())
+        )
         pexp.expect("found azure interfaces: 2")
         pexp.expect(r"interface\[0]: found a matching device with hwaddr")
         pexp.expect(
@@ -2628,7 +2645,7 @@ class TestNmCloudSetup(unittest.TestCase):
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
         # One of the devices has no IPv4 configuration to be modified
-        pexp.expect("device has no suitable applied connection. Skip")
+        pexp.expect("skip applied connection due to missing IPv4 configuration")
         # The other one was lacking an address set it up.
         pexp.expect("some changes were applied for provider azure")
         (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
@@ -2651,7 +2668,10 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         pexp.expect("provider azure detected")
-        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect(
+            "found interfaces: %s, %s"
+            % (TestNmCloudSetup._mac1.upper(), TestNmCloudSetup._mac2.upper())
+        )
         pexp.expect("get-config: starting")
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
@@ -2668,7 +2688,7 @@ class TestNmCloudSetup(unittest.TestCase):
 
     @cloud_setup_test
     def test_ec2(self):
-        self._mock_devices()
+        self._mock_connections()
 
         _ec2_macs = "/2018-09-24/meta-data/network/interfaces/macs/"
         self._mock_path("/latest/meta-data/", "ami-id\n")
@@ -2702,12 +2722,15 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         pexp.expect("provider ec2 detected")
-        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect(
+            "found interfaces: %s, %s"
+            % (TestNmCloudSetup._mac1.upper(), TestNmCloudSetup._mac2.upper())
+        )
         pexp.expect("get-config: starting")
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
         # One of the devices has no IPv4 configuration to be modified
-        pexp.expect("device has no suitable applied connection. Skip")
+        pexp.expect("skip applied connection due to missing IPv4 configuration")
         # The other one was lacking an address set it up.
         pexp.expect("some changes were applied for provider ec2")
         (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
@@ -2730,7 +2753,10 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         pexp.expect("provider ec2 detected")
-        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect(
+            "found interfaces: %s, %s"
+            % (TestNmCloudSetup._mac1.upper(), TestNmCloudSetup._mac2.upper())
+        )
         pexp.expect("get-config: starting")
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
@@ -2747,7 +2773,7 @@ class TestNmCloudSetup(unittest.TestCase):
 
     @cloud_setup_test
     def test_gcp(self):
-        self._mock_devices()
+        self._mock_connections()
 
         gcp_meta = "/computeMetadata/v1/instance/"
         gcp_iface = gcp_meta + "network-interfaces/"
@@ -2772,13 +2798,16 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         pexp.expect("provider GCP detected")
-        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect(
+            "found interfaces: %s, %s"
+            % (TestNmCloudSetup._mac1.upper(), TestNmCloudSetup._mac2.upper())
+        )
         pexp.expect("found GCP interfaces: 2")
         pexp.expect(r"GCP interface\[0]: found a requested device with hwaddr")
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
         # One of the devices has no IPv4 configuration to be modified
-        pexp.expect("device has no suitable applied connection. Skip")
+        pexp.expect("skip applied connection due to missing IPv4 configuration")
         # The other one was lacking an address set it up.
         pexp.expect("some changes were applied for provider GCP")
         (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
@@ -2801,7 +2830,10 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         pexp.expect("provider GCP detected")
-        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect(
+            "found interfaces: %s, %s"
+            % (TestNmCloudSetup._mac1.upper(), TestNmCloudSetup._mac2.upper())
+        )
         pexp.expect("get-config: starting")
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
@@ -2818,7 +2850,7 @@ class TestNmCloudSetup(unittest.TestCase):
 
     @cloud_setup_test
     def test_oci(self):
-        self._mock_devices()
+        self._mock_connections()
 
         oci_meta = "/opc/v2/"
         self._mock_path(oci_meta + "instance", "{}")
@@ -2864,12 +2896,15 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         pexp.expect("provider oci detected")
-        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect(
+            "found interfaces: %s, %s"
+            % (TestNmCloudSetup._mac1.upper(), TestNmCloudSetup._mac2.upper())
+        )
         pexp.expect("get-config: starting")
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
         # One of the devices has no IPv4 configuration to be modified
-        pexp.expect("device has no suitable applied connection. Skip")
+        pexp.expect("skip applied connection due to missing IPv4 configuration")
         # The other one was lacking an address set it up.
         pexp.expect("some changes were applied for provider oci")
         (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
@@ -2892,7 +2927,10 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         pexp.expect("provider oci detected")
-        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect(
+            "found interfaces: %s, %s"
+            % (TestNmCloudSetup._mac1.upper(), TestNmCloudSetup._mac2.upper())
+        )
         pexp.expect("get-config: starting")
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
@@ -2909,7 +2947,7 @@ class TestNmCloudSetup(unittest.TestCase):
 
     @cloud_setup_test
     def test_oci_vlans(self):
-        self._mock_devices()
+        self._mock_connections()
 
         oci_meta = "/opc/v2/"
         self._mock_path(oci_meta + "instance", "{}")
@@ -2966,17 +3004,23 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         pexp.expect("provider oci detected")
-        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect(
+            "found interfaces: %s, %s"
+            % (TestNmCloudSetup._mac1.upper(), TestNmCloudSetup._mac2.upper())
+        )
         pexp.expect("get-config: starting")
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
 
         # No configuration for the ethernets
         pexp.expect('configuring "eth0"')
-        pexp.expect("device has no suitable applied connection. Skip")
+        pexp.expect("skip applied connection due to missing IPv4 configuration")
 
         # Setting up the VLAN
-        pexp.expect("creating macvlan2 connection for VLAN 700 on CC:00:00:00:00:01...")
+        pexp.expect(
+            "creating macvlan2 connection for VLAN 700 on %s..."
+            % (TestNmCloudSetup._mac1.upper())
+        )
         pexp.expect("creating vlan connection for VLAN 700 on C0:00:00:00:00:10...")
         pexp.expect("some changes were applied for provider oci")
 
@@ -3008,12 +3052,15 @@ class TestNmCloudSetup(unittest.TestCase):
 
         # Just the same ol' thing, just no changes this time
         pexp.expect("provider oci detected")
-        pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
+        pexp.expect(
+            "found interfaces: %s, %s"
+            % (TestNmCloudSetup._mac1.upper(), TestNmCloudSetup._mac2.upper())
+        )
         pexp.expect("get-config: starting")
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
         pexp.expect('configuring "eth0"')
-        pexp.expect("device has no suitable applied connection. Skip")
+        pexp.expect("skip applied connection due to missing IPv4 configuration")
         pexp.expect("no changes were applied for provider oci")
 
         (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
@@ -3023,6 +3070,89 @@ class TestNmCloudSetup(unittest.TestCase):
             "Unexpectedly got " + Util.signal_no_to_str(signalstatus or 0),
         )
         self.assertEqual(exitstatus, 0, "Unexpectedly returned a non-zero status")
+
+    @cloud_setup_test
+    def test_oci_vm_vnic(self):
+        # One device unconnected, and one with a connection that needs changes
+        self._mock_devices()
+        self._mock_connection2()
+
+        oci_meta = "/opc/v2/"
+        self._mock_path(oci_meta + "instance", "{}")
+        self._mock_path(
+            oci_meta + "vnics",
+            """
+        [
+          {
+            "macAddr": "%s",
+            "privateIp": "%s",
+            "subnetCidrBlock": "172.31.16.0/20",
+            "virtualRouterIp": "172.31.16.1",
+            "vlanTag": 1337,
+            "vnicId": "ocid1.vnic.oc1.cz-adamov1.foobarbaz"
+          },
+          {
+            "macAddr": "%s",
+            "privateIp": "%s",
+            "subnetCidrBlock": "172.31.166.0/20",
+            "virtualRouterIp": "172.31.166.1",
+            "vlanTag": 8086,
+            "vnicId": "ocid1.vnic.oc1.uk-hogwarts.expelliarmus"
+          }
+        ]
+        """
+            % (
+                TestNmCloudSetup._mac1,
+                TestNmCloudSetup._ip1,
+                TestNmCloudSetup._mac2,
+                TestNmCloudSetup._ip2,
+            ),
+        )
+
+        pexp = self.ctx.cmd_call_pexpect(
+            ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
+            [],
+            {
+                "NM_CLOUD_SETUP_OCI_HOST": self.md_url,
+                "NM_CLOUD_SETUP_LOG": "trace",
+                "NM_CLOUD_SETUP_OCI": "yes",
+            },
+        )
+
+        pexp.expect("provider oci detected")
+        pexp.expect(
+            "found interfaces: %s, %s"
+            % (TestNmCloudSetup._mac1.upper(), TestNmCloudSetup._mac2.upper())
+        )
+        pexp.expect("get-config: starting")
+        pexp.expect("get-config: success")
+        pexp.expect("meta data received")
+
+        # First device lacks a connection: a new one will be created
+        pexp.expect('config device eth0: connection "connection-2"')
+
+        # Second device is skipped because it's activated without IPv4
+        pexp.expect(
+            "config device CC:00:00:00:00:02: skip applied connection due to missing IPv4 configuration"
+        )
+
+        # Finished!
+        pexp.expect("some changes were applied for provider oci")
+
+        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        Util.valgrind_check_log(valgrind_log, "test_oci_vm_vnic")
+        self.assertIsNone(
+            signalstatus,
+            "Unexpectedly got " + Util.signal_no_to_str(signalstatus or 0),
+        )
+        self.assertEqual(exitstatus, 0, "Unexpectedly returned a non-zero status")
+
+        # TODO: Actually check the contents of the connection
+        # Probably needs changes to the mock service API
+        conn_macvlan = self.ctx.srv.findConnections(con_id="connection-3")
+        assert conn_macvlan is not None
+        conn_vlan = self.ctx.srv.findConnections(con_id="connection-4")
+        assert conn_vlan is not None
 
 
 ###############################################################################
