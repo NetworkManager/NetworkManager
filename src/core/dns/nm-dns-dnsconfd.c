@@ -368,7 +368,8 @@ server_builder_append_base(GVariantBuilder   *argument_builder,
                            const char        *address_string,
                            const char *const *routing_domains,
                            const char *const *search_domains,
-                           const char        *ca)
+                           const char        *ca,
+                           int                priority)
 {
     NMDnsServer dns_server;
     gsize       addr_size;
@@ -407,6 +408,9 @@ server_builder_append_base(GVariantBuilder   *argument_builder,
     if (ca) {
         g_variant_builder_add(argument_builder, "{sv}", "ca", g_variant_new("s", ca));
     }
+    /* dnsconfd defines priority as bigger number equals bigger priority, while NM
+     * uses the exact opposite, thus use -priority */
+    g_variant_builder_add(argument_builder, "{sv}", "priority", g_variant_new("i", -priority));
     return TRUE;
 }
 
@@ -443,7 +447,8 @@ parse_global_config(const NMGlobalDnsConfig *global_config,
                                            servers[j],
                                            routing_domains,
                                            searches,
-                                           *ca)) {
+                                           *ca,
+                                           NM_DNS_PRIORITY_DEFAULT_NORMAL)) {
                 g_variant_builder_close(argument_builder);
             }
         }
@@ -628,6 +633,7 @@ parse_all_interface_config(GVariantBuilder *argument_builder,
     NMDnsConfigIPData *ip_data;
     const char *const *dns_server_strings;
     guint              nameserver_count;
+    int                priority;
     const char        *ifname;
     gboolean           explicit_default = is_default_interface_explicit(ip_data_lst_head);
 
@@ -648,6 +654,9 @@ parse_all_interface_config(GVariantBuilder *argument_builder,
 
         gather_interface_domains(ip_data, explicit_default, &routing_domains, &search_domains);
         get_networks(ip_data, &networks);
+        if (!nm_l3_config_data_get_dns_priority(ip_data->l3cd, ip_data->addr_family, &priority)) {
+            priority = NM_DNS_PRIORITY_DEFAULT_NORMAL;
+        }
 
         for (guint i = 0; i < nameserver_count; i++) {
             if (server_builder_append_base(argument_builder,
@@ -655,7 +664,8 @@ parse_all_interface_config(GVariantBuilder *argument_builder,
                                            dns_server_strings[i],
                                            routing_domains,
                                            search_domains,
-                                           ca)) {
+                                           ca,
+                                           priority)) {
                 server_builder_append_interface_info(argument_builder, ifname, networks);
             }
         }
