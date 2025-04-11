@@ -1868,34 +1868,34 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 1408
+size: 1414
 location: src/tests/client/test-client.py:test_003()/43
 cmd: $NMCLI -f ALL dev status
 lang: C
 returncode: 0
-stdout: 1272 bytes
+stdout: 1278 bytes
 >>>
-DEVICE  TYPE      STATE        IP4-CONNECTIVITY  IP6-CONNECTIVITY  DBUS-PATH                                  CONNECTION  CON-UUID                              CON-PATH                                           
-eth0    ethernet  connected    unknown           unknown           /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
-eth1    ethernet  unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/2  --          --                                    --                                                 
-wlan0   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
-wlan1   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/4  --          --                                    --                                                 
-wlan1   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
+DEVICE  TYPE      STATE         IP4-CONNECTIVITY  IP6-CONNECTIVITY  DBUS-PATH                                  CONNECTION  CON-UUID                              CON-PATH                                           
+eth0    ethernet  connected     unknown           unknown           /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
+eth1    ethernet  disconnected  unknown           unknown           /org/freedesktop/NetworkManager/Devices/2  --          --                                    --                                                 
+wlan0   wifi      disconnected  unknown           unknown           /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
+wlan1   wifi      disconnected  unknown           unknown           /org/freedesktop/NetworkManager/Devices/4  --          --                                    --                                                 
+wlan1   wifi      disconnected  unknown           unknown           /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
 
 <<<
-size: 1424
+size: 1422
 location: src/tests/client/test-client.py:test_003()/44
 cmd: $NMCLI -f ALL dev status
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1278 bytes
+stdout: 1276 bytes
 >>>
-DEVICE  TYPE      STATE        IP4-CONNECTIVITY  IP6-CONNECTIVITY  DBUS-PATH                                  CONNECTION  CON-UUID                              CON-PATH                                           
-eth0    ethernet  połączono    nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
-eth1    ethernet  niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/2  --          --                                    --                                                 
-wlan0   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
-wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/4  --          --                                    --                                                 
-wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
+DEVICE  TYPE      STATE       IP4-CONNECTIVITY  IP6-CONNECTIVITY  DBUS-PATH                                  CONNECTION  CON-UUID                              CON-PATH                                           
+eth0    ethernet  połączono   nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
+eth1    ethernet  rozłączono  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/2  --          --                                    --                                                 
+wlan0   wifi      rozłączono  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
+wlan1   wifi      rozłączono  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/4  --          --                                    --                                                 
+wlan1   wifi      rozłączono  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
 
 <<<
 size: 172
@@ -2960,34 +2960,34 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 1408
+size: 1414
 location: src/tests/client/test-client.py:test_003()/68
 cmd: $NMCLI -f ALL dev status
 lang: C
 returncode: 0
-stdout: 1272 bytes
+stdout: 1278 bytes
 >>>
-DEVICE  TYPE      STATE        IP4-CONNECTIVITY  IP6-CONNECTIVITY  DBUS-PATH                                  CONNECTION  CON-UUID                              CON-PATH                                           
-eth0    ethernet  connected    unknown           unknown           /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
-eth1    ethernet  connected    unknown           unknown           /org/freedesktop/NetworkManager/Devices/2  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/2 
-wlan0   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
-wlan1   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/4  --          --                                    --                                                 
-wlan1   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
+DEVICE  TYPE      STATE         IP4-CONNECTIVITY  IP6-CONNECTIVITY  DBUS-PATH                                  CONNECTION  CON-UUID                              CON-PATH                                           
+eth0    ethernet  connected     unknown           unknown           /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
+eth1    ethernet  connected     unknown           unknown           /org/freedesktop/NetworkManager/Devices/2  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/2 
+wlan0   wifi      disconnected  unknown           unknown           /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
+wlan1   wifi      disconnected  unknown           unknown           /org/freedesktop/NetworkManager/Devices/4  --          --                                    --                                                 
+wlan1   wifi      disconnected  unknown           unknown           /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
 
 <<<
-size: 1425
+size: 1422
 location: src/tests/client/test-client.py:test_003()/69
 cmd: $NMCLI -f ALL dev status
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1279 bytes
+stdout: 1276 bytes
 >>>
-DEVICE  TYPE      STATE        IP4-CONNECTIVITY  IP6-CONNECTIVITY  DBUS-PATH                                  CONNECTION  CON-UUID                              CON-PATH                                           
-eth0    ethernet  połączono    nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
-eth1    ethernet  połączono    nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/2  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/2 
-wlan0   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
-wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/4  --          --                                    --                                                 
-wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
+DEVICE  TYPE      STATE       IP4-CONNECTIVITY  IP6-CONNECTIVITY  DBUS-PATH                                  CONNECTION  CON-UUID                              CON-PATH                                           
+eth0    ethernet  połączono   nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
+eth1    ethernet  połączono   nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/2  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/2 
+wlan0   wifi      rozłączono  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
+wlan1   wifi      rozłączono  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/4  --          --                                    --                                                 
+wlan1   wifi      rozłączono  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
 
 <<<
 size: 172
@@ -3298,42 +3298,42 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 1399
+size: 1405
 location: src/tests/client/test-client.py:test_003()/76
 cmd: $NMCLI -f all d
 lang: C
 returncode: 0
-stdout: 1272 bytes
+stdout: 1278 bytes
 >>>
-DEVICE  TYPE      STATE        IP4-CONNECTIVITY  IP6-CONNECTIVITY  DBUS-PATH                                  CONNECTION  CON-UUID                              CON-PATH                                           
-eth1    ethernet  connected    unknown           unknown           /org/freedesktop/NetworkManager/Devices/2  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/2 
-eth0    ethernet  connected    unknown           unknown           /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
-wlan0   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
-wlan1   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/4  --          --                                    --                                                 
-wlan1   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
+DEVICE  TYPE      STATE         IP4-CONNECTIVITY  IP6-CONNECTIVITY  DBUS-PATH                                  CONNECTION  CON-UUID                              CON-PATH                                           
+eth1    ethernet  connected     unknown           unknown           /org/freedesktop/NetworkManager/Devices/2  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/2 
+eth0    ethernet  connected     unknown           unknown           /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
+wlan0   wifi      disconnected  unknown           unknown           /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
+wlan1   wifi      disconnected  unknown           unknown           /org/freedesktop/NetworkManager/Devices/4  --          --                                    --                                                 
+wlan1   wifi      disconnected  unknown           unknown           /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
 
 <<<
-size: 1416
+size: 1413
 location: src/tests/client/test-client.py:test_003()/77
 cmd: $NMCLI -f all d
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1279 bytes
+stdout: 1276 bytes
 >>>
-DEVICE  TYPE      STATE        IP4-CONNECTIVITY  IP6-CONNECTIVITY  DBUS-PATH                                  CONNECTION  CON-UUID                              CON-PATH                                           
-eth1    ethernet  połączono    nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/2  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/2 
-eth0    ethernet  połączono    nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
-wlan0   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
-wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/4  --          --                                    --                                                 
-wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
+DEVICE  TYPE      STATE       IP4-CONNECTIVITY  IP6-CONNECTIVITY  DBUS-PATH                                  CONNECTION  CON-UUID                              CON-PATH                                           
+eth1    ethernet  połączono   nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/2  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/2 
+eth0    ethernet  połączono   nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
+wlan0   wifi      rozłączono  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
+wlan1   wifi      rozłączono  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/4  --          --                                    --                                                 
+wlan1   wifi      rozłączono  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
 
 <<<
-size: 759
+size: 762
 location: src/tests/client/test-client.py:test_003()/78
 cmd: $NMCLI 
 lang: C
 returncode: 0
-stdout: 641 bytes
+stdout: 644 bytes
 >>>
 eth1: connected to ethernet
 	"eth1"
@@ -3343,15 +3343,15 @@ eth0: connected to ethernet
 	"eth0"
 	ethernet (virtual), C0:61:AE:26:4D:D7, hw
 
-wlan0: unavailable
+wlan0: disconnected
 	"wlan0"
 	wifi (virtual), DC:39:87:BA:3E:5D, hw
 
-wlan1: unavailable
+wlan1: disconnected
 	"wlan1"
 	wifi (virtual), AC:4E:5B:7B:57:49, hw
 
-wlan1: unavailable
+wlan1: disconnected
 	"wlan1"
 	wifi (virtual), 24:C4:52:BC:3D:37, hw
 
@@ -3379,15 +3379,15 @@ eth0: połączono do ethernet
 	"eth0"
 	ethernet (virtual), C0:61:AE:26:4D:D7, sprzęt
 
-wlan0: niedostępne
+wlan0: rozłączono
 	"wlan0"
 	wifi (virtual), DC:39:87:BA:3E:5D, sprzęt
 
-wlan1: niedostępne
+wlan1: rozłączono
 	"wlan1"
 	wifi (virtual), AC:4E:5B:7B:57:49, sprzęt
 
-wlan1: niedostępne
+wlan1: rozłączono
 	"wlan1"
 	wifi (virtual), 24:C4:52:BC:3D:37, sprzęt
 

@@ -387,17 +387,6 @@ _nmc_skip_connection_by_user_data(NMConnection *connection)
     return FALSE;
 }
 
-static gboolean
-_nmc_skip_connection_by_type(NMConnection *connection, const char *connection_type)
-{
-    if (!nm_streq0(nm_connection_get_connection_type(connection), connection_type))
-        return TRUE;
-    if (!nm_connection_get_setting_ip4_config(connection))
-        return TRUE;
-
-    return FALSE;
-}
-
 static void
 _nmc_mangle_connection(NMDevice                             *device,
                        NMConnection                         *connection,
@@ -618,8 +607,14 @@ try_again:
         return any_changes;
     }
 
-    if (_nmc_skip_connection_by_type(applied_connection, connection_type)) {
-        _LOGD("config device %s: device has no suitable applied connection. Skip", hwaddr);
+    if (!nm_streq0(nm_connection_get_connection_type(applied_connection), connection_type)) {
+        _LOGD("config device %s: skip applied connection due to type mismatch", hwaddr);
+        return any_changes;
+    }
+
+    if (!nm_connection_get_setting_ip4_config(applied_connection)) {
+        _LOGD("config device %s: skip applied connection due to missing IPv4 configuration",
+              hwaddr);
         return any_changes;
     }
 
@@ -696,13 +691,34 @@ try_again:
     return TRUE;
 }
 
+static NMConnection *
+_new_connection(void)
+{
+    NMConnection *connection;
+    NMSetting    *s_user;
+
+    connection = nm_simple_connection_new();
+    s_user     = nm_setting_user_new();
+    nm_connection_add_setting(connection, s_user);
+    nm_setting_user_set_data(NM_SETTING_USER(s_user),
+                             "org.freedesktop.NetworkManager.origin",
+                             "nm-cloud-setup",
+                             NULL);
+
+    return connection;
+}
+
 static gboolean
 _config_ethernet(SigTermData                          *sigterm_data,
                  const NMCSProviderGetConfigIfaceData *config_data,
                  NMClient                             *nmc,
-                 const NMCSProviderGetConfigResult    *result)
+                 const NMCSProviderGetConfigResult    *result,
+                 gboolean                              allow_new_connections)
 {
-    gs_unref_object NMDevice *device = NULL;
+    gs_unref_object NMDevice           *device            = NULL;
+    gs_unref_object NMConnection       *connection        = NULL;
+    gs_unref_object NMActiveConnection *active_connection = NULL;
+    gs_free_error GError               *error             = NULL;
 
     device = nm_g_object_ref(
         _nmc_get_device_by_hwaddr(nmc, NM_TYPE_DEVICE_ETHERNET, config_data->hwaddr));
@@ -711,12 +727,52 @@ _config_ethernet(SigTermData                          *sigterm_data,
         return FALSE;
     }
 
-    return _config_existing(sigterm_data,
-                            config_data,
-                            nmc,
-                            result,
-                            NM_SETTING_WIRED_SETTING_NAME,
-                            device);
+    if (allow_new_connections && nm_device_get_state(device) == NM_DEVICE_STATE_DISCONNECTED) {
+        connection = _new_connection();
+        nm_connection_add_setting(connection,
+                                  g_object_new(NM_TYPE_SETTING_CONNECTION,
+                                               NM_SETTING_CONNECTION_TYPE,
+                                               NM_SETTING_WIRED_SETTING_NAME,
+                                               NULL));
+        nm_connection_add_setting(connection,
+                                  g_object_new(NM_TYPE_SETTING_IP4_CONFIG,
+                                               NM_SETTING_IP_CONFIG_METHOD,
+                                               NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+                                               NULL));
+
+        nm_connection_add_setting(connection,
+                                  g_object_new(NM_TYPE_SETTING_WIRED,
+                                               NM_SETTING_WIRED_MAC_ADDRESS,
+                                               config_data->hwaddr,
+                                               NULL));
+
+        _nmc_mangle_connection(device, connection, result, config_data, NULL, NULL);
+
+        active_connection = nmcs_add_and_activate(nmc, NULL, device, connection, &error);
+        if (!active_connection) {
+            if (!nm_utils_error_is_cancelled(error)) {
+                _LOGD("config device %s: failure to activate connection: %s",
+                      nm_device_get_iface(NM_DEVICE(device)),
+                      error->message);
+            }
+            return FALSE;
+        }
+
+        _LOGD("config device %s: connection \"%s\" (%s) created",
+              nm_device_get_iface(NM_DEVICE(device)),
+              nm_active_connection_get_id(active_connection),
+              nm_active_connection_get_uuid(active_connection));
+
+        return TRUE;
+
+    } else {
+        return _config_existing(sigterm_data,
+                                config_data,
+                                nmc,
+                                result,
+                                NM_SETTING_WIRED_SETTING_NAME,
+                                device);
+    }
 }
 
 static gboolean
@@ -738,9 +794,8 @@ _oci_new_vlan_dev(SigTermData                          *sigterm_data,
     const char                         *wired_mac_addr    = NULL;
     const NMUtilsNamedValue            *map               = NULL;
     const char                         *ip4_config_method;
-    NMSetting                          *s_user;
 
-    connection = nm_simple_connection_new();
+    connection = _new_connection();
 
     macvlan_name  = g_strdup_printf("macvlan%ld", config_data->iface_idx);
     connection_id = g_strdup_printf("%s%ld", connection_type, config_data->iface_idx);
@@ -811,13 +866,6 @@ _oci_new_vlan_dev(SigTermData                          *sigterm_data,
                                            hwaddr,
                                            NULL));
 
-    s_user = nm_setting_user_new();
-    nm_connection_add_setting(connection, s_user);
-    nm_setting_user_set_data(NM_SETTING_USER(s_user),
-                             "org.freedesktop.NetworkManager.origin",
-                             "nm-cloud-setup",
-                             NULL);
-
     _nmc_mangle_connection(NULL, connection, result, config_data, NULL, NULL);
 
     _LOGD("config device %s: creating %s connection for VLAN %d on %s...",
@@ -826,7 +874,7 @@ _oci_new_vlan_dev(SigTermData                          *sigterm_data,
           config_data->priv.oci.vlan_tag,
           parent_hwaddr);
 
-    active_connection = nmcs_add_and_activate(nmc, NULL, connection, &error);
+    active_connection = nmcs_add_and_activate(nmc, NULL, NULL, connection, &error);
     if (active_connection == NULL) {
         if (!nm_utils_error_is_cancelled(error)) {
             _LOGD("config device %s: failure to activate connection: %s", hwaddr, error->message);
@@ -877,6 +925,7 @@ _config_one(SigTermData                       *sigterm_data,
             guint                              idx)
 {
     const NMCSProviderGetConfigIfaceData *config_data = result->iface_datas_arr[idx];
+    gboolean                              allow_new_connections;
     gboolean                              any_changes;
 
     g_main_context_iteration(NULL, FALSE);
@@ -899,7 +948,13 @@ _config_one(SigTermData                       *sigterm_data,
         return FALSE;
     }
 
-    if (NMCS_IS_PROVIDER_OCI(provider) && config_data->priv.oci.vlan_tag != 0) {
+    /* Default on on OCI, with an environment variable serving as a chicken bit. */
+    allow_new_connections =
+        _nm_utils_ascii_str_to_bool(g_getenv(NMCS_ENV_NM_CLOUD_SETUP_ALLOW_NEW_CONN),
+                                    NMCS_IS_PROVIDER_OCI(provider));
+
+    if (allow_new_connections && NMCS_IS_PROVIDER_OCI(provider)
+        && config_data->priv.oci.vlan_tag != 0) {
         if (config_data->priv.oci.parent_hwaddr == NULL) {
             _LOGW("config device %s: has vlan id %d but no parent device",
                   config_data->hwaddr,
@@ -924,7 +979,8 @@ _config_one(SigTermData                       *sigterm_data,
                                             config_data->hwaddr);
 
     } else {
-        any_changes = _config_ethernet(sigterm_data, config_data, nmc, result);
+        any_changes =
+            _config_ethernet(sigterm_data, config_data, nmc, result, allow_new_connections);
     }
 
     return any_changes;

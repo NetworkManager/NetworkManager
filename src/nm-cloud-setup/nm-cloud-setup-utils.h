@@ -23,6 +23,7 @@
 #define NMCS_ENV_NM_CLOUD_SETUP_GCP_HOST       "NM_CLOUD_SETUP_GCP_HOST"
 #define NMCS_ENV_NM_CLOUD_SETUP_OCI_HOST       "NM_CLOUD_SETUP_OCI_HOST"
 #define NMCS_ENV_NM_CLOUD_SETUP_MAP_INTERFACES "NM_CLOUD_SETUP_MAP_INTERFACES"
+#define NMCS_ENV_NM_CLOUD_SETUP_ALLOW_NEW_CONN "NM_CLOUD_SETUP_ALLOW_NEW_CONN"
 
 /*****************************************************************************/
 
@@ -155,6 +156,7 @@ NMConnection *nmcs_device_get_applied_connection(NMDevice     *device,
 
 NMActiveConnection *nmcs_add_and_activate(NMClient     *client,
                                           GCancellable *sigterm_cancellable,
+                                          NMDevice     *device,
                                           NMConnection *connection,
                                           GError      **error);
 
