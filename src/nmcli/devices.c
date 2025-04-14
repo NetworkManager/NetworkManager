@@ -2596,7 +2596,7 @@ modify_get_applied_cb(GObject *object, GAsyncResult *result, gpointer user_data)
     argc = info->argc;
     argv = (const char *const *) info->argv;
 
-    if (!nmc_process_connection_properties(info->nmc, connection, &argc, &argv, TRUE, &error)) {
+    if (!nmc_process_connection_properties(info->nmc, connection, argc, argv, TRUE, &error)) {
         g_string_assign(nmc->return_text, error->message);
         nmc->return_value = error->code;
         quit();
