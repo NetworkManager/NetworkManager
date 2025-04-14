@@ -7755,9 +7755,7 @@ device_link_changed(gpointer user_data)
          * tagged for carrier ignore) ensure that when the carrier appears we
          * renew DHCP leases and such.
          */
-        if (priv->state == NM_DEVICE_STATE_ACTIVATED) {
-            nm_device_update_dynamic_ip_setup(self, "interface got carrier");
-        }
+        nm_device_update_dynamic_ip_setup(self, "interface got carrier");
     }
 
     if (update_unmanaged_specs)
