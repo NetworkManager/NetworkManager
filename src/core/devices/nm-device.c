@@ -603,6 +603,7 @@ typedef struct _NMDevicePrivate {
 
     bool is_attached : 1;
 
+    bool device_link_carrier_changed_down : 1;
     bool device_link_changed_down : 1;
 
     bool concheck_rp_filter_checked : 1;
@@ -7592,10 +7593,12 @@ device_link_changed(gpointer user_data)
     gboolean                        carrier_was_up;
     gboolean                        update_unmanaged_specs = FALSE;
     gboolean                        got_hw_addr            = FALSE, had_hw_addr;
+    gboolean                        carrier_seen_down      = priv->device_link_carrier_changed_down;
     gboolean                        seen_down              = priv->device_link_changed_down;
 
-    priv->device_link_changed_id   = 0;
-    priv->device_link_changed_down = FALSE;
+    priv->device_link_changed_id           = 0;
+    priv->device_link_changed_down         = FALSE;
+    priv->device_link_carrier_changed_down = FALSE;
 
     ifindex = nm_device_get_ifindex(self);
     if (ifindex <= 0)
@@ -7746,7 +7749,8 @@ device_link_changed(gpointer user_data)
         if (priv->state >= NM_DEVICE_STATE_IP_CONFIG && priv->state <= NM_DEVICE_STATE_ACTIVATED
             && !nm_device_managed_type_is_external(self))
             nm_device_l3cfg_commit(self, NM_L3_CFG_COMMIT_TYPE_REAPPLY, FALSE);
-
+    }
+    if (priv->carrier && (!carrier_was_up || carrier_seen_down)) {
         /* If the device is active without a carrier (probably because it is
          * tagged for carrier ignore) ensure that when the carrier appears we
          * renew DHCP leases and such.
@@ -7837,6 +7841,8 @@ link_changed_cb(NMPlatform     *platform,
     priv = NM_DEVICE_GET_PRIVATE(self);
 
     if (ifindex == nm_device_get_ifindex(self)) {
+        if (!(pllink->n_ifi_flags & IFF_LOWER_UP))
+            priv->device_link_carrier_changed_down = TRUE;
         if (!(pllink->n_ifi_flags & IFF_UP))
             priv->device_link_changed_down = TRUE;
         if (!priv->device_link_changed_id) {
