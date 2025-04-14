@@ -149,6 +149,7 @@ src/libnmc-base/nm-secret-agent-simple.c
 src/libnmc-base/nm-vpn-helpers.c
 src/libnmc-setting/nm-meta-setting-access.c
 src/libnmc-setting/nm-meta-setting-desc.c
+src/libnmc-setting/nm-meta-setting-desc.h
 src/libnmc-setting/settings-docs.h.in
 src/libnmt-newt/nmt-newt-utils.c
 src/nm-online/nm-online.c
