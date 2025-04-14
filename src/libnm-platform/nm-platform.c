@@ -7315,8 +7315,9 @@ nm_platform_ip4_route_to_string_full(const NMPlatformIP4Route     *route,
                              route->lock_initrwnd ? "lock " : "",
                              route->initrwnd)
             : "",
-        route->rto_min ? nm_sprintf_buf(str_rto_min, " rto_min %" G_GUINT32_FORMAT, route->rto_min)
-                       : "",
+        route->rto_min_set
+            ? nm_sprintf_buf(str_rto_min, " rto_min %" G_GUINT32_FORMAT, route->rto_min)
+            : "",
         route->quickack ? " quickack 1" : "",
         route->mtu || route->lock_mtu ? nm_sprintf_buf(str_mtu,
                                                        " mtu %s%" G_GUINT32_FORMAT,
