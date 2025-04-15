@@ -1933,7 +1933,7 @@ interface-name:vboxnet*,except:interface-name:vboxnet2
           <literal>"uuid:83037490-1d17-4986-a397-01f1db3a7fc2"</literal></para></listitem>
         </varlistentry>
         <varlistentry>
-          <term>id=ID</term>
+          <term>id:ID</term>
           <listitem><para>Match the connection by name.</para></listitem>
         </varlistentry>
         <varlistentry>
