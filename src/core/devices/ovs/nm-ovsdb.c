@@ -2424,7 +2424,7 @@ again:
                  * content is broken (_json_read_msg() cannot extract any data) and
                  * we disconnect. */
                 priv->input_timeout_source =
-                    nm_g_timeout_add_seconds_source(5, _ovsdb_read_input_timeout_cb, NULL);
+                    nm_g_timeout_add_seconds_source(5, _ovsdb_read_input_timeout_cb, self);
             }
             return;
         }
