@@ -1373,19 +1373,27 @@ _delete_interface(NMOvsdb *self, json_t *params, const char *ifname)
     while (g_hash_table_iter_next(&iter, (gpointer) &ovs_bridge, NULL)) {
         nm_auto_decref_json json_t *ports         = NULL;
         nm_auto_decref_json json_t *new_ports     = NULL;
+        guint                       num_nm_ports  = 0;
         gboolean                    ports_changed = FALSE;
         int                         pi;
 
-        ports         = json_array();
-        new_ports     = json_array();
+        ports     = json_array();
+        new_ports = json_array();
 
         /* Add the bridge UUID to the list of known bridges for the "expect" condition */
         json_array_append_new(bridges, json_pack("[s,s]", "uuid", ovs_bridge->bridge_uuid));
 
+        if (!ovs_bridge->connection_uuid) {
+            /* Externally created, don't touch it */
+            json_array_append_new(new_bridges, json_pack("[s,s]", "uuid", ovs_bridge->bridge_uuid));
+            continue;
+        }
+
         /* Loop over all bridge's ports */
         for (pi = 0; pi < ovs_bridge->ports->len; pi++) {
-            nm_auto_decref_json json_t *interfaces     = NULL;
-            nm_auto_decref_json json_t *new_interfaces = NULL;
+            nm_auto_decref_json json_t *interfaces         = NULL;
+            nm_auto_decref_json json_t *new_interfaces     = NULL;
+            guint                       num_nm_interfaces  = 0;
             gboolean                    interfaces_changed = FALSE;
             int                         ii;
 
@@ -1417,6 +1425,8 @@ _delete_interface(NMOvsdb *self, json_t *params, const char *ifname)
                         interfaces_changed = TRUE;
                         continue;
                     }
+                    if (ovs_interface->connection_uuid)
+                        num_nm_interfaces++;
                 } else {
                     /* This would be a violation of ovsdb's reference integrity (a bug). */
                     _LOGW("Unknown interface '%s' in port '%s'", interface_uuid, port_uuid);
@@ -1426,8 +1436,8 @@ _delete_interface(NMOvsdb *self, json_t *params, const char *ifname)
                 json_array_append_new(new_interfaces, json_pack("[s,s]", "uuid", interface_uuid));
             }
 
-            if (json_array_size(new_interfaces) == 0) {
-                /* The port no longer has any interface. Don't add it to "new_ports" and set
+            if (num_nm_interfaces == 0) {
+                /* The port no longer has any NM interface. Don't add it to "new_ports" and set
                  * ports_changed=TRUE, so that it will be deleted. */
                 ports_changed = TRUE;
             } else {
@@ -1438,11 +1448,13 @@ _delete_interface(NMOvsdb *self, json_t *params, const char *ifname)
                 }
                 /* The port is still alive */
                 json_array_append_new(new_ports, json_pack("[s,s]", "uuid", port_uuid));
+                if (ovs_port->connection_uuid)
+                    num_nm_ports++;
             }
         }
 
-        if (json_array_size(new_ports) == 0) {
-            /* The bridge no longer has any port. Don't add it to "new_bridges" and set
+        if (num_nm_ports == 0) {
+            /* The bridge no longer has any NM port. Don't add it to "new_bridges" and set
              * bridges_changed=TRUE, so that it will be deleted. */
             bridges_changed = TRUE;
         } else {
