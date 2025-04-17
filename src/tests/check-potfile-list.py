@@ -44,7 +44,7 @@ def check_exists_in_tree(root, paths):
     for path in paths:
         if not path.exists():
             err(
-                f"{path.relative_to(root)} exists in POTFILES.in/skip, but missing in sources"
+                f"{path.relative_to(root)} exists in POTFILES.in or POTFILES.skip, but missing in sources"
             )
             is_ok = False
 
@@ -102,7 +102,7 @@ def check_exists_in_potfiles(root, pot_paths):
     is_ok = True
     for path in gettext_dry_run(root, unseen_paths):
         err(
-            f"{path.relative_to(root)} code contains gettext macros, but missing in POTFILES.in/skip"
+            f"{path.relative_to(root)} code contains gettext macros, but missing in POTFILES.in or POTFILES.skip"
         )
         is_ok = False
 
