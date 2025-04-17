@@ -2746,7 +2746,7 @@ _ethtool_features_set(NMDevice         *self,
     if (nm_setting_ethtool_init_features(s_ethtool, ethtool_state->requested) == 0)
         return;
 
-    features = nm_platform_ethtool_get_link_features(platform, ethtool_state->ifindex);
+    features = nm_platform_ethtool_get_features(platform, ethtool_state->ifindex);
     if (!features) {
         _LOGW(LOGD_DEVICE, "ethtool: failure setting offload features (cannot read features)");
         return;
@@ -2865,9 +2865,9 @@ _ethtool_coalesce_set(NMDevice         *self,
             continue;
 
         if (!has_old) {
-            if (!nm_platform_ethtool_get_link_coalesce(platform,
-                                                       ethtool_state->ifindex,
-                                                       &coalesce_old)) {
+            if (!nm_platform_ethtool_get_coalesce(platform,
+                                                  ethtool_state->ifindex,
+                                                  &coalesce_old)) {
                 _LOGW(LOGD_DEVICE, "ethtool: failure getting coalesce settings (cannot read)");
                 return;
             }
@@ -2946,7 +2946,7 @@ _ethtool_ring_set(NMDevice         *self,
         nm_assert(g_variant_is_of_type(variant, G_VARIANT_TYPE_UINT32));
 
         if (!has_old) {
-            if (!nm_platform_ethtool_get_link_ring(platform, ethtool_state->ifindex, &ring_old)) {
+            if (!nm_platform_ethtool_get_ring(platform, ethtool_state->ifindex, &ring_old)) {
                 _LOGW(LOGD_DEVICE,
                       "ethtool: failure setting ring options (cannot read existing setting)");
                 return;
@@ -3042,9 +3042,9 @@ _ethtool_channels_set(NMDevice         *self,
         nm_assert(g_variant_is_of_type(variant, G_VARIANT_TYPE_UINT32));
 
         if (!has_old) {
-            if (!nm_platform_ethtool_get_link_channels(platform,
-                                                       ethtool_state->ifindex,
-                                                       &channels_old)) {
+            if (!nm_platform_ethtool_get_channels(platform,
+                                                  ethtool_state->ifindex,
+                                                  &channels_old)) {
                 _LOGW(LOGD_DEVICE,
                       "ethtool: failure setting channels options (cannot read existing setting)");
                 return;
@@ -3161,7 +3161,7 @@ _ethtool_pause_set(NMDevice         *self,
         nm_assert(g_variant_is_of_type(variant, G_VARIANT_TYPE_BOOLEAN));
 
         if (!has_old) {
-            if (!nm_platform_ethtool_get_link_pause(platform, ethtool_state->ifindex, &pause_old)) {
+            if (!nm_platform_ethtool_get_pause(platform, ethtool_state->ifindex, &pause_old)) {
                 _LOGW(LOGD_DEVICE,
                       "ethtool: failure setting pause options (cannot read "
                       "existing setting)");
@@ -3247,7 +3247,7 @@ _ethtool_eee_set(NMDevice         *self,
         nm_assert(g_variant_is_of_type(variant, G_VARIANT_TYPE_BOOLEAN));
 
         if (!has_old) {
-            if (!nm_platform_ethtool_get_link_eee(platform, ethtool_state->ifindex, &eee_old)) {
+            if (!nm_platform_ethtool_get_eee(platform, ethtool_state->ifindex, &eee_old)) {
                 _LOGW(LOGD_DEVICE,
                       "ethtool: failure setting eee options (cannot read "
                       "existing setting)");

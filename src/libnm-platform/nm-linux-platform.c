@@ -41,6 +41,8 @@
 #include "libnm-platform/nm-netlink.h"
 #include "libnm-platform/nm-platform-utils.h"
 #include "libnm-platform/nmp-netns.h"
+#include "libnm-platform/nmp-ethtool.h"
+#include "libnm-platform/nmp-ethtool-ioctl.h"
 #include "libnm-platform/devlink/nm-devlink.h"
 #include "libnm-platform/wifi/nm-wifi-utils-wext.h"
 #include "libnm-platform/wifi/nm-wifi-utils.h"
@@ -1320,7 +1322,7 @@ _linktype_get_type(NMPlatform       *platform,
         NMPUtilsEthtoolDriverInfo driver_info;
 
         /* Fallback OVS detection for kernel <= 3.16 */
-        if (nmp_utils_ethtool_get_driver_info(ifindex, &driver_info)) {
+        if (nmp_ethtool_ioctl_get_driver_info(ifindex, &driver_info)) {
             if (nm_streq(driver_info.driver, "openvswitch"))
                 return NM_LINK_TYPE_OPENVSWITCH;
 
@@ -8966,8 +8968,8 @@ link_supports_carrier_detect(NMPlatform *platform, int ifindex)
      * us whether the device actually supports carrier detection in the first
      * place. We assume any device that does implements one of these two APIs.
      */
-    return nmp_utils_ethtool_supports_carrier_detect(ifindex)
-           || nmp_utils_mii_supports_carrier_detect(ifindex);
+    return nmp_ethtool_ioctl_supports_carrier_detect(ifindex)
+           || nmp_mii_ioctl_supports_carrier_detect(ifindex);
 }
 
 static gboolean
@@ -8985,7 +8987,7 @@ link_supports_vlans(NMPlatform *platform, int ifindex)
     if (!nm_platform_netns_push(platform, &netns))
         return FALSE;
 
-    return nmp_utils_ethtool_supports_vlans(ifindex);
+    return nmp_ethtool_ioctl_supports_vlans(ifindex);
 }
 
 static gboolean
@@ -9063,7 +9065,7 @@ link_get_permanent_address_ethtool(NMPlatform *platform, int ifindex, NMPLinkAdd
     if (!nm_platform_netns_push(platform, &netns))
         return FALSE;
 
-    if (!nmp_utils_ethtool_get_permanent_address(ifindex, buffer, &len))
+    if (!nmp_ethtool_ioctl_get_permanent_address(ifindex, buffer, &len))
         return FALSE;
     nm_assert(len <= _NM_UTILS_HWADDR_LEN_MAX);
     memcpy(out_address->data, buffer, len);
@@ -10391,7 +10393,7 @@ link_get_wake_on_lan(NMPlatform *platform, int ifindex)
         return FALSE;
 
     if (type == NM_LINK_TYPE_ETHERNET)
-        return nmp_utils_ethtool_get_wake_on_lan(ifindex);
+        return nmp_ethtool_ioctl_get_wake_on_lan(ifindex);
     else if (type == NM_LINK_TYPE_WIFI) {
         WIFI_GET_WIFI_DATA(wifi_data, platform, ifindex, FALSE);
 
@@ -10416,7 +10418,7 @@ link_get_driver_info(NMPlatform *platform,
     if (!nm_platform_netns_push(platform, &netns))
         return FALSE;
 
-    if (!nmp_utils_ethtool_get_driver_info(ifindex, &driver_info))
+    if (!nmp_ethtool_ioctl_get_driver_info(ifindex, &driver_info))
         return FALSE;
     NM_SET_OUT(out_driver_name, g_strdup(driver_info.driver));
     NM_SET_OUT(out_driver_version, g_strdup(driver_info.version));
@@ -11831,6 +11833,74 @@ mptcp_addrs_dump(NMPlatform *platform)
 
 /*****************************************************************************/
 
+static gboolean
+ethtool_get_pause(NMPlatform *platform, int ifindex, NMEthtoolPauseState *pause)
+{
+    NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+
+    return nmp_ethtool_get_pause(priv->sk_genl_sync,
+                                 genl_get_family_id(platform, NMP_GENL_FAMILY_TYPE_ETHTOOL),
+                                 ifindex,
+                                 pause);
+}
+
+static gboolean
+ethtool_set_pause(NMPlatform *platform, int ifindex, const NMEthtoolPauseState *pause)
+{
+    NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+
+    return nmp_ethtool_set_pause(priv->sk_genl_sync,
+                                 genl_get_family_id(platform, NMP_GENL_FAMILY_TYPE_ETHTOOL),
+                                 ifindex,
+                                 pause);
+}
+
+static gboolean
+ethtool_get_eee(NMPlatform *platform, int ifindex, NMEthtoolEEEState *eee)
+{
+    NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+
+    return nmp_ethtool_get_eee(priv->sk_genl_sync,
+                               genl_get_family_id(platform, NMP_GENL_FAMILY_TYPE_ETHTOOL),
+                               ifindex,
+                               eee);
+}
+
+static gboolean
+ethtool_set_eee(NMPlatform *platform, int ifindex, const NMEthtoolEEEState *eee)
+{
+    NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+
+    return nmp_ethtool_set_eee(priv->sk_genl_sync,
+                               genl_get_family_id(platform, NMP_GENL_FAMILY_TYPE_ETHTOOL),
+                               ifindex,
+                               eee);
+}
+
+static gboolean
+ethtool_get_ring(NMPlatform *platform, int ifindex, NMEthtoolRingState *ring)
+{
+    NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+
+    return nmp_ethtool_get_ring(priv->sk_genl_sync,
+                                genl_get_family_id(platform, NMP_GENL_FAMILY_TYPE_ETHTOOL),
+                                ifindex,
+                                ring);
+}
+
+static gboolean
+ethtool_set_ring(NMPlatform *platform, int ifindex, const NMEthtoolRingState *ring)
+{
+    NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+
+    return nmp_ethtool_set_ring(priv->sk_genl_sync,
+                                genl_get_family_id(platform, NMP_GENL_FAMILY_TYPE_ETHTOOL),
+                                ifindex,
+                                ring);
+}
+
+/*****************************************************************************/
+
 static void
 cache_update_link_udev(NMPlatform *platform, int ifindex, struct udev_device *udevice)
 {
@@ -12328,4 +12398,11 @@ nm_linux_platform_class_init(NMLinuxPlatformClass *klass)
     platform_class->genl_get_family_id = genl_get_family_id;
     platform_class->mptcp_addr_update  = mptcp_addr_update;
     platform_class->mptcp_addrs_dump   = mptcp_addrs_dump;
+
+    platform_class->ethtool_set_pause = ethtool_set_pause;
+    platform_class->ethtool_get_pause = ethtool_get_pause;
+    platform_class->ethtool_set_eee   = ethtool_set_eee;
+    platform_class->ethtool_get_eee   = ethtool_get_eee;
+    platform_class->ethtool_set_ring  = ethtool_set_ring;
+    platform_class->ethtool_get_ring  = ethtool_get_ring;
 }

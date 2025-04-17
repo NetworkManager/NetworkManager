@@ -14,6 +14,7 @@
 #include "libnm-platform/nm-netlink.h"
 #include "libnm-platform/nm-platform.h"
 #include "libnm-platform/nm-platform-utils.h"
+#include "libnm-platform/nmp-ethtool-ioctl.h"
 
 #define _NMLOG_PREFIX_NAME "devlink"
 #define _NMLOG_DOMAIN      LOGD_PLATFORM | LOGD_DEVICE
@@ -118,7 +119,7 @@ nm_devlink_get_dev_identifier(NMDevlink *self, char **out_bus, char **out_addr, 
         return FALSE;
     }
 
-    if (!nmp_utils_ethtool_get_driver_info(self->ifindex, &ethtool_driver_info)) {
+    if (!nmp_ethtool_ioctl_get_driver_info(self->ifindex, &ethtool_driver_info)) {
         g_set_error(error,
                     NM_UTILS_ERROR,
                     NM_UTILS_ERROR_UNKNOWN,

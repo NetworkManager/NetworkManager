@@ -31,6 +31,7 @@
 #include "libnm-log-core/nm-logging.h"
 #include "libnm-platform/nm-platform-utils.h"
 #include "libnm-platform/nmp-netns.h"
+#include "libnm-platform/nmp-ethtool-ioctl.h"
 #include "libnm-udev-aux/nm-udev-utils.h"
 #include "nm-platform-private.h"
 #include "nmp-object.h"
@@ -3230,7 +3231,7 @@ nm_platform_link_veth_get_properties(NMPlatform *self, int ifindex, int *out_pee
 
         if (!nm_platform_netns_push(self, &netns))
             return FALSE;
-        peer_ifindex = nmp_utils_ethtool_get_peer_ifindex(plink->ifindex);
+        peer_ifindex = nmp_ethtool_ioctl_get_peer_ifindex(plink->ifindex);
         if (peer_ifindex <= 0)
             return FALSE;
 
@@ -3561,7 +3562,7 @@ nm_platform_ethtool_set_wake_on_lan(NMPlatform              *self,
 
     g_return_val_if_fail(ifindex > 0, FALSE);
 
-    return nmp_utils_ethtool_set_wake_on_lan(ifindex, wol, wol_password);
+    return nmp_ethtool_ioctl_set_wake_on_lan(ifindex, wol, wol_password);
 }
 
 gboolean
@@ -3575,7 +3576,7 @@ nm_platform_ethtool_set_link_settings(NMPlatform              *self,
 
     g_return_val_if_fail(ifindex > 0, FALSE);
 
-    return nmp_utils_ethtool_set_link_settings(ifindex, autoneg, speed, duplex);
+    return nmp_ethtool_ioctl_set_link_settings(ifindex, autoneg, speed, duplex);
 }
 
 gboolean
@@ -3589,19 +3590,19 @@ nm_platform_ethtool_get_link_settings(NMPlatform               *self,
 
     g_return_val_if_fail(ifindex > 0, FALSE);
 
-    return nmp_utils_ethtool_get_link_settings(ifindex, out_autoneg, out_speed, out_duplex);
+    return nmp_ethtool_ioctl_get_link_settings(ifindex, out_autoneg, out_speed, out_duplex);
 }
 
 /*****************************************************************************/
 
 NMEthtoolFeatureStates *
-nm_platform_ethtool_get_link_features(NMPlatform *self, int ifindex)
+nm_platform_ethtool_get_features(NMPlatform *self, int ifindex)
 {
     _CHECK_SELF_NETNS(self, klass, netns, NULL);
 
     g_return_val_if_fail(ifindex > 0, NULL);
 
-    return nmp_utils_ethtool_get_features(ifindex);
+    return nmp_ethtool_ioctl_get_features(ifindex);
 }
 
 gboolean
@@ -3616,7 +3617,7 @@ nm_platform_ethtool_set_features(
 
     g_return_val_if_fail(ifindex > 0, FALSE);
 
-    return nmp_utils_ethtool_set_features(ifindex, features, requested, do_set);
+    return nmp_ethtool_ioctl_set_features(ifindex, features, requested, do_set);
 }
 
 gboolean
@@ -3626,7 +3627,7 @@ nm_platform_ethtool_get_fec_mode(NMPlatform *self, int ifindex, uint32_t *fec_mo
 
     g_return_val_if_fail(ifindex > 0, FALSE);
 
-    return nmp_utils_ethtool_get_fec_mode(ifindex, fec_mode);
+    return nmp_ethtool_ioctl_get_fec_mode(ifindex, fec_mode);
 }
 
 gboolean
@@ -3636,20 +3637,18 @@ nm_platform_ethtool_set_fec_mode(NMPlatform *self, int ifindex, uint32_t fec_mod
 
     g_return_val_if_fail(ifindex > 0, FALSE);
 
-    return nmp_utils_ethtool_set_fec_mode(ifindex, fec_mode);
+    return nmp_ethtool_ioctl_set_fec_mode(ifindex, fec_mode);
 }
 
 gboolean
-nm_platform_ethtool_get_link_coalesce(NMPlatform             *self,
-                                      int                     ifindex,
-                                      NMEthtoolCoalesceState *coalesce)
+nm_platform_ethtool_get_coalesce(NMPlatform *self, int ifindex, NMEthtoolCoalesceState *coalesce)
 {
     _CHECK_SELF_NETNS(self, klass, netns, FALSE);
 
     g_return_val_if_fail(ifindex > 0, FALSE);
     g_return_val_if_fail(coalesce, FALSE);
 
-    return nmp_utils_ethtool_get_coalesce(ifindex, coalesce);
+    return nmp_ethtool_ioctl_get_coalesce(ifindex, coalesce);
 }
 
 gboolean
@@ -3661,18 +3660,18 @@ nm_platform_ethtool_set_coalesce(NMPlatform                   *self,
 
     g_return_val_if_fail(ifindex > 0, FALSE);
 
-    return nmp_utils_ethtool_set_coalesce(ifindex, coalesce);
+    return nmp_ethtool_ioctl_set_coalesce(ifindex, coalesce);
 }
 
 gboolean
-nm_platform_ethtool_get_link_ring(NMPlatform *self, int ifindex, NMEthtoolRingState *ring)
+nm_platform_ethtool_get_ring(NMPlatform *self, int ifindex, NMEthtoolRingState *ring)
 {
     _CHECK_SELF_NETNS(self, klass, netns, FALSE);
 
     g_return_val_if_fail(ifindex > 0, FALSE);
     g_return_val_if_fail(ring, FALSE);
 
-    return nmp_utils_ethtool_get_ring(ifindex, ring);
+    return klass->ethtool_get_ring(self, ifindex, ring);
 }
 
 gboolean
@@ -3681,21 +3680,20 @@ nm_platform_ethtool_set_ring(NMPlatform *self, int ifindex, const NMEthtoolRingS
     _CHECK_SELF_NETNS(self, klass, netns, FALSE);
 
     g_return_val_if_fail(ifindex > 0, FALSE);
+    g_return_val_if_fail(ring, FALSE);
 
-    return nmp_utils_ethtool_set_ring(ifindex, ring);
+    return klass->ethtool_set_ring(self, ifindex, ring);
 }
 
 gboolean
-nm_platform_ethtool_get_link_channels(NMPlatform             *self,
-                                      int                     ifindex,
-                                      NMEthtoolChannelsState *channels)
+nm_platform_ethtool_get_channels(NMPlatform *self, int ifindex, NMEthtoolChannelsState *channels)
 {
     _CHECK_SELF_NETNS(self, klass, netns, FALSE);
 
     g_return_val_if_fail(ifindex > 0, FALSE);
     g_return_val_if_fail(channels, FALSE);
 
-    return nmp_utils_ethtool_get_channels(ifindex, channels);
+    return nmp_ethtool_ioctl_get_channels(ifindex, channels);
 }
 
 gboolean
@@ -3707,29 +3705,18 @@ nm_platform_ethtool_set_channels(NMPlatform                   *self,
 
     g_return_val_if_fail(ifindex > 0, FALSE);
 
-    return nmp_utils_ethtool_set_channels(ifindex, channels);
+    return nmp_ethtool_ioctl_set_channels(ifindex, channels);
 }
 
 gboolean
-nm_platform_ethtool_get_link_pause(NMPlatform *self, int ifindex, NMEthtoolPauseState *pause)
+nm_platform_ethtool_get_pause(NMPlatform *self, int ifindex, NMEthtoolPauseState *pause)
 {
     _CHECK_SELF_NETNS(self, klass, netns, FALSE);
 
     g_return_val_if_fail(ifindex > 0, FALSE);
     g_return_val_if_fail(pause, FALSE);
 
-    return nmp_utils_ethtool_get_pause(ifindex, pause);
-}
-
-gboolean
-nm_platform_ethtool_get_link_eee(NMPlatform *self, int ifindex, NMEthtoolEEEState *eee)
-{
-    _CHECK_SELF_NETNS(self, klass, netns, FALSE);
-
-    g_return_val_if_fail(ifindex > 0, FALSE);
-    g_return_val_if_fail(eee, FALSE);
-
-    return nmp_utils_ethtool_get_eee(ifindex, eee);
+    return klass->ethtool_get_pause(self, ifindex, pause);
 }
 
 gboolean
@@ -3738,8 +3725,20 @@ nm_platform_ethtool_set_pause(NMPlatform *self, int ifindex, const NMEthtoolPaus
     _CHECK_SELF_NETNS(self, klass, netns, FALSE);
 
     g_return_val_if_fail(ifindex > 0, FALSE);
+    g_return_val_if_fail(pause, FALSE);
 
-    return nmp_utils_ethtool_set_pause(ifindex, pause);
+    return klass->ethtool_set_pause(self, ifindex, pause);
+}
+
+gboolean
+nm_platform_ethtool_get_eee(NMPlatform *self, int ifindex, NMEthtoolEEEState *eee)
+{
+    _CHECK_SELF_NETNS(self, klass, netns, FALSE);
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+    g_return_val_if_fail(eee, FALSE);
+
+    return klass->ethtool_get_eee(self, ifindex, eee);
 }
 
 gboolean
@@ -3748,8 +3747,9 @@ nm_platform_ethtool_set_eee(NMPlatform *self, int ifindex, const NMEthtoolEEESta
     _CHECK_SELF_NETNS(self, klass, netns, FALSE);
 
     g_return_val_if_fail(ifindex > 0, FALSE);
+    g_return_val_if_fail(eee, FALSE);
 
-    return nmp_utils_ethtool_set_eee(ifindex, eee);
+    return klass->ethtool_set_eee(self, ifindex, eee);
 }
 /*****************************************************************************/
 
