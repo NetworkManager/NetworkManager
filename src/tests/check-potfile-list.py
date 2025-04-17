@@ -10,7 +10,6 @@ import sys
 import os
 
 xgettext = shutil.which("xgettext")
-git = shutil.which("git")
 
 # Paths relative to repo root which should be
 # excluded from pot->tree, or tree->pot checks.
@@ -63,18 +62,13 @@ def get_gettext_args(root):
 
 
 def list_c_sources(root):
-    process = subprocess.Popen(
-        [git, "-C", root, "ls-files", "src"], stdout=subprocess.PIPE
-    )
-    for line in process.stdout:
-        path_str = line.decode().strip()
-        extension = path_str.replace(".in", "").split(".").pop()
-        if extension in ["c", "h"] and path_str not in ignore_in_tree:
-            full_path = root / path_str
-            yield full_path.resolve()
-
-    process.stdout.close()
-    return process.wait() == 0
+    for path, _, files in os.walk(root / 'src'):
+        for file in files:
+            relpath_str = str(Path(path).relative_to(root) / file)
+            extension = file.replace(".in", "").split(".").pop()
+            if extension in ["c", "h"] and relpath_str not in ignore_in_tree:
+                full_path = root / path / file
+                yield full_path.resolve()
 
 
 def gettext_dry_run(root, paths):
@@ -99,7 +93,7 @@ def gettext_dry_run(root, paths):
                 yield out_path
 
     process.stdout.close()
-    return process.wait() == 0
+    assert(process.wait() == 0)
 
 
 def check_exists_in_potfiles(root, pot_paths):
@@ -134,9 +128,6 @@ def check_potfiles():
 if __name__ == "__main__":
     if xgettext is None:
         raise Exception("xgettext is missing")
-
-    if git is None:
-        raise Exception("git is missing")
 
     out_msg = "POTFILES consistency check: %s"
     if check_potfiles():
