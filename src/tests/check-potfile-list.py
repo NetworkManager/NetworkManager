@@ -62,7 +62,7 @@ def get_gettext_args(root):
 
 
 def list_c_sources(root):
-    for path, _, files in os.walk(root / 'src'):
+    for path, _, files in os.walk(root / "src"):
         for file in files:
             relpath_str = str(Path(path).relative_to(root) / file)
             extension = file.replace(".in", "").split(".").pop()
@@ -93,7 +93,7 @@ def gettext_dry_run(root, paths):
                 yield out_path
 
     process.stdout.close()
-    assert(process.wait() == 0)
+    assert process.wait() == 0
 
 
 def check_exists_in_potfiles(root, pot_paths):
