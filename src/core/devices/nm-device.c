@@ -14020,15 +14020,6 @@ can_reapply_change(NMDevice   *self,
         goto out_fail;
     }
 
-    if (NM_IN_STRSET(setting_name,
-                     NM_SETTING_OVS_EXTERNAL_IDS_SETTING_NAME,
-                     NM_SETTING_OVS_OTHER_CONFIG_SETTING_NAME)
-        && NM_DEVICE_GET_CLASS(self)->can_reapply_change_ovs_external_ids) {
-        /* TODO: this means, you cannot reapply changes to the external-ids for
-         * OVS system interfaces. */
-        return TRUE;
-    }
-
 out_fail:
     g_set_error(error,
                 NM_DEVICE_ERROR,

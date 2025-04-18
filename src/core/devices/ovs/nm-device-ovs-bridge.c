@@ -162,6 +162,11 @@ can_reapply_change(NMDevice   *device,
                                                  NM_SETTING_OVS_BRIDGE_STP_ENABLE);
     }
 
+    if (NM_IN_STRSET(setting_name,
+                     NM_SETTING_OVS_EXTERNAL_IDS_SETTING_NAME,
+                     NM_SETTING_OVS_OTHER_CONFIG_SETTING_NAME))
+        return TRUE;
+
     return device_class->can_reapply_change(device, setting_name, s_old, s_new, diffs, error);
 }
 
@@ -194,16 +199,15 @@ nm_device_ovs_bridge_class_init(NMDeviceOvsBridgeClass *klass)
     device_class->connection_type_check_compatible = NM_SETTING_OVS_BRIDGE_SETTING_NAME;
     device_class->link_types                       = NM_DEVICE_DEFINE_LINK_TYPES();
 
-    device_class->is_controller                       = TRUE;
-    device_class->get_type_description                = get_type_description;
-    device_class->create_and_realize                  = create_and_realize;
-    device_class->unrealize                           = unrealize;
-    device_class->get_generic_capabilities            = get_generic_capabilities;
-    device_class->act_stage3_ip_config                = act_stage3_ip_config;
-    device_class->ready_for_ip_config                 = ready_for_ip_config;
-    device_class->attach_port                         = attach_port;
-    device_class->detach_port                         = detach_port;
-    device_class->can_reapply_change                  = can_reapply_change;
-    device_class->can_reapply_change_ovs_external_ids = TRUE;
-    device_class->reapply_connection                  = nm_device_ovs_reapply_connection;
+    device_class->is_controller            = TRUE;
+    device_class->get_type_description     = get_type_description;
+    device_class->create_and_realize       = create_and_realize;
+    device_class->unrealize                = unrealize;
+    device_class->get_generic_capabilities = get_generic_capabilities;
+    device_class->act_stage3_ip_config     = act_stage3_ip_config;
+    device_class->ready_for_ip_config      = ready_for_ip_config;
+    device_class->attach_port              = attach_port;
+    device_class->detach_port              = detach_port;
+    device_class->can_reapply_change       = can_reapply_change;
+    device_class->reapply_connection       = nm_device_ovs_reapply_connection;
 }
