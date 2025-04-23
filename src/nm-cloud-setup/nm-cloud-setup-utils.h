@@ -135,9 +135,9 @@ const char *nmcs_utils_uri_complete_interned(const char *uri);
 
 /*****************************************************************************/
 
-gboolean nmcs_setting_ip_replace_ipv4_addresses(NMSettingIPConfig *s_ip,
-                                                NMIPAddress      **entries_arr,
-                                                guint              entries_len);
+gboolean nmcs_setting_ip_replace_ip_addresses(NMSettingIPConfig *s_ip,
+                                              NMIPAddress      **entries_arr,
+                                              guint              entries_len);
 
 gboolean nmcs_setting_ip_replace_ipv4_routes(NMSettingIPConfig *s_ip,
                                              NMIPRoute        **entries_arr,

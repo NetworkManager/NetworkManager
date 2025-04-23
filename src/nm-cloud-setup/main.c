@@ -396,14 +396,18 @@ _nmc_mangle_connection(NMDevice                             *device,
                        gboolean                             *out_changed)
 {
     NMSettingIPConfig           *s_ip;
+    NMSettingIPConfig           *s_ip6;
     NMActiveConnection          *ac;
     NMConnection                *remote_connection;
-    NMSettingIPConfig           *remote_s_ip = NULL;
+    NMSettingIPConfig           *remote_s_ip  = NULL;
+    NMSettingIPConfig           *remote_s_ip6 = NULL;
     gsize                        i;
     gboolean                     addrs_changed  = FALSE;
+    gboolean                     addr6s_changed = FALSE;
     gboolean                     rules_changed  = FALSE;
     gboolean                     routes_changed = FALSE;
     gs_unref_ptrarray GPtrArray *addrs_new      = NULL;
+    gs_unref_ptrarray GPtrArray *addr6s_new     = NULL;
     gs_unref_ptrarray GPtrArray *rules_new      = NULL;
     gs_unref_ptrarray GPtrArray *routes_new     = NULL;
 
@@ -418,15 +422,19 @@ _nmc_mangle_connection(NMDevice                             *device,
         /* Preserve existing L3 configuration if not a VLAN */
         if (device) {
             if ((ac = nm_device_get_active_connection(device))
-                && (remote_connection = NM_CONNECTION(nm_active_connection_get_connection(ac))))
-                remote_s_ip = nm_connection_get_setting_ip4_config(remote_connection);
+                && (remote_connection = NM_CONNECTION(nm_active_connection_get_connection(ac)))) {
+                remote_s_ip  = nm_connection_get_setting_ip4_config(remote_connection);
+                remote_s_ip6 = nm_connection_get_setting_ip6_config(remote_connection);
+            }
         }
     }
 
-    s_ip = nm_connection_get_setting_ip4_config(connection);
-    nm_assert(NM_IS_SETTING_IP4_CONFIG(s_ip));
+    s_ip  = nm_connection_get_setting_ip4_config(connection);
+    s_ip6 = nm_connection_get_setting_ip6_config(connection);
 
-    addrs_new = g_ptr_array_new_full(config_data->ipv4s_len, (GDestroyNotify) nm_ip_address_unref);
+    addrs_new  = g_ptr_array_new_full(config_data->ipv4s_len, (GDestroyNotify) nm_ip_address_unref);
+    addr6s_new = g_ptr_array_new_full(config_data->ipv6s_len, (GDestroyNotify) nm_ip_address_unref);
+
     rules_new =
         g_ptr_array_new_full(config_data->ipv4s_len, (GDestroyNotify) nm_ip_routing_rule_unref);
     routes_new =
@@ -457,8 +465,16 @@ _nmc_mangle_connection(NMDevice                             *device,
         }
     }
 
-    if (result->num_valid_ifaces <= 1 && result->num_ipv4s <= 1) {
-        /* this setup only has one interface and one IPv4 address (or less).
+    if (remote_s_ip6) {
+        guint len = nm_setting_ip_config_get_num_addresses(remote_s_ip6);
+        for (int j = 0; j < len; j++) {
+            g_ptr_array_add(addr6s_new,
+                            nm_ip_address_dup(nm_setting_ip_config_get_address(remote_s_ip6, j)));
+        }
+    }
+
+    if (result->num_valid_ifaces <= 1 && (result->num_ipv4s + result->num_ipv6s) <= 1) {
+        /* this setup only has one interface and one IP address (or less).
          * We don't need to configure policy routing in this case. */
         NM_SET_OUT(out_skipped_single_addr, TRUE);
     } else if (config_data->has_ipv4s && config_data->has_cidr) {
@@ -537,22 +553,50 @@ _nmc_mangle_connection(NMDevice                             *device,
         }
     }
 
+    if (config_data->has_ipv6s) {
+        NMIPAddress *addr_entry;
+
+        for (i = 0; i < config_data->ipv6s_len; i++) {
+            addr_entry = nm_ip_address_new_binary(AF_INET6, &config_data->ipv6s_arr[i], 128, NULL);
+            nm_assert(addr_entry);
+            g_ptr_array_add(addr6s_new, addr_entry);
+        }
+    }
+
     for (i = 0; i < nm_g_ptr_array_len(config_data->iproutes); i++)
         g_ptr_array_add(routes_new, _nm_ip_route_ref(config_data->iproutes->pdata[i]));
 
-    addrs_changed = nmcs_setting_ip_replace_ipv4_addresses(s_ip,
-                                                           (NMIPAddress **) addrs_new->pdata,
-                                                           addrs_new->len);
+    if (s_ip) {
+        addrs_changed = nmcs_setting_ip_replace_ip_addresses(s_ip,
+                                                             (NMIPAddress **) addrs_new->pdata,
+                                                             addrs_new->len);
 
-    routes_changed = nmcs_setting_ip_replace_ipv4_routes(s_ip,
-                                                         (NMIPRoute **) routes_new->pdata,
-                                                         routes_new->len);
+        routes_changed = nmcs_setting_ip_replace_ipv4_routes(s_ip,
+                                                             (NMIPRoute **) routes_new->pdata,
+                                                             routes_new->len);
 
-    rules_changed = nmcs_setting_ip_replace_ipv4_rules(s_ip,
-                                                       (NMIPRoutingRule **) rules_new->pdata,
-                                                       rules_new->len);
+        rules_changed = nmcs_setting_ip_replace_ipv4_rules(s_ip,
+                                                           (NMIPRoutingRule **) rules_new->pdata,
+                                                           rules_new->len);
+    }
 
-    NM_SET_OUT(out_changed, addrs_changed || routes_changed || rules_changed);
+    if (s_ip6) {
+        const char *method = nm_setting_ip_config_get_method(s_ip6);
+        if (NM_IN_STRSET(method,
+                         NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+                         NM_SETTING_IP6_CONFIG_METHOD_DISABLED)) {
+            g_object_set(s_ip6,
+                         NM_SETTING_IP_CONFIG_METHOD,
+                         NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+                         NULL);
+        }
+
+        addr6s_changed = nmcs_setting_ip_replace_ip_addresses(s_ip6,
+                                                              (NMIPAddress **) addr6s_new->pdata,
+                                                              addr6s_new->len);
+    }
+
+    NM_SET_OUT(out_changed, addrs_changed || addr6s_changed || routes_changed || rules_changed);
 }
 
 /*****************************************************************************/
@@ -612,9 +656,9 @@ try_again:
         return any_changes;
     }
 
-    if (!nm_connection_get_setting_ip4_config(applied_connection)) {
-        _LOGD("config device %s: skip applied connection due to missing IPv4 configuration",
-              hwaddr);
+    if (!nm_connection_get_setting_ip4_config(applied_connection)
+        && !nm_connection_get_setting_ip6_config(applied_connection)) {
+        _LOGD("config device %s: skip applied connection due to missing IP configuration", hwaddr);
         return any_changes;
     }
 
@@ -739,7 +783,11 @@ _config_ethernet(SigTermData                          *sigterm_data,
                                                NM_SETTING_IP_CONFIG_METHOD,
                                                NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
                                                NULL));
-
+        nm_connection_add_setting(connection,
+                                  g_object_new(NM_TYPE_SETTING_IP6_CONFIG,
+                                               NM_SETTING_IP_CONFIG_METHOD,
+                                               NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+                                               NULL));
         nm_connection_add_setting(connection,
                                   g_object_new(NM_TYPE_SETTING_WIRED,
                                                NM_SETTING_WIRED_MAC_ADDRESS,

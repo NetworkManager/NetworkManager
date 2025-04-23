@@ -74,6 +74,7 @@ nmcs_provider_get_config_result_new(GHashTable *iface_datas)
     GHashTableIter                        h_iter;
     guint                                 num_valid_ifaces = 0;
     guint                                 num_ipv4s        = 0;
+    guint                                 num_ipv6s        = 0;
     GPtrArray                            *ptrarr;
     guint                                 n_iface_datas;
 
@@ -86,6 +87,7 @@ nmcs_provider_get_config_result_new(GHashTable *iface_datas)
         if (nmcs_provider_get_config_iface_data_is_valid(iface_data)) {
             num_valid_ifaces++;
             num_ipv4s += iface_data->ipv4s_len;
+            num_ipv6s += iface_data->ipv6s_len;
         }
         g_ptr_array_add(ptrarr, (gpointer) iface_data);
     }
@@ -104,6 +106,7 @@ nmcs_provider_get_config_result_new(GHashTable *iface_datas)
             (const NMCSProviderGetConfigIfaceData **) g_ptr_array_free(ptrarr, FALSE),
         .num_valid_ifaces = num_valid_ifaces,
         .num_ipv4s        = num_ipv4s,
+        .num_ipv6s        = num_ipv6s,
     };
 
 #if NM_MORE_ASSERTS > 5

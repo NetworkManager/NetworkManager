@@ -2382,6 +2382,9 @@ class TestNmCloudSetup(unittest.TestCase):
     _ip1 = "172.31.26.249"
     _ip2 = "172.31.176.249"
 
+    _ip6_1 = "2001:db8:abab:abab:abab::"
+    _ip6_2 = "2001:db8:cdcd:cdcd:cdcd::"
+
     def cloud_setup_test(func):
         """
         Runs the mock NetworkManager along with a mock cloud metadata service.
@@ -2449,11 +2452,12 @@ class TestNmCloudSetup(unittest.TestCase):
         self.ctx.srv.op_AddObj("WiredDevice", iface="eth1", mac=self._mac2)
 
     def _mock_connection1(self):
-        # Active connection that has IPv4 configured for device1
+        # Active connection that has IPv4 and IPv6 configured for device1
         self.ctx.srv.addAndActivateConnection(
             {
                 "connection": {"type": "802-3-ethernet", "id": "con-eth0"},
                 "ipv4": {"method": "auto"},
+                "ipv6": {"method": "auto"},
             },
             "/org/freedesktop/NetworkManager/Devices/1",
             delay=0,

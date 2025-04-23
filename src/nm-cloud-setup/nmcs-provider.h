@@ -24,6 +24,9 @@ typedef struct {
     in_addr_t *ipv4s_arr;
     gsize      ipv4s_len;
 
+    struct in6_addr *ipv6s_arr;
+    gsize            ipv6s_len;
+
     /* If the interface was seen, get_config() should set this to a
      * unique, increasing, positive index. If the interface is requested,
      * it is initialized to -1. */
@@ -33,6 +36,7 @@ typedef struct {
     in_addr_t gateway;
     guint8    cidr_prefix;
     bool      has_ipv4s : 1;
+    bool      has_ipv6s : 1;
     bool      has_cidr : 1;
     bool      has_gateway : 1;
 
@@ -65,7 +69,7 @@ static inline gboolean
 nmcs_provider_get_config_iface_data_is_valid(const NMCSProviderGetConfigIfaceData *config_data)
 {
     return config_data && config_data->iface_idx >= 0
-           && ((config_data->has_ipv4s && config_data->has_cidr)
+           && ((config_data->has_ipv4s && config_data->has_cidr) || config_data->has_ipv6s
                || nm_g_ptr_array_len(config_data->iproutes) > 0);
 }
 
@@ -83,6 +87,7 @@ typedef struct {
 
     /* the number of IPv4 addresses over all valid iface_datas. */
     guint num_ipv4s;
+    guint num_ipv6s;
 
     guint n_iface_datas;
 

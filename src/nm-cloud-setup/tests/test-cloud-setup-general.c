@@ -54,7 +54,7 @@ _test_ri4a(const char *const *addrs_before, const char *const *addrs_new)
                     NM_PTRARRAY_LEN(addrs_before));
     g_assert_cmpint(arr->len, ==, n);
 
-    changed = nmcs_setting_ip_replace_ipv4_addresses(s_ip, (NMIPAddress **) arr->pdata, arr->len);
+    changed = nmcs_setting_ip_replace_ip_addresses(s_ip, (NMIPAddress **) arr->pdata, arr->len);
 
     g_assert_cmpint(changed, !=, nm_strv_equal(addrs_before, addrs_new));
     g_assert_cmpint(nm_setting_ip_config_get_num_addresses(s_ip), ==, n);
