@@ -2604,10 +2604,15 @@ class TestNmCloudSetup(unittest.TestCase):
             _azure_iface + "1/macAddress" + _azure_query, TestNmCloudSetup._mac2
         )
         self._mock_path(_azure_iface + "0/ipv4/ipAddress/" + _azure_query, "0\n")
+        self._mock_path(_azure_iface + "0/ipv6/ipAddress/" + _azure_query, "0\n")
         self._mock_path(_azure_iface + "1/ipv4/ipAddress/" + _azure_query, "0\n")
         self._mock_path(
             _azure_iface + "0/ipv4/ipAddress/0/privateIpAddress" + _azure_query,
             TestNmCloudSetup._ip1,
+        )
+        self._mock_path(
+            _azure_iface + "0/ipv6/ipAddress/0/privateIpAddress" + _azure_query,
+            TestNmCloudSetup._ip6_2,
         )
         self._mock_path(
             _azure_iface + "1/ipv4/ipAddress/0/privateIpAddress" + _azure_query,
@@ -2646,10 +2651,11 @@ class TestNmCloudSetup(unittest.TestCase):
         pexp.expect(
             r"interface\[0]: (received subnet address|received subnet prefix 20)"
         )
+        # pexp.expect(r"interface\[1]: received ipv6 address " + TestNmCloudSetup._ip6_2)
         pexp.expect("get-config: success")
         pexp.expect("meta data received")
-        # One of the devices has no IPv4 configuration to be modified
-        pexp.expect("skip applied connection due to missing IPv4 configuration")
+        # One of the devices has no IP configuration to be modified
+        pexp.expect("skip applied connection due to missing IP configuration")
         # The other one was lacking an address set it up.
         pexp.expect("some changes were applied for provider azure")
         (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
