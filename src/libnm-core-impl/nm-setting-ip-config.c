@@ -5647,6 +5647,28 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }
     }
 
+    /* Validate DNS search domains */
+    if (nm_strvarray_get_strv_notempty(priv->dns_search.arr, NULL)) {
+        for (i = 0; i < priv->dns_search.arr->len; i++) {
+            const char *dns_search = nm_strvarray_get_idx(priv->dns_search.arr, i);
+
+            /* TODO: currently we only check that no wrong list separators have
+             * been used by mistake. Proper domain name validation would be better. */
+            if (strpbrk(dns_search, ",; ")) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("DNS search domain '%s' is invalid"),
+                            dns_search);
+                g_prefix_error(error,
+                               "%s.%s: ",
+                               nm_setting_get_name(setting),
+                               NM_SETTING_IP_CONFIG_DNS_SEARCH);
+                return FALSE;
+            }
+        }
+    }
+
     /* Validate addresses */
     for (i = 0; i < priv->addresses->len; i++) {
         NMIPAddress *addr = (NMIPAddress *) priv->addresses->pdata[i];

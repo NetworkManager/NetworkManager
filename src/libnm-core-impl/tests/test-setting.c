@@ -5460,6 +5460,44 @@ test_settings_dns(void)
     }
 }
 
+static void
+_assert_dns_searches(gboolean valid, ...)
+{
+    NMConnection      *con;
+    NMSettingIPConfig *ip4, *ip6;
+    const char        *dns_search;
+    va_list            args;
+
+    con = nmtst_create_minimal_connection("test-dns-search",
+                                          NULL,
+                                          NM_SETTING_WIRED_SETTING_NAME,
+                                          NULL);
+    nmtst_connection_normalize(con);
+    ip4 = nm_connection_get_setting_ip4_config(con);
+    ip6 = nm_connection_get_setting_ip6_config(con);
+
+    va_start(args, valid);
+    while ((dns_search = va_arg(args, const char *))) {
+        nm_setting_ip_config_add_dns_search(ip4, dns_search);
+        nm_setting_ip_config_add_dns_search(ip6, dns_search);
+    }
+    va_end(args);
+
+    g_assert(valid == nm_setting_verify((NMSetting *) ip4, con, NULL));
+    g_assert(valid == nm_setting_verify((NMSetting *) ip6, con, NULL));
+}
+
+static void
+test_settings_dns_search_domains(void)
+{
+    _assert_dns_searches(TRUE, "example.com", NULL);
+    _assert_dns_searches(TRUE, "sub.example.com", NULL);
+    _assert_dns_searches(TRUE, "example.com", "sub.example.com", NULL);
+    _assert_dns_searches(FALSE, "example.com,sub.example.com", NULL);
+    _assert_dns_searches(FALSE, "example.com;sub.example.com", NULL);
+    _assert_dns_searches(FALSE, "example.com sub.example.com", NULL);
+}
+
 /*****************************************************************************/
 
 static void
@@ -5570,6 +5608,7 @@ main(int argc, char **argv)
     g_test_add_func("/libnm/settings/6lowpan/1", test_6lowpan_1);
 
     g_test_add_func("/libnm/settings/dns", test_settings_dns);
+    g_test_add_func("/libnm/settings/dns_search_domain", test_settings_dns_search_domains);
 
     g_test_add_func("/libnm/settings/sriov/vf", test_sriov_vf);
     g_test_add_func("/libnm/settings/sriov/vf-dup", test_sriov_vf_dup);
