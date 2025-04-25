@@ -299,31 +299,38 @@ get_word(char **argument, const char separator)
 {
     char *word;
     int   nest = 0;
+    char *last_ch;
 
     if (*argument == NULL)
         return NULL;
 
-    if (**argument == '[') {
-        nest++;
-        (*argument)++;
-    }
-
-    word = *argument;
+    word = last_ch = *argument;
 
     while (**argument != '\0') {
-        if (nest && **argument == ']') {
-            **argument = '\0';
-            (*argument)++;
-            nest--;
-            continue;
-        }
-
         if (nest == 0 && **argument == separator) {
             **argument = '\0';
             (*argument)++;
             break;
         }
+        if (**argument == '[')
+            nest++;
+        else if (nest && **argument == ']')
+            nest--;
+
+        last_ch = *argument;
         (*argument)++;
+    }
+
+    /* If the word is surrounded with the nesting symbols [], strip them so we return
+     * the inner content only.
+     * If there were nesting symbols but embracing only part of the inner content, don't
+     * remove them. Example:
+     *    Remove [] in get_word("[fc08::1]:other_token", ":")
+     *    Don't remove [] in get_word("ip6=[fc08::1]:other_token", ":")
+     */
+    if (*word == '[' && *last_ch == ']') {
+        word++;
+        *last_ch = '\0';
     }
 
     return *word ? word : NULL;
@@ -909,8 +916,8 @@ reader_parse_controller(Reader     *reader,
             char                 *opt;
             const char           *opt_name;
 
+            opt_name = get_word(&opts, '=');
             opt      = get_word(&opts, ',');
-            opt_name = get_word(&opt, '=');
 
             if (!_nm_setting_bond_validate_option(opt_name, opt, &error)) {
                 _LOGW(LOGD_CORE,
