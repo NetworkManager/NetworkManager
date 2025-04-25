@@ -597,7 +597,7 @@ static void
 test_if_ip6_manual(void)
 {
     gs_unref_hashtable GHashTable *connections = NULL;
-    const char *const             *ARGV = NM_MAKE_STRV("ip=[2001:0db8::02]/64::[2001:0db8::01]::"
+    const char *const             *ARGV = NM_MAKE_STRV("ip=[2001:0db8::02]/56::[2001:0db8::01]::"
                                                        "hostname0.example.com:eth4::[2001:0db8::53]");
     NMConnection                  *connection;
     NMSettingIPConfig             *s_ip4;
@@ -633,7 +633,7 @@ test_if_ip6_manual(void)
     ip_addr = nm_setting_ip_config_get_address(s_ip6, 0);
     g_assert(ip_addr);
     g_assert_cmpstr(nm_ip_address_get_address(ip_addr), ==, "2001:db8::2");
-    g_assert_cmpint(nm_ip_address_get_prefix(ip_addr), ==, 64);
+    g_assert_cmpint(nm_ip_address_get_prefix(ip_addr), ==, 56);
     g_assert_cmpstr(nm_setting_ip_config_get_gateway(s_ip6), ==, "2001:db8::1");
     g_assert_cmpstr(nm_setting_ip_config_get_dhcp_hostname(s_ip6), ==, NULL);
 }
