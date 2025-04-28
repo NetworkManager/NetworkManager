@@ -6,6 +6,7 @@ libnmi_core = static_library(
     'nmi-cmdline-reader.c',
     'nmi-dt-reader.c',
     'nmi-ibft-reader.c',
+    'nmi-nbft-reader.c',
   ),
   include_directories: [
     src_inc,

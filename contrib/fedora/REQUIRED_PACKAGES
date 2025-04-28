@@ -66,6 +66,7 @@ install \
     jq \
     libcurl-devel \
     libndp-devel \
+    libnvme-devel \
     libselinux-devel \
     libtool \
     libuuid-devel \

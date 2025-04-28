@@ -1451,8 +1451,10 @@ nmi_cmdline_reader_parse(const char        *etc_connections_dir,
     gs_unref_ptrarray GPtrArray *routes        = NULL;
     gs_unref_ptrarray GPtrArray *znets         = NULL;
     int                          i;
-    guint64                      dhcp_timeout   = 90;
-    guint64                      dhcp_num_tries = 1;
+    guint64                      dhcp_timeout     = 90;
+    guint64                      dhcp_num_tries   = 1;
+    gboolean                     nvmf_nonbft      = FALSE;
+    gboolean                     have_dracut_nbft = FALSE;
 
     reader = reader_new();
 
@@ -1469,7 +1471,10 @@ nmi_cmdline_reader_parse(const char        *etc_connections_dir,
             /* pass */
         } else if (nm_streq(tag, "net.ifnames"))
             net_ifnames = !nm_streq(argument, "0");
-        else if (nm_streq(tag, "rd.peerdns"))
+        else if (nm_streq(tag, "ifname")) {
+            if (NM_STR_HAS_PREFIX(argument, "nbft"))
+                have_dracut_nbft = TRUE;
+        } else if (nm_streq(tag, "rd.peerdns"))
             reader->ignore_auto_dns = !_nm_utils_ascii_str_to_bool(argument, TRUE);
         else if (nm_streq(tag, "rd.net.timeout.dhcp")) {
             if (nm_streq0(argument, "infinity")) {
@@ -1561,7 +1566,18 @@ nmi_cmdline_reader_parse(const char        *etc_connections_dir,
             reader_parse_dns_backend(reader, argument);
         } else if (nm_streq(tag, "rd.net.dns-resolve-mode")) {
             reader_parse_dns_resolve_mode(reader, argument);
+        } else if (nm_streq(tag, "rd.nvmf.nonbft"))
+            nvmf_nonbft = TRUE;
+    }
+
+    if (!nvmf_nonbft && !have_dracut_nbft) {
+        NMConnection **nbft_connections, **c;
+
+        nbft_connections = nmi_nbft_reader_parse(sysfs_dir, &reader->hostname);
+        for (c = nbft_connections; c && *c; c++) {
+            reader_add_connection(reader, nm_connection_get_id(*c), *c);
         }
+        g_free(nbft_connections);
     }
 
     for (i = 0; i < reader->vlan_parents->len; i++) {
