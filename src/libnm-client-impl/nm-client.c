@@ -9316,6 +9316,14 @@ NM_BACKPORT_SYMBOL(libnm_1_30_8,
 
 NM_BACKPORT_SYMBOL(libnm_1_30_8, NMIPRoute *, nm_ip_route_dup, (NMIPRoute * route), (route));
 
+NM_BACKPORT_SYMBOL(libnm_1_48_18,
+                   gboolean,
+                   nm_ethtool_optname_is_fec,
+                   (const char *optname),
+                   (optname));
+
+NM_BACKPORT_SYMBOL(libnm_1_48_18, GType, nm_setting_ethtool_fec_mode_get_type, (void), ());
+
 NM_BACKPORT_SYMBOL(libnm_1_50_4,
                    gboolean,
                    nm_ethtool_optname_is_fec,
