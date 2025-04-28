@@ -2009,6 +2009,11 @@ global:
 	nm_setting_wireless_get_channel_width;
 } libnm_1_48_0;
 
+libnm_1_50_4 {
+	#nm_ethtool_optname_is_fec@libnm_1_50_4;
+	#nm_setting_ethtool_fec_mode_get_type@libnm_1_50_4;
+} libnm_1_50_0;
+
 libnm_1_52_0 {
 global:
 	nm_device_ipvlan_get_mode;
