@@ -58,6 +58,7 @@
 #include "nm-object-private.h"
 #include "nm-remote-connection.h"
 #include "nm-utils.h"
+#include "nm-setting-ethtool.h"
 #include "nm-vpn-connection.h"
 
 /*****************************************************************************/
@@ -9313,3 +9314,11 @@ NM_BACKPORT_SYMBOL(libnm_1_30_8,
                    (address));
 
 NM_BACKPORT_SYMBOL(libnm_1_30_8, NMIPRoute *, nm_ip_route_dup, (NMIPRoute * route), (route));
+
+NM_BACKPORT_SYMBOL(libnm_1_48_18,
+                   gboolean,
+                   nm_ethtool_optname_is_fec,
+                   (const char *optname),
+                   (optname));
+
+NM_BACKPORT_SYMBOL(libnm_1_48_18, GType, nm_setting_ethtool_fec_mode_get_type, (void), ());
