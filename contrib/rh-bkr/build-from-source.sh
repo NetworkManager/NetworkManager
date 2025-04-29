@@ -67,6 +67,7 @@ if [[ "$INSTALL_DEPENDENCIES" == yes ]]; then
       libgudev1-devel \
       libndp-devel \
       libnl3-devel \
+      libnvme-devel \
       libpsl-devel \
       libselinux-devel \
       libsoup-devel \
