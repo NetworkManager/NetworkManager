@@ -16,6 +16,8 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-ovs-port.h"
 #include "nm-setting-ovs-interface.h"
+#include "nm-setting-ovs-external-ids.h"
+#include "nm-setting-ovs-other-config.h"
 #include "nm-setting-wired.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceOvsPort
@@ -256,6 +258,37 @@ detach_port(NMDevice                  *device,
     return ret;
 }
 
+static gboolean
+can_reapply_change(NMDevice   *device,
+                   const char *setting_name,
+                   NMSetting  *s_old,
+                   NMSetting  *s_new,
+                   GHashTable *diffs,
+                   GError    **error)
+{
+    NMDeviceClass *device_class = NM_DEVICE_CLASS(nm_device_ovs_port_parent_class);
+
+    if (nm_streq(setting_name, NM_SETTING_OVS_PORT_SETTING_NAME)) {
+        return nm_device_hash_check_invalid_keys(diffs,
+                                                 NM_SETTING_OVS_PORT_SETTING_NAME,
+                                                 error,
+                                                 NM_SETTING_OVS_PORT_TAG,
+                                                 NM_SETTING_OVS_PORT_VLAN_MODE,
+                                                 NM_SETTING_OVS_PORT_BOND_UPDELAY,
+                                                 NM_SETTING_OVS_PORT_BOND_DOWNDELAY,
+                                                 NM_SETTING_OVS_PORT_LACP,
+                                                 NM_SETTING_OVS_PORT_BOND_MODE,
+                                                 NM_SETTING_OVS_PORT_TRUNKS);
+    }
+
+    if (NM_IN_STRSET(setting_name,
+                     NM_SETTING_OVS_EXTERNAL_IDS_SETTING_NAME,
+                     NM_SETTING_OVS_OTHER_CONFIG_SETTING_NAME))
+        return TRUE;
+
+    return device_class->can_reapply_change(device, setting_name, s_old, s_new, diffs, error);
+}
+
 /*****************************************************************************/
 
 static void
@@ -285,14 +318,14 @@ nm_device_ovs_port_class_init(NMDeviceOvsPortClass *klass)
     device_class->connection_type_check_compatible = NM_SETTING_OVS_PORT_SETTING_NAME;
     device_class->link_types                       = NM_DEVICE_DEFINE_LINK_TYPES();
 
-    device_class->is_controller                       = TRUE;
-    device_class->get_type_description                = get_type_description;
-    device_class->create_and_realize                  = create_and_realize;
-    device_class->get_generic_capabilities            = get_generic_capabilities;
-    device_class->act_stage3_ip_config                = act_stage3_ip_config;
-    device_class->ready_for_ip_config                 = ready_for_ip_config;
-    device_class->attach_port                         = attach_port;
-    device_class->detach_port                         = detach_port;
-    device_class->can_reapply_change_ovs_external_ids = TRUE;
-    device_class->reapply_connection                  = nm_device_ovs_reapply_connection;
+    device_class->is_controller            = TRUE;
+    device_class->get_type_description     = get_type_description;
+    device_class->create_and_realize       = create_and_realize;
+    device_class->get_generic_capabilities = get_generic_capabilities;
+    device_class->act_stage3_ip_config     = act_stage3_ip_config;
+    device_class->ready_for_ip_config      = ready_for_ip_config;
+    device_class->attach_port              = attach_port;
+    device_class->detach_port              = detach_port;
+    device_class->can_reapply_change       = can_reapply_change;
+    device_class->reapply_connection       = nm_device_ovs_reapply_connection;
 }

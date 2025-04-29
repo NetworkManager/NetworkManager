@@ -135,11 +135,39 @@ nm_device_ovs_reapply_connection(NMDevice *self, NMConnection *con_old, NMConnec
     nm_ovsdb_set_reapply(nm_ovsdb_get(),
                          device_type,
                          nm_device_get_ip_iface(self),
-                         nm_connection_get_uuid(con_new),
+                         nm_simple_connection_new_clone(con_new),
                          _nm_connection_get_setting(con_old, NM_TYPE_SETTING_OVS_EXTERNAL_IDS),
                          _nm_connection_get_setting(con_new, NM_TYPE_SETTING_OVS_EXTERNAL_IDS),
                          _nm_connection_get_setting(con_old, NM_TYPE_SETTING_OVS_OTHER_CONFIG),
                          _nm_connection_get_setting(con_new, NM_TYPE_SETTING_OVS_OTHER_CONFIG));
+}
+
+static gboolean
+can_reapply_change(NMDevice   *device,
+                   const char *setting_name,
+                   NMSetting  *s_old,
+                   NMSetting  *s_new,
+                   GHashTable *diffs,
+                   GError    **error)
+{
+    NMDeviceClass *device_class = NM_DEVICE_CLASS(nm_device_ovs_bridge_parent_class);
+
+    if (nm_streq(setting_name, NM_SETTING_OVS_BRIDGE_SETTING_NAME)) {
+        return nm_device_hash_check_invalid_keys(diffs,
+                                                 NM_SETTING_OVS_BRIDGE_SETTING_NAME,
+                                                 error,
+                                                 NM_SETTING_OVS_BRIDGE_FAIL_MODE,
+                                                 NM_SETTING_OVS_BRIDGE_MCAST_SNOOPING_ENABLE,
+                                                 NM_SETTING_OVS_BRIDGE_RSTP_ENABLE,
+                                                 NM_SETTING_OVS_BRIDGE_STP_ENABLE);
+    }
+
+    if (NM_IN_STRSET(setting_name,
+                     NM_SETTING_OVS_EXTERNAL_IDS_SETTING_NAME,
+                     NM_SETTING_OVS_OTHER_CONFIG_SETTING_NAME))
+        return TRUE;
+
+    return device_class->can_reapply_change(device, setting_name, s_old, s_new, diffs, error);
 }
 
 /*****************************************************************************/
@@ -171,15 +199,15 @@ nm_device_ovs_bridge_class_init(NMDeviceOvsBridgeClass *klass)
     device_class->connection_type_check_compatible = NM_SETTING_OVS_BRIDGE_SETTING_NAME;
     device_class->link_types                       = NM_DEVICE_DEFINE_LINK_TYPES();
 
-    device_class->is_controller                       = TRUE;
-    device_class->get_type_description                = get_type_description;
-    device_class->create_and_realize                  = create_and_realize;
-    device_class->unrealize                           = unrealize;
-    device_class->get_generic_capabilities            = get_generic_capabilities;
-    device_class->act_stage3_ip_config                = act_stage3_ip_config;
-    device_class->ready_for_ip_config                 = ready_for_ip_config;
-    device_class->attach_port                         = attach_port;
-    device_class->detach_port                         = detach_port;
-    device_class->can_reapply_change_ovs_external_ids = TRUE;
-    device_class->reapply_connection                  = nm_device_ovs_reapply_connection;
+    device_class->is_controller            = TRUE;
+    device_class->get_type_description     = get_type_description;
+    device_class->create_and_realize       = create_and_realize;
+    device_class->unrealize                = unrealize;
+    device_class->get_generic_capabilities = get_generic_capabilities;
+    device_class->act_stage3_ip_config     = act_stage3_ip_config;
+    device_class->ready_for_ip_config      = ready_for_ip_config;
+    device_class->attach_port              = attach_port;
+    device_class->detach_port              = detach_port;
+    device_class->can_reapply_change       = can_reapply_change;
+    device_class->reapply_connection       = nm_device_ovs_reapply_connection;
 }
