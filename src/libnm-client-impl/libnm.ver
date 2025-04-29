@@ -2003,6 +2003,11 @@ global:
 	nm_setting_802_1x_get_openssl_ciphers;
 } libnm_1_46_0;
 
+libnm_1_48_18 {
+	#nm_ethtool_optname_is_fec@libnm_1_48_18;
+	#nm_setting_ethtool_fec_mode_get_type@libnm_1_48_18;
+} libnm_1_48_0;
+
 libnm_1_50_0 {
 global:
 	nm_setting_wireless_channel_width_get_type;
