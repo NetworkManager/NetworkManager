@@ -398,7 +398,8 @@ nmi_nbft_reader_parse(const char *sysfs_dir, char **hostname)
     }
 
     g_dir_close(dir);
-    dlclose(libnvme_handle);
+    if (libnvme_handle)
+        dlclose(libnvme_handle);
     g_ptr_array_add(a, NULL); /* trailing NULL-delimiter */
     return (NMConnection **) g_ptr_array_free(g_steal_pointer(&a), FALSE);
 }
