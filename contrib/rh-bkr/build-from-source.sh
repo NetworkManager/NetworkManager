@@ -100,6 +100,13 @@ if [[ "$INSTALL_DEPENDENCIES" == yes ]]; then
       -y
 fi
 
+# libnvme >= 1.5 is available in RHEL 9.4+, disable when missing
+if pkgconf 'libnvme >= 1.5'; then
+    _WITH_NBFT="true"
+else
+    _WITH_NBFT="false"
+fi
+
 if [[ "$DO_TEST_BUILD" == yes ]]; then
     # for the tests, let's pre-load some modules:
     $SUDO modprobe ip_gre || true
@@ -214,7 +221,8 @@ if [[ "$DO_TEST_BUILD" == yes ]]; then
             -Dconfig_dhcp_default=internal \
             -Dconfig_dns_rc_manager_default=auto \
             -Diptables=/usr/sbin/iptables \
-            -Dnft=/usr/bin/nft
+            -Dnft=/usr/bin/nft \
+            -Dnbft=${_WITH_NBFT}
 
 	ninja -C ./build
 	ninja test -C ./build
