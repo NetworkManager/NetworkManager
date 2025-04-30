@@ -1201,6 +1201,80 @@ test_bond_ip6_option(void)
 }
 
 static void
+test_bond_multi_values_option(void)
+{
+    /* Test that semicolon-separated multi-valued options are parsed fine in different positions */
+
+    gs_unref_hashtable GHashTable *connections = NULL;
+    const char *const             *ARGV =
+        NM_MAKE_STRV("bond=bond0:eth0,eth1:arp_interval=100,ns_ip6_target=[fc08::1];[fc08::2]",
+                     "bond=bond1:eth2,eth3:arp_interval=100,ns_ip6_target=[fc08::1];[fc08::2]:9000",
+                     "bond=bond2:eth4,eth5:ns_ip6_target=[fc08::1];[fc08::2],arp_interval=100",
+                     "bond=bond3:eth6,eth7:arp_interval=100,arp_ip_target=10.0.0.1;10.0.0.2",
+                     "bond=bond4:eth8,eth9:arp_interval=100,arp_ip_target=10.0.0.1;10.0.0.2:9000",
+                     "bond=bond5:eth10,eth11:arp_ip_target=10.0.0.1;10.0.0.2,arp_interval=100");
+    NMConnection  *connection;
+    NMSettingBond *s_bond;
+
+    connections = _parse_cons(ARGV);
+    g_assert_cmpint(g_hash_table_size(connections), ==, 18);
+
+    connection = g_hash_table_lookup(connections, "bond0");
+    nmtst_assert_connection_verifies_without_normalization(connection);
+    s_bond = nm_connection_get_setting_bond(connection);
+    g_assert(s_bond);
+    g_assert_cmpint(nm_setting_bond_get_num_options(s_bond), ==, 3);
+    g_assert_cmpstr(nm_setting_bond_get_option_by_name(s_bond, "ns_ip6_target"),
+                    ==,
+                    "fc08::1,fc08::2");
+
+    connection = g_hash_table_lookup(connections, "bond1");
+    nmtst_assert_connection_verifies_without_normalization(connection);
+    s_bond = nm_connection_get_setting_bond(connection);
+    g_assert(s_bond);
+    g_assert_cmpint(nm_setting_bond_get_num_options(s_bond), ==, 3);
+    g_assert_cmpstr(nm_setting_bond_get_option_by_name(s_bond, "ns_ip6_target"),
+                    ==,
+                    "fc08::1,fc08::2");
+
+    connection = g_hash_table_lookup(connections, "bond2");
+    nmtst_assert_connection_verifies_without_normalization(connection);
+    s_bond = nm_connection_get_setting_bond(connection);
+    g_assert(s_bond);
+    g_assert_cmpint(nm_setting_bond_get_num_options(s_bond), ==, 3);
+    g_assert_cmpstr(nm_setting_bond_get_option_by_name(s_bond, "ns_ip6_target"),
+                    ==,
+                    "fc08::1,fc08::2");
+
+    connection = g_hash_table_lookup(connections, "bond3");
+    nmtst_assert_connection_verifies_without_normalization(connection);
+    s_bond = nm_connection_get_setting_bond(connection);
+    g_assert(s_bond);
+    g_assert_cmpint(nm_setting_bond_get_num_options(s_bond), ==, 3);
+    g_assert_cmpstr(nm_setting_bond_get_option_by_name(s_bond, "arp_ip_target"),
+                    ==,
+                    "10.0.0.1,10.0.0.2");
+
+    connection = g_hash_table_lookup(connections, "bond4");
+    nmtst_assert_connection_verifies_without_normalization(connection);
+    s_bond = nm_connection_get_setting_bond(connection);
+    g_assert(s_bond);
+    g_assert_cmpint(nm_setting_bond_get_num_options(s_bond), ==, 3);
+    g_assert_cmpstr(nm_setting_bond_get_option_by_name(s_bond, "arp_ip_target"),
+                    ==,
+                    "10.0.0.1,10.0.0.2");
+
+    connection = g_hash_table_lookup(connections, "bond5");
+    nmtst_assert_connection_verifies_without_normalization(connection);
+    s_bond = nm_connection_get_setting_bond(connection);
+    g_assert(s_bond);
+    g_assert_cmpint(nm_setting_bond_get_num_options(s_bond), ==, 3);
+    g_assert_cmpstr(nm_setting_bond_get_option_by_name(s_bond, "arp_ip_target"),
+                    ==,
+                    "10.0.0.1,10.0.0.2");
+}
+
+static void
 test_bond_default(void)
 {
     gs_unref_hashtable GHashTable *connections = NULL;
@@ -2740,6 +2814,7 @@ main(int argc, char **argv)
     g_test_add_func("/initrd/cmdline/bond", test_bond);
     g_test_add_func("/initrd/cmdline/bond/ip", test_bond_ip);
     g_test_add_func("/initrd/cmdline/bond/ip6-option", test_bond_ip6_option);
+    g_test_add_func("/initrd/cmdline/bond/multi-values-option", test_bond_multi_values_option);
     g_test_add_func("/initrd/cmdline/bond/default", test_bond_default);
     g_test_add_func("/initrd/cmdline/team", test_team);
     g_test_add_func("/initrd/cmdline/vlan", test_vlan);
