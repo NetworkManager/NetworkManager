@@ -18,7 +18,6 @@
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device.h"
 #include "devices/nm-device-factory.h"
-#include "devices/nm-device-private.h"
 #include "dns/nm-dns-manager.h"
 #include "nm-act-request.h"
 #include "nm-auth-utils.h"
@@ -98,6 +97,7 @@ typedef struct {
     bool updating_dns : 1;
 
     GArray *ip6_prefix_delegations; /* pool of ip6 prefixes delegated to all devices */
+
 } NMPolicyPrivate;
 
 struct _NMPolicy {
@@ -2084,65 +2084,6 @@ unblock_autoconnect_for_ports_for_sett_conn(NMPolicy *self, NMSettingsConnection
 }
 
 static void
-refresh_forwarding(NMPolicy *self, NMDevice *device, gboolean is_activated_shared_device)
-{
-    NMActiveConnection *ac;
-    NMDevice           *tmp_device;
-    NMPolicyPrivate    *priv = NM_POLICY_GET_PRIVATE(self);
-    const CList        *tmp_lst;
-    gboolean            any_shared_active = false;
-    gint32              default_forwarding_v4;
-    const char         *new_value = NULL;
-
-    /* FIXME: This implementation is still inefficient because refresh_forwarding()
-     * is called every time a device goes up or down, requiring a full scan of all
-     * active connections to determine if any shared connection is active. */
-    nm_manager_for_each_active_connection (priv->manager, ac, tmp_lst) {
-        NMSettingIPConfig *s_ip;
-        NMDevice          *to_device = nm_active_connection_get_device(ac);
-
-        if (to_device) {
-            s_ip = nm_device_get_applied_setting(to_device, NM_TYPE_SETTING_IP4_CONFIG);
-            if (s_ip) {
-                if (nm_streq0(nm_device_get_effective_ip_config_method(to_device, AF_INET),
-                              NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
-                    any_shared_active = true;
-                    break;
-                }
-            }
-        }
-    }
-
-    default_forwarding_v4 = nm_platform_sysctl_get_int32(
-        NM_PLATFORM_GET,
-        NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv4/conf/default/forwarding"),
-        0);
-
-    new_value = any_shared_active ? "1" : (default_forwarding_v4 ? "1" : "0");
-
-    nm_manager_for_each_device (priv->manager, tmp_device, tmp_lst) {
-        NMDeviceState               state;
-        NMSettingIPConfigForwarding ipv4_forwarding;
-
-        state = nm_device_get_state(tmp_device);
-        if (state != NM_DEVICE_STATE_ACTIVATED)
-            continue;
-
-        ipv4_forwarding = nm_device_get_ipv4_forwarding(tmp_device);
-
-        if (ipv4_forwarding == NM_SETTING_IP_CONFIG_FORWARDING_AUTO
-            || (device == tmp_device && is_activated_shared_device)) {
-            gs_free char *sysctl_value = NULL;
-
-            sysctl_value = nm_device_sysctl_ip_conf_get(tmp_device, AF_INET, "forwarding");
-
-            if (!nm_streq0(sysctl_value, new_value))
-                nm_device_sysctl_ip_conf_set(tmp_device, AF_INET, "forwarding", new_value);
-        }
-    }
-}
-
-static void
 activate_port_or_children_connections(NMPolicy *self,
                                       NMDevice *device,
                                       gboolean  activate_children_connections_only)
@@ -2286,9 +2227,8 @@ device_state_changed(NMDevice           *device,
     NMPolicyPrivate      *priv = user_data;
     NMPolicy             *self = _PRIV_TO_SELF(priv);
     NMActiveConnection   *ac;
-    NMSettingsConnection *sett_conn                  = nm_device_get_settings_connection(device);
-    NMSettingConnection  *s_con                      = NULL;
-    gboolean              is_activated_shared_device = FALSE;
+    NMSettingsConnection *sett_conn = nm_device_get_settings_connection(device);
+    NMSettingConnection  *s_con     = NULL;
 
     switch (nm_device_state_reason_check(reason)) {
     case NM_DEVICE_STATE_REASON_GSM_SIM_PIN_REQUIRED:
@@ -2404,10 +2344,6 @@ device_state_changed(NMDevice           *device,
                 }
             }
         }
-        if (!nm_device_get_refresh_forwarding_done(device)) {
-            refresh_forwarding(self, device, FALSE);
-            nm_device_set_refresh_forwarding_done(device, TRUE);
-        }
         break;
     case NM_DEVICE_STATE_ACTIVATED:
         if (nm_device_get_device_type(device) == NM_DEVICE_TYPE_OVS_INTERFACE) {
@@ -2440,20 +2376,11 @@ device_state_changed(NMDevice           *device,
         update_system_hostname(self, "routing and dns", TRUE);
         nm_dns_manager_end_updates(priv->dns_manager, __func__);
 
-        is_activated_shared_device =
-            nm_streq0(nm_device_get_effective_ip_config_method(device, AF_INET),
-                      NM_SETTING_IP4_CONFIG_METHOD_SHARED);
-        refresh_forwarding(self, device, is_activated_shared_device);
-        nm_device_set_refresh_forwarding_done(device, FALSE);
         break;
     case NM_DEVICE_STATE_UNMANAGED:
     case NM_DEVICE_STATE_UNAVAILABLE:
         if (old_state > NM_DEVICE_STATE_DISCONNECTED)
             update_routing_and_dns(self, FALSE, device);
-        if (!nm_device_get_refresh_forwarding_done(device)) {
-            refresh_forwarding(self, device, FALSE);
-            nm_device_set_refresh_forwarding_done(device, TRUE);
-        }
         break;
     case NM_DEVICE_STATE_DEACTIVATING:
         if (sett_conn) {
@@ -2489,10 +2416,6 @@ device_state_changed(NMDevice           *device,
             }
         }
         ip6_remove_device_prefix_delegations(self, device);
-        if (!nm_device_get_refresh_forwarding_done(device)) {
-            refresh_forwarding(self, device, FALSE);
-            nm_device_set_refresh_forwarding_done(device, TRUE);
-        }
         break;
     case NM_DEVICE_STATE_DISCONNECTED:
         g_signal_handlers_disconnect_by_func(device, device_dns_lookup_done, self);
@@ -2509,10 +2432,6 @@ device_state_changed(NMDevice           *device,
 
         /* Device is now available for auto-activation */
         nm_policy_device_recheck_auto_activate_schedule(self, device);
-        if (!nm_device_get_refresh_forwarding_done(device)) {
-            refresh_forwarding(self, device, FALSE);
-            nm_device_set_refresh_forwarding_done(device, TRUE);
-        }
         break;
 
     case NM_DEVICE_STATE_PREPARE:
@@ -2528,10 +2447,6 @@ device_state_changed(NMDevice           *device,
             g_object_weak_unref(G_OBJECT(ac), pending_ac_gone, self);
             g_object_unref(self);
         }
-        if (!nm_device_get_refresh_forwarding_done(device)) {
-            refresh_forwarding(self, device, FALSE);
-            nm_device_set_refresh_forwarding_done(device, TRUE);
-        }
         break;
     case NM_DEVICE_STATE_IP_CONFIG:
         /* We must have secrets if we got here. */
@@ -2542,10 +2457,6 @@ device_state_changed(NMDevice           *device,
                 sett_conn,
                 NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED,
                 FALSE);
-        if (!nm_device_get_refresh_forwarding_done(device)) {
-            refresh_forwarding(self, device, FALSE);
-            nm_device_set_refresh_forwarding_done(device, TRUE);
-        }
         break;
     case NM_DEVICE_STATE_SECONDARIES:
         if (sett_conn)
