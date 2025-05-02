@@ -705,6 +705,8 @@ typedef struct _NMDevicePrivate {
 
     IPDevStateData ipdev_data_unspec;
 
+    gulong sharing_ipv4_changed_id;
+
     struct {
         /* If we set the addrgenmode6, this records the previously set value. */
         guint8 previous_mode_val;
@@ -878,6 +880,8 @@ static void _dev_ipshared4_start(NMDevice *self);
 static void _dev_ipshared4_spawn_dnsmasq(NMDevice *self);
 
 static void _dev_ipshared6_start(NMDevice *self);
+
+static void _dev_ipforwarding_start(NMDevice *self, int addr_family);
 
 static void
 _cleanup_ip_pre(NMDevice *self, int addr_family, CleanupType cleanup_type, gboolean preserve_dhcp);
@@ -13175,16 +13179,11 @@ activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family)
         goto out_devip;
 
     if (IS_IPv4) {
-        NMSettingIPConfigForwarding ipv4_forwarding = _prop_get_ipv4_forwarding(self);
-
-        if (NM_IN_SET(ipv4_forwarding,
-                      NM_SETTING_IP_CONFIG_FORWARDING_NO,
-                      NM_SETTING_IP_CONFIG_FORWARDING_YES)) {
-            nm_device_sysctl_ip_conf_set(self, AF_INET, "forwarding", ipv4_forwarding ? "1" : "0");
-        }
         priv->ipll_data_4.v4.mode = _prop_get_ipv4_link_local(self);
         if (priv->ipll_data_4.v4.mode == NM_SETTING_IP4_LL_ENABLED)
             _dev_ipll4_start(self);
+
+        _dev_ipforwarding_start(self, addr_family);
 
         if (nm_streq(priv->ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_AUTO))
             _dev_ipdhcpx_start(self, AF_INET);
@@ -13622,19 +13621,6 @@ _dev_ipshared4_init(NMDevice *self)
     }
 
     if (nm_platform_sysctl_get_int32(nm_device_get_platform(self),
-                                     NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv4/ip_forward"),
-                                     -1)
-        == 1) {
-        /* nothing to do. */
-    } else if (!nm_platform_sysctl_set(nm_device_get_platform(self),
-                                       NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv4/ip_forward"),
-                                       "1")) {
-        errsv = errno;
-        _LOGW_ipshared(AF_INET, "error enabling IPv4 forwarding: %s", nm_strerror_native(errsv));
-        return FALSE;
-    }
-
-    if (nm_platform_sysctl_get_int32(nm_device_get_platform(self),
                                      NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv4/ip_dynaddr"),
                                      -1)
         == 1) {
@@ -13829,12 +13815,61 @@ _dev_ipshared6_start(NMDevice *self)
 /*****************************************************************************/
 
 static void
+_dev_ipforwarding_auto_cb(NMManager *manager, gboolean sharing_ipv4, gpointer data)
+{
+    NMDevice   *self = NM_DEVICE(data);
+    const char *val  = sharing_ipv4 ? "1" : "0";
+
+    if (!nm_device_sysctl_ip_conf_set(self, AF_INET, "forwarding", val))
+        _LOGW(LOGD_DEVICE,
+              "error setting IPv4 forwarding to '%s': %s",
+              val,
+              nm_strerror_native(errno));
+}
+
+static void
+_dev_ipforwarding_start(NMDevice *self, int addr_family)
+{
+    NMDevicePrivate            *priv            = NM_DEVICE_GET_PRIVATE(self);
+    NMSettingIPConfigForwarding ipv4_forwarding = _prop_get_ipv4_forwarding(self);
+    NMTernary                   new_forwarding  = NM_TERNARY_DEFAULT;
+
+    /* IPv6 per-interface forwarding not supported yet */
+    if (addr_family != AF_INET)
+        return;
+
+    if (nm_streq(priv->ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
+        new_forwarding = NM_TERNARY_TRUE;
+    } else if (NM_IN_SET(ipv4_forwarding,
+                         NM_SETTING_IP_CONFIG_FORWARDING_NO,
+                         NM_SETTING_IP_CONFIG_FORWARDING_YES)) {
+        new_forwarding = ipv4_forwarding == NM_SETTING_IP_CONFIG_FORWARDING_YES;
+    } else if (ipv4_forwarding == NM_SETTING_IP_CONFIG_FORWARDING_AUTO) {
+        new_forwarding = nm_manager_get_sharing_ipv4(NM_MANAGER_GET);
+
+        if (!priv->sharing_ipv4_changed_id)
+            priv->sharing_ipv4_changed_id = g_signal_connect(NM_MANAGER_GET,
+                                                             NM_MANAGER_SHARING_IPV4_CHANGED,
+                                                             G_CALLBACK(_dev_ipforwarding_auto_cb),
+                                                             self);
+    }
+
+    nm_assert(new_forwarding != NM_TERNARY_DEFAULT);
+
+    if (!nm_device_sysctl_ip_conf_set(self, AF_INET, "forwarding", new_forwarding ? "1" : "0"))
+        _LOGW(LOGD_DEVICE, "error setting IPv4 forwarding to '%s'", new_forwarding ? "1" : "0");
+}
+
+static void
 _dev_ipforwarding_cleanup(NMDevice *self, int addr_family, CleanupType cleanup_type)
 {
+    NMDevicePrivate    *priv               = NM_DEVICE_GET_PRIVATE(self);
     gs_free const char *default_forwarding = NULL;
 
     if (!NM_IS_IPv4(addr_family))
         return;
+
+    nm_clear_g_signal_handler(NM_MANAGER_GET, &priv->sharing_ipv4_changed_id);
 
     if (!NM_IN_SET(cleanup_type, CLEANUP_TYPE_DECONFIGURE, CLEANUP_TYPE_KEEP_REAPPLY))
         return;
