@@ -13846,6 +13846,32 @@ _dev_ipshared6_start(NMDevice *self)
 /*****************************************************************************/
 
 static void
+_dev_ipforwarding_cleanup(NMDevice *self, int addr_family, CleanupType cleanup_type)
+{
+    gs_free const char *default_forwarding = NULL;
+    gs_free const char *current_forwarding = NULL;
+
+    if (!NM_IS_IPv4(addr_family))
+        return;
+
+    if (!NM_IN_SET(cleanup_type, CLEANUP_TYPE_DECONFIGURE, CLEANUP_TYPE_KEEP_REAPPLY))
+        return;
+
+    default_forwarding = nm_platform_sysctl_get(
+        nm_device_get_platform(self),
+        NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv4/conf/default/forwarding"));
+
+    if (!default_forwarding)
+        return; /* Non fatal */
+
+    current_forwarding = nm_device_sysctl_ip_conf_get(self, AF_INET, "forwarding");
+    if (!nm_streq0(current_forwarding, default_forwarding))
+        nm_device_sysctl_ip_conf_set(self, AF_INET, "forwarding", default_forwarding);
+}
+
+/*****************************************************************************/
+
+static void
 act_request_set(NMDevice *self, NMActRequest *act_request)
 {
     NMDevicePrivate *priv;
@@ -13956,6 +13982,8 @@ _cleanup_ip_pre(NMDevice *self, int addr_family, CleanupType cleanup_type, gbool
     const int        IS_IPv4      = NM_IS_IPv4(addr_family);
     NMDevicePrivate *priv         = NM_DEVICE_GET_PRIVATE(self);
     gboolean         keep_reapply = (cleanup_type == CLEANUP_TYPE_KEEP_REAPPLY);
+
+    _dev_ipforwarding_cleanup(self, addr_family, cleanup_type);
 
     _dev_ipsharedx_cleanup(self, addr_family);
 
