@@ -8,13 +8,13 @@ fedora:
 - version: rawhide
   support: yes
   nm: main
+- version: 42
+  support: 2026-05-13
+  nm: 1.52
+  tier1-default: yes
 - version: 41
   support: 2025-11-19
   nm: 1.50
-  tier1-default: yes
-- version: 40
-  support: 2025-05-13
-  nm: 1.46
 
 # CentOS Stream
 centos:
@@ -77,6 +77,10 @@ ubuntu:
 - version: devel
   support: yes
   nm: main
+- version: 25.04
+  name: plucky
+  support: 2026-01-15
+  nm: 1.52
 - version: 24.10
   name: oracular
   support: 2025-07-10
@@ -91,11 +95,6 @@ ubuntu:
   support: 2027-06-01
   extended-support: 2032-04-21
   nm: 1.36
-- version: 20.04
-  name: focal
-  support: 2025-05-29
-  extended-support: 2030-04-23
-  nm: 1.22
 
 # Debian:
 #   cadence: every 2 years
@@ -140,6 +139,3 @@ alpine:
 - version: 3.19
   support: 2025-11-01
   nm: 1.44
-- version: 3.18
-  support: 2025-05-09
-  nm: 1.42
