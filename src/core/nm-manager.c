@@ -136,6 +136,7 @@ enum {
     ACTIVE_CONNECTION_REMOVED,
     CONFIGURE_QUIT,
     DEVICE_IFINDEX_CHANGED,
+    SHARING_IPV4_CHANGED,
 
     LAST_SIGNAL
 };
@@ -237,6 +238,8 @@ typedef struct {
     NMConnectivityState connectivity_state;
 
     guint8 device_state_prune_ratelimit_count;
+
+    guint shared_connections_ip4_count;
 
     bool startup : 1;
     bool devices_inited : 1;
@@ -8829,6 +8832,41 @@ nm_manager_emit_device_ifindex_changed(NMManager *self, NMDevice *device)
     g_signal_emit(self, signals[DEVICE_IFINDEX_CHANGED], 0, device);
 }
 
+void
+nm_manager_update_shared_connection(NMManager *self, int addr_family, gboolean enabled)
+{
+    NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE(self);
+    gboolean          state_changed, state;
+
+    /* Only IPv4 supported for the moment */
+    if (addr_family != AF_INET)
+        return;
+
+    if (enabled) {
+        g_return_if_fail(priv->shared_connections_ip4_count < G_MAXUINT);
+        priv->shared_connections_ip4_count++;
+        state_changed = priv->shared_connections_ip4_count == 1;
+    } else {
+        g_return_if_fail(priv->shared_connections_ip4_count > 0);
+        priv->shared_connections_ip4_count--;
+        state_changed = priv->shared_connections_ip4_count == 0;
+    }
+
+    if (state_changed) {
+        state = priv->shared_connections_ip4_count > 0;
+        _LOGD(LOGD_SHARING, "sharing-ipv4 state change %d -> %d", !state, state);
+        g_signal_emit(self, signals[SHARING_IPV4_CHANGED], 0, state);
+    }
+}
+
+gboolean
+nm_manager_get_sharing_ipv4(NMManager *self)
+{
+    NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE(self);
+
+    return priv->shared_connections_ip4_count > 0;
+}
+
 /*****************************************************************************/
 
 NM_DEFINE_SINGLETON_REGISTER(NMManager);
@@ -9932,6 +9970,17 @@ nm_manager_class_init(NMManagerClass *manager_class)
                                                    G_TYPE_NONE,
                                                    1,
                                                    NM_TYPE_DEVICE);
+
+    signals[SHARING_IPV4_CHANGED] = g_signal_new(NM_MANAGER_SHARING_IPV4_CHANGED,
+                                                 G_OBJECT_CLASS_TYPE(object_class),
+                                                 G_SIGNAL_RUN_FIRST,
+                                                 0,
+                                                 NULL,
+                                                 NULL,
+                                                 NULL,
+                                                 G_TYPE_NONE,
+                                                 1,
+                                                 G_TYPE_BOOLEAN);
 }
 
 NMConfig *
