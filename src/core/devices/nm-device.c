@@ -13493,15 +13493,21 @@ nm_device_activate_schedule_stage3_ip_config(NMDevice *self, gboolean do_sync)
 static void
 _dev_ipsharedx_set_state(NMDevice *self, int addr_family, NMDeviceIPState state)
 {
-    NMDevicePrivate *priv    = NM_DEVICE_GET_PRIVATE(self);
-    const int        IS_IPv4 = NM_IS_IPv4(addr_family);
+    NMDevicePrivate *priv      = NM_DEVICE_GET_PRIVATE(self);
+    const int        IS_IPv4   = NM_IS_IPv4(addr_family);
+    NMDeviceIPState  old_state = priv->ipshared_data_x[IS_IPv4].state;
 
-    if (priv->ipshared_data_x[IS_IPv4].state != state) {
+    if (old_state != state) {
         _LOGD_ipshared(addr_family,
                        "set state %s (was %s)",
                        nm_device_ip_state_to_string(state),
-                       nm_device_ip_state_to_string(priv->ipshared_data_x[IS_IPv4].state));
+                       nm_device_ip_state_to_string(old_state));
         priv->ipshared_data_x[IS_IPv4].state = state;
+
+        if (old_state == NM_DEVICE_IP_STATE_READY || state == NM_DEVICE_IP_STATE_READY)
+            nm_manager_update_shared_connection(NM_MANAGER_GET,
+                                                addr_family,
+                                                state == NM_DEVICE_IP_STATE_READY);
     }
 }
 
