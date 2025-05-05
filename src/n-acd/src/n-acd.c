@@ -360,16 +360,22 @@ _c_public_ int n_acd_new(NAcd **acdp, NAcdConfig *config) {
         acd->max_bpf_map = 8;
 
         r = n_acd_bpf_map_create(&acd->fd_bpf_map, acd->max_bpf_map);
-        if (r)
+        if (r) {
+                fprintf(stderr, " ---- error creating map: %d\n", r);
                 return r;
+        }
 
         r = n_acd_bpf_compile(&fd_bpf_prog, acd->fd_bpf_map, (struct ether_addr*) acd->mac);
-        if (r)
+        if (r) {
+                fprintf(stderr, " ---- error compiling: %d\n", r);
                 return r;
+        }
 
         r = n_acd_socket_new(&acd->fd_socket, fd_bpf_prog, config);
-        if (r)
+        if (r) {
+                fprintf(stderr, " ---- error creating socket: %d\n", r);
                 return r;
+        }
 
         eevent = (struct epoll_event){
                 .events = EPOLLIN,
@@ -386,6 +392,8 @@ _c_public_ int n_acd_new(NAcd **acdp, NAcdConfig *config) {
         r = epoll_ctl(acd->fd_epoll, EPOLL_CTL_ADD, acd->fd_socket, &eevent);
         if (r < 0)
                 return -c_errno();
+
+        fprintf(stderr, " ---- success\n");
 
         *acdp = acd;
         acd = NULL;

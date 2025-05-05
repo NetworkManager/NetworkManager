@@ -159,9 +159,9 @@
 # bpf(BPF_MAP_CREATE, ...) randomly fails with EPERM. That might
 # be related to `ulimit -l`. Anyway, this is not usable at the
 # moment.
-%global ebpf_enabled "no"
+%global ebpf_enabled "yes"
 %else
-%global ebpf_enabled "no"
+%global ebpf_enabled "yes"
 %endif
 
 # Fedora 33 enables LTO by default by setting CFLAGS="-flto -ffat-lto-objects".
