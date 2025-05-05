@@ -1187,6 +1187,46 @@ ip_dns_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 }
 
 static void
+ip_dns_search_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
+{
+    gs_strfreev char **list = NULL;
+    gsize              length;
+
+    nm_assert(NM_IS_SETTING_IP4_CONFIG(setting) || NM_IS_SETTING_IP6_CONFIG(setting));
+
+    list = nm_keyfile_plugin_kf_get_string_list(info->keyfile,
+                                                nm_setting_get_name(setting),
+                                                key,
+                                                &length,
+                                                NULL);
+    nm_assert(length == NM_PTRARRAY_LEN(list));
+    if (length == 0)
+        return;
+
+    if (length == 1 && strpbrk(list[0], ", ")) {
+        /* By mistake, we accepted invalid characters like ',' in DNS search domains.
+         * Now we do some validation that would cause the connection to be rejected by
+         * the daemon. Let's continue accepting ',' and ' ' as separators but emit a
+         * warning */
+        char **list2;
+
+        read_handle_warn(info,
+                         key,
+                         key,
+                         NM_KEYFILE_WARN_SEVERITY_WARN,
+                         _("normalizing invalid separator ',' or ' ' in DNS search value '%s', "
+                           "only ';' will be valid separators in keyfiles in the future"),
+                         list[0]);
+
+        list2 = g_strsplit_set(list[0], ", ", -1);
+        g_strfreev(list);
+        list = list2;
+    }
+
+    g_object_set(setting, key, list, NULL);
+}
+
+static void
 ip6_addr_gen_mode_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
     NMSettingIP6ConfigAddrGenMode addr_gen_mode;
@@ -3084,6 +3124,7 @@ static const ParseInfoSetting *const parse_infos[_NM_META_SETTING_TYPE_NUM] = {
                                 .parser              = ip_dns_parser,
                                 .writer              = dns_writer, ),
             PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_DNS_OPTIONS, .always_write = TRUE, ),
+            PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_DNS_SEARCH, .parser = ip_dns_search_parser, ),
             PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_GATEWAY, .parser = gateway_parser, ),
             PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_ROUTES,
                                 .parser_no_check_key = TRUE,
@@ -3112,6 +3153,7 @@ static const ParseInfoSetting *const parse_infos[_NM_META_SETTING_TYPE_NUM] = {
                                 .parser              = ip_dns_parser,
                                 .writer              = dns_writer, ),
             PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_DNS_OPTIONS, .always_write = TRUE, ),
+            PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_DNS_SEARCH, .parser = ip_dns_search_parser, ),
             PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_GATEWAY, .parser = gateway_parser, ),
             PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_ROUTES,
                                 .parser_no_check_key = TRUE,
