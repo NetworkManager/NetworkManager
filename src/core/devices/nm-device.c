@@ -7125,6 +7125,9 @@ nm_device_controller_release_port(NMDevice           *self,
                                      NM_UNMANAGED_IS_PORT,
                                      NM_UNMAN_FLAG_OP_FORGET,
                                      NM_DEVICE_STATE_REASON_REMOVED);
+
+    /* Once the port is detached, unmanaged-external-down might change */
+    _dev_unmanaged_check_external_down(self, FALSE, FALSE);
 }
 
 /*****************************************************************************/
@@ -8820,6 +8823,9 @@ nm_device_controller_add_port(NMDevice *self, NMDevice *port, gboolean configure
         changed = TRUE;
     } else
         g_return_val_if_fail(port_priv->controller == self, FALSE);
+
+    /* Once the port is attached, unmanaged-external-down might change */
+    _dev_unmanaged_check_external_down(self, TRUE, FALSE);
 
     nm_device_queue_recheck_assume(self);
     nm_device_queue_recheck_assume(port);
