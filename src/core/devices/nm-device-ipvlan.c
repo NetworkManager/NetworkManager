@@ -222,16 +222,6 @@ get_generic_capabilities(NMDevice *device)
 /*****************************************************************************/
 
 static gboolean
-is_available(NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
-{
-    if (!nm_device_parent_get_device(device))
-        return FALSE;
-    return NM_DEVICE_CLASS(nm_device_ipvlan_parent_class)->is_available(device, flags);
-}
-
-/*****************************************************************************/
-
-static gboolean
 check_connection_compatible(NMDevice     *device,
                             NMConnection *connection,
                             gboolean      check_properties,
@@ -376,7 +366,6 @@ nm_device_ipvlan_class_init(NMDeviceIpvlanClass *klass)
     device_class->check_connection_compatible = check_connection_compatible;
     device_class->create_and_realize          = create_and_realize;
     device_class->get_generic_capabilities    = get_generic_capabilities;
-    device_class->is_available                = is_available;
     device_class->link_changed                = link_changed;
     device_class->update_connection           = update_connection;
 

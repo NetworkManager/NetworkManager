@@ -293,16 +293,6 @@ get_generic_capabilities(NMDevice *device)
 /*****************************************************************************/
 
 static gboolean
-is_available(NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
-{
-    if (!nm_device_parent_get_device(device))
-        return FALSE;
-    return NM_DEVICE_CLASS(nm_device_vlan_parent_class)->is_available(device, flags);
-}
-
-/*****************************************************************************/
-
-static gboolean
 check_connection_compatible(NMDevice     *device,
                             NMConnection *connection,
                             gboolean      check_properties,
@@ -561,7 +551,6 @@ nm_device_vlan_class_init(NMDeviceVlanClass *klass)
     device_class->act_stage1_prepare_set_hwaddr_ethernet = TRUE;
     device_class->act_stage1_prepare                     = act_stage1_prepare;
     device_class->get_configured_mtu    = nm_device_get_configured_mtu_wired_parent;
-    device_class->is_available          = is_available;
     device_class->parent_changed_notify = parent_changed_notify;
 
     device_class->check_connection_compatible = check_connection_compatible;
