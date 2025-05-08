@@ -138,14 +138,6 @@ link_changed(NMDevice *device, const NMPlatformLink *pllink)
 }
 
 static gboolean
-is_available(NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
-{
-    if (!nm_device_parent_get_device(device))
-        return FALSE;
-    return NM_DEVICE_CLASS(nm_device_6lowpan_parent_class)->is_available(device, flags);
-}
-
-static gboolean
 complete_connection(NMDevice            *device,
                     NMConnection        *connection,
                     const char          *specific_object,
@@ -237,7 +229,6 @@ nm_device_6lowpan_class_init(NMDevice6LowpanClass *klass)
     device_class->get_generic_capabilities               = get_generic_capabilities;
     device_class->get_configured_mtu                     = nm_device_get_configured_mtu_for_wired;
     device_class->link_changed                           = link_changed;
-    device_class->is_available                           = is_available;
     device_class->parent_changed_notify                  = parent_changed_notify;
     device_class->update_connection                      = update_connection;
 }
