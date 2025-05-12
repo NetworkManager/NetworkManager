@@ -75,11 +75,6 @@ new_device_from_type(const char *name, NMDeviceType device_type)
     const char *type_desc;
     NMLinkType  link_type = NM_LINK_TYPE_NONE;
 
-    if (nm_manager_get_device(NM_MANAGER_GET, name, device_type)) {
-        _LOGT(name, NULL, "Device already registered with manager, skipping.");
-        return NULL;
-    }
-
     if (device_type == NM_DEVICE_TYPE_OVS_INTERFACE) {
         type      = NM_TYPE_DEVICE_OVS_INTERFACE;
         type_desc = "Open vSwitch Interface";
@@ -125,6 +120,11 @@ ovsdb_device_added(NMOvsdb         *ovsdb,
          * don't need to be created by this factory. Ignore
          * anything that is not an internal or patch
          * interface. */
+        return;
+    }
+
+    if (nm_manager_get_device(NM_MANAGER_GET, name, device_type)) {
+        _LOGT(name, NULL, "Device already registered with manager, skipping.");
         return;
     }
 
