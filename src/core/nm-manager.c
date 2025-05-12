@@ -4250,6 +4250,7 @@ add:
         case NM_LINK_TYPE_OLPC_MESH:
         case NM_LINK_TYPE_TEAM:
         case NM_LINK_TYPE_WIFI:
+        case NM_LINK_TYPE_OPENVSWITCH:
             _LOGI(LOGD_PLATFORM,
                   "(%s): '%s' plugin not available; creating generic device",
                   plink->name,
