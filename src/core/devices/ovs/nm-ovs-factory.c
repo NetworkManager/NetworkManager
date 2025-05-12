@@ -75,8 +75,10 @@ new_device_from_type(const char *name, NMDeviceType device_type)
     const char *type_desc;
     NMLinkType  link_type = NM_LINK_TYPE_NONE;
 
-    if (nm_manager_get_device(NM_MANAGER_GET, name, device_type))
+    if (nm_manager_get_device(NM_MANAGER_GET, name, device_type)) {
+        _LOGT(name, NULL, "Device already registered with manager, skipping.");
         return NULL;
+    }
 
     if (device_type == NM_DEVICE_TYPE_OVS_INTERFACE) {
         type      = NM_TYPE_DEVICE_OVS_INTERFACE;
@@ -89,6 +91,7 @@ new_device_from_type(const char *name, NMDeviceType device_type)
         type      = NM_TYPE_DEVICE_OVS_BRIDGE;
         type_desc = "Open vSwitch Bridge";
     } else {
+        _LOGT(name, NULL, "Unrecognized link type: %d", device_type);
         return NULL;
     }
 
@@ -288,23 +291,31 @@ create_device(NMDeviceFactory      *self,
 {
     NMDeviceType device_type     = NM_DEVICE_TYPE_UNKNOWN;
     const char  *connection_type = NULL;
+    const char  *connection_uuid = NULL;
 
     if (g_strcmp0(iface, "ovs-system") == 0) {
         *out_ignore = TRUE;
         return NULL;
     }
 
-    if (connection)
+    if (connection) {
         connection_type = nm_connection_get_connection_type(connection);
+        connection_uuid = nm_connection_get_uuid(connection);
+    }
 
-    if (plink)
+    if (plink) {
+        _LOGD(iface, connection_uuid, "creating OVS interface (from a platform link)");
         device_type = NM_DEVICE_TYPE_OVS_INTERFACE;
-    else if (g_strcmp0(connection_type, NM_SETTING_OVS_INTERFACE_SETTING_NAME) == 0)
+    } else if (nm_streq0(connection_type, NM_SETTING_OVS_INTERFACE_SETTING_NAME)) {
+        _LOGD(iface, connection_uuid, "creating OVS interface (from setting)");
         device_type = NM_DEVICE_TYPE_OVS_INTERFACE;
-    else if (g_strcmp0(connection_type, NM_SETTING_OVS_PORT_SETTING_NAME) == 0)
+    } else if (nm_streq0(connection_type, NM_SETTING_OVS_PORT_SETTING_NAME)) {
+        _LOGD(iface, connection_uuid, "creating OVS port (from setting)");
         device_type = NM_DEVICE_TYPE_OVS_PORT;
-    else if (g_strcmp0(connection_type, NM_SETTING_OVS_BRIDGE_SETTING_NAME) == 0)
+    } else if (nm_streq0(connection_type, NM_SETTING_OVS_BRIDGE_SETTING_NAME)) {
+        _LOGD(iface, connection_uuid, "creating OVS bridge (from setting)");
         device_type = NM_DEVICE_TYPE_OVS_BRIDGE;
+    }
 
     return new_device_from_type(iface, device_type);
 }
