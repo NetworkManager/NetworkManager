@@ -3,6 +3,8 @@
 #include "nm-sd-adapt-shared.h"
 
 #include "format-ifname.h"
+#include "log.h"
+#include "stdio-util.h"
 #include "string-util.h"
 
 assert_cc(STRLEN("%") + DECIMAL_STR_MAX(int) <= IF_NAMESIZE);

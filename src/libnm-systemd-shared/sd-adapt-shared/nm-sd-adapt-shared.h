@@ -121,6 +121,15 @@ raw_getpid(void)
 #define PID_FS_MAGIC 0x50494446
 #endif
 
+/* linux/exportfs.h (33c5ac9175195c36a0b7005aaf503a2e81f117a1, 5.5) */
+#ifndef FILEID_KERNFS
+#define FILEID_KERNFS 0xfe
+#endif
+
+#ifndef AT_EMPTY_PATH
+#define AT_EMPTY_PATH		0x1000	/* Allow empty relative pathname.  */
+#endif
+
 #define HAVE_LINUX_TIME_TYPES_H 0
 
 #ifndef __COMPAR_FN_T

@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#include "missing_fs.h"
 #include "missing_pidfd.h"
 #include "missing_syscall.h"
 

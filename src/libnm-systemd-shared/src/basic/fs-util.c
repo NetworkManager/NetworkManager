@@ -3,11 +3,11 @@
 #include "nm-sd-adapt-shared.h"
 
 #include <errno.h>
+#include <linux/falloc.h>
+#include <linux/magic.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <sys/file.h>
-#include <linux/falloc.h>
-#include <linux/magic.h>
 #include <unistd.h>
 
 #include "alloc-util.h"
@@ -79,6 +79,11 @@ int rmdir_parents(const char *path, const char *stop) {
 
 int rename_noreplace(int olddirfd, const char *oldpath, int newdirfd, const char *newpath) {
         int r;
+
+        assert(olddirfd >= 0 || olddirfd == AT_FDCWD);
+        assert(oldpath);
+        assert(newdirfd >= 0 || newdirfd == AT_FDCWD);
+        assert(newpath);
 
         /* Try the ideal approach first */
         if (renameat2(olddirfd, oldpath, newdirfd, newpath, RENAME_NOREPLACE) >= 0)
@@ -792,7 +797,7 @@ int unlinkat_deallocate(int fd, const char *name, UnlinkDeallocateFlags flags) {
                 }
         }
 
-        /* Don't dallocate if there's nothing to deallocate or if the file is linked elsewhere */
+        /* Don't deallocate if there's nothing to deallocate or if the file is linked elsewhere */
         if (st.st_blocks == 0 || st.st_nlink > 0)
                 return 0;
 
@@ -1041,7 +1046,7 @@ int open_mkdir_at_full(int dirfd, const char *path, int flags, XOpenFlags xopen_
 
         if (flags & ~(O_RDONLY|O_CLOEXEC|O_DIRECTORY|O_EXCL|O_NOATIME|O_NOFOLLOW|O_PATH))
                 return -EINVAL;
-        if ((flags & O_ACCMODE) != O_RDONLY)
+        if ((flags & O_ACCMODE_STRICT) != O_RDONLY)
                 return -EINVAL;
 
         /* Note that O_DIRECTORY|O_NOFOLLOW is implied, but we allow specifying it anyway. The following
@@ -1264,7 +1269,7 @@ int xopenat_full(int dir_fd, const char *path, int open_flags, XOpenFlags xopen_
         }
 
         if (FLAGS_SET(xopen_flags, XO_NOCOW)) {
-                r = chattr_fd(fd, FS_NOCOW_FL, FS_NOCOW_FL, NULL);
+                r = chattr_fd(fd, FS_NOCOW_FL, FS_NOCOW_FL);
                 if (r < 0 && !ERRNO_IS_NOT_SUPPORTED(r))
                         goto error;
         }

@@ -15,11 +15,16 @@
 #include "in-addr-util.h"
 #include "logarithm.h"
 #include "macro.h"
+#include "memory-util.h"
 #include "parse-util.h"
 #include "random-util.h"
 #include "stdio-util.h"
 #include "string-util.h"
 #include "strxcpyx.h"
+
+#define in6_u __in6_u
+#define u6_addr32 __u6_addr32
+#define u6_addr8 __u6_addr8
 
 bool in4_addr_is_null(const struct in_addr *a) {
         assert(a);
@@ -30,7 +35,7 @@ bool in4_addr_is_null(const struct in_addr *a) {
 bool in6_addr_is_null(const struct in6_addr *a) {
         assert(a);
 
-        return IN6_IS_ADDR_UNSPECIFIED(a);
+        return eqzero(a->in6_u.u6_addr32);
 }
 
 int in_addr_is_null(int family, const union in_addr_union *u) {
@@ -68,7 +73,7 @@ bool in4_addr_is_link_local_dynamic(const struct in_addr *a) {
 bool in6_addr_is_link_local(const struct in6_addr *a) {
         assert(a);
 
-        return IN6_IS_ADDR_LINKLOCAL(a);
+        return (a->in6_u.u6_addr32[0] & htobe32(0xffc00000)) == htobe32(0xfe800000);
 }
 
 int in_addr_is_link_local(int family, const union in_addr_union *u) {
@@ -102,7 +107,7 @@ bool in4_addr_is_multicast(const struct in_addr *a) {
 bool in6_addr_is_multicast(const struct in6_addr *a) {
         assert(a);
 
-        return IN6_IS_ADDR_MULTICAST(a);
+        return a->in6_u.u6_addr8[0] == 0xff;
 }
 
 int in_addr_is_multicast(int family, const union in_addr_union *u) {
@@ -138,6 +143,10 @@ bool in4_addr_is_non_local(const struct in_addr *a) {
                !in4_addr_is_localhost(a);
 }
 
+static bool in6_addr_is_loopback(const struct in6_addr *a) {
+        return memcmp(a, &(struct in6_addr) IN6ADDR_LOOPBACK_INIT, sizeof(struct in6_addr)) == 0;
+}
+
 int in_addr_is_localhost(int family, const union in_addr_union *u) {
         assert(u);
 
@@ -145,7 +154,7 @@ int in_addr_is_localhost(int family, const union in_addr_union *u) {
                 return in4_addr_is_localhost(&u->in);
 
         if (family == AF_INET6)
-                return IN6_IS_ADDR_LOOPBACK(&u->in6);
+                return in6_addr_is_loopback(&u->in6);
 
         return -EAFNOSUPPORT;
 }
@@ -158,7 +167,7 @@ int in_addr_is_localhost_one(int family, const union in_addr_union *u) {
                 return be32toh(u->in.s_addr) == UINT32_C(0x7F000001);
 
         if (family == AF_INET6)
-                return IN6_IS_ADDR_LOOPBACK(&u->in6);
+                return in6_addr_is_loopback(&u->in6);
 
         return -EAFNOSUPPORT;
 }
@@ -180,7 +189,7 @@ bool in6_addr_equal(const struct in6_addr *a, const struct in6_addr *b) {
         assert(a);
         assert(b);
 
-        return IN6_ARE_ADDR_EQUAL(a, b);
+        return memcmp(a, b, sizeof(struct in6_addr)) == 0;
 }
 
 int in_addr_equal(int family, const union in_addr_union *a, const union in_addr_union *b) {
@@ -951,7 +960,6 @@ int in_addr_prefix_from_string_auto_full(
                 *ret_prefixlen = k;
 
         return 0;
-
 }
 
 void in_addr_hash_func(const union in_addr_union *u, int family, struct siphash *state) {
