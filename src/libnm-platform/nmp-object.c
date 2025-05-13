@@ -2007,8 +2007,8 @@ _vt_dedup_obj_clone(const NMDedupMultiObj *obj)
         .obj_destroy = _vt_dedup_obj_destroy,                                              \
         .obj_full_hash_update =                                                            \
             (void (*)(const NMDedupMultiObj *obj, NMHashState *h)) nmp_object_hash_update, \
-        .obj_full_equal = (gboolean(*)(const NMDedupMultiObj *obj_a,                       \
-                                       const NMDedupMultiObj *obj_b)) nmp_object_equal,    \
+        .obj_full_equal = (gboolean (*)(const NMDedupMultiObj *obj_a,                      \
+                                        const NMDedupMultiObj *obj_b)) nmp_object_equal,   \
     }
 
 /*****************************************************************************/

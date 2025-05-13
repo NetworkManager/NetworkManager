@@ -255,8 +255,8 @@ _assert_expected_content(NMConnection *connection, const char *filename, const c
         GError        *_error           = NULL;                           \
         gboolean       _success;                                          \
                                                                           \
-        g_assert(_ifcfg_dir &&_ifcfg_dir[0]);                             \
-        g_assert(_filename &&_filename[0]);                               \
+        g_assert(_ifcfg_dir && _ifcfg_dir[0]);                            \
+        g_assert(_filename && _filename[0]);                              \
                                                                           \
         _success = nms_ifcfg_rh_writer_write_connection(_connection,      \
                                                         _ifcfg_dir,       \
@@ -9533,12 +9533,10 @@ test_svUnescape(void)
         .exp        = v_expected,    \
         .can_concat = !!v_expected,  \
     }
-#define V2(v_value, v_expected)                 \
-    {                                           \
-        .val                   = "" v_value "", \
-        .exp                   = v_expected,    \
-        .can_concat            = TRUE,          \
-        .needs_ascii_separator = TRUE,          \
+#define V2(v_value, v_expected)                                      \
+    {                                                                \
+        .val = "" v_value "", .exp = v_expected, .can_concat = TRUE, \
+        .needs_ascii_separator = TRUE,                               \
     }
     const UnescapeTestData data_full[] = {
         V1("", ""),

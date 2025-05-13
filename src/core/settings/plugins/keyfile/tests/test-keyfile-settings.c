@@ -61,7 +61,7 @@ check_ip_route(NMSettingIPConfig *config,
         gs_free_error GError *_error = NULL;                                              \
         NMConnection         *_connection;                                                \
                                                                                           \
-        g_assert(full_filename &&full_filename[0] == '/');                                \
+        g_assert(full_filename && full_filename[0] == '/');                               \
                                                                                           \
         _connection =                                                                     \
             nms_keyfile_reader_from_file(full_filename,                                   \

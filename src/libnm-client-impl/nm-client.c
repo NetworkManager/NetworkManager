@@ -8205,7 +8205,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_settings = NML_DBUS_META_IFACE_IN
             _priv.settings.connections,
             nm_remote_connection_get_type,
             .notify_changed_ao       = _property_ao_notify_changed_connections_cb,
-            .check_nmobj_visible_fcn = (gboolean(*)(GObject *)) nm_remote_connection_get_visible),
+            .check_nmobj_visible_fcn = (gboolean (*)(GObject *)) nm_remote_connection_get_visible),
         NML_DBUS_META_PROPERTY_INIT_S("Hostname",
                                       PROP_HOSTNAME,
                                       NMClient,

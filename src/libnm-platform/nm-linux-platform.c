@@ -6143,7 +6143,7 @@ nla_put_failure:
         const int         _dirfd  = (dirfd);                                                      \
         const char *const _path   = (path);                                                       \
                                                                                                   \
-        nm_assert(_path &&_path[0]);                                                              \
+        nm_assert(_path && _path[0]);                                                             \
         g_assert(!strstr(_path, "/../"));                                                         \
         if (_dirfd < 0) {                                                                         \
             nm_assert(!_pathid);                                                                  \
@@ -6151,7 +6151,7 @@ nla_put_failure:
             nm_assert(NM_STR_HAS_PREFIX(_path, "/proc/sys/") || NM_STR_HAS_PREFIX(_path, "/sys/") \
                       || NM_STR_HAS_PREFIX(_path, "/proc/net"));                                  \
         } else {                                                                                  \
-            nm_assert(_pathid &&_pathid[0] && _pathid[0] != '/');                                 \
+            nm_assert(_pathid && _pathid[0] && _pathid[0] != '/');                                \
             nm_assert(_path[0] != '/');                                                           \
         }                                                                                         \
     }                                                                                             \
