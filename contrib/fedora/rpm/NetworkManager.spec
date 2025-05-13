@@ -106,6 +106,11 @@
 %else
 %bcond_without iwd
 %endif
+%if 0%{?rhel}
+%bcond_with nbft
+%else
+%bcond_without nbft
+%endif
 
 ###############################################################################
 
@@ -307,7 +312,9 @@ BuildRequires: libubsan
 BuildRequires: firewalld-filesystem
 BuildRequires: iproute
 BuildRequires: iproute-tc
+%if %{with nbft}
 BuildRequires: libnvme-devel >= 1.5
+%endif
 
 Provides: %{name}-dispatcher%{?_isa} = %{epoch}:%{version}-%{release}
 
@@ -707,6 +714,11 @@ Preferably use nmcli instead.
 	-Dpppd_plugin_dir="%{_libdir}/pppd/%{ppp_version}" \
 %else
 	-Dppp=false \
+%endif
+%if %{with nbft}
+	-Dnbft=true \
+%else
+	-Dnbft=false \
 %endif
 	-Ddist_version=%{version}-%{release} \
 %if %{with default_ifcfg_rh}
