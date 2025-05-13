@@ -1504,7 +1504,7 @@ _nmtst_main_loop_quit_on_notify(GObject *object, GParamSpec *pspec, gpointer use
                                                    (timeout_msec),                                \
                                                    (poll_msec),                                   \
                                                    condition))                                    \
-            g_assert(FALSE &&#condition);                                                         \
+            g_assert(FALSE && #condition);                                                        \
     }                                                                                             \
     G_STMT_END
 

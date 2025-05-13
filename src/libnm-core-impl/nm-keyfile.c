@@ -1684,7 +1684,7 @@ nm_keyfile_detect_unqualified_path_scheme(const char   *base_dir,
         const char *const _bin     = (bin);                             \
         const gsize       _bin_len = (bin_len);                         \
                                                                         \
-        nm_assert(_bin &&_bin_len > 0);                                 \
+        nm_assert(_bin && _bin_len > 0);                                \
                                                                         \
         (_bin_len > NM_STRLEN(scheme) + 1 && _bin[_bin_len - 1] == '\0' \
          && memcmp(_bin, scheme, NM_STRLEN(scheme)) == 0);              \

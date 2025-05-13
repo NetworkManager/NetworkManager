@@ -117,7 +117,7 @@ ip6_address_delete(NMPlatform *platform, int ifindex, struct in6_addr addr, guin
         const int         _dirfd  = (dirfd);                                                     \
         const char *const _path   = (path);                                                      \
                                                                                                  \
-        g_assert(_path &&_path[0]);                                                              \
+        g_assert(_path && _path[0]);                                                             \
         g_assert(!strstr(_path, "/../"));                                                        \
         if (_dirfd < 0) {                                                                        \
             g_assert(!_pathid);                                                                  \

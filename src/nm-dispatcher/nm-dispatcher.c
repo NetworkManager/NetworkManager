@@ -163,7 +163,7 @@ struct Request {
         const ScriptInfo *const _script  = (x_script);                        \
         const Request *const    _request = _script ? _script->request : NULL; \
                                                                               \
-        nm_assert(_script &&_request);                                        \
+        nm_assert(_script && _request);                                       \
         if (enabled_cmd)                                                      \
             __LOG_print_S(print_cmd, _request, _script, ": "__VA_ARGS__);     \
     }                                                                         \

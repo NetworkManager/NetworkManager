@@ -641,7 +641,7 @@ _nm_printf(3, 4) static void _iovec_set_format(struct iovec *iov,
     {                                                               \
         const char *_str_arg = (str_arg);                           \
                                                                     \
-        nm_assert(_str_arg &&strlen(_str_arg) < (max_str_len));     \
+        nm_assert(_str_arg && strlen(_str_arg) < (max_str_len));    \
         _iovec_set_format_a((iov), (max_str_len), format, str_arg); \
     }                                                               \
     G_STMT_END
