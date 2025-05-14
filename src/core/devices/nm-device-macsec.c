@@ -684,14 +684,6 @@ get_generic_capabilities(NMDevice *dev)
 /******************************************************************/
 
 static gboolean
-is_available(NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
-{
-    if (!nm_device_parent_get_device(device))
-        return FALSE;
-    return NM_DEVICE_CLASS(nm_device_macsec_parent_class)->is_available(device, flags);
-}
-
-static gboolean
 create_and_realize(NMDevice              *device,
                    NMConnection          *connection,
                    NMDevice              *parent,
@@ -903,7 +895,6 @@ nm_device_macsec_class_init(NMDeviceMacsecClass *klass)
     device_class->deactivate               = deactivate;
     device_class->get_generic_capabilities = get_generic_capabilities;
     device_class->link_changed             = link_changed;
-    device_class->is_available             = is_available;
     device_class->parent_changed_notify    = parent_changed_notify;
     device_class->state_changed            = device_state_changed;
     device_class->get_configured_mtu       = nm_device_get_configured_mtu_wired_parent;
