@@ -299,31 +299,42 @@ get_word(char **argument, const char separator)
 {
     char *word;
     int   nest = 0;
+    char *last_ch;
+    char *first_close = NULL;
 
     if (*argument == NULL)
         return NULL;
 
-    if (**argument == '[') {
-        nest++;
-        (*argument)++;
-    }
-
-    word = *argument;
+    word = last_ch = *argument;
 
     while (**argument != '\0') {
-        if (nest && **argument == ']') {
-            **argument = '\0';
-            (*argument)++;
-            nest--;
-            continue;
-        }
-
         if (nest == 0 && **argument == separator) {
             **argument = '\0';
             (*argument)++;
             break;
         }
+        if (**argument == '[') {
+            nest++;
+        } else if (nest && **argument == ']') {
+            nest--;
+            if (!first_close && nest == 0)
+                first_close = *argument;
+        }
+
+        last_ch = *argument;
         (*argument)++;
+    }
+
+    /* If the word is surrounded with the nesting symbols [], strip them so we return
+     * the inner content only.
+     * If there were nesting symbols but embracing only part of the inner content, don't
+     * remove them. Example:
+     *    Remove [] in get_word("[fc08::1]:other_token", ":")
+     *    Don't remove [] in get_word("ip6=[fc08::1]:other_token", ":")
+     */
+    if (*word == '[' && *last_ch == ']' && last_ch == first_close) {
+        word++;
+        *last_ch = '\0';
     }
 
     return *word ? word : NULL;
@@ -533,7 +544,7 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
     NMSettingConnection           *s_con;
     NMSettingIPConfig             *s_ip4 = NULL, *s_ip6 = NULL;
     gs_unref_hashtable GHashTable *ibft = NULL;
-    const char                    *tmp;
+    char                          *tmp;
     const char                    *tmp2;
     const char                    *tmp3;
     const char                    *kind;
@@ -578,13 +589,23 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
             kind       = tmp3;
         } else {
             /* <client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>:<kind> */
-            client_ip = tmp;
+
+            /* note: split here address and prefix to normalize IPs defined as
+             * [dead::beef]/64. Latter parsing would fail due to the '[]'. */
+            client_ip = get_word(&tmp, '/');
+
             if (client_ip) {
-                client_ip_family = get_ip_address_family(client_ip, TRUE);
+                client_ip_family = get_ip_address_family(client_ip, FALSE);
                 if (client_ip_family == AF_UNSPEC) {
                     _LOGW(LOGD_CORE, "Invalid IP address '%s'.", client_ip);
                     return;
                 }
+            }
+
+            if (!nm_str_is_empty(tmp)) {
+                gboolean is_ipv4 = client_ip_family == AF_INET;
+
+                client_ip_prefix = _nm_utils_ascii_str_to_int64(tmp, 10, 0, is_ipv4 ? 32 : 128, -1);
             }
 
             peer            = tmp2;
@@ -661,11 +682,7 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
         NMIPAddress *address = NULL;
         NMIPAddr     addr;
 
-        if (nm_inet_parse_with_prefix_bin(client_ip_family,
-                                          client_ip,
-                                          NULL,
-                                          &addr,
-                                          client_ip_prefix == -1 ? &client_ip_prefix : NULL)) {
+        if (nm_inet_parse_bin(client_ip_family, client_ip, NULL, &addr)) {
             if (client_ip_prefix == -1) {
                 switch (client_ip_family) {
                 case AF_INET:
@@ -905,14 +922,25 @@ reader_parse_controller(Reader     *reader,
 
         opts = get_word(&argument, ':');
         while (opts && *opts) {
-            gs_free_error GError *error = NULL;
-            char                 *opt;
-            const char           *opt_name;
+            gs_free_error GError             *error = NULL;
+            char                             *tmp;
+            const char                       *opt_name;
+            char                             *opt;
+            const char                       *opt_value;
+            nm_auto_unref_ptrarray GPtrArray *opt_values     = g_ptr_array_new();
+            gs_free char                     *opt_normalized = NULL;
 
+            opt_name = get_word(&opts, '=');
             opt      = get_word(&opts, ',');
-            opt_name = get_word(&opt, '=');
 
-            if (!_nm_setting_bond_validate_option(opt_name, opt, &error)) {
+            /* Normalize: convert ';' to ',' and remove '[]' from IPv6 addresses */
+            tmp = opt;
+            while ((opt_value = get_word(&tmp, ';')))
+                g_ptr_array_add(opt_values, (gpointer) opt_value);
+            g_ptr_array_add(opt_values, NULL);
+            opt_normalized = g_strjoinv(",", (char **) opt_values->pdata);
+
+            if (!_nm_setting_bond_validate_option(opt_name, opt_normalized, &error)) {
                 _LOGW(LOGD_CORE,
                       "Ignoring invalid bond option: %s%s%s = %s%s%s: %s",
                       NM_PRINT_FMT_QUOTE_STRING(opt_name),
@@ -920,7 +948,7 @@ reader_parse_controller(Reader     *reader,
                       error->message);
                 continue;
             }
-            nm_setting_bond_add_option(s_bond, opt_name, opt);
+            nm_setting_bond_add_option(s_bond, opt_name, opt_normalized);
         }
 
         mtu = get_word(&argument, ':');
