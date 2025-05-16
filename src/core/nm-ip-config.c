@@ -826,7 +826,7 @@ _handle_l3cd_changed(NMIPConfig *self, const NML3ConfigData *l3cd)
     if (v_i != v_i_old)
         changed_params[n_changed_params++] = obj_properties_ip[PROP_IP_DNS_PRIORITY];
 
-    strarr_old = nm_l3_config_data_get_dns_options(l3cd_old, addr_family, &len);
+    strarr_old = nm_l3_config_data_get_dns_options(l3cd_old, addr_family, &len_old);
     strarr     = nm_l3_config_data_get_dns_options(priv->l3cd, addr_family, &len);
     if (!nm_strv_equal_n(strarr, len, strarr_old, len_old))
         changed_params[n_changed_params++] = obj_properties_ip[PROP_IP_DNS_OPTIONS];
