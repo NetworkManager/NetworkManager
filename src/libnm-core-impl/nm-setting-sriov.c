@@ -22,6 +22,7 @@
 NM_GOBJECT_PROPERTIES_DEFINE(NMSettingSriov,
                              PROP_TOTAL_VFS,
                              PROP_VFS,
+                             PROP_PRESERVE_ON_DOWN,
                              PROP_AUTOPROBE_DRIVERS,
                              PROP_ESWITCH_MODE,
                              PROP_ESWITCH_INLINE_MODE,
@@ -39,6 +40,7 @@ struct _NMSettingSriov {
     GPtrArray *vfs;
     int        autoprobe_drivers;
     guint32    total_vfs;
+    int        preserve_on_down;
     int        eswitch_mode;
     int        eswitch_inline_mode;
     int        eswitch_encap_mode;
@@ -827,6 +829,22 @@ nm_setting_sriov_clear_vfs(NMSettingSriov *setting)
 }
 
 /**
+ * nm_setting_sriov_get_preserve_on_down:
+ * @setting: the #NMSettingSriov
+ *
+ * Returns: the value contained in the #NMSettingSriov:preserve-on-down property.
+ *
+ * Since: 1.56
+ */
+NMSriovPreserveOnDown
+nm_setting_sriov_get_preserve_on_down(NMSettingSriov *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_SRIOV(setting), NM_SRIOV_PRESERVE_ON_DOWN_DEFAULT);
+
+    return setting->preserve_on_down;
+}
+
+/**
  * nm_setting_sriov_get_autoprobe_drivers:
  * @setting: the #NMSettingSriov
  *
@@ -1461,6 +1479,35 @@ nm_setting_sriov_class_init(NMSettingSriovClass *klass)
                                             NULL,
                                             NMSettingSriov,
                                             eswitch_encap_mode);
+
+    /**
+     * NMSettingSriov:preserve-on-down
+     *
+     * This controls whether NetworkManager preserves the SR-IOV parameters set on
+     * the device when the connection is deactivated, or whether it resets them to
+     * their default value. The SR-IOV parameters are those specified in this setting
+     * (the "sriov" setting), like the number of VFs to create, the eswitch
+     * configuration, etc.
+     *
+     * If set to %NM_SRIOV_PRESERVE_ON_DOWN_NO, NetworkManager resets the SR-IOV
+     * parameters when the connection is deactivated. When set to
+     * %NM_SRIOV_PRESERVE_ON_DOWN_YES, NetworkManager preserves those parameters
+     * on the device. If the value is %NM_SRIOV_PRESERVE_ON_DOWN_DEFAULT, NetworkManager
+     * looks up a global default value in the configuration; in case no such value is
+     * defined, it uses %NM_SRIOV_PRESERVE_ON_DOWN_NO as fallback.
+     *
+     * Since: 1.56
+     */
+    _nm_setting_property_define_direct_enum(properties_override,
+                                            obj_properties,
+                                            NM_SETTING_SRIOV_PRESERVE_ON_DOWN,
+                                            PROP_PRESERVE_ON_DOWN,
+                                            NM_TYPE_SRIOV_PRESERVE_ON_DOWN,
+                                            NM_SRIOV_PRESERVE_ON_DOWN_DEFAULT,
+                                            NM_SETTING_PARAM_FUZZY_IGNORE,
+                                            NULL,
+                                            NMSettingSriov,
+                                            preserve_on_down);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
