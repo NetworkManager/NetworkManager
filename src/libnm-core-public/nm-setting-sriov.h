@@ -28,6 +28,7 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_SRIOV_TOTAL_VFS           "total-vfs"
 #define NM_SETTING_SRIOV_VFS                 "vfs"
+#define NM_SETTING_SRIOV_PRESERVE_ON_DOWN    "preserve-on-down"
 #define NM_SETTING_SRIOV_AUTOPROBE_DRIVERS   "autoprobe-drivers"
 #define NM_SETTING_SRIOV_ESWITCH_MODE        "eswitch-mode"
 #define NM_SETTING_SRIOV_ESWITCH_INLINE_MODE "eswitch-inline-mode"
@@ -55,6 +56,22 @@ typedef enum {
     NM_SRIOV_VF_VLAN_PROTOCOL_802_1Q  = 0,
     NM_SRIOV_VF_VLAN_PROTOCOL_802_1AD = 1,
 } NMSriovVFVlanProtocol;
+
+/**
+ * NMSriovPreserveOnDown:
+ * @NM_SRIOV_PRESERVE_ON_DOWN_DEFAULT: use the default value
+ * @NM_SRIOV_PRESERVE_ON_DOWN_NO: reset the SR-IOV parameters when the
+ *     connection is deactivated
+ * @NM_SRIOV_PRESERVE_ON_DOWN_YES: preserve the SR-IOV parameters set on
+     * the device when the connection is deactivated
+ *
+ * Since: 1.56
+ */
+typedef enum {
+    NM_SRIOV_PRESERVE_ON_DOWN_DEFAULT = -1,
+    NM_SRIOV_PRESERVE_ON_DOWN_NO      = 0,
+    NM_SRIOV_PRESERVE_ON_DOWN_YES     = 1,
+} NMSriovPreserveOnDown;
 
 /**
  * NMSriovEswitchMode:
@@ -123,6 +140,8 @@ NM_AVAILABLE_IN_1_14
 gboolean nm_setting_sriov_remove_vf_by_index(NMSettingSriov *setting, guint index);
 NM_AVAILABLE_IN_1_14
 void nm_setting_sriov_clear_vfs(NMSettingSriov *setting);
+NM_AVAILABLE_IN_1_56
+NMSriovPreserveOnDown nm_setting_sriov_get_preserve_on_down(NMSettingSriov *setting);
 NM_AVAILABLE_IN_1_14
 NMTernary nm_setting_sriov_get_autoprobe_drivers(NMSettingSriov *setting);
 NM_AVAILABLE_IN_1_46

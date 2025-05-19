@@ -2074,3 +2074,9 @@ global:
 	nm_setting_prefix_delegation_get_type;
 	nm_setting_prefix_delegation_new;
 } libnm_1_52_0;
+
+libnm_1_56_0 {
+global:
+	nm_setting_sriov_get_preserve_on_down;
+	nm_sriov_preserve_on_down_get_type;
+} libnm_1_54_0;
