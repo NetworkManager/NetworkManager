@@ -90,6 +90,7 @@ ssize_t loop_read(int fd, void *buf, size_t nbytes, bool do_poll) {
                         return n;
 
                 assert((size_t) k <= nbytes);
+                assert(k <= SSIZE_MAX - n);
 
                 p += k;
                 nbytes -= k;
@@ -194,7 +195,7 @@ int pipe_eof(int fd) {
 }
 #endif /* NM_IGNORED */
 
-int ppoll_usec(struct pollfd *fds, size_t nfds, usec_t timeout) {
+int ppoll_usec_full(struct pollfd *fds, size_t nfds, usec_t timeout, const sigset_t *ss) {
         int r;
 
         assert(fds || nfds == 0);
@@ -214,10 +215,10 @@ int ppoll_usec(struct pollfd *fds, size_t nfds, usec_t timeout) {
          *  to handle signals, such as signalfd() or signal handlers. ⚠️ ⚠️ ⚠️
          */
 
-        if (nfds == 0)
+        if (nfds == 0 && timeout == 0)
                 return 0;
 
-        r = ppoll(fds, nfds, timeout == USEC_INFINITY ? NULL : TIMESPEC_STORE(timeout), NULL);
+        r = ppoll(fds, nfds, timeout == USEC_INFINITY ? NULL : TIMESPEC_STORE(timeout), ss);
         if (r < 0)
                 return -errno;
         if (r == 0)

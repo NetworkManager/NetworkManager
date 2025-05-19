@@ -7,7 +7,6 @@
 #include <string.h>
 #include <sys/types.h>
 
-#include "alloc-util.h"
 #include "macro.h"
 #include "memory-util-fundamental.h"
 
@@ -35,12 +34,15 @@ static inline void* mempcpy_safe(void *dst, const void *src, size_t n) {
         return mempcpy(dst, src, n);
 }
 
-#define mempcpy_typesafe(dst, src, n)                                   \
+#define _mempcpy_typesafe(dst, src, n, sz)                              \
         ({                                                              \
-                size_t _sz_;                                            \
-                assert_se(MUL_SAFE(&_sz_, sizeof((dst)[0]), n));        \
-                (typeof((dst)[0])*) mempcpy_safe(dst, src, _sz_);       \
+                size_t sz;                                              \
+                assert_se(MUL_SAFE(&sz, sizeof((dst)[0]), n));          \
+                (typeof((dst)[0])*) mempcpy_safe(dst, src, sz);         \
         })
+
+#define mempcpy_typesafe(dst, src, n)                                   \
+        _mempcpy_typesafe(dst, src, n, UNIQ_T(sz, UNIQ))
 
 /* Normal memcmp() requires s1 and s2 to be nonnull. We do nothing if n is 0. */
 static inline int memcmp_safe(const void *s1, const void *s2, size_t n) {
@@ -59,19 +61,19 @@ static inline int memcmp_nn(const void *s1, size_t n1, const void *s2, size_t n2
 
 #define zero(x) (memzero(&(x), sizeof(x)))
 
-bool memeqbyte(uint8_t byte, const void *data, size_t length);
+bool memeqbyte(uint8_t byte, const void *data, size_t length) _nonnull_if_nonzero_(2, 3);
 
 #define memeqzero(data, length) memeqbyte(0x00, data, length)
 
 #define eqzero(x) memeqzero(x, sizeof(x))
 
-static inline void *mempset(void *s, int c, size_t n) {
+static inline void* mempset(void *s, int c, size_t n) {
         memset(s, c, n);
-        return (uint8_t*)s + n;
+        return (uint8_t*) s + n;
 }
 
 /* Normal memmem() requires haystack to be nonnull, which is annoying for zero-length buffers */
-static inline void *memmem_safe(const void *haystack, size_t haystacklen, const void *needle, size_t needlelen) {
+static inline void* memmem_safe(const void *haystack, size_t haystacklen, const void *needle, size_t needlelen) {
 
         if (needlelen <= 0)
                 return (void*) haystack;
@@ -85,7 +87,7 @@ static inline void *memmem_safe(const void *haystack, size_t haystacklen, const 
         return memmem(haystack, haystacklen, needle, needlelen);
 }
 
-static inline void *mempmem_safe(const void *haystack, size_t haystacklen, const void *needle, size_t needlelen) {
+static inline void* mempmem_safe(const void *haystack, size_t haystacklen, const void *needle, size_t needlelen) {
         const uint8_t *p;
 
         p = memmem_safe(haystack, haystacklen, needle, needlelen);
@@ -95,16 +97,7 @@ static inline void *mempmem_safe(const void *haystack, size_t haystacklen, const
         return (uint8_t*) p + needlelen;
 }
 
-static inline void* erase_and_free(void *p) {
-        size_t l;
-
-        if (!p)
-                return NULL;
-
-        l = MALLOC_SIZEOF_SAFE(p);
-        explicit_bzero_safe(p, l);
-        return mfree(p);
-}
+void* erase_and_free(void *p);
 
 static inline void erase_and_freep(void *p) {
         erase_and_free(*(void**) p);
@@ -116,4 +109,57 @@ static inline void erase_char(char *p) {
 }
 
 /* Makes a copy of the buffer with reversed order of bytes */
-void *memdup_reverse(const void *mem, size_t size);
+void* memdup_reverse(const void *mem, size_t size);
+
+#define _DEFINE_TRIVIAL_REF_FUNC(type, name, scope)             \
+        scope type *name##_ref(type *p) {                       \
+                if (!p)                                         \
+                        return NULL;                            \
+                                                                \
+                /* For type check. */                           \
+                unsigned *q = &p->n_ref;                        \
+                assert(*q > 0);                                 \
+                assert_se(*q < UINT_MAX);                       \
+                                                                \
+                (*q)++;                                         \
+                return p;                                       \
+        }
+
+#define _DEFINE_TRIVIAL_UNREF_FUNC(type, name, free_func, scope) \
+        scope type *name##_unref(type *p) {                      \
+                if (!p)                                          \
+                        return NULL;                             \
+                                                                 \
+                assert(p->n_ref > 0);                            \
+                p->n_ref--;                                      \
+                if (p->n_ref > 0)                                \
+                        return NULL;                             \
+                                                                 \
+                return free_func(p);                             \
+        }
+
+#define DEFINE_TRIVIAL_REF_FUNC(type, name)     \
+        _DEFINE_TRIVIAL_REF_FUNC(type, name,)
+#define DEFINE_PRIVATE_TRIVIAL_REF_FUNC(type, name)     \
+        _DEFINE_TRIVIAL_REF_FUNC(type, name, static)
+#define DEFINE_PUBLIC_TRIVIAL_REF_FUNC(type, name)      \
+        _DEFINE_TRIVIAL_REF_FUNC(type, name, _public_)
+
+#define DEFINE_TRIVIAL_UNREF_FUNC(type, name, free_func)        \
+        _DEFINE_TRIVIAL_UNREF_FUNC(type, name, free_func,)
+#define DEFINE_PRIVATE_TRIVIAL_UNREF_FUNC(type, name, free_func)        \
+        _DEFINE_TRIVIAL_UNREF_FUNC(type, name, free_func, static)
+#define DEFINE_PUBLIC_TRIVIAL_UNREF_FUNC(type, name, free_func)         \
+        _DEFINE_TRIVIAL_UNREF_FUNC(type, name, free_func, _public_)
+
+#define DEFINE_TRIVIAL_REF_UNREF_FUNC(type, name, free_func)    \
+        DEFINE_TRIVIAL_REF_FUNC(type, name);                    \
+        DEFINE_TRIVIAL_UNREF_FUNC(type, name, free_func);
+
+#define DEFINE_PRIVATE_TRIVIAL_REF_UNREF_FUNC(type, name, free_func)    \
+        DEFINE_PRIVATE_TRIVIAL_REF_FUNC(type, name);                    \
+        DEFINE_PRIVATE_TRIVIAL_UNREF_FUNC(type, name, free_func);
+
+#define DEFINE_PUBLIC_TRIVIAL_REF_UNREF_FUNC(type, name, free_func)    \
+        DEFINE_PUBLIC_TRIVIAL_REF_FUNC(type, name);                    \
+        DEFINE_PUBLIC_TRIVIAL_UNREF_FUNC(type, name, free_func);

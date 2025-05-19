@@ -263,8 +263,7 @@ int cg_get_attribute_as_bool(const char *controller, const char *path, const cha
 int cg_get_owner(const char *path, uid_t *ret_uid);
 
 int cg_set_xattr(const char *path, const char *name, const void *value, size_t size, int flags);
-int cg_get_xattr(const char *path, const char *name, void *value, size_t size);
-int cg_get_xattr_malloc(const char *path, const char *name, char **ret);
+int cg_get_xattr_malloc(const char *path, const char *name, char **ret, size_t *ret_size);
 /* Returns negative on error, and 0 or 1 on success for the bool value */
 int cg_get_xattr_bool(const char *path, const char *name);
 int cg_remove_xattr(const char *path, const char *name);
@@ -312,10 +311,6 @@ int cg_mask_supported_subtree(const char *root, CGroupMask *ret);
 int cg_mask_from_string(const char *s, CGroupMask *ret);
 int cg_mask_to_string(CGroupMask mask, char **ret);
 
-int cg_kernel_controllers(Set **controllers);
-
-bool cg_ns_supported(void);
-bool cg_freezer_supported(void);
 bool cg_kill_supported(void);
 
 int cg_all_unified(void);
@@ -328,9 +323,6 @@ static inline int cg_unified(void) {
 
 const char* cgroup_controller_to_string(CGroupController c) _const_;
 CGroupController cgroup_controller_from_string(const char *s) _pure_;
-
-bool is_cgroup_fs(const struct statfs *s);
-bool fd_is_cgroup_fs(int fd);
 
 typedef enum ManagedOOMMode {
         MANAGED_OOM_AUTO,
@@ -365,4 +357,4 @@ typedef union {
                 .file_handle.handle_type = FILEID_KERNFS,       \
         }
 
-#define CG_FILE_HANDLE_CGROUPID(fh) (*(uint64_t*) (fh).file_handle.f_handle)
+#define CG_FILE_HANDLE_CGROUPID(fh) (*CAST_ALIGN_PTR(uint64_t, (fh).file_handle.f_handle))
