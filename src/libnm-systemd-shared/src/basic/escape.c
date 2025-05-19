@@ -82,10 +82,15 @@ char* cescape_length(const char *s, size_t n) {
         const char *f;
         char *r, *t;
 
+        /* Does C style string escaping. May be reversed with cunescape(). */
+
         assert(s || n == 0);
 
-        /* Does C style string escaping. May be reversed with
-         * cunescape(). */
+        if (n == SIZE_MAX)
+                n = strlen(s);
+
+        if (n > (SIZE_MAX - 1) / 4)
+                return NULL;
 
         r = new(char, n*4 + 1);
         if (!r)
@@ -97,12 +102,6 @@ char* cescape_length(const char *s, size_t n) {
         *t = 0;
 
         return r;
-}
-
-char* cescape(const char *s) {
-        assert(s);
-
-        return cescape_length(s, strlen(s));
 }
 
 int cunescape_one(const char *p, size_t length, char32_t *ret, bool *eight_bit, bool accept_nul) {
@@ -452,7 +451,7 @@ char* escape_non_printable_full(const char *str, size_t console_width, XEscapeFl
 char* octescape(const char *s, size_t len) {
         char *buf, *t;
 
-        /* Escapes all chars in bad, in addition to \ and " chars, in \nnn style escaping. */
+        /* Escapes \ and " chars, in \nnn style escaping. */
 
         assert(s || len == 0);
 
@@ -482,12 +481,18 @@ char* octescape(const char *s, size_t len) {
         return buf;
 }
 
-char* decescape(const char *s, const char *bad, size_t len) {
+char* decescape(const char *s, size_t len, const char *bad) {
         char *buf, *t;
 
         /* Escapes all chars in bad, in addition to \ and " chars, in \nnn decimal style escaping. */
 
         assert(s || len == 0);
+
+        if (len == SIZE_MAX)
+                len = strlen(s);
+
+        if (len > (SIZE_MAX - 1) / 4)
+                return NULL;
 
         t = buf = new(char, len * 4 + 1);
         if (!buf)

@@ -6,11 +6,11 @@
 #include "nm-sd-adapt-core.h"
 
 #include <errno.h>
-#include <sys/ioctl.h>
 #ifdef __GLIBC__
 #include <linux/if_arp.h>
 #endif
 #include <linux/if_infiniband.h>
+#include <sys/ioctl.h>
 
 #include "sd-dhcp6-client.h"
 
@@ -1295,7 +1295,8 @@ static int client_receive_message(
 
         sd_dhcp6_client *client = ASSERT_PTR(userdata);
         DHCP6_CLIENT_DONT_DESTROY(client);
-        /* This needs to be initialized with zero. See #20741. */
+        /* This needs to be initialized with zero. See #20741.
+         * The issue is fixed on glibc-2.35 (8fba672472ae0055387e9315fc2eddfa6775ca79). */
         CMSG_BUFFER_TYPE(CMSG_SPACE_TIMEVAL) control = {};
         struct iovec iov;
         union sockaddr_union sa = {};
