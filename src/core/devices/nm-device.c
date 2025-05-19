@@ -6617,8 +6617,12 @@ concheck_update_state(NMDevice           *self,
 
     _notify(self, IS_IPv4 ? PROP_IP4_CONNECTIVITY : PROP_IP6_CONNECTIVITY);
 
-    if (priv->state == NM_DEVICE_STATE_ACTIVATED && !nm_device_managed_type_is_external(self))
+    /* State change could've affected the route metrics (removed the penalty
+     * once FULL connectivity is reached), redo the L3 configuration. */
+    if (priv->state > NM_DEVICE_STATE_IP_CONFIG && priv->state < NM_DEVICE_STATE_DEACTIVATING
+        && !nm_device_managed_type_is_external(self)) {
         _dev_l3_register_l3cds(self, priv->l3cfg, TRUE, NM_TERNARY_DEFAULT);
+    }
 }
 
 const char *
