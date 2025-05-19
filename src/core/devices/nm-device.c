@@ -1416,6 +1416,26 @@ _prop_get_connection_mdns(NMDevice *self)
                                                        NM_SETTING_CONNECTION_MDNS_DEFAULT);
 }
 
+static gboolean
+_prop_get_sriov_preserve_on_down(NMDevice *self, NMSettingSriov *s_sriov)
+{
+    NMSriovPreserveOnDown preserve;
+
+    g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
+    g_return_val_if_fail(NM_IS_SETTING_SRIOV(s_sriov), FALSE);
+
+    preserve = nm_setting_sriov_get_preserve_on_down(s_sriov);
+    if (NM_IN_SET(preserve, NM_SRIOV_PRESERVE_ON_DOWN_NO, NM_SRIOV_PRESERVE_ON_DOWN_YES))
+        return preserve;
+
+    return nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
+                                                       NM_CON_DEFAULT("sriov.preserve-on-down"),
+                                                       self,
+                                                       NM_SRIOV_PRESERVE_ON_DOWN_NO,
+                                                       NM_SRIOV_PRESERVE_ON_DOWN_YES,
+                                                       NM_SRIOV_PRESERVE_ON_DOWN_NO);
+}
+
 static NMSettingConnectionLlmnr
 _prop_get_connection_llmnr(NMDevice *self)
 {
@@ -17478,7 +17498,8 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
             }
 
             if (priv->ifindex > 0
-                && (s_sriov = nm_device_get_applied_setting(self, NM_TYPE_SETTING_SRIOV))) {
+                && (s_sriov = nm_device_get_applied_setting(self, NM_TYPE_SETTING_SRIOV))
+                && (!_prop_get_sriov_preserve_on_down(self, s_sriov))) {
                 priv->sriov_reset_pending++;
                 sriov_op_queue(self,
                                0,
@@ -17533,7 +17554,8 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
             nm_settings_connection_update_timestamp(sett_conn, (guint64) 0);
 
         if (priv->ifindex > 0
-            && (s_sriov = nm_device_get_applied_setting(self, NM_TYPE_SETTING_SRIOV))) {
+            && (s_sriov = nm_device_get_applied_setting(self, NM_TYPE_SETTING_SRIOV))
+            && (!_prop_get_sriov_preserve_on_down(self, s_sriov))) {
             priv->sriov_reset_pending++;
             sriov_op_queue(self,
                            0,
