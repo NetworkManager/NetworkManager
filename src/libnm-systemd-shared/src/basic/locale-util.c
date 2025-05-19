@@ -19,8 +19,9 @@
 #include "fileio.h"
 #include "hashmap.h"
 #include "locale-util.h"
-#include "missing_syscall.h"
+#include "log.h"
 #include "path-util.h"
+#include "process-util.h"
 #include "set.h"
 #include "string-table.h"
 #include "string-util.h"
@@ -28,7 +29,7 @@
 #include "utf8.h"
 
 #if 0 /* NM_IGNORED */
-static char *normalize_locale(const char *name) {
+static char* normalize_locale(const char *name) {
         const char *e;
 
         /* Locale names are weird: glibc has some magic rules when looking for the charset name on disk: it
@@ -96,18 +97,15 @@ static int add_locales_from_archive(Set *locales) {
                 uint32_t locrec_offset;
         };
 
-        const struct locarhead *h;
-        const struct namehashent *e;
-        const void *p = MAP_FAILED;
-        _cleanup_close_ int fd = -EBADF;
-        size_t sz = 0;
-        struct stat st;
         int r;
 
-        fd = open("/usr/lib/locale/locale-archive", O_RDONLY|O_NOCTTY|O_CLOEXEC);
+        assert(locales);
+
+        _cleanup_close_ int fd = open("/usr/lib/locale/locale-archive", O_RDONLY|O_NOCTTY|O_CLOEXEC);
         if (fd < 0)
                 return errno == ENOENT ? 0 : -errno;
 
+        struct stat st;
         if (fstat(fd, &st) < 0)
                 return -errno;
 
@@ -120,11 +118,12 @@ static int add_locales_from_archive(Set *locales) {
         if (file_offset_beyond_memory_size(st.st_size))
                 return -EFBIG;
 
-        p = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+        void *p = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
         if (p == MAP_FAILED)
                 return -errno;
 
-        h = (const struct locarhead *) p;
+        const struct namehashent *e;
+        const struct locarhead *h = p;
         if (h->magic != 0xde020109 ||
             h->namehash_offset + h->namehash_size > st.st_size ||
             h->string_offset + h->string_size > st.st_size ||
@@ -157,9 +156,9 @@ static int add_locales_from_archive(Set *locales) {
 
         r = 0;
 
- finish:
+finish:
         if (p != MAP_FAILED)
-                munmap((void*) p, sz);
+                munmap((void*) p, st.st_size);
 
         return r;
 }
@@ -167,6 +166,8 @@ static int add_locales_from_archive(Set *locales) {
 static int add_locales_from_libdir(Set *locales) {
         _cleanup_closedir_ DIR *dir = NULL;
         int r;
+
+        assert(locales);
 
         dir = opendir("/usr/lib/locale");
         if (!dir)
@@ -183,7 +184,7 @@ static int add_locales_from_libdir(Set *locales) {
                         return -ENOMEM;
 
                 r = set_consume(locales, z);
-                if (r < 0 && r != -EEXIST)
+                if (r < 0)
                         return r;
         }
 
@@ -191,11 +192,10 @@ static int add_locales_from_libdir(Set *locales) {
 }
 
 int get_locales(char ***ret) {
-        _cleanup_set_free_free_ Set *locales = NULL;
-        _cleanup_strv_free_ char **l = NULL;
+        _cleanup_set_free_ Set *locales = NULL;
         int r;
 
-        locales = set_new(&string_hash_ops);
+        locales = set_new(&string_hash_ops_free);
         if (!locales)
                 return -ENOMEM;
 
@@ -216,31 +216,25 @@ int get_locales(char ***ret) {
                         free(set_remove(locales, locale));
         }
 
-        l = set_get_strv(locales);
+        _cleanup_strv_free_ char **l = set_to_strv(&locales);
         if (!l)
                 return -ENOMEM;
 
-        /* Now, all elements are owned by strv 'l'. Hence, do not call set_free_free(). */
-        locales = set_free(locales);
-
         r = getenv_bool("SYSTEMD_LIST_NON_UTF8_LOCALES");
-        if (IN_SET(r, -ENXIO, 0)) {
-                char **a, **b;
+        if (r <= 0) {
+                if (!IN_SET(r, -ENXIO, 0))
+                        log_debug_errno(r, "Failed to parse $SYSTEMD_LIST_NON_UTF8_LOCALES as boolean, ignoring: %m");
 
                 /* Filter out non-UTF-8 locales, because it's 2019, by default */
-                for (a = b = l; *a; a++) {
-
-                        if (endswith(*a, "UTF-8") ||
-                            strstr(*a, ".UTF-8@"))
+                char **b = l;
+                STRV_FOREACH(a, l)
+                        if (endswith(*a, "UTF-8") || strstr(*a, ".UTF-8@"))
                                 *(b++) = *a;
                         else
                                 free(*a);
-                }
 
                 *b = NULL;
-
-        } else if (r < 0)
-                log_debug_errno(r, "Failed to parse $SYSTEMD_LIST_NON_UTF8_LOCALES as boolean");
+        }
 
         strv_sort(l);
 
@@ -287,64 +281,48 @@ int locale_is_installed(const char *name) {
 }
 #endif /* NM_IGNORED */
 
-bool is_locale_utf8(void) {
-        static int cached_answer = -1;
+static bool is_locale_utf8_impl(void) {
         const char *set;
         int r;
 
-        /* Note that we default to 'true' here, since today UTF8 is
-         * pretty much supported everywhere. */
-
-        if (cached_answer >= 0)
-                goto out;
+        /* Note that we default to 'true' here, since today UTF8 is pretty much supported everywhere. */
 
         r = secure_getenv_bool("SYSTEMD_UTF8");
-        if (r >= 0) {
-                cached_answer = r;
-                goto out;
-        } else if (r != -ENXIO)
+        if (r >= 0)
+                return r;
+        if (r != -ENXIO)
                 log_debug_errno(r, "Failed to parse $SYSTEMD_UTF8, ignoring: %m");
 
         /* This function may be called from libsystemd, and setlocale() is not thread safe. Assuming yes. */
-        if (gettid() != raw_getpid()) {
-                cached_answer = true;
-                goto out;
-        }
+        if (!is_main_thread())
+                return true;
 
-        if (!setlocale(LC_ALL, "")) {
-                cached_answer = true;
-                goto out;
-        }
+        if (!setlocale(LC_ALL, ""))
+                return true;
 
         set = nl_langinfo(CODESET);
-        if (!set) {
-                cached_answer = true;
-                goto out;
-        }
+        if (!set || streq(set, "UTF-8"))
+                return true;
 
-        if (streq(set, "UTF-8")) {
-                cached_answer = true;
-                goto out;
-        }
-
-        /* For LC_CTYPE=="C" return true, because CTYPE is effectively
-         * unset and everything can do to UTF-8 nowadays. */
         set = setlocale(LC_CTYPE, NULL);
-        if (!set) {
-                cached_answer = true;
-                goto out;
-        }
+        if (!set)
+                return true;
 
-        /* Check result, but ignore the result if C was set
-         * explicitly. */
-        cached_answer =
-                STR_IN_SET(set, "C", "POSIX") &&
+        /* Unless LC_CTYPE is explicitly overridden, return true. Because here CTYPE is effectively unset
+         * and everything can do to UTF-8 nowadays. */
+        return STR_IN_SET(set, "C", "POSIX") &&
                 !getenv("LC_ALL") &&
                 !getenv("LC_CTYPE") &&
                 !getenv("LANG");
+}
 
-out:
-        return (bool) cached_answer;
+bool is_locale_utf8(void) {
+        static int cached = -1;
+
+        if (cached < 0)
+                cached = is_locale_utf8_impl();
+
+        return cached;
 }
 
 #if 0 /* NM_IGNORED */

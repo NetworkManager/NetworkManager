@@ -76,6 +76,8 @@ raw_getpid(void)
 #endif
 }
 
+#define in6_u __in6_u
+
 #define gettid() nm_utils_gettid()
 
 /* we build with C11 and thus <uchar.h> provides char32_t,char16_t. */
