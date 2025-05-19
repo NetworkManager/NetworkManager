@@ -11454,32 +11454,32 @@ static void
 test_dns_uri_parse(void)
 {
     /* clang-format off */
-    t_dns_1("dns+tls://8.8.8.8",                   INET,  TLS,  "8.8.8.8",            -1, NULL,      NULL);
-    t_dns_1("dns+tls://8.8.8.8",                   INET,  TLS,  "8.8.8.8",            -1, NULL,      NULL);
-    t_dns_1("dns+tls://1.2.3.4#name",              INET,  TLS,  "1.2.3.4",            -1, "name",    NULL);
-    t_dns_1("dns+tls://1.2.3.4#a.b.c",             INET,  TLS,  "1.2.3.4",            -1, "a.b.c",   NULL);
-    t_dns_1("dns+tls://1.2.3.4:53",                INET,  TLS,  "1.2.3.4",            53, NULL,      NULL);
-    t_dns_1("dns+tls://1.2.3.4:53#foobar",         INET,  TLS,  "1.2.3.4",            53, "foobar",  NULL);
-    t_dns_1("dns+tls://192.168.120.250:99",        INET,  TLS,  "192.168.120.250",    99, NULL,      NULL);
-    t_dns_1("dns+udp://8.8.8.8:65535",             INET,  UDP,  "8.8.8.8",         65535, NULL,      NULL);
+    t_dns_1("dns+tls://8.8.8.8",                   INET,  TLS,  "8.8.8.8",            0,     NULL,      NULL);
+    t_dns_1("dns+tls://8.8.8.8",                   INET,  TLS,  "8.8.8.8",            0,     NULL,      NULL);
+    t_dns_1("dns+tls://1.2.3.4#name",              INET,  TLS,  "1.2.3.4",            0,     "name",    NULL);
+    t_dns_1("dns+tls://1.2.3.4#a.b.c",             INET,  TLS,  "1.2.3.4",            0,     "a.b.c",   NULL);
+    t_dns_1("dns+tls://1.2.3.4:53",                INET,  TLS,  "1.2.3.4",            53,    NULL,      NULL);
+    t_dns_1("dns+tls://1.2.3.4:53#foobar",         INET,  TLS,  "1.2.3.4",            53,    "foobar",  NULL);
+    t_dns_1("dns+tls://192.168.120.250:99",        INET,  TLS,  "192.168.120.250",    99,    NULL,      NULL);
+    t_dns_1("dns+udp://8.8.8.8:65535",             INET,  UDP,  "8.8.8.8",         65535,    NULL,      NULL);
 
-    t_dns_1("dns+udp://[fd01::1]",                 INET6, UDP,  "fd01::1",            -1, NULL,      NULL);
-    t_dns_1("dns+tls://[fd01::2]:5353",            INET6, UDP,  "fd01::2",          5353, NULL,      NULL);
-    t_dns_1("dns+tls://[::1]#name",                INET6, UDP,  "::1",                -1, "name",    NULL);
-    t_dns_1("dns+tls://[::2]:65535#name",          INET6, UDP,  "::2",             65535, "name",    NULL);
-    t_dns_1("dns+udp://[::ffff:1.2.3.4]",          INET6, UDP,  "::ffff:1.2.3.4",     -1, NULL,      NULL);
-    t_dns_1("dns+tls://[fe80::1%eth0]",            INET6, UDP,  "fe80::1",            -1, NULL,      "eth0");
-    t_dns_1("dns+tls://[fe80::2%en1]:53#a",        INET6, UDP,  "fe80::2",            53, "a",       "en1");
-    t_dns_1("dns+tls://[fe80::1%en3456789012345]", INET6, UDP,  "fe80::1",            -1, NULL, "en3456789012345");
+    t_dns_1("dns+udp://[fd01::1]",                 INET6, UDP,  "fd01::1",            0,     NULL,      NULL);
+    t_dns_1("dns+tls://[fd01::2]:5353",            INET6, UDP,  "fd01::2",            5353,  NULL,      NULL);
+    t_dns_1("dns+tls://[::1]#name",                INET6, UDP,  "::1",                0,     "name",    NULL);
+    t_dns_1("dns+tls://[::2]:65535#name",          INET6, UDP,  "::2",                65535, "name",    NULL);
+    t_dns_1("dns+udp://[::ffff:1.2.3.4]",          INET6, UDP,  "::ffff:1.2.3.4",     0,     NULL,      NULL);
+    t_dns_1("dns+tls://[fe80::1%eth0]",            INET6, UDP,  "fe80::1",            0,     NULL,      "eth0");
+    t_dns_1("dns+tls://[fe80::2%en1]:53#a",        INET6, UDP,  "fe80::2",            53,    "a",       "en1");
+    t_dns_1("dns+tls://[fe80::1%en3456789012345]", INET6, UDP,  "fe80::1",            0,     NULL,      "en3456789012345");
 
-    t_dns_1("1.2.3.4",                             INET,  NONE, "1.2.3.4",            -1, NULL,      NULL);
-    t_dns_1("1.2.3.4#foo",                         INET,  NONE, "1.2.3.4",            -1, "foo",     NULL);
-    t_dns_1("1::#x",                               INET6, NONE, "1::",                -1, "x",       NULL);
-    t_dns_1("1::0#x",                              INET6, NONE, "1::",                -1, "x",       NULL);
-    t_dns_1("192.168.0.1",                         INET,  NONE, "192.168.0.1",        -1, NULL,      NULL);
-    t_dns_1("192.168.0.1#tst.com",                 INET,  NONE, "192.168.0.1",        -1, "tst.com", NULL);
-    t_dns_1("fe80::18",                            INET6, NONE, "fe80::18",           -1, NULL,      NULL);
-    t_dns_1("fe80::18#foo.com",                    INET6, NONE, "fe80::18",           -1, "foo.com", NULL);
+    t_dns_1("1.2.3.4",                             INET,  NONE, "1.2.3.4",            0,     NULL,      NULL);
+    t_dns_1("1.2.3.4#foo",                         INET,  NONE, "1.2.3.4",            0,     "foo",     NULL);
+    t_dns_1("1::#x",                               INET6, NONE, "1::",                0,     "x",       NULL);
+    t_dns_1("1::0#x",                              INET6, NONE, "1::",                0,     "x",       NULL);
+    t_dns_1("192.168.0.1",                         INET,  NONE, "192.168.0.1",        0,     NULL,      NULL);
+    t_dns_1("192.168.0.1#tst.com",                 INET,  NONE, "192.168.0.1",        0,     "tst.com", NULL);
+    t_dns_1("fe80::18",                            INET6, NONE, "fe80::18",           0,     NULL,      NULL);
+    t_dns_1("fe80::18#foo.com",                    INET6, NONE, "fe80::18",           0,     "foo.com", NULL);
     /* clang-format on */
 
     t_dns_0("http://8.8.8.8");              /* unsupported schema */

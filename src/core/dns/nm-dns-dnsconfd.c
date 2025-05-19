@@ -393,6 +393,12 @@ server_builder_append_base(GVariantBuilder   *argument_builder,
                               "{sv}",
                               "name",
                               g_variant_new("s", dns_server.servername));
+    if (dns_server.port != NM_DNS_PORT_UNDEFINED) {
+        g_variant_builder_add(argument_builder,
+                              "{sv}",
+                              "port",
+                              g_variant_new("i", dns_server.port));
+    }
     if (routing_domains) {
         g_variant_builder_add(argument_builder,
                               "{sv}",
