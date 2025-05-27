@@ -749,9 +749,7 @@ nm_dns_uri_parse(int addr_family, const char *str, NMDnsServer *dns)
     if (!str)
         return FALSE;
 
-    *dns = (NMDnsServer) {
-        .port = -1,
-    };
+    *dns = (NMDnsServer) {0};
 
     if (NM_STR_HAS_PREFIX(str, "dns+tls://")) {
         dns->scheme = NM_DNS_URI_SCHEME_TLS;
@@ -816,8 +814,8 @@ nm_dns_uri_parse(int addr_family, const char *str, NMDnsServer *dns)
         end++;
         if (*end == ':') {
             end++;
-            dns->port = _nm_utils_ascii_str_to_int64(end, 10, 0, 65535, G_MAXINT32);
-            if (dns->port == G_MAXINT32)
+            dns->port = _nm_utils_ascii_str_to_int64(end, 10, 1, 65535, 0);
+            if (dns->port == 0)
                 return FALSE;
         }
     } else if (addr_family != AF_INET6) {
@@ -831,8 +829,8 @@ nm_dns_uri_parse(int addr_family, const char *str, NMDnsServer *dns)
         if (port) {
             addr = nm_strndup_a(100, addr_port, port - addr_port, &addr_heap);
             port++;
-            dns->port = _nm_utils_ascii_str_to_int64(port, 10, 0, 65535, G_MAXINT32);
-            if (dns->port == G_MAXINT32)
+            dns->port = _nm_utils_ascii_str_to_int64(port, 10, 1, 65535, 0);
+            if (dns->port == 0)
                 return FALSE;
         }
     } else {
@@ -885,7 +883,7 @@ nm_dns_uri_parse_plain(int addr_family, const char *str, char *out_addrstr, NMIP
         }
         return TRUE;
     case NM_DNS_URI_SCHEME_UDP:
-        if (dns.port != -1 && dns.port != 53)
+        if (dns.port != NM_DNS_PORT_UNDEFINED && dns.port != 53)
             return FALSE;
         if (dns.interface[0])
             return FALSE;
@@ -929,9 +927,9 @@ nm_dns_uri_normalize(int addr_family, const char *str, char **out_free)
 
     nm_inet_ntop(dns.addr_family, &dns.addr, addrstr);
 
-    if (dns.port != -1) {
-        nm_assert(dns.port >= 0 && dns.port <= 65535);
-        g_snprintf(portstr, sizeof(portstr), "%d", dns.port);
+    if (dns.port != NM_DNS_PORT_UNDEFINED) {
+        nm_assert(dns.port >= 1 && dns.port <= 65535);
+        g_snprintf(portstr, sizeof(portstr), "%" G_GUINT16_FORMAT, dns.port);
     }
 
     switch (dns.scheme) {
@@ -955,15 +953,15 @@ nm_dns_uri_normalize(int addr_family, const char *str, char **out_free)
             ret = g_strconcat(addrstr, "#", dns.servername, NULL);
         break;
     case NM_DNS_URI_SCHEME_UDP:
-        if (dns.interface[0] || dns.port != -1) {
+        if (dns.interface[0] || dns.port != NM_DNS_PORT_UNDEFINED) {
             ret = g_strdup_printf("dns+udp://%s%s%s%s%s%s%s",
                                   dns.addr_family == AF_INET6 ? "[" : "",
                                   addrstr,
                                   dns.interface[0] ? "%" : "",
                                   dns.interface[0] ? dns.interface : "",
                                   dns.addr_family == AF_INET6 ? "]" : "",
-                                  dns.port != -1 ? ":" : "",
-                                  dns.port != -1 ? portstr : "");
+                                  dns.port != NM_DNS_PORT_UNDEFINED ? ":" : "",
+                                  dns.port != NM_DNS_PORT_UNDEFINED ? portstr : "");
             break;
         }
         ret = g_strdup_printf("%s%s%s", addrstr, dns.servername ? "#" : "", dns.servername ?: "");
@@ -975,8 +973,8 @@ nm_dns_uri_normalize(int addr_family, const char *str, char **out_free)
                               dns.interface[0] ? "%%" : "",
                               dns.interface[0] ? dns.interface : "",
                               dns.addr_family == AF_INET6 ? "]" : "",
-                              dns.port != -1 ? ":" : "",
-                              dns.port != -1 ? portstr : "",
+                              dns.port != NM_DNS_PORT_UNDEFINED ? ":" : "",
+                              dns.port != NM_DNS_PORT_UNDEFINED ? portstr : "",
                               dns.servername ? "#" : "",
                               dns.servername ?: "");
         break;

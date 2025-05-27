@@ -319,13 +319,15 @@ typedef enum {
     NM_DNS_URI_SCHEME_TLS,
 } NMDnsUriScheme;
 
+#define NM_DNS_PORT_UNDEFINED 0
+
 typedef struct {
     NMIPAddr       addr;
     const char    *servername;
     char           interface[NM_IFNAMSIZ];
     NMDnsUriScheme scheme;
     int            addr_family;
-    int            port;
+    guint16        port;
 } NMDnsServer;
 
 gboolean nm_dns_uri_parse(int addr_family, const char *str, NMDnsServer *out_dns);
