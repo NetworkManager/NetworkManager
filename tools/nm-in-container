@@ -321,7 +321,7 @@ RUN dnf install -y \\
     wireguard-tools \\
     wireshark-cli
 
-RUN dnf debuginfo-install --skip-broken NetworkManager \$(ldd /usr/sbin/NetworkManager | sed -n 's/.* => \\(.*\\) (0x[0-9A-Fa-f]*)$/\1/p' | xargs -n1 readlink -f) -y
+RUN dnf debuginfo-install --skip-unavailable --skip-broken NetworkManager \$(ldd /usr/sbin/NetworkManager | sed -n 's/.* => \\(.*\\) (0x[0-9A-Fa-f]*)$/\1/p' | xargs -n1 readlink -f) -y
 
 RUN dnf clean all
 
