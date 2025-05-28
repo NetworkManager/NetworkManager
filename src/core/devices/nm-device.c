@@ -13895,7 +13895,8 @@ _cleanup_ip_pre(NMDevice *self, int addr_family, CleanupType cleanup_type, gbool
     NMDevicePrivate *priv         = NM_DEVICE_GET_PRIVATE(self);
     gboolean         keep_reapply = (cleanup_type == CLEANUP_TYPE_KEEP_REAPPLY);
 
-    _dev_ipforwarding_cleanup(self, addr_family);
+    if (NM_IN_SET(cleanup_type, CLEANUP_TYPE_DECONFIGURE, CLEANUP_TYPE_KEEP_REAPPLY))
+        _dev_ipforwarding_cleanup(self, addr_family);
 
     _dev_ipsharedx_cleanup(self, addr_family);
 
