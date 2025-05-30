@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
 if enable_introspection
+  xsltproc = find_program('xsltproc')
+
   settings = 'settings-spec'
   output = settings + '.xml'
 

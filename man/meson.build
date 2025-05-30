@@ -1,29 +1,5 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
-common_ent_file = configure_file(
-  input: 'common.ent.in',
-  output: '@BASENAME@',
-  configuration: data_conf,
-)
-
-xsltproc_options = [
-  xsltproc,
-  '--output', '@OUTPUT@',
-  '--path', meson.current_build_dir(),
-  '--xinclude',
-  '--nonet',
-  '--stringparam', 'man.output.quietly', '1',
-  '--stringparam', 'funcsynopsis.style', 'ansi',
-  '--stringparam', 'man.th.extra1.suppress', '1',
-  '--stringparam', 'man.authors.section.enabled', '0',
-  '--stringparam', 'man.copyright.section.enabled', '0',
-  '--stringparam', 'man.th.title.max.length', '30',
-]
-
-docbook_xls = 'http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl'
-
-mans_xmls = []
-
 mans = [
   ['NetworkManager', '8'],
   ['NetworkManager-dispatcher', '8'],
@@ -44,24 +20,74 @@ if enable_nm_cloud_setup
   mans += [['nm-cloud-setup', '8']]
 endif
 
-foreach man: mans
-  input = man[0] + '.xml'
-  content_files += join_paths(meson.current_source_dir(), input)
+introspection_mans = [
+  ['nm-settings-keyfile', '5'],
+  ['nm-settings-dbus',    '5'],
+  ['nm-settings-nmcli',   '5'],
+]
 
-  output = '@0@.@1@'.format(man[0], man[1])
+if enable_ifcfg_rh
+  introspection_mans += [['nm-settings-ifcfg-rh', '5']]
+endif
 
-  custom_target(
-    output,
-    input: input,
-    output: output,
-    command: xsltproc_options + [docbook_xls, '@INPUT@'],
-    depend_files: common_ent_file,
-    install: true,
-    install_dir: join_paths(nm_mandir, 'man' + man[1]),
-  )
+built_mans = []
+foreach man: mans + introspection_mans
+  name = man[0] + '.' + man[1]
+  if not fs.exists(name)
+    built_mans = []
+    break
+  endif
+
+  built_mans += name
 endforeach
 
-if enable_introspection
+if enable_introspection or enable_docs
+  common_ent_file = configure_file(
+    input: 'common.ent.in',
+    output: '@BASENAME@',
+    configuration: data_conf,
+  )
+endif
+
+if enable_introspection and (enable_man or enable_docs)
+  xsltproc_options = [
+    find_program('xsltproc'),
+    '--output', '@OUTPUT@',
+    '--path', meson.current_build_dir(),
+    '--xinclude',
+    '--nonet',
+    '--stringparam', 'man.output.quietly', '1',
+    '--stringparam', 'funcsynopsis.style', 'ansi',
+    '--stringparam', 'man.th.extra1.suppress', '1',
+    '--stringparam', 'man.authors.section.enabled', '0',
+    '--stringparam', 'man.copyright.section.enabled', '0',
+    '--stringparam', 'man.th.title.max.length', '30',
+  ]
+
+  docbook_xls = 'http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl'
+
+  mans_xmls = []
+
+  foreach man: mans
+    input = man[0] + '.xml'
+    content_files += join_paths(meson.current_source_dir(), input)
+
+    output = '@0@.@1@'.format(man[0], man[1])
+
+    # not needed if only html requested
+    if enable_man
+      custom_target(
+        output,
+        input: input,
+        output: output,
+        command: xsltproc_options + [docbook_xls, '@INPUT@'],
+        depend_files: common_ent_file,
+        install: true,
+        install_dir: join_paths(nm_mandir, 'man' + man[1]),
+      )
+    endif
+  endforeach
+
   merge_cmd = files(source_root / 'tools' / 'generate-docs-nm-settings-docs-merge.py')
 
   name = 'dbus'
@@ -124,13 +150,23 @@ if enable_introspection
 
     output = '@0@.@1@'.format(man[0], man[1])
 
-    custom_target(
-      output,
-      input: input,
-      output: output,
-      command: xsltproc_options + [docbook_xls, '@INPUT@'],
-      install: true,
-      install_dir: join_paths(nm_mandir, 'man' + man[1]),
-    )
+    # not needed if only html requested
+    if enable_man
+      custom_target(
+        output,
+        input: input,
+        output: output,
+        command: xsltproc_options + [docbook_xls, '@INPUT@'],
+        install: true,
+        install_dir: join_paths(nm_mandir, 'man' + man[1]),
+      )
+    endif
   endforeach
+# not needed if only html requested
+elif enable_man
+  if built_mans.length() > 0
+    install_man(built_mans)
+  else
+    error('Building manpages requires xsltproc and -Dintrospection=true, and no prebuilt manpages were found. Try building from a release tarball or using -Dman=false.')
+  endif
 endif
