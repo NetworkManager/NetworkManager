@@ -9040,6 +9040,8 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
             NM_META_SETTING_VALID_PART_ITEM (BOND,                  TRUE),
             NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
             NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
+            NM_META_SETTING_VALID_PART_ITEM (IP4_CONFIG,            FALSE),
+            NM_META_SETTING_VALID_PART_ITEM (IP6_CONFIG,            FALSE),
         ),
     ),
     SETTING_INFO (BOND_PORT),

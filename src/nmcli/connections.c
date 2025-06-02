@@ -4063,6 +4063,57 @@ is_property_valid(NMSetting *setting, const char *property, GError **error)
 }
 
 static char *
+is_property_valid_for_connection(NMConnection *con,
+                                 NMSetting    *setting,
+                                 const char   *property,
+                                 GError      **error)
+{
+    const char *con_type  = NULL;
+    const char *port_type = NULL;
+
+    if (con) {
+        NMSettingConnection *s_con = nm_connection_get_setting_connection(con);
+        con_type                   = nm_setting_connection_get_connection_type(s_con);
+        port_type                  = nm_setting_connection_get_port_type(s_con);
+    }
+
+    if (port_type && nm_streq0(con_type, NM_SETTING_BOND_SETTING_NAME)) {
+        if (NM_IN_STRSET(nm_setting_get_name(setting),
+                         NM_SETTING_IP4_CONFIG_SETTING_NAME,
+                         NM_SETTING_IP6_CONFIG_SETTING_NAME)) {
+            const char *valid_props[2] = {NM_SETTING_IP_CONFIG_METHOD, NULL};
+            return g_strdup(nmc_string_is_valid(property, (const char **) &valid_props, error));
+        }
+    }
+
+    return is_property_valid(setting, property, error);
+}
+
+static bool
+is_property_value_valid_for_connection(NMConnection *con,
+                                       const char   *property,
+                                       const char   *value,
+                                       GError      **error)
+{
+    const char *con_type  = NULL;
+    const char *port_type = NULL;
+
+    if (con) {
+        NMSettingConnection *s_con = nm_connection_get_setting_connection(con);
+        con_type                   = nm_setting_connection_get_connection_type(s_con);
+        port_type                  = nm_setting_connection_get_port_type(s_con);
+    }
+
+    if (port_type && nm_streq0(con_type, NM_SETTING_BOND_SETTING_NAME)
+        && nm_streq0(property, NM_SETTING_IP_CONFIG_METHOD)) {
+        const char *valid_props[2] = {NM_SETTING_IP4_CONFIG_METHOD_DISABLED, NULL};
+        return nmc_string_is_valid(value, (const char **) &valid_props, error);
+    }
+
+    return TRUE;
+}
+
+static char *
 unique_controller_iface_ifname(const GPtrArray *connections, const char *try_name)
 {
     char *new_name;
@@ -4383,7 +4434,7 @@ set_property(NMClient              *client,
         nm_connection_add_setting(connection, setting);
     }
 
-    property_name = is_property_valid(setting, property, &local);
+    property_name = is_property_valid_for_connection(connection, setting, property, &local);
     if (!property_name) {
         g_set_error(error,
                     NMCLI_ERROR,
@@ -4394,14 +4445,15 @@ set_property(NMClient              *client,
         return FALSE;
     }
 
-    if (!nmc_setting_set_property(client,
-                                  setting,
-                                  property_name,
-                                  ((modifier == NM_META_ACCESSOR_MODIFIER_DEL && !value)
-                                       ? NM_META_ACCESSOR_MODIFIER_SET
-                                       : modifier),
-                                  value,
-                                  &local)) {
+    if (!is_property_value_valid_for_connection(connection, property, value, &local)
+        || !nmc_setting_set_property(client,
+                                     setting,
+                                     property_name,
+                                     ((modifier == NM_META_ACCESSOR_MODIFIER_DEL && !value)
+                                          ? NM_META_ACCESSOR_MODIFIER_SET
+                                          : modifier),
+                                     value,
+                                     &local)) {
         g_set_error(error,
                     NMCLI_ERROR,
                     NMC_RESULT_ERROR_USER_INPUT,
