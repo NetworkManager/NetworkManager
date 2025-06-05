@@ -17,6 +17,10 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Add support for configuring the loopback interface in nmtui.
 * Most of the properties of ovs-bridge and ovs-port connections can
   now be reapplied at runtime without bringing the connection down.
+* Add a new "sriov.preserve-on-down" property that controls whether
+  NetworkManager preserves the SR-IOV parameters set on the device
+  when the connection is deactivated, or whether it resets them to
+  their default value.
 
 =============================================
 NetworkManager-1.52
