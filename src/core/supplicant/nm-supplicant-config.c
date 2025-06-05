@@ -1012,7 +1012,7 @@ nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig           
         if (_get_capability(priv, NM_SUPPL_CAP_TYPE_SAE)
             && _get_capability(priv, NM_SUPPL_CAP_TYPE_PMF)
             && _get_capability(priv, NM_SUPPL_CAP_TYPE_BIP)
-            && (!is_ap || pmf != NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE)) {
+            && (pmf != NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE)) {
             g_string_append(key_mgmt_conf, " SAE");
             if (!is_ap && _get_capability(priv, NM_SUPPL_CAP_TYPE_FT))
                 g_string_append(key_mgmt_conf, " FT-SAE");
