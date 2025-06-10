@@ -2,11 +2,12 @@
 
 #include "nm-sd-adapt-shared.h"
 
-/* Make sure the net/if.h header is included before any linux/ one */
-#include <net/if.h>
 #include <arpa/inet.h>
 #include <errno.h>
 #include <limits.h>
+#include <net/if.h>
+#include <linux/if.h>
+#include <linux/if_arp.h>
 #include <netdb.h>
 #include <netinet/ip.h>
 #include <poll.h>
@@ -16,9 +17,6 @@
 #include <stdlib.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-#if 0 /* NM_IGNORED */
-#include <linux/if.h>
-#endif /* NM_IGNORED */
 
 #include "alloc-util.h"
 #include "errno-util.h"
@@ -32,6 +30,7 @@
 #include "parse-util.h"
 #include "path-util.h"
 #include "process-util.h"
+#include "random-util.h"
 #include "socket-util.h"
 #include "string-table.h"
 #include "string-util.h"
@@ -1361,6 +1360,53 @@ void* cmsg_find_and_copy_data(struct msghdr *mh, int level, int type, void *buf,
 }
 
 #if 0 /* NM_IGNORED */
+size_t sockaddr_ll_len(const struct sockaddr_ll *sa) {
+        /* Certain hardware address types (e.g Infiniband) do not fit into sll_addr
+         * (8 bytes) and run over the structure. This function returns the correct size that
+         * must be passed to kernel. */
+
+        assert(sa->sll_family == AF_PACKET);
+
+        size_t mac_len = sizeof(sa->sll_addr);
+
+        if (be16toh(sa->sll_hatype) == ARPHRD_ETHER)
+                mac_len = MAX(mac_len, (size_t) ETH_ALEN);
+        if (be16toh(sa->sll_hatype) == ARPHRD_INFINIBAND)
+                mac_len = MAX(mac_len, (size_t) INFINIBAND_ALEN);
+
+        return offsetof(struct sockaddr_ll, sll_addr) + mac_len;
+}
+
+size_t sockaddr_un_len(const struct sockaddr_un *sa) {
+        /* Covers only file system and abstract AF_UNIX socket addresses, but not unnamed socket addresses. */
+
+        assert(sa->sun_family == AF_UNIX);
+
+        return offsetof(struct sockaddr_un, sun_path) +
+                (sa->sun_path[0] == 0 ?
+                        1 + strnlen(sa->sun_path+1, sizeof(sa->sun_path)-1) :
+                        strnlen(sa->sun_path, sizeof(sa->sun_path))+1);
+}
+
+size_t sockaddr_len(const union sockaddr_union *sa) {
+        switch (sa->sa.sa_family) {
+        case AF_INET:
+                return sizeof(struct sockaddr_in);
+        case AF_INET6:
+                return sizeof(struct sockaddr_in6);
+        case AF_UNIX:
+                return sockaddr_un_len(&sa->un);
+        case AF_PACKET:
+                return sockaddr_ll_len(&sa->ll);
+        case AF_NETLINK:
+                return sizeof(struct sockaddr_nl);
+        case AF_VSOCK:
+                return sizeof(struct sockaddr_vm);
+        default:
+                assert_not_reached();
+        }
+}
+
 int socket_ioctl_fd(void) {
         int fd;
 
@@ -1457,25 +1503,43 @@ int socket_bind_to_ifname(int fd, const char *ifname) {
 }
 
 int socket_bind_to_ifindex(int fd, int ifindex) {
-        char ifname[IF_NAMESIZE];
-        int r;
-
         assert(fd >= 0);
 
         if (ifindex <= 0)
                 /* Drop binding */
                 return RET_NERRNO(setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, NULL, 0));
 
-        r = setsockopt_int(fd, SOL_SOCKET, SO_BINDTOIFINDEX, ifindex);
-        if (r != -ENOPROTOOPT)
-                return r;
+        return setsockopt_int(fd, SOL_SOCKET, SO_BINDTOIFINDEX, ifindex);
+}
 
-        /* Fall back to SO_BINDTODEVICE on kernels < 5.0 which didn't have SO_BINDTOIFINDEX */
-        r = format_ifname(ifindex, ifname);
+int socket_autobind(int fd, char **ret_name) {
+        _cleanup_free_ char *name = NULL;
+        uint64_t random;
+        int r;
+
+        /* Generate a random abstract socket name and bind fd to it. This is modeled after the kernel
+         * "autobind" feature, but uses 64-bit random number internally. */
+
+        assert(fd >= 0);
+        assert(ret_name);
+
+        random = random_u64();
+
+        if (asprintf(&name, "@%" PRIu64, random) < 0)
+                return -ENOMEM;
+
+        union sockaddr_union sa;
+        assert_cc(DECIMAL_STR_MAX(uint64_t) < sizeof(sa.un.sun_path));
+
+        r = sockaddr_un_set_path(&sa.un, name);
         if (r < 0)
                 return r;
 
-        return socket_bind_to_ifname(fd, ifname);
+        if (bind(fd, &sa.sa, r) < 0)
+                return -errno;
+
+        *ret_name = TAKE_PTR(name);
+        return 0;
 }
 
 ssize_t recvmsg_safe(int sockfd, struct msghdr *msg, int flags) {
@@ -1814,8 +1878,6 @@ int netlink_socket_get_multicast_groups(int fd, size_t *ret_len, uint32_t **ret_
         socklen_t len = 0, old_len;
 
         assert(fd >= 0);
-
-        /* This returns ENOPROTOOPT if the kernel is older than 4.2. */
 
         if (getsockopt(fd, SOL_NETLINK, NETLINK_LIST_MEMBERSHIPS, NULL, &len) < 0)
                 return -errno;

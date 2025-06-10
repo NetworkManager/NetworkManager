@@ -4,11 +4,11 @@
 
 #include <errno.h>
 #include <stdarg.h>
+#include <threads.h>
 
 #include "errno-util.h"
 #include "macro.h"
 #include "missing_syscall.h"
-#include "missing_threads.h"
 #include "parse-util.h"
 #include "signal-util.h"
 #include "stdio-util.h"
@@ -283,13 +283,13 @@ void propagate_signal(int sig, siginfo_t *siginfo) {
 
         /* To be called from a signal handler. Will raise the same signal again, in our process + in our threads.
          *
-         * Note that we use raw_getpid() instead of getpid_cached(). We might have forked with raw_clone()
+         * Note that we use getpid() instead of getpid_cached(). We might have forked with raw_clone()
          * earlier (see PID 1), and hence let's go to the raw syscall here. In particular as this is not
          * performance sensitive code.
          *
          * Note that we use kill() rather than raise() as fallback, for similar reasons. */
 
-        p = raw_getpid();
+        p = getpid();
 
         if (rt_tgsigqueueinfo(p, gettid(), sig, siginfo) < 0)
                 assert_se(kill(p, sig) >= 0);
