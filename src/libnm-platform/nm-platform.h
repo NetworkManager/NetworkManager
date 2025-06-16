@@ -445,7 +445,7 @@ struct _NMPlatformIP4Route {
 
     /* RTA_VIA. Part of the primary key for a route. Allows a gateway for a
      * route to exist in a different address family.
-     * Only valid if: n_nexthops == 1, gateway == 0, via.family != 0
+     * Only valid if: n_nexthops == 1, gateway == 0, via.family != AF_UNSPEC
      */
     NMIPAddrTyped via;
 
