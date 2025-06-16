@@ -60,7 +60,6 @@ typedef enum {
  * @NM_SETTING_IP_CONFIG_FORWARDING_YES: enable forwarding
  * @NM_SETTING_IP_CONFIG_FORWARDING_AUTO: enable forwarding if any shared
  *  connection is active, use kernel default otherwise
- * @NM_SETTING_IP_CONFIG_FORWARDING_IGNORE: leave the forwarding unchanged
  *
  * #NMSettingIPConfigForwarding indicates whether to configure sysctl
  * interface-specific forwarding. When enabled, the interface will act
@@ -73,7 +72,6 @@ typedef enum {
     NM_SETTING_IP_CONFIG_FORWARDING_NO      = 0,
     NM_SETTING_IP_CONFIG_FORWARDING_YES     = 1,
     NM_SETTING_IP_CONFIG_FORWARDING_AUTO    = 2,
-    NM_SETTING_IP_CONFIG_FORWARDING_IGNORE  = 3,
 } NMSettingIPConfigForwarding;
 
 typedef struct NMIPAddress NMIPAddress;
