@@ -2151,7 +2151,7 @@ nm_device_get_ipv4_forwarding(NMDevice *self)
                                                         NM_CON_DEFAULT("ipv4.forwarding"),
                                                         self,
                                                         NM_SETTING_IP_CONFIG_FORWARDING_NO,
-                                                        NM_SETTING_IP_CONFIG_FORWARDING_IGNORE,
+                                                        NM_SETTING_IP_CONFIG_FORWARDING_AUTO,
                                                         NM_SETTING_IP_CONFIG_FORWARDING_AUTO);
     }
 
