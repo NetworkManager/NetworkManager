@@ -1433,7 +1433,7 @@ _prop_get_sriov_preserve_on_down(NMDevice *self, NMSettingSriov *s_sriov)
                                                        self,
                                                        NM_SRIOV_PRESERVE_ON_DOWN_NO,
                                                        NM_SRIOV_PRESERVE_ON_DOWN_YES,
-                                                       NM_SRIOV_PRESERVE_ON_DOWN_NO);
+                                                       NM_SRIOV_PRESERVE_ON_DOWN_YES);
 }
 
 static NMSettingConnectionLlmnr

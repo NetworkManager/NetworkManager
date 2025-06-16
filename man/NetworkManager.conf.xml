@@ -1097,7 +1097,7 @@ ipv6.ip6-privacy=0
           <term><varname>sriov.preserve-on-down</varname></term>
           <listitem><para>Set to 0 or 1 to select whether the SR-IOV parameters are
           preserved when the connection is deactivated. If left unspecified, default
-          to 0 (parameters are not preserved). </para></listitem>
+          to 1 (parameters are preserved). </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>vpn.timeout</varname></term>
