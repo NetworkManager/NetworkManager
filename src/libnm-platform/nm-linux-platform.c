@@ -4013,6 +4013,7 @@ _new_from_nl_route(const struct nlmsghdr *nlh, gboolean id_only, ParseNlmsgIter 
         [RTA_PREF]      = {.type = NLA_U8},
         [RTA_FLOW]      = {.type = NLA_U32},
         [RTA_CACHEINFO] = {.minlen = nm_offsetofend(struct rta_cacheinfo, rta_tsage)},
+        [RTA_VIA]       = {.minlen = nm_offsetofend(struct rtvia, rtvia_family)},
         [RTA_METRICS]   = {.type = NLA_NESTED},
         [RTA_MULTIPATH] = {.type = NLA_NESTED},
     };
@@ -4029,9 +4030,11 @@ _new_from_nl_route(const struct nlmsghdr *nlh, gboolean id_only, ParseNlmsgIter 
         guint8   weight;
         int      ifindex;
         NMIPAddr gateway;
+        gboolean is_via;
     } nh = {
         .found    = FALSE,
         .has_more = FALSE,
+        .is_via   = FALSE,
     };
     guint                           v4_n_nexthops = 0;
     NMPlatformIP4RtNextHop          v4_nh_extra_nexthops_stack[10];
@@ -4200,13 +4203,26 @@ rta_multipath_done:
         return nm_assert_unreachable_val(NULL);
     }
 
-    if (tb[RTA_OIF] || tb[RTA_GATEWAY] || tb[RTA_FLOW]) {
+    if (tb[RTA_OIF] || tb[RTA_GATEWAY] || tb[RTA_FLOW] || tb[RTA_VIA]) {
         int      ifindex = 0;
         NMIPAddr gateway = {};
 
         if (tb[RTA_OIF])
             ifindex = nla_get_u32(tb[RTA_OIF]);
-        if (_check_addr_or_return_null(tb, RTA_GATEWAY, addr_len))
+
+        if (tb[RTA_VIA]) {
+            struct rtvia *rtvia;
+
+            /* Used when the gateway family doesn't match the route family */
+            rtvia = nla_data(tb[RTA_VIA]);
+            if (rtvia->rtvia_family != AF_INET6)
+                return NULL;
+            if (nla_len(tb[RTA_VIA]) < sizeof(struct rtvia) + sizeof(struct in6_addr))
+                return NULL;
+
+            nh.is_via = TRUE;
+            memcpy(&gateway, rtvia->rtvia_addr, sizeof(struct in6_addr));
+        } else if (_check_addr_or_return_null(tb, RTA_GATEWAY, addr_len))
             memcpy(&gateway, nla_data(tb[RTA_GATEWAY]), addr_len);
 
         if (!nh.found) {
@@ -4222,6 +4238,9 @@ rta_multipath_done:
         } else {
             /* Kernel supports new style nexthop configuration,
              * verify that it is a duplicate and ignore old-style nexthop. */
+            if (nh.is_via)
+                return NULL;
+
             if (nh.ifindex != ifindex || memcmp(&nh.gateway, &gateway, addr_len) != 0) {
                 /* we have a RTA_MULTIPATH attribute that does not agree.
                  * That seems not right. Error out. */
@@ -4237,7 +4256,7 @@ rta_multipath_done:
          * 1 (lo). Of course it does!! */
         if (nh.found) {
             if (IS_IPv4) {
-                if (nh.ifindex != 0 || nh.gateway.addr4 != 0) {
+                if (nh.ifindex != 0 || nh.gateway.addr4 != 0 || nh.is_via) {
                     /* we only accept kernel to notify about the ifindex/gateway, if it
                      * is zero. This is only to be a bit forgiving, but we really don't
                      * know how to handle such routes that have an ifindex. */
@@ -4336,9 +4355,14 @@ rta_multipath_done:
     if (tb[RTA_PRIORITY])
         obj->ip_route.metric = nla_get_u32(tb[RTA_PRIORITY]);
 
-    if (IS_IPv4)
-        obj->ip4_route.gateway = nh.gateway.addr4;
-    else
+    if (IS_IPv4) {
+        if (nh.is_via) {
+            obj->ip4_route.via.addr_family = AF_INET6;
+            obj->ip4_route.via.addr        = nh.gateway;
+        } else {
+            obj->ip4_route.gateway = nh.gateway.addr4;
+        }
+    } else
         obj->ip6_route.gateway = nh.gateway.addr6;
 
     if (IS_IPv4)
