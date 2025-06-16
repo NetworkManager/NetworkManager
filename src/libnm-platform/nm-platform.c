@@ -7199,7 +7199,7 @@ nm_platform_ip4_route_to_string_full(const NMPlatformIP4Route     *route,
 {
     char *buf0;
     char  s_network[INET_ADDRSTRLEN];
-    char  s_gateway[INET_ADDRSTRLEN];
+    char  s_gateway[INET6_ADDRSTRLEN];
     char  s_pref_src[INET_ADDRSTRLEN];
     char  str_dev[30];
     char  str_mss[32];
@@ -7228,10 +7228,13 @@ nm_platform_ip4_route_to_string_full(const NMPlatformIP4Route     *route,
 
     inet_ntop(AF_INET, &route->network, s_network, sizeof(s_network));
 
-    if (route->gateway == 0)
-        s_gateway[0] = '\0';
-    else
+    if (route->gateway != INADDR_ANY) {
         inet_ntop(AF_INET, &route->gateway, s_gateway, sizeof(s_gateway));
+    } else if (route->via.addr_family == AF_INET6) {
+        inet_ntop(AF_INET6, route->via.addr.addr_ptr, s_gateway, sizeof(s_gateway));
+    } else {
+        s_gateway[0] = '\0';
+    }
 
     nm_strbuf_append(
         &buf,
@@ -8967,6 +8970,9 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
                 nm_hash_update_vals(h,
                                     obj->ifindex,
                                     n_nexthops,
+                                    obj->via.addr_family,
+                                    obj->via.addr_family == AF_INET6 ? obj->via.addr.addr6
+                                                                     : in6addr_any,
                                     obj->gateway,
                                     _ip4_route_weight_normalize(n_nexthops, obj->weight, FALSE));
             }
@@ -9117,6 +9123,10 @@ nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
             if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) {
                 NM_CMP_FIELD(a, b, ifindex);
                 NM_CMP_FIELD(a, b, gateway);
+                NM_CMP_FIELD(a, b, via.addr_family);
+                if (a->via.addr_family == AF_INET6) {
+                    NM_CMP_FIELD_IN6ADDR(a, b, via.addr.addr6);
+                }
                 n_nexthops = nm_platform_ip4_route_get_n_nexthops(a);
                 NM_CMP_DIRECT(n_nexthops, nm_platform_ip4_route_get_n_nexthops(b));
                 NM_CMP_DIRECT(_ip4_route_weight_normalize(n_nexthops, a->weight, FALSE),
@@ -9142,6 +9152,10 @@ nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
         NM_CMP_FIELD_UNSAFE(a, b, metric_any);
         NM_CMP_FIELD(a, b, metric);
         NM_CMP_FIELD(a, b, gateway);
+        NM_CMP_FIELD(a, b, via.addr_family);
+        if (a->via.addr_family == AF_INET6) {
+            NM_CMP_FIELD_IN6ADDR(a, b, via.addr.addr6);
+        }
         if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
             n_nexthops = nm_platform_ip4_route_get_n_nexthops(a);
             NM_CMP_DIRECT(n_nexthops, nm_platform_ip4_route_get_n_nexthops(b));

@@ -5828,8 +5828,10 @@ _nl_msg_new_route(uint16_t nlmsg_type, uint16_t nlmsg_flags, const NMPObject *ob
 
     /* We currently don't have need for multi-hop routes... */
     if (IS_IPv4) {
-        if (!obj->ip4_route.gateway && obj->ip4_route.via.addr_family) {
+        if (obj->ip4_route.gateway == INADDR_ANY && obj->ip4_route.via.addr_family != AF_UNSPEC) {
             struct rtvia *rtvia;
+
+            nm_assert(obj->ip4_route.via.addr_family == AF_INET6);
 
             rtvia = nla_data(nla_reserve(
                 msg,
