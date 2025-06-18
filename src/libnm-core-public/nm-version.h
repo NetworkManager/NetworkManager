@@ -439,6 +439,20 @@
 #define NM_AVAILABLE_IN_1_54
 #endif
 
+#if NM_VERSION_MIN_REQUIRED >= NM_VERSION_1_56
+#define NM_DEPRECATED_IN_1_56        G_DEPRECATED
+#define NM_DEPRECATED_IN_1_56_FOR(f) G_DEPRECATED_FOR(f)
+#else
+#define NM_DEPRECATED_IN_1_56
+#define NM_DEPRECATED_IN_1_56_FOR(f)
+#endif
+
+#if NM_VERSION_MAX_ALLOWED < NM_VERSION_1_56
+#define NM_AVAILABLE_IN_1_56 G_UNAVAILABLE(1, 56)
+#else
+#define NM_AVAILABLE_IN_1_56
+#endif
+
 /*
  * Synchronous API for calling D-Bus in libnm is deprecated. See
  * https://networkmanager.dev/docs/libnm/latest/usage.html#sync-api
