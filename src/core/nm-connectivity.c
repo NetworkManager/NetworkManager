@@ -25,6 +25,8 @@
 
 #define HEADER_STATUS_ONLINE "X-NetworkManager-Status: online\r\n"
 
+#define SD_RESOLVED_DNS ((guint64) (1LL << 0))
+
 /*****************************************************************************/
 
 static NM_UTILS_LOOKUP_STR_DEFINE(_state_to_string,
@@ -950,9 +952,6 @@ systemd_resolved_resolve_cb(GObject *object, GAsyncResult *res, gpointer user_da
 
     do_curl_request(cb_data, nm_str_buf_get_str(&strbuf_hosts));
 }
-#endif
-
-#define SD_RESOLVED_DNS ((guint64) (1LL << 0))
 
 static NMConnectivityState
 check_platform_config(NMConnectivity *self,
@@ -1013,6 +1012,7 @@ check_platform_config(NMConnectivity *self,
     NM_SET_OUT(reason, NULL);
     return NM_CONNECTIVITY_UNKNOWN;
 }
+#endif
 
 NMConnectivityCheckHandle *
 nm_connectivity_check_start(NMConnectivity             *self,
