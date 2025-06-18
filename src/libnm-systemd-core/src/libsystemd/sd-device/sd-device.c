@@ -1263,24 +1263,35 @@ _public_ int sd_device_get_subsystem(sd_device *device, const char **ret) {
                 return r;
 
         if (!device->subsystem_set) {
-                const char *subsystem;
+                _cleanup_free_ char *subsystem = NULL;
+                const char *syspath;
+                char *path;
 
-                r = sd_device_get_sysattr_value(device, "subsystem", &subsystem);
+                r = sd_device_get_syspath(device, &syspath);
+                if (r < 0)
+                        return r;
+
+                /* read 'subsystem' link */
+                path = strjoina(syspath, "/subsystem");
+                r = readlink_value(path, &subsystem);
                 if (r < 0 && r != -ENOENT)
                         return log_device_debug_errno(device, r,
                                                       "sd-device: Failed to read subsystem for %s: %m",
                                                       device->devpath);
-                if (r >= 0)
+
+                if (subsystem)
                         r = device_set_subsystem(device, subsystem);
                 /* use implicit names */
                 else if (!isempty(path_startswith(device->devpath, "/module/")))
                         r = device_set_subsystem(device, "module");
-                else if (strstr(device->devpath, "/drivers/") || endswith(device->devpath, "/drivers"))
+                else if (strstr(syspath, "/drivers/") || endswith(syspath, "/drivers"))
                         r = device_set_drivers_subsystem(device);
                 else if (!isempty(PATH_STARTSWITH_SET(device->devpath, "/class/", "/bus/")))
                         r = device_set_subsystem(device, "subsystem");
-                else
-                        r = device_set_subsystem(device, NULL);
+                else {
+                        device->subsystem_set = true;
+                        r = 0;
+                }
                 if (r < 0)
                         return log_device_debug_errno(device, r,
                                                       "sd-device: Failed to set subsystem for %s: %m",
@@ -1392,8 +1403,6 @@ int device_set_driver(sd_device *device, const char *driver) {
 
 #if 0 /* NM_IGNORED */
 _public_ int sd_device_get_driver(sd_device *device, const char **ret) {
-        int r;
-
         assert_return(device, -EINVAL);
 
         r = device_read_uevent_file(device);
@@ -1401,12 +1410,20 @@ _public_ int sd_device_get_driver(sd_device *device, const char **ret) {
                 return r;
 
         if (!device->driver_set) {
-                const char *driver = NULL;
+                _cleanup_free_ char *driver = NULL;
+                const char *syspath;
+                char *path;
+                int r;
 
-                r = sd_device_get_sysattr_value(device, "driver", &driver);
+                r = sd_device_get_syspath(device, &syspath);
+                if (r < 0)
+                        return r;
+
+                path = strjoina(syspath, "/driver");
+                r = readlink_value(path, &driver);
                 if (r < 0 && r != -ENOENT)
                         return log_device_debug_errno(device, r,
-                                                      "sd-device: Failed to read driver: %m");
+                                                      "sd-device: readlink(\"%s\") failed: %m", path);
 
                 r = device_set_driver(device, driver);
                 if (r < 0)
