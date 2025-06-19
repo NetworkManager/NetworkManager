@@ -13,6 +13,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   NetworkManager preserves the SR-IOV parameters set on the device
   when the connection is deactivated, or whether it resets them to
   their default value.
+* Preserve by default the SR-IOV parameters when connections are
+  deactivated, instead of resetting them (behavior change).
 
 =============================================
 NetworkManager-1.54

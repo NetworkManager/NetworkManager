@@ -1494,7 +1494,7 @@ nm_setting_sriov_class_init(NMSettingSriovClass *klass)
      * %NM_SRIOV_PRESERVE_ON_DOWN_YES, NetworkManager preserves those parameters
      * on the device. If the value is %NM_SRIOV_PRESERVE_ON_DOWN_DEFAULT, NetworkManager
      * looks up a global default value in the configuration; in case no such value is
-     * defined, it uses %NM_SRIOV_PRESERVE_ON_DOWN_NO as fallback.
+     * defined, it uses %NM_SRIOV_PRESERVE_ON_DOWN_YES as fallback.
      *
      * Since: 1.56
      */
