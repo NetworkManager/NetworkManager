@@ -805,52 +805,89 @@ static int handle_uevent_line(
 }
 
 int device_read_uevent_file(sd_device *device) {
+        _cleanup_free_ char *uevent = NULL;
+        const char *syspath, *key = NULL, *value = NULL, *major = NULL, *minor = NULL;
+        char *path;
+        size_t uevent_len;
         int r;
+
+        enum {
+                PRE_KEY,
+                KEY,
+                PRE_VALUE,
+                VALUE,
+                INVALID_LINE,
+        } state = PRE_KEY;
 
         assert(device);
 
         if (device->uevent_loaded || device->sealed)
                 return 0;
 
+        r = sd_device_get_syspath(device, &syspath);
+        if (r < 0)
+                return r;
+
         device->uevent_loaded = true;
 
-        const char *uevent;
-        r = sd_device_get_sysattr_value(device, "uevent", &uevent);
-        if (ERRNO_IS_NEG_PRIVILEGE(r) || ERRNO_IS_NEG_DEVICE_ABSENT(r))
+        path = strjoina(syspath, "/uevent");
+
+        r = read_full_virtual_file(path, &uevent, &uevent_len);
+        if (r == -EACCES || ERRNO_IS_NEG_DEVICE_ABSENT(r))
                 /* The uevent files may be write-only, the device may be already removed, or the device
                  * may not have the uevent file. */
                 return 0;
         if (r < 0)
-                return log_device_debug_errno(device, r, "sd-device: Failed to read uevent file: %m");
+                return log_device_debug_errno(device, r, "sd-device: Failed to read uevent file '%s': %m", path);
 
-        _cleanup_strv_free_ char **v = NULL;
-        r = strv_split_newlines_full(&v, uevent, EXTRACT_RETAIN_ESCAPE);
-        if (r < 0)
-                return log_device_debug_errno(device, r, "sd-device: Failed to parse uevent file: %m");
+        for (size_t i = 0; i < uevent_len; i++)
+                switch (state) {
+                case PRE_KEY:
+                        if (!strchr(NEWLINE, uevent[i])) {
+                                key = &uevent[i];
 
-        const char *major = NULL, *minor = NULL;
-        STRV_FOREACH(s, v) {
-                char *eq = strchr(*s, '=');
-                if (!eq) {
-                        log_device_debug(device, "sd-device: Invalid uevent line, ignoring: %s", *s);
-                        continue;
+                                state = KEY;
+                        }
+
+                        break;
+                case KEY:
+                        if (uevent[i] == '=') {
+                                uevent[i] = '\0';
+
+                                state = PRE_VALUE;
+                        } else if (strchr(NEWLINE, uevent[i])) {
+                                uevent[i] = '\0';
+                                log_device_debug(device, "sd-device: Invalid uevent line '%s', ignoring", key);
+
+                                state = PRE_KEY;
+                        }
+
+                        break;
+                case PRE_VALUE:
+                        value = &uevent[i];
+                        state = VALUE;
+
+                        _fallthrough_; /* to handle empty property */
+                case VALUE:
+                        if (strchr(NEWLINE, uevent[i])) {
+                                uevent[i] = '\0';
+
+                                r = handle_uevent_line(device, key, value, &major, &minor);
+                                if (r < 0)
+                                        log_device_debug_errno(device, r, "sd-device: Failed to handle uevent entry '%s=%s', ignoring: %m", key, value);
+
+                                state = PRE_KEY;
+                        }
+
+                        break;
+                default:
+                        assert_not_reached();
                 }
-
-                *eq = '\0';
-
-                r = handle_uevent_line(device, *s, eq + 1, &major, &minor);
-                if (r < 0)
-                        log_device_debug_errno(device, r,
-                                               "sd-device: Failed to handle uevent entry '%s=%s', ignoring: %m",
-                                               *s, eq + 1);
-        }
 
         if (major) {
                 r = device_set_devnum(device, major, minor);
                 if (r < 0)
-                        log_device_debug_errno(device, r,
-                                               "sd-device: Failed to set 'MAJOR=%s' and/or 'MINOR=%s' from uevent, ignoring: %m",
-                                               major, strna(minor));
+                        log_device_debug_errno(device, r, "sd-device: Failed to set 'MAJOR=%s' or 'MINOR=%s' from '%s', ignoring: %m", major, strna(minor), path);
         }
 
         if (device_in_subsystem(device, "drivers")) {
@@ -1226,24 +1263,35 @@ _public_ int sd_device_get_subsystem(sd_device *device, const char **ret) {
                 return r;
 
         if (!device->subsystem_set) {
-                const char *subsystem;
+                _cleanup_free_ char *subsystem = NULL;
+                const char *syspath;
+                char *path;
 
-                r = sd_device_get_sysattr_value(device, "subsystem", &subsystem);
+                r = sd_device_get_syspath(device, &syspath);
+                if (r < 0)
+                        return r;
+
+                /* read 'subsystem' link */
+                path = strjoina(syspath, "/subsystem");
+                r = readlink_value(path, &subsystem);
                 if (r < 0 && r != -ENOENT)
                         return log_device_debug_errno(device, r,
                                                       "sd-device: Failed to read subsystem for %s: %m",
                                                       device->devpath);
-                if (r >= 0)
+
+                if (subsystem)
                         r = device_set_subsystem(device, subsystem);
                 /* use implicit names */
                 else if (!isempty(path_startswith(device->devpath, "/module/")))
                         r = device_set_subsystem(device, "module");
-                else if (strstr(device->devpath, "/drivers/") || endswith(device->devpath, "/drivers"))
+                else if (strstr(syspath, "/drivers/") || endswith(syspath, "/drivers"))
                         r = device_set_drivers_subsystem(device);
                 else if (!isempty(PATH_STARTSWITH_SET(device->devpath, "/class/", "/bus/")))
                         r = device_set_subsystem(device, "subsystem");
-                else
-                        r = device_set_subsystem(device, NULL);
+                else {
+                        device->subsystem_set = true;
+                        r = 0;
+                }
                 if (r < 0)
                         return log_device_debug_errno(device, r,
                                                       "sd-device: Failed to set subsystem for %s: %m",
@@ -1355,8 +1403,6 @@ int device_set_driver(sd_device *device, const char *driver) {
 
 #if 0 /* NM_IGNORED */
 _public_ int sd_device_get_driver(sd_device *device, const char **ret) {
-        int r;
-
         assert_return(device, -EINVAL);
 
         r = device_read_uevent_file(device);
@@ -1364,12 +1410,20 @@ _public_ int sd_device_get_driver(sd_device *device, const char **ret) {
                 return r;
 
         if (!device->driver_set) {
-                const char *driver = NULL;
+                _cleanup_free_ char *driver = NULL;
+                const char *syspath;
+                char *path;
+                int r;
 
-                r = sd_device_get_sysattr_value(device, "driver", &driver);
+                r = sd_device_get_syspath(device, &syspath);
+                if (r < 0)
+                        return r;
+
+                path = strjoina(syspath, "/driver");
+                r = readlink_value(path, &driver);
                 if (r < 0 && r != -ENOENT)
                         return log_device_debug_errno(device, r,
-                                                      "sd-device: Failed to read driver: %m");
+                                                      "sd-device: readlink(\"%s\") failed: %m", path);
 
                 r = device_set_driver(device, driver);
                 if (r < 0)

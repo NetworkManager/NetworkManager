@@ -133,7 +133,6 @@ char** device_make_log_fields(sd_device *device) {
 
         return TAKE_PTR(strv);
 }
-
 #endif  /* NM_IGNORED */
 
 bool device_in_subsystem(sd_device *device, const char *subsystem) {
@@ -145,6 +144,7 @@ bool device_in_subsystem(sd_device *device, const char *subsystem) {
         return streq_ptr(s, subsystem);
 }
 
+#if 0 /* NM_IGNORED */
 bool device_is_devtype(sd_device *device, const char *devtype) {
         const char *s = NULL;
 
@@ -153,3 +153,4 @@ bool device_is_devtype(sd_device *device, const char *devtype) {
         (void) sd_device_get_devtype(device, &s);
         return streq_ptr(s, devtype);
 }
+#endif /* NM_IGNORED */
