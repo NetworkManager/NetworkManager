@@ -574,7 +574,7 @@ _check(NML3IPv6LL *self)
         self->wait_for_addr_source =
             nm_g_timeout_add_source(10000, _wait_for_addr_timeout_cb, self);
         if (_set_cur_lladdr_bin(self, NM_L3_IPV6LL_STATE_DAD_FAILED, NULL)) {
-            _LOGW("changed: no IPv6 link local address to retry after Duplicate Address Detection "
+            _LOGI("changed: no IPv6 link local address to retry after Duplicate Address Detection "
                   "failures (back off)");
             _lladdr_handle_changed(self, FALSE);
         }
