@@ -57981,3 +57981,43 @@ con-xx2    UUID-con-xx2-REPLACED-REPLACED-REPLA  ethernet  0          nigdy     
 con-1      5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/1  nie     --      --          --                                                  --     /etc/NetworkManager/system-connections/con-1     
 
 <<<
+size: 359
+location: src/tests/client/test-client.py:test_004()/934
+cmd: $NMCLI connection add type ethernet ifname foobar con-name con-port1 ipv4.method disabled ipv6.method ignore connection.port-type bridge connection.controller bridge1
+lang: C
+returncode: 0
+stdout: 82 bytes
+>>>
+Connection 'con-port1' (UUID-con-port1-REPLACED-REPLACED-REP) successfully added.
+
+<<<
+size: 353
+location: src/tests/client/test-client.py:test_004()/935
+cmd: $NMCLI connection add type ethernet ifname foobar con-name ethernet-foobar ipv6.method auto connection.port-type bridge connection.controller bridge1
+lang: C
+returncode: 2
+stderr: 93 bytes
+>>>
+Error: invalid or not allowed setting 'ipv6': port connections cannot have IP configuration.
+
+<<<
+size: 373
+location: src/tests/client/test-client.py:test_004()/936
+cmd: $NMCLI connection add type ovs-interface ifname ovs-int con-name con-ovs-int ipv4.method auto ipv6.method link-local connection.port-type ovs-port connection.controller ovs-port1
+lang: C
+returncode: 0
+stdout: 84 bytes
+>>>
+Connection 'con-ovs-int' (UUID-con-ovs-int-REPLACED-REPLACED-R) successfully added.
+
+<<<
+size: 377
+location: src/tests/client/test-client.py:test_004()/937
+cmd: $NMCLI connection add type ethernet ifname enp1s0 con-name con-port2 ipv4.method manual ipv4.addresses 192.0.2.1/24 ipv6.method dhcp connection.port-type vrf connection.controller vrf1
+lang: C
+returncode: 0
+stdout: 82 bytes
+>>>
+Connection 'con-port2' (UUID-con-port2-REPLACED-REPLACED-REP) successfully added.
+
+<<<
