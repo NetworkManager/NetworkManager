@@ -2125,6 +2125,113 @@ class TestNmcli(unittest.TestCase):
             replace_stdout=replace_uuids,
         )
 
+        # It is allowed to set IP method disabled/ignore for ports
+        replace_uuids.append(
+            self.ctx.srv.ReplaceTextConUuid(
+                "con-port1", "UUID-con-port1-REPLACED-REPLACED-REP"
+            )
+        )
+        self.call_nmcli(
+            [
+                "connection",
+                "add",
+                "type",
+                "ethernet",
+                "ifname",
+                "foobar",
+                "con-name",
+                "con-port1",
+                "ipv4.method",
+                "disabled",
+                "ipv6.method",
+                "ignore",
+                "connection.port-type",
+                "bridge",
+                "connection.controller",
+                "bridge1",
+            ],
+            replace_stdout=replace_uuids,
+        )
+
+        # It is NOT allowed to set IP method != disabled/ignore for ports
+        self.call_nmcli(
+            [
+                "connection",
+                "add",
+                "type",
+                "ethernet",
+                "ifname",
+                "foobar",
+                "con-name",
+                "ethernet-foobar",
+                "ipv6.method",
+                "auto",
+                "connection.port-type",
+                "bridge",
+                "connection.controller",
+                "bridge1",
+            ],
+            replace_stdout=replace_uuids,
+        )
+
+        # ovs-interface connections support IP configuration
+        replace_uuids.append(
+            self.ctx.srv.ReplaceTextConUuid(
+                "con-ovs-int", "UUID-con-ovs-int-REPLACED-REPLACED-R"
+            )
+        )
+        self.call_nmcli(
+            [
+                "connection",
+                "add",
+                "type",
+                "ovs-interface",
+                "ifname",
+                "ovs-int",
+                "con-name",
+                "con-ovs-int",
+                "ipv4.method",
+                "auto",
+                "ipv6.method",
+                "link-local",
+                "connection.port-type",
+                "ovs-port",
+                "connection.controller",
+                "ovs-port1",
+            ],
+            replace_stdout=replace_uuids,
+        )
+
+        # VRF ports support IP configuration
+        replace_uuids.append(
+            self.ctx.srv.ReplaceTextConUuid(
+                "con-port2", "UUID-con-port2-REPLACED-REPLACED-REP"
+            )
+        )
+        self.call_nmcli(
+            [
+                "connection",
+                "add",
+                "type",
+                "ethernet",
+                "ifname",
+                "enp1s0",
+                "con-name",
+                "con-port2",
+                "ipv4.method",
+                "manual",
+                "ipv4.addresses",
+                "192.0.2.1/24",
+                "ipv6.method",
+                "dhcp",
+                "connection.port-type",
+                "vrf",
+                "connection.controller",
+                "vrf1",
+            ],
+            replace_stdout=replace_uuids,
+        )
+
     @nm_test_no_dbus
     def test_offline(self):
         # Make sure we're not using D-Bus

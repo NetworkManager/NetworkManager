@@ -5428,23 +5428,67 @@ nmc_process_connection_properties(NmCli             *nmc,
             if (argc == 1 && nmc->complete)
                 complete_property_name(nmc, connection, modifier, option_sett, option_prop);
 
-            option_sett_expanded =
-                check_valid_name(option_sett, type_settings, port_settings, &local);
-            if (!option_sett_expanded) {
-                g_set_error(error,
-                            NMCLI_ERROR,
-                            NMC_RESULT_ERROR_USER_INPUT,
-                            _("Error: invalid or not allowed setting '%s': %s."),
-                            option_sett,
-                            local->message);
-                g_clear_error(&local);
-                return FALSE;
-            }
-
             argc--;
             argv++;
             if (!get_value(&value, &argc, &argv, option_orig, error))
                 return FALSE;
+
+            option_sett_expanded =
+                check_valid_name(option_sett, type_settings, port_settings, &local);
+            if (!option_sett_expanded) {
+                NMSettingConnection *s_con;
+                gboolean             raise_error = TRUE;
+
+                /* The setting does not exist or is now allowed for the given
+                 * connection type or given the port type. In the past nmcli
+                 * accepted IP-config properties for port connections under some
+                 * circumstances. For backward bug compatibility, still allow
+                 * the user to set the IP method to disabled/ignore for ports,
+                 * so that we don't break user scripts.
+                 * */
+                if (NM_IN_STRSET(option_sett,
+                                 NM_SETTING_IP4_CONFIG_SETTING_NAME,
+                                 NM_SETTING_IP6_CONFIG_SETTING_NAME)
+                    && (s_con = nm_connection_get_setting_connection(connection))
+                    && nm_setting_connection_get_controller(s_con)) {
+                    if (nm_streq(option_prop, NM_SETTING_IP_CONFIG_METHOD)
+                        && ((nm_streq(option_sett, NM_SETTING_IP4_CONFIG_SETTING_NAME)
+                             && nm_streq(value, NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
+                            || (nm_streq(option_sett, NM_SETTING_IP6_CONFIG_SETTING_NAME)
+                                && NM_IN_STRSET(value,
+                                                NM_SETTING_IP6_CONFIG_METHOD_DISABLED,
+                                                NM_SETTING_IP6_CONFIG_METHOD_IGNORE)))) {
+                        option_sett_expanded = option_sett;
+                        nmc_printerr(_("Warning: port connections cannot have IP configuration. "
+                                       "\"%s.%s %s\" will be ignored.\n"),
+                                     option_sett,
+                                     NM_SETTING_IP_CONFIG_METHOD,
+                                     value);
+                        raise_error = FALSE;
+                        g_clear_error(&local);
+                    } else {
+                        /* The property is not a disabled/ignore IP method. Raise a
+                         * meaningful error, instead of the generic "setting X is not
+                         * among LIST" */
+                        g_clear_error(&local);
+                        g_set_error(&local,
+                                    NMCLI_ERROR,
+                                    NMC_RESULT_ERROR_USER_INPUT,
+                                    _("port connections cannot have IP configuration"));
+                        raise_error = TRUE;
+                    }
+                }
+                if (raise_error) {
+                    g_set_error(error,
+                                NMCLI_ERROR,
+                                NMC_RESULT_ERROR_USER_INPUT,
+                                _("Error: invalid or not allowed setting '%s': %s."),
+                                option_sett,
+                                local->message);
+                    g_clear_error(&local);
+                    return FALSE;
+                }
+            }
 
             if (!argc && nmc->complete) {
                 complete_property(nmc, option_sett, option_prop, value ?: "", connection);
