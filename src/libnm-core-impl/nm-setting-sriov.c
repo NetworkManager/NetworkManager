@@ -834,7 +834,7 @@ nm_setting_sriov_clear_vfs(NMSettingSriov *setting)
  *
  * Returns: the value contained in the #NMSettingSriov:preserve-on-down property.
  *
- * Since: 1.56
+ * Since: 1.54
  */
 NMSriovPreserveOnDown
 nm_setting_sriov_get_preserve_on_down(NMSettingSriov *setting)
@@ -1496,7 +1496,7 @@ nm_setting_sriov_class_init(NMSettingSriovClass *klass)
      * looks up a global default value in the configuration; in case no such value is
      * defined, it uses %NM_SRIOV_PRESERVE_ON_DOWN_NO as fallback.
      *
-     * Since: 1.56
+     * Since: 1.54
      */
     _nm_setting_property_define_direct_enum(properties_override,
                                             obj_properties,

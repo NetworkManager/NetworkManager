@@ -65,7 +65,7 @@ typedef enum {
  * @NM_SRIOV_PRESERVE_ON_DOWN_YES: preserve the SR-IOV parameters set on
      * the device when the connection is deactivated
  *
- * Since: 1.56
+ * Since: 1.54
  */
 typedef enum {
     NM_SRIOV_PRESERVE_ON_DOWN_DEFAULT = -1,
@@ -140,7 +140,7 @@ NM_AVAILABLE_IN_1_14
 gboolean nm_setting_sriov_remove_vf_by_index(NMSettingSriov *setting, guint index);
 NM_AVAILABLE_IN_1_14
 void nm_setting_sriov_clear_vfs(NMSettingSriov *setting);
-NM_AVAILABLE_IN_1_56
+NM_AVAILABLE_IN_1_54
 NMSriovPreserveOnDown nm_setting_sriov_get_preserve_on_down(NMSettingSriov *setting);
 NM_AVAILABLE_IN_1_14
 NMTernary nm_setting_sriov_get_autoprobe_drivers(NMSettingSriov *setting);

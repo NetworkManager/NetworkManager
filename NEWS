@@ -9,10 +9,6 @@ the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 * nmcli now supports viewing and managing WireGuard peers.
-* Add a new "sriov.preserve-on-down" property that controls whether
-  NetworkManager preserves the SR-IOV parameters set on the device
-  when the connection is deactivated, or whether it resets them to
-  their default value.
 
 =============================================
 NetworkManager-1.54
@@ -28,6 +24,10 @@ Overview of changes since NetworkManager-1.52
 * Add support for configuring the loopback interface in nmtui.
 * Most of the properties of ovs-bridge and ovs-port connections can
   now be reapplied at runtime without bringing the connection down.
+* Add a new "sriov.preserve-on-down" property that controls whether
+  NetworkManager preserves the SR-IOV parameters set on the device
+  when the connection is deactivated, or whether it resets them to
+  their default value.
 
 =============================================
 NetworkManager-1.52
