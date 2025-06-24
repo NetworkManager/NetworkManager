@@ -100,6 +100,9 @@
  *   https://issues.redhat.com/browse/RHEL-66262
  *   https://issues.redhat.com/browse/RHEL-67324
  *
+ * @NM_VERSION_INFO_CAPABILITY_IP4_FORWARDING: Indicates that NetworkManager supports
+ * configuring per-device IPv4 sysctl forwarding setting. Since: 1.56.
+ *
  * The numeric values represent the bit index of the capability. These capabilities
  * can be queried in the "VersionInfo" D-Bus property.
  *
@@ -107,6 +110,7 @@
  */
 typedef enum {
     NM_VERSION_INFO_CAPABILITY_SYNC_ROUTE_WITH_TABLE = 0,
+    NM_VERSION_INFO_CAPABILITY_IP4_FORWARDING        = 1,
 } NMVersionInfoCapability;
 
 /**
