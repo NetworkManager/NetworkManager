@@ -99,7 +99,6 @@
  *   on connection down.
  *   https://issues.redhat.com/browse/RHEL-66262
  *   https://issues.redhat.com/browse/RHEL-67324
- *
  * @NM_VERSION_INFO_CAPABILITY_IP4_FORWARDING: Indicates that NetworkManager supports
  * configuring per-device IPv4 sysctl forwarding setting. Since: 1.54.
  *
