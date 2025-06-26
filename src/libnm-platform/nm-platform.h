@@ -443,6 +443,12 @@ struct _NMPlatformIP4Route {
      * the first hop. */
     in_addr_t gateway;
 
+    /* RTA_VIA. Part of the primary key for a route. Allows a gateway for a
+     * route to exist in a different address family.
+     * Only valid if: n_nexthops == 1, gateway == 0, via.family != AF_UNSPEC
+     */
+    NMIPAddrTyped via;
+
     /* RTA_PREFSRC (called "src" by iproute2).
      *
      * pref_src is part of the ID of an IPv4 route. When deleting a route,
@@ -2402,6 +2408,14 @@ nm_platform_ip_route_get_gateway(int addr_family, const NMPlatformIPRoute *route
     if (NM_IS_IPv4(addr_family))
         return &((NMPlatformIP4Route *) route)->gateway;
     return &((NMPlatformIP6Route *) route)->gateway;
+}
+
+static inline const NMIPAddrTyped *
+nm_platform_ip4_route_get_via(const NMPlatformIP4Route *route)
+{
+    nm_assert(route);
+
+    return &route->via;
 }
 
 static inline gconstpointer
