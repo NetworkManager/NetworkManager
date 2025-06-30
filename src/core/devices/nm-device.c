@@ -13612,13 +13612,21 @@ activate_stage3_ip_config(NMDevice *self)
                   nm_device_get_ip_iface(self));
     }
 
-    /* We currently will attach ports in the state change NM_DEVICE_STATE_IP_CONFIG above.
-     * Note that kernel changes the MTU of bond ports, so we want to commit the MTU
-     * afterwards!
+    /*
+     * Let's make sure MTU matches what is configured. The reason it's done at this
+     * precise location is twofold:
      *
-     * This might reset the MTU to something different from the bond controller and
-     * it might not be a working configuration. But it's what the user asked for, so
-     * let's do it! */
+     * (1) Attaching ports above might affect the MTU.
+     *
+     * We currently will attach ports in the state change NM_DEVICE_STATE_IP_CONFIG
+     * above. This might reset the MTU to something different from the bond controller
+     * and it might not be a working configuration. But it's what the user asked for.
+     *
+     * (2) When MTU is under 1280 IPv6 can not work.
+     *
+     * Kernel will not expose sysctls, create or accept addresses that are needed for IPv6
+     * configuration when the MTU is too small (under 1280).
+     */
     _commit_mtu(self);
 
     if (!nm_device_managed_type_is_external(self)
@@ -13627,12 +13635,6 @@ activate_stage3_ip_config(NMDevice *self)
             && !NM_IN_STRSET(priv->ipv6_method,
                              NM_SETTING_IP6_CONFIG_METHOD_DISABLED,
                              NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
-            /* Ensure the MTU makes sense. If it was below 1280 the kernel would not
-             * expose any ipv6 sysctls or allow presence of any addresses on the interface,
-             * including LL, which * would make it impossible to autoconfigure MTU to a
-             * correct value. */
-            _commit_mtu(self);
-
             /* Any method past this point requires an IPv6LL address. Use NM-controlled
              * IPv6LL if this is not an assumed connection, since assumed connections
              * will already have IPv6 set up.
