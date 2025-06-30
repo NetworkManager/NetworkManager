@@ -479,7 +479,8 @@ _version_info_get(void)
          * with index 0-31 goes to element #1, with index 32-63 to element #2,
          * with index 64-95 to element #3 and so on. */
         (1 << NM_VERSION_INFO_CAPABILITY_SYNC_ROUTE_WITH_TABLE)
-            | (1 << NM_VERSION_INFO_CAPABILITY_IP4_FORWARDING),
+            | (1 << NM_VERSION_INFO_CAPABILITY_IP4_FORWARDING)
+            | (1 << NM_VERSION_INFO_CAPABILITY_SRIOV_PRESERVE_ON_DOWN),
     };
 
     return nm_g_variant_new_au(arr, G_N_ELEMENTS(arr));
