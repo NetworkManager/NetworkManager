@@ -13438,7 +13438,8 @@ activate_stage3_ip_config(NMDevice *self)
              * IPv6LL if this is not an assumed connection, since assumed connections
              * will already have IPv6 set up.
              */
-            if (!nm_device_managed_type_is_external_or_assume(self))
+            if ((priv->state <= NM_DEVICE_STATE_IP_CONFIG || priv->ip_data_6.do_reapply)
+                && !nm_device_managed_type_is_external_or_assume(self))
                 _dev_addrgenmode6_set(self, NM_IN6_ADDR_GEN_MODE_NONE);
 
             /* Re-enable IPv6 on the interface */
