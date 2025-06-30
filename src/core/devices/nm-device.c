@@ -13422,7 +13422,8 @@ activate_stage3_ip_config(NMDevice *self)
      * let's do it! */
     _commit_mtu(self);
 
-    if (!nm_device_managed_type_is_external(self)
+    if ((priv->state <= NM_DEVICE_STATE_IP_CONFIG || priv->ip_data_6.do_reapply)
+        && !nm_device_managed_type_is_external(self)
         && (!klass->ready_for_ip_config || klass->ready_for_ip_config(self, TRUE))) {
         if (priv->ipmanual_data.state_6 == NM_DEVICE_IP_STATE_NONE
             && !NM_IN_STRSET(priv->ipv6_method,
