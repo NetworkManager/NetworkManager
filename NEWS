@@ -8,12 +8,14 @@ subject to change and not guaranteed to be compatible with
 the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
-* Add systemd services to provide networking in the initrd.
-* Introduce a new "ovs-dpdk.lsc-interrupt" property to configure the
-  Link State Change (LSC) detection mode for OVS DPDK interfaces.
+* Add support for configuring per-device IPv4 forwarding via the
+  "ipv4.forwarding" connection property.
 * Add a new "prefix-delegation" setting containing a "subnet-id"
   property that specifies the subnet to choose on the downstream
   interface when using IPv6 prefix delegation.
+* When activating a WireGuard connection to an IPv6 endpoint, now
+  NetworkManager creates firewall rules to ensure that the incoming
+  packets are not dropped by kernel reverse path filtering.
 * Add support for configuring the loopback interface in nmtui.
 * Most of the properties of ovs-bridge and ovs-port connections can
   now be reapplied at runtime without bringing the connection down.
@@ -21,6 +23,11 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   NetworkManager preserves the SR-IOV parameters set on the device
   when the connection is deactivated, or whether it resets them to
   their default value.
+* Introduce a new "ovs-dpdk.lsc-interrupt" property to configure the
+  Link State Change (LSC) detection mode for OVS DPDK interfaces.
+* The initrd-generator now can parse the NVMe Boot Firmware Table
+  (NBFT) to configure networking during early boot.
+* Add systemd services to provide networking in the initrd.
 
 =============================================
 NetworkManager-1.52
