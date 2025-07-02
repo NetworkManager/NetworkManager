@@ -1066,15 +1066,16 @@
             <listitem><para><literal>dummy</literal></para></listitem>
             <listitem><para><literal>generic</literal></para></listitem>
             <listitem><para><literal>gsm</literal></para></listitem>
+            <listitem><para><literal>hsr</literal></para></listitem>
             <listitem><para><literal>infiniband</literal></para></listitem>
             <listitem><para><literal>ip-tunnel</literal></para></listitem>
+            <listitem><para><literal>ipvlan</literal></para></listitem>
+            <listitem><para><literal>loopback</literal></para></listitem>
             <listitem><para><literal>macsec</literal></para></listitem>
             <listitem><para><literal>macvlan</literal></para></listitem>
             <listitem><para><literal>olpc-mesh</literal></para></listitem>
             <listitem><para><literal>ovs-bridge</literal></para></listitem>
-            <listitem><para><literal>ovs-dpdk</literal></para></listitem>
             <listitem><para><literal>ovs-interface</literal></para></listitem>
-            <listitem><para><literal>ovs-patch</literal></para></listitem>
             <listitem><para><literal>ovs-port</literal></para></listitem>
             <listitem><para><literal>pppoe</literal></para></listitem>
             <listitem><para><literal>team</literal></para></listitem>
