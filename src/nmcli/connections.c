@@ -6066,7 +6066,7 @@ nmc_add_connection(NmCli *nmc, NMConnection *connection, gboolean temporary)
 static void
 do_connection_add(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv)
 {
-    gs_unref_ptrarray GPtrArray  *props;
+    gs_unref_ptrarray GPtrArray  *props = NULL;
     gs_unref_object NMConnection *connection = NULL;
     NMSettingConnection          *s_con;
     gs_free_error GError         *error          = NULL;
