@@ -1894,7 +1894,7 @@ get_ip_method_auto(NMDevice *device, int addr_family)
         /* We cannot do DHCPv4 on a PPP link, instead we get "auto" IP addresses
          * by pppd. Return "manual" here, which has the suitable effect to a
          * (zero) manual addresses in addition. */
-        return NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
+        return NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
     }
 
     return NM_SETTING_IP6_CONFIG_METHOD_AUTO;
