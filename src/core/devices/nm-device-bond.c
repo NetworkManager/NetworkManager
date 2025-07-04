@@ -137,13 +137,13 @@ _set_bond_attr(NMDevice *device, const char *attr, const char *value)
     return ret;
 }
 
-#define _set_bond_attr_take(device, attr, value)                            \
-    G_STMT_START                                                            \
-    {                                                                       \
-        gs_free char *_tmp = (value);                                       \
-                                                                            \
-        _set_bond_attr(device, NM_SETTING_BOND_OPTION_ARP_IP_TARGET, _tmp); \
-    }                                                                       \
+#define _set_bond_attr_take(device, attr, value) \
+    G_STMT_START                                 \
+    {                                            \
+        gs_free char *_tmp = (value);            \
+                                                 \
+        _set_bond_attr(device, attr, _tmp);      \
+    }                                            \
     G_STMT_END
 
 #define _set_bond_attr_printf(device, attr, fmt, ...) \
