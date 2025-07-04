@@ -235,7 +235,7 @@ attach_port(NMDevice                  *device,
 
         _LOGI(LOGD_DEVICE, "attached VRF port %s", port_iface);
     } else
-        _LOGI(LOGD_BOND, "VRF port %s was attached", port_iface);
+        _LOGI(LOGD_DEVICE, "VRF port %s was attached", port_iface);
 
     return TRUE;
 }
