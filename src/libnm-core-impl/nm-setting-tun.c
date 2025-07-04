@@ -166,7 +166,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     }
 
     if (priv->owner) {
-        if (_nm_utils_ascii_str_to_int64(priv->owner, 10, 0, G_MAXINT32, -1) == -1) {
+        if (_nm_utils_ascii_str_to_int64(priv->owner, 10, 0, G_MAXUINT32 - 1, -1) == -1) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -178,7 +178,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     }
 
     if (priv->group) {
-        if (_nm_utils_ascii_str_to_int64(priv->group, 10, 0, G_MAXINT32, -1) == -1) {
+        if (_nm_utils_ascii_str_to_int64(priv->group, 10, 0, G_MAXUINT32 - 1, -1) == -1) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,
