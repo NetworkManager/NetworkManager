@@ -310,7 +310,7 @@ format_string(const guint8 *data, gsize len, gboolean allow_trim, char **out_to_
     if (len == 0)
         return NULL;
 
-    if (memchr(data, len, '\0'))
+    if (memchr(data, '\0', len))
         return NULL;
 
     return nm_utils_buf_utf8safe_escape(data,
