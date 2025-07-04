@@ -153,7 +153,7 @@ ethtool_send_and_recv(struct nl_sock *sock,
 
 out:
     if (nle < 0 && err_msg && *err_msg == NULL)
-        *err_msg = strdup(nm_strerror(nle));
+        *err_msg = g_strdup(nm_strerror(nle));
 
     if (nle >= 0 && cb_result < 0)
         nle = cb_result;
