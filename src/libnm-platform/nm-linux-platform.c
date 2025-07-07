@@ -10519,7 +10519,7 @@ parse_fdb_cb(const struct nl_msg *msg, void *arg)
 }
 
 NMEtherAddr **
-nm_linux_platform_get_link_fdb_table(NMPlatform *platform, int *ifindexes, guint ifindexes_len)
+nm_linux_platform_get_bridge_fdb(NMPlatform *platform, int *ifindexes, guint ifindexes_len)
 {
     int                            nle;
     struct nl_sock                *sk        = NULL;

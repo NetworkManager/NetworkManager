@@ -920,7 +920,7 @@ nm_bond_manager_send_arp(int                 bond_ifindex,
         int                   i;
         gs_free NMEtherAddr **fdb_addrs = NULL;
 
-        fdb_addrs = nm_linux_platform_get_link_fdb_table(platform, ifindexes, 2);
+        fdb_addrs = nm_linux_platform_get_bridge_fdb(platform, ifindexes, 2);
         /* we want to send a Reverse ARP (RARP) packet */
         data.op = htons(ARP_OP_RARP);
 
