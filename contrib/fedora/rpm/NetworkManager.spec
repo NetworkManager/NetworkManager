@@ -14,6 +14,7 @@
 
 %global epoch_version 1
 %global real_version __VERSION__
+%global git_tag_version __GIT_TAG_VERSION__
 %global rpm_version %{real_version}
 %global release_version __RELEASE_VERSION__
 %global snapshot __SNAPSHOT__
@@ -180,7 +181,7 @@ Group: System Environment/Base
 License: GPL-2.0-or-later AND LGPL-2.1-or-later
 URL: https://networkmanager.dev/
 
-#Source: https://download.gnome.org/sources/NetworkManager/%{real_version_major}/%{name}-%{real_version}.tar.xz
+#Source: https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/releases/%{git_tag_version}/downloads/%{name}-%{real_version}.tar.xz
 Source: __SOURCE1__
 Source1: NetworkManager.conf
 Source2: 00-server.conf
