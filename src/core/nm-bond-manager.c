@@ -916,9 +916,9 @@ nm_bond_manager_send_arp(int                 bond_ifindex,
     if (announce_fdb) {
         /* if we are announcing the FDB we do a RARP, we don't set the
          * source/dest IPv4 address */
-        int                   ifindexes[] = {bridge_ifindex, bond_ifindex};
-        int                   i;
-        gs_free NMEtherAddr **fdb_addrs = NULL;
+        int                         ifindexes[] = {bridge_ifindex, bond_ifindex};
+        int                         i;
+        nm_auto_freev NMEtherAddr **fdb_addrs = NULL;
 
         fdb_addrs = nm_linux_platform_get_bridge_fdb(platform, ifindexes, 2);
         /* we want to send a Reverse ARP (RARP) packet */
@@ -927,10 +927,10 @@ nm_bond_manager_send_arp(int                 bond_ifindex,
         i = 0;
         while (fdb_addrs[i] != NULL) {
             NMEtherAddr *tmp_hwaddr = fdb_addrs[i];
+
             memcpy(data.s_hw_addr, tmp_hwaddr, ETH_ALEN);
             memcpy(data.d_hw_addr, tmp_hwaddr, ETH_ALEN);
             memcpy(data.s_addr, tmp_hwaddr, ETH_ALEN);
-            g_free(tmp_hwaddr);
             if (sendto(sockfd, &data, sizeof(data), 0, (struct sockaddr *) &addr, sizeof(addr)) < 0)
                 return FALSE;
             i++;
