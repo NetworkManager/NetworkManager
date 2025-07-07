@@ -20,6 +20,7 @@ Overview of changes since NetworkManager-1.52
 * Add a new "prefix-delegation" setting containing a "subnet-id"
   property that specifies the subnet to choose on the downstream
   interface when using IPv6 prefix delegation.
+* Support OCI baremetal in nm-cloud-setup
 * When activating a WireGuard connection to an IPv6 endpoint, now
   NetworkManager creates firewall rules to ensure that the incoming
   packets are not dropped by kernel reverse path filtering.
