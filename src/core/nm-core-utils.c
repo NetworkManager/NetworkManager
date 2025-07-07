@@ -4642,13 +4642,13 @@ get_max_rate_vht_80_ss3(int mcs)
     case 5:
         return 702000000;
     case 6:
-        return 0;
+        return 0; /* invalid */
     case 7:
         return 877500000;
     case 8:
-        return 105300000;
+        return 1053000000;
     case 9:
-        return 117000000;
+        return 1170000000;
     }
     return 0;
 }
@@ -4732,7 +4732,7 @@ get_max_rate_vht_160_ss3(int mcs)
     case 8:
         return 2106000000;
     case 9:
-        return 0;
+        return 0; /* invalid */
     }
     return 0;
 }
