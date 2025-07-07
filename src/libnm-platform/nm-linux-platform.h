@@ -26,7 +26,7 @@ GType nm_linux_platform_get_type(void);
 struct _NMDedupMultiIndex;
 
 NMEtherAddr **
-nm_linux_platform_get_link_fdb_table(NMPlatform *platform, int *ifindexes, guint ifindexes_len);
+nm_linux_platform_get_bridge_fdb(NMPlatform *platform, int *ifindexes, guint ifindexes_len);
 
 NMPlatform *nm_linux_platform_new(struct _NMDedupMultiIndex *multi_idx,
                                   gboolean                   log_with_ptr,
