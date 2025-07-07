@@ -1490,7 +1490,7 @@ clean_addresses(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint
         g_array_set_size(rdata->addresses, j);
     }
 
-    if (_array_set_size_max(rdata->gateways, priv->config.max_addresses))
+    if (_array_set_size_max(rdata->addresses, priv->config.max_addresses))
         *changed |= NM_NDISC_CONFIG_ADDRESSES;
 }
 
