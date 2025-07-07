@@ -239,6 +239,76 @@ test_parse_search_list(void)
     g_assert_cmpint(g_strv_length(domains), ==, 1);
     g_assert_cmpstr(domains[0], ==, "okay");
     g_strfreev(domains);
+
+    /* Test that the message compression works when the offset uses both bytes */
+    data = (guint8[]) {
+        /* clang-format off */
+         /* offset 0 */
+         0x3e,
+        'a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a',
+        'a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a',
+        'a','a','a','a','a','a','a','a','a','a','a','a','a','a','a','a',
+        'a','a','a','a','a','a','a','a','a','a','a','a','a','a',
+        0x00,
+        /* offset 0x40 */
+        0x3e,
+        'b','b','b','b','b','b','b','b','b','b','b','b','b','b','b','b',
+        'b','b','b','b','b','b','b','b','b','b','b','b','b','b','b','b',
+        'b','b','b','b','b','b','b','b','b','b','b','b','b','b','b','b',
+        'b','b','b','b','b','b','b','b','b','b','b','b','b','b',
+        0x00,
+        /* offset 0x80 */
+        0x3e,
+        'c','c','c','c','c','c','c','c','c','c','c','c','c','c','c','c',
+        'c','c','c','c','c','c','c','c','c','c','c','c','c','c','c','c',
+        'c','c','c','c','c','c','c','c','c','c','c','c','c','c','c','c',
+        'c','c','c','c','c','c','c','c','c','c','c','c','c','c',
+        0x00,
+        /* offset 0xc0 */
+        0x3e,
+        'd','d','d','d','d','d','d','d','d','d','d','d','d','d','d','d',
+        'd','d','d','d','d','d','d','d','d','d','d','d','d','d','d','d',
+        'd','d','d','d','d','d','d','d','d','d','d','d','d','d','d','d',
+        'd','d','d','d','d','d','d','d','d','d','d','d','d','d',
+        0x00,
+        /* offset 0x100 */
+        0x3e,
+        'e','e','e','e','e','e','e','e','e','e','e','e','e','e','e','e',
+        'e','e','e','e','e','e','e','e','e','e','e','e','e','e','e','e',
+        'e','e','e','e','e','e','e','e','e','e','e','e','e','e','e','e',
+        'e','e','e','e','e','e','e','e','e','e','e','e','e','e',
+        0x00,
+        /* offset 0x140 */
+        0x06, 'f','o','o','b','a','r', 0x03, 'c', 'o', 'm', 0x00,
+        0x04, 't', 'e', 's', 't', 0xc1, 0x40, /* back pointer to offset 0x140*/
+        /* clang-format on */
+    };
+
+    domains = nm_dhcp_lease_data_parse_search_list(data,
+                                                   0x153,
+                                                   "eth0",
+                                                   AF_INET,
+                                                   NM_DHCP_OPTION_DHCP4_DOMAIN_SEARCH_LIST);
+    g_assert(domains);
+    g_assert_cmpint(g_strv_length(domains), ==, 7);
+    g_assert_cmpstr(domains[0],
+                    ==,
+                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+    g_assert_cmpstr(domains[1],
+                    ==,
+                    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
+    g_assert_cmpstr(domains[2],
+                    ==,
+                    "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc");
+    g_assert_cmpstr(domains[3],
+                    ==,
+                    "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd");
+    g_assert_cmpstr(domains[4],
+                    ==,
+                    "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
+    g_assert_cmpstr(domains[5], ==, "foobar.com");
+    g_assert_cmpstr(domains[6], ==, "test.foobar.com");
+    g_strfreev(domains);
 }
 
 static void

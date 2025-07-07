@@ -1224,7 +1224,7 @@ lease_option_print_domain_name(const uint8_t  *cache,
         }
         case 0xC0: /* back pointer */
         {
-            size_t offset = (c & 0x3F) << 16;
+            size_t offset = (c & 0x3F) << 8;
 
             /*
              * The offset is given as two bytes (in big endian), where the
