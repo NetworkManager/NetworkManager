@@ -156,6 +156,19 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }
     }
 
+    if (!NM_IN_SET(priv->mode,
+                   NM_SETTING_IPVLAN_MODE_L2,
+                   NM_SETTING_IPVLAN_MODE_L3,
+                   NM_SETTING_IPVLAN_MODE_L3S)) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("unsupported mode %u"),
+                    priv->mode);
+        g_prefix_error(error, "%s.%s: ", NM_SETTING_IPVLAN_SETTING_NAME, NM_SETTING_IPVLAN_MODE);
+        return FALSE;
+    }
+
     if (priv->private_flag && priv->vepa) {
         g_set_error(error,
                     NM_CONNECTION_ERROR,
