@@ -3082,7 +3082,7 @@ _signal_handle(NMSupplicantInterface *self,
             const char           *status;
             const char           *parameter;
 
-            if (g_variant_is_of_type(parameters, G_VARIANT_TYPE("(ss)")))
+            if (!g_variant_is_of_type(parameters, G_VARIANT_TYPE("(ss)")))
                 return;
 
             g_variant_get(parameters, "(&s&s)", &status, &parameter);
