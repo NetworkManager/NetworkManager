@@ -15,7 +15,6 @@
 #include <linux/if_ether.h>
 
 #include "NetworkManagerUtils.h"
-#include "NetworkManagerUtils.h"
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-glib-aux/nm-uuid.h"
