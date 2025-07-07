@@ -5417,7 +5417,7 @@ again:
     if ((g = g_atomic_int_get(&g_static)) == -1) {
         gid_t g2;
 
-        g2 = geteuid();
+        g2 = getegid();
         g  = g2;
         nm_assert(g == g2);
         nm_assert(g >= 0);
