@@ -14051,6 +14051,13 @@ can_reapply_change(NMDevice   *self,
         goto out_fail;
     }
 
+    if (nm_streq(setting_name, NM_SETTING_BRIDGE_PORT_SETTING_NAME)) {
+        return nm_device_hash_check_invalid_keys(diffs,
+                                                 NM_SETTING_BRIDGE_PORT_SETTING_NAME,
+                                                 error,
+                                                 NM_SETTING_BRIDGE_PORT_VLANS);
+    }
+
     if (nm_streq(setting_name, NM_SETTING_SRIOV_SETTING_NAME)) {
         return nm_device_hash_check_invalid_keys(diffs,
                                                  NM_SETTING_SRIOV_SETTING_NAME,
