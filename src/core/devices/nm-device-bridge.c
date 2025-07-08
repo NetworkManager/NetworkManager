@@ -735,6 +735,11 @@ merge_bridge_vlan_default_pvid(NMPlatformBridgeVlan *vlans, guint *num_vlans, gu
     gboolean              has_pvid = FALSE;
     guint                 i;
 
+    if (default_pvid == 0) {
+        /* default_pvid=0 means that the default PVID is disabled. No need to merge it. */
+        return vlans;
+    }
+
     for (i = 0; i < *num_vlans; i++) {
         if (vlans[i].pvid) {
             has_pvid = TRUE;
