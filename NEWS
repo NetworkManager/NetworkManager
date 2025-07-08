@@ -1,4 +1,15 @@
 =============================================
+NetworkManager-1.52.1
+Overview of changes since NetworkManager-1.52
+=============================================
+* Fail early if we cannot get current FEC
+  (Forward Error Correction) value.
+* Allow reapplying ovs-bridge and ovs-port properties.
+* When activating a WireGuard connection to an IPv6 endpoint, now
+  NetworkManager creates firewall rules to ensure that the incoming
+  packets are not dropped by kernel reverse path filtering.
+
+=============================================
 NetworkManager-1.52
 Overview of changes since NetworkManager-1.50
 =============================================
