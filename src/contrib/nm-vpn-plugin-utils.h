@@ -24,4 +24,6 @@ NMVpnEditor *nm_vpn_plugin_utils_load_editor(const char                   *modul
                                              gpointer                      user_data,
                                              GError                      **error);
 
+char *nm_vpn_plugin_utils_get_cert_path(const char *plugin);
+
 #endif /* __NM_VPN_PLUGIN_UTILS_H__ */
