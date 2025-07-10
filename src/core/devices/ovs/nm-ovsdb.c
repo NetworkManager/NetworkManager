@@ -2249,7 +2249,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                                            ovs_bridge->connection_uuid,
                                            ""),
                       (strtmp1 = _strdict_to_string(ovs_bridge->external_ids)),
-                      (strtmp2 = _strdict_to_string(ovs_bridge->external_ids)));
+                      (strtmp2 = _strdict_to_string(ovs_bridge->other_config)));
             }
         } else {
             gs_free char *strtmp1 = NULL;

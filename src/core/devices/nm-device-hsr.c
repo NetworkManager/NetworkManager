@@ -94,8 +94,10 @@ update_properties(NMDevice *device)
     CHECK_PROPERTY_CHANGED(multicast_spec, PROP_MULTICAST_SPEC);
     CHECK_PROPERTY_CHANGED(prp, PROP_PRP);
 
-    if (!nm_ether_addr_equal(&priv->props.supervision_address, &props->supervision_address))
+    if (!nm_ether_addr_equal(&priv->props.supervision_address, &props->supervision_address)) {
+        priv->props.supervision_address = props->supervision_address;
         _notify(self, PROP_SUPERVISION_ADDRESS);
+    }
 
     g_object_thaw_notify((GObject *) device);
 }

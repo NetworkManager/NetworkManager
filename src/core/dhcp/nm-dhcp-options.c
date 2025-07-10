@@ -68,7 +68,7 @@ const NMDhcpOption _nm_dhcp_option_dhcp4_options[] = {
     REQ(NM_DHCP_OPTION_DHCP4_ARP_CACHE_TIMEOUT, "arp_cache_timeout", FALSE),
     REQ(NM_DHCP_OPTION_DHCP4_IEEE802_3_ENCAPSULATION, "ieee802_3_encapsulation", FALSE),
     REQ(NM_DHCP_OPTION_DHCP4_DEFAULT_TCP_TTL, "default_tcp_ttl", FALSE),
-    REQ(NM_DHCP_OPTION_DHCP4_TCP_KEEPALIVE_INTERVAL, "tcp_keepalive_internal", FALSE),
+    REQ(NM_DHCP_OPTION_DHCP4_TCP_KEEPALIVE_INTERVAL, "tcp_keepalive_interval", FALSE),
     REQ(NM_DHCP_OPTION_DHCP4_TCP_KEEPALIVE_GARBAGE, "tcp_keepalive_garbage", FALSE),
     REQ(NM_DHCP_OPTION_DHCP4_VENDOR_SPECIFIC, "vendor_encapsulated_options", FALSE),
     REQ(NM_DHCP_OPTION_DHCP4_NETBIOS_NAMESERVER, "netbios_name_servers", FALSE),

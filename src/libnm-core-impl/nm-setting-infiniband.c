@@ -212,6 +212,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                                 NM_CONNECTION_ERROR_INVALID_PROPERTY,
                                 _("Must specify a P_Key if specifying parent"));
             g_prefix_error(error, "%s: ", NM_SETTING_INFINIBAND_PARENT);
+            return FALSE;
         }
     }
 

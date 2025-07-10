@@ -893,7 +893,7 @@ const NMPObject *
 nmp_object_stackinit_id_ip6_address(NMPObject *obj, int ifindex, const struct in6_addr *address)
 {
     _nmp_object_stackinit_from_type(obj, NMP_OBJECT_TYPE_IP6_ADDRESS);
-    obj->ip4_address.ifindex = ifindex;
+    obj->ip6_address.ifindex = ifindex;
     if (address)
         obj->ip6_address.address = *address;
     return obj;

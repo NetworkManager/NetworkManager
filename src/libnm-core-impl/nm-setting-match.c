@@ -309,9 +309,10 @@ nm_setting_match_clear_kernel_command_lines(NMSettingMatch *setting)
  * @setting: the #NMSettingMatch
  * @length: (out) (optional): the length of the returned interface names array.
  *
- * Returns all the interface names.
+ * Returns all the kernel command line arguments.
  *
- * Returns: (transfer none) (array length=length): the configured interface names.
+ * Returns: (transfer none) (array length=length): the configured kernel command
+ *    line arguments.
  *
  * Since: 1.26
  **/
@@ -344,7 +345,7 @@ nm_setting_match_get_num_drivers(NMSettingMatch *setting)
 /**
  * nm_setting_match_get_driver:
  * @setting: the #NMSettingMatch
- * @idx: index number of the DNS search domain to return
+ * @idx: index number of the driver to return
  *
  * Since 1.46, access at index "len" is allowed and returns NULL.
  *
@@ -443,7 +444,7 @@ nm_setting_match_clear_drivers(NMSettingMatch *setting)
 /**
  * nm_setting_match_get_drivers:
  * @setting: the #NMSettingMatch
- * @length: (out) (optional): the length of the returned interface names array.
+ * @length: (out) (optional): the length of the returned drivers array.
  *
  * Returns all the drivers.
  *

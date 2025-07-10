@@ -2726,6 +2726,66 @@ test_link_set_properties(void)
 /*****************************************************************************/
 
 static void
+test_link_get_bridge_fdb(void)
+{
+    const NMPlatformLink       *link;
+    nm_auto_freev NMEtherAddr **addrs;
+    int                         ifindex[2];
+    guint8                      expected[][6] = {
+        {0x00, 0x99, 0x00, 0x00, 0x00, 0x01},
+        {0x00, 0x99, 0x00, 0x00, 0x00, 0x02},
+        {0x00, 0x99, 0x00, 0x00, 0x00, 0x03},
+        {0x00, 0x99, 0x00, 0x00, 0x00, 0x05},
+    };
+    guint i;
+    guint j;
+
+    ifindex[0] =
+        nmtstp_link_bridge_add(NULL, -1, "br-test-1", &nm_platform_lnk_bridge_default)->ifindex;
+    ifindex[1] =
+        nmtstp_link_bridge_add(NULL, -1, "br-test-2", &nm_platform_lnk_bridge_default)->ifindex;
+
+    link = nmtstp_link_get(NULL, ifindex[0], "br-test-1");
+    g_assert(link);
+    link = nmtstp_link_get(NULL, ifindex[1], "br-test-2");
+    g_assert(link);
+
+    nmtstp_run_command_check("bridge fdb add dev br-test-1 00:99:00:00:00:01");
+    nmtstp_run_command_check("bridge fdb add dev br-test-1 00:99:00:00:00:02");
+    nmtstp_run_command_check("bridge fdb add dev br-test-1 00:99:00:00:00:03");
+    nmtstp_run_command_check("bridge fdb add dev br-test-2 00:99:00:00:00:01");
+    nmtstp_run_command_check("bridge fdb add dev br-test-2 00:99:00:00:00:05");
+
+    addrs = nm_linux_platform_get_bridge_fdb(NM_PLATFORM_GET, ifindex, 2);
+    g_assert(addrs);
+
+    /* Check for expected entries */
+    for (i = 0; i < G_N_ELEMENTS(expected); i++) {
+        gboolean found = FALSE;
+
+        for (j = 0; addrs[j]; j++) {
+            if (memcmp(addrs[j], expected[i], ETH_ALEN) == 0) {
+                found = TRUE;
+                break;
+            }
+        }
+        g_assert(found);
+    }
+
+    /* No dupes */
+    for (i = 0; addrs[i]; i++) {
+        for (j = i + 1; addrs[j]; j++) {
+            g_assert_cmpint(memcmp(addrs[i], addrs[j], ETH_ALEN), !=, 0);
+        }
+    }
+
+    nmtstp_link_delete(NULL, -1, ifindex[0], "br-test-1", TRUE);
+    nmtstp_link_delete(NULL, -1, ifindex[1], "br-test-2", TRUE);
+}
+
+/*****************************************************************************/
+
+static void
 test_create_many_links_do(guint n_devices)
 {
     gint64                 time, start_time = nm_utils_get_monotonic_timestamp_nsec();
@@ -4105,6 +4165,8 @@ _nmtstp_setup_tests(void)
         test_software_detect_add("/link/software/detect/wireguard/0", NM_LINK_TYPE_WIREGUARD, 0);
         test_software_detect_add("/link/software/detect/wireguard/1", NM_LINK_TYPE_WIREGUARD, 1);
         test_software_detect_add("/link/software/detect/wireguard/2", NM_LINK_TYPE_WIREGUARD, 2);
+
+        g_test_add_func("/link/get-bridge-fdb", test_link_get_bridge_fdb);
 
         g_test_add_func("/link/software/vlan/set-xgress", test_vlan_set_xgress);
 
