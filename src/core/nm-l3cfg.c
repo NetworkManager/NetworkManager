@@ -3050,7 +3050,7 @@ handle_start_probing:
         if (!acd_data->nacd_probe) {
             _LOGT_acd(acd_data,
                       "probing currently %snot possible (timeout %u msec; %s, %s)",
-                      orig_state == NM_L3_ACD_ADDR_STATE_INIT ? "" : " still",
+                      orig_state == NM_L3_ACD_ADDR_STATE_INIT ? "" : "still ",
                       acd_data->probing_timeout_msec,
                       failure_reason,
                       log_reason);
