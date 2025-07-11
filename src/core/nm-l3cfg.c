@@ -2322,7 +2322,8 @@ _l3_acd_data_timeout_schedule_probing_restart(AcdData *acd_data, gint64 now_msec
     nm_assert(acd_data->probing_timeout_msec > 0);
     nm_assert(acd_data->probing_timestamp_msec > 0);
 
-    expiry_msec = acd_data->probing_timestamp_msec + ACD_WAIT_PROBING_EXTRA_TIME_MSEC;
+    expiry_msec = acd_data->probing_timestamp_msec + ACD_WAIT_PROBING_EXTRA_TIME_MSEC
+                  + ACD_WAIT_PROBING_EXTRA_TIME2_MSEC;
 
     timeout_msec = NM_MAX(0, expiry_msec - now_msec);
 
