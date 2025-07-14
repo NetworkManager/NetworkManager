@@ -2501,6 +2501,168 @@ do_handle_init(NML3Cfg *self, AcdData *acd_data, AcdInternalEvent event)
 }
 
 static void
+do_handle_start_defending(NML3Cfg *self, AcdData *acd_data, AcdInternalEvent event)
+{
+    char sbuf256[256];
+
+    if (!_l3_acd_ipv4_addresses_on_link_contains(self, acd_data->info.addr)) {
+        if (acd_data->info.state != NM_L3_ACD_ADDR_STATE_READY) {
+            _l3_acd_data_state_set_full(
+                self,
+                acd_data,
+                NM_L3_ACD_ADDR_STATE_READY,
+                !NM_IN_SET(event, ACD_INTERNAL_EVENT_INIT, ACD_INTERNAL_EVENT_INIT_REAPPLY),
+                "probe is ready, waiting for address to be configured");
+        }
+        return;
+    }
+
+    _l3_acd_data_state_set(self,
+                           acd_data,
+                           NM_L3_ACD_ADDR_STATE_DEFENDING,
+                           !NM_IN_SET(event,
+                                      ACD_INTERNAL_EVENT_INIT,
+                                      ACD_INTERNAL_EVENT_INIT_REAPPLY,
+                                      ACD_INTERNAL_EVENT_POST_COMMIT));
+
+    nm_assert(acd_data->acd_defend_type_desired > _NM_L3_ACD_DEFEND_TYPE_NONE);
+    nm_assert(acd_data->acd_defend_type_desired <= NM_L3_ACD_DEFEND_TYPE_ALWAYS);
+
+    if (acd_data->acd_defend_type_desired != acd_data->acd_defend_type_current) {
+        acd_data->acd_defend_type_current = acd_data->acd_defend_type_desired;
+        acd_data->nacd_probe              = n_acd_probe_free(acd_data->nacd_probe);
+    }
+
+    if (!acd_data->nacd_probe) {
+        const char *failure_reason;
+        NAcdProbe  *probe;
+
+        if (acd_data->acd_data_timeout_source) {
+            /* we already failed to create a probe. We are ratelimited to retry, but
+             * we have a timer pending... */
+            return;
+        }
+
+        probe = _l3_acd_nacd_instance_create_probe(self,
+                                                   acd_data->info.addr,
+                                                   0,
+                                                   acd_data,
+                                                   NULL,
+                                                   &failure_reason);
+        if (!probe) {
+            /* we failed to create a probe for announcing the address. We log a
+             * warning and start a timer to retry. This way (of having a timer pending)
+             * we also back off and are rate limited from retrying too frequently. */
+            _LOGT_acd(acd_data, "start announcing failed to create probe (%s)", failure_reason);
+
+            if (!nm_platform_link_uses_arp(self->priv.platform, self->priv.ifindex)) {
+                _LOGT_acd(
+                    acd_data,
+                    "give up on ACD and never retry since interface '%s' is configured with NOARP",
+                    nmp_object_link_get_ifname(self->priv.plobj));
+                return;
+            }
+
+            _l3_acd_data_timeout_schedule(acd_data, ACD_WAIT_TIME_ANNOUNCE_RESTART_MSEC);
+            return;
+        }
+
+        _LOGT_acd(acd_data,
+                  "start announcing (defend=%s) (probe created)",
+                  _l3_acd_defend_type_to_string(acd_data->acd_defend_type_current,
+                                                sbuf256,
+                                                sizeof(sbuf256)));
+        acd_data->acd_defend_type_is_active = FALSE;
+        acd_data->nacd_probe                = probe;
+        return;
+    }
+
+    if (!acd_data->acd_defend_type_is_active) {
+        acd_data->acd_defend_type_is_active = TRUE;
+        _LOGT_acd(acd_data,
+                  "start announcing (defend=%s) (with existing probe)",
+                  _l3_acd_defend_type_to_string(acd_data->acd_defend_type_current,
+                                                sbuf256,
+                                                sizeof(sbuf256)));
+        if (n_acd_probe_announce(acd_data->nacd_probe,
+                                 _l3_acd_defend_type_to_nacd(acd_data->acd_defend_type_current))
+            != 0)
+            nm_assert_not_reached();
+        return;
+    }
+}
+
+static void
+do_handle_start_probing(NML3Cfg         *self,
+                        AcdData         *acd_data,
+                        AcdInternalEvent event,
+                        const char      *log_reason,
+                        gint64           now_msec)
+{
+    const NML3AcdAddrState                orig_state = acd_data->info.state;
+    nm_auto(n_acd_probe_freep) NAcdProbe *probe      = NULL;
+    const char                           *failure_reason;
+    gboolean                              acd_not_supported;
+
+    nm_assert(NM_IN_SET(acd_data->info.state,
+                        NM_L3_ACD_ADDR_STATE_INIT,
+                        NM_L3_ACD_ADDR_STATE_PROBING,
+                        NM_L3_ACD_ADDR_STATE_USED,
+                        NM_L3_ACD_ADDR_STATE_CONFLICT));
+
+    /* note that we reach this line also during a ACD_INTERNAL_EVENT_TIMEOUT, when
+         * or when we restart the probing (with a new timeout). In all cases, we still
+         * give the original timeout (acd_data->probing_timeout_msec), and not the remaining
+         * time. That means, the probing step might take longer then originally planned
+         * (e.g. if we initially cannot start probing right away). */
+
+    probe = _l3_acd_nacd_instance_create_probe(self,
+                                               acd_data->info.addr,
+                                               acd_data->probing_timeout_msec,
+                                               acd_data,
+                                               &acd_not_supported,
+                                               &failure_reason);
+    NM_SWAP(&probe, &acd_data->nacd_probe);
+
+    if (acd_not_supported) {
+        nm_assert(!acd_data->nacd_probe);
+        _LOGT_acd(acd_data,
+                  "probe-good (interface does not support acd%s, %s)",
+                  orig_state == NM_L3_ACD_ADDR_STATE_INIT ? ""
+                  : (event != ACD_INTERNAL_EVENT_TIMEOUT) ? " anymore"
+                                                          : " anymore after timeout",
+                  log_reason);
+        do_handle_start_defending(self, acd_data, event);
+        return;
+    }
+
+    _l3_acd_data_state_set(self,
+                           acd_data,
+                           NM_L3_ACD_ADDR_STATE_PROBING,
+                           !NM_IN_SET(event,
+                                      ACD_INTERNAL_EVENT_INIT,
+                                      ACD_INTERNAL_EVENT_INIT_REAPPLY,
+                                      ACD_INTERNAL_EVENT_POST_COMMIT));
+
+    if (!acd_data->nacd_probe) {
+        _LOGT_acd(acd_data,
+                  "probing currently %snot possible (timeout %u msec; %s, %s)",
+                  orig_state == NM_L3_ACD_ADDR_STATE_INIT ? "" : "still ",
+                  acd_data->probing_timeout_msec,
+                  failure_reason,
+                  log_reason);
+        _l3_acd_data_timeout_schedule_probing_restart(acd_data, now_msec);
+        return;
+    }
+
+    _LOGT_acd(acd_data,
+              "%sstart probing (timeout %u msec, %s)",
+              orig_state == NM_L3_ACD_ADDR_STATE_INIT ? "" : "re",
+              acd_data->probing_timeout_msec,
+              log_reason);
+}
+
+static void
 _l3_acd_data_state_change(NML3Cfg           *self,
                           AcdData           *acd_data,
                           AcdInternalEvent   event,
@@ -2633,8 +2795,8 @@ _l3_acd_data_state_change(NML3Cfg           *self,
             acd_data->probing_timestamp_msec = (*p_now_msec);
             acd_data->probing_timeout_msec   = acd_timeout_msec;
             _nm_l3cfg_emit_signal_notify_acd_event_queue(self, acd_data);
-            log_reason = "initial post-commit";
-            goto handle_start_probing;
+            do_handle_start_probing(self, acd_data, event, "initial post-commit", *p_now_msec);
+            return;
 
         case NM_L3_ACD_ADDR_STATE_PROBING:
         {
@@ -2672,8 +2834,12 @@ _l3_acd_data_state_change(NML3Cfg           *self,
             /* the timeout got reduced. We try to restart the probe. */
             acd_data->probing_timestamp_msec = (*p_now_msec);
             acd_data->probing_timeout_msec   = acd_timeout_msec;
-            log_reason                       = "post-commit timeout update";
-            goto handle_start_probing;
+            do_handle_start_probing(self,
+                                    acd_data,
+                                    event,
+                                    "post-commit timeout update",
+                                    *p_now_msec);
+            return;
         }
 
         case NM_L3_ACD_ADDR_STATE_USED:
@@ -2684,7 +2850,8 @@ _l3_acd_data_state_change(NML3Cfg           *self,
 
         case NM_L3_ACD_ADDR_STATE_READY:
         case NM_L3_ACD_ADDR_STATE_DEFENDING:
-            goto handle_start_defending;
+            do_handle_start_defending(self, acd_data, event);
+            return;
 
         case NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED:
             nm_assert_not_reached();
@@ -2748,12 +2915,17 @@ _l3_acd_data_state_change(NML3Cfg           *self,
                      * else would we do? Assume the address is USED? */
                     _LOGT_acd(acd_data,
                               "probe-good (waiting for creating probe timed out. Assume good)");
-                    goto handle_start_defending;
+                    do_handle_start_defending(self, acd_data, event);
+                    return;
                 }
 
                 acd_data->probing_timeout_msec = acd_timeout_msec;
-                log_reason                     = "retry probing on timeout";
-                goto handle_start_probing;
+                do_handle_start_probing(self,
+                                        acd_data,
+                                        event,
+                                        "retry probing on timeout",
+                                        *p_now_msec);
+                return;
             }
 
             acd_data->probing_timestamp_msec = (*p_now_msec);
@@ -2762,7 +2934,8 @@ _l3_acd_data_state_change(NML3Cfg           *self,
                 log_reason = "restart probing after previously used address";
             else
                 log_reason = "restart probing after previous conflict";
-            goto handle_start_probing;
+            do_handle_start_probing(self, acd_data, event, log_reason, *p_now_msec);
+            return;
 
         case NM_L3_ACD_ADDR_STATE_READY:
             nm_assert_not_reached();
@@ -2772,7 +2945,8 @@ _l3_acd_data_state_change(NML3Cfg           *self,
 
             nm_assert(!acd_data->nacd_probe);
             _LOGT_acd(acd_data, "retry announcing address");
-            goto handle_start_defending;
+            do_handle_start_defending(self, acd_data, event);
+            return;
 
         case NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED:
             nm_assert_not_reached();
@@ -2897,7 +3071,8 @@ _l3_acd_data_state_change(NML3Cfg           *self,
             return;
         case NM_L3_ACD_ADDR_STATE_READY:
         case NM_L3_ACD_ADDR_STATE_DEFENDING:
-            goto handle_start_defending;
+            do_handle_start_defending(self, acd_data, event);
+            return;
         case NM_L3_ACD_ADDR_STATE_PROBING:
         case NM_L3_ACD_ADDR_STATE_USED:
         case NM_L3_ACD_ADDR_STATE_CONFLICT:
@@ -2961,7 +3136,8 @@ _l3_acd_data_state_change(NML3Cfg           *self,
                 log_reason = "restart probing after down event";
             else
                 log_reason = "restart probing after link up";
-            goto handle_start_probing;
+            do_handle_start_probing(self, acd_data, event, log_reason, *p_now_msec);
+            return;
 
         case NM_L3_ACD_ADDR_STATE_READY:
         case NM_L3_ACD_ADDR_STATE_DEFENDING:
@@ -2999,182 +3175,29 @@ _l3_acd_data_state_change(NML3Cfg           *self,
     nm_assert_not_reached();
     return;
 
-handle_start_probing:
-    if (TRUE) {
-        const NML3AcdAddrState                orig_state = acd_data->info.state;
-        nm_auto(n_acd_probe_freep) NAcdProbe *probe      = NULL;
-        const char                           *failure_reason;
-        gboolean                              acd_not_supported;
-
-        nm_assert(NM_IN_SET(acd_data->info.state,
-                            NM_L3_ACD_ADDR_STATE_INIT,
-                            NM_L3_ACD_ADDR_STATE_PROBING,
-                            NM_L3_ACD_ADDR_STATE_USED,
-                            NM_L3_ACD_ADDR_STATE_CONFLICT));
-
-        /* note that we reach this line also during a ACD_INTERNAL_EVENT_TIMEOUT, when
-         * or when we restart the probing (with a new timeout). In all cases, we still
-         * give the original timeout (acd_data->probing_timeout_msec), and not the remaining
-         * time. That means, the probing step might take longer then originally planned
-         * (e.g. if we initially cannot start probing right away). */
-
-        probe = _l3_acd_nacd_instance_create_probe(self,
-                                                   acd_data->info.addr,
-                                                   acd_data->probing_timeout_msec,
-                                                   acd_data,
-                                                   &acd_not_supported,
-                                                   &failure_reason);
-        NM_SWAP(&probe, &acd_data->nacd_probe);
-
-        if (acd_not_supported) {
-            nm_assert(!acd_data->nacd_probe);
-            _LOGT_acd(acd_data,
-                      "probe-good (interface does not support acd%s, %s)",
-                      orig_state == NM_L3_ACD_ADDR_STATE_INIT ? ""
-                      : (event != ACD_INTERNAL_EVENT_TIMEOUT) ? " anymore"
-                                                              : " anymore after timeout",
-                      log_reason);
-            goto handle_start_defending;
-        }
-
-        _l3_acd_data_state_set(self,
-                               acd_data,
-                               NM_L3_ACD_ADDR_STATE_PROBING,
-                               !NM_IN_SET(event,
-                                          ACD_INTERNAL_EVENT_INIT,
-                                          ACD_INTERNAL_EVENT_INIT_REAPPLY,
-                                          ACD_INTERNAL_EVENT_POST_COMMIT));
-
-        if (!acd_data->nacd_probe) {
-            _LOGT_acd(acd_data,
-                      "probing currently %snot possible (timeout %u msec; %s, %s)",
-                      orig_state == NM_L3_ACD_ADDR_STATE_INIT ? "" : "still ",
-                      acd_data->probing_timeout_msec,
-                      failure_reason,
-                      log_reason);
-            _l3_acd_data_timeout_schedule_probing_restart(acd_data, (*p_now_msec));
-            return;
-        }
-
-        _LOGT_acd(acd_data,
-                  "%sstart probing (timeout %u msec, %s)",
-                  orig_state == NM_L3_ACD_ADDR_STATE_INIT ? "" : "re",
-                  acd_data->probing_timeout_msec,
-                  log_reason);
-        return;
-    }
-
 handle_probing_done:
     switch (acd_data->info.state) {
     case NM_L3_ACD_ADDR_STATE_INIT:
         _LOGT_acd(acd_data, "probe-done good (%s, initializing)", log_reason);
-        goto handle_start_defending;
+        break;
     case NM_L3_ACD_ADDR_STATE_PROBING:
         _LOGT_acd(acd_data, "probe-done good (%s, probing done)", log_reason);
         if (event != ACD_INTERNAL_EVENT_NACD_READY)
             acd_data->nacd_probe = n_acd_probe_free(acd_data->nacd_probe);
-        goto handle_start_defending;
+        break;
     case NM_L3_ACD_ADDR_STATE_USED:
         _LOGT_acd(acd_data, "probe-done good (%s, after probe failed)", log_reason);
-        goto handle_start_defending;
+        break;
     case NM_L3_ACD_ADDR_STATE_READY:
     case NM_L3_ACD_ADDR_STATE_DEFENDING:
     case NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED:
-        goto handle_start_defending;
+        break;
     case NM_L3_ACD_ADDR_STATE_CONFLICT:
         return;
         nm_assert_not_reached();
         return;
     }
-    nm_assert_not_reached();
-    return;
-
-handle_start_defending:
-    if (!_l3_acd_ipv4_addresses_on_link_contains(self, acd_data->info.addr)) {
-        if (acd_data->info.state != NM_L3_ACD_ADDR_STATE_READY) {
-            _l3_acd_data_state_set_full(
-                self,
-                acd_data,
-                NM_L3_ACD_ADDR_STATE_READY,
-                !NM_IN_SET(event, ACD_INTERNAL_EVENT_INIT, ACD_INTERNAL_EVENT_INIT_REAPPLY),
-                "probe is ready, waiting for address to be configured");
-        }
-        return;
-    }
-
-    _l3_acd_data_state_set(self,
-                           acd_data,
-                           NM_L3_ACD_ADDR_STATE_DEFENDING,
-                           !NM_IN_SET(event,
-                                      ACD_INTERNAL_EVENT_INIT,
-                                      ACD_INTERNAL_EVENT_INIT_REAPPLY,
-                                      ACD_INTERNAL_EVENT_POST_COMMIT));
-
-    nm_assert(acd_data->acd_defend_type_desired > _NM_L3_ACD_DEFEND_TYPE_NONE);
-    nm_assert(acd_data->acd_defend_type_desired <= NM_L3_ACD_DEFEND_TYPE_ALWAYS);
-
-    if (acd_data->acd_defend_type_desired != acd_data->acd_defend_type_current) {
-        acd_data->acd_defend_type_current = acd_data->acd_defend_type_desired;
-        acd_data->nacd_probe              = n_acd_probe_free(acd_data->nacd_probe);
-    }
-
-    if (!acd_data->nacd_probe) {
-        const char *failure_reason;
-        NAcdProbe  *probe;
-
-        if (acd_data->acd_data_timeout_source) {
-            /* we already failed to create a probe. We are ratelimited to retry, but
-             * we have a timer pending... */
-            return;
-        }
-
-        probe = _l3_acd_nacd_instance_create_probe(self,
-                                                   acd_data->info.addr,
-                                                   0,
-                                                   acd_data,
-                                                   NULL,
-                                                   &failure_reason);
-        if (!probe) {
-            /* we failed to create a probe for announcing the address. We log a
-             * warning and start a timer to retry. This way (of having a timer pending)
-             * we also back off and are rate limited from retrying too frequently. */
-            _LOGT_acd(acd_data, "start announcing failed to create probe (%s)", failure_reason);
-
-            if (!nm_platform_link_uses_arp(self->priv.platform, self->priv.ifindex)) {
-                _LOGT_acd(
-                    acd_data,
-                    "give up on ACD and never retry since interface '%s' is configured with NOARP",
-                    nmp_object_link_get_ifname(self->priv.plobj));
-                return;
-            }
-
-            _l3_acd_data_timeout_schedule(acd_data, ACD_WAIT_TIME_ANNOUNCE_RESTART_MSEC);
-            return;
-        }
-
-        _LOGT_acd(acd_data,
-                  "start announcing (defend=%s) (probe created)",
-                  _l3_acd_defend_type_to_string(acd_data->acd_defend_type_current,
-                                                sbuf256,
-                                                sizeof(sbuf256)));
-        acd_data->acd_defend_type_is_active = FALSE;
-        acd_data->nacd_probe                = probe;
-        return;
-    }
-
-    if (!acd_data->acd_defend_type_is_active) {
-        acd_data->acd_defend_type_is_active = TRUE;
-        _LOGT_acd(acd_data,
-                  "start announcing (defend=%s) (with existing probe)",
-                  _l3_acd_defend_type_to_string(acd_data->acd_defend_type_current,
-                                                sbuf256,
-                                                sizeof(sbuf256)));
-        if (n_acd_probe_announce(acd_data->nacd_probe,
-                                 _l3_acd_defend_type_to_nacd(acd_data->acd_defend_type_current))
-            != 0)
-            nm_assert_not_reached();
-        return;
-    }
+    do_handle_start_defending(self, acd_data, event);
 }
 
 static void
