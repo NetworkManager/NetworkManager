@@ -2663,6 +2663,34 @@ do_handle_start_probing(NML3Cfg         *self,
 }
 
 static void
+do_handle_probing_done(NML3Cfg         *self,
+                       AcdData         *acd_data,
+                       AcdInternalEvent event,
+                       const char      *log_reason)
+{
+    switch (acd_data->info.state) {
+    case NM_L3_ACD_ADDR_STATE_INIT:
+        _LOGT_acd(acd_data, "probe-done good (%s, initializing)", log_reason);
+        break;
+    case NM_L3_ACD_ADDR_STATE_PROBING:
+        _LOGT_acd(acd_data, "probe-done good (%s, probing done)", log_reason);
+        if (event != ACD_INTERNAL_EVENT_NACD_READY)
+            acd_data->nacd_probe = n_acd_probe_free(acd_data->nacd_probe);
+        break;
+    case NM_L3_ACD_ADDR_STATE_USED:
+        _LOGT_acd(acd_data, "probe-done good (%s, after probe failed)", log_reason);
+        break;
+    case NM_L3_ACD_ADDR_STATE_READY:
+    case NM_L3_ACD_ADDR_STATE_DEFENDING:
+    case NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED:
+        break;
+    case NM_L3_ACD_ADDR_STATE_CONFLICT:
+        return;
+    }
+    do_handle_start_defending(self, acd_data, event);
+}
+
+static void
 _l3_acd_data_state_change(NML3Cfg           *self,
                           AcdData           *acd_data,
                           AcdInternalEvent   event,
@@ -2764,8 +2792,8 @@ _l3_acd_data_state_change(NML3Cfg           *self,
         }
 
         if (_l3_acd_ipv4_addresses_on_link_contains(self, acd_data->info.addr)) {
-            log_reason = "address already configured";
-            goto handle_probing_done;
+            do_handle_probing_done(self, acd_data, event, "address already configured");
+            return;
         }
 
         if (acd_data->info.state == NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED)
@@ -2784,8 +2812,8 @@ _l3_acd_data_state_change(NML3Cfg           *self,
         acd_data->acd_defend_type_desired = acd_defend_type;
 
         if (acd_timeout_msec <= 0) {
-            log_reason = "acd disabled by configuration";
-            goto handle_probing_done;
+            do_handle_probing_done(self, acd_data, event, "acd disabled by configuration");
+            return;
         }
 
         switch (acd_data->info.state) {
@@ -2897,12 +2925,14 @@ _l3_acd_data_state_change(NML3Cfg           *self,
                     log_reason = "acd disabled by configuration (timeout during probing)";
                 else
                     log_reason = "acd disabled by configuration (restart after previous conflict)";
-                goto handle_probing_done;
+                do_handle_probing_done(self, acd_data, event, log_reason);
+                return;
             }
 
             if (_l3_acd_ipv4_addresses_on_link_contains(self, acd_data->info.addr)) {
                 log_reason = "address already configured (restart after previous conflict)";
-                goto handle_probing_done;
+                do_handle_probing_done(self, acd_data, event, log_reason);
+                return;
             }
 
             nm_utils_get_monotonic_timestamp_msec_cached(p_now_msec);
@@ -3031,8 +3061,8 @@ _l3_acd_data_state_change(NML3Cfg           *self,
             /* we theoretically could re-use this probe for defending. But as we
              * may not start defending right away, it makes it more complicated. */
             acd_data->nacd_probe = n_acd_probe_free(acd_data->nacd_probe);
-            log_reason           = "acd indicates ready";
-            goto handle_probing_done;
+            do_handle_probing_done(self, acd_data, event, "acd indicates ready");
+            return;
         case NM_L3_ACD_ADDR_STATE_DEFENDING:
             nm_assert(!acd_data->acd_defend_type_is_active);
             acd_data->acd_defend_type_is_active = TRUE;
@@ -3077,8 +3107,8 @@ _l3_acd_data_state_change(NML3Cfg           *self,
         case NM_L3_ACD_ADDR_STATE_USED:
         case NM_L3_ACD_ADDR_STATE_CONFLICT:
         case NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED:
-            log_reason = "address configured on link";
-            goto handle_probing_done;
+            do_handle_probing_done(self, acd_data, event, "address configured on link");
+            return;
         }
 
         nm_assert_not_reached();
@@ -3173,31 +3203,6 @@ _l3_acd_data_state_change(NML3Cfg           *self,
     }
 
     nm_assert_not_reached();
-    return;
-
-handle_probing_done:
-    switch (acd_data->info.state) {
-    case NM_L3_ACD_ADDR_STATE_INIT:
-        _LOGT_acd(acd_data, "probe-done good (%s, initializing)", log_reason);
-        break;
-    case NM_L3_ACD_ADDR_STATE_PROBING:
-        _LOGT_acd(acd_data, "probe-done good (%s, probing done)", log_reason);
-        if (event != ACD_INTERNAL_EVENT_NACD_READY)
-            acd_data->nacd_probe = n_acd_probe_free(acd_data->nacd_probe);
-        break;
-    case NM_L3_ACD_ADDR_STATE_USED:
-        _LOGT_acd(acd_data, "probe-done good (%s, after probe failed)", log_reason);
-        break;
-    case NM_L3_ACD_ADDR_STATE_READY:
-    case NM_L3_ACD_ADDR_STATE_DEFENDING:
-    case NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED:
-        break;
-    case NM_L3_ACD_ADDR_STATE_CONFLICT:
-        return;
-        nm_assert_not_reached();
-        return;
-    }
-    do_handle_start_defending(self, acd_data, event);
 }
 
 static void
