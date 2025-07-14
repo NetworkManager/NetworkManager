@@ -2460,6 +2460,47 @@ _l3_acd_data_state_set(NML3Cfg         *self,
 }
 
 static void
+do_handle_init(NML3Cfg *self, AcdData *acd_data, AcdInternalEvent event)
+{
+    guint32           acd_timeout_msec;
+    NML3AcdDefendType acd_defend_type;
+    const char       *log_reason;
+
+    if (_acd_data_collect_tracks_data(self,
+                                      acd_data,
+                                      NM_TERNARY_FALSE,
+                                      &acd_timeout_msec,
+                                      &acd_defend_type)
+        <= 0u) {
+        /* the acd_data has no active trackers. It will soon be pruned. */
+        return;
+    }
+
+    if (acd_timeout_msec == 0u)
+        log_reason = "acd disabled by configuration";
+    else if (_l3_acd_ipv4_addresses_on_link_contains(self, acd_data->info.addr))
+        log_reason = "address already configured";
+    else {
+        if (event == ACD_INTERNAL_EVENT_INIT_REAPPLY) {
+            /* during a reapply, we forget all the state and start from scratch. */
+            _LOGT_acd(acd_data, "reset state for reapply");
+            acd_data->nacd_probe = n_acd_probe_free(acd_data->nacd_probe);
+            _l3_acd_data_state_set(self, acd_data, NM_L3_ACD_ADDR_STATE_INIT, FALSE);
+        }
+        return;
+    }
+
+    _LOGT_acd(acd_data,
+              "%s probing (%s, during pre-check)",
+              acd_data->info.state == NM_L3_ACD_ADDR_STATE_INIT ? "skip" : "cancel",
+              log_reason);
+    acd_data->nacd_probe              = n_acd_probe_free(acd_data->nacd_probe);
+    acd_data->acd_defend_type_desired = acd_defend_type;
+    _l3_acd_data_state_set(self, acd_data, NM_L3_ACD_ADDR_STATE_READY, FALSE);
+    return;
+}
+
+static void
 _l3_acd_data_state_change(NML3Cfg           *self,
                           AcdData           *acd_data,
                           AcdInternalEvent   event,
@@ -2540,50 +2581,17 @@ _l3_acd_data_state_change(NML3Cfg           *self,
         case NM_L3_ACD_ADDR_STATE_PROBING:
         case NM_L3_ACD_ADDR_STATE_INIT:
         case NM_L3_ACD_ADDR_STATE_USED:
-            goto handle_init;
+            break;
         case NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED:
         case NM_L3_ACD_ADDR_STATE_CONFLICT:
         case NM_L3_ACD_ADDR_STATE_READY:
         case NM_L3_ACD_ADDR_STATE_DEFENDING:
             if (event != ACD_INTERNAL_EVENT_INIT_REAPPLY)
                 return;
-            goto handle_init;
-        }
-        nm_assert_not_reached();
-        return;
-
-handle_init:
-        if (_acd_data_collect_tracks_data(self,
-                                          acd_data,
-                                          NM_TERNARY_FALSE,
-                                          &acd_timeout_msec,
-                                          &acd_defend_type)
-            <= 0u) {
-            /* the acd_data has no active trackers. It will soon be pruned. */
-            return;
+            break;
         }
 
-        if (acd_timeout_msec == 0u)
-            log_reason = "acd disabled by configuration";
-        else if (_l3_acd_ipv4_addresses_on_link_contains(self, acd_data->info.addr))
-            log_reason = "address already configured";
-        else {
-            if (event == ACD_INTERNAL_EVENT_INIT_REAPPLY) {
-                /* during a reapply, we forget all the state and start from scratch. */
-                _LOGT_acd(acd_data, "reset state for reapply");
-                acd_data->nacd_probe = n_acd_probe_free(acd_data->nacd_probe);
-                _l3_acd_data_state_set(self, acd_data, NM_L3_ACD_ADDR_STATE_INIT, FALSE);
-            }
-            return;
-        }
-
-        _LOGT_acd(acd_data,
-                  "%s probing (%s, during pre-check)",
-                  acd_data->info.state == NM_L3_ACD_ADDR_STATE_INIT ? "skip" : "cancel",
-                  log_reason);
-        acd_data->nacd_probe              = n_acd_probe_free(acd_data->nacd_probe);
-        acd_data->acd_defend_type_desired = acd_defend_type;
-        _l3_acd_data_state_set(self, acd_data, NM_L3_ACD_ADDR_STATE_READY, FALSE);
+        do_handle_init(self, acd_data, event);
         return;
 
     case ACD_INTERNAL_EVENT_POST_COMMIT:
