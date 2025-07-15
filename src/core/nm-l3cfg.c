@@ -2299,7 +2299,7 @@ _l3_acd_data_timeout_schedule(AcdData *acd_data, gint64 timeout_msec)
 
     nm_clear_g_source_inst(&acd_data->acd_data_timeout_source);
     acd_data->acd_data_timeout_source =
-        nm_g_timeout_add_source(NM_CLAMP((gint64) 0, timeout_msec, (gint64) G_MAXUINT),
+        nm_g_timeout_add_source(NM_CLAMP(timeout_msec, (gint64) 0, (gint64) G_MAXUINT),
                                 _l3_acd_data_timeout_cb,
                                 acd_data);
 }
