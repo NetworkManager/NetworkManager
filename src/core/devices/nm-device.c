@@ -17003,6 +17003,25 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
         /* controller: release ports */
         nm_device_controller_release_ports_all(self);
 
+        /* port: detach from controller */
+        if (priv->controller) {
+            nm_device_controller_release_port(priv->controller,
+                                              self,
+                                              RELEASE_PORT_TYPE_CONFIG,
+                                              reason);
+        }
+    }
+
+    /* port: mark no longer attached */
+    if (priv->controller && priv->ifindex > 0
+        && nm_platform_link_get_controller(nm_device_get_platform(self), priv->ifindex) <= 0) {
+        nm_device_controller_release_port(priv->controller,
+                                          self,
+                                          RELEASE_PORT_TYPE_NO_CONFIG,
+                                          NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
+    }
+
+    if (cleanup_type == CLEANUP_TYPE_DECONFIGURE) {
         /* Take out any entries in the routing table and any IP address the device had. */
         if (ifindex > 0) {
             NMPlatform *platform = nm_device_get_platform(self);
@@ -17025,15 +17044,6 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
 
     if (ifindex > 0)
         nm_platform_ip4_dev_route_blacklist_set(nm_device_get_platform(self), ifindex, NULL);
-
-    /* port: mark no longer attached */
-    if (priv->controller && priv->ifindex > 0
-        && nm_platform_link_get_controller(nm_device_get_platform(self), priv->ifindex) <= 0) {
-        nm_device_controller_release_port(priv->controller,
-                                          self,
-                                          RELEASE_PORT_TYPE_NO_CONFIG,
-                                          NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
-    }
 
     lldp_setup(self, NM_TERNARY_FALSE);
 
