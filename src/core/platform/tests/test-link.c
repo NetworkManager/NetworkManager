@@ -2729,7 +2729,7 @@ static void
 test_link_get_bridge_fdb(void)
 {
     const NMPlatformLink       *link;
-    nm_auto_freev NMEtherAddr **addrs;
+    nm_auto_freev NMEtherAddr **addrs = NULL;
     int                         ifindex[2];
     guint8                      expected[][6] = {
         {0x00, 0x99, 0x00, 0x00, 0x00, 0x01},
