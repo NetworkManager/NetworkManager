@@ -18690,7 +18690,7 @@ hostname_dns_lookup_callback(GObject *source, GAsyncResult *result, gpointer use
         gboolean valid;
 
         resolver->hostname = g_steal_pointer(&output);
-        valid              = nm_utils_validate_hostname(resolver->hostname);
+        valid              = nm_sd_dns_name_is_valid(resolver->hostname);
 
         _LOGD(LOGD_DNS,
               "hostname-from-dns: ipv%c resolver %s: lookup successful for %s, result %s%s%s%s",
