@@ -9029,7 +9029,7 @@ nm_device_port_notify_attach_as_port(NMDevice *self, gboolean success)
 
             priv->is_attached = TRUE;
 
-            _notify(priv->controller, PROP_CONTROLLER);
+            _notify(self, PROP_CONTROLLER);
 
             nm_clear_pointer(&NM_DEVICE_GET_PRIVATE(priv->controller)->ports_variant,
                              g_variant_unref);
@@ -9108,7 +9108,7 @@ nm_device_port_notify_release(NMDevice           *self,
 
     priv->is_attached = FALSE;
 
-    _notify(priv->controller, PROP_CONTROLLER);
+    _notify(self, PROP_CONTROLLER);
 
     nm_clear_pointer(&NM_DEVICE_GET_PRIVATE(priv->controller)->ports_variant, g_variant_unref);
     nm_gobject_notify_together(priv->controller, PROP_PORTS, PROP_SLAVES);
