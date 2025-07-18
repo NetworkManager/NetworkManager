@@ -1477,6 +1477,7 @@ peers_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
     for (i_peer = 0; i_peer < n_peers; i_peer++) {
         const NMWireGuardPeer *peer = _peers_get(priv, i_peer)->peer;
         GVariantBuilder        builder;
+        gboolean               has_secrets = FALSE;
 
         if (!peer->public_key)
             continue;
@@ -1496,11 +1497,13 @@ peers_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
                 g_variant_new_string(nm_sock_addr_endpoint_get_endpoint(peer->endpoint)));
 
         if (_nm_connection_serialize_secrets(flags, peer->preshared_key_flags)
-            && peer->preshared_key)
+            && peer->preshared_key) {
             g_variant_builder_add(&builder,
                                   "{sv}",
                                   NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY,
                                   g_variant_new_string(peer->preshared_key));
+            has_secrets = TRUE;
+        }
 
         if (_nm_connection_serialize_non_secret(flags)
             && peer->preshared_key_flags != NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
@@ -1544,6 +1547,20 @@ peers_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
                                   "{sv}",
                                   NM_WIREGUARD_PEER_ATTR_ALLOWED_IPS,
                                   g_variant_new_strv(strv, peer->allowed_ips->len));
+        }
+
+        if (NM_FLAGS_ANY(flags,
+                         NM_CONNECTION_SERIALIZE_ONLY_SECRETS
+                             | NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED
+                             | NM_CONNECTION_SERIALIZE_WITH_SECRETS_SYSTEM_OWNED
+                             | NM_CONNECTION_SERIALIZE_WITH_SECRETS_NOT_SAVED)
+            && !_nm_connection_serialize_non_secret(flags)) {
+            /* The flags indicate that only secrets must be serialized and this
+             * peer doesn't contain any. Skip the peer. */
+            if (!has_secrets) {
+                g_variant_builder_clear(&builder);
+                continue;
+            }
         }
 
         if (!any_peers) {
