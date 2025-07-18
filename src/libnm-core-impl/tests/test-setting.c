@@ -5560,6 +5560,223 @@ test_bond_meta(void)
 
 /*****************************************************************************/
 
+static void
+check_wg_setting_str(NMSetting  *s_wg,
+                     const char *exp_all,
+                     const char *exp_nonsec,
+                     const char *exp_sec)
+{
+    gs_unref_variant GVariant *dict_all    = NULL;
+    gs_unref_variant GVariant *dict_nonsec = NULL;
+    gs_unref_variant GVariant *dict_sec    = NULL;
+    gs_free char              *str_all     = NULL;
+    gs_free char              *str_nonsec  = NULL;
+    gs_free char              *str_sec     = NULL;
+
+    dict_all    = _nm_setting_to_dbus(s_wg, NULL, NM_CONNECTION_SERIALIZE_ALL, NULL);
+    dict_nonsec = _nm_setting_to_dbus(s_wg, NULL, NM_CONNECTION_SERIALIZE_WITH_NON_SECRET, NULL);
+    dict_sec    = _nm_setting_to_dbus(s_wg, NULL, NM_CONNECTION_SERIALIZE_ONLY_SECRETS, NULL);
+
+    str_all    = g_variant_print(dict_all, TRUE);
+    str_nonsec = g_variant_print(dict_nonsec, TRUE);
+    str_sec    = g_variant_print(dict_sec, TRUE);
+
+    g_assert_cmpstr(exp_all, ==, str_all);
+    g_assert_cmpstr(exp_nonsec, ==, str_nonsec);
+    g_assert_cmpstr(exp_sec, ==, str_sec);
+}
+
+static void
+test_wireguard_to_dbus(void)
+{
+    gs_unref_object NMSetting            *s_wg              = NULL;
+    nm_auto_unref_wgpeer NMWireGuardPeer *peer1             = NULL;
+    nm_auto_unref_wgpeer NMWireGuardPeer *peer2             = NULL;
+    gs_unref_variant GVariant            *dict_all          = NULL;
+    gs_unref_variant GVariant            *dict_non_secret   = NULL;
+    gs_unref_variant GVariant            *dict_only_secrets = NULL;
+    gs_free char                         *dict_str          = NULL;
+    const char *test_private_key   = "cFoJbK9bSrYrQrjFQGgqsWTO4IUIX0+rsaqNeCw2IWM=";
+    const char *test_public_key1   = "OMhgSum5+NamArI/LTp1mCZQD+CbzZxtOuvDC/RaGWU=";
+    const char *test_public_key2   = "2S7mA0vEMethVGG0qBm4T5EXbcQ2WYHOuP14Seb7jEM=";
+    const char *test_preshared_key = "yFGq76ej4lNI0pLLu36L0DgJMxWs4HmH5qNDNOt8AmM=";
+
+    /* Test case 1: Minimal WireGuard setting without peers or private key */
+    s_wg = nm_setting_wireguard_new();
+    g_object_set(s_wg,
+                 NM_SETTING_WIREGUARD_LISTEN_PORT,
+                 51820U,
+                 NM_SETTING_WIREGUARD_FWMARK,
+                 42U,
+                 NULL);
+
+    check_wg_setting_str(s_wg,
+                         /* clang-format off */
+                         /* all */
+                         "{'fwmark': <uint32 42>, 'listen-port': <uint32 51820>}",
+                         /* non secrets */
+                         "{'fwmark': <uint32 42>, 'listen-port': <uint32 51820>}",
+                         /* secrets */
+                         "@a{sv} {}"
+                         /* clang-format on */
+    );
+    g_clear_object(&s_wg);
+
+    /* Test case 2: WireGuard setting with private key, no peers */
+    s_wg = nm_setting_wireguard_new();
+    g_object_set(s_wg,
+                 NM_SETTING_WIREGUARD_PRIVATE_KEY,
+                 test_private_key,
+                 NM_SETTING_WIREGUARD_PRIVATE_KEY_FLAGS,
+                 NM_SETTING_SECRET_FLAG_NONE,
+                 NM_SETTING_WIREGUARD_LISTEN_PORT,
+                 51820U,
+                 NM_SETTING_WIREGUARD_FWMARK,
+                 42U,
+                 NULL);
+
+    check_wg_setting_str(s_wg,
+                         /* clang-format off */
+                         /* all */
+                         "{"
+                             "'fwmark': <uint32 42>, "
+                             "'listen-port': <uint32 51820>, "
+                             "'private-key': <'cFoJbK9bSrYrQrjFQGgqsWTO4IUIX0+rsaqNeCw2IWM='>"
+                         "}",
+                         /* non secrets */
+                         "{"
+                             "'fwmark': <uint32 42>, "
+                             "'listen-port': <uint32 51820>"
+                         "}",
+                         /* secrets */
+                         "{"
+                             "'private-key': <'cFoJbK9bSrYrQrjFQGgqsWTO4IUIX0+rsaqNeCw2IWM='>"
+                         "}"
+                         /* clang-format on */
+    );
+    g_clear_object(&s_wg);
+
+    /* Test case 3: WireGuard setting with peers (no PSK) */
+    s_wg = nm_setting_wireguard_new();
+    g_object_set(s_wg,
+                 NM_SETTING_WIREGUARD_PRIVATE_KEY,
+                 test_private_key,
+                 NM_SETTING_WIREGUARD_PRIVATE_KEY_FLAGS,
+                 NM_SETTING_SECRET_FLAG_NONE,
+                 NM_SETTING_WIREGUARD_LISTEN_PORT,
+                 51820U,
+                 NULL);
+    peer1 = nm_wireguard_peer_new();
+    nm_wireguard_peer_set_public_key(peer1, test_public_key1, FALSE);
+    nm_wireguard_peer_set_endpoint(peer1, "192.168.1.1:51820", FALSE);
+    nm_wireguard_peer_append_allowed_ip(peer1, "10.0.0.0/8", FALSE);
+    nm_setting_wireguard_append_peer(NM_SETTING_WIREGUARD(s_wg), peer1);
+
+    check_wg_setting_str(s_wg,
+                         /* clang-format off */
+                         /* all */
+                         "{"
+                             "'listen-port': <uint32 51820>, "
+                             "'peers': <[{"
+                                 "'public-key': <'OMhgSum5+NamArI/LTp1mCZQD+CbzZxtOuvDC/RaGWU='>, "
+                                 "'endpoint': <'192.168.1.1:51820'>, "
+                                 "'allowed-ips': <['10.0.0.0/8']>"
+                             "}]>, "
+                             "'private-key': <'cFoJbK9bSrYrQrjFQGgqsWTO4IUIX0+rsaqNeCw2IWM='>"
+                         "}",
+                         /* non secrets */
+                         "{"
+                             "'listen-port': <uint32 51820>, "
+                             "'peers': <[{"
+                                 "'public-key': <'OMhgSum5+NamArI/LTp1mCZQD+CbzZxtOuvDC/RaGWU='>, "
+                                 "'endpoint': <'192.168.1.1:51820'>, "
+                                 "'allowed-ips': <['10.0.0.0/8']>"
+                             "}]>"
+                         "}",
+                         /* secrets */
+                         "{"
+                             "'private-key': <'cFoJbK9bSrYrQrjFQGgqsWTO4IUIX0+rsaqNeCw2IWM='>"
+                         "}"
+                         /* clang-format on */
+    );
+    g_clear_object(&s_wg);
+    nm_clear_pointer(&peer1, nm_wireguard_peer_unref);
+
+    /* Test case 4: WireGuard setting with peers, one has PSK */
+    s_wg = nm_setting_wireguard_new();
+    g_object_set(s_wg,
+                 NM_SETTING_WIREGUARD_PRIVATE_KEY,
+                 test_private_key,
+                 NM_SETTING_WIREGUARD_PRIVATE_KEY_FLAGS,
+                 NM_SETTING_SECRET_FLAG_NONE,
+                 NM_SETTING_WIREGUARD_LISTEN_PORT,
+                 51820U,
+                 NULL);
+
+    /* Peer without PSK */
+    peer1 = nm_wireguard_peer_new();
+    nm_wireguard_peer_set_public_key(peer1, test_public_key1, FALSE);
+    nm_wireguard_peer_set_endpoint(peer1, "192.168.1.1:51820", FALSE);
+    nm_wireguard_peer_append_allowed_ip(peer1, "10.0.0.0/8", FALSE);
+    nm_setting_wireguard_append_peer(NM_SETTING_WIREGUARD(s_wg), peer1);
+
+    /* Peer with PSK */
+    peer2 = nm_wireguard_peer_new();
+    nm_wireguard_peer_set_public_key(peer2, test_public_key2, FALSE);
+    nm_wireguard_peer_set_endpoint(peer2, "192.168.2.1:51820", FALSE);
+    nm_wireguard_peer_append_allowed_ip(peer2, "172.16.0.0/12", FALSE);
+    nm_wireguard_peer_set_preshared_key(peer2, test_preshared_key, FALSE);
+    nm_wireguard_peer_set_preshared_key_flags(peer2, NM_SETTING_SECRET_FLAG_NONE);
+    nm_setting_wireguard_append_peer(NM_SETTING_WIREGUARD(s_wg), peer2);
+
+    check_wg_setting_str(s_wg,
+                         /* clang-format off */
+                         /* all */
+                         "{"
+                             "'listen-port': <uint32 51820>, "
+                             "'peers': <[{"
+                                 "'public-key': <'OMhgSum5+NamArI/LTp1mCZQD+CbzZxtOuvDC/RaGWU='>, "
+                                 "'endpoint': <'192.168.1.1:51820'>, "
+                                 "'allowed-ips': <['10.0.0.0/8']>"
+                             "}, {"
+                                 "'public-key': <'2S7mA0vEMethVGG0qBm4T5EXbcQ2WYHOuP14Seb7jEM='>, "
+                                 "'endpoint': <'192.168.2.1:51820'>, "
+                                 "'preshared-key': <'yFGq76ej4lNI0pLLu36L0DgJMxWs4HmH5qNDNOt8AmM='>, "
+                                 "'preshared-key-flags': <uint32 0>, "
+                                 "'allowed-ips': <['172.16.0.0/12']>"
+                             "}]>, "
+                             "'private-key': <'cFoJbK9bSrYrQrjFQGgqsWTO4IUIX0+rsaqNeCw2IWM='>"
+                         "}",
+                         /* non secrets */
+                         "{"
+                             "'listen-port': <uint32 51820>, "
+                             "'peers': <[{"
+                                 "'public-key': <'OMhgSum5+NamArI/LTp1mCZQD+CbzZxtOuvDC/RaGWU='>, "
+                                 "'endpoint': <'192.168.1.1:51820'>, "
+                                 "'allowed-ips': <['10.0.0.0/8']>"
+                             "}, {"
+                                 "'public-key': <'2S7mA0vEMethVGG0qBm4T5EXbcQ2WYHOuP14Seb7jEM='>, "
+                                 "'endpoint': <'192.168.2.1:51820'>, "
+                                 "'preshared-key-flags': <uint32 0>, "
+                                 "'allowed-ips': <['172.16.0.0/12']>"
+                             "}]>"
+                         "}",
+                         /* secrets */
+                         "{"
+                             "'peers': <[{"
+                                 "'public-key': <'2S7mA0vEMethVGG0qBm4T5EXbcQ2WYHOuP14Seb7jEM='>, "
+                                 "'preshared-key': <'yFGq76ej4lNI0pLLu36L0DgJMxWs4HmH5qNDNOt8AmM='>"
+                             "}]>, "
+                         "'private-key': <'cFoJbK9bSrYrQrjFQGgqsWTO4IUIX0+rsaqNeCw2IWM='>}"
+                         /* clang-format on */
+    );
+    g_clear_object(&s_wg);
+    nm_clear_pointer(&peer1, nm_wireguard_peer_unref);
+    nm_clear_pointer(&peer2, nm_wireguard_peer_unref);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -5687,6 +5904,8 @@ main(int argc, char **argv)
     g_test_add_func("/libnm/test_setting_metadata", test_setting_metadata);
 
     g_test_add_func("/libnm/test_bond_meta", test_bond_meta);
+
+    g_test_add_func("/libnm/test_wireguard_to_dbus", test_wireguard_to_dbus);
 
     return g_test_run();
 }
