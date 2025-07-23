@@ -9249,7 +9249,7 @@ sriov_async_finish_err(SriovAsyncState *async_state, GError *error)
     g_object_unref(async_state->platform);
     g_object_unref(async_state->cancellable);
     g_free(async_state);
-    g_free(error);
+    nm_g_error_free(error);
 }
 
 static void

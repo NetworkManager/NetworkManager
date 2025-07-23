@@ -1066,7 +1066,7 @@ attach_port(NMDevice                  *device,
 
             plat_vlans = setting_vlans_to_platform(vlans, &num_vlans);
 
-            /* Since the link was just enportd, there are no existing VLANs
+            /* Since the link was just attached, there are no existing VLANs
              * (except for the default one) and so there's no need to flush. */
 
             if (plat_vlans
