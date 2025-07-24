@@ -4110,8 +4110,8 @@ factory_device_added_cb(NMDeviceFactory *factory, NMDevice *device, gpointer use
                                 FALSE, /* set_nm_owned */
                                 NM_UNMAN_FLAG_OP_FORGET,
                                 NULL,
-                                &error)) {
-        add_device(self, device, NULL);
+                                &error)
+        && add_device(self, device, &error)) {
         _device_realize_finish(self, device, NULL);
         retry_connections_for_parent_device(self, device);
     } else {
@@ -4289,8 +4289,8 @@ add:
                                     dev_state ? (dev_state->nm_owned == 1) : FALSE,
                                     unmanaged_user_explicit,
                                     NULL,
-                                    &error)) {
-            add_device(self, device, NULL);
+                                    &error)
+            && add_device(self, device, &error)) {
             _device_realize_finish(self, device, plink);
             retry_connections_for_parent_device(self, device);
         } else {
