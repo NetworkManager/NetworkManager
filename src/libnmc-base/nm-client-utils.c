@@ -483,7 +483,7 @@ NM_UTILS_LOOKUP_STR_DEFINE(
            "(\"unmanaged-devices\" for keyfile or \"NM_CONTROLLED=no\" for ifcfg-rh)")),
     NM_UTILS_LOOKUP_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_USER_CONF,
                          N_("The device is unmanaged by user decision in NetworkManager.conf "
-                            "('unmanaged' in a [device*] section")),
+                            "('unmanaged' in a [device*] section)")),
     NM_UTILS_LOOKUP_ITEM(
         NM_DEVICE_STATE_REASON_UNMANAGED_BY_DEFAULT,
         N_("The device is unmanaged because the device type is unmanaged by default")),
