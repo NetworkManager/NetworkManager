@@ -7,7 +7,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "assert-util.h"
 #include "macro.h"
+#include "memory-util.h"
 
 #if HAS_FEATURE_MEMORY_SANITIZER
 #  include <sanitizer/msan_interface.h>
@@ -118,15 +120,6 @@ _malloc_ _alloc_(1, 2) static inline void *malloc_multiply(size_t need, size_t s
 
         return malloc(size * need ?: 1);
 }
-
-#if !HAVE_REALLOCARRAY
-_alloc_(2, 3) static inline void *reallocarray(void *p, size_t need, size_t size) {
-        if (size_multiply_overflow(size, need))
-                return NULL;
-
-        return realloc(p, size * need ?: 1);
-}
-#endif
 
 _alloc_(2, 3) static inline void *memdup_multiply(const void *p, size_t need, size_t size) {
         if (size_multiply_overflow(size, need))
@@ -275,5 +268,3 @@ _alloc_(2) static inline void *realloc0(void *p, size_t new_size) {
 
         return q;
 }
-
-#include "memory-util.h"

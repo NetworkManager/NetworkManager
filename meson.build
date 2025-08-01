@@ -5,14 +5,14 @@ project(
 # NOTE: When incrementing version also add corresponding
 #       NM_VERSION_x_y_z macros in
 #       "src/libnm-core-public/nm-version-macros.h.in"
-  version: '1.54.0',
+  version: '1.55.3',
   license: 'GPL2+',
   default_options: [
     'buildtype=debugoptimized',
     'c_std=gnu11',
     'warning_level=2' # value "2" will add "-Wall" and "-Wextra" to the compiler flags
   ],
-  meson_version: '>= 0.51.0',
+  meson_version: '>= 0.53.0',
 )
 
 nm_name = meson.project_name()
@@ -77,6 +77,7 @@ libnm_version = '@0@.@1@.@2@'.format(current - age, age, revision)
 
 libnm_pkgincludedir = join_paths(nm_includedir, libnm_name)
 
+fs = import('fs')
 gnome = import('gnome')
 i18n = import('i18n')
 pkg = import('pkgconfig')
@@ -89,7 +90,6 @@ po_dir = source_root / 'po'
 top_inc = include_directories('.')
 
 perl = find_program('perl')
-xsltproc = find_program('xsltproc')
 
 check_exports = find_program(join_paths(source_root, 'tools', 'check-exports.sh'))
 
@@ -816,6 +816,7 @@ if enable_nm_cloud_setup
   assert(jansson_dep.found(), 'nm-cloud-setup requires jansson library. Use -Dnm_cloud_setup=false to disable it')
 endif
 
+enable_man = get_option('man')
 enable_docs = get_option('docs')
 
 more_asserts = get_option('more_asserts')
@@ -964,38 +965,6 @@ data_conf.set('nmstatedir',                              nm_pkgstatedir)
 data_conf.set('sbindir',                                 nm_sbindir)
 data_conf.set('sysconfdir',                              nm_sysconfdir)
 
-# check if we can build setting property documentation
-'''
-build_docs=no
-if test -n "$INTROSPECTION_MAKEFILE"; then
-  # If g-i is installed we know we have python, but we might not have pygobject
-  if ! "$PYTHON" -c 'from gi.repository import GObject' >& /dev/null; then
-    AC_MSG_ERROR(["--enable-introspection aims to build the settings documentation. This requires GObject introspection for python (pygobject)])
-  fi
-
-  AC_PATH_PROG(PERL, perl)
-  if test -z "$PERL"; then
-    AC_MSG_ERROR([--enable-introspection requires perl])
-  fi
-  AC_PATH_PROG(XSLTPROC, xsltproc)
-  if test -z "$XSLTPROC"; then
-    AC_MSG_ERROR([--enable-introspection requires xsltproc])
-  fi
-
-  have_introspection=yes
-  if test "$enable_gtk_doc" = "yes"; then
-    build_docs=yes
-  fi
-else
-  if test "$enable_gtk_doc" = "yes"; then
-    # large parts of the documentation require introspection/pygobject to extract
-    # the documentation out of the source files. You cannot enable gtk-doc without alone.
-    AC_MSG_ERROR(["--with-gtk-doc requires --enable-introspection"])
-  fi
-  have_introspection=no
-fi
-'''
-
 content_files = []
 
 subdir('introspection')
@@ -1033,9 +1002,14 @@ if enable_qt != 'false'
   endif
 endif
 
+# The man/ directory builds a couple targets needed by the docs build too.
+# If we build with docs but no man, then enter the subdir and only build
+# some targets.
+if enable_docs or enable_man
+  subdir('man')
+endif
 if enable_docs
   assert(enable_introspection, '-Ddocs=true requires -Dintrospection=true')
-  subdir('man')
   subdir('docs')
   meson.add_dist_script(
     'tools/meson-dist-data.sh',
@@ -1086,7 +1060,7 @@ meson.add_install_script(
   nm_pkgstatedir,
   nm_mandir,
   nm_sysconfdir,
-  enable_docs ? '1' : '0',
+  enable_man ? '1' : '0',
   enable_ifcfg_rh ? '1' : '0',
   enable_nm_cloud_setup ? '1' : '0',
   install_systemdunitdir ? '1' : '0',

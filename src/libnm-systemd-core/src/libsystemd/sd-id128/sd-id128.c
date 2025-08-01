@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <threads.h>
 #include <unistd.h>
 
 #include "sd-id128.h"
@@ -16,16 +17,16 @@
 #include "id128-util.h"
 #include "io-util.h"
 #include "keyring-util.h"
+#include "log.h"
 #include "macro.h"
 #include "missing_syscall.h"
-#include "missing_threads.h"
 #include "path-util.h"
 #include "random-util.h"
 #include "stat-util.h"
 #include "user-util.h"
 
 #if 0 /* NM_IGNORED */
-_public_ char *sd_id128_to_string(sd_id128_t id, char s[_SD_ARRAY_STATIC SD_ID128_STRING_MAX]) {
+_public_ char *sd_id128_to_string(sd_id128_t id, char s[static SD_ID128_STRING_MAX]) {
         size_t k = 0;
 
         assert_return(s, NULL);
@@ -41,7 +42,7 @@ _public_ char *sd_id128_to_string(sd_id128_t id, char s[_SD_ARRAY_STATIC SD_ID12
         return s;
 }
 
-_public_ char *sd_id128_to_uuid_string(sd_id128_t id, char s[_SD_ARRAY_STATIC SD_ID128_UUID_STRING_MAX]) {
+_public_ char *sd_id128_to_uuid_string(sd_id128_t id, char s[static SD_ID128_UUID_STRING_MAX]) {
         size_t k = 0;
 
         assert_return(s, NULL);
@@ -221,8 +222,10 @@ static int get_invocation_from_keyring(sd_id128_t *ret) {
 
         key = request_key("user", "invocation_id", NULL, 0);
         if (key == -1) {
-                /* Keyring support not available? No invocation key stored? */
-                if (IN_SET(errno, ENOSYS, ENOKEY))
+                /* Keyring support not available? Keyring access locked down? No invocation key stored? */
+                if (ERRNO_IS_NOT_SUPPORTED(errno) ||
+                    ERRNO_IS_PRIVILEGE(errno) ||
+                    errno == ENOKEY)
                         return -ENXIO;
 
                 return -errno;

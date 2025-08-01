@@ -12,6 +12,8 @@
 #include <sys/types.h>
 
 #include "alloc-util.h"
+#include "assert-util.h"
+#include "fileio.h"
 #include "format-util.h"
 #include "macro.h"
 #include "pidref.h"
@@ -22,15 +24,19 @@
                 pid_t _pid_ = (pid);                                    \
                 const char *_field_ = (field);                          \
                 char *_r_;                                              \
-                if (_pid_ == 0) {                                       \
-                        _r_ = newa(char, STRLEN("/proc/self/") + strlen(_field_) + 1); \
-                        strcpy(stpcpy(_r_, "/proc/self/"), _field_);    \
-                } else {                                                \
+                if (_pid_ == 0)                                         \
+                        _r_ = strjoina("/proc/self/", _field_);         \
+                else {                                                  \
+                        assert(_pid_ > 0);                              \
                         _r_ = newa(char, STRLEN("/proc/") + DECIMAL_STR_MAX(pid_t) + 1 + strlen(_field_) + 1); \
                         sprintf(_r_, "/proc/" PID_FMT "/%s", _pid_, _field_); \
                 }                                                       \
                 (const char*) _r_;                                      \
         })
+
+static inline int procfs_file_get_field(pid_t pid, const char *name, const char *key, char **ret) {
+        return get_proc_field(procfs_file_alloca(pid, name), key, ret);
+}
 
 typedef enum ProcessCmdlineFlags {
         PROCESS_CMDLINE_COMM_FALLBACK = 1 << 0,
@@ -61,7 +67,11 @@ int get_process_umask(pid_t pid, mode_t *ret);
 
 int container_get_leader(const char *machine, pid_t *pid);
 
-int wait_for_terminate(pid_t pid, siginfo_t *status);
+static inline bool SIGINFO_CODE_IS_DEAD(int code) {
+        return IN_SET(code, CLD_EXITED, CLD_KILLED, CLD_DUMPED);
+}
+
+int wait_for_terminate(pid_t pid, siginfo_t *ret);
 
 typedef enum WaitFlags {
         WAIT_LOG_ABNORMAL             = 1 << 0,
@@ -71,7 +81,9 @@ typedef enum WaitFlags {
         WAIT_LOG = WAIT_LOG_ABNORMAL|WAIT_LOG_NON_ZERO_EXIT_STATUS,
 } WaitFlags;
 
+int pidref_wait_for_terminate_and_check(const char *name, PidRef *pidref, WaitFlags flags);
 int wait_for_terminate_and_check(const char *name, pid_t pid, WaitFlags flags);
+
 int wait_for_terminate_with_timeout(pid_t pid, usec_t timeout);
 
 void sigkill_wait(pid_t pid);
@@ -195,19 +207,8 @@ typedef enum ForkFlags {
         FORK_NEW_NETNS          = 1 << 20, /* Run child in its own network namespace                             💣 DO NOT USE IN THREADED PROGRAMS! 💣 */
         FORK_NEW_PIDNS          = 1 << 21, /* Run child in its own PID namespace                                 💣 DO NOT USE IN THREADED PROGRAMS! 💣 */
         FORK_FREEZE             = 1 << 22, /* Don't return in child, just call freeze() instead */
+        FORK_PID_ONLY           = 1 << 23, /* Don't open a pidfd referencing the child process */
 } ForkFlags;
-
-int safe_fork_full(
-                const char *name,
-                const int stdio_fds[3],
-                int except_fds[],
-                size_t n_except_fds,
-                ForkFlags flags,
-                pid_t *ret_pid);
-
-static inline int safe_fork(const char *name, ForkFlags flags, pid_t *ret_pid) {
-        return safe_fork_full(name, NULL, NULL, 0, flags, ret_pid);
-}
 
 int pidref_safe_fork_full(
                 const char *name,
@@ -219,6 +220,18 @@ int pidref_safe_fork_full(
 
 static inline int pidref_safe_fork(const char *name, ForkFlags flags, PidRef *ret_pid) {
         return pidref_safe_fork_full(name, NULL, NULL, 0, flags, ret_pid);
+}
+
+int safe_fork_full(
+                const char *name,
+                const int stdio_fds[3],
+                int except_fds[],
+                size_t n_except_fds,
+                ForkFlags flags,
+                pid_t *ret_pid);
+
+static inline int safe_fork(const char *name, ForkFlags flags, pid_t *ret_pid) {
+        return safe_fork_full(name, NULL, NULL, 0, flags, ret_pid);
 }
 
 int namespace_fork(

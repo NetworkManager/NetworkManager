@@ -2324,6 +2324,9 @@
                   nmcli-description="Like ip4-auto-default-route, but for the IPv6 default route."
                   format="ternary"
                   values="true/yes/on, false/no/off, default/unknown" />
+        <property name="peers"
+                  nmcli-description="A comma-separated list of WireGuard peers. Each peer has the following syntax: PUBLIC_KEY [ATTRIBUTE=VALUE [ATTRIBUTE=VALUE]...] The supported attributes are: endpoint, allowed-ips, persistent-keepalive,  preshared-key, preshared-key-flags."
+                  format="list of wireguard.peers objects" />
     </setting>
     <setting name="wpan" >
         <property name="mac-address"

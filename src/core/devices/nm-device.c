@@ -13008,7 +13008,6 @@ _dev_addrgenmode6_set(NMDevice *self, guint8 addr_gen_mode)
     if (!priv->addrgenmode6_data.previous_mode_has) {
         priv->addrgenmode6_data.previous_mode_has = TRUE;
         priv->addrgenmode6_data.previous_mode_val = cur_addr_gen_mode;
-        nm_assert(priv->addrgenmode6_data.previous_mode_val == cur_addr_gen_mode);
     }
 
     _LOGD_ip(AF_INET6,

@@ -7,6 +7,7 @@
 
 #include "nm-libnm-core-aux.h"
 
+#include "nm-errors.h"
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-glib-aux/nm-str-buf.h"
 
@@ -474,4 +475,178 @@ _nm_ip_route_to_string(NMIPRoute *route, NMStrBuf *strbuf)
     if (metric != -1) {
         nm_str_buf_append_printf(strbuf, " metric %" G_GINT64_FORMAT, metric);
     }
+}
+
+/*****************************************************************************/
+
+char *
+_nm_utils_wireguard_peer_to_string(NMWireGuardPeer *peer)
+{
+    GString    *str;
+    const char *endpoint;
+    const char *psk;
+    guint16     keepalive;
+    guint       i;
+    guint       len;
+
+    g_return_val_if_fail(peer, "");
+
+    nm_assert(nm_wireguard_peer_is_valid(peer, TRUE, TRUE, NULL));
+
+    str = g_string_new("");
+    g_string_append(str, nm_wireguard_peer_get_public_key(peer));
+
+    len = nm_wireguard_peer_get_allowed_ips_len(peer);
+    if (len > 0) {
+        g_string_append(str, " allowed-ips=");
+        for (i = 0; i < len; i++) {
+            g_string_append(str, nm_wireguard_peer_get_allowed_ip(peer, i, NULL));
+            if (i < len - 1)
+                g_string_append(str, ";");
+        }
+    }
+
+    endpoint = nm_wireguard_peer_get_endpoint(peer);
+    if (endpoint) {
+        g_string_append_printf(str, " endpoint=%s", endpoint);
+    }
+
+    keepalive = nm_wireguard_peer_get_persistent_keepalive(peer);
+    if (keepalive != 0) {
+        g_string_append_printf(str, " persistent-keepalive=%hu", keepalive);
+    }
+
+    psk = nm_wireguard_peer_get_preshared_key(peer);
+    if (psk) {
+        g_string_append_printf(str, " preshared-key=%s", psk);
+        g_string_append_printf(str,
+                               " preshared-key-flags=%u",
+                               (guint) nm_wireguard_peer_get_preshared_key_flags(peer));
+    }
+
+    return g_string_free(str, FALSE);
+}
+
+NMWireGuardPeer *
+_nm_utils_wireguard_peer_from_string(const char *str, GError **error)
+{
+    nm_auto_unref_wgpeer NMWireGuardPeer *peer          = NULL;
+    gs_strfreev char                    **tokens        = NULL;
+    gboolean                              has_psk       = FALSE;
+    gboolean                              has_psk_flags = FALSE;
+    char                                 *value;
+    guint                                 i;
+
+    peer = nm_wireguard_peer_new();
+
+    tokens = g_strsplit_set(str, " ", 0);
+    for (i = 0; tokens[i]; i++) {
+        if (i == 0) {
+            if (!nm_wireguard_peer_set_public_key(peer, tokens[i], FALSE)) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            "invalid public key '%s'",
+                            tokens[i]);
+                return NULL;
+            }
+            continue;
+        }
+
+        if (tokens[i][0] == '\0')
+            continue;
+
+        value = strchr(tokens[i], '=');
+        if (!value || value[1] == '\0') {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        "attribute without value '%s'",
+                        tokens[i]);
+            return NULL;
+        }
+
+        *value = '\0';
+        value++;
+
+        if (nm_streq(tokens[i], "allowed-ips")) {
+            gs_strfreev char **ips = NULL;
+            guint              j;
+
+            ips = g_strsplit_set(value, ";", 0);
+            for (j = 0; ips[j]; j++) {
+                if (!nm_wireguard_peer_append_allowed_ip(peer, ips[j], FALSE)) {
+                    g_set_error(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                "invalid allowed-ip '%s'",
+                                ips[j]);
+                    return NULL;
+                }
+            }
+        } else if (nm_streq(tokens[i], "endpoint")) {
+            if (!nm_wireguard_peer_set_endpoint(peer, value, FALSE)) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            "invalid endpoint '%s'",
+                            value);
+                return NULL;
+            }
+        } else if (nm_streq(tokens[i], "persistent-keepalive")) {
+            gint64 keepalive;
+
+            keepalive = _nm_utils_ascii_str_to_int64(value, 10, 0, G_MAXUINT16, -1);
+            if (keepalive == -1) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            "invalid persistent-keepalive value '%s'",
+                            value);
+                return NULL;
+            }
+            nm_wireguard_peer_set_persistent_keepalive(peer, (guint16) keepalive);
+        } else if (nm_streq(tokens[i], "preshared-key")) {
+            if (!nm_wireguard_peer_set_preshared_key(peer, value, FALSE)) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            "invalid preshared-key '%s'",
+                            value);
+                return NULL;
+            }
+            has_psk = TRUE;
+        } else if (nm_streq(tokens[i], "preshared-key-flags")) {
+            int flags;
+
+            if (!nm_utils_enum_from_str(NM_TYPE_SETTING_SECRET_FLAGS, value, &flags, NULL)) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            "invalid preshared-key-flags '%s'",
+                            value);
+                return NULL;
+            }
+            nm_wireguard_peer_set_preshared_key_flags(peer, (NMSettingSecretFlags) flags);
+            has_psk_flags = TRUE;
+        } else {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        "invalid attribute '%s'",
+                        tokens[i]);
+            return NULL;
+        }
+    }
+
+    if (has_psk && !has_psk_flags) {
+        /* The flags are NOT_REQUIRED by default. With this flag, the PSK would not
+         * be saved by default, unless the user explicitly sets a different value. */
+        nm_wireguard_peer_set_preshared_key_flags(peer, NM_SETTING_SECRET_FLAG_NONE);
+    }
+
+    if (!nm_wireguard_peer_is_valid(peer, TRUE, TRUE, error))
+        return NULL;
+
+    return g_steal_pointer(&peer);
 }

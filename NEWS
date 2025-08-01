@@ -1,4 +1,16 @@
 =============================================
+NetworkManager-1.56
+Overview of changes since NetworkManager-1.54
+=============================================
+
+This is a snapshot of NetworkManager development. The API is
+subject to change and not guaranteed to be compatible with
+the later release.
+USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
+
+* nmcli now supports viewing and managing WireGuard peers.
+
+=============================================
 NetworkManager-1.54
 Overview of changes since NetworkManager-1.52
 =============================================

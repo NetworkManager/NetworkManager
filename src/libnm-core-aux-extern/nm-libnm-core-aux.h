@@ -6,8 +6,9 @@
 #ifndef __NM_LIBNM_CORE_AUX_H__
 #define __NM_LIBNM_CORE_AUX_H__
 
-#include "nm-setting-team.h"
 #include "nm-setting-ip-config.h"
+#include "nm-setting-team.h"
+#include "nm-setting-wireguard.h"
 
 typedef enum {
     NM_TEAM_LINK_WATCHER_TYPE_NONE     = 0,
@@ -38,5 +39,8 @@ struct _NMStrBuf;
 void _nm_ip_route_to_string(NMIPRoute *route, struct _NMStrBuf *strbuf);
 
 NMTeamLinkWatcher *nm_utils_team_link_watcher_from_string(const char *str, GError **error);
+
+char            *_nm_utils_wireguard_peer_to_string(NMWireGuardPeer *peer);
+NMWireGuardPeer *_nm_utils_wireguard_peer_from_string(const char *str, GError **error);
 
 #endif /* __NM_LIBNM_CORE_AUX_H__ */

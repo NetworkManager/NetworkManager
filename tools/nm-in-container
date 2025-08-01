@@ -189,7 +189,7 @@ RUN dnf install -y \\
     --skip-broken \\
     \\
     /usr/bin/python \\
-    /usr/sbin/ausearch \\
+    audit \\
     ModemManager-devel \\
     ModemManager-glib-devel \\
     NetworkManager \\
@@ -231,7 +231,7 @@ RUN dnf install -y \\
     libubsan \\
     libuuid-devel \\
     meson \\
-    mlocate \\
+    plocate \\
     mobile-broadband-provider-info-devel \\
     newt-devel \\
     nispor \\
@@ -267,7 +267,7 @@ RUN dnf install -y \\
     which \\
     \\
     'dbus*' \\
-    'openvswitch2*' \\
+    'openvswitch*' \\
     /usr/bin/pytest \\
     /usr/bin/debuginfo-install \\
     NetworkManager-openvpn \\
@@ -290,7 +290,6 @@ RUN dnf install -y \\
     git \\
     hostapd \\
     iproute-tc \\
-    ipsec-tools \\
     iputils \\
     iscsi-initiator-utils \\
     iw \\
@@ -322,7 +321,7 @@ RUN dnf install -y \\
     wireguard-tools \\
     wireshark-cli
 
-RUN dnf debuginfo-install --skip-broken NetworkManager \$(ldd /usr/sbin/NetworkManager | sed -n 's/.* => \\(.*\\) (0x[0-9A-Fa-f]*)$/\1/p' | xargs -n1 readlink -f) -y
+RUN dnf debuginfo-install --skip-unavailable --skip-broken NetworkManager \$(ldd /usr/sbin/NetworkManager | sed -n 's/.* => \\(.*\\) (0x[0-9A-Fa-f]*)$/\1/p' | xargs -n1 readlink -f) -y
 
 RUN dnf clean all
 

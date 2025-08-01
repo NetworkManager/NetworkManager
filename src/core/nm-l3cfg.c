@@ -40,8 +40,7 @@ G_STATIC_ASSERT(NM_ACD_TIMEOUT_RFC5227_MSEC == N_ACD_TIMEOUT_RFC5227);
 
 #define ACD_SUPPORTED_ETH_ALEN                  ETH_ALEN
 #define ACD_ENSURE_RATELIMIT_MSEC               ((guint32) 4000u)
-#define ACD_WAIT_PROBING_EXTRA_TIME_MSEC        ((guint32) (1000u + ACD_ENSURE_RATELIMIT_MSEC))
-#define ACD_WAIT_PROBING_EXTRA_TIME2_MSEC       ((guint32) 1000u)
+#define ACD_WAIT_PROBING_EXTRA_TIME_MSEC        ((guint32) (2000u + ACD_ENSURE_RATELIMIT_MSEC))
 #define ACD_WAIT_TIME_PROBING_FULL_RESTART_MSEC ((guint32) 30000u)
 #define ACD_WAIT_TIME_CONFLICT_RESTART_MSEC     ((guint32) 120000u)
 #define ACD_WAIT_TIME_ANNOUNCE_RESTART_MSEC     ((guint32) 30000u)
@@ -2740,9 +2739,8 @@ handle_init:
             nm_utils_get_monotonic_timestamp_msec_cached(p_now_msec);
 
             if (acd_data->info.state == NM_L3_ACD_ADDR_STATE_PROBING) {
-                if ((*p_now_msec) > acd_data->probing_timestamp_msec
-                                        + ACD_WAIT_PROBING_EXTRA_TIME_MSEC
-                                        + ACD_WAIT_PROBING_EXTRA_TIME2_MSEC) {
+                if ((*p_now_msec)
+                    > acd_data->probing_timestamp_msec + ACD_WAIT_PROBING_EXTRA_TIME_MSEC) {
                     /* hm. We failed to create a new probe too long. Something is really wrong
                      * internally, but let's ignore the issue and assume the address is good. What
                      * else would we do? Assume the address is USED? */
@@ -2948,7 +2946,7 @@ handle_init:
             nm_utils_get_monotonic_timestamp_msec_cached(p_now_msec);
 
             if (acd_data->probing_timestamp_msec + acd_data->probing_timeout_msec
-                    + ACD_WAIT_PROBING_EXTRA_TIME_MSEC + ACD_WAIT_PROBING_EXTRA_TIME2_MSEC
+                    + ACD_WAIT_PROBING_EXTRA_TIME_MSEC
                 >= (*p_now_msec)) {
                 /* The probing already started quite a while ago. We ignore the link event
                  * and let the probe come to it's natural end. */

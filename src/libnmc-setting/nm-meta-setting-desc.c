@@ -4156,6 +4156,50 @@ _optionlist_set_fcn_vpn_secrets(NMSetting  *setting,
     return TRUE;
 }
 
+static void
+_objlist_obj_to_str_fcn_wireguard_peers(NMMetaAccessorGetType get_type,
+                                        NMSetting            *setting,
+                                        guint                 idx,
+                                        GString              *str)
+{
+    NMWireGuardPeer *peer;
+    gs_free char    *peer_str = NULL;
+
+    peer     = nm_setting_wireguard_get_peer(NM_SETTING_WIREGUARD(setting), idx);
+    peer_str = _nm_utils_wireguard_peer_to_string(peer);
+    g_string_append(str, peer_str);
+}
+
+static gboolean
+_objlist_set_fcn_wireguard_peers(NMSetting  *setting,
+                                 gboolean    do_add,
+                                 const char *value,
+                                 GError    **error)
+{
+    NMSettingWireGuard                   *s_wg = NM_SETTING_WIREGUARD(setting);
+    nm_auto_unref_wgpeer NMWireGuardPeer *peer = NULL;
+
+    peer = _nm_utils_wireguard_peer_from_string(value, error);
+    if (!peer)
+        return FALSE;
+
+    if (do_add) {
+        nm_setting_wireguard_append_peer(s_wg, peer);
+    } else {
+        NMWireGuardPeer *match;
+        guint            idx;
+
+        match = nm_setting_wireguard_get_peer_by_public_key(s_wg,
+                                                            nm_wireguard_peer_get_public_key(peer),
+                                                            &idx);
+        if (match) {
+            nm_setting_wireguard_remove_peer(s_wg, idx);
+        }
+    }
+
+    return TRUE;
+}
+
 static gboolean
 _set_fcn_wired_s390_subchannels(ARGS_SET_FCN)
 {
@@ -8426,6 +8470,21 @@ static const NMMetaPropertyInfo *const property_infos_WIREGUARD[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIREGUARD_IP6_AUTO_DEFAULT_ROUTE,
         .property_type =                &_pt_gobject_ternary,
     ),
+
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_WIREGUARD_PEERS,
+        .property_type =                &_pt_objlist,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+            PROPERTY_TYP_DATA_SUBTYPE (objlist,
+                .get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingWireGuard, nm_setting_wireguard_get_peers_len),
+                .clear_all_fcn =        (void (*) (NMSetting *))(void (*)(void)) nm_setting_wireguard_clear_peers,
+                .obj_to_str_fcn =       _objlist_obj_to_str_fcn_wireguard_peers,
+                .set_fcn =              _objlist_set_fcn_wireguard_peers,
+                .remove_by_idx_fcn_u =  (void (*) (NMSetting *, guint idx))(void (*)(void)) nm_setting_wireguard_remove_peer,
+                .strsplit_plain =       TRUE,
+            ),
+        ),
+    ),
+
     NULL
 };
 

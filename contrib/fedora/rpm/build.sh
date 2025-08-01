@@ -12,6 +12,7 @@ set -o pipefail
 #   RELEASE_VERSION=
 #   SNAPSHOT=
 #   VERSION=
+#   GIT_TAG_VERSION=
 #   COMMIT_FULL=
 #   COMMIT=
 #   USERNAME=
@@ -112,6 +113,7 @@ UUID=`uuidgen`
 RELEASE_VERSION="${RELEASE_VERSION:-$(git rev-list HEAD | wc -l)}"
 SNAPSHOT="${SNAPSHOT:-%{nil\}}"
 VERSION="${VERSION:-$(get_version || die "Could not read $VERSION")}"
+GIT_TAG_VERSION="${GIT_TAG_VERSION:-$VERSION}"
 COMMIT_FULL="${COMMIT_FULL:-$(git rev-parse --verify HEAD || die "Error reading HEAD revision")}"
 COMMIT="${COMMIT:-$(printf '%s' "$COMMIT_FULL" | sed 's/^\(.\{10\}\).*/\1/' || die "Error reading HEAD revision")}"
 BCOND_DEFAULT_DEBUG="${BCOND_DEFAULT_DEBUG:-0}"
@@ -155,6 +157,7 @@ if [[ "$SOURCE_FROM_GIT" == "1" ]]; then
 fi
 
 LOG "VERSION=$VERSION"
+LOG "GIT_TAG_VERSION=$GIT_TAG_VERSION"
 LOG "RELEASE_VERSION=$RELEASE_VERSION"
 LOG "SNAPSHOT=$SNAPSHOT"
 LOG "COMMIT_FULL=$COMMIT_FULL"
@@ -207,6 +210,7 @@ cp "$SOURCE_README_IFCFG_MIGRATED" "$TEMP/SOURCES/readme-ifcfg-rh-migrated.txt" 
 write_changelog
 
 sed -e "s/__VERSION__/$VERSION/g" \
+    -e "s/__GIT_TAG_VERSION__/$GIT_TAG_VERSION/g" \
     -e "s/__RELEASE_VERSION__/$RELEASE_VERSION/g" \
     -e "s/__SNAPSHOT__/$SNAPSHOT/g" \
     -e "s/__COMMIT__/$COMMIT/g" \

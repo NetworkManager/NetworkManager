@@ -1063,27 +1063,44 @@ reader_parse_vlan(Reader *reader, char *argument)
     const char    *vlan;
     const char    *phy;
     const char    *vlanid;
+    guint64        id;
 
     vlan = get_word(&argument, ':');
     phy  = get_word(&argument, ':');
+
+    if (!vlan) {
+        _LOGW(LOGD_CORE, "missing VLAN interface name");
+        return;
+    }
+
+    if (!phy) {
+        _LOGW(LOGD_CORE, "missing VLAN parent");
+        return;
+    }
 
     for (vlanid = vlan + strlen(vlan); vlanid > vlan; vlanid--) {
         if (!g_ascii_isdigit(*(vlanid - 1)))
             break;
     }
 
+    if (vlanid[0] == '\0') {
+        _LOGW(LOGD_CORE, "missing VLAN id in '%s'", vlan);
+        return;
+    }
+
+    id = _nm_utils_ascii_str_to_int64(vlanid, 10, 0, 4094, G_MAXUINT);
+    if (id == G_MAXUINT) {
+        _LOGW(LOGD_CORE, "invalid VLAN id '%s'", vlanid);
+        return;
+    }
+
     connection = reader_get_connection(reader, vlan, NM_SETTING_VLAN_SETTING_NAME, TRUE);
 
     s_vlan = nm_connection_get_setting_vlan(connection);
-    g_object_set(s_vlan,
-                 NM_SETTING_VLAN_PARENT,
-                 phy,
-                 NM_SETTING_VLAN_ID,
-                 (guint) _nm_utils_ascii_str_to_int64(vlanid, 10, 0, G_MAXUINT, G_MAXUINT),
-                 NULL);
+    g_object_set(s_vlan, NM_SETTING_VLAN_PARENT, phy, NM_SETTING_VLAN_ID, (guint32) id, NULL);
 
     if (argument && *argument)
-        _LOGW(LOGD_CORE, "Ignoring extra: '%s'.", argument);
+        _LOGW(LOGD_CORE, "ignoring extra VLAN argument '%s'", argument);
 
     if (!nm_strv_ptrarray_contains(reader->vlan_parents, phy))
         g_ptr_array_add(reader->vlan_parents, g_strdup(phy));

@@ -1847,6 +1847,66 @@ test_vlan_over_bond(void)
 }
 
 static void
+test_vlan_invalid(void)
+{
+    {
+        /* Case 1: Missing name */
+        const char *const             *ARGV0       = NM_MAKE_STRV("vlan=");
+        gs_unref_hashtable GHashTable *connections = NULL;
+
+        NMTST_EXPECT_NM_WARN("cmdline-reader: missing VLAN interface name");
+        connections = _parse_cons(ARGV0);
+        g_assert_cmpint(g_hash_table_size(connections), ==, 0);
+        g_test_assert_expected_messages();
+    }
+
+    {
+        /* Case 2: Missing parent */
+        const char *const             *ARGV0       = NM_MAKE_STRV("vlan=vlan12");
+        gs_unref_hashtable GHashTable *connections = NULL;
+
+        NMTST_EXPECT_NM_WARN("cmdline-reader: missing VLAN parent");
+        connections = _parse_cons(ARGV0);
+        g_assert_cmpint(g_hash_table_size(connections), ==, 0);
+        g_test_assert_expected_messages();
+    }
+
+    {
+        /* Case 3: Interface name without trailing digits should fail,
+         * not trigger a GLib assertion. */
+        const char *const             *ARGV0       = NM_MAKE_STRV("vlan=myvlan:eth0");
+        gs_unref_hashtable GHashTable *connections = NULL;
+
+        NMTST_EXPECT_NM_WARN("cmdline-reader: missing VLAN id in 'myvlan'");
+        connections = _parse_cons(ARGV0);
+        g_assert_cmpint(g_hash_table_size(connections), ==, 0);
+        g_test_assert_expected_messages();
+    }
+
+    {
+        /* Case 4: An invalid VLAN id should be rejected */
+        const char *const             *ARGV0       = NM_MAKE_STRV("vlan=myvlan4095:eth0");
+        gs_unref_hashtable GHashTable *connections = NULL;
+
+        NMTST_EXPECT_NM_WARN("cmdline-reader: invalid VLAN id '4095'");
+        connections = _parse_cons(ARGV0);
+        g_assert_cmpint(g_hash_table_size(connections), ==, 0);
+        g_test_assert_expected_messages();
+    }
+
+    {
+        /* Case 5: Extra arguments */
+        const char *const             *ARGV0 = NM_MAKE_STRV("vlan=eth0.80:eth0:reorder_hdr=on");
+        gs_unref_hashtable GHashTable *connections = NULL;
+
+        NMTST_EXPECT_NM_WARN("cmdline-reader: ignoring extra VLAN argument 'reorder_hdr=on'");
+        connections = _parse_cons(ARGV0);
+        g_assert_cmpint(g_hash_table_size(connections), ==, 2);
+        g_test_assert_expected_messages();
+    }
+}
+
+static void
 test_ibft_ip_dev(void)
 {
     const char *const            *ARGV = NM_MAKE_STRV("ip=eth0:ibft");
@@ -2820,6 +2880,7 @@ main(int argc, char **argv)
     g_test_add_func("/initrd/cmdline/vlan", test_vlan);
     g_test_add_func("/initrd/cmdline/vlan/dhcp-on-parent", test_vlan_with_dhcp_on_parent);
     g_test_add_func("/initrd/cmdline/vlan/over-bond", test_vlan_over_bond);
+    g_test_add_func("/initrd/cmdline/vlan/invalid", test_vlan_invalid);
     g_test_add_func("/initrd/cmdline/bridge", test_bridge);
     g_test_add_func("/initrd/cmdline/bridge/default", test_bridge_default);
     g_test_add_func("/initrd/cmdline/bridge/ip", test_bridge_ip);

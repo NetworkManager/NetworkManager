@@ -155,3 +155,33 @@ nm_vpn_plugin_utils_load_editor(const char                   *module_path,
     g_return_val_if_fail(NM_IS_VPN_EDITOR(editor), NULL);
     return editor;
 }
+
+char *
+nm_vpn_plugin_utils_get_cert_path(const char *plugin)
+{
+    const char *path;
+
+    g_return_val_if_fail(plugin, NULL);
+
+    /* Users can set NM_CERT_PATH=~/.cert to be compatible with the certificate
+     * directory used in the past. */
+    path = g_getenv("NM_CERT_PATH");
+    if (path)
+        return g_build_filename(path, plugin, NULL);
+
+    /* Otherwise use XDG_DATA_HOME. We use subdirectory "networkmanagement/certificates"
+     * because the SELinux policy already has rules to set the correct labels in that
+     * directory. */
+    path = g_getenv("XDG_DATA_HOME");
+    if (path)
+        return g_build_filename(path, "networkmanagement", "certificates", plugin, NULL);
+
+    /* Use the default value for XDG_DATA_HOME */
+    return g_build_filename(g_get_home_dir(),
+                            ".local",
+                            "share",
+                            "networkmanagement",
+                            "certificates",
+                            plugin,
+                            NULL);
+}
