@@ -5630,14 +5630,19 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     /* Validate DNS */
     if (priv->dns) {
         for (i = 0; i < priv->dns->len; i++) {
-            const char *dns = priv->dns->pdata[i];
+            const char           *dns   = priv->dns->pdata[i];
+            gs_free_error GError *local = NULL;
 
-            if (!nm_dns_uri_parse(NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting), dns, NULL)) {
+            if (!nm_dns_uri_parse(NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting),
+                                  dns,
+                                  NULL,
+                                  &local)) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                            _("%u. DNS server address is invalid"),
-                            (i + 1u));
+                            _("%u. DNS server address is invalid: %s"),
+                            (i + 1u),
+                            local->message);
                 g_prefix_error(error,
                                "%s.%s: ",
                                nm_setting_get_name(setting),

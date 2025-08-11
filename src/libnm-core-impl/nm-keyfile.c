@@ -1158,14 +1158,17 @@ ip_dns_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
     addr_family = NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting);
 
     for (i = 0, n = 0; i < length; i++) {
-        if (!nm_dns_uri_parse(addr_family, list[i], NULL)) {
+        gs_free_error GError *error = NULL;
+
+        if (!nm_dns_uri_parse(addr_family, list[i], NULL, &error)) {
             if (!read_handle_warn(info,
                                   key,
                                   key,
                                   NM_KEYFILE_WARN_SEVERITY_WARN,
-                                  _("ignoring invalid DNS server IPv%c address '%s'"),
+                                  _("ignoring invalid DNS server IPv%c address '%s': %s"),
                                   nm_utils_addr_family_to_char(addr_family),
-                                  list[i])) {
+                                  list[i],
+                                  error->message)) {
                 do {
                     nm_clear_g_free(&list[i]);
                 } while (++i < length);
