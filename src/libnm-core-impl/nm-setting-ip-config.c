@@ -4221,6 +4221,25 @@ nm_setting_ip_config_clear_dns(NMSettingIPConfig *setting)
     }
 }
 
+/**
+ * nm_dns_server_validate:
+ * @str: the string containing the DNS server
+ * @family: the IP address family (%AF_INET for IPv4, %AF_INET6 for IPv6,
+ *   %AF_UNSPEC to accept both IPv4 and IPv6)
+ * @error: (nullable): a pointer to %NULL #GError, or %NULL
+ *
+ * Validates a DNS name server string.
+ *
+ * Return: %TRUE if the name server is valid, %FALSE otherwise
+ *
+ * Since: 1.56
+ */
+gboolean
+nm_dns_server_validate(const char *str, int family, GError **error)
+{
+    return nm_dns_uri_parse(family, str, NULL, error);
+}
+
 GPtrArray *
 _nm_setting_ip_config_get_dns_array(NMSettingIPConfig *setting)
 {
