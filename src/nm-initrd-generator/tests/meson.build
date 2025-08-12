@@ -6,6 +6,10 @@ test_units = [
   'test-cmdline-reader',
 ]
 
+if enable_nbft
+  test_units += [ 'test-nbft-reader' ]
+endif
+
 foreach test_unit : test_units
   exe = executable(
     test_unit,
