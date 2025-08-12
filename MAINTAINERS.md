@@ -252,17 +252,25 @@ Versioning scheme (version numbers are called MAJOR.MINOR.MICRO):
   versioning scheme than the main NM project despite there are no development
   versions here.
 
+Before starting:
+- You need to have the maintainer role in the project.
+- The GPG key used to sign the release must be added to your GNOME's Gitlab
+  profile and uploaded to a keyserver.
+- All details: https://handbook.gnome.org/maintainers/making-a-release.html
+
 When doing a release, follow this process:
 1. Ensure that `NEWS` file is up to date.
-2. Increment the version in `meson.build`, commit and tag the commit. Example:
-   `git tag -s 1.2.8 -m 'Tag 1.2.8'`.
-3. Ensure that you are on the right commit and create the tarball:
-   `git clean -fdx && meson setup build && cd build && meson dist`
-4. Upload the tarball: `scp ./*-*.tar.xz "$user@master.gnome.org:"`
-5. Login to `master.gnome.org` and run `ftpadmin install`.  
-   Ensure the new tarballs show up at https://download.gnome.org/sources/
-   (happens after a short delay)
-6. Announce the release on the mailing list.
+2. Increment the version in `meson.build` or `configure.ac`.
+3. Commit and push to the `main` branch.
+4. Check that the Gitlab's pipeline finishes without errors.
+5. Tag the commit with a signed tag. Example: `git tag -s 1.2.8 -m 'Release 1.2.8'`.
+6. Push the tag. Example: `git push origin 1.2.8`.  
+   WARN: this is what starts the automatic CI release. As GNOME doesn't allow
+   to delete tags, any error detected after this will force a new version bump.
+7. Check that the Gitlab's pipeline finishes without errors. If that happens,
+   the release is done and available both in the Gitlab's releases section and
+   https://download.gnome.org/sources/*
+8. Announce the release on the mailing list.
 
 Notes:
 - You need access to master.gnome.org, see [here](https://handbook.gnome.org/infrastructure/accounts.html).
