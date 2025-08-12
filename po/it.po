@@ -12596,7 +12596,7 @@ msgstr "Digitare «help» o «?» per i comandi disponibili."
 #. TRANSLATORS: do not translate 'print', leave it as it is
 #: src/nmcli/connections.c:9072
 msgid "Type 'print' to show all the connection properties."
-msgstr "Digitare «stampa» per mostrare tutte le proprietà della connessione."
+msgstr "Digitare «print» per mostrare tutte le proprietà della connessione."
 
 #. TRANSLATORS: do not translate 'describe', leave it as it is
 #: src/nmcli/connections.c:9075
