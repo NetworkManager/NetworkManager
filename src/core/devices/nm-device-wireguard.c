@@ -1672,6 +1672,57 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     return ret;
 }
 
+static gboolean
+skip_peer_route(const NMIPAddr    *peer_addr,
+                guint              peer_addr_prefix,
+                int                addr_family,
+                NMSettingIPConfig *s_ip)
+{
+    guint num_addresses;
+    guint i;
+
+    /*
+     * If the allowed-ip subnet is already reachable on the interface via the
+     * prefix route of a static IP address, skip adding the peer route.
+     * We don't want to override the prefix route with a new one because the
+     * prefix route also specifies the correct source IP address.
+     *
+     * wg-quick does something similar here:
+     * https://git.zx2c4.com/wireguard-tools/tree/src/wg-quick/linux.bash?h=v1.0.20250521#n177
+     * The condition in wg-quick is a bit different because it checks that no
+     * duplicate route exists on the interface. We can't do exactly the same
+     * because here we don't have visibility on all the platform routes.
+     */
+
+    if (!s_ip)
+        return FALSE;
+
+    num_addresses = nm_setting_ip_config_get_num_addresses(s_ip);
+    for (i = 0; i < num_addresses; i++) {
+        NMIPAddr     setting_addr;
+        NMIPAddr     peer_addr_tmp;
+        guint        setting_prefix;
+        NMIPAddress *a;
+
+        peer_addr_tmp = *peer_addr;
+
+        a = nm_setting_ip_config_get_address(s_ip, i);
+        nm_ip_address_get_address_binary(a, &setting_addr);
+        setting_prefix = nm_ip_address_get_prefix(a);
+
+        if (setting_prefix > peer_addr_prefix)
+            continue;
+
+        nm_ip_addr_clear_host_address(addr_family, &setting_addr, NULL, setting_prefix);
+        nm_ip_addr_clear_host_address(addr_family, &peer_addr_tmp, NULL, setting_prefix);
+
+        if (nm_ip_addr_equal(addr_family, &peer_addr_tmp, &setting_addr))
+            return TRUE;
+    }
+
+    return FALSE;
+}
+
 static const NML3ConfigData *
 _get_dev2_ip_config(NMDeviceWireGuard *self, int addr_family)
 {
@@ -1738,6 +1789,7 @@ _get_dev2_ip_config(NMDeviceWireGuard *self, int addr_family)
 
         n_aips = nm_wireguard_peer_get_allowed_ips_len(peer);
         for (j = 0; j < n_aips; j++) {
+            NMSettingIPConfig *s_ip;
             NMPlatformIPXRoute rt;
             NMIPAddr           addrbin;
             const char        *aip;
@@ -1745,7 +1797,8 @@ _get_dev2_ip_config(NMDeviceWireGuard *self, int addr_family)
             int                prefix;
             guint32            rtable_coerced;
 
-            aip = nm_wireguard_peer_get_allowed_ip(peer, j, &valid);
+            aip  = nm_wireguard_peer_get_allowed_ip(peer, j, &valid);
+            s_ip = nm_connection_get_setting_ip_config(connection, addr_family);
 
             if (!valid || !nm_inet_parse_with_prefix_bin(addr_family, aip, NULL, &addrbin, &prefix))
                 continue;
@@ -1754,9 +1807,6 @@ _get_dev2_ip_config(NMDeviceWireGuard *self, int addr_family)
                 prefix = (addr_family == AF_INET) ? 32 : 128;
 
             if (prefix == 0) {
-                NMSettingIPConfig *s_ip;
-
-                s_ip = nm_connection_get_setting_ip_config(connection, addr_family);
                 if (nm_setting_ip_config_get_never_default(s_ip))
                     continue;
             }
@@ -1768,6 +1818,9 @@ _get_dev2_ip_config(NMDeviceWireGuard *self, int addr_family)
             }
 
             nm_ip_addr_clear_host_address(addr_family, &addrbin, NULL, prefix);
+
+            if (skip_peer_route(&addrbin, prefix, addr_family, s_ip))
+                continue;
 
             rtable_coerced = route_table_coerced;
 
