@@ -9194,12 +9194,16 @@ is_available(NMDevice *self, NMDeviceCheckDevAvailableFlags flags)
  * %TRUE. (But note that it can still be %NM_DEVICE_STATE_UNMANAGED
  * when it is available.)
  *
+ * The device must be realized.
+ *
  * Returns: %TRUE or %FALSE
  */
 gboolean
 nm_device_is_available(NMDevice *self, NMDeviceCheckDevAvailableFlags flags)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+
+    nm_assert(nm_device_is_real(self));
 
     if (priv->firmware_missing)
         return FALSE;
