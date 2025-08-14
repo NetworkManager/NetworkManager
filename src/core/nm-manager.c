@@ -4692,6 +4692,9 @@ found_better:
         if (nm_g_hash_table_contains(exclude_devices, device))
             continue;
 
+        if (!nm_device_is_real(device) && !nm_device_is_unrealized_ready(device))
+            continue;
+
         /* determine the priority of this device. Currently, this priority is independent
          * of the profile (connection) and the device's details (aside the state).
          *
