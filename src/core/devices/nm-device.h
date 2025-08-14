@@ -283,6 +283,7 @@ typedef struct _NMDeviceClass {
     NMDeviceCapabilities (*get_generic_capabilities)(NMDevice *self);
 
     gboolean (*is_available)(NMDevice *self, NMDeviceCheckDevAvailableFlags flags);
+    gboolean (*is_unrealized_ready)(NMDevice *self);
 
     gboolean (*get_enabled)(NMDevice *self);
 
@@ -521,6 +522,7 @@ void nm_device_removed(NMDevice *self, gboolean unconfigure_ip_config);
 gboolean nm_device_ignore_carrier_by_default(NMDevice *self);
 
 gboolean nm_device_is_available(NMDevice *dev, NMDeviceCheckDevAvailableFlags flags);
+gboolean nm_device_is_unrealized_ready(NMDevice *self);
 gboolean nm_device_has_carrier(NMDevice *dev);
 
 NMConnection *nm_device_generate_connection(NMDevice *self,

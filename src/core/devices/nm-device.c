@@ -9211,6 +9211,26 @@ nm_device_is_available(NMDevice *self, NMDeviceCheckDevAvailableFlags flags)
     return NM_DEVICE_GET_CLASS(self)->is_available(self, flags);
 }
 
+/**
+ * nm_device_is_unrealized_ready:
+ * @self: the #NMDevice
+ *
+ * Checks if unrealized device @self would currently be capable of activating a
+ * connection.
+ *
+ * Returns: %TRUE or %FALSE
+ */
+gboolean
+nm_device_is_unrealized_ready(NMDevice *self)
+{
+    nm_assert(!nm_device_is_real(self));
+
+    if (NM_DEVICE_GET_CLASS(self)->is_unrealized_ready)
+        return NM_DEVICE_GET_CLASS(self)->is_unrealized_ready(self);
+
+    return TRUE;
+}
+
 gboolean
 nm_device_ignore_carrier_by_default(NMDevice *self)
 {
