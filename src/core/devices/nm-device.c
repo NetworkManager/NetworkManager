@@ -14079,7 +14079,8 @@ can_reapply_change(NMDevice   *self,
         return nm_device_hash_check_invalid_keys(diffs,
                                                  NM_SETTING_SRIOV_SETTING_NAME,
                                                  error,
-                                                 NM_SETTING_SRIOV_PRESERVE_ON_DOWN);
+                                                 NM_SETTING_SRIOV_PRESERVE_ON_DOWN,
+                                                 NM_SETTING_SRIOV_VFS);
     }
 
 out_fail:
@@ -14257,8 +14258,33 @@ check_and_reapply_connection(NMDevice            *self,
 
     nm_device_link_properties_set(self, TRUE);
 
-    if (priv->state >= NM_DEVICE_STATE_CONFIG)
+    if (priv->state >= NM_DEVICE_STATE_CONFIG) {
+        GHashTable *sriov_diff;
+
         lldp_setup(self, NM_TERNARY_DEFAULT);
+
+        sriov_diff = nm_g_hash_table_lookup(diffs, NM_SETTING_SRIOV_SETTING_NAME);
+
+        if (sriov_diff && nm_g_hash_table_lookup(sriov_diff, NM_SETTING_SRIOV_VFS)) {
+            nm_auto_freev NMPlatformVF **plat_vfs = NULL;
+            NMSettingSriov              *s_sriov;
+
+            s_sriov =
+                (NMSettingSriov *) nm_connection_get_setting(connection, NM_TYPE_SETTING_SRIOV);
+
+            if (s_sriov
+                && (!sriov_gen_platform_vfs(self, s_sriov, &plat_vfs)
+                    || !nm_platform_link_set_sriov_vfs(nm_device_get_platform(self),
+                                                       priv->ifindex,
+                                                       plat_vfs))) {
+                g_set_error_literal(error,
+                                    NM_DEVICE_ERROR,
+                                    NM_DEVICE_ERROR_FAILED,
+                                    "failed to reapply SRIOV VFs");
+                return FALSE;
+            }
+        }
+    }
 
     if (priv->state >= NM_DEVICE_STATE_IP_CONFIG) {
         /* Allow reapply of MTU */
