@@ -104,6 +104,15 @@ is_available(NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 }
 
 static gboolean
+is_unrealized_ready(NMDevice *device)
+{
+    NMDeviceOvsInterface        *self = NM_DEVICE_OVS_INTERFACE(device);
+    NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
+
+    return nm_ovsdb_is_ready(priv->ovsdb);
+}
+
+static gboolean
 can_auto_connect(NMDevice *device, NMSettingsConnection *sett_conn, char **specific_object)
 {
     NMDeviceOvsInterface        *self = NM_DEVICE_OVS_INTERFACE(device);
@@ -728,6 +737,7 @@ nm_device_ovs_interface_class_init(NMDeviceOvsInterfaceClass *klass)
     device_class->create_and_realize            = create_and_realize;
     device_class->get_generic_capabilities      = get_generic_capabilities;
     device_class->is_available                  = is_available;
+    device_class->is_unrealized_ready           = is_unrealized_ready;
     device_class->check_connection_compatible   = check_connection_compatible;
     device_class->link_changed                  = link_changed;
     device_class->act_stage3_ip_config          = act_stage3_ip_config;
