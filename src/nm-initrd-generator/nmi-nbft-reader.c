@@ -210,6 +210,7 @@ parse_hfi(GPtrArray *a, struct nbft_info_hfi *hfi, const char *table_name, char 
                 return;
             }
             g_ptr_array_add(a, parent_connection);
+            nm_clear_g_free(&conn_name);
         }
 
         conn_name  = format_conn_name(table_name, hfi, TRUE);
