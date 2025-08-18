@@ -9,6 +9,8 @@ the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 * nmcli now supports viewing and managing WireGuard peers.
+* Support reapplying the "sriov.vfs" property as long as
+  "sriov.total-vfs" is not changed.
 
 =============================================
 NetworkManager-1.54
