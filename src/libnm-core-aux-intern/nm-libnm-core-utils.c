@@ -705,6 +705,7 @@ nm_mptcp_flags_normalize(NMMptcpFlags flags)
  * @addr_family: the address family, or AF_UNSPEC to autodetect it
  * @str: the name server URI string to parse
  * @dns: the name server descriptor to fill, or %NULL
+ * @error: the error to set if the string cannot be parsed
  *
  * Parses the given name server URI string. Each name server is represented
  * by the following grammar:
@@ -731,7 +732,7 @@ nm_mptcp_flags_normalize(NMMptcpFlags flags)
  * Returns: %TRUE on success, %FALSE on failure
  */
 gboolean
-nm_dns_uri_parse(int addr_family, const char *str, NMDnsServer *dns)
+nm_dns_uri_parse(int addr_family, const char *str, NMDnsServer *dns, GError **error)
 {
     NMDnsServer   dns_stack;
     gs_free char *addr_port_heap = NULL;
@@ -746,8 +747,13 @@ nm_dns_uri_parse(int addr_family, const char *str, NMDnsServer *dns)
     if (!dns)
         dns = &dns_stack;
 
-    if (!str)
+    if (!str) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("the string is empty"));
         return FALSE;
+    }
 
     *dns = (NMDnsServer) {0};
 
@@ -765,12 +771,21 @@ nm_dns_uri_parse(int addr_family, const char *str, NMDnsServer *dns)
         }
 
         if (name && name[0] == '\0') {
-            /* empty DoT server name is not allowed */
+            g_set_error_literal(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                _("the DNS-over-TLS server name is empty"));
             return FALSE;
         }
 
-        if (!nm_inet_parse_bin(addr_family, str, &dns->addr_family, &dns->addr))
+        if (!nm_inet_parse_bin(addr_family, str, &dns->addr_family, &dns->addr)) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("\"%s\" is not a valid IP address or a supported URI"),
+                        str);
             return FALSE;
+        }
 
         dns->servername = name;
         dns->scheme     = NM_DNS_URI_SCHEME_NONE;
@@ -784,7 +799,10 @@ nm_dns_uri_parse(int addr_family, const char *str, NMDnsServer *dns)
         addr_port = nm_strndup_a(100, addr_port, name - addr_port, &addr_port_heap);
         name++;
         if (*name == '\0') {
-            /* empty DoT server name not allowed */
+            g_set_error_literal(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                _("the DNS-over-TLS server name is empty"));
             return FALSE;
         }
         dns->servername = name;
@@ -797,8 +815,13 @@ nm_dns_uri_parse(int addr_family, const char *str, NMDnsServer *dns)
         addr_family = AF_INET6;
         addr_port++;
         end = strchr(addr_port, ']');
-        if (!end)
+        if (!end) {
+            g_set_error_literal(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                _("unterminated square bracket"));
             return FALSE;
+        }
         addr = nm_strndup_a(100, addr_port, end - addr_port, &addr_heap);
 
         /* IPv6 link-local scope-id */
@@ -806,8 +829,13 @@ nm_dns_uri_parse(int addr_family, const char *str, NMDnsServer *dns)
         if (perc) {
             *perc = '\0';
             if (g_strlcpy(dns->interface, perc + 1, sizeof(dns->interface))
-                >= sizeof(dns->interface))
+                >= sizeof(dns->interface)) {
+                g_set_error_literal(error,
+                                    NM_CONNECTION_ERROR,
+                                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                    _("the interface name is too long"));
                 return FALSE;
+            }
         }
 
         /* port */
@@ -815,8 +843,14 @@ nm_dns_uri_parse(int addr_family, const char *str, NMDnsServer *dns)
         if (*end == ':') {
             end++;
             dns->port = _nm_utils_ascii_str_to_int64(end, 10, 1, 65535, 0);
-            if (dns->port == 0)
+            if (dns->port == 0) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("\"%s\" is not a valid port number"),
+                            end);
                 return FALSE;
+            }
         }
     } else if (addr_family != AF_INET6) {
         /* square brackets are mandatory for IPv6, so it must be IPv4 */
@@ -830,23 +864,49 @@ nm_dns_uri_parse(int addr_family, const char *str, NMDnsServer *dns)
             addr = nm_strndup_a(100, addr_port, port - addr_port, &addr_heap);
             port++;
             dns->port = _nm_utils_ascii_str_to_int64(port, 10, 1, 65535, 0);
-            if (dns->port == 0)
+            if (dns->port == 0) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("\"%s\" is not a valid port number"),
+                            port);
                 return FALSE;
+            }
         }
     } else {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("IPv6 addresses must be enclosed in square brackets"));
         return FALSE;
     }
 
-    if (!nm_inet_parse_bin(addr_family, addr, &dns->addr_family, &dns->addr))
+    if (!nm_inet_parse_bin(addr_family, addr, &dns->addr_family, &dns->addr)) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("\"%s\" is not a valid IP address"),
+                    addr);
         return FALSE;
+    }
 
-    if (dns->scheme != NM_DNS_URI_SCHEME_TLS && dns->servername)
+    if (dns->scheme != NM_DNS_URI_SCHEME_TLS && dns->servername) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("the server name is only supported for DNS-over-TLS"));
         return FALSE;
+    }
 
     /* For now, allow the interface only for IPv6 link-local addresses */
     if (dns->interface[0]
-        && (dns->addr_family != AF_INET6 || !IN6_IS_ADDR_LINKLOCAL(&dns->addr.addr6)))
+        && (dns->addr_family != AF_INET6 || !IN6_IS_ADDR_LINKLOCAL(&dns->addr.addr6))) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("the scope-id is only supported for IPv6 link-local addresses"));
         return FALSE;
+    }
 
     return TRUE;
 }
@@ -870,7 +930,7 @@ nm_dns_uri_parse_plain(int addr_family, const char *str, char *out_addrstr, NMIP
 {
     NMDnsServer dns;
 
-    if (!nm_dns_uri_parse(addr_family, str, &dns))
+    if (!nm_dns_uri_parse(addr_family, str, &dns, NULL))
         return FALSE;
 
     switch (dns.scheme) {
@@ -922,7 +982,7 @@ nm_dns_uri_normalize(int addr_family, const char *str, char **out_free)
     nm_assert(str);
     nm_assert(out_free && !*out_free);
 
-    if (!nm_dns_uri_parse(addr_family, str, &dns))
+    if (!nm_dns_uri_parse(addr_family, str, &dns, NULL))
         return NULL;
 
     nm_inet_ntop(dns.addr_family, &dns.addr, addrstr);

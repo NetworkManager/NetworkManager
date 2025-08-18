@@ -11400,12 +11400,16 @@ test_connection_path(void)
 static void
 t_dns_0(const char *str)
 {
-    NMDnsServer server = {};
-    gboolean    ret;
+    gs_free_error GError *error  = NULL;
+    NMDnsServer           server = {};
+    gboolean              ret;
 
-    ret = nm_dns_uri_parse(AF_UNSPEC, str, &server);
+    ret = nm_dns_uri_parse(AF_UNSPEC, str, &server, &error);
 
     g_assert(!ret);
+    g_assert(error);
+    g_assert(error->message);
+    g_assert(error->message[0] != '\0');
 }
 
 static void
@@ -11422,10 +11426,12 @@ dns_uri_parse_ok(const char    *str,
     gboolean    ret;
 
     for (int i = 0; i < 2; i++) {
-        gboolean af_unspec = i;
+        gs_free_error GError *error     = NULL;
+        gboolean              af_unspec = i;
 
-        ret = nm_dns_uri_parse(af_unspec ? AF_UNSPEC : addr_family, str, &dns);
+        ret = nm_dns_uri_parse(af_unspec ? AF_UNSPEC : addr_family, str, &dns, &error);
         g_assert(ret);
+        g_assert_no_error(error);
 
         g_assert_cmpint(addr_family, ==, dns.addr_family);
         g_assert_cmpint(port, ==, dns.port);
@@ -11436,8 +11442,9 @@ dns_uri_parse_ok(const char    *str,
         g_assert_cmpstr(addrstr, ==, addr);
 
         /* Parse with the wrong address family must fail */
-        ret = nm_dns_uri_parse(addr_family == AF_INET ? AF_INET6 : AF_INET, str, &dns);
+        ret = nm_dns_uri_parse(addr_family == AF_INET ? AF_INET6 : AF_INET, str, &dns, &error);
         g_assert(!ret);
+        g_assert(error);
     }
 }
 

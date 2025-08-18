@@ -567,6 +567,9 @@ int nm_setting_ip_config_get_shared_dhcp_lease_time(NMSettingIPConfig *setting);
 NM_AVAILABLE_IN_1_54
 NMSettingIPConfigForwarding nm_setting_ip_config_get_forwarding(NMSettingIPConfig *setting);
 
+NM_AVAILABLE_IN_1_56
+gboolean nm_dns_server_validate(const char *str, int family, GError **error);
+
 G_END_DECLS
 
 #endif /* NM_SETTING_IP_CONFIG_H */

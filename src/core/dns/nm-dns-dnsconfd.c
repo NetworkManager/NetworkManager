@@ -374,7 +374,7 @@ server_builder_append_base(GVariantBuilder   *argument_builder,
     NMDnsServer dns_server;
     gsize       addr_size;
 
-    if (!nm_dns_uri_parse(address_family, address_string, &dns_server))
+    if (!nm_dns_uri_parse(address_family, address_string, &dns_server, NULL))
         return FALSE;
     addr_size = nm_utils_addr_family_to_size(dns_server.addr_family);
 

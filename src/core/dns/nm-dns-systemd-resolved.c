@@ -398,7 +398,7 @@ update_add_ip_config(NMDnsSystemdResolved    *self,
     for (i = 0; i < n; i++) {
         NMDnsServer dns_server;
 
-        if (!nm_dns_uri_parse(ip_data->addr_family, strarr[i], &dns_server))
+        if (!nm_dns_uri_parse(ip_data->addr_family, strarr[i], &dns_server, NULL))
             continue;
 
         if (!NM_IN_SET(dns_server.scheme,

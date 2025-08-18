@@ -2056,8 +2056,9 @@ make_ip4_setting(shvarFile *ifcfg,
          * Pick up just IPv4 addresses (IPv6 addresses are taken by make_ip6_setting())
          */
         for (i = 1; i < 10000; i++) {
-            NMDnsServer dns;
-            char        tag[256];
+            NMDnsServer           dns;
+            char                  tag[256];
+            gs_free_error GError *local = NULL;
 
             numbered_tag(tag, "DNS", i);
             nm_clear_g_free(&value);
@@ -2065,12 +2066,13 @@ make_ip4_setting(shvarFile *ifcfg,
             if (!v)
                 break;
 
-            if (!nm_dns_uri_parse(AF_UNSPEC, v, &dns)) {
+            if (!nm_dns_uri_parse(AF_UNSPEC, v, &dns, &local)) {
                 g_set_error(error,
                             NM_SETTINGS_ERROR,
                             NM_SETTINGS_ERROR_INVALID_CONNECTION,
-                            "Invalid DNS server address '%s'",
-                            v);
+                            "Invalid DNS server address '%s': %s",
+                            v,
+                            local->message);
                 return NULL;
             }
 
@@ -2607,8 +2609,9 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
      * Pick up just IPv6 addresses (IPv4 addresses are taken by make_ip4_setting())
      */
     for (i = 1; i < 10000; i++) {
-        NMDnsServer dns;
-        char        tag[256];
+        gs_free_error GError *err = NULL;
+        NMDnsServer           dns;
+        char                  tag[256];
 
         numbered_tag(tag, "DNS", i);
         nm_clear_g_free(&value);
@@ -2616,14 +2619,15 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
         if (!v)
             break;
 
-        if (!nm_dns_uri_parse(AF_UNSPEC, v, &dns)) {
+        if (!nm_dns_uri_parse(AF_UNSPEC, v, &dns, &err)) {
             if (is_disabled)
                 continue;
             g_set_error(error,
                         NM_SETTINGS_ERROR,
                         NM_SETTINGS_ERROR_INVALID_CONNECTION,
-                        "Invalid DNS server address '%s'",
-                        v);
+                        "Invalid DNS server address '%s': %s",
+                        v,
+                        err->message);
             return NULL;
         }
         if (dns.addr_family == AF_INET6) {

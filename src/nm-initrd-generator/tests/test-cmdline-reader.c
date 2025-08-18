@@ -2664,7 +2664,7 @@ test_global_dns(void)
     gs_free char                  *dns_resolve_mode   = NULL;
     gint64                         carrier_timeout_sec = 0;
 
-    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.net.dns: invalid server 'foobar'");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.net.dns: invalid server 'foobar':*");
     connections = _parse(ARGV,
                          &hostname,
                          &carrier_timeout_sec,

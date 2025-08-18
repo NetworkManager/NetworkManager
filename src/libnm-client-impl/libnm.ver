@@ -2076,3 +2076,8 @@ global:
 	nm_setting_sriov_get_preserve_on_down;
 	nm_sriov_preserve_on_down_get_type;
 } libnm_1_52_0;
+
+libnm_1_56_0 {
+global:
+	nm_dns_server_validate;
+} libnm_1_54_0;

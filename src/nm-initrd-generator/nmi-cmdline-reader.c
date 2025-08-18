@@ -1273,8 +1273,10 @@ reader_parse_rd_znet(Reader *reader, char *argument, gboolean net_ifnames)
 static void
 reader_parse_global_dns(Reader *reader, char *argument)
 {
-    if (!nm_dns_uri_parse(AF_UNSPEC, argument, NULL)) {
-        _LOGW(LOGD_CORE, "rd.net.dns: invalid server '%s'", argument);
+    gs_free_error GError *error = NULL;
+
+    if (!nm_dns_uri_parse(AF_UNSPEC, argument, NULL, &error)) {
+        _LOGW(LOGD_CORE, "rd.net.dns: invalid server '%s': %s", argument, error->message);
         return;
     }
 

@@ -330,7 +330,7 @@ typedef struct {
     guint16        port;
 } NMDnsServer;
 
-gboolean nm_dns_uri_parse(int addr_family, const char *str, NMDnsServer *out_dns);
+gboolean nm_dns_uri_parse(int addr_family, const char *str, NMDnsServer *out_dns, GError **error);
 gboolean
 nm_dns_uri_parse_plain(int addr_family, const char *str, char *out_addrstr, NMIPAddr *out_addr);
 const char *nm_dns_uri_normalize(int addr_family, const char *str, char **out_free);

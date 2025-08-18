@@ -3987,7 +3987,7 @@ _l3cfg_routed_dns_apply(NML3Cfg *self, const NML3ConfigData *l3cd)
             NMDnsServer               dns;
             int                       r;
 
-            if (!nm_dns_uri_parse(addr_family, nameservers[i], &dns))
+            if (!nm_dns_uri_parse(addr_family, nameservers[i], &dns, NULL))
                 continue;
 
             /* Find the gateway to the DNS over the current interface. When
