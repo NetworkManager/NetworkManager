@@ -9164,6 +9164,10 @@ is_available(NMDevice *self, NMDeviceCheckDevAvailableFlags flags)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
+    /* unrealized software devices are always available, hardware devices never */
+    if (!nm_device_is_real(self))
+        return nm_device_is_software(self);
+
     if (priv->carrier || priv->ignore_carrier)
         return TRUE;
 
