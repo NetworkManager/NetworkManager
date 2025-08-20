@@ -1606,17 +1606,6 @@ nm_global_dns_config_from_dbus(const GValue *value, GError **error)
         g_variant_unref(val);
     }
 
-    /* An empty value is valid and clears the internal configuration */
-    if (!nm_global_dns_config_is_empty(dns_config)
-        && !nm_global_dns_config_lookup_domain(dns_config, "*")) {
-        g_set_error_literal(error,
-                            NM_MANAGER_ERROR,
-                            NM_MANAGER_ERROR_FAILED,
-                            "Global DNS configuration is missing the default domain");
-        nm_global_dns_config_free(dns_config);
-        return NULL;
-    }
-
     global_dns_config_seal_domains(dns_config);
     return dns_config;
 }
