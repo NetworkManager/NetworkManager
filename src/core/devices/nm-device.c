@@ -14696,13 +14696,15 @@ impl_device_delete(NMDBusObject                      *obj,
                            NULL);
 }
 
-static void
+static gboolean
 _device_activate(NMDevice *self, NMActRequest *req)
 {
     NMConnection *connection;
 
-    g_return_if_fail(NM_IS_DEVICE(self));
-    g_return_if_fail(NM_IS_ACT_REQUEST(req));
+    /* Returns TRUE on success, FALSE if the activation request could not be started */
+
+    g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
+    g_return_val_if_fail(NM_IS_ACT_REQUEST(req), FALSE);
     nm_assert(nm_device_is_real(self));
 
     /* Ensure the activation request is still valid; the controller may have
@@ -14710,7 +14712,7 @@ _device_activate(NMDevice *self, NMActRequest *req)
      */
     if (nm_active_connection_get_state(NM_ACTIVE_CONNECTION(req))
         >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING)
-        return;
+        return FALSE;
 
     if (!nm_device_get_managed(self, FALSE)) {
         /* It's unclear why the device would be unmanaged at this point.
@@ -14721,7 +14723,7 @@ _device_activate(NMDevice *self, NMActRequest *req)
         nm_active_connection_set_state_fail((NMActiveConnection *) req,
                                             NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN,
                                             NULL);
-        return;
+        return FALSE;
     }
 
     connection = nm_act_request_get_applied_connection(req);
@@ -14737,6 +14739,8 @@ _device_activate(NMDevice *self, NMActRequest *req)
     act_request_set(self, req);
 
     nm_device_activate_schedule_stage1_device_prepare(self, FALSE);
+
+    return TRUE;
 }
 
 static void
@@ -14756,7 +14760,9 @@ _carrier_wait_check_queued_act_request(NMDevice *self)
 
         _LOGD(LOGD_DEVICE, "Activate queued activation request as we now have carrier");
         queued_req = g_steal_pointer(&priv->queued_act_request);
-        _device_activate(self, queued_req);
+        if (!_device_activate(self, queued_req)) {
+            delete_on_deactivate_check_and_schedule(self);
+        }
     }
 }
 
@@ -17534,7 +17540,8 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
             gs_unref_object NMActRequest *queued_req = NULL;
 
             queued_req = g_steal_pointer(&priv->queued_act_request);
-            _device_activate(self, queued_req);
+            if (!_device_activate(self, queued_req))
+                delete_on_deactivate_check_and_schedule(self);
         }
         break;
     case NM_DEVICE_STATE_ACTIVATED:
