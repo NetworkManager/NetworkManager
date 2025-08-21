@@ -10390,6 +10390,43 @@ sriov_params_cb(GError *error, gpointer user_data)
     nm_device_activate_schedule_stage1_device_prepare(self, FALSE);
 }
 
+static gboolean
+sriov_gen_platform_vfs(NMDevice       *self,
+                       NMSettingSriov *s_sriov,
+                       NMPlatformVF ***plat_vfs_out,
+                       GError        **error)
+{
+    nm_auto_freev NMPlatformVF **plat_vfs = NULL;
+    guint                        num;
+
+    nm_assert(s_sriov);
+    nm_assert(plat_vfs_out && !*plat_vfs_out);
+
+    num      = nm_setting_sriov_get_num_vfs(s_sriov);
+    plat_vfs = g_new0(NMPlatformVF *, num + 1);
+
+    for (int i = 0; i < num; i++) {
+        NMSriovVF            *vf    = nm_setting_sriov_get_vf(s_sriov, i);
+        gs_free_error GError *local = NULL;
+
+        plat_vfs[i] = sriov_vf_config_to_platform(self, vf, &local);
+
+        if (!plat_vfs[i]) {
+            g_set_error(error,
+                        local->domain,
+                        local->code,
+                        "VF '%s' is invalid: %s",
+                        nm_utils_sriov_vf_to_str(vf, FALSE, NULL),
+                        local->message);
+            return FALSE;
+        }
+    }
+
+    *plat_vfs_out = g_steal_pointer(&plat_vfs);
+
+    return TRUE;
+}
+
 /*
  * activate_stage1_device_prepare
  *
@@ -10436,10 +10473,7 @@ activate_stage1_device_prepare(NMDevice *self)
         if (s_sriov && nm_device_has_capability(self, NM_DEVICE_CAP_SRIOV)) {
             nm_auto_freev NMPlatformVF **plat_vfs = NULL;
             gs_free_error GError        *error    = NULL;
-            NMSriovVF                   *vf;
             NMTernary                    autoprobe;
-            guint                        num;
-            guint                        i;
 
             autoprobe = nm_setting_sriov_get_autoprobe_drivers(s_sriov);
             if (autoprobe == NM_TERNARY_DEFAULT) {
@@ -10452,21 +10486,12 @@ activate_stage1_device_prepare(NMDevice *self)
                     NM_OPTION_BOOL_TRUE);
             }
 
-            num      = nm_setting_sriov_get_num_vfs(s_sriov);
-            plat_vfs = g_new0(NMPlatformVF *, num + 1);
-            for (i = 0; i < num; i++) {
-                vf          = nm_setting_sriov_get_vf(s_sriov, i);
-                plat_vfs[i] = sriov_vf_config_to_platform(self, vf, &error);
-                if (!plat_vfs[i]) {
-                    _LOGE(LOGD_DEVICE,
-                          "failed to apply SR-IOV VF '%s': %s",
-                          nm_utils_sriov_vf_to_str(vf, FALSE, NULL),
-                          error->message);
-                    nm_device_state_changed(self,
-                                            NM_DEVICE_STATE_FAILED,
-                                            NM_DEVICE_STATE_REASON_SRIOV_CONFIGURATION_FAILED);
-                    return;
-                }
+            if (!sriov_gen_platform_vfs(self, s_sriov, &plat_vfs, &error)) {
+                _LOGE(LOGD_DEVICE, "cannot parse the VF list: %s", error->message);
+                nm_device_state_changed(self,
+                                        NM_DEVICE_STATE_FAILED,
+                                        NM_DEVICE_STATE_REASON_SRIOV_CONFIGURATION_FAILED);
+                return;
             }
 
             /* When changing the number of VFs the kernel can block
@@ -14061,7 +14086,8 @@ can_reapply_change(NMDevice   *self,
         return nm_device_hash_check_invalid_keys(diffs,
                                                  NM_SETTING_SRIOV_SETTING_NAME,
                                                  error,
-                                                 NM_SETTING_SRIOV_PRESERVE_ON_DOWN);
+                                                 NM_SETTING_SRIOV_PRESERVE_ON_DOWN,
+                                                 NM_SETTING_SRIOV_VFS);
     }
 
 out_fail:
@@ -14239,8 +14265,34 @@ check_and_reapply_connection(NMDevice            *self,
 
     nm_device_link_properties_set(self, TRUE);
 
-    if (priv->state >= NM_DEVICE_STATE_CONFIG)
+    if (priv->state >= NM_DEVICE_STATE_CONFIG) {
+        GHashTable *sriov_diff;
+
         lldp_setup(self, NM_TERNARY_DEFAULT);
+
+        sriov_diff = nm_g_hash_table_lookup(diffs, NM_SETTING_SRIOV_SETTING_NAME);
+
+        if (sriov_diff && nm_g_hash_table_lookup(sriov_diff, NM_SETTING_SRIOV_VFS)) {
+            nm_auto_freev NMPlatformVF **plat_vfs = NULL;
+            NMSettingSriov              *s_sriov;
+
+            s_sriov = (NMSettingSriov *) nm_connection_get_setting(applied, NM_TYPE_SETTING_SRIOV);
+
+            if (s_sriov) {
+                gs_free_error GError *local = NULL;
+
+                if (!sriov_gen_platform_vfs(self, s_sriov, &plat_vfs, &local)
+                    || !nm_platform_link_set_sriov_vfs(nm_device_get_platform(self),
+                                                       priv->ifindex,
+                                                       (const NMPlatformVF *const *) plat_vfs)) {
+                    _LOGE(LOGD_DEVICE,
+                          "failed to reapply SRIOV VFs%s%s",
+                          local ? ": " : "",
+                          local ? local->message : "");
+                }
+            }
+        }
+    }
 
     if (priv->state >= NM_DEVICE_STATE_IP_CONFIG) {
         /* Allow reapply of MTU */
