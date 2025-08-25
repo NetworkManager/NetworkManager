@@ -3139,7 +3139,8 @@ void
 nm_l3_config_data_hash_dns(const NML3ConfigData *l3cd,
                            GChecksum            *sum,
                            int                   addr_family,
-                           NMDnsIPConfigType     dns_ip_config_type)
+                           NMDnsIPConfigType     dns_ip_config_type,
+                           gboolean              ignore_searches_and_options)
 {
     guint              i;
     int                val;
@@ -3178,16 +3179,18 @@ nm_l3_config_data_hash_dns(const NML3ConfigData *l3cd,
         empty = FALSE;
     }
 
-    searches = nm_l3_config_data_get_searches(l3cd, addr_family, &num_searches);
-    for (i = 0; i < num_searches; i++) {
-        g_checksum_update(sum, (const guint8 *) searches[i], strlen(searches[i]));
-        empty = FALSE;
-    }
+    if (!ignore_searches_and_options) {
+        searches = nm_l3_config_data_get_searches(l3cd, addr_family, &num_searches);
+        for (i = 0; i < num_searches; i++) {
+            g_checksum_update(sum, (const guint8 *) searches[i], strlen(searches[i]));
+            empty = FALSE;
+        }
 
-    options = nm_l3_config_data_get_dns_options(l3cd, addr_family, &num_options);
-    for (i = 0; i < num_options; i++) {
-        g_checksum_update(sum, (const guint8 *) options[i], strlen(options[i]));
-        empty = FALSE;
+        options = nm_l3_config_data_get_dns_options(l3cd, addr_family, &num_options);
+        for (i = 0; i < num_options; i++) {
+            g_checksum_update(sum, (const guint8 *) options[i], strlen(options[i]));
+            empty = FALSE;
+        }
     }
 
     val = nm_l3_config_data_get_mdns(l3cd);

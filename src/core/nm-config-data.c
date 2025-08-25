@@ -50,9 +50,10 @@ struct _NMGlobalDnsConfig {
     char           **options;
     GHashTable      *domains;
     const char     **domain_list;
-    gboolean         internal;
     char            *cert_authority;
     NMDnsResolveMode resolve_mode;
+    gboolean         internal;
+    gboolean         has_global_dns;
 };
 
 /*****************************************************************************/
@@ -941,6 +942,14 @@ next:
 
 /*****************************************************************************/
 
+gboolean
+nm_global_dns_has_global_dns_section(const NMGlobalDnsConfig *dns_config)
+{
+    g_return_val_if_fail(dns_config, FALSE);
+
+    return dns_config->has_global_dns;
+}
+
 const char *const *
 nm_global_dns_config_get_searches(const NMGlobalDnsConfig *dns_config)
 {
@@ -1385,6 +1394,12 @@ load_global_dns(GKeyFile *keyfile, gboolean internal)
         nm_global_dns_config_free(dns_config);
         return NULL;
     }
+
+    /* Defining [global-dns-domain-*] implies defining [global-dns] too (maybe empty) */
+    if (default_found)
+        dns_config->has_global_dns = TRUE;
+    else
+        dns_config->has_global_dns = g_key_file_has_group(keyfile, group);
 
     dns_config->internal = internal;
     global_dns_config_seal_domains(dns_config);
