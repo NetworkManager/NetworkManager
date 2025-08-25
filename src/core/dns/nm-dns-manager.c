@@ -586,7 +586,11 @@ add_dns_domains(GPtrArray            *array,
 }
 
 static void
-merge_one_l3cd(NMResolvConfData *rc, int addr_family, int ifindex, const NML3ConfigData *l3cd)
+merge_one_l3cd(NMResolvConfData     *rc,
+               int                   addr_family,
+               int                   ifindex,
+               const NML3ConfigData *l3cd,
+               gboolean              nameservers_only)
 {
     char               buf[NM_INET_ADDRSTRLEN + 50];
     gboolean           has_trust_ad;
@@ -624,30 +628,32 @@ merge_one_l3cd(NMResolvConfData *rc, int addr_family, int ifindex, const NML3Con
         add_string_item(rc->nameservers, buf, TRUE);
     }
 
-    add_dns_domains(rc->searches, addr_family, l3cd, FALSE, TRUE);
+    if (!nameservers_only) {
+        add_dns_domains(rc->searches, addr_family, l3cd, FALSE, TRUE);
 
-    has_trust_ad = FALSE;
-    strarr       = nm_l3_config_data_get_dns_options(l3cd, addr_family, &num);
-    for (i = 0; i < num; i++) {
-        const char *option = strarr[i];
+        has_trust_ad = FALSE;
+        strarr       = nm_l3_config_data_get_dns_options(l3cd, addr_family, &num);
+        for (i = 0; i < num; i++) {
+            const char *option = strarr[i];
 
-        if (nm_streq(option, NM_SETTING_DNS_OPTION_TRUST_AD)) {
-            has_trust_ad = TRUE;
-            continue;
+            if (nm_streq(option, NM_SETTING_DNS_OPTION_TRUST_AD)) {
+                has_trust_ad = TRUE;
+                continue;
+            }
+            add_dns_option_item(rc->options, option);
         }
-        add_dns_option_item(rc->options, option);
-    }
 
-    if (num_nameservers == 0) {
-        /* If the @l3cd contributes no DNS servers, ignore whether trust-ad is set or unset
-         * for this @l3cd. */
-    } else if (has_trust_ad) {
-        /* We only set has_trust_ad to TRUE, if all IP configs agree (or don't contribute).
-         * Once set to FALSE, it doesn't get reset. */
-        if (rc->has_trust_ad == NM_TERNARY_DEFAULT)
-            rc->has_trust_ad = NM_TERNARY_TRUE;
-    } else
-        rc->has_trust_ad = NM_TERNARY_FALSE;
+        if (num_nameservers == 0) {
+            /* If the @l3cd contributes no DNS servers, ignore whether trust-ad is set or unset
+             * for this @l3cd. */
+        } else if (has_trust_ad) {
+            /* We only set has_trust_ad to TRUE, if all IP configs agree (or don't contribute).
+             * Once set to FALSE, it doesn't get reset. */
+            if (rc->has_trust_ad == NM_TERNARY_DEFAULT)
+                rc->has_trust_ad = NM_TERNARY_TRUE;
+        } else
+            rc->has_trust_ad = NM_TERNARY_FALSE;
+    }
 
     if (addr_family == AF_INET) {
         const in_addr_t *nis_servers;
@@ -1248,7 +1254,8 @@ compute_hash(NMDnsManager *self, const NMGlobalDnsConfig *global, guint8 buffer[
             nm_l3_config_data_hash_dns(ip_data->l3cd,
                                        sum,
                                        ip_data->addr_family,
-                                       ip_data->ip_config_type);
+                                       ip_data->ip_config_type,
+                                       nm_global_dns_has_global_dns_section(global));
         }
     }
 
@@ -1263,6 +1270,9 @@ merge_global_dns_config(NMResolvConfData *rc, NMGlobalDnsConfig *global_conf)
     const char *const *options;
     const char *const *servers;
     guint              i;
+
+    /* Global config must be processed before connections' config */
+    nm_assert(rc->nameservers->len == 0);
 
     if (!global_conf)
         return FALSE;
@@ -1357,6 +1367,8 @@ _collect_resolv_conf_data(NMDnsManager      *self,
     if (global_config)
         merge_global_dns_config(&rc, global_config);
 
+    /* If global nameservers are defined, no DNS configs are used from connections at all,
+     * including searches and options. */
     if (!global_config || !nm_global_dns_config_lookup_domain(global_config, "*")) {
         nm_auto_str_buf NMStrBuf tmp_strbuf = NM_STR_BUF_INIT(0, FALSE);
         int                      first_prio = 0;
@@ -1390,8 +1402,16 @@ _collect_resolv_conf_data(NMDnsManager      *self,
                   skip ? "<SKIP>" : "",
                   get_nameserver_list(ip_data->addr_family, ip_data->l3cd, &tmp_strbuf));
 
-            if (!skip)
-                merge_one_l3cd(&rc, ip_data->addr_family, ip_data->data->ifindex, ip_data->l3cd);
+            if (!skip) {
+                /* Merge the configs from connections. However, if there was a [global-dns]
+                 * it overwrites searches and options from the connections, thus we only
+                 * merge the nameservers. */
+                merge_one_l3cd(&rc,
+                               ip_data->addr_family,
+                               ip_data->data->ifindex,
+                               ip_data->l3cd,
+                               nm_global_dns_has_global_dns_section(global_config));
+            }
         }
     }
 

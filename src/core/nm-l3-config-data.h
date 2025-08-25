@@ -615,6 +615,7 @@ nmtst_l3_config_data_get_best_gateway(const NML3ConfigData *self, int addr_famil
 void nm_l3_config_data_hash_dns(const NML3ConfigData *l3cd,
                                 GChecksum            *sum,
                                 int                   addr_family,
-                                NMDnsIPConfigType     dns_ip_config_type);
+                                NMDnsIPConfigType     dns_ip_config_type,
+                                gboolean              nameservers_only);
 
 #endif /* __NM_L3_CONFIG_DATA_H__ */
