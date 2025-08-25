@@ -1540,8 +1540,12 @@ managed=1
 
   <refsect1>
     <title><literal>global-dns</literal> section</title>
-    <para>This section specifies DNS settings that are applied
-    globally, in addition to connection-specific ones.</para>
+    <para>This section specifies DNS settings that are applied globally. They
+    override the equivalent options defined in individual connections, making
+    them to be ignored. If a [global-dns-domain-*] section is defined, but this
+    section isn't, an empty [global-dns] section is assumed, thus overwriting
+    connection specific configurations too.
+    </para>
     <para>
       <variablelist>
         <varlistentry>
@@ -1601,6 +1605,10 @@ managed=1
     default domain "*". When the global DNS domains are valid, the
     name servers and domains defined globally override the ones from
     active connections.
+
+    If any global DNS domain is defined but a [global-dns] section isn't,
+    an empty [global-dns] section is assumed, thus overwriting its
+    connection specific configurations too.
     </para>
     <para>
       <variablelist>
