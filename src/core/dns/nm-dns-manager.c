@@ -542,10 +542,41 @@ add_string_item(GPtrArray *array, const char *str, gboolean dup)
 }
 
 static void
-add_dns_option_item(GPtrArray *array, const char *str)
+add_dns_nameservers(NMResolvConfData *rc, int addr_family, int ifindex, const NML3ConfigData *l3cd)
 {
-    if (_nm_utils_dns_option_find_idx((const char *const *) array->pdata, array->len, str) < 0)
-        g_ptr_array_add(array, g_strdup(str));
+    char               buf[NM_INET_ADDRSTRLEN + 50];
+    guint              num_nameservers;
+    guint              i;
+    const char *const *strarr;
+
+    nm_assert(ifindex == nm_l3_config_data_get_ifindex(l3cd));
+
+    strarr = nm_l3_config_data_get_nameservers(l3cd, addr_family, &num_nameservers);
+    for (i = 0; i < num_nameservers; i++) {
+        NMIPAddr a;
+
+        if (!nm_dns_uri_parse_plain(addr_family, strarr[i], NULL, &a))
+            continue;
+
+        if (addr_family == AF_INET)
+            nm_inet_ntop(addr_family, &a, buf);
+        else if (IN6_IS_ADDR_V4MAPPED(&a))
+            nm_inet4_ntop(a.addr6.s6_addr32[3], buf);
+        else {
+            nm_inet6_ntop(&a.addr6, buf);
+            if (IN6_IS_ADDR_LINKLOCAL(&a)) {
+                const char *ifname;
+
+                ifname = nm_platform_link_get_name(NM_PLATFORM_GET, ifindex);
+                if (ifname) {
+                    g_strlcat(buf, "%", sizeof(buf));
+                    g_strlcat(buf, ifname, sizeof(buf));
+                }
+            }
+        }
+
+        add_string_item(rc->nameservers, buf, TRUE);
+    }
 }
 
 static void
@@ -586,45 +617,23 @@ add_dns_domains(GPtrArray            *array,
 }
 
 static void
-merge_one_l3cd(NMResolvConfData *rc, int addr_family, int ifindex, const NML3ConfigData *l3cd)
+add_dns_option_item(GPtrArray *array, const char *str)
 {
-    char               buf[NM_INET_ADDRSTRLEN + 50];
-    gboolean           has_trust_ad;
+    if (_nm_utils_dns_option_find_idx((const char *const *) array->pdata, array->len, str) < 0)
+        g_ptr_array_add(array, g_strdup(str));
+}
+
+static void
+add_dns_options(NMResolvConfData     *rc,
+                int                   addr_family,
+                const NML3ConfigData *l3cd,
+                gboolean              has_global_nameservers)
+{
     guint              num_nameservers;
+    gboolean           has_trust_ad;
     guint              num;
     guint              i;
     const char *const *strarr;
-
-    nm_assert(ifindex == nm_l3_config_data_get_ifindex(l3cd));
-
-    strarr = nm_l3_config_data_get_nameservers(l3cd, addr_family, &num_nameservers);
-    for (i = 0; i < num_nameservers; i++) {
-        NMIPAddr a;
-
-        if (!nm_dns_uri_parse_plain(addr_family, strarr[i], NULL, &a))
-            continue;
-
-        if (addr_family == AF_INET)
-            nm_inet_ntop(addr_family, &a, buf);
-        else if (IN6_IS_ADDR_V4MAPPED(&a))
-            nm_inet4_ntop(a.addr6.s6_addr32[3], buf);
-        else {
-            nm_inet6_ntop(&a.addr6, buf);
-            if (IN6_IS_ADDR_LINKLOCAL(&a)) {
-                const char *ifname;
-
-                ifname = nm_platform_link_get_name(NM_PLATFORM_GET, ifindex);
-                if (ifname) {
-                    g_strlcat(buf, "%", sizeof(buf));
-                    g_strlcat(buf, ifname, sizeof(buf));
-                }
-            }
-        }
-
-        add_string_item(rc->nameservers, buf, TRUE);
-    }
-
-    add_dns_domains(rc->searches, addr_family, l3cd, FALSE, TRUE);
 
     has_trust_ad = FALSE;
     strarr       = nm_l3_config_data_get_dns_options(l3cd, addr_family, &num);
@@ -638,16 +647,27 @@ merge_one_l3cd(NMResolvConfData *rc, int addr_family, int ifindex, const NML3Con
         add_dns_option_item(rc->options, option);
     }
 
-    if (num_nameservers == 0) {
+    nm_l3_config_data_get_nameservers(l3cd, addr_family, &num_nameservers);
+    if (num_nameservers == 0 || has_global_nameservers) {
         /* If the @l3cd contributes no DNS servers, ignore whether trust-ad is set or unset
-         * for this @l3cd. */
+         * for this @l3cd. If there are global nameservers, those from this @l3cd has been
+         * ignored, so it count as not contributing. */
     } else if (has_trust_ad) {
         /* We only set has_trust_ad to TRUE, if all IP configs agree (or don't contribute).
          * Once set to FALSE, it doesn't get reset. */
         if (rc->has_trust_ad == NM_TERNARY_DEFAULT)
             rc->has_trust_ad = NM_TERNARY_TRUE;
-    } else
+    } else {
         rc->has_trust_ad = NM_TERNARY_FALSE;
+    }
+}
+
+static void
+add_nis_servers(NMResolvConfData *rc, int addr_family, const NML3ConfigData *l3cd)
+{
+    char  buf[NM_INET_ADDRSTRLEN + 50];
+    guint num;
+    guint i;
 
     if (addr_family == AF_INET) {
         const in_addr_t *nis_servers;
@@ -1264,6 +1284,9 @@ merge_global_dns_config(NMResolvConfData *rc, NMGlobalDnsConfig *global_conf)
     const char *const *servers;
     guint              i;
 
+    /* Global config must be processed before connections' config */
+    nm_assert(rc->nameservers->len == 0);
+
     if (!global_conf)
         return FALSE;
 
@@ -1342,56 +1365,63 @@ _collect_resolv_conf_data(NMDnsManager      *self,
                           char            ***out_nis_servers,
                           const char       **out_nis_domain)
 {
-    NMDnsManagerPrivate *priv;
-    NMResolvConfData     rc = {
-            .nameservers  = g_ptr_array_new(),
-            .searches     = g_ptr_array_new(),
-            .options      = g_ptr_array_new(),
-            .nis_domain   = NULL,
-            .nis_servers  = g_ptr_array_new(),
-            .has_trust_ad = NM_TERNARY_DEFAULT,
+    NMDnsManagerPrivate     *priv;
+    nm_auto_str_buf NMStrBuf tmp_strbuf             = NM_STR_BUF_INIT(0, FALSE);
+    int                      first_prio             = 0;
+    gboolean                 is_first               = TRUE;
+    gboolean                 has_global_nameservers = FALSE;
+    const NMDnsConfigIPData *ip_data;
+    const CList             *head;
+    NMResolvConfData         rc = {
+                .nameservers  = g_ptr_array_new(),
+                .searches     = g_ptr_array_new(),
+                .options      = g_ptr_array_new(),
+                .nis_domain   = NULL,
+                .nis_servers  = g_ptr_array_new(),
+                .has_trust_ad = NM_TERNARY_DEFAULT,
     };
 
     priv = NM_DNS_MANAGER_GET_PRIVATE(self);
 
-    if (global_config)
+    if (global_config) {
         merge_global_dns_config(&rc, global_config);
+        has_global_nameservers = rc.nameservers->len > 0;
+    }
 
-    if (!global_config || !nm_global_dns_config_lookup_domain(global_config, "*")) {
-        nm_auto_str_buf NMStrBuf tmp_strbuf = NM_STR_BUF_INIT(0, FALSE);
-        int                      first_prio = 0;
-        const NMDnsConfigIPData *ip_data;
-        const CList             *head;
-        gboolean                 is_first = TRUE;
+    head = _mgr_get_ip_data_lst_head(self);
+    c_list_for_each_entry (ip_data, head, ip_data_lst) {
+        gboolean skip = FALSE;
+        int      dns_priority;
 
-        head = _mgr_get_ip_data_lst_head(self);
-        c_list_for_each_entry (ip_data, head, ip_data_lst) {
-            gboolean skip = FALSE;
-            int      dns_priority;
+        _ASSERT_dns_config_ip_data(ip_data);
 
-            _ASSERT_dns_config_ip_data(ip_data);
+        if (!nm_l3_config_data_get_dns_priority(ip_data->l3cd, ip_data->addr_family, &dns_priority))
+            nm_assert_not_reached();
 
-            if (!nm_l3_config_data_get_dns_priority(ip_data->l3cd,
-                                                    ip_data->addr_family,
-                                                    &dns_priority))
-                nm_assert_not_reached();
+        if (is_first) {
+            is_first   = FALSE;
+            first_prio = dns_priority;
+        } else if (first_prio < 0 && first_prio != dns_priority)
+            skip = TRUE;
 
-            if (is_first) {
-                is_first   = FALSE;
-                first_prio = dns_priority;
-            } else if (first_prio < 0 && first_prio != dns_priority)
-                skip = TRUE;
+        _LOGT("config: %8d %-7s v%c %-5d %s: %s",
+              dns_priority,
+              _config_type_to_string(ip_data->ip_config_type),
+              nm_utils_addr_family_to_char(ip_data->addr_family),
+              ip_data->data->ifindex,
+              skip ? "<SKIP>" : "",
+              get_nameserver_list(ip_data->addr_family, ip_data->l3cd, &tmp_strbuf));
 
-            _LOGT("config: %8d %-7s v%c %-5d %s: %s",
-                  dns_priority,
-                  _config_type_to_string(ip_data->ip_config_type),
-                  nm_utils_addr_family_to_char(ip_data->addr_family),
-                  ip_data->data->ifindex,
-                  skip ? "<SKIP>" : "",
-                  get_nameserver_list(ip_data->addr_family, ip_data->l3cd, &tmp_strbuf));
-
-            if (!skip)
-                merge_one_l3cd(&rc, ip_data->addr_family, ip_data->data->ifindex, ip_data->l3cd);
+        if (!skip) {
+            if (!has_global_nameservers) {
+                add_dns_nameservers(&rc,
+                                    ip_data->addr_family,
+                                    ip_data->data->ifindex,
+                                    ip_data->l3cd);
+            }
+            add_dns_domains(rc.searches, ip_data->addr_family, ip_data->l3cd, FALSE, TRUE);
+            add_dns_options(&rc, ip_data->addr_family, ip_data->l3cd, has_global_nameservers);
+            add_nis_servers(&rc, ip_data->addr_family, ip_data->l3cd);
         }
     }
 
