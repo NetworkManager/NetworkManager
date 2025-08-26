@@ -19,7 +19,7 @@ _sort() {
 
 call_nm() {
     if [ -n "$from_meson" ]; then
-        "${NM:-nm}" "$1" |
+        "${NM:-nm}" -D "$1" |
             sed -n 's/.* \([^ ]\) \([^ ]*\)$/\1 \2/p'
     else
         libtool=(${LIBTOOL:-libtool})
@@ -105,4 +105,3 @@ case "$1" in
         do_generate
         ;;
 esac
-
