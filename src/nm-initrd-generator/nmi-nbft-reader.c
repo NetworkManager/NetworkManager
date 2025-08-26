@@ -94,6 +94,33 @@ find_conn_for_wired_mac(GPtrArray *a, const char *hwaddr)
     return NULL;
 }
 
+static gboolean
+hfi_is_dhcp(struct nbft_info_hfi *hfi, int family)
+{
+    /* There are several flags that may indicate the HFI is set for DHCP
+     * per NVM Express® Boot Specification, Revision 1.3. As the HFI
+     * Transport Flags (HFITFLAGS) are not publicly exposed by the libnvme
+     * API, only the DHCP Override (DHCPO) flag and the IP Origin (IPORIG)
+     * value is available.
+     *
+     * The bit 03 of the HFI Transport Flags (HFITFLAGS) is about an advanced
+     * stateless mechanism - IPv6-SLAAC and IPv6-ND, stating that "the DHCP
+     * Override bit shall be cleared to 0, and the IP Origin field shall
+     * be cleared to 0". This nm-initrd-generator will ignore this flag,
+     * expecting an IP address to be provided by the usual HFI fields
+     * just like in a static adressing case.
+     *
+     * DHCP Override (DHCPO): "The HFI information was populated by
+     * consuming the DHCP on this interface."
+     *
+     * IP Origin (IPORIG): "If set to 3h (IpPrefixOriginDhcp), then the
+     * IP Address was acquired through DHCP, and the IP Address specified
+     * in this HFI should not be reused by the OS."
+     */
+    return hfi->tcp_info.dhcp_override || hfi->tcp_info.ip_origin == 3 /* IpPrefixOriginDhcp */
+           || is_valid_addr(family, hfi->tcp_info.dhcp_server_ipaddr);
+}
+
 static NMConnection *
 create_wired_conn(struct nbft_info_hfi *hfi,
                   const char           *conn_name,
@@ -183,6 +210,7 @@ parse_hfi(GPtrArray *a, struct nbft_info_hfi *hfi, const char *table_name, char 
                 return;
             }
             g_ptr_array_add(a, parent_connection);
+            nm_clear_g_free(&conn_name);
         }
 
         conn_name  = format_conn_name(table_name, hfi, TRUE);
@@ -208,7 +236,7 @@ parse_hfi(GPtrArray *a, struct nbft_info_hfi *hfi, const char *table_name, char 
                      NM_SETTING_IP_CONFIG_METHOD,
                      NM_SETTING_IP6_CONFIG_METHOD_DISABLED,
                      NULL);
-        if (is_valid_addr(AF_INET, hfi->tcp_info.dhcp_server_ipaddr)) {
+        if (hfi_is_dhcp(hfi, family)) {
             g_object_set(s_ip4,
                          NM_SETTING_IP_CONFIG_METHOD,
                          NM_SETTING_IP4_CONFIG_METHOD_AUTO,
@@ -260,7 +288,7 @@ parse_hfi(GPtrArray *a, struct nbft_info_hfi *hfi, const char *table_name, char 
                      NM_SETTING_IP_CONFIG_METHOD,
                      NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
                      NULL);
-        if (is_valid_addr(AF_INET6, hfi->tcp_info.dhcp_server_ipaddr)) {
+        if (hfi_is_dhcp(hfi, family)) {
             g_object_set(s_ip6,
                          NM_SETTING_IP_CONFIG_METHOD,
                          NM_SETTING_IP6_CONFIG_METHOD_AUTO,
