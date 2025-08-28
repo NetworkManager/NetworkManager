@@ -5718,6 +5718,7 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
     GError                  *local = NULL;
     NMConnectionMultiConnect multi_connect;
     const char              *parent_spec;
+    gboolean                 did_realize = FALSE;
 
     g_return_val_if_fail(NM_IS_MANAGER(self), FALSE);
     g_return_val_if_fail(NM_IS_ACTIVE_CONNECTION(active), FALSE);
@@ -5892,6 +5893,7 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
                                nm_device_get_iface(device));
                 return FALSE;
             }
+            did_realize = TRUE;
         }
     }
 
@@ -5923,7 +5925,7 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
                         "The controller connection '%s' is not compatible with '%s'",
                         nm_settings_connection_get_id(controller_connection),
                         nm_settings_connection_get_id(sett_conn));
-            return FALSE;
+            goto err_unrealize;
         }
 
         if (!controller_ac) {
@@ -5946,7 +5948,7 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
                                    "Controller connection '%s' can't be activated: ",
                                    nm_settings_connection_get_id(controller_connection));
                 }
-                return FALSE;
+                goto err_unrealize;
             }
         }
 
@@ -6040,7 +6042,7 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
                                 NM_MANAGER_ERROR,
                                 NM_MANAGER_ERROR_DEPENDENCY_FAILED,
                                 "Activation failed because the device is unmanaged");
-            return FALSE;
+            goto err_unrealize;
         }
     }
 
@@ -6048,6 +6050,11 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
     active_connection_add(self, active);
     nm_device_queue_activation(device, NM_ACT_REQUEST(active));
     return TRUE;
+
+err_unrealize:
+    if (did_realize)
+        nm_device_unrealize(device, TRUE, NULL);
+    return FALSE;
 }
 
 static gboolean
