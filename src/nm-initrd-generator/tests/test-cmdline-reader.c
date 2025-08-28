@@ -2846,6 +2846,149 @@ test_plain_equal_char(void)
 
 /*****************************************************************************/
 
+#define _dhcp_client_id_check_invalid(arg)                        \
+    G_STMT_START                                                  \
+    {                                                             \
+        gs_unref_hashtable GHashTable *_connections2 = NULL;      \
+                                                                  \
+        _connections2 = _parse_cons(NM_MAKE_STRV(arg));           \
+        g_test_assert_expected_messages();                        \
+        g_assert_cmpint(g_hash_table_size(_connections2), ==, 0); \
+    }                                                             \
+    G_STMT_END
+
+#define _dhcp_client_id_check_v(strv, exp_ifname, exp_client_id)                                 \
+    G_STMT_START                                                                                 \
+    {                                                                                            \
+        gs_unref_object NMConnection *_connection = NULL;                                        \
+        NMSettingIPConfig            *_s_ip4;                                                    \
+                                                                                                 \
+        _connection = _parse_con(strv, exp_ifname);                                              \
+                                                                                                 \
+        g_test_assert_expected_messages();                                                       \
+                                                                                                 \
+        g_assert(nm_connection_get_setting_connection(_connection));                             \
+        g_assert(nm_connection_is_type(_connection, NM_SETTING_WIRED_SETTING_NAME));             \
+        g_assert(nm_connection_get_setting_ip4_config(_connection));                             \
+        g_assert(nm_connection_get_setting_ip6_config(_connection));                             \
+        _s_ip4 = nm_connection_get_setting_ip4_config(_connection);                              \
+        g_assert(NM_IS_SETTING_IP_CONFIG(_s_ip4));                                               \
+                                                                                                 \
+        g_assert_cmpstr(nm_setting_ip4_config_get_dhcp_client_id(NM_SETTING_IP4_CONFIG(_s_ip4)), \
+                        ==,                                                                      \
+                        (exp_client_id));                                                        \
+    }                                                                                            \
+    G_STMT_END
+
+#define _dhcp_client_id_check(arg, exp_ifname, exp_client_id) \
+    _dhcp_client_id_check_v(NM_MAKE_STRV("" arg ""), (exp_ifname), (exp_client_id))
+
+#define DHCP_CLIENT_ID_INVALID_MSG(_id)                                                \
+    "cmdline-reader: "                                                                 \
+    "rd.net.dhcp.client-id: invalid client-id \"" _id "\". Must be hexadecimal bytes " \
+    "separated by dashes (for example \"00-01-02-03-04-05-06\"), or '@' followed by a string"
+
+static void
+test_rd_dhcp_client_id(void)
+{
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.net.dhcp.client-id: missing interface");
+    _dhcp_client_id_check_invalid("rd.net.dhcp.client-id=");
+
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.net.dhcp.client-id: missing interface");
+    _dhcp_client_id_check_invalid("rd.net.dhcp.client-id=:");
+
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.net.dhcp.client-id: missing client-id");
+    _dhcp_client_id_check_invalid("rd.net.dhcp.client-id=eth0:");
+
+    NMTST_EXPECT_NM_WARN(DHCP_CLIENT_ID_INVALID_MSG("invalid"));
+    _dhcp_client_id_check_invalid("rd.net.dhcp.client-id=eth0:invalid");
+
+    NMTST_EXPECT_NM_WARN(DHCP_CLIENT_ID_INVALID_MSG("01:AA:BB:CC:DD:EE:FF"));
+    _dhcp_client_id_check_invalid("rd.net.dhcp.client-id=eth0:01:AA:BB:CC:DD:EE:FF");
+
+    NMTST_EXPECT_NM_WARN(DHCP_CLIENT_ID_INVALID_MSG("@"));
+    _dhcp_client_id_check_invalid("rd.net.dhcp.client-id=eth0:@");
+
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.net.dhcp.client-id: invalid client-id \"01\". Must be "
+                         "at least two bytes");
+    _dhcp_client_id_check_invalid("rd.net.dhcp.client-id=eth0:01");
+
+    /* Client-id with hex string */
+    _dhcp_client_id_check("rd.net.dhcp.client-id=eth0:01-aa-BB-cc-dd-EE-ff",
+                          "eth0",
+                          "01:aa:bb:cc:dd:ee:ff");
+
+    /* Client-id with plain string */
+    _dhcp_client_id_check("rd.net.dhcp.client-id=eth0:@test.com",
+                          "eth0",
+                          "00:74:65:73:74:2e:63:6f:6d");
+
+    /* Minimal client-id, hex */
+    _dhcp_client_id_check("rd.net.dhcp.client-id=eth1:01-02", "eth1", "01:02");
+
+    /* Minimal client-id, string */
+    _dhcp_client_id_check("rd.net.dhcp.client-id=eth1:@1", "eth1", "00:31");
+
+    /* Long client-id */
+    _dhcp_client_id_check(
+        "rd.net.dhcp.client-id=enp1s0:"
+        "01-02-03-04-05-06-07-08-09-10-11-12-13-14-15-16-17-18-19-20-21-22-23-24-"
+        "25-26-27-28-29-30-31-32-33-34-35-36-37-38-39-40-41-42-43-44-45-46-47-48-"
+        "49-50-51-52-53-54-55-56-57-58-59-60-61-62-63-64-65-66-67-68-69-70-71-72",
+        "enp1s0",
+        "01:02:03:04:05:06:07:08:09:10:11:12:13:14:15:16:17:18:19:20:21:22:23:24:"
+        "25:26:27:28:29:30:31:32:33:34:35:36:37:38:39:40:41:42:43:44:45:46:47:48:"
+        "49:50:51:52:53:54:55:56:57:58:59:60:61:62:63:64:65:66:67:68:69:70:71:72");
+
+    /* Test ordering: client-id before ip= */
+    _dhcp_client_id_check_v(
+        NM_MAKE_STRV("rd.net.dhcp.client-id=eth0:aa-bb-cc-dd-ee-ff", "ip=eth0:dhcp"),
+        "eth0",
+        "aa:bb:cc:dd:ee:ff");
+
+    /* Test ordering: client-id after ip= */
+    _dhcp_client_id_check_v(
+        NM_MAKE_STRV("ip=eth2:dhcp", "rd.net.dhcp.client-id=eth2:ba-da-cc-dd-ee-ff"),
+        "eth2",
+        "ba:da:cc:dd:ee:ff");
+
+    /* Duplicate option: last wins */
+    _dhcp_client_id_check_v(NM_MAKE_STRV("ip=eth3:dhcp",
+                                         "rd.net.dhcp.client-id=eth3:01-02",
+                                         "rd.net.dhcp.client-id=eth3:01-03"),
+                            "eth3",
+                            "01:03");
+
+    /* Multiple connections */
+    {
+        gs_unref_hashtable GHashTable *connections = NULL;
+        NMConnection                  *connection;
+        NMSettingIP4Config            *s_ip4;
+
+        connections = _parse_cons(NM_MAKE_STRV("ip=eth0:dhcp",
+                                               "ip=eth1:dhcp",
+                                               "rd.net.dhcp.client-id=eth1:01-01-01",
+                                               "rd.net.dhcp.client-id=eth0:00-00-00"));
+
+        g_assert_nonnull(connections);
+        g_assert_cmpint(g_hash_table_size(connections), ==, 2);
+
+        connection = g_hash_table_lookup(connections, "eth0");
+        g_assert_nonnull(connection);
+        s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting_ip4_config(connection);
+        g_assert_nonnull(s_ip4);
+        g_assert_cmpstr(nm_setting_ip4_config_get_dhcp_client_id(s_ip4), ==, "00:00:00");
+
+        connection = g_hash_table_lookup(connections, "eth1");
+        g_assert_nonnull(connection);
+        s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting_ip4_config(connection);
+        g_assert_nonnull(s_ip4);
+        g_assert_cmpstr(nm_setting_ip4_config_get_dhcp_client_id(s_ip4), ==, "01:01:01");
+    }
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -2909,6 +3052,7 @@ main(int argc, char **argv)
     g_test_add_func("/initrd/cmdline/rd_ethtool", test_rd_ethtool);
     g_test_add_func("/initrd/cmdline/plain_equal_char", test_plain_equal_char);
     g_test_add_func("/initrd/cmdline/global_dns", test_global_dns);
+    g_test_add_func("/initrd/cmdline/rd_dhcp_client_id", test_rd_dhcp_client_id);
 
     return g_test_run();
 }

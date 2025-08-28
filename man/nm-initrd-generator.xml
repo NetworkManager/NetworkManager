@@ -162,6 +162,7 @@
             <member><option>rd.net.dns-backend</option></member>
             <member><option>rd.net.dns-resolve-mode</option></member>
             <member><option>rd.net.timeout.dhcp</option></member>
+            <member><option>rd.net.dhcp.client-id</option></member>
             <member><option>rd.net.dhcp.retry</option></member>
             <member><option>rd.net.dhcp.vendor-class</option></member>
             <member><option>rd.net.dhcp.dscp</option></member>
@@ -268,6 +269,23 @@
         </para>
       </listitem>
 
+      <listitem>
+        <para>NetworkManager supports the
+        <option>rd.net.dhcp.client-id</option>=<replaceable>interface</replaceable>:<replaceable>client-id</replaceable>
+        kernel command line option to set a specific DHCPv4 client identifier
+        for the given interface. The client-id can be specified either as a
+        sequence of bytes in hexadecimal format separated by dashes, or as the
+        character '@' followed by a non-empty string. When using the second
+        format, NetworkManager prepends a zero byte to the given string,
+        according to section 9.14 of RFC 2132. See the "ipv4.dhcp-client-id"
+        section of <link
+        linkend='nm-settings-nmcli'><citerefentry><refentrytitle>nm-settings-nmcli</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>
+        for more details. Examples:
+        <literal>rd.net.dhcp.client-id=eth0:01-52-54-00-45-87-42</literal>,
+        <literal>rd.net.dhcp.client-id=enp1s0:@example.com</literal>.
+        </para>
+      </listitem>
+
     </itemizedlist>
   </refsect1>
 
@@ -278,6 +296,7 @@
 
   <refsect1 id='see_also'><title>See Also</title>
     <para><link linkend='dracut.cmdline'><citerefentry><refentrytitle>dracut.cmdline</refentrytitle><manvolnum>7</manvolnum></citerefentry></link>,
-    <link linkend='NetworkManager'><citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry></link>.</para>
+    <link linkend='NetworkManager'><citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry></link>,
+    <link linkend='nm-settings-nmcli'><citerefentry><refentrytitle>nm-settings-nmcli</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>.</para>
   </refsect1>
 </refentry>

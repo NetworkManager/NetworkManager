@@ -1369,6 +1369,67 @@ reader_parse_ethtool(Reader *reader, char *argument)
 }
 
 static void
+reader_parse_dhcp_client_id(Reader *reader, char *argument)
+{
+    NMConnection      *connection;
+    NMSettingIPConfig *s_ip4;
+    const char        *interface;
+    gs_free char      *client_id = NULL;
+    gs_free guint8    *buf       = NULL;
+    gsize              len       = 0;
+
+    interface = get_word(&argument, ':');
+    if (!interface) {
+        _LOGW(LOGD_CORE, "rd.net.dhcp.client-id: missing interface");
+        return;
+    }
+
+    if (!argument || !*argument) {
+        _LOGW(LOGD_CORE, "rd.net.dhcp.client-id: missing client-id");
+        return;
+    }
+
+    if (argument[0] == '@') {
+        /* The client-id is a plain string but we still encode it as
+         * hex string. Otherwise, we could pass the string as-is, but we
+         * would need to handle special keywords like "mac", "perm-mac", etc.
+         */
+        if (argument[1] != '\0') {
+            len    = strlen(argument);
+            buf    = (guint8 *) nm_memdup(argument, len + 1);
+            buf[0] = '\0';
+        }
+    } else {
+        /* Try to parse it as hex string */
+        buf = nm_utils_hexstr2bin_alloc(argument, FALSE, FALSE, "-", 0, &len);
+    }
+
+    if (buf) {
+        client_id = nm_utils_bin2hexstr_full(buf, len, ':', FALSE, NULL);
+    }
+
+    if (!client_id) {
+        _LOGW(LOGD_CORE,
+              "rd.net.dhcp.client-id: invalid client-id \"%s\". Must be hexadecimal bytes "
+              "separated by dashes (for example \"00-01-02-03-04-05-06\"), or '@' followed by a "
+              "string",
+              argument);
+        return;
+    }
+
+    if (len < 2) {
+        _LOGW(LOGD_CORE,
+              "rd.net.dhcp.client-id: invalid client-id \"%s\". Must be at least two bytes",
+              argument);
+        return;
+    }
+
+    connection = reader_get_connection(reader, interface, NULL, TRUE);
+    s_ip4      = nm_connection_get_setting_ip4_config(connection);
+    g_object_set(s_ip4, NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID, client_id, NULL);
+}
+
+static void
 _normalize_conn(gpointer key, gpointer value, gpointer user_data)
 {
     NMConnection      *connection = value;
@@ -1383,6 +1444,8 @@ _normalize_conn(gpointer key, gpointer value, gpointer user_data)
                          NM_SETTING_IP_CONFIG_DHCP_HOSTNAME,
                          NULL,
                          NM_SETTING_IP_CONFIG_DHCP_TIMEOUT,
+                         NULL,
+                         NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID,
                          NULL,
                          NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER,
                          NULL,
@@ -1602,6 +1665,8 @@ nmi_cmdline_reader_parse(const char        *etc_connections_dir,
             g_ptr_array_add(znets, g_strdup(argument));
         } else if (nm_streq(tag, "rd.znet_ifname")) {
             reader_parse_znet_ifname(reader, argument);
+        } else if (nm_streq(tag, "rd.net.dhcp.client-id")) {
+            reader_parse_dhcp_client_id(reader, argument);
         } else if (g_ascii_strcasecmp(tag, "BOOTIF") == 0) {
             nm_clear_g_free(&bootif_val);
             bootif_val = g_strdup(argument);
