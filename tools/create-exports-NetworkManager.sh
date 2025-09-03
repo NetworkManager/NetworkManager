@@ -18,14 +18,8 @@ _sort() {
 }
 
 call_nm() {
-    if [ -n "$from_meson" ]; then
-        "${NM:-nm}" -D "$1" |
-            sed -n 's/.* \([^ ]\) \([^ ]*\)$/\1 \2/p'
-    else
-        libtool=(${LIBTOOL:-libtool})
-        ${libtool[@]} --mode=execute "${NM:-nm}" "$1" |
-            sed -n 's/.* \([^ ]\) \([^ ]*\)$/\1 \2/p'
-    fi
+    "${NM:-nm}" -D "$1" |
+        sed -n 's/.* \([^ ]\) \([^ ]*\)$/\1 \2/p'
 }
 
 get_symbols_nm () {
@@ -42,9 +36,9 @@ EOF
 }
 
 get_symbols_missing() {
-    (for f in $(find ./src/core/settings/plugins/*/${libs} \
-                     ./src/core/devices/*/${libs} \
-                     ./src/core/ppp/${libs} -name '*.so' 2>/dev/null); do
+    (for f in $(find ./src/core/settings/plugins/*/ \
+                     ./src/core/devices/*/ \
+                     ./src/core/ppp/ -name '*.so' 2>/dev/null); do
         call_nm "$f" |
             sed -n 's/^\([U]\) \(\(nm_\|nmp_\|_nm\|NM\|_NM\|nmtst_\|c_siphash_\|c_list_\).*\)$/\2/p'
     done) |
@@ -60,14 +54,6 @@ pretty() {
 do_update() {
     do_generate > ./src/core/NetworkManager.ver
 }
-
-if [ -f "build.ninja" ]; then
-    from_meson=1
-    libs=
-else
-    from_meson=
-    libs=.libs/
-fi
 
 SYMBOLS_MISSING="$(get_symbols_missing | pretty)"
 SYMBOLS_EXPLICIT="$(get_symbols_explicit | pretty)"
@@ -86,7 +72,7 @@ local:
 EOF
 }
 
-test -f ./src/core/${libs}libNetworkManager.a || die "must be called from NetworkManager top build dir after building the tree"
+test -f ./src/core/libNetworkManager.a || die "must be called from NetworkManager top build dir after building the tree"
 
 case "$1" in
     --called-from-build)

@@ -339,7 +339,7 @@ main(int argc, char *argv[])
         char *path, *slash;
         int   g;
 
-        /* exe is <basedir>/src/.libs/lt-NetworkManager, so chop off
+        /* exe is <builddir>/src/core/NetworkManager, so chop off
          * the last three components */
         path = realpath("/proc/self/exe", NULL);
         g_assert(path != NULL);

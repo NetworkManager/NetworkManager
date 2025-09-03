@@ -29,7 +29,6 @@ apk add \
     'libpsl-dev' \
     'libsoup-dev' \
     'libteam-dev' \
-    'libtool' \
     'linux-headers' \
     'meson' \
     'mobile-broadband-provider-info' \
