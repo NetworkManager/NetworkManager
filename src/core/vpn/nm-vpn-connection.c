@@ -26,10 +26,12 @@
 #include "nm-active-connection.h"
 #include "nm-config.h"
 #include "nm-dbus-manager.h"
+#include "devices/nm-device.h"
 #include "nm-dispatcher.h"
 #include "nm-firewalld-manager.h"
 #include "nm-ip-config.h"
 #include "nm-l3-config-data.h"
+#include "nm-manager.h"
 #include "nm-netns.h"
 #include "nm-pacrunner-manager.h"
 #include "nm-vpn-manager.h"
@@ -1409,9 +1411,11 @@ _check_complete(NMVpnConnection *self, gboolean success)
     NMVpnConnectionPrivate                 *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
     NMConnection                           *connection;
+    NMDevice                               *device;
     NMSettingConnection                    *s_con;
     const char                             *zone;
     const char                             *iface;
+    int                                     ifindex;
 
     if (priv->vpn_state < STATE_IP_CONFIG_GET || priv->vpn_state > STATE_ACTIVATED)
         return;
@@ -1437,10 +1441,23 @@ _check_complete(NMVpnConnection *self, gboolean success)
     }
 
     connection = _get_applied_connection(self);
-
-    l3cd = nm_l3_config_data_new_from_connection(nm_netns_get_multi_idx(priv->netns),
-                                                 nm_vpn_connection_get_ip_ifindex(self, TRUE),
-                                                 connection);
+    ifindex    = nm_vpn_connection_get_ip_ifindex(self, FALSE);
+    /* Use nm_device_create_l3_config_data_from_connection here if possible. This ensures that
+     * connection properties like mdns, llmnr, dns-over-tls or dnssec are applied to vpn connections
+     * If this vpn connection does not have its own device resort to nm_l3_config_data_new_from_connection
+     * since we can't properly apply these properties anyway
+     */
+    if (ifindex > 0) {
+        device = nm_manager_get_device_by_ifindex(NM_MANAGER_GET, ifindex);
+        nm_assert(device);
+        l3cd = nm_device_create_l3_config_data_from_connection(device, connection);
+    } else {
+        l3cd = nm_l3_config_data_new_from_connection(nm_netns_get_multi_idx(priv->netns),
+                                                     nm_vpn_connection_get_ip_ifindex(self, TRUE),
+                                                     connection);
+        _LOGD("VPN connection does not have its own device. Some connection properties won't be "
+              "supported.");
+    }
 
     nm_l3_config_data_set_allow_routes_without_address(l3cd, AF_INET, TRUE);
     nm_l3_config_data_set_allow_routes_without_address(l3cd, AF_INET6, TRUE);

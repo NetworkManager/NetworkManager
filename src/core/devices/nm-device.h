@@ -853,4 +853,7 @@ void nm_routing_rules_sync(NMConnection *applied_connection,
                            NMDevice *self,
                            NMNetns  *netns);
 
+NML3ConfigData *nm_device_create_l3_config_data_from_connection(NMDevice     *self,
+                                                                NMConnection *connection);
+
 #endif /* __NETWORKMANAGER_DEVICE_H__ */
