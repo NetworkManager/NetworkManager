@@ -1411,14 +1411,12 @@ _prop_get_ipvx_routed_dns(NMDevice *self, int addr_family)
 }
 
 static NMSettingConnectionMdns
-_prop_get_connection_mdns(NMDevice *self)
+_prop_get_connection_mdns(NMDevice *self, NMConnection *connection)
 {
-    NMConnection           *connection;
     NMSettingConnectionMdns mdns = NM_SETTING_CONNECTION_MDNS_DEFAULT;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), NM_SETTING_CONNECTION_MDNS_DEFAULT);
 
-    connection = nm_device_get_applied_connection(self);
     if (connection)
         mdns = nm_setting_connection_get_mdns(nm_connection_get_setting_connection(connection));
     if (mdns != NM_SETTING_CONNECTION_MDNS_DEFAULT)
@@ -1453,14 +1451,12 @@ _prop_get_sriov_preserve_on_down(NMDevice *self, NMSettingSriov *s_sriov)
 }
 
 static NMSettingConnectionLlmnr
-_prop_get_connection_llmnr(NMDevice *self)
+_prop_get_connection_llmnr(NMDevice *self, NMConnection *connection)
 {
-    NMConnection            *connection;
     NMSettingConnectionLlmnr llmnr = NM_SETTING_CONNECTION_LLMNR_DEFAULT;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), NM_SETTING_CONNECTION_LLMNR_DEFAULT);
 
-    connection = nm_device_get_applied_connection(self);
     if (connection)
         llmnr = nm_setting_connection_get_llmnr(nm_connection_get_setting_connection(connection));
     if (llmnr != NM_SETTING_CONNECTION_LLMNR_DEFAULT)
@@ -1475,14 +1471,12 @@ _prop_get_connection_llmnr(NMDevice *self)
 }
 
 static NMSettingConnectionDnsOverTls
-_prop_get_connection_dns_over_tls(NMDevice *self)
+_prop_get_connection_dns_over_tls(NMDevice *self, NMConnection *connection)
 {
-    NMConnection                 *connection;
     NMSettingConnectionDnsOverTls dns_over_tls = NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT);
 
-    connection = nm_device_get_applied_connection(self);
     if (connection)
         dns_over_tls = nm_setting_connection_get_dns_over_tls(
             nm_connection_get_setting_connection(connection));
@@ -1498,14 +1492,12 @@ _prop_get_connection_dns_over_tls(NMDevice *self)
 }
 
 static NMSettingConnectionDnssec
-_prop_get_connection_dnssec(NMDevice *self)
+_prop_get_connection_dnssec(NMDevice *self, NMConnection *connection)
 {
-    NMConnection             *connection;
     NMSettingConnectionDnssec dnssec = NM_SETTING_CONNECTION_DNSSEC_DEFAULT;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), NM_SETTING_CONNECTION_DNSSEC_DEFAULT);
 
-    connection = nm_device_get_applied_connection(self);
     if (connection)
         dnssec = nm_setting_connection_get_dnssec(nm_connection_get_setting_connection(connection));
     if (dnssec != NM_SETTING_CONNECTION_DNSSEC_DEFAULT)
@@ -1520,14 +1512,12 @@ _prop_get_connection_dnssec(NMDevice *self)
 }
 
 static NMMptcpFlags
-_prop_get_connection_mptcp_flags(NMDevice *self)
+_prop_get_connection_mptcp_flags(NMDevice *self, NMConnection *connection)
 {
-    NMConnection *connection;
-    NMMptcpFlags  mptcp_flags = NM_MPTCP_FLAGS_NONE;
+    NMMptcpFlags mptcp_flags = NM_MPTCP_FLAGS_NONE;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), NM_MPTCP_FLAGS_DISABLED);
 
-    connection = nm_device_get_applied_connection(self);
     if (connection) {
         mptcp_flags =
             nm_setting_connection_get_mptcp_flags(nm_connection_get_setting_connection(connection));
@@ -2493,16 +2483,14 @@ _prop_get_ipv4_dhcp_vendor_class_identifier(NMDevice *self, NMSettingIP4Config *
 }
 
 static NMSettingIP6ConfigPrivacy
-_prop_get_ipv6_ip6_privacy(NMDevice *self)
+_prop_get_ipv6_ip6_privacy(NMDevice *self, NMConnection *connection)
 {
     NMSettingIP6ConfigPrivacy ip6_privacy;
-    NMConnection             *connection;
 
     g_return_val_if_fail(self, NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
 
     /* 1.) First look at the per-connection setting. If it is not -1 (unknown),
      * use it. */
-    connection = nm_device_get_applied_connection(self);
     if (connection) {
         NMSettingIPConfig *s_ip6 = nm_connection_get_setting_ip6_config(connection);
 
@@ -3635,12 +3623,12 @@ nm_device_create_l3_config_data_from_connection(NMDevice *self, NMConnection *co
 
     l3cd =
         nm_l3_config_data_new_from_connection(nm_device_get_multi_index(self), ifindex, connection);
-    nm_l3_config_data_set_mdns(l3cd, _prop_get_connection_mdns(self));
-    nm_l3_config_data_set_llmnr(l3cd, _prop_get_connection_llmnr(self));
-    nm_l3_config_data_set_dns_over_tls(l3cd, _prop_get_connection_dns_over_tls(self));
-    nm_l3_config_data_set_dnssec(l3cd, _prop_get_connection_dnssec(self));
-    nm_l3_config_data_set_ip6_privacy(l3cd, _prop_get_ipv6_ip6_privacy(self));
-    nm_l3_config_data_set_mptcp_flags(l3cd, _prop_get_connection_mptcp_flags(self));
+    nm_l3_config_data_set_mdns(l3cd, _prop_get_connection_mdns(self, connection));
+    nm_l3_config_data_set_llmnr(l3cd, _prop_get_connection_llmnr(self, connection));
+    nm_l3_config_data_set_dns_over_tls(l3cd, _prop_get_connection_dns_over_tls(self, connection));
+    nm_l3_config_data_set_dnssec(l3cd, _prop_get_connection_dnssec(self, connection));
+    nm_l3_config_data_set_ip6_privacy(l3cd, _prop_get_ipv6_ip6_privacy(self, connection));
+    nm_l3_config_data_set_mptcp_flags(l3cd, _prop_get_connection_mptcp_flags(self, connection));
     return l3cd;
 }
 
@@ -12891,7 +12879,7 @@ _dev_ipac6_start(NMDevice *self)
             .router_solicitations         = router_solicitations,
             .router_solicitation_interval = router_solicitation_interval,
             .ra_timeout                   = ra_timeout,
-            .ip6_privacy                  = _prop_get_ipv6_ip6_privacy(self),
+            .ip6_privacy                  = _prop_get_ipv6_ip6_privacy(self, connection),
         };
 
         priv->ipac6_data.ndisc = nm_lndp_ndisc_new(&config);
