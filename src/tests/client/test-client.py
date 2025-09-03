@@ -2247,9 +2247,9 @@ class TestNmcli(unittest.TestCase):
             extra_env=no_dbus_env,
             replace_stderr=[
                 Util.ReplaceTextRegex(
-                    # depending on glib version, it prints `%s', '%s', or “%s”.
-                    # depending on libc version, it converts unicode to ? or *.
-                    r"Key/Value pair 0, [`*?']invalid[*?'], in address element [`*?']very:invalid[*?'] does not contain an equal sign",
+                    # Depending on glib version, it prints `%s', '%s', or “%s”.
+                    # Some libc versions convert the multi-byte UTF-8 sequence to ? or *.
+                    r"Key/Value pair 0, .*invalid.*, in address element .*very:invalid.* does not contain an equal sign",
                     "Key/Value pair 0, 'invalid', in address element 'very:invalid' does not contain an equal sign",
                 )
             ],
