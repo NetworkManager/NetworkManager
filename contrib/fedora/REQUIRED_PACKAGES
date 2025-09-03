@@ -68,7 +68,6 @@ install \
     libndp-devel \
     libnvme-devel \
     libselinux-devel \
-    libtool \
     libuuid-devel \
     meson \
     mobile-broadband-provider-info-devel \

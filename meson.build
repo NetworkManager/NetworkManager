@@ -915,7 +915,6 @@ endif
 test_args = [
   '--called-from-make',
   build_root,
-  '',
   enable_valgrind ? valgrind_path : '',
   enable_valgrind ? valgrind_suppressions_path : '',
   '--launch-dbus=auto',

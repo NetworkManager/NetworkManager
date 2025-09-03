@@ -97,8 +97,6 @@ ENV_NM_TEST_UBSAN_OPTIONS = "NM_TEST_UBSAN_OPTIONS"
 # Valgrind is always disabled, if NM_TEST_REGENERATE is enabled.
 ENV_NM_TEST_VALGRIND = "NM_TEST_VALGRIND"
 
-ENV_LIBTOOL = "LIBTOOL"
-
 ###############################################################################
 
 import collections
@@ -678,9 +676,6 @@ class Util:
                 "--log-file=" + valgrind_log[1],
                 cmd,
             ]
-            libtool = conf.get(ENV_LIBTOOL)
-            if libtool:
-                argv = list(libtool) + ["--mode=execute"] + argv
         else:
             argv = [cmd]
 
@@ -784,21 +779,6 @@ class Configuration:
                     v = "print_stacktrace=1:halt_on_error=1"
                 else:
                     assert False
-        elif name == ENV_LIBTOOL:
-            v = os.environ.get(name, None)
-            if v is None:
-                v = os.path.abspath(
-                    os.path.dirname(self.get("ENV_NM_TEST_CLIENT_NMCLI_UNCHECKED_PATH"))
-                    + "/../../libtool"
-                )
-                if not os.path.isfile(v):
-                    v = None
-                else:
-                    v = [v]
-            elif not v:
-                v = None
-            else:
-                v = shlex.split(v)
         else:
             raise Exception()
         self._values[name] = v

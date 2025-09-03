@@ -10,9 +10,6 @@ test(
     '--',
     'TestNmcli',
   ],
-  env: [
-    'LIBTOOL=',
-  ],
   timeout: 120,
 )
 
@@ -26,9 +23,6 @@ if enable_nm_cloud_setup
       python_path,
       '--',
       'TestNmCloudSetup',
-    ],
-    env: [
-      'LIBTOOL=',
     ],
     timeout: 120,
   )

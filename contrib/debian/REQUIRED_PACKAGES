@@ -62,7 +62,6 @@ install \
     libreadline-dev \
     libsystemd-dev \
     libteam-dev \
-    libtool \
     libudev-dev \
     locales \
     meson \
