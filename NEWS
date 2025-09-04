@@ -23,6 +23,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Fix a bug that makes broadband connections auto-connect getting 
   blocked if the connection tries to reconnect when modem status is 
   "disconnecting" / "disconnected".
+* Treat modem connection not having an operator code available
+  as a recoverable error.
 
 =============================================
 NetworkManager-1.54

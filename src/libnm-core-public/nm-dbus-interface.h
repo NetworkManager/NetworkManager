@@ -648,6 +648,8 @@ typedef enum {
  *   Since: 1.48
  * @NM_DEVICE_STATE_REASON_UNMANAGED_USER_UDEV: The device is unmanaged via udev rule. Since: 1.48
  * @NM_DEVICE_STATE_REASON_NETWORKING_OFF: NetworkManager was disabled (networking off). Since: 1.56
+ * @NM_DEVICE_STATE_REASON_MODEM_NO_OPERATOR_CODE: The modem's operator code wasn't available,
+ *   and auto-configuration was requested. Since: 1.56
  *
  * Device state change reason codes
  */
@@ -732,6 +734,7 @@ typedef enum {
     NM_DEVICE_STATE_REASON_UNMANAGED_USER_SETTINGS        = 76,
     NM_DEVICE_STATE_REASON_UNMANAGED_USER_UDEV            = 77,
     NM_DEVICE_STATE_REASON_NETWORKING_OFF                 = 78,
+    NM_DEVICE_STATE_REASON_MODEM_NO_OPERATOR_CODE         = 79,
 } NMDeviceStateReason;
 
 /**

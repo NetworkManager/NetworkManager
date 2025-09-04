@@ -508,8 +508,9 @@ find_gsm_apn_cb(const char   *apn,
 static gboolean
 try_create_connect_properties(NMModemBroadband *self)
 {
-    NMModemBroadbandPrivate *priv = NM_MODEM_BROADBAND_GET_PRIVATE(self);
-    ConnectContext          *ctx  = priv->ctx;
+    NMModemBroadbandPrivate *priv        = NM_MODEM_BROADBAND_GET_PRIVATE(self);
+    ConnectContext          *ctx         = priv->ctx;
+    NMDeviceStateReason      fail_reason = NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED;
 
     if (MODEM_CAPS_3GPP(ctx->caps)) {
         NMSettingGsm *s_gsm = nm_connection_get_setting_gsm(ctx->connection);
@@ -530,6 +531,7 @@ try_create_connect_properties(NMModemBroadband *self)
             if (!network_id) {
                 _LOGW("failed to connect '%s': unable to determine the network id",
                       nm_connection_get_id(ctx->connection));
+                fail_reason = NM_DEVICE_STATE_REASON_MODEM_NO_OPERATOR_CODE;
                 goto out;
             }
 
@@ -558,7 +560,7 @@ try_create_connect_properties(NMModemBroadband *self)
     }
 
 out:
-    nm_modem_emit_prepare_result(NM_MODEM(self), FALSE, NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
+    nm_modem_emit_prepare_result(NM_MODEM(self), FALSE, fail_reason);
     connect_context_clear(self);
     return TRUE;
 }
