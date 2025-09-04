@@ -53,7 +53,6 @@ struct _NMGlobalDnsConfig {
     char            *cert_authority;
     NMDnsResolveMode resolve_mode;
     gboolean         internal;
-    gboolean         has_global_dns;
 };
 
 /*****************************************************************************/
@@ -947,7 +946,7 @@ nm_global_dns_has_global_dns_section(const NMGlobalDnsConfig *dns_config)
 {
     g_return_val_if_fail(dns_config, FALSE);
 
-    return dns_config->has_global_dns;
+    return dns_config->searches != NULL || dns_config->options != NULL;
 }
 
 const char *const *
@@ -1245,6 +1244,7 @@ load_global_dns(GKeyFile *keyfile, gboolean internal)
     gs_free char      *cert_authority = NULL;
     gs_free char      *resolve_mode   = NULL;
     NMDnsResolveMode   parsed_resolve_mode;
+    gboolean           has_global_dns_section;
 
     if (internal) {
         group         = NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS;
@@ -1397,9 +1397,19 @@ load_global_dns(GKeyFile *keyfile, gboolean internal)
 
     /* Defining [global-dns-domain-*] implies defining [global-dns] too (maybe empty) */
     if (default_found)
-        dns_config->has_global_dns = TRUE;
+        has_global_dns_section = TRUE;
     else
-        dns_config->has_global_dns = g_key_file_has_group(keyfile, group);
+        has_global_dns_section = g_key_file_has_group(keyfile, group);
+
+    /* If there exist a [global-dns] section, always initialize "searches" and "options" so
+     * they appear in D-Bus. Clients can use this to know if it's defined, so they can know
+     * if DNS configs from connections are relevant or not. */
+    if (has_global_dns_section) {
+        if (!dns_config->searches)
+            dns_config->searches = nm_strv_empty_new();
+        if (!dns_config->options)
+            dns_config->options = nm_strv_empty_new();
+    }
 
     dns_config->internal = internal;
     global_dns_config_seal_domains(dns_config);
