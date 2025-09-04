@@ -1046,6 +1046,14 @@ read_config(GKeyFile   *keyfile,
             /* internal groups cannot be set by user configuration. */
             continue;
         }
+
+        if (!g_key_file_has_group(keyfile, group)) {
+            /* Hack to preserve empty groups, glib doesn't have an add_group function. */
+            g_key_file_set_integer(keyfile, group, "to-remove", 0);
+            g_key_file_remove_key(keyfile, group, "to-remove", NULL);
+            nm_assert(g_key_file_has_group(keyfile, group));
+        }
+
         keys = g_key_file_get_keys(kf, group, &nkeys, NULL);
         if (!keys)
             continue;
@@ -1639,6 +1647,15 @@ intern_config_read(const char        *filename,
                                  "");
         }
 
+        if (!g_key_file_has_group(keyfile_intern, group)) {
+            /* Hack to preserve empty groups, glib doesn't have an add_group function. */
+            g_key_file_set_integer(keyfile_intern, group, "to-remove", 0);
+            g_key_file_remove_key(keyfile_intern, group, "to-remove", NULL);
+            nm_assert(g_key_file_has_group(keyfile_intern, group));
+            if (is_intern)
+                has_intern = TRUE;
+        }
+
         for (k = 0; keys[k]; k++) {
             gs_free char *value_set = NULL;
             const char   *key       = keys[k];
@@ -1821,6 +1838,13 @@ intern_config_write(const char        *filename,
                                        " Overwrites entire section from 'NetworkManager.conf'",
                                        NULL);
             }
+        }
+
+        if (!g_key_file_has_group(keyfile_intern, group)) {
+            /* Hack to preserve empty groups, glib doesn't have an add_group function. */
+            g_key_file_set_integer(keyfile, group, "to-remove", 0);
+            g_key_file_remove_key(keyfile, group, "to-remove", NULL);
+            nm_assert(g_key_file_has_group(keyfile, group));
         }
 
         for (k = 0; keys[k]; k++) {
