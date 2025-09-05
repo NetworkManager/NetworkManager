@@ -1432,13 +1432,13 @@ test_client_wait_shutdown(void)
     nmtst_assert_success(dbus_connection, error);
 
     for (i_run = 0; i_run < N_RUN; i_run++) {
-        gs_unref_object GCancellable          *init_cancellable = g_cancellable_new();
-        gs_unref_object NMClient              *nmc              = NULL;
-        nm_auto_pop_gmaincontext GMainContext *client_context   = NULL;
-        gboolean                               b;
-        gboolean                               context_integrated = FALSE;
-        gs_unref_object GCancellable          *cancellable_1      = NULL;
-        GMainContext                          *ctx;
+        gs_unref_object GCancellable                    *init_cancellable = g_cancellable_new();
+        gs_unref_object NMClient                        *nmc              = NULL;
+        nm_auto_pop_and_unref_gmaincontext GMainContext *client_context   = NULL;
+        gboolean                                         b;
+        gboolean                                         context_integrated = FALSE;
+        gs_unref_object GCancellable                    *cancellable_1      = NULL;
+        GMainContext                                    *ctx;
 
         /* Choose a random context for the client. */
         ctx = contexts->pdata[nmtst_get_rand_uint32() % contexts->len];
