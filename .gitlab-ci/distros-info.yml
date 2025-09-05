@@ -8,18 +8,24 @@ fedora:
 - version: rawhide
   support: yes
   nm: main
+- version: 43
+  support: 2026-12-02
+  nm: 1.54
+  tier1-default: yes
 - version: 42
   support: 2026-05-13
   nm: 1.52
-  tier1-default: yes
 - version: 41
   support: 2025-11-19
   nm: 1.50
 
 # CentOS Stream
 centos:
+- version: stream10
+  support: 2030-12-31 # exact date unknown, only the year
+  nm: main
 - version: stream9
-  support: 2027-05-31
+  support: 2027-12-31 # exact date unknown, only the year
   nm: main
 
 # RHEL:
@@ -31,33 +37,43 @@ centos:
 #   support: 6 months
 # Releases and support info: https://access.redhat.com/support/policy/updates/errata
 rhel:
-- version: 9.6  # not released yet
+# Not released yet
+- version: 10.1
   support: yes
-  nm: main
-- version: 9.5
+  nm: 1.54
+- version: 9.7  # not released yet
   support: yes
-  nm: 1.48
+  nm: 1.54
+# Full support or EUS support:
+- version: 10.0
+  support: 2027-05-31
+  extended-support: 2029-05-31
+  nm: 1.52
+- version: 9.6
+  support: 2027-05-31
+  extended-support: 2029-05-31
+  nm: 1.52
 - version: 9.4
   support: 2026-04-30
   extended-support: 2028-04-30
   nm: 1.46
-- version: 9.2
-  support: 2025-05-31
-  extended-support: 2027-05-31
-  nm: 1.42
 - version: 8.10  # last RHEL 8 release, maintenaince support only
   support: 2029-05-31
   extended-support: no
   nm: 1.40
-- version: 8.8
+# SAP / Enhaced EUS only:
+- version: 9.2
   support: 2025-05-31
   extended-support: 2027-05-31
-  nm: 1.40
-# SAP / Enhaced EUS only:
+  nm: 1.42
 - version: 9.0
   support: 2024-05-31
   extended-support: 2026-05-31
   nm: 1.36
+- version: 8.8
+  support: 2025-05-31
+  extended-support: 2027-05-31
+  nm: 1.40
 - version: 8.6
   support: 2024-05-31
   extended-support: 2026-05-31
@@ -81,10 +97,6 @@ ubuntu:
   name: plucky
   support: 2026-01-15
   nm: 1.52
-- version: 24.10
-  name: oracular
-  support: 2025-07-10
-  nm: 1.48
 - version: 24.04
   name: noble
   support: 2029-05-31
@@ -109,6 +121,11 @@ debian:
 - version: sid
   support: yes
   nm: main
+- version: 13
+  name: trixie
+  support: 2028-08-09
+  extended-support: 2030-06-30
+  nm: 1.52
 - version: 12
   name: bookworm
   support: 2026-06-11
@@ -130,6 +147,9 @@ alpine:
 - version: edge
   support: yes
   nm: main
+- version: 3.22
+  support: 2027-05-01
+  nm: 1.52
 - version: 3.21
   support: 2026-11-01
   nm: 1.50

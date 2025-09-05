@@ -13,6 +13,8 @@ if [ $IS_CENTOS = 1 ]; then
         CENTOS_VERSION=8
     elif grep -q '^VERSION_ID=.*\<9\>' /etc/os-release ; then
         CENTOS_VERSION=9
+    elif grep -q '^VERSION_ID=.*\<10\>' /etc/os-release ; then
+        CENTOS_VERSION=10
     else
         exit 1
     fi
@@ -33,6 +35,11 @@ fi
         dnf install -y 'dnf-command(config-manager)'
         dnf config-manager --set-enabled crb
         curl https://copr.fedorainfracloud.org/coprs/nmstate/nm-build-deps/repo/epel-9/nmstate-nm-build-deps-epel-9.repo > /etc/yum.repos.d/nmstate-nm-build-deps-epel-9.repo
+    elif [ "$CENTOS_VERSION" = stream10 ]; then
+        dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm
+        dnf install -y 'dnf-command(config-manager)'
+        dnf config-manager --set-enabled crb
+        curl https://copr.fedorainfracloud.org/coprs/nmstate/nm-build-deps/repo/epel-10/nmstate-nm-build-deps-epel-10.repo > /etc/yum.repos.d/nmstate-nm-build-deps-epel-10.repo
     else
         exit 1
     fi
