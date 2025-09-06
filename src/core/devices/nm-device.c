@@ -265,11 +265,11 @@ typedef struct {
     NMDeviceIPState state;
     union {
         struct {
-            NMDnsMasqManager      *dnsmasq_manager;
-            NMNetnsSharedIPHandle *shared_ip_handle;
-            NMFirewallConfig      *firewall_config;
-            gulong                 dnsmasq_state_id;
-            const NML3ConfigData  *l3cd;
+            NMDnsMasqManager     *dnsmasq_manager;
+            NMNetnsIPReservation *ip_reservation;
+            NMFirewallConfig     *firewall_config;
+            gulong                dnsmasq_state_id;
+            const NML3ConfigData *l3cd;
         } v4;
         struct {
         } v6;
@@ -13524,7 +13524,7 @@ _dev_ipsharedx_cleanup(NMDevice *self, int addr_family)
             nm_clear_pointer(&priv->ipshared_data_4.v4.firewall_config, nm_firewall_config_free);
         }
 
-        nm_clear_pointer(&priv->ipshared_data_4.v4.shared_ip_handle, nm_netns_shared_ip_release);
+        nm_clear_pointer(&priv->ipshared_data_4.v4.ip_reservation, nm_netns_ip_reservation_release);
         nm_clear_l3cd(&priv->ipshared_data_4.v4.l3cd);
 
         _dev_l3_register_l3cds_set_one(self, L3_CONFIG_DATA_TYPE_SHARED_4, NULL, FALSE);
@@ -13558,13 +13558,14 @@ _dev_ipshared4_new_l3cd(NMDevice *self, NMConnection *connection, NMPlatformIP4A
 
         nm_ip_address_get_address_binary(user, &a);
         nm_platform_ip4_address_set_addr(&address, a, nm_ip_address_get_prefix(user));
-        nm_clear_pointer(&priv->ipshared_data_4.v4.shared_ip_handle, nm_netns_shared_ip_release);
+        nm_clear_pointer(&priv->ipshared_data_4.v4.ip_reservation, nm_netns_ip_reservation_release);
     } else {
-        if (!priv->ipshared_data_4.v4.shared_ip_handle)
-            priv->ipshared_data_4.v4.shared_ip_handle =
-                nm_netns_shared_ip_reserve(nm_device_get_netns(self));
+        if (!priv->ipshared_data_4.v4.ip_reservation)
+            priv->ipshared_data_4.v4.ip_reservation =
+                nm_netns_ip_reservation_get(nm_device_get_netns(self),
+                                            NM_NETNS_IP_RESERVATION_TYPE_SHARED4);
         nm_platform_ip4_address_set_addr(&address,
-                                         priv->ipshared_data_4.v4.shared_ip_handle->addr,
+                                         priv->ipshared_data_4.v4.ip_reservation->addr,
                                          24);
     }
 

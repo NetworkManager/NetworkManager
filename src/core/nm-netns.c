@@ -68,7 +68,7 @@ typedef struct {
     NMPNetns         *platform_netns;
     NMPGlobalTracker *global_tracker;
     GHashTable       *l3cfgs;
-    GHashTable       *shared_ips;
+    GHashTable       *ip_reservation[_NM_NETNS_IP_RESERVATION_TYPE_NUM];
     GHashTable       *ecmp_track_by_obj;
     GHashTable       *ecmp_track_by_ecmpid;
 
@@ -571,106 +571,150 @@ notify_watcher:
 
 /*****************************************************************************/
 
-NMNetnsSharedIPHandle *
-nm_netns_shared_ip_reserve(NMNetns *self)
-{
-    NMNetnsPrivate        *priv;
-    NMNetnsSharedIPHandle *handle;
-    const in_addr_t        addr_start = ntohl(0x0a2a0001u); /* 10.42.0.1 */
-    in_addr_t              addr;
-    char                   sbuf_addr[NM_INET_ADDRSTRLEN];
+typedef struct {
+    const char *name;
+    guint32     start_addr; /* host byte order */
+    guint       prefix_len;
+    guint       num_addrs;
+    gboolean    allow_reuse;
+} IPReservationTypeDesc;
 
-    /* Find an unused address in the 10.42.x.x range */
+static const IPReservationTypeDesc ip_reservation_types[_NM_NETNS_IP_RESERVATION_TYPE_NUM] = {
+    [NM_NETNS_IP_RESERVATION_TYPE_SHARED4] =
+        {
+            .name        = "shared-ip4",
+            .start_addr  = 0x0a2a0001, /* 10.42.0.1 */
+            .prefix_len  = 24,
+            .num_addrs   = 256,
+            .allow_reuse = TRUE,
+        },
+};
+
+NMNetnsIPReservation *
+nm_netns_ip_reservation_get(NMNetns *self, NMNetnsIPReservationType type)
+{
+    NMNetnsPrivate              *priv;
+    const IPReservationTypeDesc *desc;
+    NMNetnsIPReservation        *res;
+    GHashTable                 **table;
+    in_addr_t                    addr;
+    char                         buf[NM_INET_ADDRSTRLEN];
 
     g_return_val_if_fail(NM_IS_NETNS(self), NULL);
+    g_return_val_if_fail(type < _NM_NETNS_IP_RESERVATION_TYPE_NUM, NULL);
 
-    priv = NM_NETNS_GET_PRIVATE(self);
+    priv  = NM_NETNS_GET_PRIVATE(self);
+    desc  = &ip_reservation_types[type];
+    table = &priv->ip_reservation[type];
 
-    if (!priv->shared_ips) {
-        addr             = addr_start;
-        priv->shared_ips = g_hash_table_new(nm_puint32_hash, nm_puint32_equal);
+    if (!*table) {
+        addr   = htonl(desc->start_addr);
+        *table = g_hash_table_new(nm_puint32_hash, nm_puint32_equal);
         g_object_ref(self);
     } else {
         guint32 count;
 
-        nm_assert(g_hash_table_size(priv->shared_ips) > 0);
+        nm_assert(g_hash_table_size(*table) > 0);
+        nm_assert(desc->prefix_len > 0 && desc->prefix_len <= 32);
 
         count = 0u;
         for (;;) {
-            addr = addr_start + htonl(count << 8u);
+            addr = htonl(desc->start_addr + (count << (32 - desc->prefix_len)));
 
-            handle = g_hash_table_lookup(priv->shared_ips, &addr);
-            if (!handle)
+            res = g_hash_table_lookup(*table, &addr);
+            if (!res)
                 break;
 
             count++;
 
-            if (count > 0xFFu) {
-                if (handle->_ref_count == 1) {
-                    _LOGE("shared-ip4: ran out of shared IP addresses. Reuse %s/24",
-                          nm_inet4_ntop(handle->addr, sbuf_addr));
-                } else {
-                    _LOGD("shared-ip4: reserved IP address range %s/24 (duplicate)",
-                          nm_inet4_ntop(handle->addr, sbuf_addr));
+            if (count >= desc->num_addrs) {
+                if (!desc->allow_reuse) {
+                    _LOGE("%s: ran out of IP addresses", desc->name);
+                    return NULL;
                 }
-                handle->_ref_count++;
-                return handle;
+
+                if (res->_ref_count == 1) {
+                    _LOGE("%s: ran out of IP addresses. Reuse %s/%u",
+                          desc->name,
+                          nm_inet4_ntop(res->addr, buf),
+                          desc->prefix_len);
+                } else {
+                    _LOGD("%s: reserved IP address %s/%u (duplicate)",
+                          desc->name,
+                          nm_inet4_ntop(res->addr, buf),
+                          desc->prefix_len);
+                }
+                res->_ref_count++;
+                return res;
             }
         }
     }
 
-    handle  = g_slice_new(NMNetnsSharedIPHandle);
-    *handle = (NMNetnsSharedIPHandle) {
+    res  = g_slice_new(NMNetnsIPReservation);
+    *res = (NMNetnsIPReservation) {
         .addr       = addr,
         ._ref_count = 1,
         ._self      = self,
+        ._type      = type,
     };
 
-    g_hash_table_add(priv->shared_ips, handle);
+    g_hash_table_add(*table, res);
 
-    _LOGD("shared-ip4: reserved IP address range %s/24", nm_inet4_ntop(handle->addr, sbuf_addr));
-    return handle;
+    _LOGD("%s: reserved IP address %s/%u",
+          desc->name,
+          nm_inet4_ntop(res->addr, buf),
+          desc->prefix_len);
+    return res;
 }
 
 void
-nm_netns_shared_ip_release(NMNetnsSharedIPHandle *handle)
+nm_netns_ip_reservation_release(NMNetnsIPReservation *res)
 {
-    NMNetns        *self;
-    NMNetnsPrivate *priv;
-    char            sbuf_addr[NM_INET_ADDRSTRLEN];
+    NMNetns                     *self;
+    NMNetnsPrivate              *priv;
+    const IPReservationTypeDesc *desc;
+    GHashTable                 **table;
+    char                         buf[NM_INET_ADDRSTRLEN];
 
-    g_return_if_fail(handle);
+    g_return_if_fail(res);
+    g_return_if_fail(res->_type < _NM_NETNS_IP_RESERVATION_TYPE_NUM);
 
-    self = handle->_self;
-
+    self = res->_self;
     g_return_if_fail(NM_IS_NETNS(self));
 
-    priv = NM_NETNS_GET_PRIVATE(self);
+    priv  = NM_NETNS_GET_PRIVATE(self);
+    desc  = &ip_reservation_types[res->_type];
+    table = &priv->ip_reservation[res->_type];
 
-    nm_assert(handle->_ref_count > 0);
-    nm_assert(handle == nm_g_hash_table_lookup(priv->shared_ips, handle));
+    nm_assert(res->_ref_count > 0);
+    nm_assert(res == nm_g_hash_table_lookup(*table, res));
 
-    if (handle->_ref_count > 1) {
-        nm_assert(handle->addr == ntohl(0x0A2AFF01u)); /* 10.42.255.1 */
-        handle->_ref_count--;
-        _LOGD("shared-ip4: release IP address range %s/24 (%d more references held)",
-              nm_inet4_ntop(handle->addr, sbuf_addr),
-              handle->_ref_count);
+    if (res->_ref_count > 1) {
+        nm_assert(desc->allow_reuse);
+        res->_ref_count--;
+        _LOGD("%s: release IP address reservation %s/%u (%d more references held)",
+              desc->name,
+              nm_inet4_ntop(res->addr, buf),
+              desc->prefix_len,
+              res->_ref_count);
         return;
     }
 
-    if (!g_hash_table_remove(priv->shared_ips, handle))
+    if (!g_hash_table_remove(*table, res))
         nm_assert_not_reached();
 
-    if (g_hash_table_size(priv->shared_ips) == 0) {
-        nm_clear_pointer(&priv->shared_ips, g_hash_table_unref);
+    if (g_hash_table_size(*table) == 0) {
+        nm_clear_pointer(table, g_hash_table_unref);
         g_object_unref(self);
     }
 
-    _LOGD("shared-ip4: release IP address range %s/24", nm_inet4_ntop(handle->addr, sbuf_addr));
+    _LOGD("%s: release IP address reservation %s/%u",
+          desc->name,
+          nm_inet4_ntop(res->addr, buf),
+          desc->prefix_len);
 
-    handle->_self = NULL;
-    nm_g_slice_free(handle);
+    res->_self = NULL;
+    nm_g_slice_free(res);
 }
 
 /*****************************************************************************/
@@ -1560,10 +1604,13 @@ dispose(GObject *object)
 
     nm_assert(nm_g_hash_table_size(priv->l3cfgs) == 0);
     nm_assert(c_list_is_empty(&priv->l3cfg_signal_pending_lst_head));
-    nm_assert(!priv->shared_ips);
     nm_assert(nm_g_hash_table_size(priv->watcher_idx) == 0);
     nm_assert(nm_g_hash_table_size(priv->watcher_by_tag_idx) == 0);
     nm_assert(nm_g_hash_table_size(priv->watcher_ip_data_idx) == 0);
+
+    for (guint i = 0; i < _NM_NETNS_IP_RESERVATION_TYPE_NUM; i++) {
+        nm_assert(!priv->ip_reservation[i]);
+    }
 
     nm_clear_pointer(&priv->ecmp_track_by_obj, g_hash_table_destroy);
     nm_clear_pointer(&priv->ecmp_track_by_ecmpid, g_hash_table_destroy);
