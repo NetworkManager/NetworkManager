@@ -43,6 +43,7 @@ NML3Cfg *nm_netns_l3cfg_acquire(NMNetns *netns, int ifindex);
 
 typedef enum {
     NM_NETNS_IP_RESERVATION_TYPE_SHARED4,
+    NM_NETNS_IP_RESERVATION_TYPE_CLAT,
 
     _NM_NETNS_IP_RESERVATION_TYPE_NUM,
 } NMNetnsIPReservationType;
