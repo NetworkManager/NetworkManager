@@ -588,6 +588,14 @@ static const IPReservationTypeDesc ip_reservation_types[_NM_NETNS_IP_RESERVATION
             .addr_plen   = 24,
             .allow_reuse = TRUE,
         },
+    [NM_NETNS_IP_RESERVATION_TYPE_CLAT] =
+        {
+            .name        = "clat",
+            .start_addr  = 0xc0000005, /* 192.0.0.{5-7,0-4}/32 */
+            .range_plen  = 29,
+            .addr_plen   = 32,
+            .allow_reuse = FALSE,
+        },
 };
 
 NMNetnsIPReservation *
