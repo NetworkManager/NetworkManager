@@ -23,10 +23,27 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_HSR_SETTING_NAME "hsr"
 
-#define NM_SETTING_HSR_PORT1          "port1"
-#define NM_SETTING_HSR_PORT2          "port2"
-#define NM_SETTING_HSR_MULTICAST_SPEC "multicast-spec"
-#define NM_SETTING_HSR_PRP            "prp"
+#define NM_SETTING_HSR_PORT1            "port1"
+#define NM_SETTING_HSR_PORT2            "port2"
+#define NM_SETTING_HSR_MULTICAST_SPEC   "multicast-spec"
+#define NM_SETTING_HSR_PRP              "prp"
+#define NM_SETTING_HSR_PROTOCOL_VERSION "protocol-version"
+
+/**
+ * NMSettingHsrProtocolVersion:
+ * @NM_SETTING_HSR_PROTOCOL_VERSION_DEFAULT: Default version for the protocol
+ * @NM_SETTING_HSR_PROTOCOL_VERSION_HSR_2010: HSRv0, IEC 62439-3:2010
+ * @NM_SETTING_HSR_PROTOCOL_VERSION_HSR_2012: HSRv1, IEC 62439-3:2012
+ *
+ * #NMSettingHsrProtocolVersion values indicate the HSR protocol version.
+ *
+ * Since: 1.56
+ */
+typedef enum {
+    NM_SETTING_HSR_PROTOCOL_VERSION_DEFAULT  = -1,
+    NM_SETTING_HSR_PROTOCOL_VERSION_HSR_2010 = 0,
+    NM_SETTING_HSR_PROTOCOL_VERSION_HSR_2012 = 1,
+} NMSettingHsrProtocolVersion;
 
 typedef struct _NMSettingHsrClass NMSettingHsrClass;
 
@@ -43,6 +60,8 @@ NM_AVAILABLE_IN_1_46
 guint32 nm_setting_hsr_get_multicast_spec(NMSettingHsr *setting);
 NM_AVAILABLE_IN_1_46
 gboolean nm_setting_hsr_get_prp(NMSettingHsr *setting);
+NM_AVAILABLE_IN_1_56
+NMSettingHsrProtocolVersion nm_setting_hsr_get_protocol_version(NMSettingHsr *setting);
 
 G_END_DECLS
 
