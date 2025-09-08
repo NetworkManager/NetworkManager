@@ -3626,6 +3626,14 @@ do_write_construct(NMConnection                   *connection,
 
     write_ip_routing_rules(connection, ifcfg, route_ignore);
 
+    if (nm_setting_connection_get_dnssec(s_con) != NM_SETTING_CONNECTION_DNSSEC_DEFAULT) {
+        set_error_unsupported(error,
+                              connection,
+                              NM_SETTING_CONNECTION_SETTING_NAME "." NM_SETTING_CONNECTION_DNSSEC,
+                              TRUE);
+        return FALSE;
+    }
+
     write_connection_setting(s_con, ifcfg, interface_name);
 
     NM_SET_OUT(out_ifcfg, g_steal_pointer(&ifcfg));
