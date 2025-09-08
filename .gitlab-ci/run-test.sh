@@ -17,10 +17,17 @@ grep -q '^NAME=.*\(CentOS\)' /etc/os-release && IS_CENTOS=1
 grep -q '^NAME=.*\(Fedora\)' /etc/os-release && IS_FEDORA=1
 grep -q '^NAME=.*\(Alpine\)' /etc/os-release && IS_ALPINE=1
 
-IS_CENTOS_7=0
 if [ $IS_CENTOS = 1 ]; then
-    if grep -q '^VERSION_ID=.*\<7\>' /etc/os-release ; then
-        IS_CENTOS_7=1
+    CENTOS_VER_LINE="$(grep '^VERSION_ID=' /etc/os-release)"
+    if [[ $CENTOS_VER_LINE =~ ^VERSION_ID=\"?([0-9]+)\"?$ ]]; then
+        CENTOS_VER="${BASH_REMATCH[1]}"
+    else
+        echo "Error detecting CentOS Stream version" >&2
+        exit 1
+    fi
+
+    if (( $CENTOS_VER >= 10 )); then
+        export WITH_LIBTEAM=0
     fi
 fi
 
