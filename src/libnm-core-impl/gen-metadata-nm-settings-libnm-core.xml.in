@@ -810,6 +810,10 @@
                   dbus-type="i"
                   gprop-type="gint"
                   />
+        <property name="dnssec"
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="down-on-poweroff"
                   dbus-type="i"
                   gprop-type="gint"

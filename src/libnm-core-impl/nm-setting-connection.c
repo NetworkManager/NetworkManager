@@ -71,6 +71,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingConnection,
                              PROP_MDNS,
                              PROP_LLMNR,
                              PROP_DNS_OVER_TLS,
+                             PROP_DNSSEC,
                              PROP_MPTCP_FLAGS,
                              PROP_STABLE_ID,
                              PROP_AUTH_RETRIES,
@@ -103,6 +104,7 @@ typedef struct {
     gint32      mdns;
     gint32      llmnr;
     gint32      dns_over_tls;
+    gint32      dnssec;
     gint32      wait_device_timeout;
     gint32      lldp;
     gint32      wait_activation_delay;
@@ -1291,6 +1293,22 @@ nm_setting_connection_get_dns_over_tls(NMSettingConnection *setting)
                          NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT);
 
     return NM_SETTING_CONNECTION_GET_PRIVATE(setting)->dns_over_tls;
+}
+
+/**
+ * nm_setting_connection_get_dnssec:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns: the #NMSettingConnection:dnssec property of the setting.
+ *
+ * Since: 1.56
+ **/
+NMSettingConnectionDnssec
+nm_setting_connection_get_dnssec(NMSettingConnection *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), NM_SETTING_CONNECTION_DNSSEC_DEFAULT);
+
+    return NM_SETTING_CONNECTION_GET_PRIVATE(setting)->dnssec;
 }
 
 /**
@@ -3405,6 +3423,33 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                              NM_SETTING_PARAM_NONE,
                                              NMSettingConnectionPrivate,
                                              dns_over_tls);
+
+    /**
+     * NMSettingConnection:dnssec:
+     *
+     * Whether DNSSEC (dnssec) is enabled for the connection.
+     *
+     * The permitted values are: "yes" (2) use DNSSEC and disable fallback,
+     * "allow-downgrade" (1) use DNSSEC but allow fallback if the server does not support it,
+     * "no" (0) don't ever use DNSSEC.
+     * The effect of "default" (-1) depends on the dns plugin used.
+     * Systemd-resolved uses its global setting in this case.
+     *
+     * This feature requires a plugin which supports DNSSEC. Otherwise, the
+     * setting has no effect. One such plugin is systemd-resolved.
+     *
+     * Since: 1.56
+     **/
+    _nm_setting_property_define_direct_enum(properties_override,
+                                            obj_properties,
+                                            NM_SETTING_CONNECTION_DNSSEC,
+                                            PROP_DNSSEC,
+                                            NM_TYPE_SETTING_CONNECTION_DNSSEC,
+                                            NM_SETTING_CONNECTION_DNSSEC_DEFAULT,
+                                            NM_SETTING_PARAM_NONE,
+                                            NULL,
+                                            NMSettingConnectionPrivate,
+                                            dnssec);
 
     /* Notes about "mptcp-flags":
      *

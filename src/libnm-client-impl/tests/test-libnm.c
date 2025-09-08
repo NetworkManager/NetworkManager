@@ -2756,6 +2756,8 @@ test_types(void)
         G(nm_setting_connection_lldp_get_type),
         G(nm_setting_connection_llmnr_get_type),
         G(nm_setting_connection_mdns_get_type),
+        G(nm_setting_connection_dns_over_tls_get_type),
+        G(nm_setting_connection_dnssec_get_type),
         G(nm_setting_dcb_flags_get_type),
         G(nm_setting_dcb_get_type),
         G(nm_setting_diff_result_get_type),
