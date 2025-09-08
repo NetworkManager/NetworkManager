@@ -79,6 +79,14 @@ if [ "$CC" != gcc ]; then
     _WITH_CRYPTO=nss
 fi
 
+if [ "$WITH_LIBTEAM" != "" ]; then
+    if _is_true "$WITH_LIBTEAM"; then
+        _WITH_LIBTEAM="true"
+    else
+        _WITH_LIBTEAM="false"
+    fi
+fi
+
 if [ "$WITH_DOCS" != "" ]; then
     if _is_true "$WITH_DOCS"; then
         _WITH_DOCS="true"

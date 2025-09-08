@@ -11,6 +11,7 @@ apk add \
     'clang' \
     'curl-dev' \
     'dbus' \
+    'dbus-dev' \
     'elogind-dev' \
     'eudev-dev' \
     'gcc' \
