@@ -1969,12 +1969,11 @@ nm_l3_config_data_set_pref64_valid(NML3ConfigData *self, gboolean val)
 }
 
 gboolean
-nm_l3_config_data_get_pref64_valid(const NML3ConfigData *self, gboolean *out_val)
+nm_l3_config_data_get_pref64_valid(const NML3ConfigData *self)
 {
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
 
-    NM_SET_OUT(out_val, self->pref64_valid);
-    return TRUE;
+    return self->pref64_valid;
 }
 
 gboolean
