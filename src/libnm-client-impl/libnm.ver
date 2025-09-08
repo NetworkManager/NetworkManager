@@ -2080,4 +2080,6 @@ global:
 libnm_1_56_0 {
 global:
 	nm_dns_server_validate;
+	nm_setting_hsr_get_protocol_version;
+	nm_setting_hsr_protocol_version_get_type;
 } libnm_1_54_0;
