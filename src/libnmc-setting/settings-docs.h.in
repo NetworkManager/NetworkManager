@@ -174,6 +174,7 @@
 #define DESCRIBE_DOC_NM_SETTING_HSR_MULTICAST_SPEC N_("The last byte of supervision address.")
 #define DESCRIBE_DOC_NM_SETTING_HSR_PORT1 N_("The port1 interface name of the HSR. This property is mandatory.")
 #define DESCRIBE_DOC_NM_SETTING_HSR_PORT2 N_("The port2 interface name of the HSR. This property is mandatory.")
+#define DESCRIBE_DOC_NM_SETTING_HSR_PROTOCOL_VERSION N_("Configures the protocol version to be used for the HSR/PRP interface. \"default\" (-1) sets the protocol version to the default version for the protocol. \"hsr-2010\" (0) sets the protocol version to HSRv0 (IEC 62439-3:2010). \"hsr-2012\" (1) sets the protocol version to HSRv1 (IEC 62439-3:2012).")
 #define DESCRIBE_DOC_NM_SETTING_HSR_PRP N_("The protocol used by the interface, whether it is PRP or HSR.")
 #define DESCRIBE_DOC_NM_SETTING_INFINIBAND_MAC_ADDRESS N_("If specified, this connection will only apply to the IPoIB device whose permanent MAC address matches. This property does not change the MAC address of the device (i.e. MAC spoofing).")
 #define DESCRIBE_DOC_NM_SETTING_INFINIBAND_MTU N_("If non-zero, only transmit packets of the specified size or smaller, breaking larger packets up into multiple frames.")
