@@ -11,7 +11,7 @@
 #include <linux/if_ether.h>
 #include <linux/rtnetlink.h>
 #include <linux/fib_rules.h>
-#ifdef HAVE_CLAT
+#if HAVE_CLAT
 #include <bpf/libbpf.h>
 #include <bpf/bpf.h>
 #endif /* HAVE_CLAT */
@@ -27,7 +27,7 @@
 #include "nm-l3-ipv4ll.h"
 #include "nm-ip-config.h"
 #include "nm-core-utils.h"
-#ifdef HAVE_CLAT
+#if HAVE_CLAT
 #include "bpf/clat.h"
 NM_PRAGMA_WARNING_DISABLE("-Wcast-align")
 #include "bpf/clat.skel.h"
@@ -300,12 +300,19 @@ typedef struct _NML3CfgPrivate {
         NMIPConfig *ipconfig_x[2];
     };
 
-#ifdef HAVE_CLAT
-    NMNetnsIPRange      *clat_address_4_commited;
-    NMPlatformIP6Address clat_address_6_commited;
-    NMNetnsIPRange      *clat_address_4;
+#if HAVE_CLAT
+    /* The reserved IPv4 address for CLAT in the 192.0.0.0/28 range */
+    NMNetnsIPReservation *clat_address_4;
+    /* The IPv6 address for sending and receiving translated packets */
     NMPlatformIP6Address clat_address_6;
-    struct in6_addr      clat_pref64;
+
+    /* The same addresses as above, but already committed previously */
+    NMNetnsIPReservation *clat_address_4_committed;
+    NMPlatformIP6Address  clat_address_6_committed;
+
+    /* The NAT64 prefix discovered via RA */
+    struct in6_addr clat_pref64;
+
     /* If NULL, the BPF program hasn't been loaded or attached */
     struct clat_bpf   *clat_bpf;
     int                clat_socket;
@@ -379,7 +386,7 @@ typedef struct _NML3CfgPrivate {
     bool rp_filter_set : 1;
 
     bool clat_address_6_valid : 1;
-    bool clat_address_6_commited_valid : 1;
+    bool clat_address_6_committed_valid : 1;
     bool clat_pref64_valid : 1;
 } NML3CfgPrivate;
 
@@ -4149,9 +4156,10 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
     guint                                    i;
     gboolean                                 merged_changed   = FALSE;
     gboolean                                 commited_changed = FALSE;
-    gboolean                                 pref64_valid     = FALSE;
-    struct in6_addr                          pref64;
-    guint32                                  pref64_plen;
+#if HAVE_CLAT
+    struct in6_addr pref64;
+    guint32         pref64_plen;
+#endif
 
     nm_assert(NM_IS_L3CFG(self));
     nm_assert(!out_old || !*out_old);
@@ -4250,32 +4258,41 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
         }
 
 #if HAVE_CLAT
-        nm_assert(nm_l3_config_data_get_pref64_valid(l3cd, &pref64_valid));
-        if (pref64_valid) {
-            nm_assert(nm_l3_config_data_get_pref64(l3cd, &pref64, &pref64_plen));
-        }
-
-        if (pref64_valid) {
-            NMPlatformIPXRoute rx;
-            NMIPAddrTyped      best_v6_gateway;
-            struct in6_addr    ip6;
-            NMDedupMultiIter   iter;
-
+        if (nm_l3_config_data_get_pref64_valid(l3cd)) {
+            NMPlatformIPXRoute          rx;
+            NMIPAddrTyped               best_v6_gateway;
+            NMDedupMultiIter            iter;
             const NMPlatformIP6Route   *best_v6_route;
             const NMPlatformIP6Address *ip6_entry;
+            struct in6_addr             ip6;
+            const char                 *network_id;
 
-            /* We need to assign an additional v6 /64 address for ourselves, according
-               to the spec: https://www.rfc-editor.org/rfc/rfc6877#section-6.3 */
-            if (!self->priv.p->clat_address_6_valid) {
+            /* If we have a valid NAT64 prefix, configure in kernel:
+             *
+             * - a CLAT IPv4 address (192.0.0.x)
+             * - a IPv4 default route via the best IPv6 gateway
+             *
+             * We also set clat_address_6 as an additional /64 IPv6 address
+             * determined according to https://www.rfc-editor.org/rfc/rfc6877#section-6.3 .
+             * This address is used for sending and receiving translated packets,
+             * but is not configured in kernel to avoid that it gets used by applications.
+             * Later in _l3_commit_pref64() we use IPV6_JOIN_ANYCAST to let the kernel
+             * handle ND for the address.
+             */
+
+            nm_l3_config_data_get_pref64(l3cd, &pref64, &pref64_plen);
+            network_id = nm_l3_config_data_get_network_id(l3cd);
+
+            if (!self->priv.p->clat_address_6_valid && network_id) {
                 nm_l3_config_data_iter_ip6_address_for_each (&iter, l3cd, &ip6_entry) {
                     if (ip6_entry->addr_source == NM_IP_CONFIG_SOURCE_NDISC
                         && ip6_entry->plen == 64) {
                         ip6 = ip6_entry->address;
 
-                        nm_utils_ipv6_addr_set_stable_privacy(NM_UTILS_STABLE_TYPE_RANDOM,
+                        nm_utils_ipv6_addr_set_stable_privacy(NM_UTILS_STABLE_TYPE_CLAT,
                                                               &ip6,
                                                               nm_l3cfg_get_ifname(self, TRUE),
-                                                              "TODO: Mary fixme",
+                                                              network_id,
                                                               0);
                         self->priv.p->clat_address_6 = (NMPlatformIP6Address) {
                             .ifindex      = self->priv.ifindex,
@@ -4294,16 +4311,18 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
                potentially create broken v4 connectivity) */
             if (!self->priv.p->clat_address_6_valid) {
                 _LOGW("CLAT is currently only supported when SLAAC is in use.");
-                /* Deallocate the v4 address unless it's the commited one */
-                if (self->priv.p->clat_address_4 != self->priv.p->clat_address_4_commited) {
-                    nm_clear_pointer(&self->priv.p->clat_address_4, nm_netns_ip_range_release);
+                /* Deallocate the v4 address unless it's the committed one */
+                if (self->priv.p->clat_address_4 != self->priv.p->clat_address_4_committed) {
+                    nm_clear_pointer(&self->priv.p->clat_address_4,
+                                     nm_netns_ip_reservation_release);
                 } else {
                     self->priv.p->clat_address_4 = NULL;
                 }
             } else if (!self->priv.p->clat_address_4) {
                 /* We need a v4 /32 */
                 self->priv.p->clat_address_4 =
-                    nm_netns_ip_range_allocate(self->priv.netns, NM_NETNS_IP_RANGE_TYPE_CLAT);
+                    nm_netns_ip_reservation_get(self->priv.netns,
+                                                NM_NETNS_IP_RESERVATION_TYPE_CLAT);
             }
 
             if (self->priv.p->clat_address_4) {
@@ -4423,15 +4442,17 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
     if (nm_l3_config_data_equal(l3cd, self->priv.p->combined_l3cd_merged))
         goto out;
 
+#if HAVE_CLAT
     if (!l3cd) {
         self->priv.p->clat_address_6_valid = FALSE;
         /* Deallocate the v4 address unless it's the commited one */
-        if (self->priv.p->clat_address_4 != self->priv.p->clat_address_4_commited) {
-            nm_clear_pointer(&self->priv.p->clat_address_4, nm_netns_ip_range_release);
+        if (self->priv.p->clat_address_4 != self->priv.p->clat_address_4_committed) {
+            nm_clear_pointer(&self->priv.p->clat_address_4, nm_netns_ip_reservation_release);
         } else {
             self->priv.p->clat_address_4 = NULL;
         }
     }
+#endif /* HAVE_CLAT */
 
     l3cd_old                           = g_steal_pointer(&self->priv.p->combined_l3cd_merged);
     self->priv.p->combined_l3cd_merged = nm_l3_config_data_seal(g_steal_pointer(&l3cd));
@@ -5532,14 +5553,14 @@ _l3_commit_one(NML3Cfg              *self,
     _failedobj_handle_routes(self, addr_family, routes_failed);
 }
 
-#ifdef HAVE_CLAT
+#if HAVE_CLAT
 static void
 _l3_get_pref64_config(NML3Cfg                     *self,
                       struct clat_v4_config_key   *v4_key,
                       struct clat_v4_config_value *v4_value,
                       struct clat_v6_config_key   *v6_key,
                       struct clat_v6_config_value *v6_value,
-                      gboolean                     commited)
+                      gboolean                     committed)
 {
     const NML3ConfigData *l3cd = self->priv.p->combined_l3cd_commited;
     struct in6_addr       pref64;
@@ -5552,13 +5573,13 @@ _l3_get_pref64_config(NML3Cfg                     *self,
 
     v4_key->ifindex = v6_key->ifindex = self->priv.ifindex;
 
-    if (commited) {
-        if (self->priv.p->clat_address_4_commited) {
+    if (committed) {
+        if (self->priv.p->clat_address_4_committed) {
             v6_value->local_v4.s_addr = v4_key->local_v4.s_addr =
-                self->priv.p->clat_address_4_commited->addr;
+                self->priv.p->clat_address_4_committed->addr;
         }
-        if (self->priv.p->clat_address_6_commited_valid) {
-            v4_value->local_v6 = v6_key->local_v6 = self->priv.p->clat_address_6_commited.address;
+        if (self->priv.p->clat_address_6_committed_valid) {
+            v4_value->local_v6 = v6_key->local_v6 = self->priv.p->clat_address_6_committed.address;
         }
         if (self->priv.p->clat_pref64_valid) {
             v6_key->pref64 = v4_value->pref64 = self->priv.p->clat_pref64;
@@ -5615,10 +5636,10 @@ _l3_commit_pref64(NML3Cfg *self, NML3CfgCommitType commit_type)
     const struct in6_addr      *l3cd_pref64 = NULL;
     guint32                     l3cd_pref64_plen;
     char                        buf[100];
-    struct clat_v6_config_key   v6_key_commited, v6_key_new;
-    struct clat_v4_config_key   v4_key_commited, v4_key_new;
-    struct clat_v6_config_value v6_value_commited, v6_value_new;
-    struct clat_v4_config_value v4_value_commited, v4_value_new;
+    struct clat_v6_config_key   v6_key_committed, v6_key_new;
+    struct clat_v4_config_key   v4_key_committed, v4_key_new;
+    struct clat_v6_config_value v6_value_committed, v6_value_new;
+    struct clat_v4_config_value v4_value_committed, v4_value_new;
     gboolean                    v6_changed;
     DECLARE_LIBBPF_OPTS(bpf_tc_hook,
                         hook,
@@ -5706,28 +5727,28 @@ _l3_commit_pref64(NML3Cfg *self, NML3CfgCommitType commit_type)
         }
 
         _l3_get_pref64_config(self,
-                              &v4_key_commited,
-                              &v4_value_commited,
-                              &v6_key_commited,
-                              &v6_value_commited,
+                              &v4_key_committed,
+                              &v4_value_committed,
+                              &v6_key_committed,
+                              &v6_value_committed,
                               TRUE);
         _l3_get_pref64_config(self, &v4_key_new, &v4_value_new, &v6_key_new, &v6_value_new, FALSE);
 
-        if (memcmp(&v4_key_commited, &v4_key_new, sizeof(v4_key_new))) {
+        if (memcmp(&v4_key_committed, &v4_key_new, sizeof(v4_key_new))) {
             bpf_map_delete_elem(bpf_map__fd(self->priv.p->clat_bpf->maps.v4_config_map),
-                                &v4_key_commited);
+                                &v4_key_committed);
         }
-        if (memcmp(&v6_key_commited, &v6_key_new, sizeof(v6_key_new))) {
+        if (memcmp(&v6_key_committed, &v6_key_new, sizeof(v6_key_new))) {
             bpf_map_delete_elem(bpf_map__fd(self->priv.p->clat_bpf->maps.v6_config_map),
-                                &v6_key_commited);
+                                &v6_key_committed);
         }
-        if (memcmp(&v4_value_commited, &v4_value_new, sizeof(v4_value_new))) {
+        if (memcmp(&v4_value_committed, &v4_value_new, sizeof(v4_value_new))) {
             bpf_map_update_elem(bpf_map__fd(self->priv.p->clat_bpf->maps.v4_config_map),
                                 &v4_key_new,
                                 &v4_value_new,
                                 BPF_ANY);
         }
-        if (memcmp(&v6_value_commited, &v6_value_new, sizeof(v6_value_new))) {
+        if (memcmp(&v6_value_committed, &v6_value_new, sizeof(v6_value_new))) {
             bpf_map_update_elem(bpf_map__fd(self->priv.p->clat_bpf->maps.v6_config_map),
                                 &v6_key_new,
                                 &v6_value_new,
@@ -5763,17 +5784,17 @@ _l3_commit_pref64(NML3Cfg *self, NML3CfgCommitType commit_type)
         }
 
         v6_changed =
-            (self->priv.p->clat_address_6_valid != self->priv.p->clat_address_6_commited_valid)
-            || (self->priv.p->clat_address_6_valid && self->priv.p->clat_address_6_commited_valid
+            (self->priv.p->clat_address_6_valid != self->priv.p->clat_address_6_committed_valid)
+            || (self->priv.p->clat_address_6_valid && self->priv.p->clat_address_6_committed_valid
                 && memcmp(&self->priv.p->clat_address_6.address,
-                          &self->priv.p->clat_address_6_commited.address,
-                          sizeof(self->priv.p->clat_address_6_commited.address)));
+                          &self->priv.p->clat_address_6_committed.address,
+                          sizeof(self->priv.p->clat_address_6_committed.address)));
 
         if (self->priv.p->clat_socket > 0 && v6_changed) {
             struct ipv6_mreq mreq = {.ipv6mr_interface = self->priv.ifindex};
 
-            if (self->priv.p->clat_address_6_commited_valid) {
-                mreq.ipv6mr_multiaddr = self->priv.p->clat_address_6_commited.address;
+            if (self->priv.p->clat_address_6_committed_valid) {
+                mreq.ipv6mr_multiaddr = self->priv.p->clat_address_6_committed.address;
 
                 err = setsockopt(self->priv.p->clat_socket,
                                  SOL_IPV6,
@@ -5807,27 +5828,27 @@ _l3_commit_pref64(NML3Cfg *self, NML3CfgCommitType commit_type)
             _l3_clat_destroy(self);
         }
 
-        /* Commited will get cleaned up below */
+        /* Committed will get cleaned up below */
         self->priv.p->clat_address_6_valid = FALSE;
 
         nm_clear_fd(&self->priv.p->clat_socket);
 
-        /* Deallocate the v4 address. Commited address will get cleaned up below,
+        /* Deallocate the v4 address. Committed address will get cleaned up below,
            but we need to make sure there's no double-free */
-        if (self->priv.p->clat_address_4 != self->priv.p->clat_address_4_commited) {
-            nm_clear_pointer(&self->priv.p->clat_address_4, nm_netns_ip_range_release);
+        if (self->priv.p->clat_address_4 != self->priv.p->clat_address_4_committed) {
+            nm_clear_pointer(&self->priv.p->clat_address_4, nm_netns_ip_reservation_release);
         } else {
             self->priv.p->clat_address_4 = NULL;
         }
     }
 
     /* Record the new state */
-    if (self->priv.p->clat_address_4_commited != self->priv.p->clat_address_4) {
-        nm_clear_pointer(&self->priv.p->clat_address_4_commited, nm_netns_ip_range_release);
-        self->priv.p->clat_address_4_commited = self->priv.p->clat_address_4;
+    if (self->priv.p->clat_address_4_committed != self->priv.p->clat_address_4) {
+        nm_clear_pointer(&self->priv.p->clat_address_4_committed, nm_netns_ip_reservation_release);
+        self->priv.p->clat_address_4_committed = self->priv.p->clat_address_4;
     }
-    self->priv.p->clat_address_6_commited       = self->priv.p->clat_address_6;
-    self->priv.p->clat_address_6_commited_valid = self->priv.p->clat_address_6_valid;
+    self->priv.p->clat_address_6_committed       = self->priv.p->clat_address_6;
+    self->priv.p->clat_address_6_committed_valid = self->priv.p->clat_address_6_valid;
 }
 #endif /* HAVE_CLAT */
 
@@ -5913,7 +5934,7 @@ _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
 
     _l3_acd_data_process_changes(self);
 
-#ifdef HAVE_CLAT
+#if HAVE_CLAT
     _l3_commit_pref64(self, commit_type);
 #endif /* HAVE_CLAT */
 
@@ -6298,7 +6319,9 @@ nm_l3cfg_init(NML3Cfg *self)
 {
     self->priv.p = G_TYPE_INSTANCE_GET_PRIVATE(self, NM_TYPE_L3CFG, NML3CfgPrivate);
 
+#if HAVE_CLAT
     self->priv.p->clat_socket = -1;
+#endif /* HAVE_CLAT */
 
     c_list_init(&self->priv.p->acd_lst_head);
     c_list_init(&self->priv.p->acd_event_notify_lst_head);
@@ -6354,9 +6377,6 @@ finalize(GObject *object)
 {
     NML3Cfg *self = NM_L3CFG(object);
     gboolean changed;
-#ifdef HAVE_CLAT
-    DECLARE_LIBBPF_OPTS(bpf_tc_hook, hook, .attach_point = BPF_TC_INGRESS | BPF_TC_EGRESS);
-#endif /* HAVE_CLAT */
 
     if (self->priv.netns) {
         nm_netns_watcher_remove_all(self->priv.netns, _NETNS_WATCHER_IP_ADDR_TAG(self, AF_INET));
@@ -6411,9 +6431,9 @@ finalize(GObject *object)
     if (changed)
         nmp_global_tracker_sync_mptcp_addrs(self->priv.global_tracker, FALSE);
 
-#ifdef HAVE_CLAT
-    self->priv.p->clat_address_4_commited = NULL;
-    nm_clear_pointer(&self->priv.p->clat_address_4, nm_netns_ip_range_release);
+#if HAVE_CLAT
+    self->priv.p->clat_address_4_committed = NULL;
+    nm_clear_pointer(&self->priv.p->clat_address_4, nm_netns_ip_reservation_release);
     nm_clear_fd(&self->priv.p->clat_socket);
     if (self->priv.p->clat_bpf) {
         _l3_clat_destroy(self);
