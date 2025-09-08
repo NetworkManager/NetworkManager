@@ -506,12 +506,12 @@ NAME   UUID                                  TYPE      DEVICE
 con-1  5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  --     
 
 <<<
-size: 1704
+size: 1757
 location: src/tests/client/test-client.py:test_002()/23
 cmd: $NMCLI c s con-1
 lang: C
 returncode: 0
-stdout: 1576 bytes
+stdout: 1629 bytes
 >>>
 connection.id:                          con-1
 connection.uuid:                        5fcfd6d7-1e63-3332-8826-a7eda103792d
@@ -543,17 +543,18 @@ connection.lldp:                        default
 connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
+connection.dnssec:                      -1 (default)
 connection.mptcp-flags:                 0x0 (default)
 connection.wait-device-timeout:         -1
 connection.wait-activation-delay:       -1
 
 <<<
-size: 1715
+size: 1768
 location: src/tests/client/test-client.py:test_002()/24
 cmd: $NMCLI c s con-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1577 bytes
+stdout: 1630 bytes
 >>>
 connection.id:                          con-1
 connection.uuid:                        5fcfd6d7-1e63-3332-8826-a7eda103792d
@@ -585,6 +586,7 @@ connection.lldp:                        default
 connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
+connection.dnssec:                      -1 (default)
 connection.mptcp-flags:                 0x0 (default)
 connection.wait-device-timeout:         -1
 connection.wait-activation-delay:       -1
