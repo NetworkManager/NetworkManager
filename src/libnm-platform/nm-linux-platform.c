@@ -1893,6 +1893,8 @@ _parse_lnk_hsr(const char *kind, struct nlattr *info_data)
         nla_memcpy(&props->supervision_address, tb[IFLA_HSR_SUPERVISION_ADDR], sizeof(NMEtherAddr));
     if (tb[IFLA_HSR_PROTOCOL])
         props->prp = nla_get_u8(tb[IFLA_HSR_PROTOCOL]);
+    if (tb[IFLA_HSR_VERSION])
+        props->protocol_version = nla_get_u8(tb[IFLA_HSR_VERSION]);
 
     return obj;
 }
@@ -5220,6 +5222,11 @@ _nl_msg_new_link_set_linkinfo(struct nl_msg *msg, NMLinkType link_type, gconstpo
             NLA_PUT_U8(msg, IFLA_HSR_MULTICAST_SPEC, props->multicast_spec);
 
         NLA_PUT_U8(msg, IFLA_HSR_PROTOCOL, props->prp);
+
+        if (!props->prp) {
+            NLA_PUT_U8(msg, IFLA_HSR_VERSION, props->protocol_version);
+        }
+
         break;
     }
     case NM_LINK_TYPE_SIT:
