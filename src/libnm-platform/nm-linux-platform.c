@@ -5220,6 +5220,11 @@ _nl_msg_new_link_set_linkinfo(struct nl_msg *msg, NMLinkType link_type, gconstpo
             NLA_PUT_U8(msg, IFLA_HSR_MULTICAST_SPEC, props->multicast_spec);
 
         NLA_PUT_U8(msg, IFLA_HSR_PROTOCOL, props->prp);
+
+        if (!props->prp && props->protocol_version >= 0) {
+            NLA_PUT_U8(msg, IFLA_HSR_VERSION, props->protocol_version);
+        }
+
         break;
     }
     case NM_LINK_TYPE_SIT:
