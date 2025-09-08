@@ -227,7 +227,6 @@ RUN dnf install -y \\
     libnvme-devel \\
     libpsl-devel \\
     libselinux-devel \\
-    libtool \\
     libubsan \\
     libuuid-devel \\
     meson \\

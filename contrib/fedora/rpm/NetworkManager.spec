@@ -254,7 +254,6 @@ Conflicts: NetworkManager-dispatcher-routing-rules <= 1:1.47.5-3
 %endif
 
 BuildRequires: gcc
-BuildRequires: libtool
 BuildRequires: pkgconfig
 BuildRequires: meson
 BuildRequires: gettext-devel >= 0.19.8

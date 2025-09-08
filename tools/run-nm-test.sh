@@ -34,8 +34,6 @@ usage() {
     echo "        depending on a hard-coded list of tests that require it. This flag overwrites"
     echo "        the automatism to always launch a D-Bus session"
     echo "  --no-launch-dbus|-D: prevent launching a D-Bus session"
-    echo "  --no-libtool: when running with valgrind, the script tries automatically to"
-    echo "        use libtool as necessary. This disables libtool usage"
     echo "  --valgrind|-v: run under valgrind"
     echo "  --no-valgrind|-V: disable running under valgrind (overrides NMTST_USE_VALGRIND=1)"
     echo "  -d: set NMTST_DEBUG=d"
@@ -50,7 +48,6 @@ usage() {
     echo ""
     echo "  The following environment variables are honored:"
     echo "    NMTST_USE_VALGRIND=0|1: enable/disable valgrind"
-    echo "    NMTST_LIBTOOL=: libtool path (or disable)"
     echo "    NMTST_LAUNCH_DBUS=0|1: whether to lounch a D-Bus session"
     echo "    NMTST_SET_DEBUG=0|1: saet NMTST_DEBUG=d"
     echo ""
@@ -74,12 +71,6 @@ BUILDDIR=
 
 if [ "$CALLED_FROM_MAKE" == 1 ]; then
     BUILDDIR="$1"
-    shift
-    if [ -n "$1" ]; then
-        NMTST_LIBTOOL=($1 --mode=execute);
-    else
-        NMTST_LIBTOOL=()
-    fi
     shift
     NMTST_VALGRIND_ARG="$1"; shift
     if [[ "$NMTST_VALGRIND_ARG" == no ]]; then
@@ -130,14 +121,6 @@ else
         # by default, disable valgrind checks.
         NMTST_USE_VALGRIND=0
     fi
-
-    if [ -n "$NMTST_LIBTOOL" ] ; then
-        NMTST_LIBTOOL=("$NMTST_LIBTOOL" "--mode=execute")
-    elif [ -z "${NMTST_LIBTOOL+x}" -a -f "$SCRIPT_PATH/../libtool" ]; then
-        NMTST_LIBTOOL=(sh "$SCRIPT_PATH/../libtool" "--mode=execute")
-    else
-        NMTST_LIBTOOL=()
-    fi
     TEST_ARGV=()
     unset TEST
     while test $# -gt 0; do
@@ -152,10 +135,6 @@ else
             ;;
         "--no-launch-dbus"|"-D")
             NMTST_LAUNCH_DBUS=0
-            shift
-            ;;
-        "--no-libtool")
-            NMTST_LIBTOOL=()
             shift
             ;;
         "--valgrind"|-v)
@@ -209,7 +188,6 @@ else
                 BUILDDIR="$(dirname "$BUILDDIR")"
                 [[ "$BUILDDIR" == / ]] && BUILDDIR=
                 [[ -z "$BUILDDIR" ]] && break
-                [[ -e "$BUILDDIR/src/libnm-client-impl/.libs/libnm.so" ]] && break
                 [[ -e "$BUILDDIR/src/libnm-client-impl/libnm.so" ]] && break
             done
         fi
@@ -257,11 +235,7 @@ fi
 if [[ -n "$BUILDDIR" ]]; then
     if [[ -d "$BUILDDIR/src/libnm-client-impl" ]]; then
         export GI_TYPELIB_PATH="$BUILDDIR/src/libnm-client-impl/${GI_TYPELIB_PATH:+:$GI_TYPELIB_PATH}"
-        if [[ -d "$BUILDDIR/src/libnm-client-impl/.libs" ]]; then
-            export LD_LIBRARY_PATH="$BUILDDIR/src/libnm-client-impl/.libs${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-        else
-            export LD_LIBRARY_PATH="$BUILDDIR/src/libnm-client-impl${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-        fi
+        export LD_LIBRARY_PATH="$BUILDDIR/src/libnm-client-impl${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
     fi
 fi
 
@@ -304,7 +278,6 @@ export G_SLICE=always-malloc
 export G_DEBUG=gc-friendly
 export NM_TEST_UNDER_VALGRIND=1
 "${NMTST_DBUS_RUN_SESSION[@]}" \
-"${NMTST_LIBTOOL[@]}" \
 "$NMTST_VALGRIND" \
     --quiet \
     --error-exitcode=$VALGRIND_ERROR \
