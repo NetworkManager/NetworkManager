@@ -304,6 +304,7 @@ typedef enum {
     NM_UTILS_STABLE_TYPE_STABLE_ID = 1,
     NM_UTILS_STABLE_TYPE_GENERATED = 2,
     NM_UTILS_STABLE_TYPE_RANDOM    = 3,
+    NM_UTILS_STABLE_TYPE_CLAT      = 4,
 } NMUtilsStableType;
 
 #define NM_UTILS_STABLE_TYPE_NONE ((NMUtilsStableType) - 1)
