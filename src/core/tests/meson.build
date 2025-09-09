@@ -6,6 +6,7 @@ test_units = [
   'test-core',
   'test-core-with-expect',
   'test-dcb',
+  'test-netns',
   'test-l3cfg',
   'test-utils',
   'test-wired-defname',
