@@ -40,7 +40,8 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_DHCP_CLIENT_ID,
                                   PROP_DHCP_FQDN,
                                   PROP_DHCP_VENDOR_CLASS_IDENTIFIER,
                                   PROP_LINK_LOCAL,
-                                  PROP_DHCP_IPV6_ONLY_PREFERRED, );
+                                  PROP_DHCP_IPV6_ONLY_PREFERRED,
+                                  PROP_CLAT, );
 
 typedef struct {
     NMSettingIPConfigPrivate parent;
@@ -50,6 +51,7 @@ typedef struct {
     char  *dhcp_vendor_class_identifier;
     gint32 link_local;
     gint32 dhcp_ipv6_only_preferred;
+    gint32 clat;
 } NMSettingIP4ConfigPrivate;
 
 /**
@@ -168,6 +170,24 @@ nm_setting_ip4_config_get_dhcp_ipv6_only_preferred(NMSettingIP4Config *setting)
     return NM_SETTING_IP4_CONFIG_GET_PRIVATE(setting)->dhcp_ipv6_only_preferred;
 }
 
+/**
+ * nm_setting_ip4_config_get_clat:
+ * @setting: the #NMSettingIP4Config
+ *
+ * Returns the value in the #NMSettingIP4Config:clat property.
+ *
+ * Returns: the CLAT property value
+ *
+ * Since: 1.58
+ */
+NMSettingIp4ConfigClat
+nm_setting_ip4_config_get_clat(NMSettingIP4Config *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_IP4_CONFIG(setting), NM_SETTING_IP4_CONFIG_CLAT_DEFAULT);
+
+    return NM_SETTING_IP4_CONFIG_GET_PRIVATE(setting)->clat;
+}
+
 static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
@@ -186,12 +206,15 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
     if (!strcmp(method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
         if (nm_setting_ip_config_get_num_addresses(s_ip) == 0
-            && nm_setting_ip_config_get_num_routes(s_ip) == 0) {
-            g_set_error(error,
-                        NM_CONNECTION_ERROR,
-                        NM_CONNECTION_ERROR_MISSING_PROPERTY,
-                        _("method '%s' requires at least an address or a route"),
-                        method);
+            && nm_setting_ip_config_get_num_routes(s_ip) == 0
+            && nm_setting_ip4_config_get_clat(NM_SETTING_IP4_CONFIG(s_ip))
+                   != NM_SETTING_IP4_CONFIG_CLAT_YES) {
+            g_set_error(
+                error,
+                NM_CONNECTION_ERROR,
+                NM_CONNECTION_ERROR_MISSING_PROPERTY,
+                _("method '%s' requires at least an address, a route, or CLAT explicitly enabled"),
+                method);
             g_prefix_error(error,
                            "%s.%s: ",
                            NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -1381,6 +1404,35 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
                                             NULL,
                                             NMSettingIP4ConfigPrivate,
                                             dhcp_ipv6_only_preferred);
+
+    /**
+     * NMSettingIP4Config:clat
+     *
+     * Controls the CLAT (Customer-side translator) functionality. CLAT is used to implement the
+     * client part of 464XLAT (RFC 6877), an architecture that provides IPv4 connectivity to hosts
+     * on IPv6-only networks.
+     *
+     * Setting %NM_SETTING_IP4_CONFIG_CLAT_YES or %NM_SETTING_IP4_CONFIG_CLAT_NO respectively enables
+     * or disables CLAT. When enabled, NetworkManager discovers the NAT64 prefix via Router
+     * Advertisement; if the prefix is found, it installs a BPF program to perform the stateless
+     * translation of packets between IPv4 and IPv6. %NM_SETTING_IP4_CONFIG_CLAT_AUTO enables CLAT
+     * only when the IPv4 method is 'auto' and the device doesn't have a native IPv4 gateway.
+     *
+     * When set to %NM_SETTING_IP4_CONFIG_CLAT_DEFAULT, the actual value is looked up in the global
+     * configuration; if not specified it defaults to %NM_SETTING_IP4_CONFIG_CLAT_AUTO.
+     *
+     * Since: 1.58
+     */
+    _nm_setting_property_define_direct_enum(properties_override,
+                                            obj_properties,
+                                            NM_SETTING_IP4_CONFIG_CLAT,
+                                            PROP_CLAT,
+                                            NM_TYPE_SETTING_IP4_CONFIG_CLAT,
+                                            NM_SETTING_IP4_CONFIG_CLAT_DEFAULT,
+                                            NM_SETTING_PARAM_NONE,
+                                            NULL,
+                                            NMSettingIP4ConfigPrivate,
+                                            clat);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

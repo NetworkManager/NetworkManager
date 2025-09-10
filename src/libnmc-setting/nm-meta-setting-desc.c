@@ -6600,6 +6600,9 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_IP4_CONFIG_DHCP_IPV6_ONLY_PREFERRED,
         .property_type =                &_pt_gobject_enum,
     ),
+    PROPERTY_INFO (NM_SETTING_IP4_CONFIG_CLAT, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_CLAT,
+        .property_type =                &_pt_gobject_enum,
+    ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_IP4_CONFIG_LINK_LOCAL,
         .property_type =                &_pt_gobject_enum,
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
