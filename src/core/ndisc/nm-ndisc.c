@@ -1541,8 +1541,10 @@ clean_pref64(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint64 
 
     if (!rdata->public.pref64.valid)
         return;
-    if (!expiry_next(now_msec, rdata->public.pref64.expiry_msec, next_msec))
+    if (!expiry_next(now_msec, rdata->public.pref64.expiry_msec, next_msec)) {
+        rdata->public.pref64.valid = FALSE;
         *changed |= NM_NDISC_CONFIG_PREF64;
+    }
 }
 
 static void
