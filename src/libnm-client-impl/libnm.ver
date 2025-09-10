@@ -2087,9 +2087,17 @@ global:
 libnm_1_56_0 {
 global:
 	nm_dns_server_validate;
+	nm_setting_connection_dnssec_get_type;
+	nm_setting_connection_get_dnssec;
 	nm_setting_gsm_get_device_uid;
 	nm_setting_connection_get_dnssec;
 	nm_setting_connection_dnssec_get_type;
 	nm_utils_copy_cert_as_user;
 	nm_vpn_plugin_info_supports_safe_private_file_access;
 } libnm_1_54_0;
+
+libnm_1_58_0 {
+global:
+	nm_setting_ip6_config_clat_get_type;
+	nm_setting_ip6_config_get_clat;
+} libnm_1_56_0;
