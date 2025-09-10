@@ -46,6 +46,8 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_IP6_CONFIG_DHCP_PD_HINT "dhcp-pd-hint"
 
+#define NM_SETTING_IP6_CONFIG_CLAT "clat"
+
 /**
  * NM_SETTING_IP6_CONFIG_METHOD_IGNORE:
  *
@@ -153,6 +155,25 @@ typedef enum {
     NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT          = 3,
 } NMSettingIP6ConfigAddrGenMode;
 
+/**
+ * NMSettingIp6ConfigClat:
+ * @NM_SETTING_IP6_CONFIG_CLAT_DEFAULT: use the global default value
+ * @NM_SETTING_IP6_CONFIG_CLAT_NO: disable CLAT
+ * @NM_SETTING_IP6_CONFIG_CLAT_YES: enable CLAT
+ *
+ * #NMSettingIP6ConfigClat values specify if CLAT (Customer-side translator)
+ * is enabled or not. CLAT is used to implement the client part of 464XLAT
+ * (RFC 6877), an architecture that provides IPv4 connectivity to hosts on
+ * IPv6-only networks.
+ *
+ * Since: 1.56
+ */
+typedef enum {
+    NM_SETTING_IP6_CONFIG_CLAT_DEFAULT = -1,
+    NM_SETTING_IP6_CONFIG_CLAT_NO      = 0,
+    NM_SETTING_IP6_CONFIG_CLAT_YES     = 1,
+} NMSettingIp6ConfigClat;
+
 typedef struct _NMSettingIP6ConfigClass NMSettingIP6ConfigClass;
 
 GType nm_setting_ip6_config_get_type(void);
@@ -176,6 +197,8 @@ NM_AVAILABLE_IN_1_40
 guint32 nm_setting_ip6_config_get_mtu(NMSettingIP6Config *setting);
 NM_AVAILABLE_IN_1_44
 const char *nm_setting_ip6_config_get_dhcp_pd_hint(NMSettingIP6Config *setting);
+NM_AVAILABLE_IN_1_56
+NMSettingIp6ConfigClat nm_setting_ip6_config_get_clat(NMSettingIP6Config *setting);
 
 G_END_DECLS
 

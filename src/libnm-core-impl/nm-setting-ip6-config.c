@@ -47,7 +47,8 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_IP6_PRIVACY,
                                   PROP_DHCP_DUID,
                                   PROP_RA_TIMEOUT,
                                   PROP_MTU,
-                                  PROP_DHCP_PD_HINT, );
+                                  PROP_DHCP_PD_HINT,
+                                  PROP_CLAT, );
 
 typedef struct {
     NMSettingIPConfigPrivate parent;
@@ -60,6 +61,7 @@ typedef struct {
     gint32  temp_preferred_lifetime;
     gint32  addr_gen_mode;
     gint32  ra_timeout;
+    gint32  clat;
     guint32 mtu;
 } NMSettingIP6ConfigPrivate;
 
@@ -250,6 +252,24 @@ nm_setting_ip6_config_get_mtu(NMSettingIP6Config *setting)
     g_return_val_if_fail(NM_IS_SETTING_IP6_CONFIG(setting), 0);
 
     return NM_SETTING_IP6_CONFIG_GET_PRIVATE(setting)->mtu;
+}
+
+/**
+ * nm_setting_ip6_config_get_clat:
+ * @setting: the #NMSettingIP6Config
+ *
+ * Returns the value in the #NMSettingIP6Config:clat property.
+ *
+ * Returns: the CLAT property value
+ *
+ * Since: 1.56
+ */
+NMSettingIp6ConfigClat
+nm_setting_ip6_config_get_clat(NMSettingIP6Config *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_IP6_CONFIG(setting), NM_SETTING_IP6_CONFIG_CLAT_DEFAULT);
+
+    return NM_SETTING_IP6_CONFIG_GET_PRIVATE(setting)->clat;
 }
 
 static gboolean
@@ -1338,6 +1358,35 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
                                               .direct_data.set_string =
                                                   _set_string_fcn_dhcp_pd_hint,
                                               .direct_string_allow_empty = TRUE);
+
+    /**
+     * NMSettingIP6Config:clat
+     *
+     * Controls the CLAT (Customer-side translator) functionality. CLAT is used to implement the
+     * client part of 464XLAT (RFC 6877), an architecture that provides IPv4 connectivity to hosts
+     * on IPv6-only networks.
+     *
+     * Setting %NM_SETTING_IP6_CONFIG_CLAT_YES or %NM_SETTING_IP6_CONFIG_CLAT_NO respectively enables
+     * or disables CLAT. When enabled, NetworkManager discovers the NAT64 prefix via Router
+     * Advertisement; if the prefix is found, it installs a BPF program to perform the stateless
+     * translation of packets betweeen IPv4 and IPv6.
+     *
+     * When set to %NM_SETTING_IP6_CONFIG_CLAT_DEFAULT, the actual value is looked up in the global
+     * configuration; if not specified it defaults to %NM_SETTING_IP6_CONFIG_CLAT_NO. In the future
+     * the fallback value may change to %NM_SETTING_IP6_CONFIG_CLAT_YES.
+     *
+     * Since: 1.56
+     */
+    _nm_setting_property_define_direct_enum(properties_override,
+                                            obj_properties,
+                                            NM_SETTING_IP6_CONFIG_CLAT,
+                                            PROP_CLAT,
+                                            NM_TYPE_SETTING_IP6_CONFIG_CLAT,
+                                            NM_SETTING_IP6_CONFIG_CLAT_DEFAULT,
+                                            NM_SETTING_PARAM_NONE,
+                                            NULL,
+                                            NMSettingIP6ConfigPrivate,
+                                            clat);
 
     /* IP6-specific property overrides */
 

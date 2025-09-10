@@ -2080,4 +2080,6 @@ global:
 libnm_1_56_0 {
 global:
 	nm_dns_server_validate;
+	nm_setting_ip6_config_get_clat;
+	nm_setting_ip6_config_clat_get_type;
 } libnm_1_54_0;
