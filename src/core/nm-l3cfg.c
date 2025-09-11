@@ -4258,7 +4258,7 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
         }
 
 #if HAVE_CLAT
-        if (nm_l3_config_data_get_pref64_valid(l3cd)) {
+        if (nm_l3_config_data_get_clat(l3cd) && nm_l3_config_data_get_pref64_valid(l3cd)) {
             NMPlatformIPXRoute          rx;
             NMIPAddrTyped               best_v6_gateway;
             NMDedupMultiIter            iter;

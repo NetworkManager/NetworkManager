@@ -494,6 +494,10 @@ gboolean nm_l3_config_data_set_network_id(NML3ConfigData *self, const char *netw
 
 const char *nm_l3_config_data_get_network_id(const NML3ConfigData *self);
 
+gboolean nm_l3_config_data_set_clat(NML3ConfigData *self, gboolean val);
+
+gboolean nm_l3_config_data_get_clat(const NML3ConfigData *self);
+
 gboolean nm_l3_config_data_set_pref64_valid(NML3ConfigData *self, gboolean val);
 
 gboolean nm_l3_config_data_get_pref64_valid(const NML3ConfigData *self);

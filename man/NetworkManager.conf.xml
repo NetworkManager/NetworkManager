@@ -1018,6 +1018,10 @@ ipv6.ip6-privacy=0
             or "eui64", depending on whether the per-profile setting is "default" or "default-or-eui64, respectively.</para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>ipv6.clat</varname></term>
+          <listitem><para>If left unspecified, CLAT is disabled.</para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>ipv6.ra-timeout</varname></term>
           <listitem><para>If left unspecified, the default value depends on the sysctl solicitation settings.</para></listitem>
         </varlistentry>
