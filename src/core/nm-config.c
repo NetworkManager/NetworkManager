@@ -18,6 +18,7 @@
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-core-intern/nm-keyfile-internal.h"
 #include "libnm-core-intern/nm-keyfile-utils.h"
+#include "libnm-glib-aux/nm-keyfile-aux.h"
 
 #define DEFAULT_CONFIG_MAIN_FILE     NMCONFDIR "/NetworkManager.conf"
 #define DEFAULT_CONFIG_DIR           NMCONFDIR "/conf.d"
@@ -1046,6 +1047,10 @@ read_config(GKeyFile   *keyfile,
             /* internal groups cannot be set by user configuration. */
             continue;
         }
+
+        if (!g_key_file_has_group(keyfile, group))
+            nm_key_file_add_group(keyfile, group);
+
         keys = g_key_file_get_keys(kf, group, &nkeys, NULL);
         if (!keys)
             continue;
@@ -1639,6 +1644,12 @@ intern_config_read(const char        *filename,
                                  "");
         }
 
+        if (!g_key_file_has_group(keyfile_intern, group)) {
+            nm_key_file_add_group(keyfile_intern, group);
+            if (is_intern)
+                has_intern = TRUE;
+        }
+
         for (k = 0; keys[k]; k++) {
             gs_free char *value_set = NULL;
             const char   *key       = keys[k];
@@ -1822,6 +1833,9 @@ intern_config_write(const char        *filename,
                                        NULL);
             }
         }
+
+        if (!g_key_file_has_group(keyfile, group))
+            nm_key_file_add_group(keyfile, group);
 
         for (k = 0; keys[k]; k++) {
             const char   *key       = keys[k];
