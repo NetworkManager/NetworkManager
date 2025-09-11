@@ -1524,6 +1524,29 @@ _prop_get_connection_dnssec(NMDevice *self, NMConnection *connection)
                                                        NM_SETTING_CONNECTION_DNSSEC_DEFAULT);
 }
 
+static NMSettingIp6ConfigClat
+_prop_get_ipv6_clat(NMDevice *self, NMConnection *connection)
+{
+    NMSettingIP6Config    *s_ip6 = NULL;
+    NMSettingIp6ConfigClat clat;
+
+    if (connection)
+        s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting_ip6_config(connection);
+    if (!s_ip6)
+        return NM_SETTING_IP6_CONFIG_CLAT_NO;
+
+    clat = nm_setting_ip6_config_get_clat(s_ip6);
+    if (clat != NM_SETTING_IP6_CONFIG_CLAT_DEFAULT)
+        return clat;
+
+    return nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
+                                                       NM_CON_DEFAULT("ipv6.clat"),
+                                                       self,
+                                                       NM_SETTING_IP6_CONFIG_CLAT_NO,
+                                                       NM_SETTING_IP6_CONFIG_CLAT_YES,
+                                                       NM_SETTING_IP6_CONFIG_CLAT_NO);
+}
+
 static NMMptcpFlags
 _prop_get_connection_mptcp_flags(NMDevice *self, NMConnection *connection)
 {
@@ -3642,6 +3665,8 @@ nm_device_create_l3_config_data_from_connection(NMDevice *self, NMConnection *co
     nm_l3_config_data_set_dnssec(l3cd, _prop_get_connection_dnssec(self, connection));
     nm_l3_config_data_set_ip6_privacy(l3cd, _prop_get_ipv6_ip6_privacy(self, connection));
     nm_l3_config_data_set_mptcp_flags(l3cd, _prop_get_connection_mptcp_flags(self, connection));
+    nm_l3_config_data_set_clat(l3cd, _prop_get_ipv6_clat(self, connection));
+
     return l3cd;
 }
 
