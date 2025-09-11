@@ -171,6 +171,7 @@ struct _NML3ConfigData {
     bool routed_dns_4 : 1;
     bool routed_dns_6 : 1;
 
+    bool clat : 1;
     bool pref64_valid : 1;
 };
 
@@ -522,6 +523,10 @@ nm_l3_config_data_log(const NML3ConfigData *self,
             }
             if (self->nis_domain)
                 _L("nis-domain: %s", self->nis_domain->str);
+        }
+
+        if (!IS_IPv4 && self->clat) {
+            _L("clat: yes");
         }
 
         if (!IS_IPv4 && self->pref64_valid) {
@@ -1960,6 +1965,23 @@ nm_l3_config_data_set_network_id(NML3ConfigData *self, const char *value)
 }
 
 gboolean
+nm_l3_config_data_set_clat(NML3ConfigData *self, gboolean val)
+{
+    if (self->clat == val)
+        return FALSE;
+    self->clat = val;
+    return TRUE;
+}
+
+gboolean
+nm_l3_config_data_get_clat(const NML3ConfigData *self)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+
+    return self->clat;
+}
+
+gboolean
 nm_l3_config_data_set_pref64_valid(NML3ConfigData *self, gboolean val)
 {
     if (self->pref64_valid == val)
@@ -2557,6 +2579,8 @@ nm_l3_config_data_cmp_full(const NML3ConfigData *a,
 
         NM_CMP_DIRECT_UNSAFE(a->routed_dns_4, b->routed_dns_4);
         NM_CMP_DIRECT_UNSAFE(a->routed_dns_6, b->routed_dns_6);
+
+        NM_CMP_DIRECT_UNSAFE(a->clat, b->clat);
 
         NM_CMP_DIRECT(!!a->pref64_valid, !!b->pref64_valid);
         if (a->pref64_valid) {
@@ -3619,6 +3643,9 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
         self->routed_dns_4 = TRUE;
     if (src->routed_dns_6)
         self->routed_dns_6 = TRUE;
+
+    if (src->clat)
+        self->clat = TRUE;
 
     if (src->pref64_valid) {
         self->pref64_prefix = src->pref64_prefix;
