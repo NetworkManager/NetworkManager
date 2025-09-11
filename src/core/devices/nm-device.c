@@ -1523,6 +1523,41 @@ _prop_get_connection_dnssec(NMDevice *self, NMConnection *connection)
                                                        NM_SETTING_CONNECTION_DNSSEC_DEFAULT);
 }
 
+static NMSettingIp4ConfigClat
+_prop_get_ipv4_clat(NMDevice *self, NMConnection *connection)
+{
+    NMSettingIP4Config    *s_ip4 = NULL;
+    NMSettingIp4ConfigClat clat;
+    const char            *method;
+
+    if (connection)
+        s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting_ip4_config(connection);
+    if (!s_ip4)
+        return NM_SETTING_IP4_CONFIG_CLAT_NO;
+
+    method = nm_setting_ip_config_get_method(NM_SETTING_IP_CONFIG(s_ip4));
+    if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
+        return NM_SETTING_IP4_CONFIG_CLAT_NO;
+
+    clat = nm_setting_ip4_config_get_clat(s_ip4);
+    if (clat == NM_SETTING_IP4_CONFIG_CLAT_DEFAULT) {
+        clat = nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
+                                                           NM_CON_DEFAULT("ipv4.clat"),
+                                                           self,
+                                                           NM_SETTING_IP4_CONFIG_CLAT_NO,
+                                                           NM_SETTING_IP4_CONFIG_CLAT_AUTO,
+                                                           NM_SETTING_IP4_CONFIG_CLAT_NO);
+    }
+
+    if (clat == NM_SETTING_IP4_CONFIG_CLAT_AUTO
+        && !nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
+        /* clat=auto enables CLAT only with method=auto */
+        clat = NM_SETTING_IP4_CONFIG_CLAT_NO;
+    }
+
+    return clat;
+}
+
 static NMMptcpFlags
 _prop_get_connection_mptcp_flags(NMDevice *self, NMConnection *connection)
 {
@@ -3641,6 +3676,8 @@ nm_device_create_l3_config_data_from_connection(NMDevice *self, NMConnection *co
     nm_l3_config_data_set_dnssec(l3cd, _prop_get_connection_dnssec(self, connection));
     nm_l3_config_data_set_ip6_privacy(l3cd, _prop_get_ipv6_ip6_privacy(self, connection));
     nm_l3_config_data_set_mptcp_flags(l3cd, _prop_get_connection_mptcp_flags(self, connection));
+    nm_l3_config_data_set_clat(l3cd, _prop_get_ipv4_clat(self, connection));
+
     return l3cd;
 }
 
