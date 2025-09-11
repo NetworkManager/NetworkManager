@@ -5,6 +5,7 @@
 
 #include "libnm-glib-aux/nm-dedup-multi.h"
 #include "nm-setting-connection.h"
+#include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
 #include "libnm-platform/nm-platform.h"
 #include "libnm-platform/nmp-object.h"
@@ -497,6 +498,10 @@ gboolean nm_l3_config_data_set_ip6_token(NML3ConfigData *self, NMUtilsIPv6IfaceI
 gboolean nm_l3_config_data_set_network_id(NML3ConfigData *self, const char *network_id);
 
 const char *nm_l3_config_data_get_network_id(const NML3ConfigData *self);
+
+gboolean nm_l3_config_data_set_clat(NML3ConfigData *self, NMSettingIp4ConfigClat val);
+
+NMSettingIp4ConfigClat nm_l3_config_data_get_clat(const NML3ConfigData *self);
 
 gboolean nm_l3_config_data_set_pref64_valid(NML3ConfigData *self, gboolean val);
 

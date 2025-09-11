@@ -4159,8 +4159,11 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
     gboolean                                 merged_changed   = FALSE;
     gboolean                                 commited_changed = FALSE;
 #if HAVE_CLAT
-    struct in6_addr pref64;
-    guint32         pref64_plen;
+    struct in6_addr           pref64;
+    guint32                   pref64_plen;
+    gboolean                  clat_enabled = FALSE;
+    const NMPlatformIP4Route *ip4_route;
+    NMDedupMultiIter          iter;
 #endif
 
     nm_assert(NM_IS_L3CFG(self));
@@ -4260,10 +4263,32 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
         }
 
 #if HAVE_CLAT
-        if (nm_l3_config_data_get_pref64_valid(l3cd)) {
+        switch (nm_l3_config_data_get_clat(l3cd)) {
+        case NM_SETTING_IP4_CONFIG_CLAT_FORCE:
+            clat_enabled = TRUE;
+            break;
+        case NM_SETTING_IP4_CONFIG_CLAT_NO:
+            clat_enabled = FALSE;
+            break;
+        case NM_SETTING_IP4_CONFIG_CLAT_AUTO:
+            clat_enabled = TRUE;
+            /* disable if there is a native IPv4 gateway */
+            nm_l3_config_data_iter_ip4_route_for_each (&iter, l3cd, &ip4_route) {
+                if (ip4_route->network == INADDR_ANY && ip4_route->plen == 0
+                    && ip4_route->gateway != INADDR_ANY)
+                    clat_enabled = FALSE;
+                break;
+            }
+            break;
+        case NM_SETTING_IP4_CONFIG_CLAT_DEFAULT:
+            nm_assert_not_reached();
+            clat_enabled = TRUE;
+            break;
+        }
+
+        if (clat_enabled && nm_l3_config_data_get_pref64_valid(l3cd)) {
             NMPlatformIPXRoute          rx;
             NMIPAddrTyped               best_v6_gateway;
-            NMDedupMultiIter            iter;
             const NMPlatformIP6Route   *best_v6_route;
             const NMPlatformIP6Address *ip6_entry;
             struct in6_addr             ip6;

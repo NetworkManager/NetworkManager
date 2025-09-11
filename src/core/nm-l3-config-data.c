@@ -125,6 +125,7 @@ struct _NML3ConfigData {
     NMSettingConnectionDnsOverTls dns_over_tls;
     NMSettingConnectionDnssec     dnssec;
     NMUtilsIPv6IfaceId            ip6_token;
+    NMSettingIp4ConfigClat        clat;
     NMRefString                  *network_id;
 
     NML3ConfigDatFlags flags;
@@ -525,6 +526,13 @@ nm_l3_config_data_log(const NML3ConfigData *self,
                 _L("nis-domain: %s", self->nis_domain->str);
         }
 
+        if (!IS_IPv4) {
+            if (self->clat == NM_SETTING_IP4_CONFIG_CLAT_AUTO)
+                _L("clat: auto");
+            else if (self->clat == NM_SETTING_IP4_CONFIG_CLAT_FORCE)
+                _L("clat: force");
+        }
+
         if (!IS_IPv4 && self->pref64_valid) {
             _L("pref64_prefix: %s/%d",
                nm_utils_inet6_ntop(&self->pref64_prefix, sbuf_addr),
@@ -725,6 +733,7 @@ nm_l3_config_data_new(NMDedupMultiIndex *multi_idx, int ifindex, NMIPConfigSourc
         .flags                          = NM_L3_CONFIG_DAT_FLAGS_NONE,
         .metered                        = NM_TERNARY_DEFAULT,
         .proxy_browser_only             = NM_TERNARY_DEFAULT,
+        .clat                           = NM_SETTING_IP4_CONFIG_CLAT_NO,
         .proxy_method                   = NM_PROXY_CONFIG_METHOD_UNKNOWN,
         .route_table_sync_4             = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
         .route_table_sync_6             = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
@@ -1992,6 +2001,29 @@ nm_l3_config_data_set_network_id(NML3ConfigData *self, const char *value)
 }
 
 gboolean
+nm_l3_config_data_set_clat(NML3ConfigData *self, NMSettingIp4ConfigClat val)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
+    nm_assert(NM_IN_SET(val,
+                        NM_SETTING_IP4_CONFIG_CLAT_NO,
+                        NM_SETTING_IP4_CONFIG_CLAT_FORCE,
+                        NM_SETTING_IP4_CONFIG_CLAT_AUTO));
+
+    if (self->clat == val)
+        return FALSE;
+    self->clat = val;
+    return TRUE;
+}
+
+NMSettingIp4ConfigClat
+nm_l3_config_data_get_clat(const NML3ConfigData *self)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+
+    return self->clat;
+}
+
+gboolean
 nm_l3_config_data_set_pref64_valid(NML3ConfigData *self, gboolean val)
 {
     if (self->pref64_valid == val)
@@ -2590,6 +2622,8 @@ nm_l3_config_data_cmp_full(const NML3ConfigData *a,
 
         NM_CMP_DIRECT_UNSAFE(a->routed_dns_4, b->routed_dns_4);
         NM_CMP_DIRECT_UNSAFE(a->routed_dns_6, b->routed_dns_6);
+
+        NM_CMP_DIRECT_UNSAFE(a->clat, b->clat);
 
         NM_CMP_DIRECT(!!a->pref64_valid, !!b->pref64_valid);
         if (a->pref64_valid) {
@@ -3661,6 +3695,14 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
         self->routed_dns_4 = TRUE;
     if (src->routed_dns_6)
         self->routed_dns_6 = TRUE;
+
+    if (self->clat == NM_SETTING_IP4_CONFIG_CLAT_NO) {
+        /* 'no' always loses to 'force' and 'auto' */
+        self->clat = src->clat;
+    } else if (src->clat == NM_SETTING_IP4_CONFIG_CLAT_FORCE) {
+        /* 'force' always takes precedence */
+        self->clat = src->clat;
+    }
 
     if (src->pref64_valid) {
         self->pref64_prefix = src->pref64_prefix;

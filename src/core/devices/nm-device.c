@@ -906,10 +906,11 @@ static void concheck_update_state(NMDevice           *self,
 static void sriov_op_cb(GError *error, gpointer user_data);
 
 static void device_ifindex_changed_cb(NMManager *manager, NMDevice *device_changed, NMDevice *self);
-static gboolean device_link_changed(gpointer user_data);
-static gboolean _get_maybe_ipv6_disabled(NMDevice *self);
-static void     deactivate_ready(NMDevice *self, NMDeviceStateReason reason);
-static void     carrier_disconnected_action_cancel(NMDevice *self);
+static gboolean    device_link_changed(gpointer user_data);
+static gboolean    _get_maybe_ipv6_disabled(NMDevice *self);
+static void        deactivate_ready(NMDevice *self, NMDeviceStateReason reason);
+static void        carrier_disconnected_action_cancel(NMDevice *self);
+static const char *nm_device_get_effective_ip_config_method(NMDevice *self, int addr_family);
 
 /*****************************************************************************/
 
@@ -1521,6 +1522,40 @@ _prop_get_connection_dnssec(NMDevice *self, NMConnection *connection)
                                                        NM_SETTING_CONNECTION_DNSSEC_NO,
                                                        NM_SETTING_CONNECTION_DNSSEC_YES,
                                                        NM_SETTING_CONNECTION_DNSSEC_DEFAULT);
+}
+
+static NMSettingIp4ConfigClat
+_prop_get_ipv4_clat(NMDevice *self)
+{
+    NMSettingIP4Config    *s_ip4 = NULL;
+    NMSettingIp4ConfigClat clat;
+    const char            *method;
+
+    s_ip4 = nm_device_get_applied_setting(self, NM_TYPE_SETTING_IP4_CONFIG);
+    if (!s_ip4)
+        return NM_SETTING_IP4_CONFIG_CLAT_NO;
+
+    method = nm_device_get_effective_ip_config_method(self, AF_INET);
+    if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
+        return NM_SETTING_IP4_CONFIG_CLAT_NO;
+
+    clat = nm_setting_ip4_config_get_clat(s_ip4);
+    if (clat == NM_SETTING_IP4_CONFIG_CLAT_DEFAULT) {
+        clat = nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
+                                                           NM_CON_DEFAULT("ipv4.clat"),
+                                                           self,
+                                                           NM_SETTING_IP4_CONFIG_CLAT_NO,
+                                                           NM_SETTING_IP4_CONFIG_CLAT_FORCE,
+                                                           NM_SETTING_IP4_CONFIG_CLAT_NO);
+    }
+
+    if (clat == NM_SETTING_IP4_CONFIG_CLAT_AUTO
+        && !nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
+        /* clat=auto enables CLAT only with method=auto */
+        clat = NM_SETTING_IP4_CONFIG_CLAT_NO;
+    }
+
+    return clat;
 }
 
 static NMMptcpFlags
@@ -3641,6 +3676,7 @@ nm_device_create_l3_config_data_from_connection(NMDevice *self, NMConnection *co
     nm_l3_config_data_set_dnssec(l3cd, _prop_get_connection_dnssec(self, connection));
     nm_l3_config_data_set_ip6_privacy(l3cd, _prop_get_ipv6_ip6_privacy(self, connection));
     nm_l3_config_data_set_mptcp_flags(l3cd, _prop_get_connection_mptcp_flags(self, connection));
+
     return l3cd;
 }
 
@@ -11467,6 +11503,8 @@ _dev_ipmanual_start(NMDevice *self)
         if (_prop_get_ipvx_routed_dns(self, AF_INET6) == NM_SETTING_IP_CONFIG_ROUTED_DNS_YES) {
             nm_l3_config_data_set_routed_dns(l3cd, AF_INET6, TRUE);
         }
+
+        nm_l3_config_data_set_clat(l3cd, _prop_get_ipv4_clat(self));
     }
 
     if (!l3cd) {
