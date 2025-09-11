@@ -11,10 +11,10 @@ fedora:
 - version: 43
   support: 2026-12-02
   nm: 1.54
-  tier1-default: yes
 - version: 42
   support: 2026-05-13
   nm: 1.52
+  tier1-default: yes
 - version: 41
   support: 2025-11-19
   nm: 1.50
