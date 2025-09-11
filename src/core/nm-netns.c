@@ -703,15 +703,15 @@ nm_netns_ip_reservation_release(NMNetnsIPReservation *res)
     if (!g_hash_table_remove(*table, res))
         nm_assert_not_reached();
 
-    if (g_hash_table_size(*table) == 0) {
-        nm_clear_pointer(table, g_hash_table_unref);
-        g_object_unref(self);
-    }
-
     _LOGD("%s: release IP address reservation %s/%u",
           desc->name,
           nm_inet4_ntop(res->addr, buf),
           desc->prefix_len);
+
+    if (g_hash_table_size(*table) == 0) {
+        nm_clear_pointer(table, g_hash_table_unref);
+        g_object_unref(self);
+    }
 
     res->_self = NULL;
     nm_g_slice_free(res);
