@@ -11,6 +11,12 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * nmcli now supports viewing and managing WireGuard peers.
 * Support reapplying the "sriov.vfs" property as long as
   "sriov.total-vfs" is not changed.
+* Support reapplying "bond-port.vlans".
+* Accept hostnames longer than 64 characters from DNS lookup.
+* Make that global-dns configuration overwrites DNS searches and
+  options from connections, instead of merging all together.
+* Add support for a new rd.net.dhcp.client-id option in
+  nm-initrd-generator.
 
 =============================================
 NetworkManager-1.54
