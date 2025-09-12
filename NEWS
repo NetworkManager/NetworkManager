@@ -1,3 +1,14 @@
+===============================================
+NetworkManager-1.54.1
+Overview of changes since NetworkManager-1.54.0
+===============================================
+
+* Make that global-dns configuration overwrites DNS searches and
+  options from connections, instead of merging all together.
+* Add support for a new rd.net.dhcp.client-id option in
+  nm-initrd-generator.
+* Minor bug fixes.
+
 =============================================
 NetworkManager-1.54
 Overview of changes since NetworkManager-1.52
