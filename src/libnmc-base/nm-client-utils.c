@@ -492,6 +492,7 @@ NM_UTILS_LOOKUP_STR_DEFINE(
     NM_UTILS_LOOKUP_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_EXTERNAL_DOWN,
                          N_("The device is unmanaged because it is an external device and is "
                             "unconfigured (down or without addresses)")),
+    NM_UTILS_LOOKUP_ITEM(NM_DEVICE_STATE_REASON_NETWORKING_OFF, N_("Networking was disabled")),
 
 );
 

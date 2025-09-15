@@ -7324,24 +7324,26 @@ _handle_device_takedown(NMManager *self,
                         gboolean   suspending,
                         gboolean   is_shutdown)
 {
+    gboolean            is_sleep = suspending || is_shutdown;
+    NMDeviceStateReason reason =
+        is_sleep ? NM_DEVICE_STATE_REASON_SLEEPING : NM_DEVICE_STATE_REASON_NETWORKING_OFF;
+
     nm_device_notify_sleeping(device);
 
     if (nm_device_is_activating(device)
         || nm_device_get_state(device) == NM_DEVICE_STATE_ACTIVATED) {
-        _LOGD(LOGD_SUSPEND,
+        _LOGD(is_sleep ? LOGD_SUSPEND : LOGD_CORE,
               "%s: wait disconnection of device %s",
-              is_shutdown ? "shutdown" : "sleep",
+              is_sleep ? (is_shutdown ? "shutdown" : "sleep") : "networking off",
               nm_device_get_ip_iface(device));
 
         if (sleep_devices_add(self, device, suspending))
-            nm_device_queue_state(device,
-                                  NM_DEVICE_STATE_DEACTIVATING,
-                                  NM_DEVICE_STATE_REASON_SLEEPING);
+            nm_device_queue_state(device, NM_DEVICE_STATE_DEACTIVATING, reason);
     } else {
         nm_device_set_unmanaged_by_flags(device,
                                          NM_UNMANAGED_SLEEPING,
                                          NM_UNMAN_FLAG_OP_SET_UNMANAGED,
-                                         NM_DEVICE_STATE_REASON_SLEEPING);
+                                         reason);
     }
 }
 
@@ -7431,7 +7433,9 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
                 && !nm_device_get_unmanaged_flags(device, NM_UNMANAGED_SLEEPING)) {
                 /* DHCP leases of software devices could have gone stale
                  * so we need to renew them. */
-                nm_device_update_dynamic_ip_setup(device, "wake up");
+                nm_device_update_dynamic_ip_setup(device,
+                                                  waking_from_suspend ? "wake up"
+                                                                      : "networking on");
                 continue;
             }
 
