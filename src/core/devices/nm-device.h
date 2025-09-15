@@ -581,7 +581,8 @@ void nm_device_copy_ip6_dns_config(NMDevice *self, NMDevice *from_device);
 /**
  * NMUnmanagedFlags:
  * @NM_UNMANAGED_NONE: placeholder value
- * @NM_UNMANAGED_SLEEPING: %TRUE when unmanaged because NM is sleeping.
+ * @NM_UNMANAGED_MANAGER_DISABLED: %TRUE when unmanaged because NM is disabled.
+ *   Currently, this happens when sleeping or with networking disabled.
  * @NM_UNMANAGED_QUITTING: %TRUE when unmanaged because NM is shutting down.
  * @NM_UNMANAGED_PLATFORM_INIT: %TRUE when unmanaged because platform link not
  *   yet initialized. Unrealized device are also unmanaged for this reason.
@@ -610,11 +611,11 @@ typedef enum {
 
     /* these flags are authoritative. If one of them is set,
      * the device cannot be managed. */
-    NM_UNMANAGED_SLEEPING      = (1LL << 0),
-    NM_UNMANAGED_QUITTING      = (1LL << 1),
-    NM_UNMANAGED_PLATFORM_INIT = (1LL << 2),
-    NM_UNMANAGED_USER_EXPLICIT = (1LL << 3),
-    NM_UNMANAGED_USER_SETTINGS = (1LL << 4),
+    NM_UNMANAGED_MANAGER_DISABLED = (1LL << 0),
+    NM_UNMANAGED_QUITTING         = (1LL << 1),
+    NM_UNMANAGED_PLATFORM_INIT    = (1LL << 2),
+    NM_UNMANAGED_USER_EXPLICIT    = (1LL << 3),
+    NM_UNMANAGED_USER_SETTINGS    = (1LL << 4),
 
     /* These flags can be non-effective and be overwritten
      * by other flags. */

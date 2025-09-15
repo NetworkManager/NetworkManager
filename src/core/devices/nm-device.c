@@ -15665,7 +15665,7 @@ nm_device_get_firmware_missing(NMDevice *self)
 
 NM_UTILS_FLAGS2STR_DEFINE(nm_unmanaged_flags2str,
                           NMUnmanagedFlags,
-                          NM_UTILS_FLAGS2STR(NM_UNMANAGED_SLEEPING, "sleeping"),
+                          NM_UTILS_FLAGS2STR(NM_UNMANAGED_MANAGER_DISABLED, "nm-disabled"),
                           NM_UTILS_FLAGS2STR(NM_UNMANAGED_QUITTING, "quitting"),
                           NM_UTILS_FLAGS2STR(NM_UNMANAGED_PLATFORM_INIT, "platform-init"),
                           NM_UTILS_FLAGS2STR(NM_UNMANAGED_USER_EXPLICIT, "user-explicit"),
@@ -15729,8 +15729,8 @@ unmanaged_flags_to_reason(NMUnmanagedFlags flags)
     /* Even if there are multiple flags, we can only return one reason.
      * Return the most important reason.
      */
-    if (NM_FLAGS_HAS(flags, NM_UNMANAGED_SLEEPING))
-        return NM_DEVICE_STATE_REASON_UNMANAGED_SLEEPING;
+    if (NM_FLAGS_HAS(flags, NM_UNMANAGED_MANAGER_DISABLED))
+        return NM_DEVICE_STATE_REASON_UNMANAGED_MANAGER_DISABLED;
     if (NM_FLAGS_HAS(flags, NM_UNMANAGED_QUITTING))
         return NM_DEVICE_STATE_REASON_UNMANAGED_QUITTING;
     if (NM_FLAGS_HAS(flags, NM_UNMANAGED_USER_SETTINGS))
