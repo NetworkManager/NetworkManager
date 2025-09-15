@@ -23,8 +23,8 @@ static const char *
 nm_state_to_string(NMState state)
 {
     switch (state) {
-    case NM_STATE_ASLEEP:
-        return "asleep";
+    case NM_STATE_DISABLED:
+        return "network off";
     case NM_STATE_CONNECTING:
         return "connecting";
     case NM_STATE_CONNECTED_LOCAL:

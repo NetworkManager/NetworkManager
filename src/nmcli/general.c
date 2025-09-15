@@ -28,7 +28,7 @@ static void permission_changed(GObject *gobject, GParamSpec *pspec, NmCli *nmc);
 static NM_UTILS_LOOKUP_STR_DEFINE(nm_state_to_string,
                                   NMState,
                                   NM_UTILS_LOOKUP_DEFAULT(N_("unknown")),
-                                  NM_UTILS_LOOKUP_ITEM(NM_STATE_ASLEEP, N_("asleep")),
+                                  NM_UTILS_LOOKUP_ITEM(NM_STATE_DISABLED, N_("network off")),
                                   NM_UTILS_LOOKUP_ITEM(NM_STATE_CONNECTING, N_("connecting")),
                                   NM_UTILS_LOOKUP_ITEM(NM_STATE_CONNECTED_LOCAL,
                                                        N_("connected (local only)")),
@@ -53,8 +53,8 @@ state_to_color(NMState state)
         return NM_META_COLOR_STATE_CONNECTED_GLOBAL;
     case NM_STATE_DISCONNECTING:
         return NM_META_COLOR_STATE_DISCONNECTING;
-    case NM_STATE_ASLEEP:
-        return NM_META_COLOR_STATE_ASLEEP;
+    case NM_STATE_DISABLED:
+        return NM_META_COLOR_STATE_DISABLED;
     case NM_STATE_DISCONNECTED:
         return NM_META_COLOR_STATE_DISCONNECTED;
     default:
