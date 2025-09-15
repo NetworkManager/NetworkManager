@@ -17,6 +17,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   options from connections, instead of merging all together.
 * Add support for a new rd.net.dhcp.client-id option in
   nm-initrd-generator.
+* Support configuring the HSR protocol version via the
+  "hsr.protocol-version" property.
 
 =============================================
 NetworkManager-1.54
