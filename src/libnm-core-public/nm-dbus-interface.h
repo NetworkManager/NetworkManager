@@ -145,8 +145,10 @@ typedef enum {
  *    and not disable controls that require network access.
  *    The graphical shells may hide the network accessibility indicator altogether
  *    since no meaningful status indication can be provided.
- * @NM_STATE_ASLEEP: Networking is not enabled, the system is being suspended or
- *    resumed from suspend.
+ * @NM_STATE_ASLEEP: Deprecated: 1.56: Use %NM_STATE_DISABLED instead.
+ * @NM_STATE_DISABLED: NetworkManager is disabled, either because the user requested
+ *    to disable networking or because the system is suspended or resuming from suspend.
+ *    Since: 1.56.
  * @NM_STATE_DISCONNECTED: There is no active network connection.
  *    The graphical shell should indicate  no network connectivity and the
  *    applications should not attempt to access the network.
@@ -170,7 +172,8 @@ typedef enum {
  **/
 typedef enum {
     NM_STATE_UNKNOWN          = 0,
-    NM_STATE_ASLEEP           = 10,
+    NM_STATE_ASLEEP           = 10, /* Deprecated */
+    NM_STATE_DISABLED         = 10,
     NM_STATE_DISCONNECTED     = 20,
     NM_STATE_DISCONNECTING    = 30,
     NM_STATE_CONNECTING       = 40,

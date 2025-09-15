@@ -581,6 +581,7 @@ static NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
     {"permission-unknown", NM_META_COLOR_PERMISSION_UNKNOWN},
     {"permission-yes", NM_META_COLOR_PERMISSION_YES},
     {"prompt", NM_META_COLOR_PROMPT},
+    {"state-disabled", NM_META_COLOR_STATE_DISABLED},
     {"state-asleep", NM_META_COLOR_STATE_ASLEEP},
     {"state-connected-global", NM_META_COLOR_STATE_CONNECTED_GLOBAL},
     {"state-connected-local", NM_META_COLOR_STATE_CONNECTED_LOCAL},
