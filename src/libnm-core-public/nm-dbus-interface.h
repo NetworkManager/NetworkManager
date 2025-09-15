@@ -635,8 +635,10 @@ typedef enum {
  *   not initialized by udev. Since: 1.48
  * @NM_DEVICE_STATE_REASON_UNMANAGED_QUITTING: The device is unmanaged because NetworkManager is
  *   quitting. Since: 1.48
- * @NM_DEVICE_STATE_REASON_UNMANAGED_SLEEPING: The device is unmanaged because networking is
- *   disabled or the system is suspended. Since: 1.48
+ * @NM_DEVICE_STATE_REASON_UNMANAGED_SLEEPING: Since: 1.48. Deprecated: 1.56: Use
+ *   %NM_DEVICE_STATE_REASON_UNMANAGED_MANAGER_DISABLED instead.
+ * @NM_DEVICE_STATE_REASON_UNMANAGED_MANAGER_DISABLED: The device is unmanaged because networking is
+ *   disabled or the system is suspended. Since: 1.56
  * @NM_DEVICE_STATE_REASON_UNMANAGED_USER_CONF: The device is unmanaged by user decision in
  *   NetworkManager.conf ('unmanaged' in a [device*] section). Since: 1.48
  * @NM_DEVICE_STATE_REASON_UNMANAGED_USER_EXPLICIT: The device is unmanaged by explicit user
@@ -723,7 +725,8 @@ typedef enum {
     NM_DEVICE_STATE_REASON_UNMANAGED_EXTERNAL_DOWN        = 70,
     NM_DEVICE_STATE_REASON_UNMANAGED_LINK_NOT_INIT        = 71,
     NM_DEVICE_STATE_REASON_UNMANAGED_QUITTING             = 72,
-    NM_DEVICE_STATE_REASON_UNMANAGED_SLEEPING             = 73,
+    NM_DEVICE_STATE_REASON_UNMANAGED_SLEEPING             = 73, /* Deprecated */
+    NM_DEVICE_STATE_REASON_UNMANAGED_MANAGER_DISABLED     = 73,
     NM_DEVICE_STATE_REASON_UNMANAGED_USER_CONF            = 74,
     NM_DEVICE_STATE_REASON_UNMANAGED_USER_EXPLICIT        = 75,
     NM_DEVICE_STATE_REASON_UNMANAGED_USER_SETTINGS        = 76,

@@ -467,7 +467,7 @@ NM_UTILS_LOOKUP_STR_DEFINE(
                          N_("The Wi-Fi P2P peer could not be found")),
     NM_UTILS_LOOKUP_ITEM(NM_DEVICE_STATE_REASON_DEVICE_HANDLER_FAILED,
                          N_("The device handler dispatcher returned an error")),
-    NM_UTILS_LOOKUP_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_SLEEPING,
+    NM_UTILS_LOOKUP_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_MANAGER_DISABLED,
                          N_("The device is unmanaged because networking is disabled "
                             "or the system is suspended")),
     NM_UTILS_LOOKUP_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_QUITTING,

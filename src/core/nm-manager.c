@@ -4082,7 +4082,7 @@ add_device(NMManager *self, NMDevice *device, GError **error)
 
     nm_device_set_unmanaged_by_user_settings(device, TRUE);
 
-    nm_device_set_unmanaged_flags(device, NM_UNMANAGED_SLEEPING, manager_is_disabled(self));
+    nm_device_set_unmanaged_flags(device, NM_UNMANAGED_MANAGER_DISABLED, manager_is_disabled(self));
 
     dbus_path = nm_dbus_object_export(NM_DBUS_OBJECT(device));
     _LOG2I(LOGD_DEVICE, device, "new %s device (%s)", type_desc, dbus_path);
@@ -7302,7 +7302,7 @@ device_sleep_cb(NMDevice *device, GParamSpec *pspec, NMManager *self)
     case NM_DEVICE_STATE_DISCONNECTED:
         _LOGD(LOGD_SUSPEND, "sleep: unmanaging device %s", nm_device_get_ip_iface(device));
         nm_device_set_unmanaged_by_flags_queue(device,
-                                               NM_UNMANAGED_SLEEPING,
+                                               NM_UNMANAGED_MANAGER_DISABLED,
                                                NM_UNMAN_FLAG_OP_SET_UNMANAGED,
                                                NM_DEVICE_STATE_REASON_SLEEPING);
         break;
@@ -7341,7 +7341,7 @@ _handle_device_takedown(NMManager *self,
             nm_device_queue_state(device, NM_DEVICE_STATE_DEACTIVATING, reason);
     } else {
         nm_device_set_unmanaged_by_flags(device,
-                                         NM_UNMANAGED_SLEEPING,
+                                         NM_UNMANAGED_MANAGER_DISABLED,
                                          NM_UNMAN_FLAG_OP_SET_UNMANAGED,
                                          reason);
     }
@@ -7402,7 +7402,7 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
                  */
                 if (device_is_wake_on_lan(priv->platform, device))
                     nm_device_set_unmanaged_by_flags(device,
-                                                     NM_UNMANAGED_SLEEPING,
+                                                     NM_UNMANAGED_MANAGER_DISABLED,
                                                      NM_UNMAN_FLAG_OP_SET_UNMANAGED,
                                                      NM_DEVICE_STATE_REASON_SLEEPING);
 
@@ -7430,7 +7430,7 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
             guint               i;
 
             if (nm_device_is_software(device)
-                && !nm_device_get_unmanaged_flags(device, NM_UNMANAGED_SLEEPING)) {
+                && !nm_device_get_unmanaged_flags(device, NM_UNMANAGED_MANAGER_DISABLED)) {
                 /* DHCP leases of software devices could have gone stale
                  * so we need to renew them. */
                 nm_device_update_dynamic_ip_setup(device,
@@ -7466,7 +7466,7 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
                     ? NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED
                     : NM_DEVICE_STATE_REASON_NOW_MANAGED;
             nm_device_set_unmanaged_by_flags(device,
-                                             NM_UNMANAGED_SLEEPING,
+                                             NM_UNMANAGED_MANAGER_DISABLED,
                                              NM_UNMAN_FLAG_OP_SET_MANAGED,
                                              reason);
         }
