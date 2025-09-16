@@ -5011,6 +5011,7 @@ typedef struct {
     int      child_stdin;
     int      child_stdout;
     int      child_stderr;
+    gboolean binary_output;
     GSource *input_source;
     GSource *output_source;
     GSource *error_source;
@@ -5090,9 +5091,17 @@ helper_complete(HelperInfo *info, GError *error)
     }
 
     nm_clear_g_cancellable_disconnect(g_task_get_cancellable(info->task), &info->cancellable_id);
-    g_task_return_pointer(info->task,
-                          nm_str_buf_finalize(&info->in_buffer, NULL) ?: g_new0(char, 1),
-                          g_free);
+
+    if (info->binary_output) {
+        g_task_return_pointer(
+            info->task,
+            g_bytes_new(nm_str_buf_get_str_unsafe(&info->in_buffer), info->in_buffer.len),
+            (GDestroyNotify) (g_bytes_unref));
+    } else {
+        g_task_return_pointer(info->task,
+                              nm_str_buf_finalize(&info->in_buffer, NULL) ?: g_new0(char, 1),
+                              g_free);
+    }
     helper_info_free(info);
 }
 
@@ -5235,6 +5244,7 @@ helper_cancelled(GObject *object, gpointer user_data)
 
 void
 nm_utils_spawn_helper(const char *const  *args,
+                      gboolean            binary_output,
                       GCancellable       *cancellable,
                       GAsyncReadyCallback callback,
                       gpointer            cb_data)
@@ -5250,8 +5260,13 @@ nm_utils_spawn_helper(const char *const  *args,
 
     info  = g_new(HelperInfo, 1);
     *info = (HelperInfo) {
-        .task = nm_g_task_new(NULL, cancellable, nm_utils_spawn_helper, callback, cb_data),
+        .task          = nm_g_task_new(NULL, cancellable, nm_utils_spawn_helper, callback, cb_data),
+        .binary_output = binary_output,
     };
+
+    /* Store if the caller requested binary output so that we can check later
+     * that the right result function is called. */
+    g_task_set_task_data(info->task, GINT_TO_POINTER(binary_output), NULL);
 
     if (!g_spawn_async_with_pipes("/",
                                   (char **) NM_MAKE_STRV(LIBEXECDIR "/nm-daemon-helper"),
@@ -5363,11 +5378,25 @@ nm_utils_spawn_helper(const char *const  *args,
 }
 
 char *
-nm_utils_spawn_helper_finish(GAsyncResult *result, GError **error)
+nm_utils_spawn_helper_finish_string(GAsyncResult *result, GError **error)
 {
     GTask *task = G_TASK(result);
 
     nm_assert(nm_g_task_is_valid(result, NULL, nm_utils_spawn_helper));
+    /* Check binary_output */
+    nm_assert(GPOINTER_TO_INT(g_task_get_task_data(task)) == FALSE);
+
+    return g_task_propagate_pointer(task, error);
+}
+
+GBytes *
+nm_utils_spawn_helper_finish_binary(GAsyncResult *result, GError **error)
+{
+    GTask *task = G_TASK(result);
+
+    nm_assert(nm_g_task_is_valid(result, NULL, nm_utils_spawn_helper));
+    /* Check binary_output */
+    nm_assert(GPOINTER_TO_INT(g_task_get_task_data(task)) == TRUE);
 
     return g_task_propagate_pointer(task, error);
 }
