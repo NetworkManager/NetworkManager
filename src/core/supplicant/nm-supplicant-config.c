@@ -258,19 +258,19 @@ static gboolean
 nm_supplicant_config_add_blob_for_connection(NMSupplicantConfig *self,
                                              GBytes             *field,
                                              const char         *name,
-                                             const char         *con_uid,
+                                             const char         *con_uuid,
                                              GError            **error)
 {
     if (field && g_bytes_get_size(field)) {
-        gs_free char *uid = NULL;
+        gs_free char *blob_id = NULL;
         char         *p;
 
-        uid = g_strdup_printf("%s-%s", con_uid, name);
-        for (p = uid; *p; p++) {
+        blob_id = g_strdup_printf("%s-%s", con_uuid, name);
+        for (p = blob_id; *p; p++) {
             if (*p == '/')
                 *p = '-';
         }
-        if (!nm_supplicant_config_add_blob(self, name, field, uid, error))
+        if (!nm_supplicant_config_add_blob(self, name, field, blob_id, error))
             return FALSE;
     }
     return TRUE;
