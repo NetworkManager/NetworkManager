@@ -253,7 +253,8 @@ G_STATIC_ASSERT(RTA_MAX == (__RTA_MAX - 1));
 #define IFLA_HSR_SEQ_NR           5
 #define IFLA_HSR_VERSION          6
 #define IFLA_HSR_PROTOCOL         7
-#define __IFLA_HSR_MAX            8
+#define IFLA_HSR_INTERLINK        8
+#define __IFLA_HSR_MAX            9
 
 /*****************************************************************************/
 
@@ -5199,6 +5200,10 @@ _nl_msg_new_link_set_linkinfo(struct nl_msg *msg, NMLinkType link_type, gconstpo
 
         if (!props->prp && props->protocol_version >= 0) {
             NLA_PUT_U8(msg, IFLA_HSR_VERSION, props->protocol_version);
+        }
+
+        if (props->interlink > 0) {
+            NLA_PUT_U32(msg, IFLA_HSR_INTERLINK, props->interlink);
         }
 
         break;
