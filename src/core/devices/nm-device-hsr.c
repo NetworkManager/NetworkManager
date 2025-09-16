@@ -116,18 +116,31 @@ create_and_realize(NMDevice              *device,
                    const NMPlatformLink **out_plink,
                    GError               **error)
 {
-    const char      *iface = nm_device_get_iface(device);
-    NMSettingHsr    *s_hsr;
-    NMPlatformLnkHsr lnk = {};
-    int              r;
+    const char        *iface   = nm_device_get_iface(device);
+    nm_auto_free char *err_msg = NULL;
+    NMSettingHsr      *s_hsr;
+    NMPlatformLnkHsr   lnk = {};
+    int                r   = 0;
 
     s_hsr = _nm_connection_get_setting(connection, NM_TYPE_SETTING_HSR);
+
     nm_assert(s_hsr);
 
     if (nm_setting_hsr_get_port1(s_hsr) != NULL)
         lnk.port1 = nm_platform_link_get_ifindex(NM_PLATFORM_GET, nm_setting_hsr_get_port1(s_hsr));
     if (nm_setting_hsr_get_port2(s_hsr) != NULL)
         lnk.port2 = nm_platform_link_get_ifindex(NM_PLATFORM_GET, nm_setting_hsr_get_port2(s_hsr));
+    if (nm_setting_hsr_get_interlink(s_hsr) != NULL) {
+        const char *ifname  = nm_setting_hsr_get_interlink(s_hsr);
+        int         ifindex = nm_platform_link_get_ifindex(NM_PLATFORM_GET, ifname);
+
+        if (ifindex <= 0) {
+            err_msg = g_strdup_printf("interlink port '%s' does not exist", ifname);
+            goto out;
+        }
+
+        lnk.interlink = ifindex;
+    }
 
     lnk.multicast_spec   = nm_setting_hsr_get_multicast_spec(s_hsr);
     lnk.prp              = nm_setting_hsr_get_prp(s_hsr);
@@ -136,13 +149,18 @@ create_and_realize(NMDevice              *device,
     r = nm_platform_link_hsr_add(nm_device_get_platform(device), iface, &lnk, out_plink);
 
     if (r < 0) {
+        err_msg = g_strdup(nm_strerror(r) ?: "unknown");
+    }
+
+out:
+    if (err_msg) {
         g_set_error(error,
                     NM_DEVICE_ERROR,
                     NM_DEVICE_ERROR_CREATION_FAILED,
                     "Failed to create HSR interface '%s' for '%s': %s",
                     iface,
                     nm_connection_get_id(connection),
-                    nm_strerror(r));
+                    err_msg);
         return FALSE;
     }
 
