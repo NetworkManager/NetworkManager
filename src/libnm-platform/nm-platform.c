@@ -6570,13 +6570,15 @@ nm_platform_lnk_hsr_to_string(const NMPlatformLnkHsr *lnk, char *buf, gsize len)
                "port2 %d "
                "supervision_address " NM_ETHER_ADDR_FORMAT_STR " multicast_spec %u "
                "prp %s "
-               "protocol_version %d",
+               "protocol_version %d "
+               "interlink %d",
                lnk->port1,
                lnk->port2,
                NM_ETHER_ADDR_FORMAT_VAL(&lnk->supervision_address),
                lnk->multicast_spec,
                lnk->prp ? "on" : "off",
-               lnk->protocol_version);
+               lnk->protocol_version,
+               lnk->interlink);
     return buf;
 }
 
@@ -8494,7 +8496,8 @@ nm_platform_lnk_hsr_hash_update(const NMPlatformLnkHsr *obj, NMHashState *h)
                         obj->supervision_address,
                         obj->multicast_spec,
                         NM_HASH_COMBINE_BOOLS(guint8, obj->prp),
-                        obj->protocol_version);
+                        obj->protocol_version,
+                        obj->interlink);
 }
 
 int
@@ -8507,6 +8510,7 @@ nm_platform_lnk_hsr_cmp(const NMPlatformLnkHsr *a, const NMPlatformLnkHsr *b)
     NM_CMP_FIELD(a, b, multicast_spec);
     NM_CMP_FIELD_BOOL(a, b, prp);
     NM_CMP_FIELD(a, b, protocol_version);
+    NM_CMP_FIELD(a, b, interlink);
     return 0;
 }
 
