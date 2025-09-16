@@ -224,8 +224,8 @@ if [[ "$DO_TEST_BUILD" == yes ]]; then
             -Dnft=/usr/bin/nft \
             -Dnbft=${_WITH_NBFT}
 
-	ninja -C ./build
-	ninja test -C ./build
+	ninja -j$(nproc) -C ./build
+	ninja test -j$(nproc) -C ./build
     else
         NOCONFIGURE=yes ./autogen.sh
 
@@ -260,7 +260,7 @@ if [[ "$DO_TEST_BUILD" == yes ]]; then
             --with-systemd-logind=yes \
             --with-consolekit=yes
 
-	# We see some OOM when we have 8 cores and 12GB RAM, lowering to 16 from 20.
+        # We see some OOM when we have 8 cores and 12GB RAM, lowering to 16 from 20.
         proc=$(nproc); make -j$((proc*2))
         make check -k
     fi
