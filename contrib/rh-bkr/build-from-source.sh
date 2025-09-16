@@ -260,7 +260,8 @@ if [[ "$DO_TEST_BUILD" == yes ]]; then
             --with-systemd-logind=yes \
             --with-consolekit=yes
 
-        make -j20
+	# We see some OOM when we have 8 cores and 12GB RAM, lowering to 16 from 20.
+        proc=$(nproc); make -j$((proc*2))
         make check -k
     fi
 fi
