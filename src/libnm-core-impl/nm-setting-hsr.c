@@ -28,11 +28,13 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingHsr,
                              PROP_PORT2,
                              PROP_MULTICAST_SPEC,
                              PROP_PRP,
-                             PROP_PROTOCOL_VERSION, );
+                             PROP_PROTOCOL_VERSION,
+                             PROP_INTERLINK, );
 
 typedef struct {
     char   *port1;
     char   *port2;
+    char   *interlink;
     guint32 multicast_spec;
     int     protocol_version;
     bool    prp;
@@ -137,6 +139,22 @@ nm_setting_hsr_get_protocol_version(NMSettingHsr *setting)
     g_return_val_if_fail(NM_IS_SETTING_HSR(setting), NM_SETTING_HSR_PROTOCOL_VERSION_DEFAULT);
 
     return NM_SETTING_HSR_GET_PRIVATE(setting)->protocol_version;
+}
+
+/**
+ * nm_setting_hsr_get_interlink:
+ * @setting: the #NMSettingHsr
+ *
+ * Returns: the #NMSettingHsr:interlink property of the setting
+ *
+ * Since: 1.56
+ **/
+const char *
+nm_setting_hsr_get_interlink(NMSettingHsr *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_HSR(setting), NULL);
+
+    return NM_SETTING_HSR_GET_PRIVATE(setting)->interlink;
 }
 
 /*****************************************************************************/
@@ -314,6 +332,21 @@ nm_setting_hsr_class_init(NMSettingHsrClass *klass)
                                             NULL,
                                             NMSettingHsr,
                                             _priv.protocol_version);
+
+    /**
+      * NMSettingHsr:interlink:
+      *
+      * The optional interlink port name of the HSR interface.
+      *
+      * Since: 1.56
+      **/
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_HSR_INTERLINK,
+                                              PROP_INTERLINK,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingHsr,
+                                              _priv.interlink);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
