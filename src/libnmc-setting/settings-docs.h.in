@@ -171,6 +171,7 @@
 #define DESCRIBE_DOC_NM_SETTING_GSM_SIM_ID N_("The SIM card unique identifier (as given by the WWAN management service) which this connection applies to.  If given, the connection will apply to any device also allowed by \"device-id\" which contains a SIM card matching the given identifier.")
 #define DESCRIBE_DOC_NM_SETTING_GSM_SIM_OPERATOR_ID N_("A MCC/MNC string like \"310260\" or \"21601\" identifying the specific mobile network operator which this connection applies to.  If given, the connection will apply to any device also allowed by \"device-id\" and \"sim-id\" which contains a SIM card provisioned by the given operator.")
 #define DESCRIBE_DOC_NM_SETTING_GSM_USERNAME N_("The username used to authenticate with the network, if required.  Many providers do not require a username, or accept any username.  But if a username is required, it is specified here.")
+#define DESCRIBE_DOC_NM_SETTING_HSR_INTERLINK N_("The optional interlink port name of the HSR interface.")
 #define DESCRIBE_DOC_NM_SETTING_HSR_MULTICAST_SPEC N_("The last byte of supervision address.")
 #define DESCRIBE_DOC_NM_SETTING_HSR_PORT1 N_("The port1 interface name of the HSR. This property is mandatory.")
 #define DESCRIBE_DOC_NM_SETTING_HSR_PORT2 N_("The port2 interface name of the HSR. This property is mandatory.")

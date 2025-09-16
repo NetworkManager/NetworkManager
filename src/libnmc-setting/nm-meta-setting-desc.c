@@ -6201,6 +6201,9 @@ static const NMMetaPropertyInfo *const property_infos_HSR[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_HSR_PROTOCOL_VERSION,
         .property_type =                &_pt_gobject_enum,
     ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_HSR_INTERLINK,
+        .property_type =                &_pt_gobject_string,
+    ),
     NULL
 };
 

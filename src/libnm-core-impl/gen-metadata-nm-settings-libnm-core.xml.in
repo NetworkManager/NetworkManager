@@ -1516,6 +1516,10 @@
     <setting name="hsr"
              gtype="NMSettingHsr"
              >
+        <property name="interlink"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="multicast-spec"
                   dbus-type="u"
                   gprop-type="guint"
