@@ -28,6 +28,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_HSR_MULTICAST_SPEC   "multicast-spec"
 #define NM_SETTING_HSR_PRP              "prp"
 #define NM_SETTING_HSR_PROTOCOL_VERSION "protocol-version"
+#define NM_SETTING_HSR_INTERLINK        "interlink"
 
 /**
  * NMSettingHsrProtocolVersion:
@@ -62,6 +63,8 @@ NM_AVAILABLE_IN_1_46
 gboolean nm_setting_hsr_get_prp(NMSettingHsr *setting);
 NM_AVAILABLE_IN_1_56
 NMSettingHsrProtocolVersion nm_setting_hsr_get_protocol_version(NMSettingHsr *setting);
+NM_AVAILABLE_IN_1_56
+const char *nm_setting_hsr_get_interlink(NMSettingHsr *setting);
 
 G_END_DECLS
 

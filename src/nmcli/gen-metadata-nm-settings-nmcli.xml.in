@@ -1239,6 +1239,9 @@
                   nmcli-description="Configures the protocol version to be used for the HSR/PRP interface. &quot;default&quot; (-1) sets the protocol version to the default version for the protocol. &quot;hsr-2010&quot; (0) sets the protocol version to HSRv0 (IEC 62439-3:2010). &quot;hsr-2012&quot; (1) sets the protocol version to HSRv1 (IEC 62439-3:2012)."
                   format="choice (NMSettingHsrProtocolVersion)"
                   values="default (-1), hsr-2010 (0), hsr-2012 (1)" />
+        <property name="interlink"
+                  nmcli-description="The optional interlink port name of the HSR interface."
+                  format="string" />
     </setting>
     <setting name="infiniband" >
         <property name="mac-address"
