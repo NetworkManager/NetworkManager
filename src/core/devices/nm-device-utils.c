@@ -239,7 +239,7 @@ resolve_addr_helper_cb(GObject *source, GAsyncResult *result, gpointer user_data
     gs_free_error GError *error  = NULL;
     gs_free char         *output = NULL;
 
-    output = nm_utils_spawn_helper_finish(result, &error);
+    output = nm_utils_spawn_helper_finish_string(result, &error);
     if (nm_utils_error_is_cancelled(error))
         return;
 
@@ -278,6 +278,7 @@ resolve_addr_spawn_helper(ResolveAddrInfo *info, ResolveAddrService services)
     nm_inet_ntop(info->addr_family, &info->address, addr_str);
     _LOG2D(info, "start lookup via nm-daemon-helper using services: %s", str);
     nm_utils_spawn_helper(NM_MAKE_STRV("resolve-address", addr_str, str),
+                          FALSE,
                           g_task_get_cancellable(info->task),
                           resolve_addr_helper_cb,
                           info);

@@ -478,11 +478,13 @@ guint8 nm_wifi_utils_level_to_quality(int val);
 /*****************************************************************************/
 
 void nm_utils_spawn_helper(const char *const  *args,
+                           gboolean            binary_output,
                            GCancellable       *cancellable,
                            GAsyncReadyCallback callback,
                            gpointer            cb_data);
 
-char *nm_utils_spawn_helper_finish(GAsyncResult *result, GError **error);
+char   *nm_utils_spawn_helper_finish_string(GAsyncResult *result, GError **error);
+GBytes *nm_utils_spawn_helper_finish_binary(GAsyncResult *result, GError **error);
 
 /*****************************************************************************/
 
