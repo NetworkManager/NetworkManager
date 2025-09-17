@@ -60,8 +60,17 @@ if enable_polkit
     output: '@BASENAME@',
     po_dir: po_dir,
     install: true,
-    install_dir: polkit_gobject_policydir,
+    install_dir: polkit_policydir,
   )
+
+  if polkit_noauth_group != ''
+    configure_file(
+      input: 'org.freedesktop.NetworkManager.rules.in',
+      output: '@BASENAME@',
+      install_dir: polkit_rulesdir,
+      configuration: {'NM_POLKIT_NOAUTH_GROUP': polkit_noauth_group},
+    )
+  endif
 endif
 
 if enable_firewalld_zone
