@@ -665,7 +665,6 @@ Preferably use nmcli instead.
 	-Dselinux=true \
 	-Dpolkit=true  \
 	-Dconfig_auth_polkit_default=true \
-	-Dmodify_system=true \
 	-Dconcheck=true \
 %if 0%{?fedora}
 	-Dlibpsl=true \

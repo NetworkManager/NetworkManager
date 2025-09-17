@@ -519,6 +519,10 @@ endif
 config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT', config_auth_polkit_default)
 
 enable_modify_system = get_option('modify_system')
+if enable_modify_system
+  # FIXME: remove this after everyone has stopped using modify_system
+  error('modify_system=true is no longer allowed due to security reasons')
+endif
 
 polkit_agent_helper_1_path = get_option('polkit_agent_helper_1')
 foreach p : [ '/usr/libexec/polkit-agent-helper-1',
@@ -951,7 +955,6 @@ data_conf.set('NM_DHCP_CLIENTS_ENABLED',                 ', '.join(config_dhcp_c
 data_conf.set('NM_MAJOR_VERSION',                        nm_major_version)
 data_conf.set('NM_MICRO_VERSION',                        nm_micro_version)
 data_conf.set('NM_MINOR_VERSION',                        nm_minor_version)
-data_conf.set('NM_MODIFY_SYSTEM_POLICY',                 (enable_modify_system ? 'yes' : 'auth_admin_keep'))
 data_conf.set('NM_VERSION',                              nm_version)
 data_conf.set('VERSION',                                 nm_version)
 data_conf.set('bindir',                                  nm_bindir)
@@ -1082,17 +1085,7 @@ output += '  dbus_conf_dir: ' + dbus_conf_dir + '\n'
 output += '\nPlatform:\n'
 output += '  session tracking: ' + ','.join(session_trackers) + '\n'
 output += '  suspend/resume: ' + suspend_resume + '\n'
-output += '  policykit: ' + enable_polkit.to_string() + ' (default: ' + config_auth_polkit_default + ')'
-if enable_polkit
-  output += ' ('
-  if enable_modify_system
-    output += 'permissive'
-  else
-    output += 'restrictive'
-  endif
-  output += ' modify.system)'
-endif
-output += '\n'
+output += '  policykit: ' + enable_polkit.to_string() + ' (default: ' + config_auth_polkit_default + ')\n'
 output += '  polkit-agent-helper-1: ' + polkit_agent_helper_1_path + '\n'
 output += '  selinux: ' + enable_selinux.to_string() + '\n'
 output += '  systemd-journald: ' + enable_systemd_journal.to_string() + ' (default: logging.backend=' + config_logging_backend_default + ')\n'
