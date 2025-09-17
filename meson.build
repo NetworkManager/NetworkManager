@@ -526,7 +526,8 @@ config_h.set10('WITH_TEAMDCTL', enable_teamdctl)
 enable_polkit = get_option('polkit')
 if enable_polkit
   # FIXME: policydir should be relative to `datadir`, not `prefix`. Fixed in https://gitlab.freedesktop.org/polkit/polkit/merge_requests/2
-  polkit_gobject_policydir = dependency('polkit-gobject-1').get_variable(pkgconfig: 'policydir', pkgconfig_define: ['prefix', nm_prefix])
+  polkit_policydir = dependency('polkit-gobject-1').get_variable(pkgconfig: 'policydir', pkgconfig_define: ['prefix', nm_prefix])
+  polkit_rulesdir = join_paths(fs.parent(polkit_policydir), 'rules.d')
 endif
 
 config_auth_polkit_default = get_option('config_auth_polkit_default')
@@ -536,6 +537,8 @@ endif
 config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT', config_auth_polkit_default)
 
 enable_modify_system = get_option('modify_system')
+
+polkit_noauth_group = get_option('polkit_noauth_group')
 
 polkit_agent_helper_1_path = get_option('polkit_agent_helper_1')
 foreach p : [ '/usr/libexec/polkit-agent-helper-1',
@@ -1098,7 +1101,7 @@ output += '  dbus_conf_dir: ' + dbus_conf_dir + '\n'
 output += '\nPlatform:\n'
 output += '  session tracking: ' + ','.join(session_trackers) + '\n'
 output += '  suspend/resume: ' + suspend_resume + '\n'
-output += '  policykit: ' + enable_polkit.to_string() + ' (default: ' + config_auth_polkit_default + ')'
+output += '  policykit: ' + enable_polkit.to_string() + ' (default: ' + config_auth_polkit_default + ', noauth_group: "' + polkit_noauth_group + '")'
 if enable_polkit
   output += ' ('
   if enable_modify_system
