@@ -107,6 +107,11 @@
 %else
 %bcond_without iwd
 %endif
+%if 0%{?fedora} <= 43 || 0%{?rhel} <= 10
+%bcond_without polkit_noauth_group
+%else
+%bcond_with polkit_noauth_group
+%endif
 
 ###############################################################################
 
@@ -665,6 +670,9 @@ Preferably use nmcli instead.
 	-Dselinux=true \
 	-Dpolkit=true  \
 	-Dconfig_auth_polkit_default=true \
+%if %{with polkit_noauth_group}
+	-Dpolkit_noauth_group=wheel \
+%endif
 	-Dconcheck=true \
 %if 0%{?fedora}
 	-Dlibpsl=true \
@@ -912,6 +920,9 @@ fi
 %{_datadir}/dbus-1/system-services/org.freedesktop.nm_dispatcher.service
 %{_datadir}/dbus-1/system-services/org.freedesktop.nm_priv_helper.service
 %{_datadir}/polkit-1/actions/*.policy
+%if %{with polkit_noauth_group}
+%{_datadir}/polkit-1/rules.d/org.freedesktop.NetworkManager.rules
+%endif
 %{_prefix}/lib/udev/rules.d/*.rules
 %{_prefix}/lib/firewalld/zones/nm-shared.xml
 # systemd stuff
