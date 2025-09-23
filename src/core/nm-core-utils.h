@@ -496,4 +496,15 @@ gid_t nm_utils_get_nm_gid(void);
 
 const char *nm_utils_get_connection_first_permissions_user(NMConnection *connection);
 
+/*****************************************************************************/
+
+const char **nm_utils_get_connection_private_files_paths(NMConnection *connection);
+
+void        nm_utils_read_private_files(const char *const  *paths,
+                                        const char         *user,
+                                        GCancellable       *cancellable,
+                                        GAsyncReadyCallback callback,
+                                        gpointer            cb_data);
+GHashTable *nm_utils_read_private_files_finish(GAsyncResult *result, GError **error);
+
 #endif /* __NM_CORE_UTILS_H__ */
