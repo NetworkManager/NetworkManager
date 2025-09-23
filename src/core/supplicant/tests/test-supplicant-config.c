@@ -98,7 +98,8 @@ build_supplicant_config(NMConnection  *connection,
     NMSetting8021x                     *s_8021x;
     gboolean                            success;
 
-    config = nm_supplicant_config_new(capabilities);
+    config = nm_supplicant_config_new(capabilities,
+                                      nm_utils_get_connection_first_permissions_user(connection));
 
     s_wifi = nm_connection_get_setting_wireless(connection);
     g_assert(s_wifi);
@@ -120,6 +121,7 @@ build_supplicant_config(NMConnection  *connection,
                                                                mtu,
                                                                pmf,
                                                                fils,
+                                                               NULL,
                                                                &error);
     } else {
         success = nm_supplicant_config_add_no_security(config, &error);

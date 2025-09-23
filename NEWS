@@ -1,4 +1,13 @@
 ===============================================
+NetworkManager-1.54.3
+Overview of changes since NetworkManager-1.54.2
+===============================================
+
+* For private connections (the ones that specify a user in the
+  "connection.permissions" property), verify that the user can access
+  the 802.1X certificates and keys set in the connection.
+
+===============================================
 NetworkManager-1.54.2
 Overview of changes since NetworkManager-1.54.1
 ===============================================
