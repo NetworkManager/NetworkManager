@@ -5664,3 +5664,202 @@ nm_utils_get_connection_first_permissions_user(NMConnection *connection)
 
     return _nm_setting_connection_get_first_permissions_user(s_con);
 }
+
+/*****************************************************************************/
+
+static void
+get_8021x_private_files(NMConnection *connection, GPtrArray *files)
+{
+    const struct {
+        NMSetting8021xCKScheme (*get_scheme_func)(NMSetting8021x *);
+        const char *(*get_path_func)(NMSetting8021x *);
+    } funcs[] = {
+        {nm_setting_802_1x_get_ca_cert_scheme, nm_setting_802_1x_get_ca_cert_path},
+        {nm_setting_802_1x_get_client_cert_scheme, nm_setting_802_1x_get_client_cert_path},
+        {nm_setting_802_1x_get_private_key_scheme, nm_setting_802_1x_get_private_key_path},
+        {nm_setting_802_1x_get_phase2_ca_cert_scheme, nm_setting_802_1x_get_phase2_ca_cert_path},
+        {nm_setting_802_1x_get_phase2_client_cert_scheme,
+         nm_setting_802_1x_get_phase2_client_cert_path},
+        {nm_setting_802_1x_get_phase2_private_key_scheme,
+         nm_setting_802_1x_get_phase2_private_key_path},
+    };
+    NMSetting8021x *s_8021x;
+    const char     *path;
+    guint           i;
+
+    s_8021x = nm_connection_get_setting_802_1x(connection);
+    if (!s_8021x)
+        return;
+
+    for (i = 0; i < G_N_ELEMENTS(funcs); i++) {
+        if (funcs[i].get_scheme_func(s_8021x) == NM_SETTING_802_1X_CK_SCHEME_PATH) {
+            path = funcs[i].get_path_func(s_8021x);
+            if (path) {
+                g_ptr_array_add(files, (gpointer) path);
+            }
+        }
+    }
+}
+
+const char **
+nm_utils_get_connection_private_files_paths(NMConnection *connection)
+{
+    GPtrArray *files;
+
+    files = g_ptr_array_new();
+    get_8021x_private_files(connection, files);
+    g_ptr_array_add(files, NULL);
+
+    return (const char **) g_ptr_array_free(files, files->len == 1);
+}
+
+typedef struct _ReadInfo ReadInfo;
+
+typedef struct {
+    char     *path;
+    ReadInfo *read_info;
+} FileInfo;
+
+struct _ReadInfo {
+    GTask      *task;
+    GHashTable *table;
+    GPtrArray  *file_infos; /* of FileInfo */
+    GError     *first_error;
+    guint       num_pending;
+};
+
+static void
+read_file_helper_cb(GObject *source, GAsyncResult *result, gpointer user_data)
+{
+    FileInfo              *file_info = user_data;
+    ReadInfo              *read_info = file_info->read_info;
+    gs_unref_bytes GBytes *output    = NULL;
+    gs_free_error GError  *error     = NULL;
+
+    output = nm_utils_spawn_helper_finish_binary(result, &error);
+
+    nm_assert(read_info->num_pending > 0);
+    read_info->num_pending--;
+
+    if (nm_utils_error_is_cancelled(error)) {
+        /* nop */
+    } else if (error) {
+        nm_log_dbg(LOGD_CORE,
+                   "read-private-files: failed to read file '%s': %s",
+                   file_info->path,
+                   error->message);
+        if (!read_info->first_error) {
+            /* @error just says "helper process exited with status X".
+             * Return a more human-friendly one. */
+            read_info->first_error = g_error_new(NM_UTILS_ERROR,
+                                                 NM_UTILS_ERROR_UNKNOWN,
+                                                 "error reading file '%s'",
+                                                 file_info->path);
+        }
+    } else {
+        nm_log_dbg(LOGD_SUPPLICANT,
+                   "read-private-files: successfully read file '%s'",
+                   file_info->path);
+
+        /* Store the file contents in the hash table */
+        if (!read_info->table) {
+            read_info->table = g_hash_table_new_full(nm_str_hash,
+                                                     g_str_equal,
+                                                     g_free,
+                                                     (GDestroyNotify) g_bytes_unref);
+        }
+        g_hash_table_insert(read_info->table,
+                            g_steal_pointer(&file_info->path),
+                            g_steal_pointer(&output));
+    }
+
+    g_clear_pointer(&file_info->path, g_free);
+
+    /* If all operations are completed, return  */
+    if (read_info->num_pending == 0) {
+        if (read_info->first_error) {
+            g_task_return_error(read_info->task, g_steal_pointer(&read_info->first_error));
+        } else {
+            g_task_return_pointer(read_info->task,
+                                  g_steal_pointer(&read_info->table),
+                                  (GDestroyNotify) g_hash_table_unref);
+        }
+
+        if (read_info->table)
+            g_hash_table_unref(read_info->table);
+        if (read_info->file_infos)
+            g_ptr_array_unref(read_info->file_infos);
+
+        g_object_unref(read_info->task);
+        g_free(read_info);
+    }
+}
+
+/**
+ * nm_utils_read_private_files:
+ * @paths: array of file paths to be read
+ * @user: name of the user to impersonate when reading the files
+ * @cancellable: cancellable to cancel the operation
+ * @callback: callback to invoke on completion
+ * @cb_data: data for @callback
+ *
+ * Reads the given list of files @paths on behalf of user @user. Invokes
+ * @callback asynchronously on completion. The callback must use
+ * nm_utils_read_private_files_finish() to obtain the result.
+ */
+void
+nm_utils_read_private_files(const char *const  *paths,
+                            const char         *user,
+                            GCancellable       *cancellable,
+                            GAsyncReadyCallback callback,
+                            gpointer            cb_data)
+{
+    ReadInfo *read_info;
+    FileInfo *file_info;
+    guint     i;
+
+    g_return_if_fail(paths && paths[0]);
+    g_return_if_fail(cancellable);
+    g_return_if_fail(callback);
+    g_return_if_fail(cb_data);
+
+    read_info  = g_new(ReadInfo, 1);
+    *read_info = (ReadInfo) {
+        .task = nm_g_task_new(NULL, cancellable, nm_utils_read_private_files, callback, cb_data),
+        .file_infos = g_ptr_array_new_with_free_func(g_free),
+    };
+
+    for (i = 0; paths[i]; i++) {
+        file_info  = g_new(FileInfo, 1);
+        *file_info = (FileInfo) {
+            .path      = g_strdup(paths[i]),
+            .read_info = read_info,
+        };
+        g_ptr_array_add(read_info->file_infos, file_info);
+        read_info->num_pending++;
+
+        nm_utils_spawn_helper(NM_MAKE_STRV("read-file-as-user", user, paths[i]),
+                              TRUE,
+                              cancellable,
+                              read_file_helper_cb,
+                              file_info);
+    }
+}
+
+/**
+ * nm_utils_read_private_files_finish:
+ * @result: the GAsyncResult
+ * @error: on return, the error
+ *
+ * Returns the files read by nm_utils_read_private_files(). The return value
+ * is a hash table {char * -> GBytes *}. Free it with g_hash_table_unref().
+ */
+GHashTable *
+nm_utils_read_private_files_finish(GAsyncResult *result, GError **error)
+{
+    GTask *task = G_TASK(result);
+
+    nm_assert(nm_g_task_is_valid(result, NULL, nm_utils_read_private_files));
+
+    return g_task_propagate_pointer(task, error);
+}
