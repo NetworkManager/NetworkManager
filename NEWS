@@ -19,6 +19,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   nm-initrd-generator.
 * Support configuring the HSR protocol version via the
   "hsr.protocol-version" property.
+* Support configuring the HSR interlink port via the
+  "hsr.interlink" property.
 
 =============================================
 NetworkManager-1.54
