@@ -201,7 +201,8 @@ build_supplicant_config(NMDeviceMacsec *self, GError **error)
     mtu      = nm_platform_link_get_mtu(nm_device_get_platform(NM_DEVICE(self)),
                                    nm_device_get_ifindex(NM_DEVICE(self)));
 
-    config = nm_supplicant_config_new(NM_SUPPL_CAP_MASK_NONE);
+    config = nm_supplicant_config_new(NM_SUPPL_CAP_MASK_NONE,
+                                      nm_utils_get_connection_first_permissions_user(connection));
 
     s_macsec = nm_device_get_applied_setting(NM_DEVICE(self), NM_TYPE_SETTING_MACSEC);
 
@@ -227,7 +228,13 @@ build_supplicant_config(NMDeviceMacsec *self, GError **error)
 
     if (nm_setting_macsec_get_mode(s_macsec) == NM_SETTING_MACSEC_MODE_EAP) {
         s_8021x = nm_connection_get_setting_802_1x(connection);
-        if (!nm_supplicant_config_add_setting_8021x(config, s_8021x, con_uuid, mtu, TRUE, error)) {
+        if (!nm_supplicant_config_add_setting_8021x(config,
+                                                    s_8021x,
+                                                    con_uuid,
+                                                    mtu,
+                                                    TRUE,
+                                                    nm_device_get_private_files(NM_DEVICE(self)),
+                                                    error)) {
             g_prefix_error(error, "802-1x-setting: ");
             return NULL;
         }

@@ -18,6 +18,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   polkit permissions to allow non-admin users to create system-wide
   connection. That configuration is discouraged because it can be used
   to bypass filesystem permissions.
+* For private connections (the ones that specify a user in the
+  "connection.permissions" property), verify that the user can access
+  the 802.1X certificates and keys set in the connection.
 
 =============================================
 NetworkManager-1.56
