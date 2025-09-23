@@ -176,4 +176,6 @@ void nm_device_auth_request(NMDevice                      *self,
 
 void nm_device_link_properties_set(NMDevice *self, gboolean reapply);
 
+GHashTable *nm_device_get_private_files(NMDevice *self);
+
 #endif /* NM_DEVICE_PRIVATE_H */
