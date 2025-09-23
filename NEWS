@@ -1,12 +1,16 @@
+===============================================
+NetworkManager-1.56.1
+Overview of changes since NetworkManager-1.56.0
+===============================================
+
+* For private connections (the ones that specify a user in the
+  "connection.permissions" property), verify that the user can access
+  the 802.1X certificates and keys set in the connection.
+
 =============================================
 NetworkManager-1.56
 Overview of changes since NetworkManager-1.54
 =============================================
-
-This is a snapshot of NetworkManager development. The API is
-subject to change and not guaranteed to be compatible with
-the later release.
-USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 * nmcli now supports viewing and managing WireGuard peers.
 * Support reapplying the "sriov.vfs" property as long as
