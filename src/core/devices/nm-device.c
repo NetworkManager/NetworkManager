@@ -113,6 +113,19 @@ typedef enum {
     RELEASE_PORT_TYPE_CONFIG_FORCE,
 } ReleasePortType;
 
+/**
+ * CleanupType:
+ * @CLEANUP_TYPE_KEEP: Cleanup internally but keep the real device's config. This is
+ *   often used when moving a partially managed device to "unmanaged" (but not only).
+ * @CLEANUP_TYPE_REMOVED: The device suddently disappeared. Cleanup internally but don't
+ *   make any action on the real device at all, as it no longer exists.
+ * @CLEANUP_TYPE_DECONFIGURE: Also deconfigure the real device. This is the typical
+ *   action when a connection or device is set to "down", or fully managed devices
+ *   moved to "unmanaged".
+ * @CLEANUP_TYPE_KEEP_REAPPLY: Like %CLEANUP_TYPE_KEEP, but indicating that it's a
+ *   reapply. Some special actions can be done if we're doing a reapply, like keeping
+ *   the existing DHCP lease, for example.
+ */
 typedef enum {
     CLEANUP_TYPE_KEEP,
     CLEANUP_TYPE_REMOVED,
