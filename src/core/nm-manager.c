@@ -1960,7 +1960,7 @@ find_device_by_iface(NMManager    *self,
 }
 
 static gboolean
-manager_sleeping(NMManager *self)
+manager_is_disabled(NMManager *self)
 {
     NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE(self);
 
@@ -1973,8 +1973,8 @@ static const char *
 _nm_state_to_string(NMState state)
 {
     switch (state) {
-    case NM_STATE_ASLEEP:
-        return "ASLEEP";
+    case NM_STATE_DISABLED:
+        return "DISABLED";
     case NM_STATE_DISCONNECTED:
         return "DISCONNECTED";
     case NM_STATE_DISCONNECTING:
@@ -2078,15 +2078,18 @@ nm_manager_update_state(NMManager *self)
 {
     NMManagerPrivate *priv;
     NMState           new_state = NM_STATE_DISCONNECTED;
+    const char       *detail    = "";
 
     g_return_if_fail(NM_IS_MANAGER(self));
 
     priv = NM_MANAGER_GET_PRIVATE(self);
 
-    if (manager_sleeping(self))
-        new_state = NM_STATE_ASLEEP;
-    else
+    if (manager_is_disabled(self)) {
+        new_state = NM_STATE_DISABLED;
+        detail    = priv->sleeping ? " (ASLEEP)" : " (NETWORKING OFF)";
+    } else {
         new_state = find_best_device_state(self);
+    }
 
     if (new_state >= NM_STATE_CONNECTED_LOCAL && priv->connectivity_state == NM_CONNECTIVITY_FULL) {
         new_state = NM_STATE_CONNECTED_GLOBAL;
@@ -2097,7 +2100,7 @@ nm_manager_update_state(NMManager *self)
 
     priv->state = new_state;
 
-    _LOGI(LOGD_CORE, "NetworkManager state is now %s", _nm_state_to_string(new_state));
+    _LOGI(LOGD_CORE, "NetworkManager state is now %s%s", _nm_state_to_string(new_state), detail);
 
     _notify(self, PROP_STATE);
     nm_dbus_object_emit_signal(NM_DBUS_OBJECT(self),
@@ -2956,7 +2959,7 @@ _rfkill_update_devices(NMManager *self, NMRfkillType rtype, gboolean enabled)
     _notify(self, _rfkill_type_desc[rtype].prop_id);
 
     /* Don't touch devices if asleep/networking disabled */
-    if (manager_sleeping(self))
+    if (manager_is_disabled(self))
         return;
 
     /* enable/disable wireless devices as required */
@@ -3120,7 +3123,7 @@ _rfkill_update_from_user(NMManager *self, NMRfkillType rtype, gboolean enabled)
     gboolean          old_enabled, new_enabled;
 
     /* Don't touch devices if asleep/networking disabled */
-    if (manager_sleeping(self))
+    if (manager_is_disabled(self))
         return;
 
     _LOGD(LOGD_RFKILL,
@@ -4079,7 +4082,7 @@ add_device(NMManager *self, NMDevice *device, GError **error)
 
     nm_device_set_unmanaged_by_user_settings(device, TRUE);
 
-    nm_device_set_unmanaged_flags(device, NM_UNMANAGED_SLEEPING, manager_sleeping(self));
+    nm_device_set_unmanaged_flags(device, NM_UNMANAGED_MANAGER_DISABLED, manager_is_disabled(self));
 
     dbus_path = nm_dbus_object_export(NM_DBUS_OBJECT(device));
     _LOG2I(LOGD_DEVICE, device, "new %s device (%s)", type_desc, dbus_path);
@@ -7299,7 +7302,7 @@ device_sleep_cb(NMDevice *device, GParamSpec *pspec, NMManager *self)
     case NM_DEVICE_STATE_DISCONNECTED:
         _LOGD(LOGD_SUSPEND, "sleep: unmanaging device %s", nm_device_get_ip_iface(device));
         nm_device_set_unmanaged_by_flags_queue(device,
-                                               NM_UNMANAGED_SLEEPING,
+                                               NM_UNMANAGED_MANAGER_DISABLED,
                                                NM_UNMAN_FLAG_OP_SET_UNMANAGED,
                                                NM_DEVICE_STATE_REASON_SLEEPING);
         break;
@@ -7321,24 +7324,26 @@ _handle_device_takedown(NMManager *self,
                         gboolean   suspending,
                         gboolean   is_shutdown)
 {
+    gboolean            is_sleep = suspending || is_shutdown;
+    NMDeviceStateReason reason =
+        is_sleep ? NM_DEVICE_STATE_REASON_SLEEPING : NM_DEVICE_STATE_REASON_NETWORKING_OFF;
+
     nm_device_notify_sleeping(device);
 
     if (nm_device_is_activating(device)
         || nm_device_get_state(device) == NM_DEVICE_STATE_ACTIVATED) {
-        _LOGD(LOGD_SUSPEND,
+        _LOGD(is_sleep ? LOGD_SUSPEND : LOGD_CORE,
               "%s: wait disconnection of device %s",
-              is_shutdown ? "shutdown" : "sleep",
+              is_sleep ? (is_shutdown ? "shutdown" : "sleep") : "networking off",
               nm_device_get_ip_iface(device));
 
         if (sleep_devices_add(self, device, suspending))
-            nm_device_queue_state(device,
-                                  NM_DEVICE_STATE_DEACTIVATING,
-                                  NM_DEVICE_STATE_REASON_SLEEPING);
+            nm_device_queue_state(device, NM_DEVICE_STATE_DEACTIVATING, reason);
     } else {
         nm_device_set_unmanaged_by_flags(device,
-                                         NM_UNMANAGED_SLEEPING,
+                                         NM_UNMANAGED_MANAGER_DISABLED,
                                          NM_UNMAN_FLAG_OP_SET_UNMANAGED,
-                                         NM_DEVICE_STATE_REASON_SLEEPING);
+                                         reason);
     }
 }
 
@@ -7352,8 +7357,10 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
     suspending          = sleeping_changed && priv->sleeping;
     waking_from_suspend = sleeping_changed && !priv->sleeping;
 
-    if (manager_sleeping(self)) {
-        _LOGD(LOGD_SUSPEND, "sleep: %s...", suspending ? "sleeping" : "disabling");
+    if (manager_is_disabled(self)) {
+        _LOGD(suspending ? LOGD_SUSPEND : LOGD_CORE,
+              "%s...",
+              suspending ? "sleep: sleeping" : "networking: disabling");
 
         /* FIXME: are there still hardware devices that need to be disabled around
          * suspend/resume?
@@ -7379,7 +7386,9 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
             _handle_device_takedown(self, device, suspending, FALSE);
         }
     } else {
-        _LOGD(LOGD_SUSPEND, "sleep: %s...", waking_from_suspend ? "waking up" : "re-enabling");
+        _LOGD(waking_from_suspend ? LOGD_SUSPEND : LOGD_CORE,
+              "%s...",
+              waking_from_suspend ? "sleep: waking up" : "networking: re-enabling");
 
         sleep_devices_clear(self);
 
@@ -7393,7 +7402,7 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
                  */
                 if (device_is_wake_on_lan(priv->platform, device))
                     nm_device_set_unmanaged_by_flags(device,
-                                                     NM_UNMANAGED_SLEEPING,
+                                                     NM_UNMANAGED_MANAGER_DISABLED,
                                                      NM_UNMAN_FLAG_OP_SET_UNMANAGED,
                                                      NM_DEVICE_STATE_REASON_SLEEPING);
 
@@ -7421,10 +7430,12 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
             guint               i;
 
             if (nm_device_is_software(device)
-                && !nm_device_get_unmanaged_flags(device, NM_UNMANAGED_SLEEPING)) {
+                && !nm_device_get_unmanaged_flags(device, NM_UNMANAGED_MANAGER_DISABLED)) {
                 /* DHCP leases of software devices could have gone stale
                  * so we need to renew them. */
-                nm_device_update_dynamic_ip_setup(device, "wake up");
+                nm_device_update_dynamic_ip_setup(device,
+                                                  waking_from_suspend ? "wake up"
+                                                                      : "networking on");
                 continue;
             }
 
@@ -7455,7 +7466,7 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
                     ? NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED
                     : NM_DEVICE_STATE_REASON_NOW_MANAGED;
             nm_device_set_unmanaged_by_flags(device,
-                                             NM_UNMANAGED_SLEEPING,
+                                             NM_UNMANAGED_MANAGER_DISABLED,
                                              NM_UNMAN_FLAG_OP_SET_MANAGED,
                                              reason);
         }
