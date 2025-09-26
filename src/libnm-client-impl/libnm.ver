@@ -2051,5 +2051,6 @@ global:
 
 libnm_1_52_2 {
 global:
+	nm_utils_copy_cert_as_user;
 	nm_vpn_plugin_info_supports_safe_private_file_access;
 } libnm_1_52_0;

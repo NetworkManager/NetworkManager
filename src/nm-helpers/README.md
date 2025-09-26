@@ -17,6 +17,14 @@ all the threads of the process).
 
 This is not directly useful to the user.
 
+nm-libnm-helper
+---------------
+
+A internal helper application that is spawned by libnm to perform
+certain actions without impacting the calling process.
+
+This is not directly useful to the user.
+
 nm-priv-helper
 --------------
 

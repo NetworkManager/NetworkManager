@@ -18,6 +18,26 @@ executable(
   install_dir: nm_libexecdir,
 )
 
+# nm-libnm-helper
+
+executable(
+  'nm-libnm-helper',
+  ['nm-libnm-helper.c'],
+  include_directories : [
+    src_inc,
+    top_inc,
+  ],
+  dependencies: [
+    glib_dep,
+  ],
+  link_with: [
+    libnm_glib_aux,
+    libnm_std_aux,
+  ],
+  install: true,
+  install_dir: nm_libexecdir,
+)
+
 # nm-priv-helper
 
 configure_file(
