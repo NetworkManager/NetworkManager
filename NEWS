@@ -6,6 +6,8 @@ Overview of changes since NetworkManager-1.56.0
 * For private connections (the ones that specify a user in the
   "connection.permissions" property), verify that the user can access
   the 802.1X certificates and keys set in the connection.
+* Introduce a libnm function that can be used by VPN plugins to check
+  user permissions on certificate and keys.
 
 =============================================
 NetworkManager-1.56
