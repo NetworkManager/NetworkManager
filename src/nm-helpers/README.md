@@ -7,12 +7,13 @@ components.
 nm-daemon-helper
 ----------------
 
-A internal helper application that is spawned by NetworkManager
-to perform certain actions.
+A internal helper application that is spawned by NetworkManager to
+perform certain actions which can't be done in the daemon. 
 
-Currently all it does is doing a reverse DNS lookup, which
-cannot be done by NetworkManager because the operation requires
-to reconfigure the libc resolver (which is a process-wide operation).
+Currently it's used to do a reverse DNS lookup after reconfiguring the
+libc resolver (which is a process-wide operation), and to read files
+on behalf of unprivileged users (which requires a seteuid that affects
+all the threads of the process).
 
 This is not directly useful to the user.
 

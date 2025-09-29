@@ -37,4 +37,8 @@ size_t nm_utils_get_next_realloc_size(bool true_realloc, size_t requested);
 
 const char *_nm_strerror_r(int errsv, char *buf, size_t buf_size);
 
+bool nm_utils_set_effective_user(const char *user, char *errbuf, size_t errbuf_size);
+
+bool nm_utils_read_file_to_stdout(const char *filename, char *errbuf, size_t errbuf_len);
+
 #endif /* __NM_STD_UTILS_H__ */

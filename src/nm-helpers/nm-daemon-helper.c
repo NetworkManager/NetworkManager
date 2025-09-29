@@ -137,6 +137,37 @@ cmd_resolve_address(void)
     return RETURN_ERROR;
 }
 
+static int
+cmd_read_file_as_user(void)
+{
+    nm_auto_free char *user     = NULL;
+    nm_auto_free char *filename = NULL;
+    char               error[1024];
+
+    user = read_arg();
+    if (!user)
+        return RETURN_INVALID_ARGS;
+
+    filename = read_arg();
+    if (!filename)
+        return RETURN_INVALID_ARGS;
+
+    if (more_args())
+        return RETURN_INVALID_ARGS;
+
+    if (!nm_utils_set_effective_user(user, error, sizeof(error))) {
+        fprintf(stderr, "Failed to set effective user '%s': %s", user, error);
+        return RETURN_ERROR;
+    }
+
+    if (!nm_utils_read_file_to_stdout(filename, error, sizeof(error))) {
+        fprintf(stderr, "Failed to read file '%s' as user '%s': %s", filename, user, error);
+        return RETURN_ERROR;
+    }
+
+    return RETURN_SUCCESS;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -150,6 +181,8 @@ main(int argc, char **argv)
         return cmd_version();
     if (nm_streq(cmd, "resolve-address"))
         return cmd_resolve_address();
+    if (nm_streq(cmd, "read-file-as-user"))
+        return cmd_read_file_as_user();
 
     return RETURN_INVALID_CMD;
 }
