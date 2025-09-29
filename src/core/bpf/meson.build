@@ -119,7 +119,6 @@ bpf_gcc_flags = [
 clang_arch_flag = '-D__@0@__'.format(host_machine.cpu_family())
 
 libbpf_include_dir = dependency('libbpf').get_variable(pkgconfig : 'includedir')
-libxdp_include_dir = dependency('libxdp').get_variable(pkgconfig : 'includedir')
 
 # Generate defines that are appropriate to tell the compiler what architecture
 # we're compiling for. By default we just map meson's cpu_family to __<cpu_family>__.
