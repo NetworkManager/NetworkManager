@@ -38,7 +38,7 @@ base_sources_addon = []
 base_deps_addon = []
 if enable_clat
   base_sources_addon += [clat_skel_h]
-  base_deps_addon += [libbpf, libxdp]
+  base_deps_addon += [libbpf]
 endif
 
 libNetworkManagerBase = static_library(
