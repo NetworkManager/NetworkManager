@@ -103,8 +103,7 @@ if enable_nmtui
 endif
 subdir('nmcli')
 subdir('nm-dispatcher')
-subdir('nm-priv-helper')
-subdir('nm-daemon-helper')
+subdir('nm-helpers')
 subdir('nm-online')
 if enable_nmtui
   subdir('nmtui')
