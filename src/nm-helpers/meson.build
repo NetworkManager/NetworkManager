@@ -1,5 +1,25 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
+# nm-daemon-helper
+
+executable(
+  'nm-daemon-helper',
+  'nm-daemon-helper.c',
+  include_directories : [
+    src_inc,
+    top_inc,
+  ],
+  link_with: [
+    libnm_std_aux,
+  ],
+  link_args: ldflags_linker_script_binary,
+  link_depends: linker_script_binary,
+  install: true,
+  install_dir: nm_libexecdir,
+)
+
+# nm-priv-helper
+
 configure_file(
   input: 'org.freedesktop.nm_priv_helper.service.in',
   output: '@BASENAME@',
