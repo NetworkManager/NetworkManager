@@ -82,7 +82,7 @@ struct icmpv6_pseudo {
     __u8            nh;
 } __attribute__((packed));
 
-static __always_inline void
+static void
 update_l4_checksum(struct __sk_buff *skb,
                    struct ipv6hdr   *ip6h,
                    struct iphdr     *iph,
@@ -123,7 +123,7 @@ update_l4_checksum(struct __sk_buff *skb,
     bpf_l4_csum_replace(skb, offset, 0, csum, flags);
 }
 
-static __always_inline void
+static void
 update_icmp_checksum(struct __sk_buff *skb,
                      struct ipv6hdr   *ip6h,
                      void             *icmp_before,
@@ -288,7 +288,7 @@ rewrite_icmp(struct iphdr *iph, struct ipv6hdr *ip6h, struct __sk_buff *skb)
 }
 
 /* ipv4 traffic in from application on this device, needs to be translated to v6 and sent to PLAT */
-static __attribute__((always_inline)) inline int
+static int
 clat_handle_v4(struct __sk_buff *skb, struct hdr_cursor *nh)
 {
     int   ret      = TC_ACT_OK;
@@ -402,13 +402,13 @@ csum_fold_helper(__u32 csum)
     return ~sum;
 }
 
-static __attribute__((always_inline)) inline int clat_translate_v6(struct __sk_buff  *skb,
-                                                                   struct hdr_cursor *nh,
-                                                                   void              *data_end,
-                                                                   struct iphdr      *dst_hdr_out,
-                                                                   bool               depth);
+static int clat_translate_v6(struct __sk_buff  *skb,
+                             struct hdr_cursor *nh,
+                             void              *data_end,
+                             struct iphdr      *dst_hdr_out,
+                             bool               depth);
 
-static __attribute__((always_inline)) inline int
+static int
 rewrite_icmpv6(struct ipv6hdr    *ip6h,
                struct __sk_buff  *skb,
                struct icmphdr   **new_icmp_out,
@@ -505,7 +505,7 @@ rewrite_icmpv6(struct ipv6hdr    *ip6h,
     return 0;
 }
 
-static __attribute__((always_inline)) inline int
+static int
 clat_translate_v6(struct __sk_buff  *skb,
                   struct hdr_cursor *nh,
                   void              *data_end,
@@ -637,7 +637,7 @@ out:
 }
 
 /* ipv6 traffic from the PLAT, to be translated into ipv4 and sent to an application */
-static __attribute__((always_inline)) inline int
+static int
 clat_handle_v6(struct __sk_buff *skb, struct hdr_cursor *nh)
 {
     int   ret      = TC_ACT_OK;
@@ -674,7 +674,7 @@ out:
     return ret;
 }
 
-static __attribute__((always_inline)) inline int
+static int
 clat_handler(struct __sk_buff *skb, bool egress)
 {
     void             *data_end = SKB_DATA_END(skb);
