@@ -8,14 +8,15 @@
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 # Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
 # Thomas Haller <thaller@redhat.com>, 2017. #zanata
+# Jordi Mas i Hernàndez <jmas@softcatala.org>, 2025
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: https://gitlab.freedesktop.org/NetworkManager/"
 "NetworkManager/issues\n"
 "POT-Creation-Date: 2023-06-16 15:26+0000\n"
-"PO-Revision-Date: 2023-06-17 00:07+0200\n"
-"Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
+"PO-Revision-Date: 2025-09-28 00:07+0200\n"
+"Last-Translator: Jordi Mas i Hernàndez <jmas@softcatala.org>\n"
 "Language-Team: Catalan <tradgnome@softcatala.org>\n"
 "Language: ca\n"
 "MIME-Version: 1.0\n"
@@ -355,7 +356,7 @@ msgstr "Connexió WPAN"
 
 #: src/core/devices/team/nm-device-team.c:131
 msgid "Team connection"
-msgstr "Connexió equip"
+msgstr "Connexió d'equip"
 
 #: src/core/devices/wifi/nm-device-olpc-mesh.c:112 src/nmcli/devices.c:1400
 msgid "Mesh"
@@ -648,7 +649,7 @@ msgstr "Surt després de la configuració inicial"
 #: src/core/nm-config.c:639
 msgid "Don't become a daemon, and log to stderr"
 msgstr ""
-"No et converteixis en un dimoni, i envia el registre a la sortida estàndard"
+"No et converteixis en un dimoni, i envia el registre a la sortida d'error"
 
 #: src/core/nm-config.c:648
 msgid "An http(s) address for checking internet connectivity"
@@ -795,7 +796,7 @@ msgstr "La connexió no era una connexió Ethernet o PPPoE."
 
 #: src/libnm-client-impl/nm-device-ethernet.c:206
 msgid "The connection and device differ in S390 subchannels."
-msgstr "La connexió i el dispositiu difereixen als subcanals 5930."
+msgstr "La connexió i el dispositiu difereixen als subcanals S390."
 
 #: src/libnm-client-impl/nm-device-ethernet.c:223
 #, c-format
@@ -881,7 +882,7 @@ msgstr "La connexió no era una connexió tun."
 
 #: src/libnm-client-impl/nm-device-team.c:124
 msgid "The connection was not a team connection."
-msgstr "La connexió no era una connexió equip."
+msgstr "La connexió no era una connexió d'equip."
 
 #: src/libnm-client-impl/nm-device-tun.c:204
 msgid "The connection was not a tun connection."
@@ -1325,27 +1326,27 @@ msgstr ""
 
 #: src/libnm-core-impl/nm-keyfile.c:333
 msgid "ignoring missing number"
-msgstr "s'ignorarà el número faltant"
+msgstr "s'ignora el número faltant"
 
 #: src/libnm-core-impl/nm-keyfile.c:345
 #, c-format
 msgid "ignoring invalid number '%s'"
-msgstr "s'ignorarà el número «%s» no vàlid"
+msgstr "s'ignora el número «%s» no vàlid"
 
 #: src/libnm-core-impl/nm-keyfile.c:374
 #, c-format
 msgid "ignoring invalid %s address: %s"
-msgstr "s'ignorarà l'adreça %s no vàlida: %s"
+msgstr "s'ignora l'adreça %s no vàlida: %s"
 
 #: src/libnm-core-impl/nm-keyfile.c:420
 #, c-format
 msgid "ignoring invalid gateway '%s' for %s route"
-msgstr "s'ignorarà la passarel·la «%s» no vàlida per a la ruta %s"
+msgstr "s'ignora la passarel·la «%s» no vàlida per a la ruta %s"
 
 #: src/libnm-core-impl/nm-keyfile.c:442
 #, c-format
 msgid "ignoring invalid %s route: %s"
-msgstr "s'ignorarà la ruta %s no vàlida: %s"
+msgstr "s'ignora la ruta %s no vàlida: %s"
 
 #: src/libnm-core-impl/nm-keyfile.c:620
 #, c-format
@@ -1361,7 +1362,7 @@ msgstr "caràcter «%c» inesperat per a %s: «%s» (posició %td)"
 #, c-format
 msgid "unexpected character '%c' in prefix length for %s: '%s' (position %td)"
 msgstr ""
-"caràcter «%c» inesperat a la longitud de prefix %s: «%s» (posició %td)<"
+"caràcter «%c» inesperat a la longitud de prefix %s: «%s» (posició %td)"
 
 #: src/libnm-core-impl/nm-keyfile.c:669
 #, c-format
@@ -1413,11 +1414,11 @@ msgstr "s'ignorarà l'adreça %s no vàlida: %s"
 
 #: src/libnm-core-impl/nm-keyfile.c:1518
 msgid "ignoring invalid SSID"
-msgstr "s'ignorarà l'SSID no vàlida"
+msgstr "s'ignora l'SSID no vàlida"
 
 #: src/libnm-core-impl/nm-keyfile.c:1536
 msgid "ignoring invalid raw password"
-msgstr "s'ignorarà la contrasenya sense processar no vàlida"
+msgstr "s'ignora la contrasenya sense processar no vàlida"
 
 #: src/libnm-core-impl/nm-keyfile.c:1681
 msgid "invalid key/cert value"
@@ -1458,7 +1459,7 @@ msgstr "valor de paritat «%s» no vàlid"
 #: src/libnm-core-impl/nm-keyfile.c:1958 src/libnm-core-impl/nm-keyfile.c:3540
 #, c-format
 msgid "invalid setting: %s"
-msgstr "el paràmetre no és vàlid: «%s»"
+msgstr "el paràmetre no és vàlid: %s"
 
 #: src/libnm-core-impl/nm-keyfile.c:1978
 #, fuzzy, c-format
@@ -1973,7 +1974,7 @@ msgstr "file:// URI no és UTF-8 vàlida"
 
 #: src/libnm-core-impl/nm-setting-connection.c:1501
 msgid "invalid permissions not in format \"user:$UNAME[:]\""
-msgstr "els permisos no són vàlids, no estan en el format «user:$UNANE[:]"
+msgstr "els permisos no són vàlids, no estan en el format «user:$UNAME[:]"
 
 #: src/libnm-core-impl/nm-setting-connection.c:1530
 #, c-format
@@ -2086,7 +2087,7 @@ msgstr "«%s» no és un número"
 
 #: src/libnm-core-impl/nm-setting-gsm.c:479
 msgid "property is empty or wrong size"
-msgstr "la propietat és buda o de mida incorrecta"
+msgstr "la propietat és buida o de mida incorrecta"
 
 #: src/libnm-core-impl/nm-setting-gsm.c:492
 msgid "property must contain only digits"
@@ -2098,12 +2099,12 @@ msgstr "no es pot activar quan hi ha una configuració manual"
 
 #: src/libnm-core-impl/nm-setting-infiniband.c:215
 msgid "Must specify a P_Key if specifying parent"
-msgstr "S'ha d'especificar una P-Key si s'especifica el pare"
+msgstr "S'ha d'especificar una P_Key si s'especifica el pare"
 
 #: src/libnm-core-impl/nm-setting-infiniband.c:226
 msgid "InfiniBand P_Key connection did not specify parent interface name"
 msgstr ""
-"La connexió InfiniBand P_Key no ha especificat el nom de l'interfície pare"
+"La connexió InfiniBand P_Key no ha especificat el nom de la interfície pare"
 
 #: src/libnm-core-impl/nm-setting-infiniband.c:234
 msgid "the values 0 and 0x8000 are not allowed"
@@ -2156,12 +2157,12 @@ msgstr "Adreça IPv4 «%s» no és vàlida"
 #: src/libnm-core-impl/nm-setting-ip-config.c:106
 #, c-format
 msgid "Invalid IPv4 address prefix '%u'"
-msgstr "Prefix «%u» d'adreça IPv4 no vàlida"
+msgstr "Prefix «%u» d'adreça IPv4 no vàlid"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:107
 #, c-format
 msgid "Invalid IPv6 address prefix '%u'"
-msgstr "Prefix «%u» d'adreça IPv6 no vàlida<"
+msgstr "Prefix «%u» d'adreça IPv6 no vàlid"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:124
 #, c-format
@@ -2208,7 +2209,7 @@ msgstr "el prefix %s no és vàlid"
 #: src/libnm-core-impl/nm-setting-ip-config.c:1423
 #, c-format
 msgid "%s is not a valid route type"
-msgstr "%s no és un nom de ruta vàlid"
+msgstr "%s no és un tipus de ruta vàlid"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:1442
 #, fuzzy
@@ -2432,7 +2433,7 @@ msgstr "La ruta %d. no és vàlida"
 #: src/libnm-core-impl/nm-setting-ip-config.c:5638
 #, c-format
 msgid "invalid attribute: %s"
-msgstr "atribut no vàlid: «%s»"
+msgstr "atribut no vàlid: %s"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:5658
 #, c-format
@@ -4105,7 +4106,7 @@ msgstr "«%s» no és vàlid; useu [%s] or [%s]"
 #: src/libnmc-base/nm-client-utils.c:176
 #, c-format
 msgid "'%s' is not valid; use [%s], [%s] or [%s]"
-msgstr "«%s» no és vàld, useu [%s], [%s] o [%s]"
+msgstr "«%s» no és vàlid, useu [%s], [%s] o [%s]"
 
 #: src/libnmc-base/nm-client-utils.c:230
 #, c-format
@@ -4676,7 +4677,7 @@ msgstr "clau privada no vàlida"
 #, fuzzy, c-format
 msgid "Secrets are required to connect WireGuard VPN '%s'"
 msgstr ""
-"Es requereixen contrasenyes o claus d'encriptació per accedir la xarxa sens "
+"Es requereixen contrasenyes o claus d'encriptació per accedir la xarxa sense "
 "fil «%s»."
 
 #: src/libnmc-base/nm-secret-agent-simple.c:620
@@ -4698,7 +4699,7 @@ msgid ""
 "Passwords or encryption keys are required to access the wireless network "
 "'%s'."
 msgstr ""
-"Es requereixen contrasenyes o claus d'encriptació per accedir la xarxa sens "
+"Es requereixen contrasenyes o claus d'encriptació per accedir la xarxa sense "
 "fil «%s»."
 
 #: src/libnmc-base/nm-secret-agent-simple.c:886
@@ -4709,7 +4710,7 @@ msgstr "Autenticació 802.1X de xarxa amb fil"
 #, fuzzy, c-format
 msgid "Secrets are required to access the wired network '%s'"
 msgstr ""
-"Es requereixen contrasenyes o claus d'encriptació per accedir la xarxa sens "
+"Es requereixen contrasenyes o claus d'encriptació per accedir la xarxa sense "
 "fil «%s»."
 
 #: src/libnmc-base/nm-secret-agent-simple.c:893
@@ -5418,10 +5419,10 @@ msgid ""
 msgstr ""
 "Entreu els bytes com una llista de valors hexadecimals.\n"
 "S'accepten dos formats:\n"
-"(a) una cadena de dígits exadecimals, on cada dos dígits representen un "
+"(a) una cadena de dígits hexadecimals, on cada dos dígits representen un "
 "byte\n"
-"(b) una llista separada per espais de bytes escrits com a dígits hexadecimas "
-"(amb prefix opcional 0x/0X,i un 0 inicial opcional). \n"
+"(b) una llista separada per espais de bytes escrits com a dígits hexadecimals "
+"(amb prefix opcional 0x/0X,i un 0 inicial opcional).\n"
 "\n"
 "Exemples: ab0455a6ea3a74C2\n"
 "          ab 4 55 0xa6 ea 3a 74 C2\n"
@@ -5493,7 +5494,7 @@ msgstr "Demora cap endavant"
 #: src/libnmc-setting/nm-meta-setting-desc.c:5280
 #: src/nmtui/nmt-page-bridge.c:134
 msgid "Hello time"
-msgstr "Temps de benviguda"
+msgstr "Temps de benvinguda"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:5286
 #: src/nmtui/nmt-page-bridge.c:148
@@ -5567,7 +5568,7 @@ msgid ""
 msgstr ""
 "Entreu les connexions secundàries que s'haurien d'activar quan s'activa "
 "aquesta connexió. Les connexions es poden especificar o bé per UUID o per ID "
-"(nom). L'nmcli tradueix transparentment els noms a UUID. Noteu que el "
+"(nom). nmcli tradueix transparentment els noms a UUID. Noteu que el "
 "NetworkManager actualment sols dóna suport els VPN com a connexions "
 "secundàries.\n"
 "Els elements es poden separar per comes o espais.\n"
@@ -5676,7 +5677,7 @@ msgid ""
 "  priority [prio] [from [src]] [to [dst]], ,...\n"
 "\n"
 msgstr ""
-"Introduïu una llista de regles d'encaminanent IPv4 amb el següent format:\n"
+"Introduïu una llista de regles d'encaminament IPv4 amb el següent format:\n"
 "  priority [prioritat] [from [origen]] [to [destí]], ,...\n"
 "\n"
 "\n"
@@ -5696,7 +5697,7 @@ msgstr ""
 "configuració IPv6 \n"
 "és «auto» aquests servidors DNS s'annexen als que retorna (si retorna cap) "
 "la \n"
-"configuració automatica. Els servidors DNS no es poden usar amb els métodes "
+"configuració automàtica. Els servidors DNS no es poden usar amb els mètodes "
 "de \n"
 "configuracó DNS «shared» o «link-local», atès que no hi una xarxa superior. "
 "A tots\n"
@@ -8151,12 +8152,12 @@ msgstr ""
 "canonada (|) o un ampersand (&). El primer indica que l'element és opcional "
 "i el segon significa que és obligatori. Si hi ha algun element opcional, "
 "llavors la coincidència avalua a cert si almenys un dels elements opcionals "
-"coincideix (O lògicà). Si hi ha elements obligatoris, llavors tots han de "
+"coincideix (O lògica). Si hi ha elements obligatoris, llavors tots han de "
 "coincidir (I lògica). Per defecte, un element és opcional. Això significa "
 "que un element «foo» es comporta igual que «|foo». Un element també es pot "
 "invertir amb el símbol d'exclamació (!) entre el símbol de la canonada (o de "
 "l'ampersand) i abans del patró. Tingueu en compte que «!foo» és una drecera "
-"per al patró obligatòri «&!foo». Finalment, es pot utilitzar una barra "
+"per al patró obligatori «&!foo». Finalment, es pot utilitzar una barra "
 "inversa al començament de l'element (després dels caràcters especials "
 "opcionals) per no considerar-lo inici del patró. Per exemple, «\\!a» és una "
 "coincidència obligatòria per literalment «!a»."
@@ -10722,7 +10723,7 @@ msgstr "Error: «%s» no és una connexió activa.\n"
 
 #: src/nmcli/connections.c:3436
 msgid "Error: not all active connections found."
-msgstr "Error: No s'han trobar totes les connexions actives."
+msgstr "Error: No s'han trobat totes les connexions actives."
 
 #: src/nmcli/connections.c:3444
 msgid "Error: no active connection provided."
@@ -11041,7 +11042,7 @@ msgstr ""
 "Verifica si el paràmetre o la connexió és vàlida i es pot desar més tard.\n"
 "Indica valors no vàlids quan hi ha un error. Alguns errors es poden "
 "corregir\n"
-"automàticaent amb l'opció «fix».\n"
+"automàticament amb l'opció «fix».\n"
 "\n"
 "Exemples: nmcli> verify\n"
 "          nmcli> verify fix\n"
@@ -11063,7 +11064,7 @@ msgid ""
 msgstr ""
 "save [persistent|temporary]  :: desa la connexió\n"
 "\n"
-"Envia el perfil de la connexió al NetworManager que o bé la desarà de forma\n"
+"Envia el perfil de la connexió al NetworkManager que o bé la desarà de forma\n"
 "persistent o bé sols la mantindrà a la memòria. «desa» sense cap argument\n"
 "significa «desa de forma persistent».\n"
 "Noteu que un cop que deseu el perfile de forma persistent aquestes "
@@ -11485,7 +11486,7 @@ msgstr "Opció no vàlida de verificació: %s\n"
 #: src/nmcli/connections.c:8486
 #, c-format
 msgid "Verify setting '%s': %s\n"
-msgstr "Verifica el paràmere «%s»: %s\n"
+msgstr "Verifica el paràmetre «%s»: %s\n"
 
 #: src/nmcli/connections.c:8501
 #, c-format
@@ -11552,12 +11553,12 @@ msgstr "Error: no es pot activar la connexió: %s.\n"
 #: src/nmcli/connections.c:8679
 #, c-format
 msgid "Error: Failed to activate '%s' (%s) connection: %s\n"
-msgstr "Error: no s'ha pogut desconnectar la connexió «%s» (%s): %s\n"
+msgstr "Error: no s'ha pogut activar la connexió «%s» (%s): %s\n"
 
 #: src/nmcli/connections.c:8686
 msgid "Monitoring connection activation (press any key to continue)\n"
 msgstr ""
-"S'està supervisant l'activació de la connexio (premeu qualsevol teclar per "
+"S'està supervisant l'activació de la connexió (premeu qualsevol tecla per "
 "continuar)\n"
 
 #: src/nmcli/connections.c:8721
@@ -11582,7 +11583,7 @@ msgstr "Configuració actual del nmcli:\n"
 #: src/nmcli/connections.c:8753
 #, c-format
 msgid "Invalid configuration option '%s'; allowed [%s]\n"
-msgstr "Opció de configuració no vàida: «%s»; es permet [%s]\n"
+msgstr "Opció de configuració no vàlida: «%s»; es permet [%s]\n"
 
 #: src/nmcli/connections.c:8985
 #, fuzzy
@@ -12396,7 +12397,7 @@ msgstr "Error: no s'ha pogut afegir/activar la connexió nova: %s"
 #: src/nmcli/devices.c:2266
 #, c-format
 msgid "Error: Device activation failed: %s"
-msgstr "Error: no s'ha pogut activar el dispositu: %s"
+msgstr "Error: no s'ha pogut activar el dispositiu: %s"
 
 #: src/nmcli/devices.c:2322
 #, c-format
@@ -12603,7 +12604,7 @@ msgstr "Contrasenya: "
 #: src/nmcli/devices.c:4172
 #, c-format
 msgid "'%s' is not valid WPA PSK"
-msgstr "«%s» no és una WPS PSK vàlida"
+msgstr "«%s» no és una WPA PSK vàlida"
 
 #: src/nmcli/devices.c:4193
 #, c-format
@@ -13538,7 +13539,7 @@ msgstr "Error: s'esperava l'argument «%s», però s'ha proporcionat «%s»."
 #: src/nmcli/utils.c:315
 #, c-format
 msgid "Error: Unexpected argument '%s'"
-msgstr "Error: argument inesperat «%s»."
+msgstr "Error: argument inesperat «%s»"
 
 #: src/nmcli/utils.c:702
 #, fuzzy, c-format
@@ -13897,7 +13898,7 @@ msgstr "«%s» <"
 #. NB: the ordering/numbering here corresponds to NmtPageBondMonitoringMode
 #: src/nmtui/nmt-page-bond.c:92
 msgid "MII (recommended)"
-msgstr "MII (recomendat)"
+msgstr "MII (recomanat)"
 
 #: src/nmtui/nmt-page-bond.c:93
 msgid "ARP"
@@ -14543,7 +14544,7 @@ msgstr ""
 
 #: src/nmtui/nmtui-edit.c:394 src/nmtui/nmtui-edit.c:410
 msgid "New Connection"
-msgstr "Connexions nova"
+msgstr "Connexió nova"
 
 #: src/nmtui/nmtui-edit.c:452
 #, c-format
