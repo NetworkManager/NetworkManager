@@ -632,6 +632,7 @@ icmp_out:
 
     *dst_hdr_out = dst_hdr;
 
+    ret = TC_ACT_UNSPEC;
 out:
     return ret;
 }
@@ -651,9 +652,11 @@ clat_handle_v6(struct __sk_buff *skb, struct hdr_cursor *nh)
     int ip_offset = (nh->pos - data) & 0x1fff;
 
     ret = clat_translate_v6(skb, nh, data_end, &dst_hdr, 0);
-    if (ret != TC_ACT_SHOT) {
+    if (ret != TC_ACT_UNSPEC) {
         goto out;
     }
+
+    ret = TC_ACT_SHOT;
 
     if (bpf_skb_change_proto(skb, bpf_htons(ETH_P_IP), 0))
         goto out;
