@@ -98,18 +98,16 @@ update_l4_checksum(struct __sk_buff *skb,
     __u32 csum;
 
     if (v4to6) {
-        csum   = bpf_csum_diff((__be32 *) &iph->saddr,
-                             2 * sizeof(__u32),
-                             (__be32 *) &ip6h->saddr,
-                             2 * sizeof(struct in6_addr),
-                             0);
+        void *from_ptr = &iph->saddr;
+        void *to_ptr   = &ip6h->saddr;
+
+        csum   = bpf_csum_diff(from_ptr, 2 * sizeof(__u32), to_ptr, 2 * sizeof(struct in6_addr), 0);
         offset = (void *) (iph + 1) - data;
     } else {
-        csum   = bpf_csum_diff((__be32 *) &ip6h->saddr,
-                             2 * sizeof(struct in6_addr),
-                             (__be32 *) &iph->saddr,
-                             2 * sizeof(__u32),
-                             0);
+        void *from_ptr = &ip6h->saddr;
+        void *to_ptr   = &iph->saddr;
+
+        csum   = bpf_csum_diff(from_ptr, 2 * sizeof(struct in6_addr), to_ptr, 2 * sizeof(__u32), 0);
         offset = (void *) (ip6h + 1) - data;
     }
 
@@ -136,12 +134,12 @@ update_icmp_checksum(struct __sk_buff *skb,
                      bool              add)
 {
     void                *data = SKB_DATA(skb);
-    struct icmpv6_pseudo ph   = {.nh    = IPPROTO_ICMPV6,
-                                 .saddr = ip6h->saddr,
-                                 .daddr = ip6h->daddr,
-                                 .len   = ip6h->payload_len};
+    struct icmpv6_pseudo ph   = {.nh = IPPROTO_ICMPV6, .len = ip6h->payload_len};
     __u16                h_before, h_after, offset;
     __u32                csum, u_before, u_after;
+
+    __builtin_memcpy(&ph.saddr, &ip6h->saddr, sizeof(struct in6_addr));
+    __builtin_memcpy(&ph.daddr, &ip6h->daddr, sizeof(struct in6_addr));
 
     /* Do checksum update in two passes: first compute the incremental
      * checksum update of the ICMPv6 pseudo header, update the checksum
@@ -577,7 +575,10 @@ clat_translate_v6(struct __sk_buff  *skb,
     switch (dst_hdr.protocol) {
     case IPPROTO_ICMPV6:
 
-        new_icmp  = (void *) (ip6h + 1);
+        new_icmp = (void *) (ip6h + 1);
+        if ((void *) (new_icmp + 1) > data_end)
+            goto out;
+
         old_icmp6 = *((struct icmp6hdr *) (void *) new_icmp);
         if (rewrite_icmpv6(ip6h, skb, &new_icmp, nh))
             goto out;
