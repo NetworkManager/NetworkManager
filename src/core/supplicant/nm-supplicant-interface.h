@@ -87,6 +87,7 @@ typedef enum {
 #define NM_SUPPLICANT_INTERFACE_GROUP_STARTED   "group-started"
 #define NM_SUPPLICANT_INTERFACE_GROUP_FINISHED  "group-finished"
 #define NM_SUPPLICANT_INTERFACE_PSK_MISMATCH    "wpa-psk-mismatch"
+#define NM_SUPPLICANT_INTERFACE_SAE_MISMATCH    "wpa-sae-password-mismatch"
 
 typedef struct _NMSupplicantInterfaceClass NMSupplicantInterfaceClass;
 

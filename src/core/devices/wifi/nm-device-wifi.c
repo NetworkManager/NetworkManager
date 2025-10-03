@@ -194,6 +194,9 @@ static void supplicant_iface_notify_p2p_available(NMSupplicantInterface *iface,
 static void supplicant_iface_notify_wpa_psk_mismatch_cb(NMSupplicantInterface *iface,
                                                         NMDeviceWifi          *self);
 
+static void supplicant_iface_notify_wpa_sae_mismatch_cb(NMSupplicantInterface *iface,
+                                                        NMDeviceWifi          *self);
+
 static void periodic_update(NMDeviceWifi *self);
 
 static void ap_add_remove(NMDeviceWifi *self,
@@ -630,6 +633,10 @@ supplicant_interface_acquire_cb(NMSupplicantManager         *supplicant_manager,
     g_signal_connect(priv->sup_iface,
                      NM_SUPPLICANT_INTERFACE_PSK_MISMATCH,
                      G_CALLBACK(supplicant_iface_notify_wpa_psk_mismatch_cb),
+                     self);
+    g_signal_connect(priv->sup_iface,
+                     NM_SUPPLICANT_INTERFACE_SAE_MISMATCH,
+                     G_CALLBACK(supplicant_iface_notify_wpa_sae_mismatch_cb),
                      self);
 
     _scan_notify_is_scanning(self);
@@ -2863,6 +2870,34 @@ supplicant_iface_notify_wpa_psk_mismatch_cb(NMSupplicantInterface *iface, NMDevi
 
     _LOGI(LOGD_DEVICE | LOGD_WIFI,
           "Activation: (wifi) psk mismatch reported by supplicant, asking for new key");
+
+    req = nm_device_get_act_request(NM_DEVICE(self));
+    g_return_if_fail(req != NULL);
+
+    nm_act_request_clear_secrets(req);
+
+    cleanup_association_attempt(self, TRUE);
+    nm_device_state_changed(device,
+                            NM_DEVICE_STATE_NEED_AUTH,
+                            NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
+    wifi_secrets_get_secrets(self,
+                             setting_name,
+                             NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
+                                 | NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW);
+}
+
+static void
+supplicant_iface_notify_wpa_sae_mismatch_cb(NMSupplicantInterface *iface, NMDeviceWifi *self)
+{
+    NMDevice     *device = NM_DEVICE(self);
+    NMActRequest *req;
+    const char   *setting_name = NM_SETTING_WIRELESS_SECURITY_SETTING_NAME;
+
+    if (nm_device_get_state(device) != NM_DEVICE_STATE_CONFIG)
+        return;
+
+    _LOGI(LOGD_DEVICE | LOGD_WIFI,
+          "Activation: (wifi) SAE password mismatch reported by supplicant, asking for new key");
 
     req = nm_device_get_act_request(NM_DEVICE(self));
     g_return_if_fail(req != NULL);
