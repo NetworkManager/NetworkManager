@@ -586,34 +586,6 @@ clat_translate_v6(struct __sk_buff  *skb,
         if ((void *) (new_icmp + 1) > data_end)
             goto icmp_out;
 
-        /* int type = (*new_icmp).type; */
-        /* switch (type) { */
-        /* case ICMP_TIME_EXCEEDED: */
-        /* case ICMP_DEST_UNREACH: */
-
-        /*     nh->pos = new_icmp + 1; */
-        /*     if (clat_translate_v6(skb, nh, data_end, &dst_hdr_icmp, 1)) { */
-        /*         DBG("Bad embedded v6?"); */
-        /*         goto out; */
-        /*     } */
-        /*     if (((__u8 *)(new_icmp + 1)) + sizeof(dst_hdr_icmp) >= data_end) { */
-        /*         DBG("ICMP header is out of bounds"); */
-        /*         goto out; */
-        /*     } */
-        /*     memcpy(new_icmp + 1, &dst_hdr_icmp, sizeof(dst_hdr_icmp));  // dst_hdr.ihl * 4 */
-
-        /*     /\* Scoot the payload up against the v4 header *\/ */
-        /*     /\* (Note: We can't use a normal memmove here because clang only supports */
-        /*        constexpr lengths!) *\/ */
-
-        /*     clat_memmove(((__u8 *)(new_icmp + 1)) + sizeof(dst_hdr), */
-        /*                  ((__u8 *)(new_icmp + 1)) + sizeof(struct ipv6hdr), */
-        /*                  skb, */
-        /*                  dst_hdr.tot_len - (dst_hdr.ihl * 4)); */
-        /*     /\* TODO: Translate ICMP Extension length *\/ */
-        /*     break; */
-        /* } */
-
         update_icmp_checksum(skb, ip6h, &old_icmp6, new_icmp, false);
 
 icmp_out:
