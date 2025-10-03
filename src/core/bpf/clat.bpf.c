@@ -61,6 +61,22 @@ struct {
 #define DBG(fmt, ...)
 #endif
 
+/* Macros to read the sk_buff data* pointers, preventing the compiler
+ * from generating a 32-bit register spill. */
+#define SKB_ACCESS_MEMBER_32(_skb, member)                                  \
+    ({                                                                      \
+        void *ptr;                                                          \
+                                                                            \
+        asm volatile("%0 = *(u32 *)(%1 + %2)"                               \
+                     : "=r"(ptr)                                            \
+                     : "r"(_skb), "i"(offsetof(struct __sk_buff, member))); \
+                                                                            \
+        ptr;                                                                \
+    })
+
+#define SKB_DATA(_skb)     SKB_ACCESS_MEMBER_32(_skb, data)
+#define SKB_DATA_END(_skb) SKB_ACCESS_MEMBER_32(_skb, data_end)
+
 struct icmpv6_pseudo {
     struct in6_addr saddr;
     struct in6_addr daddr;
@@ -76,7 +92,7 @@ update_l4_checksum(struct __sk_buff *skb,
                    int               ip_type,
                    bool              v4to6)
 {
-    void *data  = (void *) (unsigned long long) skb->data;
+    void *data  = SKB_DATA(skb);
     int   flags = BPF_F_PSEUDO_HDR;
     __u16 offset;
     __u32 csum;
@@ -119,7 +135,7 @@ update_icmp_checksum(struct __sk_buff *skb,
                      void             *icmp_after,
                      bool              add)
 {
-    void                *data = (void *) (unsigned long long) skb->data;
+    void                *data = SKB_DATA(skb);
     struct icmpv6_pseudo ph   = {.nh    = IPPROTO_ICMPV6,
                                  .saddr = ip6h->saddr,
                                  .daddr = ip6h->daddr,
@@ -161,8 +177,7 @@ update_icmp_checksum(struct __sk_buff *skb,
 static int
 rewrite_icmp(struct iphdr *iph, struct ipv6hdr *ip6h, struct __sk_buff *skb)
 {
-    void *data_end = (void *) (unsigned long long) skb->data_end;
-
+    void           *data_end = SKB_DATA_END(skb);
     struct icmphdr  old_icmp, *icmp = (void *) (iph + 1);
     struct icmp6hdr icmp6, *new_icmp6;
     __u32           mtu;
@@ -278,8 +293,8 @@ static __attribute__((always_inline)) inline int
 clat_handle_v4(struct __sk_buff *skb, struct hdr_cursor *nh)
 {
     int   ret      = TC_ACT_OK;
-    void *data_end = (void *) (unsigned long long) skb->data_end;
-    void *data     = (void *) (unsigned long long) skb->data;
+    void *data_end = SKB_DATA_END(skb);
+    void *data     = SKB_DATA(skb);
     int   ip_type, iphdr_len, ip_offset;
 
     struct in6_addr *dst_v6;
@@ -363,8 +378,8 @@ clat_handle_v4(struct __sk_buff *skb, struct hdr_cursor *nh)
     if (bpf_skb_change_proto(skb, bpf_htons(ETH_P_IPV6), 0))
         goto out;
 
-    data     = (void *) (unsigned long long) skb->data;
-    data_end = (void *) (unsigned long long) skb->data_end;
+    data     = SKB_DATA(skb);
+    data_end = SKB_DATA_END(skb);
 
     eth  = data;
     ip6h = data + ip_offset;
@@ -400,8 +415,7 @@ rewrite_icmpv6(struct ipv6hdr    *ip6h,
                struct icmphdr   **new_icmp_out,
                struct hdr_cursor *nh)
 {
-    void *data_end = (void *) (unsigned long long) skb->data_end;
-
+    void           *data_end = SKB_DATA_END(skb);
     struct icmp6hdr old_icmp6, *icmp6 = (void *) (ip6h + 1);
     struct icmphdr  icmp, *new_icmp;
     __u32           mtu, ptr;
@@ -631,8 +645,8 @@ static __attribute__((always_inline)) inline int
 clat_handle_v6(struct __sk_buff *skb, struct hdr_cursor *nh)
 {
     int   ret      = TC_ACT_OK;
-    void *data_end = (void *) (unsigned long long) skb->data_end;
-    void *data     = (void *) (unsigned long long) skb->data;
+    void *data_end = SKB_DATA_END(skb);
+    void *data     = SKB_DATA(skb);
 
     struct ethhdr *eth;
     struct iphdr  *iph;
@@ -648,8 +662,8 @@ clat_handle_v6(struct __sk_buff *skb, struct hdr_cursor *nh)
     if (bpf_skb_change_proto(skb, bpf_htons(ETH_P_IP), 0))
         goto out;
 
-    data     = (void *) (unsigned long long) skb->data;
-    data_end = (void *) (unsigned long long) skb->data_end;
+    data     = SKB_DATA(skb);
+    data_end = SKB_DATA_END(skb);
 
     eth = data;
     iph = data + ip_offset;
@@ -667,8 +681,8 @@ out:
 static __attribute__((always_inline)) inline int
 clat_handler(struct __sk_buff *skb, bool egress)
 {
-    void             *data_end = (void *) (unsigned long long) skb->data_end;
-    void             *data     = (void *) (unsigned long long) skb->data;
+    void             *data_end = SKB_DATA_END(skb);
+    void             *data     = SKB_DATA(skb);
     struct hdr_cursor nh       = {.pos = data};
     struct ethhdr    *eth;
     int               eth_type;
