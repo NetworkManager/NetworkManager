@@ -50,6 +50,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_GSM_INITIAL_EPS_BEARER_REFUSE_CHAP     "initial-eps-bearer-refuse-chap"
 #define NM_SETTING_GSM_INITIAL_EPS_BEARER_REFUSE_MSCHAP   "initial-eps-bearer-refuse-mschap"
 #define NM_SETTING_GSM_INITIAL_EPS_BEARER_REFUSE_MSCHAPV2 "initial-eps-bearer-refuse-mschapv2"
+#define NM_SETTING_GSM_DEVICE_UID                         "device-uid"
 
 /* Deprecated */
 #define NM_SETTING_GSM_NUMBER "number"
@@ -98,6 +99,8 @@ NM_AVAILABLE_IN_1_52
 gboolean nm_setting_gsm_get_initial_eps_refuse_mschap(NMSettingGsm *setting);
 NM_AVAILABLE_IN_1_52
 gboolean nm_setting_gsm_get_initial_eps_refuse_mschapv2(NMSettingGsm *setting);
+
+const char *nm_setting_gsm_get_device_uid(NMSettingGsm *setting);
 
 NM_DEPRECATED_IN_1_16
 const char *nm_setting_gsm_get_number(NMSettingGsm *setting);

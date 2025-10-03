@@ -8,6 +8,7 @@ timestamp=305415219
 [gsm]
 apn=internet2.voicestream.com
 device-id=da812de91eec16620b06cd0ca5cbc7ea25245222
+device-uid=MODEM1
 home-only=true
 network-id=254098
 password=parliament2

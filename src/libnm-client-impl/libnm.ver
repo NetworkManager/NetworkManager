@@ -2080,4 +2080,5 @@ global:
 libnm_1_56_0 {
 global:
 	nm_dns_server_validate;
+	nm_setting_gsm_get_device_uid;
 } libnm_1_54_0;

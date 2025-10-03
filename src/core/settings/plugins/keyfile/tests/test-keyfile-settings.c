@@ -1408,6 +1408,8 @@ test_write_gsm_connection(void)
                  "89148000000060671234",
                  NM_SETTING_GSM_SIM_OPERATOR_ID,
                  "310260",
+                 NM_SETTING_GSM_DEVICE_UID,
+                 "MODEM1",
                  NULL);
 
     write_test_connection_and_reread(connection, TRUE, TEST_KEYFILES_DIR "/Test_Write_GSM");
