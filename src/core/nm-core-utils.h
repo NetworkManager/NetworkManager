@@ -490,4 +490,26 @@ uid_t nm_utils_get_nm_uid(void);
 
 gid_t nm_utils_get_nm_gid(void);
 
+/*****************************************************************************/
+
+typedef struct {
+    gint64 timestamp_msec;
+} NMRateLimit;
+
+static inline gboolean
+nm_rate_limit_check(NMRateLimit *rate_limit, guint seconds)
+{
+    gint64 now = nm_utils_get_monotonic_timestamp_msec();
+
+    if (rate_limit->timestamp_msec == 0
+        || (now - rate_limit->timestamp_msec > ((gint64) seconds) * NM_UTILS_MSEC_PER_SEC)) {
+        rate_limit->timestamp_msec = now;
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+/*****************************************************************************/
+
 #endif /* __NM_CORE_UTILS_H__ */
