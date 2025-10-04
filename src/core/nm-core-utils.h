@@ -490,4 +490,15 @@ uid_t nm_utils_get_nm_uid(void);
 
 gid_t nm_utils_get_nm_gid(void);
 
+/*****************************************************************************/
+
+typedef struct {
+    gint64 ts_msec;
+    gint64 tokens;
+} NMRateLimit;
+
+gboolean nm_rate_limit_check(NMRateLimit *rate_limit, gint32 window_sec, gint32 burst);
+
+/*****************************************************************************/
+
 #endif /* __NM_CORE_UTILS_H__ */

@@ -5474,3 +5474,58 @@ nm_utils_shorten_hostname(const char *hostname, char **shortened)
     *shortened = g_steal_pointer(&s);
     return TRUE;
 }
+
+/*****************************************************************************/
+
+/**
+ * nm_rate_limit_check():
+ * @rate_limit: the NMRateLimit instance
+ * @window_sec: the time window in seconds, between 1 and 864000 (ten days)
+ * @burst: the number of max allowed event occurrences in the given time
+ *   window
+ *
+ * The function rate limits an event. Call it with multiple times with the
+ * same @window_sec, and @burst values.
+ *
+ * Returns: TRUE if the event is allowed, FALSE if it is rate-limited
+ */
+gboolean
+nm_rate_limit_check(NMRateLimit *rate_limit, gint32 window_sec, gint32 burst)
+{
+    gint64 now;
+    gint64 old_ts_msec;
+    gint64 window_msec;
+    gint64 capacity;
+    gint64 elapsed;
+
+    nm_assert(window_sec >= 1 && window_sec <= 864000);
+    nm_assert(burst >= 1);
+
+    /* For each millisecond, refill "burst" tokens. Thus, during a time window we
+     * refill (window_msec * burst) tokens. Each event consumes @window_msec tokens. */
+
+    window_msec         = (gint64) window_sec * NM_UTILS_MSEC_PER_SEC;
+    capacity            = window_msec * (gint64) burst;
+    old_ts_msec         = rate_limit->ts_msec;
+    now                 = nm_utils_get_monotonic_timestamp_msec();
+    rate_limit->ts_msec = now;
+
+    elapsed = now - old_ts_msec;
+    if (old_ts_msec == 0 || elapsed > window_msec) {
+        /* On the first call, or in case a whole window passed, (re)start with
+         * a full budget */
+        rate_limit->tokens = capacity;
+        rate_limit->tokens -= window_msec;
+        return TRUE;
+    }
+
+    rate_limit->tokens += elapsed * (gint64) burst;
+    rate_limit->tokens = NM_MIN(rate_limit->tokens, capacity);
+
+    if (rate_limit->tokens >= window_msec) {
+        rate_limit->tokens -= window_msec;
+        return TRUE;
+    }
+
+    return FALSE;
+}
