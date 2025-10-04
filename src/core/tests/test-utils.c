@@ -261,6 +261,73 @@ test_shorten_hostname(void)
 }
 
 /*****************************************************************************/
+typedef struct {
+    NMRateLimit ratelimit;
+    GMainLoop  *loop;
+    GSource    *source1;
+    GSource    *source2;
+    guint       num;
+} RateLimitData;
+
+static int
+rate_limit_window_expire_cb(gpointer user_data)
+{
+    RateLimitData *data = user_data;
+
+    g_assert(nm_rate_limit_check(&data->ratelimit, 1, 5));
+    g_assert(nm_rate_limit_check(&data->ratelimit, 1, 5));
+    g_assert(nm_rate_limit_check(&data->ratelimit, 1, 5));
+    g_assert(nm_rate_limit_check(&data->ratelimit, 1, 5));
+    g_assert(nm_rate_limit_check(&data->ratelimit, 1, 5));
+
+    g_assert(!nm_rate_limit_check(&data->ratelimit, 1, 5));
+    g_assert(!nm_rate_limit_check(&data->ratelimit, 1, 5));
+
+    g_main_loop_quit(data->loop);
+
+    nm_clear_g_source_inst(&data->source1);
+
+    return G_SOURCE_CONTINUE;
+}
+
+static int
+rate_limit_check_cb(gpointer user_data)
+{
+    RateLimitData *data = user_data;
+
+    g_assert(nm_rate_limit_check(&data->ratelimit, 1, 5));
+    g_assert(nm_rate_limit_check(&data->ratelimit, 1, 5));
+    g_assert(nm_rate_limit_check(&data->ratelimit, 1, 5));
+    g_assert(nm_rate_limit_check(&data->ratelimit, 1, 5));
+    g_assert(nm_rate_limit_check(&data->ratelimit, 1, 5));
+
+    g_assert(!nm_rate_limit_check(&data->ratelimit, 1, 5));
+    g_assert(!nm_rate_limit_check(&data->ratelimit, 1, 5));
+
+    nm_clear_g_source_inst(&data->source2);
+
+    return G_SOURCE_CONTINUE;
+}
+
+static void
+test_rate_limit_check(void)
+{
+    RateLimitData data;
+
+    data = (RateLimitData) {
+        .loop      = g_main_loop_new(NULL, FALSE),
+        .ratelimit = {},
+        .num       = 0,
+    };
+
+    data.source1 = nm_g_timeout_add_source(1100, rate_limit_window_expire_cb, &data);
+    data.source2 = nm_g_timeout_add_source(10, rate_limit_check_cb, &data);
+
+    g_main_loop_run(data.loop);
+    g_main_loop_unref(data.loop);
+}
+
+/*****************************************************************************/
 
 NMTST_DEFINE();
 
@@ -272,6 +339,7 @@ main(int argc, char **argv)
     g_test_add_func("/utils/stable_privacy", test_stable_privacy);
     g_test_add_func("/utils/hw_addr_gen_stable_eth", test_hw_addr_gen_stable_eth);
     g_test_add_func("/utils/shorten-hostname", test_shorten_hostname);
+    g_test_add_func("/utils/rate-limit-check", test_rate_limit_check);
 
     return g_test_run();
 }
