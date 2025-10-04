@@ -19,6 +19,7 @@
 #include "libnm-systemd-shared/nm-sd-utils-shared.h"
 #include "nm-l3cfg.h"
 #include "nm-ndisc-private.h"
+#include "nm-core-utils.h"
 
 #define _NMLOG_PREFIX_NAME "ndisc-lndp"
 
@@ -27,6 +28,14 @@
 typedef struct {
     struct ndp *ndp;
     GSource    *event_source;
+
+    struct {
+        NMRateLimit pio_lft;
+        NMRateLimit mtu;
+        NMRateLimit omit_prefix;
+        NMRateLimit omit_dns;
+        NMRateLimit omit_dnssl;
+    } msg_ratelimit;
 } NMLndpNDiscPrivate;
 
 /*****************************************************************************/
@@ -46,6 +55,36 @@ G_DEFINE_TYPE(NMLndpNDisc, nm_lndp_ndisc, NM_TYPE_NDISC)
 
 #define NM_LNDP_NDISC_GET_PRIVATE(self) \
     _NM_GET_PRIVATE(self, NMLndpNDisc, NM_IS_LNDP_NDISC, NMNDisc)
+
+/*****************************************************************************/
+
+/*
+ * If we log a message about an invalid RA packet, don't repeat the same message
+ * at every packet received or sent. Rate limit the message to 6 every 12 hours
+ * per type and per ndisc instance.
+ */
+
+#define LOG_INV_RA_WINDOW (12 * 3600)
+#define LOG_INV_RA_BURST  6
+
+#define _LOG_INVALID_RA(ndisc, rate_limit, ...)                                  \
+    G_STMT_START                                                                 \
+    {                                                                            \
+        NMNDisc     *__ndisc  = (ndisc);                                         \
+        NMRateLimit *__rl     = (rate_limit);                                    \
+        const char  *__ifname = nm_ndisc_get_ifname(__ndisc);                    \
+                                                                                 \
+        if (__ifname && nm_logging_enabled(LOGL_WARN, LOGD_IP6)                  \
+            && nm_rate_limit_check(__rl, LOG_INV_RA_WINDOW, LOG_INV_RA_BURST)) { \
+            nm_log(LOGL_WARN,                                                    \
+                   LOGD_IP6,                                                     \
+                   __ifname,                                                     \
+                   NULL,                                                         \
+                   "ndisc (%s): " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),            \
+                   __ifname _NM_UTILS_MACRO_REST(__VA_ARGS__));                  \
+        }                                                                        \
+    }                                                                            \
+    G_STMT_END
 
 /*****************************************************************************/
 
@@ -113,6 +152,7 @@ static int
 receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 {
     NMNDisc             *ndisc   = (NMNDisc *) user_data;
+    NMLndpNDiscPrivate  *priv    = NM_LNDP_NDISC_GET_PRIVATE(ndisc);
     NMNDiscDataInternal *rdata   = ndisc->rdata;
     NMNDiscConfigMap     changed = 0;
     NMNDiscGateway       gateway;
@@ -229,7 +269,11 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
              * log a system management error in this case.
              */
             if (preferred_time > valid_time) {
-                _LOGW("skipping PIO - preferred lifetime > valid lifetime");
+                _LOG_INVALID_RA(
+                    ndisc,
+                    &priv->msg_ratelimit.pio_lft,
+                    "ignoring Prefix Information Option with invalid lifetimes in received IPv6 "
+                    "router advertisement");
                 continue;
             }
 
@@ -349,7 +393,11 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
              * Kernel would set it, but would flush out all IPv6 addresses away
              * from the link, even the link-local, and we wouldn't be able to
              * listen for further RAs that could fix the MTU. */
-            _LOGW("MTU too small for IPv6 ignored: %d", mtu);
+            _LOG_INVALID_RA(ndisc,
+                            &priv->msg_ratelimit.mtu,
+                            "ignoring too small MTU %u in received IPv6 "
+                            "router advertisement",
+                            mtu);
         }
     }
 
@@ -445,8 +493,11 @@ send_ra(NMNDisc *ndisc, GError **error)
 
         prefix = _ndp_msg_add_option(msg, sizeof(*prefix));
         if (!prefix) {
-            /* Maybe we could sent separate RAs, but why bother... */
-            _LOGW("The RA is too big, had to omit some some prefixes.");
+            /* Maybe we could send separate RAs, but why bother... */
+            _LOG_INVALID_RA(
+                ndisc,
+                &priv->msg_ratelimit.omit_prefix,
+                "the outgoing IPv6 router advertisement is too big: omitting some prefixes");
             break;
         }
 
@@ -475,7 +526,10 @@ send_ra(NMNDisc *ndisc, GError **error)
 
         option = _ndp_msg_add_option(msg, len);
         if (!option) {
-            _LOGW("The RA is too big, had to omit DNS information.");
+            _LOG_INVALID_RA(
+                ndisc,
+                &priv->msg_ratelimit.omit_dns,
+                "the outgoing IPv6 router advertisement is too big: omitting DNS information");
             goto dns_servers_done;
         }
 
@@ -553,7 +607,10 @@ dns_servers_done:
         nm_assert(len / 8u >= 2u);
 
         if (len / 8u >= 256u || !(option = _ndp_msg_add_option(msg, len))) {
-            _LOGW("The RA is too big, had to omit DNS search list.");
+            _LOG_INVALID_RA(
+                ndisc,
+                &priv->msg_ratelimit.omit_dnssl,
+                "the outgoing IPv6 router advertisement is too big: omitting DNS search list");
             goto dns_domains_done;
         }
 
