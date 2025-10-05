@@ -976,7 +976,7 @@ ipv6.ip6-privacy=0
         </varlistentry>
         <varlistentry>
           <term><varname>ipv4.dhcp-ipv6-only-preferred</varname></term>
-          <listitem><para>If left unspecified, the "IPv6-only preferred" DHCPv4 option is disabled.</para></listitem>
+          <listitem><para>If left unspecified, it defaults to "auto".</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>ipv4.dhcp-hostname-flags</varname></term>
