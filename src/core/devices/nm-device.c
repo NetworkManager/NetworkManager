@@ -1958,6 +1958,7 @@ _prop_get_ipvx_may_fail_cached(NMDevice *self, int addr_family, NMTernary *cache
 static gboolean
 _prop_get_ipv4_dhcp_ipv6_only_preferred(NMDevice *self)
 {
+    NMDevicePrivate                  *priv = NM_DEVICE_GET_PRIVATE(self);
     NMSettingIP4Config               *s_ip4;
     NMSettingIP4DhcpIpv6OnlyPreferred ipv6_only;
 
@@ -1966,16 +1967,34 @@ _prop_get_ipv4_dhcp_ipv6_only_preferred(NMDevice *self)
         return FALSE;
 
     ipv6_only = nm_setting_ip4_config_get_dhcp_ipv6_only_preferred(s_ip4);
-    if (ipv6_only != NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_DEFAULT)
-        return ipv6_only;
+    if (NM_IN_SET(ipv6_only,
+                  NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_YES,
+                  NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_NO))
+        return ipv6_only == NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_YES;
 
-    return nm_config_data_get_connection_default_int64(
-        NM_CONFIG_GET_DATA,
-        NM_CON_DEFAULT("ipv4.dhcp-ipv6-only-preferred"),
-        self,
-        NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_NO,
-        NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_YES,
-        NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_NO);
+    if (ipv6_only == NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_DEFAULT) {
+        ipv6_only = nm_config_data_get_connection_default_int64(
+            NM_CONFIG_GET_DATA,
+            NM_CON_DEFAULT("ipv4.dhcp-ipv6-only-preferred"),
+            self,
+            NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_NO,
+            NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_AUTO,
+            NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_AUTO);
+    }
+
+    if (NM_IN_SET(ipv6_only,
+                  NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_YES,
+                  NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_NO))
+        return ipv6_only == NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_YES;
+
+    /* auto */
+    if (nm_streq0(priv->ipv6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)
+        && _prop_get_ipv4_clat(self, nm_device_get_applied_connection(self))
+               != NM_SETTING_IP4_CONFIG_CLAT_NO) {
+        return TRUE;
+    }
+
+    return FALSE;
 }
 
 /**

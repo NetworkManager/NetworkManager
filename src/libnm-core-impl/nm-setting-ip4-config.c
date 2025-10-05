@@ -1376,18 +1376,25 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
     /**
      * NMSettingIP4Config:dhcp-ipv6-only-preferred
      *
-     * Controls the "IPv6-Only Preferred" DHCPv4 option (RFC 8925).
+     * Controls the "IPv6-Only Preferred" DHCPv4 option (option 108 - RFC 8925).
      *
      * When set to %NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_YES, the host adds the
      * option to the parameter request list; if the DHCP server sends the option back,
      * the host stops the DHCP client for the time interval specified in the option.
      *
      * Enable this feature if the host supports an IPv6-only mode, i.e. either all
-     * applications are IPv6-only capable or there is a form of 464XLAT deployed.
+     * applications are IPv6-only capable or there is a form of CLAT (464XLAT)
+     * deployed.
+     *
+     * If set to %NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_AUTO, the option is
+     * automatically turned on when the IPv6 method is "auto" and the connection
+     * profile has ipv4.clat set to "yes" or "auto". If these two conditions are
+     * met, the host can operate in IPv6-only mode and therefore it is safe to
+     * disable DHCPv4 when the network also supports it.
      *
      * When set to %NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_DEFAULT, the actual value
      * is looked up in the global configuration; if not specified, it defaults to
-     * %NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_NO.
+     * %NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_AUTO.
      *
      * If the connection has IPv6 method set to "disabled", this property does not
      * have effect and the "IPv6-Only Preferred" option is always disabled.

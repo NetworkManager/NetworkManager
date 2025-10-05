@@ -110,6 +110,8 @@ typedef enum {
  * @NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_DEFAULT: use the global default value
  * @NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_NO: the option is disabled
  * @NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_YES: the option is enabled
+ * @NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_AUTO: the option is enabled when
+ *    the IPv6 method is "auto" and CLAT is enabled. Since: 1.58
  *
  * #NMSettingIP4DhcpIpv6OnlyPreferred values specify if the "IPv6-Only Preferred"
  * option (RFC 8925) for DHCPv4 is enabled.
@@ -120,6 +122,7 @@ typedef enum {
     NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_DEFAULT = -1,
     NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_NO      = 0,
     NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_YES     = 1,
+    NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_AUTO    = 2,
 } NMSettingIP4DhcpIpv6OnlyPreferred;
 
 /**
