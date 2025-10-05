@@ -1460,7 +1460,9 @@ nm_dhcp_client_schedule_ipv6_only_restart(NMDhcpClient *self, guint timeout)
     nm_assert(!priv->is_stopped);
 
     timeout = NM_MAX(priv->v4.ipv6_only_min_wait, timeout);
-    _LOGI("received option \"ipv6-only-preferred\": stopping DHCPv4 for %u seconds", timeout);
+    _LOGI("received option \"ipv6-only-preferred\": stopping DHCPv4 for %u seconds. Set "
+          "ipv4.dhcp-ipv6-only-preferred=no to force the use of IPv4 on this IPv6-mostly network",
+          timeout);
 
     nm_dhcp_client_stop(self, FALSE);
     nm_clear_g_source_inst(&priv->no_lease_timeout_source);
