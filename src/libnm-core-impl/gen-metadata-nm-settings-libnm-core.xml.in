@@ -1532,6 +1532,10 @@
                   dbus-type="s"
                   gprop-type="gchararray"
                   />
+        <property name="protocol-version"
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="prp"
                   dbus-type="b"
                   gprop-type="gboolean"

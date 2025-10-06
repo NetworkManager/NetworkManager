@@ -23,12 +23,18 @@
 
 /*****************************************************************************/
 
-NM_GOBJECT_PROPERTIES_DEFINE(NMSettingHsr, PROP_PORT1, PROP_PORT2, PROP_MULTICAST_SPEC, PROP_PRP, );
+NM_GOBJECT_PROPERTIES_DEFINE(NMSettingHsr,
+                             PROP_PORT1,
+                             PROP_PORT2,
+                             PROP_MULTICAST_SPEC,
+                             PROP_PRP,
+                             PROP_PROTOCOL_VERSION, );
 
 typedef struct {
     char   *port1;
     char   *port2;
     guint32 multicast_spec;
+    int     protocol_version;
     bool    prp;
 } NMSettingHsrPrivate;
 
@@ -117,6 +123,22 @@ nm_setting_hsr_get_prp(NMSettingHsr *setting)
     return NM_SETTING_HSR_GET_PRIVATE(setting)->prp;
 }
 
+/**
+ * nm_setting_hsr_get_protocol_version:
+ * @setting: the #NMSettingHsr
+ *
+ * Returns: the #NMSettingHsr:protocol-version property of the setting
+ *
+ * Since: 1.56
+ **/
+NMSettingHsrProtocolVersion
+nm_setting_hsr_get_protocol_version(NMSettingHsr *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_HSR(setting), NM_SETTING_HSR_PROTOCOL_VERSION_DEFAULT);
+
+    return NM_SETTING_HSR_GET_PRIVATE(setting)->protocol_version;
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -157,6 +179,18 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                     _("'%s' is not a valid interface name"),
                     priv->port2);
         g_prefix_error(error, "%s.%s: ", NM_SETTING_HSR_SETTING_NAME, NM_SETTING_HSR_PORT2);
+        return FALSE;
+    }
+
+    if (priv->prp && priv->protocol_version != NM_SETTING_HSR_PROTOCOL_VERSION_DEFAULT) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("HSR protocol cannot be configured for PRP interfaces"));
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_HSR_SETTING_NAME,
+                       NM_SETTING_HSR_PROTOCOL_VERSION);
         return FALSE;
     }
 
@@ -259,6 +293,27 @@ nm_setting_hsr_class_init(NMSettingHsrClass *klass)
                                                NM_SETTING_PARAM_INFERRABLE,
                                                NMSettingHsr,
                                                _priv.prp);
+
+    /**
+      * NMSettingHsr:protocol-version:
+      *
+      * Configures the protocol version to be used for the HSR/PRP interface.
+      * %NM_SETTING_HSR_PROTOCOL_VERSION_DEFAULT sets the protocol version to the default version for the protocol.
+      * %NM_SETTING_HSR_PROTOCOL_VERSION_HSR_2010 sets the protocol version to HSRv0 (IEC 62439-3:2010).
+      * %NM_SETTING_HSR_PROTOCOL_VERSION_HSR_2012 sets the protocol version to HSRv1 (IEC 62439-3:2012).
+      *
+      * Since: 1.56
+      **/
+    _nm_setting_property_define_direct_enum(properties_override,
+                                            obj_properties,
+                                            NM_SETTING_HSR_PROTOCOL_VERSION,
+                                            PROP_PROTOCOL_VERSION,
+                                            NM_TYPE_SETTING_HSR_PROTOCOL_VERSION,
+                                            NM_SETTING_HSR_PROTOCOL_VERSION_DEFAULT,
+                                            NM_SETTING_PARAM_NONE,
+                                            NULL,
+                                            NMSettingHsr,
+                                            _priv.protocol_version);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
