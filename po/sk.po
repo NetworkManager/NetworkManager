@@ -7,13 +7,14 @@
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 # Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
 # Thomas Haller <thaller@redhat.com>, 2017. #zanata
+# Jose Riha <jose1711@gmail.com>, 2025.
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: https://gitlab.freedesktop.org/NetworkManager/"
 "NetworkManager/issues\n"
 "POT-Creation-Date: 2022-08-15 18:14-0300\n"
-"PO-Revision-Date: 2019-05-15 16:46+0200\n"
+"PO-Revision-Date: 2025-09-26 17:33+0200\n"
 "Last-Translator: Jose Riha <jose1711@gmail.com>\n"
 "Language-Team: Slovak <sk-i18n@lists.linux.sk>\n"
 "Language: sk\n"
@@ -24,22 +25,20 @@ msgstr ""
 "X-Generator: Poedit 2.2.1\n"
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:13
-#, fuzzy
 msgid "Enable or disable system networking"
-msgstr "Povoliť _sieť"
+msgstr "Zapnúť alebo vypnúť sieťovanie v systéme"
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:14
 msgid "System policy prevents enabling or disabling system networking"
-msgstr ""
+msgstr "Systémová politika zabraňuje zapnutiu alebo vypnutiu siete v systéme"
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:22
-#, fuzzy
 msgid "Reload NetworkManager configuration"
-msgstr "NetworkManager nebeží"
+msgstr "Opätovne načítať konfiguráciu NetworkManagera"
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:23
 msgid "System policy prevents reloading NetworkManager"
-msgstr ""
+msgstr "Systémová politika zabraňuje opätovnému načítaniu NetworkManagera"
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:32
 msgid ""
@@ -53,11 +52,11 @@ msgstr ""
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:41
 msgid "Enable or disable Wi-Fi devices"
-msgstr ""
+msgstr "Zapnúť alebo vypnúť zariadenia Wi-Fi"
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:42
 msgid "System policy prevents enabling or disabling Wi-Fi devices"
-msgstr ""
+msgstr "Systémová politika neumožňuje zapnúť alebo vypnúť zariadenia Wi-Fi"
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:50
 msgid "Enable or disable mobile broadband devices"
@@ -77,65 +76,63 @@ msgid ""
 msgstr ""
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:68
-#, fuzzy
 msgid "Allow control of network connections"
-msgstr "Bez sieťového spojenia"
+msgstr "Povoliť ovládanie sieťových pripojení"
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:69
 msgid "System policy prevents control of network connections"
-msgstr ""
+msgstr "Systémová politika neumožňuje ovládať sieťové pripojenia"
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:78
-#, fuzzy
 msgid "Allow control of Wi-Fi scans"
-msgstr "Bez sieťového spojenia"
+msgstr "Povoliť ovládanie skenovania sietí Wi-Fi"
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:79
 msgid "System policy prevents Wi-Fi scans"
-msgstr ""
+msgstr "Systémová politika neumožňuje skenovanie sietí Wi-Fi"
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:88
 msgid "Connection sharing via a protected Wi-Fi network"
-msgstr ""
+msgstr "Zdieľanie pripojenia prostredníctvom zabezpečenej siete Wi-Fi"
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:89
 msgid ""
 "System policy prevents sharing connections via a protected Wi-Fi network"
 msgstr ""
+"Systémová politika neumožňuje zdieľanie pripojenia prostredníctvom zabezpečenej siete Wi-Fi"
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:97
 msgid "Connection sharing via an open Wi-Fi network"
-msgstr ""
+msgstr "Zdieľanie pripojenia prostredníctvom nezabezpečnej siete Wi-Fi"
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:98
 msgid "System policy prevents sharing connections via an open Wi-Fi network"
 msgstr ""
+"Systémová politika neumožňuje zdieľanie pripojenia prostredníctvom nezabezpečnej siete Wi-Fi"
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:106
-#, fuzzy
 msgid "Modify personal network connections"
-msgstr "Bez sieťového spojenia"
+msgstr "Upraviť osobné sieťové pripojenia"
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:107
 msgid "System policy prevents modification of personal network settings"
-msgstr ""
+msgstr "Systémová politika neumožňuje meniť osobné nastavenia siete"
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:116
-#, fuzzy
 msgid "Modify network connections for all users"
-msgstr "Bez sieťového spojenia"
+msgstr "Upraviť sieťové pripojenia pre všetkých používateľov"
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:117
 msgid "System policy prevents modification of network settings for all users"
-msgstr ""
+msgstr "Systémová politika neumožňuje meniť nastavenia siete pre všetkých používateľov"
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:126
 msgid "Modify persistent system hostname"
-msgstr "Zmenit perzistentné systémové meno hostiteľa"
+msgstr "Zmeniť perzistentné systémové meno hostiteľa"
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:127
 msgid "System policy prevents modification of the persistent system hostname"
-msgstr ""
+msgstr "Systémová politika neumožňuje zmenu perzistentného systémového mena hostiteľa"
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:136
 msgid "Modify persistent global DNS configuration"
@@ -164,13 +161,12 @@ msgid "System policy prevents enabling or disabling device statistics"
 msgstr ""
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:165
-#, fuzzy
 msgid "Enable or disable connectivity checking"
-msgstr "Povoliť _sieť"
+msgstr "Zapnúť alebo vypnúť kontrolu pripojenia"
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:166
 msgid "System policy prevents enabling or disabling connectivity checking"
-msgstr ""
+msgstr "Systémová politika neumožňuje zapnutie alebo vypnutie kontroly pripojenia"
 
 #. TRANSLATORS: the first %s is a prefix for the connection id, such
 #. * as "Wired Connection" or "VPN Connection". The %d is a number
@@ -180,26 +176,25 @@ msgstr ""
 #, c-format
 msgctxt "connection id fallback"
 msgid "%s %u"
-msgstr ""
+msgstr "%s %u"
 
 #: src/core/devices/adsl/nm-device-adsl.c:115
 #: src/libnmc-setting/nm-meta-setting-desc.c:8265
 msgid "ADSL connection"
-msgstr "ADSL spojenie"
+msgstr "ADSL pripojenie"
 
 #: src/core/devices/bluetooth/nm-bluez-manager.c:1315
-#, fuzzy, c-format
+#, c-format
 msgid "%s Network"
-msgstr "Bezdrôtových sietí"
+msgstr "%s sieť"
 
 #: src/core/devices/bluetooth/nm-device-bt.c:300
 msgid "NAP requested, but Bluetooth device does not support NAP"
 msgstr ""
 
 #: src/core/devices/bluetooth/nm-device-bt.c:313
-#, fuzzy
 msgid "NAP connection"
-msgstr "VPN spojenia"
+msgstr "NAP pripojenie"
 
 #: src/core/devices/bluetooth/nm-device-bt.c:320
 msgid "PAN requested, but Bluetooth device does not support NAP"
@@ -210,9 +205,8 @@ msgid "PAN connections cannot specify GSM, CDMA, or serial settings"
 msgstr ""
 
 #: src/core/devices/bluetooth/nm-device-bt.c:348
-#, fuzzy
 msgid "PAN connection"
-msgstr "VPN spojenia"
+msgstr "PAN pripojenie"
 
 #: src/core/devices/bluetooth/nm-device-bt.c:355
 msgid "DUN requested, but Bluetooth device does not support DUN"
@@ -224,38 +218,33 @@ msgstr ""
 
 #: src/core/devices/bluetooth/nm-device-bt.c:379
 #: src/core/devices/wwan/nm-modem-broadband.c:814
-#, fuzzy
 msgid "GSM connection"
-msgstr "VPN spojenia"
+msgstr "GSM pripojenie"
 
 #: src/core/devices/bluetooth/nm-device-bt.c:381
 #: src/core/devices/wwan/nm-modem-broadband.c:835
-#, fuzzy
 msgid "CDMA connection"
-msgstr "VPN spojenia"
+msgstr "CDMA pripojenie"
 
 #: src/core/devices/bluetooth/nm-device-bt.c:389
 msgid "Unknown/unhandled Bluetooth connection type"
-msgstr ""
+msgstr "Neznámy/neobsluhovaný typ Bluetooth pripojenia"
 
 #: src/core/devices/bluetooth/nm-device-bt.c:414
 msgid "connection does not match device"
-msgstr ""
+msgstr "pripojenie nezodpovedá zariadeniu"
 
 #: src/core/devices/nm-device-6lowpan.c:191
-#, fuzzy
 msgid "6LOWPAN connection"
-msgstr "VPN spojenia"
+msgstr "6LOWPAN pripojenie"
 
 #: src/core/devices/nm-device-bond.c:91
-#, fuzzy
 msgid "Bond connection"
-msgstr "Bez sieťového spojenia"
+msgstr "Previazané pripojenie (bond)"
 
 #: src/core/devices/nm-device-bridge.c:161
-#, fuzzy
 msgid "Bridge connection"
-msgstr "Pripojenie k drôtovej sieti"
+msgstr "Premostené pripojenie (bridge)"
 
 #: src/core/devices/nm-device-dummy.c:56
 #, fuzzy
@@ -269,75 +258,69 @@ msgstr "Drôtové pripojenie %d"
 
 #: src/core/devices/nm-device-ethernet.c:1628
 #: src/libnmc-setting/nm-meta-setting-desc.c:8303
-#, fuzzy
 msgid "Veth connection"
-msgstr "VPN spojenia"
+msgstr "Veth pripojenie"
 
 #: src/core/devices/nm-device-ethernet.c:1686
-#, fuzzy
 msgid "PPPoE connection"
-msgstr "VPN spojenia"
+msgstr "PPPoE pripojenie"
 
 #: src/core/devices/nm-device-ethernet.c:1686
 msgid "Wired connection"
-msgstr "Pripojenie k drôtovej sieti"
+msgstr "Drôtové pripojenie"
 
 #: src/core/devices/nm-device-infiniband.c:157
 #: src/libnmc-setting/nm-meta-setting-desc.c:8279
 msgid "InfiniBand connection"
-msgstr "Spojenie InfiniBand"
+msgstr "InfiniBand pripojenie"
 
 #: src/core/devices/nm-device-ip-tunnel.c:399
 msgid "IP tunnel connection"
 msgstr "Pripojenie IP tunela"
 
 #: src/core/devices/nm-device-macvlan.c:389
-#, fuzzy
 msgid "MACVLAN connection"
-msgstr "VPN spojenia"
+msgstr "MACVLAN pripojenie"
 
 #: src/core/devices/nm-device-tun.c:144
 msgid "TUN connection"
-msgstr "Spojenie TUN"
+msgstr "TUN pripojenie"
 
 #: src/core/devices/nm-device-vlan.c:398
 #: src/libnmc-setting/nm-meta-setting-desc.c:8304
-#, fuzzy
 msgid "VLAN connection"
-msgstr "VPN spojenia"
+msgstr "VLAN pripojenie"
 
 #: src/core/devices/nm-device-vrf.c:182
 #: src/libnmc-setting/nm-meta-setting-desc.c:8306
-#, fuzzy
 msgid "VRF connection"
-msgstr "VPN spojenia"
+msgstr "VRF pripojenie"
 
 #: src/core/devices/nm-device-vxlan.c:382
 #: src/libnmc-setting/nm-meta-setting-desc.c:8307
-#, fuzzy
 msgid "VXLAN connection"
-msgstr "VPN spojenia"
+msgstr "VXLAN pripojenie"
 
 #: src/core/devices/nm-device-wpan.c:54
 msgid "WPAN connection"
-msgstr "WPAN spojenie"
+msgstr "WPAN pripojenie"
 
 #: src/core/devices/team/nm-device-team.c:130
 msgid "Team connection"
-msgstr "Team spojenie"
+msgstr "Team pripojenie"
 
 #: src/core/devices/wifi/nm-device-olpc-mesh.c:112 src/nmcli/devices.c:1397
 msgid "Mesh"
-msgstr ""
+msgstr "Mesh"
 
 #: src/core/devices/wifi/nm-wifi-utils.c:33
 #, c-format
 msgid "%s is incompatible with static WEP keys"
-msgstr ""
+msgstr "%s nie je kompatibilné so statickými kľúčmi WEP"
 
 #: src/core/devices/wifi/nm-wifi-utils.c:68
 msgid "LEAP authentication requires a LEAP username"
-msgstr ""
+msgstr "LEAP autentifikácia vyžaduje meno používateľa LEAP"
 
 #: src/core/devices/wifi/nm-wifi-utils.c:80
 msgid "LEAP username requires 'leap' authentication"
@@ -374,62 +357,60 @@ msgstr ""
 #: src/core/devices/wifi/nm-wifi-utils.c:213
 #, c-format
 msgid "a connection using '%s' authentication cannot specify a WPA password"
-msgstr ""
+msgstr "v pripojení využívajúcom autentifikáciu '%s' nie je možné zadať WPA"
 
 #: src/core/devices/wifi/nm-wifi-utils.c:246
 msgid "Dynamic WEP requires an 802.1x setting"
-msgstr ""
+msgstr "Dynamický WEP vyžaduje nastavenie 802.1x"
 
 #: src/core/devices/wifi/nm-wifi-utils.c:256
 #: src/core/devices/wifi/nm-wifi-utils.c:288
 msgid "Dynamic WEP requires 'open' authentication"
-msgstr ""
+msgstr "Dynamický WEP vyžaduje autentifikáciu 'Open'"
 
 #: src/core/devices/wifi/nm-wifi-utils.c:273
 msgid "Dynamic WEP requires 'ieee8021x' key management"
-msgstr ""
+msgstr "Dynamický WEP vyžaduje správu kľúčov 'ieee8021x'"
 
 #: src/core/devices/wifi/nm-wifi-utils.c:324
 msgid "WPA-PSK authentication is incompatible with 802.1x"
-msgstr ""
+msgstr "WPA-PSK autentifikácia nie je kompatibilná s 802.1x"
 
 #: src/core/devices/wifi/nm-wifi-utils.c:334
 msgid "WPA-PSK requires 'open' authentication"
-msgstr ""
+msgstr "WPA-PSK vyžaduje 'otvorenú' autentifikáciu"
 
 #: src/core/devices/wifi/nm-wifi-utils.c:348
 msgid "Access point does not support PSK but setting requires it"
-msgstr ""
+msgstr "Prístupový bod nepodporuje PSK, ale nastavenie ho vyžaduje"
 
 #: src/core/devices/wifi/nm-wifi-utils.c:363
-#, fuzzy
 msgid "WPA Ad-Hoc authentication requires 'rsn' protocol"
-msgstr "Bezdrôtová sieť vyžaduje overenie totožnosti"
+msgstr "WPA Ad-Hoc autentifikácia vyžaduje protokol 'rsn'"
 
 #: src/core/devices/wifi/nm-wifi-utils.c:376
-#, fuzzy
 msgid "WPA Ad-Hoc authentication requires 'ccmp' pairwise cipher"
-msgstr "Bezdrôtová sieť vyžaduje overenie totožnosti"
+msgstr "WPA Ad-Hoc autentifikácia vyžaduje párovú šifru 'ccmp'"
 
 #: src/core/devices/wifi/nm-wifi-utils.c:389
 msgid "WPA Ad-Hoc requires 'ccmp' group cipher"
-msgstr ""
+msgstr "WPA Ad-Hoc vyžaduje skupinovú šifru 'ccmp'"
 
 #: src/core/devices/wifi/nm-wifi-utils.c:420
 msgid "WPA-EAP authentication requires an 802.1x setting"
-msgstr ""
+msgstr "WPA-EAP autentifikácia vyžaduje nastavenie 802.1x"
 
 #: src/core/devices/wifi/nm-wifi-utils.c:430
 msgid "WPA-EAP requires 'open' authentication"
-msgstr ""
+msgstr "WPA-EAP vyžaduje 'otvorenú' autentifikáciu"
 
 #: src/core/devices/wifi/nm-wifi-utils.c:443
 msgid "802.1x setting requires 'wpa-eap' key management"
-msgstr ""
+msgstr "Nastavenie 802.1x vyžaduje správu kľúčov 'wpa-eap'"
 
 #: src/core/devices/wifi/nm-wifi-utils.c:457
 msgid "Access point does not support 802.1x but setting requires it"
-msgstr ""
+msgstr "Prístupový bod nepodporuje 802.1x, ale nastavenie ho vyžaduje"
 
 #: src/core/devices/wifi/nm-wifi-utils.c:487
 msgid "Ad-Hoc mode requires 'none' or 'wpa-psk' key management"
@@ -636,9 +617,8 @@ msgid "Show NetworkManager options"
 msgstr "Applet NetworkManager"
 
 #: src/core/nm-manager.c:6162 src/libnmc-setting/nm-meta-setting-desc.c:8305
-#, fuzzy
 msgid "VPN connection"
-msgstr "VPN spojenia"
+msgstr "VPN pripojenie"
 
 #: src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5612
 #: src/libnm-client-impl/nm-device.c:1779
@@ -701,9 +681,9 @@ msgid "invalid secret '%s' at %s:%zu"
 msgstr "neplatné smerovanie: %s. %s"
 
 #: src/libnm-client-impl/nm-conn-utils.c:587
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to create WireGuard connection: %s"
-msgstr "Nepodarilo sa spustiť VPN spojenie '%s'"
+msgstr "Nepodarilo sa vytvoriť WireGuard pripojenie: %s"
 
 #: src/libnm-client-impl/nm-device-adsl.c:66
 #, fuzzy
@@ -1052,26 +1032,25 @@ msgstr "USB"
 #, c-format
 msgctxt "long device name"
 msgid "%s %s"
-msgstr ""
+msgstr "%s %s"
 
 #: src/libnm-client-impl/nm-device.c:2857
-#, fuzzy, c-format
+#, c-format
 msgid "The connection was not valid: %s"
-msgstr "VPN spojenie '%s' nebolo správne nakonfigurované."
+msgstr "Pripojenie bolo neplatné: %s"
 
 #: src/libnm-client-impl/nm-device.c:2869
 msgid "The interface names of the device and the connection didn't match"
 msgstr ""
 
 #: src/libnm-client-impl/nm-secret-agent-old.c:1384
-#, fuzzy
 msgid "registration failed"
-msgstr "Žiadosť o registráciu bola zamietnutá."
+msgstr "registrácia zlyhala"
 
 #: src/libnm-client-impl/nm-vpn-plugin-old.c:817
 #: src/libnm-client-impl/nm-vpn-service-plugin.c:1025
 msgid "No service name specified"
-msgstr ""
+msgstr "Nezadali ste názov služby"
 
 #: src/libnm-core-aux-extern/nm-libnm-core-aux.c:287
 #, c-format
@@ -1915,7 +1894,7 @@ msgstr ""
 
 #: src/libnm-core-impl/nm-setting-ethtool.c:311
 msgid "unsupported ethtool setting"
-msgstr ""
+msgstr "nepodporované nastavenie ethtoolu"
 
 #: src/libnm-core-impl/nm-setting-ethtool.c:320
 #, fuzzy
@@ -1931,9 +1910,9 @@ msgid "pause-autoneg cannot be enabled when setting rx/tx options"
 msgstr ""
 
 #: src/libnm-core-impl/nm-setting-ethtool.c:374
-#, fuzzy, c-format
+#, c-format
 msgid "unknown ethtool option '%s'"
-msgstr "(neznáme)"
+msgstr "neznáma voľba ethtoolu '%s'"
 
 #: src/libnm-core-impl/nm-setting-gsm.c:311
 #, c-format
@@ -1953,15 +1932,15 @@ msgstr ""
 #: src/libnm-core-impl/nm-setting-gsm.c:381
 #, c-format
 msgid "'%s' is not a number"
-msgstr ""
+msgstr "'%s' nie je číslo"
 
 #: src/libnm-core-impl/nm-setting-gsm.c:418
 msgid "property is empty or wrong size"
-msgstr ""
+msgstr "vlastnosť je prázdna alebo má nesprávnu veľkosť"
 
 #: src/libnm-core-impl/nm-setting-gsm.c:431
 msgid "property must contain only digits"
-msgstr ""
+msgstr "vlastnosť môže obsahovať iba číslice"
 
 #: src/libnm-core-impl/nm-setting-gsm.c:445
 msgid "can't be enabled when manual configuration is present"
@@ -1977,7 +1956,7 @@ msgstr ""
 
 #: src/libnm-core-impl/nm-setting-infiniband.c:248
 msgid "the values 0 and 0x8000 are not allowed"
-msgstr ""
+msgstr "hodnoty 0 a 0x8000 nie sú povolené"
 
 #: src/libnm-core-impl/nm-setting-infiniband.c:274
 #, c-format
@@ -1996,35 +1975,35 @@ msgstr ""
 #: src/libnm-core-impl/nm-setting-infiniband.c:310
 #, c-format
 msgid "mtu can be at most %u but it is %u"
-msgstr ""
+msgstr "najvyššie mtu môže byť %u, ale je %u"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:80
 msgid "Missing IPv4 address"
-msgstr ""
+msgstr "Chýbajúca adresa IPv4"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:80
 msgid "Missing IPv6 address"
-msgstr ""
+msgstr "Chýbajúca adresa IPv6"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:87
 #, c-format
 msgid "Invalid IPv4 address '%s'"
-msgstr ""
+msgstr "Neplatná adresa IPv4: '%s'"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:88
 #, c-format
 msgid "Invalid IPv6 address '%s'"
-msgstr ""
+msgstr "Neplatná adresa IPv6: '%s'"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:105
 #, c-format
 msgid "Invalid IPv4 address prefix '%u'"
-msgstr ""
+msgstr "Neplatný prefix adresy IPv4: '%u'"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:106
 #, c-format
 msgid "Invalid IPv6 address prefix '%u'"
-msgstr ""
+msgstr "Neplatný prefix adresy IPv6: '%u'"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:123
 #, c-format
@@ -4110,11 +4089,11 @@ msgstr "Pripojenie už nie je aktívne na zariadení"
 
 #: src/libnmc-base/nm-client-utils.c:417
 msgid "Device disconnected by user or client"
-msgstr "Zariadenie bolo odpojené užívaťeľom"
+msgstr "Zariadenie bolo odpojené používaťeľom"
 
 #: src/libnmc-base/nm-client-utils.c:418
 msgid "Carrier/link changed"
-msgstr "Stav spojenia sa zmenil"
+msgstr "Stav pripojenia sa zmenil"
 
 #: src/libnmc-base/nm-client-utils.c:420
 msgid "The device's existing connection was assumed"
@@ -4170,7 +4149,7 @@ msgstr "Nebolo možné nájsť Wi-Fi sieť"
 
 #: src/libnmc-base/nm-client-utils.c:445
 msgid "A secondary connection of the base connection failed"
-msgstr "Zlyhalo nadviazanie druhotného spojenia"
+msgstr "Zlyhalo nadviazanie druhotného pripojenia"
 
 #: src/libnmc-base/nm-client-utils.c:446
 msgid "DCB or FCoE setup failed"
@@ -4232,11 +4211,11 @@ msgstr "Dôvod neznámy"
 
 #: src/libnmc-base/nm-client-utils.c:476
 msgid "The connection was disconnected"
-msgstr "Spojenie bolo rozpojené."
+msgstr "Pripojenie bolo rozpojené."
 
 #: src/libnmc-base/nm-client-utils.c:478
 msgid "Disconnected by user"
-msgstr "Odpojené užívateľom"
+msgstr "Odpojené používateľom"
 
 #: src/libnmc-base/nm-client-utils.c:480
 #, fuzzy
@@ -4253,7 +4232,7 @@ msgstr "Služba VPN vrátila neplatnú konfiguráciu"
 
 #: src/libnmc-base/nm-client-utils.c:486
 msgid "The connection attempt timed out"
-msgstr "Vypršal čas pri pokuse o spojenie"
+msgstr "Vypršal čas pri pokuse o pripojenie"
 
 #: src/libnmc-base/nm-client-utils.c:488
 msgid "The VPN service did not start in time"
@@ -4274,15 +4253,15 @@ msgstr "nesprávna smerová adresa '%s'"
 
 #: src/libnmc-base/nm-client-utils.c:494
 msgid "The connection was removed"
-msgstr "Spojenie bolo odstránené"
+msgstr "Pripojenie bolo odstránené"
 
 #: src/libnmc-base/nm-client-utils.c:496
 msgid "Master connection failed"
-msgstr "Master spojenie zlyhalo"
+msgstr "Master pripojenie zlyhalo"
 
 #: src/libnmc-base/nm-client-utils.c:498
 msgid "Could not create a software link"
-msgstr "Nepodarilo sa vytvoriť softvérové spojenie"
+msgstr "Nepodarilo sa vytvoriť softvérové pripojenie"
 
 #: src/libnmc-base/nm-client-utils.c:500
 msgid "The device disappeared"
@@ -4748,7 +4727,7 @@ msgstr ""
 #. * we're setting (type) has been removed.
 #: src/libnmc-setting/nm-meta-setting-desc.c:2646
 msgid "Can not change the connection type"
-msgstr "Nie je možné zmeniť typ spojenia"
+msgstr "Nie je možné zmeniť typ pripojenia"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:2729
 #, fuzzy, c-format
@@ -4817,7 +4796,7 @@ msgstr ""
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:3259
 msgid "default"
-msgstr "východzie"
+msgstr "predvolené"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:3420
 #, fuzzy, c-format
@@ -4836,13 +4815,14 @@ msgstr "'%s' nie je platným kanálom; použite <1-13>"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:3777
 msgid "The valid syntax is: vf [attribute=value]... [,vf [attribute=value]...]"
-msgstr ""
+msgstr "Platná syntax je: vf [atribút=hodnota]... [,vf [atribút=hodnota]...]"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:3803
 #: src/libnmc-setting/nm-meta-setting-desc.c:3885
 msgid ""
 "The valid syntax is: '[root | parent <handle>] [handle <handle>] <kind>'"
 msgstr ""
+"Platná syntax je: '[root | parent <ovládač>] [handle <ovládač>] <typ>'"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:3829
 msgid "The valid syntax is: '<vid>[-<vid>] [pvid] [untagged]'"
@@ -5501,7 +5481,7 @@ msgstr ""
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:8266
 msgid "bluetooth connection"
-msgstr "spojenie bluetooth"
+msgstr "bluetooth pripojenie"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:8267
 msgid "Bond device"
@@ -5573,13 +5553,12 @@ msgid "MACsec connection"
 msgstr ""
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:8284
-#, fuzzy
 msgid "macvlan connection"
-msgstr "Bez sieťového spojenia"
+msgstr "macvlan pripojenie"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:8285
 msgid "Match"
-msgstr ""
+msgstr "Zhoda"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:8286
 #, fuzzy
@@ -5657,20 +5636,19 @@ msgstr "Wi-Fi spojenie"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:8309
 msgid "WiMAX connection"
-msgstr "Spojenie WiMAX"
+msgstr "WiMAX pripojenie"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:8310
 msgid "Wired Ethernet"
 msgstr "Ethernet po drôte"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:8311
-#, fuzzy
 msgid "WireGuard VPN settings"
-msgstr "Nastavenia WPAN"
+msgstr "Nastavenia VPN WireGuard"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:8312
 msgid "Wi-Fi connection"
-msgstr "Wi-Fi spojenie"
+msgstr "Wi-Fi pripojenie"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:8313
 msgid "Wi-Fi security settings"
@@ -8911,7 +8889,7 @@ msgstr ""
 "\n"
 "Spustí nmcli v režime prostredníka prístupových oprávnení. V prípade, že\n"
 "NetworkManager potrebuje heslo, vyžiada si ho od prostredníka. Tento\n"
-"príkaz spôsobí, že nmcli ostane bežať a vyžiada si od užívateľa heslo keď\n"
+"príkaz spôsobí, že nmcli ostane bežať a vyžiada si od používateľa heslo keď\n"
 "ho NetworkManager potrebuje.\n"
 
 #: src/nmcli/agent.c:42
@@ -8941,7 +8919,7 @@ msgstr ""
 "\n"
 "Spustí agenta, ktorý bude obsluhovať požiadavky od polkitu aj "
 "NetworkManagera.\n"
-"Keď bude vyžadovaná autorizácia užívateľa alebo siete, nmcli ju obslúži.\n"
+"Keď bude vyžadovaná autorizácia používateľa alebo siete, nmcli ju obslúži.\n"
 "\n"
 
 #: src/nmcli/agent.c:141
@@ -9048,7 +9026,7 @@ msgstr "Vlastnosť? "
 
 #: src/nmcli/connections.c:63
 msgid "Enter connection type: "
-msgstr "Druh spojenia: "
+msgstr "Zadajte typ pripojenia: "
 
 #. define some other prompts
 #: src/nmcli/connections.c:67
@@ -9101,7 +9079,7 @@ msgstr "VPN pripojená"
 
 #: src/nmcli/connections.c:97
 msgid "VPN connection failed"
-msgstr "VPN spojenie zlyhalo"
+msgstr "VPN pripojenie zlyhalo"
 
 #: src/nmcli/connections.c:98
 msgid "VPN disconnected"
@@ -9532,7 +9510,7 @@ msgstr "Nepodarilo sa zmeniť heslo pre %s: %s\n"
 
 #: src/nmcli/connections.c:1559
 msgid "Connection profile details"
-msgstr "Detaily spojenia"
+msgstr "Podrobnosti profilu pripojenia"
 
 #: src/nmcli/connections.c:1577 src/nmcli/connections.c:1684
 #, fuzzy, c-format
@@ -9540,9 +9518,8 @@ msgid "Error: 'connection show': %s"
 msgstr "VPN spojenie s '%s'"
 
 #: src/nmcli/connections.c:1666
-#, fuzzy
 msgid "Active connection details"
-msgstr "Bez aktívnych sieťových spojení!"
+msgstr "Podrobnosti aktívneho pripojenia"
 
 #: src/nmcli/connections.c:1795 src/nmcli/devices.c:1663
 #: src/nmcli/devices.c:1680 src/nmcli/devices.c:1698 src/nmcli/devices.c:1717
@@ -9572,7 +9549,7 @@ msgstr ""
 
 #: src/nmcli/connections.c:2248
 msgid "No connection specified"
-msgstr "Nebolo špecifikované spojenie"
+msgstr "Nebolo špecifikované pripojenie"
 
 #: src/nmcli/connections.c:2261
 #, c-format
@@ -9582,7 +9559,7 @@ msgstr "%s parameter chýba"
 #: src/nmcli/connections.c:2282
 #, c-format
 msgid "unknown connection '%s'"
-msgstr "neznáme spojenie '%s'"
+msgstr "neznáme pripojenie '%s'"
 
 #: src/nmcli/connections.c:2311
 msgid "'--order' argument is missing"
@@ -9594,7 +9571,7 @@ msgstr "Aktívne profily NetworkManagera"
 
 #: src/nmcli/connections.c:2376
 msgid "NetworkManager connection profiles"
-msgstr "Profily spojení NetworkManagera"
+msgstr "Profily pripojení NetworkManagera"
 
 #: src/nmcli/connections.c:2432 src/nmcli/connections.c:3153
 #: src/nmcli/connections.c:3165 src/nmcli/connections.c:3177
@@ -9629,11 +9606,11 @@ msgstr "Chyba: %s."
 #: src/nmcli/connections.c:2651 src/nmcli/devices.c:4730
 #, c-format
 msgid "no active connection on device '%s'"
-msgstr "žiadne aktívne spojenie na zariadení '%s'"
+msgstr "žiadne aktívne pripojenie na zariadení '%s'"
 
 #: src/nmcli/connections.c:2659
 msgid "no active connection or device"
-msgstr "nie je aktívne spojenie alebo zariadenie"
+msgstr "nie je aktívne pripojenie alebo zariadenie"
 
 #: src/nmcli/connections.c:2682
 #, fuzzy, c-format
@@ -9643,7 +9620,7 @@ msgstr "Nepodarilo sa spustiť VPN spojenie '%s'"
 #: src/nmcli/connections.c:2720
 #, c-format
 msgid "device '%s' not compatible with connection '%s'"
-msgstr "zariadenie '%s' nie je kompatibilné so spojením '%s'"
+msgstr "zariadenie '%s' nie je kompatibilné s pripojením '%s'"
 
 #: src/nmcli/connections.c:2727
 #, fuzzy, c-format
@@ -9663,18 +9640,18 @@ msgstr "Tip: použite '%s' pre zistenie podrobností."
 #: src/nmcli/connections.c:2804
 #, c-format
 msgid "Connection successfully activated (%s) (D-Bus active path: %s)\n"
-msgstr "Spojenie úspešne aktivované (%s) (aktívna cesta D-Bus: %s)\n"
+msgstr "Pripojenie bolo úspešne aktivované (%s) (aktívna cesta D-Bus: %s)\n"
 
 #: src/nmcli/connections.c:2808 src/nmcli/connections.c:2959
 #: src/nmcli/connections.c:7399
 #, c-format
 msgid "Connection successfully activated (D-Bus active path: %s)\n"
-msgstr "Spojenie úspešne aktivované (aktívna cesta D-Bus: %s)\n"
+msgstr "Pripojenie bolo úspešne aktivované (aktívna cesta D-Bus: %s)\n"
 
 #: src/nmcli/connections.c:2815 src/nmcli/connections.c:2938
 #, c-format
 msgid "Error: Connection activation failed: %s"
-msgstr "Chyba: Aktivácia spojenia zlyhala: %s"
+msgstr "Chyba: Aktivácia pripojenia zlyhala: %s"
 
 #: src/nmcli/connections.c:2851
 #, c-format
@@ -9716,17 +9693,17 @@ msgstr "pripravujem"
 #: src/nmcli/connections.c:3329
 #, c-format
 msgid "Connection '%s' (%s) successfully deleted.\n"
-msgstr "Spojenie '%s' (%s) úspešne vymazané.\n"
+msgstr "Pripojenie '%s' (%s) bolo úspešne vymazané.\n"
 
 #: src/nmcli/connections.c:3345
 #, c-format
 msgid "Connection '%s' successfully deactivated (D-Bus active path: %s)\n"
-msgstr "Spojenie '%s' úspešne deaktivované (aktívna cesta D-Bus: %s)\n"
+msgstr "Pripojenie '%s' bolo úspešne deaktivované (aktívna cesta D-Bus: %s)\n"
 
 #: src/nmcli/connections.c:3394 src/nmcli/connections.c:9326
 #: src/nmcli/connections.c:9361 src/nmcli/connections.c:9550
 msgid "Error: No connection specified."
-msgstr "Chyba: Nebolo špecifikované spojenie."
+msgstr "Chyba: Nebolo špecifikované pripojenie."
 
 #: src/nmcli/connections.c:3426
 #, fuzzy, c-format
@@ -9865,7 +9842,7 @@ msgstr "Chyba: Nepodarilo sa pridať spojenie '%s': %s"
 #: src/nmcli/connections.c:5484
 #, c-format
 msgid "Connection '%s' (%s) successfully added.\n"
-msgstr "Spojenie '%s' (%s) úspešne pridané.\n"
+msgstr "Pripojenie '%s' (%s) bolo úspešne pridané.\n"
 
 #: src/nmcli/connections.c:5632
 msgid ""
@@ -10163,7 +10140,7 @@ msgstr "[ Typ: %s | Názov: %s | UUID: %s | Dirty: %s | Temp: %s ]\n"
 #: src/nmcli/connections.c:7541
 #, c-format
 msgid "The connection is not saved. Do you really want to quit? %s"
-msgstr "Spojenie nie je uložené. Naozaj chcete skončiť? %s"
+msgstr "Pripojenie nie je uložené. Naozaj chcete skončiť? %s"
 
 #: src/nmcli/connections.c:7585
 msgid ""
@@ -10338,9 +10315,9 @@ msgid "Verify setting '%s': %s\n"
 msgstr ""
 
 #: src/nmcli/connections.c:8473
-#, fuzzy, c-format
+#, c-format
 msgid "Verify connection: %s\n"
-msgstr "VPN spojenie s '%s'"
+msgstr "Overiť pripojenie: %s\n"
 
 #: src/nmcli/connections.c:8475
 msgid "The error cannot be fixed automatically.\n"
@@ -10509,7 +10486,7 @@ msgstr ""
 
 #: src/nmcli/connections.c:9241
 msgid "New connection name: "
-msgstr "Názov nového spojenia: "
+msgstr "Názov nového pripojenia: "
 
 #: src/nmcli/connections.c:9243
 msgid "Error: <new name> argument is missing."
@@ -10549,17 +10526,17 @@ msgstr ""
 #: src/nmcli/connections.c:9407
 #, c-format
 msgid "%s: connection profile changed\n"
-msgstr "%s: profil spojenie sa zmenil\n"
+msgstr "%s: profil pripojenia sa zmenil\n"
 
 #: src/nmcli/connections.c:9433
 #, c-format
 msgid "%s: connection profile created\n"
-msgstr "%s: profil spojenia bol vytvorený\n"
+msgstr "%s: profil pripojenia bol vytvorený\n"
 
 #: src/nmcli/connections.c:9442
 #, c-format
 msgid "%s: connection profile removed\n"
-msgstr "%s: profil spojenia bol odstránený\n"
+msgstr "%s: profil pripojenia bol odstránený\n"
 
 #: src/nmcli/connections.c:9510
 #, fuzzy, c-format
@@ -11119,7 +11096,7 @@ msgstr ""
 #: src/nmcli/devices.c:2867
 #, c-format
 msgid "%s: using connection '%s'\n"
-msgstr "%s: použiva sa spojenie %s'\n"
+msgstr "%s: použiva sa pripojenie %s'\n"
 
 #: src/nmcli/devices.c:2893
 #, c-format
@@ -11718,11 +11695,11 @@ msgstr "Meno hostiteľa nastavené na '%s'\n"
 #: src/nmcli/general.c:1262
 #, c-format
 msgid "'%s' is now the primary connection\n"
-msgstr "'%s' je teraz primárnym spojením\n"
+msgstr "'%s' je teraz primárnym pripojením\n"
 
 #: src/nmcli/general.c:1264
 msgid "There's no primary connection\n"
-msgstr "Primárne spojenie neexistuje\n"
+msgstr "Primárne pripojenie neexistuje\n"
 
 #: src/nmcli/general.c:1277
 #, c-format
@@ -11736,11 +11713,11 @@ msgstr "NetworkManager je teraz v stave '%s'\n"
 
 #: src/nmcli/general.c:1312
 msgid "connection available"
-msgstr "dostupné spojenie"
+msgstr "dostupné pripojenie"
 
 #: src/nmcli/general.c:1314
 msgid "connections available"
-msgstr "dostupné spojenia"
+msgstr "dostupné pripojenia"
 
 #: src/nmcli/general.c:1330
 msgid "autoconnect"
@@ -11893,7 +11870,7 @@ msgstr ""
 "  g[eneral]       všeobecný stav a operácie NetworkManagera\n"
 "  n[etworking]    celkové ovládanie siete\n"
 "  r[adio]         prepínače vysielania NetworkManagera\n"
-"  c[onnection]    spojenia NetworkManagera\n"
+"  c[onnection]    pripojenia NetworkManagera\n"
 "  d[evice]        zariadenia spravované NetworkManagerom\n"
 "  a[gent]         NetworkManager secret agent alebo agent polkit-u\n"
 "  m[onitor]       sledovanie zmien NetworkManagera\n"
@@ -12112,7 +12089,7 @@ msgstr ""
 #: src/nmtui/nm-editor-utils.c:148
 #, c-format
 msgid "Ethernet connection %d"
-msgstr "Ethernetové spojenie %d"
+msgstr "Ethernetové pripojenie %d"
 
 #: src/nmtui/nm-editor-utils.c:156
 #, fuzzy, c-format
@@ -12122,17 +12099,17 @@ msgstr "VPN spojenie %d"
 #: src/nmtui/nm-editor-utils.c:164
 #, c-format
 msgid "Wi-Fi connection %d"
-msgstr "Wi-Fi spojenie %d"
+msgstr "Wi-Fi pripojenie %d"
 
 #: src/nmtui/nm-editor-utils.c:173
 #, c-format
 msgid "InfiniBand connection %d"
-msgstr "InfiniBand spojenie %d"
+msgstr "InfiniBand pripojenie %d"
 
 #: src/nmtui/nm-editor-utils.c:181
 #, c-format
 msgid "Mobile broadband connection %d"
-msgstr "Mobilné broadbandové spojenie %d"
+msgstr "Mobilné broadbandové pripojenie %d"
 
 #: src/nmtui/nm-editor-utils.c:187 src/nmtui/nmt-page-dsl.c:47
 msgid "DSL"
@@ -12141,7 +12118,7 @@ msgstr "DSL"
 #: src/nmtui/nm-editor-utils.c:191
 #, c-format
 msgid "DSL connection %d"
-msgstr "DSL spojenie %d"
+msgstr "DSL pripojenie %d"
 
 #: src/nmtui/nm-editor-utils.c:200
 #, fuzzy, c-format
@@ -12156,12 +12133,12 @@ msgstr "Premostenie (bridge) %d"
 #: src/nmtui/nm-editor-utils.c:219
 #, c-format
 msgid "Team connection %d"
-msgstr "Teamové spojenie %d"
+msgstr "Teamové pripojenie %d"
 
 #: src/nmtui/nm-editor-utils.c:227
 #, c-format
 msgid "VLAN connection %d"
-msgstr "VLAN spojenie %d"
+msgstr "VLAN pripojenie %d"
 
 #: src/nmtui/nm-editor-utils.c:231 src/nmtui/nmt-page-ip-tunnel.c:113
 msgid "IP tunnel"
@@ -12170,12 +12147,12 @@ msgstr "IP tunel"
 #: src/nmtui/nm-editor-utils.c:235
 #, c-format
 msgid "IP tunnel connection %d"
-msgstr "IP tunel spojenie %d"
+msgstr "IP tunel pripojenie %d"
 
 #: src/nmtui/nm-editor-utils.c:250
 #, c-format
 msgid "VPN connection %d"
-msgstr "VPN spojenie %d"
+msgstr "VPN pripojenie %d"
 
 #: src/nmtui/nm-editor-utils.c:267
 #, fuzzy, c-format
@@ -12222,17 +12199,17 @@ msgstr ""
 
 #: src/nmtui/nmt-editor.c:107
 msgid "Edit Connection"
-msgstr "Upraviť Spojenie"
+msgstr "Upraviť pripojenie"
 
 #: src/nmtui/nmt-editor.c:165
 #, c-format
 msgid "Unable to save connection: %s"
-msgstr "Nepodarilo sa uložiť spojenie: %s"
+msgstr "Nepodarilo sa uložiť pripojenie: %s"
 
 #: src/nmtui/nmt-editor.c:182
 #, c-format
 msgid "Unable to add new connection: %s"
-msgstr "Zlyhalo pridanie nového spojenia: %s"
+msgstr "Zlyhalo pridanie nového pripojenia: %s"
 
 #: src/nmtui/nmt-editor.c:331
 msgid "Profile name"
@@ -12253,7 +12230,7 @@ msgstr "Automaticky pripojiť"
 
 #: src/nmtui/nmt-editor.c:418
 msgid "Available to all users"
-msgstr "Dostupné všetkým užívateľom"
+msgstr "Dostupné všetkým používateľom"
 
 #: src/nmtui/nmt-editor.c:436 src/nmtui/nmt-password-dialog.c:162
 #: src/nmtui/nmt-route-editor.c:97 src/nmtui/nmt-wireguard-peer-editor.c:146
@@ -12264,11 +12241,11 @@ msgstr "Zrušiť"
 
 #: src/nmtui/nmt-mtu-entry.c:70
 msgid "(default)"
-msgstr "(východzie)"
+msgstr "(predvolené)"
 
 #: src/nmtui/nmt-mtu-entry.c:72 src/nmtui/nmt-mtu-entry.c:102
 msgid "bytes"
-msgstr ""
+msgstr "bajtov"
 
 #: src/nmtui/nmt-page-bond-port.c:42
 msgid "BOND PORT"
@@ -12537,7 +12514,7 @@ msgstr "Ignorovať automaticky obdržané parametre DNS"
 
 #: src/nmtui/nmt-page-ip4.c:193
 msgid "Require IPv4 addressing for this connection"
-msgstr "Vyžadovať IPv4 adresovanie pre toto spojenie"
+msgstr "Vyžadovať IPv4 adresovanie pre toto pripojenie"
 
 #: src/nmtui/nmt-page-ip6.c:27
 msgid "Ignore"
@@ -12553,7 +12530,7 @@ msgstr "Konfigurácia IPv6"
 
 #: src/nmtui/nmt-page-ip6.c:192
 msgid "Require IPv6 addressing for this connection"
-msgstr "Vyžadovať IPv6 adresovanie pre toto spojenie"
+msgstr "Vyžadovať IPv6 adresovanie pre toto pripojenie"
 
 #: src/nmtui/nmt-page-ppp.c:116
 msgid "PPP CONFIGURATION"
@@ -12687,32 +12664,31 @@ msgstr "Dynamický WEP (802.1x)"
 
 #: src/nmtui/nmt-page-wifi.c:68
 msgid "LEAP"
-msgstr ""
+msgstr "LEAP"
 
 #: src/nmtui/nmt-page-wifi.c:69
 msgid "Enhanced Open (OWE)"
-msgstr ""
+msgstr "Enhanced Open (OWE)"
 
 #: src/nmtui/nmt-page-wifi.c:72
-#, fuzzy
 msgctxt "WEP key index"
 msgid "1 (Default)"
-msgstr "Automatické (Predvolené)"
+msgstr "1 (Predvolené)"
 
 #: src/nmtui/nmt-page-wifi.c:73
 msgctxt "WEP key index"
 msgid "2"
-msgstr ""
+msgstr "2"
 
 #: src/nmtui/nmt-page-wifi.c:74
 msgctxt "WEP key index"
 msgid "3"
-msgstr ""
+msgstr "3"
 
 #: src/nmtui/nmt-page-wifi.c:75
 msgctxt "WEP key index"
 msgid "4"
-msgstr ""
+msgstr "4"
 
 #: src/nmtui/nmt-page-wifi.c:78
 msgid "Open System"
@@ -12806,7 +12782,7 @@ msgstr "Nie sú definované žiane vlastné smerovania."
 
 #: src/nmtui/nmt-port-list.c:126
 msgid "Select the type of slave connection you wish to add."
-msgstr "Vyberte typ podriadeného spojenia, ktoré si želáte pridať."
+msgstr "Vyberte typ podriadeného pripojenia, ktoré si želáte pridať."
 
 #: src/nmtui/nmt-widget-list.c:131
 msgid "Add..."
@@ -12881,7 +12857,7 @@ msgstr "Pripájam sa..."
 #: src/nmtui/nmtui-connect.c:290 src/nmtui/nmtui-connect.c:330
 #, c-format
 msgid "Could not activate connection: %s"
-msgstr "Nepodarilo sa aktivovať spojenie: %s"
+msgstr "Nepodarilo sa aktivovať pripojenie: %s"
 
 #: src/nmtui/nmtui-connect.c:390 src/nmtui/nmtui-connect.c:443
 msgid "Activate"
@@ -12903,11 +12879,11 @@ msgstr "Späť"
 #: src/nmtui/nmtui-connect.c:471
 #, c-format
 msgid "No such connection '%s'"
-msgstr "Také spojenie neexistuje '%s'"
+msgstr "Také pripojenie neexistuje '%s'"
 
 #: src/nmtui/nmtui-connect.c:473
 msgid "Connection is already active"
-msgstr "Spojenie už je nadviazané"
+msgstr "Pripojenie už je aktívne"
 
 #: src/nmtui/nmtui-edit.c:215
 msgid "Create"
@@ -12915,7 +12891,7 @@ msgstr "Vytvoriť"
 
 #: src/nmtui/nmtui-edit.c:356
 msgid "Select the type of connection you wish to create."
-msgstr "Vyberte typ spojenia, ktoré si želáte vytvoriť."
+msgstr "Vyberte typ pripojenia, ktoré si želáte vytvoriť."
 
 #: src/nmtui/nmtui-edit.c:365
 msgid ""
@@ -12925,12 +12901,12 @@ msgstr ""
 
 #: src/nmtui/nmtui-edit.c:401 src/nmtui/nmtui-edit.c:417
 msgid "New Connection"
-msgstr "Nové spojenie"
+msgstr "Nové pripojenie"
 
 #: src/nmtui/nmtui-edit.c:459
 #, c-format
 msgid "Unable to delete connection: %s"
-msgstr "Nepodarilo sa odstrániť spojenie: %s"
+msgstr "Nepodarilo sa odstrániť pripojenie: %s"
 
 #: src/nmtui/nmtui-edit.c:497
 #, fuzzy, c-format
@@ -12940,7 +12916,7 @@ msgstr "Nepodarilo sa spustiť VPN spojenie '%s'"
 #: src/nmtui/nmtui-edit.c:519
 #, c-format
 msgid "Are you sure you want to delete the connection '%s'?"
-msgstr "Naozaj chcete vymazať spojenie '%s'?"
+msgstr "Naozaj chcete vymazať pripojenie '%s'?"
 
 #: src/nmtui/nmtui-hostname.c:31
 msgid "Set Hostname"
@@ -12963,15 +12939,15 @@ msgstr "Nepodarilo sa nastaviť meno hostiteľa: %s"
 
 #: src/nmtui/nmtui.c:40 src/nmtui/nmtui.c:41
 msgid "connection"
-msgstr "spojenie"
+msgstr "pripojenie"
 
 #: src/nmtui/nmtui.c:40
 msgid "Edit a connection"
-msgstr "Upraviť spojenie"
+msgstr "Upraviť pripojenie"
 
 #: src/nmtui/nmtui.c:41
 msgid "Activate a connection"
-msgstr "Aktivovať spojenie"
+msgstr "Aktivovať pripojenie"
 
 #: src/nmtui/nmtui.c:42
 msgid "new hostname"
