@@ -1019,7 +1019,7 @@ update_resolv_conf_no_stub(NMDnsManager      *self,
 
     content = create_resolv_conf(searches, nameservers, options);
 
-    if (!g_file_set_contents(NO_STUB_RESOLV_CONF, content, -1, &local)) {
+    if (!g_file_set_contents_full(NO_STUB_RESOLV_CONF, content, -1, G_FILE_SET_CONTENTS_DURABLE, 0666, &local)) {
         _LOGD("update-resolv-no-stub: failure to write file: %s", local->message);
         g_error_free(local);
         return;
