@@ -91,6 +91,10 @@
       NetworkManager inserts the records for Bridges into OVSDB when a Port is
       attached.
       </para>
+
+      <para>Known limitation: when the last NetworkManager's owned port is removed,
+      the bridge is removed too, even if there are other externally attached ports.
+      </para>
     </refsect2>
 
     <refsect2>
@@ -102,6 +106,10 @@
       exist.  Ports can also be configured to do VLAN tagging or Bonding.
       NetworkManager inserts the records for Ports into OVSDB when an Interface is
       attached. Ports must be attached to a Bridge.</para>
+
+      <para>Known limitation: when the last NetworkManager's owned interface is removed,
+      the port is removed too, even if there are other externally attached interfaces.
+      </para>
     </refsect2>
 
     <refsect2>
