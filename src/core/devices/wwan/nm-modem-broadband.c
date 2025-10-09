@@ -522,7 +522,7 @@ try_create_connect_properties(NMModemBroadband *self)
             if (s_gsm)
                 network_id = nm_setting_gsm_get_network_id(s_gsm);
             if (!network_id) {
-                if (mm_modem_get_state(self->_priv.modem_iface) < MM_MODEM_STATE_REGISTERED)
+                if (mm_modem_get_state(self->_priv.modem_iface) != MM_MODEM_STATE_REGISTERED)
                     return FALSE;
                 modem_3gpp = mm_object_get_modem_3gpp(priv->modem_object);
                 network_id = mm_modem_3gpp_get_operator_code(modem_3gpp);
