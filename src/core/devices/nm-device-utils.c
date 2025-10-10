@@ -143,7 +143,9 @@ NM_UTILS_LOOKUP_STR_DEFINE(
     NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_USER_SETTINGS,
                              "unmanaged-user-settings"),
     NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_USER_UDEV, "unmanaged-user-udev"),
-    NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_STATE_REASON_NETWORKING_OFF, "networking-off"), );
+    NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_STATE_REASON_NETWORKING_OFF, "networking-off"),
+    NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_STATE_REASON_MODEM_NO_OPERATOR_CODE,
+                             "modem-no-operator-code"), );
 
 NM_UTILS_LOOKUP_STR_DEFINE(nm_device_mtu_source_to_string,
                            NMDeviceMtuSource,
