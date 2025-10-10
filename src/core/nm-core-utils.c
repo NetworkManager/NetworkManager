@@ -5624,3 +5624,14 @@ nm_rate_limit_check(NMRateLimit *rate_limit, gint32 window_sec, gint32 burst)
 
     return FALSE;
 }
+
+const char *
+nm_utils_get_connection_first_permissions_user(NMConnection *connection)
+{
+    NMSettingConnection *s_con;
+
+    s_con = nm_connection_get_setting_connection(connection);
+    nm_assert(s_con);
+
+    return _nm_setting_connection_get_first_permissions_user(s_con);
+}

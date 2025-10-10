@@ -503,4 +503,8 @@ typedef struct {
 
 gboolean nm_rate_limit_check(NMRateLimit *rate_limit, gint32 window_sec, gint32 burst);
 
+/*****************************************************************************/
+
+const char *nm_utils_get_connection_first_permissions_user(NMConnection *connection);
+
 #endif /* __NM_CORE_UTILS_H__ */
