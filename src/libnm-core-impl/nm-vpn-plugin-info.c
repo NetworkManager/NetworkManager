@@ -914,6 +914,29 @@ nm_vpn_plugin_info_supports_multiple(NMVpnPluginInfo *self)
 }
 
 /**
+ * nm_vpn_plugin_info_supports_safe_private_file_access:
+ * @self: plugin info instance
+ *
+ * Returns: %TRUE if the service supports reading files (certificates, keys) of
+ *     private connections in a safe way (i.e. checking user permissions), or
+       if the service doesn't need to read any file from disk.
+ *
+ * Since: 1.56
+ */
+gboolean
+nm_vpn_plugin_info_supports_safe_private_file_access(NMVpnPluginInfo *self)
+{
+    const char *s;
+
+    g_return_val_if_fail(NM_IS_VPN_PLUGIN_INFO(self), FALSE);
+
+    s = nm_vpn_plugin_info_lookup_property(self,
+                                           NM_VPN_PLUGIN_INFO_KF_GROUP_CONNECTION,
+                                           "supports-safe-private-file-access");
+    return _nm_utils_ascii_str_to_bool(s, FALSE);
+}
+
+/**
  * nm_vpn_plugin_info_get_aliases:
  * @self: plugin info instance
  *
