@@ -490,4 +490,8 @@ uid_t nm_utils_get_nm_uid(void);
 
 gid_t nm_utils_get_nm_gid(void);
 
+/*****************************************************************************/
+
+const char *nm_utils_get_connection_first_permissions_user(NMConnection *connection);
+
 #endif /* __NM_CORE_UTILS_H__ */

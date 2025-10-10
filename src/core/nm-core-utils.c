@@ -5474,3 +5474,14 @@ nm_utils_shorten_hostname(const char *hostname, char **shortened)
     *shortened = g_steal_pointer(&s);
     return TRUE;
 }
+
+const char *
+nm_utils_get_connection_first_permissions_user(NMConnection *connection)
+{
+    NMSettingConnection *s_con;
+
+    s_con = nm_connection_get_setting_connection(connection);
+    nm_assert(s_con);
+
+    return _nm_setting_connection_get_first_permissions_user(s_con);
+}
