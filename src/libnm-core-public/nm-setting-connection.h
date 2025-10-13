@@ -60,6 +60,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_CONNECTION_MDNS                          "mdns"
 #define NM_SETTING_CONNECTION_LLMNR                         "llmnr"
 #define NM_SETTING_CONNECTION_DNS_OVER_TLS                  "dns-over-tls"
+#define NM_SETTING_CONNECTION_DNSSEC                        "dnssec"
 #define NM_SETTING_CONNECTION_MPTCP_FLAGS                   "mptcp-flags"
 #define NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT           "wait-device-timeout"
 #define NM_SETTING_CONNECTION_MUD_URL                       "mud-url"
@@ -161,6 +162,24 @@ typedef enum {
     NM_SETTING_CONNECTION_DNS_OVER_TLS_OPPORTUNISTIC = 1,
     NM_SETTING_CONNECTION_DNS_OVER_TLS_YES           = 2,
 } NMSettingConnectionDnsOverTls;
+
+/**
+ * NMSettingConnectionDnssec:
+ * @NM_SETTING_CONNECTION_DNSSEC_DEFAULT: default value
+ * @NM_SETTING_CONNECTION_DNSSEC_NO: disable DNSSEC
+ * @NM_SETTING_CONNECTION_DNSSEC_ALLOW_DOWNGRADE: enable DNSSEC but allow fallback to non-DNSSEC mode
+ * @NM_SETTING_CONNECTION_DNSSEC_YES: force enable DNSSEC
+ *
+ * #NMSettingConnectionDnssec values indicate whether DNSSEC should be enabled.
+ *
+ * Since: 1.56
+ */
+typedef enum {
+    NM_SETTING_CONNECTION_DNSSEC_DEFAULT         = -1,
+    NM_SETTING_CONNECTION_DNSSEC_NO              = 0,
+    NM_SETTING_CONNECTION_DNSSEC_ALLOW_DOWNGRADE = 1,
+    NM_SETTING_CONNECTION_DNSSEC_YES             = 2,
+} NMSettingConnectionDnssec;
 
 /**
  * NMSettingConnectionDownOnPoweroff:
@@ -303,6 +322,9 @@ void nm_setting_connection_clear_ip_ping_addresses(NMSettingConnection *setting)
 
 NM_AVAILABLE_IN_1_52
 NMTernary nm_setting_connection_get_ip_ping_addresses_require_all(NMSettingConnection *setting);
+
+NM_AVAILABLE_IN_1_56
+NMSettingConnectionDnssec nm_setting_connection_get_dnssec(NMSettingConnection *setting);
 
 G_END_DECLS
 

@@ -1494,6 +1494,28 @@ _prop_get_connection_dns_over_tls(NMDevice *self)
                                                        NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT);
 }
 
+static NMSettingConnectionDnssec
+_prop_get_connection_dnssec(NMDevice *self)
+{
+    NMConnection             *connection;
+    NMSettingConnectionDnssec dnssec = NM_SETTING_CONNECTION_DNSSEC_DEFAULT;
+
+    g_return_val_if_fail(NM_IS_DEVICE(self), NM_SETTING_CONNECTION_DNSSEC_DEFAULT);
+
+    connection = nm_device_get_applied_connection(self);
+    if (connection)
+        dnssec = nm_setting_connection_get_dnssec(nm_connection_get_setting_connection(connection));
+    if (dnssec != NM_SETTING_CONNECTION_DNSSEC_DEFAULT)
+        return dnssec;
+
+    return nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
+                                                       NM_CON_DEFAULT("connection.dnssec"),
+                                                       self,
+                                                       NM_SETTING_CONNECTION_DNSSEC_NO,
+                                                       NM_SETTING_CONNECTION_DNSSEC_YES,
+                                                       NM_SETTING_CONNECTION_DNSSEC_DEFAULT);
+}
+
 static NMMptcpFlags
 _prop_get_connection_mptcp_flags(NMDevice *self)
 {
@@ -3613,6 +3635,7 @@ nm_device_create_l3_config_data_from_connection(NMDevice *self, NMConnection *co
     nm_l3_config_data_set_mdns(l3cd, _prop_get_connection_mdns(self));
     nm_l3_config_data_set_llmnr(l3cd, _prop_get_connection_llmnr(self));
     nm_l3_config_data_set_dns_over_tls(l3cd, _prop_get_connection_dns_over_tls(self));
+    nm_l3_config_data_set_dnssec(l3cd, _prop_get_connection_dnssec(self));
     nm_l3_config_data_set_ip6_privacy(l3cd, _prop_get_ipv6_ip6_privacy(self));
     nm_l3_config_data_set_mptcp_flags(l3cd, _prop_get_connection_mptcp_flags(self));
     return l3cd;
@@ -14069,6 +14092,7 @@ can_reapply_change(NMDevice   *self,
                                                  NM_SETTING_CONNECTION_MDNS,
                                                  NM_SETTING_CONNECTION_LLMNR,
                                                  NM_SETTING_CONNECTION_DNS_OVER_TLS,
+                                                 NM_SETTING_CONNECTION_DNSSEC,
                                                  NM_SETTING_CONNECTION_MPTCP_FLAGS,
                                                  NM_SETTING_CONNECTION_WAIT_ACTIVATION_DELAY);
     }
@@ -14327,6 +14351,7 @@ check_and_reapply_connection(NMDevice            *self,
                 NM_SETTING_CONNECTION_MDNS,
                 NM_SETTING_CONNECTION_LLMNR,
                 NM_SETTING_CONNECTION_DNS_OVER_TLS,
+                NM_SETTING_CONNECTION_DNSSEC,
                 NM_SETTING_CONNECTION_MPTCP_FLAGS)) {
             priv->ip_data_4.do_reapply = TRUE;
             priv->ip_data_6.do_reapply = TRUE;

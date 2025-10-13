@@ -25,6 +25,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   "disconnecting" / "disconnected".
 * Treat modem connection not having an operator code available
   as a recoverable error.
+* Add support for configuring systemd-resolved's DNSSEC option
+  per-connection via the "connection.dnssec" connection property.
 
 =============================================
 NetworkManager-1.54

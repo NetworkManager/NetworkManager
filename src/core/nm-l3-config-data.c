@@ -120,6 +120,7 @@ struct _NML3ConfigData {
     NMSettingConnectionMdns       mdns;
     NMSettingConnectionLlmnr      llmnr;
     NMSettingConnectionDnsOverTls dns_over_tls;
+    NMSettingConnectionDnssec     dnssec;
     NMUtilsIPv6IfaceId            ip6_token;
 
     NML3ConfigDatFlags flags;
@@ -577,6 +578,16 @@ nm_l3_config_data_log(const NML3ConfigData *self,
                                            NULL)));
     }
 
+    if (self->dnssec != NM_SETTING_CONNECTION_DNSSEC_DEFAULT) {
+        gs_free char *s = NULL;
+
+        _L("dnssec: %s",
+           (s = _nm_utils_enum_to_str_full(nm_setting_connection_dnssec_get_type(),
+                                           self->dnssec,
+                                           " ",
+                                           NULL)));
+    }
+
     if (self->mptcp_flags != NM_MPTCP_FLAGS_NONE) {
         gs_free char *s = NULL;
 
@@ -694,6 +705,7 @@ nm_l3_config_data_new(NMDedupMultiIndex *multi_idx, int ifindex, NMIPConfigSourc
         .mdns                           = NM_SETTING_CONNECTION_MDNS_DEFAULT,
         .llmnr                          = NM_SETTING_CONNECTION_LLMNR_DEFAULT,
         .dns_over_tls                   = NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT,
+        .dnssec                         = NM_SETTING_CONNECTION_DNSSEC_DEFAULT,
         .flags                          = NM_L3_CONFIG_DAT_FLAGS_NONE,
         .metered                        = NM_TERNARY_DEFAULT,
         .proxy_browser_only             = NM_TERNARY_DEFAULT,
@@ -1767,6 +1779,26 @@ nm_l3_config_data_set_dns_over_tls(NML3ConfigData *self, NMSettingConnectionDnsO
     return TRUE;
 }
 
+NMSettingConnectionDnssec
+nm_l3_config_data_get_dnssec(const NML3ConfigData *self)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+
+    return self->dnssec;
+}
+
+gboolean
+nm_l3_config_data_set_dnssec(NML3ConfigData *self, NMSettingConnectionDnssec dnssec)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
+
+    if (self->dnssec == dnssec)
+        return FALSE;
+
+    self->dnssec = dnssec;
+    return TRUE;
+}
+
 NMIPRouteTableSyncMode
 nm_l3_config_data_get_route_table_sync(const NML3ConfigData *self, int addr_family)
 {
@@ -2446,6 +2478,7 @@ nm_l3_config_data_cmp_full(const NML3ConfigData *a,
         NM_CMP_DIRECT(a->mdns, b->mdns);
         NM_CMP_DIRECT(a->llmnr, b->llmnr);
         NM_CMP_DIRECT(a->dns_over_tls, b->dns_over_tls);
+        NM_CMP_DIRECT(a->dnssec, b->dnssec);
     }
 
     if (NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_OTHER)) {
@@ -3211,6 +3244,12 @@ nm_l3_config_data_hash_dns(const NML3ConfigData *l3cd,
         empty = FALSE;
     }
 
+    val = nm_l3_config_data_get_dnssec(l3cd);
+    if (val != NM_SETTING_CONNECTION_DNSSEC_DEFAULT) {
+        g_checksum_update(sum, (const guint8 *) &val, sizeof(val));
+        empty = FALSE;
+    }
+
     if (!empty) {
         int prio = 0;
 
@@ -3460,6 +3499,9 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
 
     if (self->dns_over_tls == NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT)
         self->dns_over_tls = src->dns_over_tls;
+
+    if (self->dnssec == NM_SETTING_CONNECTION_DNSSEC_DEFAULT)
+        self->dnssec = src->dnssec;
 
     if (self->ip6_token.id == 0)
         self->ip6_token.id = src->ip6_token.id;

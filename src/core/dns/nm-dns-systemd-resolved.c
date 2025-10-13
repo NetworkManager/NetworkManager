@@ -37,6 +37,7 @@
 static const char *const DBUS_OP_SET_LINK_DEFAULT_ROUTE = "SetLinkDefaultRoute";
 static const char *const DBUS_OP_SET_LINK_DNS_OVER_TLS  = "SetLinkDNSOverTLS";
 static const char *const DBUS_OP_SET_LINK_DNS_EX        = "SetLinkDNSEx";
+static const char *const DBUS_OP_SET_LINK_DNSSEC        = "SetLinkDNSSEC";
 
 /*****************************************************************************/
 
@@ -484,9 +485,11 @@ prepare_one_interface(NMDnsSystemdResolved *self, const InterfaceConfig *ic)
     NMSettingConnectionMdns       mdns              = NM_SETTING_CONNECTION_MDNS_DEFAULT;
     NMSettingConnectionLlmnr      llmnr             = NM_SETTING_CONNECTION_LLMNR_DEFAULT;
     NMSettingConnectionDnsOverTls dns_over_tls      = NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT;
+    NMSettingConnectionDnssec     dnssec            = NM_SETTING_CONNECTION_DNSSEC_DEFAULT;
     const char                   *mdns_arg          = NULL;
     const char                   *llmnr_arg         = NULL;
     const char                   *dns_over_tls_arg  = NULL;
+    const char                   *dnssec_arg        = NULL;
     gboolean                      has_config        = FALSE;
     gboolean                      has_default_route = FALSE;
     guint                         i;
@@ -517,6 +520,7 @@ prepare_one_interface(NMDnsSystemdResolved *self, const InterfaceConfig *ic)
                 llmnr = NM_MAX(llmnr, nm_l3_config_data_get_llmnr(ip_data->l3cd));
                 dns_over_tls =
                     NM_MAX(dns_over_tls, nm_l3_config_data_get_dns_over_tls(ip_data->l3cd));
+                dnssec = NM_MAX(dnssec, nm_l3_config_data_get_dnssec(ip_data->l3cd));
             }
         }
     }
@@ -589,8 +593,24 @@ prepare_one_interface(NMDnsSystemdResolved *self, const InterfaceConfig *ic)
     }
     nm_assert(dns_over_tls_arg);
 
+    switch (dnssec) {
+    case NM_SETTING_CONNECTION_DNSSEC_NO:
+        dnssec_arg = "no";
+        break;
+    case NM_SETTING_CONNECTION_DNSSEC_ALLOW_DOWNGRADE:
+        dnssec_arg = "allow-downgrade";
+        break;
+    case NM_SETTING_CONNECTION_DNSSEC_YES:
+        dnssec_arg = "yes";
+        break;
+    case NM_SETTING_CONNECTION_DNSSEC_DEFAULT:
+        dnssec_arg = "";
+        break;
+    }
+    nm_assert(dnssec_arg);
+
     if (!nm_str_is_empty(mdns_arg) || !nm_str_is_empty(llmnr_arg)
-        || !nm_str_is_empty(dns_over_tls_arg))
+        || !nm_str_is_empty(dns_over_tls_arg) || !nm_str_is_empty(dnssec_arg))
         has_config = TRUE;
 
     _request_item_append(self, "SetLinkDomains", ic->ifindex, g_variant_builder_end(&domains));
@@ -618,6 +638,10 @@ prepare_one_interface(NMDnsSystemdResolved *self, const InterfaceConfig *ic)
                          DBUS_OP_SET_LINK_DNS_OVER_TLS,
                          ic->ifindex,
                          g_variant_new("(is)", ic->ifindex, dns_over_tls_arg ?: ""));
+    _request_item_append(self,
+                         DBUS_OP_SET_LINK_DNSSEC,
+                         ic->ifindex,
+                         g_variant_new("(is)", ic->ifindex, dnssec_arg ?: ""));
 
     return has_config;
 }
