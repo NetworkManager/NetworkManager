@@ -27,6 +27,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   as a recoverable error.
 * Add support for configuring systemd-resolved's DNSSEC option
   per-connection via the "connection.dnssec" connection property.
+* Support configuring the HSR interlink port via the
+  "hsr.interlink" property.
 
 =============================================
 NetworkManager-1.54
