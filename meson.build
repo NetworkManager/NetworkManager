@@ -327,6 +327,7 @@ config_h.set10('WITH_CONFIG_PLUGIN_IFUPDOWN', enable_ifupdown)
 config_h.set_quoted('NM_DIST_VERSION', dist_version)
 
 enable_wifi = get_option('wifi')
+config_h.set10('WITH_WIFI', enable_wifi)
 
 enable_iwd = get_option('iwd')
 assert((not enable_iwd) or enable_wifi, 'Enabling iwd support requires Wi-Fi support as well')
@@ -507,6 +508,7 @@ if enable_teamdctl
   libteamdctl_dep = dependency('libteamdctl', version: '>= 1.9')
   assert(libteamdctl_dep.found(), 'You must have libteamdctl installed to build. Use -Dteamdctl=false to disable it')
 endif
+config_h.set10('WITH_TEAMDCTL', enable_teamdctl)
 
 # polkit
 enable_polkit = get_option('polkit')
@@ -616,6 +618,7 @@ if enable_modem_manager
   endif
   config_h.set_quoted('MOBILE_BROADBAND_PROVIDER_INFO_DATABASE', mobile_broadband_provider_info_database)
 endif
+config_h.set10('WITH_WWAN', enable_modem_manager)
 
 # Bluez5 DUN support
 enable_bluez5_dun = get_option('bluez5_dun')

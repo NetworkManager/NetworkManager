@@ -1851,6 +1851,9 @@ nm_settings_add_connection(NMSettings                     *self,
 
     NM_SET_OUT(out_sett_conn, NULL);
 
+    if (!nm_utils_connection_supported(connection, error))
+        return FALSE;
+
     uuid = nm_connection_get_uuid(connection);
 
     sett_conn_entry = _sett_conn_entries_get(self, uuid);
