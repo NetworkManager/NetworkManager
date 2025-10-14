@@ -239,6 +239,15 @@
 /* Whether we build with OVS plugin */
 #mesondefine WITH_OPENVSWITCH
 
+/* Whether we build with team support */
+#mesondefine WITH_TEAMDCTL
+
+/* Whether we build with Wi-Fi support */
+#mesondefine WITH_WIFI
+
+/* Whether we build with WWAN support */
+#mesondefine WITH_WWAN
+
 /* Define if you have PPP support */
 #mesondefine WITH_PPP
 

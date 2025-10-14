@@ -191,6 +191,9 @@ nms_keyfile_reader_from_file(const char  *full_filename,
     if (!connection)
         return NULL;
 
+    if (!nm_utils_connection_supported(connection, error))
+        return NULL;
+
     /* Normalize and verify the connection */
     if (!nm_connection_normalize(connection, NULL, NULL, &verify_error)) {
         g_set_error(error,

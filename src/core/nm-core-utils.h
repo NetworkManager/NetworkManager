@@ -490,4 +490,8 @@ uid_t nm_utils_get_nm_uid(void);
 
 gid_t nm_utils_get_nm_gid(void);
 
+/*****************************************************************************/
+
+gboolean nm_utils_connection_supported(NMConnection *connection, GError **error);
+
 #endif /* __NM_CORE_UTILS_H__ */

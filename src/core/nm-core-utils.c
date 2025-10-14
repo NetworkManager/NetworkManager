@@ -5474,3 +5474,63 @@ nm_utils_shorten_hostname(const char *hostname, char **shortened)
     *shortened = g_steal_pointer(&s);
     return TRUE;
 }
+
+/**
+ * nm_utils_connection_supported:
+ * @connection: the connection
+ * @error: on return, the reason why the connection in not supported
+ *
+ * Returns whether the given connection is supported by this version
+ * of NetworkManager, given the build flags.
+ */
+gboolean
+nm_utils_connection_supported(NMConnection *connection, GError **error)
+{
+    const char *type;
+    const char *feature = NULL;
+
+    g_return_val_if_fail(connection, FALSE);
+    g_return_val_if_fail(!error || !*error, FALSE);
+
+    type = nm_connection_get_connection_type(connection);
+
+    if (!WITH_TEAMDCTL && nm_streq(type, NM_SETTING_TEAM_SETTING_NAME)) {
+        feature = "team";
+        goto out_err;
+    }
+
+    if (!WITH_OPENVSWITCH
+        && NM_IN_STRSET(type,
+                        NM_SETTING_OVS_BRIDGE_SETTING_NAME,
+                        NM_SETTING_OVS_PORT_SETTING_NAME,
+                        NM_SETTING_OVS_INTERFACE_SETTING_NAME)) {
+        feature = "Open vSwitch";
+        goto out_err;
+    }
+
+    if (!WITH_WIFI
+        && NM_IN_STRSET(type,
+                        NM_SETTING_WIRELESS_SETTING_NAME,
+                        NM_SETTING_OLPC_MESH_SETTING_NAME,
+                        NM_SETTING_WIFI_P2P_SETTING_NAME)) {
+        feature = "Wi-Fi";
+        goto out_err;
+    }
+
+    if (!WITH_WWAN
+        && NM_IN_STRSET(type, NM_SETTING_GSM_SETTING_NAME, NM_SETTING_CDMA_SETTING_NAME)) {
+        feature = "WWAN";
+        goto out_err;
+    }
+
+    return TRUE;
+
+out_err:
+    nm_assert(feature);
+    g_set_error(error,
+                NM_SETTINGS_ERROR,
+                NM_SETTINGS_ERROR_NOT_SUPPORTED,
+                "%s support is disabled in this build",
+                feature);
+    return FALSE;
+}

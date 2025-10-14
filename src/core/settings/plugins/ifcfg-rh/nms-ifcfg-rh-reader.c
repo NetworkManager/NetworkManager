@@ -6826,6 +6826,9 @@ connection_from_file_full(const char *filename,
     if (!nm_connection_normalize(connection, NULL, NULL, error))
         return NULL;
 
+    if (!nm_utils_connection_supported(connection, error))
+        return NULL;
+
     return g_steal_pointer(&connection);
 }
 
