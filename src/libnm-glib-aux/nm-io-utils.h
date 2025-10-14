@@ -55,6 +55,7 @@ gboolean nm_utils_file_set_contents(const char            *filename,
                                     gssize                 length,
                                     mode_t                 mode,
                                     const struct timespec *times,
+                                    const char            *tmp_name,
                                     int                   *out_errsv,
                                     GError               **error);
 

@@ -684,7 +684,7 @@ iwd_config_write(GKeyFile              *config,
      * in the last few filename characters -- it cannot end in .open, .psk
      * or .8021x.
      */
-    return nm_utils_file_set_contents(filepath, data, length, 0600, times, NULL, error);
+    return nm_utils_file_set_contents(filepath, data, length, 0600, times, NULL, NULL, error);
 }
 
 static const char *

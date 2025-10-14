@@ -133,6 +133,7 @@ cert_writer(NMConnection                     *connection,
                                              0600,
                                              NULL,
                                              NULL,
+                                             NULL,
                                              &local);
         if (success) {
             /* Write the path value to the keyfile.
@@ -384,7 +385,14 @@ _internal_write_connection(NMConnection                   *connection,
         }
     }
 
-    nm_utils_file_set_contents(path, kf_content_buf, kf_content_len, 0600, NULL, NULL, &local_err);
+    nm_utils_file_set_contents(path,
+                               kf_content_buf,
+                               kf_content_len,
+                               0600,
+                               NULL,
+                               NULL,
+                               NULL,
+                               &local_err);
     if (local_err) {
         g_set_error(error,
                     NM_SETTINGS_ERROR,

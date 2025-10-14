@@ -320,6 +320,7 @@ write_blobs(GHashTable *blobs, GError **error)
                                         0600,
                                         NULL,
                                         NULL,
+                                        NULL,
                                         &write_error)) {
             g_set_error(error,
                         NM_SETTINGS_ERROR,
