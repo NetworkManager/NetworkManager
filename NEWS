@@ -1,4 +1,12 @@
 ===============================================
+NetworkManager-1.54.2
+Overview of changes since NetworkManager-1.54.1
+===============================================
+
+* Support reapplying the "sriov.vfs" property as long as
+  "sriov.total-vfs" is not changed.
+
+===============================================
 NetworkManager-1.54.1
 Overview of changes since NetworkManager-1.54.0
 ===============================================
