@@ -1368,10 +1368,11 @@ _connection_changed_track(NMSettings        *self,
                           NMConnection      *connection,
                           gboolean           prioritize)
 {
-    NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE(self);
-    SettConnEntry     *sett_conn_entry;
-    StorageData       *sd;
-    const char        *uuid;
+    NMSettingsPrivate    *priv = NM_SETTINGS_GET_PRIVATE(self);
+    SettConnEntry        *sett_conn_entry;
+    StorageData          *sd;
+    const char           *uuid;
+    gs_free_error GError *error = NULL;
 
     nm_assert_valid_settings_storage(NULL, storage);
 
@@ -1381,6 +1382,17 @@ _connection_changed_track(NMSettings        *self,
     nm_assert(!connection
               || (_nm_connection_verify(connection, NULL) == NM_SETTING_VERIFY_SUCCESS));
     nm_assert(!connection || nm_streq0(uuid, nm_connection_get_uuid(connection)));
+
+    if (connection && !nm_utils_connection_supported(connection, &error)) {
+        _LOGD("storage[%s," NM_SETTINGS_STORAGE_PRINT_FMT
+              "]: ignoring connection \"%s\" from file \"%s\": %s",
+              uuid,
+              NM_SETTINGS_STORAGE_PRINT_ARG(storage),
+              nm_connection_get_id(connection),
+              nm_settings_storage_get_filename(storage),
+              error->message);
+        connection = NULL;
+    }
 
     nm_assert_connection_unchanging(connection);
 
