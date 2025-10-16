@@ -180,8 +180,6 @@ meson setup build \
     -D crypto=$_WITH_CRYPTO \
     -D docs=$_WITH_DOCS \
     \
-    -D ebpf=false \
-    \
     -D iwd=true \
     -D ofono=true \
     -D teamdctl=$_WITH_LIBTEAM \

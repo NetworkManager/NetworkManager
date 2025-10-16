@@ -24,7 +24,7 @@ libn_acd = static_library(
     'n-acd/src/n-acd.c',
     'n-acd/src/n-acd-probe.c',
     'n-acd/src/util/timer.c',
-    enable_ebpf ? 'n-acd/src/n-acd-bpf.c' : 'n-acd/src/n-acd-bpf-fallback.c',
+    'n-acd/src/n-acd-bpf.c',
   ),
   include_directories: include_directories(
     'c-list/src',
