@@ -3056,9 +3056,10 @@ handle_start_probing:
         }
 
         _LOGT_acd(acd_data,
-                  "%sstart probing (timeout %u msec, %s)",
+                  "%sstart probing (timeout %u msec, ebpf %s; %s)",
                   orig_state == NM_L3_ACD_ADDR_STATE_INIT ? "" : "re",
                   acd_data->probing_timeout_msec,
+                  n_acd_has_bpf(self->priv.p->nacd) ? "enabled" : "disabled",
                   log_reason);
         return;
     }
@@ -3153,10 +3154,11 @@ handle_start_defending:
         }
 
         _LOGT_acd(acd_data,
-                  "start announcing (defend=%s) (probe created)",
+                  "start announcing (defend=%s) (probe created with ebpf %s)",
                   _l3_acd_defend_type_to_string(acd_data->acd_defend_type_current,
                                                 sbuf256,
-                                                sizeof(sbuf256)));
+                                                sizeof(sbuf256)),
+                  n_acd_has_bpf(self->priv.p->nacd) ? "enabled" : "disabled");
         acd_data->acd_defend_type_is_active = FALSE;
         acd_data->nacd_probe                = probe;
         return;
