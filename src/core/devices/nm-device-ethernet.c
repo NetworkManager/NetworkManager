@@ -700,6 +700,9 @@ supplicant_iface_start(NMDeviceEthernet *self)
     NMDeviceEthernetPrivate            *priv   = NM_DEVICE_ETHERNET_GET_PRIVATE(self);
     gs_unref_object NMSupplicantConfig *config = NULL;
     gs_free_error GError               *error  = NULL;
+    NMActRequest                       *request;
+    NMActiveConnection                 *controller_ac;
+    NMDevice                           *controller;
 
     config = build_supplicant_config(self, &error);
     if (!config) {
@@ -714,6 +717,16 @@ supplicant_iface_start(NMDeviceEthernet *self)
     }
 
     nm_supplicant_interface_disconnect(priv->supplicant.iface);
+
+    /* Tell the supplicant in which bridge the interface is */
+    if ((request = nm_device_get_act_request(NM_DEVICE(self)))
+        && (controller_ac = nm_active_connection_get_controller(NM_ACTIVE_CONNECTION(request)))
+        && (controller = nm_active_connection_get_device(controller_ac))
+        && nm_device_get_device_type(controller) == NM_DEVICE_TYPE_BRIDGE) {
+        nm_supplicant_interface_set_bridge(priv->supplicant.iface, nm_device_get_iface(controller));
+    } else
+        nm_supplicant_interface_set_bridge(priv->supplicant.iface, NULL);
+
     nm_supplicant_interface_assoc(priv->supplicant.iface, config, supplicant_iface_assoc_cb, self);
     return TRUE;
 }
