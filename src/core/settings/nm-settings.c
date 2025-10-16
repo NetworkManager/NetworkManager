@@ -76,6 +76,17 @@ static NM_CACHED_QUARK_FCN("default-wired-connection-blocked",
 
 /*****************************************************************************/
 
+/**
+ * StorageData:
+ * @sd_lst: Node used in per-UUID storage lists.
+ * @storage: Storage provider instance for this UUID.
+ * @connection: Connection object backed by @storage, or NULL for meta-data.
+ * @prioritize: Request to prioritize this storage during merge.
+ *
+ * Per-UUID storage entry used to accumulate and merge updates from plugins.
+ * Items live temporarily in the dirty list and are merged into the current list
+ * with stable priority ordering.
+ */
 typedef struct _StorageData {
     CList              sd_lst;
     NMSettingsStorage *storage;
@@ -165,6 +176,20 @@ _storage_data_is_alive(StorageData *sd)
 
 /*****************************************************************************/
 
+/**
+ * SettConnEntry:
+ * @uuid: Normalized UUID key for this entry (points to @_uuid_data).
+ * @sett_conn: Current NMSettingsConnection selected for @uuid, or NULL.
+ * @storage: The storage that currently owns @sett_conn, or NULL.
+ * @sd_lst_head: Head of current storages list for @uuid (high to low priority).
+ * @dirty_sd_lst_head: Head of pending storage updates to merge.
+ * @sce_dirty_lst: Node in the global dirty queue.
+ * @_uuid_data: Inline storage backing @uuid.
+ *
+ * Tracks one connection profile across all storages and its dirty state.
+ * It holds the authoritative in-memory connection and the sets of storages
+ * providing or updating it.
+ */
 typedef struct {
     const char           *uuid;
     NMSettingsConnection *sett_conn;

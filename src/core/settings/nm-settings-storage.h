@@ -27,6 +27,19 @@
 
 struct _NMSettingsPlugin;
 
+/**
+ * NMSettingsStorage:
+ * @_plugin: The settings plugin that provides this storage.
+ * @_uuid: UUID of the profile represented by this storage.
+ * @_filename: Backing filename (can be NULL for in-memory or meta-data).
+ * @_storage_lst: Node in the per-plugin storage list.
+ * @_storage_by_uuid_lst: Node in the per-UUID storage list.
+ *
+ * Describes the origin and identity of one profile instance as provided by a
+ * specific settings plugin and (optionally) a backing file. A single UUID may
+ * have multiple storages from different plugins; plugin order determines
+ * priority.
+ */
 typedef struct NMSettingsStorage {
     GObject                   parent;
     struct _NMSettingsPlugin *_plugin;
