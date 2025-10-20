@@ -218,7 +218,8 @@ clat_bpf_o_unstripped = custom_target(
   'clat.bpf.unstripped.o',
   input : 'clat.bpf.c',
   output : 'clat.bpf.unstripped.o',
-  command : bpf_o_unstripped_cmd)
+  command : ['sh', '-c', '"$@" && llvm-objdump -d @OUTPUT@', 'ignored'] + bpf_o_unstripped_cmd
+)
 
 clat_bpf_o = custom_target(
   'clat.bpf.o',

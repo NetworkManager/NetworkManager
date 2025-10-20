@@ -256,6 +256,7 @@ Conflicts: NetworkManager-dispatcher-routing-rules <= 1:1.47.5-3
 
 BuildRequires: gcc
 BuildRequires: clang
+BuildRequires: llvm
 BuildRequires: pkgconfig
 BuildRequires: meson
 BuildRequires: gettext-devel >= 0.19.8
