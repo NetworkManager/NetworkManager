@@ -2417,7 +2417,10 @@ device_state_changed(NMDevice           *device,
         }
         if (sett_conn) {
             /* Reset auto retries back to default since connection was successful */
-            nm_manager_devcon_autoconnect_retries_reset(priv->manager, device, sett_conn);
+            nm_manager_devcon_autoconnect_reset_reconnect_all(priv->manager,
+                                                              device,
+                                                              sett_conn,
+                                                              FALSE);
         }
 
         /* Since there is no guarantee that device_l3cd_changed() is called
