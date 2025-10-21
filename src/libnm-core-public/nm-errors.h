@@ -256,6 +256,11 @@ GQuark nm_secret_agent_error_quark(void);
  * @NM_SETTINGS_ERROR_NOT_SUPPORTED_BY_PLUGIN: the requested operation is not
  *   supported by the settings plugin currently in use for the specified object.
  *   Since: 1.44.
+ * @NM_SETTINGS_ERROR_FEATURE_DISABLED: the requested operation failed because it
+ *   requires a feature that is disabled in this build of NetworkManager.
+ *   Since: 1.56
+ * @NM_SETTINGS_ERROR_FEATURE_REMOVED: the requested operation failed because it
+ *   requires a feature that is no longer supported. Since: 1.56
  *
  * Errors related to the settings/persistent configuration interface of
  * NetworkManager.
@@ -275,6 +280,8 @@ typedef enum {
     NM_SETTINGS_ERROR_INVALID_ARGUMENTS,       /*< nick=InvalidArguments >*/
     NM_SETTINGS_ERROR_VERSION_ID_MISMATCH,     /*< nick=VersionIdMismatch >*/
     NM_SETTINGS_ERROR_NOT_SUPPORTED_BY_PLUGIN, /*< nick=NotSupportedByPlugin >*/
+    NM_SETTINGS_ERROR_FEATURE_DISABLED,        /*< nick=FeatureDisabled >*/
+    NM_SETTINGS_ERROR_FEATURE_REMOVED,         /*< nick=FeatureRemoved >*/
 } NMSettingsError;
 
 GQuark nm_settings_error_quark(void);

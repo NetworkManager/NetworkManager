@@ -76,6 +76,17 @@ static NM_CACHED_QUARK_FCN("default-wired-connection-blocked",
 
 /*****************************************************************************/
 
+/**
+ * StorageData:
+ * @sd_lst: Node used in per-UUID storage lists.
+ * @storage: Storage provider instance for this UUID.
+ * @connection: Connection object backed by @storage, or NULL for meta-data.
+ * @prioritize: Request to prioritize this storage during merge.
+ *
+ * Per-UUID storage entry used to accumulate and merge updates from plugins.
+ * Items live temporarily in the dirty list and are merged into the current list
+ * with stable priority ordering.
+ */
 typedef struct _StorageData {
     CList              sd_lst;
     NMSettingsStorage *storage;
@@ -165,6 +176,20 @@ _storage_data_is_alive(StorageData *sd)
 
 /*****************************************************************************/
 
+/**
+ * SettConnEntry:
+ * @uuid: Normalized UUID key for this entry (points to @_uuid_data).
+ * @sett_conn: Current NMSettingsConnection selected for @uuid, or NULL.
+ * @storage: The storage that currently owns @sett_conn, or NULL.
+ * @sd_lst_head: Head of current storages list for @uuid (high to low priority).
+ * @dirty_sd_lst_head: Head of pending storage updates to merge.
+ * @sce_dirty_lst: Node in the global dirty queue.
+ * @_uuid_data: Inline storage backing @uuid.
+ *
+ * Tracks one connection profile across all storages and its dirty state.
+ * It holds the authoritative in-memory connection and the sets of storages
+ * providing or updating it.
+ */
 typedef struct {
     const char           *uuid;
     NMSettingsConnection *sett_conn;
@@ -1368,10 +1393,11 @@ _connection_changed_track(NMSettings        *self,
                           NMConnection      *connection,
                           gboolean           prioritize)
 {
-    NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE(self);
-    SettConnEntry     *sett_conn_entry;
-    StorageData       *sd;
-    const char        *uuid;
+    NMSettingsPrivate    *priv = NM_SETTINGS_GET_PRIVATE(self);
+    SettConnEntry        *sett_conn_entry;
+    StorageData          *sd;
+    const char           *uuid;
+    gs_free_error GError *error = NULL;
 
     nm_assert_valid_settings_storage(NULL, storage);
 
@@ -1381,6 +1407,17 @@ _connection_changed_track(NMSettings        *self,
     nm_assert(!connection
               || (_nm_connection_verify(connection, NULL) == NM_SETTING_VERIFY_SUCCESS));
     nm_assert(!connection || nm_streq0(uuid, nm_connection_get_uuid(connection)));
+
+    if (connection && !nm_utils_connection_supported(connection, &error)) {
+        _LOGD("storage[%s," NM_SETTINGS_STORAGE_PRINT_FMT
+              "]: ignoring connection \"%s\" from file \"%s\": %s",
+              uuid,
+              NM_SETTINGS_STORAGE_PRINT_ARG(storage),
+              nm_connection_get_id(connection),
+              nm_settings_storage_get_filename(storage),
+              error->message);
+        connection = NULL;
+    }
 
     nm_assert_connection_unchanging(connection);
 
@@ -1850,6 +1887,9 @@ nm_settings_add_connection(NMSettings                     *self,
     nm_assert(!NM_FLAGS_ANY(add_reason, ~NM_SETTINGS_CONNECTION_ADD_REASON_BLOCK_AUTOCONNECT));
 
     NM_SET_OUT(out_sett_conn, NULL);
+
+    if (!nm_utils_connection_supported(connection, error))
+        return FALSE;
 
     uuid = nm_connection_get_uuid(connection);
 

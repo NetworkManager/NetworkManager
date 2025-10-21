@@ -5474,3 +5474,96 @@ nm_utils_shorten_hostname(const char *hostname, char **shortened)
     *shortened = g_steal_pointer(&s);
     return TRUE;
 }
+
+/**
+ * nm_utils_connection_supported:
+ * @connection: the connection
+ * @error: on return, the reason why the connection in not supported
+ *
+ * Returns whether the given connection is supported by this version
+ * of NetworkManager.
+ */
+gboolean
+nm_utils_connection_supported(NMConnection *connection, GError **error)
+{
+    const char *type;
+    const char *feature = NULL;
+
+    g_return_val_if_fail(connection, FALSE);
+    g_return_val_if_fail(!error || !*error, FALSE);
+
+    type = nm_connection_get_connection_type(connection);
+
+    if (!WITH_TEAMDCTL) {
+        NMSettingConnection *s_con;
+
+        if (nm_streq0(type, NM_SETTING_TEAM_SETTING_NAME)) {
+            feature = "team";
+            goto out_disabled;
+        }
+
+        /* Match team ports */
+        if ((s_con = nm_connection_get_setting_connection(connection))
+            && nm_streq0(nm_setting_connection_get_port_type(s_con),
+                         NM_SETTING_TEAM_SETTING_NAME)) {
+            feature = "team";
+            goto out_disabled;
+        }
+    }
+
+    if (!WITH_OPENVSWITCH) {
+        if (NM_IN_STRSET(type,
+                         NM_SETTING_OVS_BRIDGE_SETTING_NAME,
+                         NM_SETTING_OVS_PORT_SETTING_NAME,
+                         NM_SETTING_OVS_INTERFACE_SETTING_NAME)) {
+            feature = "Open vSwitch";
+            goto out_disabled;
+        }
+
+        /* Match OVS system interfaces */
+        if (nm_connection_get_setting_ovs_interface(connection)) {
+            feature = "Open vSwitch";
+            goto out_disabled;
+        }
+    }
+
+    if (!WITH_WIFI
+        && NM_IN_STRSET(type,
+                        NM_SETTING_WIRELESS_SETTING_NAME,
+                        NM_SETTING_OLPC_MESH_SETTING_NAME,
+                        NM_SETTING_WIFI_P2P_SETTING_NAME)) {
+        feature = "Wi-Fi";
+        goto out_disabled;
+    }
+
+    if (!WITH_WWAN
+        && NM_IN_STRSET(type, NM_SETTING_GSM_SETTING_NAME, NM_SETTING_CDMA_SETTING_NAME)) {
+        feature = "WWAN";
+        goto out_disabled;
+    }
+
+    if (nm_streq0(type, NM_SETTING_WIMAX_SETTING_NAME)) {
+        feature = "WiMAX";
+        goto out_removed;
+    }
+
+    return TRUE;
+
+out_disabled:
+    nm_assert(feature);
+    g_set_error(error,
+                NM_SETTINGS_ERROR,
+                NM_SETTINGS_ERROR_FEATURE_DISABLED,
+                "%s support is disabled in this build",
+                feature);
+    return FALSE;
+
+out_removed:
+    nm_assert(feature);
+    g_set_error(error,
+                NM_SETTINGS_ERROR,
+                NM_SETTINGS_ERROR_FEATURE_REMOVED,
+                "%s is no longer supported",
+                feature);
+    return FALSE;
+}
