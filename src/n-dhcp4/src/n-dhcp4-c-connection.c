@@ -379,6 +379,10 @@ void n_dhcp4_c_connection_get_timeout(NDhcp4CConnection *connection,
         *timeoutp = timeout;
 }
 
+void n_dhcp4_c_connection_clear_client_ip(NDhcp4CConnection *connection) {
+        connection->client_ip = INADDR_ANY;
+}
+
 static int n_dhcp4_c_connection_packet_broadcast(NDhcp4CConnection *connection,
                                                  NDhcp4Outgoing *message) {
         int r;
