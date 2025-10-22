@@ -150,6 +150,7 @@ uint16_t packet_internet_checksum_udp(const struct in_addr *src_addr,
  * @src_paddr:          source protocol address, see ip(7)
  * @dest_haddr:         destination hardware address, see packet(7)
  * @dest_paddr:         destination protocol address, see ip(7)
+ * @dscp:               the DSCP value
  *
  * Sends an UDP packet on a AF_PACKET socket directly to a hardware
  * address. The difference between this and sendto() on an AF_INET
@@ -165,11 +166,12 @@ int packet_sendto_udp(int sockfd,
                       size_t *n_transmittedp,
                       const struct sockaddr_in *src_paddr,
                       const struct packet_sockaddr_ll *dest_haddr,
-                      const struct sockaddr_in *dest_paddr) {
+                      const struct sockaddr_in *dest_paddr,
+                      uint8_t dscp) {
         struct iphdr ip_hdr = {
                 .version = IPVERSION,
                 .ihl = sizeof(ip_hdr) / 4, /* Length of header in multiples of four bytes */
-                .tos = IPTOS_CLASS_CS6, /* Class Selector for network control */
+                .tos = dscp << 2,
                 .tot_len = htons(sizeof(struct iphdr) + sizeof(struct udphdr) + n_buf),
                 .frag_off = htons(IP_DF), /* Do not fragment */
                 .ttl = IPDEFTTL,

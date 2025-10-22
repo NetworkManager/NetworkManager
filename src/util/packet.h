@@ -42,7 +42,8 @@ int packet_sendto_udp(int sockfd,
                       size_t *n_transmittedp,
                       const struct sockaddr_in *src_paddr,
                       const struct packet_sockaddr_ll *dest_haddr,
-                      const struct sockaddr_in *dest_paddr);
+                      const struct sockaddr_in *dest_paddr,
+                      uint8_t dscp);
 int packet_recvfrom_udp(int sockfd,
                         void *buf,
                         size_t n_buf,
