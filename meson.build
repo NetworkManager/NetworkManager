@@ -22,6 +22,4 @@ dep_crbtree = sub_crbtree.get_variable('libcrbtree_dep')
 dep_csiphash = sub_csiphash.get_variable('libcsiphash_dep')
 dep_cstdaux = sub_cstdaux.get_variable('libcstdaux_dep')
 
-use_ebpf = get_option('ebpf')
-
 subdir('src')

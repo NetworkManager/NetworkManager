@@ -19,6 +19,9 @@
 #include "n-acd-private.h"
 #include "test.h"
 
+// https://mesonbuild.com/Unit-tests.html#skipped-tests-and-hard-errors
+#define RETURN_TEST_SKIPPED 77
+
 #define ETHER_ARP_PACKET_INIT(_op, _mac, _sip, _tip) {                  \
                 .ea_hdr = {                                             \
                         .ar_hrd = htobe16(ARPHRD_ETHER),                \
@@ -43,11 +46,15 @@
                 .arp_tpa[3] =  be32toh((_tip)->s_addr) & 0xff,          \
         }
 
-static void test_map(void) {
+static int test_map(void) {
         int r, mapfd = -1;
         struct in_addr addr = { 1 };
 
         r = n_acd_bpf_map_create(&mapfd, 8);
+        if (r == -EPERM) {
+                return RETURN_TEST_SKIPPED;
+        }
+
         c_assert(r >= 0);
         c_assert(mapfd >= 0);
 
@@ -67,6 +74,7 @@ static void test_map(void) {
         c_assert(r == -ENOENT);
 
         close(mapfd);
+        return 0;
 }
 
 static void verify_success(struct ether_arp *packet, int out_fd, int in_fd) {
@@ -92,7 +100,7 @@ static void verify_failure(struct ether_arp *packet, int out_fd, int in_fd) {
         c_assert(errno == EAGAIN);
 }
 
-static void test_filter(void) {
+static int test_filter(void) {
         uint8_t buf[sizeof(struct ether_arp) + 1] = {};
         struct ether_addr mac1 = { { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 } };
         struct ether_addr mac2 = { { 0x01, 0x02, 0x03, 0x04, 0x05, 0x07 } };
@@ -103,6 +111,10 @@ static void test_filter(void) {
         int r, mapfd = -1, progfd = -1, pair[2];
 
         r = n_acd_bpf_map_create(&mapfd, 1);
+        if (r == -EPERM) {
+                return RETURN_TEST_SKIPPED;
+        }
+
         c_assert(r >= 0);
 
         r = n_acd_bpf_compile(&progfd, mapfd, &mac1);
@@ -214,13 +226,21 @@ static void test_filter(void) {
         close(pair[1]);
         close(progfd);
         close(mapfd);
+
+        return 0;
 }
 
 int main(int argc, char **argv) {
+        int r;
         test_setup();
 
-        test_map();
-        test_filter();
+        if ((r = test_map())) {
+                return r;
+        }
+
+        if ((r = test_filter())) {
+                return r;
+        }
 
         return 0;
 }
