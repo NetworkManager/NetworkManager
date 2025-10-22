@@ -8642,6 +8642,8 @@ nm_device_unrealize(NMDevice *self, gboolean remove_resources, GError **error)
 
     g_object_thaw_notify(G_OBJECT(self));
 
+    nm_device_managed_type_set(self, NM_DEVICE_MANAGED_TYPE_REMOVED);
+
     nm_device_set_unmanaged_flags(self, NM_UNMANAGED_PLATFORM_INIT, TRUE);
 
     nm_device_set_unmanaged_flags(self,
