@@ -1890,7 +1890,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
         == -1) {
         /* This doesn't really have to be an error; the key might
          * be missing if there really are no bridges present. */
-        _LOGD("Bad update: %s", json_error.text);
+        _LOGD("monitor: bad update: %s", json_error.text);
     }
 
     if (ovs) {
@@ -1936,12 +1936,12 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                                              &unused))
                 continue;
 
-            _LOGT("obj[iface:%s]: removed an '%s' interface: %s%s%s",
-                  key,
-                  ovs_interface->type,
+            _LOGT("monitor: %s: interface removed: type=%s, obj[iface:%s]%s%s",
                   ovs_interface->name,
+                  ovs_interface->type,
+                  key,
                   NM_PRINT_FMT_QUOTED2(ovs_interface->connection_uuid,
-                                       ", ",
+                                       ", connection=",
                                        ovs_interface->connection_uuid,
                                        ""));
             _signal_emit_device_removed(self,
@@ -1989,17 +1989,18 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                 gs_free char *strtmp1 = NULL;
                 gs_free char *strtmp2 = NULL;
 
-                _LOGT("obj[iface:%s]: changed an '%s' interface: %s%s%s, external-ids=%s, "
-                      "other-config=%s",
-                      key,
-                      type,
-                      ovs_interface->name,
-                      NM_PRINT_FMT_QUOTED2(ovs_interface->connection_uuid,
-                                           ", ",
-                                           ovs_interface->connection_uuid,
-                                           ""),
-                      (strtmp1 = _strdict_to_string(ovs_interface->external_ids)),
-                      (strtmp2 = _strdict_to_string(ovs_interface->other_config)));
+                _LOGT(
+                    "monitor: %s: interface changed: type=%s, obj[iface:%s]%s%s, external-ids=%s, "
+                    "other-config=%s",
+                    ovs_interface->name,
+                    type,
+                    key,
+                    NM_PRINT_FMT_QUOTED2(ovs_interface->connection_uuid,
+                                         ", connection=",
+                                         ovs_interface->connection_uuid,
+                                         ""),
+                    (strtmp1 = _strdict_to_string(ovs_interface->external_ids)),
+                    (strtmp2 = _strdict_to_string(ovs_interface->other_config)));
             }
         } else {
             gs_free char *strtmp1 = NULL;
@@ -2015,17 +2016,17 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                 .other_config    = g_steal_pointer(&other_config_arr),
             };
             g_hash_table_add(priv->interfaces, ovs_interface);
-            _LOGT(
-                "obj[iface:%s]: added an '%s' interface: %s%s%s, external-ids=%s, other-config=%s",
-                key,
-                ovs_interface->type,
-                ovs_interface->name,
-                NM_PRINT_FMT_QUOTED2(ovs_interface->connection_uuid,
-                                     ", ",
-                                     ovs_interface->connection_uuid,
-                                     ""),
-                (strtmp1 = _strdict_to_string(ovs_interface->external_ids)),
-                (strtmp2 = _strdict_to_string(ovs_interface->other_config)));
+            _LOGT("monitor: %s: interface added: type=%s, obj[iface:%s]%s%s, external-ids=%s, "
+                  "other-config=%s",
+                  ovs_interface->name,
+                  ovs_interface->type,
+                  key,
+                  NM_PRINT_FMT_QUOTED2(ovs_interface->connection_uuid,
+                                       ", connection=",
+                                       ovs_interface->connection_uuid,
+                                       ""),
+                  (strtmp1 = _strdict_to_string(ovs_interface->external_ids)),
+                  (strtmp2 = _strdict_to_string(ovs_interface->other_config)));
             _signal_emit_device_added(self,
                                       ovs_interface->name,
                                       NM_DEVICE_TYPE_OVS_INTERFACE,
@@ -2071,11 +2072,11 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
             if (!g_hash_table_steal_extended(priv->ports, &key, (gpointer *) &ovs_port, &unused))
                 continue;
 
-            _LOGT("obj[port:%s]: removed a port: %s%s%s",
-                  key,
+            _LOGT("monitor: %s: port removed: obj[port:%s]%s%s",
                   ovs_port->name,
+                  key,
                   NM_PRINT_FMT_QUOTED2(ovs_port->connection_uuid,
-                                       ", ",
+                                       ", connection=",
                                        ovs_port->connection_uuid,
                                        ""));
             _signal_emit_device_removed(self, ovs_port->name, NM_DEVICE_TYPE_OVS_PORT, NULL);
@@ -2122,15 +2123,16 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                 gs_free char *strtmp1 = NULL;
                 gs_free char *strtmp2 = NULL;
 
-                _LOGT("obj[port:%s]: changed a port: %s%s%s, external-ids=%s, other-config=%s",
-                      key,
-                      ovs_port->name,
-                      NM_PRINT_FMT_QUOTED2(ovs_port->connection_uuid,
-                                           ", ",
-                                           ovs_port->connection_uuid,
-                                           ""),
-                      (strtmp1 = _strdict_to_string(ovs_port->external_ids)),
-                      (strtmp2 = _strdict_to_string(ovs_port->other_config)));
+                _LOGT(
+                    "monitor: %s: port changed: obj[port:%s]%s%s, external-ids=%s, other-config=%s",
+                    ovs_port->name,
+                    key,
+                    NM_PRINT_FMT_QUOTED2(ovs_port->connection_uuid,
+                                         ", connection=",
+                                         ovs_port->connection_uuid,
+                                         ""),
+                    (strtmp1 = _strdict_to_string(ovs_port->external_ids)),
+                    (strtmp2 = _strdict_to_string(ovs_port->other_config)));
             }
         } else {
             gs_free char *strtmp1 = NULL;
@@ -2146,11 +2148,11 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                 .other_config    = g_steal_pointer(&other_config_arr),
             };
             g_hash_table_add(priv->ports, ovs_port);
-            _LOGT("obj[port:%s]: added a port: %s%s%s, external-ids=%s, other-config=%s",
-                  key,
+            _LOGT("monitor: %s: port added: obj[port:%s]%s%s, external-ids=%s, other-config=%s",
                   ovs_port->name,
+                  key,
                   NM_PRINT_FMT_QUOTED2(ovs_port->connection_uuid,
-                                       ", ",
+                                       ", connection=",
                                        ovs_port->connection_uuid,
                                        ""),
                   (strtmp1 = _strdict_to_string(ovs_port->external_ids)),
@@ -2192,11 +2194,11 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                                              &unused))
                 continue;
 
-            _LOGT("obj[bridge:%s]: removed a bridge: %s%s%s",
-                  key,
+            _LOGT("monitor: %s: bridge removed: obj[bridge:%s]%s%s",
                   ovs_bridge->name,
+                  key,
                   NM_PRINT_FMT_QUOTED2(ovs_bridge->connection_uuid,
-                                       ", ",
+                                       ", connection=",
                                        ovs_bridge->connection_uuid,
                                        ""));
             _signal_emit_device_removed(self, ovs_bridge->name, NM_DEVICE_TYPE_OVS_BRIDGE, NULL);
@@ -2243,11 +2245,12 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                 gs_free char *strtmp1 = NULL;
                 gs_free char *strtmp2 = NULL;
 
-                _LOGT("obj[bridge:%s]: changed a bridge: %s%s%s, external-ids=%s, other-config=%s",
-                      key,
+                _LOGT("monitor: %s: bridge changed: obj[bridge:%s]%s%s, external-ids=%s, "
+                      "other-config=%s",
                       ovs_bridge->name,
+                      key,
                       NM_PRINT_FMT_QUOTED2(ovs_bridge->connection_uuid,
-                                           ", ",
+                                           ", connection=",
                                            ovs_bridge->connection_uuid,
                                            ""),
                       (strtmp1 = _strdict_to_string(ovs_bridge->external_ids)),
@@ -2267,11 +2270,11 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                 .other_config    = g_steal_pointer(&other_config_arr),
             };
             g_hash_table_add(priv->bridges, ovs_bridge);
-            _LOGT("obj[bridge:%s]: added a bridge: %s%s%s, external-ids=%s, other-config=%s",
-                  key,
+            _LOGT("monitor: %s: bridge added: obj[bridge:%s]%s%s, external-ids=%s, other-config=%s",
                   ovs_bridge->name,
+                  key,
                   NM_PRINT_FMT_QUOTED2(ovs_bridge->connection_uuid,
-                                       ", ",
+                                       ", connection=",
                                        ovs_bridge->connection_uuid,
                                        ""),
                   (strtmp1 = _strdict_to_string(ovs_bridge->external_ids)),
