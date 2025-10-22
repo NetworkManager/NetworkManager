@@ -280,6 +280,7 @@ nms_keyfile_nmmeta_write(const char *dirname,
                                         length,
                                         0600,
                                         NULL,
+                                        NULL,
                                         &errsv,
                                         NULL)) {
             NM_SET_OUT(out_full_filename, g_steal_pointer(&full_filename_tmp));

@@ -26,6 +26,7 @@
 
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-glib-aux/nm-str-buf.h"
+#include "libnm-glib-aux/nm-io-utils.h"
 
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device.h"
@@ -1006,7 +1007,8 @@ _read_link_cached(const char *path, gboolean *is_cached, char **cached)
 #define MY_RESOLV_CONF_TMP MY_RESOLV_CONF ".tmp"
 #define RESOLV_CONF_TMP    "/etc/.resolv.conf.NetworkManager"
 
-#define NO_STUB_RESOLV_CONF NMRUNDIR "/no-stub-resolv.conf"
+#define NO_STUB_RESOLV_CONF     NMRUNDIR "/no-stub-resolv.conf"
+#define NO_STUB_RESOLV_CONF_TMP NMRUNDIR "/no-stub-resolv.conf.tmp"
 
 static void
 update_resolv_conf_no_stub(NMDnsManager      *self,
@@ -1019,7 +1021,14 @@ update_resolv_conf_no_stub(NMDnsManager      *self,
 
     content = create_resolv_conf(searches, nameservers, options);
 
-    if (!g_file_set_contents(NO_STUB_RESOLV_CONF, content, -1, &local)) {
+    if (!nm_utils_file_set_contents(NO_STUB_RESOLV_CONF,
+                                    content,
+                                    -1,
+                                    0644,
+                                    NULL,
+                                    NO_STUB_RESOLV_CONF_TMP,
+                                    NULL,
+                                    &local)) {
         _LOGD("update-resolv-no-stub: failure to write file: %s", local->message);
         g_error_free(local);
         return;

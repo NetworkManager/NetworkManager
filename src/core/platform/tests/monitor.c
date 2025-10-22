@@ -186,6 +186,7 @@ ip_again:
                                00644,
                                NULL,
                                NULL,
+                               NULL,
                                NULL);
 
     nm_log_dbg(LOGD_PLATFORM, "dump to file complete");

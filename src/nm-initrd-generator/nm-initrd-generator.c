@@ -78,7 +78,7 @@ output_conn(gpointer key, gpointer value, gpointer user_data)
         filename      = nm_keyfile_utils_create_filename(basename, TRUE);
         full_filename = g_build_filename(connections_dir, filename, NULL);
 
-        if (!nm_utils_file_set_contents(full_filename, data, len, 0600, NULL, NULL, &error))
+        if (!nm_utils_file_set_contents(full_filename, data, len, 0600, NULL, NULL, NULL, &error))
             goto err_out;
     } else
         g_print("\n*** Connection '%s' ***\n\n%s", basename, data);

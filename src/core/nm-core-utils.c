@@ -2865,6 +2865,7 @@ _host_id_read(guint8 **out_host_id, gsize *out_host_id_len)
                                                0600,
                                                NULL,
                                                NULL,
+                                               NULL,
                                                &error)) {
             nm_log_warn(
                 LOGD_CORE,

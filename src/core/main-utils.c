@@ -81,7 +81,7 @@ nm_main_utils_write_pidfile(const char *pidfile)
     char                  pid[16];
 
     nm_sprintf_buf(pid, "%lld", (long long) getpid());
-    if (!nm_utils_file_set_contents(pidfile, pid, -1, 00644, NULL, NULL, &error)) {
+    if (!nm_utils_file_set_contents(pidfile, pid, -1, 00644, NULL, NULL, NULL, &error)) {
         fprintf(stderr, _("Writing to %s failed: %s\n"), pidfile, error->message);
         return FALSE;
     }
