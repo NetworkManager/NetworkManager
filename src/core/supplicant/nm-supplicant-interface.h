@@ -86,6 +86,7 @@ typedef enum {
 #define NM_SUPPLICANT_INTERFACE_WPS_CREDENTIALS "wps-credentials"
 #define NM_SUPPLICANT_INTERFACE_GROUP_STARTED   "group-started"
 #define NM_SUPPLICANT_INTERFACE_GROUP_FINISHED  "group-finished"
+#define NM_SUPPLICANT_INTERFACE_PSK_MISMATCH    "wpa-psk-mismatch"
 
 typedef struct _NMSupplicantInterfaceClass NMSupplicantInterfaceClass;
 
