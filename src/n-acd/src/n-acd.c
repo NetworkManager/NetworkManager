@@ -284,6 +284,11 @@ int n_acd_ensure_bpf_map_space(NAcd *acd) {
 
         max_map = 2 * acd->max_bpf_map;
 
+        /* If we didn't succeed in creating a map during n_acd_new(),
+         * let's assume we are unable to create it here, and skip it. */
+        if (!n_acd_has_bpf(acd))
+                goto out;
+
         r = n_acd_bpf_map_create(&fd_map, max_map);
         if (r)
                 return r;
@@ -308,6 +313,8 @@ int n_acd_ensure_bpf_map_space(NAcd *acd) {
                 close(acd->fd_bpf_map);
         acd->fd_bpf_map = fd_map;
         fd_map = -1;
+
+out:
         acd->max_bpf_map = max_map;
         return 0;
 }
@@ -359,13 +366,16 @@ _c_public_ int n_acd_new(NAcd **acdp, NAcdConfig *config) {
 
         acd->max_bpf_map = 8;
 
+        /* Let's try to create a BPF map. If we fail, we want to ignore it
+         * only if we lack permissions to create it, and proceed without eBPF. */
         r = n_acd_bpf_map_create(&acd->fd_bpf_map, acd->max_bpf_map);
-        if (r)
+        if (r == 0) {
+                r = n_acd_bpf_compile(&fd_bpf_prog, acd->fd_bpf_map, (struct ether_addr*) acd->mac);
+                if (r)
+                        return r;
+        } else if (r != -EPERM) {
                 return r;
-
-        r = n_acd_bpf_compile(&fd_bpf_prog, acd->fd_bpf_map, (struct ether_addr*) acd->mac);
-        if (r)
-                return r;
+        }
 
         r = n_acd_socket_new(&acd->fd_socket, fd_bpf_prog, config);
         if (r)
@@ -570,6 +580,20 @@ int n_acd_send(NAcd *acd, const struct in_addr *tpa, const struct in_addr *spa) 
  */
 _c_public_ void n_acd_get_fd(NAcd *acd, int *fdp) {
         *fdp = acd->fd_epoll;
+}
+
+/**
+ * n_acd_has_bpf() - query the usage of eBPF
+ * @acd:                        context object to operate on
+ *
+ * Checks whether the ACD probe is using eBPF or not.
+ *
+ * Return: true if the probe is using eBPF, or
+ *         false if the probe failed to configure eBPF
+ *               (e.g. due to missing capabilities)
+ */
+_c_public_ bool n_acd_has_bpf(NAcd *acd) {
+        return acd->fd_bpf_map != -1;
 }
 
 static int n_acd_handle_timeout(NAcd *acd) {

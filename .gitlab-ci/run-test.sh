@@ -155,12 +155,7 @@ test_subtree() {
     do_clean
     pushd ./src/$d
 
-    ARGS=()
-    if [ "$d" = n-acd ]; then
-        ARGS+=('-Debpf=false')
-    fi
-
-    CC="$cc" CFLAGS="-Werror -Wall" meson build "${ARGS[@]}"
+    CC="$cc" CFLAGS="-Werror -Wall" meson build
     ninja -v -C build test
 
     popd

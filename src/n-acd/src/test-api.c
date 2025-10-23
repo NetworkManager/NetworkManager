@@ -56,6 +56,7 @@ static void test_api_functions(void) {
                 (void *)n_acd_ref,
                 (void *)n_acd_unref,
                 (void *)n_acd_get_fd,
+                (void *)n_acd_has_bpf,
                 (void *)n_acd_dispatch,
                 (void *)n_acd_pop_event,
                 (void *)n_acd_probe,

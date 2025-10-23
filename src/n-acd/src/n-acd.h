@@ -93,6 +93,7 @@ NAcd *n_acd_ref(NAcd *acd);
 NAcd *n_acd_unref(NAcd *acd);
 
 void n_acd_get_fd(NAcd *acd, int *fdp);
+bool n_acd_has_bpf(NAcd *acd);
 int n_acd_dispatch(NAcd *acd);
 int n_acd_pop_event(NAcd *acd, NAcdEvent **eventp);
 

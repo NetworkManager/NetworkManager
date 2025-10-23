@@ -198,7 +198,7 @@ _c_public_ void n_dhcp4_client_probe_config_set_init_reboot(NDhcp4ClientProbeCon
  *
  * This sets the DSCP property of the configuration object, which specifies
  * the DSCP value to set in the first six bits of the DS field in the IPv4
- * header. If this function is not called, the DSCP will be set to CS0.
+ * header. If this function is not called, the DSCP will be set to CS0 (0).
  */
 _c_public_ void n_dhcp4_client_probe_config_set_dscp(NDhcp4ClientProbeConfig *config, uint8_t dscp) {
         config->dscp = dscp & 0x3F;
@@ -703,6 +703,8 @@ static int n_dhcp4_client_probe_transition_deferred(NDhcp4ClientProbe *probe, ui
 
         switch (probe->state) {
         case N_DHCP4_CLIENT_PROBE_STATE_INIT:
+                /* reset client IP (CIADDR) */
+                n_dhcp4_c_connection_clear_client_ip(&probe->connection);
                 r = n_dhcp4_c_connection_listen(&probe->connection);
                 if (r)
                         return r;

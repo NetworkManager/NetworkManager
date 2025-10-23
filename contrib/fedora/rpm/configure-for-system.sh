@@ -155,7 +155,6 @@ P_CRYPTO="${CRYPTO-}"
 P_DBUS_SYS_DIR="${DBUS_SYS_DIR-}"
 P_DHCP_DEFAULT="${DHCP_DEFAULT-}"
 P_DNS_RC_MANAGER_DEFAULT="${DNS_RC_MANAGER_DEFAULT-}"
-P_EBPF_ENABLED="${EBPF_ENABLED-no}"
 P_FIREWALLD_ZONE="${FIREWALLD_ZONE-}"
 P_IWD="${IWD-}"
 P_LOGGING_BACKEND_DEFAULT="${LOGGING_BACKEND_DEFAULT-}"
@@ -396,7 +395,6 @@ meson setup\
     -Dmodify_system=true \
     -Dconcheck=true \
     -Dlibpsl="$(bool_true "$P_FEDORA")" \
-    -Debpf="$(bool_true "$P_EBPF_ENABLED")" \
     -Dsession_tracking=systemd \
     -Dsuspend_resume=systemd \
     -Dsystemdsystemunitdir=/usr/lib/systemd/system \

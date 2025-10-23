@@ -617,6 +617,8 @@ void n_dhcp4_c_connection_close(NDhcp4CConnection *connection);
 void n_dhcp4_c_connection_get_timeout(NDhcp4CConnection *connection,
                                       uint64_t *timeoutp);
 
+void n_dhcp4_c_connection_clear_client_ip(NDhcp4CConnection *connection);
+
 int n_dhcp4_c_connection_discover_new(NDhcp4CConnection *connection,
                                       NDhcp4Outgoing **request);
 int n_dhcp4_c_connection_select_new(NDhcp4CConnection *connection,

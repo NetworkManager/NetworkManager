@@ -170,6 +170,10 @@ int n_acd_bpf_map_add(int mapfd, struct in_addr *addrp) {
         uint8_t _dummy = 0;
         int r;
 
+        /* If we don't have a map to update, there is nothing to do. */
+        if (mapfd == -1)
+                return 0;
+
         memset(&attr, 0, sizeof(attr));
         attr = (union bpf_attr){
                 .map_fd = mapfd,
@@ -189,6 +193,10 @@ int n_acd_bpf_map_remove(int mapfd, struct in_addr *addrp) {
         uint32_t addr = be32toh(addrp->s_addr);
         union bpf_attr attr;
         int r;
+
+        /* If we don't have a map to update, there is nothing to do. */
+        if (mapfd == -1)
+                return 0;
 
         memset(&attr, 0, sizeof(attr));
         attr = (union bpf_attr){
