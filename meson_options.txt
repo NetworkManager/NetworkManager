@@ -44,12 +44,12 @@ option('nmcli', type: 'boolean', value: true, description: 'Build nmcli')
 option('nmtui', type: 'boolean', value: true, description: 'Build nmtui')
 option('nm_cloud_setup', type: 'boolean', value: true, description: 'Build nm-cloud-setup, a tool for automatically configuring networking in cloud')
 option('bluez5_dun', type: 'boolean', value: false, description: 'enable Bluez5 DUN support')
-option('ebpf', type: 'combo', choices: ['auto', 'true', 'false'], description: 'Enable eBPF support (deprecated)')
+option('ebpf', type: 'combo', choices: ['auto', 'true', 'false'], description: 'Enable eBPF support (deprecated)', deprecated: true)
 option('nbft', type: 'boolean', value: true, description: 'Enable NBFT support in the initrd generator')
 
 # configuration plugins
 option('config_plugins_default', type: 'string', value: '', description: 'Default configuration option for main.plugins setting, used as fallback if the configuration option is unset')
-option('ifcfg_rh', type: 'boolean', value: false, description: 'enable ifcfg-rh configuration plugin (Fedora/RHEL) (deprecated)')
+option('ifcfg_rh', type: 'boolean', value: false, description: 'enable ifcfg-rh configuration plugin (Fedora/RHEL) (deprecated)', deprecated: true)
 option('ifupdown', type: 'combo', choices:['auto', 'true', 'false'], value: 'auto', description: 'enable ifupdown configuration plugin (Debian/Ubuntu)')
 option('config_migrate_ifcfg_rh_default', type: 'boolean', value: false, description: 'The default value of the main.migrate-ifcfg-rh configuration option')
 
@@ -59,7 +59,7 @@ option('netconfig', type: 'string', value: '', description: 'Enable SUSE netconf
 option('config_dns_rc_manager_default', type: 'combo', choices: ['auto', 'symlink', 'file', 'netconfig', 'resolvconf'], value: 'auto', description: 'Configure default value for main.rc-manager setting')
 
 # dhcp clients
-option('dhclient', type: 'string', value: 'no', description: 'Enable dhclient support (deprecated)')
+option('dhclient', type: 'string', value: 'no', description: 'Enable dhclient support (deprecated)', deprecated: true)
 option('dhcpcd', type: 'string', value: '', description: 'Enable dhcpcd support')
 option('config_dhcp_default', type: 'combo', choices: ['dhclient', 'dhcpcd', 'internal', 'nettools'], value: 'internal', description: 'Default configuration option for main.dhcp setting, used as fallback if the configuration option is unset')
 
