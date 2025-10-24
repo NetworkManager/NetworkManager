@@ -60,11 +60,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-722dacf5c4be'
-  CENTOS_TAG:  'tag-1387a813d200'
-  DEBIAN_TAG:  'tag-447ddf898453'
-  FEDORA_TAG:  'tag-1387a813d200'
-  UBUNTU_TAG:  'tag-447ddf898453'
+  ALPINE_TAG:  'tag-0c3a6f855fb8'
+  CENTOS_TAG:  'tag-c1c23df75dda'
+  DEBIAN_TAG:  'tag-d4bf5db9e214'
+  FEDORA_TAG:  'tag-c1c23df75dda'
+  UBUNTU_TAG:  'tag-d4bf5db9e214'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
@@ -713,7 +713,7 @@ pages:
   rules:
     - if: $CI_PIPELINE_SOURCE == 'schedule'
       when: never
-    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == 'main'
+    - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   dependencies:
     - "t_fedora:42: [meson+gcc+docs+valgrind]"
   needs:
