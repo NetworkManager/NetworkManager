@@ -61,6 +61,7 @@
 #define NM_MANAGER_CONFIGURE_QUIT            "configure-quit"
 #define NM_MANAGER_INTERNAL_DEVICE_ADDED     "internal-device-added"
 #define NM_MANAGER_INTERNAL_DEVICE_REMOVED   "internal-device-removed"
+#define NM_MANAGER_SHARING_IPV4_CHANGED      "sharing-ipv4-changed"
 
 GType nm_manager_get_type(void);
 
@@ -211,6 +212,9 @@ void nm_manager_notify_device_availability_maybe_changed(NMManager *self);
 struct _NMDnsManager;
 
 struct _NMDnsManager *nm_manager_get_dns_manager(NMManager *self);
+
+void     nm_manager_update_shared_connection(NMManager *self, int addr_family, gboolean enabled);
+gboolean nm_manager_get_sharing_ipv4(NMManager *self);
 
 /*****************************************************************************/
 
