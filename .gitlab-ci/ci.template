@@ -240,7 +240,7 @@ pages:
   rules:
     - if: $CI_PIPELINE_SOURCE == 'schedule'
       when: never
-    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == 'main'
+    - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   dependencies:
     - "t_{{default_distro.name}}:{{default_distro.versions[0]}}: [meson+gcc+docs+valgrind]"
   needs:
