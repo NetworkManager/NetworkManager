@@ -65,7 +65,6 @@ install \
     libsystemd-dev \
     libteam-dev \
     libudev-dev \
-    libxdp-dev \
     locales \
     meson \
     mobile-broadband-provider-info \
