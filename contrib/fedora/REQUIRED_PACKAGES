@@ -71,7 +71,6 @@ install \
     libnvme-devel \
     libselinux-devel \
     libuuid-devel \
-    libxdp-devel \
     meson \
     mobile-broadband-provider-info-devel \
     newt-devel \
