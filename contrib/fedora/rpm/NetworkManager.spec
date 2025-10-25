@@ -287,7 +287,6 @@ BuildRequires: iproute
 BuildRequires: iproute-tc
 BuildRequires: libnvme-devel >= 1.5
 BuildRequires: libbpf-devel
-BuildRequires: libxdp-devel
 BuildRequires: bpftool
 
 Provides: %{name}-dispatcher%{?_isa} = %{epoch}:%{version}-%{release}

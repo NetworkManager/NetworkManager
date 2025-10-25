@@ -519,7 +519,6 @@ enable_clat = get_option('clat')
 if enable_clat
   libbpf = dependency('libbpf', version: '>= 0.1.0', required: false)
   assert(libbpf.found(), 'You must have libbpf installed to build. Use -Dclat=false to disable use of it')
-  libxdp = dependency('libxdp', version: '>= 0.1.0', required: false)
 endif
 config_h.set10('HAVE_CLAT', enable_clat)
 
