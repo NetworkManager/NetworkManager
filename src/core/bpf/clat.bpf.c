@@ -29,7 +29,6 @@
 
 #include <bpf/bpf_endian.h>
 #include <bpf/bpf_helpers.h>
-#include <xdp/parsing_helpers.h>
 
 #include "clat.h"
 
@@ -102,13 +101,13 @@ update_l4_checksum(struct __sk_buff *skb,
         void *to_ptr   = &ip6h->saddr;
 
         csum   = bpf_csum_diff(from_ptr, 2 * sizeof(__u32), to_ptr, 2 * sizeof(struct in6_addr), 0);
-        offset = (void *) (iph + 1) - data;
+        offset = sizeof(struct ethhdr) + sizeof(struct iphdr);
     } else {
         void *from_ptr = &ip6h->saddr;
         void *to_ptr   = &iph->saddr;
 
         csum   = bpf_csum_diff(from_ptr, 2 * sizeof(struct in6_addr), to_ptr, 2 * sizeof(__u32), 0);
-        offset = (void *) (ip6h + 1) - data;
+        offset = sizeof(struct ethhdr) + sizeof(struct ipv6hdr);
     }
 
     switch (ip_type) {
@@ -135,8 +134,10 @@ update_icmp_checksum(struct __sk_buff *skb,
 {
     void                *data = SKB_DATA(skb);
     struct icmpv6_pseudo ph   = {.nh = IPPROTO_ICMPV6, .len = ip6h->payload_len};
-    __u16                h_before, h_after, offset;
-    __u32                csum, u_before, u_after;
+    __u16                h_before, h_after;
+    __u32                u_before, u_after;
+    __u16                offset;
+    __u32                csum;
 
     __builtin_memcpy(&ph.saddr, &ip6h->saddr, sizeof(struct in6_addr));
     __builtin_memcpy(&ph.daddr, &ip6h->daddr, sizeof(struct in6_addr));
@@ -156,7 +157,8 @@ update_icmp_checksum(struct __sk_buff *skb,
                          add ? sizeof(ph) : 0,
                          0);
 
-    offset = ((void *) icmp_after - data) + 2;
+    offset = sizeof(struct ethhdr) + (add ? sizeof(struct iphdr) : sizeof(struct ipv6hdr)) + 2;
+
     /* first two bytes of ICMP header, type and code */
     h_before = *(__u16 *) icmp_before;
     h_after  = *(__u16 *) icmp_after;
@@ -175,12 +177,14 @@ update_icmp_checksum(struct __sk_buff *skb,
 static int
 rewrite_icmp(struct iphdr *iph, struct ipv6hdr *ip6h, struct __sk_buff *skb)
 {
-    void           *data_end = SKB_DATA_END(skb);
-    struct icmphdr  old_icmp, *icmp = (void *) (iph + 1);
-    struct icmp6hdr icmp6, *new_icmp6;
-    __u32           mtu;
+    void            *data_end = SKB_DATA_END(skb);
+    struct icmphdr   old_icmp;
+    struct icmp6hdr  icmp6;
+    struct icmphdr  *icmp = (void *) (iph + 1);
+    struct icmp6hdr *new_icmp6;
+    __u32            mtu;
 
-    if ((void *) (icmp + 1) > data_end)
+    if ((icmp + 1) > data_end)
         return -1;
 
     old_icmp  = *icmp;
@@ -288,13 +292,11 @@ rewrite_icmp(struct iphdr *iph, struct ipv6hdr *ip6h, struct __sk_buff *skb)
 
 /* ipv4 traffic in from application on this device, needs to be translated to v6 and sent to PLAT */
 static int
-clat_handle_v4(struct __sk_buff *skb, struct hdr_cursor *nh)
+clat_handle_v4(struct __sk_buff *skb)
 {
-    int   ret      = TC_ACT_OK;
-    void *data_end = SKB_DATA_END(skb);
-    void *data     = SKB_DATA(skb);
-    int   ip_type, iphdr_len, ip_offset;
-
+    int              ret      = TC_ACT_OK;
+    void            *data_end = SKB_DATA_END(skb);
+    void            *data     = SKB_DATA(skb);
     struct in6_addr *dst_v6;
     struct ipv6hdr  *ip6h;
     struct ipv6hdr   dst_hdr = {
@@ -302,20 +304,16 @@ clat_handle_v4(struct __sk_buff *skb, struct hdr_cursor *nh)
     };
     struct iphdr  *iph;
     struct ethhdr *eth;
-    struct in_addr src_v4;
 
     struct clat_v4_config_value *v4_config;
     struct clat_v4_config_key    v4_config_key;
 
-    ip_offset = (nh->pos - data) & 0x1fff;
-
-    ip_type = parse_iphdr(nh, data_end, &iph);
-    if (ip_type < 0)
+    iph = data + sizeof(struct ethhdr);
+    if (iph + 1 > data_end)
         goto out;
 
-    src_v4.s_addr          = iph->saddr;
-    v4_config_key.ifindex  = skb->ifindex;
-    v4_config_key.local_v4 = src_v4;
+    v4_config_key.ifindex         = skb->ifindex;
+    v4_config_key.local_v4.s_addr = iph->saddr;
 
     v4_config = bpf_map_lookup_elem(&v4_config_map, &v4_config_key);
     if (!v4_config) {
@@ -336,28 +334,26 @@ clat_handle_v4(struct __sk_buff *skb, struct hdr_cursor *nh)
      * out. The DF is the second-most-significant bit (as bit 0 is
      * reserved).
      */
-    iphdr_len = iph->ihl * 4;
-    if (iphdr_len != sizeof(struct iphdr) || (iph->frag_off & ~bpf_htons(1 << 14))) {
+
+    if (iph->ihl != 5 || (iph->frag_off & ~bpf_htons(1 << 14))) {
         DBG("v4: pkt src/dst %pI4/%pI4 has IP options or is fragmented, dropping\n",
             &iph->daddr,
             &iph->saddr);
         goto out;
     }
 
-    dst_v6               = &v4_config->pref64;
-    dst_v6->s6_addr32[3] = iph->daddr;
-
-    DBG("v4: Found mapping for dst %pI4 to %pI6c\n", &iph->daddr, dst_v6);
-
     /* src v4 as last octet of clat address */
-    dst_hdr.saddr     = v4_config->local_v6;
-    dst_hdr.daddr     = *dst_v6;
-    dst_hdr.nexthdr   = iph->protocol;
-    dst_hdr.hop_limit = iph->ttl;
+    dst_hdr.saddr              = v4_config->local_v6;
+    dst_hdr.daddr              = v4_config->pref64;
+    dst_hdr.daddr.s6_addr32[3] = iph->daddr;
+    dst_hdr.nexthdr            = iph->protocol;
+    dst_hdr.hop_limit          = iph->ttl;
     /* weird definition in ipv6hdr */
     dst_hdr.priority    = (iph->tos & 0x70) >> 4;
     dst_hdr.flow_lbl[0] = iph->tos << 4;
-    dst_hdr.payload_len = bpf_htons(bpf_ntohs(iph->tot_len) - iphdr_len);
+    dst_hdr.payload_len = bpf_htons(bpf_ntohs(iph->tot_len) - sizeof(struct iphdr));
+
+    DBG("v4: Found mapping for dst %pI4 to %pI6c\n", &iph->daddr, &dst_hdr.daddr);
 
     switch (dst_hdr.nexthdr) {
     case IPPROTO_ICMP:
@@ -379,9 +375,12 @@ clat_handle_v4(struct __sk_buff *skb, struct hdr_cursor *nh)
     data     = SKB_DATA(skb);
     data_end = SKB_DATA_END(skb);
 
-    eth  = data;
-    ip6h = data + ip_offset;
-    if ((void *) (eth + 1) > data_end || (void *) (ip6h + 1) > data_end)
+    eth = data;
+    if (eth + 1 > data_end)
+        goto out;
+
+    ip6h = (void *) (eth + 1);
+    if (ip6h + 1 > data_end)
         goto out;
 
     eth->h_proto = bpf_htons(ETH_P_IPV6);
@@ -401,31 +400,26 @@ csum_fold_helper(__u32 csum)
     return ~sum;
 }
 
-static int clat_translate_v6(struct __sk_buff  *skb,
-                             struct hdr_cursor *nh,
-                             void              *data_end,
-                             struct iphdr      *dst_hdr_out,
-                             bool               depth);
-
 static int
-rewrite_icmpv6(struct ipv6hdr    *ip6h,
-               struct __sk_buff  *skb,
-               struct icmphdr   **new_icmp_out,
-               struct hdr_cursor *nh)
+rewrite_icmpv6(struct ipv6hdr *ip6h, struct __sk_buff *skb)
 {
-    void           *data_end = SKB_DATA_END(skb);
-    struct icmp6hdr old_icmp6, *icmp6 = (void *) (ip6h + 1);
-    struct icmphdr  icmp, *new_icmp;
-    __u32           mtu, ptr;
-    struct iphdr    dst_hdr;
-    void           *inner_packet;
+    void            *data_end = SKB_DATA_END(skb);
+    struct icmp6hdr  old_icmp6;
+    struct icmp6hdr *icmp6;
+    struct icmphdr   icmp;
+    struct icmphdr  *new_icmp;
+    struct iphdr     dst_hdr;
+    __u32            mtu;
+    __u32            ptr;
+    void            *inner_packet;
 
-    if ((void *) (icmp6 + 1) > data_end)
+    icmp6 = (void *) (ip6h + 1);
+    if (icmp6 + 1 > data_end)
         return -1;
 
     old_icmp6 = *icmp6;
     new_icmp  = (void *) icmp6;
-    icmp      = *new_icmp;
+    icmp      = *new_icmp;  // TODO avoid these copies?
 
     /* These translations are defined in RFC6145 section 5.2 */
     switch (icmp6->icmp6_type) {
@@ -502,42 +496,31 @@ rewrite_icmpv6(struct ipv6hdr    *ip6h,
     }
 
     *new_icmp = icmp;
-out:
-    *new_icmp_out = new_icmp;
     return 0;
 }
 
+/* ipv6 traffic from the PLAT, to be translated into ipv4 and sent to an application */
 static int
-clat_translate_v6(struct __sk_buff  *skb,
-                  struct hdr_cursor *nh,
-                  void              *data_end,
-                  struct iphdr      *dst_hdr_out,
-                  bool               depth)
+clat_handle_v6(struct __sk_buff *skb)
 {
-    struct in6_addr subnet_v6 = {};
-    struct in_addr  src_v4;
-    int             ip_type;
+    int             ret      = TC_ACT_OK;
+    void           *data_end = SKB_DATA_END(skb);
+    void           *data     = SKB_DATA(skb);
+    struct ethhdr  *eth;
+    struct iphdr   *iph;
     struct ipv6hdr *ip6h;
-    int             ret = TC_ACT_OK;
-    struct icmphdr *new_icmp;
-    struct icmp6hdr old_icmp6;
-    struct iphdr    dst_hdr_icmp;
-    int             type;
+    struct iphdr    dst_hdr = {
+           .version  = 4,
+           .ihl      = 5,
+           .frag_off = bpf_htons(1 << 14), /* set Don't Fragment bit */
+    };
 
     struct clat_v6_config_value *v6_config;
     struct clat_v6_config_key    v6_config_key;
 
-    struct iphdr dst_hdr = {
-        .version  = 4,
-        .ihl      = 5,
-        .frag_off = bpf_htons(1 << 14), /* set Don't Fragment bit */
-    };
-
-    ip_type = parse_ip6hdr(nh, data_end, &ip6h);
-    if (ip_type < 0)
+    ip6h = data + sizeof(struct ethhdr);
+    if (ip6h + 1 > data_end)
         goto out;
-
-    src_v4.s_addr = ip6h->saddr.s6_addr32[3];
 
     v6_config_key.local_v6 = ip6h->daddr;
     v6_config_key.pref64   = ip6h->saddr;
@@ -559,35 +542,35 @@ clat_translate_v6(struct __sk_buff  *skb,
      */
     ret = TC_ACT_SHOT;
 
-    /* drop packets with IP options - parser skips options */
-    if (ip_type != ip6h->nexthdr) {
-        DBG("v6: dropping packet with IP options from %pI6c\n", &ip6h->saddr);
+    /* drop packets with extension headers */
+    if (ip6h->nexthdr != IPPROTO_TCP && ip6h->nexthdr != IPPROTO_UDP
+        && ip6h->nexthdr != IPPROTO_ICMPV6)
         goto out;
-    }
 
     dst_hdr.daddr    = v6_config->local_v4.s_addr;
-    dst_hdr.saddr    = src_v4.s_addr;
+    dst_hdr.saddr    = ip6h->saddr.s6_addr32[3];
     dst_hdr.protocol = ip6h->nexthdr;
     dst_hdr.ttl      = ip6h->hop_limit;
     dst_hdr.tos      = ip6h->priority << 4 | (ip6h->flow_lbl[0] >> 4);
-    dst_hdr.tot_len  = bpf_htons(bpf_ntohs(ip6h->payload_len) + sizeof(dst_hdr));
+    dst_hdr.tot_len  = bpf_htons(bpf_ntohs(ip6h->payload_len) + sizeof(struct iphdr));
 
     switch (dst_hdr.protocol) {
     case IPPROTO_ICMPV6:
+    {
+        struct icmphdr *new_icmp;
+        struct icmp6hdr old_icmp6;
+        struct iphdr    dst_hdr_icmp;
 
         new_icmp = (void *) (ip6h + 1);
-        if ((void *) (new_icmp + 1) > data_end)
+        if (new_icmp + 1 > data_end)
             goto out;
 
         old_icmp6 = *((struct icmp6hdr *) (void *) new_icmp);
-        if (rewrite_icmpv6(ip6h, skb, &new_icmp, nh))
+        if (rewrite_icmpv6(ip6h, skb))
             goto out;
 
-        /* FIXME: also need to rewrite IP header embedded in ICMP error */
-        if (depth)
-            goto icmp_out;
-        if (!new_icmp)
-            goto icmp_out;
+        /* TODO: also need to rewrite IP header embedded in ICMP error */
+
         if ((void *) (new_icmp + 1) > data_end)
             goto icmp_out;
 
@@ -596,6 +579,7 @@ clat_translate_v6(struct __sk_buff  *skb,
 icmp_out:
         dst_hdr.protocol = IPPROTO_ICMP;
         break;
+    }
     case IPPROTO_TCP:
     case IPPROTO_UDP:
         update_l4_checksum(skb, ip6h, &dst_hdr, dst_hdr.protocol, false);
@@ -607,34 +591,6 @@ icmp_out:
     dst_hdr.check = csum_fold_helper(
         bpf_csum_diff((__be32 *) &dst_hdr, 0, (__be32 *) &dst_hdr, sizeof(dst_hdr), 0));
 
-    *dst_hdr_out = dst_hdr;
-
-    ret = TC_ACT_UNSPEC;
-out:
-    return ret;
-}
-
-/* ipv6 traffic from the PLAT, to be translated into ipv4 and sent to an application */
-static int
-clat_handle_v6(struct __sk_buff *skb, struct hdr_cursor *nh)
-{
-    int   ret      = TC_ACT_OK;
-    void *data_end = SKB_DATA_END(skb);
-    void *data     = SKB_DATA(skb);
-
-    struct ethhdr *eth;
-    struct iphdr  *iph;
-    struct iphdr   dst_hdr;
-
-    int ip_offset = (nh->pos - data) & 0x1fff;
-
-    ret = clat_translate_v6(skb, nh, data_end, &dst_hdr, 0);
-    if (ret != TC_ACT_UNSPEC) {
-        goto out;
-    }
-
-    ret = TC_ACT_SHOT;
-
     if (bpf_skb_change_proto(skb, bpf_htons(ETH_P_IP), 0))
         goto out;
 
@@ -642,8 +598,11 @@ clat_handle_v6(struct __sk_buff *skb, struct hdr_cursor *nh)
     data_end = SKB_DATA_END(skb);
 
     eth = data;
-    iph = data + ip_offset;
-    if ((void *) (eth + 1) > data_end || (void *) (iph + 1) > data_end)
+    if (eth + 1 > data_end)
+        goto out;
+
+    iph = (void *) (eth + 1);
+    if (iph + 1 > data_end)
         goto out;
 
     eth->h_proto = bpf_htons(ETH_P_IP);
@@ -654,21 +613,32 @@ out:
     return ret;
 }
 
+static __always_inline int
+_proto_is_vlan(__u16 h_proto)
+{
+    return !!(h_proto == bpf_htons(ETH_P_8021Q) || h_proto == bpf_htons(ETH_P_8021AD));
+}
+
 static int
 clat_handler(struct __sk_buff *skb, bool egress)
 {
-    void             *data_end = SKB_DATA_END(skb);
-    void             *data     = SKB_DATA(skb);
-    struct hdr_cursor nh       = {.pos = data};
-    struct ethhdr    *eth;
-    int               eth_type;
+    void          *data     = SKB_DATA(skb);
+    void          *data_end = SKB_DATA_END(skb);
+    struct ethhdr *eth;
+    int            eth_type;
 
-    /* Parse Ethernet and IP/IPv6 headers */
-    eth_type = parse_ethhdr(&nh, data_end, &eth);
+    eth = data;
+    if (eth + 1 > data_end)
+        return TC_ACT_OK;
+
+    eth_type = eth->h_proto;
+    if (_proto_is_vlan(eth_type))
+        return TC_ACT_OK;
+
     if (eth_type == bpf_htons(ETH_P_IP) && egress)
-        return clat_handle_v4(skb, &nh);
+        return clat_handle_v4(skb);
     else if (eth_type == bpf_htons(ETH_P_IPV6) && !egress)
-        return clat_handle_v6(skb, &nh);
+        return clat_handle_v6(skb);
 
     return TC_ACT_OK;
 }
