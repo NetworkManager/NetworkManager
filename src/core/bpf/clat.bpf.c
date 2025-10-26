@@ -34,21 +34,7 @@
 
 char _license[] SEC("license") = "GPL";
 
-struct {
-    __uint(type, BPF_MAP_TYPE_HASH);
-    __type(key, struct clat_v4_config_key);
-    __type(value, struct clat_v4_config_value);
-    __uint(max_entries, 16);
-    __uint(map_flags, BPF_F_NO_PREALLOC);
-} v4_config_map SEC(".maps");
-
-struct {
-    __uint(type, BPF_MAP_TYPE_HASH);
-    __type(key, struct clat_v6_config_key);
-    __type(value, struct clat_v6_config_value);
-    __uint(max_entries, 16);
-    __uint(map_flags, BPF_F_NO_PREALLOC);
-} v6_config_map SEC(".maps");
+struct clat_config config;
 
 #ifdef DEBUG
 #define DBG(fmt, ...)                                              \
@@ -305,25 +291,15 @@ clat_handle_v4(struct __sk_buff *skb)
     struct iphdr  *iph;
     struct ethhdr *eth;
 
-    struct clat_v4_config_value *v4_config;
-    struct clat_v4_config_key    v4_config_key;
-
     iph = data + sizeof(struct ethhdr);
     if (iph + 1 > data_end)
         goto out;
 
-    v4_config_key.ifindex         = skb->ifindex;
-    v4_config_key.local_v4.s_addr = iph->saddr;
-
-    v4_config = bpf_map_lookup_elem(&v4_config_map, &v4_config_key);
-    if (!v4_config) {
-        DBG("-> v4: config for src_v4=%pI4 not found!\n", &v4_config_key.local_v4);
+    if (iph->saddr != config.local_v4.s_addr)
         goto out;
-    }
 
-    /* At this point we know the destination IP is within the configured
-     * subnet, so if we can't rewrite the packet it should be dropped (so as
-     * not to leak traffic in that subnet).
+    /* At this point we know the packet needs translation. If we can't
+     * rewrite it, it should be dropped.
      */
     ret = TC_ACT_SHOT;
 
@@ -343,8 +319,8 @@ clat_handle_v4(struct __sk_buff *skb)
     }
 
     /* src v4 as last octet of clat address */
-    dst_hdr.saddr              = v4_config->local_v6;
-    dst_hdr.daddr              = v4_config->pref64;
+    dst_hdr.saddr              = config.local_v6;
+    dst_hdr.daddr              = config.pref64;
     dst_hdr.daddr.s6_addr32[3] = iph->daddr;
     dst_hdr.nexthdr            = iph->protocol;
     dst_hdr.hop_limit          = iph->ttl;
@@ -499,6 +475,18 @@ rewrite_icmpv6(struct ipv6hdr *ip6h, struct __sk_buff *skb)
     return 0;
 }
 
+static __always_inline bool
+v6addr_equal(const struct in6_addr *a, const struct in6_addr *b)
+{
+    int i;
+
+    for (i = 0; i < 4; i++) {
+        if (a->s6_addr32[i] != b->s6_addr32[i])
+            return false;
+    }
+    return true;
+}
+
 /* ipv6 traffic from the PLAT, to be translated into ipv4 and sent to an application */
 static int
 clat_handle_v6(struct __sk_buff *skb)
@@ -506,6 +494,7 @@ clat_handle_v6(struct __sk_buff *skb)
     int             ret      = TC_ACT_OK;
     void           *data_end = SKB_DATA_END(skb);
     void           *data     = SKB_DATA(skb);
+    struct in6_addr subnet_v6;
     struct ethhdr  *eth;
     struct iphdr   *iph;
     struct ipv6hdr *ip6h;
@@ -515,30 +504,21 @@ clat_handle_v6(struct __sk_buff *skb)
            .frag_off = bpf_htons(1 << 14), /* set Don't Fragment bit */
     };
 
-    struct clat_v6_config_value *v6_config;
-    struct clat_v6_config_key    v6_config_key;
-
     ip6h = data + sizeof(struct ethhdr);
     if (ip6h + 1 > data_end)
         goto out;
 
-    v6_config_key.local_v6 = ip6h->daddr;
-    v6_config_key.pref64   = ip6h->saddr;
-    /* v6 pxlen is always 96 */
-    v6_config_key.pref64.s6_addr32[3] = 0;
-    v6_config_key.ifindex             = skb->ifindex;
-
-    v6_config = bpf_map_lookup_elem(&v6_config_map, &v6_config_key);
-    if (!v6_config) {
-        DBG("<- v6: config for pref64=%pI6c, local_v6=%pI6c not found!\n",
-            &v6_config_key.pref64,
-            &v6_config_key.local_v6);
+    if (!v6addr_equal(&ip6h->daddr, &config.local_v6))
         goto out;
-    }
 
-    /* At this point we know the destination IP is within the configured
-     * subnet, so if we can't rewrite the packet it should be dropped (so as
-     * not to leak traffic in that subnet).
+    subnet_v6              = ip6h->saddr;
+    subnet_v6.s6_addr32[3] = 0; /* prefix len is always 96 for now */
+
+    if (!v6addr_equal(&subnet_v6, &config.pref64))
+        goto out;
+
+    /* At this point we know the packet needs translation. If we can't
+     * rewrite it, it should be dropped.
      */
     ret = TC_ACT_SHOT;
 
@@ -547,7 +527,7 @@ clat_handle_v6(struct __sk_buff *skb)
         && ip6h->nexthdr != IPPROTO_ICMPV6)
         goto out;
 
-    dst_hdr.daddr    = v6_config->local_v4.s_addr;
+    dst_hdr.daddr    = config.local_v4.s_addr;
     dst_hdr.saddr    = ip6h->saddr.s6_addr32[3];
     dst_hdr.protocol = ip6h->nexthdr;
     dst_hdr.ttl      = ip6h->hop_limit;
