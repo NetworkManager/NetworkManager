@@ -29,6 +29,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   per-connection via the "connection.dnssec" connection property.
 * Support configuring the HSR interlink port via the
   "hsr.interlink" property.
+* Fix some connection properties not being applied to vpn connections
+  (connection.mdns, connection.llmnr, connection.dns-over-tls,
+   connection.mptcp-flags, ipv6.ip6-privacy)
 
 =============================================
 NetworkManager-1.54
