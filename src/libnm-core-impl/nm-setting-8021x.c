@@ -3134,6 +3134,86 @@ need_secrets(NMSetting *setting, gboolean check_rerequest)
 /*****************************************************************************/
 
 static void
+get_private_files(NMSetting *setting, GPtrArray *files)
+{
+    const struct {
+        const char *property;
+        NMSetting8021xCKScheme (*get_scheme_func)(NMSetting8021x *);
+        const char *(*get_path_func)(NMSetting8021x *);
+    } cert_props[] = {
+        {NM_SETTING_802_1X_CA_CERT,
+         nm_setting_802_1x_get_ca_cert_scheme,
+         nm_setting_802_1x_get_ca_cert_path},
+        {NM_SETTING_802_1X_CLIENT_CERT,
+         nm_setting_802_1x_get_client_cert_scheme,
+         nm_setting_802_1x_get_client_cert_path},
+        {NM_SETTING_802_1X_PRIVATE_KEY,
+         nm_setting_802_1x_get_private_key_scheme,
+         nm_setting_802_1x_get_private_key_path},
+        {NM_SETTING_802_1X_PHASE2_CA_CERT,
+         nm_setting_802_1x_get_phase2_ca_cert_scheme,
+         nm_setting_802_1x_get_phase2_ca_cert_path},
+        {NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
+         nm_setting_802_1x_get_phase2_client_cert_scheme,
+         nm_setting_802_1x_get_phase2_client_cert_path},
+        {NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
+         nm_setting_802_1x_get_phase2_private_key_scheme,
+         nm_setting_802_1x_get_phase2_private_key_path},
+    };
+    NMSetting8021x *s_8021x = NM_SETTING_802_1X(setting);
+    const char     *path;
+    guint           i;
+
+    if (NM_MORE_ASSERT_ONCE(5)) {
+        GObjectClass        *klass;
+        gs_free GParamSpec **properties = NULL;
+        guint                n_properties;
+        gboolean             found;
+        guint                j;
+
+        /* Check that all the properties in the setting with flag CERT_KEY_FILE
+         * are listed in the table, and vice versa. */
+
+        klass = G_OBJECT_GET_CLASS(setting);
+
+        properties = g_object_class_list_properties(klass, &n_properties);
+        for (i = 0; i < n_properties; i++) {
+            if (!(properties[i]->flags & NM_SETTING_PARAM_CERT_KEY_FILE))
+                continue;
+
+            found = FALSE;
+            for (j = 0; j < G_N_ELEMENTS(cert_props); j++) {
+                if (nm_streq0(properties[i]->name, cert_props[j].property)) {
+                    found = TRUE;
+                    break;
+                }
+            }
+
+            nm_assert(found);
+        }
+
+        for (i = 0; i < G_N_ELEMENTS(cert_props); i++) {
+            GParamSpec *prop;
+
+            prop = g_object_class_find_property(klass, cert_props[i].property);
+            nm_assert(prop);
+            nm_assert(prop->flags & NM_SETTING_PARAM_CERT_KEY_FILE);
+        }
+    }
+
+    for (i = 0; i < G_N_ELEMENTS(cert_props); i++) {
+        if (cert_props[i].get_scheme_func(s_8021x) == NM_SETTING_802_1X_CK_SCHEME_PATH) {
+            path = cert_props[i].get_path_func(s_8021x);
+            if (path) {
+                g_ptr_array_add(files, (gpointer) path);
+            }
+        }
+    }
+}
+
+/*****************************************************************************/
+
+static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
     NMSetting8021x        *setting = NM_SETTING_802_1X(object);
@@ -3223,8 +3303,9 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
     object_class->set_property = set_property;
     object_class->finalize     = finalize;
 
-    setting_class->verify       = verify;
-    setting_class->need_secrets = need_secrets;
+    setting_class->verify            = verify;
+    setting_class->need_secrets      = need_secrets;
+    setting_class->get_private_files = get_private_files;
 
     /**
      * NMSetting8021x:eap:
@@ -3359,7 +3440,7 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                              obj_properties,
                                              NM_SETTING_802_1X_CA_CERT,
                                              PROP_CA_CERT,
-                                             NM_SETTING_PARAM_NONE,
+                                             NM_SETTING_PARAM_CERT_KEY_FILE,
                                              NMSetting8021xPrivate,
                                              ca_cert);
 
@@ -3556,7 +3637,7 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                              obj_properties,
                                              NM_SETTING_802_1X_CLIENT_CERT,
                                              PROP_CLIENT_CERT,
-                                             NM_SETTING_PARAM_NONE,
+                                             NM_SETTING_PARAM_CERT_KEY_FILE,
                                              NMSetting8021xPrivate,
                                              client_cert);
 
@@ -3803,7 +3884,7 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                              obj_properties,
                                              NM_SETTING_802_1X_PHASE2_CA_CERT,
                                              PROP_PHASE2_CA_CERT,
-                                             NM_SETTING_PARAM_NONE,
+                                             NM_SETTING_PARAM_CERT_KEY_FILE,
                                              NMSetting8021xPrivate,
                                              phase2_ca_cert);
 
@@ -4006,7 +4087,7 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                              obj_properties,
                                              NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
                                              PROP_PHASE2_CLIENT_CERT,
-                                             NM_SETTING_PARAM_NONE,
+                                             NM_SETTING_PARAM_CERT_KEY_FILE,
                                              NMSetting8021xPrivate,
                                              phase2_client_cert);
 
@@ -4175,7 +4256,7 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                              obj_properties,
                                              NM_SETTING_802_1X_PRIVATE_KEY,
                                              PROP_PRIVATE_KEY,
-                                             NM_SETTING_PARAM_NONE,
+                                             NM_SETTING_PARAM_CERT_KEY_FILE,
                                              NMSetting8021xPrivate,
                                              private_key);
 
@@ -4276,7 +4357,7 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                              obj_properties,
                                              NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
                                              PROP_PHASE2_PRIVATE_KEY,
-                                             NM_SETTING_PARAM_NONE,
+                                             NM_SETTING_PARAM_CERT_KEY_FILE,
                                              NMSetting8021xPrivate,
                                              phase2_private_key);
 
