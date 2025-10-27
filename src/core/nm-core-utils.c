@@ -5517,47 +5517,19 @@ nm_utils_get_connection_first_permissions_user(NMConnection *connection)
 
 /*****************************************************************************/
 
-static void
-get_8021x_private_files(NMConnection *connection, GPtrArray *files)
-{
-    const struct {
-        NMSetting8021xCKScheme (*get_scheme_func)(NMSetting8021x *);
-        const char *(*get_path_func)(NMSetting8021x *);
-    } funcs[] = {
-        {nm_setting_802_1x_get_ca_cert_scheme, nm_setting_802_1x_get_ca_cert_path},
-        {nm_setting_802_1x_get_client_cert_scheme, nm_setting_802_1x_get_client_cert_path},
-        {nm_setting_802_1x_get_private_key_scheme, nm_setting_802_1x_get_private_key_path},
-        {nm_setting_802_1x_get_phase2_ca_cert_scheme, nm_setting_802_1x_get_phase2_ca_cert_path},
-        {nm_setting_802_1x_get_phase2_client_cert_scheme,
-         nm_setting_802_1x_get_phase2_client_cert_path},
-        {nm_setting_802_1x_get_phase2_private_key_scheme,
-         nm_setting_802_1x_get_phase2_private_key_path},
-    };
-    NMSetting8021x *s_8021x;
-    const char     *path;
-    guint           i;
-
-    s_8021x = nm_connection_get_setting_802_1x(connection);
-    if (!s_8021x)
-        return;
-
-    for (i = 0; i < G_N_ELEMENTS(funcs); i++) {
-        if (funcs[i].get_scheme_func(s_8021x) == NM_SETTING_802_1X_CK_SCHEME_PATH) {
-            path = funcs[i].get_path_func(s_8021x);
-            if (path) {
-                g_ptr_array_add(files, (gpointer) path);
-            }
-        }
-    }
-}
-
 const char **
 nm_utils_get_connection_private_files_paths(NMConnection *connection)
 {
-    GPtrArray *files;
+    GPtrArray          *files;
+    gs_free NMSetting **settings = NULL;
+    guint               num_settings;
+    guint               i;
 
-    files = g_ptr_array_new();
-    get_8021x_private_files(connection, files);
+    files    = g_ptr_array_new();
+    settings = nm_connection_get_settings(connection, &num_settings);
+    for (i = 0; i < num_settings; i++) {
+        _nm_setting_get_private_files(settings[i], files);
+    }
     g_ptr_array_add(files, NULL);
 
     return (const char **) g_ptr_array_free(files, files->len == 1);
