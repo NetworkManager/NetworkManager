@@ -111,11 +111,11 @@ update_l4_checksum(struct __sk_buff *skb,
 }
 
 static void
-update_icmp_checksum(struct __sk_buff *skb,
-                     struct ipv6hdr   *ip6h,
-                     void             *icmp_before,
-                     void             *icmp_after,
-                     bool              add)
+update_icmp_checksum(struct __sk_buff     *skb,
+                     const struct ipv6hdr *ip6h,
+                     void                 *icmp_before,
+                     void                 *icmp_after,
+                     bool                  v4to6)
 {
     struct icmpv6_pseudo ph = {.nh = IPPROTO_ICMPV6, .len = ip6h->payload_len};
     __u16                h_before, h_after;
@@ -136,12 +136,12 @@ update_icmp_checksum(struct __sk_buff *skb,
      * itself.
      */
     csum = bpf_csum_diff((__be32 *) &ph,
-                         add ? 0 : sizeof(ph),
+                         v4to6 ? 0 : sizeof(ph),
                          (__be32 *) &ph,
-                         add ? sizeof(ph) : 0,
+                         v4to6 ? sizeof(ph) : 0,
                          0);
 
-    offset = sizeof(struct ethhdr) + (add ? sizeof(struct iphdr) : sizeof(struct ipv6hdr)) + 2;
+    offset = sizeof(struct ethhdr) + (v4to6 ? sizeof(struct iphdr) : sizeof(struct ipv6hdr)) + 2;
 
     /* first two bytes of ICMP header, type and code */
     h_before = *(__u16 *) icmp_before;
