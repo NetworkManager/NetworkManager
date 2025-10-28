@@ -77,7 +77,6 @@ update_l4_checksum(struct __sk_buff *skb,
                    int               ip_type,
                    bool              v4to6)
 {
-    void *data  = SKB_DATA(skb);
     int   flags = BPF_F_PSEUDO_HDR;
     __u16 offset;
     __u32 csum;
@@ -118,8 +117,7 @@ update_icmp_checksum(struct __sk_buff *skb,
                      void             *icmp_after,
                      bool              add)
 {
-    void                *data = SKB_DATA(skb);
-    struct icmpv6_pseudo ph   = {.nh = IPPROTO_ICMPV6, .len = ip6h->payload_len};
+    struct icmpv6_pseudo ph = {.nh = IPPROTO_ICMPV6, .len = ip6h->payload_len};
     __u16                h_before, h_after;
     __u32                u_before, u_after;
     __u16                offset;
@@ -280,13 +278,12 @@ rewrite_icmp(struct iphdr *iph, struct ipv6hdr *ip6h, struct __sk_buff *skb)
 static int
 clat_handle_v4(struct __sk_buff *skb)
 {
-    int              ret      = TC_ACT_OK;
-    void            *data_end = SKB_DATA_END(skb);
-    void            *data     = SKB_DATA(skb);
-    struct in6_addr *dst_v6;
-    struct ipv6hdr  *ip6h;
-    struct ipv6hdr   dst_hdr = {
-          .version = 6,
+    int             ret      = TC_ACT_OK;
+    void           *data_end = SKB_DATA_END(skb);
+    void           *data     = SKB_DATA(skb);
+    struct ipv6hdr *ip6h;
+    struct ipv6hdr  dst_hdr = {
+         .version = 6,
     };
     struct iphdr  *iph;
     struct ethhdr *eth;
@@ -380,22 +377,18 @@ static int
 rewrite_icmpv6(struct ipv6hdr *ip6h, struct __sk_buff *skb)
 {
     void            *data_end = SKB_DATA_END(skb);
-    struct icmp6hdr  old_icmp6;
     struct icmp6hdr *icmp6;
     struct icmphdr   icmp;
     struct icmphdr  *new_icmp;
-    struct iphdr     dst_hdr;
     __u32            mtu;
     __u32            ptr;
-    void            *inner_packet;
 
     icmp6 = (void *) (ip6h + 1);
     if (icmp6 + 1 > data_end)
         return -1;
 
-    old_icmp6 = *icmp6;
-    new_icmp  = (void *) icmp6;
-    icmp      = *new_icmp;  // TODO avoid these copies?
+    new_icmp = (void *) icmp6;
+    icmp     = *new_icmp;  // TODO avoid these copies?
 
     /* These translations are defined in RFC6145 section 5.2 */
     switch (icmp6->icmp6_type) {
@@ -539,7 +532,6 @@ clat_handle_v6(struct __sk_buff *skb)
     {
         struct icmphdr *new_icmp;
         struct icmp6hdr old_icmp6;
-        struct iphdr    dst_hdr_icmp;
 
         new_icmp = (void *) (ip6h + 1);
         if (new_icmp + 1 > data_end)
