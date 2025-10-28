@@ -159,32 +159,34 @@ update_icmp_checksum(struct __sk_buff     *skb,
 }
 
 static int
-rewrite_icmp(struct iphdr *iph, struct ipv6hdr *ip6h, struct __sk_buff *skb)
+rewrite_icmp(struct __sk_buff *skb, const struct ipv6hdr *ip6h)
 {
     void            *data_end = SKB_DATA_END(skb);
-    struct icmphdr   old_icmp;
-    struct icmp6hdr  icmp6;
-    struct icmphdr  *icmp = (void *) (iph + 1);
-    struct icmp6hdr *new_icmp6;
+    void            *data     = SKB_DATA(skb);
+    struct icmphdr   icmp_buf;  /* copy of the old ICMPv4 header */
+    struct icmp6hdr  icmp6_buf; /* buffer for the new ICMPv6 header */
+    struct icmphdr  *icmp;
+    struct icmp6hdr *icmp6;
     __u32            mtu;
 
+    icmp = data + sizeof(struct ethhdr) + sizeof(struct iphdr);
     if ((icmp + 1) > data_end)
         return -1;
 
-    old_icmp  = *icmp;
-    new_icmp6 = (void *) icmp;
-    icmp6     = *new_icmp6;
+    icmp_buf  = *icmp;
+    icmp6     = (void *) icmp;
+    icmp6_buf = *icmp6;
 
     /* These translations are defined in RFC6145 section 4.2 */
     switch (icmp->type) {
     case ICMP_ECHO:
-        icmp6.icmp6_type = ICMPV6_ECHO_REQUEST;
+        icmp6_buf.icmp6_type = ICMPV6_ECHO_REQUEST;
         break;
     case ICMP_ECHOREPLY:
-        icmp6.icmp6_type = ICMPV6_ECHO_REPLY;
+        icmp6_buf.icmp6_type = ICMPV6_ECHO_REPLY;
         break;
     case ICMP_DEST_UNREACH:
-        icmp6.icmp6_type = ICMPV6_DEST_UNREACH;
+        icmp6_buf.icmp6_type = ICMPV6_DEST_UNREACH;
         switch (icmp->code) {
         case ICMP_NET_UNREACH:
         case ICMP_HOST_UNREACH:
@@ -194,30 +196,30 @@ rewrite_icmp(struct iphdr *iph, struct ipv6hdr *ip6h, struct __sk_buff *skb)
         case ICMP_HOST_ISOLATED:
         case ICMP_NET_UNR_TOS:
         case ICMP_HOST_UNR_TOS:
-            icmp6.icmp6_code = ICMPV6_NOROUTE;
+            icmp6_buf.icmp6_code = ICMPV6_NOROUTE;
             break;
         case ICMP_PROT_UNREACH:
-            icmp6.icmp6_type    = ICMPV6_PARAMPROB;
-            icmp6.icmp6_code    = ICMPV6_UNK_NEXTHDR;
-            icmp6.icmp6_pointer = bpf_htonl(offsetof(struct ipv6hdr, nexthdr));
+            icmp6_buf.icmp6_type    = ICMPV6_PARAMPROB;
+            icmp6_buf.icmp6_code    = ICMPV6_UNK_NEXTHDR;
+            icmp6_buf.icmp6_pointer = bpf_htonl(offsetof(struct ipv6hdr, nexthdr));
         case ICMP_PORT_UNREACH:
-            icmp6.icmp6_code = ICMPV6_PORT_UNREACH;
+            icmp6_buf.icmp6_code = ICMPV6_PORT_UNREACH;
             break;
         case ICMP_FRAG_NEEDED:
-            icmp6.icmp6_type = ICMPV6_PKT_TOOBIG;
-            icmp6.icmp6_code = 0;
-            mtu              = bpf_ntohs(icmp->un.frag.mtu) + 20;
+            icmp6_buf.icmp6_type = ICMPV6_PKT_TOOBIG;
+            icmp6_buf.icmp6_code = 0;
+            mtu                  = bpf_ntohs(icmp->un.frag.mtu) + 20;
             /* RFC6145 section 6, "second approach" - should not be
              * necessary, but might as well do this
              */
             if (mtu < 1280)
                 mtu = 1280;
-            icmp6.icmp6_mtu = bpf_htonl(mtu);
+            icmp6_buf.icmp6_mtu = bpf_htonl(mtu);
         case ICMP_NET_ANO:
         case ICMP_HOST_ANO:
         case ICMP_PKT_FILTERED:
         case ICMP_PREC_CUTOFF:
-            icmp6.icmp6_code = ICMPV6_ADM_PROHIBITED;
+            icmp6_buf.icmp6_code = ICMPV6_ADM_PROHIBITED;
         default:
             return -1;
         }
@@ -225,39 +227,39 @@ rewrite_icmp(struct iphdr *iph, struct ipv6hdr *ip6h, struct __sk_buff *skb)
     case ICMP_PARAMETERPROB:
         if (icmp->code == 1)
             return -1;
-        icmp6.icmp6_type = ICMPV6_PARAMPROB;
-        icmp6.icmp6_code = ICMPV6_HDR_FIELD;
+        icmp6_buf.icmp6_type = ICMPV6_PARAMPROB;
+        icmp6_buf.icmp6_code = ICMPV6_HDR_FIELD;
         /* The pointer field not defined in the Linux header. This
          * translation is from Figure 3 of RFC6145.
          */
         switch (icmp->un.reserved[0]) {
         case 0: /* version/IHL */
-            icmp6.icmp6_pointer = 0;
+            icmp6_buf.icmp6_pointer = 0;
             break;
         case 1: /* Type of Service */
-            icmp6.icmp6_pointer = bpf_htonl(1);
+            icmp6_buf.icmp6_pointer = bpf_htonl(1);
             break;
         case 2: /* Total length */
         case 3:
-            icmp6.icmp6_pointer = bpf_htonl(4);
+            icmp6_buf.icmp6_pointer = bpf_htonl(4);
             break;
         case 8: /* Time to Live */
-            icmp6.icmp6_pointer = bpf_htonl(7);
+            icmp6_buf.icmp6_pointer = bpf_htonl(7);
             break;
         case 9: /* Protocol */
-            icmp6.icmp6_pointer = bpf_htonl(6);
+            icmp6_buf.icmp6_pointer = bpf_htonl(6);
             break;
         case 12: /* Source address */
         case 13:
         case 14:
         case 15:
-            icmp6.icmp6_pointer = bpf_htonl(8);
+            icmp6_buf.icmp6_pointer = bpf_htonl(8);
             break;
         case 16: /* Destination address */
         case 17:
         case 18:
         case 19:
-            icmp6.icmp6_pointer = bpf_htonl(24);
+            icmp6_buf.icmp6_pointer = bpf_htonl(24);
             break;
         default:
             return -1;
@@ -266,8 +268,8 @@ rewrite_icmp(struct iphdr *iph, struct ipv6hdr *ip6h, struct __sk_buff *skb)
         return -1;
     }
 
-    *new_icmp6 = icmp6;
-    update_icmp_checksum(skb, ip6h, &old_icmp, new_icmp6, true);
+    *icmp6 = icmp6_buf;
+    update_icmp_checksum(skb, ip6h, &icmp_buf, icmp6, true);
 
     /* FIXME: also need to rewrite IP header embedded in ICMP error */
 
@@ -330,7 +332,7 @@ clat_handle_v4(struct __sk_buff *skb)
 
     switch (dst_hdr.nexthdr) {
     case IPPROTO_ICMP:
-        if (rewrite_icmp(iph, &dst_hdr, skb))
+        if (rewrite_icmp(skb, &dst_hdr))
             goto out;
         dst_hdr.nexthdr = IPPROTO_ICMPV6;
         break;
