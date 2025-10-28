@@ -19,13 +19,10 @@
 #include <linux/in.h>
 #include <linux/in6.h>
 #include <linux/pkt_cls.h>
-#include <linux/pkt_sched.h>
 #include <linux/tcp.h>
 #include <linux/udp.h>
 #include <linux/if_ether.h>
 #include <stdbool.h>
-#include <string.h>
-#include <sys/socket.h>
 
 #include <bpf/bpf_endian.h>
 #include <bpf/bpf_helpers.h>
