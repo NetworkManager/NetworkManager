@@ -32,6 +32,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Fix some connection properties not being applied to vpn connections
   (connection.mdns, connection.llmnr, connection.dns-over-tls,
    connection.mptcp-flags, ipv6.ip6-privacy)
+* Update n-acd to always compile with eBPF enabled, as support
+  for eBPF is now detected at run time.
 
 =============================================
 NetworkManager-1.54
