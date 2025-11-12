@@ -23,6 +23,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   the 802.1X certificates and keys set in the connection.
 * Introduce a libnm function that can be used by VPN plugins to check
   user permissions on certificate and keys.
+* The support for Wireless Extensions is deprecated and will be
+  removed in a future release. Wireless Extensions are now disabled by
+  default.
 
 =============================================
 NetworkManager-1.56

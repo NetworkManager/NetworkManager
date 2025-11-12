@@ -333,7 +333,11 @@ enable_iwd = get_option('iwd')
 assert((not enable_iwd) or enable_wifi, 'Enabling iwd support requires Wi-Fi support as well')
 config_h.set10('WITH_IWD', enable_iwd)
 
-enable_wext = get_option('wext')
+wext = get_option('wext')
+if wext == 'true'
+  error('Wireless Extensions support is deprecated and will be removed in the future. Use -Dwext=force to keep using it')
+endif
+enable_wext = (wext == 'force')
 config_h.set10('HAVE_WEXT', enable_wext)
 
 # Checks for libdl - on certain platforms its part of libc
