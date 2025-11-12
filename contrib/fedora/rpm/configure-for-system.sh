@@ -387,7 +387,7 @@ meson setup\
     -Db_lto="$(bool_true "$P_LTO")" \
     -Dlibaudit=yes-disabled-by-default \
     -Dmodem_manager="$(bool_true "$P_MODEM_MANAGER_1")" \
-    $(args_enable "$P_WIFI"                    -Dwifi=true  -Dwext="$(bool_true "$P_FEDORA")") \
+    $(args_enable "$P_WIFI"                    -Dwifi=true  -Dwext=false) \
     $(args_enable "$(bool_not_true "$P_WIFI")" -Dwifi=false                                  ) \
     -Diwd="$(bool_true "$P_IWD")" \
     -Dbluez5_dun="$(bool_true "$P_BLUETOOTH")" \
