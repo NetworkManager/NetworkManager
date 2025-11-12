@@ -7135,20 +7135,24 @@ nm_device_controller_release_port(NMDevice           *self,
 
     info = find_port_info(self, port);
 
-    if (info->port_state == PORT_STATE_ATTACHED)
-        port_state_str = "(attached)";
-    else if (info->port_state == PORT_STATE_NOT_ATTACHED)
-        port_state_str = "(not attached)";
-    else {
-        nm_assert(info->port_state == PORT_STATE_ATTACHING);
-        port_state_str = "(attaching)";
+    if (info) {
+        if (info->port_state == PORT_STATE_ATTACHED)
+            port_state_str = "(attached)";
+        else if (info->port_state == PORT_STATE_NOT_ATTACHED)
+            port_state_str = "(not attached)";
+        else {
+            nm_assert(info->port_state == PORT_STATE_ATTACHING);
+            port_state_str = "(attaching)";
+        }
+    } else {
+        port_state_str = "(not registered)";
     }
 
     _LOGT(LOGD_CORE,
           "controller: release one port " NM_HASH_OBFUSCATE_PTR_FMT "/%s %s%s",
           NM_HASH_OBFUSCATE_PTR(port),
           nm_device_get_iface(port),
-          !info ? "(not registered)" : port_state_str,
+          port_state_str,
           release_type == RELEASE_PORT_TYPE_CONFIG_FORCE
               ? " (force-configure)"
               : (release_type == RELEASE_PORT_TYPE_CONFIG ? " (configure)" : "(no-config)"));
