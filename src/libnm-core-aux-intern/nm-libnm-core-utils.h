@@ -300,11 +300,12 @@ gpointer _nm_connection_new_setting(NMConnection *connection, GType gtype);
 
 /*****************************************************************************/
 
-#define _NM_MPTCP_FLAGS_ALL                                                              \
-    ((NMMptcpFlags) (NM_MPTCP_FLAGS_DISABLED | NM_MPTCP_FLAGS_ENABLED                    \
-                     | NM_MPTCP_FLAGS_ALSO_WITHOUT_SYSCTL                                \
-                     | NM_MPTCP_FLAGS_ALSO_WITHOUT_DEFAULT_ROUTE | NM_MPTCP_FLAGS_SIGNAL \
-                     | NM_MPTCP_FLAGS_SUBFLOW | NM_MPTCP_FLAGS_BACKUP | NM_MPTCP_FLAGS_FULLMESH))
+#define _NM_MPTCP_FLAGS_ALL                                                                     \
+    ((NMMptcpFlags) (NM_MPTCP_FLAGS_DISABLED | NM_MPTCP_FLAGS_ENABLED                           \
+                     | NM_MPTCP_FLAGS_ALSO_WITHOUT_SYSCTL                                       \
+                     | NM_MPTCP_FLAGS_ALSO_WITHOUT_DEFAULT_ROUTE | NM_MPTCP_FLAGS_SIGNAL        \
+                     | NM_MPTCP_FLAGS_SUBFLOW | NM_MPTCP_FLAGS_BACKUP | NM_MPTCP_FLAGS_FULLMESH \
+                     | NM_MPTCP_FLAGS_LAMINAR))
 
 #define _NM_MPTCP_FLAGS_DEFAULT ((NMMptcpFlags) (NM_MPTCP_FLAGS_ENABLED | NM_MPTCP_FLAGS_SUBFLOW))
 
