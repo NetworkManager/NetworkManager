@@ -5054,8 +5054,8 @@ _l3_commit_mptcp_af(NML3Cfg          *self,
             (NM_FLAGS_HAS(mptcp_flags, NM_MPTCP_FLAGS_SIGNAL) ? MPTCP_PM_ADDR_FLAG_SIGNAL : 0)
             | (NM_FLAGS_HAS(mptcp_flags, NM_MPTCP_FLAGS_SUBFLOW) ? MPTCP_PM_ADDR_FLAG_SUBFLOW : 0)
             | (NM_FLAGS_HAS(mptcp_flags, NM_MPTCP_FLAGS_BACKUP) ? MPTCP_PM_ADDR_FLAG_BACKUP : 0)
-            | (NM_FLAGS_HAS(mptcp_flags, NM_MPTCP_FLAGS_FULLMESH) ? MPTCP_PM_ADDR_FLAG_FULLMESH
-                                                                  : 0);
+            | (NM_FLAGS_HAS(mptcp_flags, NM_MPTCP_FLAGS_FULLMESH) ? MPTCP_PM_ADDR_FLAG_FULLMESH : 0)
+            | (NM_FLAGS_HAS(mptcp_flags, NM_MPTCP_FLAGS_LAMINAR) ? MPTCP_PM_ADDR_FLAG_LAMINAR : 0);
         NMPlatformMptcpAddr a = {
             .ifindex     = self->priv.ifindex,
             .id          = 0,

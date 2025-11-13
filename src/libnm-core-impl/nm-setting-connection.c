@@ -3458,7 +3458,7 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * - "disabled", "disabled-on-local-iface", "enable": whether MPTCP handling
      *   is enabled. The flag "disabled-on-local-iface" enables it based on whether
      *   the interface has a default route.
-     * - "signal", "subflow", "backup", "fullmesh": the endpoint flags
+     * - "signal", "subflow", "backup", "fullmesh", "laminar": the endpoint flags
      *   that are used.
      *
      * The reason is, that it is useful to have one "connection.mptcp-flags"
@@ -3518,7 +3518,8 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * When MPTCP handling is enabled then endpoints are configured with
      * the specified address flags "signal" (0x10), "subflow" (0x20), "backup" (0x40),
-     * "fullmesh" (0x80). See ip-mptcp(8) manual for additional information about the flags.
+     * "fullmesh" (0x80), "laminar" (0x100). See ip-mptcp(8) manual for
+     * additional information about the flags.
      *
      * If the flags are zero (0x0), the global connection default from NetworkManager.conf is
      * honored. If still unspecified, the fallback is "enabled,subflow".
