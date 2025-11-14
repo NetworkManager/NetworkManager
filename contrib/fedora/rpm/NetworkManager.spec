@@ -675,6 +675,7 @@ Preferably use nmcli instead.
 	-Dsession_tracking=systemd \
 	-Dsuspend_resume=systemd \
 	-Dsystemdsystemunitdir=%{_unitdir} \
+	-Dsystemdsystemgeneratordir=%{_systemdgeneratordir} \
 	-Dsystem_ca_path=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem \
 	-Ddbus_conf_dir=%{dbus_sys_dir} \
 	-Dtests=yes \
@@ -747,6 +748,7 @@ rm -f %{buildroot}%{_libdir}/pppd/%{ppp_version}/*.la
 rm -f %{buildroot}%{nmplugindir}/*.la
 
 # Don't use the *-initrd.service files yet, wait dracut to support them
+rm -f %{buildroot}%{_systemdgeneratordir}/nm-initrd-generator.sh
 rm -f %{buildroot}%{_unitdir}/NetworkManager-config-initrd.service
 rm -f %{buildroot}%{_unitdir}/NetworkManager-initrd.service
 rm -f %{buildroot}%{_unitdir}/NetworkManager-wait-online-initrd.service

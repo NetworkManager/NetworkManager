@@ -383,6 +383,14 @@ if install_systemdunitdir and systemd_systemdsystemunitdir == ''
   systemd_systemdsystemunitdir = systemd_dep.get_variable(pkgconfig: 'systemdsystemunitdir', pkgconfig_define: ['rootprefix', nm_prefix])
 endif
 
+systemd_systemdsystemgeneratordir = get_option('systemdsystemgeneratordir')
+install_systemdgeneratordir = (systemd_systemdsystemgeneratordir != 'no')
+
+if install_systemdgeneratordir and systemd_systemdsystemgeneratordir == ''
+  assert(systemd_dep.found(), 'systemd required but not found, please provide a valid systemd user generator dir or disable it')
+  systemd_systemdsystemgeneratordir = systemd_dep.get_variable(pkgconfig: 'systemdsystemgeneratordir', pkgconfig_define: ['rootprefix', nm_prefix])
+endif
+
 enable_systemd_journal = get_option('systemd_journal')
 if enable_systemd_journal
   assert(libsystemd_dep.found(), 'Missing systemd-journald support')
@@ -1059,6 +1067,7 @@ output = '\nSystem paths:\n'
 output += '  prefix: ' + nm_prefix + '\n'
 output += '  exec_prefix: ' + nm_prefix + '\n'
 output += '  systemdunitdir: ' + systemd_systemdsystemunitdir + '\n'
+output += '  systemdgeneratordir: ' + systemd_systemdsystemgeneratordir + '\n'
 output += '  udev_dir: ' + udev_udevdir + '\n'
 output += '  nmbinary: ' + nm_pkgsbindir + '\n'
 output += '  nmconfdir: ' + nm_pkgconfdir + '\n'

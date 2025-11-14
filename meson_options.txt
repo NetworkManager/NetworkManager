@@ -1,5 +1,6 @@
 # system paths
 option('systemdsystemunitdir', type: 'string', value: '', description: 'Directory for systemd service files')
+option('systemdsystemgeneratordir', type: 'string', value: '', description: 'Directory for systemd generator files')
 option('system_ca_path', type: 'string', value: '/etc/ssl/certs', description: 'path to system CA certificates')
 option('udev_dir', type: 'string', value: '', description: 'Absolute path of the udev base directory. Set to \'no\' not to install the udev rule')
 option('dbus_conf_dir', type: 'string', value: '', description: 'where D-Bus system.d directory is')

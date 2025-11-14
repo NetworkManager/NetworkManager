@@ -1,10 +1,10 @@
 [Unit]
 Description=NetworkManager Wait Online (initrd)
+AssertPathExists=/etc/initrd-release
 DefaultDependencies=no
 Requires=NetworkManager-initrd.service
 After=NetworkManager-initrd.service
 Before=network-online.target
-ConditionPathExists=/etc/initrd-release
 ConditionPathExists=/run/NetworkManager/initrd/neednet
 
 [Service]
@@ -21,6 +21,3 @@ Type=oneshot
 ExecStart=@bindir@/nm-online -s -q
 RemainAfterExit=yes
 Environment=NM_ONLINE_TIMEOUT=3600
-
-[Install]
-WantedBy=initrd.target network-online.target

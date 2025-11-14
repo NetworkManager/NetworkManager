@@ -398,6 +398,7 @@ meson setup\
     -Dsession_tracking=systemd \
     -Dsuspend_resume=systemd \
     -Dsystemdsystemunitdir=/usr/lib/systemd/system \
+    -Dsystemdsystemgeneratordir=/usr/lib/systemd/system-generators \
     -Dsystem_ca_path=/etc/pki/tls/cert.pem \
     -Ddbus_conf_dir="$P_DBUS_SYS_DIR" \
     -Dtests=yes \
