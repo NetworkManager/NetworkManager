@@ -5,6 +5,10 @@ Overview of changes since NetworkManager-1.54.1
 
 * Support reapplying the "sriov.vfs" property as long as
   "sriov.total-vfs" is not changed.
+* Support configuring the HSR protocol version via the
+  "hsr.protocol-version" property.
+* Support configuring the HSR interlink port via the
+  "hsr.interlink" property.
 
 ===============================================
 NetworkManager-1.54.1
