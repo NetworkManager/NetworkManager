@@ -77,6 +77,8 @@ struct _NMConnectivityCheckHandle {
         ConConfig *con_config;
 
         GCancellable      *resolve_cancellable;
+        int                resolve_ifindex;
+        GDBusConnection   *dbus_connection;
         CURLM             *curl_mhandle;
         CURL              *curl_ehandle;
         struct curl_slist *request_headers;
@@ -953,6 +955,113 @@ systemd_resolved_resolve_cb(GObject *object, GAsyncResult *res, gpointer user_da
     do_curl_request(cb_data, nm_str_buf_get_str(&strbuf_hosts));
 }
 
+static void
+systemd_resolved_resolve(NMConnectivityCheckHandle *cb_data)
+{
+    _LOG2D("start request to '%s' (try resolving '%s' using systemd-resolved with ifindex %d)",
+           cb_data->concheck.con_config->uri,
+           cb_data->concheck.con_config->host,
+           cb_data->concheck.resolve_ifindex);
+
+    g_dbus_connection_call(cb_data->concheck.dbus_connection,
+                           "org.freedesktop.resolve1",
+                           "/org/freedesktop/resolve1",
+                           "org.freedesktop.resolve1.Manager",
+                           "ResolveHostname",
+                           g_variant_new("(isit)",
+                                         (gint32) cb_data->concheck.resolve_ifindex,
+                                         cb_data->concheck.con_config->host,
+                                         (gint32) cb_data->addr_family,
+                                         SD_RESOLVED_DNS),
+                           G_VARIANT_TYPE("(a(iiay)st)"),
+                           G_DBUS_CALL_FLAGS_NONE,
+                           -1,
+                           cb_data->concheck.resolve_cancellable,
+                           systemd_resolved_resolve_cb,
+                           cb_data);
+}
+
+static void
+systemd_resolved_link_scopes_cb(GObject *object, GAsyncResult *res, gpointer user_data)
+{
+    NMConnectivityCheckHandle *cb_data;
+    gs_unref_variant GVariant *result     = NULL;
+    gs_unref_variant GVariant *value      = NULL;
+    gs_free_error GError      *error      = NULL;
+    guint64                    scope_mask = 0;
+
+    result = g_dbus_connection_call_finish(G_DBUS_CONNECTION(object), res, &error);
+    if (nm_utils_error_is_cancelled(error))
+        return;
+
+    cb_data = user_data;
+
+    if (!result) {
+        _LOG2D("unable to obtain systemd-resolved link ScopesMask for interface %d: %s",
+               cb_data->concheck.resolve_ifindex,
+               error->message);
+
+        cb_data->concheck.resolve_ifindex = 0;
+        systemd_resolved_resolve(cb_data);
+        return;
+    }
+
+    g_variant_get(result, "(v)", &value);
+    g_variant_get(value, "t", &scope_mask);
+
+    if (!(scope_mask & SD_RESOLVED_DNS)) {
+        /* there is no per-link DNS configured / active; query all available /
+         * system DNS resolvers instead of restricting the lookup to just this
+         * one, which would turn up no results. */
+        _LOG2D("no per-link DNS available (scope mask %" G_GUINT64_FORMAT
+               "); falling back to system-wide lookups",
+               scope_mask);
+        cb_data->concheck.resolve_ifindex = 0;
+    }
+
+    systemd_resolved_resolve(cb_data);
+}
+
+static void
+systemd_resolved_get_link_cb(GObject *object, GAsyncResult *res, gpointer user_data)
+{
+    NMConnectivityCheckHandle *cb_data;
+    gs_unref_variant GVariant *result    = NULL;
+    gs_free char              *link_path = NULL;
+    gs_free_error GError      *error     = NULL;
+
+    result = g_dbus_connection_call_finish(G_DBUS_CONNECTION(object), res, &error);
+    if (nm_utils_error_is_cancelled(error))
+        return;
+
+    cb_data = user_data;
+
+    if (!result) {
+        _LOG2D("unable to obtain systemd-resolved link D-Bus object for interface %d: %s",
+               cb_data->concheck.resolve_ifindex,
+               error->message);
+
+        cb_data->concheck.resolve_ifindex = 0;
+        systemd_resolved_resolve(cb_data);
+        return;
+    }
+
+    g_variant_get(result, "(o)", &link_path);
+
+    g_dbus_connection_call(cb_data->concheck.dbus_connection,
+                           "org.freedesktop.resolve1",
+                           link_path,
+                           "org.freedesktop.DBus.Properties",
+                           "Get",
+                           g_variant_new("(ss)", "org.freedesktop.resolve1.Link", "ScopesMask"),
+                           G_VARIANT_TYPE("(v)"),
+                           G_DBUS_CALL_FLAGS_NONE,
+                           -1,
+                           cb_data->concheck.resolve_cancellable,
+                           systemd_resolved_link_scopes_cb,
+                           cb_data);
+}
+
 static NMConnectivityState
 check_platform_config(NMConnectivity *self,
                       NMPlatform     *platform,
@@ -1067,6 +1176,7 @@ nm_connectivity_check_start(NMConnectivity             *self,
         }
 
         cb_data->concheck.resolve_cancellable = g_cancellable_new();
+        cb_data->concheck.resolve_ifindex     = ifindex;
 
         /* note that we pick up support for systemd-resolved right away when we need it.
          * We don't need to remember the setting, because we can (cheaply) check anew
@@ -1089,10 +1199,8 @@ nm_connectivity_check_start(NMConnectivity             *self,
         has_systemd_resolved = !!nm_dns_manager_get_systemd_resolved(nm_dns_manager_get());
 
         if (has_systemd_resolved) {
-            GDBusConnection *dbus_connection;
-
-            dbus_connection = NM_MAIN_DBUS_CONNECTION_GET;
-            if (!dbus_connection) {
+            cb_data->concheck.dbus_connection = NM_MAIN_DBUS_CONNECTION_GET;
+            if (!cb_data->concheck.dbus_connection) {
                 /* we have no D-Bus connection? That might happen in configure and quit mode.
                  *
                  * Anyway, something is very odd, just fail connectivity check. */
@@ -1103,25 +1211,19 @@ nm_connectivity_check_start(NMConnectivity             *self,
                 return cb_data;
             }
 
-            g_dbus_connection_call(dbus_connection,
+            /* first check whether there has been a per-link DNS configured */
+            g_dbus_connection_call(cb_data->concheck.dbus_connection,
                                    "org.freedesktop.resolve1",
                                    "/org/freedesktop/resolve1",
                                    "org.freedesktop.resolve1.Manager",
-                                   "ResolveHostname",
-                                   g_variant_new("(isit)",
-                                                 0,
-                                                 cb_data->concheck.con_config->host,
-                                                 (gint32) cb_data->addr_family,
-                                                 SD_RESOLVED_DNS),
-                                   G_VARIANT_TYPE("(a(iiay)st)"),
+                                   "GetLink",
+                                   g_variant_new("(i)", ifindex),
+                                   G_VARIANT_TYPE("(o)"),
                                    G_DBUS_CALL_FLAGS_NONE,
                                    -1,
                                    cb_data->concheck.resolve_cancellable,
-                                   systemd_resolved_resolve_cb,
+                                   systemd_resolved_get_link_cb,
                                    cb_data);
-            _LOG2D("start request to '%s' (try resolving '%s' using systemd-resolved)",
-                   cb_data->concheck.con_config->uri,
-                   cb_data->concheck.con_config->host);
             return cb_data;
         }
 
