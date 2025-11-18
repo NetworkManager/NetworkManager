@@ -1463,7 +1463,7 @@
                   nmcli-description="Array of servers from which DHCP offers must be rejected. This property is useful to avoid getting a lease from misconfigured or rogue servers. For DHCPv4, each element must be an IPv4 address, optionally followed by a slash and a prefix length (e.g. &quot;192.168.122.0/24&quot;). This property is currently not implemented for DHCPv6."
                   format="list of IPv4 addresses" />
         <property name="auto-route-ext-gw"
-                  nmcli-description="VPN connections will default to add the route automatically unless this setting is set to FALSE. For other connection types, adding such an automatic route is currently not supported and setting this to TRUE has no effect."
+                  nmcli-description="Controls whether to add automatically a route to the external gateway. VPN connections will default to add the route automatically unless this property is set to FALSE. Setting it to FALSE is particularly useful for a VPN inside another VPN where the second network only needs to reach the resources through the first. For other connection types, adding such an automatic route is currently not supported and setting this to TRUE has no effect."
                   format="ternary"
                   values="true/yes/on, false/no/off, default/unknown" />
         <property name="shared-dhcp-range"
@@ -1605,7 +1605,7 @@
                   format="flags (NMDhcpHostnameFlags)"
                   values="none (0x0), fqdn-serv-update (0x1), fqdn-encoded (0x2), fqdn-no-update (0x4), fqdn-clear-flags (0x8)" />
         <property name="auto-route-ext-gw"
-                  nmcli-description="VPN connections will default to add the route automatically unless this setting is set to FALSE. For other connection types, adding such an automatic route is currently not supported and setting this to TRUE has no effect."
+                  nmcli-description="Controls whether to add automatically a route to the external gateway. VPN connections will default to add the route automatically unless this property is set to FALSE. Setting it to FALSE is particularly useful for a VPN inside another VPN where the second network only needs to reach the resources through the first. For other connection types, adding such an automatic route is currently not supported and setting this to TRUE has no effect."
                   format="ternary"
                   values="true/yes/on, false/no/off, default/unknown" />
         <property name="token"

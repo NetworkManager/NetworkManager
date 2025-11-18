@@ -7119,8 +7119,12 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
     /**
      * NMSettingIPConfig:auto-route-ext-gw:
      *
+     * Controls whether to add automatically a route to the external gateway.
+     *
      * VPN connections will default to add the route automatically unless this
-     * setting is set to %FALSE.
+     * property is set to %FALSE. Setting it to %FALSE is particularly useful for a
+     * VPN inside another VPN where the second network only needs to reach the
+     * resources through the first.
      *
      * For other connection types, adding such an automatic route is currently
      * not supported and setting this to %TRUE has no effect.
