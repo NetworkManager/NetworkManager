@@ -1919,6 +1919,13 @@ _dbus_signal_config_cb(NMVpnConnection *self, GVariant *dict)
           priv->ip_data_6.enabled ? "on" : "off",
           priv->ip_data_6.method_auto ? "auto" : "disabled");
 
+    if (!priv->ip_data_4.enabled) {
+        _l3cfg_l3cd_set(self, L3CD_TYPE_IP_4, NULL);
+    }
+    if (!priv->ip_data_6.enabled) {
+        _l3cfg_l3cd_set(self, L3CD_TYPE_IP_6, NULL);
+    }
+
     if (!priv->ip_data_4.method_auto)
         priv->ip_data_4.enabled = FALSE;
     if (!priv->ip_data_6.method_auto)
@@ -2005,6 +2012,7 @@ _dbus_signal_ip_config_cb(NMVpnConnection *self, int addr_family, GVariant *dict
     }
 
     if (!priv->ip_data_x[IS_IPv4].enabled) {
+        _l3cfg_l3cd_set(self, L3CD_TYPE_IP_X(IS_IPv4), NULL);
         _check_complete(self, TRUE);
         return;
     }
