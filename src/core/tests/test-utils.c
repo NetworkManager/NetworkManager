@@ -264,8 +264,7 @@ test_shorten_hostname(void)
 typedef struct {
     NMRateLimit ratelimit;
     GMainLoop  *loop;
-    GSource    *source1;
-    GSource    *source2;
+    GSource    *source;
     guint       num;
 } RateLimitData;
 
@@ -283,9 +282,8 @@ rate_limit_window_expire_cb(gpointer user_data)
     g_assert(!nm_rate_limit_check(&data->ratelimit, 1, 5));
     g_assert(!nm_rate_limit_check(&data->ratelimit, 1, 5));
 
+    nm_clear_g_source_inst(&data->source);
     g_main_loop_quit(data->loop);
-
-    nm_clear_g_source_inst(&data->source1);
 
     return G_SOURCE_CONTINUE;
 }
@@ -304,7 +302,8 @@ rate_limit_check_cb(gpointer user_data)
     g_assert(!nm_rate_limit_check(&data->ratelimit, 1, 5));
     g_assert(!nm_rate_limit_check(&data->ratelimit, 1, 5));
 
-    nm_clear_g_source_inst(&data->source2);
+    nm_clear_g_source_inst(&data->source);
+    data->source = nm_g_timeout_add_source(1000, rate_limit_window_expire_cb, data);
 
     return G_SOURCE_CONTINUE;
 }
@@ -317,11 +316,9 @@ test_rate_limit_check(void)
     data = (RateLimitData) {
         .loop      = g_main_loop_new(NULL, FALSE),
         .ratelimit = {},
+        .source    = nm_g_timeout_add_source(1, rate_limit_check_cb, &data),
         .num       = 0,
     };
-
-    data.source1 = nm_g_timeout_add_source(1100, rate_limit_window_expire_cb, &data);
-    data.source2 = nm_g_timeout_add_source(10, rate_limit_check_cb, &data);
 
     g_main_loop_run(data.loop);
     g_main_loop_unref(data.loop);
