@@ -197,6 +197,13 @@ typedef enum {
 /* boolean: Has IP6 configuration? */
 #define NM_VPN_PLUGIN_CONFIG_HAS_IP6 "has-ip6"
 
+/* boolean: if %TRUE, the VPN plugin is listening for an incoming connection.
+ * As such, it doesn't report all parameters (for example, the external gateway)
+ * at the time the connection is activated. If the key is omitted, the value is
+ * assumed to be %FALSE.
+ */
+#define NM_VPN_PLUGIN_CONFIG_LISTENING "listening"
+
 /* boolean: If %TRUE the VPN plugin can persist/reconnect the connection over
  * link changes and VPN server dropouts.
  */

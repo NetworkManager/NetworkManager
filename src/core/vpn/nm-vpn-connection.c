@@ -124,6 +124,7 @@ typedef struct {
 typedef struct {
     gboolean service_can_persist;
     gboolean connection_can_persist;
+    gboolean listening;
 
     NMSettingsConnectionCallId *secrets_id;
     SecretsReq                  secrets_idx;
@@ -1856,8 +1857,13 @@ _config_process_generic(NMVpnConnection *self, GVariant *dict)
                      NM_VPN_PLUGIN_CONFIG_EXT_GATEWAY,
                      &priv->ip_data_6.gw_external);
 
+    if (g_variant_lookup(dict, NM_VPN_PLUGIN_CONFIG_LISTENING, "b", &v_b) && v_b) {
+        /* Defaults to FALSE if not specified */
+        priv->listening = TRUE;
+    }
+
     if (nm_ip_addr_is_null(AF_INET, &priv->ip_data_4.gw_external)
-        && nm_ip_addr_is_null(AF_INET6, &priv->ip_data_6.gw_external)) {
+        && nm_ip_addr_is_null(AF_INET6, &priv->ip_data_6.gw_external) && !priv->listening) {
         _LOGW("config: no VPN gateway address received");
         return FALSE;
     }
