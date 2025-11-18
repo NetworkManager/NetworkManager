@@ -34,6 +34,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
    connection.mptcp-flags, ipv6.ip6-privacy)
 * Update n-acd to always compile with eBPF enabled, as support
   for eBPF is now detected at run time.
+* Add new MPTCP 'laminar' endpoint type, and set it by default alongside
+  the 'subflow' one.
 
 =============================================
 NetworkManager-1.54
