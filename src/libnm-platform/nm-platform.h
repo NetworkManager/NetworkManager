@@ -46,6 +46,7 @@ typedef gboolean (*NMPObjectPredicateFunc)(const NMPObject *obj, gpointer user_d
 #define NM_MPTCP_PM_ADDR_FLAG_BACKUP   ((guint32) (1 << 2))
 #define NM_MPTCP_PM_ADDR_FLAG_FULLMESH ((guint32) (1 << 3))
 #define NM_MPTCP_PM_ADDR_FLAG_IMPLICIT ((guint32) (1 << 4))
+#define NM_MPTCP_PM_ADDR_FLAG_LAMINAR  ((guint32) (1 << 5))
 
 /* Redefine this in host's endianness */
 #define NM_GRE_KEY 0x2000
