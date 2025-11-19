@@ -1460,6 +1460,16 @@ typedef enum /*< flags >*/ {
  *   any additional addresses using the MPTCP ADD_ADDR sub-option, this will behave the same
  *   as a plain subflow endpoint. When the peer does announce addresses, each received ADD_ADDR
  *   sub-option will trigger creation of an additional subflow to generate a full mesh topology.
+ * @NM_MPTCP_FLAGS_LAMINAR: Flag for the MPTCP endpoint. The endpoint will be
+ *   used to create new subflows from the associated address to additional
+ *   addresses announced by the other peer. This will be done if allowed by the
+ *   MPTCP limits, and if the associated address is not already being used by
+ *   another subflow from the same MPTCP connection. Note that the 'fullmesh'
+ *   flag takes precedence over the 'laminar' one. Without any of these two
+ *   flags, the path-manager will create new subflows to additional addresses
+ *   announced by the other peer by selecting the source address from the
+ *   routing tables, which is harder to configure if the announced address is
+ *   not known in advance. Since: 1.56
  *
  * Since: 1.40
  */
@@ -1476,6 +1486,7 @@ typedef enum /*< flags >*/ {
     NM_MPTCP_FLAGS_SUBFLOW  = 0x20,
     NM_MPTCP_FLAGS_BACKUP   = 0x40,
     NM_MPTCP_FLAGS_FULLMESH = 0x80,
+    NM_MPTCP_FLAGS_LAMINAR  = 0x100,
 } NMMptcpFlags;
 
 /* For secrets requests, hints starting with "x-vpn-message:" are a message to show, not

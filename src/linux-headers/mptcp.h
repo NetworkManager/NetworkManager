@@ -80,6 +80,7 @@ enum {
 #define MPTCP_PM_ADDR_FLAG_BACKUP			(1 << 2)
 #define MPTCP_PM_ADDR_FLAG_FULLMESH			(1 << 3)
 #define MPTCP_PM_ADDR_FLAG_IMPLICIT			(1 << 4)
+#define MPTCP_PM_ADDR_FLAG_LAMINAR			(1 << 5)
 
 enum {
 	MPTCP_PM_CMD_UNSPEC,
