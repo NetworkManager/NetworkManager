@@ -12,6 +12,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   same link. If the link has no DNS servers, the connectivity check will
   use any servers available in the system.
 * Install the systemd units in the initramfs using a systemd generator.
+* A new "check-connectivity" configuration option is available to disable the
+  connectivity check for selected interfaces.
 
 =============================================
 NetworkManager-1.56

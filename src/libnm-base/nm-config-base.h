@@ -65,6 +65,7 @@
 
 #define NM_CONFIG_KEYFILE_KEY_DEVICE_MANAGED                    "managed"
 #define NM_CONFIG_KEYFILE_KEY_DEVICE_IGNORE_CARRIER             "ignore-carrier"
+#define NM_CONFIG_KEYFILE_KEY_DEVICE_CHECK_CONNECTIVITY         "check-connectivity"
 #define NM_CONFIG_KEYFILE_KEY_DEVICE_SRIOV_NUM_VFS              "sriov-num-vfs"
 #define NM_CONFIG_KEYFILE_KEY_DEVICE_KEEP_CONFIGURATION         "keep-configuration"
 #define NM_CONFIG_KEYFILE_KEY_DEVICE_ALLOWED_CONNECTIONS        "allowed-connections"
