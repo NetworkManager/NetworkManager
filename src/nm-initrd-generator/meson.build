@@ -46,3 +46,10 @@ executable(
   install: true,
   install_dir: nm_libexecdir,
 )
+
+if install_systemdgeneratordir
+  install_data(
+    'nm-initrd-generator.sh',
+    install_dir: systemd_systemdsystemgeneratordir,
+  )
+endif

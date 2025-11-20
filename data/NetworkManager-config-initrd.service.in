@@ -1,10 +1,10 @@
 [Unit]
 Description=NetworkManager Configuration (initrd)
+AssertPathExists=/etc/initrd-release
 DefaultDependencies=no
 Wants=systemd-journald.socket
 After=systemd-journald.socket
 Before=systemd-udevd.service systemd-udev-trigger.service
-ConditionPathExists=/etc/initrd-release
 
 [Service]
 Type=oneshot
@@ -22,6 +22,3 @@ ExecStartPost=/bin/sh -c ' \
     fi \
 '
 RemainAfterExit=yes
-
-[Install]
-WantedBy=initrd.target
