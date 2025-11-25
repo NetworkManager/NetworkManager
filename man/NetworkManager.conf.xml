@@ -83,6 +83,11 @@
     note that your distribution or other packages may drop configuration snippets for NetworkManager, such
     that they are part of the factory default.
     </para>
+    <para>
+    The options that are indicated as boolean can be set to one of these values:
+    <literal>yes</literal>, <literal>true</literal>, <literal>on</literal>, <literal>1</literal>,
+    <literal>no</literal>, <literal>false</literal>, <literal>off</literal>, <literal>0</literal>.
+    </para>
 
   </refsect1>
 
@@ -1249,12 +1254,13 @@ managed=1
           <term><varname>managed</varname></term>
           <listitem>
             <para>
-              Whether the device is managed or not. A device can be
-              marked as managed via udev rules (ENV{NM_UNMANAGED}),
-              or via setting plugins (keyfile.unmanaged-devices).
-              This is yet another way. Note that this configuration
-              can be overruled at runtime via D-Bus. Also, it has
-              higher priority then udev rules.
+              A boolean value specifying whether the device is
+              managed or not. A device can be marked as managed via
+              udev rules (ENV{NM_UNMANAGED}), or via setting plugins
+              (keyfile.unmanaged-devices).  This is yet another
+              way. Note that this configuration can be overruled at
+              runtime via D-Bus. Also, it has higher priority than
+              udev rules.
             </para>
           </listitem>
         </varlistentry>
@@ -1324,8 +1330,12 @@ managed=1
           </listitem>
         </varlistentry>
         <varlistentry id="keep-configuration">
-         <term><varname>keep-configuration</varname></term>
+          <term><varname>keep-configuration</varname></term>
           <listitem>
+            <para>
+              A boolean value indicating whether the existing device
+              configuration is kept at startup.
+            </para>
             <para>
               On startup, NetworkManager tries to not interfere with
               interfaces that are already configured. It does so by
@@ -1422,16 +1432,16 @@ managed=1
           <term><varname>wifi.iwd.autoconnect</varname></term>
           <listitem>
             <para>
-              If <literal>wifi.backend</literal> is <literal>iwd</literal>, setting this to
-              <literal>false</literal> forces IWD's autoconnect mechanism to be disabled for
-              this device and connections will only be initiated by NetworkManager whether
-              commanded by a client or automatically.  Leaving it <literal>true</literal> (default)
-              stops NetworkManager from automatically initiating connections and allows
-              IWD to use its network ranking and scanning logic to decide the best networks
-              to autoconnect to next.  Connections' <literal>autoconnect-priority</literal>,
-              <literal>autoconnect-retries</literal> settings will be ignored.  Other settings
-              like <literal>permissions</literal> or <literal>multi-connect</literal> may interfere
-              with IWD connection attempts.
+              A boolean value. If <literal>wifi.backend</literal> is <literal>iwd</literal>,
+              setting this to <literal>false</literal> forces IWD's autoconnect mechanism to be
+              disabled for this device and connections will only be initiated by NetworkManager
+              whether commanded by a client or automatically.  Leaving it <literal>true</literal>
+              (default) stops NetworkManager from automatically initiating connections and allows
+              IWD to use its network ranking and scanning logic to decide the best networks to
+              autoconnect to next.  Connections' <literal>autoconnect-priority</literal>,
+              <literal>autoconnect-retries</literal> settings will be ignored.  Other settings like
+              <literal>permissions</literal> or <literal>multi-connect</literal> may interfere with
+              IWD connection attempts.
             </para>
           </listitem>
         </varlistentry>
@@ -1490,7 +1500,7 @@ managed=1
       <variablelist>
         <varlistentry>
           <term><varname>enabled</varname></term>
-          <listitem><para>Whether connectivity check is enabled.
+          <listitem><para>A boolean indicating whether connectivity check is enabled.
           Note that to enable connectivity check, a valid uri must
           also be configured. The value defaults to true, but since
           the uri is unset by default, connectivity check may be disabled.
