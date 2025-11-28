@@ -866,7 +866,7 @@ usage(void)
           "<ifname>]\n"
           "                         [bssid <BSSID>] [name <name>] [private yes|no] [hidden "
           "yes|no]\n\n"
-          "  wifi hotspot [ifname <ifname>] [con-name <name>] [ssid <SSID>] [band a|bg] "
+          "  wifi hotspot [ifname <ifname>] [con-name <name>] [ssid <SSID>] [band a|bg|6GHz] "
           "[channel <channel>] [password <password>]\n\n"
           "  wifi rescan [ifname <ifname>] [[ssid <SSID to scan>] ...]\n\n"
           "  wifi show-password [ifname <ifname>]\n\n"
@@ -1021,7 +1021,7 @@ usage_device_wifi(void)
           "It is also assumed that IP configuration is obtained via DHCP.\n"
           "\n"
           "ARGUMENTS := hotspot [ifname <ifname>] [con-name <name>] [ssid <SSID>]\n"
-          "                     [band a|bg] [channel <channel>] [password <password>]\n"
+          "                     [band a|bg|6GHz] [channel <channel>] [password <password>]\n"
           "\n"
           "Create a Wi-Fi hotspot. Use 'connection down' or 'device disconnect'\n"
           "to stop the hotspot.\n"
@@ -4412,10 +4412,11 @@ do_device_wifi_hotspot(const NMCCommand *cmd, NmCli *nmc, int argc, const char *
             }
             band = *argv;
             if (argc == 1 && nmc->complete)
-                nmc_complete_strings(band, "a", "bg");
-            if (strcmp(band, "a") && strcmp(band, "bg")) {
+                nmc_complete_strings(band, "a", "bg", "6GHz");
+            if (!NM_IN_STRSET(band, "a", "bg", "6GHz")) {
                 g_string_printf(nmc->return_text,
-                                _("Error: band argument value '%s' is invalid; use 'a' or 'bg'."),
+                                _("Error: band argument value '%s' is invalid; use 'a', 'bg' "
+                                  "or '6GHz'."),
                                 band);
                 nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
                 return;
@@ -4463,7 +4464,7 @@ do_device_wifi_hotspot(const NMCCommand *cmd, NmCli *nmc, int argc, const char *
             nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
             return;
         }
-        if (!nmc_string_to_uint(channel, TRUE, 1, 5825, &value)
+        if (!nmc_string_to_uint(channel, TRUE, 1, G_MAXUINT32, &value)
             || !nm_utils_wifi_is_channel_valid(value, band)) {
             g_string_printf(nmc->return_text,
                             _("Error: channel '%s' not valid for band '%s'."),

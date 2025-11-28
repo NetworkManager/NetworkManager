@@ -4401,7 +4401,7 @@ make_wireless_setting(shvarFile *ifcfg, GError **error)
     NMSettingWireless         *s_wireless;
     const char                *cvalue;
     char                      *value = NULL;
-    gint64                     chan  = 0;
+    guint64                    chan  = 0;
     NMSettingMacRandomization  mac_randomization;
     NMSettingWirelessPowersave powersave = NM_SETTING_WIRELESS_POWERSAVE_DEFAULT;
     NMTernary                  ternary;
@@ -4502,7 +4502,7 @@ make_wireless_setting(shvarFile *ifcfg, GError **error)
 
     value = svGetValueStr_cp(ifcfg, "CHANNEL");
     if (value) {
-        chan = _nm_utils_ascii_str_to_int64(value, 10, 1, 196, 0);
+        chan = _nm_utils_ascii_str_to_int64(value, 10, 1, _NM_WIFI_CHANNEL_MAX, 0);
         if (chan == 0) {
             g_set_error(error,
                         NM_SETTINGS_ERROR,
@@ -4518,44 +4518,47 @@ make_wireless_setting(shvarFile *ifcfg, GError **error)
 
     value = svGetValueStr_cp(ifcfg, "BAND");
     if (value) {
-        if (!strcmp(value, "a")) {
-            if (chan && chan <= 14) {
-                g_set_error(error,
-                            NM_SETTINGS_ERROR,
-                            NM_SETTINGS_ERROR_INVALID_CONNECTION,
-                            "Band '%s' invalid for channel %u",
-                            value,
-                            (guint32) chan);
-                g_free(value);
-                goto error;
-            }
-        } else if (!strcmp(value, "bg")) {
-            if (chan && chan > 14) {
-                g_set_error(error,
-                            NM_SETTINGS_ERROR,
-                            NM_SETTINGS_ERROR_INVALID_CONNECTION,
-                            "Band '%s' invalid for channel %u",
-                            value,
-                            (guint32) chan);
-                g_free(value);
-                goto error;
-            }
-        } else {
+        if (!NM_IN_STRSET(value, "a", "bg", "6GHz")) {
             g_set_error(error,
                         NM_SETTINGS_ERROR,
                         NM_SETTINGS_ERROR_INVALID_CONNECTION,
-                        "Invalid wireless band '%s'",
+                        "Band '%s' invalid",
                         value);
             g_free(value);
             goto error;
         }
+
+        if (chan) {
+            if (!nm_utils_wifi_is_channel_valid(chan, value)) {
+                g_set_error(error,
+                            NM_SETTINGS_ERROR,
+                            NM_SETTINGS_ERROR_INVALID_CONNECTION,
+                            "Band '%s' invalid for channel %u",
+                            value,
+                            (guint32) chan);
+                g_free(value);
+                goto error;
+            }
+        }
+
         g_object_set(s_wireless, NM_SETTING_WIRELESS_BAND, value, NULL);
         g_free(value);
     } else if (chan > 0) {
-        if (chan > 14)
+        if (chan > _NM_WIFI_CHANNEL_MAX_5GHZ) {
+            g_set_error(error,
+                        NM_SETTINGS_ERROR,
+                        NM_SETTINGS_ERROR_INVALID_CONNECTION,
+                        "Setting channel without band is ambiguous and deprecated. Not supported "
+                        "for 6GHz.");
+            g_free(value);
+            goto error;
+        } else if (chan > _NM_WIFI_CHANNEL_MAX_2GHZ) {
+            PARSE_WARNING(
+                "Setting channel without band is ambiguous and deprecated. Assuming band 'a'.");
             g_object_set(s_wireless, NM_SETTING_WIRELESS_BAND, "a", NULL);
-        else
+        } else {
             g_object_set(s_wireless, NM_SETTING_WIRELESS_BAND, "bg", NULL);
+        }
     }
 
     value = svGetValueStr_cp(ifcfg, "MTU");

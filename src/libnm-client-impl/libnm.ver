@@ -2091,3 +2091,8 @@ global:
 	nm_setting_connection_get_dnssec;
 	nm_setting_connection_dnssec_get_type;
 } libnm_1_54_0;
+
+libnm_1_58_0 {
+global:
+	nm_utils_wifi_6ghz_freqs;
+} libnm_1_56_0;

@@ -33,9 +33,9 @@
                   format="string"
                   values="infrastructure, adhoc, ap, mesh" />
         <property name="band"
-                  nmcli-description="802.11 frequency band of the network.  One of &quot;a&quot; for 5GHz 802.11a or &quot;bg&quot; for 2.4GHz 802.11.  This will lock associations to the Wi-Fi network to the specific band, i.e. if &quot;a&quot; is specified, the device will not associate with the same network in the 2.4GHz band even if the network&apos;s settings are compatible.  This setting depends on specific driver capability and may not work with all drivers."
+                  nmcli-description="802.11 frequency band of the network.  One of &quot;a&quot; for 5GHz, &quot;bg&quot; for 2.4GHz or &quot;6GHz&quot;.  This will lock associations to the Wi-Fi network to the specific band, i.e. if &quot;a&quot; is specified, the device will not associate with the same network in the 2.4GHz (bg) or 6GHz bands even if the network&apos;s settings are compatible.  This setting depends on specific driver capability and may not work with all drivers."
                   format="string"
-                  values="a, bg" />
+                  values="a, bg, 6GHz" />
         <property name="channel"
                   nmcli-description="Wireless channel to use for the Wi-Fi connection.  The device will only join (or create for Ad-Hoc networks) a Wi-Fi network on the specified channel.  Because channel numbers overlap between bands, this property also requires the &quot;band&quot; property to be set."
                   format="integer"

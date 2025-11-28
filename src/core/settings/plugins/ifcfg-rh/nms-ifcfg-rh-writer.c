@@ -849,7 +849,7 @@ write_wireless_setting(NMConnection *connection,
     GBytes            *ssid;
     const guint8      *ssid_data;
     gsize              ssid_len;
-    const char        *mode, *bssid;
+    const char        *mode, *bssid, *band;
     const char        *device_mac, *cloned_mac;
     guint32            mtu, chan, i;
     gboolean           adhoc = FALSE, hex_ssid = FALSE;
@@ -968,9 +968,11 @@ write_wireless_setting(NMConnection *connection,
     chan = nm_setting_wireless_get_channel(s_wireless);
     if (chan) {
         svSetValueInt64(ifcfg, "CHANNEL", chan);
-    } else {
-        /* Band only set if channel is not, since channel implies band */
-        svSetValueStr(ifcfg, "BAND", nm_setting_wireless_get_band(s_wireless));
+    }
+
+    band = nm_setting_wireless_get_band(s_wireless);
+    if (band) {
+        svSetValueStr(ifcfg, "BAND", band);
     }
 
     bssid = nm_setting_wireless_get_bssid(s_wireless);

@@ -11140,7 +11140,7 @@ _do_wifi_ghz_freqs(const guint *freqs, const char *band)
     int j;
     int i;
 
-    g_assert(NM_IN_STRSET(band, "a", "bg"));
+    g_assert(NM_IN_STRSET(band, "a", "bg", "6GHz"));
     g_assert(freqs);
     g_assert(freqs[0] != 0);
 
@@ -11178,6 +11178,7 @@ test_nm_utils_wifi_ghz_freqs(void)
 {
     _do_wifi_ghz_freqs(nm_utils_wifi_2ghz_freqs(), "bg");
     _do_wifi_ghz_freqs(nm_utils_wifi_5ghz_freqs(), "a");
+    _do_wifi_ghz_freqs(nm_utils_wifi_6ghz_freqs(), "6GHz");
 }
 
 /*****************************************************************************/
