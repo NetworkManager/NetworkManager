@@ -18,6 +18,7 @@
 
 #include "nm-dbus-interface.h"
 #include "nm-object-private.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 
 /*****************************************************************************/
 
@@ -338,11 +339,14 @@ nm_access_point_connection_valid(NMAccessPoint *ap, NMConnection *connection)
     ap_freq = nm_access_point_get_frequency(ap);
     if (ap_freq) {
         setting_band = nm_setting_wireless_get_band(s_wifi);
-        if (g_strcmp0(setting_band, "a") == 0) {
-            if (ap_freq < 4915 || ap_freq > 5825)
+        if (nm_streq0(setting_band, "a")) {
+            if (ap_freq < _NM_WIFI_FREQ_MIN_5GHZ || ap_freq > _NM_WIFI_FREQ_MAX_5GHZ)
                 return FALSE;
-        } else if (g_strcmp0(setting_band, "bg") == 0) {
-            if (ap_freq < 2412 || ap_freq > 2484)
+        } else if (nm_streq0(setting_band, "bg")) {
+            if (ap_freq < _NM_WIFI_FREQ_MIN_2GHZ || ap_freq > _NM_WIFI_FREQ_MAX_2GHZ)
+                return FALSE;
+        } else if (nm_streq0(setting_band, "6Ghz")) {
+            if (ap_freq < _NM_WIFI_FREQ_MIN_6GHZ || ap_freq > _NM_WIFI_FREQ_MAX_6GHZ)
                 return FALSE;
         }
 

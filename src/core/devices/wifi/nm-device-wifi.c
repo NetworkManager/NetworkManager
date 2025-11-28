@@ -3257,8 +3257,10 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 static void
 ensure_hotspot_frequency(NMDeviceWifi *self, NMSettingWireless *s_wifi, NMWifiAP *ap)
 {
-    guint32     a_freqs[]  = {5180, 5200, 5220, 5745, 5765, 5785, 5805, 0};
-    guint32     bg_freqs[] = {2412, 2437, 2462, 2472, 0};
+    guint32 freqs_a[]  = {5180, 5200, 5220, 5745, 5765, 5785, 5805, 0};
+    guint32 freqs_bg[] = {2412, 2437, 2462, 2472, 0};
+    guint32 freqs_6ghz[] =
+        {5955, 5975, 5995, 6015, 6035, 6055, 6075, 6095, 6755, 6775, 6795, 6815, 0};
     guint32    *rnd_freqs;
     guint       rnd_freqs_len;
     NMDevice   *device = NM_DEVICE(self);
@@ -3269,7 +3271,7 @@ ensure_hotspot_frequency(NMDeviceWifi *self, NMSettingWireless *s_wifi, NMWifiAP
     guint       l;
 
     nm_assert(ap);
-    nm_assert(NM_IN_STRSET(band, NULL, "a", "bg"));
+    nm_assert(NM_IN_STRSET(band, NULL, "a", "bg", "6GHz"));
 
     if (nm_wifi_ap_get_freq(ap))
         return;
@@ -3303,11 +3305,14 @@ ensure_hotspot_frequency(NMDeviceWifi *self, NMSettingWireless *s_wifi, NMWifiAP
     }
 
     if (nm_streq0(band, "a")) {
-        rnd_freqs     = a_freqs;
-        rnd_freqs_len = G_N_ELEMENTS(a_freqs) - 1;
+        rnd_freqs     = freqs_a;
+        rnd_freqs_len = G_N_ELEMENTS(freqs_a) - 1;
+    } else if (nm_streq0(band, "6GHz")) {
+        rnd_freqs     = freqs_6ghz;
+        rnd_freqs_len = G_N_ELEMENTS(freqs_6ghz) - 1;
     } else {
-        rnd_freqs     = bg_freqs;
-        rnd_freqs_len = G_N_ELEMENTS(bg_freqs) - 1;
+        rnd_freqs     = freqs_bg;
+        rnd_freqs_len = G_N_ELEMENTS(freqs_bg) - 1;
     }
 
     /* shuffle the frequencies (inplace). The idea is to choose

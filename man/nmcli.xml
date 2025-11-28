@@ -1718,6 +1718,7 @@
             <group choice='req'>
               <arg choice='plain'>a</arg>
               <arg choice='plain'>bg</arg>
+              <arg choice='plain'>6GHz</arg>
             </group>
           </arg>
           <arg><option>channel</option> <replaceable>channel</replaceable></arg>
