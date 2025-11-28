@@ -531,6 +531,7 @@ get_ap_params(guint                         freq,
     case NM_SETTING_WIRELESS_CHANNEL_WIDTH_80MHZ:
     {
         guint channel;
+        guint center_channel = 0;
 
         if (freq < 5000) {
             /* the setting is not valid */
@@ -540,12 +541,29 @@ get_ap_params(guint                         freq,
 
         /* Determine the center channel according to the table at
          * https://en.wikipedia.org/wiki/List_of_WLAN_channels */
-        channel = (freq - 5000) / 5;
-        channel = ((channel / 4 - 1) / 4) * 16 + 10;
 
-        *out_ht40             = 1;
-        *out_max_oper_chwidth = 1;
-        *out_center_freq      = 5000 + 5 * channel;
+        channel = (freq - 5000) / 5;
+
+        if (channel >= 36 && channel <= 48)
+            center_channel = 42;
+        else if (channel >= 52 && channel <= 64)
+            center_channel = 58;
+        else if (channel >= 100 && channel <= 112)
+            center_channel = 106;
+        else if (channel >= 116 && channel <= 128)
+            center_channel = 122;
+        else if (channel >= 132 && channel <= 144)
+            center_channel = 138;
+        else if (channel >= 149 && channel <= 161)
+            center_channel = 155;
+        else if (channel >= 165 && channel <= 177)
+            center_channel = 171;
+
+        if (center_channel) {
+            *out_ht40             = 1;
+            *out_max_oper_chwidth = 1;
+            *out_center_freq      = 5000 + 5 * center_channel;
+        }
 
         return;
     }
