@@ -2093,3 +2093,8 @@ global:
 	nm_utils_copy_cert_as_user;
 	nm_vpn_plugin_info_supports_safe_private_file_access;
 } libnm_1_54_0;
+
+libnm_1_58_0 {
+global:
+	nm_utils_wifi_6ghz_freqs;
+} libnm_1_56_0;

@@ -1086,7 +1086,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                                                NM_SETTING_WIRELESS_MODE_AP,
                                                NM_SETTING_WIRELESS_MODE_MESH,
                                                NULL};
-    const char               *valid_bands[] = {"a", "bg", NULL};
+    const char               *valid_bands[] = {"a", "bg", "6GHz", NULL};
     guint                     i;
     gsize                     length;
     GError                   *local = NULL;
@@ -1363,11 +1363,11 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }
 
         if (priv->channel_width == NM_SETTING_WIRELESS_CHANNEL_WIDTH_80MHZ
-            && !nm_streq0(priv->band, "a")) {
+            && !NM_IN_STRSET(priv->band, "a", "6GHz")) {
             g_set_error_literal(error,
                                 NM_CONNECTION_ERROR,
                                 NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                                _("80MHz channels are only supported in the 5GHz band"));
+                                _("80MHz channels are only supported in the 5GHz and 6GHz bands"));
             g_prefix_error(error,
                            "%s.%s: ",
                            NM_SETTING_WIRELESS_SETTING_NAME,
@@ -1636,17 +1636,18 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
     /**
      * NMSettingWireless:band:
      *
-     * 802.11 frequency band of the network.  One of "a" for 5GHz 802.11a or
-     * "bg" for 2.4GHz 802.11.  This will lock associations to the Wi-Fi network
-     * to the specific band, i.e. if "a" is specified, the device will not
-     * associate with the same network in the 2.4GHz band even if the network's
-     * settings are compatible.  This setting depends on specific driver
-     * capability and may not work with all drivers.
+     * 802.11 frequency band of the network.  One of "a" for 5GHz,
+     * "bg" for 2.4GHz or "6GHz".  This will lock associations to the
+     * Wi-Fi network to the specific band, i.e. if "a" is specified,
+     * the device will not associate with the same network in the
+     * 2.4GHz (bg) or 6GHz bands even if the network's settings are
+     * compatible.  This setting depends on specific driver capability
+     * and may not work with all drivers.
      **/
     /* ---ifcfg-rh---
      * property: band
      * variable: BAND(+)
-     * values: a, bg
+     * values: a, bg, 6GHz
      * description: BAND alone is honored, but CHANNEL overrides BAND since it
      *   implies a band.
      * example: BAND=bg
@@ -1673,8 +1674,6 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * property: channel
      * variable: CHANNEL
      * description: Channel used for the Wi-Fi communication.
-     *   Channels greater than 14 mean "a" band, otherwise the
-     *   band is "bg".
      * example: CHANNEL=6
      * ---end---
      */
