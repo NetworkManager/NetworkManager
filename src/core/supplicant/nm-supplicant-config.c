@@ -373,14 +373,24 @@ nm_supplicant_config_get_blobs(NMSupplicantConfig *self)
 }
 
 static const char *
-wifi_freqs_to_string(gboolean bg_band)
+wifi_freqs_to_string(const char *band)
 {
     static const char *str_2ghz = NULL;
     static const char *str_5ghz = NULL;
+    static const char *str_6ghz = NULL;
     const char       **f_p;
     const char        *f;
 
-    f_p = bg_band ? &str_2ghz : &str_5ghz;
+    if (nm_streq0(band, "a"))
+        f_p = &str_5ghz;
+    else if (nm_streq0(band, "bg"))
+        f_p = &str_2ghz;
+    else if (nm_streq0(band, "6GHz"))
+        f_p = &str_6ghz;
+    else {
+        nm_assert_not_reached();
+        return NULL;
+    }
 
 again:
     f = g_atomic_pointer_get(f_p);
@@ -390,7 +400,13 @@ again:
         const guint             *freqs;
         int                      i;
 
-        freqs = bg_band ? nm_utils_wifi_2ghz_freqs() : nm_utils_wifi_5ghz_freqs();
+        if (f_p == &str_2ghz)
+            freqs = nm_utils_wifi_2ghz_freqs();
+        else if (f_p == &str_5ghz)
+            freqs = nm_utils_wifi_5ghz_freqs();
+        else
+            freqs = nm_utils_wifi_6ghz_freqs();
+
         for (i = 0; freqs[i]; i++) {
             if (i > 0)
                 nm_str_buf_append_c(&strbuf, ' ');
@@ -533,38 +549,47 @@ get_ap_params(guint                         freq,
         guint channel;
         guint center_channel = 0;
 
-        if (freq < 5000) {
-            /* the setting is not valid */
-            nm_assert_not_reached();
-            return;
-        }
-
         /* Determine the center channel according to the table at
          * https://en.wikipedia.org/wiki/List_of_WLAN_channels */
 
-        channel = (freq - 5000) / 5;
+        if (freq > 5950) {
+            /* 6 GHz */
+            channel = (freq - 5950) / 5;
+            channel = ((channel - 1) / 16) * 16 + 7;
 
-        if (channel >= 36 && channel <= 48)
-            center_channel = 42;
-        else if (channel >= 52 && channel <= 64)
-            center_channel = 58;
-        else if (channel >= 100 && channel <= 112)
-            center_channel = 106;
-        else if (channel >= 116 && channel <= 128)
-            center_channel = 122;
-        else if (channel >= 132 && channel <= 144)
-            center_channel = 138;
-        else if (channel >= 149 && channel <= 161)
-            center_channel = 155;
-        else if (channel >= 165 && channel <= 177)
-            center_channel = 171;
-
-        if (center_channel) {
             *out_ht40             = 1;
             *out_max_oper_chwidth = 1;
-            *out_center_freq      = 5000 + 5 * center_channel;
-        }
+            *out_center_freq      = 5950 + 5 * channel;
+        } else {
+            /* 5 GHz */
+            if (freq < 5000) {
+                /* the setting is not valid */
+                nm_assert_not_reached();
+                return;
+            }
+            channel = (freq - 5000) / 5;
 
+            if (channel >= 36 && channel <= 48)
+                center_channel = 42;
+            else if (channel >= 52 && channel <= 64)
+                center_channel = 58;
+            else if (channel >= 100 && channel <= 112)
+                center_channel = 106;
+            else if (channel >= 116 && channel <= 128)
+                center_channel = 122;
+            else if (channel >= 132 && channel <= 144)
+                center_channel = 138;
+            else if (channel >= 149 && channel <= 161)
+                center_channel = 155;
+            else if (channel >= 165 && channel <= 177)
+                center_channel = 171;
+
+            if (center_channel) {
+                *out_ht40             = 1;
+                *out_max_oper_chwidth = 1;
+                *out_center_freq      = 5000 + 5 * center_channel;
+            }
+        }
         return;
     }
 
@@ -711,10 +736,7 @@ nm_supplicant_config_add_setting_wireless(NMSupplicantConfig *self,
         } else {
             const char *freqs = NULL;
 
-            if (nm_streq(band, "a"))
-                freqs = wifi_freqs_to_string(FALSE);
-            else if (nm_streq(band, "bg"))
-                freqs = wifi_freqs_to_string(TRUE);
+            freqs = wifi_freqs_to_string(band);
 
             if (freqs
                 && !nm_supplicant_config_add_option(self,

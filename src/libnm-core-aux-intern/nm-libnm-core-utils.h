@@ -342,4 +342,23 @@ const char *nm_dns_uri_normalize(int addr_family, const char *str, char **out_fr
 gboolean nm_setting_ovs_other_config_check_key(const char *key, GError **error);
 gboolean nm_setting_ovs_other_config_check_val(const char *val, GError **error);
 
+/*****************************************************************************/
+
+/* Wi-Fi frequencies range for each band */
+#define _NM_WIFI_FREQ_MIN_2GHZ 2412
+#define _NM_WIFI_FREQ_MAX_2GHZ 2484
+#define _NM_WIFI_FREQ_MIN_5GHZ 4915
+#define _NM_WIFI_FREQ_MAX_5GHZ 5825
+#define _NM_WIFI_FREQ_MIN_6GHZ 5955
+#define _NM_WIFI_FREQ_MAX_6GHZ 7115
+
+#define _NM_WIFI_FREQ_MIN _NM_WIFI_FREQ_MIN_2GHZ
+#define _NM_WIFI_FREQ_MAX _NM_WIFI_FREQ_MAX_6GHZ
+
+/* Max Wi-Fi channel for each band */
+#define _NM_WIFI_CHANNEL_MAX_2GHZ 14
+#define _NM_WIFI_CHANNEL_MAX_5GHZ 177
+#define _NM_WIFI_CHANNEL_MAX_6GHZ 233
+#define _NM_WIFI_CHANNEL_MAX      _NM_WIFI_CHANNEL_MAX_6GHZ
+
 #endif /* __NM_LIBNM_SHARED_UTILS_H__ */
