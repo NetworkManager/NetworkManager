@@ -56,4 +56,6 @@ bool    nm_wifi_utils_parse_wfd_ies(GBytes *ies, NMIwdWfdInfo *out_wfd);
 GBytes *nm_wifi_utils_build_wfd_ies(const NMIwdWfdInfo *wfd);
 bool    nm_wifi_utils_wfd_info_eq(const NMIwdWfdInfo *a, const NMIwdWfdInfo *b);
 
+const char *nm_wifi_freq_to_band_prop(guint32 freq);
+
 #endif /* __NM_WIFI_UTILS_H__ */
