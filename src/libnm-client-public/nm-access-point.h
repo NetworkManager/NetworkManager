@@ -25,17 +25,18 @@ G_BEGIN_DECLS
 #define NM_ACCESS_POINT_GET_CLASS(obj) \
     (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_ACCESS_POINT, NMAccessPointClass))
 
-#define NM_ACCESS_POINT_FLAGS       "flags"
-#define NM_ACCESS_POINT_WPA_FLAGS   "wpa-flags"
-#define NM_ACCESS_POINT_RSN_FLAGS   "rsn-flags"
-#define NM_ACCESS_POINT_SSID        "ssid"
-#define NM_ACCESS_POINT_BSSID       "bssid"
-#define NM_ACCESS_POINT_FREQUENCY   "frequency"
-#define NM_ACCESS_POINT_MODE        "mode"
-#define NM_ACCESS_POINT_MAX_BITRATE "max-bitrate"
-#define NM_ACCESS_POINT_STRENGTH    "strength"
-#define NM_ACCESS_POINT_LAST_SEEN   "last-seen"
-#define NM_ACCESS_POINT_BANDWIDTH   "bandwidth"
+#define NM_ACCESS_POINT_FLAGS           "flags"
+#define NM_ACCESS_POINT_WPA_FLAGS       "wpa-flags"
+#define NM_ACCESS_POINT_RSN_FLAGS       "rsn-flags"
+#define NM_ACCESS_POINT_SSID            "ssid"
+#define NM_ACCESS_POINT_BSSID           "bssid"
+#define NM_ACCESS_POINT_FREQUENCY       "frequency"
+#define NM_ACCESS_POINT_MODE            "mode"
+#define NM_ACCESS_POINT_MAX_BITRATE     "max-bitrate"
+#define NM_ACCESS_POINT_STRENGTH        "strength"
+#define NM_ACCESS_POINT_LAST_SEEN       "last-seen"
+#define NM_ACCESS_POINT_BANDWIDTH       "bandwidth"
+#define NM_ACCESS_POINT_WIFI_GENERATION "wifi-generation"
 
 /* DEPRECATED */
 #define NM_ACCESS_POINT_HW_ADDRESS "hw-address"
@@ -62,6 +63,9 @@ int nm_access_point_get_last_seen(NMAccessPoint *ap);
 
 NM_AVAILABLE_IN_1_46
 guint32 nm_access_point_get_bandwidth(NMAccessPoint *ap);
+
+NM_AVAILABLE_IN_1_58
+NMWifiGeneration nm_access_point_get_wifi_generation(NMAccessPoint *ap);
 
 GPtrArray *nm_access_point_filter_connections(NMAccessPoint *ap, const GPtrArray *connections);
 

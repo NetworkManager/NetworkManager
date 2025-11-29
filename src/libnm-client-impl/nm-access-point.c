@@ -34,20 +34,22 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMAccessPoint,
                              PROP_BANDWIDTH,
                              PROP_STRENGTH,
                              PROP_BSSID,
-                             PROP_LAST_SEEN, );
+                             PROP_LAST_SEEN,
+                             PROP_WIFI_GENERATION, );
 
 typedef struct {
-    GBytes *ssid;
-    char   *bssid;
-    guint32 flags;
-    guint32 wpa_flags;
-    guint32 rsn_flags;
-    guint32 frequency;
-    guint32 mode;
-    guint32 max_bitrate;
-    guint32 bandwidth;
-    gint32  last_seen;
-    guint8  strength;
+    GBytes          *ssid;
+    char            *bssid;
+    guint32          flags;
+    guint32          wpa_flags;
+    guint32          rsn_flags;
+    guint32          frequency;
+    guint32          mode;
+    guint32          max_bitrate;
+    guint32          bandwidth;
+    gint32           last_seen;
+    guint8           strength;
+    NMWifiGeneration wifi_generation;
 } NMAccessPointPrivate;
 
 struct _NMAccessPoint {
@@ -255,6 +257,24 @@ nm_access_point_get_last_seen(NMAccessPoint *ap)
     return NM_ACCESS_POINT_GET_PRIVATE(ap)->last_seen;
 }
 NM_BACKPORT_SYMBOL(libnm_1_0_6, int, nm_access_point_get_last_seen, (NMAccessPoint * ap), (ap));
+
+/**
+ * nm_access_point_get_wifi_generation:
+ * @ap: a #NMAccessPoint
+ *
+ * Gets the Wi-Fi Generation (Wi-Fi 4, Wi-Fi 5, etc.) of the access point.
+ *
+ * Returns: the Wi-Fi Generation
+ *
+ * Since: 1.58
+ **/
+NMWifiGeneration
+nm_access_point_get_wifi_generation(NMAccessPoint *ap)
+{
+    g_return_val_if_fail(NM_IS_ACCESS_POINT(ap), NM_WIFI_GENERATION_LEGACY);
+
+    return NM_ACCESS_POINT_GET_PRIVATE(ap)->wifi_generation;
+}
 
 /**
  * nm_access_point_connection_valid:
@@ -496,6 +516,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_LAST_SEEN:
         g_value_set_int(value, nm_access_point_get_last_seen(ap));
         break;
+    case PROP_WIFI_GENERATION:
+        g_value_set_uint(value, nm_access_point_get_wifi_generation(ap));
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
@@ -523,6 +546,10 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_accesspoint = NML_DBUS_META_IFACE
         NML_DBUS_META_PROPERTY_INIT_U("RsnFlags", PROP_RSN_FLAGS, NMAccessPoint, _priv.rsn_flags),
         NML_DBUS_META_PROPERTY_INIT_AY("Ssid", PROP_SSID, NMAccessPoint, _priv.ssid),
         NML_DBUS_META_PROPERTY_INIT_Y("Strength", PROP_STRENGTH, NMAccessPoint, _priv.strength),
+        NML_DBUS_META_PROPERTY_INIT_U("WifiGeneration",
+                                      PROP_WIFI_GENERATION,
+                                      NMAccessPoint,
+                                      _priv.wifi_generation),
         NML_DBUS_META_PROPERTY_INIT_U("WpaFlags",
                                       PROP_WPA_FLAGS,
                                       NMAccessPoint,
@@ -692,6 +719,22 @@ nm_access_point_class_init(NMAccessPointClass *ap_class)
                                                       G_MAXINT,
                                                       -1,
                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
+    /**
+     * NMAccessPoint:wifi-generation:
+     *
+     * The Wi-Fi generation of the access point.
+     *
+     * Since: 1.58
+     **/
+    obj_properties[PROP_WIFI_GENERATION] =
+        g_param_spec_uint(NM_ACCESS_POINT_WIFI_GENERATION,
+                          "",
+                          "",
+                          NM_WIFI_GENERATION_LEGACY,
+                          NM_WIFI_GENERATION_WIFI_7,
+                          NM_WIFI_GENERATION_LEGACY,
+                          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     _nml_dbus_meta_class_init_with_properties(object_class, &_nml_dbus_meta_iface_nm_accesspoint);
 }

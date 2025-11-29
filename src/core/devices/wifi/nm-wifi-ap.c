@@ -38,7 +38,8 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMWifiAP,
                              PROP_MAX_BITRATE,
                              PROP_BANDWIDTH,
                              PROP_STRENGTH,
-                             PROP_LAST_SEEN, );
+                             PROP_LAST_SEEN,
+                             PROP_WIFI_GENERATION, );
 
 struct _NMWifiAPPrivate {
     /* Scanned or cached values */
@@ -57,6 +58,7 @@ struct _NMWifiAPPrivate {
     NM80211ApFlags         flags;     /* General flags */
     NM80211ApSecurityFlags wpa_flags; /* WPA-related flags */
     NM80211ApSecurityFlags rsn_flags; /* RSN (WPA2) -related flags */
+    NMWifiGeneration       wifi_generation;
 
     bool metered : 1;
 
@@ -367,6 +369,19 @@ nm_wifi_ap_set_last_seen(NMWifiAP *ap, gint32 last_seen_msec)
     return FALSE;
 }
 
+static gboolean
+nm_wifi_ap_set_wifi_generation(NMWifiAP *ap, NMWifiGeneration wifi_generation)
+{
+    NMWifiAPPrivate *priv = NM_WIFI_AP_GET_PRIVATE(ap);
+
+    if (priv->wifi_generation != wifi_generation) {
+        priv->wifi_generation = wifi_generation;
+        _notify(ap, PROP_WIFI_GENERATION);
+        return TRUE;
+    }
+    return FALSE;
+}
+
 gboolean
 nm_wifi_ap_get_metered(const NMWifiAP *self)
 {
@@ -430,6 +445,8 @@ nm_wifi_ap_update_from_properties(NMWifiAP *ap, const NMSupplicantBssInfo *bss_i
 
     changed |= nm_wifi_ap_set_wpa_flags(ap, bss_info->wpa_flags);
     changed |= nm_wifi_ap_set_rsn_flags(ap, bss_info->rsn_flags);
+
+    changed |= nm_wifi_ap_set_wifi_generation(ap, bss_info->wifi_generation);
 
     changed |= nm_wifi_ap_set_last_seen(ap, bss_info->last_seen_msec);
 
@@ -718,6 +735,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
                                1)
                 : -1);
         break;
+    case PROP_WIFI_GENERATION:
+        g_value_set_uint(value, priv->wifi_generation);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
@@ -737,11 +757,12 @@ nm_wifi_ap_init(NMWifiAP *self)
 
     c_list_init(&self->aps_lst);
 
-    priv->mode           = _NM_802_11_MODE_INFRA;
-    priv->flags          = NM_802_11_AP_FLAGS_NONE;
-    priv->wpa_flags      = NM_802_11_AP_SEC_NONE;
-    priv->rsn_flags      = NM_802_11_AP_SEC_NONE;
-    priv->last_seen_msec = G_MININT64;
+    priv->mode            = _NM_802_11_MODE_INFRA;
+    priv->flags           = NM_802_11_AP_FLAGS_NONE;
+    priv->wpa_flags       = NM_802_11_AP_SEC_NONE;
+    priv->rsn_flags       = NM_802_11_AP_SEC_NONE;
+    priv->last_seen_msec  = G_MININT64;
+    priv->wifi_generation = NM_WIFI_GENERATION_LEGACY;
 }
 
 NMWifiAP *
@@ -898,9 +919,10 @@ static const NMDBusInterfaceInfoExtended interface_info_access_point = {
                                                            NM_WIFI_AP_MAX_BITRATE),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Bandwidth", "u", NM_WIFI_AP_BANDWIDTH),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Strength", "y", NM_WIFI_AP_STRENGTH),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("LastSeen",
-                                                           "i",
-                                                           NM_WIFI_AP_LAST_SEEN), ), ),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("LastSeen", "i", NM_WIFI_AP_LAST_SEEN),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("WifiGeneration",
+                                                           "u",
+                                                           NM_WIFI_AP_WIFI_GENERATION), ), ),
 };
 
 static void
@@ -1002,6 +1024,15 @@ nm_wifi_ap_class_init(NMWifiAPClass *ap_class)
                                                       G_MAXINT,
                                                       -1,
                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
+    obj_properties[PROP_WIFI_GENERATION] =
+        g_param_spec_uint(NM_WIFI_AP_WIFI_GENERATION,
+                          "",
+                          "",
+                          NM_WIFI_GENERATION_LEGACY,
+                          G_MAXUINT,
+                          NM_WIFI_GENERATION_LEGACY,
+                          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     obj_properties[PROP_BANDWIDTH] = g_param_spec_uint(NM_WIFI_AP_BANDWIDTH,
                                                        "",

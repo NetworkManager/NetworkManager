@@ -4901,14 +4901,19 @@ get_bandwidth_vht(const guint8 *bytes, guint len, guint32 *out_bandwidth)
 #define WLAN_EID_VHT_CAPABILITY  191
 #define WLAN_EID_VHT_OPERATION   192
 #define WLAN_EID_VENDOR_SPECIFIC 221
+#define WLAN_EID_EXTENSION       255
+
+#define WLAN_EID_EXT_HE_CAPABILITY  35
+#define WLAN_EID_EXT_EHT_CAPABILITY 108
 
 void
-nm_wifi_utils_parse_ies(const guint8 *bytes,
-                        gsize         len,
-                        guint32      *out_max_rate,
-                        guint32      *out_bandwidth,
-                        gboolean     *out_metered,
-                        gboolean     *out_owe_transition_mode)
+nm_wifi_utils_parse_ies(const guint8     *bytes,
+                        gsize             len,
+                        guint32          *out_max_rate,
+                        guint32          *out_bandwidth,
+                        gboolean         *out_metered,
+                        gboolean         *out_owe_transition_mode,
+                        NMWifiGeneration *out_wifi_generation)
 {
     guint8  id, elem_len;
     guint32 m;
@@ -4917,6 +4922,7 @@ nm_wifi_utils_parse_ies(const guint8 *bytes,
     NM_SET_OUT(out_bandwidth, 0);
     NM_SET_OUT(out_metered, FALSE);
     NM_SET_OUT(out_owe_transition_mode, FALSE);
+    NM_SET_OUT(out_wifi_generation, NM_WIFI_GENERATION_LEGACY);
 
     while (len) {
         if (len < 2)
@@ -4931,6 +4937,9 @@ nm_wifi_utils_parse_ies(const guint8 *bytes,
 
         switch (id) {
         case WLAN_EID_HT_CAPABILITY:
+            if (out_wifi_generation && *out_wifi_generation < NM_WIFI_GENERATION_WIFI_4)
+                *out_wifi_generation = NM_WIFI_GENERATION_WIFI_4;
+
             if (out_max_rate) {
                 if (get_max_rate_ht(bytes, elem_len, &m))
                     *out_max_rate = NM_MAX(*out_max_rate, m);
@@ -4941,6 +4950,9 @@ nm_wifi_utils_parse_ies(const guint8 *bytes,
                 get_bandwidth_ht(bytes, elem_len, out_bandwidth);
             break;
         case WLAN_EID_VHT_CAPABILITY:
+            if (out_wifi_generation && *out_wifi_generation < NM_WIFI_GENERATION_WIFI_5)
+                *out_wifi_generation = NM_WIFI_GENERATION_WIFI_5;
+
             if (out_max_rate) {
                 if (get_max_rate_vht(bytes, elem_len, &m))
                     *out_max_rate = NM_MAX(*out_max_rate, m);
@@ -4949,6 +4961,19 @@ nm_wifi_utils_parse_ies(const guint8 *bytes,
         case WLAN_EID_VHT_OPERATION:
             if (out_bandwidth)
                 get_bandwidth_vht(bytes, elem_len, out_bandwidth);
+            break;
+        case WLAN_EID_EXTENSION:
+            if (out_wifi_generation && elem_len >= 1) {
+                guint8 ext_id = bytes[0];
+
+                if (ext_id == WLAN_EID_EXT_HE_CAPABILITY) {
+                    if (*out_wifi_generation < NM_WIFI_GENERATION_WIFI_6)
+                        *out_wifi_generation = NM_WIFI_GENERATION_WIFI_6;
+                } else if (ext_id == WLAN_EID_EXT_EHT_CAPABILITY) {
+                    if (*out_wifi_generation < NM_WIFI_GENERATION_WIFI_7)
+                        *out_wifi_generation = NM_WIFI_GENERATION_WIFI_7;
+                }
+            }
             break;
         case WLAN_EID_VENDOR_SPECIFIC:
             if (len == 8 && bytes[0] == 0x00 /* OUI: Microsoft */
