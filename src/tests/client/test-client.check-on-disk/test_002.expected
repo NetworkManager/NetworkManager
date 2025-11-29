@@ -466,40 +466,40 @@ AP[2]: :90\:B1\:5F\:9E\:E0\:E3:wlan0-ap-1:Infrastruktura:2.4 GHz:6:54 Mb/s:44:
 AP[3]: :61\:66\:D2\:E7\:44\:A2:wlan0-ap-2:Infrastruktura:5 GHz:44:54 Mb/s:34:**  :WPA1 WPA2
 
 <<<
-size: 2109
+size: 2193
 location: src/tests/client/test-client.py:test_002()/19
 cmd: $NMCLI -f ALL d wifi
 lang: C
 returncode: 0
-stdout: 1977 bytes
+stdout: 2061 bytes
 >>>
-NAME   SSID        SSID-HEX              BSSID              MODE   CHAN  BAND     FREQ      RATE       BANDWIDTH  SIGNAL  BARS  SECURITY   WPA-FLAGS                                      RSN-FLAGS                                      DEVICE  ACTIVE  IN-USE  DBUS-PATH                                     
-AP[1]  wlan0-ap-3  776C616E302D61702D33  60:B3:25:25:E2:C8  Infra  129   6 GHz    6595 MHz  54 Mbit/s  40 MHz     55      **    WPA3       (none)                                         pair_tkip pair_ccmp group_tkip group_ccmp sae  wlan0   no              /org/freedesktop/NetworkManager/AccessPoint/3 
-AP[2]  wlan0-ap-1  776C616E302D61702D31  90:B1:5F:9E:E0:E3  Infra  6     2.4 GHz  2437 MHz  54 Mbit/s  40 MHz     44      **    WPA1       pair_tkip pair_ccmp group_tkip group_ccmp psk  (none)                                         wlan0   no              /org/freedesktop/NetworkManager/AccessPoint/1 
-AP[3]  wlan0-ap-2  776C616E302D61702D32  61:66:D2:E7:44:A2  Infra  44    5 GHz    5220 MHz  54 Mbit/s  40 MHz     34      **    WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan0   no              /org/freedesktop/NetworkManager/AccessPoint/2 
+NAME   SSID        SSID-HEX              BSSID              MODE   CHAN  BAND     FREQ      RATE       BANDWIDTH  SIGNAL  BARS  GENERATION  SECURITY   WPA-FLAGS                                      RSN-FLAGS                                      DEVICE  ACTIVE  IN-USE  DBUS-PATH                                     
+AP[1]  wlan0-ap-3  776C616E302D61702D33  60:B3:25:25:E2:C8  Infra  129   6 GHz    6595 MHz  54 Mbit/s  40 MHz     55      **    Wi-Fi 5     WPA3       (none)                                         pair_tkip pair_ccmp group_tkip group_ccmp sae  wlan0   no              /org/freedesktop/NetworkManager/AccessPoint/3 
+AP[2]  wlan0-ap-1  776C616E302D61702D31  90:B1:5F:9E:E0:E3  Infra  6     2.4 GHz  2437 MHz  54 Mbit/s  40 MHz     44      **    Wi-Fi 4     WPA1       pair_tkip pair_ccmp group_tkip group_ccmp psk  (none)                                         wlan0   no              /org/freedesktop/NetworkManager/AccessPoint/1 
+AP[3]  wlan0-ap-2  776C616E302D61702D32  61:66:D2:E7:44:A2  Infra  44    5 GHz    5220 MHz  54 Mbit/s  40 MHz     34      **    Wi-Fi 5     WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan0   no              /org/freedesktop/NetworkManager/AccessPoint/2 
 
-NAME   SSID        SSID-HEX              BSSID              MODE   CHAN  BAND     FREQ      RATE       BANDWIDTH  SIGNAL  BARS  SECURITY   WPA-FLAGS                                      RSN-FLAGS                                      DEVICE  ACTIVE  IN-USE  DBUS-PATH                                     
-AP[1]  wlan1-ap-4  776C616E312D61702D34  EE:52:8B:49:A1:96  Infra  1     2.4 GHz  2412 MHz  54 Mbit/s  40 MHz     38      **    WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan1   no              /org/freedesktop/NetworkManager/AccessPoint/4 
+NAME   SSID        SSID-HEX              BSSID              MODE   CHAN  BAND     FREQ      RATE       BANDWIDTH  SIGNAL  BARS  GENERATION  SECURITY   WPA-FLAGS                                      RSN-FLAGS                                      DEVICE  ACTIVE  IN-USE  DBUS-PATH                                     
+AP[1]  wlan1-ap-4  776C616E312D61702D34  EE:52:8B:49:A1:96  Infra  1     2.4 GHz  2412 MHz  54 Mbit/s  40 MHz     38      **    Wi-Fi 4     WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan1   no              /org/freedesktop/NetworkManager/AccessPoint/4 
 
-NAME  SSID  SSID-HEX  BSSID  MODE  CHAN  BAND  FREQ  RATE  BANDWIDTH  SIGNAL  BARS  SECURITY  WPA-FLAGS  RSN-FLAGS  DEVICE  ACTIVE  IN-USE  DBUS-PATH 
+NAME  SSID  SSID-HEX  BSSID  MODE  CHAN  BAND  FREQ  RATE  BANDWIDTH  SIGNAL  BARS  GENERATION  SECURITY  WPA-FLAGS  RSN-FLAGS  DEVICE  ACTIVE  IN-USE  DBUS-PATH 
 
 <<<
-size: 2185
+size: 2269
 location: src/tests/client/test-client.py:test_002()/20
 cmd: $NMCLI -f ALL d wifi
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2043 bytes
+stdout: 2127 bytes
 >>>
-NAME   SSID        SSID-HEX              BSSID              MODE            CHAN  BAND     FREQ      RATE     BANDWIDTH  SIGNAL  BARS  SECURITY   WPA-FLAGS                                      RSN-FLAGS                                      DEVICE  ACTIVE  IN-USE  DBUS-PATH                                     
-AP[1]  wlan0-ap-3  776C616E302D61702D33  60:B3:25:25:E2:C8  Infrastruktura  129   6 GHz    6595 MHz  54 Mb/s  40 MHz     55      **    WPA3       (brak)                                         pair_tkip pair_ccmp group_tkip group_ccmp sae  wlan0   nie             /org/freedesktop/NetworkManager/AccessPoint/3 
-AP[2]  wlan0-ap-1  776C616E302D61702D31  90:B1:5F:9E:E0:E3  Infrastruktura  6     2.4 GHz  2437 MHz  54 Mb/s  40 MHz     44      **    WPA1       pair_tkip pair_ccmp group_tkip group_ccmp psk  (brak)                                         wlan0   nie             /org/freedesktop/NetworkManager/AccessPoint/1 
-AP[3]  wlan0-ap-2  776C616E302D61702D32  61:66:D2:E7:44:A2  Infrastruktura  44    5 GHz    5220 MHz  54 Mb/s  40 MHz     34      **    WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan0   nie             /org/freedesktop/NetworkManager/AccessPoint/2 
+NAME   SSID        SSID-HEX              BSSID              MODE            CHAN  BAND     FREQ      RATE     BANDWIDTH  SIGNAL  BARS  GENERATION  SECURITY   WPA-FLAGS                                      RSN-FLAGS                                      DEVICE  ACTIVE  IN-USE  DBUS-PATH                                     
+AP[1]  wlan0-ap-3  776C616E302D61702D33  60:B3:25:25:E2:C8  Infrastruktura  129   6 GHz    6595 MHz  54 Mb/s  40 MHz     55      **    Wi-Fi 5     WPA3       (brak)                                         pair_tkip pair_ccmp group_tkip group_ccmp sae  wlan0   nie             /org/freedesktop/NetworkManager/AccessPoint/3 
+AP[2]  wlan0-ap-1  776C616E302D61702D31  90:B1:5F:9E:E0:E3  Infrastruktura  6     2.4 GHz  2437 MHz  54 Mb/s  40 MHz     44      **    Wi-Fi 4     WPA1       pair_tkip pair_ccmp group_tkip group_ccmp psk  (brak)                                         wlan0   nie             /org/freedesktop/NetworkManager/AccessPoint/1 
+AP[3]  wlan0-ap-2  776C616E302D61702D32  61:66:D2:E7:44:A2  Infrastruktura  44    5 GHz    5220 MHz  54 Mb/s  40 MHz     34      **    Wi-Fi 5     WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan0   nie             /org/freedesktop/NetworkManager/AccessPoint/2 
 
-NAME   SSID        SSID-HEX              BSSID              MODE            CHAN  BAND     FREQ      RATE     BANDWIDTH  SIGNAL  BARS  SECURITY   WPA-FLAGS                                      RSN-FLAGS                                      DEVICE  ACTIVE  IN-USE  DBUS-PATH                                     
-AP[1]  wlan1-ap-4  776C616E312D61702D34  EE:52:8B:49:A1:96  Infrastruktura  1     2.4 GHz  2412 MHz  54 Mb/s  40 MHz     38      **    WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan1   nie             /org/freedesktop/NetworkManager/AccessPoint/4 
+NAME   SSID        SSID-HEX              BSSID              MODE            CHAN  BAND     FREQ      RATE     BANDWIDTH  SIGNAL  BARS  GENERATION  SECURITY   WPA-FLAGS                                      RSN-FLAGS                                      DEVICE  ACTIVE  IN-USE  DBUS-PATH                                     
+AP[1]  wlan1-ap-4  776C616E312D61702D34  EE:52:8B:49:A1:96  Infrastruktura  1     2.4 GHz  2412 MHz  54 Mb/s  40 MHz     38      **    Wi-Fi 4     WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan1   nie             /org/freedesktop/NetworkManager/AccessPoint/4 
 
-NAME  SSID  SSID-HEX  BSSID  MODE  CHAN  BAND  FREQ  RATE  BANDWIDTH  SIGNAL  BARS  SECURITY  WPA-FLAGS  RSN-FLAGS  DEVICE  ACTIVE  IN-USE  DBUS-PATH 
+NAME  SSID  SSID-HEX  BSSID  MODE  CHAN  BAND  FREQ  RATE  BANDWIDTH  SIGNAL  BARS  GENERATION  SECURITY  WPA-FLAGS  RSN-FLAGS  DEVICE  ACTIVE  IN-USE  DBUS-PATH 
 
 <<<
 size: 245
