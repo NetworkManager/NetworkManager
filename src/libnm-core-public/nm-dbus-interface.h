@@ -419,6 +419,26 @@ typedef enum /*< underscore_name=nm_802_11_ap_security_flags, flags >*/ {
 } NM80211ApSecurityFlags;
 
 /**
+ * NMWifiGeneration:
+ * @NM_WIFI_GENERATION_LEGACY: pre-Wi-Fi 4 (802.11a/b/g)
+ * @NM_WIFI_GENERATION_WIFI_4: Wi-Fi 4 (802.11n)
+ * @NM_WIFI_GENERATION_WIFI_5: Wi-Fi 5 (802.11ac)
+ * @NM_WIFI_GENERATION_WIFI_6: Wi-Fi 6 (802.11ax)
+ * @NM_WIFI_GENERATION_WIFI_7: Wi-Fi 7 (802.11be)
+ *
+ * 802.11 Wi-Fi generation.
+ *
+ * Since: 1.58
+ */
+typedef enum {
+    NM_WIFI_GENERATION_LEGACY = 0,
+    NM_WIFI_GENERATION_WIFI_4 = 4,
+    NM_WIFI_GENERATION_WIFI_5 = 5,
+    NM_WIFI_GENERATION_WIFI_6 = 6,
+    NM_WIFI_GENERATION_WIFI_7 = 7,
+} NMWifiGeneration;
+
+/**
  * NM80211Mode:
  * @NM_802_11_MODE_UNKNOWN: the device or access point mode is unknown
  * @NM_802_11_MODE_ADHOC: for both devices and access point objects, indicates

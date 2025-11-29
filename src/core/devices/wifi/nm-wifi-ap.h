@@ -19,17 +19,18 @@
 #define NM_IS_WIFI_AP_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_WIFI_AP))
 #define NM_WIFI_AP_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_WIFI_AP, NMWifiAPClass))
 
-#define NM_WIFI_AP_FLAGS       "flags"
-#define NM_WIFI_AP_WPA_FLAGS   "wpa-flags"
-#define NM_WIFI_AP_RSN_FLAGS   "rsn-flags"
-#define NM_WIFI_AP_SSID        "ssid"
-#define NM_WIFI_AP_FREQUENCY   "frequency"
-#define NM_WIFI_AP_HW_ADDRESS  "hw-address"
-#define NM_WIFI_AP_MODE        "mode"
-#define NM_WIFI_AP_MAX_BITRATE "max-bitrate"
-#define NM_WIFI_AP_BANDWIDTH   "bandwidth"
-#define NM_WIFI_AP_STRENGTH    "strength"
-#define NM_WIFI_AP_LAST_SEEN   "last-seen"
+#define NM_WIFI_AP_FLAGS           "flags"
+#define NM_WIFI_AP_WPA_FLAGS       "wpa-flags"
+#define NM_WIFI_AP_RSN_FLAGS       "rsn-flags"
+#define NM_WIFI_AP_SSID            "ssid"
+#define NM_WIFI_AP_FREQUENCY       "frequency"
+#define NM_WIFI_AP_HW_ADDRESS      "hw-address"
+#define NM_WIFI_AP_MODE            "mode"
+#define NM_WIFI_AP_MAX_BITRATE     "max-bitrate"
+#define NM_WIFI_AP_BANDWIDTH       "bandwidth"
+#define NM_WIFI_AP_STRENGTH        "strength"
+#define NM_WIFI_AP_LAST_SEEN       "last-seen"
+#define NM_WIFI_AP_WIFI_GENERATION "wifi-generation"
 
 typedef struct {
     NMDBusObject             parent;

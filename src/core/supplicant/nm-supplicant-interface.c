@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <linux/if_ether.h>
 
+#include "core/nm-core-utils.h"
 #include "NetworkManagerUtils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-glib-aux/nm-c-list.h"
@@ -765,10 +766,11 @@ _bss_info_properties_changed(NMSupplicantInterface *self,
 
     v_v = nm_g_variant_lookup_value(properties, "IEs", G_VARIANT_TYPE_BYTESTRING);
     if (v_v) {
-        gboolean p_owe_transition_mode;
-        gboolean p_metered;
-        guint32  rate;
-        guint32  bandwidth;
+        gboolean         p_owe_transition_mode;
+        gboolean         p_metered;
+        guint32          rate;
+        guint32          bandwidth;
+        NMWifiGeneration p_wifi_generation;
 
         arr_data = g_variant_get_fixed_array(v_v, &arr_len, 1);
         nm_wifi_utils_parse_ies(arr_data,
@@ -776,7 +778,8 @@ _bss_info_properties_changed(NMSupplicantInterface *self,
                                 &rate,
                                 &bandwidth,
                                 &p_metered,
-                                &p_owe_transition_mode);
+                                &p_owe_transition_mode,
+                                &p_wifi_generation);
         p_max_rate     = NM_MAX(p_max_rate, rate);
         p_max_rate_has = TRUE;
         g_variant_unref(v_v);
@@ -786,8 +789,9 @@ _bss_info_properties_changed(NMSupplicantInterface *self,
         else
             bss_info->rsn_flags &= ~NM_802_11_AP_SEC_KEY_MGMT_OWE_TM;
 
-        bss_info->metered   = p_metered;
-        bss_info->bandwidth = bandwidth;
+        bss_info->metered         = p_metered;
+        bss_info->bandwidth       = bandwidth;
+        bss_info->wifi_generation = (guint8) p_wifi_generation;
     }
 
     if (p_max_rate_has)
