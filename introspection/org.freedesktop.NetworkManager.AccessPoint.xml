@@ -102,5 +102,16 @@
     -->
     <property name="LastSeen" type="i" access="read"/>
 
+    <!--
+        WifiStandard:
+
+        The 802.11 Wi-Fi standard supported by the access point.
+
+        Returns: <link linkend="NMWifiStandard">NMWifiStandard</link>
+
+        Since: 1.58
+    -->
+    <property name="WifiStandard" type="u" access="read"/>
+
   </interface>
 </node>

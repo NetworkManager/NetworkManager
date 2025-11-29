@@ -422,6 +422,26 @@ typedef enum /*< underscore_name=nm_802_11_ap_security_flags, flags >*/ {
 } NM80211ApSecurityFlags;
 
 /**
+ * NMWifiStandard:
+ * @NM_WIFI_STANDARD_LEGACY: 802.11a/b/g
+ * @NM_WIFI_STANDARD_802_11_N: 802.11n (Wi-Fi 4)
+ * @NM_WIFI_STANDARD_802_11_AC: 802.11ac (Wi-Fi 5)
+ * @NM_WIFI_STANDARD_802_11_AX: 802.11ax (Wi-Fi 6)
+ * @NM_WIFI_STANDARD_802_11_BE: 802.11be (Wi-Fi 7)
+ *
+ * The 802.11 Wi-Fi standard supported by an access point.
+ *
+ * Since: 1.58
+ */
+typedef enum {
+    NM_WIFI_STANDARD_LEGACY    = 0,
+    NM_WIFI_STANDARD_802_11_N  = 1,
+    NM_WIFI_STANDARD_802_11_AC = 2,
+    NM_WIFI_STANDARD_802_11_AX = 3,
+    NM_WIFI_STANDARD_802_11_BE = 4,
+} NMWifiStandard;
+
+/**
  * NM80211Mode:
  * @NM_802_11_MODE_UNKNOWN: the device or access point mode is unknown
  * @NM_802_11_MODE_ADHOC: for both devices and access point objects, indicates

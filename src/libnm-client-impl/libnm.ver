@@ -2106,6 +2106,7 @@ global:
 
 libnm_1_58_0 {
 global:
+	nm_access_point_get_wifi_standard;
 	nm_connection_get_setting_geneve;
 	nm_device_geneve_get_df;
 	nm_device_geneve_get_dst_port;
@@ -2130,4 +2131,5 @@ global:
 	nm_utils_wifi_6ghz_freqs;
 	nm_utils_wifi_freq_to_band;
 	nm_wifi_band_get_type;
+	nm_wifi_standard_get_type;
 } libnm_1_56_0;

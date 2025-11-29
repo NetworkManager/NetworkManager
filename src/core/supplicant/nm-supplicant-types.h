@@ -195,6 +195,8 @@ typedef struct _NMSupplicantBssInfo {
 
     bool _bss_dirty : 1;
 
+    guint8 wifi_standard; /* NMWifiStandard */
+
 } NMSupplicantBssInfo;
 
 typedef struct _NMSupplicantPeerInfo {
