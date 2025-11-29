@@ -135,10 +135,30 @@ const char *nm_utils_file_search_in_paths(const char                       *prog
                                           gpointer                          user_data,
                                           GError                          **error);
 
-guint32  nm_utils_wifi_freq_to_channel(guint32 freq);
-guint32  nm_utils_wifi_channel_to_freq(guint32 channel, const char *band);
-guint32  nm_utils_wifi_find_next_channel(guint32 channel, int direction, char *band);
-gboolean nm_utils_wifi_is_channel_valid(guint32 channel, const char *band);
+/**
+ * NMWifiBand:
+ * @NM_WIFI_BAND_UNKNOWN: the band is unknown
+ * @NM_WIFI_BAND_2_4_GHZ: the 2.4 GHz band
+ * @NM_WIFI_BAND_5_GHZ: the 5 GHz band
+ * @NM_WIFI_BAND_6_GHZ: the 6 GHz band
+ *
+ * Describes a Wi-Fi radio frequency band.
+ *
+ * Since: 1.58
+ */
+typedef enum {
+    NM_WIFI_BAND_UNKNOWN,
+    NM_WIFI_BAND_2_4_GHZ,
+    NM_WIFI_BAND_5_GHZ,
+    NM_WIFI_BAND_6_GHZ,
+} NMWifiBand;
+
+guint32 nm_utils_wifi_freq_to_channel(guint32 freq);
+NM_AVAILABLE_IN_1_58
+NMWifiBand nm_utils_wifi_freq_to_band(guint32 freq);
+guint32    nm_utils_wifi_channel_to_freq(guint32 channel, const char *band);
+guint32    nm_utils_wifi_find_next_channel(guint32 channel, int direction, char *band);
+gboolean   nm_utils_wifi_is_channel_valid(guint32 channel, const char *band);
 NM_AVAILABLE_IN_1_2
 const guint *nm_utils_wifi_2ghz_freqs(void);
 NM_AVAILABLE_IN_1_2

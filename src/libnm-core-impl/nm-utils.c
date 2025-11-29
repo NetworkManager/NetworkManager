@@ -3797,21 +3797,24 @@ nm_utils_wifi_freq_to_channel(guint32 freq)
  * nm_utils_wifi_freq_to_band:
  * @freq: frequency
  *
- * Utility function to translate a Wi-Fi frequency to its corresponding band.
+ * Translates a Wi-Fi frequency to its corresponding band.
  *
- * Returns: the band containing the frequency or NULL if freq is invalid
+ * Returns: the band containing the frequency or %NM_WIFI_BAND_UNKNOWN if
+ * the frequency does not belong to a known band.
+ *
+ * Since: 1.58
  **/
-const char *
+NMWifiBand
 nm_utils_wifi_freq_to_band(guint32 freq)
 {
     if (freq >= _NM_WIFI_FREQ_MIN_2GHZ && freq <= _NM_WIFI_FREQ_MAX_2GHZ)
-        return "bg";
+        return NM_WIFI_BAND_2_4_GHZ;
     else if (freq >= _NM_WIFI_FREQ_MIN_5GHZ && freq <= _NM_WIFI_FREQ_MAX_5GHZ)
-        return "a";
+        return NM_WIFI_BAND_5_GHZ;
     else if (freq >= _NM_WIFI_FREQ_MIN_6GHZ && freq <= _NM_WIFI_FREQ_MAX_6GHZ)
-        return "6GHz";
+        return NM_WIFI_BAND_6_GHZ;
 
-    return NULL;
+    return NM_WIFI_BAND_UNKNOWN;
 }
 
 /**
