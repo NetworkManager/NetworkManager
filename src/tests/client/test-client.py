@@ -1547,9 +1547,9 @@ class TestNmcli(unittest.TestCase):
         # does not enforce the ifnames are unique.
         self.ctx.srv.op_AddObj("WifiDevice", ident="wlan1/x", iface="wlan1")
 
-        self.ctx.srv.op_AddObj("WifiAp", device="wlan0", rsnf=0x0)
+        self.ctx.srv.op_AddObj("WifiAp", device="wlan0", rsnf=0x0, freq=2437)
 
-        self.ctx.srv.op_AddObj("WifiAp", device="wlan0")
+        self.ctx.srv.op_AddObj("WifiAp", device="wlan0", freq=5220)
 
         NM_AP_FLAGS = getattr(NM, "80211ApSecurityFlags")
         rsnf = 0x0
@@ -1558,7 +1558,7 @@ class TestNmcli(unittest.TestCase):
         rsnf = rsnf | NM_AP_FLAGS.GROUP_TKIP
         rsnf = rsnf | NM_AP_FLAGS.GROUP_CCMP
         rsnf = rsnf | NM_AP_FLAGS.KEY_MGMT_SAE
-        self.ctx.srv.op_AddObj("WifiAp", device="wlan0", wpaf=0x0, rsnf=rsnf)
+        self.ctx.srv.op_AddObj("WifiAp", device="wlan0", wpaf=0x0, rsnf=rsnf, freq=6595)
 
         self.ctx.srv.op_AddObj("WifiAp", device="wlan1")
 
