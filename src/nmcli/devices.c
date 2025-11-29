@@ -738,13 +738,14 @@ const NmcMetaGenericInfo *const nmc_fields_dev_wifi_list[] = {
     NMC_META_GENERIC("BANDWIDTH"), /* 9 */
     NMC_META_GENERIC("SIGNAL"),    /* 10 */
     NMC_META_GENERIC("BARS"),      /* 11 */
-    NMC_META_GENERIC("SECURITY"),  /* 12 */
-    NMC_META_GENERIC("WPA-FLAGS"), /* 13 */
-    NMC_META_GENERIC("RSN-FLAGS"), /* 14 */
-    NMC_META_GENERIC("DEVICE"),    /* 15 */
-    NMC_META_GENERIC("ACTIVE"),    /* 16 */
-    NMC_META_GENERIC("IN-USE"),    /* 17 */
-    NMC_META_GENERIC("DBUS-PATH"), /* 18 */
+    NMC_META_GENERIC("STANDARD"),  /* 12 */
+    NMC_META_GENERIC("SECURITY"),  /* 13 */
+    NMC_META_GENERIC("WPA-FLAGS"), /* 14 */
+    NMC_META_GENERIC("RSN-FLAGS"), /* 15 */
+    NMC_META_GENERIC("DEVICE"),    /* 16 */
+    NMC_META_GENERIC("ACTIVE"),    /* 17 */
+    NMC_META_GENERIC("IN-USE"),    /* 18 */
+    NMC_META_GENERIC("DBUS-PATH"), /* 19 */
     NULL,
 };
 #define NMC_FIELDS_DEV_WIFI_LIST_COMMON       "IN-USE,BSSID,SSID,MODE,BAND,CHAN,RATE,SIGNAL,BARS,SECURITY"
@@ -1337,6 +1338,7 @@ fill_output_access_point(NMAccessPoint *ap, const APInfo *info)
     char                  *ap_name;
     const char            *sig_bars;
     NMMetaColor            color;
+    char                  *standard_str;
 
     active = (info->active_ap == ap);
 
@@ -1382,6 +1384,23 @@ fill_output_access_point(NMAccessPoint *ap, const APInfo *info)
     default:
     case NM_WIFI_BAND_UNKNOWN:
         band_str = "";
+    }
+
+    switch (nm_access_point_get_wifi_standard(ap)) {
+    case NM_WIFI_STANDARD_802_11_N:
+        standard_str = g_strdup("Wi-Fi 4");
+        break;
+    case NM_WIFI_STANDARD_802_11_AC:
+        standard_str = g_strdup("Wi-Fi 5");
+        break;
+    case NM_WIFI_STANDARD_802_11_AX:
+        standard_str = g_strdup("Wi-Fi 6");
+        break;
+    case NM_WIFI_STANDARD_802_11_BE:
+        standard_str = g_strdup("Wi-Fi 7");
+        break;
+    default:
+        standard_str = NULL;
         break;
     }
 
@@ -1439,13 +1458,14 @@ fill_output_access_point(NMAccessPoint *ap, const APInfo *info)
     set_val_str(arr, 9, bandwidth_str);
     set_val_str(arr, 10, strength_str);
     set_val_strc(arr, 11, sig_bars);
-    set_val_str(arr, 12, g_string_free(security_str, FALSE));
-    set_val_str(arr, 13, wpa_flags_str);
-    set_val_str(arr, 14, rsn_flags_str);
-    set_val_strc(arr, 15, info->device);
-    set_val_strc(arr, 16, active ? _("yes") : _("no"));
-    set_val_strc(arr, 17, active ? "*" : " ");
-    set_val_strc(arr, 18, nm_object_get_path(NM_OBJECT(ap)));
+    set_val_str(arr, 12, standard_str);
+    set_val_str(arr, 13, g_string_free(security_str, FALSE));
+    set_val_str(arr, 14, wpa_flags_str);
+    set_val_str(arr, 15, rsn_flags_str);
+    set_val_strc(arr, 16, info->device);
+    set_val_strc(arr, 17, active ? _("yes") : _("no"));
+    set_val_strc(arr, 18, active ? "*" : " ");
+    set_val_strc(arr, 19, nm_object_get_path(NM_OBJECT(ap)));
 
     /* Set colors */
     color = wifi_signal_to_color(strength);
@@ -1453,7 +1473,7 @@ fill_output_access_point(NMAccessPoint *ap, const APInfo *info)
         color = NM_META_COLOR_WIFI_DEPRECATED;
     set_val_color_all(arr, color);
     if (active)
-        arr[15].color = NM_META_COLOR_CONNECTION_ACTIVATED;
+        arr[16].color = NM_META_COLOR_CONNECTION_ACTIVATED;
 
     g_ptr_array_add(info->output_data, arr);
 }

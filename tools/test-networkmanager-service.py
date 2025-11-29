@@ -1265,6 +1265,7 @@ PRP_WIFI_AP_MAX_BITRATE = "MaxBitrate"
 PRP_WIFI_AP_STRENGTH = "Strength"
 PRP_WIFI_AP_LAST_SEEN = "LastSeen"
 PRP_WIFI_AP_BANDWIDTH = "Bandwidth"
+PRP_WIFI_AP_WIFI_STANDARD = "WifiStandard"
 
 
 class WifiAp(ExportedObj):
@@ -1322,6 +1323,9 @@ class WifiAp(ExportedObj):
             PRP_WIFI_AP_STRENGTH: dbus.Byte(strength),
             PRP_WIFI_AP_LAST_SEEN: dbus.Int32(NM.utils_get_timestamp_msec() / 1000),
             PRP_WIFI_AP_BANDWIDTH: dbus.UInt32(40),
+            PRP_WIFI_AP_WIFI_STANDARD: (
+                dbus.UInt32(1) if freq < 5000 else dbus.UInt32(2)
+            ),
         }
 
         self.dbus_interface_add(IFACE_WIFI_AP, props)
