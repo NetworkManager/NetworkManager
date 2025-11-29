@@ -639,7 +639,7 @@ nm_wifi_utils_complete_connection(GBytes       *ap_ssid,
                 chan_valid = FALSE;
             }
 
-            band = nm_utils_wifi_freq_to_band(ap_freq);
+            band = nm_wifi_freq_to_band_prop(ap_freq);
             if (band) {
                 g_object_set(s_wifi, NM_SETTING_WIRELESS_BAND, band, NULL);
             } else {
@@ -1928,4 +1928,20 @@ nm_wifi_utils_wfd_info_eq(const NMIwdWfdInfo *a, const NMIwdWfdInfo *b)
 
     return a->source == b->source && a->sink == b->sink && a->port == b->port
            && a->has_audio == b->has_audio && a->has_uibc == b->has_uibc && a->has_cp == b->has_cp;
+}
+
+const char *
+nm_wifi_freq_to_band_prop(guint32 freq)
+{
+    switch (nm_utils_wifi_freq_to_band(freq)) {
+    case NM_WIFI_BAND_2_4_GHZ:
+        return "bg";
+    case NM_WIFI_BAND_5_GHZ:
+        return "a";
+    case NM_WIFI_BAND_6_GHZ:
+        return "6GHz";
+    default:
+    case NM_WIFI_BAND_UNKNOWN:
+        return NULL;
+    }
 }

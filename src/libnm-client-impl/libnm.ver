@@ -2095,4 +2095,6 @@ global:
 libnm_1_58_0 {
 global:
 	nm_utils_wifi_6ghz_freqs;
+	nm_utils_wifi_freq_to_band;
+	nm_wifi_band_get_type;
 } libnm_1_56_0;
