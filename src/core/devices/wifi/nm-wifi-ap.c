@@ -621,7 +621,7 @@ nm_wifi_ap_check_compatible(NMWifiAP *self, NMConnection *connection)
 
     band = nm_setting_wireless_get_band(s_wireless);
     if (band) {
-        const char *ap_band = nm_utils_wifi_freq_to_band(priv->freq);
+        const char *ap_band = nm_wifi_freq_to_band_prop(priv->freq);
 
         if (!nm_streq(band, ap_band))
             return FALSE;
