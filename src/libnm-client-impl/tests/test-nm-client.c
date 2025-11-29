@@ -299,7 +299,7 @@ test_wifi_ap_added_removed(void)
 
     ret = g_dbus_proxy_call_sync(sinfo->proxy,
                                  "AddWifiAp",
-                                 g_variant_new("(sss)", "wlan0", "test-ap", expected_bssid),
+                                 g_variant_new("(sssu)", "wlan0", "test-ap", expected_bssid, 2412),
                                  G_DBUS_CALL_FLAGS_NO_AUTO_START,
                                  3000,
                                  NULL,

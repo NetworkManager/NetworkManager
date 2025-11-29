@@ -136,18 +136,19 @@ Strony podręcznika nmcli(1) i nmcli-examples(7) zawierają pełne informacje
 o użyciu.
 
 <<<
-size: 1423
+size: 1566
 location: src/tests/client/test-client.py:test_002()/7
 cmd: $NMCLI -f AP -mode multiline d show wlan0
 lang: C
 returncode: 0
-stdout: 1271 bytes
+stdout: 1414 bytes
 >>>
 AP[1].IN-USE:                            
 AP[1].BSSID:                            60:B3:25:25:E2:C8
 AP[1].SSID:                             wlan0-ap-3
 AP[1].MODE:                             Infra
-AP[1].CHAN:                             1
+AP[1].BAND:                             6 GHz
+AP[1].CHAN:                             129
 AP[1].RATE:                             54 Mbit/s
 AP[1].SIGNAL:                           55
 AP[1].BARS:                             **  
@@ -156,7 +157,8 @@ AP[2].IN-USE:
 AP[2].BSSID:                            90:B1:5F:9E:E0:E3
 AP[2].SSID:                             wlan0-ap-1
 AP[2].MODE:                             Infra
-AP[2].CHAN:                             1
+AP[2].BAND:                             2.4 GHz
+AP[2].CHAN:                             6
 AP[2].RATE:                             54 Mbit/s
 AP[2].SIGNAL:                           44
 AP[2].BARS:                             **  
@@ -165,25 +167,27 @@ AP[3].IN-USE:
 AP[3].BSSID:                            61:66:D2:E7:44:A2
 AP[3].SSID:                             wlan0-ap-2
 AP[3].MODE:                             Infra
-AP[3].CHAN:                             1
+AP[3].BAND:                             5 GHz
+AP[3].CHAN:                             44
 AP[3].RATE:                             54 Mbit/s
 AP[3].SIGNAL:                           34
 AP[3].BARS:                             **  
 AP[3].SECURITY:                         WPA1 WPA2
 
 <<<
-size: 1460
+size: 1603
 location: src/tests/client/test-client.py:test_002()/8
 cmd: $NMCLI -f AP -mode multiline d show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1298 bytes
+stdout: 1441 bytes
 >>>
 AP[1].IN-USE:                            
 AP[1].BSSID:                            60:B3:25:25:E2:C8
 AP[1].SSID:                             wlan0-ap-3
 AP[1].MODE:                             Infrastruktura
-AP[1].CHAN:                             1
+AP[1].BAND:                             6 GHz
+AP[1].CHAN:                             129
 AP[1].RATE:                             54 Mb/s
 AP[1].SIGNAL:                           55
 AP[1].BARS:                             **  
@@ -192,7 +196,8 @@ AP[2].IN-USE:
 AP[2].BSSID:                            90:B1:5F:9E:E0:E3
 AP[2].SSID:                             wlan0-ap-1
 AP[2].MODE:                             Infrastruktura
-AP[2].CHAN:                             1
+AP[2].BAND:                             2.4 GHz
+AP[2].CHAN:                             6
 AP[2].RATE:                             54 Mb/s
 AP[2].SIGNAL:                           44
 AP[2].BARS:                             **  
@@ -201,19 +206,20 @@ AP[3].IN-USE:
 AP[3].BSSID:                            61:66:D2:E7:44:A2
 AP[3].SSID:                             wlan0-ap-2
 AP[3].MODE:                             Infrastruktura
-AP[3].CHAN:                             1
+AP[3].BAND:                             5 GHz
+AP[3].CHAN:                             44
 AP[3].RATE:                             54 Mb/s
 AP[3].SIGNAL:                           34
 AP[3].BARS:                             **  
 AP[3].SECURITY:                         WPA1 WPA2
 
 <<<
-size: 1877
+size: 2020
 location: src/tests/client/test-client.py:test_002()/9
 cmd: $NMCLI -f AP -mode multiline -p d show wlan0
 lang: C
 returncode: 0
-stdout: 1722 bytes
+stdout: 1865 bytes
 >>>
 ===============================================================================
                             Device details (wlan0)
@@ -222,7 +228,8 @@ AP[1].IN-USE:
 AP[1].BSSID:                            60:B3:25:25:E2:C8
 AP[1].SSID:                             wlan0-ap-3
 AP[1].MODE:                             Infra
-AP[1].CHAN:                             1
+AP[1].BAND:                             6 GHz
+AP[1].CHAN:                             129
 AP[1].RATE:                             54 Mbit/s
 AP[1].SIGNAL:                           55
 AP[1].BARS:                             **  
@@ -232,7 +239,8 @@ AP[2].IN-USE:
 AP[2].BSSID:                            90:B1:5F:9E:E0:E3
 AP[2].SSID:                             wlan0-ap-1
 AP[2].MODE:                             Infra
-AP[2].CHAN:                             1
+AP[2].BAND:                             2.4 GHz
+AP[2].CHAN:                             6
 AP[2].RATE:                             54 Mbit/s
 AP[2].SIGNAL:                           44
 AP[2].BARS:                             **  
@@ -242,7 +250,8 @@ AP[3].IN-USE:
 AP[3].BSSID:                            61:66:D2:E7:44:A2
 AP[3].SSID:                             wlan0-ap-2
 AP[3].MODE:                             Infra
-AP[3].CHAN:                             1
+AP[3].BAND:                             5 GHz
+AP[3].CHAN:                             44
 AP[3].RATE:                             54 Mbit/s
 AP[3].SIGNAL:                           34
 AP[3].BARS:                             **  
@@ -250,12 +259,12 @@ AP[3].SECURITY:                         WPA1 WPA2
 -------------------------------------------------------------------------------
 
 <<<
-size: 1922
+size: 2065
 location: src/tests/client/test-client.py:test_002()/10
 cmd: $NMCLI -f AP -mode multiline -p d show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1756 bytes
+stdout: 1899 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (wlan0)
@@ -264,7 +273,8 @@ AP[1].IN-USE:
 AP[1].BSSID:                            60:B3:25:25:E2:C8
 AP[1].SSID:                             wlan0-ap-3
 AP[1].MODE:                             Infrastruktura
-AP[1].CHAN:                             1
+AP[1].BAND:                             6 GHz
+AP[1].CHAN:                             129
 AP[1].RATE:                             54 Mb/s
 AP[1].SIGNAL:                           55
 AP[1].BARS:                             **  
@@ -274,7 +284,8 @@ AP[2].IN-USE:
 AP[2].BSSID:                            90:B1:5F:9E:E0:E3
 AP[2].SSID:                             wlan0-ap-1
 AP[2].MODE:                             Infrastruktura
-AP[2].CHAN:                             1
+AP[2].BAND:                             2.4 GHz
+AP[2].CHAN:                             6
 AP[2].RATE:                             54 Mb/s
 AP[2].SIGNAL:                           44
 AP[2].BARS:                             **  
@@ -284,7 +295,8 @@ AP[3].IN-USE:
 AP[3].BSSID:                            61:66:D2:E7:44:A2
 AP[3].SSID:                             wlan0-ap-2
 AP[3].MODE:                             Infrastruktura
-AP[3].CHAN:                             1
+AP[3].BAND:                             5 GHz
+AP[3].CHAN:                             44
 AP[3].RATE:                             54 Mb/s
 AP[3].SIGNAL:                           34
 AP[3].BARS:                             **  
@@ -292,18 +304,19 @@ AP[3].SECURITY:                         WPA1 WPA2
 -------------------------------------------------------------------------------
 
 <<<
-size: 670
+size: 726
 location: src/tests/client/test-client.py:test_002()/11
 cmd: $NMCLI -f AP -mode multiline -t d show wlan0
 lang: C
 returncode: 0
-stdout: 515 bytes
+stdout: 571 bytes
 >>>
 AP[1].IN-USE: 
 AP[1].BSSID:60:B3:25:25:E2:C8
 AP[1].SSID:wlan0-ap-3
 AP[1].MODE:Infra
-AP[1].CHAN:1
+AP[1].BAND:6 GHz
+AP[1].CHAN:129
 AP[1].RATE:54 Mbit/s
 AP[1].SIGNAL:55
 AP[1].BARS:**  
@@ -312,7 +325,8 @@ AP[2].IN-USE:
 AP[2].BSSID:90:B1:5F:9E:E0:E3
 AP[2].SSID:wlan0-ap-1
 AP[2].MODE:Infra
-AP[2].CHAN:1
+AP[2].BAND:2.4 GHz
+AP[2].CHAN:6
 AP[2].RATE:54 Mbit/s
 AP[2].SIGNAL:44
 AP[2].BARS:**  
@@ -321,25 +335,27 @@ AP[3].IN-USE:
 AP[3].BSSID:61:66:D2:E7:44:A2
 AP[3].SSID:wlan0-ap-2
 AP[3].MODE:Infra
-AP[3].CHAN:1
+AP[3].BAND:5 GHz
+AP[3].CHAN:44
 AP[3].RATE:54 Mbit/s
 AP[3].SIGNAL:34
 AP[3].BARS:**  
 AP[3].SECURITY:WPA1 WPA2
 
 <<<
-size: 707
+size: 763
 location: src/tests/client/test-client.py:test_002()/12
 cmd: $NMCLI -f AP -mode multiline -t d show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 542 bytes
+stdout: 598 bytes
 >>>
 AP[1].IN-USE: 
 AP[1].BSSID:60:B3:25:25:E2:C8
 AP[1].SSID:wlan0-ap-3
 AP[1].MODE:Infrastruktura
-AP[1].CHAN:1
+AP[1].BAND:6 GHz
+AP[1].CHAN:129
 AP[1].RATE:54 Mb/s
 AP[1].SIGNAL:55
 AP[1].BARS:**  
@@ -348,7 +364,8 @@ AP[2].IN-USE:
 AP[2].BSSID:90:B1:5F:9E:E0:E3
 AP[2].SSID:wlan0-ap-1
 AP[2].MODE:Infrastruktura
-AP[2].CHAN:1
+AP[2].BAND:2.4 GHz
+AP[2].CHAN:6
 AP[2].RATE:54 Mb/s
 AP[2].SIGNAL:44
 AP[2].BARS:**  
@@ -357,131 +374,132 @@ AP[3].IN-USE:
 AP[3].BSSID:61:66:D2:E7:44:A2
 AP[3].SSID:wlan0-ap-2
 AP[3].MODE:Infrastruktura
-AP[3].CHAN:1
+AP[3].BAND:5 GHz
+AP[3].CHAN:44
 AP[3].RATE:54 Mb/s
 AP[3].SIGNAL:34
 AP[3].BARS:**  
 AP[3].SECURITY:WPA1 WPA2
 
 <<<
-size: 530
+size: 566
 location: src/tests/client/test-client.py:test_002()/13
 cmd: $NMCLI -f AP -mode tabular d show wlan0
 lang: C
 returncode: 0
-stdout: 380 bytes
+stdout: 416 bytes
 >>>
-NAME   IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY  
-AP[1]          60:B3:25:25:E2:C8  wlan0-ap-3  Infra  1     54 Mbit/s  55      **    WPA3      
-AP[2]          90:B1:5F:9E:E0:E3  wlan0-ap-1  Infra  1     54 Mbit/s  44      **    WPA1      
-AP[3]          61:66:D2:E7:44:A2  wlan0-ap-2  Infra  1     54 Mbit/s  34      **    WPA1 WPA2 
+NAME   IN-USE  BSSID              SSID        MODE   BAND     CHAN  RATE       SIGNAL  BARS  SECURITY  
+AP[1]          60:B3:25:25:E2:C8  wlan0-ap-3  Infra  6 GHz    129   54 Mbit/s  55      **    WPA3      
+AP[2]          90:B1:5F:9E:E0:E3  wlan0-ap-1  Infra  2.4 GHz  6     54 Mbit/s  44      **    WPA1      
+AP[3]          61:66:D2:E7:44:A2  wlan0-ap-2  Infra  5 GHz    44    54 Mbit/s  34      **    WPA1 WPA2 
 
 <<<
-size: 574
+size: 610
 location: src/tests/client/test-client.py:test_002()/14
 cmd: $NMCLI -f AP -mode tabular d show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 414 bytes
+stdout: 450 bytes
 >>>
-NAME   IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY  
-AP[1]          60:B3:25:25:E2:C8  wlan0-ap-3  Infrastruktura  1     54 Mb/s  55      **    WPA3      
-AP[2]          90:B1:5F:9E:E0:E3  wlan0-ap-1  Infrastruktura  1     54 Mb/s  44      **    WPA1      
-AP[3]          61:66:D2:E7:44:A2  wlan0-ap-2  Infrastruktura  1     54 Mb/s  34      **    WPA1 WPA2 
+NAME   IN-USE  BSSID              SSID        MODE            BAND     CHAN  RATE     SIGNAL  BARS  SECURITY  
+AP[1]          60:B3:25:25:E2:C8  wlan0-ap-3  Infrastruktura  6 GHz    129   54 Mb/s  55      **    WPA3      
+AP[2]          90:B1:5F:9E:E0:E3  wlan0-ap-1  Infrastruktura  2.4 GHz  6     54 Mb/s  44      **    WPA1      
+AP[3]          61:66:D2:E7:44:A2  wlan0-ap-2  Infrastruktura  5 GHz    44    54 Mb/s  34      **    WPA1 WPA2 
 
 <<<
-size: 708
+size: 753
 location: src/tests/client/test-client.py:test_002()/15
 cmd: $NMCLI -f AP -mode tabular -p d show wlan0
 lang: C
 returncode: 0
-stdout: 555 bytes
+stdout: 600 bytes
 >>>
 ==========================
   Device details (wlan0)
 ==========================
-NAME   IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY  
------------------------------------------------------------------------------------------------
-AP[1]          60:B3:25:25:E2:C8  wlan0-ap-3  Infra  1     54 Mbit/s  55      **    WPA3      
-AP[2]          90:B1:5F:9E:E0:E3  wlan0-ap-1  Infra  1     54 Mbit/s  44      **    WPA1      
-AP[3]          61:66:D2:E7:44:A2  wlan0-ap-2  Infra  1     54 Mbit/s  34      **    WPA1 WPA2 
+NAME   IN-USE  BSSID              SSID        MODE   BAND     CHAN  RATE       SIGNAL  BARS  SECURITY  
+--------------------------------------------------------------------------------------------------------
+AP[1]          60:B3:25:25:E2:C8  wlan0-ap-3  Infra  6 GHz    129   54 Mbit/s  55      **    WPA3      
+AP[2]          90:B1:5F:9E:E0:E3  wlan0-ap-1  Infra  2.4 GHz  6     54 Mbit/s  44      **    WPA1      
+AP[3]          61:66:D2:E7:44:A2  wlan0-ap-2  Infra  5 GHz    44    54 Mbit/s  34      **    WPA1 WPA2 
 
 <<<
-size: 788
+size: 833
 location: src/tests/client/test-client.py:test_002()/16
 cmd: $NMCLI -f AP -mode tabular -p d show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 625 bytes
+stdout: 670 bytes
 >>>
 ===================================
   Informacje o urządzeniu (wlan0)
 ===================================
-NAME   IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY  
-------------------------------------------------------------------------------------------------------
-AP[1]          60:B3:25:25:E2:C8  wlan0-ap-3  Infrastruktura  1     54 Mb/s  55      **    WPA3      
-AP[2]          90:B1:5F:9E:E0:E3  wlan0-ap-1  Infrastruktura  1     54 Mb/s  44      **    WPA1      
-AP[3]          61:66:D2:E7:44:A2  wlan0-ap-2  Infrastruktura  1     54 Mb/s  34      **    WPA1 WPA2 
+NAME   IN-USE  BSSID              SSID        MODE            BAND     CHAN  RATE     SIGNAL  BARS  SECURITY  
+---------------------------------------------------------------------------------------------------------------
+AP[1]          60:B3:25:25:E2:C8  wlan0-ap-3  Infrastruktura  6 GHz    129   54 Mb/s  55      **    WPA3      
+AP[2]          90:B1:5F:9E:E0:E3  wlan0-ap-1  Infrastruktura  2.4 GHz  6     54 Mb/s  44      **    WPA1      
+AP[3]          61:66:D2:E7:44:A2  wlan0-ap-2  Infrastruktura  5 GHz    44    54 Mb/s  34      **    WPA1 WPA2 
 
 <<<
-size: 377
+size: 400
 location: src/tests/client/test-client.py:test_002()/17
 cmd: $NMCLI -f AP -mode tabular -t d show wlan0
 lang: C
 returncode: 0
-stdout: 224 bytes
+stdout: 247 bytes
 >>>
-AP[1]: :60\:B3\:25\:25\:E2\:C8:wlan0-ap-3:Infra:1:54 Mbit/s:55:**  :WPA3
-AP[2]: :90\:B1\:5F\:9E\:E0\:E3:wlan0-ap-1:Infra:1:54 Mbit/s:44:**  :WPA1
-AP[3]: :61\:66\:D2\:E7\:44\:A2:wlan0-ap-2:Infra:1:54 Mbit/s:34:**  :WPA1 WPA2
+AP[1]: :60\:B3\:25\:25\:E2\:C8:wlan0-ap-3:Infra:6 GHz:129:54 Mbit/s:55:**  :WPA3
+AP[2]: :90\:B1\:5F\:9E\:E0\:E3:wlan0-ap-1:Infra:2.4 GHz:6:54 Mbit/s:44:**  :WPA1
+AP[3]: :61\:66\:D2\:E7\:44\:A2:wlan0-ap-2:Infra:5 GHz:44:54 Mbit/s:34:**  :WPA1 WPA2
 
 <<<
-size: 414
+size: 437
 location: src/tests/client/test-client.py:test_002()/18
 cmd: $NMCLI -f AP -mode tabular -t d show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 251 bytes
+stdout: 274 bytes
 >>>
-AP[1]: :60\:B3\:25\:25\:E2\:C8:wlan0-ap-3:Infrastruktura:1:54 Mb/s:55:**  :WPA3
-AP[2]: :90\:B1\:5F\:9E\:E0\:E3:wlan0-ap-1:Infrastruktura:1:54 Mb/s:44:**  :WPA1
-AP[3]: :61\:66\:D2\:E7\:44\:A2:wlan0-ap-2:Infrastruktura:1:54 Mb/s:34:**  :WPA1 WPA2
+AP[1]: :60\:B3\:25\:25\:E2\:C8:wlan0-ap-3:Infrastruktura:6 GHz:129:54 Mb/s:55:**  :WPA3
+AP[2]: :90\:B1\:5F\:9E\:E0\:E3:wlan0-ap-1:Infrastruktura:2.4 GHz:6:54 Mb/s:44:**  :WPA1
+AP[3]: :61\:66\:D2\:E7\:44\:A2:wlan0-ap-2:Infrastruktura:5 GHz:44:54 Mb/s:34:**  :WPA1 WPA2
 
 <<<
-size: 2049
+size: 2109
 location: src/tests/client/test-client.py:test_002()/19
 cmd: $NMCLI -f ALL d wifi
 lang: C
 returncode: 0
-stdout: 1917 bytes
+stdout: 1977 bytes
 >>>
-NAME   SSID        SSID-HEX              BSSID              MODE   CHAN  FREQ      RATE       BANDWIDTH  SIGNAL  BARS  SECURITY   WPA-FLAGS                                      RSN-FLAGS                                      DEVICE  ACTIVE  IN-USE  DBUS-PATH                                     
-AP[1]  wlan0-ap-3  776C616E302D61702D33  60:B3:25:25:E2:C8  Infra  1     2412 MHz  54 Mbit/s  40 MHz     55      **    WPA3       (none)                                         pair_tkip pair_ccmp group_tkip group_ccmp sae  wlan0   no              /org/freedesktop/NetworkManager/AccessPoint/3 
-AP[2]  wlan0-ap-1  776C616E302D61702D31  90:B1:5F:9E:E0:E3  Infra  1     2412 MHz  54 Mbit/s  40 MHz     44      **    WPA1       pair_tkip pair_ccmp group_tkip group_ccmp psk  (none)                                         wlan0   no              /org/freedesktop/NetworkManager/AccessPoint/1 
-AP[3]  wlan0-ap-2  776C616E302D61702D32  61:66:D2:E7:44:A2  Infra  1     2412 MHz  54 Mbit/s  40 MHz     34      **    WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan0   no              /org/freedesktop/NetworkManager/AccessPoint/2 
+NAME   SSID        SSID-HEX              BSSID              MODE   CHAN  BAND     FREQ      RATE       BANDWIDTH  SIGNAL  BARS  SECURITY   WPA-FLAGS                                      RSN-FLAGS                                      DEVICE  ACTIVE  IN-USE  DBUS-PATH                                     
+AP[1]  wlan0-ap-3  776C616E302D61702D33  60:B3:25:25:E2:C8  Infra  129   6 GHz    6595 MHz  54 Mbit/s  40 MHz     55      **    WPA3       (none)                                         pair_tkip pair_ccmp group_tkip group_ccmp sae  wlan0   no              /org/freedesktop/NetworkManager/AccessPoint/3 
+AP[2]  wlan0-ap-1  776C616E302D61702D31  90:B1:5F:9E:E0:E3  Infra  6     2.4 GHz  2437 MHz  54 Mbit/s  40 MHz     44      **    WPA1       pair_tkip pair_ccmp group_tkip group_ccmp psk  (none)                                         wlan0   no              /org/freedesktop/NetworkManager/AccessPoint/1 
+AP[3]  wlan0-ap-2  776C616E302D61702D32  61:66:D2:E7:44:A2  Infra  44    5 GHz    5220 MHz  54 Mbit/s  40 MHz     34      **    WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan0   no              /org/freedesktop/NetworkManager/AccessPoint/2 
 
-NAME   SSID        SSID-HEX              BSSID              MODE   CHAN  FREQ      RATE       BANDWIDTH  SIGNAL  BARS  SECURITY   WPA-FLAGS                                      RSN-FLAGS                                      DEVICE  ACTIVE  IN-USE  DBUS-PATH                                     
-AP[1]  wlan1-ap-4  776C616E312D61702D34  EE:52:8B:49:A1:96  Infra  1     2412 MHz  54 Mbit/s  40 MHz     38      **    WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan1   no              /org/freedesktop/NetworkManager/AccessPoint/4 
+NAME   SSID        SSID-HEX              BSSID              MODE   CHAN  BAND     FREQ      RATE       BANDWIDTH  SIGNAL  BARS  SECURITY   WPA-FLAGS                                      RSN-FLAGS                                      DEVICE  ACTIVE  IN-USE  DBUS-PATH                                     
+AP[1]  wlan1-ap-4  776C616E312D61702D34  EE:52:8B:49:A1:96  Infra  1     2.4 GHz  2412 MHz  54 Mbit/s  40 MHz     38      **    WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan1   no              /org/freedesktop/NetworkManager/AccessPoint/4 
 
-NAME  SSID  SSID-HEX  BSSID  MODE  CHAN  FREQ  RATE  BANDWIDTH  SIGNAL  BARS  SECURITY  WPA-FLAGS  RSN-FLAGS  DEVICE  ACTIVE  IN-USE  DBUS-PATH 
+NAME  SSID  SSID-HEX  BSSID  MODE  CHAN  BAND  FREQ  RATE  BANDWIDTH  SIGNAL  BARS  SECURITY  WPA-FLAGS  RSN-FLAGS  DEVICE  ACTIVE  IN-USE  DBUS-PATH 
 
 <<<
-size: 2125
+size: 2185
 location: src/tests/client/test-client.py:test_002()/20
 cmd: $NMCLI -f ALL d wifi
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1983 bytes
+stdout: 2043 bytes
 >>>
-NAME   SSID        SSID-HEX              BSSID              MODE            CHAN  FREQ      RATE     BANDWIDTH  SIGNAL  BARS  SECURITY   WPA-FLAGS                                      RSN-FLAGS                                      DEVICE  ACTIVE  IN-USE  DBUS-PATH                                     
-AP[1]  wlan0-ap-3  776C616E302D61702D33  60:B3:25:25:E2:C8  Infrastruktura  1     2412 MHz  54 Mb/s  40 MHz     55      **    WPA3       (brak)                                         pair_tkip pair_ccmp group_tkip group_ccmp sae  wlan0   nie             /org/freedesktop/NetworkManager/AccessPoint/3 
-AP[2]  wlan0-ap-1  776C616E302D61702D31  90:B1:5F:9E:E0:E3  Infrastruktura  1     2412 MHz  54 Mb/s  40 MHz     44      **    WPA1       pair_tkip pair_ccmp group_tkip group_ccmp psk  (brak)                                         wlan0   nie             /org/freedesktop/NetworkManager/AccessPoint/1 
-AP[3]  wlan0-ap-2  776C616E302D61702D32  61:66:D2:E7:44:A2  Infrastruktura  1     2412 MHz  54 Mb/s  40 MHz     34      **    WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan0   nie             /org/freedesktop/NetworkManager/AccessPoint/2 
+NAME   SSID        SSID-HEX              BSSID              MODE            CHAN  BAND     FREQ      RATE     BANDWIDTH  SIGNAL  BARS  SECURITY   WPA-FLAGS                                      RSN-FLAGS                                      DEVICE  ACTIVE  IN-USE  DBUS-PATH                                     
+AP[1]  wlan0-ap-3  776C616E302D61702D33  60:B3:25:25:E2:C8  Infrastruktura  129   6 GHz    6595 MHz  54 Mb/s  40 MHz     55      **    WPA3       (brak)                                         pair_tkip pair_ccmp group_tkip group_ccmp sae  wlan0   nie             /org/freedesktop/NetworkManager/AccessPoint/3 
+AP[2]  wlan0-ap-1  776C616E302D61702D31  90:B1:5F:9E:E0:E3  Infrastruktura  6     2.4 GHz  2437 MHz  54 Mb/s  40 MHz     44      **    WPA1       pair_tkip pair_ccmp group_tkip group_ccmp psk  (brak)                                         wlan0   nie             /org/freedesktop/NetworkManager/AccessPoint/1 
+AP[3]  wlan0-ap-2  776C616E302D61702D32  61:66:D2:E7:44:A2  Infrastruktura  44    5 GHz    5220 MHz  54 Mb/s  40 MHz     34      **    WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan0   nie             /org/freedesktop/NetworkManager/AccessPoint/2 
 
-NAME   SSID        SSID-HEX              BSSID              MODE            CHAN  FREQ      RATE     BANDWIDTH  SIGNAL  BARS  SECURITY   WPA-FLAGS                                      RSN-FLAGS                                      DEVICE  ACTIVE  IN-USE  DBUS-PATH                                     
-AP[1]  wlan1-ap-4  776C616E312D61702D34  EE:52:8B:49:A1:96  Infrastruktura  1     2412 MHz  54 Mb/s  40 MHz     38      **    WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan1   nie             /org/freedesktop/NetworkManager/AccessPoint/4 
+NAME   SSID        SSID-HEX              BSSID              MODE            CHAN  BAND     FREQ      RATE     BANDWIDTH  SIGNAL  BARS  SECURITY   WPA-FLAGS                                      RSN-FLAGS                                      DEVICE  ACTIVE  IN-USE  DBUS-PATH                                     
+AP[1]  wlan1-ap-4  776C616E312D61702D34  EE:52:8B:49:A1:96  Infrastruktura  1     2.4 GHz  2412 MHz  54 Mb/s  40 MHz     38      **    WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan1   nie             /org/freedesktop/NetworkManager/AccessPoint/4 
 
-NAME  SSID  SSID-HEX  BSSID  MODE  CHAN  FREQ  RATE  BANDWIDTH  SIGNAL  BARS  SECURITY  WPA-FLAGS  RSN-FLAGS  DEVICE  ACTIVE  IN-USE  DBUS-PATH 
+NAME  SSID  SSID-HEX  BSSID  MODE  CHAN  BAND  FREQ  RATE  BANDWIDTH  SIGNAL  BARS  SECURITY  WPA-FLAGS  RSN-FLAGS  DEVICE  ACTIVE  IN-USE  DBUS-PATH 
 
 <<<
 size: 245
