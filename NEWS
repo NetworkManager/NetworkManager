@@ -48,6 +48,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   and only prompt for new secrets during the last authentication attempt before
   failing.
 * Add support for GENEVE interface.
+* Expose the Wi-Fi standard of access points and make that information
+  available in nmcli.
 
 =============================================
 NetworkManager-1.56
