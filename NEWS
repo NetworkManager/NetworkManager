@@ -26,6 +26,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * The support for Wireless Extensions is deprecated and will be
   removed in a future release. Wireless Extensions are now disabled by
   default.
+* The "band" property of Wi-fi connections now accepts the "6GHz"
+  value.
+* Show the Wi-Fi band of APs in the scan results from nmcli.
 
 =============================================
 NetworkManager-1.56
