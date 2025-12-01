@@ -12,6 +12,12 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   same link. If the link has no DNS servers, the connectivity check will
   use any servers available in the system.
 * Install the systemd units in the initramfs using a systemd generator.
+* The "band" property of Wi-fi connections now accepts the "6GHz"
+  value.
+* Expose the Wi-Fi generation (Wi-Fi 4, Wi-Fi 5, etc) of access points
+  and provide a new libnm function to determine the band from the
+  frequency. nmcli now can display both the band and the generation in
+  Wi-Fi scan results.
 
 =============================================
 NetworkManager-1.56
