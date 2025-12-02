@@ -6331,6 +6331,14 @@ concheck_is_possible(NMDevice *self)
     if (priv->state == NM_DEVICE_STATE_UNKNOWN)
         return FALSE;
 
+    if (!nm_config_data_get_device_config_boolean_by_device(
+            NM_CONFIG_GET_DATA,
+            NM_CONFIG_KEYFILE_KEY_DEVICE_CHECK_CONNECTIVITY,
+            self,
+            TRUE,
+            TRUE))
+        return FALSE;
+
     return TRUE;
 }
 
@@ -6351,8 +6359,10 @@ concheck_periodic_schedule_do(NMDevice *self, int addr_family, gint64 now_ns)
         goto out;
     }
 
-    if (!concheck_is_possible(self))
+    if (!concheck_is_possible(self)) {
+        concheck_update_state(self, addr_family, NM_CONNECTIVITY_UNKNOWN, FALSE);
         goto out;
+    }
 
     nm_assert(now_ns > 0);
     nm_assert(priv->concheck_x[IS_IPv4].p_cur_interval > 0);
@@ -6575,7 +6585,11 @@ concheck_update_interval(NMDevice *self, int addr_family, gboolean check_now)
         concheck_periodic_schedule_do(self, addr_family, 0);
 
         /* also update the fake connectivity state. */
-        concheck_update_state(self, addr_family, NM_CONNECTIVITY_FAKE, TRUE);
+        if (concheck_is_possible(self))
+            concheck_update_state(self, addr_family, NM_CONNECTIVITY_FAKE, TRUE);
+        else
+            concheck_update_state(self, addr_family, NM_CONNECTIVITY_UNKNOWN, FALSE);
+
         return;
     }
 
@@ -6604,6 +6618,7 @@ concheck_update_state(NMDevice           *self,
     /* @state is a result of the connectivity check. We only expect a precise
      * number of possible values. */
     nm_assert(NM_IN_SET(state,
+                        NM_CONNECTIVITY_UNKNOWN,
                         NM_CONNECTIVITY_LIMITED,
                         NM_CONNECTIVITY_PORTAL,
                         NM_CONNECTIVITY_FULL,
@@ -6927,8 +6942,11 @@ nm_device_check_connectivity(NMDevice                    *self,
                              NMDeviceConnectivityCallback callback,
                              gpointer                     user_data)
 {
-    if (!concheck_is_possible(self))
+    if (!concheck_is_possible(self)) {
+        concheck_update_state(self, AF_INET, NM_CONNECTIVITY_UNKNOWN, FALSE);
+        concheck_update_state(self, AF_INET6, NM_CONNECTIVITY_UNKNOWN, FALSE);
         return NULL;
+    }
 
     concheck_periodic_schedule_set(self, addr_family, CONCHECK_SCHEDULE_CHECK_EXTERNAL);
     return concheck_start(self, addr_family, callback, user_data, FALSE);
@@ -8315,6 +8333,17 @@ config_changed(NMConfig           *config,
         if (NM_FLAGS_HAS(changes, NM_CONFIG_CHANGE_VALUES)
             && !nm_device_get_applied_setting(self, NM_TYPE_SETTING_SRIOV))
             device_init_static_sriov_num_vfs(self);
+    }
+
+    if (NM_FLAGS_HAS(changes, NM_CONFIG_CHANGE_VALUES) && concheck_is_possible(self)) {
+        /* restart (periodic) connectivity checks if they were previously disabled */
+        if (!nm_config_data_get_device_config_boolean_by_device(
+                old_data,
+                NM_CONFIG_KEYFILE_KEY_DEVICE_CHECK_CONNECTIVITY,
+                self,
+                TRUE,
+                TRUE))
+            nm_device_check_connectivity_update_interval(self);
     }
 }
 

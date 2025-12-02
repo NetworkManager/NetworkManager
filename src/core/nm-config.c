@@ -892,6 +892,7 @@ static const ConfigGroup config_groups[] = {
         .is_prefix = TRUE,
         .keys      = NM_MAKE_STRV(NM_CONFIG_KEYFILE_KEY_DEVICE_CARRIER_WAIT_TIMEOUT,
                              NM_CONFIG_KEYFILE_KEY_DEVICE_IGNORE_CARRIER,
+                             NM_CONFIG_KEYFILE_KEY_DEVICE_CHECK_CONNECTIVITY,
                              NM_CONFIG_KEYFILE_KEY_DEVICE_MANAGED,
                              NM_CONFIG_KEYFILE_KEY_DEVICE_SRIOV_NUM_VFS,
                              NM_CONFIG_KEYFILE_KEY_DEVICE_KEEP_CONFIGURATION,
