@@ -92,7 +92,8 @@ _subsystem_split(const char  *subsystem_full,
                  const char **out_devtype,
                  char       **to_free)
 {
-    char *tmp, *s;
+    char       *tmp;
+    const char *s;
 
     nm_assert(subsystem_full);
     nm_assert(out_subsystem);
@@ -101,12 +102,12 @@ _subsystem_split(const char  *subsystem_full,
 
     s = strstr(subsystem_full, "/");
     if (s) {
-        tmp            = g_strdup(subsystem_full);
-        s              = &tmp[s - subsystem_full];
-        *s             = '\0';
-        *out_subsystem = tmp;
-        *out_devtype   = &s[1];
-        *to_free       = tmp;
+        tmp                     = g_strdup(subsystem_full);
+        tmp[s - subsystem_full] = '\0';
+        s                       = &tmp[s - subsystem_full];
+        *out_subsystem          = tmp;
+        *out_devtype            = &s[1];
+        *to_free                = tmp;
     } else {
         *out_subsystem = subsystem_full;
         *out_devtype   = NULL;
