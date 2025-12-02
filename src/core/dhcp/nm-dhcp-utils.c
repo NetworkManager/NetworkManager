@@ -32,11 +32,11 @@ ip4_process_dhcpcd_rfc3442_routes(const char     *iface,
                                   in_addr_t       address,
                                   guint32        *out_gwaddr)
 {
-    gs_free const char **routes = NULL;
-    const char         **r;
-    gboolean             have_routes = FALSE;
+    gs_free char **routes = NULL;
+    char         **r;
+    gboolean       have_routes = FALSE;
 
-    routes = nm_strsplit_set(str, " ");
+    routes = (char **) nm_strsplit_set(str, " ");
     if (!routes)
         return FALSE;
 

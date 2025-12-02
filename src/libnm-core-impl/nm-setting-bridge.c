@@ -472,17 +472,17 @@ nm_bridge_vlan_to_str(const NMBridgeVlan *vlan, GError **error)
 NMBridgeVlan *
 nm_bridge_vlan_from_str(const char *str, GError **error)
 {
-    NMBridgeVlan        *vlan   = NULL;
-    gs_free const char **tokens = NULL;
-    guint                i, vid_start, vid_end = 0;
-    gboolean             pvid     = FALSE;
-    gboolean             untagged = FALSE;
-    char                *c;
+    NMBridgeVlan  *vlan   = NULL;
+    gs_free char **tokens = NULL;
+    guint          i, vid_start, vid_end = 0;
+    gboolean       pvid     = FALSE;
+    gboolean       untagged = FALSE;
+    char          *c;
 
     g_return_val_if_fail(str, NULL);
     g_return_val_if_fail(!error || !*error, NULL);
 
-    tokens = nm_utils_escaped_tokens_split(str, NM_ASCII_SPACES);
+    tokens = (char **) nm_utils_escaped_tokens_split(str, NM_ASCII_SPACES);
     if (!tokens || !tokens[0]) {
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
