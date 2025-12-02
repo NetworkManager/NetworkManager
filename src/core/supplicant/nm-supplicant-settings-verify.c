@@ -212,18 +212,19 @@ validate_type_utf8(const struct Opt *opt, const char *value, const guint32 len)
 }
 
 static gboolean
-validate_type_keyword(const struct Opt *opt, const char *value, const guint32 len)
+validate_type_keyword(const struct Opt *opt, const char *value_in, const guint32 len)
 {
     gs_free char *value_free = NULL;
+    char         *value;
 
     nm_assert(opt);
-    nm_assert(value);
+    nm_assert(value_in);
 
     /* Allow everything */
     if (!opt->str_allowed)
         return TRUE;
 
-    value = nm_strndup_a(300, value, len, &value_free);
+    value = nm_strndup_a(300, value_in, len, &value_free);
 
     /* validate each space-separated word in 'value' */
 
