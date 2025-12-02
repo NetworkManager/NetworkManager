@@ -25,14 +25,17 @@ void *xbsearch_r(const void *key, const void *base, size_t nmemb, size_t size,
  * Normal bsearch requires base to be nonnull. Here were require
  * that only if nmemb > 0.
  */
-static inline void* bsearch_safe(const void *key, const void *base,
+static inline void* bsearch_safe_internal(const void *key, const void *base,
                                  size_t nmemb, size_t size, comparison_fn_t compar) {
         if (nmemb <= 0)
                 return NULL;
 
         assert(base);
-        return bsearch(key, base, nmemb, size, compar);
+        return (void*) bsearch(key, base, nmemb, size, compar);
 }
+
+#define bsearch_safe(key, base, nmemb, size, compar) \
+        const_generic((base), bsearch_safe_internal(key, base, nmemb, size, compar))
 
 #define typesafe_bsearch(k, b, n, func)                                 \
         ({                                                              \
