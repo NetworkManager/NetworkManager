@@ -483,8 +483,8 @@ nm_utils_validate_shared_dhcp_range(const char *shared_dhcp_range,
                                     GPtrArray  *addresses,
                                     GError    **error)
 {
-    char         *start_address_str;
-    char         *end_address_str;
+    const char   *start_address_str;
+    const char   *end_address_str;
     NMIPAddress  *interface_address_with_prefix;
     NMIPAddr      interface_address;
     NMIPAddr      start_address;

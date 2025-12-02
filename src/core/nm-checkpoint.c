@@ -160,7 +160,7 @@ parse_connection_from_shadowed_file(const char *path, GError **error)
 {
     nm_auto_unref_keyfile GKeyFile *keyfile  = NULL;
     gs_free char                   *base_dir = NULL;
-    char                           *sep;
+    const char                     *sep;
 
     keyfile = g_key_file_new();
     if (!g_key_file_load_from_file(keyfile, path, G_KEY_FILE_NONE, error))

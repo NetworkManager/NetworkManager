@@ -4523,7 +4523,7 @@ nm_range_from_str(const char *str, GError **error)
     gs_free char *str_free = NULL;
     guint64       start;
     guint64       end = 0;
-    char         *c;
+    const char   *c;
 
     g_return_val_if_fail(str, NULL);
     g_return_val_if_fail(!error || !*error, NULL);
