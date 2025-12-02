@@ -27,23 +27,27 @@
 #define URI_UNRESERVED      ALPHANUMERICAL "-._~"       /* [RFC3986] */
 #define URI_VALID           URI_RESERVED URI_UNRESERVED /* [RFC3986] */
 
-static inline char* strstr_ptr(const char *haystack, const char *needle) {
+static inline char* strstr_ptr_internal(const char *haystack, const char *needle) {
         if (!haystack || !needle)
                 return NULL;
-        return strstr(haystack, needle);
+        return (char*) strstr(haystack, needle);
 }
 
-static inline char* strstrafter(const char *haystack, const char *needle) {
-        char *p;
+#define strstr_ptr(haystack, needle) \
+        const_generic(haystack, strstr_ptr_internal(haystack, needle))
 
+static inline char* strstrafter_internal(const char *haystack, const char *needle) {
         /* Returns NULL if not found, or pointer to first character after needle if found */
 
-        p = strstr_ptr(haystack, needle);
+        char *p = (char*) strstr_ptr(haystack, needle);
         if (!p)
                 return NULL;
 
         return p + strlen(needle);
 }
+
+#define strstrafter(haystack, needle) \
+        const_generic(haystack, strstrafter_internal(haystack, needle))
 
 static inline const char* strnull(const char *s) {
         return s ?: "(null)";
@@ -300,6 +304,8 @@ bool version_is_valid_versionspec(const char *s);
 
 ssize_t strlevenshtein(const char *x, const char *y);
 
-char* strrstr(const char *haystack, const char *needle);
+char* strrstr_internal(const char *haystack, const char *needle);
+#define strrstr(haystack, needle) \
+        const_generic(haystack, strrstr_internal(haystack, needle))
 
 size_t str_common_prefix(const char *a, const char *b);
