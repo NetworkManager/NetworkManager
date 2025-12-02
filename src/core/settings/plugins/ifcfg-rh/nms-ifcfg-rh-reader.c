@@ -77,7 +77,7 @@ get_full_file_path(const char *ifcfg_path, const char *file_path)
 {
     const char   *base    = file_path;
     gs_free char *dirname = NULL;
-    char         *p;
+    const char   *p;
 
     g_return_val_if_fail(ifcfg_path != NULL, NULL);
     g_return_val_if_fail(file_path != NULL, NULL);
