@@ -1177,7 +1177,7 @@ reader_parse_rd_znet(Reader *reader, char *argument, gboolean net_ifnames)
 {
     const char     *nettype;
     const char     *subchannels[4] = {0, 0, 0, 0};
-    const char     *tmp;
+    char           *tmp;
     gs_free char   *ifname          = NULL;
     gs_free char   *str_subchannels = NULL;
     const char     *prefix;
@@ -1248,8 +1248,8 @@ reader_parse_rd_znet(Reader *reader, char *argument, gboolean net_ifnames)
                  NULL);
 
     while ((tmp = get_word(&argument, ',')) != NULL) {
-        const char *key;
-        char       *val;
+        char *key;
+        char *val;
 
         val = strchr(tmp, '=');
         if (!val) {
