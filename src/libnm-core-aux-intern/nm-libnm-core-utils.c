@@ -825,7 +825,7 @@ nm_dns_uri_parse(int addr_family, const char *str, NMDnsServer *dns, GError **er
         addr = nm_strndup_a(100, addr_port, end - addr_port, &addr_heap);
 
         /* IPv6 link-local scope-id */
-        perc = strchr(addr, '%');
+        perc = (char *) strchr(addr, '%');
         if (perc) {
             *perc = '\0';
             if (g_strlcpy(dns->interface, perc + 1, sizeof(dns->interface))
