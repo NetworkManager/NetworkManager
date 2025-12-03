@@ -2091,3 +2091,12 @@ global:
 	nm_setting_connection_get_dnssec;
 	nm_setting_connection_dnssec_get_type;
 } libnm_1_54_0;
+
+libnm_1_58_0 {
+global:
+	nm_device_wifi_get_stations;
+	nm_wifi_station_dup;
+	nm_wifi_station_get_address;
+	nm_wifi_station_get_type;
+	nm_wifi_station_unref;
+} libnm_1_56_0;

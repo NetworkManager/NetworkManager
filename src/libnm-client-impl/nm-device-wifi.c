@@ -22,17 +22,101 @@
 
 /*****************************************************************************/
 
+struct _NMWifiStation {
+    int   refcount;
+    char *address;
+};
+
+G_DEFINE_BOXED_TYPE(NMWifiStation, nm_wifi_station, nm_wifi_station_dup, nm_wifi_station_unref)
+
+static NMWifiStation *
+_nm_wifi_station_new(const char *address)
+{
+    NMWifiStation *station;
+
+    station  = g_slice_new(NMWifiStation);
+    *station = (NMWifiStation) {
+        .refcount = 1,
+        .address  = g_strdup(address),
+    };
+    return station;
+}
+
+/**
+ * nm_wifi_station_dup:
+ * @station: the #NMWifiStation
+ *
+ * Creates a copy of @station.
+ *
+ * Returns: (transfer full): a copy of @station
+ *
+ * Since: 1.58
+ **/
+NMWifiStation *
+nm_wifi_station_dup(const NMWifiStation *station)
+{
+    g_return_val_if_fail(station, NULL);
+    g_return_val_if_fail(station->refcount > 0, NULL);
+
+    g_atomic_int_inc((int *) &station->refcount);
+    return (NMWifiStation *) station;
+}
+
+/**
+ * nm_wifi_station_unref:
+ * @station: the #NMWifiStation
+ *
+ * Decreases the reference count of the object.  If the reference count
+ * reaches zero the object will be destroyed.
+ *
+ * Since: 1.58
+ **/
+void
+nm_wifi_station_unref(NMWifiStation *station)
+{
+    g_return_if_fail(station);
+    g_return_if_fail(station->refcount > 0);
+
+    if (g_atomic_int_dec_and_test(&station->refcount)) {
+        g_free(station->address);
+        g_slice_free(NMWifiStation, station);
+    }
+}
+
+/**
+ * nm_wifi_station_get_address:
+ * @station: the #NMWifiStation
+ *
+ * Gets the MAC address of the station.
+ *
+ * Returns: the MAC address of the station.
+ *
+ * Since: 1.58
+ **/
+const char *
+nm_wifi_station_get_address(const NMWifiStation *station)
+{
+    g_return_val_if_fail(station, NULL);
+    g_return_val_if_fail(station->refcount > 0, NULL);
+
+    return station->address;
+}
+
+/*****************************************************************************/
+
 NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_PERM_HW_ADDRESS,
                                   PROP_MODE,
                                   PROP_BITRATE,
                                   PROP_ACCESS_POINTS,
                                   PROP_ACTIVE_ACCESS_POINT,
                                   PROP_WIRELESS_CAPABILITIES,
-                                  PROP_LAST_SCAN, );
+                                  PROP_LAST_SCAN,
+                                  PROP_STATIONS, );
 
 typedef struct {
     NMLDBusPropertyAO access_points;
     NMLDBusPropertyO  active_access_point;
+    GPtrArray        *stations;
     char             *perm_hw_address;
     gint64            last_scan;
     guint32           mode;
@@ -252,6 +336,27 @@ nm_device_wifi_get_last_scan(NMDeviceWifi *device)
     g_return_val_if_fail(NM_IS_DEVICE_WIFI(device), -1);
 
     return NM_DEVICE_WIFI_GET_PRIVATE(device)->last_scan;
+}
+
+/**
+ * nm_device_wifi_get_stations:
+ * @device: a #NMDeviceWifi
+ *
+ * Gets the list of stations connected to this device when operating
+ * in Access Point mode. When not in AP mode, returns an empty list.
+ *
+ * Returns: (element-type NMWifiStation) (transfer none): a #GPtrArray
+ * containing #NMWifiStation objects representing connected stations.
+ * The returned array is owned by the client and should not be modified.
+ *
+ * Since: 1.58
+ **/
+const GPtrArray *
+nm_device_wifi_get_stations(NMDeviceWifi *device)
+{
+    g_return_val_if_fail(NM_IS_DEVICE_WIFI(device), NULL);
+
+    return NM_DEVICE_WIFI_GET_PRIVATE(device)->stations;
 }
 
 /**
@@ -550,6 +655,44 @@ _property_ao_notify_changed_access_points_cb(NMLDBusPropertyAO *pr_ao,
                                                            : signals[ACCESS_POINT_REMOVED]);
 }
 
+static NMLDBusNotifyUpdatePropFlags
+_notify_update_prop_stations(NMClient               *client,
+                             NMLDBusObject          *dbobj,
+                             const NMLDBusMetaIface *meta_iface,
+                             guint                   dbus_property_idx,
+                             GVariant               *value)
+{
+    NMDeviceWifi        *self = NM_DEVICE_WIFI(dbobj->nmobj);
+    NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE(self);
+    GVariantIter        *station_iter;
+    GVariantIter         iter;
+
+    g_ptr_array_set_size(priv->stations, 0);
+
+    if (value) {
+        g_variant_iter_init(&iter, value);
+        while (g_variant_iter_next(&iter, "a{sv}", &station_iter)) {
+            const char   *key;
+            GVariant     *val;
+            gs_free char *address = NULL;
+
+            while (g_variant_iter_next(station_iter, "{&sv}", &key, &val)) {
+                if (nm_streq(key, "address") && g_variant_is_of_type(val, G_VARIANT_TYPE_STRING)) {
+                    if (!address)
+                        address = g_strdup(g_variant_get_string(val, NULL));
+                }
+                g_variant_unref(val);
+            }
+            g_variant_iter_free(station_iter);
+
+            if (address)
+                g_ptr_array_add(priv->stations, _nm_wifi_station_new(address));
+        }
+    }
+
+    return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NOTIFY;
+}
+
 /*****************************************************************************/
 
 static void
@@ -558,6 +701,7 @@ nm_device_wifi_init(NMDeviceWifi *device)
     NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE(device);
 
     priv->last_scan = -1;
+    priv->stations  = g_ptr_array_new_with_free_func((GDestroyNotify) nm_wifi_station_unref);
 }
 
 static void
@@ -588,6 +732,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_LAST_SCAN:
         g_value_set_int64(value, nm_device_wifi_get_last_scan(self));
         break;
+    case PROP_STATIONS:
+        g_value_take_boxed(value, _nm_utils_copy_object_array(nm_device_wifi_get_stations(self)));
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
@@ -600,6 +747,7 @@ finalize(GObject *object)
     NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE(object);
 
     g_free(priv->perm_hw_address);
+    g_ptr_array_unref(priv->stations);
 
     G_OBJECT_CLASS(nm_device_wifi_parent_class)->finalize(object);
 }
@@ -632,6 +780,10 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_wireless = NML_DBUS_META_I
                                       PROP_PERM_HW_ADDRESS,
                                       NMDeviceWifi,
                                       _priv.perm_hw_address),
+        NML_DBUS_META_PROPERTY_INIT_FCN("Stations",
+                                        PROP_STATIONS,
+                                        "aa{sv}",
+                                        _notify_update_prop_stations),
         NML_DBUS_META_PROPERTY_INIT_U("WirelessCapabilities",
                                       PROP_WIRELESS_CAPABILITIES,
                                       NMDeviceWifi,
@@ -747,6 +899,20 @@ nm_device_wifi_class_init(NMDeviceWifiClass *klass)
                                                         G_MAXINT64,
                                                         -1,
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
+    /**
+     * NMDeviceWifi:stations: (type GPtrArray(NMWifiStation))
+     *
+     * List of stations connected to this device when operating in
+     * Access Point mode. Returns an empty list when not in AP mode.
+     *
+     * Since: 1.58
+     **/
+    obj_properties[PROP_STATIONS] = g_param_spec_boxed(NM_DEVICE_WIFI_STATIONS,
+                                                       "",
+                                                       "",
+                                                       G_TYPE_PTR_ARRAY,
+                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     _nml_dbus_meta_class_init_with_properties(object_class,
                                               &_nml_dbus_meta_iface_nm_device_wireless);

@@ -32,12 +32,22 @@ G_BEGIN_DECLS
 #define NM_DEVICE_WIFI_CAPABILITIES         "wireless-capabilities"
 #define NM_DEVICE_WIFI_ACCESS_POINTS        "access-points"
 #define NM_DEVICE_WIFI_LAST_SCAN            "last-scan"
+#define NM_DEVICE_WIFI_STATIONS             "stations"
 
 /**
  * NMDeviceWifi:
  */
 typedef struct _NMDeviceWifi      NMDeviceWifi;
 typedef struct _NMDeviceWifiClass NMDeviceWifiClass;
+
+/**
+ * NMWifiStation:
+ *
+ * Represents a station connected to a Wi-Fi Access Point.
+ *
+ * Since: 1.58
+ */
+typedef struct _NMWifiStation NMWifiStation;
 
 GType nm_device_wifi_get_type(void);
 
@@ -78,6 +88,21 @@ void nm_device_wifi_request_scan_options_async(NMDeviceWifi       *device,
                                                gpointer            user_data);
 gboolean
 nm_device_wifi_request_scan_finish(NMDeviceWifi *device, GAsyncResult *result, GError **error);
+
+NM_AVAILABLE_IN_1_58
+GType nm_wifi_station_get_type(void);
+
+NM_AVAILABLE_IN_1_58
+NMWifiStation *nm_wifi_station_dup(const NMWifiStation *station);
+
+NM_AVAILABLE_IN_1_58
+void nm_wifi_station_unref(NMWifiStation *station);
+
+NM_AVAILABLE_IN_1_58
+const char *nm_wifi_station_get_address(const NMWifiStation *station);
+
+NM_AVAILABLE_IN_1_58
+const GPtrArray *nm_device_wifi_get_stations(NMDeviceWifi *device);
 
 G_END_DECLS
 
