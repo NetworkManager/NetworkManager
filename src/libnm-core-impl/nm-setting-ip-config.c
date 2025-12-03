@@ -6694,7 +6694,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      * NMSettingIPConfig:gateway:
      *
      * The gateway associated with this configuration. This is only meaningful
-     * if #NMSettingIPConfig:addresses is also set.
+     * if addresses are also set on the device.
      *
      * Setting the gateway causes NetworkManager to configure a standard default route
      * with the gateway as next hop. This is ignored if #NMSettingIPConfig:never-default
