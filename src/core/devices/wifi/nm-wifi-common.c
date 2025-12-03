@@ -169,5 +169,8 @@ const NMDBusInterfaceInfoExtended nm_interface_info_device_wireless = {
                                                            NM_DEVICE_WIFI_CAPABILITIES),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("LastScan",
                                                            "x",
-                                                           NM_DEVICE_WIFI_LAST_SCAN), ), ),
+                                                           NM_DEVICE_WIFI_LAST_SCAN),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Stations",
+                                                           "aa{sv}",
+                                                           NM_DEVICE_WIFI_STATIONS), ), ),
 };

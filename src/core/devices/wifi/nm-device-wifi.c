@@ -67,7 +67,8 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMDeviceWifi,
                              PROP_ACTIVE_ACCESS_POINT,
                              PROP_CAPABILITIES,
                              PROP_SCANNING,
-                             PROP_LAST_SCAN, );
+                             PROP_LAST_SCAN,
+                             PROP_STATIONS, );
 
 enum {
     P2P_DEVICE_CREATED,
@@ -98,6 +99,7 @@ typedef struct {
     NMSupplicantManager         *sup_mgr;
     NMSupplMgrCreateIfaceHandle *sup_create_handle;
     NMSupplicantInterface       *sup_iface;
+    GVariant                    *stations;
 
     GSource *scan_kickoff_timeout_source;
 
@@ -193,6 +195,10 @@ static void supplicant_iface_notify_p2p_available(NMSupplicantInterface *iface,
 
 static void supplicant_iface_notify_wpa_psk_mismatch_cb(NMSupplicantInterface *iface,
                                                         NMDeviceWifi          *self);
+
+static void supplicant_iface_notify_stations_cb(NMSupplicantInterface *iface,
+                                                GParamSpec            *pspec,
+                                                NMDeviceWifi          *self);
 
 static void periodic_update(NMDeviceWifi *self);
 
@@ -496,6 +502,36 @@ _scan_notify_is_scanning(NMDeviceWifi *self)
     return TRUE;
 }
 
+static void
+update_stations_variant(NMDeviceWifi *self)
+{
+    NMDeviceWifiPrivate       *priv        = NM_DEVICE_WIFI_GET_PRIVATE(self);
+    gs_unref_variant GVariant *variant_new = NULL;
+    GVariantBuilder            builder;
+
+    g_variant_builder_init(&builder, G_VARIANT_TYPE("aa{sv}"));
+
+    if (priv->mode == _NM_802_11_MODE_AP && priv->sup_iface) {
+        gs_strfreev char **stations = NULL;
+        guint              i;
+
+        g_object_get(priv->sup_iface, NM_SUPPLICANT_INTERFACE_STATIONS, &stations, NULL);
+
+        for (i = 0; stations && stations[i]; i++) {
+            g_variant_builder_open(&builder, G_VARIANT_TYPE("a{sv}"));
+            g_variant_builder_add(&builder, "{sv}", "address", g_variant_new_string(stations[i]));
+            g_variant_builder_close(&builder);
+        }
+    }
+    variant_new = g_variant_builder_end(&builder);
+    g_variant_ref_sink(variant_new);
+
+    if (!g_variant_equal(priv->stations, variant_new)) {
+        NM_SWAP(&priv->stations, &variant_new);
+        _notify(self, PROP_STATIONS);
+    }
+}
+
 static gboolean
 _scan_notify_allowed(NMDeviceWifi *self, NMTernary do_kickoff)
 {
@@ -631,6 +667,10 @@ supplicant_interface_acquire_cb(NMSupplicantManager         *supplicant_manager,
                      NM_SUPPLICANT_INTERFACE_PSK_MISMATCH,
                      G_CALLBACK(supplicant_iface_notify_wpa_psk_mismatch_cb),
                      self);
+    g_signal_connect(priv->sup_iface,
+                     "notify::" NM_SUPPLICANT_INTERFACE_STATIONS,
+                     G_CALLBACK(supplicant_iface_notify_stations_cb),
+                     self);
 
     _scan_notify_is_scanning(self);
 
@@ -691,6 +731,8 @@ supplicant_interface_release(NMDeviceWifi *self)
         nm_supplicant_interface_disconnect(priv->sup_iface);
 
         g_clear_object(&priv->sup_iface);
+
+        update_stations_variant(self);
     }
 
     if (priv->p2p_device) {
@@ -989,6 +1031,7 @@ deactivate(NMDevice *device)
     if (priv->mode != _NM_802_11_MODE_INFRA) {
         priv->mode = _NM_802_11_MODE_INFRA;
         _notify(self, PROP_MODE);
+        update_stations_variant(self);
     }
 
     _scan_notify_allowed(self, NM_TERNARY_TRUE);
@@ -2772,6 +2815,14 @@ supplicant_iface_notify_p2p_available(NMSupplicantInterface *iface,
         recheck_p2p_availability(self);
 }
 
+static void
+supplicant_iface_notify_stations_cb(NMSupplicantInterface *iface,
+                                    GParamSpec            *pspec,
+                                    NMDeviceWifi          *self)
+{
+    update_stations_variant(self);
+}
+
 static gboolean
 handle_auth_or_fail(NMDeviceWifi *self, NMActRequest *req, gboolean new_secrets)
 {
@@ -3171,6 +3222,7 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     } else if (g_strcmp0(mode, NM_SETTING_WIRELESS_MODE_MESH) == 0)
         priv->mode = _NM_802_11_MODE_MESH;
     _notify(self, PROP_MODE);
+    update_stations_variant(self);
 
     /* expire the temporary MAC address used during scanning */
     priv->hw_addr_scan_expire = 0;
@@ -3765,6 +3817,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
                                                            NM_UTILS_NSEC_PER_MSEC)
                 : (gint64) -1);
         break;
+    case PROP_STATIONS:
+        g_value_set_variant(value, priv->stations);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
@@ -3804,6 +3859,7 @@ nm_device_wifi_init(NMDeviceWifi *self)
     priv->hidden_probe_scan_warn            = TRUE;
     priv->mode                              = _NM_802_11_MODE_INFRA;
     priv->wowlan_restore                    = _NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE;
+    priv->stations = g_variant_ref_sink(g_variant_new_array(G_VARIANT_TYPE("a{sv}"), NULL, 0));
 }
 
 static void
@@ -3878,6 +3934,7 @@ finalize(GObject *object)
     nm_assert(g_hash_table_size(priv->aps_idx_by_supplicant_path) == 0);
 
     g_hash_table_unref(priv->aps_idx_by_supplicant_path);
+    nm_clear_pointer(&priv->stations, g_variant_unref);
 
     G_OBJECT_CLASS(nm_device_wifi_parent_class)->finalize(object);
 }
@@ -3979,6 +4036,13 @@ nm_device_wifi_class_init(NMDeviceWifiClass *klass)
                                                         G_MAXINT64,
                                                         -1,
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
+    obj_properties[PROP_STATIONS] = g_param_spec_variant(NM_DEVICE_WIFI_STATIONS,
+                                                         "",
+                                                         "",
+                                                         G_VARIANT_TYPE("aa{sv}"),
+                                                         NULL,
+                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

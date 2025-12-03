@@ -26,6 +26,7 @@
 #define NM_DEVICE_WIFI_CAPABILITIES        "wireless-capabilities"
 #define NM_DEVICE_WIFI_SCANNING            "scanning"
 #define NM_DEVICE_WIFI_LAST_SCAN           "last-scan"
+#define NM_DEVICE_WIFI_STATIONS            "stations"
 
 #define NM_DEVICE_WIFI_P2P_DEVICE_CREATED "p2p-device-created"
 
