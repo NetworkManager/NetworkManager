@@ -202,7 +202,7 @@ if [ -z "$P_FEDORA" -a -z "$P_RHEL" ] ; then
         P_FEDORA="$x"
         P_RHEL=0
     else
-        x="$(grep -q "ID=fedora" /etc/os-release && sed -n 's/VERSION_ID=//p' /etc/os-release)"
+        x="$(grep -q 'ID="rhel"' /etc/os-release && sed -n 's/^VERSION_ID="*\([0-9]*\).*/\1/p' /etc/os-release)"
         if test "$x" -gt 0 ; then
             P_FEDORA=0
             P_RHEL="$x"
