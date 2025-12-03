@@ -123,7 +123,8 @@ software_add(NMLinkType link_type, const char *name)
         gboolean bond0_exists = !!nm_platform_link_get_by_ifname(NM_PLATFORM_GET, "bond0");
         int      r;
         const NMPlatformLnkBond nm_platform_lnk_bond_default = {
-            .mode = nmtst_rand_select(3, 1),
+            .mode        = nmtst_rand_select(3, 1),
+            .use_carrier = 1,
         };
 
         r = nm_platform_link_bond_add(NM_PLATFORM_GET, name, &nm_platform_lnk_bond_default, NULL);
