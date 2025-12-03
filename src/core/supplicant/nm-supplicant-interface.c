@@ -66,6 +66,7 @@ enum {
     GROUP_STARTED,   /* a new Group (interface) was created */
     GROUP_FINISHED,  /* a Group (interface) has been finished */
     PSK_MISMATCH,    /* supplicant reported incorrect PSK */
+    SAE_MISMATCH,    /* supplicant reported incorrect SAE Password */
     LAST_SIGNAL
 };
 
@@ -3110,6 +3111,11 @@ _signal_handle(NMSupplicantInterface *self,
             g_signal_emit(self, signals[PSK_MISMATCH], 0);
             return;
         }
+
+        if (nm_streq(signal_name, "SaePasswordMismatch")) {
+            g_signal_emit(self, signals[SAE_MISMATCH], 0);
+            return;
+        }
         return;
     }
 
@@ -3744,6 +3750,15 @@ nm_supplicant_interface_class_init(NMSupplicantInterfaceClass *klass)
                                            G_TYPE_STRING);
 
     signals[PSK_MISMATCH] = g_signal_new(NM_SUPPLICANT_INTERFACE_PSK_MISMATCH,
+                                         G_OBJECT_CLASS_TYPE(object_class),
+                                         G_SIGNAL_RUN_LAST,
+                                         0,
+                                         NULL,
+                                         NULL,
+                                         NULL,
+                                         G_TYPE_NONE,
+                                         0);
+    signals[SAE_MISMATCH] = g_signal_new(NM_SUPPLICANT_INTERFACE_SAE_MISMATCH,
                                          G_OBJECT_CLASS_TYPE(object_class),
                                          G_SIGNAL_RUN_LAST,
                                          0,
