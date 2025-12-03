@@ -1357,7 +1357,7 @@
                   format="list of ipv4.addresses objects" />
         <property name="gateway"
                   alias="gw4"
-                  nmcli-description="The gateway associated with this configuration. This is only meaningful if &quot;addresses&quot; is also set. Setting the gateway causes NetworkManager to configure a standard default route with the gateway as next hop. This is ignored if &quot;never-default&quot; is set. An alternative is to configure the default route explicitly with a manual route and /0 as prefix length. Note that the gateway usually conflicts with routing that NetworkManager configures for WireGuard interfaces, so usually it should not be set in that case. See &quot;ip4-auto-default-route&quot;."
+                  nmcli-description="The gateway associated with this configuration. This is only meaningful if addresses are also set on the device. Setting the gateway causes NetworkManager to configure a standard default route with the gateway as next hop. This is ignored if &quot;never-default&quot; is set. An alternative is to configure the default route explicitly with a manual route and /0 as prefix length. Note that the gateway usually conflicts with routing that NetworkManager configures for WireGuard interfaces, so usually it should not be set in that case. See &quot;ip4-auto-default-route&quot;."
                   format="IPv4 address" />
         <property name="routes"
                   nmcli-description="A list of IPv4 destination addresses, prefix length, optional IPv4 next hop addresses, optional route metric, optional attribute. The valid syntax is: &quot;ip[/prefix] [next-hop] [metric] [attribute=val]...[,ip[/prefix]...]&quot;. For example &quot;192.0.2.0/24 10.1.1.1 77, 198.51.100.0/24&quot;."
@@ -1499,7 +1499,7 @@
                   format="list of ipv6.addresses objects" />
         <property name="gateway"
                   alias="gw6"
-                  nmcli-description="The gateway associated with this configuration. This is only meaningful if &quot;addresses&quot; is also set. Setting the gateway causes NetworkManager to configure a standard default route with the gateway as next hop. This is ignored if &quot;never-default&quot; is set. An alternative is to configure the default route explicitly with a manual route and /0 as prefix length. Note that the gateway usually conflicts with routing that NetworkManager configures for WireGuard interfaces, so usually it should not be set in that case. See &quot;ip4-auto-default-route&quot;."
+                  nmcli-description="The gateway associated with this configuration. This is only meaningful if addresses are also set on the device. Setting the gateway causes NetworkManager to configure a standard default route with the gateway as next hop. This is ignored if &quot;never-default&quot; is set. An alternative is to configure the default route explicitly with a manual route and /0 as prefix length. Note that the gateway usually conflicts with routing that NetworkManager configures for WireGuard interfaces, so usually it should not be set in that case. See &quot;ip4-auto-default-route&quot;."
                   format="IPv6 address" />
         <property name="routes"
                   nmcli-description="Array of IP routes."
