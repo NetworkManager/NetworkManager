@@ -4041,6 +4041,7 @@ do_device_wifi_connect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *
         if (password) {
             if (!connection)
                 connection = nm_simple_connection_new();
+            s_wsec = nm_connection_get_setting_wireless_security(connection);
             if (!s_wsec) {
                 s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new();
                 nm_connection_add_setting(connection, NM_SETTING(s_wsec));
