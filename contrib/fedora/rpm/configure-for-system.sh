@@ -173,6 +173,7 @@ P_WIFI="${WIFI-1}"
 P_WWAN="${WWAN-1}"
 P_TEAM="${TEAM-1}"
 P_BLUETOOTH="${BLUETOOTH-1}"
+P_IFCFG_RH="${IFCFG_RH-0}"
 P_NMTUI="${NMTUI-1}"
 P_NM_CLOUD_SETUP="${NM_CLOUD_SETUP-1}"
 P_OVS="${OVS-1}"
@@ -293,8 +294,12 @@ if [ -z "$P_MODEM_MANAGER_1" ] ; then
     fi
 fi
 
-if [ -z "$TEAM" ] && [ "$P_RHEL" -ge 10 ] ; then
+if [ -z "$TEAM" ] && [ "${P_RHEL-0}" -ge 10 ] ; then
     P_TEAM=0
+fi
+
+if [ -z "$IFCFG_RH" ] && [ -n "$P_RHEL" ] && [ "$P_RHEL" -le 9 ] ; then
+    P_IFCFG_RH=1
 fi
 
 if bool "$P_DEBUG" ; then
@@ -407,7 +412,7 @@ meson setup\
     -Ddbus_conf_dir="$P_DBUS_SYS_DIR" \
     -Dtests=yes \
     -Dvalgrind=no \
-    -Difcfg_rh=true \
+    -Difcfg_rh="$(bool_true "$P_IFCFG_RH")" \
     -Difupdown=false \
     $(args_enable "$P_PPP"                    -Dppp=true  -Dpppd="$D_SBINDIR/pppd" -Dpppd_plugin_dir="$D_LIBDIR/pppd/$P_PPP_VERSION") \
     $(args_enable "$(bool_not_true "$P_PPP")" -Dppp=false                                                                           ) \
