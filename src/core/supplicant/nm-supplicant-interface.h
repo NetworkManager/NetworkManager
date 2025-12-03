@@ -79,6 +79,7 @@ typedef enum {
 #define NM_SUPPLICANT_INTERFACE_DRIVER             "driver"
 #define NM_SUPPLICANT_INTERFACE_P2P_AVAILABLE      "p2p-available"
 #define NM_SUPPLICANT_INTERFACE_AUTH_STATE         "auth-state"
+#define NM_SUPPLICANT_INTERFACE_STATIONS           "stations"
 
 #define NM_SUPPLICANT_INTERFACE_STATE           "state"
 #define NM_SUPPLICANT_INTERFACE_BSS_CHANGED     "bss-changed"

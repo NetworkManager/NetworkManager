@@ -82,7 +82,8 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSupplicantInterface,
                              PROP_CURRENT_BSS,
                              PROP_DRIVER,
                              PROP_P2P_AVAILABLE,
-                             PROP_AUTH_STATE, );
+                             PROP_AUTH_STATE,
+                             PROP_STATIONS, );
 
 typedef struct _NMSupplicantInterfacePrivate {
     NMSupplicantManager *supplicant_manager;
@@ -106,6 +107,8 @@ typedef struct _NMSupplicantInterfacePrivate {
     char *net_path;
 
     char *driver;
+
+    GHashTable *stations;
 
     GHashTable *bss_idx;
     CList       bss_lst_head;
@@ -3078,6 +3081,38 @@ _signal_handle(NMSupplicantInterface *self,
             return;
         }
 
+        if (nm_streq(signal_name, "StationAdded")) {
+            gs_unref_variant GVariant *station = NULL;
+            gs_unref_variant GVariant *address = NULL;
+            gconstpointer              address_bytes;
+            gsize                      address_len;
+
+            if (!g_variant_is_of_type(parameters, G_VARIANT_TYPE("(oa{sv})")))
+                return;
+
+            g_variant_get(parameters, "(&o@a{sv})", &path, &station);
+            if (!g_variant_lookup(station, "Address", "@ay", &address))
+                return;
+
+            address_bytes = g_variant_get_fixed_array(address, &address_len, sizeof(guint8));
+            g_hash_table_insert(
+                priv->stations,
+                g_strdup(path),
+                nm_utils_bin2hexstr_full(address_bytes, address_len, ':', TRUE, NULL));
+            _notify(self, PROP_STATIONS);
+            return;
+        }
+
+        if (nm_streq(signal_name, "StationRemoved")) {
+            if (!g_variant_is_of_type(parameters, G_VARIANT_TYPE("(o)")))
+                return;
+
+            g_variant_get(parameters, "(&o)", &path);
+            g_hash_table_remove(priv->stations, path);
+            _notify(self, PROP_STATIONS);
+            return;
+        }
+
         if (nm_streq(signal_name, "EAP")) {
             NMSupplicantAuthState auth_state = NM_SUPPLICANT_AUTH_STATE_UNKNOWN;
             const char           *status;
@@ -3321,6 +3356,25 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_AUTH_STATE:
         g_value_set_uint(value, priv->auth_state);
         break;
+    case PROP_STATIONS:
+    {
+        GHashTableIter iter;
+        char         **strv;
+        char          *addr;
+        guint          i = 0;
+
+        strv = g_new(char *, g_hash_table_size(priv->stations) + 1);
+
+        g_hash_table_iter_init(&iter, priv->stations);
+        while (g_hash_table_iter_next(&iter, NULL, (gpointer *) &addr))
+            strv[i++] = g_strdup(addr);
+        strv[i] = NULL;
+
+        nm_strv_sort(strv, i);
+
+        g_value_take_boxed(value, strv);
+        break;
+    }
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
@@ -3391,7 +3445,8 @@ nm_supplicant_interface_init(NMSupplicantInterface *self)
     c_list_init(&self->supp_lst);
 
     G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(NMSupplicantBssInfo, bss_path) == 0);
-    priv->bss_idx = g_hash_table_new(nm_pdirect_hash, nm_pdirect_equal);
+    priv->bss_idx  = g_hash_table_new(nm_pdirect_hash, nm_pdirect_equal);
+    priv->stations = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_free);
 
     c_list_init(&priv->bss_lst_head);
     c_list_init(&priv->bss_initializing_lst_head);
@@ -3575,6 +3630,7 @@ dispose(GObject *object)
 
     nm_clear_pointer(&priv->bss_idx, g_hash_table_destroy);
     nm_clear_pointer(&priv->peer_idx, g_hash_table_destroy);
+    nm_clear_pointer(&priv->stations, g_hash_table_destroy);
 
     nm_clear_pointer(&priv->current_bss, nm_ref_string_unref);
 
@@ -3633,6 +3689,7 @@ nm_supplicant_interface_class_init(NMSupplicantInterfaceClass *klass)
                                                          "",
                                                          FALSE,
                                                          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
     obj_properties[PROP_CURRENT_BSS] =
         g_param_spec_string(NM_SUPPLICANT_INTERFACE_CURRENT_BSS,
                             "",
@@ -3670,6 +3727,12 @@ nm_supplicant_interface_class_init(NMSupplicantInterfaceClass *klass)
                                                         _NM_SUPPLICANT_AUTH_STATE_NUM - 1,
                                                         NM_SUPPLICANT_AUTH_STATE_UNKNOWN,
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
+    obj_properties[PROP_STATIONS] = g_param_spec_boxed(NM_SUPPLICANT_INTERFACE_STATIONS,
+                                                       "",
+                                                       "",
+                                                       G_TYPE_STRV,
+                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
