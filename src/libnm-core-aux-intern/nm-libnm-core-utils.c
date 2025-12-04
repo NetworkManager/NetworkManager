@@ -483,8 +483,8 @@ nm_utils_validate_shared_dhcp_range(const char *shared_dhcp_range,
                                     GPtrArray  *addresses,
                                     GError    **error)
 {
-    char         *start_address_str;
-    char         *end_address_str;
+    const char   *start_address_str;
+    const char   *end_address_str;
     NMIPAddress  *interface_address_with_prefix;
     NMIPAddr      interface_address;
     NMIPAddr      start_address;
@@ -825,7 +825,7 @@ nm_dns_uri_parse(int addr_family, const char *str, NMDnsServer *dns, GError **er
         addr = nm_strndup_a(100, addr_port, end - addr_port, &addr_heap);
 
         /* IPv6 link-local scope-id */
-        perc = strchr(addr, '%');
+        perc = (char *) strchr(addr, '%');
         if (perc) {
             *perc = '\0';
             if (g_strlcpy(dns->interface, perc + 1, sizeof(dns->interface))

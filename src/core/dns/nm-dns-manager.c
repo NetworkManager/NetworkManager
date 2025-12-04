@@ -1510,8 +1510,8 @@ _domain_track_is_shadowed(GHashTable  *ht,
                           const char **out_parent,
                           int         *out_parent_priority)
 {
-    char *parent;
-    int   parent_priority;
+    const char *parent;
+    int         parent_priority;
 
     if (!ht)
         return FALSE;

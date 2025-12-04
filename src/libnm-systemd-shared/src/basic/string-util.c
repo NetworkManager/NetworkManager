@@ -1470,7 +1470,7 @@ ssize_t strlevenshtein(const char *x, const char *y) {
         return t1[yl];
 }
 
-char* strrstr(const char *haystack, const char *needle) {
+char* strrstr_internal(const char *haystack, const char *needle) {
         /* Like strstr() but returns the last rather than the first occurrence of "needle" in "haystack". */
 
         if (!haystack || !needle)
@@ -1479,7 +1479,7 @@ char* strrstr(const char *haystack, const char *needle) {
         /* Special case: for the empty string we return the very last possible occurrence, i.e. *after* the
          * last char, not before. */
         if (*needle == 0)
-                return strchr(haystack, 0);
+                return (char*) strchr(haystack, 0);
 
         for (const char *p = strstr(haystack, needle), *q; p; p = q) {
                 q = strstr(p + 1, needle);
