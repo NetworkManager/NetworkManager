@@ -2090,6 +2090,7 @@ typedef struct {
     char               *specific_object;
     bool                hotspot : 1;
     bool                create : 1;
+    bool                start_agent : 1;
 } AddAndActivateInfo;
 
 static AddAndActivateInfo *
@@ -2097,6 +2098,7 @@ add_and_activate_info_new(NmCli      *nmc,
                           NMDevice   *device,
                           gboolean    hotspot,
                           gboolean    create,
+                          gboolean    start_agent,
                           const char *specific_object)
 {
     AddAndActivateInfo *info;
@@ -2107,6 +2109,7 @@ add_and_activate_info_new(NmCli      *nmc,
         .device          = g_object_ref(device),
         .hotspot         = hotspot,
         .create          = create,
+        .start_agent     = start_agent,
         .specific_object = g_strdup(specific_object),
     };
     return info;
@@ -2364,7 +2367,7 @@ do_device_connect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
                          nmc);
     }
 
-    info = add_and_activate_info_new(nmc, device, FALSE, FALSE, NULL);
+    info = add_and_activate_info_new(nmc, device, FALSE, FALSE, FALSE, NULL);
 
     nm_client_activate_connection_async(nmc->client,
                                         NULL, /* let NM find a connection automatically */
@@ -3603,6 +3606,16 @@ activate_update2_cb(GObject *source_object, GAsyncResult *res, gpointer user_dat
         return;
     }
 
+    if (info->start_agent && !nmc->secret_agent) {
+        nmc->secret_agent = nm_secret_agent_simple_new("nmcli-connect");
+        if (nmc->secret_agent) {
+            g_signal_connect(nmc->secret_agent,
+                             NM_SECRET_AGENT_SIMPLE_REQUEST_SECRETS,
+                             G_CALLBACK(nmc_secrets_requested),
+                             nmc);
+        }
+    }
+
     nm_client_activate_connection_async(nmc->client,
                                         NM_CONNECTION(remote_con),
                                         info->device,
@@ -3617,6 +3630,7 @@ save_and_activate_connection(NmCli        *nmc,
                              NMDevice     *device,
                              NMConnection *connection,
                              gboolean      hotspot,
+                             gboolean      start_agent,
                              const char   *specific_object)
 {
     AddAndActivateInfo *info;
@@ -3625,9 +3639,15 @@ save_and_activate_connection(NmCli        *nmc,
                                      device,
                                      hotspot,
                                      !NM_IS_REMOTE_CONNECTION(connection),
+                                     start_agent,
                                      specific_object);
 
     if (NM_IS_REMOTE_CONNECTION(connection)) {
+        /* Don't start the agent immediately. Otherwise the agent registration
+         * to the daemon will trigger a new activation if the connection was
+         * blocked due to bad secrets. This new activation would use the old
+         * secrets.
+         */
         nm_remote_connection_update2(NM_REMOTE_CONNECTION(connection),
                                      nm_connection_to_dbus(connection, NM_CONNECTION_SERIALIZE_ALL),
                                      NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT,
@@ -3636,6 +3656,16 @@ save_and_activate_connection(NmCli        *nmc,
                                      activate_update2_cb,
                                      info);
     } else {
+        if (start_agent) {
+            nmc->secret_agent = nm_secret_agent_simple_new("nmcli-connect");
+            if (nmc->secret_agent) {
+                g_signal_connect(nmc->secret_agent,
+                                 NM_SECRET_AGENT_SIMPLE_REQUEST_SECRETS,
+                                 G_CALLBACK(nmc_secrets_requested),
+                                 nmc);
+            }
+        }
+
         nm_client_add_and_activate_connection_async(nmc->client,
                                                     connection,
                                                     info->device,
@@ -3665,6 +3695,7 @@ do_device_wifi_connect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *
     gboolean private                         = FALSE;
     gboolean           hidden                = FALSE;
     gboolean           wep_passphrase        = FALSE;
+    gboolean           start_agent           = FALSE;
     GByteArray        *bssid1_arr            = NULL;
     GByteArray        *bssid2_arr            = NULL;
     gs_free NMDevice **devices               = NULL;
@@ -4029,14 +4060,8 @@ do_device_wifi_connect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *
                              NM_802_11_AP_SEC_KEY_MGMT_OWE | NM_802_11_AP_SEC_KEY_MGMT_OWE_TM))) {
         NMSettingWirelessSecurity *s_wsec = NULL;
 
-        /* Create secret agent */
-        nmc->secret_agent = nm_secret_agent_simple_new("nmcli-connect");
-        if (nmc->secret_agent) {
-            g_signal_connect(nmc->secret_agent,
-                             NM_SECRET_AGENT_SIMPLE_REQUEST_SECRETS,
-                             G_CALLBACK(nmc_secrets_requested),
-                             nmc);
-        }
+        /* Start the secret agent just before initiating the activation. */
+        start_agent = TRUE;
 
         if (password) {
             if (!connection)
@@ -4076,7 +4101,12 @@ do_device_wifi_connect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *
     nmc->nowait_flag = (nmc->timeout == 0);
     nmc->should_wait++;
 
-    save_and_activate_connection(nmc, device, connection, FALSE, nm_object_get_path(NM_OBJECT(ap)));
+    save_and_activate_connection(nmc,
+                                 device,
+                                 connection,
+                                 FALSE,
+                                 start_agent,
+                                 nm_object_get_path(NM_OBJECT(ap)));
 
 finish:
     if (bssid1_arr)
@@ -4536,7 +4566,7 @@ do_device_wifi_hotspot(const NMCCommand *cmd, NmCli *nmc, int argc, const char *
     nmc->nowait_flag = (nmc->timeout == 0);
     nmc->should_wait++;
 
-    save_and_activate_connection(nmc, device, connection, TRUE, NULL);
+    save_and_activate_connection(nmc, device, connection, TRUE, FALSE, NULL);
 }
 
 static void
