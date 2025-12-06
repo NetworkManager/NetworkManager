@@ -178,7 +178,7 @@ typedef struct {
         } platform_change;
 
         struct {
-            guint32 obj_type_flags;
+            guint64 obj_type_flags;
         } platform_change_on_idle;
 
         struct {

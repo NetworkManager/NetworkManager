@@ -624,7 +624,7 @@ _l3_config_notify_data_to_string(const NML3ConfigNotifyData *notify_data,
     case NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE:
         nm_strbuf_append(&s,
                          &l,
-                         ", obj-type-flags=0x%x",
+                         ", obj-type-flags=0x%" G_GINT64_MODIFIER "x",
                          notify_data->platform_change_on_idle.obj_type_flags);
         break;
     case NM_L3_CONFIG_NOTIFY_TYPE_IPV4LL_EVENT:
