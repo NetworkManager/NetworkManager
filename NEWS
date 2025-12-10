@@ -40,6 +40,9 @@ Core:
 * Add new property '802-1x.server-cert-hash' to allow authentication server
   verification by certificate hash, primarily to support Trust On First Use
   (TOFU).
+* IPv6 default routes generated from Router Advertisements now use
+  nexthop objects to avoid that multiple routes are coalesced into
+  a single ECMP route by kernel.
 
 initrd:
 * Add the "rd.net.timeout.ip-required" kernel command line argument
