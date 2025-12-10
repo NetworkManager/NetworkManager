@@ -2240,6 +2240,175 @@ test_mptcp(gconstpointer test_data)
 /*****************************************************************************/
 
 static void
+test_nexthop_dump(void)
+{
+    const int        ifindex1 = NMTSTP_ENV1_IFINDEXES[0];
+    const int        ifindex2 = NMTSTP_ENV1_IFINDEXES[1];
+    const char      *ifname1  = NMTSTP_ENV1_DEVICE_NAME[0];
+    const char      *ifname2  = NMTSTP_ENV1_DEVICE_NAME[1];
+    GPtrArray       *result;
+    const NMPObject *obj;
+
+    nmtstp_run_command_check("ip addr add 1.2.3.0/24 dev %s", ifname1);
+    nmtstp_run_command_check("ip addr add fe80::1/64 dev %s", ifname1);
+    nmtstp_run_command_check("ip addr add fe80::2/64 dev %s", ifname2);
+
+    nmtstp_run_command_check("ip nexthop add id 4 dev %s", ifname1);
+    nmtstp_run_command_check("ip nexthop add id 5 dev %s via 1.2.3.4", ifname1);
+    nmtstp_run_command_check("ip nexthop add id 6 dev %s", ifname2);
+
+    nmtstp_run_command_check("ip -6 nexthop add id 12345670 dev %s", ifname1);
+    nmtstp_run_command_check("ip -6 nexthop add id 12345671 dev %s via fe80::11", ifname1);
+    nmtstp_run_command_check("ip -6 nexthop add id 12345672 dev %s via fe80::12", ifname1);
+    nmtstp_run_command_check("ip -6 nexthop add id 12345673 dev %s via fe80::11", ifname2);
+
+    /* interface 1, IPv4 */
+    result = nm_platform_ip_nexthop_dump(NM_PLATFORM_GET, AF_INET, ifindex1);
+    g_assert(result);
+    g_assert_cmpint(result->len, ==, 2);
+    obj = result->pdata[0];
+    g_assert_cmpint(NMP_OBJECT_CAST_IP4_NEXTHOP(obj)->id, ==, 4);
+    g_assert_cmpint(NMP_OBJECT_CAST_IP4_NEXTHOP(obj)->ifindex, ==, ifindex1);
+    g_assert_cmpint(NMP_OBJECT_CAST_IP4_NEXTHOP(obj)->gateway, ==, 0);
+    obj = result->pdata[1];
+    g_assert_cmpint(NMP_OBJECT_CAST_IP4_NEXTHOP(obj)->id, ==, 5);
+    g_assert_cmpint(NMP_OBJECT_CAST_IP4_NEXTHOP(obj)->ifindex, ==, ifindex1);
+    nmtst_assert_ip4_address(NMP_OBJECT_CAST_IP4_NEXTHOP(obj)->gateway, "1.2.3.4");
+    g_ptr_array_unref(result);
+
+    /* interface 1, IPv6 */
+    result = nm_platform_ip_nexthop_dump(NM_PLATFORM_GET, AF_INET6, ifindex1);
+    g_assert(result);
+    g_assert_cmpint(result->len, ==, 3);
+    obj = result->pdata[0];
+    g_assert_cmpint(NMP_OBJECT_CAST_IP6_NEXTHOP(obj)->id, ==, 12345670);
+    g_assert_cmpint(NMP_OBJECT_CAST_IP6_NEXTHOP(obj)->ifindex, ==, ifindex1);
+    nmtst_assert_ip6_address(&NMP_OBJECT_CAST_IP6_NEXTHOP(obj)->gateway, "::");
+    obj = result->pdata[1];
+    g_assert_cmpint(NMP_OBJECT_CAST_IP6_NEXTHOP(obj)->id, ==, 12345671);
+    g_assert_cmpint(NMP_OBJECT_CAST_IP6_NEXTHOP(obj)->ifindex, ==, ifindex1);
+    nmtst_assert_ip6_address(&NMP_OBJECT_CAST_IP6_NEXTHOP(obj)->gateway, "fe80::11");
+    obj = result->pdata[2];
+    g_assert_cmpint(NMP_OBJECT_CAST_IP6_NEXTHOP(obj)->id, ==, 12345672);
+    g_assert_cmpint(NMP_OBJECT_CAST_IP6_NEXTHOP(obj)->ifindex, ==, ifindex1);
+    nmtst_assert_ip6_address(&NMP_OBJECT_CAST_IP6_NEXTHOP(obj)->gateway, "fe80::12");
+    g_ptr_array_unref(result);
+
+    /* interface 2, IPv4 */
+    result = nm_platform_ip_nexthop_dump(NM_PLATFORM_GET, AF_INET, ifindex2);
+    g_assert(result);
+    g_assert_cmpint(result->len, ==, 1);
+    obj = result->pdata[0];
+    g_assert_cmpint(NMP_OBJECT_CAST_IP4_NEXTHOP(obj)->id, ==, 6);
+    g_assert_cmpint(NMP_OBJECT_CAST_IP4_NEXTHOP(obj)->ifindex, ==, ifindex2);
+    g_assert_cmpint(NMP_OBJECT_CAST_IP4_NEXTHOP(obj)->gateway, ==, 0);
+    g_ptr_array_unref(result);
+
+    /* interface 2, IPv6 */
+    result = nm_platform_ip_nexthop_dump(NM_PLATFORM_GET, AF_INET6, ifindex2);
+    g_assert(result);
+    g_assert_cmpint(result->len, ==, 1);
+    obj = result->pdata[0];
+    g_assert_cmpint(NMP_OBJECT_CAST_IP6_NEXTHOP(obj)->id, ==, 12345673);
+    g_assert_cmpint(NMP_OBJECT_CAST_IP6_NEXTHOP(obj)->ifindex, ==, ifindex2);
+    nmtst_assert_ip6_address(&NMP_OBJECT_CAST_IP6_NEXTHOP(obj)->gateway, "fe80::11");
+    g_ptr_array_unref(result);
+}
+
+/*****************************************************************************/
+
+static void
+test_nexthop_add(void)
+{
+    const int   ifindex = NMTSTP_ENV1_IFINDEXES[0];
+    const char *ifname  = NMTSTP_ENV1_DEVICE_NAME[0];
+    NMPObject   obj;
+    GPtrArray  *result;
+    int         r;
+
+    nmtstp_run_command_check("ip addr add 1.2.3.0/24 dev %s", ifname);
+    nmtstp_run_command_check("ip addr add fe80::1/64 dev %s", ifname);
+
+    /* Add IPv4 nexthop without gateway */
+    nmp_object_stackinit(&obj, NMP_OBJECT_TYPE_IP4_NEXTHOP, NULL);
+    obj.ip4_nexthop.id      = 100;
+    obj.ip4_nexthop.ifindex = ifindex;
+    r = nm_platform_ip_nexthop_add(NM_PLATFORM_GET, NMP_NLM_FLAG_ADD, &obj, NULL);
+    g_assert_cmpint(r, ==, 0);
+
+    /* Add IPv4 nexthop with gateway */
+    nmp_object_stackinit(&obj, NMP_OBJECT_TYPE_IP4_NEXTHOP, NULL);
+    obj.ip4_nexthop.id      = 101;
+    obj.ip4_nexthop.ifindex = ifindex;
+    obj.ip4_nexthop.gateway = nmtst_inet4_from_string("1.2.3.4");
+    r = nm_platform_ip_nexthop_add(NM_PLATFORM_GET, NMP_NLM_FLAG_ADD, &obj, NULL);
+    g_assert_cmpint(r, ==, 0);
+
+    /* Add IPv6 nexthop without gateway */
+    nmp_object_stackinit(&obj, NMP_OBJECT_TYPE_IP6_NEXTHOP, NULL);
+    obj.ip6_nexthop.id      = 200;
+    obj.ip6_nexthop.ifindex = ifindex;
+    r = nm_platform_ip_nexthop_add(NM_PLATFORM_GET, NMP_NLM_FLAG_ADD, &obj, NULL);
+    g_assert_cmpint(r, ==, 0);
+
+    /* Add IPv6 nexthop with gateway */
+    nmp_object_stackinit(&obj, NMP_OBJECT_TYPE_IP6_NEXTHOP, NULL);
+    obj.ip6_nexthop.id      = 201;
+    obj.ip6_nexthop.ifindex = ifindex;
+    obj.ip6_nexthop.gateway = nmtst_inet6_from_string("fe80::99");
+    r = nm_platform_ip_nexthop_add(NM_PLATFORM_GET, NMP_NLM_FLAG_ADD, &obj, NULL);
+    g_assert_cmpint(r, ==, 0);
+
+    /* Verify IPv4 nexthops via dump */
+    result = nm_platform_ip_nexthop_dump(NM_PLATFORM_GET, AF_INET, ifindex);
+    g_assert(result);
+    g_assert_cmpint(result->len, ==, 2);
+    g_assert_cmpint(NMP_OBJECT_CAST_IP4_NEXTHOP(result->pdata[0])->id, ==, 100);
+    g_assert_cmpint(NMP_OBJECT_CAST_IP4_NEXTHOP(result->pdata[0])->ifindex, ==, ifindex);
+    g_assert_cmpint(NMP_OBJECT_CAST_IP4_NEXTHOP(result->pdata[0])->gateway, ==, 0);
+    g_assert_cmpint(NMP_OBJECT_CAST_IP4_NEXTHOP(result->pdata[1])->id, ==, 101);
+    g_assert_cmpint(NMP_OBJECT_CAST_IP4_NEXTHOP(result->pdata[1])->ifindex, ==, ifindex);
+    nmtst_assert_ip4_address(NMP_OBJECT_CAST_IP4_NEXTHOP(result->pdata[1])->gateway, "1.2.3.4");
+    g_ptr_array_unref(result);
+
+    /* Verify IPv6 nexthops via dump */
+    result = nm_platform_ip_nexthop_dump(NM_PLATFORM_GET, AF_INET6, ifindex);
+    g_assert(result);
+    g_assert_cmpint(result->len, ==, 2);
+    g_assert_cmpint(NMP_OBJECT_CAST_IP6_NEXTHOP(result->pdata[0])->id, ==, 200);
+    g_assert_cmpint(NMP_OBJECT_CAST_IP6_NEXTHOP(result->pdata[0])->ifindex, ==, ifindex);
+    nmtst_assert_ip6_address(&NMP_OBJECT_CAST_IP6_NEXTHOP(result->pdata[0])->gateway, "::");
+    g_assert_cmpint(NMP_OBJECT_CAST_IP6_NEXTHOP(result->pdata[1])->id, ==, 201);
+    g_assert_cmpint(NMP_OBJECT_CAST_IP6_NEXTHOP(result->pdata[1])->ifindex, ==, ifindex);
+    nmtst_assert_ip6_address(&NMP_OBJECT_CAST_IP6_NEXTHOP(result->pdata[1])->gateway, "fe80::99");
+    g_ptr_array_unref(result);
+
+    /* Delete all nexthops */
+    g_assert(
+        nm_platform_object_delete(NM_PLATFORM_GET, nmp_object_stackinit_id_ip4_nexthop(&obj, 100)));
+    g_assert(
+        nm_platform_object_delete(NM_PLATFORM_GET, nmp_object_stackinit_id_ip4_nexthop(&obj, 101)));
+    g_assert(
+        nm_platform_object_delete(NM_PLATFORM_GET, nmp_object_stackinit_id_ip6_nexthop(&obj, 200)));
+    g_assert(
+        nm_platform_object_delete(NM_PLATFORM_GET, nmp_object_stackinit_id_ip6_nexthop(&obj, 201)));
+
+    /* Verify IPv4 nexthops are gone */
+    result = nm_platform_ip_nexthop_dump(NM_PLATFORM_GET, AF_INET, ifindex);
+    g_assert(result);
+    g_assert_cmpint(result->len, ==, 0);
+    g_ptr_array_unref(result);
+
+    /* Verify IPv6 nexthops are gone */
+    result = nm_platform_ip_nexthop_dump(NM_PLATFORM_GET, AF_INET6, ifindex);
+    g_assert(result);
+    g_assert_cmpint(result->len, ==, 0);
+    g_ptr_array_unref(result);
+}
+
+/*****************************************************************************/
+
+static void
 _ensure_onlink_routes(void)
 {
     int i;
@@ -2546,6 +2715,8 @@ void
 _nmtstp_setup_tests(void)
 {
 #define add_test_func(testpath, test_func) nmtstp_env1_add_test_func(testpath, test_func, 1, TRUE)
+#define add_test_func_with_if2(testpath, test_func) \
+    nmtstp_env1_add_test_func(testpath, test_func, 2, TRUE)
 #define add_test_func_data(testpath, test_func, arg) \
     nmtstp_env1_add_test_func_data(testpath, test_func, arg, 1, TRUE)
 #define add_test_func_data_with_if2(testpath, test_func, arg) \
@@ -2585,6 +2756,12 @@ _nmtstp_setup_tests(void)
         add_test_func_data("/route/mptcp/1", test_mptcp, GINT_TO_POINTER(1));
         add_test_func_data("/route/mptcp/2", test_mptcp, GINT_TO_POINTER(2));
     }
+
+    if (nmtstp_is_root_test()) {
+        add_test_func_with_if2("/route/nexthop/dump", test_nexthop_dump);
+        add_test_func("/route/nexthop/add", test_nexthop_add);
+    }
+
     if (nmtstp_is_root_test()) {
         add_test_func_data_with_if2("/route/test_cache_consistency_routes/1",
                                     test_cache_consistency_routes,
