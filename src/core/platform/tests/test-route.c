@@ -2768,6 +2768,110 @@ test_ip6_route_with_group_nexthop(void)
 /*****************************************************************************/
 
 static void
+test_nexthop_prune_list(void)
+{
+    const int                      ifindex = NMTSTP_ENV1_IFINDEXES[0];
+    NMPObject                      obj;
+    int                            r;
+    gs_unref_hashtable GHashTable *owned_ids         = g_hash_table_new(nm_direct_hash, NULL);
+    gs_unref_ptrarray GPtrArray   *nexthops_platform = NULL;
+    GPtrArray                     *prune;
+
+    nmtstp_ip6_address_add(NM_PLATFORM_GET,
+                           FALSE,
+                           ifindex,
+                           nmtst_inet6_from_string("fe80::1"),
+                           64,
+                           in6addr_any,
+                           3600,
+                           3600,
+                           0);
+
+    /*
+     * IPv6 nexthops:
+     *  - id 400
+     *  - id 401 via fe80:99 [owned]
+     *  - id (402 | (1u << 31)) proto ra
+     *  - id 403 proto ra
+     *  - id 404 [owned]
+     */
+
+    /* External nexthop (protocol unspecified, low ID). */
+    nmp_object_stackinit(&obj, NMP_OBJECT_TYPE_IP6_NEXTHOP, NULL);
+    obj.ip6_nexthop.id      = 400;
+    obj.ip6_nexthop.ifindex = ifindex;
+    r = nm_platform_ip_nexthop_add(NM_PLATFORM_GET, NMP_NLM_FLAG_ADD, &obj, NULL);
+    g_assert_cmpint(r, ==, 0);
+
+    /* "Owned" nexthop (ID in @owned_ids) */
+    nmp_object_stackinit(&obj, NMP_OBJECT_TYPE_IP6_NEXTHOP, NULL);
+    obj.ip6_nexthop.id      = 401;
+    obj.ip6_nexthop.ifindex = ifindex;
+    obj.ip6_nexthop.gateway = nmtst_inet6_from_string("fe80::99");
+    r = nm_platform_ip_nexthop_add(NM_PLATFORM_GET, NMP_NLM_FLAG_ADD, &obj, NULL);
+    g_assert_cmpint(r, ==, 0);
+
+    /* NM signature nexthop (protocol RA, high-bit ID). */
+    nmp_object_stackinit(&obj, NMP_OBJECT_TYPE_IP6_NEXTHOP, NULL);
+    obj.ip6_nexthop.id        = (1u << 31) | 402;
+    obj.ip6_nexthop.ifindex   = ifindex;
+    obj.ip6_nexthop.nh_source = NM_IP_CONFIG_SOURCE_NDISC;
+    r = nm_platform_ip_nexthop_add(NM_PLATFORM_GET, NMP_NLM_FLAG_ADD, &obj, NULL);
+    g_assert_cmpint(r, ==, 0);
+
+    /* Protocol RA but a low ID: not the NM signature. */
+    nmp_object_stackinit(&obj, NMP_OBJECT_TYPE_IP6_NEXTHOP, NULL);
+    obj.ip6_nexthop.id        = 403;
+    obj.ip6_nexthop.ifindex   = ifindex;
+    obj.ip6_nexthop.nh_source = NM_IP_CONFIG_SOURCE_NDISC;
+    r = nm_platform_ip_nexthop_add(NM_PLATFORM_GET, NMP_NLM_FLAG_ADD, &obj, NULL);
+    g_assert_cmpint(r, ==, 0);
+
+    /* "Owned" nexthop. */
+    nmp_object_stackinit(&obj, NMP_OBJECT_TYPE_IP6_NEXTHOP, NULL);
+    obj.ip6_nexthop.id      = 404;
+    obj.ip6_nexthop.ifindex = ifindex;
+    r = nm_platform_ip_nexthop_add(NM_PLATFORM_GET, NMP_NLM_FLAG_ADD, &obj, NULL);
+    g_assert_cmpint(r, ==, 0);
+
+    g_hash_table_add(owned_ids, GUINT_TO_POINTER(401));
+    g_hash_table_add(owned_ids, GUINT_TO_POINTER(404));
+
+    nexthops_platform = nm_platform_ip_nexthop_dump(NM_PLATFORM_GET, AF_INET6, ifindex);
+    g_assert(nexthops_platform);
+    g_assert_cmpint(nexthops_platform->len, ==, 5);
+
+    /* Owned-IDs mode (used on update): only the IDs in @owned_ids (401, 404) are
+     * candidates. */
+    prune = nm_platform_ip_nexthop_get_prune_list(NM_PLATFORM_GET,
+                                                  AF_INET6,
+                                                  ifindex,
+                                                  nexthops_platform,
+                                                  owned_ids,
+                                                  NM_PLATFORM_IP_NEXTHOP_PRUNE_MODE_OWNED);
+    g_assert(prune);
+    g_assert_cmpint(prune->len, ==, 2);
+    g_assert_cmpint(NMP_OBJECT_CAST_IP_NEXTHOP(prune->pdata[0])->id, ==, 401);
+    g_assert_cmpint(NMP_OBJECT_CAST_IP_NEXTHOP(prune->pdata[1])->id, ==, 404);
+    g_ptr_array_unref(prune);
+
+    /* All matching mode (used on reapply): only the NM-signature nexthop
+     * is a candidate. */
+    prune = nm_platform_ip_nexthop_get_prune_list(NM_PLATFORM_GET,
+                                                  AF_INET6,
+                                                  ifindex,
+                                                  nexthops_platform,
+                                                  NULL,
+                                                  NM_PLATFORM_IP_NEXTHOP_PRUNE_MODE_ALL_MATCHING);
+    g_assert(prune);
+    g_assert_cmpint(prune->len, ==, 1);
+    g_assert_cmpint(NMP_OBJECT_CAST_IP_NEXTHOP(prune->pdata[0])->id, ==, (1u << 31) | 402);
+    g_ptr_array_unref(prune);
+}
+
+/*****************************************************************************/
+
+static void
 _ensure_onlink_routes(void)
 {
     int i;
@@ -3124,6 +3228,7 @@ _nmtstp_setup_tests(void)
     }
     add_test_func("/route/nexthop/add", test_nexthop_add);
     add_test_func("/route/nexthop/sync", test_nexthop_sync);
+    add_test_func("/route/nexthop/prune_list", test_nexthop_prune_list);
 
     if (nmtstp_is_root_test()) {
         add_test_func_data_with_if2("/route/test_cache_consistency_routes/1",
