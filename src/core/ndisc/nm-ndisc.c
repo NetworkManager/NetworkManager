@@ -18,6 +18,7 @@
 #include "nm-l3-config-data.h"
 #include "nm-l3cfg.h"
 #include "nm-ndisc-private.h"
+#include "nm-netns.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-utils.h"
 
@@ -105,6 +106,77 @@ NM_UTILS_LOOKUP_STR_DEFINE(nm_ndisc_dhcp_level_to_string,
 
 /*****************************************************************************/
 
+#define NEXTHOP_ID_RETRIES 100
+
+static guint32
+nexthop_id_alloc(NMNDisc               *ndisc,
+                 const struct in6_addr *dest,
+                 guint                  plen,
+                 const struct in6_addr *gateway)
+{
+    NMNDiscPrivate           *priv     = NM_NDISC_GET_PRIVATE(ndisc);
+    NMNetns                  *netns    = nm_l3cfg_get_netns(priv->config.l3cfg);
+    const char               *ifname   = nm_l3cfg_get_ifname(priv->config.l3cfg, FALSE);
+    NMPlatform               *platform = nm_l3cfg_get_platform(priv->config.l3cfg);
+    int                       ifindex  = nm_l3cfg_get_ifindex(priv->config.l3cfg);
+    nm_auto_nmpobj NMPObject *obj      = NULL;
+    CSipHash                  state;
+    guint64                   id64;
+    guint32                   id;
+    guint                     i;
+
+    /* Determine a stable nexthop ID by hashing the interface name, the destination
+     * and the gateway. We set the high bit to decrease the chance of collisions with
+     * external (manually added) nexthops. */
+    c_siphash_init(&state, NM_HASH_SEED_16_U64(725697701u));
+    c_siphash_append(&state, (const uint8_t *) ifname, strlen(ifname) + 1);
+    c_siphash_append(&state, (const uint8_t *) dest, sizeof(struct in6_addr));
+    c_siphash_append(&state, (const uint8_t *) &plen, sizeof(guint));
+    c_siphash_append(&state, (const uint8_t *) gateway, sizeof(struct in6_addr));
+    id64 = c_siphash_finalize(&state);
+
+    for (i = 0; i < NEXTHOP_ID_RETRIES; i++) {
+        if (i < NEXTHOP_ID_RETRIES * 3 / 4) {
+            id = (guint32) (id64 + i) | (1u << 31);
+        } else {
+            /* After many collisions, start probing random ids */
+            id = (guint32) nm_random_u64_range(1ULL << 31, 1ULL << 32);
+        }
+
+        if (nm_netns_nexthop_id_is_reserved(netns, id))
+            continue;
+
+        if (nm_platform_ip_nexthop_get(platform, id, &obj)) {
+            /* The id already exists in platform. We can reuse it only
+             * if it's an IPv6 RA nexthop on the same interface (i.e.
+             * we added it). */
+            if (NMP_OBJECT_GET_TYPE(obj) != NMP_OBJECT_TYPE_IP6_NEXTHOP
+                || obj->ip6_nexthop.nh_source != NM_IP_CONFIG_SOURCE_RTPROT_RA
+                || obj->ip6_nexthop.ifindex != ifindex)
+                continue;
+        }
+
+        nm_netns_nexthop_id_reserve(netns, id, ndisc);
+        return id;
+    }
+
+    return 0;
+}
+
+static void
+_nexthop_id_release_one(NMNDisc *ndisc, guint32 nexthop_id)
+{
+    NMNDiscPrivate *priv;
+
+    if (nexthop_id == 0)
+        return;
+
+    priv = NM_NDISC_GET_PRIVATE(ndisc);
+    nm_netns_nexthop_id_release(nm_l3cfg_get_netns(priv->config.l3cfg), nexthop_id);
+}
+
+/*****************************************************************************/
+
 NML3ConfigData *
 nm_ndisc_data_to_l3cd(NMDedupMultiIndex        *multi_idx,
                       int                       ifindex,
@@ -172,9 +244,6 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex        *multi_idx,
     }
 
     if (rdata->gateways_n > 0) {
-        guint              metric_offset = 0;
-        NMIcmpv6RouterPref prev_pref     = NM_ICMPV6_ROUTER_PREF_INVALID;
-
         NMPlatformIP6Route r = {
             .rt_source     = NM_IP_CONFIG_SOURCE_NDISC,
             .ifindex       = ifindex,
@@ -185,24 +254,38 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex        *multi_idx,
         };
 
         for (i = 0; i < rdata->gateways_n; i++) {
-            /* If we add multiple default routes with the same metric and
-             * different preferences, kernel merges them into a single ECMP
-             * route, with overall preference equal to the preference of the
-             * first route added. Therefore, the preference of individual routes
-             * is not respected.
-             * To avoid that, add routes with different metrics if they have
-             * different preferences, so that they are not merged together. Here
-             * the gateways are already ordered by increasing preference. */
-            if (i != 0 && rdata->gateways[i].preference != prev_pref) {
-                metric_offset++;
-            }
+            NMPlatformIP6NextHop nh;
 
-            prev_pref = rdata->gateways[i].preference;
-            r.metric  = metric_offset;
-            r.gateway = rdata->gateways[i].address;
             r.rt_pref = rdata->gateways[i].preference;
             nm_assert((NMIcmpv6RouterPref) r.rt_pref == rdata->gateways[i].preference);
+
+            /* If we add multiple routes with the same destination (in this case, the
+             * default route) and the same metric, the kernel merges them into a single
+             * ECMP route, which is forbidden by RFCs as it breaks NUD and other use cases.
+             * Use nexthop objects to avoid this merging behavior.
+             *
+             * We could use nexthops only when there are multiple default routes on this
+             * interface. But that is not enough, because there can be multiple profiles
+             * with the same ipv6.route-metric value, and their default routes would still
+             * be merged. We need to always use nexthops.
+             */
+
+            if (rdata->gateways[i].nexthop_id == 0) {
+                /* The nexthop id could not be reserved and we already emitted a warning */
+                continue;
+            }
+
+            nh = (NMPlatformIP6NextHop) {
+                .ifindex   = ifindex,
+                .nh_source = NM_IP_CONFIG_SOURCE_NDISC,
+                .gateway   = rdata->gateways[i].address,
+                .id        = rdata->gateways[i].nexthop_id,
+            };
+
+            r.nhid    = nh.id;
+            r.gateway = nh.gateway;
             nm_l3_config_data_add_route_6(l3cd, &r);
+            nm_l3_config_data_add_nexthop(l3cd, AF_INET6, NULL, (const NMPlatformIPNextHop *) &nh);
         }
     }
 
@@ -465,21 +548,36 @@ nm_ndisc_add_gateway(NMNDisc *ndisc, const NMNDiscGateway *new_item, gint64 now_
 {
     NMNDiscDataInternal *rdata = &NM_NDISC_GET_PRIVATE(ndisc)->rdata;
     guint                i;
-    guint                insert_idx = G_MAXUINT;
+    guint                insert_idx     = G_MAXUINT;
+    guint32              old_nexthop_id = 0;
+    NMNDiscGateway       gw;
 
     for (i = 0; i < rdata->gateways->len;) {
         NMNDiscGateway *item = &nm_g_array_index(rdata->gateways, NMNDiscGateway, i);
 
         if (IN6_ARE_ADDR_EQUAL(&item->address, &new_item->address)) {
             if (new_item->expiry_msec <= now_msec) {
+                _nexthop_id_release_one(ndisc, item->nexthop_id);
                 g_array_remove_index(rdata->gateways, i);
                 _ASSERT_data_gateways(rdata);
                 return TRUE;
             }
 
             if (item->preference != new_item->preference) {
+                /* Preference changed: save the nexthop ID so that we can
+                 * reuse it when re-inserting at the correct position. */
+                old_nexthop_id = item->nexthop_id;
                 g_array_remove_index(rdata->gateways, i);
                 continue;
+            }
+
+            if (item->nexthop_id == 0) {
+                /* We failed to allocate the nexthop id previously; retry. */
+                item->nexthop_id = nexthop_id_alloc(ndisc, &in6addr_any, 0, &new_item->address);
+                if (item->nexthop_id > 0) {
+                    item->expiry_msec = new_item->expiry_msec;
+                    return TRUE;
+                }
             }
 
             if (item->expiry_msec == new_item->expiry_msec)
@@ -499,15 +597,36 @@ nm_ndisc_add_gateway(NMNDisc *ndisc, const NMNDiscGateway *new_item, gint64 now_
         i++;
     }
 
-    if (rdata->gateways->len >= _SIZE_MAX_GATEWAYS)
+    if (rdata->gateways->len >= _SIZE_MAX_GATEWAYS) {
+        _nexthop_id_release_one(ndisc, old_nexthop_id);
         return FALSE;
+    }
 
-    if (new_item->expiry_msec <= now_msec)
+    if (new_item->expiry_msec <= now_msec) {
+        _nexthop_id_release_one(ndisc, old_nexthop_id);
         return FALSE;
+    }
+
+    /* Make a copy of the gateway and assign a nexthop id, reusing the existing
+     * one if possible */
+    gw = *new_item;
+    if (old_nexthop_id != 0) {
+        gw.nexthop_id = old_nexthop_id;
+    } else {
+        gw.nexthop_id = nexthop_id_alloc(ndisc, &in6addr_any, 0, &new_item->address);
+        if (gw.nexthop_id == 0) {
+            char buf[INET6_ADDRSTRLEN];
+
+            _LOGW("failed to find a free nexthop id for gateway %s",
+                  nm_inet6_ntop(&new_item->address, buf));
+            return FALSE;
+        }
+    }
 
     g_array_insert_val(rdata->gateways,
                        insert_idx == G_MAXUINT ? rdata->gateways->len : insert_idx,
-                       *new_item);
+                       gw);
+
     _ASSERT_data_gateways(rdata);
     return TRUE;
 }
@@ -1328,6 +1447,9 @@ nm_ndisc_stop(NMNDisc *ndisc)
 
     NM_NDISC_GET_CLASS(ndisc)->stop(ndisc);
 
+    /* Release all nexthop IDs reserved by this ndisc instance. */
+    nm_netns_nexthop_id_release_all(nm_l3cfg_get_netns(priv->config.l3cfg), ndisc);
+
     rdata = &priv->rdata;
 
     g_array_set_size(rdata->gateways, 0);
@@ -1440,9 +1562,10 @@ _config_changed_log(NMNDisc *ndisc, NMNDiscConfigMap changed)
     for (i = 0; i < rdata->gateways->len; i++) {
         const NMNDiscGateway *gateway = &nm_g_array_index(rdata->gateways, NMNDiscGateway, i);
 
-        _LOGD("  gateway %s pref %s exp %s",
+        _LOGD("  gateway %s pref %s nhid %u exp %s",
               nm_inet6_ntop(&gateway->address, addrstr),
               nm_icmpv6_router_pref_to_string(gateway->preference, str_pref, sizeof(str_pref)),
+              gateway->nexthop_id,
               get_exp(str_exp, now_msec, gateway));
     }
     for (i = 0; i < rdata->addresses->len; i++) {
@@ -1519,8 +1642,11 @@ clean_gateways(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint6
     arr = &nm_g_array_first(rdata->gateways, NMNDiscGateway);
 
     for (i = 0, j = 0; i < rdata->gateways->len; i++) {
-        if (!expiry_next(now_msec, arr[i].expiry_msec, next_msec))
+        if (!expiry_next(now_msec, arr[i].expiry_msec, next_msec)) {
+            /* Gateway expired. Release its nexthop ID. */
+            _nexthop_id_release_one(ndisc, arr[i].nexthop_id);
             continue;
+        }
         if (i != j)
             arr[j] = arr[i];
         j++;
@@ -1531,8 +1657,14 @@ clean_gateways(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint6
         g_array_set_size(rdata->gateways, j);
     }
 
-    if (_array_set_size_max(rdata->gateways, _SIZE_MAX_GATEWAYS))
+    if (rdata->gateways->len > _SIZE_MAX_GATEWAYS) {
+        for (i = _SIZE_MAX_GATEWAYS; i < rdata->gateways->len; i++)
+            _nexthop_id_release_one(
+                ndisc,
+                nm_g_array_index(rdata->gateways, NMNDiscGateway, i).nexthop_id);
+        g_array_set_size(rdata->gateways, _SIZE_MAX_GATEWAYS);
         *changed |= NM_NDISC_CONFIG_GATEWAYS;
+    }
 
     _ASSERT_data_gateways(rdata);
 }
@@ -2062,6 +2194,8 @@ finalize(GObject *object)
     NMNDisc             *ndisc = NM_NDISC(object);
     NMNDiscPrivate      *priv  = NM_NDISC_GET_PRIVATE(ndisc);
     NMNDiscDataInternal *rdata = &priv->rdata;
+
+    nm_netns_nexthop_id_release_all(nm_l3cfg_get_netns(priv->config.l3cfg), ndisc);
 
     g_array_unref(rdata->gateways);
     g_array_unref(rdata->addresses);

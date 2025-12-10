@@ -10,6 +10,9 @@ USE AT YOUR OWN RISK. NOT RECOMMENDED FOR PRODUCTION USE!
 
 Core:
 * Flush systemd-resolved caches after updating the DNS configuration.
+* IPv6 default routes generated from Router Advertisements now refer
+  to nexthop objects to avoid that multiple routes are coalesced into
+  a single ECMP route by kernel.
 
 Wi-Fi:
 * Keep the long background scan interval for a single Wi-Fi 7 AP-MLD.
