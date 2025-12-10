@@ -23,6 +23,7 @@
 #include <linux/if_tunnel.h>
 #include <linux/if_vlan.h>
 #include <linux/ip6_tunnel.h>
+#include <linux/nexthop.h>
 #include <linux/tc_act/tc_mirred.h>
 #include <netinet/icmp6.h>
 #include <netinet/in.h>
@@ -4495,6 +4496,62 @@ rta_multipath_done:
 }
 
 static NMPObject *
+_new_from_nl_nexthop(const struct nlmsghdr *nlh, gboolean id_only, gboolean tracked_protos_only)
+{
+    static const struct nla_policy policy[] = {
+        [NHA_ID]      = {.type = NLA_U32},
+        [NHA_OIF]     = {.type = NLA_U32},
+        [NHA_GATEWAY] = {.maxlen = sizeof(struct in6_addr)},
+    };
+    const struct nhmsg       *nhm;
+    gboolean                  IS_IPv4;
+    struct nlattr            *tb[G_N_ELEMENTS(policy)];
+    nm_auto_nmpobj NMPObject *obj = NULL;
+
+    if (!nlmsg_valid_hdr(nlh, sizeof(*nhm)))
+        return NULL;
+
+    nhm = nlmsg_data(nlh);
+
+    if (tracked_protos_only && !NM_IN_SET(nhm->nh_protocol, IP_ROUTE_TRACKED_PROTOCOLS)) {
+        return NULL;
+    }
+
+    if (nhm->nh_family == AF_INET)
+        IS_IPv4 = TRUE;
+    else if (nhm->nh_family == AF_INET6)
+        IS_IPv4 = FALSE;
+    else
+        return NULL;
+
+    if (nlmsg_parse_arr(nlh, sizeof(*nhm), tb, policy) < 0)
+        return NULL;
+
+    if (!tb[NHA_ID])
+        return NULL;
+
+    obj                = nmp_object_new(NMP_OBJECT_TYPE_IP_NEXTHOP(IS_IPv4), NULL);
+    obj->ip_nexthop.id = nla_get_u32(tb[NHA_ID]);
+
+    if (id_only)
+        return g_steal_pointer(&obj);
+
+    obj->ip_nexthop.nh_source = nmp_utils_ip_config_source_from_rtprot(nhm->nh_protocol);
+    if (tb[NHA_OIF])
+        obj->ip_nexthop.ifindex = nla_get_u32(tb[NHA_OIF]);
+
+    if (IS_IPv4) {
+        if (tb[NHA_GATEWAY] && nla_len(tb[NHA_GATEWAY]) == sizeof(in_addr_t))
+            obj->ip4_nexthop.gateway = nla_get_u32(tb[NHA_GATEWAY]);
+        return g_steal_pointer(&obj);
+    } else {
+        if (tb[NHA_GATEWAY] && nla_len(tb[NHA_GATEWAY]) == sizeof(struct in6_addr))
+            nla_memcpy(&obj->ip6_nexthop.gateway, tb[NHA_GATEWAY], sizeof(struct in6_addr));
+        return g_steal_pointer(&obj);
+    }
+}
+
+static NMPObject *
 _new_from_nl_routing_rule(const struct nlmsghdr *nlh, gboolean id_only)
 {
     static const struct nla_policy policy[] = {
@@ -4959,6 +5016,10 @@ nmp_object_new_from_nl(NMPlatform               *platform,
     case RTM_DELRULE:
     case RTM_GETRULE:
         return _new_from_nl_routing_rule(msghdr, id_only);
+    case RTM_NEWNEXTHOP:
+    case RTM_DELNEXTHOP:
+    case RTM_GETNEXTHOP:
+        return _new_from_nl_nexthop(msghdr, id_only, FALSE);
     case RTM_NEWQDISC:
     case RTM_DELQDISC:
     case RTM_GETQDISC:
@@ -5808,6 +5869,54 @@ ip_route_is_alive(const NMPlatformIPRoute *route)
     nm_assert(nmp_utils_ip_config_source_from_rtprot(proto) == route->rt_source);
 
     return ip_route_is_tracked(proto, type);
+}
+
+static struct nl_msg *
+_nl_msg_new_nexthop(uint16_t nlmsg_type, uint16_t nlmsg_flags, const NMPObject *obj)
+{
+    nm_auto_nlmsg struct nl_msg *msg     = NULL;
+    const NMPClass              *klass   = NMP_OBJECT_GET_CLASS(obj);
+    const gboolean               IS_IPv4 = NM_IS_IPv4(klass->addr_family);
+    struct nhmsg                 nhm     = {
+                            .nh_family = klass->addr_family,
+    };
+
+    nm_assert(NM_IN_SET(NMP_OBJECT_GET_TYPE(obj),
+                        NMP_OBJECT_TYPE_IP4_NEXTHOP,
+                        NMP_OBJECT_TYPE_IP6_NEXTHOP));
+    nm_assert(NM_IN_SET(nlmsg_type, RTM_NEWNEXTHOP, RTM_DELNEXTHOP));
+
+    msg = nlmsg_alloc_new(0, nlmsg_type, nlmsg_flags);
+
+    if (nlmsg_type == RTM_NEWNEXTHOP) {
+        /* the protocol must be zero for deletion messages */
+        nhm.nh_protocol = nmp_utils_ip_config_source_coerce_to_rtprot(obj->ip_nexthop.nh_source);
+    }
+
+    if (nlmsg_append_struct(msg, &nhm) < 0)
+        goto nla_put_failure;
+
+    NLA_PUT_U32(msg, NHA_ID, obj->ip_nexthop.id);
+
+    if (nlmsg_type == RTM_DELNEXTHOP)
+        goto end;
+
+    if (obj->ip_nexthop.ifindex > 0)
+        NLA_PUT_U32(msg, NHA_OIF, obj->ip_nexthop.ifindex);
+
+    if (IS_IPv4) {
+        if (obj->ip4_nexthop.gateway != INADDR_ANY)
+            NLA_PUT(msg, NHA_GATEWAY, sizeof(in_addr_t), &obj->ip4_nexthop.gateway);
+    } else {
+        if (!IN6_IS_ADDR_UNSPECIFIED(&obj->ip6_nexthop.gateway))
+            NLA_PUT(msg, NHA_GATEWAY, sizeof(struct in6_addr), &obj->ip6_nexthop.gateway);
+    }
+
+end:
+    return g_steal_pointer(&msg);
+
+nla_put_failure:
+    g_return_val_if_reached(NULL);
 }
 
 /* Copied and modified from libnl3's build_route_msg() and rtnl_route_build_msg(). */
@@ -8654,7 +8763,9 @@ do_add_addrroute(NMPlatform      *platform,
                         NMP_OBJECT_TYPE_IP4_ADDRESS,
                         NMP_OBJECT_TYPE_IP6_ADDRESS,
                         NMP_OBJECT_TYPE_IP4_ROUTE,
-                        NMP_OBJECT_TYPE_IP6_ROUTE));
+                        NMP_OBJECT_TYPE_IP6_ROUTE,
+                        NMP_OBJECT_TYPE_IP4_NEXTHOP,
+                        NMP_OBJECT_TYPE_IP6_NEXTHOP));
 
     event_handler_read_netlink(platform, NMP_NETLINK_ROUTE, FALSE);
 
@@ -10804,6 +10915,159 @@ ip6_address_delete(NMPlatform *platform, int ifindex, struct in6_addr addr, guin
 /*****************************************************************************/
 
 static int
+ip_nexthop_add(NMPlatform *platform, NMPNlmFlags flags, NMPObject *obj_stack, char **out_extack_msg)
+{
+    nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+
+    nlmsg = _nl_msg_new_nexthop(RTM_NEWNEXTHOP, flags & NMP_NLM_FLAG_FMASK, obj_stack);
+    if (!nlmsg)
+        g_return_val_if_reached(-NME_BUG);
+    return do_add_addrroute(platform,
+                            obj_stack,
+                            nlmsg,
+                            NM_FLAGS_HAS(flags, NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE),
+                            out_extack_msg);
+}
+
+typedef struct {
+    GPtrArray *result;
+    int        addr_family;
+    int        ifindex;
+} NexthopDumpData;
+
+static int
+_ip_nexthop_dump_parse_cb(const struct nl_msg *msg, void *arg)
+{
+    NexthopDumpData          *data = arg;
+    nm_auto_nmpobj NMPObject *obj  = NULL;
+
+    obj = _new_from_nl_nexthop(nlmsg_hdr(msg), FALSE, TRUE);
+    if (!obj)
+        return NL_SKIP;
+
+    g_ptr_array_add(data->result, g_steal_pointer(&obj));
+    return NL_OK;
+}
+
+static GPtrArray *
+ip_nexthop_dump(NMPlatform *platform, int addr_family, int ifindex)
+{
+    NMLinuxPlatformPrivate      *priv  = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+    nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+    struct nhmsg                 nhm   = {
+                          .nh_family = addr_family,
+    };
+    NexthopDumpData data;
+    int             nle;
+
+    nlmsg = nlmsg_alloc_new(0, RTM_GETNEXTHOP, NLM_F_DUMP);
+    if (!nlmsg)
+        g_return_val_if_reached(NULL);
+
+    if (nlmsg_append_struct(nlmsg, &nhm) < 0)
+        g_return_val_if_reached(NULL);
+
+    NLA_PUT_U32(nlmsg, NHA_OIF, ifindex);
+
+    nle = nl_send_auto(priv->sk_rtnl_sync, nlmsg);
+    if (nle < 0) {
+        _LOGD("nexthop-dump: failed sending request: %s (%d)", nm_strerror(nle), nle);
+        return NULL;
+    }
+
+    data = (NexthopDumpData) {
+        .result      = g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref),
+        .addr_family = addr_family,
+        .ifindex     = ifindex,
+    };
+
+    do {
+        nle = nl_recvmsgs(priv->sk_rtnl_sync,
+                          &((const struct nl_cb) {
+                              .valid_cb  = _ip_nexthop_dump_parse_cb,
+                              .valid_arg = &data,
+                          }));
+    } while (nle == -EAGAIN);
+
+    if (nle < 0) {
+        _LOGD("nexthop-dump: recv failed: %s (%d)", nm_strerror(nle), nle);
+        g_ptr_array_unref(data.result);
+        return NULL;
+    }
+
+    return data.result;
+nla_put_failure:
+    g_return_val_if_reached(NULL);
+}
+
+typedef struct {
+    NMPObject *obj;
+} NexthopGetData;
+
+static int
+_ip_nexthop_get_parse_cb(const struct nl_msg *msg, void *arg)
+{
+    NexthopGetData *data = arg;
+
+    nm_assert(!data->obj);
+
+    data->obj = _new_from_nl_nexthop(nlmsg_hdr(msg), FALSE, FALSE);
+    if (!data->obj)
+        return NL_SKIP;
+
+    return NL_OK;
+}
+
+static gboolean
+ip_nexthop_get(NMPlatform *platform, guint32 nh_id, NMPObject **out_obj)
+{
+    NMLinuxPlatformPrivate      *priv  = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+    nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+    struct nhmsg                 nhm   = {
+                          .nh_family = AF_UNSPEC,
+    };
+    NexthopGetData data = {
+        .obj = NULL,
+    };
+    int nle;
+
+    nlmsg = nlmsg_alloc_new(0, RTM_GETNEXTHOP, 0);
+    if (!nlmsg)
+        g_return_val_if_reached(FALSE);
+
+    if (nlmsg_append_struct(nlmsg, &nhm) < 0)
+        g_return_val_if_reached(FALSE);
+
+    NLA_PUT_U32(nlmsg, NHA_ID, nh_id);
+
+    nle = nl_send_auto(priv->sk_rtnl_sync, nlmsg);
+    if (nle < 0) {
+        _LOGD("nexthop-get: failed sending request: %s (%d)", nm_strerror(nle), nle);
+        return FALSE;
+    }
+
+    nle = nl_recvmsgs(priv->sk_rtnl_sync,
+                      &((const struct nl_cb) {
+                          .valid_cb  = _ip_nexthop_get_parse_cb,
+                          .valid_arg = &data,
+                      }));
+
+    if (nle < 0) {
+        nm_clear_pointer(&data.obj, nmp_object_unref);
+        return FALSE;
+    }
+
+    if (!data.obj)
+        return FALSE;
+
+    NM_SET_OUT(out_obj, data.obj);
+    return TRUE;
+
+nla_put_failure:
+    g_return_val_if_reached(FALSE);
+}
+
+static int
 ip_route_add(NMPlatform *platform, NMPNlmFlags flags, NMPObject *obj_stack, char **out_extack_msg)
 {
     nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
@@ -10831,6 +11095,10 @@ object_delete(NMPlatform *platform, const NMPObject *obj)
     case NMP_OBJECT_TYPE_IP4_ROUTE:
     case NMP_OBJECT_TYPE_IP6_ROUTE:
         nlmsg = _nl_msg_new_route(RTM_DELROUTE, 0, obj);
+        break;
+    case NMP_OBJECT_TYPE_IP4_NEXTHOP:
+    case NMP_OBJECT_TYPE_IP6_NEXTHOP:
+        nlmsg = _nl_msg_new_nexthop(RTM_DELNEXTHOP, 0, obj);
         break;
     case NMP_OBJECT_TYPE_ROUTING_RULE:
         nlmsg = _nl_msg_new_routing_rule(RTM_DELRULE, 0, NMP_OBJECT_CAST_ROUTING_RULE(obj));
@@ -12525,6 +12793,10 @@ nm_linux_platform_class_init(NMLinuxPlatformClass *klass)
 
     platform_class->ip_route_add = ip_route_add;
     platform_class->ip_route_get = ip_route_get;
+
+    platform_class->ip_nexthop_add  = ip_nexthop_add;
+    platform_class->ip_nexthop_dump = ip_nexthop_dump;
+    platform_class->ip_nexthop_get  = ip_nexthop_get;
 
     platform_class->routing_rule_add = routing_rule_add;
 

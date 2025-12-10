@@ -381,6 +381,8 @@ _idx_obj_part(const DedupMultiIdxType *idx_type,
                        NMP_OBJECT_TYPE_IP6_ADDRESS,
                        NMP_OBJECT_TYPE_IP4_ROUTE,
                        NMP_OBJECT_TYPE_IP6_ROUTE,
+                       NMP_OBJECT_TYPE_IP4_NEXTHOP,
+                       NMP_OBJECT_TYPE_IP6_NEXTHOP,
                        NMP_OBJECT_TYPE_QDISC,
                        NMP_OBJECT_TYPE_TFILTER,
                        NMP_OBJECT_TYPE_MPTCP_ADDR)
@@ -896,6 +898,22 @@ nmp_object_stackinit_id_ip6_address(NMPObject *obj, int ifindex, const struct in
     obj->ip6_address.ifindex = ifindex;
     if (address)
         obj->ip6_address.address = *address;
+    return obj;
+}
+
+const NMPObject *
+nmp_object_stackinit_id_ip4_nexthop(NMPObject *obj, guint32 id)
+{
+    _nmp_object_stackinit_from_type(obj, NMP_OBJECT_TYPE_IP4_NEXTHOP);
+    obj->ip4_nexthop.id = id;
+    return obj;
+}
+
+const NMPObject *
+nmp_object_stackinit_id_ip6_nexthop(NMPObject *obj, guint32 id)
+{
+    _nmp_object_stackinit_from_type(obj, NMP_OBJECT_TYPE_IP6_NEXTHOP);
+    obj->ip6_nexthop.id = id;
     return obj;
 }
 
@@ -1668,6 +1686,22 @@ _vt_cmd_plobj_id_cmp_ip6_address(const NMPlatformObject *obj1, const NMPlatformO
                                        NM_PLATFORM_IP_ADDRESS_CMP_TYPE_ID);
 }
 
+static int
+_vt_cmd_plobj_id_cmp_ip4_nexthop(const NMPlatformObject *obj1, const NMPlatformObject *obj2)
+{
+    return nm_platform_ip4_nexthop_cmp((const NMPlatformIP4NextHop *) obj1,
+                                       (const NMPlatformIP4NextHop *) obj2,
+                                       NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_ID);
+}
+
+static int
+_vt_cmd_plobj_id_cmp_ip6_nexthop(const NMPlatformObject *obj1, const NMPlatformObject *obj2)
+{
+    return nm_platform_ip6_nexthop_cmp((const NMPlatformIP6NextHop *) obj1,
+                                       (const NMPlatformIP6NextHop *) obj2,
+                                       NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_ID);
+}
+
 _vt_cmd_plobj_id_cmp(qdisc, NMPlatformQdisc, {
     NM_CMP_FIELD(obj1, obj2, ifindex);
     NM_CMP_FIELD(obj1, obj2, parent);
@@ -1770,6 +1804,14 @@ _vt_cmd_plobj_id_hash_update(ip6_route, NMPlatformIP6Route, {
     nm_platform_ip6_route_hash_update(obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID, h);
 });
 
+_vt_cmd_plobj_id_hash_update(ip4_nexthop, NMPlatformIP4NextHop, {
+    nm_platform_ip4_nexthop_hash_update(obj, NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_ID, h);
+});
+
+_vt_cmd_plobj_id_hash_update(ip6_nexthop, NMPlatformIP6NextHop, {
+    nm_platform_ip6_nexthop_hash_update(obj, NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_ID, h);
+});
+
 _vt_cmd_plobj_id_hash_update(routing_rule, NMPlatformRoutingRule, {
     nm_platform_routing_rule_hash_update(obj, NM_PLATFORM_ROUTING_RULE_CMP_TYPE_ID, h);
 });
@@ -1802,6 +1844,38 @@ _vt_cmd_plobj_cmp_ip6_route(const NMPlatformObject *obj1, const NMPlatformObject
     return nm_platform_ip6_route_cmp((const NMPlatformIP6Route *) obj1,
                                      (const NMPlatformIP6Route *) obj2,
                                      NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL);
+}
+
+static int
+_vt_cmd_plobj_cmp_ip4_nexthop(const NMPlatformObject *obj1, const NMPlatformObject *obj2)
+{
+    return nm_platform_ip4_nexthop_cmp((const NMPlatformIP4NextHop *) obj1,
+                                       (const NMPlatformIP4NextHop *) obj2,
+                                       NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_FULL);
+}
+
+static void
+_vt_cmd_plobj_hash_update_ip4_nexthop(const NMPlatformObject *obj, NMHashState *h)
+{
+    return nm_platform_ip4_nexthop_hash_update((const NMPlatformIP4NextHop *) obj,
+                                               NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_FULL,
+                                               h);
+}
+
+static int
+_vt_cmd_plobj_cmp_ip6_nexthop(const NMPlatformObject *obj1, const NMPlatformObject *obj2)
+{
+    return nm_platform_ip6_nexthop_cmp((const NMPlatformIP6NextHop *) obj1,
+                                       (const NMPlatformIP6NextHop *) obj2,
+                                       NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_FULL);
+}
+
+static void
+_vt_cmd_plobj_hash_update_ip6_nexthop(const NMPlatformObject *obj, NMHashState *h)
+{
+    return nm_platform_ip6_nexthop_hash_update((const NMPlatformIP6NextHop *) obj,
+                                               NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_FULL,
+                                               h);
 }
 
 static void
@@ -2263,6 +2337,8 @@ nmp_lookup_init_obj_type(NMPLookup *lookup, NMPObjectType obj_type)
     case NMP_OBJECT_TYPE_IP6_ADDRESS:
     case NMP_OBJECT_TYPE_IP4_ROUTE:
     case NMP_OBJECT_TYPE_IP6_ROUTE:
+    case NMP_OBJECT_TYPE_IP4_NEXTHOP:
+    case NMP_OBJECT_TYPE_IP6_NEXTHOP:
     case NMP_OBJECT_TYPE_ROUTING_RULE:
     case NMP_OBJECT_TYPE_QDISC:
     case NMP_OBJECT_TYPE_TFILTER:
@@ -2300,6 +2376,8 @@ nmp_lookup_init_object_by_ifindex(NMPLookup *lookup, NMPObjectType obj_type, int
                         NMP_OBJECT_TYPE_IP6_ADDRESS,
                         NMP_OBJECT_TYPE_IP4_ROUTE,
                         NMP_OBJECT_TYPE_IP6_ROUTE,
+                        NMP_OBJECT_TYPE_IP4_NEXTHOP,
+                        NMP_OBJECT_TYPE_IP6_NEXTHOP,
                         NMP_OBJECT_TYPE_QDISC,
                         NMP_OBJECT_TYPE_TFILTER,
                         NMP_OBJECT_TYPE_MPTCP_ADDR));
@@ -3399,6 +3477,36 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
             .cmd_plobj_to_string      = (CmdPlobjToStringFunc) nm_platform_ip6_route_to_string,
             .cmd_plobj_hash_update    = _vt_cmd_plobj_hash_update_ip6_route,
             .cmd_plobj_cmp            = _vt_cmd_plobj_cmp_ip6_route,
+        },
+    [NMP_OBJECT_TYPE_IP4_NEXTHOP - 1] =
+        {
+            .parent                   = DEDUP_MULTI_OBJ_CLASS_INIT(),
+            .obj_type                 = NMP_OBJECT_TYPE_IP4_NEXTHOP,
+            .sizeof_data              = sizeof(NMPObjectIP4NextHop),
+            .sizeof_public            = sizeof(NMPlatformIP4NextHop),
+            .obj_type_name            = "ip4-nexthop",
+            .addr_family              = AF_INET,
+            .cmd_plobj_id_cmp         = _vt_cmd_plobj_id_cmp_ip4_nexthop,
+            .cmd_plobj_id_hash_update = _vt_cmd_plobj_id_hash_update_ip4_nexthop,
+            .cmd_plobj_to_string_id   = (CmdPlobjToStringIdFunc) nm_platform_ip4_nexthop_to_string,
+            .cmd_plobj_to_string      = (CmdPlobjToStringFunc) nm_platform_ip4_nexthop_to_string,
+            .cmd_plobj_hash_update    = _vt_cmd_plobj_hash_update_ip4_nexthop,
+            .cmd_plobj_cmp            = _vt_cmd_plobj_cmp_ip4_nexthop,
+        },
+    [NMP_OBJECT_TYPE_IP6_NEXTHOP - 1] =
+        {
+            .parent                   = DEDUP_MULTI_OBJ_CLASS_INIT(),
+            .obj_type                 = NMP_OBJECT_TYPE_IP6_NEXTHOP,
+            .sizeof_data              = sizeof(NMPObjectIP6NextHop),
+            .sizeof_public            = sizeof(NMPlatformIP6NextHop),
+            .obj_type_name            = "ip6-nexthop",
+            .addr_family              = AF_INET6,
+            .cmd_plobj_id_cmp         = _vt_cmd_plobj_id_cmp_ip6_nexthop,
+            .cmd_plobj_id_hash_update = _vt_cmd_plobj_id_hash_update_ip6_nexthop,
+            .cmd_plobj_to_string_id   = (CmdPlobjToStringIdFunc) nm_platform_ip6_nexthop_to_string,
+            .cmd_plobj_to_string      = (CmdPlobjToStringFunc) nm_platform_ip6_nexthop_to_string,
+            .cmd_plobj_hash_update    = _vt_cmd_plobj_hash_update_ip6_nexthop,
+            .cmd_plobj_cmp            = _vt_cmd_plobj_cmp_ip6_nexthop,
         },
     [NMP_OBJECT_TYPE_ROUTING_RULE - 1] =
         {
