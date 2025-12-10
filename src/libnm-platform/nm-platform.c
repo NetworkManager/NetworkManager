@@ -4771,6 +4771,53 @@ next_plat:;
 }
 
 gboolean
+nm_platform_ip_nexthop_sync(NMPlatform *self,
+                            int         addr_family,
+                            int         ifindex,
+                            GPtrArray  *known_nexthops)
+{
+    gs_unref_ptrarray GPtrArray   *plat_nexthops      = NULL;
+    gs_unref_hashtable GHashTable *known_nexthops_idx = NULL;
+    int                            IS_IPv4            = NM_IS_IPv4(addr_family);
+    NMPLookup                      lookup;
+    NMPlatformIPXNextHop          *nh;
+    guint                          i;
+    gboolean                       success = TRUE;
+
+    if (known_nexthops) {
+        known_nexthops_idx = g_hash_table_new(nm_direct_hash, NULL);
+        for (i = 0; i < known_nexthops->len; i++) {
+            nh = known_nexthops->pdata[i];
+            g_hash_table_add(known_nexthops_idx, GUINT_TO_POINTER(nh->nhx.id));
+        }
+    }
+
+    plat_nexthops = nm_platform_lookup_clone(
+        self,
+        nmp_lookup_init_object_by_ifindex(&lookup, NMP_OBJECT_TYPE_IP_NEXTHOP(IS_IPv4), ifindex),
+        NULL,
+        NULL);
+
+    for (i = 0; plat_nexthops && i < plat_nexthops->len; i++) {
+        nh = plat_nexthops->pdata[i];
+        if (!nm_g_hash_table_lookup(known_nexthops_idx, GUINT_TO_POINTER(nh->nhx.id))) {
+            if (!nm_platform_object_delete(self, (NMPObject *) nh))
+                success = FALSE;
+        }
+    }
+
+    if (known_nexthops) {
+        for (i = 0; i < known_nexthops->len; i++) {
+            nh = known_nexthops->pdata[i];
+            if (nm_platform_ip_nexthop_add(self, NMP_NLM_FLAG_APPEND, (NMPObject *) nh, NULL) != 0)
+                success = FALSE;
+        }
+    }
+
+    return success;
+}
+
+gboolean
 nm_platform_ip_address_flush(NMPlatform *self, int addr_family, int ifindex)
 {
     gboolean success = TRUE;
@@ -5364,6 +5411,24 @@ nm_platform_ip_route_flush(NMPlatform *self, int addr_family, int ifindex)
     return success;
 }
 
+gboolean
+nm_platform_ip_nexthop_flush(NMPlatform *self, int addr_family, int ifindex)
+{
+    gboolean success = TRUE;
+
+    _CHECK_SELF(self, klass, FALSE);
+
+    nm_assert(NM_IN_SET(addr_family, AF_UNSPEC, AF_INET, AF_INET6));
+
+    if (NM_IN_SET(addr_family, AF_UNSPEC, AF_INET)) {
+        success &= nm_platform_ip_nexthop_sync(self, AF_INET, ifindex, NULL);
+    }
+    if (NM_IN_SET(addr_family, AF_UNSPEC, AF_INET6)) {
+        success &= nm_platform_ip_nexthop_sync(self, AF_INET6, ifindex, NULL);
+    }
+    return success;
+}
+
 /*****************************************************************************/
 
 static guint8
@@ -5617,6 +5682,35 @@ nm_platform_ip6_route_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformI
     return _ip_route_add(self, flags, &obj, NULL);
 }
 
+int
+nm_platform_ip_nexthop_add(NMPlatform      *self,
+                           NMPNlmFlags      flags,
+                           const NMPObject *obj,
+                           char           **out_extack_msg)
+{
+    nm_auto_nmpobj const NMPObject *obj_keep_alive = NULL;
+    NMPObject                       obj_stack;
+    char                            sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+    int                             ifindex;
+
+    _CHECK_SELF(self, klass, -NME_BUG);
+
+    nm_assert(NM_IN_SET(NMP_OBJECT_GET_TYPE(obj),
+                        NMP_OBJECT_TYPE_IP4_NEXTHOP,
+                        NMP_OBJECT_TYPE_IP6_NEXTHOP));
+
+    nmp_object_stackinit(&obj_stack, NMP_OBJECT_GET_TYPE(obj), &obj->ip_nexthop);
+
+    ifindex = obj_stack.ip_nexthop.ifindex;
+
+    _LOG3D("nexthop: %-10s IPv%c nexthop: %s",
+           _nmp_nlm_flag_to_string(flags & NMP_NLM_FLAG_FMASK),
+           nm_utils_addr_family_to_char(NMP_OBJECT_GET_ADDR_FAMILY(&obj_stack)),
+           nmp_object_to_string(&obj_stack, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
+
+    return klass->ip_nexthop_add(self, flags, &obj_stack, out_extack_msg);
+}
+
 gboolean
 nm_platform_object_delete(NMPlatform *self, const NMPObject *obj)
 {
@@ -5635,6 +5729,8 @@ nm_platform_object_delete(NMPlatform *self, const NMPObject *obj)
             break;
         case NMP_OBJECT_TYPE_IP4_ROUTE:
         case NMP_OBJECT_TYPE_IP6_ROUTE:
+        case NMP_OBJECT_TYPE_IP4_NEXTHOP:
+        case NMP_OBJECT_TYPE_IP6_NEXTHOP:
         case NMP_OBJECT_TYPE_QDISC:
         case NMP_OBJECT_TYPE_TFILTER:
             ifindex = NMP_OBJECT_CAST_OBJ_WITH_IFINDEX(obj)->ifindex;
@@ -7378,6 +7474,36 @@ nm_platform_ip4_route_to_string_full(const NMPlatformIP4Route     *route,
         }
     }
     return buf0;
+}
+
+const char *
+nm_platform_ip4_nexthop_to_string(const NMPlatformIP4NextHop *nexthop, char *buf, gsize len)
+{
+    char s_gateway[INET_ADDRSTRLEN];
+
+    if (!nm_utils_to_string_buffer_init_null(nexthop, &buf, &len))
+        return buf;
+
+    inet_ntop(AF_INET, &nexthop->gateway, s_gateway, sizeof(s_gateway));
+
+    g_snprintf(buf, len, "id %u dev %d gw %s", nexthop->id, nexthop->ifindex, s_gateway);
+
+    return buf;
+}
+
+const char *
+nm_platform_ip6_nexthop_to_string(const NMPlatformIP6NextHop *nexthop, char *buf, gsize len)
+{
+    char s_gateway[INET6_ADDRSTRLEN];
+
+    if (!nm_utils_to_string_buffer_init_null(nexthop, &buf, &len))
+        return buf;
+
+    inet_ntop(AF_INET6, &nexthop->gateway, s_gateway, sizeof(s_gateway));
+
+    g_snprintf(buf, len, "id %u dev %d gw %s", nexthop->id, nexthop->ifindex, s_gateway);
+
+    return buf;
 }
 
 /**
@@ -9862,6 +9988,42 @@ log_ip6_route(NMPlatform                *self,
 }
 
 static void
+log_ip4_nexthop(NMPlatform                *self,
+                NMPObjectType              obj_type,
+                int                        ifindex,
+                NMPlatformIP4NextHop      *nh,
+                NMPlatformSignalChangeType change_type,
+                gpointer                   user_data)
+{
+    char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+
+    _LOG3D("signal: nexthop 4 %7s: %s",
+           nm_platform_signal_change_type_to_string(change_type),
+           nmp_object_to_string(NMP_OBJECT_UP_CAST(nh),
+                                NMP_OBJECT_TO_STRING_PUBLIC,
+                                sbuf,
+                                sizeof(sbuf)));
+}
+
+static void
+log_ip6_nexthop(NMPlatform                *self,
+                NMPObjectType              obj_type,
+                int                        ifindex,
+                NMPlatformIP6NextHop      *nh,
+                NMPlatformSignalChangeType change_type,
+                gpointer                   user_data)
+{
+    char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+
+    _LOG3D("signal: nexthop 6 %7s: %s",
+           nm_platform_signal_change_type_to_string(change_type),
+           nmp_object_to_string(NMP_OBJECT_UP_CAST(nh),
+                                NMP_OBJECT_TO_STRING_PUBLIC,
+                                sbuf,
+                                sizeof(sbuf)));
+}
+
+static void
 log_routing_rule(NMPlatform                *self,
                  NMPObjectType              obj_type,
                  int                        ifindex,
@@ -10324,6 +10486,12 @@ nm_platform_class_init(NMPlatformClass *platform_class)
            log_ip6_address);
     SIGNAL(NM_PLATFORM_SIGNAL_ID_IP4_ROUTE, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, log_ip4_route);
     SIGNAL(NM_PLATFORM_SIGNAL_ID_IP6_ROUTE, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, log_ip6_route);
+    SIGNAL(NM_PLATFORM_SIGNAL_ID_IP4_NEXTHOP,
+           NM_PLATFORM_SIGNAL_IP4_NEXTHOP_CHANGED,
+           log_ip4_nexthop);
+    SIGNAL(NM_PLATFORM_SIGNAL_ID_IP6_NEXTHOP,
+           NM_PLATFORM_SIGNAL_IP6_NEXTHOP_CHANGED,
+           log_ip6_nexthop);
     SIGNAL(NM_PLATFORM_SIGNAL_ID_ROUTING_RULE,
            NM_PLATFORM_SIGNAL_ROUTING_RULE_CHANGED,
            log_routing_rule);

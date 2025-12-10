@@ -349,6 +349,14 @@ typedef struct {
 } NMPObjectIP6Route;
 
 typedef struct {
+    NMPlatformIP4NextHop _public;
+} NMPObjectIP4NextHop;
+
+typedef struct {
+    NMPlatformIP6NextHop _public;
+} NMPObjectIP6NextHop;
+
+typedef struct {
     NMPlatformRoutingRule _public;
 } NMPObjectRoutingRule;
 
@@ -445,6 +453,13 @@ struct _NMPObject {
         NMPObjectIP4Route  _ip4_route;
         NMPObjectIP6Route  _ip6_route;
 
+        NMPlatformIPNextHop  ip_nexthop;
+        NMPlatformIPXNextHop ipx_nexthop;
+        NMPlatformIP4NextHop ip4_nexthop;
+        NMPlatformIP6NextHop ip6_nexthop;
+        NMPObjectIP4NextHop  _ip4_nexthop;
+        NMPObjectIP6NextHop  _ip6_nexthop;
+
         NMPlatformRoutingRule routing_rule;
         NMPObjectRoutingRule  _routing_rule;
 
@@ -536,6 +551,8 @@ _NMP_OBJECT_TYPE_IS_OBJ_WITH_IFINDEX(NMPObjectType obj_type)
     case NMP_OBJECT_TYPE_IP6_ADDRESS:
     case NMP_OBJECT_TYPE_IP4_ROUTE:
     case NMP_OBJECT_TYPE_IP6_ROUTE:
+    case NMP_OBJECT_TYPE_IP4_NEXTHOP:
+    case NMP_OBJECT_TYPE_IP6_NEXTHOP:
 
     case NMP_OBJECT_TYPE_QDISC:
 
@@ -620,6 +637,12 @@ _NMP_OBJECT_TYPE_IS_OBJ_WITH_IFINDEX(NMPObjectType obj_type)
     _NMP_OBJECT_CAST(obj, ipx_route, NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE)
 #define NMP_OBJECT_CAST_IP4_ROUTE(obj) _NMP_OBJECT_CAST(obj, ip4_route, NMP_OBJECT_TYPE_IP4_ROUTE)
 #define NMP_OBJECT_CAST_IP6_ROUTE(obj) _NMP_OBJECT_CAST(obj, ip6_route, NMP_OBJECT_TYPE_IP6_ROUTE)
+#define NMP_OBJECT_CAST_IP4_NEXTHOP(obj) \
+    _NMP_OBJECT_CAST(obj, ip4_nexthop, NMP_OBJECT_TYPE_IP4_NEXTHOP)
+#define NMP_OBJECT_CAST_IP6_NEXTHOP(obj) \
+    _NMP_OBJECT_CAST(obj, ip6_nexthop, NMP_OBJECT_TYPE_IP6_NEXTHOP)
+#define NMP_OBJECT_CAST_IP_NEXTHOP(obj) \
+    _NMP_OBJECT_CAST(obj, ip_nexthop, NMP_OBJECT_TYPE_IP4_NEXTHOP, NMP_OBJECT_TYPE_IP6_NEXTHOP)
 #define NMP_OBJECT_CAST_ROUTING_RULE(obj) \
     _NMP_OBJECT_CAST(obj, routing_rule, NMP_OBJECT_TYPE_ROUTING_RULE)
 #define NMP_OBJECT_CAST_QDISC(obj)   _NMP_OBJECT_CAST(obj, qdisc, NMP_OBJECT_TYPE_QDISC)
@@ -758,6 +781,9 @@ const NMPObject *nmp_object_stackinit_id_ip4_address(NMPObject *obj,
                                                      guint32    peer_address);
 const NMPObject *
 nmp_object_stackinit_id_ip6_address(NMPObject *obj, int ifindex, const struct in6_addr *address);
+
+const NMPObject *nmp_object_stackinit_id_ip4_nexthop(NMPObject *obj, guint32 id);
+const NMPObject *nmp_object_stackinit_id_ip6_nexthop(NMPObject *obj, guint32 id);
 
 const char *nmp_object_to_string(const NMPObject      *obj,
                                  NMPObjectToStringMode to_string_mode,

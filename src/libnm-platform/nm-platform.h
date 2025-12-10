@@ -259,6 +259,8 @@ typedef enum {
     NM_PLATFORM_SIGNAL_ID_IP6_ADDRESS,
     NM_PLATFORM_SIGNAL_ID_IP4_ROUTE,
     NM_PLATFORM_SIGNAL_ID_IP6_ROUTE,
+    NM_PLATFORM_SIGNAL_ID_IP4_NEXTHOP,
+    NM_PLATFORM_SIGNAL_ID_IP6_NEXTHOP,
     NM_PLATFORM_SIGNAL_ID_ROUTING_RULE,
     NM_PLATFORM_SIGNAL_ID_QDISC,
     NM_PLATFORM_SIGNAL_ID_TFILTER,
@@ -1339,6 +1341,11 @@ typedef struct {
                         int           oif_ifindex,
                         NMPObject   **out_route);
 
+    int (*ip_nexthop_add)(NMPlatform *self,
+                          NMPNlmFlags flags,
+                          NMPObject  *obj_stack,
+                          char      **out_extack_msg);
+
     int (*routing_rule_add)(NMPlatform                  *self,
                             NMPNlmFlags                  flags,
                             const NMPlatformRoutingRule *routing_rule);
@@ -1379,6 +1386,8 @@ typedef struct {
 #define NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED  "ip6-address-changed"
 #define NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED    "ip4-route-changed"
 #define NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED    "ip6-route-changed"
+#define NM_PLATFORM_SIGNAL_IP4_NEXTHOP_CHANGED  "ip4-nexthop-changed"
+#define NM_PLATFORM_SIGNAL_IP6_NEXTHOP_CHANGED  "ip6-nexthop-changed"
 #define NM_PLATFORM_SIGNAL_ROUTING_RULE_CHANGED "routing-rule-changed"
 #define NM_PLATFORM_SIGNAL_QDISC_CHANGED        "qdisc-changed"
 #define NM_PLATFORM_SIGNAL_TFILTER_CHANGED      "tfilter-changed"
@@ -2444,6 +2453,11 @@ int nm_platform_ip4_route_add(NMPlatform                   *self,
                               const NMPlatformIP4RtNextHop *extra_nexthops);
 int nm_platform_ip6_route_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformIP6Route *route);
 
+int nm_platform_ip_nexthop_add(NMPlatform      *self,
+                               NMPNlmFlags      flags,
+                               const NMPObject *nexthop,
+                               char           **out_extack_msg);
+
 GPtrArray *nm_platform_ip_route_get_prune_list(NMPlatform            *self,
                                                int                    addr_family,
                                                int                    ifindex,
@@ -2458,6 +2472,7 @@ gboolean nm_platform_ip_route_sync(NMPlatform *self,
                                    GPtrArray **out_routes_failed);
 
 gboolean nm_platform_ip_route_flush(NMPlatform *self, int addr_family, int ifindex);
+gboolean nm_platform_ip_nexthop_flush(NMPlatform *self, int addr_family, int ifindex);
 
 int nm_platform_ip_route_get(NMPlatform   *self,
                              int           addr_family,
@@ -2465,6 +2480,11 @@ int nm_platform_ip_route_get(NMPlatform   *self,
                              guint32       fwmark,
                              int           oif_ifindex,
                              NMPObject   **out_route);
+
+gboolean nm_platform_ip_nexthop_sync(NMPlatform *self,
+                                     int         addr_family,
+                                     int         ifindex,
+                                     GPtrArray  *known_nexthops);
 
 int nm_platform_routing_rule_add(NMPlatform                  *self,
                                  NMPNlmFlags                  flags,
@@ -2514,6 +2534,11 @@ nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsiz
 }
 
 const char *nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsize len);
+const char *
+nm_platform_ip4_nexthop_to_string(const NMPlatformIP4NextHop *nexthop, char *buf, gsize len);
+const char *
+nm_platform_ip6_nexthop_to_string(const NMPlatformIP6NextHop *nexthop, char *buf, gsize len);
+
 const char *
 nm_platform_routing_rule_to_string(const NMPlatformRoutingRule *routing_rule, char *buf, gsize len);
 const char *nm_platform_qdisc_to_string(const NMPlatformQdisc *qdisc, char *buf, gsize len);

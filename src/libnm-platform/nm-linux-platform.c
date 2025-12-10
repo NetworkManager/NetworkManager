@@ -23,6 +23,7 @@
 #include <linux/if_tunnel.h>
 #include <linux/if_vlan.h>
 #include <linux/ip6_tunnel.h>
+#include <linux/nexthop.h>
 #include <linux/tc_act/tc_mirred.h>
 #include <netinet/icmp6.h>
 #include <netinet/in.h>
@@ -408,12 +409,14 @@ typedef enum {
     REFRESH_ALL_TYPE_RTNL_IP6_ADDRESSES     = 2,
     REFRESH_ALL_TYPE_RTNL_IP4_ROUTES        = 3,
     REFRESH_ALL_TYPE_RTNL_IP6_ROUTES        = 4,
-    REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP4 = 5,
-    REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP6 = 6,
-    REFRESH_ALL_TYPE_RTNL_QDISCS            = 7,
-    REFRESH_ALL_TYPE_RTNL_TFILTERS          = 8,
+    REFRESH_ALL_TYPE_RTNL_IP4_NEXTHOPS      = 5,
+    REFRESH_ALL_TYPE_RTNL_IP6_NEXTHOPS      = 6,
+    REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP4 = 7,
+    REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP6 = 8,
+    REFRESH_ALL_TYPE_RTNL_QDISCS            = 9,
+    REFRESH_ALL_TYPE_RTNL_TFILTERS          = 10,
 
-    REFRESH_ALL_TYPE_GENL_FAMILIES = 9,
+    REFRESH_ALL_TYPE_GENL_FAMILIES = 11,
 
     _REFRESH_ALL_TYPE_NUM,
 } RefreshAllType;
@@ -437,24 +440,28 @@ typedef enum _nm_packed {
         1 << F(1, REFRESH_ALL_TYPE_RTNL_IP4_ADDRESSES),
     DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_ADDRESSES =
         1 << F(2, REFRESH_ALL_TYPE_RTNL_IP6_ADDRESSES),
-    DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP4_ROUTES = 1 << F(3, REFRESH_ALL_TYPE_RTNL_IP4_ROUTES),
-    DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_ROUTES = 1 << F(4, REFRESH_ALL_TYPE_RTNL_IP6_ROUTES),
+    DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP4_ROUTES   = 1 << F(3, REFRESH_ALL_TYPE_RTNL_IP4_ROUTES),
+    DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_ROUTES   = 1 << F(4, REFRESH_ALL_TYPE_RTNL_IP6_ROUTES),
+    DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP4_NEXTHOPS = 1
+                                                        << F(5, REFRESH_ALL_TYPE_RTNL_IP4_NEXTHOPS),
+    DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_NEXTHOPS = 1
+                                                        << F(6, REFRESH_ALL_TYPE_RTNL_IP6_NEXTHOPS),
     DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_IP4 =
-        1 << F(5, REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP4),
+        1 << F(7, REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP4),
     DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_IP6 =
-        1 << F(6, REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP6),
-    DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_QDISCS   = 1 << F(7, REFRESH_ALL_TYPE_RTNL_QDISCS),
-    DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_TFILTERS = 1 << F(8, REFRESH_ALL_TYPE_RTNL_TFILTERS),
+        1 << F(8, REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP6),
+    DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_QDISCS   = 1 << F(9, REFRESH_ALL_TYPE_RTNL_QDISCS),
+    DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_TFILTERS = 1 << F(10, REFRESH_ALL_TYPE_RTNL_TFILTERS),
 
-    DELAYED_ACTION_TYPE_REFRESH_ALL_GENL_FAMILIES = 1 << F(9, REFRESH_ALL_TYPE_GENL_FAMILIES),
+    DELAYED_ACTION_TYPE_REFRESH_ALL_GENL_FAMILIES = 1 << F(11, REFRESH_ALL_TYPE_GENL_FAMILIES),
 #undef F
 
-    DELAYED_ACTION_TYPE_READ_RTNL              = 1 << 10,
-    DELAYED_ACTION_TYPE_READ_GENL              = 1 << 11,
-    DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL = 1 << 12,
-    DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_GENL = 1 << 13,
-    DELAYED_ACTION_TYPE_REFRESH_LINK           = 1 << 14,
-    DELAYED_ACTION_TYPE_CONTROLLER_CONNECTED   = 1 << 15,
+    DELAYED_ACTION_TYPE_READ_RTNL              = 1 << 12,
+    DELAYED_ACTION_TYPE_READ_GENL              = 1 << 13,
+    DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL = 1 << 14,
+    DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_GENL = 1 << 15,
+    DELAYED_ACTION_TYPE_REFRESH_LINK           = 1 << 16,
+    DELAYED_ACTION_TYPE_CONTROLLER_CONNECTED   = 1 << 17,
 
     __DELAYED_ACTION_TYPE_MAX,
 
@@ -467,6 +474,8 @@ typedef enum _nm_packed {
                                            | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_ADDRESSES
                                            | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP4_ROUTES
                                            | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_ROUTES
+                                           | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP4_NEXTHOPS
+                                           | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_NEXTHOPS
                                            | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_ALL
                                            | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_QDISCS
                                            | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_TFILTERS,
@@ -3854,6 +3863,49 @@ _new_from_nl_link(NMPlatform            *platform,
     return g_steal_pointer(&obj);
 }
 
+static NMPObject *
+_new_from_nl_nexthop(const struct nlmsghdr *nlh, gboolean id_only)
+{
+    static const struct nla_policy policy[] = {
+        [NHA_ID]      = {.type = NLA_U32},
+        [NHA_OIF]     = {.type = NLA_U32},
+        [NHA_GATEWAY] = {.maxlen = sizeof(struct in6_addr)},
+    };
+    const struct nhmsg       *nhm;
+    gboolean                  IS_IPv4;
+    struct nlattr            *tb[G_N_ELEMENTS(policy)];
+    nm_auto_nmpobj NMPObject *obj = NULL;
+
+    if (!nlmsg_valid_hdr(nlh, sizeof(*nhm)))
+        return NULL;
+
+    nhm = nlmsg_data(nlh);
+    if (nhm->nh_family == AF_INET)
+        IS_IPv4 = TRUE;
+    else if (nhm->nh_family == AF_INET6)
+        IS_IPv4 = FALSE;
+    else
+        return NULL;
+
+    if (nlmsg_parse_arr(nlh, sizeof(*nhm), tb, policy) < 0)
+        return NULL;
+
+    if (!tb[NHA_ID])
+        return NULL;
+
+    if (IS_IPv4) {
+        return NULL; /* TODO */
+    } else {
+        obj                 = nmp_object_new(NMP_OBJECT_TYPE_IP6_NEXTHOP, NULL);
+        obj->ip6_nexthop.id = nla_get_u32(tb[NHA_ID]);
+        if (tb[NHA_OIF])
+            obj->ip6_nexthop.ifindex = nla_get_u32(tb[NHA_OIF]);
+        if (tb[NHA_GATEWAY] && nla_len(tb[NHA_GATEWAY]) == sizeof(struct in6_addr))
+            nla_memcpy(&obj->ip6_nexthop.gateway, tb[NHA_GATEWAY], sizeof(struct in6_addr));
+        return g_steal_pointer(&obj);
+    }
+}
+
 /* Copied and heavily modified from libnl3's addr_msg_parser(). */
 static NMPObject *
 _new_from_nl_addr(const struct nlmsghdr *nlh, gboolean id_only)
@@ -4885,6 +4937,10 @@ nmp_object_new_from_nl(NMPlatform               *platform,
     case RTM_DELRULE:
     case RTM_GETRULE:
         return _new_from_nl_routing_rule(msghdr, id_only);
+    case RTM_NEWNEXTHOP:
+    case RTM_DELNEXTHOP:
+    case RTM_GETNEXTHOP:
+        return _new_from_nl_nexthop(msghdr, id_only);
     case RTM_NEWQDISC:
     case RTM_DELQDISC:
     case RTM_GETQDISC:
@@ -5705,6 +5761,50 @@ ip_route_is_alive(const NMPlatformIPRoute *route)
     nm_assert(nmp_utils_ip_config_source_from_rtprot(proto) == route->rt_source);
 
     return ip_route_is_tracked(proto, type);
+}
+
+static struct nl_msg *
+_nl_msg_new_nexthop(uint16_t nlmsg_type, uint16_t nlmsg_flags, const NMPObject *obj)
+{
+    nm_auto_nlmsg struct nl_msg *msg     = NULL;
+    const NMPClass              *klass   = NMP_OBJECT_GET_CLASS(obj);
+    const gboolean               IS_IPv4 = NM_IS_IPv4(klass->addr_family);
+    const struct nhmsg           nhm     = {
+                      .nh_family   = klass->addr_family,
+                      .nh_protocol = 0,  // XXX
+    };
+
+    nm_assert(NM_IN_SET(NMP_OBJECT_GET_TYPE(obj),
+                        NMP_OBJECT_TYPE_IP4_NEXTHOP,
+                        NMP_OBJECT_TYPE_IP6_NEXTHOP));
+    nm_assert(NM_IN_SET(nlmsg_type, RTM_NEWNEXTHOP, RTM_DELNEXTHOP));
+
+    msg = nlmsg_alloc_new(0, nlmsg_type, nlmsg_flags);
+
+    if (nlmsg_append_struct(msg, &nhm) < 0)
+        goto nla_put_failure;
+
+    NLA_PUT_U32(msg, NHA_ID, obj->ip_nexthop.id);
+
+    if (nlmsg_type == RTM_DELNEXTHOP)
+        goto end;
+
+    if (obj->ip_nexthop.ifindex > 0)
+        NLA_PUT_U32(msg, NHA_OIF, obj->ip_nexthop.ifindex);
+
+    if (IS_IPv4) {
+        if (obj->ip4_nexthop.gateway != INADDR_ANY)
+            NLA_PUT(msg, NHA_GATEWAY, sizeof(in_addr_t), &obj->ip4_nexthop.gateway);
+    } else {
+        if (!IN6_IS_ADDR_UNSPECIFIED(&obj->ip6_nexthop.gateway))
+            NLA_PUT(msg, NHA_GATEWAY, sizeof(struct in6_addr), &obj->ip6_nexthop.gateway);
+    }
+
+end:
+    return g_steal_pointer(&msg);
+
+nla_put_failure:
+    g_return_val_if_reached(NULL);
 }
 
 /* Copied and modified from libnl3's build_route_msg() and rtnl_route_build_msg(). */
@@ -6779,6 +6879,8 @@ refresh_all_type_get_info(RefreshAllType refresh_all_type)
         R_ROUTE(REFRESH_ALL_TYPE_RTNL_IP6_ADDRESSES, NMP_OBJECT_TYPE_IP6_ADDRESS, AF_UNSPEC),
         R_ROUTE(REFRESH_ALL_TYPE_RTNL_IP4_ROUTES, NMP_OBJECT_TYPE_IP4_ROUTE, AF_UNSPEC),
         R_ROUTE(REFRESH_ALL_TYPE_RTNL_IP6_ROUTES, NMP_OBJECT_TYPE_IP6_ROUTE, AF_UNSPEC),
+        R_ROUTE(REFRESH_ALL_TYPE_RTNL_IP4_NEXTHOPS, NMP_OBJECT_TYPE_IP4_NEXTHOP, AF_UNSPEC),
+        R_ROUTE(REFRESH_ALL_TYPE_RTNL_IP6_NEXTHOPS, NMP_OBJECT_TYPE_IP6_NEXTHOP, AF_UNSPEC),
         R_ROUTE(REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP4, NMP_OBJECT_TYPE_ROUTING_RULE, AF_INET),
         R_ROUTE(REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP6, NMP_OBJECT_TYPE_ROUTING_RULE, AF_INET6),
         R_ROUTE(REFRESH_ALL_TYPE_RTNL_QDISCS, NMP_OBJECT_TYPE_QDISC, AF_UNSPEC),
@@ -6811,6 +6913,10 @@ static NM_UTILS_LOOKUP_DEFINE(
                          REFRESH_ALL_TYPE_RTNL_IP4_ROUTES),
     NM_UTILS_LOOKUP_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_ROUTES,
                          REFRESH_ALL_TYPE_RTNL_IP6_ROUTES),
+    NM_UTILS_LOOKUP_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP4_NEXTHOPS,
+                         REFRESH_ALL_TYPE_RTNL_IP4_NEXTHOPS),
+    NM_UTILS_LOOKUP_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_NEXTHOPS,
+                         REFRESH_ALL_TYPE_RTNL_IP6_NEXTHOPS),
     NM_UTILS_LOOKUP_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_IP4,
                          REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP4),
     NM_UTILS_LOOKUP_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_IP6,
@@ -6850,6 +6956,10 @@ refresh_all_type_from_needle_object(const NMPObject *obj_needle)
         return REFRESH_ALL_TYPE_RTNL_IP4_ROUTES;
     case NMP_OBJECT_TYPE_IP6_ROUTE:
         return REFRESH_ALL_TYPE_RTNL_IP6_ROUTES;
+    case NMP_OBJECT_TYPE_IP4_NEXTHOP:
+        return REFRESH_ALL_TYPE_RTNL_IP4_NEXTHOPS;
+    case NMP_OBJECT_TYPE_IP6_NEXTHOP:
+        return REFRESH_ALL_TYPE_RTNL_IP6_NEXTHOPS;
     case NMP_OBJECT_TYPE_QDISC:
         return REFRESH_ALL_TYPE_RTNL_QDISCS;
     case NMP_OBJECT_TYPE_TFILTER:
@@ -6912,6 +7022,10 @@ static NM_UTILS_LOOKUP_STR_DEFINE(
                              "refresh-all-rtnl-ip4-routes"),
     NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_ROUTES,
                              "refresh-all-rtnl-ip6-routes"),
+    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP4_NEXTHOPS,
+                             "refresh-all-rtnl-ip4-nexthops"),
+    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_NEXTHOPS,
+                             "refresh-all-rtnl-ip6-nexthops"),
     NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_IP4,
                              "refresh-all-rtnl-routing-rules-ip4"),
     NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_IP6,
@@ -8274,7 +8388,8 @@ _rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg)
                   RTM_DELROUTE,
                   RTM_DELRULE,
                   RTM_DELQDISC,
-                  RTM_DELTFILTER)) {
+                  RTM_DELTFILTER,
+                  RTM_DELNEXTHOP)) {
         /* The event notifies about a deleted object. We don't need to initialize all
          * fields of the object. */
         is_del = TRUE;
@@ -8297,6 +8412,7 @@ _rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg)
                      RTM_NEWLINK,
                      RTM_NEWROUTE,
                      RTM_NEWRULE,
+                     RTM_NEWNEXTHOP,
                      RTM_NEWQDISC,
                      RTM_NEWTFILTER)) {
         is_dump =
@@ -8320,6 +8436,7 @@ _rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg)
         case RTM_GETLINK:
         case RTM_NEWADDR:
         case RTM_NEWLINK:
+        case RTM_NEWNEXTHOP:
         case RTM_NEWQDISC:
         case RTM_NEWRULE:
         case RTM_NEWTFILTER:
@@ -8438,6 +8555,7 @@ _rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg)
         case RTM_DELQDISC:
         case RTM_DELROUTE:
         case RTM_DELRULE:
+        case RTM_DELNEXTHOP:
         case RTM_DELTFILTER:
             cache_op = nmp_cache_remove_netlink(cache, obj, &obj_old, &obj_new);
             if (cache_op != NMP_CACHE_OPS_UNCHANGED) {
@@ -8548,7 +8666,9 @@ do_add_addrroute(NMPlatform      *platform,
                         NMP_OBJECT_TYPE_IP4_ADDRESS,
                         NMP_OBJECT_TYPE_IP6_ADDRESS,
                         NMP_OBJECT_TYPE_IP4_ROUTE,
-                        NMP_OBJECT_TYPE_IP6_ROUTE));
+                        NMP_OBJECT_TYPE_IP6_ROUTE,
+                        NMP_OBJECT_TYPE_IP4_NEXTHOP,
+                        NMP_OBJECT_TYPE_IP6_NEXTHOP));
 
     event_handler_read_netlink(platform, NMP_NETLINK_ROUTE, FALSE);
 
@@ -10724,6 +10844,21 @@ ip6_address_delete(NMPlatform *platform, int ifindex, struct in6_addr addr, guin
 /*****************************************************************************/
 
 static int
+ip_nexthop_add(NMPlatform *platform, NMPNlmFlags flags, NMPObject *obj_stack, char **out_extack_msg)
+{
+    nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+
+    nlmsg = _nl_msg_new_nexthop(RTM_NEWNEXTHOP, flags & NMP_NLM_FLAG_FMASK, obj_stack);
+    if (!nlmsg)
+        g_return_val_if_reached(-NME_BUG);
+    return do_add_addrroute(platform,
+                            obj_stack,
+                            nlmsg,
+                            NM_FLAGS_HAS(flags, NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE),
+                            out_extack_msg);
+}
+
+static int
 ip_route_add(NMPlatform *platform, NMPNlmFlags flags, NMPObject *obj_stack, char **out_extack_msg)
 {
     nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
@@ -10751,6 +10886,10 @@ object_delete(NMPlatform *platform, const NMPObject *obj)
     case NMP_OBJECT_TYPE_IP4_ROUTE:
     case NMP_OBJECT_TYPE_IP6_ROUTE:
         nlmsg = _nl_msg_new_route(RTM_DELROUTE, 0, obj);
+        break;
+    case NMP_OBJECT_TYPE_IP4_NEXTHOP:
+    case NMP_OBJECT_TYPE_IP6_NEXTHOP:
+        nlmsg = _nl_msg_new_nexthop(RTM_DELNEXTHOP, 0, obj);
         break;
     case NMP_OBJECT_TYPE_ROUTING_RULE:
         nlmsg = _nl_msg_new_routing_rule(RTM_DELRULE, 0, NMP_OBJECT_CAST_ROUTING_RULE(obj));
@@ -12181,6 +12320,7 @@ constructed(GObject *_object)
                                     RTNLGRP_IPV6_IFADDR,
                                     RTNLGRP_IPV6_ROUTE,
                                     RTNLGRP_LINK,
+                                    RTNLGRP_NEXTHOP,
                                     0);
     g_assert(!nle);
 
@@ -12437,6 +12577,8 @@ nm_linux_platform_class_init(NMLinuxPlatformClass *klass)
 
     platform_class->ip_route_add = ip_route_add;
     platform_class->ip_route_get = ip_route_get;
+
+    platform_class->ip_nexthop_add = ip_nexthop_add;
 
     platform_class->routing_rule_add = routing_rule_add;
 

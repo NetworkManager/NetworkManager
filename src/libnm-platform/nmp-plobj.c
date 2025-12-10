@@ -171,6 +171,78 @@ nm_platform_ip4_address_cmp(const NMPlatformIP4Address *a,
 /*****************************************************************************/
 
 void
+nm_platform_ip4_nexthop_hash_update(const NMPlatformIP4NextHop *obj,
+                                    NMPlatformIPNextHopCmpType  cmp_type,
+                                    NMHashState                *h)
+{
+    switch (cmp_type) {
+    case NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_ID:
+        nm_hash_update_vals(h, obj->id);
+        break;
+    case NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_FULL:
+        nm_hash_update_vals(h, obj->id, obj->ifindex, obj->gateway);
+        break;
+    }
+}
+
+int
+nm_platform_ip4_nexthop_cmp(const NMPlatformIP4NextHop *a,
+                            const NMPlatformIP4NextHop *b,
+                            NMPlatformIPNextHopCmpType  cmp_type)
+{
+    NM_CMP_SELF(a, b);
+
+    NM_CMP_FIELD(a, b, id);
+
+    switch (cmp_type) {
+    case NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_ID:
+        return 0;
+    case NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_FULL:
+        NM_CMP_FIELD(a, b, ifindex);
+        NM_CMP_FIELD(a, b, gateway);
+        return 0;
+    }
+    return nm_assert_unreachable_val(0);
+}
+
+void
+nm_platform_ip6_nexthop_hash_update(const NMPlatformIP6NextHop *obj,
+                                    NMPlatformIPNextHopCmpType  cmp_type,
+                                    NMHashState                *h)
+{
+    switch (cmp_type) {
+    case NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_ID:
+        nm_hash_update_vals(h, obj->id);
+        break;
+    case NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_FULL:
+        nm_hash_update_vals(h, obj->id, obj->ifindex, obj->gateway);
+        break;
+    }
+}
+
+int
+nm_platform_ip6_nexthop_cmp(const NMPlatformIP6NextHop *a,
+                            const NMPlatformIP6NextHop *b,
+                            NMPlatformIPNextHopCmpType  cmp_type)
+{
+    NM_CMP_SELF(a, b);
+
+    NM_CMP_FIELD(a, b, id);
+
+    switch (cmp_type) {
+    case NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_ID:
+        return 0;
+    case NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_FULL:
+        NM_CMP_FIELD(a, b, ifindex);
+        NM_CMP_FIELD_IN6ADDR(a, b, gateway);
+        return 0;
+    }
+    return nm_assert_unreachable_val(0);
+}
+
+/*****************************************************************************/
+
+void
 nm_platform_ip6_address_hash_update(const NMPlatformIP6Address *obj, NMHashState *h)
 {
     nm_hash_update_vals(h,
