@@ -2626,6 +2626,148 @@ test_nexthop_sync(void)
 /*****************************************************************************/
 
 static void
+test_ip6_route_with_nexthop(void)
+{
+    const int                 ifindex = NMTSTP_ENV1_IFINDEXES[0];
+    NMPObject                 obj;
+    int                       r;
+    const NMPlatformIP6Route *r6;
+    struct in6_addr           network;
+    const guint32             metric = 22987;
+    gboolean                  res;
+
+    g_assert(nm_platform_ip6_address_add(NM_PLATFORM_GET,
+                                         ifindex,
+                                         nmtst_inet6_from_string("fe80::1"),
+                                         64,
+                                         in6addr_any,
+                                         NM_PLATFORM_LIFETIME_PERMANENT,
+                                         NM_PLATFORM_LIFETIME_PERMANENT,
+                                         0,
+                                         NULL));
+
+    /* Add IPv6 nexthop without gateway (id 300) */
+    nmp_object_stackinit(&obj, NMP_OBJECT_TYPE_IP6_NEXTHOP, NULL);
+    obj.ip6_nexthop.id      = 300;
+    obj.ip6_nexthop.ifindex = ifindex;
+    r = nm_platform_ip_nexthop_add(NM_PLATFORM_GET, NMP_NLM_FLAG_ADD, &obj, NULL);
+    g_assert_cmpint(r, ==, 0);
+
+    /* Add IPv6 nexthop with gateway (id 301) */
+    nmp_object_stackinit(&obj, NMP_OBJECT_TYPE_IP6_NEXTHOP, NULL);
+    obj.ip6_nexthop.id      = 301;
+    obj.ip6_nexthop.ifindex = ifindex;
+    obj.ip6_nexthop.gateway = nmtst_inet6_from_string("fe80::99");
+    r = nm_platform_ip_nexthop_add(NM_PLATFORM_GET, NMP_NLM_FLAG_ADD, &obj, NULL);
+    g_assert_cmpint(r, ==, 0);
+
+    /* Add route using nexthop without gateway */
+    inet_pton(AF_INET6, "a:b:c:1::", &network);
+    r = nm_platform_ip6_route_add(NM_PLATFORM_GET,
+                                  NMP_NLM_FLAG_REPLACE,
+                                  &((NMPlatformIP6Route) {
+                                      .ifindex = ifindex,
+                                      .network = network,
+                                      .plen    = 64,
+                                      .metric  = metric,
+                                      .nhid    = 300,
+                                  }));
+    g_assert_cmpint(r, ==, 0);
+
+    r6 = nmtstp_ip6_route_get(NM_PLATFORM_GET, ifindex, &network, 64, metric, NULL, 0);
+    g_assert(r6);
+    g_assert_cmpint(r6->ifindex, ==, ifindex);
+    g_assert_cmpint(r6->nhid, ==, 300);
+    nmtst_assert_ip6_address(&r6->gateway, "::");
+
+    /* Add route using nexthop with gateway */
+    inet_pton(AF_INET6, "a:b:c:2::", &network);
+    r = nm_platform_ip6_route_add(NM_PLATFORM_GET,
+                                  NMP_NLM_FLAG_REPLACE,
+                                  &((NMPlatformIP6Route) {
+                                      .ifindex = ifindex,
+                                      .network = network,
+                                      .plen    = 64,
+                                      .metric  = metric,
+                                      .nhid    = 301,
+                                      .gateway = nmtst_inet6_from_string("fe80::99"),
+                                  }));
+    g_assert_cmpint(r, ==, 0);
+
+    r6 = nmtstp_ip6_route_get(NM_PLATFORM_GET, ifindex, &network, 64, metric, NULL, 0);
+    g_assert(r6);
+    g_assert_cmpint(r6->ifindex, ==, ifindex);
+    g_assert_cmpint(r6->nhid, ==, 301);
+    nmtst_assert_ip6_address(&r6->gateway, "fe80::99");
+
+    nmtstp_check_platform(NM_PLATFORM_GET, nmp_object_type_to_flags(NMP_OBJECT_TYPE_IP6_ROUTE));
+
+    /* Check that the route disappears when the nexthop is deleted */
+    inet_pton(AF_INET6, "a:b:c:1::", &network);
+    r6 = nmtstp_ip6_route_get(NM_PLATFORM_GET, ifindex, &network, 64, metric, NULL, 0);
+    g_assert(r6);
+
+    res =
+        nm_platform_object_delete(NM_PLATFORM_GET, nmp_object_stackinit_id_ip6_nexthop(&obj, 300));
+    g_assert(res);
+
+    nm_platform_process_events(NM_PLATFORM_GET);
+    r6 = nmtstp_ip6_route_get(NM_PLATFORM_GET, ifindex, &network, 64, metric, NULL, 0);
+    g_assert(!r6);
+}
+
+static void
+test_ip6_route_with_group_nexthop(void)
+{
+    const int                    ifindex           = NMTSTP_ENV1_IFINDEXES[0];
+    const char                  *ifname            = NMTSTP_ENV1_DEVICE_NAME[0];
+    gs_unref_ptrarray GPtrArray *nexthops_platform = NULL;
+    gs_unref_ptrarray GPtrArray *routes_platform   = NULL;
+    NMPlatformIP6Route           rts[6];
+
+    nmtstp_run_command_check("ip addr add fe80::1/64 dev %s", ifname);
+
+    nmtstp_run_command_check("ip -6 nexthop add id 1001 dev %s via fe80::11", ifname);
+    nmtstp_run_command_check("ip -6 nexthop add id 1002 dev %s via fe80::77", ifname);
+    nmtstp_run_command_check("ip nexthop add id 1003 group 1001/1002");
+    nmtstp_run_command_check("ip -6 route add 3fff::/64 nhid 1003");
+
+    nm_platform_process_events(NM_PLATFORM_GET);
+
+    nexthops_platform = nm_platform_ip_nexthop_dump(NM_PLATFORM_GET, AF_INET6, ifindex);
+    g_assert(nexthops_platform);
+    g_assert_cmpint(nexthops_platform->len, ==, 2);
+
+    routes_platform = nmtstp_ip6_route_get_all(NM_PLATFORM_GET, ifindex);
+    g_assert_true(!!routes_platform);
+    g_assert_cmpint(routes_platform->len, ==, 2);
+
+    memset(rts, 0, sizeof(rts));
+    rts[0].rt_source = NM_IP_CONFIG_SOURCE_RTPROT_BOOT;
+    rts[0].network   = nmtst_inet6_from_string("3fff::");
+    rts[0].plen      = 64;
+    rts[0].ifindex   = ifindex;
+    rts[0].gateway   = nmtst_inet6_from_string("fe80::11");
+    rts[0].metric    = 1024;
+    rts[0].nhid      = 1003;
+
+    rts[1].rt_source = NM_IP_CONFIG_SOURCE_RTPROT_BOOT;
+    rts[1].network   = nmtst_inet6_from_string("3fff::");
+    rts[1].plen      = 64;
+    rts[1].ifindex   = ifindex;
+    rts[1].gateway   = nmtst_inet6_from_string("fe80::77");
+    rts[1].metric    = 1024;
+    rts[1].nhid      = 1003;
+
+    nmtst_platform_ip6_routes_equal_aptr((const NMPObject *const *) routes_platform->pdata,
+                                         rts,
+                                         routes_platform->len,
+                                         TRUE);
+}
+
+/*****************************************************************************/
+
+static void
 _ensure_onlink_routes(void)
 {
     int i;
@@ -2977,6 +3119,8 @@ _nmtstp_setup_tests(void)
     if (nmtstp_is_root_test()) {
         add_test_func_with_if2("/route/nexthop/dump", test_nexthop_dump);
         add_test_func_with_if2("/route/nexthop/ip4-route", test_nexthop_ip4_route);
+        add_test_func("/route/ip6_with_nexthop", test_ip6_route_with_nexthop);
+        add_test_func("/route/ip6_with_group_nexthop", test_ip6_route_with_group_nexthop);
     }
     add_test_func("/route/nexthop/add", test_nexthop_add);
     add_test_func("/route/nexthop/sync", test_nexthop_sync);
