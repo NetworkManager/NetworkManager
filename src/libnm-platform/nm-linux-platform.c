@@ -4076,6 +4076,7 @@ _new_from_nl_route(const struct nlmsghdr *nlh, gboolean id_only, ParseNlmsgIter 
         [RTA_PRIORITY]  = {.type = NLA_U32},
         [RTA_PREF]      = {.type = NLA_U8},
         [RTA_FLOW]      = {.type = NLA_U32},
+        [RTA_NH_ID]     = {.type = NLA_U32},
         [RTA_CACHEINFO] = {.minlen = nm_offsetofend(struct rta_cacheinfo, rta_tsage)},
         [RTA_VIA]       = {.minlen = nm_offsetofend(struct rtvia, rtvia_family)},
         [RTA_METRICS]   = {.type = NLA_NESTED},
@@ -4114,6 +4115,7 @@ _new_from_nl_route(const struct nlmsghdr *nlh, gboolean id_only, ParseNlmsgIter 
     guint32                         mtu         = 0;
     guint32                         rto_min     = 0;
     guint32                         lock        = 0;
+    guint32                         nhid        = 0;
     gboolean                        quickack    = FALSE;
     gboolean                        rto_min_set = FALSE;
 
@@ -4159,7 +4161,12 @@ _new_from_nl_route(const struct nlmsghdr *nlh, gboolean id_only, ParseNlmsgIter 
     if (rtm->rtm_dst_len > (IS_IPv4 ? 32 : 128))
         return NULL;
 
-    if (tb[RTA_MULTIPATH]) {
+    if (tb[RTA_NH_ID] && !IS_IPv4) {
+        /* we only support NHID for IPv6 at the moment */
+        nhid = nla_get_u32(tb[RTA_NH_ID]);
+    }
+
+    if (nhid == 0 && tb[RTA_MULTIPATH]) {
         size_t            tlen;
         struct rtnexthop *rtnh;
         guint             idx;
@@ -4270,7 +4277,7 @@ rta_multipath_done:
         return nm_assert_unreachable_val(NULL);
     }
 
-    if (tb[RTA_OIF] || tb[RTA_GATEWAY] || tb[RTA_FLOW] || tb[RTA_VIA]) {
+    if (nhid == 0 && (tb[RTA_OIF] || tb[RTA_GATEWAY] || tb[RTA_FLOW] || tb[RTA_VIA])) {
         int      ifindex = 0;
         NMIPAddr gateway = {};
 
@@ -4314,6 +4321,15 @@ rta_multipath_done:
                 return NULL;
             }
         }
+    }
+
+    if (nhid != 0) {
+        if (tb[RTA_OIF]) {
+            nh.ifindex = nla_get_u32(tb[RTA_OIF]);
+            nh.found   = TRUE;
+        }
+        if (_check_addr_or_return_null(tb, RTA_GATEWAY, addr_len))
+            memcpy(&nh.gateway, nla_data(tb[RTA_GATEWAY]), addr_len);
     }
 
     if (nm_platform_route_type_is_nodev(rtm->rtm_type)) {
@@ -4451,6 +4467,9 @@ rta_multipath_done:
         }
         obj->ip6_route.src_plen = rtm->rtm_src_len;
     }
+
+    if (!IS_IPv4)
+        obj->ip6_route.nhid = nhid;
 
     obj->ip_route.mss           = mss;
     obj->ip_route.window        = window;
@@ -6096,10 +6115,14 @@ _nl_msg_new_route(uint16_t nlmsg_type, uint16_t nlmsg_flags, const NMPObject *ob
             NLA_PUT(msg, RTA_GATEWAY, addr_len, &obj->ip4_route.gateway);
         }
     } else {
-        if (!IN6_IS_ADDR_UNSPECIFIED(&obj->ip6_route.gateway))
+        if (obj->ip6_route.nhid != 0) {
+            NLA_PUT_U32(msg, RTA_NH_ID, obj->ip6_route.nhid);
+        } else if (!IN6_IS_ADDR_UNSPECIFIED(&obj->ip6_route.gateway))
             NLA_PUT(msg, RTA_GATEWAY, addr_len, &obj->ip6_route.gateway);
     }
-    NLA_PUT_U32(msg, RTA_OIF, obj->ip_route.ifindex);
+
+    if (IS_IPv4 || obj->ip6_route.nhid == 0)
+        NLA_PUT_U32(msg, RTA_OIF, obj->ip_route.ifindex);
 
     if (!IS_IPv4 && obj->ip6_route.rt_pref != NM_ICMPV6_ROUTER_PREF_MEDIUM)
         NLA_PUT_U8(msg, RTA_PREF, obj->ip6_route.rt_pref);
