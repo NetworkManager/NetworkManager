@@ -28,6 +28,7 @@ typedef struct {
 } NMFakePlatformLink;
 
 typedef struct {
+    bool        nexthop_delete_fail : 1;
     GHashTable *options;
     GArray     *links;
     GHashTable *nexthops;
@@ -1339,6 +1340,18 @@ ip_route_delete_by_nhid(NMPlatform *platform, guint32 nhid)
     }
 }
 
+static int
+mptcp_addr_update(NMPlatform *platform, NMOptionBool add, const NMPlatformMptcpAddr *addr)
+{
+    return -EOPNOTSUPP;
+}
+
+static GPtrArray *
+mptcp_addrs_dump(NMPlatform *platform)
+{
+    return NULL;
+}
+
 static gboolean
 object_delete(NMPlatform *platform, const NMPObject *obj)
 {
@@ -1349,6 +1362,8 @@ object_delete(NMPlatform *platform, const NMPObject *obj)
     switch (NMP_OBJECT_GET_TYPE(obj)) {
     case NMP_OBJECT_TYPE_IP4_NEXTHOP:
     case NMP_OBJECT_TYPE_IP6_NEXTHOP:
+        if (priv->nexthop_delete_fail)
+            return FALSE;
         if (g_hash_table_remove(priv->nexthops, GUINT_TO_POINTER(obj->ip_nexthop.id)))
             ip_route_delete_by_nhid(platform, obj->ip_nexthop.id);
         return TRUE;
@@ -1390,8 +1405,8 @@ ip_route_add(NMPlatform *platform, NMPNlmFlags flags, NMPObject *obj_stack, char
 
     flags = NM_FLAGS_UNSET(flags, NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE);
 
-    /* currently, only replace is implemented. */
-    g_assert(flags == NMP_NLM_FLAG_REPLACE);
+    /* currently, only replace and append are implemented. */
+    nm_assert(NM_IN_SET(flags, NMP_NLM_FLAG_REPLACE, NMP_NLM_FLAG_APPEND));
 
     if (NMP_OBJECT_GET_TYPE(obj_stack) == NMP_OBJECT_TYPE_IP4_ROUTE
         && obj_stack->ip4_route.n_nexthops == 0 && obj_stack->ip4_route.ifindex > 0)
@@ -1505,6 +1520,9 @@ ip_route_add(NMPlatform *platform, NMPNlmFlags flags, NMPObject *obj_stack, char
         case NMP_NLM_FLAG_REPLACE:
             nlmsgflags = NLM_F_REPLACE;
             break;
+        case NMP_NLM_FLAG_APPEND:
+            nlmsgflags = NLM_F_CREATE | NLM_F_APPEND;
+            break;
         default:
             g_assert_not_reached();
             break;
@@ -1556,6 +1574,14 @@ nm_fake_platform_init(NMFakePlatform *fake_platform)
     priv->links   = g_array_new(TRUE, TRUE, sizeof(NMFakePlatformLink));
     priv->nexthops =
         g_hash_table_new_full(nm_direct_hash, NULL, NULL, (GDestroyNotify) nmp_object_unref);
+}
+
+void
+nm_fake_platform_set_nexthop_delete_fail(NMPlatform *platform, gboolean fail)
+{
+    g_return_if_fail(NM_IS_FAKE_PLATFORM(platform));
+
+    NM_FAKE_PLATFORM_GET_PRIVATE(platform)->nexthop_delete_fail = fail;
 }
 
 void
@@ -1653,6 +1679,9 @@ nm_fake_platform_class_init(NMFakePlatformClass *klass)
     platform_class->ip_nexthop_add  = ip_nexthop_add;
     platform_class->ip_nexthop_dump = ip_nexthop_dump;
     platform_class->ip_nexthop_get  = ip_nexthop_get;
+
+    platform_class->mptcp_addr_update = mptcp_addr_update;
+    platform_class->mptcp_addrs_dump  = mptcp_addrs_dump;
 
     platform_class->ip_route_add  = ip_route_add;
     platform_class->object_delete = object_delete;

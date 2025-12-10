@@ -21,6 +21,8 @@
 typedef struct _NMFakePlatform      NMFakePlatform;
 typedef struct _NMFakePlatformClass NMFakePlatformClass;
 
+void nm_fake_platform_set_nexthop_delete_fail(NMPlatform *platform, gboolean fail);
+
 GType nm_fake_platform_get_type(void);
 
 void nm_fake_platform_setup(void);
