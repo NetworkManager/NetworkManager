@@ -793,7 +793,9 @@ _nm_n_acd_data_probe_new(NML3Cfg *self, in_addr_t addr, guint32 timeout_msec, gp
                                 NMP_OBJECT_TYPE_IP4_ADDRESS,                                  \
                                 NMP_OBJECT_TYPE_IP6_ADDRESS,                                  \
                                 NMP_OBJECT_TYPE_IP4_ROUTE,                                    \
-                                NMP_OBJECT_TYPE_IP6_ROUTE));                                  \
+                                NMP_OBJECT_TYPE_IP6_ROUTE,                                    \
+                                NMP_OBJECT_TYPE_IP4_NEXTHOP,                                  \
+                                NMP_OBJECT_TYPE_IP6_NEXTHOP));                                \
             nm_assert(!_obj_state->os_plobj || _obj_state->os_was_in_platform);               \
             nm_assert(_obj_state->os_failedobj_expiry_msec != 0                               \
                       || _obj_state->os_failedobj_prioq_idx == NM_PRIOQ_IDX_NULL);            \
@@ -1156,6 +1158,8 @@ _obj_states_update_all(NML3Cfg *self)
         NMP_OBJECT_TYPE_IP6_ADDRESS,
         NMP_OBJECT_TYPE_IP4_ROUTE,
         NMP_OBJECT_TYPE_IP6_ROUTE,
+        NMP_OBJECT_TYPE_IP4_NEXTHOP,
+        NMP_OBJECT_TYPE_IP6_NEXTHOP,
     };
     ObjStateData *obj_state;
     int           i;
@@ -1283,6 +1287,23 @@ _commit_collect_addresses(NML3Cfg *self, int addr_family, NML3CfgCommitType comm
 
     head_entry = nm_l3_config_data_lookup_objs(self->priv.p->combined_l3cd_commited,
                                                NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4));
+    return nm_dedup_multi_objs_to_ptr_array_head(head_entry,
+                                                 _obj_states_sync_filter_predicate,
+                                                 (gpointer) &sync_filter_data);
+}
+
+static GPtrArray *
+_commit_collect_nexthops(NML3Cfg *self, int addr_family, NML3CfgCommitType commit_type)
+{
+    const int                     IS_IPv4 = NM_IS_IPv4(addr_family);
+    const NMDedupMultiHeadEntry  *head_entry;
+    const ObjStatesSyncFilterData sync_filter_data = {
+        .self        = self,
+        .commit_type = commit_type,
+    };
+
+    head_entry = nm_l3_config_data_lookup_objs(self->priv.p->combined_l3cd_commited,
+                                               NMP_OBJECT_TYPE_IP_NEXTHOP(IS_IPv4));
     return nm_dedup_multi_objs_to_ptr_array_head(head_entry,
                                                  _obj_states_sync_filter_predicate,
                                                  (gpointer) &sync_filter_data);
@@ -1617,6 +1638,8 @@ _nm_l3cfg_notify_platform_change(NML3Cfg                   *self,
     case NMP_OBJECT_TYPE_IP6_ADDRESS:
     case NMP_OBJECT_TYPE_IP4_ROUTE:
     case NMP_OBJECT_TYPE_IP6_ROUTE:
+    case NMP_OBJECT_TYPE_IP4_NEXTHOP:
+    case NMP_OBJECT_TYPE_IP6_NEXTHOP:
         _obj_states_externally_removed_track(self, obj, change_type != NM_PLATFORM_SIGNAL_REMOVED);
     default:
         break;
@@ -5214,6 +5237,7 @@ _l3_commit_one(NML3Cfg              *self,
 {
     const int                    IS_IPv4         = NM_IS_IPv4(addr_family);
     gs_unref_ptrarray GPtrArray *addresses       = NULL;
+    gs_unref_ptrarray GPtrArray *nexthops        = NULL;
     gs_unref_ptrarray GPtrArray *routes          = NULL;
     gs_unref_ptrarray GPtrArray *routes_nodev    = NULL;
     gs_unref_ptrarray GPtrArray *addresses_prune = NULL;
@@ -5239,6 +5263,7 @@ _l3_commit_one(NML3Cfg              *self,
         any_dirty = _obj_states_track_mark_dirty(self, TRUE);
 
     addresses = _commit_collect_addresses(self, addr_family, commit_type);
+    nexthops  = _commit_collect_nexthops(self, addr_family, commit_type);
 
     _commit_collect_routes(self,
                            addr_family,
@@ -5364,6 +5389,8 @@ _l3_commit_one(NML3Cfg              *self,
                                 self->priv.ifindex == NM_LOOPBACK_IFINDEX
                                     ? NMP_IP_ADDRESS_SYNC_FLAGS_NONE
                                     : NMP_IP_ADDRESS_SYNC_FLAGS_WITH_NOPREFIXROUTE);
+
+    nm_platform_ip_nexthop_sync(self->priv.platform, addr_family, self->priv.ifindex, nexthops);
 
     self->priv.p->commit_reentrant_count_ip_address_sync_x[IS_IPv4]--;
 

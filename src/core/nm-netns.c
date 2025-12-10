@@ -1588,6 +1588,14 @@ constructed(GObject *object)
                      NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED,
                      G_CALLBACK(_platform_signal_cb),
                      &priv->_self_signal_user_data);
+    g_signal_connect(priv->platform,
+                     NM_PLATFORM_SIGNAL_IP4_NEXTHOP_CHANGED,
+                     G_CALLBACK(_platform_signal_cb),
+                     &priv->_self_signal_user_data);
+    g_signal_connect(priv->platform,
+                     NM_PLATFORM_SIGNAL_IP6_NEXTHOP_CHANGED,
+                     G_CALLBACK(_platform_signal_cb),
+                     &priv->_self_signal_user_data);
 }
 
 NMNetns *
