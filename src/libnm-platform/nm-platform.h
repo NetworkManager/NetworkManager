@@ -533,6 +533,21 @@ struct _NMPlatformIP6Route {
      * The type is guint8 to keep the struct size small. But the values are compatible with
      * the NMIcmpv6RouterPref enum. */
     guint8 rt_pref;
+
+    /* RTA_NH_ID. The unique id of the nexthop object.
+     *
+     * When sending a route with a nexthop to the kernel, the ifindex
+     * and gateway must be unset, otherwise the route will be
+     * rejected. When the kernel sends notifications to userspace it
+     * copies the ifindex and the gateway from the nexthop into the
+     * route.
+     *
+     * In a route platform object, the ifindex and gateway are ignored
+     * if the routes has a nexthop. The ifindex must be always set
+     * when creating new synthetic route because the platform code
+     * needs it to properly track the object.
+     */
+    guint32 nhid;
 } _nm_alignas(NMPlatformObject);
 
 typedef union {
