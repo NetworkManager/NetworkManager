@@ -13260,6 +13260,9 @@ activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family)
                      * addresses and routes on activation.
                      */
                     if (ip_ifindex > 0) {
+                        nm_platform_ip_nexthop_flush(nm_device_get_platform(self),
+                                                     AF_INET6,
+                                                     ip_ifindex);
                         nm_platform_ip_route_flush(nm_device_get_platform(self),
                                                    AF_INET6,
                                                    ip_ifindex);
