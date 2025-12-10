@@ -280,6 +280,7 @@ struct _NML3ConfigData;
 
 struct _NML3ConfigData *nm_ndisc_data_to_l3cd(NMDedupMultiIndex        *multi_idx,
                                               int                       ifindex,
+                                              const char               *ifname,
                                               const NMNDiscData        *rdata,
                                               NMSettingIP6ConfigPrivacy ip6_privacy,
                                               NMUtilsIPv6IfaceId       *token);

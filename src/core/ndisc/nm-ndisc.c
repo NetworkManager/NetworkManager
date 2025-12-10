@@ -107,6 +107,7 @@ NM_UTILS_LOOKUP_STR_DEFINE(nm_ndisc_dhcp_level_to_string,
 NML3ConfigData *
 nm_ndisc_data_to_l3cd(NMDedupMultiIndex        *multi_idx,
                       int                       ifindex,
+                      const char               *ifname,
                       const NMNDiscData        *rdata,
                       NMSettingIP6ConfigPrivacy ip6_privacy,
                       NMUtilsIPv6IfaceId       *token)
@@ -170,8 +171,7 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex        *multi_idx,
     }
 
     if (rdata->gateways_n > 0) {
-        guint              metric_offset = 0;
-        NMIcmpv6RouterPref prev_pref     = NM_ICMPV6_ROUTER_PREF_INVALID;
+        guint metric_offset = 0;
 
         NMPlatformIP6Route r = {
             .rt_source     = NM_IP_CONFIG_SOURCE_NDISC,
@@ -183,24 +183,29 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex        *multi_idx,
         };
 
         for (i = 0; i < rdata->gateways_n; i++) {
-            /* If we add multiple default routes with the same metric and
-             * different preferences, kernel merges them into a single ECMP
-             * route, with overall preference equal to the preference of the
-             * first route added. Therefore, the preference of individual routes
-             * is not respected.
-             * To avoid that, add routes with different metrics if they have
-             * different preferences, so that they are not merged together. Here
-             * the gateways are already ordered by increasing preference. */
-            if (i != 0 && rdata->gateways[i].preference != prev_pref) {
-                metric_offset++;
-            }
+            NMPlatformIP6NextHop nh = {
+                .ifindex = ifindex,
+                .gateway = rdata->gateways[i].address,
+            };
+            CSipHash state;
+            guint64  id64;
 
-            prev_pref = rdata->gateways[i].preference;
+            c_siphash_init(&state, NM_HASH_SEED_16_U64(725697701u));
+            c_siphash_append(&state, (const uint8_t *) ifname, strlen(ifname) + 1);
+            c_siphash_append(&state,
+                             (const uint8_t *) &rdata->gateways[i].address,
+                             sizeof(struct in6_addr));
+            id64  = c_siphash_finalize(&state);
+            nh.id = ((guint32) (id64 >> 32u)) | (1 << 31u);
+            // XXX: find a strategy to generate stable ID avoiding
+            // collisions with existing ones
+
             r.metric  = metric_offset;
-            r.gateway = rdata->gateways[i].address;
             r.rt_pref = rdata->gateways[i].preference;
+            r.nhid    = nh.id;
             nm_assert((NMIcmpv6RouterPref) r.rt_pref == rdata->gateways[i].preference);
             nm_l3_config_data_add_route_6(l3cd, &r);
+            nm_l3_config_data_add_nexthop(l3cd, AF_INET6, NULL, (const NMPlatformIPNextHop *) &nh);
         }
     }
 
@@ -435,6 +440,7 @@ nm_ndisc_emit_config_change(NMNDisc *self, NMNDiscConfigMap changed)
 
     l3cd = nm_ndisc_data_to_l3cd(nm_l3cfg_get_multi_idx(priv->config.l3cfg),
                                  nm_l3cfg_get_ifindex(priv->config.l3cfg),
+                                 nm_l3cfg_get_ifname(priv->config.l3cfg, FALSE),
                                  rdata,
                                  priv->config.ip6_privacy,
                                  priv->iid_is_token ? &priv->iid : NULL);
