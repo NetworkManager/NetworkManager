@@ -5499,6 +5499,71 @@ nm_platform_ip_nexthop_dump(NMPlatform *self, int addr_family, int ifindex)
     }
 }
 
+/**
+ * nm_platform_ip_nexthop_get_prune_list:
+ * @self: the #NMPlatform instance.
+ * @addr_family: AF_INET or AF_INET6.
+ * @ifindex: the @ifindex for which the nexthops are to be pruned.
+ * @nexthops_platform: the nexthops currently configured in the kernel.
+ * @owned_nexthop_ids: (nullable): a set of nexthop IDs that the caller
+ *   is in charge of. Used when @prune_mode is
+ *   %NM_PLATFORM_IP_NEXTHOP_PRUNE_MODE_OWNED. May be %NULL.
+ * @prune_mode: which nexthops are candidates for deletion.
+ *
+ * Gets a list of the nexthops of @ifindex that should be deleted.
+ *
+ * A nexthop is a candidate for deletion depending on @prune_mode:
+ *   - %NM_PLATFORM_IP_NEXTHOP_PRUNE_MODE_OWNED: its ID is in
+ *     @owned_nexthop_ids (the exact set the caller has configured).
+ *   - %NM_PLATFORM_IP_NEXTHOP_PRUNE_MODE_ALL_MATCHING: all the nexthops
+ *     from platform with protocol RA and ID in the high range.
+ *
+ * Returns: (element-type NMPObject) (transfer full): a list of nexthops
+ *   to delete, or %NULL if there is none. The caller owns the list and
+ *   the objects.
+ */
+GPtrArray *
+nm_platform_ip_nexthop_get_prune_list(NMPlatform                  *self,
+                                      int                          addr_family,
+                                      int                          ifindex,
+                                      GPtrArray                   *nexthops_platform,
+                                      GHashTable                  *owned_nexthop_ids,
+                                      NMPlatformIPNexthopPruneMode prune_mode)
+{
+    GPtrArray *result = NULL;
+    guint      i;
+
+    _CHECK_SELF(self, klass, NULL);
+
+    nm_assert(NM_IN_SET(addr_family, AF_INET, AF_INET6));
+    nm_assert(NM_IN_SET(prune_mode,
+                        NM_PLATFORM_IP_NEXTHOP_PRUNE_MODE_OWNED,
+                        NM_PLATFORM_IP_NEXTHOP_PRUNE_MODE_ALL_MATCHING));
+
+    if (!nexthops_platform || nexthops_platform->len == 0)
+        return NULL;
+
+    for (i = 0; i < nexthops_platform->len; i++) {
+        const NMPObject           *obj = nexthops_platform->pdata[i];
+        const NMPlatformIPNextHop *nh  = NMP_OBJECT_CAST_IP_NEXTHOP(obj);
+        gboolean                   owned;
+
+        if (prune_mode == NM_PLATFORM_IP_NEXTHOP_PRUNE_MODE_ALL_MATCHING)
+            owned = nh->nh_source == NM_IP_CONFIG_SOURCE_RTPROT_RA && !!(nh->id & (1u << 31));
+        else
+            owned = !!nm_g_hash_table_lookup(owned_nexthop_ids, GUINT_TO_POINTER(nh->id));
+
+        if (!owned)
+            continue;
+
+        if (!result)
+            result = g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
+        g_ptr_array_add(result, (gpointer) nmp_object_ref(obj));
+    }
+
+    return result;
+}
+
 int
 nm_platform_ip_nexthop_get(NMPlatform *self, guint32 nh_id, NMPObject **out_obj)
 {
@@ -5546,7 +5611,7 @@ nm_platform_ip_nexthop_get(NMPlatform *self, guint32 nh_id, NMPObject **out_obj)
  *
  * This function doesn't flush group nexthops.
  *
- * Returns:  %TRUE on success, %FALSE on failure
+ * Returns: %TRUE on success, %FALSE on failure
  */
 gboolean
 nm_platform_ip_nexthop_flush(NMPlatform *self, int addr_family, int ifindex)
