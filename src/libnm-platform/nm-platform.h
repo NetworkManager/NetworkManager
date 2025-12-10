@@ -2522,13 +2522,31 @@ int nm_platform_ip_route_get(NMPlatform   *self,
 
 GPtrArray *nm_platform_ip_nexthop_dump(NMPlatform *self, int addr_family, int ifindex);
 
+typedef enum {
+    /* Prune only the nexthops whose ID is in @owned_nexthop_ids (the exact set the
+     * caller has configured). */
+    NM_PLATFORM_IP_NEXTHOP_PRUNE_MODE_OWNED,
+
+    /* Prune the nexthops that look like they were created by NM: protocol RA with an
+     * ID in the high range (where NM allocates its IDs). */
+    NM_PLATFORM_IP_NEXTHOP_PRUNE_MODE_ALL_MATCHING,
+} NMPlatformIPNexthopPruneMode;
+
+GPtrArray *nm_platform_ip_nexthop_get_prune_list(NMPlatform                  *self,
+                                                 int                          addr_family,
+                                                 int                          ifindex,
+                                                 GHashTable                  *owned_nexthop_ids,
+                                                 GPtrArray                   *routes_prune,
+                                                 NMPlatformIPNexthopPruneMode prune_mode);
+
 gboolean nm_platform_ip_nexthop_get(NMPlatform *self, guint32 nh_id, NMPObject **out_obj);
 
 gboolean nm_platform_ip_nexthop_sync(NMPlatform *self,
                                      int         addr_family,
                                      GPtrArray  *known_nexthops,
                                      GPtrArray  *nexthops_prune,
-                                     GPtrArray  *nexthops_platform);
+                                     GPtrArray  *nexthops_platform,
+                                     GPtrArray **out_nexthops_delete_failed);
 
 int nm_platform_routing_rule_add(NMPlatform                  *self,
                                  NMPNlmFlags                  flags,
