@@ -1237,6 +1237,7 @@ deactivate_cleanup(NMModem *self, NMDevice *device, gboolean stop_ppp_manager)
             if (ifindex > 0) {
                 NMPlatform *platform = nm_device_get_platform(device);
 
+                nm_platform_ip_nexthop_flush(platform, AF_UNSPEC, ifindex);
                 nm_platform_ip_route_flush(platform, AF_UNSPEC, ifindex);
                 nm_platform_ip_address_flush(platform, AF_UNSPEC, ifindex);
                 nm_platform_link_change_flags(platform, ifindex, IFF_UP, FALSE);
