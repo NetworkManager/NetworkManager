@@ -4076,6 +4076,7 @@ _new_from_nl_route(const struct nlmsghdr *nlh, gboolean id_only, ParseNlmsgIter 
         [RTA_PRIORITY]  = {.type = NLA_U32},
         [RTA_PREF]      = {.type = NLA_U8},
         [RTA_FLOW]      = {.type = NLA_U32},
+        [RTA_NH_ID]     = {.type = NLA_U32},
         [RTA_CACHEINFO] = {.minlen = nm_offsetofend(struct rta_cacheinfo, rta_tsage)},
         [RTA_VIA]       = {.minlen = nm_offsetofend(struct rtvia, rtvia_family)},
         [RTA_METRICS]   = {.type = NLA_NESTED},
@@ -4471,6 +4472,10 @@ rta_multipath_done:
     if (!IS_IPv4) {
         if (tb[RTA_PREF])
             obj->ip6_route.rt_pref = nla_get_u8(tb[RTA_PREF]);
+        if (tb[RTA_NH_ID]) {
+            /* we support NHID only for IPv6 at the moment */
+            obj->ip6_route.nhid = nla_get_u32(tb[RTA_NH_ID]);
+        }
     }
 
     obj->ip_route.r_rtm_flags = rtm->rtm_flags;
@@ -6103,10 +6108,19 @@ _nl_msg_new_route(uint16_t nlmsg_type, uint16_t nlmsg_flags, const NMPObject *ob
             NLA_PUT(msg, RTA_GATEWAY, addr_len, &obj->ip4_route.gateway);
         }
     } else {
-        if (!IN6_IS_ADDR_UNSPECIFIED(&obj->ip6_route.gateway))
+        if (obj->ip6_route.nhid != 0) {
+            /* When sending a route with a nexthop to the kernel, the ifindex
+             * and gateway must be unset, otherwise the route will be
+             * rejected. When the kernel sends notifications to userspace it
+             * copies the ifindex and the gateway from the nexthop into the
+             * route. */
+            NLA_PUT_U32(msg, RTA_NH_ID, obj->ip6_route.nhid);
+        } else if (!IN6_IS_ADDR_UNSPECIFIED(&obj->ip6_route.gateway))
             NLA_PUT(msg, RTA_GATEWAY, addr_len, &obj->ip6_route.gateway);
     }
-    NLA_PUT_U32(msg, RTA_OIF, obj->ip_route.ifindex);
+
+    if (IS_IPv4 || obj->ip6_route.nhid == 0)
+        NLA_PUT_U32(msg, RTA_OIF, obj->ip_route.ifindex);
 
     if (!IS_IPv4 && obj->ip6_route.rt_pref != NM_ICMPV6_ROUTER_PREF_MEDIUM)
         NLA_PUT_U8(msg, RTA_PREF, obj->ip6_route.rt_pref);
