@@ -203,9 +203,11 @@ typedef enum {
     NM_L3_CONFIG_CMP_FLAGS_ADDRESSES    = (1LL << 2),
     NM_L3_CONFIG_CMP_FLAGS_ROUTES_ID    = (1LL << 3),
     NM_L3_CONFIG_CMP_FLAGS_ROUTES       = (1LL << 4),
-    NM_L3_CONFIG_CMP_FLAGS_DNS          = (1LL << 5),
-    NM_L3_CONFIG_CMP_FLAGS_OTHER        = (1LL << 6),
-    NM_L3_CONFIG_CMP_FLAGS_ALL          = (1LL << 7) - 1,
+    NM_L3_CONFIG_CMP_FLAGS_NEXTHOPS_ID  = (1LL << 5),
+    NM_L3_CONFIG_CMP_FLAGS_NEXTHOPS     = (1LL << 6),
+    NM_L3_CONFIG_CMP_FLAGS_DNS          = (1LL << 7),
+    NM_L3_CONFIG_CMP_FLAGS_OTHER        = (1LL << 8),
+    NM_L3_CONFIG_CMP_FLAGS_ALL          = (1LL << 9) - 1,
 } NML3ConfigCmpFlags;
 
 int nm_l3_config_data_cmp_full(const NML3ConfigData *a,
@@ -251,6 +253,12 @@ const NMDedupMultiEntry *nm_l3_config_data_lookup_route(const NML3ConfigData    
                                                         int                      addr_family,
                                                         const NMPlatformIPRoute *needle);
 
+const NMPlatformIP4NextHop *nm_l3_config_data_lookup_nexthop4(const NML3ConfigData *self,
+                                                              guint32               id);
+
+const NMPlatformIP6NextHop *nm_l3_config_data_lookup_nexthop6(const NML3ConfigData *self,
+                                                              guint32               id);
+
 const NMDedupMultiHeadEntry *nm_l3_config_data_lookup_objs(const NML3ConfigData *self,
                                                            NMPObjectType         obj_type);
 
@@ -264,6 +272,12 @@ static inline const NMDedupMultiHeadEntry *
 nm_l3_config_data_lookup_routes(const NML3ConfigData *self, int addr_family)
 {
     return nm_l3_config_data_lookup_objs(self, NMP_OBJECT_TYPE_IP_ROUTE(NM_IS_IPv4(addr_family)));
+}
+
+static inline const NMDedupMultiHeadEntry *
+nm_l3_config_data_lookup_nexthops(const NML3ConfigData *self, int addr_family)
+{
+    return nm_l3_config_data_lookup_objs(self, NMP_OBJECT_TYPE_IP_NEXTHOP(NM_IS_IPv4(addr_family)));
 }
 
 #define nm_l3_config_data_iter_obj_for_each(iter, self, obj, type)                        \
@@ -434,6 +448,11 @@ nm_l3_config_data_add_route(NML3ConfigData          *self,
                                             NULL,
                                             NULL);
 }
+
+gboolean nm_l3_config_data_add_nexthop(NML3ConfigData            *self,
+                                       int                        addr_family,
+                                       const NMPObject           *obj_new,
+                                       const NMPlatformIPNextHop *pl_new);
 
 static inline gboolean
 nm_l3_config_data_add_route_4(NML3ConfigData *self, const NMPlatformIP4Route *rt)
