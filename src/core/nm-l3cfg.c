@@ -319,6 +319,17 @@ typedef struct _NML3CfgPrivate {
     int clat_socket;
 #endif /* HAVE_CLAT */
 
+    /* Tracks nexthop IDs that NM has configured, per address family.
+     * Used to build the nexthop prune list without relying on the
+     * platform cache or the zombie mechanism. */
+    union {
+        struct {
+            GHashTable *nexthop_configured_ids_6;
+            GHashTable *nexthop_configured_ids_4;
+        };
+        GHashTable *nexthop_configured_ids_x[2];
+    };
+
     /* Whether we earlier configured MPTCP endpoints for the interface. */
     union {
         struct {
@@ -826,7 +837,9 @@ _nm_n_acd_data_probe_new(NML3Cfg *self, in_addr_t addr, guint32 timeout_msec, gp
                                 NMP_OBJECT_TYPE_IP4_ADDRESS,                                  \
                                 NMP_OBJECT_TYPE_IP6_ADDRESS,                                  \
                                 NMP_OBJECT_TYPE_IP4_ROUTE,                                    \
-                                NMP_OBJECT_TYPE_IP6_ROUTE));                                  \
+                                NMP_OBJECT_TYPE_IP6_ROUTE,                                    \
+                                NMP_OBJECT_TYPE_IP4_NEXTHOP,                                  \
+                                NMP_OBJECT_TYPE_IP6_NEXTHOP));                                \
             nm_assert(!_obj_state->os_plobj || _obj_state->os_was_in_platform);               \
             nm_assert(_obj_state->os_failedobj_expiry_msec != 0                               \
                       || _obj_state->os_failedobj_prioq_idx == NM_PRIOQ_IDX_NULL);            \
@@ -1189,6 +1202,8 @@ _obj_states_update_all(NML3Cfg *self)
         NMP_OBJECT_TYPE_IP6_ADDRESS,
         NMP_OBJECT_TYPE_IP4_ROUTE,
         NMP_OBJECT_TYPE_IP6_ROUTE,
+        NMP_OBJECT_TYPE_IP4_NEXTHOP,
+        NMP_OBJECT_TYPE_IP6_NEXTHOP,
     };
     ObjStateData *obj_state;
     int           i;
@@ -1316,6 +1331,23 @@ _commit_collect_addresses(NML3Cfg *self, int addr_family, NML3CfgCommitType comm
 
     head_entry = nm_l3_config_data_lookup_objs(self->priv.p->combined_l3cd_commited,
                                                NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4));
+    return nm_dedup_multi_objs_to_ptr_array_head(head_entry,
+                                                 _obj_states_sync_filter_predicate,
+                                                 (gpointer) &sync_filter_data);
+}
+
+static GPtrArray *
+_commit_collect_nexthops(NML3Cfg *self, int addr_family, NML3CfgCommitType commit_type)
+{
+    const int                     IS_IPv4 = NM_IS_IPv4(addr_family);
+    const NMDedupMultiHeadEntry  *head_entry;
+    const ObjStatesSyncFilterData sync_filter_data = {
+        .self        = self,
+        .commit_type = commit_type,
+    };
+
+    head_entry = nm_l3_config_data_lookup_objs(self->priv.p->combined_l3cd_commited,
+                                               NMP_OBJECT_TYPE_IP_NEXTHOP(IS_IPv4));
     return nm_dedup_multi_objs_to_ptr_array_head(head_entry,
                                                  _obj_states_sync_filter_predicate,
                                                  (gpointer) &sync_filter_data);
@@ -5544,13 +5576,16 @@ _l3_commit_one(NML3Cfg              *self,
                NML3CfgCommitType     commit_type,
                const NML3ConfigData *l3cd_old)
 {
-    const int                    IS_IPv4         = NM_IS_IPv4(addr_family);
-    gs_unref_ptrarray GPtrArray *addresses       = NULL;
-    gs_unref_ptrarray GPtrArray *routes          = NULL;
-    gs_unref_ptrarray GPtrArray *routes_nodev    = NULL;
-    gs_unref_ptrarray GPtrArray *addresses_prune = NULL;
-    gs_unref_ptrarray GPtrArray *routes_prune    = NULL;
-    gs_unref_ptrarray GPtrArray *routes_failed   = NULL;
+    const int                    IS_IPv4           = NM_IS_IPv4(addr_family);
+    gs_unref_ptrarray GPtrArray *addresses         = NULL;
+    gs_unref_ptrarray GPtrArray *nexthops          = NULL;
+    gs_unref_ptrarray GPtrArray *routes            = NULL;
+    gs_unref_ptrarray GPtrArray *routes_nodev      = NULL;
+    gs_unref_ptrarray GPtrArray *addresses_prune   = NULL;
+    gs_unref_ptrarray GPtrArray *nexthops_prune    = NULL;
+    gs_unref_ptrarray GPtrArray *nexthops_platform = NULL;
+    gs_unref_ptrarray GPtrArray *routes_prune      = NULL;
+    gs_unref_ptrarray GPtrArray *routes_failed     = NULL;
     NMIPRouteTableSyncMode       route_table_sync;
     char                         sbuf_commit_type[50];
     guint                        i;
@@ -5571,6 +5606,7 @@ _l3_commit_one(NML3Cfg              *self,
         any_dirty = _obj_states_track_mark_dirty(self, TRUE);
 
     addresses = _commit_collect_addresses(self, addr_family, commit_type);
+    nexthops  = _commit_collect_nexthops(self, addr_family, commit_type);
 
     _commit_collect_routes(self,
                            addr_family,
@@ -5652,15 +5688,44 @@ _l3_commit_one(NML3Cfg              *self,
                                                                route_table_sync,
                                                                routes_old);
 
+            nexthops_platform =
+                nm_platform_ip_nexthop_dump(self->priv.platform, addr_family, self->priv.ifindex);
+            nexthops_prune = nm_g_ptr_array_ref(nexthops_platform);
+
             _obj_state_zombie_lst_prune_all(self, addr_family);
         }
     } else {
         if (c_list_is_empty(&self->priv.p->blocked_lst_head_x[IS_IPv4])) {
+            GHashTable    *ht = self->priv.p->nexthop_configured_ids_x[IS_IPv4];
+            GHashTableIter h_iter;
+            gpointer       key;
+
             _obj_state_zombie_lst_get_prune_lists(self,
                                                   addr_family,
                                                   &addresses_prune,
                                                   &routes_prune);
+
+            /* Unlike addresses and routes, nexthop pruning doesn't use the
+             * zombie mechanism. On update, build the nexthop prune list from the internally
+             * tracked set of IDs that NM has configured. */
+            g_hash_table_iter_init(&h_iter, ht);
+            while (g_hash_table_iter_next(&h_iter, &key, NULL)) {
+                NMPObject *obj;
+
+                obj                = nmp_object_new(NMP_OBJECT_TYPE_IP_NEXTHOP(IS_IPv4), NULL);
+                obj->ip_nexthop.id = GPOINTER_TO_UINT(key);
+
+                if (!nexthops_prune)
+                    nexthops_prune =
+                        g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
+                g_ptr_array_add(nexthops_prune, obj);
+            }
         }
+    }
+
+    if (!nexthops_platform) {
+        nexthops_platform =
+            nm_platform_ip_nexthop_dump(self->priv.platform, addr_family, self->priv.ifindex);
     }
 
     if (self->priv.ifindex == NM_LOOPBACK_IFINDEX) {
@@ -5696,6 +5761,21 @@ _l3_commit_one(NML3Cfg              *self,
                                 self->priv.ifindex == NM_LOOPBACK_IFINDEX
                                     ? NMP_IP_ADDRESS_SYNC_FLAGS_NONE
                                     : NMP_IP_ADDRESS_SYNC_FLAGS_WITH_NOPREFIXROUTE);
+
+    nm_platform_ip_nexthop_sync(self->priv.platform,
+                                addr_family,
+                                self->priv.ifindex,
+                                nexthops,
+                                nexthops_prune,
+                                nexthops_platform);
+
+    /* Update the set of nexthop IDs we have configured. */
+    g_hash_table_remove_all(self->priv.p->nexthop_configured_ids_x[IS_IPv4]);
+    for (i = 0; i < nm_g_ptr_array_len(nexthops); i++) {
+        guint32 id = NMP_OBJECT_CAST_IP_NEXTHOP(nexthops->pdata[i])->id;
+
+        g_hash_table_add(self->priv.p->nexthop_configured_ids_x[IS_IPv4], GUINT_TO_POINTER(id));
+    }
 
     self->priv.p->commit_reentrant_count_ip_address_sync_x[IS_IPv4]--;
 
@@ -6443,6 +6523,9 @@ nm_l3cfg_init(NML3Cfg *self)
                                                          _obj_state_data_free,
                                                          NULL);
 
+    self->priv.p->nexthop_configured_ids_4 = g_hash_table_new(nm_direct_hash, NULL);
+    self->priv.p->nexthop_configured_ids_6 = g_hash_table_new(nm_direct_hash, NULL);
+
     nm_prioq_init(&self->priv.p->failedobj_prioq, _failedobj_prioq_cmp);
 }
 
@@ -6521,6 +6604,9 @@ finalize(GObject *object)
     nm_clear_pointer(&self->priv.p->obj_state_hash, g_hash_table_destroy);
     nm_assert(c_list_is_empty(&self->priv.p->obj_state_lst_head));
     nm_assert(c_list_is_empty(&self->priv.p->obj_state_zombie_lst_head));
+
+    nm_clear_pointer(&self->priv.p->nexthop_configured_ids_4, g_hash_table_destroy);
+    nm_clear_pointer(&self->priv.p->nexthop_configured_ids_6, g_hash_table_destroy);
 
     if (_nodev_routes_untrack(self, AF_INET))
         nmp_global_tracker_sync(self->priv.global_tracker, NMP_OBJECT_TYPE_IP4_ROUTE, FALSE);
