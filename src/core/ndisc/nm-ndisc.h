@@ -88,6 +88,7 @@ typedef struct _NMNDiscGateway {
     struct in6_addr    address;
     gint64             expiry_msec;
     NMIcmpv6RouterPref preference;
+    guint32            nexthop_id;
 } NMNDiscGateway;
 
 typedef struct _NMNDiscAddress {
@@ -101,11 +102,17 @@ typedef struct _NMNDiscRoute {
     struct in6_addr    network;
     struct in6_addr    gateway;
     gint64             expiry_msec;
+    guint32            nexthop_id;
     NMIcmpv6RouterPref preference;
     guint8             plen;
     bool               on_link : 1;
     bool               duplicate : 1;
 } NMNDiscRoute;
+
+typedef struct _NMNDiscNexthop {
+    struct in6_addr gateway;
+    guint32         id;
+} NMNDiscNexthop;
 
 typedef struct _NMNDiscPref64 {
     struct in6_addr    prefix;
@@ -186,6 +193,7 @@ typedef struct {
     guint gateways_n;
     guint addresses_n;
     guint routes_n;
+    guint nexthops_n;
     guint pref64_n;
     guint dns_servers_n;
     guint dns_domains_n;
@@ -193,6 +201,7 @@ typedef struct {
     const NMNDiscGateway   *gateways;
     const NMNDiscAddress   *addresses;
     const NMNDiscRoute     *routes;
+    const NMNDiscNexthop   *nexthops;
     const NMNDiscPref64    *pref64;
     const NMNDiscDNSServer *dns_servers;
     const NMNDiscDNSDomain *dns_domains;
