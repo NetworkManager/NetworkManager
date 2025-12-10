@@ -142,6 +142,8 @@ typedef struct _NMPlatformIP4Address     NMPlatformIP4Address;
 typedef struct _NMPlatformIP4Route       NMPlatformIP4Route;
 typedef struct _NMPlatformIP6Address     NMPlatformIP6Address;
 typedef struct _NMPlatformIP6Route       NMPlatformIP6Route;
+typedef struct _NMPlatformIP4NextHop     NMPlatformIP4NextHop;
+typedef struct _NMPlatformIP6NextHop     NMPlatformIP6NextHop;
 typedef struct _NMPlatformLink           NMPlatformLink;
 typedef struct _NMPObject                NMPObject;
 
@@ -158,6 +160,11 @@ typedef enum _nm_packed {
     ((is_ipv4) ? NMP_OBJECT_TYPE_IP4_ROUTE : NMP_OBJECT_TYPE_IP6_ROUTE)
     NMP_OBJECT_TYPE_IP4_ROUTE,
     NMP_OBJECT_TYPE_IP6_ROUTE,
+
+#define NMP_OBJECT_TYPE_IP_NEXTHOP(is_ipv4) \
+    ((is_ipv4) ? NMP_OBJECT_TYPE_IP4_NEXTHOP : NMP_OBJECT_TYPE_IP6_NEXTHOP)
+    NMP_OBJECT_TYPE_IP4_NEXTHOP,
+    NMP_OBJECT_TYPE_IP6_NEXTHOP,
 
     NMP_OBJECT_TYPE_ROUTING_RULE,
 

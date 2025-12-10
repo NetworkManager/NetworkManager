@@ -4769,6 +4769,84 @@ next_plat:;
 }
 
 gboolean
+nm_platform_ip_nexthop_sync(NMPlatform *self,
+                            int         addr_family,
+                            int         ifindex,
+                            GPtrArray  *known_nexthops,
+                            GPtrArray  *nexthops_prune,
+                            GPtrArray  *nexthops_platform)
+{
+    gs_unref_hashtable GHashTable *known_nexthops_idx    = NULL;
+    gs_unref_hashtable GHashTable *nexthops_platform_idx = NULL;
+    int                            IS_IPv4               = NM_IS_IPv4(addr_family);
+    guint                          i;
+    gboolean                       success = TRUE;
+
+    if (known_nexthops && known_nexthops->len > 0) {
+        known_nexthops_idx = g_hash_table_new(nm_direct_hash, NULL);
+        for (i = 0; i < known_nexthops->len; i++) {
+            const NMPObject *nh = known_nexthops->pdata[i];
+
+            g_hash_table_add(known_nexthops_idx, GUINT_TO_POINTER(nh->ipx_nexthop.nhx.id));
+        }
+    }
+
+    if (nexthops_platform && nexthops_platform->len > 0) {
+        nexthops_platform_idx = g_hash_table_new(nm_direct_hash, NULL);
+        for (i = 0; i < nexthops_platform->len; i++) {
+            const NMPObject *nh = nexthops_platform->pdata[i];
+
+            g_hash_table_insert(nexthops_platform_idx,
+                                GUINT_TO_POINTER(nh->ipx_nexthop.nhx.id),
+                                (gpointer) nh);
+        }
+    }
+
+    if (nexthops_prune) {
+        for (i = 0; i < nexthops_prune->len; i++) {
+            const NMPObject *prune_o = nexthops_prune->pdata[i];
+
+            nm_assert((IS_IPv4 && NMP_OBJECT_GET_TYPE(prune_o) == NMP_OBJECT_TYPE_IP4_NEXTHOP)
+                      || (!IS_IPv4 && NMP_OBJECT_GET_TYPE(prune_o) == NMP_OBJECT_TYPE_IP6_NEXTHOP));
+
+            if (nm_g_hash_table_lookup(known_nexthops_idx,
+                                       GUINT_TO_POINTER(NMP_OBJECT_CAST_IP_NEXTHOP(prune_o)->id)))
+                continue;
+
+            if (!nm_platform_object_delete(self, prune_o)) {
+                /* ignore error... */
+            }
+        }
+    }
+
+    if (known_nexthops) {
+        for (i = 0; i < known_nexthops->len; i++) {
+            const NMPObject *nh = known_nexthops->pdata[i];
+            const NMPObject *candidate;
+
+            candidate =
+                nm_g_hash_table_lookup(nexthops_platform_idx, GUINT_TO_POINTER(nh->ip_nexthop.id));
+            if (candidate
+                && (IS_IPv4
+                        ? nm_platform_ip4_nexthop_cmp(&nh->ip4_nexthop,
+                                                      &candidate->ip4_nexthop,
+                                                      NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_SEMANTICALLY)
+                        : nm_platform_ip6_nexthop_cmp(&nh->ip6_nexthop,
+                                                      &candidate->ip6_nexthop,
+                                                      NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_SEMANTICALLY))
+                       == 0) {
+                continue;
+            }
+
+            if (nm_platform_ip_nexthop_add(self, NMP_NLM_FLAG_REPLACE, nh, NULL) != 0)
+                success = FALSE;
+        }
+    }
+
+    return success;
+}
+
+gboolean
 nm_platform_ip_address_flush(NMPlatform *self, int addr_family, int ifindex)
 {
     gboolean success = TRUE;
@@ -5362,6 +5440,69 @@ nm_platform_ip_route_flush(NMPlatform *self, int addr_family, int ifindex)
     return success;
 }
 
+GPtrArray *
+nm_platform_ip_nexthop_dump(NMPlatform *self, int addr_family, int ifindex)
+{
+    _CHECK_SELF(self, klass, NULL);
+
+    nm_assert(NM_IN_SET(addr_family, AF_INET, AF_INET6));
+
+    return klass->ip_nexthop_dump(self, addr_family, ifindex);
+}
+
+gboolean
+nm_platform_ip_nexthop_get(NMPlatform *self, guint32 nh_id, NMPObject **out_obj)
+{
+    nm_auto_nmpobj NMPObject *obj = NULL;
+    gboolean                  result;
+
+    _CHECK_SELF(self, klass, FALSE);
+
+    nm_assert(nh_id > 0);
+
+    if (!klass->ip_nexthop_get) {
+        NM_SET_OUT(out_obj, NULL);
+        return FALSE;
+    }
+
+    result = klass->ip_nexthop_get(self, nh_id, &obj);
+
+    if (result) {
+        nm_assert(obj);
+        _LOGD("nexthop: get nexthop %u succeeded", nh_id);
+        NM_SET_OUT(out_obj, g_steal_pointer(&obj));
+    } else {
+        _LOGD("nexthop: get nexthop %u failed", nh_id);
+        NM_SET_OUT(out_obj, NULL);
+    }
+
+    return result;
+}
+
+gboolean
+nm_platform_ip_nexthop_flush(NMPlatform *self, int addr_family, int ifindex)
+{
+    gboolean success = TRUE;
+
+    _CHECK_SELF(self, klass, FALSE);
+
+    nm_assert(NM_IN_SET(addr_family, AF_UNSPEC, AF_INET, AF_INET6));
+
+    if (NM_IN_SET(addr_family, AF_UNSPEC, AF_INET)) {
+        gs_unref_ptrarray GPtrArray *nexthops_prune = NULL;
+
+        nexthops_prune = nm_platform_ip_nexthop_dump(self, AF_INET, ifindex);
+        success &= nm_platform_ip_nexthop_sync(self, AF_INET, ifindex, NULL, nexthops_prune, NULL);
+    }
+    if (NM_IN_SET(addr_family, AF_UNSPEC, AF_INET6)) {
+        gs_unref_ptrarray GPtrArray *nexthops_prune = NULL;
+
+        nexthops_prune = nm_platform_ip_nexthop_dump(self, AF_INET6, ifindex);
+        success &= nm_platform_ip_nexthop_sync(self, AF_INET6, ifindex, NULL, nexthops_prune, NULL);
+    }
+    return success;
+}
+
 /*****************************************************************************/
 
 static guint8
@@ -5615,6 +5756,34 @@ nm_platform_ip6_route_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformI
     return _ip_route_add(self, flags, &obj, NULL);
 }
 
+int
+nm_platform_ip_nexthop_add(NMPlatform      *self,
+                           NMPNlmFlags      flags,
+                           const NMPObject *obj,
+                           char           **out_extack_msg)
+{
+    NMPObject obj_stack;
+    char      sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+    int       ifindex;
+
+    _CHECK_SELF(self, klass, -NME_BUG);
+
+    nm_assert(NM_IN_SET(NMP_OBJECT_GET_TYPE(obj),
+                        NMP_OBJECT_TYPE_IP4_NEXTHOP,
+                        NMP_OBJECT_TYPE_IP6_NEXTHOP));
+
+    nmp_object_stackinit(&obj_stack, NMP_OBJECT_GET_TYPE(obj), &obj->ip_nexthop);
+
+    ifindex = obj_stack.ip_nexthop.ifindex;
+
+    _LOG3D("nexthop: %-10s IPv%c nexthop: %s",
+           _nmp_nlm_flag_to_string(flags & NMP_NLM_FLAG_FMASK),
+           nm_utils_addr_family_to_char(NMP_OBJECT_GET_ADDR_FAMILY(&obj_stack)),
+           nmp_object_to_string(&obj_stack, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
+
+    return klass->ip_nexthop_add(self, flags, &obj_stack, out_extack_msg);
+}
+
 gboolean
 nm_platform_object_delete(NMPlatform *self, const NMPObject *obj)
 {
@@ -5633,6 +5802,8 @@ nm_platform_object_delete(NMPlatform *self, const NMPObject *obj)
             break;
         case NMP_OBJECT_TYPE_IP4_ROUTE:
         case NMP_OBJECT_TYPE_IP6_ROUTE:
+        case NMP_OBJECT_TYPE_IP4_NEXTHOP:
+        case NMP_OBJECT_TYPE_IP6_NEXTHOP:
         case NMP_OBJECT_TYPE_QDISC:
         case NMP_OBJECT_TYPE_TFILTER:
             ifindex = NMP_OBJECT_CAST_OBJ_WITH_IFINDEX(obj)->ifindex;
@@ -7431,6 +7602,52 @@ nm_platform_ip4_route_to_string_full(const NMPlatformIP4Route     *route,
         }
     }
     return buf0;
+}
+
+const char *
+nm_platform_ip4_nexthop_to_string(const NMPlatformIP4NextHop *nexthop, char *buf, gsize len)
+{
+    char s_gateway[INET_ADDRSTRLEN];
+    char s_source[50];
+
+    if (!nm_utils_to_string_buffer_init_null(nexthop, &buf, &len))
+        return buf;
+
+    inet_ntop(AF_INET, &nexthop->gateway, s_gateway, sizeof(s_gateway));
+    nmp_utils_ip_config_source_to_string(nexthop->nh_source, s_source, sizeof(s_source));
+
+    g_snprintf(buf,
+               len,
+               "id %u dev %d gw %s rt-src %s",
+               nexthop->id,
+               nexthop->ifindex,
+               s_gateway,
+               s_source);
+
+    return buf;
+}
+
+const char *
+nm_platform_ip6_nexthop_to_string(const NMPlatformIP6NextHop *nexthop, char *buf, gsize len)
+{
+    char s_gateway[INET6_ADDRSTRLEN];
+    char s_source[50];
+
+    if (!nm_utils_to_string_buffer_init_null(nexthop, &buf, &len))
+        return buf;
+
+    inet_ntop(AF_INET6, &nexthop->gateway, s_gateway, sizeof(s_gateway));
+    nmp_utils_ip_config_source_to_string(nexthop->nh_source, s_source, sizeof(s_source));
+
+    g_snprintf(buf,
+               len,
+               "id %u dev %d gw %s rt-src %s",
+               nexthop->id,
+               nexthop->ifindex,
+               s_gateway,
+               s_source);
+
+    return buf;
 }
 
 /**
