@@ -538,6 +538,16 @@ struct _NMPlatformIP6Route {
      * The type is guint8 to keep the struct size small. But the values are compatible with
      * the NMIcmpv6RouterPref enum. */
     guint8 rt_pref;
+
+    /* RTA_NH_ID. The unique id of the nexthop object.
+     *
+     * For routes with a nexthop id, we don't send the ifindex and the gateway to the kernel
+     * when creating the route. However, route objects must always have the ifindex and gateway
+     * set. Note that NM parses kernel's IPv6 multipath routes as multiple non-multipath routes.
+     * When a route exists in kernel referencing a nexthop group, NM creates an individual route
+     * for each of the gateways.
+     */
+    guint32 nhid;
 } _nm_alignas(NMPlatformObject);
 
 typedef union {
