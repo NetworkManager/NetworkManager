@@ -23,6 +23,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   the 802.1X certificates and keys set in the connection.
 * Introduce a libnm function that can be used by VPN plugins to check
   user permissions on certificate and keys.
+* Use an internal implementation of the ping functionality when the
+  "connection.gateway-ping-timeout" or "connection.ip-ping-addresses"
+  properties are set, instead of relying on the "ping" tool.  
 
 =============================================
 NetworkManager-1.56
