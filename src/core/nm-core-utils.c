@@ -21,6 +21,8 @@
 #include <linux/if_infiniband.h>
 #include <net/if_arp.h>
 #include <net/ethernet.h>
+#include <netinet/ip_icmp.h>
+#include <netinet/icmp6.h>
 
 #include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-platform/nmp-base.h"
@@ -5003,6 +5005,297 @@ NM_UTILS_LOOKUP_STR_DEFINE(nm_activation_type_to_string,
 /*****************************************************************************/
 
 typedef struct {
+    NMIPAddrTyped address;
+    char         *addr_str;
+    GTask        *task;
+    GSource      *timeout_source;
+    GSource      *retry_source;
+    GSource      *input_source;
+    gulong        cancellable_id;
+    int           ifindex;
+    int           socket;
+    guint16       seq;
+} PingInfo;
+
+#define _NMLOG2_PREFIX_NAME "ping"
+#define _NMLOG2_DOMAIN      LOGD_CORE
+#define _NMLOG2(level, info, ...)                                                          \
+    G_STMT_START                                                                           \
+    {                                                                                      \
+        if (nm_logging_enabled((level), (_NMLOG2_DOMAIN))) {                               \
+            PingInfo *_info = (info);                                                      \
+                                                                                           \
+            _nm_log((level),                                                               \
+                    (_NMLOG2_DOMAIN),                                                      \
+                    0,                                                                     \
+                    NULL,                                                                  \
+                    NULL,                                                                  \
+                    _NMLOG2_PREFIX_NAME "[" NM_HASH_OBFUSCATE_PTR_FMT                      \
+                                        ",if=%d,%s]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                    NM_HASH_OBFUSCATE_PTR(_info),                                          \
+                    _info->ifindex,                                                        \
+                    _info->addr_str _NM_UTILS_MACRO_REST(__VA_ARGS__));                    \
+        }                                                                                  \
+    }                                                                                      \
+    G_STMT_END
+
+static void
+ping_complete(PingInfo *info, GError *error)
+{
+    nm_clear_g_cancellable_disconnect(g_task_get_cancellable(info->task), &info->cancellable_id);
+
+    if (error && !nm_utils_error_is_cancelled(error)) {
+        _LOG2T(info, "terminated with error: %s", error->message);
+    }
+
+    if (error)
+        g_task_return_error(info->task, error);
+    else
+        g_task_return_boolean(info->task, TRUE);
+
+    nm_clear_g_source_inst(&info->timeout_source);
+    nm_clear_g_source_inst(&info->retry_source);
+    nm_clear_g_source_inst(&info->input_source);
+    nm_clear_g_free(&info->addr_str);
+    nm_clear_fd(&info->socket);
+    g_object_unref(info->task);
+
+    g_free(info);
+}
+
+static gboolean
+ping_socket_data_cb(int fd, GIOCondition condition, gpointer user_data)
+{
+    PingInfo *info = user_data;
+    ssize_t   len;
+    union {
+        struct icmphdr   icmph;
+        struct icmp6_hdr icmp6h;
+    } pkt;
+
+    len = recv(fd, &pkt, sizeof(pkt), 0);
+
+    if (len < 0)
+        return G_SOURCE_CONTINUE;
+
+    if (info->address.addr_family == AF_INET) {
+        if (len >= sizeof(struct icmphdr) && pkt.icmph.type == ICMP_ECHOREPLY) {
+            _LOG2T(info, "received echo-reply with seq %hu", ntohs(pkt.icmph.un.echo.sequence));
+            ping_complete(info, NULL);
+            return G_SOURCE_CONTINUE;
+        }
+    } else {
+        if (len >= sizeof(struct icmp6_hdr) && pkt.icmp6h.icmp6_type == ICMP6_ECHO_REPLY) {
+            _LOG2T(info, "received echo-reply with seq %hu", ntohs(pkt.icmp6h.icmp6_seq));
+            ping_complete(info, NULL);
+            return G_SOURCE_CONTINUE;
+        }
+    }
+
+    return G_SOURCE_CONTINUE;
+}
+
+static void
+ping_send(PingInfo *info)
+{
+    const bool IS_IPv4 = NM_IS_IPv4(info->address.addr_family);
+    union {
+        struct sockaddr_in6 sa6;
+        struct sockaddr_in  sa4;
+    } sa;
+    union {
+        struct icmphdr   icmph;
+        struct icmp6_hdr icmp6h;
+    } pkt;
+    socklen_t sa_len;
+    size_t    pkt_len;
+    nm_be32_t ifindex_be;
+    int       errsv;
+
+    info->seq++;
+
+    if (info->socket < 0) {
+        info->socket = socket(info->address.addr_family,
+                              SOCK_DGRAM | SOCK_CLOEXEC,
+                              IS_IPv4 ? IPPROTO_ICMP : IPPROTO_ICMPV6);
+        if (info->socket < 0) {
+            errsv = errno;
+            _LOG2T(info, "socket creation failed: %s", nm_strerror_native(errsv));
+            /* Try again at the next iteration */
+            return;
+        }
+
+        memset(&sa, 0, sizeof(sa));
+        if (IS_IPv4) {
+            sa.sa4.sin_family      = AF_INET;
+            sa.sa4.sin_addr.s_addr = info->address.addr.addr4;
+            sa_len                 = sizeof(struct sockaddr_in);
+        } else {
+            sa.sa6.sin6_family = AF_INET6;
+            sa.sa6.sin6_addr   = info->address.addr.addr6;
+            if (IN6_IS_ADDR_LINKLOCAL(&info->address.addr.addr6))
+                sa.sa6.sin6_scope_id = info->ifindex;
+            sa_len = sizeof(struct sockaddr_in6);
+        }
+
+        /* setsockopt(IP*_UNICAST_IF) must be called *before* connecting
+         * the socket, otherwise it doesn't have any effect */
+        ifindex_be = htonl(info->ifindex);
+        if (setsockopt(info->socket,
+                       IS_IPv4 ? IPPROTO_IP : IPPROTO_IPV6,
+                       IS_IPv4 ? IP_UNICAST_IF : IPV6_UNICAST_IF,
+                       &ifindex_be,
+                       sizeof(ifindex_be))) {
+            errsv = errno;
+            _LOG2T(info,
+                   "failed to bind the socket to the interface: %s",
+                   nm_strerror_native(errsv));
+            /* Try again at the next iteration */
+            nm_clear_fd(&info->socket);
+            return;
+        }
+
+        /* Connect the socket so that the kernel only delivers us packets
+         * coming from the given remote address */
+        if (connect(info->socket, (struct sockaddr *) &sa, sa_len) < 0) {
+            errsv = errno;
+            _LOG2T(info, "failed to connect the socket: %s", nm_strerror_native(errsv));
+            /* try again at the next iteration */
+            nm_clear_fd(&info->socket);
+            return;
+        }
+
+        info->input_source = nm_g_unix_fd_source_new(info->socket,
+                                                     G_IO_IN,
+                                                     G_PRIORITY_DEFAULT,
+                                                     ping_socket_data_cb,
+                                                     info,
+                                                     NULL);
+        g_source_attach(info->input_source, g_task_get_context(info->task));
+    }
+
+    if (IS_IPv4) {
+        memset(&pkt.icmph, 0, sizeof(struct icmphdr));
+        pkt.icmph.type             = ICMP_ECHO;
+        pkt.icmph.un.echo.sequence = htons(info->seq);
+        pkt_len                    = sizeof(struct icmphdr);
+    } else {
+        memset(&pkt.icmp6h, 0, sizeof(struct icmp6_hdr));
+        pkt.icmp6h.icmp6_type = ICMP6_ECHO_REQUEST;
+        pkt.icmp6h.icmp6_seq  = htons(info->seq);
+        pkt_len               = sizeof(struct icmp6_hdr);
+    }
+    /* The kernel will automatically set the ID ICMP field and filter
+     * incoming packets by the same ID */
+
+    if (send(info->socket, &pkt, pkt_len, 0) < 0) {
+        errsv = errno;
+        _LOG2T(info, "error sending echo-request #%u: %s", info->seq, nm_strerror_native(errsv));
+        return;
+    }
+
+    _LOG2T(info, "sent echo-request #%u", info->seq);
+}
+
+static gboolean
+ping_timeout_cb(gpointer user_data)
+{
+    PingInfo *info = user_data;
+
+    _LOG2T(info, "timeout");
+
+    nm_clear_g_source_inst(&info->timeout_source);
+    ping_complete(info, g_error_new_literal(NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN, "timeout"));
+
+    return G_SOURCE_CONTINUE;
+}
+
+static gboolean
+ping_retry_cb(gpointer user_data)
+{
+    PingInfo *info = user_data;
+
+    ping_send(info);
+
+    return G_SOURCE_CONTINUE;
+}
+
+static void
+ping_cancelled(GObject *object, gpointer user_data)
+{
+    PingInfo *info  = user_data;
+    GError   *error = NULL;
+
+    nm_clear_g_signal_handler(g_task_get_cancellable(info->task), &info->cancellable_id);
+    nm_utils_error_set_cancelled(&error, FALSE, NULL);
+    ping_complete(info, error);
+}
+
+void
+nm_utils_ping_host(NMIPAddrTyped       address,
+                   int                 ifindex,
+                   guint               timeout_sec,
+                   GCancellable       *cancellable,
+                   GAsyncReadyCallback callback,
+                   gpointer            cb_data)
+{
+    PingInfo *info;
+    char      buf[NM_INET_ADDRSTRLEN];
+    gulong    signal_id;
+
+    nm_assert(ifindex > 0);
+    nm_assert(G_IS_CANCELLABLE(cancellable));
+    nm_assert(callback);
+    nm_assert(cb_data);
+
+    info          = g_new0(PingInfo, 1);
+    info->address = address;
+    info->ifindex = ifindex;
+    info->task    = nm_g_task_new(NULL, cancellable, nm_utils_ping_host, callback, cb_data);
+    info->socket  = -1;
+
+    nm_inet_ntop(address.addr_family, address.addr.addr_ptr, buf);
+    info->addr_str = g_strdup(buf);
+
+    _LOG2T(info, "started");
+
+    if (timeout_sec > 0) {
+        info->timeout_source = nm_g_timeout_source_new_seconds(timeout_sec,
+                                                               G_PRIORITY_DEFAULT,
+                                                               ping_timeout_cb,
+                                                               info,
+                                                               NULL);
+        g_source_attach(info->timeout_source, g_task_get_context(info->task));
+    }
+
+    info->retry_source =
+        nm_g_timeout_source_new_seconds(1, G_PRIORITY_DEFAULT, ping_retry_cb, info, NULL);
+    g_source_attach(info->retry_source, g_task_get_context(info->task));
+
+    signal_id = g_cancellable_connect(cancellable, G_CALLBACK(ping_cancelled), info, NULL);
+    if (signal_id == 0) {
+        /* the callback was invoked synchronously, which destroyed @info.
+         * We must not touch it anymore. */
+        return;
+    }
+    info->cancellable_id = signal_id;
+
+    ping_send(info);
+}
+
+gboolean
+nm_utils_ping_host_finish(GAsyncResult *result, GError **error)
+{
+    GTask *task = G_TASK(result);
+
+    nm_assert(nm_g_task_is_valid(result, NULL, nm_utils_ping_host));
+
+    return g_task_propagate_boolean(task, error);
+}
+
+/*****************************************************************************/
+
+typedef struct {
     GPid     pid;
     GTask   *task;
     gulong   cancellable_id;
@@ -5023,6 +5316,9 @@ typedef struct {
     gsize    out_buffer_offset;
 } HelperInfo;
 
+#undef _NMLOG2_PREFIX_NAME
+#undef _NMLOG2_DOMAIN
+#undef _NMLOG2
 #define _NMLOG2_PREFIX_NAME "nm-daemon-helper"
 #define _NMLOG2_DOMAIN      LOGD_CORE
 #define _NMLOG2(level, info, ...)                                                    \
