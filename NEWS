@@ -26,6 +26,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * The support for Wireless Extensions is deprecated and will be
   removed in a future release. Wireless Extensions are now disabled by
   default.
+* Use an internal implementation of the ping functionality when the
+  "connection.gateway-ping-timeout" or "connection.ip-ping-addresses"
+  properties are set, instead of relying on the "ping" tool.  
 
 =============================================
 NetworkManager-1.56
