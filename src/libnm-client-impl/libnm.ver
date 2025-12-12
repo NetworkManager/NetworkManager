@@ -2048,3 +2048,9 @@ global:
 	nm_setting_ethtool_fec_mode_get_type;
 	nm_ethtool_optname_is_fec;
 } libnm_1_50_0;
+
+libnm_1_52_2 {
+global:
+	nm_utils_copy_cert_as_user;
+	nm_vpn_plugin_info_supports_safe_private_file_access;
+} libnm_1_52_0;

@@ -46,6 +46,7 @@ typedef struct {
     gpointer                     user_data;
     guint                        fail_on_idle_id;
     guint                        blobs_left;
+    guint                        remove_blobs_left;
     guint                        calls_left;
     struct _AddNetworkData      *add_network_data;
 } AssocData;
@@ -2264,6 +2265,7 @@ assoc_add_blob_cb(GObject *source, GAsyncResult *result, gpointer user_data)
         return;
     }
 
+    nm_assert(priv->assoc_data->blobs_left > 0);
     priv->assoc_data->blobs_left--;
     _LOGT("assoc[" NM_HASH_OBFUSCATE_PTR_FMT "]: blob added (%u left)",
           NM_HASH_OBFUSCATE_PTR(priv->assoc_data),
@@ -2273,18 +2275,156 @@ assoc_add_blob_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 }
 
 static void
+assoc_add_blobs(NMSupplicantInterface *self)
+{
+    NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE(self);
+    GHashTable                   *blobs;
+    GHashTableIter                iter;
+    const char                   *blob_name;
+    GBytes                       *blob_data;
+
+    blobs                        = nm_supplicant_config_get_blobs(priv->assoc_data->cfg);
+    priv->assoc_data->blobs_left = nm_g_hash_table_size(blobs);
+
+    _LOGT("assoc[" NM_HASH_OBFUSCATE_PTR_FMT "]: need to add %u blobs",
+          NM_HASH_OBFUSCATE_PTR(priv->assoc_data),
+          priv->assoc_data->blobs_left);
+
+    if (priv->assoc_data->blobs_left == 0) {
+        assoc_call_select_network(self);
+        return;
+    }
+
+    g_hash_table_iter_init(&iter, blobs);
+    while (g_hash_table_iter_next(&iter, (gpointer) &blob_name, (gpointer) &blob_data)) {
+        _LOGT("assoc[" NM_HASH_OBFUSCATE_PTR_FMT "]: adding blob '%s'",
+              NM_HASH_OBFUSCATE_PTR(priv->assoc_data),
+              blob_name);
+        _dbus_connection_call(
+            self,
+            NM_WPAS_DBUS_IFACE_INTERFACE,
+            "AddBlob",
+            g_variant_new("(s@ay)", blob_name, nm_g_bytes_to_variant_ay(blob_data)),
+            G_VARIANT_TYPE("()"),
+            G_DBUS_CALL_FLAGS_NONE,
+            DBUS_TIMEOUT_MSEC,
+            priv->assoc_data->cancellable,
+            assoc_add_blob_cb,
+            self);
+    }
+}
+
+static void
+assoc_remove_blob_cb(GObject *source, GAsyncResult *result, gpointer user_data)
+{
+    NMSupplicantInterface        *self;
+    NMSupplicantInterfacePrivate *priv;
+    gs_free_error GError         *error = NULL;
+    gs_unref_variant GVariant    *res   = NULL;
+
+    res = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), result, &error);
+    if (nm_utils_error_is_cancelled(error))
+        return;
+
+    self = NM_SUPPLICANT_INTERFACE(user_data);
+    priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE(self);
+
+    /* We don't consider a failure fatal. The new association might be able
+     * to proceed even with the existing blobs, if they don't conflict with new
+     * ones. */
+
+    nm_assert(priv->assoc_data->remove_blobs_left > 0);
+    priv->assoc_data->remove_blobs_left--;
+
+    if (error) {
+        g_dbus_error_strip_remote_error(error);
+        _LOGD("assoc[" NM_HASH_OBFUSCATE_PTR_FMT "]: failed to delete blob: %s",
+              NM_HASH_OBFUSCATE_PTR(priv->assoc_data),
+              error->message);
+    } else {
+        _LOGT("assoc[" NM_HASH_OBFUSCATE_PTR_FMT "]: blob removed (%u left)",
+              NM_HASH_OBFUSCATE_PTR(priv->assoc_data),
+              priv->assoc_data->remove_blobs_left);
+    }
+
+    if (priv->assoc_data->remove_blobs_left == 0)
+        assoc_add_blobs(self);
+}
+
+static void
+assoc_get_blobs_cb(GObject *source, GAsyncResult *result, gpointer user_data)
+{
+    NMSupplicantInterface        *self;
+    NMSupplicantInterfacePrivate *priv;
+    gs_free_error GError         *error = NULL;
+    gs_unref_variant GVariant    *res   = NULL;
+    gs_unref_variant GVariant    *value = NULL;
+    GVariantIter                  iter;
+    const char                   *blob_name;
+    GVariant                     *blob_data;
+
+    res = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), result, &error);
+    if (nm_utils_error_is_cancelled(error))
+        return;
+
+    self = NM_SUPPLICANT_INTERFACE(user_data);
+    priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE(self);
+
+    if (error) {
+        _LOGD("assoc[" NM_HASH_OBFUSCATE_PTR_FMT "]: failed to get blob list: %s",
+              NM_HASH_OBFUSCATE_PTR(priv->assoc_data),
+              error->message);
+        assoc_add_blobs(self);
+        return;
+    }
+
+    g_variant_get(res, "(v)", &value);
+
+    /* While the "Blobs" property is documented as type "as", it is actually "a{say}" */
+    if (!value || !g_variant_is_of_type(value, G_VARIANT_TYPE("a{say}"))) {
+        _LOGD("assoc[" NM_HASH_OBFUSCATE_PTR_FMT "]: failed to get blob list: wrong return type %s",
+              NM_HASH_OBFUSCATE_PTR(priv->assoc_data),
+              value ? g_variant_get_type_string(value) : "NULL");
+        assoc_add_blobs(self);
+        return;
+    }
+
+    g_variant_iter_init(&iter, value);
+    priv->assoc_data->remove_blobs_left = g_variant_iter_n_children(&iter);
+    _LOGT("assoc[" NM_HASH_OBFUSCATE_PTR_FMT "]: need to delete %u blobs",
+          NM_HASH_OBFUSCATE_PTR(priv->assoc_data),
+          priv->assoc_data->remove_blobs_left);
+
+    if (priv->assoc_data->remove_blobs_left == 0) {
+        assoc_add_blobs(self);
+    } else {
+        while (g_variant_iter_loop(&iter, "{&s@ay}", &blob_name, &blob_data)) {
+            _LOGT("assoc[" NM_HASH_OBFUSCATE_PTR_FMT "]: removing blob '%s'",
+                  NM_HASH_OBFUSCATE_PTR(priv->assoc_data),
+                  blob_name);
+            _dbus_connection_call(self,
+                                  NM_WPAS_DBUS_IFACE_INTERFACE,
+                                  "RemoveBlob",
+                                  g_variant_new("(s)", blob_name),
+                                  G_VARIANT_TYPE("()"),
+                                  G_DBUS_CALL_FLAGS_NONE,
+                                  DBUS_TIMEOUT_MSEC,
+                                  priv->assoc_data->cancellable,
+                                  assoc_remove_blob_cb,
+                                  self);
+        }
+    }
+}
+
+static void
 assoc_add_network_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
     AddNetworkData                 *add_network_data = user_data;
     AssocData                      *assoc_data;
     NMSupplicantInterface          *self;
     NMSupplicantInterfacePrivate   *priv;
-    gs_unref_variant GVariant      *res   = NULL;
-    gs_free_error GError           *error = NULL;
-    GHashTable                     *blobs;
-    GHashTableIter                  iter;
-    const char                     *blob_name;
-    GBytes                         *blob_data;
+    gs_unref_variant GVariant      *res         = NULL;
+    gs_free_error GError           *error       = NULL;
     nm_auto_ref_string NMRefString *name_owner  = NULL;
     nm_auto_ref_string NMRefString *object_path = NULL;
 
@@ -2336,34 +2476,21 @@ assoc_add_network_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     nm_assert(!priv->net_path);
     g_variant_get(res, "(o)", &priv->net_path);
 
-    /* Send blobs first; otherwise jump to selecting the network */
-    blobs                        = nm_supplicant_config_get_blobs(priv->assoc_data->cfg);
-    priv->assoc_data->blobs_left = blobs ? g_hash_table_size(blobs) : 0u;
-
-    _LOGT("assoc[" NM_HASH_OBFUSCATE_PTR_FMT "]: network added (%s) (%u blobs left)",
+    _LOGT("assoc[" NM_HASH_OBFUSCATE_PTR_FMT "]: network added (%s)",
           NM_HASH_OBFUSCATE_PTR(priv->assoc_data),
-          priv->net_path,
-          priv->assoc_data->blobs_left);
+          priv->net_path);
 
-    if (priv->assoc_data->blobs_left == 0) {
-        assoc_call_select_network(self);
-        return;
-    }
-
-    g_hash_table_iter_init(&iter, blobs);
-    while (g_hash_table_iter_next(&iter, (gpointer) &blob_name, (gpointer) &blob_data)) {
-        _dbus_connection_call(
-            self,
-            NM_WPAS_DBUS_IFACE_INTERFACE,
-            "AddBlob",
-            g_variant_new("(s@ay)", blob_name, nm_g_bytes_to_variant_ay(blob_data)),
-            G_VARIANT_TYPE("()"),
-            G_DBUS_CALL_FLAGS_NONE,
-            DBUS_TIMEOUT_MSEC,
-            priv->assoc_data->cancellable,
-            assoc_add_blob_cb,
-            self);
-    }
+    /* Delete any existing blobs before adding new ones */
+    _dbus_connection_call(self,
+                          DBUS_INTERFACE_PROPERTIES,
+                          "Get",
+                          g_variant_new("(ss)", NM_WPAS_DBUS_IFACE_INTERFACE, "Blobs"),
+                          G_VARIANT_TYPE("(v)"),
+                          G_DBUS_CALL_FLAGS_NONE,
+                          DBUS_TIMEOUT_MSEC,
+                          priv->assoc_data->cancellable,
+                          assoc_get_blobs_cb,
+                          self);
 }
 
 static void

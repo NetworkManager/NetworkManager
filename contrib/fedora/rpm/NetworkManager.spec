@@ -890,6 +890,7 @@ fi
 %{_libexecdir}/nm-dispatcher
 %{_libexecdir}/nm-initrd-generator
 %{_libexecdir}/nm-daemon-helper
+%{_libexecdir}/nm-libnm-helper
 %{_libexecdir}/nm-priv-helper
 %dir %{_libdir}/%{name}
 %dir %{nmplugindir}

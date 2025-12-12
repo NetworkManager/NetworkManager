@@ -154,6 +154,11 @@ struct _NMSettingClass {
                                guint /* NMSettingParseFlags */ parse_flags,
                                GError                        **error);
 
+    /* returns a list of certificate/key files referenced in the connection.
+     * When the connection is private, we need to verify that the owner of
+     * the connection has access to them. */
+    void (*get_private_files)(NMSetting *setting, GPtrArray *files);
+
     const struct _NMMetaSettingInfo *setting_info;
 };
 
@@ -332,6 +337,11 @@ struct _NMRange {
 /* property_to_dbus() should ignore the property flags, and instead always calls to_dbus_fcn()
  */
 #define NM_SETTING_PARAM_TO_DBUS_IGNORE_FLAGS (1 << (7 + G_PARAM_USER_SHIFT))
+
+/* The property can refer to a certificate or key stored on disk. As such,
+ * special care is needed when accessing the file for private connections.
+ */
+#define NM_SETTING_PARAM_CERT_KEY_FILE (1 << (8 + G_PARAM_USER_SHIFT))
 
 extern const NMSettInfoPropertType nm_sett_info_propert_type_setting_name;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_interface_name;
@@ -858,9 +868,10 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
     {                                                                                              \
         GParamSpec *_param_spec;                                                                   \
                                                                                                    \
-        G_STATIC_ASSERT(!NM_FLAGS_ANY((param_flags),                                               \
-                                      ~(NM_SETTING_PARAM_SECRET | NM_SETTING_PARAM_INFERRABLE      \
-                                        | NM_SETTING_PARAM_FUZZY_IGNORE)));                        \
+        G_STATIC_ASSERT(                                                                           \
+            !NM_FLAGS_ANY((param_flags),                                                           \
+                          ~(NM_SETTING_PARAM_SECRET | NM_SETTING_PARAM_INFERRABLE                  \
+                            | NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_CERT_KEY_FILE)));   \
                                                                                                    \
         _param_spec = g_param_spec_boxed("" prop_name "",                                          \
                                          "",                                                       \

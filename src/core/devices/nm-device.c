@@ -335,6 +335,12 @@ typedef struct {
     int           addr_family;
 } HostnameResolver;
 
+typedef enum {
+    PRIVATE_FILES_STATE_UNKNOWN = 0,
+    PRIVATE_FILES_STATE_READING,
+    PRIVATE_FILES_STATE_DONE,
+} PrivateFilesState;
+
 /*****************************************************************************/
 
 enum {
@@ -768,6 +774,13 @@ typedef struct _NMDevicePrivate {
         guint64  tx_bytes;
         guint64  rx_bytes;
     } stats;
+
+    struct {
+        GHashTable       *table;
+        GCancellable     *cancellable;
+        char             *user;
+        PrivateFilesState state;
+    } private_files;
 
     bool mtu_force_set_done : 1;
 
@@ -10743,6 +10756,49 @@ tc_commit(NMDevice *self)
     return TRUE;
 }
 
+static void
+read_private_files_cb(GObject *source_object, GAsyncResult *result, gpointer data)
+{
+    gs_unref_hashtable GHashTable *table = NULL;
+    gs_free_error GError          *error = NULL;
+    NMDevice                      *self;
+    NMDevicePrivate               *priv;
+
+    table = nm_utils_read_private_files_finish(result, &error);
+    if (nm_utils_error_is_cancelled(error))
+        return;
+
+    self = NM_DEVICE(data);
+    priv = NM_DEVICE_GET_PRIVATE(self);
+
+    if (error) {
+        NMConnection *connection = nm_device_get_applied_connection(self);
+
+        _LOGW(LOGD_DEVICE,
+              "could not read files for private connection %s owned by user '%s': %s",
+              connection ? nm_connection_get_uuid(connection) : NULL,
+              priv->private_files.user,
+              error->message);
+        nm_device_state_changed(self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+        return;
+    }
+
+    _LOGD(LOGD_DEVICE, "private files successfully read");
+
+    priv->private_files.state = PRIVATE_FILES_STATE_DONE;
+    priv->private_files.table = g_steal_pointer(&table);
+    g_clear_pointer(&priv->private_files.user, g_free);
+    g_clear_object(&priv->private_files.cancellable);
+
+    nm_device_activate_schedule_stage2_device_config(self, FALSE);
+}
+
+GHashTable *
+nm_device_get_private_files(NMDevice *self)
+{
+    return NM_DEVICE_GET_PRIVATE(self)->private_files.table;
+}
+
 /*
  * activate_stage2_device_config
  *
@@ -10755,6 +10811,7 @@ activate_stage2_device_config(NMDevice *self)
 {
     NMDevicePrivate *priv  = NM_DEVICE_GET_PRIVATE(self);
     NMDeviceClass   *klass = NM_DEVICE_GET_CLASS(self);
+    NMConnection    *applied;
     NMActStageReturn ret;
     NMSettingWired  *s_wired;
     gboolean         no_firmware = FALSE;
@@ -10762,6 +10819,68 @@ activate_stage2_device_config(NMDevice *self)
     NMTernary        accept_all_mac_addresses;
 
     nm_device_state_changed(self, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_REASON_NONE);
+
+    applied = nm_device_get_applied_connection(self);
+
+    /* If the connection is private (owned by a specific user), we need to
+     * verify that the user has permission to access any files specified in
+     * the connection, such as certificates and keys. We do that by calling
+     * nm_utils_read_private_files() and saving the file contents in a hash
+     * table that can be accessed later during the activation. It is important
+     * to never access the files again to avoid TOCTOU bugs.
+     */
+    switch (priv->private_files.state) {
+    case PRIVATE_FILES_STATE_UNKNOWN:
+    {
+        gs_free const char **paths = NULL;
+        NMSettingConnection *s_con;
+        const char          *user;
+
+        s_con = nm_connection_get_setting_connection(applied);
+        nm_assert(s_con);
+        user = _nm_setting_connection_get_first_permissions_user(s_con);
+
+        priv->private_files.user = g_strdup(user);
+        if (!priv->private_files.user) {
+            priv->private_files.state = PRIVATE_FILES_STATE_DONE;
+            break;
+        }
+
+        paths = nm_utils_get_connection_private_files_paths(applied);
+        if (!paths) {
+            priv->private_files.state = PRIVATE_FILES_STATE_DONE;
+            break;
+        }
+
+        if (_nm_setting_connection_get_num_permissions_users(s_con) > 1) {
+            _LOGW(LOGD_DEVICE,
+                  "private connections with multiple users are not allowed to reference "
+                  "certificates and keys on the filesystem. Specify only one user in the "
+                  "connection.permissions property.");
+            nm_device_state_changed(self,
+                                    NM_DEVICE_STATE_FAILED,
+                                    NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+            return;
+        }
+
+        priv->private_files.state       = PRIVATE_FILES_STATE_READING;
+        priv->private_files.cancellable = g_cancellable_new();
+
+        _LOGD(LOGD_DEVICE, "reading private files");
+        nm_utils_read_private_files(paths,
+                                    priv->private_files.user,
+                                    priv->private_files.cancellable,
+                                    read_private_files_cb,
+                                    self);
+        return;
+    }
+    case PRIVATE_FILES_STATE_READING:
+        /* wait */
+        return;
+    case PRIVATE_FILES_STATE_DONE:
+        /* proceed */
+        break;
+    }
 
     if (!nm_device_managed_type_is_external(self)) {
         _ethtool_state_set(self);
@@ -10779,7 +10898,7 @@ activate_stage2_device_config(NMDevice *self)
         priv->tc_committed = TRUE;
     }
 
-    nm_routing_rules_sync(nm_device_get_applied_connection(self),
+    nm_routing_rules_sync(applied,
                           NM_TERNARY_TRUE,
                           klass->get_extra_rules,
                           self,
@@ -16992,6 +17111,12 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
     /* Call device type-specific deactivation */
     if (klass->deactivate)
         klass->deactivate(self);
+
+    /* Clean up private files */
+    nm_clear_g_cancellable(&priv->private_files.cancellable);
+    g_clear_pointer(&priv->private_files.table, g_hash_table_unref);
+    g_clear_pointer(&priv->private_files.user, g_free);
+    priv->private_files.state = PRIVATE_FILES_STATE_UNKNOWN;
 
     ifindex = nm_device_get_ip_ifindex(self);
 

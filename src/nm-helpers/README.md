@@ -1,5 +1,32 @@
+nm-helpers
+==========
+
+This directory contains stand-alone helper programs used by various
+components.
+
+nm-daemon-helper
+----------------
+
+A internal helper application that is spawned by NetworkManager to
+perform certain actions which can't be done in the daemon. 
+
+Currently it's used to do a reverse DNS lookup after reconfiguring the
+libc resolver (which is a process-wide operation), and to read files
+on behalf of unprivileged users (which requires a seteuid that affects
+all the threads of the process).
+
+This is not directly useful to the user.
+
+nm-libnm-helper
+---------------
+
+A internal helper application that is spawned by libnm to perform
+certain actions without impacting the calling process.
+
+This is not directly useful to the user.
+
 nm-priv-helper
-==============
+--------------
 
 This is a D-Bus activatable, exit-on-idle service, which
 provides an internal API to NetworkManager daemon.

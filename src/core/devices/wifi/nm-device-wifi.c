@@ -2935,7 +2935,8 @@ build_supplicant_config(NMDeviceWifi         *self,
     s_wireless = nm_connection_get_setting_wireless(connection);
     g_return_val_if_fail(s_wireless != NULL, NULL);
 
-    config = nm_supplicant_config_new(nm_supplicant_interface_get_capabilities(priv->sup_iface));
+    config = nm_supplicant_config_new(nm_supplicant_interface_get_capabilities(priv->sup_iface),
+                                      nm_utils_get_connection_first_permissions_user(connection));
 
     /* Warn if AP mode may not be supported */
     if (nm_streq0(nm_setting_wireless_get_mode(s_wireless), NM_SETTING_WIRELESS_MODE_AP)
@@ -3011,6 +3012,7 @@ build_supplicant_config(NMDeviceWifi         *self,
                 mtu,
                 pmf,
                 fils,
+                nm_device_get_private_files(NM_DEVICE(self)),
                 error)) {
             g_prefix_error(error, "802-11-wireless-security: ");
             goto error;
