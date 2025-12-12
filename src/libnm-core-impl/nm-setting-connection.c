@@ -431,6 +431,47 @@ nm_setting_connection_permissions_user_allowed_by_uid(NMSettingConnection *setti
     return _permissions_user_allowed(setting, NULL, uid);
 }
 
+guint
+_nm_setting_connection_get_num_permissions_users(NMSettingConnection *setting)
+{
+    NMSettingConnectionPrivate *priv;
+    guint                       i;
+    guint                       count = 0;
+
+    nm_assert(NM_IS_SETTING_CONNECTION(setting));
+    priv = NM_SETTING_CONNECTION_GET_PRIVATE(setting);
+
+    for (i = 0; priv->permissions && i < priv->permissions->len; i++) {
+        const Permission *permission = &nm_g_array_index(priv->permissions, Permission, i);
+
+        if (permission->ptype == PERM_TYPE_USER) {
+            count++;
+        }
+    }
+
+    return count;
+}
+
+const char *
+_nm_setting_connection_get_first_permissions_user(NMSettingConnection *setting)
+{
+    NMSettingConnectionPrivate *priv;
+    guint                       i;
+
+    nm_assert(NM_IS_SETTING_CONNECTION(setting));
+    priv = NM_SETTING_CONNECTION_GET_PRIVATE(setting);
+
+    for (i = 0; priv->permissions && i < priv->permissions->len; i++) {
+        const Permission *permission = &nm_g_array_index(priv->permissions, Permission, i);
+
+        if (permission->ptype == PERM_TYPE_USER) {
+            return permission->item;
+        }
+    }
+
+    return NULL;
+}
+
 /**
  * nm_setting_connection_add_permission:
  * @setting: the #NMSettingConnection

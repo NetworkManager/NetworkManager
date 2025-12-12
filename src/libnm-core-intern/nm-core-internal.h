@@ -1187,4 +1187,11 @@ gboolean nm_connection_need_secrets_for_rerequest(NMConnection *connection);
 
 const GPtrArray *_nm_setting_ovs_port_get_trunks_arr(NMSettingOvsPort *self);
 
+/*****************************************************************************/
+
+guint       _nm_setting_connection_get_num_permissions_users(NMSettingConnection *setting);
+const char *_nm_setting_connection_get_first_permissions_user(NMSettingConnection *setting);
+
+void _nm_setting_get_private_files(NMSetting *setting, GPtrArray *files);
+
 #endif

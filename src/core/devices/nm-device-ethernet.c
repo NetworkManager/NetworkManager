@@ -630,10 +630,17 @@ build_supplicant_config(NMDeviceEthernet *self, GError **error)
     mtu      = nm_platform_link_get_mtu(nm_device_get_platform(NM_DEVICE(self)),
                                    nm_device_get_ifindex(NM_DEVICE(self)));
 
-    config = nm_supplicant_config_new(NM_SUPPL_CAP_MASK_NONE);
+    config = nm_supplicant_config_new(NM_SUPPL_CAP_MASK_NONE,
+                                      nm_utils_get_connection_first_permissions_user(connection));
 
     security = nm_connection_get_setting_802_1x(connection);
-    if (!nm_supplicant_config_add_setting_8021x(config, security, con_uuid, mtu, TRUE, error)) {
+    if (!nm_supplicant_config_add_setting_8021x(config,
+                                                security,
+                                                con_uuid,
+                                                mtu,
+                                                TRUE,
+                                                nm_device_get_private_files(NM_DEVICE(self)),
+                                                error)) {
         g_prefix_error(error, "802-1x-setting: ");
         g_clear_object(&config);
     }

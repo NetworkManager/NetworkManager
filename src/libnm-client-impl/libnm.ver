@@ -2083,3 +2083,9 @@ global:
 	nm_setting_hsr_get_protocol_version;
 	nm_setting_hsr_protocol_version_get_type;
 } libnm_1_54_0;
+
+libnm_1_54_3 {
+global:
+	nm_utils_copy_cert_as_user;
+	nm_vpn_plugin_info_supports_safe_private_file_access;
+} libnm_1_54_2;

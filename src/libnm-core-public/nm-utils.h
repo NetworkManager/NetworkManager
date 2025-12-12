@@ -261,6 +261,9 @@ nm_utils_base64secret_decode(const char *base64_key, gsize required_key_len, gui
 NM_AVAILABLE_IN_1_42
 void nm_utils_ensure_gtypes(void);
 
+NM_AVAILABLE_IN_1_54_3
+char *nm_utils_copy_cert_as_user(const char *filename, const char *user, GError **error);
+
 G_END_DECLS
 
 #endif /* __NM_UTILS_H__ */
