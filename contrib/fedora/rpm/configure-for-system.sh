@@ -401,7 +401,6 @@ meson setup\
     -Dselinux=true \
     -Dpolkit=true  \
     -Dconfig_auth_polkit_default=true \
-    -Dmodify_system=true \
     -Dconcheck=true \
     -Dlibpsl="$(bool_true "$P_FEDORA")" \
     -Dsession_tracking=systemd \

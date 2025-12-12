@@ -1,6 +1,6 @@
 # List of source files containing translatable strings.
 # Please keep this file sorted alphabetically.
-data/org.freedesktop.NetworkManager.policy.in.in
+data/org.freedesktop.NetworkManager.policy.in
 src/core/NetworkManagerUtils.c
 src/core/devices/adsl/nm-device-adsl.c
 src/core/devices/bluetooth/nm-bluez-manager.c

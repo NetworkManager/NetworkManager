@@ -478,11 +478,13 @@ guint8 nm_wifi_utils_level_to_quality(int val);
 /*****************************************************************************/
 
 void nm_utils_spawn_helper(const char *const  *args,
+                           gboolean            binary_output,
                            GCancellable       *cancellable,
                            GAsyncReadyCallback callback,
                            gpointer            cb_data);
 
-char *nm_utils_spawn_helper_finish(GAsyncResult *result, GError **error);
+char   *nm_utils_spawn_helper_finish_string(GAsyncResult *result, GError **error);
+GBytes *nm_utils_spawn_helper_finish_binary(GAsyncResult *result, GError **error);
 
 /*****************************************************************************/
 
@@ -502,5 +504,20 @@ typedef struct {
 } NMRateLimit;
 
 gboolean nm_rate_limit_check(NMRateLimit *rate_limit, gint32 window_sec, gint32 burst);
+
+/*****************************************************************************/
+
+const char *nm_utils_get_connection_first_permissions_user(NMConnection *connection);
+
+/*****************************************************************************/
+
+const char **nm_utils_get_connection_private_files_paths(NMConnection *connection);
+
+void        nm_utils_read_private_files(const char *const  *paths,
+                                        const char         *user,
+                                        GCancellable       *cancellable,
+                                        GAsyncReadyCallback callback,
+                                        gpointer            cb_data);
+GHashTable *nm_utils_read_private_files_finish(GAsyncResult *result, GError **error);
 
 #endif /* __NM_CORE_UTILS_H__ */

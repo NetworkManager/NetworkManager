@@ -81,7 +81,6 @@ test-*.trs
 /data/org.freedesktop.NetworkManager.service
 /data/server.conf
 /data/org.freedesktop.NetworkManager.policy
-/data/org.freedesktop.NetworkManager.policy.in
 /data/nm-sudo.service
 /data/nm-priv-helper.service
 /data/NetworkManager-config-initrd.service

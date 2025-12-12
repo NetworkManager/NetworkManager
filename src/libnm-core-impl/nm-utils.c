@@ -17,6 +17,7 @@
 #include <linux/pkt_sched.h>
 #include <linux/if_infiniband.h>
 
+#include "libnm-glib-aux/nm-io-utils.h"
 #include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-glib-aux/nm-json-aux.h"
 #include "libnm-glib-aux/nm-str-buf.h"
@@ -6194,4 +6195,259 @@ nm_utils_ensure_gtypes(void)
 
     for (meta_type = 0; meta_type < _NM_META_SETTING_TYPE_NUM; meta_type++)
         nm_meta_setting_infos[meta_type].get_setting_gtype();
+}
+
+/*****************************************************************************/
+
+typedef struct {
+    GPid       pid;
+    GSource   *child_watch_source;
+    GMainLoop *loop;
+    GError    *error;
+
+    int child_stdout;
+    int child_stderr;
+
+    GSource *output_source;
+    GSource *error_source;
+
+    NMStrBuf output_buffer;
+    NMStrBuf error_buffer;
+} HelperInfo;
+
+static void
+helper_complete(HelperInfo *info, GError *error_take)
+{
+    if (error_take) {
+        if (!info->error)
+            info->error = error_take;
+        else
+            g_error_free(error_take);
+    }
+
+    if (info->output_source || info->error_source || info->pid != -1) {
+        /* Wait that the pipe is closed and process has terminated */
+        return;
+    }
+
+    if (info->error && info->error_buffer.len > 0) {
+        /* Prefer the message from stderr as it's more informative */
+        g_error_free(info->error);
+        info->error = g_error_new(NM_CONNECTION_ERROR,
+                                  NM_CONNECTION_ERROR_FAILED,
+                                  "%s",
+                                  nm_str_buf_get_str(&info->error_buffer));
+    }
+
+    g_main_loop_quit(info->loop);
+}
+
+static gboolean
+helper_have_err_data(int fd, GIOCondition condition, gpointer user_data)
+{
+    HelperInfo *info = user_data;
+    gssize      n_read;
+    GError     *error = NULL;
+
+    n_read = nm_utils_fd_read(fd, &info->error_buffer);
+
+    if (n_read > 0)
+        return G_SOURCE_CONTINUE;
+
+    nm_clear_g_source_inst(&info->error_source);
+    nm_clear_fd(&info->child_stderr);
+
+    if (n_read < 0) {
+        error = g_error_new(NM_UTILS_ERROR,
+                            NM_UTILS_ERROR_UNKNOWN,
+                            "read from process returned %d (%s)",
+                            (int) -n_read,
+                            nm_strerror_native((int) -n_read));
+    }
+
+    helper_complete(info, error);
+    return G_SOURCE_CONTINUE;
+}
+
+static gboolean
+helper_have_data(int fd, GIOCondition condition, gpointer user_data)
+{
+    HelperInfo *info = user_data;
+    gssize      n_read;
+    GError     *error = NULL;
+
+    n_read = nm_utils_fd_read(fd, &info->output_buffer);
+
+    if (n_read > 0)
+        return G_SOURCE_CONTINUE;
+
+    nm_clear_g_source_inst(&info->output_source);
+    nm_clear_fd(&info->child_stdout);
+
+    if (n_read < 0) {
+        error = g_error_new(NM_UTILS_ERROR,
+                            NM_UTILS_ERROR_UNKNOWN,
+                            "read from process returned %d (%s)",
+                            (int) -n_read,
+                            nm_strerror_native((int) -n_read));
+    }
+
+    helper_complete(info, error);
+    return G_SOURCE_CONTINUE;
+}
+
+static void
+helper_child_terminated(GPid pid, int status, gpointer user_data)
+{
+    HelperInfo   *info        = user_data;
+    gs_free char *status_desc = NULL;
+    GError       *error       = NULL;
+
+    info->pid = -1;
+    nm_clear_g_source_inst(&info->child_watch_source);
+
+    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+        if (!status_desc)
+            status_desc = nm_utils_get_process_exit_status_desc(status);
+        error =
+            g_error_new(NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN, "helper process %s", status_desc);
+    }
+
+    helper_complete(info, error);
+}
+
+#define RUN_CERT_DIR NMRUNDIR "/cert"
+
+/**
+ * nm_utils_copy_cert_as_user:
+ * @filename: the file name of the certificate or key to copy
+ * @user: the user to impersonate when reading the file
+ * @error: (nullable): return location for a #GError, or %NULL
+ *
+ * Reads @filename on behalf of user @user and writes the
+ * content to a new file in /run/NetworkManager/cert/.
+ * The new file has permission 600 and is owned by root.
+ *
+ * This function is useful for VPN plugins that run as root and need
+ * to verify that the user owning the connection (the one listed in the
+ * connection.permissions property) can access the file.
+ *
+ * Returns: (transfer full): the name of the new temporary file. Or %NULL
+ *   if an error occurred, including when the given user can't access the
+ *   file.
+ *
+ * Since: 1.56
+ */
+char *
+nm_utils_copy_cert_as_user(const char *filename, const char *user, GError **error)
+{
+    gs_unref_bytes GBytes *bytes      = NULL;
+    char                   dst_path[] = RUN_CERT_DIR "/XXXXXX";
+    HelperInfo             info       = {
+                          .child_stdout = -1,
+                          .child_stderr = -1,
+    };
+    GMainContext *context;
+    int           fd = -1;
+
+    g_return_val_if_fail(filename, NULL);
+    g_return_val_if_fail(user, NULL);
+    g_return_val_if_fail(!error || !*error, NULL);
+
+    if (geteuid() != 0) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("This function needs to be called by root"));
+        return NULL;
+    }
+
+    if (!g_spawn_async_with_pipes(
+            "/",
+            (char **)
+                NM_MAKE_STRV(LIBEXECDIR "/nm-libnm-helper", "read-file-as-user", filename, user),
+            (char **) NM_MAKE_STRV(),
+            G_SPAWN_CLOEXEC_PIPES | G_SPAWN_DO_NOT_REAP_CHILD,
+            NULL,
+            NULL,
+            &info.pid,
+            NULL,
+            &info.child_stdout,
+            &info.child_stderr,
+            error)) {
+        return NULL;
+    }
+
+    context   = g_main_context_new();
+    info.loop = g_main_loop_new(context, FALSE);
+
+    /* Watch process */
+    info.child_watch_source = nm_g_child_watch_source_new(info.pid,
+                                                          G_PRIORITY_DEFAULT,
+                                                          helper_child_terminated,
+                                                          &info,
+                                                          NULL);
+    g_source_attach(info.child_watch_source, context);
+
+    /* Watch stdout */
+    info.output_buffer = NM_STR_BUF_INIT(0, FALSE);
+    info.output_source = nm_g_unix_fd_source_new(info.child_stdout,
+                                                 G_IO_IN | G_IO_ERR | G_IO_HUP,
+                                                 G_PRIORITY_DEFAULT,
+                                                 helper_have_data,
+                                                 &info,
+                                                 NULL);
+    g_source_attach(info.output_source, context);
+
+    /* Watch stderr */
+    info.error_buffer = NM_STR_BUF_INIT(0, FALSE);
+    info.error_source = nm_g_unix_fd_source_new(info.child_stderr,
+                                                G_IO_IN | G_IO_ERR | G_IO_HUP,
+                                                G_PRIORITY_DEFAULT,
+                                                helper_have_err_data,
+                                                &info,
+                                                NULL);
+    g_source_attach(info.error_source, context);
+
+    /* Wait termination */
+    g_main_loop_run(info.loop);
+    g_clear_pointer(&info.loop, g_main_loop_unref);
+    g_clear_pointer(&context, g_main_context_unref);
+
+    if (info.error) {
+        nm_str_buf_destroy(&info.output_buffer);
+        nm_str_buf_destroy(&info.error_buffer);
+        g_propagate_error(error, g_steal_pointer(&info.error));
+        return NULL;
+    }
+
+    /* Write the data to a new file */
+
+    bytes = g_bytes_new(nm_str_buf_get_str_unsafe(&info.output_buffer), info.output_buffer.len);
+    nm_str_buf_destroy(&info.output_buffer);
+    nm_str_buf_destroy(&info.error_buffer);
+
+    mkdir(RUN_CERT_DIR, 0600);
+    fd = mkstemp(dst_path);
+    if (fd < 0) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("Failure creating the temporary file"));
+        return NULL;
+    }
+    nm_close(fd);
+
+    if (!nm_utils_file_set_contents(dst_path,
+                                    g_bytes_get_data(bytes, NULL),
+                                    g_bytes_get_size(bytes),
+                                    0600,
+                                    NULL,
+                                    NULL,
+                                    NULL,
+                                    error)) {
+        return NULL;
+    }
+
+    return g_strdup(dst_path);
 }

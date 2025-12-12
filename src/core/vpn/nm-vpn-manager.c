@@ -60,16 +60,21 @@ nm_vpn_manager_activate_connection(NMVpnManager *manager, NMVpnConnection *vpn, 
 {
     NMVpnManagerPrivate *priv;
     NMVpnPluginInfo     *plugin_info;
+    NMConnection        *applied;
     const char          *service_name;
     NMDevice            *device;
+    const char          *user;
 
     g_return_val_if_fail(NM_IS_VPN_MANAGER(manager), FALSE);
     g_return_val_if_fail(NM_IS_VPN_CONNECTION(vpn), FALSE);
     g_return_val_if_fail(!error || !*error, FALSE);
 
-    priv   = NM_VPN_MANAGER_GET_PRIVATE(manager);
-    device = nm_active_connection_get_device(NM_ACTIVE_CONNECTION(vpn));
-    g_assert(device);
+    priv    = NM_VPN_MANAGER_GET_PRIVATE(manager);
+    device  = nm_active_connection_get_device(NM_ACTIVE_CONNECTION(vpn));
+    applied = nm_active_connection_get_applied_connection(NM_ACTIVE_CONNECTION(vpn));
+    nm_assert(device);
+    nm_assert(applied);
+
     if (nm_device_get_state(device) != NM_DEVICE_STATE_ACTIVATED
         && nm_device_get_state(device) != NM_DEVICE_STATE_SECONDARIES) {
         g_set_error_literal(error,
@@ -99,6 +104,30 @@ nm_vpn_manager_activate_connection(NMVpnManager *manager, NMVpnConnection *vpn, 
                     "The '%s' plugin only supports a single active connection.",
                     nm_vpn_plugin_info_get_name(plugin_info));
         return FALSE;
+    }
+
+    user = nm_utils_get_connection_first_permissions_user(applied);
+    if (user) {
+        NMSettingConnection *s_con;
+
+        s_con = nm_connection_get_setting_connection(applied);
+        nm_assert(s_con);
+        if (_nm_setting_connection_get_num_permissions_users(s_con) > 1) {
+            g_set_error_literal(error,
+                                NM_MANAGER_ERROR,
+                                NM_MANAGER_ERROR_CONNECTION_NOT_AVAILABLE,
+                                "private VPN connections with multiple users are not allowed.");
+            return FALSE;
+        }
+
+        if (!nm_vpn_plugin_info_supports_safe_private_file_access(plugin_info)) {
+            g_set_error(error,
+                        NM_MANAGER_ERROR,
+                        NM_MANAGER_ERROR_CONNECTION_NOT_AVAILABLE,
+                        "The '%s' plugin doesn't support private connections.",
+                        nm_vpn_plugin_info_get_name(plugin_info));
+            return FALSE;
+        }
     }
 
     nm_vpn_connection_activate(vpn, plugin_info);

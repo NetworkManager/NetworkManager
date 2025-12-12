@@ -55,21 +55,22 @@ if install_udevdir
 endif
 
 if enable_polkit
-  policy = 'org.freedesktop.NetworkManager.policy'
-
-  policy_in = configure_file(
-    input: policy + '.in.in',
-    output: '@BASENAME@',
-    configuration: data_conf,
-  )
-
   i18n.merge_file(
-    input: policy_in,
+    input: 'org.freedesktop.NetworkManager.policy.in',
     output: '@BASENAME@',
     po_dir: po_dir,
     install: true,
-    install_dir: polkit_gobject_policydir,
+    install_dir: polkit_policydir,
   )
+
+  if polkit_noauth_group != ''
+    configure_file(
+      input: 'org.freedesktop.NetworkManager.rules.in',
+      output: '@BASENAME@',
+      install_dir: polkit_rulesdir,
+      configuration: {'NM_POLKIT_NOAUTH_GROUP': polkit_noauth_group},
+    )
+  endif
 endif
 
 if enable_firewalld_zone
