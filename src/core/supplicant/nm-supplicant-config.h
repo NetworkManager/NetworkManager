@@ -29,7 +29,7 @@ typedef struct _NMSupplicantConfigClass NMSupplicantConfigClass;
 
 GType nm_supplicant_config_get_type(void);
 
-NMSupplicantConfig *nm_supplicant_config_new(NMSupplCapMask capabilities);
+NMSupplicantConfig *nm_supplicant_config_new(NMSupplCapMask capabilities, const char *private_user);
 
 guint32 nm_supplicant_config_get_ap_scan(NMSupplicantConfig *self);
 
@@ -57,6 +57,7 @@ gboolean nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig  
                                                             guint32         mtu,
                                                             NMSettingWirelessSecurityPmf  pmf,
                                                             NMSettingWirelessSecurityFils fils,
+                                                            GHashTable                   *files,
                                                             GError                      **error);
 
 gboolean nm_supplicant_config_add_no_security(NMSupplicantConfig *self, GError **error);
@@ -66,6 +67,7 @@ gboolean nm_supplicant_config_add_setting_8021x(NMSupplicantConfig *self,
                                                 const char         *con_uuid,
                                                 guint32             mtu,
                                                 gboolean            wired,
+                                                GHashTable         *files,
                                                 GError            **error);
 
 gboolean nm_supplicant_config_add_setting_macsec(NMSupplicantConfig    *self,

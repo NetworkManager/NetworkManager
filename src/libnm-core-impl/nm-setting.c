@@ -2262,6 +2262,34 @@ init_from_dbus(NMSetting                      *setting,
     return TRUE;
 }
 
+static void
+get_private_files(NMSetting *setting, GPtrArray *files)
+{
+    if (NM_MORE_ASSERTS) {
+        GParamSpec **properties;
+        guint        n_properties;
+        int          i;
+
+        properties = g_object_class_list_properties(G_OBJECT_GET_CLASS(setting), &n_properties);
+        for (i = 0; i < n_properties; i++) {
+            if (properties[i]->flags & NM_SETTING_PARAM_CERT_KEY_FILE) {
+                /* Certificates and keys needs special handling, see setting 802.1X */
+                nm_assert_not_reached();
+            }
+        }
+        g_free(properties);
+    }
+}
+
+void
+_nm_setting_get_private_files(NMSetting *setting, GPtrArray *files)
+{
+    g_return_if_fail(NM_IS_SETTING(setting));
+    g_return_if_fail(files);
+
+    NM_SETTING_GET_CLASS(setting)->get_private_files(setting, files);
+}
+
 /**
  * nm_setting_get_dbus_property_type:
  * @setting: an #NMSetting
@@ -4672,6 +4700,7 @@ nm_setting_class_init(NMSettingClass *setting_class)
     setting_class->enumerate_values          = enumerate_values;
     setting_class->aggregate                 = aggregate;
     setting_class->init_from_dbus            = init_from_dbus;
+    setting_class->get_private_files         = get_private_files;
 
     /**
      * NMSetting:name:

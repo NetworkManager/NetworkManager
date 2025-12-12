@@ -5,6 +5,7 @@ test_units = [
   'test-nm-client',
   'test-remote-settings-client',
   'test-secret-agent',
+  'test-copy-cert-as-user'
 ]
 
 foreach test_unit: test_units
@@ -37,12 +38,15 @@ foreach test_unit: test_units
     ],
   )
 
-  test(
-    'src/libnm-client-impl/tests/' + test_unit,
-    test_script,
-    timeout: 90,
-    args: test_args + [exe.full_path()],
-  )
+  # test-copy-cert-as-user is a manual test, don't run it automatically
+  if test_unit != 'test-copy-cert-as-user'
+    test(
+      'src/libnm-client-impl/tests/' + test_unit,
+      test_script,
+      timeout: 90,
+      args: test_args + [exe.full_path()],
+    )
+  endif
 endforeach
 
 if enable_introspection
