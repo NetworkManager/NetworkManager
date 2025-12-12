@@ -169,6 +169,7 @@ meson setup build \
     -D ld_gc=false \
     -D session_tracking=no \
     -D systemdsystemunitdir=no \
+    -D systemdsystemgeneratordir=no \
     -D systemd_journal=false \
     -D selinux=false \
     -D libaudit=no \
