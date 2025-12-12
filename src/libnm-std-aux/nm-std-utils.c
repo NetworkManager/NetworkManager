@@ -117,7 +117,7 @@ nm_utils_set_effective_user(const char *user, char *errbuf, size_t errbuf_len)
                      errbuf_len,
                      "error getting user entry: %d (%s)\n",
                      errsv,
-                     strerror_r(errsv, error, sizeof(error)));
+                     _nm_strerror_r(errsv, error, sizeof(error)));
         }
         return false;
     }
@@ -129,7 +129,7 @@ nm_utils_set_effective_user(const char *user, char *errbuf, size_t errbuf_len)
                  "failed to change group to %u: %d (%s)\n",
                  pwentry->pw_gid,
                  errsv,
-                 strerror_r(errsv, error, sizeof(error)));
+                 _nm_strerror_r(errsv, error, sizeof(error)));
         return false;
     }
 
@@ -140,7 +140,7 @@ nm_utils_set_effective_user(const char *user, char *errbuf, size_t errbuf_len)
                  "failed to reset supplementary group list to %u: %d (%s)\n",
                  pwentry->pw_gid,
                  errsv,
-                 strerror_r(errsv, error, sizeof(error)));
+                 _nm_strerror_r(errsv, error, sizeof(error)));
         return false;
     }
 
@@ -151,7 +151,7 @@ nm_utils_set_effective_user(const char *user, char *errbuf, size_t errbuf_len)
                  "failed to change user to %u: %d (%s)\n",
                  pwentry->pw_uid,
                  errsv,
-                 strerror_r(errsv, error, sizeof(error)));
+                 _nm_strerror_r(errsv, error, sizeof(error)));
         return false;
     }
 
@@ -176,7 +176,7 @@ nm_utils_read_file_to_stdout(const char *filename, char *errbuf, size_t errbuf_l
                  errbuf_len,
                  "error opening the file: %d (%s)",
                  errsv,
-                 strerror_r(errsv, error, sizeof(error)));
+                 _nm_strerror_r(errsv, error, sizeof(error)));
         return false;
     }
 
@@ -187,7 +187,7 @@ nm_utils_read_file_to_stdout(const char *filename, char *errbuf, size_t errbuf_l
                      errbuf_len,
                      "error writing to stdout: %d (%s)",
                      errsv,
-                     strerror_r(errsv, error, sizeof(error)));
+                     _nm_strerror_r(errsv, error, sizeof(error)));
             return false;
         }
     }
@@ -198,7 +198,7 @@ nm_utils_read_file_to_stdout(const char *filename, char *errbuf, size_t errbuf_l
                  errbuf_len,
                  "error reading the file: %d (%s)",
                  errsv,
-                 strerror_r(errsv, error, sizeof(error)));
+                 _nm_strerror_r(errsv, error, sizeof(error)));
         return false;
     }
 
