@@ -7,7 +7,8 @@
 struct clat_config {
     struct in6_addr local_v6;
     struct in6_addr pref64;
-    struct in_addr local_v4;
+    struct in_addr  local_v4;
+    unsigned        pref64_len;
 };
 
 #endif
