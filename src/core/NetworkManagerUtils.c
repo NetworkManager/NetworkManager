@@ -1753,6 +1753,13 @@ nm_utils_ip_routes_to_dbus(int                          addr_family,
                     "{sv}",
                     "next-hop",
                     g_variant_new_string(nm_inet_ntop(addr_family, gateway, addr_str)));
+            } else if (addr_family == AF_INET && r->r4.via.addr_family == AF_INET6) {
+                g_variant_builder_add(
+                    &route_builder,
+                    "{sv}",
+                    "next-hop-v6",
+                    g_variant_new_string(
+                        nm_inet_ntop(AF_INET6, r->r4.via.addr.addr_ptr, addr_str)));
             }
 
             g_variant_builder_add(&route_builder,
