@@ -5714,6 +5714,7 @@ _l3_commit_pref64(NML3Cfg *self, NML3CfgCommitType commit_type)
         clat_config.local_v4.s_addr         = self->priv.p->clat_address_4->addr;
         clat_config.local_v6                = self->priv.p->clat_address_6.address;
         clat_config.pref64                  = *l3cd_pref64;
+        clat_config.pref64_len              = l3cd_pref64_plen;
         self->priv.p->clat_bpf->bss->config = clat_config;
 
         if (self->priv.p->clat_socket < 0) {

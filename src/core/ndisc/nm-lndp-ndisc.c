@@ -409,12 +409,8 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
         gint64          expiry_msec =
             _nm_ndisc_lifetime_to_expiry(now_msec, ndp_msg_opt_pref64_lifetime(msg, offset));
 
-        /* Currently, only /96 is supported */
-        if (pref64_length != 96) {
-            _LOGW("Ignored PREF64 for unsupported prefix length: %d (only /96 is supported)",
-                  pref64_length);
-            continue;
-        }
+        /* libndp should only return lengths defined in RFC 8781 */
+        nm_assert(NM_IN_SET(pref64_length, 96, 64, 56, 48, 40, 32));
 
         /* Newer RA has more up to date information, prefer it: */
         if (!pref64_found) {
