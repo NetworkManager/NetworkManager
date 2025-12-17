@@ -35,6 +35,9 @@ char _license[] SEC("license") = "GPL";
 struct clat_config config;
 
 #ifdef DEBUG
+/* Note: when enabling debugging, you also need to add CAP_PERFMON
+ * to the CapabilityBoundingSet of the NM systemd unit. The messages
+ * will be printed to /sys/kernel/debug/tracing/trace_pipe */
 #define DBG(fmt, ...)                                              \
     ({                                                             \
         char ____fmt[] = "clat: " fmt;                             \
@@ -502,8 +505,8 @@ clat_handle_v4(struct __sk_buff *skb)
 
     if (iph->ihl != 5 || (iph->frag_off & ~bpf_htons(1 << 14))) {
         DBG("v4: pkt src/dst %pI4/%pI4 has IP options or is fragmented, dropping\n",
-            &iph->daddr,
-            &iph->saddr);
+            &iph->saddr,
+            &iph->daddr);
         goto out;
     }
 
@@ -518,7 +521,7 @@ clat_handle_v4(struct __sk_buff *skb)
     dst_hdr.flow_lbl[0] = iph->tos << 4;
     dst_hdr.payload_len = bpf_htons(bpf_ntohs(iph->tot_len) - sizeof(struct iphdr));
 
-    DBG("v4: Found mapping for dst %pI4 to %pI6c\n", &iph->daddr, &dst_hdr.daddr);
+    DBG("v4: outgoing pkt to dst %pI4 (%pI6c)\n", &iph->daddr, &dst_hdr.daddr);
 
     switch (dst_hdr.nexthdr) {
     case IPPROTO_ICMP:
@@ -934,8 +937,12 @@ clat_handle_v6(struct __sk_buff *skb)
 
     /* drop packets with extension headers */
     if (ip6h->nexthdr != IPPROTO_TCP && ip6h->nexthdr != IPPROTO_UDP
-        && ip6h->nexthdr != IPPROTO_ICMPV6)
+        && ip6h->nexthdr != IPPROTO_ICMPV6) {
+        DBG("v6: pkt src/dst %pI6c/%pI6c has nexthdr %u, dropping\n", &ip6h->saddr, &ip6h->daddr);
         goto out;
+    }
+
+    DBG("v6: incoming pkt from src %pI6c (%pI4)\n", &ip6h->saddr, &addr4);
 
     translate_ipv6_header(ip6h, &dst_hdr, addr4, config.local_v4.s_addr);
 
