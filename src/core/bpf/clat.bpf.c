@@ -34,6 +34,9 @@ char _license[] SEC("license") = "GPL";
 struct clat_config config;
 
 #ifdef DEBUG
+/* Note: when enabling debugging, you also need to add CAP_PERFMON
+ * to the CapabilityBoundingSet of the NM systemd unit. The messages
+ * will be printed to /sys/kernel/debug/tracing/trace_pipe */
 #define DBG(fmt, ...)                                              \
     ({                                                             \
         char ____fmt[] = "clat: " fmt;                             \
