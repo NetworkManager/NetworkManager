@@ -688,7 +688,17 @@ class Util:
         micro = ver & 0xFF
         minor = (ver >> 8) & 0xFF
         major = ver >> 16
-        return "%s.%s.%s" % (major, minor, micro)
+
+        # Convert 1.57.1 -> 1.57.1-dev and 1.55.90 -> 1.56-rc1
+        if micro >= 90:
+            minor += 1
+            micro = "-rc" + str(micro - 89)
+        elif minor % 2 == 1:
+            micro = f".{micro}-dev"
+        else:
+            micro = f".{micro}"
+
+        return "%s.%s%s" % (major, minor, micro)
 
 
 ###############################################################################
@@ -3264,7 +3274,7 @@ def main():
                     sys.executable,
                     __file__,
                     "--started-with-dbus-session",
-                    *sys.argv[1:]
+                    *sys.argv[1:],
                 )
             except OSError as e:
                 if e.errno != errno.ENOENT:

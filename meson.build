@@ -5,23 +5,48 @@ project(
 # NOTE: When incrementing version also add corresponding
 #       NM_VERSION_x_y_z macros in
 #       "src/libnm-core-public/nm-version-macros.h.in"
-  version: '1.57.1',
+  version: '1.57.1-dev',
   license: 'GPL2+',
   default_options: [
     'buildtype=debugoptimized',
     'c_std=gnu11',
     'warning_level=2' # value "2" will add "-Wall" and "-Wextra" to the compiler flags
   ],
-  meson_version: '>= 0.53.0',
+  meson_version: '>= 0.56.0',
 )
 
 nm_name = meson.project_name()
-
 nm_version = meson.project_version()
-version_array = nm_version.split('.')
-nm_major_version = version_array[0].to_int()
-nm_minor_version = version_array[1].to_int()
-nm_micro_version = version_array[2].to_int()
+
+version_and_suffix = nm_version.split('-')
+version_array = version_and_suffix[0].split('.')
+if version_and_suffix.length() == 2
+  version_suffix = version_and_suffix[1]
+else
+  assert(version_and_suffix.length() == 1)
+  version_suffix = ''
+endif
+
+# In the C API we encode the version in 90+ scheme (1.56-rc1 = 1.55.90, rc2 = .91, etc)
+if version_suffix == '' or version_suffix == 'dev'
+  assert(version_array.length() == 3)
+  nm_major_version = version_array[0].to_int()
+  nm_minor_version = version_array[1].to_int()
+  nm_micro_version = version_array[2].to_int()
+elif version_suffix.startswith('rc')
+  assert(version_array.length() == 2)
+  nm_major_version = version_array[0].to_int()
+  nm_minor_version = version_array[1].to_int() - 1
+  nm_micro_version = version_suffix.substring(2).to_int() + 89
+else
+  error('Invalid suffix: ' + version_suffix)
+endif
+
+if nm_minor_version % 2 == 1 and version_suffix == ''
+  error('Expected a "-dev" or "-rc" suffix')
+elif nm_minor_version %2 == 0 and version_suffix != ''
+  error('Unexpected "' + version_suffix + '" suffix')
+endif
 
 nm_id_prefix = 'NM'
 
