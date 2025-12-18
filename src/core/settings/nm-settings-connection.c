@@ -781,7 +781,7 @@ validate_secret_flags(NMConnection *connection, GVariant *secrets, ForEachSecret
 static gboolean
 secret_is_system_owned(NMSettingSecretFlags flags, gpointer user_data)
 {
-    return !NM_FLAGS_HAS(flags, NM_SETTING_SECRET_FLAG_AGENT_OWNED);
+    return !NM_FLAGS_HAS(flags, NM_SETTING_SECRET_FLAG_AGENT_OWNED) && !NM_FLAGS_HAS(flags, NM_SETTING_SECRET_FLAG_NOT_SAVED);
 }
 
 static void
