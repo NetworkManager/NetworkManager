@@ -13,9 +13,7 @@
 %global glib2_version %(pkg-config --modversion glib-2.0 2>/dev/null || echo bad)
 
 %global epoch_version 1
-%global real_version __VERSION__
-%global git_tag_version __GIT_TAG_VERSION__
-%global rpm_version %{real_version}
+%global base_version __VERSION__
 %global release_version __RELEASE_VERSION__
 %global snapshot __SNAPSHOT__
 %global git_sha __COMMIT__
@@ -29,7 +27,7 @@
 %global obsoletes_ifcfg_rh           1:1.36.2
 
 %global nmlibdir %{_prefix}/lib/%{name}
-%global nmplugindir %{_libdir}/%{name}/%{version}-%{release}
+%global nmplugindir %{_libdir}/%{name}/%{version_no_tilde}-%{release}
 
 %global _hardened_build 1
 
@@ -41,8 +39,6 @@
 %endif
 
 %global snap %{?snapshot_dot}%{?git_sha_dot}
-
-%global real_version_major %(printf '%s' '%{real_version}' | sed -n 's/^\\([1-9][0-9]*\\.[0-9][0-9]*\\)\\.[0-9][0-9]*$/\\1/p')
 
 %global systemd_units NetworkManager.service NetworkManager-wait-online.service NetworkManager-dispatcher.service nm-priv-helper.service
 
@@ -169,13 +165,13 @@
 Name: NetworkManager
 Summary: Network connection manager and user applications
 Epoch: %{epoch_version}
-Version: %{rpm_version}
+Version: %{base_version}
 Release: %{release_version}%{?snap}%{?dist}
 Group: System Environment/Base
 License: GPL-2.0-or-later AND LGPL-2.1-or-later
 URL: https://networkmanager.dev/
 
-#Source: https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/releases/%{git_tag_version}/downloads/%{name}-%{real_version}.tar.xz
+#Source: https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/releases/%{version_no_tilde}/downloads/%{name}-%{version_no_tilde}.tar.xz
 Source: __SOURCE1__
 Source1: NetworkManager.conf
 Source2: 00-server.conf
@@ -580,7 +576,7 @@ Preferably use nmcli instead.
 
 
 %prep
-%autosetup -p1 -n NetworkManager-%{real_version}
+%autosetup -p1 -n NetworkManager-%{version_no_tilde}
 
 
 %build
@@ -764,8 +760,8 @@ rm -f %{buildroot}%{_unitdir}/NetworkManager-wait-online-initrd.service
 find %{buildroot}%{_datadir}/gtk-doc -exec touch --reference meson.build '{}' \+
 
 %if 0%{?__debug_package} && ! 0%{?flatpak}
-mkdir -p %{buildroot}%{_prefix}/src/debug/NetworkManager-%{real_version}
-cp valgrind.suppressions %{buildroot}%{_prefix}/src/debug/NetworkManager-%{real_version}
+mkdir -p %{buildroot}%{_prefix}/src/debug/NetworkManager-%{version_no_tilde}
+cp valgrind.suppressions %{buildroot}%{_prefix}/src/debug/NetworkManager-%{version_no_tilde}
 %endif
 
 %if %{with ifcfg_rh}
