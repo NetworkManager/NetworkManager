@@ -621,14 +621,10 @@ Preferably use nmcli instead.
 %endif
 %if %{with wifi}
 	-Dwifi=true \
-%if 0%{?fedora}
-	-Dwext=true \
-%else
-	-Dwext=false \
-%endif
 %else
 	-Dwifi=false \
 %endif
+	-Dwext=false \
 %if %{with iwd}
 	-Diwd=true \
 %else
