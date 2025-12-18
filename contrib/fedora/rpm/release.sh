@@ -102,14 +102,8 @@ do_command() {
 SCRIPTDIR="$(dirname "$(readlink -f "$0")")"
 GITDIR="$(cd "$SCRIPTDIR" && git rev-parse --show-toplevel || die "Could not get GITDIR")"
 
-parse_version() {
-    local VERSION=$(grep -E -m1 '^\s+version:' "$GITDIR/meson.build" \
-                    | cut -d"'" -f2 \
-                    | sed 's/\./ /g')
-
-    re='^(0|[1-9][0-9]*) (0|[1-9][0-9]*) (0|[1-9][0-9]*)$'
-    [[ "$VERSION" =~ $re ]] || return 1
-    echo "$VERSION"
+get_version() {
+    grep -E -m1 '^\s+version:' "$GITDIR/meson.build" | cut -d"'" -f2
 }
 
 number_is_even() {
@@ -155,7 +149,7 @@ check_gitlab_pipeline() {
 
 set_version_number() {
     sed -i \
-        -e '1,20 s/^\( *version: *'\''\)[0-9]\+\.[0-9]\+\.[0-9]\+\('\'',\)$/\1'"$1.$2.$3"'\2/' \
+        -E "1,20 s/^( *version: *')[^']+(',) *\$/\1$1\2/" \
         meson.build
 }
 
@@ -259,12 +253,18 @@ done
 
 [ -n "$RELEASE_MODE" ] || die_usage "specify the desired release mode"
 
-VERSION_ARR=( $(parse_version) ) || die "cannot detect NetworkManager version"
-VERSION_STR="$(IFS=.; echo "${VERSION_ARR[*]}")"
+VERSION_STR="$(get_version)"
+VERSION_ARR=( $(echo "$VERSION_STR" | sed 's/[\.\-]/ /g') )
+if [[ ${VERSION_ARR[2]} =~ ^rc ]]; then
+    RC_VERSION=${VERSION_ARR[2]#rc}
+    VERSION_ARR[2]=0
+else
+    RC_VERSION=
+fi
 
 echo "Current version before release: $VERSION_STR (do \"$RELEASE_MODE\" release)"
 
-grep -q "version: '${VERSION_ARR[0]}.${VERSION_ARR[1]}.${VERSION_ARR[2]}'," ./meson.build || die "meson.build does not have expected version"
+grep -q "version: '$VERSION_STR'," ./meson.build || die "meson.build does not have expected version"
 
 TMP="$(git status --porcelain)" || die "git status failed"
 test -z "$TMP" || die "git working directory is not clean (git status --porcelain)"
@@ -280,50 +280,41 @@ if [ "$CUR_BRANCH" = main ]; then
     number_is_odd "${VERSION_ARR[1]}" || die "Unexpected version number on main. Should be an odd development version"
     [ "$RELEASE_MODE" = devel -o "$RELEASE_MODE" = rc1 -o "$RELEASE_MODE" = major-post ] || die "Unexpected branch name \"$CUR_BRANCH\" for \"$RELEASE_MODE\""
 else
-    re='^nm-[0-9]+-[0-9]+$'
-    [[ "$CUR_BRANCH" =~ $re ]] || die "Unexpected current branch $CUR_BRANCH. Should be main or nm-?-??"
-    if number_is_odd "${VERSION_ARR[1]}"; then
-        # we are on a release candiate branch.
-        [ "$RELEASE_MODE" = rc -o "$RELEASE_MODE" = major ] || die "Unexpected branch name \"$CUR_BRANCH\" for \"$RELEASE_MODE\""
-        [ "$CUR_BRANCH" == "nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))" ] || die "Unexpected current branch $CUR_BRANCH. Should be nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))"
-    else
-        [ "$RELEASE_MODE" = minor ] || die "Unexpected branch name \"$CUR_BRANCH\" for \"$RELEASE_MODE\""
-        [ "$CUR_BRANCH" == "nm-${VERSION_ARR[0]}-${VERSION_ARR[1]}" ] || die "Unexpected current branch $CUR_BRANCH. Should be nm-${VERSION_ARR[0]}-${VERSION_ARR[1]}"
-    fi
+    [ "$CUR_BRANCH" == "nm-${VERSION_ARR[0]}-${VERSION_ARR[1]}" ] || die "Unexpected current branch $CUR_BRANCH. Should be nm-${VERSION_ARR[0]}-${VERSION_ARR[1]}"
+    [ "$RELEASE_MODE" = rc -o "$RELEASE_MODE" = major -o "$RELEASE_MODE" = minor ] || die "Unexpected branch name \"$CUR_BRANCH\" for \"$RELEASE_MODE\""
 fi
 
-RC_VERSION=
 RELEASE_BRANCH=
 case "$RELEASE_MODE" in
     minor)
         number_is_even "${VERSION_ARR[1]}" || die "cannot do minor release on top of version $VERSION_STR"
-        [ "$CUR_BRANCH" != main ] || die "cannot do a minor release on main"
+        [ "$RC_VERSION" = "" ] || die "cannot do a minor release on top of an RC version"
+        [ "$CUR_BRANCH" == "nm-${VERSION_ARR[0]}-${VERSION_ARR[1]}" ] || die "minor release can only be on \"nm-${VERSION_ARR[0]}-${VERSION_ARR[1]}\" branch"
         ;;
     devel)
         number_is_odd "${VERSION_ARR[1]}" || die "cannot do devel release on top of version $VERSION_STR"
-        [ "$((${VERSION_ARR[2]} + 1))" -lt 90 ] || die "devel release must have a micro version smaller than 90 but current version is $VERSION_STR"
+        [ "$RC_VERSION" = "" ] || die "cannot do a devel release on top of an RC version"
         [ "$CUR_BRANCH" == main ] || die "devel release can only be on main"
-        ;;
-    rc)
-        number_is_odd "${VERSION_ARR[1]}" || die "cannot do rc release on top of version $VERSION_STR"
-        [ "${VERSION_ARR[2]}" -ge 90 ] || die "rc release must have a micro version larger than ${VERSION_ARR[0]}.90 but current version is $VERSION_STR"
-        RC_VERSION="$((${VERSION_ARR[2]} - 88))"
-        [ "$CUR_BRANCH" == "nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))" ] || die "devel release can only be on \"nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))\" branch"
         ;;
     rc1)
         number_is_odd "${VERSION_ARR[1]}" || die "cannot do rc release on top of version $VERSION_STR"
-        [ "${VERSION_ARR[2]}" -lt 90 ] || die "rc release must have a micro version smaller than ${VERSION_ARR[0]}.${VERSION_ARR[1]}.90 but current version is $VERSION_STR"
+        [ "$RC_VERSION" = "" ] || die "rc1 release cannot be done on top of an RC version"
         [ "$CUR_BRANCH" == main ] || die "rc1 release can only be on main"
         RELEASE_BRANCH="nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))"
         ;;
+    rc)
+        number_is_even "${VERSION_ARR[1]}" || die "cannot do rc release on top of version $VERSION_STR"
+        [ "$RC_VERSION" != "" ] || die "rc release must be done on top of an RC version"
+        [ "$CUR_BRANCH" == "nm-${VERSION_ARR[0]}-${VERSION_ARR[1]}" ] || die "rc release can only be on \"nm-${VERSION_ARR[0]}-${VERSION_ARR[1]}\" branch"
+        ;;
     major)
-        number_is_odd "${VERSION_ARR[1]}" || die "cannot do major release on top of version $VERSION_STR"
-        [ "${VERSION_ARR[2]}" -ge 90 ] || die "parent version for major release must have a micro version larger than ${VERSION_ARR[0]}.90 but current version is $VERSION_STR"
-        [ "$CUR_BRANCH" == "nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))" ] || die "major release can only be on \"nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))\" branch"
+        number_is_even "${VERSION_ARR[1]}" || die "cannot do major release on top of version $VERSION_STR"
+        [ "$RC_VERSION" != "" ] || die "major release must be done on top of an RC version"
+        [ "$CUR_BRANCH" == "nm-${VERSION_ARR[0]}-${VERSION_ARR[1]}" ] || die "major release can only be on \"nm-${VERSION_ARR[0]}-${VERSION_ARR[1]}\" branch"
         ;;
     major-post)
         number_is_odd "${VERSION_ARR[1]}" || die "cannot do major-post release on top of version $VERSION_STR"
-        [ "$((${VERSION_ARR[2]} + 1))" -lt 90 ] || die "major-post release must have a micro version smaller than 90 but current version is $VERSION_STR"
+        [ "$RC_VERSION" = "" ] || die "major-post release cannot be done on top of an RC version"
         [ "$CUR_BRANCH" == main ] || die "major-post release can only be on main"
         ;;
     *)
@@ -389,7 +380,7 @@ if [ "$RELEASE_MODE" = major -o "$RELEASE_MODE" = minor ]; then
     fi
     echo "$(echo_color 36 -n "https://gitlab.freedesktop.org/NetworkManager/networkmanager.pages.freedesktop.org.git") by running"
     if [ "$RELEASE_MODE" = major ]; then
-        v="${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 1)).0"
+        v="${VERSION_ARR[0]}.${VERSION_ARR[1]}.0"
     else
         v="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$((${VERSION_ARR[2]} + 1))"
     fi
@@ -418,8 +409,8 @@ if [ $CHECK_GITLAB = 1 ]; then
     fi
 fi
 
-BRANCHES=()
-BUILD_TAG=
+PUSH_REFS=()
+BUILD_VERSION=
 
 CLEANUP_CHECKOUT_BRANCH="$CUR_BRANCH"
 
@@ -428,61 +419,21 @@ CLEANUP_REFS+=("refs/heads/$TMP_BRANCH")
 
 case "$RELEASE_MODE" in
     minor)
-        set_version_number "${VERSION_ARR[0]}" "${VERSION_ARR[1]}" $(("${VERSION_ARR[2]}" + 1))
-        git commit -m "release: bump version to ${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 1))" -a || die "failed to commit release"
-
-        b="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 1))"
-        git tag -s -a -m "Tag $b" "$b" HEAD || die "failed to tag release"
-        BRANCHES+=("$b")
-        CLEANUP_REFS+=("refs/tags/$b")
-        BUILD_TAG="$b"
-        TAR_VERSION="$b"
+        BUILD_VERSION="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 1))"
         ;;
     devel)
-        set_version_number "${VERSION_ARR[0]}" "${VERSION_ARR[1]}" $(("${VERSION_ARR[2]}" + 1))
-        git commit -m "release: bump version to ${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 1)) (development)" -a || die "failed to commit devel version bump"
-
-        b="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 1))"
-        git tag -s -a -m "Tag $b (development)" "$b-dev" HEAD || die "failed to tag release"
-        BRANCHES+=("$b-dev")
-        CLEANUP_REFS+=("refs/tags/$b-dev")
-        BUILD_TAG="$b-dev"
-        TAR_VERSION="$b"
-        ;;
-    rc)
-        b="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 1))"
-        t="${VERSION_ARR[0]}.$(("${VERSION_ARR[1]}" + 1))-rc$RC_VERSION"
-        set_version_number "${VERSION_ARR[0]}" "${VERSION_ARR[1]}" $(("${VERSION_ARR[2]}" + 1))
-        git commit -m "release: bump version to $b ($t) (development)" -a || die "failed to commit rc version bump"
-
-        git tag -s -a -m "Tag $b ($t) (development)" "$t" HEAD || die "failed to tag release"
-        BRANCHES+=("$t")
-        CLEANUP_REFS+=("refs/tags/$t")
-        BUILD_TAG="$t"
-        TAR_VERSION="$b"
+        BUILD_VERSION="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 1))"
+        BUILD_VERSION_DESCR="$BUILD_VERSION (development)"
+        BUILD_VERSION="${BUILD_VERSION}-dev"
         ;;
     rc1)
-        set_version_number "${VERSION_ARR[0]}" "${VERSION_ARR[1]}" 90
-        b="${VERSION_ARR[0]}.${VERSION_ARR[1]}.90"
-        t="${VERSION_ARR[0]}.$(("${VERSION_ARR[1]}" + 1))-rc1"
-        git commit -m "release: bump version to $b ($t)" -a || die "failed to commit rc1 version bump"
-
-        git tag -s -a -m "Tag $b ($t) (development)" "$t" HEAD || die "failed to tag release $t"
-        BRANCHES+=("$t")
-        CLEANUP_REFS+=("refs/tags/$t")
-        BUILD_TAG="$t"
-        TAR_VERSION="$b"
+        BUILD_VERSION="${VERSION_ARR[0]}.$(("${VERSION_ARR[1]}" + 1))-rc1"
+        ;;
+    rc)
+        BUILD_VERSION="${VERSION_ARR[0]}.${VERSION_ARR[1]}-rc$(( $RC_VERSION + 1 ))"
         ;;
     major)
-        b="${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 1)).0"
-        set_version_number "${VERSION_ARR[0]}" "$((${VERSION_ARR[1]} + 1))" 0
-        git commit -m "release: bump version to $b" -a || die "failed to commit major version bump"
-
-        git tag -s -a -m "Tag $b" "$b" HEAD || die "failed to tag release"
-        BRANCHES+=("$b")
-        CLEANUP_REFS+=("refs/tags/$b")
-        BUILD_TAG="$b"
-        TAR_VERSION="$b"
+        BUILD_VERSION="${VERSION_ARR[0]}.${VERSION_ARR[1]}.0"
         ;;
     major-post)
         # We create a merge commit with the content of current "main", with two
@@ -494,62 +445,60 @@ case "$RELEASE_MODE" in
         git merge -Xours --commit -m tmp main || die "merge1"
         git rm --cached -r . || die "merge2"
         git checkout main -- . || die "merge3"
-        b="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$((${VERSION_ARR[2]} + 1))"
         git commit --amend -m tmp -a || die "failed to commit major version bump"
         test x = "x$(git diff main HEAD)" || die "there is a diff after merge!"
 
-        set_version_number "${VERSION_ARR[0]}" "${VERSION_ARR[1]}" "$((${VERSION_ARR[2]} + 1))"
-        git commit --amend -m "release: bump version to $b (development)" -a || die "failed to commit major version bump"
-        git tag -s -a -m "Tag $b (development)" "$b-dev" HEAD || die "failed to tag release"
-        BRANCHES+=("$b-dev")
-        CLEANUP_REFS+=("refs/tags/$b-dev")
-        BUILD_TAG="$b-dev"
-        TAR_VERSION="$b"
+        BUILD_VERSION="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 1))"
+        BUILD_VERSION_DESCR="$BUILD_VERSION (development)"
+        BUILD_VERSION="${BUILD_VERSION}-dev"
         ;;
     *)
         die "Release mode $RELEASE_MODE not yet implemented"
         ;;
 esac
 
-build_tag() {
-    local BUILD_TAG="$1"
-    local TAR_FILE="NetworkManager-$2.tar.xz"
+build_version() {
+    local BUILD_VERSION="$1"
+    local BUILD_VERSION_DESCR="$2"
+    local TAR_FILE="NetworkManager-$BUILD_VERSION.tar.xz"
     local SUM_FILE="$TAR_FILE.sha256sum"
 
-    git checkout "$BUILD_TAG" || die "failed to checkout $BUILD_TAG"
+    set_version_number "$BUILD_VERSION"
+    git commit -m "release: bump version to $BUILD_VERSION_DESCR" -a || die "failed to commit release"
+    git tag -s -a -m "Release $BUILD_VERSION_DESCR" "$BUILD_VERSION" HEAD || die "failed to tag release"
+
+    PUSH_REFS+=("$BUILD_VERSION")
+    CLEANUP_REFS+=("refs/tags/$BUILD_VERSION")
+
+    git checkout "$BUILD_VERSION" || die "failed to checkout $BUILD_VERSION"
     ./contrib/fedora/rpm/build_clean.sh -r || die "build release failed"
     cp "./build/meson-dist/$TAR_FILE" /tmp/ || die "failed to copy $TAR_FILE to /tmp"
     cp "./build/meson-dist/$SUM_FILE" /tmp/ || die "failed to copy $SUM_FILE to /tmp"
     git clean -fdx
+
+    RELEASE_VERSIONS+=("$BUILD_VERSION")
 }
 
-RELEASE_TAR_VERSIONS=()
-RELEASE_TAGS=()
-if [ -n "$BUILD_TAG" ]; then
-    build_tag "$BUILD_TAG" "$TAR_VERSION"
-    RELEASE_TAR_VERSIONS+=("$TAR_VERSION")
-    RELEASE_TAGS+=("$BUILD_TAG")
+RELEASE_VERSIONS=()
+if [ -n "$BUILD_VERSION" ]; then
+    build_version "$BUILD_VERSION" "${BUILD_VERSION_DESCR:-$BUILD_VERSION}"
 fi
 git checkout -B "$CUR_BRANCH" "$TMP_BRANCH" || die "cannot checkout $CUR_BRANCH"
 
-BRANCHES+=( "$CUR_BRANCH" )
+PUSH_REFS+=( "$CUR_BRANCH" )
 
 if [ "$RELEASE_MODE" = rc1 ]; then
     git branch "$RELEASE_BRANCH" "$TMP_BRANCH" || die "cannot checkout $CUR_BRANCH"
-    BRANCHES+=( "$RELEASE_BRANCH" )
+    PUSH_REFS+=( "$RELEASE_BRANCH" )
     CLEANUP_REFS+=( "refs/heads/$RELEASE_BRANCH" )
+
     git checkout "$TMP_BRANCH"
-    b="${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 2)).0"
-    set_version_number "${VERSION_ARR[0]}" "$((${VERSION_ARR[1]} + 2))" 0
-    git commit -m "release: bump version to $b (development)" -a || die "failed to commit devel version bump"
-    git tag -s -a -m "Tag $b (development)" "$b-dev" HEAD || die "failed to tag release"
-    BRANCHES+=("$b-dev")
-    CLEANUP_REFS+=("refs/tags/$b-dev")
-    BUILD_TAG="$b-dev"
-    TAR_VERSION="$b"
-    build_tag "$BUILD_TAG" "$TAR_VERSION"
-    RELEASE_TAR_VERSIONS+=("$TAR_VERSION")
-    RELEASE_TAGS+=("$BUILD_TAG")
+
+    BUILD_VERSION="${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 2)).0"
+    BUILD_VERSION_DESCR="$BUILD_VERSION (development)"
+    BUILD_VERSION="${BUILD_VERSION}-dev"
+    build_version "$BUILD_VERSION" "$BUILD_VERSION_DESCR"
+
     git checkout -B "$CUR_BRANCH" "$TMP_BRANCH" || die "cannot checkout $CUR_BRANCH"
 fi
 
@@ -565,20 +514,19 @@ if [ -z "$GITLAB_USER_ID" ] || [ "$GITLAB_USER_ID" = "null" ]; then
     die "failed to authenticate to gitlab.freedesktop.org with the private token"
 fi
 
-do_command git push "$ORIGIN" "${BRANCHES[@]}" || die "failed to to push branches ${BRANCHES[@]} to $ORIGIN"
+do_command git push "$ORIGIN" "${PUSH_REFS[@]}" || die "failed to to push branches ${PUSH_REFS[@]} to $ORIGIN"
 
 CREATE_RELEASE_FAIL=0
-for I in "${!RELEASE_TAR_VERSIONS[@]}"; do
-    TAR_FILE="NetworkManager-${RELEASE_TAR_VERSIONS[$I]}.tar.xz"
+for BUILD_VERSION in "${RELEASE_VERSIONS[@]}"; do
+    TAR_FILE="NetworkManager-$BUILD_VERSION.tar.xz"
     SUM_FILE="$TAR_FILE.sha256sum"
-    BUILD_TAG="${RELEASE_TAGS["$I"]}"
     FAIL=0
 
     # upload tarball and checksum file as generic packages
     for F in "$TAR_FILE" "$SUM_FILE"; do
         do_command curl --location --fail-with-body --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
             --upload-file "/tmp/$F" \
-            "https://gitlab.freedesktop.org/api/v4/projects/411/packages/generic/NetworkManager/$BUILD_TAG/$F" \
+            "https://gitlab.freedesktop.org/api/v4/projects/411/packages/generic/NetworkManager/$BUILD_VERSION/$F" \
             || FAIL=1
 
         if [[ $FAIL = 1 ]]; then
@@ -595,25 +543,25 @@ for I in "${!RELEASE_TAR_VERSIONS[@]}"; do
          --request POST "https://gitlab.freedesktop.org/api/v4/projects/411/releases" \
          --data "$(cat <<END
             {
-                "name": "NetworkManager $BUILD_TAG",
-                "tag_name": "$BUILD_TAG", 
+                "name": "NetworkManager $BUILD_VERSION",
+                "tag_name": "$BUILD_VERSION", 
                 "assets": {
                     "links": [
                         {
-                            "name": "NetworkManager $BUILD_TAG tarball with docs",
-                            "url": "https://gitlab.freedesktop.org/api/v4/projects/411/packages/generic/NetworkManager/$BUILD_TAG/$TAR_FILE",
+                            "name": "NetworkManager $BUILD_VERSION tarball with docs",
+                            "url": "https://gitlab.freedesktop.org/api/v4/projects/411/packages/generic/NetworkManager/$BUILD_VERSION/$TAR_FILE",
                             "direct_asset_path": "/$TAR_FILE",
                             "link_type":"package"
                         },
                         {
-                            "name": "NetworkManager $BUILD_TAG tarball sha256sum",
-                            "url": "https://gitlab.freedesktop.org/api/v4/projects/411/packages/generic/NetworkManager/$BUILD_TAG/$SUM_FILE",
+                            "name": "NetworkManager $BUILD_VERSION tarball sha256sum",
+                            "url": "https://gitlab.freedesktop.org/api/v4/projects/411/packages/generic/NetworkManager/$BUILD_VERSION/$SUM_FILE",
                             "direct_asset_path": "/$SUM_FILE",
                             "link_type":"package"
                         },
                         {
                             "name": "NEWS",
-                            "url": "https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/blob/$BUILD_TAG/NEWS?ref_type=tags",
+                            "url": "https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/blob/$BUILD_VERSION/NEWS?ref_type=tags",
                             "direct_asset_path": "/NEWS",
                             "link_type":"other"
                         }
@@ -624,7 +572,7 @@ END
             )" || FAIL=1
 
     if [[ $? != 0 ]]; then
-        fail_msg "failed to create NetworkManager $BUILD_TAG release"
+        fail_msg "failed to create NetworkManager $BUILD_VERSION release"
         CREATE_RELEASE_FAIL=1
         continue
     fi
