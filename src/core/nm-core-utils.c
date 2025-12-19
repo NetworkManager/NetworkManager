@@ -5163,6 +5163,14 @@ helper_have_data(int fd, GIOCondition condition, gpointer user_data)
     n_read = nm_utils_fd_read(fd, &info->in_buffer);
     _LOG2T(info, "read returns %ld", (long) n_read);
 
+    if (info->in_buffer.len > 32 * 1024 * 1024) {
+        helper_complete(info,
+                        g_error_new_literal(NM_UTILS_ERROR,
+                                            NM_UTILS_ERROR_UNKNOWN,
+                                            "the output is larger than 32MiB"));
+        return G_SOURCE_CONTINUE;
+    }
+
     if (n_read > 0)
         return G_SOURCE_CONTINUE;
 
