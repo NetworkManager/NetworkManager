@@ -206,20 +206,30 @@ nm_supplicant_config_add_blob(NMSupplicantConfig *self,
     ConfigOption              *old_opt;
     ConfigOption              *opt;
     NMSupplOptType             type;
-    const guint8              *data;
     gsize                      data_len;
+    gs_free char              *full_value = NULL;
 
     g_return_val_if_fail(NM_IS_SUPPLICANT_CONFIG(self), FALSE);
     g_return_val_if_fail(key != NULL, FALSE);
     g_return_val_if_fail(value != NULL, FALSE);
     g_return_val_if_fail(blobid != NULL, FALSE);
 
-    data = g_bytes_get_data(value, &data_len);
+    g_bytes_get_data(value, &data_len);
     g_return_val_if_fail(data_len > 0, FALSE);
 
-    priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE(self);
+    if (data_len > 32 * 1024 * 1024) {
+        g_set_error(error,
+                    NM_SUPPLICANT_ERROR,
+                    NM_SUPPLICANT_ERROR_CONFIG,
+                    "blob '%s' is larger than 32MiB",
+                    key);
+        return FALSE;
+    }
 
-    type = nm_supplicant_settings_verify_setting(key, (const char *) data, data_len);
+    priv       = NM_SUPPLICANT_CONFIG_GET_PRIVATE(self);
+    full_value = g_strdup_printf("blob://%s", blobid);
+
+    type = nm_supplicant_settings_verify_setting(key, full_value, strlen(full_value));
     if (type == NM_SUPPL_OPT_TYPE_INVALID) {
         g_set_error(error,
                     NM_SUPPLICANT_ERROR,
@@ -240,7 +250,7 @@ nm_supplicant_config_add_blob(NMSupplicantConfig *self,
     }
 
     opt        = g_slice_new0(ConfigOption);
-    opt->value = g_strdup_printf("blob://%s", blobid);
+    opt->value = g_steal_pointer(&full_value);
     opt->len   = strlen(opt->value);
     opt->type  = type;
 
