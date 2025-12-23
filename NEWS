@@ -8,6 +8,10 @@ subject to change and not guaranteed to be compatible with
 the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
+* Unify the versioning to use everywhere the scheme with the -rcX or -dev
+  suffixes when appropriate. This affects, for example, the URL and filename
+  of the release tarball and the version reported by nmcli and the daemon.
+  As an exception, the C API will continue to use the 90+ scheme for RC versions.
 * Restrict the connectivity check to use the DNS servers defined on the
   same link. If the link has no DNS servers, the connectivity check will
   use any servers available in the system.
