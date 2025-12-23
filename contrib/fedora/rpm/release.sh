@@ -415,17 +415,30 @@ git checkout -B "$TMP_BRANCH"
 CLEANUP_REFS+=("refs/heads/$TMP_BRANCH")
 
 case "$RELEASE_MODE" in
-    minor|devel|rc)
+    minor)
         # Version is already correct in meson.build
         BUILD_VERSION="$VERSION_STR"
+        NEXT_VERSION="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$((${VERSION_ARR[2]} + 1))"
+        ;;
+    devel)
+        # Version is already correct in meson.build
+        BUILD_VERSION="$VERSION_STR"
+        NEXT_VERSION="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$((${VERSION_ARR[2]} + 1))-dev"
+        ;;
+    rc)
+        # Version is already correct in meson.build
+        BUILD_VERSION="$VERSION_STR"
+        NEXT_VERSION="${VERSION_ARR[0]}.${VERSION_ARR[1]}-rc$((RC_VERSION + 1))"
         ;;
     rc1)
         # Current version is wrong (dev version), need to set rc1 version
-        BUILD_VERSION="${VERSION_ARR[0]}.$(("${VERSION_ARR[1]}" + 1))-rc1"
+        BUILD_VERSION="${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 1))-rc1"
+        NEXT_VERSION="${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 1))-rc2"
         ;;
     major)
         # Current version is wrong (rc version), need to set major version
         BUILD_VERSION="${VERSION_ARR[0]}.${VERSION_ARR[1]}.0"
+        NEXT_VERSION="${VERSION_ARR[0]}.${VERSION_ARR[1]}.1"
         ;;
     major-post)
         # We create a merge commit with the content of current "main", with two
@@ -442,6 +455,7 @@ case "$RELEASE_MODE" in
 
         # Version is already correct in meson.build
         BUILD_VERSION="$VERSION_STR"
+        NEXT_VERSION="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$((${VERSION_ARR[2]} + 1))-dev"
         ;;
     *)
         die "Release mode $RELEASE_MODE not yet implemented"
@@ -451,7 +465,9 @@ esac
 build_version() {
     local CURR_VERSION="$(get_version)"
     local BUILD_VERSION="$1"
+    local NEXT_VERSION="$2"
     local BUILD_VERSION_DESCR="${BUILD_VERSION/-dev/ (development)}"
+    local NEXT_VERSION_DESCR="${NEXT_VERSION/-dev/ (development)}"
     local TAR_FILE="NetworkManager-$BUILD_VERSION.tar.xz"
     local SUM_FILE="$TAR_FILE.sha256sum"
 
@@ -474,16 +490,17 @@ build_version() {
 
     # Store the release version for later use
     RELEASE_VERSIONS+=("$BUILD_VERSION")
+
+    # Bump to next version, so that build between now and the next release has the next version already.
+    # Otherwise the macros in nm_version.h don't work correctly.
+    set_version_number "$NEXT_VERSION"
+    git commit -m "release: bump version to $NEXT_VERSION_DESCR" -a || die "failed to commit version bump"
 }
 
 # Build and create tarball. Bump version as needed.
 PUSH_REFS=()
 RELEASE_VERSIONS=()
-build_version "$BUILD_VERSION"
-
-# Work was done on the temporary branch, advance the real branch
-git checkout -B "$CUR_BRANCH" "$TMP_BRANCH" || die "cannot checkout $CUR_BRANCH"
-PUSH_REFS+=( "$CUR_BRANCH" )
+build_version "$BUILD_VERSION" "$NEXT_VERSION"
 
 if [ "$RELEASE_MODE" = rc1 ]; then
     # Create the release branch (nm-1-xx)
@@ -491,16 +508,18 @@ if [ "$RELEASE_MODE" = rc1 ]; then
     PUSH_REFS+=( "$RELEASE_BRANCH" )
     CLEANUP_REFS+=( "refs/heads/$RELEASE_BRANCH" )
 
-    # Work on the temporary branch again
-    git checkout "$TMP_BRANCH"
+    # Go back to the commit of the rc1 release, nm-1-xx is one commit further now.
+    git checkout -B "$TMP_BRANCH" "$BUILD_VERSION" || die "cannot checkout $TMP_BRANCH"
 
     # Second release for rc1: create new dev version on main
     BUILD_VERSION="${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 2)).0-dev"
-    build_version "$BUILD_VERSION"
-
-    # Work was done on the temporary branch, advance the real branch
-    git checkout -B "$CUR_BRANCH" "$TMP_BRANCH" || die "cannot checkout $CUR_BRANCH"
+    NEXT_VERSION="${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 2)).1-dev"
+    build_version "$BUILD_VERSION" "$NEXT_VERSION"
 fi
+
+# Work was done on the temporary branch, advance the real branch
+git checkout -B "$CUR_BRANCH" "$TMP_BRANCH" || die "cannot checkout $CUR_BRANCH"
+PUSH_REFS+=( "$CUR_BRANCH" )
 
 if [[ $GITLAB_TOKEN == "" ]]; then
     [[ -r ~/.config/nm-release-token ]] || die "cannot read ~/.config/nm-release-token"
