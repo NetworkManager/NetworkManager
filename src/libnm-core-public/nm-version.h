@@ -12,14 +12,14 @@
 
 /* Deprecation / Availability macros */
 
-#if !defined(NM_VERSION_MIN_REQUIRED) || (NM_VERSION_MIN_REQUIRED == 0)
-#undef NM_VERSION_MIN_REQUIRED
-#define NM_VERSION_MIN_REQUIRED (NM_API_VERSION)
-#endif
-
 #if !defined(NM_VERSION_MAX_ALLOWED) || (NM_VERSION_MAX_ALLOWED == 0)
 #undef NM_VERSION_MAX_ALLOWED
 #define NM_VERSION_MAX_ALLOWED (NM_API_VERSION)
+#endif
+
+#if !defined(NM_VERSION_MIN_REQUIRED) || (NM_VERSION_MIN_REQUIRED == 0)
+#undef NM_VERSION_MIN_REQUIRED
+#define NM_VERSION_MIN_REQUIRED (NM_VERSION_MAX_ALLOWED)
 #endif
 
 /* sanity checks */
