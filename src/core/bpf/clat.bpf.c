@@ -603,11 +603,8 @@ rewrite_icmpv6(struct __sk_buff *skb)
         case 0:
             icmp_buf.type = ICMP_PARAMETERPROB;
             icmp_buf.code = 0;
-            break;
-        case 1:
-            icmp_buf.type = ICMP_DEST_UNREACH;
-            icmp_buf.code = ICMP_PROT_UNREACH;
-            ptr           = bpf_ntohl(icmp6->icmp6_pointer);
+
+            ptr = bpf_ntohl(icmp6->icmp6_pointer);
             /* Figure 6 in RFC6145 - using if statements b/c of
              * range at the bottom
              */
@@ -625,6 +622,10 @@ rewrite_icmpv6(struct __sk_buff *skb)
                 icmp_buf.un.reserved[0] = 16;
             else
                 return -1;
+            break;
+        case 1:
+            icmp_buf.type = ICMP_DEST_UNREACH;
+            icmp_buf.code = ICMP_PROT_UNREACH;
             break;
         default:
             return -1;
