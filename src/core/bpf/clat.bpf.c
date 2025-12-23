@@ -455,7 +455,7 @@ rewrite_icmpv6(struct ipv6hdr    *ip6h,
         icmp.type = ICMP_DEST_UNREACH;
         icmp.code = ICMP_FRAG_NEEDED;
 
-        mtu = bpf_htonl(icmp6->icmp6_mtu) - 20;
+        mtu = bpf_ntohl(icmp6->icmp6_mtu) - 20;
         if (mtu > 0xffff)
             return -1;
         icmp.un.frag.mtu = bpf_htons(mtu);
