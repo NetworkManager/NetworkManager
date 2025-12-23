@@ -202,6 +202,7 @@ rewrite_icmp(struct __sk_buff *skb, const struct ipv6hdr *ip6h)
             icmp6_buf.icmp6_type    = ICMPV6_PARAMPROB;
             icmp6_buf.icmp6_code    = ICMPV6_UNK_NEXTHDR;
             icmp6_buf.icmp6_pointer = bpf_htonl(offsetof(struct ipv6hdr, nexthdr));
+            break;
         case ICMP_PORT_UNREACH:
             icmp6_buf.icmp6_code = ICMPV6_PORT_UNREACH;
             break;
@@ -215,11 +216,13 @@ rewrite_icmp(struct __sk_buff *skb, const struct ipv6hdr *ip6h)
             if (mtu < 1280)
                 mtu = 1280;
             icmp6_buf.icmp6_mtu = bpf_htonl(mtu);
+            break;
         case ICMP_NET_ANO:
         case ICMP_HOST_ANO:
         case ICMP_PKT_FILTERED:
         case ICMP_PREC_CUTOFF:
             icmp6_buf.icmp6_code = ICMPV6_ADM_PROHIBITED;
+            break;
         default:
             return -1;
         }
@@ -264,6 +267,7 @@ rewrite_icmp(struct __sk_buff *skb, const struct ipv6hdr *ip6h)
         default:
             return -1;
         }
+        break;
     default:
         return -1;
     }

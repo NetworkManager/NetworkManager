@@ -98,6 +98,7 @@ bpf_clang_flags = [
   '-std=gnu17',
   '-Wno-compare-distinct-pointer-types',
   '-Wunused',
+  '-Wimplicit-fallthrough',
   '-fno-stack-protector',
   '-O2',
   '-target',
@@ -109,6 +110,7 @@ bpf_clang_flags = [
 bpf_gcc_flags = [
   '-std=gnu17',
   '-Wunused',
+  '-Wimplicit-fallthrough',
   '-fno-stack-protector',
   '-fno-ssa-phiopt',
   '-O2',
