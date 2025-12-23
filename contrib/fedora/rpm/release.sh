@@ -409,11 +409,8 @@ if [ $CHECK_GITLAB = 1 ]; then
     fi
 fi
 
-PUSH_REFS=()
-BUILD_VERSION=
-
+# Work on a temporary branch
 CLEANUP_CHECKOUT_BRANCH="$CUR_BRANCH"
-
 git checkout -B "$TMP_BRANCH"
 CLEANUP_REFS+=("refs/heads/$TMP_BRANCH")
 
@@ -463,6 +460,7 @@ build_version() {
     local TAR_FILE="NetworkManager-$BUILD_VERSION.tar.xz"
     local SUM_FILE="$TAR_FILE.sha256sum"
 
+    # Bump version and tag the release
     set_version_number "$BUILD_VERSION"
     git commit -m "release: bump version to $BUILD_VERSION_DESCR" -a || die "failed to commit release"
     git tag -s -a -m "Release $BUILD_VERSION_DESCR" "$BUILD_VERSION" HEAD || die "failed to tag release"
@@ -470,35 +468,43 @@ build_version() {
     PUSH_REFS+=("$BUILD_VERSION")
     CLEANUP_REFS+=("refs/tags/$BUILD_VERSION")
 
-    git checkout "$BUILD_VERSION" || die "failed to checkout $BUILD_VERSION"
+    # Build to get the tarball for the release
     ./contrib/fedora/rpm/build_clean.sh -r || die "build release failed"
     cp "./build/meson-dist/$TAR_FILE" /tmp/ || die "failed to copy $TAR_FILE to /tmp"
     cp "./build/meson-dist/$SUM_FILE" /tmp/ || die "failed to copy $SUM_FILE to /tmp"
     git clean -fdx
 
+    # Store the release version for later use
     RELEASE_VERSIONS+=("$BUILD_VERSION")
 }
 
+# Build and create tarball. Bump version as needed.
+PUSH_REFS=()
 RELEASE_VERSIONS=()
 if [ -n "$BUILD_VERSION" ]; then
     build_version "$BUILD_VERSION" "${BUILD_VERSION_DESCR:-$BUILD_VERSION}"
 fi
-git checkout -B "$CUR_BRANCH" "$TMP_BRANCH" || die "cannot checkout $CUR_BRANCH"
 
+# Work was done on the temporary branch, advance the real branch
+git checkout -B "$CUR_BRANCH" "$TMP_BRANCH" || die "cannot checkout $CUR_BRANCH"
 PUSH_REFS+=( "$CUR_BRANCH" )
 
 if [ "$RELEASE_MODE" = rc1 ]; then
-    git branch "$RELEASE_BRANCH" "$TMP_BRANCH" || die "cannot checkout $CUR_BRANCH"
+    # Create the release branch (nm-1-xx)
+    git branch "$RELEASE_BRANCH" "$TMP_BRANCH" || die "cannot checkout $RELEASE_BRANCH"
     PUSH_REFS+=( "$RELEASE_BRANCH" )
     CLEANUP_REFS+=( "refs/heads/$RELEASE_BRANCH" )
 
+    # Work on the temporary branch again
     git checkout "$TMP_BRANCH"
 
+    # Second release for rc1: create new dev version on main
     BUILD_VERSION="${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 2)).0"
     BUILD_VERSION_DESCR="$BUILD_VERSION (development)"
     BUILD_VERSION="${BUILD_VERSION}-dev"
     build_version "$BUILD_VERSION" "$BUILD_VERSION_DESCR"
 
+    # Work was done on the temporary branch, advance the real branch
     git checkout -B "$CUR_BRANCH" "$TMP_BRANCH" || die "cannot checkout $CUR_BRANCH"
 fi
 
@@ -514,8 +520,10 @@ if [ -z "$GITLAB_USER_ID" ] || [ "$GITLAB_USER_ID" = "null" ]; then
     die "failed to authenticate to gitlab.freedesktop.org with the private token"
 fi
 
+# Push the modified branches and tags to the origin repository
 do_command git push "$ORIGIN" "${PUSH_REFS[@]}" || die "failed to to push branches ${PUSH_REFS[@]} to $ORIGIN"
 
+# Create the releases
 CREATE_RELEASE_FAIL=0
 for BUILD_VERSION in "${RELEASE_VERSIONS[@]}"; do
     TAR_FILE="NetworkManager-$BUILD_VERSION.tar.xz"
