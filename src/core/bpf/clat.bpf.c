@@ -594,7 +594,7 @@ rewrite_icmpv6(struct __sk_buff *skb)
         icmp_buf.type = ICMP_DEST_UNREACH;
         icmp_buf.code = ICMP_FRAG_NEEDED;
 
-        mtu = bpf_htonl(icmp6->icmp6_mtu) - 20;
+        mtu = bpf_ntohl(icmp6->icmp6_mtu) - 20;
         if (mtu > 0xffff)
             return -1;
         icmp_buf.un.frag.mtu = bpf_htons(mtu);
