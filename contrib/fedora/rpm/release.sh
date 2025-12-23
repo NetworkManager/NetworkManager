@@ -415,21 +415,16 @@ git checkout -B "$TMP_BRANCH"
 CLEANUP_REFS+=("refs/heads/$TMP_BRANCH")
 
 case "$RELEASE_MODE" in
-    minor)
-        BUILD_VERSION="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 1))"
-        ;;
-    devel)
-        BUILD_VERSION="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 1))"
-        BUILD_VERSION_DESCR="$BUILD_VERSION (development)"
-        BUILD_VERSION="${BUILD_VERSION}-dev"
+    minor|devel|rc)
+        # Version is already correct in meson.build
+        BUILD_VERSION="$VERSION_STR"
         ;;
     rc1)
+        # Current version is wrong (dev version), need to set rc1 version
         BUILD_VERSION="${VERSION_ARR[0]}.$(("${VERSION_ARR[1]}" + 1))-rc1"
         ;;
-    rc)
-        BUILD_VERSION="${VERSION_ARR[0]}.${VERSION_ARR[1]}-rc$(( $RC_VERSION + 1 ))"
-        ;;
     major)
+        # Current version is wrong (rc version), need to set major version
         BUILD_VERSION="${VERSION_ARR[0]}.${VERSION_ARR[1]}.0"
         ;;
     major-post)
@@ -445,9 +440,8 @@ case "$RELEASE_MODE" in
         git commit --amend -m tmp -a || die "failed to commit major version bump"
         test x = "x$(git diff main HEAD)" || die "there is a diff after merge!"
 
-        BUILD_VERSION="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 1))"
-        BUILD_VERSION_DESCR="$BUILD_VERSION (development)"
-        BUILD_VERSION="${BUILD_VERSION}-dev"
+        # Version is already correct in meson.build
+        BUILD_VERSION="$VERSION_STR"
         ;;
     *)
         die "Release mode $RELEASE_MODE not yet implemented"
@@ -455,16 +449,20 @@ case "$RELEASE_MODE" in
 esac
 
 build_version() {
+    local CURR_VERSION="$(get_version)"
     local BUILD_VERSION="$1"
-    local BUILD_VERSION_DESCR="$2"
+    local BUILD_VERSION_DESCR="${BUILD_VERSION/-dev/ (development)}"
     local TAR_FILE="NetworkManager-$BUILD_VERSION.tar.xz"
     local SUM_FILE="$TAR_FILE.sha256sum"
 
-    # Bump version and tag the release
-    set_version_number "$BUILD_VERSION"
-    git commit -m "release: bump version to $BUILD_VERSION_DESCR" -a || die "failed to commit release"
-    git tag -s -a -m "Release $BUILD_VERSION_DESCR" "$BUILD_VERSION" HEAD || die "failed to tag release"
+    # The current version is usually already correct, except for rc1 and major. Bump version in those cases.
+    if [[ "$BUILD_VERSION" != "$CURR_VERSION" ]]; then
+        set_version_number "$BUILD_VERSION"
+        git commit -m "release: bump version to $BUILD_VERSION_DESCR" -a || die "failed to commit release"
+    fi
 
+    # Tag the release
+    git tag -s -a -m "Release $BUILD_VERSION_DESCR" "$BUILD_VERSION" HEAD || die "failed to tag release"
     PUSH_REFS+=("$BUILD_VERSION")
     CLEANUP_REFS+=("refs/tags/$BUILD_VERSION")
 
@@ -481,9 +479,7 @@ build_version() {
 # Build and create tarball. Bump version as needed.
 PUSH_REFS=()
 RELEASE_VERSIONS=()
-if [ -n "$BUILD_VERSION" ]; then
-    build_version "$BUILD_VERSION" "${BUILD_VERSION_DESCR:-$BUILD_VERSION}"
-fi
+build_version "$BUILD_VERSION"
 
 # Work was done on the temporary branch, advance the real branch
 git checkout -B "$CUR_BRANCH" "$TMP_BRANCH" || die "cannot checkout $CUR_BRANCH"
@@ -499,10 +495,8 @@ if [ "$RELEASE_MODE" = rc1 ]; then
     git checkout "$TMP_BRANCH"
 
     # Second release for rc1: create new dev version on main
-    BUILD_VERSION="${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 2)).0"
-    BUILD_VERSION_DESCR="$BUILD_VERSION (development)"
-    BUILD_VERSION="${BUILD_VERSION}-dev"
-    build_version "$BUILD_VERSION" "$BUILD_VERSION_DESCR"
+    BUILD_VERSION="${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 2)).0-dev"
+    build_version "$BUILD_VERSION"
 
     # Work was done on the temporary branch, advance the real branch
     git checkout -B "$CUR_BRANCH" "$TMP_BRANCH" || die "cannot checkout $CUR_BRANCH"
