@@ -27,7 +27,7 @@
 #   * Run in a "clean" environment, i.e. no unusual environment variables set, on a recent
 #     Fedora, with suitable dependencies installed.
 #
-#   * First, ensure that you have a valid Gitlab's private token for gitlab.freedestkop.org
+#   * First, ensure that you have a valid Gitlab's private token for gitlab.freedesktop.org
 #     stored in ~/.config/nm-release-token, or pass one with --gitlab-token argument.
 #     Also, ensure you have a GPG key that you want to use for signing. Also, have gpg-agent running
 #     and possibly configure `git config --get user.signingkey` for the proper key.
@@ -155,8 +155,6 @@ set_version_number() {
 
 check_news() {
     local mode="$1"
-    shift
-    local ver_arr=("$@")
 
     case "$mode" in
         major|minor)
@@ -361,7 +359,7 @@ if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
     cmp <(git show "$ORIGIN/main:contrib/fedora/rpm/release.sh") "$BASH_SOURCE_ABSOLUTE" || die "$BASH_SOURCE is not identical to \`git show \"$ORIGIN/main:contrib/fedora/rpm/release.sh\"\`"
 fi
 
-if ! check_news "$RELEASE_MODE" "@{VERSION_ARR[@]}" ; then
+if ! check_news "$RELEASE_MODE"; then
     if [ "$CHECK_NEWS" == 1 ]; then
         die "NEWS file needs update to mention stable release (skip check with --no-check-news)"
     fi
@@ -592,7 +590,7 @@ for BUILD_VERSION in "${RELEASE_VERSIONS[@]}"; do
 END
             )" || FAIL=1
 
-    if [[ $? != 0 ]]; then
+    if [[ $FAIL = 1 ]]; then
         fail_msg "failed to create NetworkManager $BUILD_VERSION release"
         CREATE_RELEASE_FAIL=1
         continue
