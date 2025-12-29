@@ -2135,16 +2135,20 @@ _dbus_signal_ip_config_cb(NMVpnConnection *self, int addr_family, GVariant *dict
                          IS_IPv4 ? NM_VPN_PLUGIN_IP4_CONFIG_DOMAIN
                                  : NM_VPN_PLUGIN_IP6_CONFIG_DOMAIN,
                          "&s",
-                         &v_str))
+                         &v_str)) {
         nm_l3_config_data_add_domain(l3cd, addr_family, v_str);
+        nm_l3_config_data_add_search(l3cd, addr_family, v_str);
+    }
 
     if (g_variant_lookup(dict,
                          IS_IPv4 ? NM_VPN_PLUGIN_IP4_CONFIG_DOMAINS
                                  : NM_VPN_PLUGIN_IP6_CONFIG_DOMAINS,
                          "as",
                          &var_iter)) {
-        while (g_variant_iter_next(var_iter, "&s", &v_str))
+        while (g_variant_iter_next(var_iter, "&s", &v_str)) {
             nm_l3_config_data_add_domain(l3cd, addr_family, v_str);
+            nm_l3_config_data_add_search(l3cd, addr_family, v_str);
+        }
         g_variant_iter_free(var_iter);
     }
 
