@@ -468,14 +468,11 @@ rewrite_icmpv6(struct ipv6hdr    *ip6h,
         case 0:
             icmp.type = ICMP_PARAMETERPROB;
             icmp.code = 0;
-            break;
-        case 1:
-            icmp.type = ICMP_DEST_UNREACH;
-            icmp.code = ICMP_PROT_UNREACH;
-            ptr       = bpf_ntohl(icmp6->icmp6_pointer);
+
             /* Figure 6 in RFC6145 - using if statements b/c of
              * range at the bottom
              */
+            ptr = bpf_ntohl(icmp6->icmp6_pointer);
             if (ptr == 0 || ptr == 1)
                 icmp.un.reserved[0] = ptr;
             else if (ptr == 4 || ptr == 5)
@@ -490,6 +487,10 @@ rewrite_icmpv6(struct ipv6hdr    *ip6h,
                 icmp.un.reserved[0] = 16;
             else
                 return -1;
+            break;
+        case 1:
+            icmp.type = ICMP_DEST_UNREACH;
+            icmp.code = ICMP_PROT_UNREACH;
             break;
         default:
             return -1;
