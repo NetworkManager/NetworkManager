@@ -96,6 +96,7 @@ endif
 
 bpf_clang_flags = [
   '-std=gnu17',
+  '-Wunused',
   '-Wno-compare-distinct-pointer-types',
   '-fno-stack-protector',
   '-O2',
@@ -107,6 +108,7 @@ bpf_clang_flags = [
 
 bpf_gcc_flags = [
   '-std=gnu17',
+  '-Wunused',
   '-fno-stack-protector',
   '-fno-ssa-phiopt',
   '-O2',
