@@ -413,19 +413,16 @@ rewrite_icmpv6(struct ipv6hdr    *ip6h,
                struct icmphdr   **new_icmp_out,
                struct hdr_cursor *nh)
 {
-    void           *data_end = SKB_DATA_END(skb);
-    struct icmp6hdr old_icmp6, *icmp6 = (void *) (ip6h + 1);
-    struct icmphdr  icmp, *new_icmp;
-    __u32           mtu, ptr;
-    struct iphdr    dst_hdr;
-    void           *inner_packet;
+    void            *data_end = SKB_DATA_END(skb);
+    struct icmp6hdr *icmp6    = (void *) (ip6h + 1);
+    struct icmphdr   icmp, *new_icmp;
+    __u32            mtu, ptr;
 
     if ((void *) (icmp6 + 1) > data_end)
         return -1;
 
-    old_icmp6 = *icmp6;
-    new_icmp  = (void *) icmp6;
-    icmp      = *new_icmp;
+    new_icmp = (void *) icmp6;
+    icmp     = *new_icmp;
 
     /* These translations are defined in RFC6145 section 5.2 */
     switch (icmp6->icmp6_type) {
@@ -501,8 +498,7 @@ rewrite_icmpv6(struct ipv6hdr    *ip6h,
         return -1;
     }
 
-    *new_icmp = icmp;
-out:
+    *new_icmp     = icmp;
     *new_icmp_out = new_icmp;
     return 0;
 }
@@ -514,15 +510,12 @@ clat_translate_v6(struct __sk_buff  *skb,
                   struct iphdr      *dst_hdr_out,
                   bool               depth)
 {
-    struct in6_addr subnet_v6 = {};
     struct in_addr  src_v4;
     int             ip_type;
     struct ipv6hdr *ip6h;
     int             ret = TC_ACT_OK;
     struct icmphdr *new_icmp;
     struct icmp6hdr old_icmp6;
-    struct iphdr    dst_hdr_icmp;
-    int             type;
 
     struct clat_v6_config_value *v6_config;
     struct clat_v6_config_key    v6_config_key;
