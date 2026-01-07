@@ -520,4 +520,15 @@ void        nm_utils_read_private_files(const char *const  *paths,
                                         gpointer            cb_data);
 GHashTable *nm_utils_read_private_files_finish(GAsyncResult *result, GError **error);
 
+/*****************************************************************************/
+
+void nm_utils_ping_host(NMIPAddrTyped       address,
+                        int                 ifindex,
+                        guint               timeout_sec,
+                        GCancellable       *cancellable,
+                        GAsyncReadyCallback callback,
+                        gpointer            cb_data);
+
+gboolean nm_utils_ping_host_finish(GAsyncResult *result, GError **error);
+
 #endif /* __NM_CORE_UTILS_H__ */
