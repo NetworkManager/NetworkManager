@@ -1,19 +1,17 @@
-===============================================
-NetworkManager-1.56.1
-Overview of changes since NetworkManager-1.56.0
-===============================================
-
-* For private connections (the ones that specify a user in the
-  "connection.permissions" property), verify that the user can access
-  the 802.1X certificates and keys set in the connection.
-* Introduce a libnm function that can be used by VPN plugins to check
-  user permissions on certificate and keys.
-
 =============================================
 NetworkManager-1.56
 Overview of changes since NetworkManager-1.54
 =============================================
 
+This is a snapshot of NetworkManager development. The API is
+subject to change and not guaranteed to be compatible with
+the later release.
+USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
+
+* Unify the versioning to use everywhere the scheme with the -rcX or -dev
+  suffixes when appropriate. This affects, for example, the URL and filename
+  of the release tarball and the version reported by nmcli and the daemon.
+  As an exception, the C API will continue to use the 90+ scheme for RC versions.
 * nmcli now supports viewing and managing WireGuard peers.
 * Support reapplying the "sriov.vfs" property as long as
   "sriov.total-vfs" is not changed.
@@ -42,6 +40,11 @@ Overview of changes since NetworkManager-1.54
   for eBPF is now detected at run time.
 * Add new MPTCP 'laminar' endpoint type, and set it by default alongside
   the 'subflow' one.
+* For private connections (the ones that specify a user in the
+  "connection.permissions" property), verify that the user can access
+  the 802.1X certificates and keys set in the connection.
+* Introduce a libnm function that can be used by VPN plugins to check
+  user permissions on certificate and keys.
 
 =============================================
 NetworkManager-1.54
