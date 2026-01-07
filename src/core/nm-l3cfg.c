@@ -311,10 +311,11 @@ typedef struct _NML3CfgPrivate {
     NMPlatformIP6Address  clat_address_6_committed;
 
     /* If NULL, the BPF program hasn't been loaded or attached */
-    struct clat_bpf   *clat_bpf;
-    int                clat_socket;
-    struct bpf_tc_opts clat_attach_ingress;
-    struct bpf_tc_opts clat_attach_egress;
+    struct clat_bpf *clat_bpf;
+    struct bpf_link *clat_ingress_link;
+    struct bpf_link *clat_egress_link;
+
+    int clat_socket;
 #endif /* HAVE_CLAT */
 
     /* Whether we earlier configured MPTCP endpoints for the interface. */
@@ -5588,31 +5589,26 @@ _l3_commit_one(NML3Cfg              *self,
 static void
 _l3_clat_destroy(NML3Cfg *self)
 {
-    DECLARE_LIBBPF_OPTS(bpf_tc_hook,
-                        hook,
-                        .attach_point = BPF_TC_INGRESS | BPF_TC_EGRESS,
-                        .ifindex      = self->priv.ifindex);
-    int  err = 0;
     char buf[100];
+    int  err;
 
-    hook.attach_point                         = BPF_TC_INGRESS;
-    self->priv.p->clat_attach_ingress.prog_fd = 0;
-    self->priv.p->clat_attach_ingress.prog_id = 0;
-    err = bpf_tc_detach(&hook, &self->priv.p->clat_attach_ingress);
-    if (err) {
-        libbpf_strerror(err, buf, sizeof(buf));
-        _LOGW("failed to tear down CLAT BPF ingress hook: %s", buf);
-    }
-    hook.attach_point                        = BPF_TC_EGRESS;
-    self->priv.p->clat_attach_egress.prog_fd = 0;
-    self->priv.p->clat_attach_egress.prog_id = 0;
-    err = bpf_tc_detach(&hook, &self->priv.p->clat_attach_egress);
-    if (err) {
-        libbpf_strerror(err, buf, sizeof(buf));
-        _LOGW("failed to tear down CLAT BPF egress hook: %s", buf);
+    if (self->priv.p->clat_ingress_link) {
+        err = bpf_link__destroy(self->priv.p->clat_ingress_link);
+        if (err != 0) {
+            libbpf_strerror(err, buf, sizeof(buf));
+            _LOGD("clat: failed to destroy the ingress link");
+        }
+        self->priv.p->clat_ingress_link = NULL;
     }
 
-    bpf_tc_hook_destroy(&hook);
+    if (self->priv.p->clat_egress_link) {
+        err = bpf_link__destroy(self->priv.p->clat_egress_link);
+        if (err != 0) {
+            libbpf_strerror(err, buf, sizeof(buf));
+            _LOGD("clat: failed to destroy the egress link");
+        }
+        self->priv.p->clat_egress_link = NULL;
+    }
 
     nm_clear_pointer(&self->priv.p->clat_bpf, clat_bpf__destroy);
 }
@@ -5628,12 +5624,6 @@ _l3_commit_pref64(NML3Cfg *self, NML3CfgCommitType commit_type)
     char                   buf[100];
     struct clat_config     clat_config;
     gboolean               v6_changed;
-    DECLARE_LIBBPF_OPTS(bpf_tc_hook,
-                        hook,
-                        .attach_point = BPF_TC_INGRESS | BPF_TC_EGRESS,
-                        .ifindex      = self->priv.ifindex);
-    DECLARE_LIBBPF_OPTS(bpf_tc_opts, attach_egress);
-    DECLARE_LIBBPF_OPTS(bpf_tc_opts, attach_ingress);
 
     if (l3cd && nm_l3_config_data_get_pref64(l3cd, &_l3cd_pref64_inner, &l3cd_pref64_plen)) {
         l3cd_pref64 = &_l3cd_pref64_inner;
@@ -5642,71 +5632,35 @@ _l3_commit_pref64(NML3Cfg *self, NML3CfgCommitType commit_type)
     if (l3cd_pref64 && self->priv.p->clat_address_4 && self->priv.p->clat_address_6_valid) {
         if (!self->priv.p->clat_bpf) {
             _LOGT("clat: attaching the BPF program");
-            self->priv.p->clat_bpf = clat_bpf__open();
-            err                    = libbpf_get_error(self->priv.p->clat_bpf);
-            if (err) {
-                libbpf_strerror(err, buf, sizeof(buf));
-                _LOGW("clat: failed to open the BPF program: %s", buf);
-                clat_bpf__destroy(self->priv.p->clat_bpf);
-                self->priv.p->clat_bpf = NULL;
+
+            self->priv.p->clat_bpf = clat_bpf__open_and_load();
+            if (!self->priv.p->clat_bpf) {
+                libbpf_strerror(errno, buf, sizeof(buf));
+                _LOGW("clat: failed to open and load the BPF program: %s", buf);
                 return;
             }
 
-            err = clat_bpf__load(self->priv.p->clat_bpf);
-            if (err) {
-                libbpf_strerror(err, buf, sizeof(buf));
-                _LOGW("clat: failed to load the BPF program: %s", buf);
-                clat_bpf__destroy(self->priv.p->clat_bpf);
-                self->priv.p->clat_bpf = NULL;
+            self->priv.p->clat_ingress_link =
+                bpf_program__attach_tcx(self->priv.p->clat_bpf->progs.clat_ingress,
+                                        self->priv.ifindex,
+                                        NULL);
+            if (!self->priv.p->clat_ingress_link) {
+                libbpf_strerror(errno, buf, sizeof(buf));
+                _LOGW("clat: failed to attach the ingress program: %s", buf);
                 return;
             }
 
-            err = bpf_tc_hook_create(&hook);
-            if (err && err != -EEXIST) {
-                libbpf_strerror(err, buf, sizeof(buf));
-                _LOGW("clat: failed to create the BPF hook: %s", buf);
-                clat_bpf__destroy(self->priv.p->clat_bpf);
-                self->priv.p->clat_bpf = NULL;
+            self->priv.p->clat_egress_link =
+                bpf_program__attach_tcx(self->priv.p->clat_bpf->progs.clat_egress,
+                                        self->priv.ifindex,
+                                        NULL);
+            if (!self->priv.p->clat_egress_link) {
+                libbpf_strerror(errno, buf, sizeof(buf));
+                _LOGW("clat: failed to attach the egress program: %s", buf);
                 return;
             }
 
-            attach_ingress.prog_fd = bpf_program__fd(self->priv.p->clat_bpf->progs.clat_ingress);
-            if (attach_ingress.prog_fd < 0) {
-                _LOGW("clat: couldn't find the BPF ingress");
-                clat_bpf__destroy(self->priv.p->clat_bpf);
-                self->priv.p->clat_bpf = NULL;
-                return;
-            }
-
-            attach_egress.prog_fd = bpf_program__fd(self->priv.p->clat_bpf->progs.clat_egress);
-            if (attach_egress.prog_fd < 0) {
-                _LOGW("clat: couldn't find the BPF egress");
-                clat_bpf__destroy(self->priv.p->clat_bpf);
-                self->priv.p->clat_bpf = NULL;
-                return;
-            }
-
-            hook.attach_point = BPF_TC_INGRESS;
-            err               = bpf_tc_attach(&hook, &attach_ingress);
-            if (err) {
-                libbpf_strerror(err, buf, sizeof(buf));
-                _LOGW("clat: failed to attach ingress to BPF hook: %s", buf);
-                clat_bpf__destroy(self->priv.p->clat_bpf);
-                self->priv.p->clat_bpf = NULL;
-                return;
-            }
-            self->priv.p->clat_attach_ingress = attach_ingress;
-
-            hook.attach_point = BPF_TC_EGRESS;
-            err               = bpf_tc_attach(&hook, &attach_egress);
-            if (err) {
-                libbpf_strerror(err, buf, sizeof(buf));
-                _LOGW("clat: failed to attach ingress to BPF hook: %s", buf);
-                clat_bpf__destroy(self->priv.p->clat_bpf);
-                self->priv.p->clat_bpf = NULL;
-                return;
-            }
-            self->priv.p->clat_attach_egress = attach_egress;
+            _LOGT("clat: program attached successfully");
         }
 
         /* Pass configuration to the BPF program */
