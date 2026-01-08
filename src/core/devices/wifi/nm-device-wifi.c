@@ -3257,7 +3257,11 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 static void
 ensure_hotspot_frequency(NMDeviceWifi *self, NMSettingWireless *s_wifi, NMWifiAP *ap)
 {
-    guint32     freqs_a[]    = {5180, 5200, 5220, 5745, 5765, 5785, 5805, 0};
+    guint32     freqs_a[]    = {5180, /* only U-NII-1 channels: non-DFS and available everywhere */
+                                5200,
+                                5220,
+                                5240,
+                                0};
     guint32     freqs_bg[]   = {2412, 2437, 2462, 2472, 0};
     guint32     freqs_6ghz[] = {5975, /* only U-NII-5 PSC channels, for better compatibility */
                                 6055,
