@@ -110,7 +110,6 @@ exec 2>&1
 
 UUID=`uuidgen`
 RELEASE_VERSION="${RELEASE_VERSION:-$(git rev-list HEAD | wc -l)}"
-SNAPSHOT="${SNAPSHOT:-%{nil\}}"
 VERSION="${VERSION:-$(get_version || die "Could not read $VERSION")}"
 COMMIT_FULL="${COMMIT_FULL:-$(git rev-parse --verify HEAD || die "Error reading HEAD revision")}"
 COMMIT="${COMMIT:-$(printf '%s' "$COMMIT_FULL" | sed 's/^\(.\{10\}\).*/\1/' || die "Error reading HEAD revision")}"
@@ -208,10 +207,6 @@ write_changelog
 
 sed -e "s/__VERSION__/${VERSION/-/\~}/g" \
     -e "s/__RELEASE_VERSION__/$RELEASE_VERSION/g" \
-    -e "s/__SNAPSHOT__/$SNAPSHOT/g" \
-    -e "s/__COMMIT__/$COMMIT/g" \
-    -e "s/__COMMIT_FULL__/$COMMIT_FULL/g" \
-    -e "s/__SNAPSHOT__/$SNAPSHOT/g" \
     -e "s/__SOURCE1__/$(basename "$SOURCE")/g" \
     -e "s/__BCOND_DEFAULT_DEBUG__/$BCOND_DEFAULT_DEBUG/g" \
     -e "s/__BCOND_DEFAULT_LTO__/${BCOND_DEFAULT_LTO:-"%{nil}"}/g" \
@@ -232,7 +227,12 @@ case "$BUILDTYPE" in
         ;;
 esac
 
-rpmbuild --define "_topdir $TEMP" $RPM_BUILD_OPTION "$TEMPSPEC" $NM_RPMBUILD_ARGS || die "ERROR: rpmbuild FAILED"
+DIST=
+[[ "$COMMIT" != "" ]] && DIST=".${COMMIT}${DIST}"
+[[ "$SNAPSHOT" != "" ]] && DIST=".${SNAPSHOT}${DIST}"
+[[ "$DIST" != "" ]] && DIST=("--define" "dist ${DIST}$(rpmbuild --eval '%{dist}')")
+
+rpmbuild --define "_topdir $TEMP" "${DIST[@]}" $RPM_BUILD_OPTION "$TEMPSPEC" $NM_RPMBUILD_ARGS || die "ERROR: rpmbuild FAILED"
 
 LS_EXTRA=()
 
