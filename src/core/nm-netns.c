@@ -574,8 +574,8 @@ notify_watcher:
 typedef struct {
     const char *name;
     guint32     start_addr; /* host byte order */
-    guint       prefix_len;
-    guint       num_addrs;
+    guint       range_plen;
+    guint       addr_plen;
     gboolean    allow_reuse;
 } IPReservationTypeDesc;
 
@@ -583,9 +583,9 @@ static const IPReservationTypeDesc ip_reservation_types[_NM_NETNS_IP_RESERVATION
     [NM_NETNS_IP_RESERVATION_TYPE_SHARED4] =
         {
             .name        = "shared-ip4",
-            .start_addr  = 0x0a2a0001, /* 10.42.0.1 */
-            .prefix_len  = 24,
-            .num_addrs   = 256,
+            .start_addr  = 0x0a2a0001, /* 10.42.{0-255}.1/24 */
+            .range_plen  = 16,
+            .addr_plen   = 24,
             .allow_reuse = TRUE,
         },
 };
@@ -613,13 +613,23 @@ nm_netns_ip_reservation_get(NMNetns *self, NMNetnsIPReservationType type)
         g_object_ref(self);
     } else {
         guint32 count;
+        guint32 base_network;
+        guint32 host_mask;
+        guint32 increment;
 
         nm_assert(g_hash_table_size(*table) > 0);
-        nm_assert(desc->prefix_len > 0 && desc->prefix_len <= 32);
+        nm_assert(desc->range_plen < 32);
+        nm_assert(desc->addr_plen > 0 && desc->addr_plen <= 32);
+        nm_assert(desc->addr_plen > desc->range_plen);
+
+        base_network = desc->start_addr & ~(0xFFFFFFFFu >> desc->range_plen);
+        host_mask    = 0xFFFFFFFFu >> desc->range_plen;
+        increment    = 1 << (32 - desc->addr_plen);
 
         count = 0u;
         for (;;) {
-            addr = htonl(desc->start_addr + (count << (32 - desc->prefix_len)));
+            addr = htonl(base_network
+                         + ((base_network + (desc->start_addr + count * increment)) & host_mask));
 
             res = g_hash_table_lookup(*table, &addr);
             if (!res)
@@ -627,7 +637,7 @@ nm_netns_ip_reservation_get(NMNetns *self, NMNetnsIPReservationType type)
 
             count++;
 
-            if (count >= desc->num_addrs) {
+            if (count >= 1 << (desc->addr_plen - desc->range_plen)) {
                 if (!desc->allow_reuse) {
                     _LOGE("%s: ran out of IP addresses", desc->name);
                     return NULL;
@@ -637,12 +647,12 @@ nm_netns_ip_reservation_get(NMNetns *self, NMNetnsIPReservationType type)
                     _LOGE("%s: ran out of IP addresses. Reuse %s/%u",
                           desc->name,
                           nm_inet4_ntop(res->addr, buf),
-                          desc->prefix_len);
+                          desc->addr_plen);
                 } else {
                     _LOGD("%s: reserved IP address %s/%u (duplicate)",
                           desc->name,
                           nm_inet4_ntop(res->addr, buf),
-                          desc->prefix_len);
+                          desc->addr_plen);
                 }
                 res->_ref_count++;
                 return res;
@@ -663,7 +673,7 @@ nm_netns_ip_reservation_get(NMNetns *self, NMNetnsIPReservationType type)
     _LOGD("%s: reserved IP address %s/%u",
           desc->name,
           nm_inet4_ntop(res->addr, buf),
-          desc->prefix_len);
+          desc->addr_plen);
     return res;
 }
 
@@ -695,7 +705,7 @@ nm_netns_ip_reservation_release(NMNetnsIPReservation *res)
         _LOGD("%s: release IP address reservation %s/%u (%d more references held)",
               desc->name,
               nm_inet4_ntop(res->addr, buf),
-              desc->prefix_len,
+              desc->addr_plen,
               res->_ref_count);
         return;
     }
@@ -706,7 +716,7 @@ nm_netns_ip_reservation_release(NMNetnsIPReservation *res)
     _LOGD("%s: release IP address reservation %s/%u",
           desc->name,
           nm_inet4_ntop(res->addr, buf),
-          desc->prefix_len);
+          desc->addr_plen);
 
     if (g_hash_table_size(*table) == 0) {
         nm_clear_pointer(table, g_hash_table_unref);
