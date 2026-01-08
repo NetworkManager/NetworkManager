@@ -6,15 +6,23 @@
 #
 # Note that it contains __PLACEHOLDERS__ that will be replaced by the accompanying 'build.sh' script.
 
+Name:    NetworkManager
+Summary: Network connection manager and user applications
+License: GPL-2.0-or-later AND LGPL-2.1-or-later
+URL:     https://networkmanager.dev/
+Group:   System Environment/Base
+
+Epoch:   1
+Version: __VERSION__
+Release: __RELEASE_VERSION__%{?dist}
+
+###############################################################################
 
 %global wpa_supplicant_version 1:1.1
 
 %global ppp_version %(pkg-config --modversion pppd 2>/dev/null || sed -n 's/^#define\\s*VERSION\\s*"\\([^\\s]*\\)"$/\\1/p' %{_includedir}/pppd/patchlevel.h 2>/dev/null | grep . || echo bad)
 %global glib2_version %(pkg-config --modversion glib-2.0 2>/dev/null || echo bad)
 
-%global epoch_version 1
-%global base_version __VERSION__
-%global release_version __RELEASE_VERSION__
 %global bcond_default_debug __BCOND_DEFAULT_DEBUG__
 %global bcond_default_lto __BCOND_DEFAULT_LTO__
 %global bcond_default_test __BCOND_DEFAULT_TEST__
@@ -150,15 +158,6 @@
 %define _lto_cflags %{nil}
 
 ###############################################################################
-
-Name: NetworkManager
-Summary: Network connection manager and user applications
-Epoch: %{epoch_version}
-Version: %{base_version}
-Release: %{release_version}%{?dist}
-Group: System Environment/Base
-License: GPL-2.0-or-later AND LGPL-2.1-or-later
-URL: https://networkmanager.dev/
 
 #Source: https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/releases/%{version_no_tilde}/downloads/%{name}-%{version_no_tilde}.tar.xz
 Source: __SOURCE1__
