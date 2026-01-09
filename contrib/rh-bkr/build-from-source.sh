@@ -293,7 +293,7 @@ if [[ "$DO_INSTALL" == yes ]]; then
 
     # ensure that the expected NM is installed.
     COMMIT_ID="$(git rev-parse --verify HEAD | sed 's/^\(.\{10\}\).*/\1/')"
-    $SUDO yum list installed NetworkManager | grep -q -e "\.$COMMIT_ID\."
+    $SUDO yum list --installed NetworkManager | grep -q -e "\.$COMMIT_ID\."
 
     $SUDO systemctl restart NetworkManager
 fi
