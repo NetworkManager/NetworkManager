@@ -27,7 +27,7 @@
 %global obsoletes_ifcfg_rh           1:1.36.2
 
 %global nmlibdir %{_prefix}/lib/%{name}
-%global nmplugindir %{_libdir}/%{name}/%{version_no_tilde}-%{release}
+%global nmplugindir %{_libdir}/%{name}/%{version}-%{release}
 
 %global _hardened_build 1
 
