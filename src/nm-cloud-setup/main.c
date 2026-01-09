@@ -797,8 +797,8 @@ _oci_new_vlan_dev(SigTermData                          *sigterm_data,
 
     connection = _new_connection();
 
-    macvlan_name  = g_strdup_printf("macvlan%ld", config_data->iface_idx);
-    connection_id = g_strdup_printf("%s%ld", connection_type, config_data->iface_idx);
+    macvlan_name  = g_strdup_printf("macvlan%" G_GSSIZE_FORMAT, config_data->iface_idx);
+    connection_id = g_strdup_printf("%s%" G_GSSIZE_FORMAT, connection_type, config_data->iface_idx);
 
     wired_mac_addr = parent_hwaddr;
     if (nm_streq(connection_type, NM_SETTING_MACVLAN_SETTING_NAME)) {
