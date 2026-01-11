@@ -554,7 +554,7 @@ clat_handle_v4(struct __sk_buff *skb)
     eth->h_proto = bpf_htons(ETH_P_IPV6);
     *ip6h        = dst_hdr;
 
-    ret = bpf_redirect_neigh(skb->ifindex, NULL, 0, 0);
+    ret = bpf_redirect(skb->ifindex, 0);
 out:
     return ret;
 }
