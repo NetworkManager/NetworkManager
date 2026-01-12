@@ -927,8 +927,35 @@ clat_handle_v6(struct __sk_buff *skb)
         goto out;
     if (!v6addr_to_v4(&ip6h->saddr, config.pref64_len, &addr4, &subnet_v6))
         goto out;
-    if (!v6addr_equal(&subnet_v6, &config.pref64))
-        goto out;
+    if (!v6addr_equal(&subnet_v6, &config.pref64)) {
+        struct icmp6hdr *icmp6;
+
+        /* Follow draft-ietf-v6ops-icmpext-xlat-v6only-source-01:
+         *
+         * "Whenever a translator translates an ICMPv6 Destination Unreachable,
+         *  ICMPv6 Time Exceeded or ICMPv6 Packet Too Big ([RFC4443]) to the
+         *  corresponding ICMPv4 ([RFC0792]) message, and the IPv6 source
+         *  address in the outermost IPv6 header is untranslatable, the
+         *  translator SHOULD use the dummy IPv4 address (192.0.0.8) as the IPv4
+         *  source address for the translated packet."
+         */
+        if (ip6h->nexthdr != IPPROTO_ICMPV6)
+            goto out;
+
+        icmp6 = data + sizeof(struct ethhdr) + sizeof(struct ipv6hdr);
+        if (icmp6 + 1 > data_end)
+            goto out;
+
+        if (icmp6->icmp6_type != ICMPV6_DEST_UNREACH && icmp6->icmp6_type != ICMPV6_TIME_EXCEED
+            && icmp6->icmp6_type != ICMPV6_PKT_TOOBIG)
+            goto out;
+
+        DBG("v6: icmpv6 type %u from native address %pI6c, translating src to dummy ipv4\n",
+            icmp6->icmp6_type,
+            &ip6h->saddr);
+
+        addr4 = __cpu_to_be32(INADDR_DUMMY);
+    }
 
     /* At this point we know the packet needs translation. If we can't
      * rewrite it, it should be dropped.
