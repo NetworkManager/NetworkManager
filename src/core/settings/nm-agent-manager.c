@@ -1130,7 +1130,7 @@ _con_get_request_start(Request *req)
             perm = NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM;
         nm_auth_chain_set_data(req->con.chain, "perm", (gpointer) perm, NULL);
 
-        nm_auth_chain_add_call_unsafe(req->con.chain, perm, !!req->con.get.existing_secrets);
+        nm_auth_chain_add_call_unsafe(req->con.chain, perm, FALSE);
     } else {
         _LOGD(NULL,
               "(" LOG_REQ_FMT ") requesting user-owned secrets from agent %s",
