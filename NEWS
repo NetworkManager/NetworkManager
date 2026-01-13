@@ -37,6 +37,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * The "band" property of Wi-fi connections now accepts the "6GHz"
   value.
 * Show the Wi-Fi band of APs in the scan results from nmcli.
+* New <Select...> button in nmtui that allows users to chose from list of
+  available devices when creating connection profiles for physical interfaces
+  (Ethernet, Wi-Fi, etc.).
 
 =============================================
 NetworkManager-1.56

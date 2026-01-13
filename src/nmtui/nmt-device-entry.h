@@ -30,7 +30,10 @@ typedef struct {
 
 GType nmt_device_entry_get_type(void);
 
-NmtNewtWidget *nmt_device_entry_new(const char *label, int width, GType hardware_type);
+NmtNewtWidget *nmt_device_entry_new(const char *label,
+                                    int         width,
+                                    GType       hardware_type,
+                                    gboolean    show_select_button);
 
 typedef gboolean (*NmtDeviceEntryDeviceFilter)(NmtDeviceEntry *deventry,
                                                NMDevice       *device,

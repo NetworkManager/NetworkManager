@@ -99,7 +99,7 @@ nmt_page_macsec_constructed(GObject *object)
     section = nmt_editor_section_new(_("MACsec"), NULL, TRUE);
     grid    = nmt_editor_section_get_body(section);
 
-    widget = nmt_device_entry_new(_("Parent device"), 40, G_TYPE_NONE);
+    widget = nmt_device_entry_new(_("Parent device"), 40, G_TYPE_NONE, FALSE);
     g_object_bind_property(s_macsec,
                            NM_SETTING_MACSEC_PARENT,
                            widget,
