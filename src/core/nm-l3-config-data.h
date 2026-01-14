@@ -487,9 +487,13 @@ guint32 nm_l3_config_data_get_mtu(const NML3ConfigData *self);
 
 gboolean nm_l3_config_data_set_mtu(NML3ConfigData *self, guint32 mtu);
 
-guint32 nm_l3_config_data_get_ip6_mtu(const NML3ConfigData *self);
+guint32 nm_l3_config_data_get_ip6_mtu_static(const NML3ConfigData *self);
 
-gboolean nm_l3_config_data_set_ip6_mtu(NML3ConfigData *self, guint32 ip6_mtu);
+gboolean nm_l3_config_data_set_ip6_mtu_static(NML3ConfigData *self, guint32 ip6_mtu);
+
+guint32 nm_l3_config_data_get_ip6_mtu_ra(const NML3ConfigData *self);
+
+gboolean nm_l3_config_data_set_ip6_mtu_ra(NML3ConfigData *self, guint32 ip6_mtu);
 
 NMUtilsIPv6IfaceId nm_l3_config_data_get_ip6_token(const NML3ConfigData *self);
 

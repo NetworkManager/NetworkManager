@@ -4976,7 +4976,7 @@ _dev_l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, N
         if (state >= NM_DEVICE_STATE_IP_CONFIG && state < NM_DEVICE_STATE_DEACTIVATING) {
             /* FIXME(l3cfg): MTU handling should be moved to l3cfg. */
             if (l3cd)
-                priv->ip6_mtu = nm_l3_config_data_get_ip6_mtu(l3cd);
+                priv->ip6_mtu = nm_l3_config_data_get_ip6_mtu_ra(l3cd);
             _commit_mtu(self);
         }
         _dev_ipll4_check_fallback(self, l3cd);
