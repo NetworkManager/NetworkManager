@@ -4361,7 +4361,6 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
                         nm_l3_config_data_get_best_default_route(l3cd, AF_INET6));
                 }
                 if (best_v6_route) {
-                    int                  mtu;
                     NMPlatformIP4Address addr = {
                         .ifindex      = self->priv.ifindex,
                         .address      = self->priv.p->clat_address_4->addr,
@@ -4369,18 +4368,39 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
                         .addr_source  = NM_IP_CONFIG_SOURCE_CLAT,
                         .plen         = 32,
                     };
+                    const NMPlatformLink *pllink;
+                    guint                 mtu = 0;
+                    guint                 val = 0;
 
                     best_v6_gateway.addr_family = AF_INET6;
                     best_v6_gateway.addr.addr6  = best_v6_route->gateway;
 
-                    mtu = best_v6_route->mtu;
+                    /* Determine the IPv6 MTU of the interface. Unfortunately,
+                     * the logic to set the MTU is in NMDevice and here we need
+                     * some duplication to find the actual value.
+                     * TODO: move the MTU handling into l3cfg. */
 
-                    if (!mtu || mtu > 1500) {
-                        /* v4 Internet MTU */
+                    /* Get the link MTU */
+                    pllink = nm_l3cfg_get_pllink(self, TRUE);
+                    if (pllink)
+                        mtu = pllink->mtu;
+                    if (mtu == 0)
                         mtu = 1500;
+
+                    /* Update it with the IPv6 MTU value from the connection
+                     * or from RA */
+                    val = nm_l3_config_data_get_ip6_mtu_static(l3cd);
+                    if (val == 0) {
+                        val = nm_l3_config_data_get_ip6_mtu_ra(l3cd);
                     }
-                    /* 20 for the ipv6 vs ipv4 header plus 8 for a potential
-                       fragmentation extension header */
+                    if (val != 0 && val < mtu) {
+                        mtu = val;
+                    }
+                    if (mtu < 1280)
+                        mtu = 1280;
+
+                    /* Leave 20 additional bytes for the ipv4 -> ipv6 header translation,
+                     * plus 8 for a potential fragmentation extension header */
                     mtu -= 28;
 
                     rx.r4 = (NMPlatformIP4Route) {
