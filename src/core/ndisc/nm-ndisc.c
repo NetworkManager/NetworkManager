@@ -222,7 +222,7 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex        *multi_idx,
     nm_l3_config_data_set_ndisc_reachable_time_msec(l3cd, rdata->reachable_time_ms);
     nm_l3_config_data_set_ndisc_retrans_timer_msec(l3cd, rdata->retrans_timer_ms);
 
-    nm_l3_config_data_set_ip6_mtu(l3cd, rdata->mtu);
+    nm_l3_config_data_set_ip6_mtu_ra(l3cd, rdata->mtu);
     if (token)
         nm_l3_config_data_set_ip6_token(l3cd, *token);
     if (network_id)

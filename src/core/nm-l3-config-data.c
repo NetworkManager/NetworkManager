@@ -135,7 +135,8 @@ struct _NML3ConfigData {
     int ndisc_hop_limit_val;
 
     guint32 mtu;
-    guint32 ip6_mtu;
+    guint32 ip6_mtu_static; /* IPv6 MTU from the connection profile */
+    guint32 ip6_mtu_ra;     /* IPv6 MTU from Router Advertisement */
     guint32 ndisc_reachable_time_msec_val;
     guint32 ndisc_retrans_timer_msec_val;
 
@@ -397,8 +398,11 @@ nm_l3_config_data_log(const NML3ConfigData *self,
            : "",
        !self->is_sealed ? ", not-sealed" : "");
 
-    if (self->mtu != 0 || self->ip6_mtu != 0) {
-        _L("mtu: %u, ip6-mtu: %u", self->mtu, self->ip6_mtu);
+    if (self->mtu != 0 || self->ip6_mtu_static != 0 || self->ip6_mtu_ra != 0) {
+        _L("mtu: %u, ip6-mtu-static: %u, ip6-mtu-ra %u",
+           self->mtu,
+           self->ip6_mtu_static,
+           self->ip6_mtu_ra);
     }
 
     for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
@@ -1917,22 +1921,42 @@ nm_l3_config_data_set_mtu(NML3ConfigData *self, guint32 mtu)
 }
 
 guint32
-nm_l3_config_data_get_ip6_mtu(const NML3ConfigData *self)
+nm_l3_config_data_get_ip6_mtu_static(const NML3ConfigData *self)
 {
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
 
-    return self->ip6_mtu;
+    return self->ip6_mtu_static;
 }
 
 gboolean
-nm_l3_config_data_set_ip6_mtu(NML3ConfigData *self, guint32 ip6_mtu)
+nm_l3_config_data_set_ip6_mtu_static(NML3ConfigData *self, guint32 ip6_mtu)
 {
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
 
-    if (self->ip6_mtu == ip6_mtu)
+    if (self->ip6_mtu_static == ip6_mtu)
         return FALSE;
 
-    self->ip6_mtu = ip6_mtu;
+    self->ip6_mtu_static = ip6_mtu;
+    return TRUE;
+}
+
+guint32
+nm_l3_config_data_get_ip6_mtu_ra(const NML3ConfigData *self)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+
+    return self->ip6_mtu_ra;
+}
+
+gboolean
+nm_l3_config_data_set_ip6_mtu_ra(NML3ConfigData *self, guint32 ip6_mtu)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
+
+    if (self->ip6_mtu_ra == ip6_mtu)
+        return FALSE;
+
+    self->ip6_mtu_ra = ip6_mtu;
     return TRUE;
 }
 
@@ -2599,7 +2623,8 @@ nm_l3_config_data_cmp_full(const NML3ConfigData *a,
         NM_CMP_DIRECT(a->ip6_token.id, b->ip6_token.id);
         NM_CMP_DIRECT_REF_STRING(a->network_id, b->network_id);
         NM_CMP_DIRECT(a->mtu, b->mtu);
-        NM_CMP_DIRECT(a->ip6_mtu, b->ip6_mtu);
+        NM_CMP_DIRECT(a->ip6_mtu_static, b->ip6_mtu_static);
+        NM_CMP_DIRECT(a->ip6_mtu_ra, b->ip6_mtu_ra);
         NM_CMP_DIRECT_UNSAFE(a->metered, b->metered);
         NM_CMP_DIRECT_UNSAFE(a->proxy_browser_only, b->proxy_browser_only);
         NM_CMP_DIRECT_UNSAFE(a->proxy_method, b->proxy_method);
@@ -3155,6 +3180,9 @@ _init_from_connection_ip(NML3ConfigData *self, int addr_family, NMConnection *co
         nm_l3_config_data_set_ip6_privacy(
             self,
             nm_setting_ip6_config_get_ip6_privacy(NM_SETTING_IP6_CONFIG(s_ip)));
+        nm_l3_config_data_set_ip6_mtu_static(
+            self,
+            nm_setting_ip6_config_get_mtu(NM_SETTING_IP6_CONFIG(s_ip)));
     }
 }
 
@@ -3672,8 +3700,11 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
     if (self->mtu == 0u)
         self->mtu = src->mtu;
 
-    if (self->ip6_mtu == 0u)
-        self->ip6_mtu = src->ip6_mtu;
+    if (self->ip6_mtu_static == 0u)
+        self->ip6_mtu_static = src->ip6_mtu_static;
+
+    if (self->ip6_mtu_ra == 0u)
+        self->ip6_mtu_ra = src->ip6_mtu_ra;
 
     if (NM_FLAGS_HAS(merge_flags, NM_L3_CONFIG_MERGE_FLAGS_CLONE)) {
         _nm_unused nm_auto_unref_dhcplease NMDhcpLease *dhcp_lease_6 =
