@@ -342,12 +342,255 @@ listbox_active_changed(GObject *object, GParamSpec *pspec, gpointer button)
     }
 }
 
+/* Contains both the UI and batch data for wifi-rescans */
+typedef struct {
+    NmtNewtWidget *activate_button;
+    NmtNewtWidget *listbox;
+    NmtNewtForm   *rescan_form;
+    NmtNewtWidget *rescan_button;
+    int            pending;
+    GCancellable  *cancellable;
+    gboolean       cancelled;
+    gboolean       has_error;
+    gboolean       timeout_occurred;
+} RescanBatch;
+
+typedef struct {
+    NMDeviceWifi *wifi_device;
+    GSource      *timeout_id;
+    gulong        signal_id;
+    RescanBatch  *batch;
+} RescanData;
+
+static GPtrArray *
+active_wifi_devices(void)
+{
+    const GPtrArray *devices;
+    GPtrArray       *active_wifi_devices;
+
+    devices = nm_client_get_devices(nm_client);
+
+    if (!devices)
+        return NULL;
+
+    active_wifi_devices = g_ptr_array_new_with_free_func(g_object_unref);
+
+    for (guint i = 0; i < devices->len; i++) {
+        NMDevice              *dev      = g_ptr_array_index((GPtrArray *) devices, i);
+        NMDeviceInterfaceFlags devflags = nm_device_get_interface_flags(dev);
+
+        if ((devflags & NM_DEVICE_INTERFACE_FLAG_UP) == 0)
+            continue;
+
+        if (NM_IS_DEVICE_WIFI(dev)
+            && !NM_IN_SET(nm_device_get_state(dev),
+                          NM_DEVICE_STATE_UNAVAILABLE,
+                          NM_DEVICE_STATE_UNMANAGED,
+                          NM_DEVICE_STATE_FAILED)) {
+            g_ptr_array_add(active_wifi_devices, g_object_ref(dev));
+        }
+    }
+    return active_wifi_devices;
+}
+
+static void
+on_rescan_cancel(NmtNewtForm *form, gpointer user_data)
+{
+    RescanBatch *batch_data = user_data;
+
+    if (!batch_data || batch_data->cancelled)
+        return;
+
+    batch_data->cancelled = TRUE;
+
+    /* Cancel the async operations using nm_clear_g_cancellable */
+    if (batch_data->cancellable)
+        nm_clear_g_cancellable(&batch_data->cancellable);
+
+    g_object_unref(batch_data->rescan_form);
+    batch_data->rescan_form = NULL;
+}
+
+/* creates the wifi-rescan form and manages other ui properties while rescanning */
+static void
+wifi_rescan_form(RescanBatch *batch_data)
+{
+    NmtNewtForm   *rescan_form;
+    NmtNewtWidget *label;
+
+    nmt_newt_component_set_sensitive(NMT_NEWT_COMPONENT(batch_data->listbox), FALSE);
+    nmt_newt_component_set_sensitive(NMT_NEWT_COMPONENT(batch_data->rescan_button), FALSE);
+    nmt_newt_component_set_sensitive(NMT_NEWT_COMPONENT(batch_data->activate_button), FALSE);
+
+    /* open the scanning form*/
+    rescan_form = g_object_new(NMT_TYPE_NEWT_FORM, NULL);
+    label       = nmt_newt_label_new(_("Rescanning Wi-Fi devices..."));
+    nmt_newt_form_set_content(rescan_form, label);
+
+    /* connect the quit signal to rescan cancel */
+    g_signal_connect(rescan_form, "quit", G_CALLBACK(on_rescan_cancel), batch_data);
+
+    nmt_newt_form_show(rescan_form);
+    batch_data->rescan_form = rescan_form;
+}
+
+/* rebuilds the connection list and changes back the
+ * state for various UI components which were
+ * changed during rescanning */
+static void
+on_rescan_complete(gpointer data)
+{
+    NmtConnectConnectionList *list;
+    RescanData               *rescan_data;
+    RescanBatch              *batch_data;
+    NMDeviceWifi             *wifi_device;
+
+    rescan_data = data;
+    batch_data  = rescan_data->batch;
+    wifi_device = rescan_data->wifi_device;
+
+    g_free(rescan_data);
+    rescan_data = NULL;
+
+    if (batch_data->has_error) {
+        nmt_newt_message_dialog(_("Wi-Fi scan failed for device : %s"),
+                                nm_device_get_iface(NM_DEVICE(wifi_device)));
+        batch_data->has_error = FALSE;
+    }
+
+    if (batch_data->timeout_occurred) {
+        nmt_newt_message_dialog(_("Wi-Fi scan timed out for device : %s"),
+                                nm_device_get_iface(NM_DEVICE(wifi_device)));
+        batch_data->timeout_occurred = FALSE;
+    }
+
+    /* If the scans are not complete then simply wait for them to complete
+     * This also ensures that UI is only enabled either after all
+     * scans complete (Either complete or cancel ). Preventing any
+     * overlapping scans caused due to the user pressing rescan multiple times
+     */
+
+    if (--batch_data->pending > 0)
+        return;
+
+    /* If the scan is not cancelled quit normally */
+    if (!batch_data->cancelled) {
+        if (nmt_newt_widget_get_realized(NMT_NEWT_WIDGET(batch_data->rescan_form))) {
+            nmt_newt_form_quit(batch_data->rescan_form);
+            nm_clear_g_object(&batch_data->rescan_form);
+            batch_data->rescan_form = NULL;
+        }
+        list = NMT_CONNECT_CONNECTION_LIST(batch_data->listbox);
+        nmt_newt_listbox_clear(NMT_NEWT_LISTBOX(list));
+
+        g_object_notify(G_OBJECT(nm_client), NM_CLIENT_CONNECTIONS);
+    }
+
+    /* The following cleanup  is required regardless of any cancellation */
+    nmt_newt_component_set_sensitive(NMT_NEWT_COMPONENT(batch_data->listbox), TRUE);
+    nmt_newt_component_set_sensitive(NMT_NEWT_COMPONENT(batch_data->rescan_button), TRUE);
+    nmt_newt_component_set_sensitive(NMT_NEWT_COMPONENT(batch_data->activate_button), TRUE);
+
+    g_clear_object(&batch_data->cancellable);
+}
+
+static gboolean
+scan_timeout_callback(gpointer user_data)
+{
+    RescanData *data = user_data;
+
+    nm_clear_g_source_inst(&data->timeout_id);
+
+    /* Timeout reached - scan took too long */
+    if (data->signal_id) {
+        g_signal_handler_disconnect(data->wifi_device, data->signal_id);
+        data->signal_id = 0;
+    }
+
+    data->batch->timeout_occurred = TRUE;
+
+    on_rescan_complete(data);
+    return G_SOURCE_REMOVE;
+}
+
+static void
+on_last_scan_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
+{
+    RescanData *data = user_data;
+
+    /* Scan completed successfully */
+    nm_clear_g_source_inst(&data->timeout_id);
+    if (data->signal_id) {
+        g_signal_handler_disconnect(data->wifi_device, data->signal_id);
+        data->signal_id = 0;
+    }
+
+    on_rescan_complete(data);
+}
+
+static void
+wifi_rescan_callback(GObject *source_object, GAsyncResult *result, gpointer rescan_data)
+{
+    RescanData *data = rescan_data;
+
+    if (!nm_device_wifi_request_scan_finish(data->wifi_device, result, NULL)) {
+        data->batch->has_error = TRUE;
+        on_rescan_complete(data);
+        return;
+    }
+
+    /* Listen for last-scan property changes */
+    data->signal_id = g_signal_connect(data->wifi_device,
+                                       "notify::last-scan",
+                                       G_CALLBACK(on_last_scan_changed),
+                                       data);
+
+    /* Set a 10-second timeout in case scan doesn't complete */
+    data->timeout_id = nm_g_timeout_add_source(RESCAN_TIMEOUT_MS, scan_timeout_callback, data);
+}
+
+static void
+wifi_rescan(NmtNewtButton *button, gpointer data_batch)
+{
+    gs_unref_ptrarray GPtrArray *devices = active_wifi_devices();
+    RescanData                  *data;
+    RescanBatch                 *batch_data = data_batch;
+
+    if (!devices || devices->len == 0) {
+        nmt_newt_message_dialog(_("No active Wi-Fi devices found"));
+        return;
+    }
+
+    /* create a shared batch for all the devices*/
+    batch_data->pending     = devices->len;
+    batch_data->cancelled   = FALSE;
+    batch_data->cancellable = g_cancellable_new();
+
+    wifi_rescan_form(batch_data);
+
+    for (guint i = 0; i < devices->len; i++) {
+        NMDevice *dev = g_ptr_array_index(devices, i);
+
+        /* per-device data */
+        data              = g_new0(RescanData, 1);
+        data->wifi_device = NM_DEVICE_WIFI(dev);
+        data->batch       = batch_data;
+
+        nm_device_wifi_request_scan_async(NM_DEVICE_WIFI(dev),
+                                          batch_data->cancellable,
+                                          wifi_rescan_callback,
+                                          data);
+    }
+}
+
 static NmtNewtForm *
 nmt_connect_connection_list(gboolean is_top)
 {
-    int            screen_width, screen_height;
-    NmtNewtForm   *form;
-    NmtNewtWidget *list, *activate, *quit, *bbox, *grid;
+    int                          screen_width, screen_height;
+    NmtNewtForm                 *form;
+    NmtNewtWidget               *list, *activate, *quit, *bbox, *grid, *rescan;
+    RescanBatch                 *batch_data;
+    gs_unref_ptrarray GPtrArray *all_active_wifi_devices;
 
     newtGetScreenSize(&screen_width, &screen_height);
 
@@ -371,6 +614,22 @@ nmt_connect_connection_list(gboolean is_top)
     g_signal_connect(list, "notify::active", G_CALLBACK(listbox_active_changed), activate);
     listbox_active_changed(G_OBJECT(list), NULL, activate);
     g_signal_connect(activate, "clicked", G_CALLBACK(activate_clicked), list);
+
+    all_active_wifi_devices = active_wifi_devices();
+    if (all_active_wifi_devices && all_active_wifi_devices->len > 0) {
+        rescan = nmt_newt_button_box_add_start(NMT_NEWT_BUTTON_BOX(bbox), _("Rescan Wi-Fi"));
+
+        batch_data                  = g_new0(RescanBatch, 1);
+        batch_data->activate_button = activate;
+        batch_data->listbox         = list;
+        batch_data->rescan_button   = rescan;
+
+        /* Bind the lifecycle of batch_data to the rescan button.
+         * The data will be freed automatically when the button is destroyed i.e form quits. */
+        g_object_set_data_full(G_OBJECT(rescan), "rescan-batch-data", batch_data, g_free);
+
+        g_signal_connect(rescan, "clicked", G_CALLBACK(wifi_rescan), batch_data);
+    }
 
     quit = nmt_newt_button_box_add_end(NMT_NEWT_BUTTON_BOX(bbox), is_top ? _("Quit") : _("Back"));
     nmt_newt_widget_set_exit_on_activate(quit, TRUE);
