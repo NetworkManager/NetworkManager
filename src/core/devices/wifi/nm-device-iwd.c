@@ -2270,6 +2270,37 @@ add_new:
     return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
+static void
+set_powersave(NMDevice *device)
+{
+    NMDeviceIwd               *self = NM_DEVICE_IWD(device);
+    NMSettingWireless         *s_wireless;
+    NMSettingWirelessPowersave val;
+
+    s_wireless = nm_device_get_applied_setting(device, NM_TYPE_SETTING_WIRELESS);
+
+    g_return_if_fail(s_wireless);
+
+    val = nm_setting_wireless_get_powersave(s_wireless);
+    if (val == NM_SETTING_WIRELESS_POWERSAVE_DEFAULT) {
+        val = nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
+                                                          "wifi.powersave",
+                                                          device,
+                                                          NM_SETTING_WIRELESS_POWERSAVE_IGNORE,
+                                                          NM_SETTING_WIRELESS_POWERSAVE_ENABLE,
+                                                          NM_SETTING_WIRELESS_POWERSAVE_IGNORE);
+    }
+
+    _LOGT(LOGD_WIFI, "powersave is set to %u", (unsigned) val);
+
+    if (val == NM_SETTING_WIRELESS_POWERSAVE_IGNORE)
+        return;
+
+    nm_platform_wifi_set_powersave(nm_device_get_platform(device),
+                                   nm_device_get_ifindex(device),
+                                   val == NM_SETTING_WIRELESS_POWERSAVE_ENABLE);
+}
+
 static NMActStageReturn
 act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
@@ -2296,6 +2327,8 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
             NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
             goto out_fail;
         }
+
+        set_powersave(device);
 
         /* With priv->iwd_autoconnect we have to let IWD handle retries for
          * infrastructure networks.  IWD will not necessarily retry the same
