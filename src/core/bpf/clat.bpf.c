@@ -71,6 +71,13 @@ struct icmpv6_pseudo {
     __u8            nh;
 } __attribute__((packed));
 
+struct ip6_frag {
+    __u8  nexthdr;
+    __u8  reserved;
+    __u16 offset;
+    __u32 identification;
+} __attribute__((packed));
+
 /* This function must be declared as inline because the BPF calling
  * convention only supports up to 5 function arguments. */
 static __always_inline void
@@ -79,6 +86,7 @@ update_l4_checksum(struct __sk_buff *skb,
                    struct iphdr     *iph,
                    bool              v4to6,
                    bool              is_inner,
+                   bool              is_v6_fragment,
                    __u32            *csum_diff)
 {
     int   flags = BPF_F_PSEUDO_HDR;
@@ -104,6 +112,10 @@ update_l4_checksum(struct __sk_buff *skb,
         if (is_inner) {
             offset = offset + sizeof(struct icmp6hdr) + sizeof(struct ipv6hdr);
         }
+    }
+
+    if (is_v6_fragment) {
+        offset += sizeof(struct ip6_frag);
     }
 
     switch (ip_type) {
@@ -497,7 +509,7 @@ clat_handle_v4(struct __sk_buff *skb)
 
     /* we don't bother dealing with IP options or fragmented packets. The
      * latter are identified by the 'frag_off' field having a value (either
-     * the MF bit, or the fragmet offset, or both). However, this field also
+     * the MF bit, or the fragment offset, or both). However, this field also
      * contains the "don't fragment" (DF) bit, which we ignore, so mask that
      * out. The DF is the second-most-significant bit (as bit 0 is
      * reserved).
@@ -531,7 +543,7 @@ clat_handle_v4(struct __sk_buff *skb)
         break;
     case IPPROTO_TCP:
     case IPPROTO_UDP:
-        update_l4_checksum(skb, &dst_hdr, iph, true, false, NULL);
+        update_l4_checksum(skb, &dst_hdr, iph, true, false, false, NULL);
         break;
     default:
         break;
@@ -793,7 +805,7 @@ rewrite_ipv6_inner(struct __sk_buff *skb, struct iphdr *dst_hdr, __u32 *csum_dif
         break;
     case IPPROTO_TCP:
     case IPPROTO_UDP:
-        update_l4_checksum(skb, ip6h, dst_hdr, false, true, csum_diff);
+        update_l4_checksum(skb, ip6h, dst_hdr, false, true, false, csum_diff);
         break;
     default:
         break;
@@ -911,6 +923,7 @@ clat_handle_v6(struct __sk_buff *skb)
     struct in6_addr subnet_v6;
     __be32          addr4;
     int             length_diff = 0;
+    bool            fragmented  = false;
 
     /*
      * ip6h:      v
@@ -962,25 +975,74 @@ clat_handle_v6(struct __sk_buff *skb)
      */
     ret = TC_ACT_SHOT;
 
-    /* drop packets with extension headers */
-    if (ip6h->nexthdr != IPPROTO_TCP && ip6h->nexthdr != IPPROTO_UDP
-        && ip6h->nexthdr != IPPROTO_ICMPV6) {
+    if (ip6h->nexthdr == IPPROTO_TCP || ip6h->nexthdr == IPPROTO_UDP
+        || ip6h->nexthdr == IPPROTO_ICMPV6) {
+        translate_ipv6_header(ip6h, &dst_hdr, addr4, config.local_v4.s_addr);
+        DBG("v6: incoming pkt from src %pI6c (%pI4)\n", &ip6h->saddr, &addr4);
+    } else if (ip6h->nexthdr == IPPROTO_FRAGMENT) {
+        struct ip6_frag *frag = data + sizeof(struct ethhdr) + sizeof(struct ipv6hdr);
+        int              tot_len;
+        __u16            offset;
+
+        if (frag + 1 > data_end)
+            goto out;
+
+        /* Translate into an IPv4 fragmented packet, RFC 6145 5.1.1 */
+
+        tot_len = bpf_ntohs(ip6h->payload_len) + sizeof(struct iphdr) - sizeof(struct ip6_frag);
+
+        offset = bpf_ntohs(frag->offset);
+        offset = ((offset & 1) << 13) | /* More Fragments flag */
+                 (offset >> 3);         /* Offset in 8-octet units */
+
+        dst_hdr = (struct iphdr) {
+            .version  = 4,
+            .ihl      = 5,
+            .id       = bpf_htons(bpf_ntohl(frag->identification) & 0xffff),
+            .tos      = ip6h->priority << 4 | (ip6h->flow_lbl[0] >> 4),
+            .frag_off = bpf_htons(offset),
+            .ttl      = ip6h->hop_limit,
+            .protocol = frag->nexthdr == IPPROTO_ICMPV6 ? IPPROTO_ICMP : frag->nexthdr,
+            .saddr    = addr4,
+            .daddr    = config.local_v4.s_addr,
+            .tot_len  = bpf_htons(tot_len),
+        };
+
+        dst_hdr.check = csum_fold_helper(
+            bpf_csum_diff((__be32 *) &dst_hdr, 0, (__be32 *) &dst_hdr, sizeof(struct iphdr), 0));
+
+        fragmented = true;
+
+        DBG("v6: incoming fragmented pkt from src %pI6c (%pI4), id 0x%x\n",
+            &ip6h->saddr,
+            &addr4,
+            bpf_ntohs(dst_hdr.id));
+    } else {
         DBG("v6: pkt src/dst %pI6c/%pI6c has nexthdr %u, dropping\n", &ip6h->saddr, &ip6h->daddr);
         goto out;
     }
 
-    DBG("v6: incoming pkt from src %pI6c (%pI4)\n", &ip6h->saddr, &addr4);
-
-    translate_ipv6_header(ip6h, &dst_hdr, addr4, config.local_v4.s_addr);
-
     switch (dst_hdr.protocol) {
     case IPPROTO_ICMP:
+        /* We can't update the checksum of ICMP fragmented packets: ICMPv4 doesn't use
+         * a pseudo header, while the ICMPv6 pseudo-header includes the total payload
+         * length, which is not known when parsing the first fragment. This makes it
+         * impossible for a stateless translator to compute the checksum delta. TCP and
+         * UDP don't have this problem because both the v4 and v6 pseudo-headers include
+         * the total length. */
+        if (fragmented)
+            goto out;
+
         if (rewrite_icmpv6(skb, &length_diff))
             goto out;
         break;
     case IPPROTO_TCP:
     case IPPROTO_UDP:
-        update_l4_checksum(skb, ip6h, &dst_hdr, false, false, NULL);
+        /* Update the L4 headers only for non-fragmented packets or for the first
+         * fragment, which contains the L4 header. */
+        if (!fragmented || (bpf_ntohs(dst_hdr.frag_off) & 0x1FFF) == 0) {
+            update_l4_checksum(skb, ip6h, &dst_hdr, false, false, fragmented, NULL);
+        }
         break;
     default:
         break;
@@ -1006,6 +1068,12 @@ clat_handle_v6(struct __sk_buff *skb)
 
     if (bpf_skb_change_proto(skb, bpf_htons(ETH_P_IP), 0))
         goto out;
+
+    if (fragmented) {
+        /* Remove the IPv6 fragment header */
+        if (bpf_skb_adjust_room(skb, -(__s32) sizeof(struct ip6_frag), BPF_ADJ_ROOM_NET, 0))
+            goto out;
+    }
 
     data     = SKB_DATA(skb);
     data_end = SKB_DATA_END(skb);
