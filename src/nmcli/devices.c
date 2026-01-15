@@ -732,21 +732,22 @@ const NmcMetaGenericInfo *const nmc_fields_dev_wifi_list[] = {
     NMC_META_GENERIC("BSSID"),     /* 3 */
     NMC_META_GENERIC("MODE"),      /* 4 */
     NMC_META_GENERIC("CHAN"),      /* 5 */
-    NMC_META_GENERIC("FREQ"),      /* 6 */
-    NMC_META_GENERIC("RATE"),      /* 7 */
-    NMC_META_GENERIC("BANDWIDTH"), /* 8 */
-    NMC_META_GENERIC("SIGNAL"),    /* 9 */
-    NMC_META_GENERIC("BARS"),      /* 10 */
-    NMC_META_GENERIC("SECURITY"),  /* 11 */
-    NMC_META_GENERIC("WPA-FLAGS"), /* 12 */
-    NMC_META_GENERIC("RSN-FLAGS"), /* 13 */
-    NMC_META_GENERIC("DEVICE"),    /* 14 */
-    NMC_META_GENERIC("ACTIVE"),    /* 15 */
-    NMC_META_GENERIC("IN-USE"),    /* 16 */
-    NMC_META_GENERIC("DBUS-PATH"), /* 17 */
+    NMC_META_GENERIC("BAND"),      /* 6 */
+    NMC_META_GENERIC("FREQ"),      /* 7 */
+    NMC_META_GENERIC("RATE"),      /* 8 */
+    NMC_META_GENERIC("BANDWIDTH"), /* 9 */
+    NMC_META_GENERIC("SIGNAL"),    /* 10 */
+    NMC_META_GENERIC("BARS"),      /* 11 */
+    NMC_META_GENERIC("SECURITY"),  /* 12 */
+    NMC_META_GENERIC("WPA-FLAGS"), /* 13 */
+    NMC_META_GENERIC("RSN-FLAGS"), /* 14 */
+    NMC_META_GENERIC("DEVICE"),    /* 15 */
+    NMC_META_GENERIC("ACTIVE"),    /* 16 */
+    NMC_META_GENERIC("IN-USE"),    /* 17 */
+    NMC_META_GENERIC("DBUS-PATH"), /* 18 */
     NULL,
 };
-#define NMC_FIELDS_DEV_WIFI_LIST_COMMON       "IN-USE,BSSID,SSID,MODE,CHAN,RATE,SIGNAL,BARS,SECURITY"
+#define NMC_FIELDS_DEV_WIFI_LIST_COMMON       "IN-USE,BSSID,SSID,MODE,BAND,CHAN,RATE,SIGNAL,BARS,SECURITY"
 #define NMC_FIELDS_DEV_WIFI_LIST_FOR_DEV_LIST "NAME," NMC_FIELDS_DEV_WIFI_LIST_COMMON
 
 const NmcMetaGenericInfo *const nmc_fields_dev_wimax_list[] = {
@@ -866,7 +867,7 @@ usage(void)
           "<ifname>]\n"
           "                         [bssid <BSSID>] [name <name>] [private yes|no] [hidden "
           "yes|no]\n\n"
-          "  wifi hotspot [ifname <ifname>] [con-name <name>] [ssid <SSID>] [band a|bg] "
+          "  wifi hotspot [ifname <ifname>] [con-name <name>] [ssid <SSID>] [band a|bg|6GHz] "
           "[channel <channel>] [password <password>]\n\n"
           "  wifi rescan [ifname <ifname>] [[ssid <SSID to scan>] ...]\n\n"
           "  wifi show-password [ifname <ifname>]\n\n"
@@ -1021,7 +1022,7 @@ usage_device_wifi(void)
           "It is also assumed that IP configuration is obtained via DHCP.\n"
           "\n"
           "ARGUMENTS := hotspot [ifname <ifname>] [con-name <name>] [ssid <SSID>]\n"
-          "                     [band a|bg] [channel <channel>] [password <password>]\n"
+          "                     [band a|bg|6GHz] [channel <channel>] [password <password>]\n"
           "\n"
           "Create a Wi-Fi hotspot. Use 'connection down' or 'device disconnect'\n"
           "to stop the hotspot.\n"
@@ -1323,6 +1324,7 @@ fill_output_access_point(NMAccessPoint *ap, const APInfo *info)
     const char            *bssid;
     NM80211Mode            mode;
     char                  *channel_str;
+    const char            *band_str;
     char                  *freq_str;
     char                  *ssid_str     = NULL;
     char                  *ssid_hex_str = NULL;
@@ -1366,6 +1368,22 @@ fill_output_access_point(NMAccessPoint *ap, const APInfo *info)
     wpa_flags_str = ap_wpa_rsn_flags_to_string(wpa_flags, NM_META_ACCESSOR_GET_TYPE_PRETTY);
     rsn_flags_str = ap_wpa_rsn_flags_to_string(rsn_flags, NM_META_ACCESSOR_GET_TYPE_PRETTY);
     sig_bars      = nmc_wifi_strength_bars(strength);
+
+    switch (nm_utils_wifi_freq_to_band(freq)) {
+    case NM_WIFI_BAND_2_4_GHZ:
+        band_str = _("2.4 GHz");
+        break;
+    case NM_WIFI_BAND_5_GHZ:
+        band_str = _("5 GHz");
+        break;
+    case NM_WIFI_BAND_6_GHZ:
+        band_str = _("6 GHz");
+        break;
+    default:
+    case NM_WIFI_BAND_UNKNOWN:
+        band_str = "";
+        break;
+    }
 
     security_str = g_string_new(NULL);
 
@@ -1415,18 +1433,19 @@ fill_output_access_point(NMAccessPoint *ap, const APInfo *info)
                  : mode == NM_802_11_MODE_MESH  ? _("Mesh")
                                                 : _("N/A"));
     set_val_str(arr, 5, channel_str);
-    set_val_str(arr, 6, freq_str);
-    set_val_str(arr, 7, bitrate_str);
-    set_val_str(arr, 8, bandwidth_str);
-    set_val_str(arr, 9, strength_str);
-    set_val_strc(arr, 10, sig_bars);
-    set_val_str(arr, 11, g_string_free(security_str, FALSE));
-    set_val_str(arr, 12, wpa_flags_str);
-    set_val_str(arr, 13, rsn_flags_str);
-    set_val_strc(arr, 14, info->device);
-    set_val_strc(arr, 15, active ? _("yes") : _("no"));
-    set_val_strc(arr, 16, active ? "*" : " ");
-    set_val_strc(arr, 17, nm_object_get_path(NM_OBJECT(ap)));
+    set_val_strc(arr, 6, band_str);
+    set_val_str(arr, 7, freq_str);
+    set_val_str(arr, 8, bitrate_str);
+    set_val_str(arr, 9, bandwidth_str);
+    set_val_str(arr, 10, strength_str);
+    set_val_strc(arr, 11, sig_bars);
+    set_val_str(arr, 12, g_string_free(security_str, FALSE));
+    set_val_str(arr, 13, wpa_flags_str);
+    set_val_str(arr, 14, rsn_flags_str);
+    set_val_strc(arr, 15, info->device);
+    set_val_strc(arr, 16, active ? _("yes") : _("no"));
+    set_val_strc(arr, 17, active ? "*" : " ");
+    set_val_strc(arr, 18, nm_object_get_path(NM_OBJECT(ap)));
 
     /* Set colors */
     color = wifi_signal_to_color(strength);
@@ -4443,10 +4462,11 @@ do_device_wifi_hotspot(const NMCCommand *cmd, NmCli *nmc, int argc, const char *
             }
             band = *argv;
             if (argc == 1 && nmc->complete)
-                nmc_complete_strings(band, "a", "bg");
-            if (strcmp(band, "a") && strcmp(band, "bg")) {
+                nmc_complete_strings(band, "a", "bg", "6GHz");
+            if (!NM_IN_STRSET(band, "a", "bg", "6GHz")) {
                 g_string_printf(nmc->return_text,
-                                _("Error: band argument value '%s' is invalid; use 'a' or 'bg'."),
+                                _("Error: band argument value '%s' is invalid; use 'a', 'bg' "
+                                  "or '6GHz'."),
                                 band);
                 nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
                 return;
@@ -4494,7 +4514,7 @@ do_device_wifi_hotspot(const NMCCommand *cmd, NmCli *nmc, int argc, const char *
             nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
             return;
         }
-        if (!nmc_string_to_uint(channel, TRUE, 1, 5825, &value)
+        if (!nmc_string_to_uint(channel, TRUE, 1, G_MAXUINT32, &value)
             || !nm_utils_wifi_is_channel_valid(value, band)) {
             g_string_printf(nmc->return_text,
                             _("Error: channel '%s' not valid for band '%s'."),

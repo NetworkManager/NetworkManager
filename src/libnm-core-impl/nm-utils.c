@@ -25,6 +25,7 @@
 #include "libnm-glib-aux/nm-time-utils.h"
 #include "libnm-glib-aux/nm-secret-utils.h"
 #include "libnm-core-aux-intern/nm-common-macros.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
 #include "nm-setting-bond.h"
@@ -3697,43 +3698,78 @@ struct cf_pair {
     guint32 freq;
 };
 
-static const struct cf_pair a_table[] = {
-    /* A band */
-    {7, 5035},   {8, 5040},   {9, 5045},   {11, 5055},  {12, 5060},  {16, 5080},  {34, 5170},
-    {36, 5180},  {38, 5190},  {40, 5200},  {42, 5210},  {44, 5220},  {46, 5230},  {48, 5240},
-    {50, 5250},  {52, 5260},  {56, 5280},  {58, 5290},  {60, 5300},  {64, 5320},  {100, 5500},
-    {104, 5520}, {108, 5540}, {112, 5560}, {116, 5580}, {120, 5600}, {124, 5620}, {128, 5640},
-    {132, 5660}, {136, 5680}, {140, 5700}, {149, 5745}, {152, 5760}, {153, 5765}, {157, 5785},
-    {160, 5800}, {161, 5805}, {165, 5825}, {183, 4915}, {184, 4920}, {185, 4925}, {187, 4935},
-    {188, 4945}, {192, 4960}, {196, 4980}, {0, 0}};
+static const struct cf_pair table_5ghz[] = {
+    /* Special, 20MHz only */
+    {32, 5160},
 
-static const guint a_table_freqs[G_N_ELEMENTS(a_table)] = {
-    /* A band */
-    5035, 5040, 5045, 5055, 5060, 5080, 5170, 5180, 5190, 5200, 5210, 5220, 5230, 5240, 5250, 5260,
-    5280, 5290, 5300, 5320, 5500, 5520, 5540, 5560, 5580, 5600, 5620, 5640, 5660, 5680, 5700, 5745,
-    5760, 5765, 5785, 5800, 5805, 5825, 4915, 4920, 4925, 4935, 4945, 4960, 4980, 0,
-};
+    /* UNII-1 (Indoor) */
+    {36, 5180},
+    {40, 5200},
+    {44, 5220},
+    {48, 5240},
 
-static const struct cf_pair bg_table[] = {
-    /* B/G band */
-    {1, 2412},
-    {2, 2417},
-    {3, 2422},
-    {4, 2427},
-    {5, 2432},
-    {6, 2437},
-    {7, 2442},
-    {8, 2447},
-    {9, 2452},
-    {10, 2457},
-    {11, 2462},
-    {12, 2467},
-    {13, 2472},
-    {14, 2484},
+    /* UNII-2 (DFS) */
+    {52, 5260},
+    {56, 5280},
+    {60, 5300},
+    {64, 5320},
+
+    /* UNII-2C (DFS) */
+    {100, 5500},
+    {104, 5520},
+    {108, 5540},
+    {112, 5560},
+    {116, 5580},
+    {120, 5600},
+    {124, 5620},
+    {128, 5640},
+    {132, 5660},
+    {136, 5680},
+    {140, 5700},
+    {144, 5720},
+
+    /* UNII-3 */
+    {149, 5745},
+    {153, 5765},
+    {157, 5785},
+    {161, 5805},
+    {165, 5825},
+
+    /* 4.9 GHz Public Safety Band (802.11y/j) */
+    {183, 4915},
+    {184, 4920},
+    {185, 4925},
+    {187, 4935},
+    {188, 4940},
+    {189, 4945},
+    {192, 4960},
+    {196, 4980},
+
     {0, 0}};
 
-static const guint bg_table_freqs[G_N_ELEMENTS(bg_table)] = {
-    /* B/G band */
+static const guint table_5ghz_freqs[G_N_ELEMENTS(table_5ghz)] = {
+    5160, 5180, 5200, 5220, 5240, 5260, 5280, 5300, 5320, 5500, 5520, 5540,
+    5560, 5580, 5600, 5620, 5640, 5660, 5680, 5700, 5720, 5745, 5765, 5785,
+    5805, 5825, 4915, 4920, 4925, 4935, 4940, 4945, 4960, 4980, 0,
+};
+
+static const struct cf_pair table_2ghz[] = {{1, 2412},
+                                            {2, 2417},
+                                            {3, 2422},
+                                            {4, 2427},
+                                            {5, 2432},
+                                            {6, 2437},
+                                            {7, 2442},
+                                            {8, 2447},
+                                            {9, 2452},
+                                            {10, 2457},
+                                            {11, 2462},
+                                            {12, 2467},
+                                            {13, 2472},
+                                            {14, 2484},
+                                            {0, 0}};
+
+static const guint table_2ghz_freqs[G_N_ELEMENTS(table_2ghz)] = {
     2412,
     2417,
     2422,
@@ -3751,6 +3787,24 @@ static const guint bg_table_freqs[G_N_ELEMENTS(bg_table)] = {
     0,
 };
 
+static const struct cf_pair table_6ghz[] = {
+    {1, 5955},   {5, 5975},   {9, 5995},   {13, 6015},  {17, 6035},  {21, 6055},  {25, 6075},
+    {29, 6095},  {33, 6115},  {37, 6135},  {41, 6155},  {45, 6175},  {49, 6195},  {53, 6215},
+    {57, 6235},  {61, 6255},  {65, 6275},  {69, 6295},  {73, 6315},  {77, 6335},  {81, 6355},
+    {85, 6375},  {89, 6395},  {93, 6415},  {97, 6435},  {101, 6455}, {105, 6475}, {109, 6495},
+    {113, 6515}, {117, 6535}, {121, 6555}, {125, 6575}, {129, 6595}, {133, 6615}, {137, 6635},
+    {141, 6655}, {145, 6675}, {149, 6695}, {153, 6715}, {157, 6735}, {161, 6755}, {169, 6775},
+    {173, 6815}, {177, 6835}, {181, 6855}, {185, 6875}, {189, 6895}, {193, 6915}, {197, 6935},
+    {201, 6955}, {205, 6975}, {209, 6995}, {213, 7015}, {217, 7035}, {221, 7055}, {225, 7075},
+    {229, 7095}, {233, 7115}, {0, 0}};
+
+static const guint table_6ghz_freqs[G_N_ELEMENTS(table_6ghz)] = {
+    5955, 5975, 5995, 6015, 6035, 6055, 6075, 6095, 6115, 6135, 6155, 6175, 6195, 6215, 6235,
+    6255, 6275, 6295, 6315, 6335, 6355, 6375, 6395, 6415, 6435, 6455, 6475, 6495, 6515, 6535,
+    6555, 6575, 6595, 6615, 6635, 6655, 6675, 6695, 6715, 6735, 6755, 6775, 6815, 6835, 6855,
+    6875, 6895, 6915, 6935, 6955, 6975, 6995, 7015, 7035, 7055, 7075, 7095, 7115, 0,
+};
+
 /**
  * nm_utils_wifi_freq_to_channel:
  * @freq: frequency
@@ -3762,42 +3816,51 @@ static const guint bg_table_freqs[G_N_ELEMENTS(bg_table)] = {
 guint32
 nm_utils_wifi_freq_to_channel(guint32 freq)
 {
-    int i = 0;
+    const struct cf_pair *table;
+    int                   i = 0;
 
-    if (freq > 4900) {
-        while (a_table[i].freq && (a_table[i].freq != freq))
-            i++;
-        return a_table[i].chan;
+    if (freq >= _NM_WIFI_FREQ_MIN_6GHZ) {
+        table = table_6ghz;
+    } else if (freq >= _NM_WIFI_FREQ_MIN_5GHZ) {
+        table = table_5ghz;
+    } else {
+        table = table_2ghz;
     }
 
-    while (bg_table[i].freq && (bg_table[i].freq != freq))
+    while (table[i].freq && (table[i].freq != freq))
         i++;
-    return bg_table[i].chan;
+
+    return table[i].chan;
 }
 
 /**
  * nm_utils_wifi_freq_to_band:
  * @freq: frequency
  *
- * Utility function to translate a Wi-Fi frequency to its corresponding band.
+ * Translates a Wi-Fi frequency to its corresponding band.
  *
- * Returns: the band containing the frequency or NULL if freq is invalid
+ * Returns: the band containing the frequency or %NM_WIFI_BAND_UNKNOWN if
+ * the frequency does not belong to a known band.
+ *
+ * Since: 1.58
  **/
-const char *
+NMWifiBand
 nm_utils_wifi_freq_to_band(guint32 freq)
 {
-    if (freq >= 4915 && freq <= 5825)
-        return "a";
-    else if (freq >= 2412 && freq <= 2484)
-        return "bg";
+    if (freq >= _NM_WIFI_FREQ_MIN_2GHZ && freq <= _NM_WIFI_FREQ_MAX_2GHZ)
+        return NM_WIFI_BAND_2_4_GHZ;
+    else if (freq >= _NM_WIFI_FREQ_MIN_5GHZ && freq <= _NM_WIFI_FREQ_MAX_5GHZ)
+        return NM_WIFI_BAND_5_GHZ;
+    else if (freq >= _NM_WIFI_FREQ_MIN_6GHZ && freq <= _NM_WIFI_FREQ_MAX_6GHZ)
+        return NM_WIFI_BAND_6_GHZ;
 
-    return NULL;
+    return NM_WIFI_BAND_UNKNOWN;
 }
 
 /**
  * nm_utils_wifi_channel_to_freq:
  * @channel: channel
- * @band: frequency band for wireless ("a" or "bg")
+ * @band: frequency band for wireless ("a", "bg", "6GHz")
  *
  * Utility function to translate a Wi-Fi channel to its corresponding frequency.
  *
@@ -3808,34 +3871,33 @@ nm_utils_wifi_freq_to_band(guint32 freq)
 guint32
 nm_utils_wifi_channel_to_freq(guint32 channel, const char *band)
 {
-    int i;
+    const struct cf_pair *table;
+    int                   i;
 
     g_return_val_if_fail(band, 0);
 
-    if (nm_streq(band, "a")) {
-        for (i = 0; a_table[i].chan; i++) {
-            if (a_table[i].chan == channel)
-                return a_table[i].freq;
-        }
-        return ((guint32) -1);
+    if (nm_streq0(band, "a")) {
+        table = table_5ghz;
+    } else if (nm_streq0(band, "bg")) {
+        table = table_2ghz;
+    } else if (nm_streq0(band, "6GHz")) {
+        table = table_6ghz;
+    } else {
+        return 0;
     }
 
-    if (nm_streq(band, "bg")) {
-        for (i = 0; bg_table[i].chan; i++) {
-            if (bg_table[i].chan == channel)
-                return bg_table[i].freq;
-        }
-        return ((guint32) -1);
+    for (i = 0; table[i].chan; i++) {
+        if (table[i].chan == channel)
+            return table[i].freq;
     }
-
-    return 0;
+    return ((guint32) -1);
 }
 
 /**
  * nm_utils_wifi_find_next_channel:
  * @channel: current channel
  * @direction: whether going downward (0 or less) or upward (1 or more)
- * @band: frequency band for wireless ("a" or "bg")
+ * @band: frequency band for wireless ("a", "bg", "6GHz")
  *
  * Utility function to find out next/previous Wi-Fi channel for a channel.
  *
@@ -3844,35 +3906,36 @@ nm_utils_wifi_channel_to_freq(guint32 channel, const char *band)
 guint32
 nm_utils_wifi_find_next_channel(guint32 channel, int direction, char *band)
 {
-    size_t                a_size  = G_N_ELEMENTS(a_table);
-    size_t                bg_size = G_N_ELEMENTS(bg_table);
-    const struct cf_pair *pair;
+    const struct cf_pair *table;
+    guint                 table_size;
 
-    if (nm_streq(band, "a")) {
-        if (channel < a_table[0].chan)
-            return a_table[0].chan;
-        if (channel > a_table[a_size - 2].chan)
-            return a_table[a_size - 2].chan;
-        pair = &a_table[0];
-    } else if (nm_streq(band, "bg")) {
-        if (channel < bg_table[0].chan)
-            return bg_table[0].chan;
-        if (channel > bg_table[bg_size - 2].chan)
-            return bg_table[bg_size - 2].chan;
-        pair = &bg_table[0];
+    if (nm_streq0(band, "a")) {
+        table      = table_5ghz;
+        table_size = G_N_ELEMENTS(table_5ghz);
+    } else if (nm_streq0(band, "bg")) {
+        table      = table_2ghz;
+        table_size = G_N_ELEMENTS(table_2ghz);
+    } else if (nm_streq0(band, "6GHz")) {
+        table      = table_6ghz;
+        table_size = G_N_ELEMENTS(table_6ghz);
     } else
         g_return_val_if_reached(0);
 
-    while (pair->chan) {
-        if (channel == pair->chan)
+    if (channel < table[0].chan)
+        return table[0].chan;
+    if (channel > table[table_size - 2].chan)
+        return table[table_size - 2].chan;
+
+    while (table->chan) {
+        if (channel == table->chan)
             return channel;
-        if ((channel < (pair + 1)->chan) && (channel > pair->chan)) {
+        if ((channel < (table + 1)->chan) && (channel > table->chan)) {
             if (direction > 0)
-                return (pair + 1)->chan;
+                return (table + 1)->chan;
             else
-                return pair->chan;
+                return table->chan;
         }
-        pair++;
+        table++;
     }
     return 0;
 }
@@ -3880,7 +3943,7 @@ nm_utils_wifi_find_next_channel(guint32 channel, int direction, char *band)
 /**
  * nm_utils_wifi_is_channel_valid:
  * @channel: channel
- * @band: frequency band for wireless ("a" or "bg")
+ * @band: frequency band for wireless ("a", "bg", "6GHz")
  *
  * Utility function to verify Wi-Fi channel validity.
  *
@@ -3930,8 +3993,8 @@ nm_utils_wifi_is_channel_valid(guint32 channel, const char *band)
 const guint *
 nm_utils_wifi_2ghz_freqs(void)
 {
-    _nm_assert_wifi_freqs(bg_table, bg_table_freqs);
-    return bg_table_freqs;
+    _nm_assert_wifi_freqs(table_2ghz, table_2ghz_freqs);
+    return table_2ghz_freqs;
 }
 
 /**
@@ -3946,8 +4009,24 @@ nm_utils_wifi_2ghz_freqs(void)
 const guint *
 nm_utils_wifi_5ghz_freqs(void)
 {
-    _nm_assert_wifi_freqs(a_table, a_table_freqs);
-    return a_table_freqs;
+    _nm_assert_wifi_freqs(table_5ghz, table_5ghz_freqs);
+    return table_5ghz_freqs;
+}
+
+/**
+ * nm_utils_wifi_6ghz_freqs:
+ *
+ * Utility function to return 6 GHz Wi-Fi frequencies (802.11ax/be, Wi-Fi 6E).
+ *
+ * Returns: zero-terminated array of frequencies numbers (in MHz)
+ *
+ * Since: 1.58
+ **/
+const guint *
+nm_utils_wifi_6ghz_freqs(void)
+{
+    _nm_assert_wifi_freqs(table_6ghz, table_6ghz_freqs);
+    return table_6ghz_freqs;
 }
 
 /**

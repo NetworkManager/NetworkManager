@@ -2069,10 +2069,10 @@ class NetworkManager(ExportedObj):
         d = self.find_device_first(path=path, require=TestError)
         self.remove_device(d)
 
-    @dbus.service.method(IFACE_TEST, in_signature="sss", out_signature="o")
-    def AddWifiAp(self, ident, ssid, bssid):
+    @dbus.service.method(IFACE_TEST, in_signature="sssu", out_signature="o")
+    def AddWifiAp(self, ident, ssid, bssid, freq):
         d = self.find_device_first(ident=ident, require=TestError)
-        ap = WifiAp(ssid, bssid)
+        ap = WifiAp(ssid, bssid=bssid, freq=freq)
         return ExportedObj.to_path(d.add_ap(ap))
 
     @dbus.service.method(IFACE_TEST, in_signature="so", out_signature="")

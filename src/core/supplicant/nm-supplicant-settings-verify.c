@@ -6,6 +6,7 @@
 #include "src/core/nm-default-daemon.h"
 
 #include "nm-supplicant-settings-verify.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -71,7 +72,7 @@ static const struct Opt opt_table[] = {
     OPT_BYTES("engine_id", 0),
     OPT_INT("fragment_size", 1, 2000),
     OPT_KEYWORD("freq_list", NULL),
-    OPT_INT("frequency", 2412, 5825),
+    OPT_INT("frequency", _NM_WIFI_FREQ_MIN, _NM_WIFI_FREQ_MAX),
     OPT_KEYWORD("group", NM_MAKE_STRV("CCMP", "TKIP", "WEP104", "WEP40", "GCMP-256", )),
     OPT_INT("ht40", 0, 1),
     OPT_BYTES("identity", 0),

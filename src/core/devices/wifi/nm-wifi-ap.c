@@ -574,16 +574,6 @@ nm_wifi_ap_to_string(const NMWifiAP *self, char *str_buf, gulong buf_len, gint64
     return str_buf;
 }
 
-static guint
-freq_to_band(guint32 freq)
-{
-    if (freq >= 4915 && freq <= 5825)
-        return 5;
-    else if (freq >= 2412 && freq <= 2484)
-        return 2;
-    return 0;
-}
-
 gboolean
 nm_wifi_ap_check_compatible(NMWifiAP *self, NMConnection *connection)
 {
@@ -631,12 +621,12 @@ nm_wifi_ap_check_compatible(NMWifiAP *self, NMConnection *connection)
 
     band = nm_setting_wireless_get_band(s_wireless);
     if (band) {
-        guint ap_band = freq_to_band(priv->freq);
+        const char *ap_band = nm_wifi_freq_to_band_prop(priv->freq);
 
-        if (!strcmp(band, "a") && ap_band != 5)
+        if (!nm_streq(band, ap_band))
             return FALSE;
-        else if (!strcmp(band, "bg") && ap_band != 2)
-            return FALSE;
+
+        return TRUE;
     }
 
     channel = nm_setting_wireless_get_channel(s_wireless);

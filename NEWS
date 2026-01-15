@@ -34,6 +34,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   "connection.gateway-ping-timeout" or "connection.ip-ping-addresses"
   properties are set, instead of relying on the "ping" tool.  
 * The powersave property now functions with the iwd backend.
+* The "band" property of Wi-fi connections now accepts the "6GHz"
+  value.
+* Show the Wi-Fi band of APs in the scan results from nmcli.
 
 =============================================
 NetworkManager-1.56
