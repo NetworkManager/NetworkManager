@@ -47,6 +47,8 @@ if [[ "$INSTALL_DEPENDENCIES" == yes ]]; then
       audit-libs-devel \
       automake \
       bluez-libs-devel \
+      bpftool \
+      clang \
       dbus-devel \
       dbus-glib-devel \
       dbus-python \
