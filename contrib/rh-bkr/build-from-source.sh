@@ -63,6 +63,7 @@ if [[ "$INSTALL_DEPENDENCIES" == yes ]]; then
       iptables \
       jansson-devel \
       libasan \
+      libbpf-devel \
       libcurl-devel \
       libgudev1-devel \
       libndp-devel \
