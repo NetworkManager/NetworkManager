@@ -495,6 +495,12 @@ clat_handle_v4(struct __sk_buff *skb)
     struct iphdr  *iph;
     struct ethhdr *eth;
 
+    eth = data;
+    if (eth + 1 > data_end)
+        goto out;
+    if (eth->h_proto != bpf_htons(ETH_P_IP))
+        goto out;
+
     iph = data + sizeof(struct ethhdr);
     if (iph + 1 > data_end)
         goto out;
@@ -925,12 +931,11 @@ clat_handle_v6(struct __sk_buff *skb)
     int             length_diff = 0;
     bool            fragmented  = false;
 
-    /*
-     * ip6h:      v
-     * ------------------------------------
-     * | Ethernet | IPv6             | ...
-     * ------------------------------------
-     */
+    eth = data;
+    if (eth + 1 > data_end)
+        goto out;
+    if (eth->h_proto != bpf_htons(ETH_P_IPV6))
+        goto out;
 
     ip6h = data + sizeof(struct ethhdr);
     if (ip6h + 1 > data_end)
@@ -1094,38 +1099,16 @@ out:
     return ret;
 }
 
-static int
-clat_handler(struct __sk_buff *skb, bool egress)
-{
-    void          *data     = SKB_DATA(skb);
-    void          *data_end = SKB_DATA_END(skb);
-    struct ethhdr *eth;
-
-    eth = data;
-    if (eth + 1 > data_end)
-        return TC_ACT_OK;
-
-    /* Don't explicitly handle Ethernet types 8021Q and 8021AD
-     * because we don't expect to receive VLAN-tagged packets
-     * on the interface. */
-
-    if (eth->h_proto == bpf_htons(ETH_P_IP) && egress)
-        return clat_handle_v4(skb);
-    else if (eth->h_proto == bpf_htons(ETH_P_IPV6) && !egress)
-        return clat_handle_v6(skb);
-
-    return TC_ACT_OK;
-}
 SEC("tcx/egress")
 int
 clat_egress(struct __sk_buff *skb)
 {
-    return clat_handler(skb, true);
+    return clat_handle_v4(skb);
 }
 
 SEC("tcx/ingress")
 int
 clat_ingress(struct __sk_buff *skb)
 {
-    return clat_handler(skb, false);
+    return clat_handle_v6(skb);
 }
