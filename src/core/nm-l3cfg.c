@@ -4291,6 +4291,7 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
             struct in6_addr             ip6;
             const char                 *network_id;
             char                        buf[512];
+            guint32                     route4_metric = NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP4;
 
             /* If we have a valid NAT64 prefix, configure in kernel:
              *
@@ -4353,6 +4354,38 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
                                                 NM_NETNS_IP_RESERVATION_TYPE_CLAT);
             }
 
+            {
+                const NMPlatformIP4Route *r4;
+                guint32                   metric  = 0;
+                guint32                   penalty = 0;
+
+                /* Find the IPv4 metric for the CLAT default route.
+                 * If there is another non-CLAT default route on the device, use the
+                 * same metric + 1, so that native connectivity is always preferred.
+                 * Otherwise, use the metric from the connection profile.
+                 */
+
+                r4 = NMP_OBJECT_CAST_IP4_ROUTE(
+                    nm_l3_config_data_get_best_default_route(l3cd, AF_INET));
+
+                if (r4) {
+                    route4_metric = nm_add_clamped_u32(r4->metric, 1u);
+                } else {
+                    for (i = 0; i < l3_config_datas_len; i++) {
+                        const L3ConfigData *l3cd_data = l3_config_datas_arr[i];
+
+                        if (l3cd_data->default_route_metric_4
+                            != NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP4) {
+                            metric = l3cd_data->default_route_metric_4;
+                        }
+                        if (l3cd_data->default_route_penalty_4 != 0) {
+                            penalty = l3cd_data->default_route_penalty_4;
+                        }
+                    }
+                    route4_metric = nm_add_clamped_u32(metric, penalty);
+                }
+            }
+
             if (self->priv.p->clat_address_4) {
                 best_v6_route = NMP_OBJECT_CAST_IP6_ROUTE(
                     nm_l3_config_data_get_direct_route_for_host(l3cd, AF_INET6, &pref64));
@@ -4413,10 +4446,8 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
                         .type_coerced  = nm_platform_route_type_coerce(RTN_UNICAST),
                         .pref_src      = self->priv.p->clat_address_4->addr,
                         .via           = best_v6_gateway,
-                        /* If real v4 connectivity is available from another interface,
-                           that should probably be preferred */
-                        .metric = best_v6_route->metric + 50,
-                        .mtu    = mtu,
+                        .metric        = route4_metric,
+                        .mtu           = mtu,
                     };
                     nm_platform_ip_route_normalize(AF_INET, &rx.rx);
                     if (!nm_l3_config_data_lookup_route(l3cd, AF_INET, &rx.rx)) {
