@@ -15,6 +15,7 @@
 #include "libnm-std-aux/nm-dbus-compat.h"
 #include "nm-setting-wifi-p2p.h"
 #include "nm-utils.h"
+#include "nm-wifi-common.h"
 #include "nm-wifi-p2p-peer.h"
 #include "nm-iwd-manager.h"
 #include "settings/nm-settings.h"
@@ -37,6 +38,7 @@ typedef struct {
 
     GCancellable *find_cancellable;
     GCancellable *connect_cancellable;
+    GCancellable *name_cancellable;
 
     bool enabled : 1;
 
@@ -647,6 +649,23 @@ iwd_wsc_connect_cb(GObject *source, GAsyncResult *res, gpointer user_data)
     nm_device_activate_schedule_stage2_device_config(device, FALSE);
 }
 
+static void
+p2p_device_name_set_cb(GObject *source, GAsyncResult *result, gpointer user_data)
+{
+    gs_unref_variant GVariant *res   = NULL;
+    gs_free_error GError      *error = NULL;
+    NMDeviceIwdP2P            *self;
+
+    res = g_dbus_proxy_call_finish(G_DBUS_PROXY(source), result, &error);
+    if (!res && nm_utils_error_is_cancelled(error))
+        return;
+
+    self = NM_DEVICE_IWD_P2P(user_data);
+
+    if (!res)
+        _LOGD(LOGD_WIFI, "failed to set the P2P device name on IWD: %s", error->message);
+}
+
 static NMActStageReturn
 act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
@@ -655,8 +674,9 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     NMConnection               *connection;
     NMSettingWifiP2P           *s_wifi_p2p;
     NMWifiP2PPeer              *peer;
-    gs_unref_object GDBusProxy *peer_proxy = NULL;
-    gs_unref_object GDBusProxy *wsc_proxy  = NULL;
+    gs_unref_object GDBusProxy *peer_proxy  = NULL;
+    gs_unref_object GDBusProxy *wsc_proxy   = NULL;
+    gs_free char               *device_name = NULL;
 
     if (priv->stage2_ready)
         return NM_ACT_STAGE_RETURN_SUCCESS;
@@ -692,6 +712,25 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
         cleanup_connect_attempt(self);
         NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
         return NM_ACT_STAGE_RETURN_FAILURE;
+    }
+
+    /* Set the P2P device name to the system hostname so that peers can identify this device. */
+    device_name = nm_wifi_common_get_p2p_device_name(device);
+    if (device_name) {
+        nm_clear_g_cancellable(&priv->name_cancellable);
+        priv->name_cancellable = g_cancellable_new();
+
+        g_dbus_proxy_call(priv->dbus_p2p_proxy,
+                          DBUS_INTERFACE_PROPERTIES ".Set",
+                          g_variant_new("(ssv)",
+                                        NM_IWD_P2P_INTERFACE,
+                                        "Name",
+                                        g_variant_new_string(device_name)),
+                          G_DBUS_CALL_FLAGS_NONE,
+                          2000,
+                          priv->name_cancellable,
+                          p2p_device_name_set_cb,
+                          self);
     }
 
     peer_proxy = nm_iwd_manager_get_dbus_interface(nm_iwd_manager_get(),
@@ -1069,6 +1108,7 @@ nm_device_iwd_p2p_set_dbus_obj(NMDeviceIwdP2P *self, GDBusObject *obj)
 
     if (priv->dbus_obj) {
         cleanup_connect_attempt(self);
+        nm_clear_g_cancellable(&priv->name_cancellable);
         g_signal_handlers_disconnect_by_data(priv->dbus_p2p_proxy, self);
         g_clear_object(&priv->dbus_p2p_proxy);
         g_clear_object(&priv->dbus_obj);
@@ -1217,6 +1257,7 @@ dispose(GObject *object)
     NMDeviceIwdP2PPrivate *priv = NM_DEVICE_IWD_P2P_GET_PRIVATE(object);
 
     nm_clear_g_source_inst(&priv->peer_dump_source);
+    nm_clear_g_cancellable(&priv->name_cancellable);
 
     nm_device_iwd_p2p_set_dbus_obj(self, NULL);
 
