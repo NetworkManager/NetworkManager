@@ -2963,6 +2963,37 @@ nm_supplicant_interface_p2p_stop_find(NMSupplicantInterface *self)
                                  "p2p-stop-find");
 }
 
+/**
+ * nm_supplicant_interface_p2p_set_device_name:
+ * @self: the #NMSupplicantInterface
+ * @name: the P2P device name to set
+ *
+ * Sets the "DeviceName" key of the interface's "P2PDeviceConfig"
+ * property. The P2P device name is announced during Wi-Fi Direct (P2P)
+ * discovery and connection so that peers can identify this device.
+ */
+void
+nm_supplicant_interface_p2p_set_device_name(NMSupplicantInterface *self, const char *name)
+{
+    GVariantBuilder config;
+
+    g_return_if_fail(NM_IS_SUPPLICANT_INTERFACE(self));
+    g_return_if_fail(name);
+
+    g_variant_builder_init(&config, G_VARIANT_TYPE_VARDICT);
+    g_variant_builder_add(&config, "{sv}", "DeviceName", g_variant_new_string(name));
+
+    _dbus_connection_call_simple(self,
+                                 DBUS_INTERFACE_PROPERTIES,
+                                 "Set",
+                                 g_variant_new("(ssv)",
+                                               NM_WPAS_DBUS_IFACE_INTERFACE_P2P_DEVICE,
+                                               "P2PDeviceConfig",
+                                               g_variant_new("a{sv}", &config)),
+                                 G_VARIANT_TYPE("()"),
+                                 "p2p-set-device-name");
+}
+
 /*****************************************************************************/
 
 void

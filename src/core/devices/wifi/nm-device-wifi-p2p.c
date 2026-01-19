@@ -25,6 +25,7 @@
 #include "nm-manager.h"
 #include "nm-setting-wifi-p2p.h"
 #include "nm-utils.h"
+#include "nm-wifi-common.h"
 #include "nm-wifi-p2p-peer.h"
 #include "settings/nm-settings.h"
 
@@ -424,6 +425,7 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     NMSettingWifiP2P       *s_wifi_p2p;
     NMWifiP2PPeer          *peer;
     GBytes                 *wfd_ies;
+    gs_free char           *device_name = NULL;
 
     if (nm_clear_g_source_inst(&priv->find_peer_timeout_source))
         nm_assert_not_reached();
@@ -450,6 +452,11 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
         NM_SETTING_WIFI_P2P(nm_connection_get_setting(connection, NM_TYPE_SETTING_WIFI_P2P));
     wfd_ies = nm_setting_wifi_p2p_get_wfd_ies(s_wifi_p2p);
     nm_supplicant_manager_set_wfd_ies(priv->sup_mgr, wfd_ies);
+
+    /* Set the P2P device name to the system hostname so that peers can identify this device. */
+    device_name = nm_wifi_common_get_p2p_device_name(device);
+    if (device_name)
+        nm_supplicant_interface_p2p_set_device_name(priv->mgmt_iface, device_name);
 
     /* TODO: Grab secrets if we don't have them yet! */
 
