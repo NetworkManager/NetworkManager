@@ -9339,3 +9339,15 @@ NM_BACKPORT_SYMBOL(libnm_1_50_4,
                    (optname));
 
 NM_BACKPORT_SYMBOL(libnm_1_50_4, GType, nm_setting_ethtool_fec_mode_get_type, (void), ());
+
+NM_BACKPORT_SYMBOL(libnm_1_52_2,
+                   char *,
+                   nm_utils_copy_cert_as_user,
+                   (const char *filename, const char *user, GError **error),
+                   (filename, user, error));
+
+NM_BACKPORT_SYMBOL(libnm_1_52_2,
+                   gboolean,
+                   nm_vpn_plugin_info_supports_safe_private_file_access,
+                   (NMVpnPluginInfo * self),
+                   (self));
