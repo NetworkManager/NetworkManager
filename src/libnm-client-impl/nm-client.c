@@ -9351,3 +9351,15 @@ NM_BACKPORT_SYMBOL(libnm_1_52_2,
                    nm_vpn_plugin_info_supports_safe_private_file_access,
                    (NMVpnPluginInfo * self),
                    (self));
+
+NM_BACKPORT_SYMBOL(libnm_1_54_3,
+                   char *,
+                   nm_utils_copy_cert_as_user,
+                   (const char *filename, const char *user, GError **error),
+                   (filename, user, error));
+
+NM_BACKPORT_SYMBOL(libnm_1_54_3,
+                   gboolean,
+                   nm_vpn_plugin_info_supports_safe_private_file_access,
+                   (NMVpnPluginInfo * self),
+                   (self));

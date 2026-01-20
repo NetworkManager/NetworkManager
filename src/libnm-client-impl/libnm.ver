@@ -2089,6 +2089,11 @@ global:
 	nm_setting_hsr_protocol_version_get_type;
 } libnm_1_54_0;
 
+libnm_1_54_3 {
+	#nm_utils_copy_cert_as_user@libnm_1_54_3;
+	#nm_vpn_plugin_info_supports_safe_private_file_access@libnm_1_54_3;
+} libnm_1_54_2;
+
 libnm_1_56_0 {
 global:
 	nm_dns_server_validate;
