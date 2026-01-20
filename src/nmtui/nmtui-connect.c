@@ -590,7 +590,7 @@ nmt_connect_connection_list(gboolean is_top)
     NmtNewtForm                 *form;
     NmtNewtWidget               *list, *activate, *quit, *bbox, *grid, *rescan;
     RescanBatch                 *batch_data;
-    gs_unref_ptrarray GPtrArray *all_active_wifi_devices;
+    gs_unref_ptrarray GPtrArray *all_active_wifi_devices = NULL;
 
     newtGetScreenSize(&screen_width, &screen_height);
 
