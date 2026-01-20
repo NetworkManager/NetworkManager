@@ -2064,6 +2064,11 @@ global:
 	nm_ethtool_optname_is_fec;
 } libnm_1_50_0;
 
+libnm_1_52_2 {
+	#nm_utils_copy_cert_as_user@libnm_1_52_2;
+	#nm_vpn_plugin_info_supports_safe_private_file_access@libnm_1_52_2;
+} libnm_1_52_0;
+
 libnm_1_54_0 {
 global:
 	nm_setting_ip_config_forwarding_get_type;
