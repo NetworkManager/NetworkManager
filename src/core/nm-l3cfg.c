@@ -12,8 +12,7 @@
 #include <linux/rtnetlink.h>
 #include <linux/fib_rules.h>
 #if HAVE_CLAT
-#include <bpf/libbpf.h>
-#include <bpf/bpf.h>
+#include "bpf/nm-bpf-syms.h"
 #endif /* HAVE_CLAT */
 
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
@@ -30,7 +29,7 @@
 #if HAVE_CLAT
 #include "bpf/clat.h"
 NM_PRAGMA_WARNING_DISABLE("-Wcast-align")
-#include "bpf/clat.skel.h"
+#include "bpf/clat-skel-wrapper.h"
 NM_PRAGMA_WARNING_REENABLE
 #endif /* HAVE_CLAT */
 
@@ -4283,6 +4282,11 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
             break;
         }
 
+        if (clat_enabled && !nm_bpf_syms_load()) {
+            _LOGE("clat: could not load symbols from libbpf. CLAT will not work");
+            clat_enabled = FALSE;
+        }
+
         if (clat_enabled && nm_l3_config_data_get_pref64_valid(l3cd)) {
             NMPlatformIPXRoute          rx;
             NMIPAddrTyped               best_v6_gateway;
@@ -5643,19 +5647,22 @@ _l3_clat_destroy(NML3Cfg *self)
     char buf[100];
     int  err;
 
+    if (nm_bpf_syms_load())
+        return;
+
     if (self->priv.p->clat_ingress_link) {
-        err = bpf_link__destroy(self->priv.p->clat_ingress_link);
+        err = sym_bpf_link__destroy(self->priv.p->clat_ingress_link);
         if (err != 0) {
-            libbpf_strerror(err, buf, sizeof(buf));
+            sym_libbpf_strerror(err, buf, sizeof(buf));
             _LOGD("clat: failed to destroy the ingress link");
         }
         self->priv.p->clat_ingress_link = NULL;
     }
 
     if (self->priv.p->clat_egress_link) {
-        err = bpf_link__destroy(self->priv.p->clat_egress_link);
+        err = sym_bpf_link__destroy(self->priv.p->clat_egress_link);
         if (err != 0) {
-            libbpf_strerror(err, buf, sizeof(buf));
+            sym_libbpf_strerror(err, buf, sizeof(buf));
             _LOGD("clat: failed to destroy the egress link");
         }
         self->priv.p->clat_egress_link = NULL;
@@ -5676,6 +5683,9 @@ _l3_commit_pref64(NML3Cfg *self, NML3CfgCommitType commit_type)
     struct clat_config     clat_config;
     gboolean               v6_changed;
 
+    if (nm_bpf_syms_load())
+        return;
+
     if (l3cd && nm_l3_config_data_get_pref64(l3cd, &_l3cd_pref64_inner, &l3cd_pref64_plen)) {
         l3cd_pref64 = &_l3cd_pref64_inner;
     }
@@ -5686,27 +5696,27 @@ _l3_commit_pref64(NML3Cfg *self, NML3CfgCommitType commit_type)
 
             self->priv.p->clat_bpf = clat_bpf__open_and_load();
             if (!self->priv.p->clat_bpf) {
-                libbpf_strerror(errno, buf, sizeof(buf));
+                sym_libbpf_strerror(errno, buf, sizeof(buf));
                 _LOGW("clat: failed to open and load the BPF program: %s", buf);
                 return;
             }
 
             self->priv.p->clat_ingress_link =
-                bpf_program__attach_tcx(self->priv.p->clat_bpf->progs.clat_ingress,
-                                        self->priv.ifindex,
-                                        NULL);
+                sym_bpf_program__attach_tcx(self->priv.p->clat_bpf->progs.clat_ingress,
+                                            self->priv.ifindex,
+                                            NULL);
             if (!self->priv.p->clat_ingress_link) {
-                libbpf_strerror(errno, buf, sizeof(buf));
+                sym_libbpf_strerror(errno, buf, sizeof(buf));
                 _LOGW("clat: failed to attach the ingress program: %s", buf);
                 return;
             }
 
             self->priv.p->clat_egress_link =
-                bpf_program__attach_tcx(self->priv.p->clat_bpf->progs.clat_egress,
-                                        self->priv.ifindex,
-                                        NULL);
+                sym_bpf_program__attach_tcx(self->priv.p->clat_bpf->progs.clat_egress,
+                                            self->priv.ifindex,
+                                            NULL);
             if (!self->priv.p->clat_egress_link) {
-                libbpf_strerror(errno, buf, sizeof(buf));
+                sym_libbpf_strerror(errno, buf, sizeof(buf));
                 _LOGW("clat: failed to attach the egress program: %s", buf);
                 return;
             }

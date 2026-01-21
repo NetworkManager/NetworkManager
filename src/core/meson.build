@@ -37,8 +37,7 @@ subdir('bpf')
 base_sources_addon = []
 base_deps_addon = []
 if enable_clat
-  base_sources_addon += [clat_skel_h]
-  base_deps_addon += [libbpf]
+  base_sources_addon += [clat_skel_h, 'bpf/nm-bpf-syms.c']
 endif
 
 libNetworkManagerBase = static_library(
