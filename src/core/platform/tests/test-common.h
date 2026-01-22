@@ -474,6 +474,10 @@ const NMPlatformLink *nmtstp_link_veth_add(NMPlatform *platform,
                                            const char *peer);
 const NMPlatformLink *
 nmtstp_link_dummy_add(NMPlatform *platform, int external_command, const char *name);
+const NMPlatformLink *nmtstp_link_geneve_add(NMPlatform                *platform,
+                                             int                        external_command,
+                                             const char                *name,
+                                             const NMPlatformLnkGeneve *lnk);
 const NMPlatformLink *nmtstp_link_gre_add(NMPlatform             *platform,
                                           int                     external_command,
                                           const char             *name,

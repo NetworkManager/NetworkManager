@@ -836,6 +836,16 @@ typedef struct {
 } _nm_alignas(NMPlatformObject) NMPlatformLnkBond;
 
 typedef struct {
+    struct in6_addr remote6;
+    in_addr_t       remote;
+    guint32         id;
+    guint16         dst_port;
+    guint8          tos;
+    guint8          ttl;
+    guint8          df;
+} _nm_alignas(NMPlatformObject) NMPlatformLnkGeneve;
+
+typedef struct {
     int       parent_ifindex;
     in_addr_t local;
     in_addr_t remote;
@@ -1859,6 +1869,15 @@ nm_platform_link_vxlan_add(NMPlatform               *self,
 }
 
 static inline int
+nm_platform_link_geneve_add(NMPlatform                *self,
+                            const char                *name,
+                            const NMPlatformLnkGeneve *props,
+                            const NMPlatformLink     **out_link)
+{
+    return nm_platform_link_add(self, NM_LINK_TYPE_GENEVE, name, 0, NULL, 0, 0, props, out_link);
+}
+
+static inline int
 nm_platform_link_6lowpan_add(NMPlatform            *self,
                              const char            *name,
                              int                    parent,
@@ -2143,6 +2162,8 @@ const NMPlatformLnkBond *
 nm_platform_link_get_lnk_bond(NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkBridge *
 nm_platform_link_get_lnk_bridge(NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
+const NMPlatformLnkGeneve *
+nm_platform_link_get_lnk_geneve(NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkGre *
 nm_platform_link_get_lnk_gre(NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkGre *
@@ -2482,6 +2503,7 @@ gboolean nm_platform_tc_sync(NMPlatform *self,
 const char *nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len);
 const char *nm_platform_lnk_bond_to_string(const NMPlatformLnkBond *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_bridge_to_string(const NMPlatformLnkBridge *lnk, char *buf, gsize len);
+const char *nm_platform_lnk_geneve_to_string(const NMPlatformLnkGeneve *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_gre_to_string(const NMPlatformLnkGre *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_hsr_to_string(const NMPlatformLnkHsr *lnk, char *buf, gsize len);
 const char *
@@ -2537,6 +2559,7 @@ nm_platform_mptcp_addr_to_string(const NMPlatformMptcpAddr *mptcp_addr, char *bu
 int nm_platform_link_cmp(const NMPlatformLink *a, const NMPlatformLink *b);
 int nm_platform_lnk_bond_cmp(const NMPlatformLnkBond *a, const NMPlatformLnkBond *b);
 int nm_platform_lnk_bridge_cmp(const NMPlatformLnkBridge *a, const NMPlatformLnkBridge *b);
+int nm_platform_lnk_geneve_cmp(const NMPlatformLnkGeneve *a, const NMPlatformLnkGeneve *b);
 int nm_platform_lnk_gre_cmp(const NMPlatformLnkGre *a, const NMPlatformLnkGre *b);
 int nm_platform_lnk_hsr_cmp(const NMPlatformLnkHsr *a, const NMPlatformLnkHsr *b);
 int nm_platform_lnk_infiniband_cmp(const NMPlatformLnkInfiniband *a,
@@ -2612,6 +2635,7 @@ void nm_platform_routing_rule_hash_update(const NMPlatformRoutingRule *obj,
                                           NMHashState                 *h);
 void nm_platform_lnk_bond_hash_update(const NMPlatformLnkBond *obj, NMHashState *h);
 void nm_platform_lnk_bridge_hash_update(const NMPlatformLnkBridge *obj, NMHashState *h);
+void nm_platform_lnk_geneve_hash_update(const NMPlatformLnkGeneve *obj, NMHashState *h);
 void nm_platform_lnk_gre_hash_update(const NMPlatformLnkGre *obj, NMHashState *h);
 void nm_platform_lnk_hsr_hash_update(const NMPlatformLnkHsr *obj, NMHashState *h);
 void nm_platform_lnk_infiniband_hash_update(const NMPlatformLnkInfiniband *obj, NMHashState *h);

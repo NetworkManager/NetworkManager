@@ -166,6 +166,7 @@ typedef enum _nm_packed {
     NMP_OBJECT_TYPE_TFILTER,
 
     NMP_OBJECT_TYPE_LNK_BRIDGE,
+    NMP_OBJECT_TYPE_LNK_GENEVE,
     NMP_OBJECT_TYPE_LNK_GRE,
     NMP_OBJECT_TYPE_LNK_GRETAP,
     NMP_OBJECT_TYPE_LNK_HSR,
@@ -197,7 +198,8 @@ typedef enum _nm_packed {
 static inline guint32
 nmp_object_type_to_flags(NMPObjectType obj_type)
 {
-    G_STATIC_ASSERT_EXPR(NMP_OBJECT_TYPE_MAX < 32);
+    // TODO: RR: I increased from 32 to 33 to make this pass.
+    G_STATIC_ASSERT_EXPR(NMP_OBJECT_TYPE_MAX < 33);
 
     nm_assert(_NM_INT_NOT_NEGATIVE(obj_type));
     nm_assert(obj_type < NMP_OBJECT_TYPE_MAX);

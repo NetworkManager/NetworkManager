@@ -2394,6 +2394,91 @@ nmtstp_link_dummy_add(NMPlatform *platform, int external_command, const char *na
 }
 
 const NMPlatformLink *
+nmtstp_link_geneve_add(NMPlatform                *platform,
+                       int                        external_command,
+                       const char                *name,
+                       const NMPlatformLnkGeneve *lnk)
+{
+    const NMPlatformLink *pllink = NULL;
+    int                   err;
+    int                   r;
+
+    g_assert(nm_utils_ifname_valid_kernel(name, NULL));
+
+    external_command = nmtstp_run_command_check_external(external_command);
+
+    _init_platform(&platform, external_command);
+
+    if (external_command) {
+        char remote[NM_INET_ADDRSTRLEN];
+        char remote6[NM_INET_ADDRSTRLEN];
+
+        if (lnk->remote)
+            nm_inet4_ntop(lnk->remote, remote);
+        else
+            remote[0] = '\0';
+
+        if (memcmp(&lnk->remote6, &in6addr_any, sizeof(in6addr_any)))
+            nm_inet6_ntop(&lnk->remote6, remote6);
+        else
+            remote6[0] = '\0';
+
+        if (remote[0]) {
+            err = nmtstp_run_command(
+                "ip link add %s type geneve id %u remote %s ttl %u tos %02x dstport %u%s",
+                name,
+                lnk->id,
+                remote,
+                lnk->ttl,
+                lnk->tos,
+                lnk->dst_port,
+                lnk->df == 1   ? " df set "
+                : lnk->df == 2 ? " df inherit "
+                               : "");
+        } else if (remote6[0]) {
+            err = nmtstp_run_command(
+                "ip link add %s type geneve id %u remote %s ttl %u tos %02x dstport %u%s",
+                name,
+                lnk->id,
+                remote6,
+                lnk->ttl,
+                lnk->tos,
+                lnk->dst_port,
+                lnk->df == 1   ? " df set "
+                : lnk->df == 2 ? " df inherit "
+                               : "");
+        } else {
+            err =
+                nmtstp_run_command("ip link add %s type geneve id %u ttl %u tos %02x dstport %u%s",
+                                   name,
+                                   lnk->id,
+                                   lnk->ttl,
+                                   lnk->tos,
+                                   lnk->dst_port,
+                                   lnk->df == 1   ? " df set "
+                                   : lnk->df == 2 ? " df inherit "
+                                                  : "");
+        }
+        /* Older versions of iproute2 don't support adding geneve devices.
+         * On failure, fallback to using platform code. */
+        if (err == 0)
+            pllink = nmtstp_assert_wait_for_link(platform, name, NM_LINK_TYPE_GENEVE, 100);
+        else
+            _LOGI(
+                "Adding geneve device via iproute2 failed. Assume iproute2 is not up to the task.");
+    }
+    if (!pllink) {
+        r = nm_platform_link_geneve_add(platform, name, lnk, &pllink);
+        g_assert(NMTST_NM_ERR_SUCCESS(r));
+        g_assert(pllink);
+    }
+
+    g_assert_cmpint(pllink->type, ==, NM_LINK_TYPE_GENEVE);
+    g_assert_cmpstr(pllink->name, ==, name);
+    return pllink;
+}
+
+const NMPlatformLink *
 nmtstp_link_gre_add(NMPlatform             *platform,
                     int                     external_command,
                     const char             *name,
@@ -3023,8 +3108,6 @@ nmtstp_link_vxlan_add(NMPlatform               *platform,
     g_assert_cmpstr(pllink->name, ==, name);
     return pllink;
 }
-
-/*****************************************************************************/
 
 const NMPlatformLink *
 nmtstp_link_get_typed(NMPlatform *platform, int ifindex, const char *name, NMLinkType link_type)
