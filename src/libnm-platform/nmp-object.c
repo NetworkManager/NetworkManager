@@ -3469,6 +3469,18 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
             .cmd_plobj_hash_update = (CmdPlobjHashUpdateFunc) nm_platform_lnk_bridge_hash_update,
             .cmd_plobj_cmp         = (CmdPlobjCmpFunc) nm_platform_lnk_bridge_cmp,
         },
+    [NMP_OBJECT_TYPE_LNK_GENEVE - 1] =
+        {
+            .parent                = DEDUP_MULTI_OBJ_CLASS_INIT(),
+            .obj_type              = NMP_OBJECT_TYPE_LNK_GENEVE,
+            .sizeof_data           = sizeof(NMPObjectLnkGeneve),
+            .sizeof_public         = sizeof(NMPlatformLnkGeneve),
+            .obj_type_name         = "geneve",
+            .lnk_link_type         = NM_LINK_TYPE_GENEVE,
+            .cmd_plobj_to_string   = (CmdPlobjToStringFunc) nm_platform_lnk_geneve_to_string,
+            .cmd_plobj_hash_update = (CmdPlobjHashUpdateFunc) nm_platform_lnk_geneve_hash_update,
+            .cmd_plobj_cmp         = (CmdPlobjCmpFunc) nm_platform_lnk_geneve_cmp,
+        },
     [NMP_OBJECT_TYPE_LNK_GRE - 1] =
         {
             .parent                = DEDUP_MULTI_OBJ_CLASS_INIT(),

@@ -1388,10 +1388,11 @@ test_software_detect(gconstpointer user_data)
     const gboolean                   ext        = test_data->external_command;
     NMPlatformLnkBridge              lnk_bridge = {};
     NMPlatformLnkTun                 lnk_tun;
-    NMPlatformLnkGre                 lnk_gre  = {};
-    NMPlatformLnkVti                 lnk_vti  = {};
-    NMPlatformLnkVti6                lnk_vti6 = {};
-    nm_auto_close int                tun_fd   = -1;
+    NMPlatformLnkGeneve              lnk_geneve = {};
+    NMPlatformLnkGre                 lnk_gre    = {};
+    NMPlatformLnkVti                 lnk_vti    = {};
+    NMPlatformLnkVti6                lnk_vti6   = {};
+    nm_auto_close int                tun_fd     = -1;
     gboolean                         module_loaded;
 
     nmtstp_run_command_check("ip link add %s type dummy", PARENT_NAME);
@@ -1433,6 +1434,31 @@ test_software_detect(gconstpointer user_data)
         if (!nmtstp_link_bridge_add(NULL, ext, DEVICE_NAME, &lnk_bridge))
             g_error("Failed adding Bridge interface");
         break;
+
+    case NM_LINK_TYPE_GENEVE:
+    {
+        switch (test_data->test_mode) {
+        case 0:
+            lnk_geneve.id       = 42;
+            lnk_geneve.remote   = nmtst_inet4_from_string("192.168.1.100");
+            lnk_geneve.ttl      = 64;
+            lnk_geneve.tos      = 0;
+            lnk_geneve.dst_port = 6081;
+            lnk_geneve.df       = 0;
+            break;
+        case 1:
+            lnk_geneve.id       = 12345;
+            lnk_geneve.remote6  = nmtst_inet6_from_string("2001:db8::1");
+            lnk_geneve.ttl      = 128;
+            lnk_geneve.tos      = 16;
+            lnk_geneve.dst_port = 6082;
+            lnk_geneve.df       = 1;
+            break;
+        }
+
+        g_assert(nmtstp_link_geneve_add(NULL, ext, DEVICE_NAME, &lnk_geneve));
+        break;
+    }
 
     case NM_LINK_TYPE_GRE:
         module_loaded = nmtstp_ensure_module("ip_gre");
@@ -2204,6 +2230,34 @@ test_software_detect(gconstpointer user_data)
                 g_assert_cmpint(plnk->ttl, ==, 32);
                 g_assert_cmpint(plnk->src_port_min, ==, 1000);
                 g_assert_cmpint(plnk->src_port_max, ==, 1003);
+                break;
+            }
+            break;
+        }
+        case NM_LINK_TYPE_GENEVE:
+        {
+            const NMPlatformLnkGeneve *plnk = &lnk->lnk_geneve;
+
+            g_assert(plnk == nm_platform_link_get_lnk_geneve(NM_PLATFORM_GET, ifindex, NULL));
+
+            switch (test_data->test_mode) {
+            case 0:
+                g_assert_cmpint(plnk->id, ==, 42);
+                nmtst_assert_ip4_address(plnk->remote, "192.168.1.100");
+                nmtst_assert_ip6_address(&plnk->remote6, "::");
+                g_assert_cmpint(plnk->ttl, ==, 64);
+                g_assert_cmpint(plnk->tos, ==, 0);
+                g_assert_cmpint(plnk->dst_port, ==, 6081);
+                g_assert_cmpint(plnk->df, ==, 0);
+                break;
+            case 1:
+                g_assert_cmpint(plnk->id, ==, 12345);
+                nmtst_assert_ip4_address(plnk->remote, "0.0.0.0");
+                nmtst_assert_ip6_address(&plnk->remote6, "2001:db8::1");
+                g_assert_cmpint(plnk->ttl, ==, 128);
+                g_assert_cmpint(plnk->tos, ==, 16);
+                g_assert_cmpint(plnk->dst_port, ==, 6082);
+                g_assert_cmpint(plnk->df, ==, 1);
                 break;
             }
             break;
@@ -4143,6 +4197,8 @@ _nmtstp_setup_tests(void)
         g_test_add_func("/link/external", test_external);
 
         test_software_detect_add("/link/software/detect/bridge", NM_LINK_TYPE_BRIDGE, 0);
+        test_software_detect_add("/link/software/detect/geneve/0", NM_LINK_TYPE_GENEVE, 0);
+        test_software_detect_add("/link/software/detect/geneve/1", NM_LINK_TYPE_GENEVE, 1);
         test_software_detect_add("/link/software/detect/gre", NM_LINK_TYPE_GRE, 0);
         test_software_detect_add("/link/software/detect/gretap", NM_LINK_TYPE_GRETAP, 0);
         test_software_detect_add("/link/software/detect/ip6tnl/0", NM_LINK_TYPE_IP6TNL, 0);
