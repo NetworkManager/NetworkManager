@@ -2394,6 +2394,61 @@ nmtstp_link_dummy_add(NMPlatform *platform, int external_command, const char *na
 }
 
 const NMPlatformLink *
+nmtstp_link_geneve_add(NMPlatform                *platform,
+                       int                        external_command,
+                       const char                *name,
+                       const NMPlatformLnkGeneve *lnk)
+{
+    const NMPlatformLink *pllink = NULL;
+    int                   success;
+
+    g_assert(nm_utils_ifname_valid_kernel(name, NULL));
+    g_assert(lnk->remote || !IN6_IS_ADDR_UNSPECIFIED(&lnk->remote6));
+
+    external_command = nmtstp_run_command_check_external(external_command);
+
+    _init_platform(&platform, external_command);
+
+    if (external_command) {
+        char remote[NM_INET_ADDRSTRLEN];
+        char remote6[NM_INET_ADDRSTRLEN];
+        char str_ttl[30];
+
+        if (lnk->remote)
+            nm_inet4_ntop(lnk->remote, remote);
+        else
+            remote[0] = '\0';
+
+        if (memcmp(&lnk->remote6, &in6addr_any, sizeof(in6addr_any)))
+            nm_inet6_ntop(&lnk->remote6, remote6);
+        else
+            remote6[0] = '\0';
+
+        success = !nmtstp_run_command(
+            "ip link add %s type geneve id %u remote %s %s tos %02x dstport %u%s",
+            name,
+            lnk->id,
+            remote[0] ? remote : remote6,
+            lnk->ttl > 0    ? nm_sprintf_buf(str_ttl, "ttl %u", lnk->ttl & 0xff)
+            : lnk->ttl == 0 ? "ttl auto"
+                            : "ttl inherit",
+            lnk->tos,
+            lnk->dst_port,
+            lnk->df == 1   ? " df set "
+            : lnk->df == 2 ? " df inherit "
+                           : "");
+
+        if (success)
+            pllink = nmtstp_assert_wait_for_link(platform, name, NM_LINK_TYPE_GENEVE, 100);
+    } else
+        success = NMTST_NM_ERR_SUCCESS(nm_platform_link_geneve_add(platform, name, lnk, &pllink));
+
+    _assert_pllink(platform, success, pllink, name, NM_LINK_TYPE_GENEVE);
+
+    return pllink;
+}
+
+const NMPlatformLink *
 nmtstp_link_gre_add(NMPlatform             *platform,
                     int                     external_command,
                     const char             *name,
@@ -3023,8 +3078,6 @@ nmtstp_link_vxlan_add(NMPlatform               *platform,
     g_assert_cmpstr(pllink->name, ==, name);
     return pllink;
 }
-
-/*****************************************************************************/
 
 const NMPlatformLink *
 nmtstp_link_get_typed(NMPlatform *platform, int ifindex, const char *name, NMLinkType link_type)
