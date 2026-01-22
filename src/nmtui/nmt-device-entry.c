@@ -14,11 +14,6 @@
  * the entry recognizes the interface name or mac address typed in as
  * matching a known #NMDevice, then it will also display the other
  * property in parentheses.
- *
- * FIXME: #NmtDeviceEntry is currently an #NmtEditorGrid object, so that
- * we can possibly eventually add a button to its "extra" field, that
- * would pop up a form for selecting a device. But if we're not going
- * to implement that then we should make it just an #NmtNewtEntry.
  */
 
 #include "libnm-client-aux-extern/nm-default-client.h"
@@ -49,6 +44,7 @@ typedef struct {
     NmtNewtWidget *button;
 
     gboolean updating;
+    gboolean show_select_button;
 } NmtDeviceEntryPrivate;
 
 enum {
@@ -58,6 +54,7 @@ enum {
     PROP_HARDWARE_TYPE,
     PROP_INTERFACE_NAME,
     PROP_MAC_ADDRESS,
+    PROP_SHOW_SELECT_BUTTON,
 
     LAST_PROP
 };
@@ -68,16 +65,18 @@ enum {
  * @width: the width of the entry
  * @hardware_type: the type of #NMDevice to be selected, or
  *   %G_TYPE_NONE if this is for a virtual device type.
+ * @show_select_button: whether to show select button or not.
  *
  * Creates a new #NmtDeviceEntry, for identifying a device of type
  * @hardware_type. If @hardware_type is %G_TYPE_NONE (and you do not
  * set a #NmtDeviceEntryDeviceFilter), then this will only allow
- * specifying an interface name, not a hardware address.
+ * specifying an interface name, not a hardware address. @show_select_button
+ * will allow the user to select from a list of available devices of type @hardware_type.
  *
  * Returns: a new #NmtDeviceEntry.
  */
 NmtNewtWidget *
-nmt_device_entry_new(const char *label, int width, GType hardware_type)
+nmt_device_entry_new(const char *label, int width, GType hardware_type, gboolean show_select_button)
 {
     return g_object_new(NMT_TYPE_DEVICE_ENTRY,
                         "label",
@@ -86,6 +85,8 @@ nmt_device_entry_new(const char *label, int width, GType hardware_type)
                         width,
                         "hardware-type",
                         hardware_type,
+                        "show-select-button",
+                        show_select_button,
                         NULL);
 }
 
@@ -334,6 +335,133 @@ entry_text_changed(GObject *object, GParamSpec *pspec, gpointer deventry)
 }
 
 static void
+device_selected(NmtNewtWidget *listbox, gpointer user_data)
+{
+    NMDevice       *candidate = nmt_newt_listbox_get_active_key(NMT_NEWT_LISTBOX(listbox));
+    NmtDeviceEntry *deventry  = NMT_DEVICE_ENTRY(user_data);
+    const char     *ifname;
+
+    if (!candidate)
+        return;
+
+    ifname = nm_device_get_iface(candidate);
+    if (!ifname)
+        return;
+
+    if (nmt_device_entry_set_interface_name(deventry, ifname))
+        update_entry(deventry);
+}
+
+static int
+compare_devices_by_name(gconstpointer a, gconstpointer b)
+{
+    NMDevice **dev_a = (NMDevice **) a;
+    NMDevice **dev_b = (NMDevice **) b;
+
+    return nm_strcmp0(nm_device_get_iface(*dev_a), nm_device_get_iface(*dev_b));
+}
+
+static void
+do_select_dialog(NmtNewtWidget *button, gpointer user_data)
+{
+    NmtDeviceEntry              *deventry;
+    NmtDeviceEntryPrivate       *priv;
+    gs_unref_object NmtNewtForm *popup_form = NULL;
+    NmtNewtWidget               *listbox_widget;
+    NmtNewtForm                 *parent_form;
+    const GPtrArray             *devices;
+    gs_unref_ptrarray GPtrArray *matching_devices = NULL;
+    const char                  *ifname, *driver;
+    int                          i;
+    int                          entry_x, entry_y;
+    int                          window_x, window_y;
+    int                          popup_x, popup_y;
+    int                          list_w, list_h;
+    newtComponent                entry_component;
+
+    deventry    = NMT_DEVICE_ENTRY(user_data);
+    priv        = NMT_DEVICE_ENTRY_GET_PRIVATE(deventry);
+    parent_form = nmt_newt_widget_get_form(NMT_NEWT_WIDGET(deventry));
+    if (!parent_form)
+        return;
+
+    matching_devices = g_ptr_array_new();
+
+    entry_component = nmt_newt_component_get_component(NMT_NEWT_COMPONENT(priv->entry));
+    newtComponentGetPosition(entry_component, &entry_x, &entry_y);
+    g_object_get(parent_form, "x", &window_x, "y", &window_y, NULL);
+
+    listbox_widget = nmt_newt_listbox_new(5, NMT_NEWT_LISTBOX_SCROLL);
+    nmt_newt_widget_set_exit_on_activate(listbox_widget, TRUE);
+
+    nmt_newt_widget_set_padding(listbox_widget, 1, 0, 1, 0);
+
+    devices = nm_client_get_devices(nm_client);
+    for (i = 0; i < devices->len; i++) {
+        NMDevice *candidate = devices->pdata[i];
+
+        if (!G_TYPE_CHECK_INSTANCE_TYPE(candidate, priv->hardware_type))
+            continue;
+
+        if (priv->device_filter
+            && !priv->device_filter(deventry, candidate, priv->device_filter_data))
+            continue;
+
+        ifname = nm_device_get_iface(candidate);
+        if (!ifname)
+            continue;
+
+        g_ptr_array_add(matching_devices, candidate);
+    }
+
+    if (matching_devices->len == 0) {
+        nmt_newt_message_dialog(_("No devices available"));
+        return;
+    }
+
+    g_ptr_array_sort(matching_devices, compare_devices_by_name);
+
+    for (i = 0; i < matching_devices->len; i++) {
+        gs_free char *display_text = NULL;
+        NMDevice     *candidate    = matching_devices->pdata[i];
+
+        ifname = nm_device_get_iface(candidate);
+
+        driver = nm_device_get_driver(candidate);
+
+        if (driver && driver[0] != '\0') {
+            display_text = g_strdup_printf("%s (%s)", ifname, driver);
+        } else {
+            display_text = g_strdup(ifname);
+        }
+
+        nmt_newt_listbox_append(NMT_NEWT_LISTBOX(listbox_widget), display_text, candidate);
+    }
+
+    g_signal_connect(listbox_widget, "activated", G_CALLBACK(device_selected), deventry);
+
+    nmt_newt_widget_size_request(listbox_widget, &list_w, &list_h);
+    popup_x = window_x + entry_x + 1;
+    popup_y = window_y + entry_y + 1;
+
+    popup_form = g_object_new(NMT_TYPE_NEWT_FORM,
+                              "x",
+                              popup_x,
+                              "y",
+                              popup_y,
+                              "width",
+                              list_w,
+                              "height",
+                              list_h,
+                              "padding",
+                              0,
+                              NULL);
+
+    nmt_newt_form_set_content(popup_form, listbox_widget);
+    nmt_newt_form_show(popup_form);
+}
+
+static void
 nmt_device_entry_init(NmtDeviceEntry *deventry)
 {
     NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE(deventry);
@@ -346,11 +474,9 @@ nmt_device_entry_init(NmtDeviceEntry *deventry)
     nmt_newt_entry_set_validator(priv->entry, device_entry_validate, deventry);
     g_signal_connect(priv->entry, "notify::text", G_CALLBACK(entry_text_changed), deventry);
 
-#if 0
-    priv->button = nmt_newt_button_new (_("Select..."));
-    g_signal_connect (priv->button, "clicked",
-                      G_CALLBACK (do_select_dialog), deventry);
-#endif
+    priv->button = nmt_newt_button_new(_("Select..."));
+    nmt_newt_widget_set_visible(priv->button, FALSE);
+    g_signal_connect(priv->button, "clicked", G_CALLBACK(do_select_dialog), deventry);
 }
 
 static void
@@ -361,7 +487,7 @@ nmt_device_entry_constructed(GObject *object)
     nmt_editor_grid_append(NMT_EDITOR_GRID(object),
                            priv->label,
                            NMT_NEWT_WIDGET(priv->entry),
-                           NULL);
+                           priv->button);
 
     G_OBJECT_CLASS(nmt_device_entry_parent_class)->constructed(object);
 }
@@ -446,6 +572,10 @@ nmt_device_entry_set_property(GObject      *object,
         if (nmt_device_entry_set_mac_address(deventry, mac_address))
             update_entry(deventry);
         break;
+    case PROP_SHOW_SELECT_BUTTON:
+        priv->show_select_button = g_value_get_boolean(value);
+        nmt_newt_widget_set_visible(priv->button, priv->show_select_button);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
@@ -472,6 +602,9 @@ nmt_device_entry_get_property(GObject *object, guint prop_id, GValue *value, GPa
         break;
     case PROP_MAC_ADDRESS:
         g_value_set_string(value, priv->mac_address);
+        break;
+    case PROP_SHOW_SELECT_BUTTON:
+        g_value_set_boolean(value, priv->show_select_button);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -554,4 +687,18 @@ nmt_device_entry_class_init(NmtDeviceEntryClass *deventry_class)
                             "",
                             NULL,
                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+    /**
+     * NmtDeviceEntry:show-select-button:
+     *
+     * Display select button to select device from available devices.
+     */
+    g_object_class_install_property(
+        object_class,
+        PROP_SHOW_SELECT_BUTTON,
+        g_param_spec_boolean("show-select-button",
+                             "",
+                             "",
+                             TRUE,
+                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }

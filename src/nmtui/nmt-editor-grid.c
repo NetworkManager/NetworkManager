@@ -244,8 +244,10 @@ nmt_editor_grid_get_components(NmtNewtWidget *widget)
 
         if (rows[i].extra) {
             child_cos = nmt_newt_widget_get_components(rows[i].extra);
-            for (c = 0; child_cos[c]; c++)
-                g_ptr_array_add(cos, child_cos[c]);
+            if (child_cos) {
+                for (c = 0; child_cos[c]; c++)
+                    g_ptr_array_add(cos, child_cos[c]);
+            }
             g_free(child_cos);
         }
     }

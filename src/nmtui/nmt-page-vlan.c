@@ -59,7 +59,7 @@ nmt_page_vlan_constructed(GObject *object)
 
     nm_editor_bind_vlan_name(s_vlan, nm_connection_get_setting_connection(conn));
 
-    widget = parent = nmt_device_entry_new(_("Parent"), 40, G_TYPE_NONE);
+    widget = parent = nmt_device_entry_new(_("Parent"), 40, G_TYPE_NONE, FALSE);
     nmt_device_entry_set_device_filter(NMT_DEVICE_ENTRY(widget), vlan_device_filter, vlan);
     g_object_bind_property(s_vlan,
                            NM_SETTING_VLAN_PARENT,

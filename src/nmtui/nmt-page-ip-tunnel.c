@@ -127,7 +127,7 @@ nmt_page_ip_tunnel_constructed(GObject *object)
                                          w2s);
     nmt_editor_grid_append(grid, _("Mode"), widget, NULL);
 
-    widget = parent = nmt_device_entry_new(_("Parent"), 40, G_TYPE_NONE);
+    widget = parent = nmt_device_entry_new(_("Parent"), 40, G_TYPE_NONE, FALSE);
     g_object_bind_property(s_ip_tunnel,
                            NM_SETTING_IP_TUNNEL_PARENT,
                            widget,
