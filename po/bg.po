@@ -6,14 +6,14 @@
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 # Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
 # Thomas Haller <thaller@redhat.com>, 2017. #zanata
-# twlvnn kraftwerk <kraft_werk@tutanota.com>, 2025
+# twlvnn kraftwerk <kraft_werk@tutanota.com>, 2025, 2026
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: https://gitlab.freedesktop.org/NetworkManager/"
 "NetworkManager/issues\n"
-"POT-Creation-Date: 2025-12-11 15:34+0000\n"
-"PO-Revision-Date: 2025-12-12 21:09+0200\n"
+"POT-Creation-Date: 2026-01-22 14:50+0000\n"
+"PO-Revision-Date: 2025-12-28 19:44+0200\n"
 "Last-Translator: twlvnn kraftwerk <kraft_werk@tutanota.com>\n"
 "Language-Team: Bulgarian <dict@fsa-bg.org>\n"
 "Language: bg\n"
@@ -23,29 +23,25 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Poedit 3.8\n"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:13
+#: data/org.freedesktop.NetworkManager.policy.in:13
 msgid "Enable or disable system networking"
 msgstr "Включване и изключване на мрежата на системно ниво"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:14
+#: data/org.freedesktop.NetworkManager.policy.in:14
 msgid "System policy prevents enabling or disabling system networking"
 msgstr ""
 "Политиката на системата не позволява включване и изключване на мрежата на "
 "системно ниво"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:22
-#, fuzzy
+#: data/org.freedesktop.NetworkManager.policy.in:22
 msgid "Reload NetworkManager configuration"
-msgstr "Състояние на NetworkManager"
+msgstr "Презареждане на настройките на NetworkManager"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:23
-#, fuzzy
+#: data/org.freedesktop.NetworkManager.policy.in:23
 msgid "System policy prevents reloading NetworkManager"
-msgstr ""
-"Политиката на системата не позволява включване и изключване на мрежата на "
-"системно ниво"
+msgstr "Политиката на системата не позволява презареждането на NetworkManager"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:32
+#: data/org.freedesktop.NetworkManager.policy.in:32
 msgid ""
 "Put NetworkManager to sleep or wake it up (should only be used by system "
 "power management)"
@@ -53,155 +49,147 @@ msgstr ""
 "Приспиване и събуждане на NetworkManager (за целите на модула за управление "
 "на захранването на системата)"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:33
+#: data/org.freedesktop.NetworkManager.policy.in:33
 msgid "System policy prevents putting NetworkManager to sleep or waking it up"
 msgstr ""
 "Политиката на системата не позволява приспиване и събуждане на NetworkManager"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:41
+#: data/org.freedesktop.NetworkManager.policy.in:41
 msgid "Enable or disable Wi-Fi devices"
 msgstr "Включване и изключване на устройства за безжични мрежи"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:42
+#: data/org.freedesktop.NetworkManager.policy.in:42
 msgid "System policy prevents enabling or disabling Wi-Fi devices"
 msgstr ""
 "Политиката на системата не позволява включване и изключване на устройства за "
 "безжични мрежи"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:50
+#: data/org.freedesktop.NetworkManager.policy.in:50
 msgid "Enable or disable mobile broadband devices"
 msgstr "Включване и изключване на устройства за достъп до мобилни мрежи"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:51
+#: data/org.freedesktop.NetworkManager.policy.in:51
 msgid "System policy prevents enabling or disabling mobile broadband devices"
 msgstr ""
 "Политиката на системата не позволява включване и изключване на устройства за "
 "мобилни мрежи"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:59
+#: data/org.freedesktop.NetworkManager.policy.in:59
 msgid "Enable or disable WiMAX mobile broadband devices"
 msgstr ""
 "Включване и изключване на устройства за достъп до мобилни мрежи по WiMAX"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:60
+#: data/org.freedesktop.NetworkManager.policy.in:60
 msgid ""
 "System policy prevents enabling or disabling WiMAX mobile broadband devices"
 msgstr ""
 "Политиката на системата не позволява включване и изключване на устройства за "
 "мобилни мрежи по WiMAX"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:68
+#: data/org.freedesktop.NetworkManager.policy.in:68
 msgid "Allow control of network connections"
 msgstr "Разрешаване на управлението на мрежовите връзки"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:69
+#: data/org.freedesktop.NetworkManager.policy.in:69
 msgid "System policy prevents control of network connections"
 msgstr "Политиката на системата не позволява управляване на мрежовите връзки"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:78
-#, fuzzy
+#: data/org.freedesktop.NetworkManager.policy.in:78
 msgid "Allow control of Wi-Fi scans"
-msgstr "Разрешаване на управлението на мрежовите връзки"
+msgstr "Разрешаване на управлението на сканиране за безжични мрежи"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:79
-#, fuzzy
+#: data/org.freedesktop.NetworkManager.policy.in:79
 msgid "System policy prevents Wi-Fi scans"
-msgstr ""
-"Политиката на системата не позволява включване и изключване на устройства за "
-"безжични мрежи"
+msgstr "Политиката на системата не позволява сканиране за безжични мрежи"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:88
+#: data/org.freedesktop.NetworkManager.policy.in:88
 msgid "Connection sharing via a protected Wi-Fi network"
 msgstr "Споделяне на връзката през защитена безжична мрежа"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:89
+#: data/org.freedesktop.NetworkManager.policy.in:89
 msgid ""
 "System policy prevents sharing connections via a protected Wi-Fi network"
 msgstr ""
 "Политиката на системата не позволява споделяне на връзки през защитена "
 "безжична мрежа"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:97
+#: data/org.freedesktop.NetworkManager.policy.in:97
 msgid "Connection sharing via an open Wi-Fi network"
 msgstr "Споделяне на връзката през отворена безжична мрежа"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:98
+#: data/org.freedesktop.NetworkManager.policy.in:98
 msgid "System policy prevents sharing connections via an open Wi-Fi network"
 msgstr ""
 "Политиката на системата не позволява споделяне на връзки през отворена "
 "безжична мрежа"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:106
-#, fuzzy
+#: data/org.freedesktop.NetworkManager.policy.in:106
 msgid "Modify personal network connections"
-msgstr "Разрешаване на управлението на мрежовите връзки"
+msgstr "Променяне на лични мрежови връзки"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:107
-#, fuzzy
+#: data/org.freedesktop.NetworkManager.policy.in:107
 msgid "System policy prevents modification of personal network settings"
-msgstr "Политиката на системата не позволява промяна на системните настройки"
+msgstr ""
+"Политиката на системата не позволява промяна на личните мрежови настройки"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:116
-#, fuzzy
+#: data/org.freedesktop.NetworkManager.policy.in:116
 msgid "Modify network connections for all users"
-msgstr "Промяна на системни връзки"
+msgstr "Променяне на мрежовите връзки за всички потребители"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:117
-#, fuzzy
+#: data/org.freedesktop.NetworkManager.policy.in:117
 msgid "System policy prevents modification of network settings for all users"
-msgstr "Политиката на системата не позволява промяна на системните настройки"
+msgstr ""
+"Политиката на системата не позволява промяна на мрежовите настройки за "
+"всички потребители"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:126
+#: data/org.freedesktop.NetworkManager.policy.in:126
 msgid "Modify persistent system hostname"
 msgstr "Промяна на името на хоста"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:127
+#: data/org.freedesktop.NetworkManager.policy.in:127
 msgid "System policy prevents modification of the persistent system hostname"
 msgstr "Политиката на системата не позволява промяна на името на хоста"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:136
+#: data/org.freedesktop.NetworkManager.policy.in:136
 msgid "Modify persistent global DNS configuration"
 msgstr ""
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:137
+#: data/org.freedesktop.NetworkManager.policy.in:137
 #, fuzzy
 msgid ""
 "System policy prevents modification of the persistent global DNS "
 "configuration"
 msgstr "Политиката на системата не позволява промяна на името на хоста"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:146
+#: data/org.freedesktop.NetworkManager.policy.in:146
 msgid "Perform a checkpoint or rollback of interfaces configuration"
 msgstr ""
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:147
-#, fuzzy
+#: data/org.freedesktop.NetworkManager.policy.in:147
 msgid "System policy prevents the creation of a checkpoint or its rollback"
-msgstr "Политиката на системата не позволява промяна на името на хоста"
+msgstr ""
+"Политиката на системата не позволява създаване на точка за достъп или "
+"нейното връщане"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:156
-#, fuzzy
+#: data/org.freedesktop.NetworkManager.policy.in:156
 msgid "Enable or disable device statistics"
-msgstr "Включване и изключване на устройства за безжични мрежи"
+msgstr "Включване или изключване на статистическите данни за устройството"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:157
-#, fuzzy
+#: data/org.freedesktop.NetworkManager.policy.in:157
 msgid "System policy prevents enabling or disabling device statistics"
 msgstr ""
-"Политиката на системата не позволява включване и изключване на устройства за "
-"безжични мрежи"
+"Политиката на системата не позволява включване и изключване на "
+"статистическите данни за устройството"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:165
-#, fuzzy
+#: data/org.freedesktop.NetworkManager.policy.in:165
 msgid "Enable or disable connectivity checking"
-msgstr "Включване и изключване на мрежата на системно ниво"
+msgstr "Включване и изключване на проверката за свързаност"
 
-#: data/org.freedesktop.NetworkManager.policy.in.in:166
-#, fuzzy
+#: data/org.freedesktop.NetworkManager.policy.in:166
 msgid "System policy prevents enabling or disabling connectivity checking"
 msgstr ""
-"Политиката на системата не позволява включване и изключване на мрежата на "
-"системно ниво"
+"Политиката на системата не позволява включване и изключване на проверката за "
+"свързаност"
 
 #. TRANSLATORS: the first %s is a prefix for the connection id, such
 #. * as "Wired Connection" or "VPN Connection". The %d is a number
@@ -214,7 +202,7 @@ msgid "%s %u"
 msgstr "%s %u"
 
 #: src/core/devices/adsl/nm-device-adsl.c:118
-#: src/libnmc-setting/nm-meta-setting-desc.c:9005
+#: src/libnmc-setting/nm-meta-setting-desc.c:9006
 msgid "ADSL connection"
 msgstr "ADSL връзка"
 
@@ -263,12 +251,11 @@ msgstr "CDMA връзка"
 
 #: src/core/devices/bluetooth/nm-device-bt.c:392
 msgid "Unknown/unhandled Bluetooth connection type"
-msgstr ""
+msgstr "Неизвестен/необработен вид  Bluetooth връзка"
 
 #: src/core/devices/bluetooth/nm-device-bt.c:416
-#, fuzzy
 msgid "connection does not match device"
-msgstr "няма активна връзка или устройство"
+msgstr "връзката не съответства на устройството"
 
 #: src/core/devices/nm-device-6lowpan.c:154
 msgid "6LOWPAN connection"
@@ -294,23 +281,23 @@ msgstr "Системни връзки"
 msgid "Wired connection %d"
 msgstr "Кабелна връзка %d"
 
-#: src/core/devices/nm-device-ethernet.c:1653
-#: src/libnmc-setting/nm-meta-setting-desc.c:9049
+#: src/core/devices/nm-device-ethernet.c:1660
+#: src/libnmc-setting/nm-meta-setting-desc.c:9050
 #, fuzzy
 msgid "Veth connection"
 msgstr "Свързване към ВЧМ"
 
-#: src/core/devices/nm-device-ethernet.c:1710
+#: src/core/devices/nm-device-ethernet.c:1717
 msgid "PPPoE connection"
 msgstr "PPPoE връзка"
 
-#: src/core/devices/nm-device-ethernet.c:1710
+#: src/core/devices/nm-device-ethernet.c:1717
 #, fuzzy
 msgid "Wired connection"
 msgstr "Активни връзки"
 
 #: src/core/devices/nm-device-infiniband.c:160
-#: src/libnmc-setting/nm-meta-setting-desc.c:9020
+#: src/libnmc-setting/nm-meta-setting-desc.c:9021
 msgid "InfiniBand connection"
 msgstr "InfiniBand връзка"
 
@@ -331,17 +318,17 @@ msgid "TUN connection"
 msgstr "TUN връзка"
 
 #: src/core/devices/nm-device-vlan.c:370
-#: src/libnmc-setting/nm-meta-setting-desc.c:9050
+#: src/libnmc-setting/nm-meta-setting-desc.c:9051
 msgid "VLAN connection"
 msgstr "VLAN връзка"
 
 #: src/core/devices/nm-device-vrf.c:185
-#: src/libnmc-setting/nm-meta-setting-desc.c:9052
+#: src/libnmc-setting/nm-meta-setting-desc.c:9053
 msgid "VRF connection"
 msgstr "VRF връзка"
 
 #: src/core/devices/nm-device-vxlan.c:385
-#: src/libnmc-setting/nm-meta-setting-desc.c:9053
+#: src/libnmc-setting/nm-meta-setting-desc.c:9054
 msgid "VXLAN connection"
 msgstr "VXLAN връзка"
 
@@ -354,7 +341,7 @@ msgstr "WPAN връзка"
 msgid "Team connection"
 msgstr "Системни връзки"
 
-#: src/core/devices/wifi/nm-device-olpc-mesh.c:112 src/nmcli/devices.c:1415
+#: src/core/devices/wifi/nm-device-olpc-mesh.c:112 src/nmcli/devices.c:1433
 msgid "Mesh"
 msgstr ""
 
@@ -476,7 +463,7 @@ msgstr ""
 #: src/core/devices/wifi/nm-wifi-utils.c:565
 #: src/core/devices/wifi/nm-wifi-utils.c:600
 msgid "connection does not match access point"
-msgstr ""
+msgstr "връзката не съответства на точката за достъп"
 
 #: src/core/devices/wifi/nm-wifi-utils.c:654
 #, fuzzy
@@ -485,7 +472,7 @@ msgstr "няма активна връзка или устройство"
 
 #: src/core/devices/wifi/nm-wifi-utils.c:673
 msgid "Access point is unencrypted but setting specifies security"
-msgstr ""
+msgstr "Точката за достъп не е шифрирана, но настройката изисква сигурността"
 
 #: src/core/devices/wifi/nm-wifi-utils.c:761
 msgid ""
@@ -518,7 +505,7 @@ msgstr ""
 #: src/core/main-utils.c:85
 #, c-format
 msgid "Writing to %s failed: %s\n"
-msgstr ""
+msgstr "Записването в %s е неуспешно: %s\n"
 
 #: src/core/main-utils.c:126 src/core/main-utils.c:138
 #, c-format
@@ -536,23 +523,22 @@ msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr "%s. Ползвайте --help, за да видите списъка с опции.\n"
 
 #: src/core/main.c:164 src/core/main.c:379
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to read configuration: %s\n"
-msgstr "Грешка при задаване на началния вектор за шифриране — %s / %s."
+msgstr "Настройките не може да бъдат прочетени: %s\n"
 
 #: src/core/main.c:191
-#, fuzzy
 msgid "Print NetworkManager version and exit"
-msgstr "Състояние на NetworkManager"
+msgstr "Извеждане на версията на NetworkManager и спиране"
 
 #: src/core/main.c:198
 msgid "Don't become a daemon"
-msgstr ""
+msgstr "Не ставай демон"
 
 #: src/core/main.c:205
 #, c-format
 msgid "Log level: one of [%s]"
-msgstr ""
+msgstr "Ниво на съобщения на журнала: едно от [%s]"
 
 #: src/core/main.c:212
 #, c-format
@@ -561,15 +547,15 @@ msgstr ""
 
 #: src/core/main.c:219
 msgid "Make all warnings fatal"
-msgstr ""
+msgstr "Всички съобщения за внимание да са фатални"
 
 #: src/core/main.c:226
 msgid "Specify the location of a PID file"
-msgstr ""
+msgstr "Посочете местоположението на файла с ид. на процеса"
 
 #: src/core/main.c:240
 msgid "Print NetworkManager configuration and exit"
-msgstr ""
+msgstr "Извеждане на настройките на NetworkManager и спиране"
 
 #: src/core/main.c:251
 msgid ""
@@ -578,36 +564,40 @@ msgid ""
 "specify wireless access points which wireless cards in the computer\n"
 "should associate with."
 msgstr ""
+"NetworkManager следи всички мрежови връзки и автоматично\n"
+"избира най-добрата връзка за използване.  То също така позволява на "
+"потребителя да\n"
+"определи безжичните точки за достъп, с които безжичните карти в компютъра\n"
+"трябва да се свързват."
 
 #: src/core/main.c:402
 #, c-format
 msgid "Could not daemonize: %s [error %u]\n"
-msgstr ""
+msgstr "Не може да се направи на демон: %s [грешка %u]\n"
 
 #: src/core/nm-config.c:545 src/libnm-core-impl/nm-setting-ovs-bridge.c:187
 #: src/libnmc-setting/nm-meta-setting-desc.c:2176
-#: src/libnmc-setting/nm-meta-setting-desc.c:4366
-#, fuzzy, c-format
+#: src/libnmc-setting/nm-meta-setting-desc.c:4367
+#, c-format
 msgid "'%s' is not valid"
-msgstr "Грешка: „%s“ не е правилна команда за „nm“."
+msgstr "„%s“ не е правилно"
 
 #: src/core/nm-config.c:567
 #, c-format
 msgid "Bad '%s' option: "
-msgstr ""
+msgstr "Лоша опция „%s“: "
 
 #: src/core/nm-config.c:584
 msgid "Config file location"
-msgstr ""
+msgstr "Местоположение на файла за настройки"
 
 #: src/core/nm-config.c:591
 msgid "Config directory location"
-msgstr ""
+msgstr "Местоположение на папката за настройки"
 
 #: src/core/nm-config.c:598
-#, fuzzy
 msgid "System config directory location"
-msgstr "Системни връзки"
+msgstr "Местоположение на папката за системните настройки"
 
 #: src/core/nm-config.c:605
 msgid "Internal config file location"
@@ -627,7 +617,7 @@ msgstr "Списък с приставки, разделени с запетая
 
 #: src/core/nm-config.c:633
 msgid "Quit after initial configuration"
-msgstr ""
+msgstr "Спиране след първоначално настройване"
 
 #: src/core/nm-config.c:640
 msgid "Don't become a daemon, and log to stderr"
@@ -639,44 +629,43 @@ msgstr ""
 
 #: src/core/nm-config.c:656
 msgid "The interval between connectivity checks (in seconds)"
-msgstr ""
+msgstr "Интервалът между проверките за свързаност (в секунди)"
 
 #: src/core/nm-config.c:663
 msgid "The expected start of the response"
-msgstr ""
+msgstr "Очакваното начало на отговора"
 
 #: src/core/nm-config.c:672
 msgid "NetworkManager options"
 msgstr "Опции на NetworkManager"
 
 #: src/core/nm-config.c:673
-#, fuzzy
 msgid "Show NetworkManager options"
-msgstr "Състояние на NetworkManager"
+msgstr "Показване на опциите на NetworkManager"
 
-#: src/core/nm-manager.c:7001 src/libnmc-setting/nm-meta-setting-desc.c:9051
+#: src/core/nm-manager.c:7001 src/libnmc-setting/nm-meta-setting-desc.c:9052
 msgid "VPN connection"
 msgstr "ВЧМ връзка"
 
-#: src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5657
+#: src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5660
 #: src/libnm-client-impl/nm-device.c:1782
 #: src/libnm-core-impl/nm-connection.c:3343 src/nmtui/nm-editor-utils.c:204
 msgid "Bond"
 msgstr ""
 
-#: src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5728
+#: src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5731
 #: src/libnm-client-impl/nm-device.c:1784
 #: src/libnm-core-impl/nm-connection.c:3345 src/nmtui/nm-editor-utils.c:222
 msgid "Team"
 msgstr ""
 
-#: src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:6065
+#: src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:6068
 #: src/libnm-client-impl/nm-device.c:1786
 #: src/libnm-core-impl/nm-connection.c:3347 src/nmtui/nm-editor-utils.c:213
 msgid "Bridge"
 msgstr ""
 
-#: src/core/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh.c:9028
+#: src/core/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh.c:9111
 #: src/libnm-core-impl/nm-team-utils.c:2395
 msgid "invalid json"
 msgstr "неправилен json"
@@ -684,12 +673,12 @@ msgstr "неправилен json"
 #: src/libnm-client-impl/nm-client.c:3818
 #, c-format
 msgid "request succeeded with %s but object is in an unsuitable state"
-msgstr ""
+msgstr "заявката е успешна с %s, но обектът е в неподходящо състояние"
 
 #: src/libnm-client-impl/nm-client.c:3910
 #, c-format
 msgid "operation succeeded but object %s does not exist"
-msgstr ""
+msgstr "операцията е успешна, но обектът %s не съществува"
 
 #: src/libnm-client-impl/nm-conn-utils.c:40
 #, fuzzy, c-format
@@ -701,16 +690,18 @@ msgid ""
 "The name of the WireGuard config must be a valid interface name followed by "
 "\".conf\""
 msgstr ""
+"Името на настройките на WireGuard трябва да бъде правилно име на интерфейс, "
+"последвано от „.conf“"
 
 #: src/libnm-client-impl/nm-conn-utils.c:454
 #, c-format
 msgid "unrecognized line at %s:%zu"
-msgstr ""
+msgstr "неразпознат ред на %s:%zu"
 
 #: src/libnm-client-impl/nm-conn-utils.c:461
-#, fuzzy, c-format
+#, c-format
 msgid "invalid value for '%s' at %s:%zu"
-msgstr "Грешка: „%s“ не е правилен аргумент за опцията „%s“."
+msgstr "неправилна стойност за „%s“ в %s:%zu"
 
 #: src/libnm-client-impl/nm-conn-utils.c:469
 #, fuzzy, c-format
@@ -718,9 +709,9 @@ msgid "invalid secret '%s' at %s:%zu"
 msgstr "неправилни пароли за ВЧМ"
 
 #: src/libnm-client-impl/nm-conn-utils.c:593
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to create WireGuard connection: %s"
-msgstr "Непозната връзка „%s“."
+msgstr "Не може да бъде създадена WireGuard връзка: %s"
 
 #: src/libnm-client-impl/nm-device-adsl.c:66
 msgid "The connection was not an ADSL connection."
@@ -750,12 +741,13 @@ msgstr "Неправилен адрес на Bluetooth устройството.
 
 #: src/libnm-client-impl/nm-device-bt.c:161
 msgid "The Bluetooth addresses of the device and the connection didn't match."
-msgstr ""
+msgstr "Bluetooth адресите на устройството и връзката не съвпадат."
 
 #: src/libnm-client-impl/nm-device-bt.c:173
 msgid ""
 "The device is lacking Bluetooth capabilities required by the connection."
 msgstr ""
+"Устройството не разполага с Bluetooth функции, необходими за свързване."
 
 #: src/libnm-client-impl/nm-device-dummy.c:62
 #, fuzzy
@@ -769,7 +761,7 @@ msgstr "връзката е премахната"
 #: src/libnm-client-impl/nm-device-ovs-interface.c:57
 #: src/libnm-client-impl/nm-device-ovs-port.c:83
 msgid "The connection did not specify an interface name."
-msgstr ""
+msgstr "Връзката не е посочила име на интерфейс."
 
 #: src/libnm-client-impl/nm-device-ethernet.c:189
 msgid "The connection was not an Ethernet or PPPoE connection."
@@ -782,21 +774,21 @@ msgstr ""
 #: src/libnm-client-impl/nm-device-ethernet.c:223
 #, c-format
 msgid "Invalid device MAC address %s."
-msgstr "Невалиден MAC адрес %s на устройство."
+msgstr "Неправилен MAC адрес %s на устройство."
 
 #: src/libnm-client-impl/nm-device-ethernet.c:231
 msgid "The MACs of the device and the connection do not match."
-msgstr ""
+msgstr "MAC адресите на устройството и връзката не съвпадат."
 
 #: src/libnm-client-impl/nm-device-ethernet.c:243
 #, c-format
 msgid "Invalid MAC in the blacklist: %s."
-msgstr ""
+msgstr "Неправилен MAC адрес в забранения списък: %s."
 
 #: src/libnm-client-impl/nm-device-ethernet.c:252
 #, c-format
 msgid "Device MAC (%s) is blacklisted by the connection."
-msgstr ""
+msgstr "MAC адресът на устройството (%s) е в забранения списък на връзката."
 
 #: src/libnm-client-impl/nm-device-generic.c:80
 #, fuzzy
@@ -815,7 +807,7 @@ msgstr "Неправилен MAC адрес на устройството."
 #: src/libnm-client-impl/nm-device-infiniband.c:110
 #: src/libnm-client-impl/nm-device-wifi.c:490
 msgid "The MACs of the device and the connection didn't match."
-msgstr ""
+msgstr "MAC адресите на устройството и връзката не съвпадаха."
 
 #: src/libnm-client-impl/nm-device-ip-tunnel.c:285
 msgid "The connection was not an IP tunnel connection."
@@ -831,9 +823,8 @@ msgid "The connection was not a MAC-VLAN connection."
 msgstr "Връзката не беше MAC-VLAN връзка."
 
 #: src/libnm-client-impl/nm-device-modem.c:181
-#, fuzzy
 msgid "The connection was not a modem connection."
-msgstr "връзката е премахната"
+msgstr "Връзката не беше модемна връзка."
 
 #: src/libnm-client-impl/nm-device-modem.c:191
 msgid "The connection was not a valid modem connection."
@@ -874,7 +865,7 @@ msgstr "връзката е премахната"
 
 #: src/libnm-client-impl/nm-device-tun.c:215
 msgid "The mode of the device and the connection didn't match"
-msgstr ""
+msgstr "Режимът на устройството и връзката не съвпадаха"
 
 #: src/libnm-client-impl/nm-device-vlan.c:121
 msgid "The connection was not a VLAN connection."
@@ -886,12 +877,11 @@ msgstr ""
 
 #: src/libnm-client-impl/nm-device-vlan.c:148
 msgid "The hardware address of the device and the connection didn't match."
-msgstr ""
+msgstr "Хардуерният адрес на устройството и връзката не съвпадат."
 
 #: src/libnm-client-impl/nm-device-vrf.c:65
-#, fuzzy
 msgid "The connection was not a VRF connection."
-msgstr "връзката е премахната"
+msgstr "Връзката не беше VRF връзка."
 
 #: src/libnm-client-impl/nm-device-vrf.c:74
 msgid "The VRF table of the device and the connection didn't match."
@@ -1054,7 +1044,7 @@ msgstr "IPVLAN"
 #: src/libnm-client-impl/nm-device.c:1829 src/libnmc-base/nm-client-utils.c:352
 #: src/libnmc-base/nm-client-utils.c:505 src/nmcli/utils.c:1852
 msgid "Unknown"
-msgstr "Непознат"
+msgstr "Непозната"
 
 #: src/libnm-client-impl/nm-device.c:1854
 msgid "Wired"
@@ -1088,7 +1078,7 @@ msgstr "Връзката не беше валидна: %s"
 
 #: src/libnm-client-impl/nm-device.c:2878
 msgid "The interface names of the device and the connection didn't match"
-msgstr ""
+msgstr "Имената на интерфейса на устройството и връзката не съвпадат"
 
 #: src/libnm-client-impl/nm-secret-agent-old.c:1384
 #, fuzzy
@@ -1104,6 +1094,7 @@ msgstr "Не е посочено име на услугата"
 #, c-format
 msgid "'%s' is not valid: properties should be specified as 'key=value'"
 msgstr ""
+"„%s“ не е правилно: свойствата трябва да бъдат посочени като „ключ=стойност“"
 
 #: src/libnm-core-aux-extern/nm-libnm-core-aux.c:302
 #, c-format
@@ -1123,16 +1114,16 @@ msgstr "полето „%s“ трябва да е единствено"
 #: src/libnm-core-aux-extern/nm-libnm-core-aux.c:326
 #, c-format
 msgid "value for '%s' must be a number"
-msgstr ""
+msgstr "стойността за „%s“ трябва да бъде число"
 
 #: src/libnm-core-aux-extern/nm-libnm-core-aux.c:339
 #, c-format
 msgid "value for '%s' must be a boolean"
-msgstr ""
+msgstr "стойността за „%s“ трябва да бъде булева стойност"
 
 #: src/libnm-core-aux-extern/nm-libnm-core-aux.c:348
 msgid "missing 'name' attribute"
-msgstr ""
+msgstr "липсва атрибут „name“ (име)"
 
 #: src/libnm-core-aux-extern/nm-libnm-core-aux.c:357
 #, c-format
@@ -1150,15 +1141,16 @@ msgstr "свойството не може да бъде празен низ"
 
 #: src/libnm-core-aux-intern/nm-libnm-core-utils.c:442
 msgid "property cannot be longer than 255 bytes"
-msgstr ""
+msgstr "свойството не може да бъде по-дълго от 255 байта"
 
 #: src/libnm-core-aux-intern/nm-libnm-core-utils.c:453
 msgid "property cannot contain any nul bytes"
-msgstr ""
+msgstr "свойството не може да съдържа празни байтове"
 
 #: src/libnm-core-aux-intern/nm-libnm-core-utils.c:474
 msgid "invalid DSCP value; allowed values are: 'CS0', 'CS4', 'CS6'"
 msgstr ""
+"неправилна DSCP стойност; позволените стойности са „CS0“, „CS4“ и „CS6“"
 
 #: src/libnm-core-aux-intern/nm-libnm-core-utils.c:508
 msgid "NULL DHCP range; it should be provided as <START_IP>,<END_IP>."
@@ -1216,7 +1208,7 @@ msgstr "Грешка: „%s“ не е правилен аргумент за о
 
 #: src/libnm-core-aux-intern/nm-libnm-core-utils.c:822
 msgid "unterminated square bracket"
-msgstr ""
+msgstr "незатворен квадратна скоба"
 
 #: src/libnm-core-aux-intern/nm-libnm-core-utils.c:836
 msgid "the interface name is too long"
@@ -1230,7 +1222,7 @@ msgstr "„%s“ не е правилен номер на порт"
 
 #: src/libnm-core-aux-intern/nm-libnm-core-utils.c:880
 msgid "IPv6 addresses must be enclosed in square brackets"
-msgstr ""
+msgstr "IPv6 адресите трябва да бъдат поставени в квадратни скоби"
 
 #: src/libnm-core-aux-intern/nm-libnm-core-utils.c:888
 #, c-format
@@ -1289,11 +1281,11 @@ msgstr "стойността не е правилен UTF8 текст"
 
 #: src/libnm-core-impl/nm-connection.c:424
 msgid "wrong type; should be a list of strings."
-msgstr ""
+msgstr "грешен вид; трябва да бъде списък от низове."
 
 #: src/libnm-core-impl/nm-connection.c:513
 msgid "unknown setting name"
-msgstr ""
+msgstr "непознато име на настройка"
 
 #: src/libnm-core-impl/nm-connection.c:525
 msgid "duplicate setting name"
@@ -1315,7 +1307,7 @@ msgstr "грешно поле „%s“"
 
 #: src/libnm-core-impl/nm-connection.c:1936
 msgid "setting not found"
-msgstr ""
+msgstr "настройката не е открита"
 
 #: src/libnm-core-impl/nm-connection.c:1990
 #: src/libnm-core-impl/nm-connection.c:2015
@@ -1337,12 +1329,12 @@ msgstr ""
 
 #: src/libnm-core-impl/nm-connection.c:2227
 msgid "Unexpected failure to verify the connection"
-msgstr ""
+msgstr "Възникна неочаквана грешка при проверка на връзката"
 
 #: src/libnm-core-impl/nm-connection.c:2264
 #, c-format
 msgid "unexpected uuid %s instead of %s"
-msgstr ""
+msgstr "неочакван универсално уникален ид. %s вместо %s"
 
 #: src/libnm-core-impl/nm-connection.c:3193
 #: src/libnm-core-impl/nm-setting-8021x.c:2641
@@ -1354,9 +1346,9 @@ msgstr ""
 #: src/libnm-core-impl/nm-setting-bluetooth.c:190
 #: src/libnm-core-impl/nm-setting-bluetooth.c:207
 #: src/libnm-core-impl/nm-setting-cdma.c:142
-#: src/libnm-core-impl/nm-setting-connection.c:1442
-#: src/libnm-core-impl/nm-setting-connection.c:1480
-#: src/libnm-core-impl/nm-setting-connection.c:1979
+#: src/libnm-core-impl/nm-setting-connection.c:1483
+#: src/libnm-core-impl/nm-setting-connection.c:1521
+#: src/libnm-core-impl/nm-setting-connection.c:2020
 #: src/libnm-core-impl/nm-setting-ip-config.c:5632
 #: src/libnm-core-impl/nm-setting-ip-tunnel.c:405
 #: src/libnm-core-impl/nm-setting-olpc-mesh.c:97
@@ -1389,7 +1381,7 @@ msgstr ""
 
 #: src/libnm-core-impl/nm-keyfile.c:334
 msgid "ignoring missing number"
-msgstr ""
+msgstr "игнориране на липсващо число"
 
 #: src/libnm-core-impl/nm-keyfile.c:346
 #, c-format
@@ -1399,7 +1391,7 @@ msgstr "игнориране на неправилното число „%s“"
 #: src/libnm-core-impl/nm-keyfile.c:375
 #, c-format
 msgid "ignoring invalid %s address: %s"
-msgstr ""
+msgstr "игнориране на неправилен адрес %s: %s"
 
 #: src/libnm-core-impl/nm-keyfile.c:421
 #, c-format
@@ -1414,17 +1406,18 @@ msgstr ""
 #: src/libnm-core-impl/nm-keyfile.c:621
 #, c-format
 msgid "unexpected character '%c' for address %s: '%s' (position %td)"
-msgstr ""
+msgstr "неочакван знак „%c“ за адрес %s: „%s“ (позиция %td)"
 
 #: src/libnm-core-impl/nm-keyfile.c:637
 #, c-format
 msgid "unexpected character '%c' for %s: '%s' (position %td)"
-msgstr ""
+msgstr "неочакван знак „%c“ за %s: „%s“ (позиция %td)"
 
 #: src/libnm-core-impl/nm-keyfile.c:653
 #, c-format
 msgid "unexpected character '%c' in prefix length for %s: '%s' (position %td)"
 msgstr ""
+"неочакван знак „%c“ в дължината на представката за %s: „%s“ (позиция %td)"
 
 #: src/libnm-core-impl/nm-keyfile.c:670
 #, c-format
@@ -1651,7 +1644,7 @@ msgstr "свойството не е посочено"
 #: src/libnm-core-impl/nm-setting-vlan.c:625
 #, c-format
 msgid "'%s' value doesn't match '%s=%s'"
-msgstr ""
+msgstr "Стойността „%s“ не съвпада с „%s=%s“"
 
 #: src/libnm-core-impl/nm-setting-6lowpan.c:120
 #: src/libnm-core-impl/nm-setting-ip-tunnel.c:378
@@ -1662,11 +1655,11 @@ msgstr ""
 #: src/libnm-core-impl/nm-setting-vxlan.c:377
 #, c-format
 msgid "'%s' is neither an UUID nor an interface name"
-msgstr ""
+msgstr "„%s“ не е нито универсално уникален ид., нито име на интерфейс"
 
 #: src/libnm-core-impl/nm-setting-8021x.c:237
 msgid "binary data missing"
-msgstr ""
+msgstr "липсват двоични данни"
 
 #: src/libnm-core-impl/nm-setting-8021x.c:269
 msgid "URI not NUL terminated"
@@ -1718,9 +1711,9 @@ msgstr ""
 #: src/libnm-core-impl/nm-setting-adsl.c:179
 #: src/libnm-core-impl/nm-setting-cdma.c:147
 #: src/libnm-core-impl/nm-setting-cdma.c:157
-#: src/libnm-core-impl/nm-setting-connection.c:1452
-#: src/libnm-core-impl/nm-setting-connection.c:1495
-#: src/libnm-core-impl/nm-setting-connection.c:1747
+#: src/libnm-core-impl/nm-setting-connection.c:1493
+#: src/libnm-core-impl/nm-setting-connection.c:1536
+#: src/libnm-core-impl/nm-setting-connection.c:1788
 #: src/libnm-core-impl/nm-setting-gsm.c:560
 #: src/libnm-core-impl/nm-setting-gsm.c:575
 #: src/libnm-core-impl/nm-setting-gsm.c:618
@@ -1735,7 +1728,7 @@ msgstr ""
 #: src/libnm-core-impl/nm-setting-wimax.c:107
 #: src/libnm-core-impl/nm-setting-wireless-security.c:968
 #: src/libnm-core-impl/nm-setting-wireless-security.c:996
-#: src/libnm-core-impl/nm-setting.c:2626
+#: src/libnm-core-impl/nm-setting.c:2654
 msgid "property is empty"
 msgstr "свойството е празно"
 
@@ -1779,7 +1772,7 @@ msgstr "грешка при присъединяване към групата �
 #: src/libnm-core-impl/nm-setting-wireless.c:1208
 #: src/libnm-core-impl/nm-setting-wireless.c:1221
 #: src/libnm-core-impl/nm-setting-wpan.c:164
-#: src/libnm-core-impl/nm-utils.c:4559
+#: src/libnm-core-impl/nm-utils.c:4639
 msgid "property is invalid"
 msgstr "свойството не е правилно"
 
@@ -1941,7 +1934,7 @@ msgstr ""
 #: src/libnm-core-impl/nm-setting-bond.c:1182
 #, c-format
 msgid "'%s' option should be string"
-msgstr ""
+msgstr "опцията „%s“ трябва да бъде низ"
 
 #: src/libnm-core-impl/nm-setting-bond.c:1195
 #, c-format
@@ -1951,7 +1944,7 @@ msgstr "Опцията „%s“ не е правилна с режим „%s“"
 #: src/libnm-core-impl/nm-setting-bridge.c:1182
 #, c-format
 msgid "value '%d' is out of range <%d-%d>"
-msgstr ""
+msgstr "стойността „%d“ е извън обхвата <%d-%d>"
 
 #: src/libnm-core-impl/nm-setting-bridge.c:1201
 msgid "is not a valid MAC address"
@@ -1984,158 +1977,157 @@ msgstr ""
 msgid "bridge connection should have a ethernet setting as well"
 msgstr ""
 
-#: src/libnm-core-impl/nm-setting-connection.c:1336
+#: src/libnm-core-impl/nm-setting-connection.c:1377
 #, fuzzy, c-format
 msgid "setting required for connection of type '%s'"
 msgstr "не е открито устройство за връзката „%s“"
 
-#: src/libnm-core-impl/nm-setting-connection.c:1367
+#: src/libnm-core-impl/nm-setting-connection.c:1408
 #, c-format
 msgid "Unknown port type '%s'"
 msgstr "Неизвестен вид на порт „%s“"
 
-#: src/libnm-core-impl/nm-setting-connection.c:1382
+#: src/libnm-core-impl/nm-setting-connection.c:1423
 #, fuzzy, c-format
 msgid "Slave connections need a valid '%s' property"
 msgstr "няма активна връзка, използваща устройството „%s“"
 
-#: src/libnm-core-impl/nm-setting-connection.c:1405
+#: src/libnm-core-impl/nm-setting-connection.c:1446
 #, c-format
 msgid "Cannot set '%s' without '%s'"
-msgstr ""
+msgstr "„%s“ не може да бъде зададено без „%s“"
 
-#: src/libnm-core-impl/nm-setting-connection.c:1464
+#: src/libnm-core-impl/nm-setting-connection.c:1505
 #, c-format
 msgid "'%s' is not a valid UUID"
 msgstr "„%s“ не е правилен универсално уникален ид."
 
-#: src/libnm-core-impl/nm-setting-connection.c:1509
+#: src/libnm-core-impl/nm-setting-connection.c:1550
 #, c-format
 msgid "connection type '%s' is not valid"
 msgstr "видът на връзката „%s“ не е правилен"
 
-#: src/libnm-core-impl/nm-setting-connection.c:1615
+#: src/libnm-core-impl/nm-setting-connection.c:1656
 #, c-format
 msgid "'%s' connections must be attached as port to '%s', not '%s'"
 msgstr ""
 
-#: src/libnm-core-impl/nm-setting-connection.c:1630
+#: src/libnm-core-impl/nm-setting-connection.c:1671
 #, fuzzy, c-format
 msgid "metered value %d is not valid"
 msgstr "Ограничението на времето „%s“ не е правилно."
 
-#: src/libnm-core-impl/nm-setting-connection.c:1644
-#: src/libnm-core-impl/nm-setting-connection.c:1658
-#: src/libnm-core-impl/nm-setting-connection.c:1672
-#: src/libnm-core-impl/nm-setting-connection.c:1733
+#: src/libnm-core-impl/nm-setting-connection.c:1685
+#: src/libnm-core-impl/nm-setting-connection.c:1699
+#: src/libnm-core-impl/nm-setting-connection.c:1713
+#: src/libnm-core-impl/nm-setting-connection.c:1774
 #, c-format
 msgid "value %d is not valid"
 msgstr "стойността %d не е правилна"
 
-#: src/libnm-core-impl/nm-setting-connection.c:1688
+#: src/libnm-core-impl/nm-setting-connection.c:1729
 msgid "\"disabled\" flag cannot be combined with other MPTCP flags"
 msgstr ""
 
-#: src/libnm-core-impl/nm-setting-connection.c:1702
+#: src/libnm-core-impl/nm-setting-connection.c:1743
 msgid "cannot set both \"signal\" and \"fullmesh\" MPTCP flags"
 msgstr ""
 
-#: src/libnm-core-impl/nm-setting-connection.c:1714
+#: src/libnm-core-impl/nm-setting-connection.c:1755
 #, fuzzy, c-format
 msgid "value %u is not a valid combination of MPTCP flags"
 msgstr "Ограничението на времето „%s“ не е правилно."
 
-#: src/libnm-core-impl/nm-setting-connection.c:1761
+#: src/libnm-core-impl/nm-setting-connection.c:1802
 msgid "DHCP option cannot be longer than 255 characters"
 msgstr ""
 
-#: src/libnm-core-impl/nm-setting-connection.c:1772
-#, fuzzy
+#: src/libnm-core-impl/nm-setting-connection.c:1813
 msgid "MUD URL is not a valid URL"
-msgstr "Грешка: „%s“ не е правилна команда за „nm“."
+msgstr "MUD адресът не е правилен адрес"
 
-#: src/libnm-core-impl/nm-setting-connection.c:1792
+#: src/libnm-core-impl/nm-setting-connection.c:1833
 #, fuzzy
 msgid "invalid permissions not in format \"user:$UNAME[:]\""
 msgstr "грешно поле „%s“"
 
-#: src/libnm-core-impl/nm-setting-connection.c:1808
-#: src/libnm-core-impl/nm-setting-connection.c:1825
+#: src/libnm-core-impl/nm-setting-connection.c:1849
+#: src/libnm-core-impl/nm-setting-connection.c:1866
 #, c-format
 msgid "can only be set if %s.%s is set"
-msgstr ""
+msgstr "може да бъде зададено само ако %s.%s е зададено"
 
-#: src/libnm-core-impl/nm-setting-connection.c:1839
+#: src/libnm-core-impl/nm-setting-connection.c:1880
 #, c-format
 msgid "is incompatible with '%s'"
 msgstr "не е съвместимо с „%s“"
 
-#: src/libnm-core-impl/nm-setting-connection.c:1864
+#: src/libnm-core-impl/nm-setting-connection.c:1905
 #, c-format
 msgid "contains IPv4 address '%s', %s.%s cannot be 'disabled'"
 msgstr ""
 
-#: src/libnm-core-impl/nm-setting-connection.c:1878
+#: src/libnm-core-impl/nm-setting-connection.c:1919
 #, c-format
 msgid "contains IPv4 address '%s', %s.%s cannot be 'true'"
 msgstr ""
 
-#: src/libnm-core-impl/nm-setting-connection.c:1892
+#: src/libnm-core-impl/nm-setting-connection.c:1933
 #, c-format
 msgid "contains IPv4 address '%s', %s.%s must be set to 'false' explicitly"
 msgstr ""
 
-#: src/libnm-core-impl/nm-setting-connection.c:1917
+#: src/libnm-core-impl/nm-setting-connection.c:1958
 #, c-format
 msgid "contains IPv6 address '%s', %s.%s cannot be '%s'"
 msgstr ""
 
-#: src/libnm-core-impl/nm-setting-connection.c:1932
+#: src/libnm-core-impl/nm-setting-connection.c:1973
 #, c-format
 msgid "contains IPv6 address '%s', %s.%s cannot be 'true'"
 msgstr ""
 
-#: src/libnm-core-impl/nm-setting-connection.c:1946
+#: src/libnm-core-impl/nm-setting-connection.c:1987
 #, c-format
 msgid "contains IPv6 address '%s', %s.%s must be set to 'false' explicitly"
 msgstr ""
 
-#: src/libnm-core-impl/nm-setting-connection.c:1962
+#: src/libnm-core-impl/nm-setting-connection.c:2003
 #, c-format
 msgid "has an invalid IP address '%s'"
 msgstr "има неправилен IP адрес „%s“"
 
-#: src/libnm-core-impl/nm-setting-connection.c:1991
+#: src/libnm-core-impl/nm-setting-connection.c:2032
 #, c-format
 msgid "property type should be set to '%s'"
-msgstr ""
+msgstr "видът на свойството трябва да бъде зададен на „%s”"
 
-#: src/libnm-core-impl/nm-setting-connection.c:2009
+#: src/libnm-core-impl/nm-setting-connection.c:2050
 #, fuzzy, c-format
 msgid "port-type '%s' requires a '%s' setting in the connection"
 msgstr "устройството „%s“ не е съвместимо с връзката „%s“"
 
-#: src/libnm-core-impl/nm-setting-connection.c:2020
+#: src/libnm-core-impl/nm-setting-connection.c:2061
 #, fuzzy, c-format
 msgid ""
 "Detect a port connection with '%s' set and a port type '%s'. '%s' should be "
 "set to '%s'"
 msgstr "Ограничението на времето „%s“ не е правилно."
 
-#: src/libnm-core-impl/nm-setting-connection.c:2046
+#: src/libnm-core-impl/nm-setting-connection.c:2087
 #, fuzzy, c-format
 msgid "A port connection with '%s' set to '%s' cannot have a '%s' setting"
 msgstr "Ограничението на времето „%s“ не е правилно."
 
-#: src/libnm-core-impl/nm-setting-connection.c:2063
+#: src/libnm-core-impl/nm-setting-connection.c:2104
 msgid "UUID needs normalization"
 msgstr ""
 
-#: src/libnm-core-impl/nm-setting-connection.c:2080
+#: src/libnm-core-impl/nm-setting-connection.c:2121
 msgid "has duplicate addresses"
 msgstr "има повтарящи се адреси"
 
-#: src/libnm-core-impl/nm-setting-connection.c:2092
+#: src/libnm-core-impl/nm-setting-connection.c:2133
 msgid "read-only is deprecated and not settable for the user"
 msgstr ""
 
@@ -2154,7 +2146,7 @@ msgstr ""
 
 #: src/libnm-core-impl/nm-setting-dcb.c:540
 msgid "element invalid"
-msgstr ""
+msgstr "елементът не е правилен"
 
 #: src/libnm-core-impl/nm-setting-dcb.c:555
 msgid "sum not 100%"
@@ -2182,7 +2174,7 @@ msgid "pause-autoneg cannot be enabled when setting rx/tx options"
 msgstr ""
 
 #: src/libnm-core-impl/nm-setting-ethtool.c:410
-#: src/libnmc-setting/nm-meta-setting-desc.c:4608
+#: src/libnmc-setting/nm-meta-setting-desc.c:4609
 #, fuzzy, c-format
 msgid "'%s' is not valid FEC modes, valid modes are combinations of %s"
 msgstr "Грешка: „%s“ не е правилен аргумент за опцията „%s“."
@@ -2415,14 +2407,12 @@ msgid "invalid prefix length for to/dst"
 msgstr "грешно поле „%s“"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:2838
-#, fuzzy
 msgid "invalid iifname"
-msgstr "грешно поле „%s“"
+msgstr ""
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:2848
-#, fuzzy
 msgid "invalid oifname"
-msgstr "грешно поле „%s“"
+msgstr ""
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:2856
 #, fuzzy
@@ -2453,19 +2443,17 @@ msgid "duplicate key %s"
 msgstr "ключът „%s“ се повтаря"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:3053
-#, fuzzy, c-format
+#, c-format
 msgid "invalid variant type '%s' for \"%s\""
-msgstr "грешно поле „%s“"
+msgstr "невалиден вариант на вид„%s“ за „%s“"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:3064
-#, fuzzy
 msgid "missing \"family\""
-msgstr "Липсва аргумент за „%s“."
+msgstr "липсва „family“"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:3072
-#, fuzzy
 msgid "invalid \"family\""
-msgstr "неправилни пароли за ВЧМ"
+msgstr ""
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:3129
 msgid "\"uid-range-start\" is greater than \"uid-range-end\""
@@ -2599,9 +2587,9 @@ msgid "the property is currently supported only for DHCPv4"
 msgstr "в момента свойството се поддържа само за DHCPv4"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:5898
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid IP or subnet"
-msgstr "Грешка: „%s“ не е правилен аргумент за опцията „%s“."
+msgstr "„%s“ не е правилен IP адрес или подмрежа"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:5942
 #, fuzzy, c-format
@@ -2609,9 +2597,9 @@ msgid "a gateway is incompatible with '%s'"
 msgstr "устройството „%s“ не е съвместимо с връзката „%s“"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:5956
-#, fuzzy, c-format
+#, c-format
 msgid "the value is inconsistent with '%s'"
-msgstr "устройството „%s“ не е съвместимо с връзката „%s“"
+msgstr "стойността не е съвместима с „%s“"
 
 #: src/libnm-core-impl/nm-setting-ip-tunnel.c:364
 #, c-format
@@ -2772,12 +2760,12 @@ msgstr ""
 
 #: src/libnm-core-impl/nm-setting-macsec.c:267
 msgid "the key is empty"
-msgstr ""
+msgstr "ключът е празен"
 
 #: src/libnm-core-impl/nm-setting-macsec.c:277
 #, c-format
 msgid "the key must be %d characters"
-msgstr ""
+msgstr "ключът трябва да съдържа %d знака"
 
 #: src/libnm-core-impl/nm-setting-macsec.c:287
 #, fuzzy
@@ -2786,9 +2774,8 @@ msgid "the key must have an even number of characters between 2 and 64"
 msgstr "Началният вектор трябва да е с размер четен брой байта."
 
 #: src/libnm-core-impl/nm-setting-macsec.c:296
-#, fuzzy
 msgid "the key contains non-hexadecimal characters"
-msgstr "Началният вектор съдържа низ, който не е шестнайсетично число."
+msgstr "ключът съдържа знаци, които не са нешестнадесетични"
 
 #: src/libnm-core-impl/nm-setting-macsec.c:396
 #, c-format
@@ -2797,7 +2784,7 @@ msgstr ""
 
 #: src/libnm-core-impl/nm-setting-macsec.c:405
 msgid "must be either psk (0) or eap (1)"
-msgstr ""
+msgstr "трябва да бъде psk (0) или eap (1)"
 
 #: src/libnm-core-impl/nm-setting-macsec.c:416
 msgid "only valid for psk mode"
@@ -2812,7 +2799,7 @@ msgstr ""
 #: src/libnm-core-impl/nm-setting-match.c:677
 #: src/libnm-core-impl/nm-setting-match.c:693
 msgid "is empty"
-msgstr ""
+msgstr "е празен"
 
 #: src/libnm-core-impl/nm-setting-olpc-mesh.c:110
 #: src/libnm-core-impl/nm-setting-wireless.c:1113
@@ -2823,12 +2810,12 @@ msgstr ""
 #: src/libnm-core-impl/nm-setting-wireless.c:1166
 #, c-format
 msgid "'%d' is not a valid channel"
-msgstr ""
+msgstr "„%d“ не е валиден канал"
 
 #: src/libnm-core-impl/nm-setting-ovs-bridge.c:160
-#, fuzzy, c-format
+#, c-format
 msgid "A connection with a '%s' setting must not have a controller."
-msgstr "Ограничението на времето „%s“ не е правилно."
+msgstr "Връзка с настройка „%s“ не трябва да има контролер."
 
 #: src/libnm-core-impl/nm-setting-ovs-bridge.c:174
 #, c-format
@@ -2842,7 +2829,7 @@ msgstr ""
 
 #: src/libnm-core-impl/nm-setting-ovs-external-ids.c:115
 msgid "key cannot start with \"NM.\""
-msgstr ""
+msgstr "ключът не може да започва с „NM.“"
 
 #: src/libnm-core-impl/nm-setting-ovs-external-ids.c:166
 #, c-format
@@ -2856,7 +2843,7 @@ msgstr ""
 #: src/libnm-core-impl/nm-setting-user.c:361
 #, c-format
 msgid "invalid key \"%s\": %s"
-msgstr ""
+msgstr "невалиден ключ „%s“: %s"
 
 #: src/libnm-core-impl/nm-setting-ovs-external-ids.c:387
 #: src/libnm-core-impl/nm-setting-ovs-other-config.c:225
@@ -2885,9 +2872,9 @@ msgid "A connection of type '%s' cannot have an ovs-interface.type \"%s\""
 msgstr ""
 
 #: src/libnm-core-impl/nm-setting-ovs-interface.c:187
-#, fuzzy, c-format
+#, c-format
 msgid "A connection can not have both '%s' and '%s' settings at the same time"
-msgstr "Ограничението на времето „%s“ не е правилно."
+msgstr "Една връзка не може да има едновременно настройки „%s“ и „%s“"
 
 #: src/libnm-core-impl/nm-setting-ovs-interface.c:201
 #, c-format
@@ -2897,10 +2884,11 @@ msgid ""
 msgstr ""
 
 #: src/libnm-core-impl/nm-setting-ovs-interface.c:217
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "A connection with '%s' setting needs to be of '%s' interface type, not '%s'"
-msgstr "Ограничението на времето „%s“ не е правилно."
+msgstr ""
+"Връзката с настройката „%s“ трябва да е от вид интерфейс „%s“, а не „%s“."
 
 #: src/libnm-core-impl/nm-setting-ovs-interface.c:239
 #, c-format
@@ -2917,9 +2905,9 @@ msgstr ""
 
 #: src/libnm-core-impl/nm-setting-ovs-interface.c:315
 #: src/libnm-core-impl/nm-setting-ovs-port.c:420
-#, fuzzy, c-format
+#, c-format
 msgid "A connection with a '%s' setting must have a controller."
-msgstr "Ограничението на времето „%s“ не е правилно."
+msgstr "Връзката с настройка „%s“ трябва да има контролер."
 
 #: src/libnm-core-impl/nm-setting-ovs-port.c:347
 msgid "VLANs must be between 0 and 4095"
@@ -2943,7 +2931,7 @@ msgstr "„%s“ не е позволено във vlan_mode"
 #: src/libnm-core-impl/nm-setting-ovs-port.c:470
 #, c-format
 msgid "the tag id must be in range 0-4094 but is %u"
-msgstr ""
+msgstr "идентификаторът на етикета трябва да е в диапазона 0-4094, но е %u"
 
 #: src/libnm-core-impl/nm-setting-ovs-port.c:480
 #, c-format
@@ -2958,12 +2946,12 @@ msgstr "„%s“ не е устройство за безжична мрежа."
 #: src/libnm-core-impl/nm-setting-ppp.c:350
 #, c-format
 msgid "'%d' is out of valid range <128-16384>"
-msgstr ""
+msgstr "„%d“ е извън правилния обхват <128-16384>"
 
 #: src/libnm-core-impl/nm-setting-ppp.c:363
 #, c-format
 msgid "setting this property requires non-zero '%s' property"
-msgstr ""
+msgstr "задаването на това свойство изисква свойство „%s“ различно от нула"
 
 #: src/libnm-core-impl/nm-setting-proxy.c:137
 #, fuzzy
@@ -2973,11 +2961,11 @@ msgstr "грешно поле „%s“"
 #: src/libnm-core-impl/nm-setting-proxy.c:147
 #: src/libnm-core-impl/nm-setting-proxy.c:159
 msgid "this property is not allowed for method none"
-msgstr ""
+msgstr "това свойство не е разрешено за метод none"
 
 #: src/libnm-core-impl/nm-setting-proxy.c:173
 msgid "the script is too large"
-msgstr ""
+msgstr "командният файл е твърде голям"
 
 #: src/libnm-core-impl/nm-setting-proxy.c:184
 msgid "the script is not valid utf8"
@@ -2985,7 +2973,7 @@ msgstr "командния файл не е правилен utf8 текст"
 
 #: src/libnm-core-impl/nm-setting-proxy.c:195
 msgid "the script lacks FindProxyForURL function"
-msgstr ""
+msgstr "командният файл няма FindProxyForURL функция"
 
 #: src/libnm-core-impl/nm-setting-sriov.c:434
 #: src/libnm-core-impl/nm-setting-wired.c:993
@@ -2994,10 +2982,10 @@ msgstr ""
 #: src/libnm-core-impl/nm-setting-wired.c:1144
 #: src/libnm-core-impl/nm-setting-wireless.c:1257
 #: src/libnm-core-impl/nm-setting-wireless.c:1277
-#: src/libnmc-setting/nm-meta-setting-desc.c:4315
+#: src/libnmc-setting/nm-meta-setting-desc.c:4316
 #, c-format
 msgid "'%s' is not a valid MAC address"
-msgstr ""
+msgstr "„%s“ не е правилен MAC адрес"
 
 #: src/libnm-core-impl/nm-setting-sriov.c:1121
 #, c-format
@@ -3010,9 +2998,9 @@ msgid "invalid VF %u: %s"
 msgstr "неправилен VF %u: %s"
 
 #: src/libnm-core-impl/nm-setting-sriov.c:1149
-#, fuzzy, c-format
+#, c-format
 msgid "duplicate VF index %u"
-msgstr "грешно поле „%s“"
+msgstr "VF указателят %u се повтаря"
 
 #: src/libnm-core-impl/nm-setting-sriov.c:1173
 #, c-format
@@ -3022,16 +3010,15 @@ msgstr ""
 #: src/libnm-core-impl/nm-setting-tc-config.c:54
 #: src/libnm-core-impl/nm-setting-tc-config.c:420
 #: src/libnm-core-impl/nm-setting-tc-config.c:697
-#, fuzzy
 msgid "kind is missing"
-msgstr "Липсва аргумент за „%s“."
+msgstr "липсва вид"
 
 #: src/libnm-core-impl/nm-setting-tc-config.c:62
 #: src/libnm-core-impl/nm-setting-tc-config.c:428
 #: src/libnm-core-impl/nm-setting-tc-config.c:705
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid kind"
-msgstr "Грешка: „%s“ не е правилна команда за „nm“."
+msgstr "„%s“ не е правилен вид"
 
 #: src/libnm-core-impl/nm-setting-tc-config.c:71
 #: src/libnm-core-impl/nm-setting-tc-config.c:714
@@ -3052,7 +3039,7 @@ msgstr ""
 #: src/libnm-core-impl/nm-setting-team.c:321
 #, c-format
 msgid "%s is out of range [0, %d]"
-msgstr ""
+msgstr "%s е извън обхвата [0, %d]"
 
 #: src/libnm-core-impl/nm-setting-team.c:166
 msgid "Missing target-host in nsna_ping link watcher"
@@ -3076,30 +3063,30 @@ msgstr "Началният вектор съдържа низ, който не �
 
 #: src/libnm-core-impl/nm-setting-team.c:331
 msgid "vlanid is out of range [-1, 4094]"
-msgstr ""
+msgstr "vlanid е извън обхвата [-1, 4094]"
 
 #: src/libnm-core-impl/nm-setting-tun.c:162
 #, c-format
 msgid "'%u': invalid mode"
-msgstr ""
+msgstr "„%u“: неправилен режим"
 
 #: src/libnm-core-impl/nm-setting-tun.c:173
 #, c-format
 msgid "'%s': invalid user ID"
-msgstr ""
+msgstr "„%s“: неправилен ид. на потребителя"
 
 #: src/libnm-core-impl/nm-setting-tun.c:185
 #, c-format
 msgid "'%s': invalid group ID"
-msgstr ""
+msgstr "„%s“: неправилен ид. на групата"
 
 #: src/libnm-core-impl/nm-setting-user.c:133
 msgid "key requires a '.' for a namespace"
-msgstr ""
+msgstr "ключът изисква „.“ за пространство от имена"
 
 #: src/libnm-core-impl/nm-setting-user.c:148
 msgid "key cannot contain \"..\""
-msgstr ""
+msgstr "ключът не може да съдържа „..“"
 
 #: src/libnm-core-impl/nm-setting-user.c:318
 msgid "maximum number of user data entries reached"
@@ -3117,7 +3104,7 @@ msgstr ""
 
 #: src/libnm-core-impl/nm-setting-vlan.c:676
 msgid "flags are invalid"
-msgstr ""
+msgstr "флаговете не са правилни"
 
 #: src/libnm-core-impl/nm-setting-vlan.c:685
 #, c-format
@@ -3137,7 +3124,7 @@ msgid "setting contained a secret with an empty name"
 msgstr ""
 
 #: src/libnm-core-impl/nm-setting-vpn.c:694
-#: src/libnm-core-impl/nm-setting.c:3579
+#: src/libnm-core-impl/nm-setting.c:3607
 msgid "not a secret property"
 msgstr ""
 
@@ -3316,9 +3303,9 @@ msgid ""
 msgstr ""
 
 #: src/libnm-core-impl/nm-setting-wireless.c:1125
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid Wi-Fi mode"
-msgstr "„%s“ не е устройство за безжична мрежа."
+msgstr "„%s“ не е правилен режим на Wi-Fi"
 
 #: src/libnm-core-impl/nm-setting-wireless.c:1138
 #, c-format
@@ -3331,9 +3318,9 @@ msgid "'%s' requires setting '%s' property"
 msgstr ""
 
 #: src/libnm-core-impl/nm-setting-wireless.c:1181
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' requires '%s' and '%s' property"
-msgstr "Ограничението на времето „%s“ не е правилно."
+msgstr "„%s“ изисква свойствата „%s“ и „%s“"
 
 #: src/libnm-core-impl/nm-setting-wireless.c:1295
 #: src/libnm-core-impl/nm-team-utils.c:2254
@@ -3361,7 +3348,7 @@ msgid "a specific channel width can be set only together with a fixed channel"
 msgstr ""
 
 #: src/libnm-core-impl/nm-setting-wireless.c:1370
-msgid "80MHz channels are only supported in the 5GHz band"
+msgid "80MHz channels are only supported in the 5GHz and 6GHz bands"
 msgstr ""
 
 #: src/libnm-core-impl/nm-setting-wireless.c:1389
@@ -3390,12 +3377,13 @@ msgstr ""
 #: src/libnm-core-impl/nm-setting.c:2125
 #, c-format
 msgid "can't set property of type '%s' from value of type '%s'"
-msgstr ""
+msgstr "не може да се зададе свойство от тип „%s“ от стойност от тип „%s“"
 
 #: src/libnm-core-impl/nm-setting.c:1790
 #, c-format
 msgid "value of type '%s' is invalid or out of range for property '%s'"
 msgstr ""
+"стойността от тип „%s“ не е правилна или е извън обхвата за свойството „%s“"
 
 #: src/libnm-core-impl/nm-setting.c:1835
 #, c-format
@@ -3416,16 +3404,16 @@ msgstr "неизвестно свойство"
 msgid "failed to set property: %s"
 msgstr "свойството не може да бъде зададено: %s"
 
-#: src/libnm-core-impl/nm-setting.c:2515
+#: src/libnm-core-impl/nm-setting.c:2543
 #, c-format
 msgid "invalid value %d, expected %d-%d"
 msgstr "неправилна стойност %d, очакваше се %d-%d"
 
-#: src/libnm-core-impl/nm-setting.c:2539
+#: src/libnm-core-impl/nm-setting.c:2567
 msgid "cannot be empty"
 msgstr "не може да бъде празно"
 
-#: src/libnm-core-impl/nm-setting.c:3476
+#: src/libnm-core-impl/nm-setting.c:3504
 msgid "secret not found"
 msgstr ""
 
@@ -3496,403 +3484,411 @@ msgstr "грешно поле „%s“"
 msgid "invalid link-watchers: %s"
 msgstr "грешно поле „%s“"
 
-#: src/libnm-core-impl/nm-utils.c:1367
-#, fuzzy
+#: src/libnm-core-impl/nm-utils.c:1369
 msgid "Expected value of type \"au\""
-msgstr "Грешка: „%s“ не е правилен аргумент за опцията „%s“."
+msgstr "Очаква се стойност от тип „au“"
 
-#: src/libnm-core-impl/nm-utils.c:1510 src/libnm-core-impl/nm-utils.c:1675
-#, fuzzy
+#: src/libnm-core-impl/nm-utils.c:1512 src/libnm-core-impl/nm-utils.c:1677
 msgid "Expected value of type \"aau\""
-msgstr "Грешка: „%s“ не е правилен аргумент за опцията „%s“."
+msgstr "Очаква се стойност от тип „aau“"
 
-#: src/libnm-core-impl/nm-utils.c:1521
+#: src/libnm-core-impl/nm-utils.c:1523
 msgid "Expected \"address-labels\" of type \"as\""
-msgstr ""
+msgstr "Очакваше се „address-labels“ от вид „as“"
 
-#: src/libnm-core-impl/nm-utils.c:1543
-#, fuzzy, c-format
+#: src/libnm-core-impl/nm-utils.c:1545
+#, c-format
 msgid "Incomplete IPv4 address (idx=%u)"
-msgstr "грешно поле „%s“"
+msgstr "Непълен IPv4 адрес (idx=%u)"
 
-#: src/libnm-core-impl/nm-utils.c:1556 src/libnm-core-impl/nm-utils.c:1712
-#: src/libnm-core-impl/nm-utils.c:2021 src/libnm-core-impl/nm-utils.c:2218
-#: src/libnm-core-impl/nm-utils.c:2374 src/libnm-core-impl/nm-utils.c:2559
+#: src/libnm-core-impl/nm-utils.c:1558 src/libnm-core-impl/nm-utils.c:1714
+#: src/libnm-core-impl/nm-utils.c:2023 src/libnm-core-impl/nm-utils.c:2220
+#: src/libnm-core-impl/nm-utils.c:2376 src/libnm-core-impl/nm-utils.c:2561
 #, c-format
 msgid "%s (idx=%u)"
 msgstr "%s (idx=%u)"
 
-#: src/libnm-core-impl/nm-utils.c:1693
+#: src/libnm-core-impl/nm-utils.c:1695
 #, c-format
 msgid "Incomplete IPv4 route (idx=%u)"
 msgstr ""
 
-#: src/libnm-core-impl/nm-utils.c:1821
-#, fuzzy
+#: src/libnm-core-impl/nm-utils.c:1823
 msgid "Expected value of type \"aay\""
-msgstr "Грешка: „%s“ не е правилен аргумент за опцията „%s“."
+msgstr "Очаква се стойност от тип „aay“"
 
-#: src/libnm-core-impl/nm-utils.c:1846
-#, fuzzy, c-format
+#: src/libnm-core-impl/nm-utils.c:1848
+#, c-format
 msgid "Invalid IPv6 DNS address length (idx=%u)"
-msgstr "грешно поле „%s“"
+msgstr "Неправилна дължина на IPv6 DNS адрес (idx=%u)"
 
-#: src/libnm-core-impl/nm-utils.c:1973
+#: src/libnm-core-impl/nm-utils.c:1975
 msgid "Expected value of type \"a(ayuay)\""
-msgstr ""
+msgstr "Очаква се стойност от тип „a(ayuay)“"
 
-#: src/libnm-core-impl/nm-utils.c:1995
+#: src/libnm-core-impl/nm-utils.c:1997
 #, c-format
 msgid "Expected value of type \"(ayuay)\" (idx=%u)"
-msgstr ""
+msgstr "Очаква се стойност от тип „(ayuay)“ (idx=%u)"
 
-#: src/libnm-core-impl/nm-utils.c:2008
+#: src/libnm-core-impl/nm-utils.c:2010
 #, c-format
 msgid "IPv6 address with invalid length (idx=%u)"
 msgstr ""
 
-#: src/libnm-core-impl/nm-utils.c:2038
+#: src/libnm-core-impl/nm-utils.c:2040
 #, c-format
 msgid "IPv6 gateway with invalid length (idx=%u)"
 msgstr ""
 
-#: src/libnm-core-impl/nm-utils.c:2150
+#: src/libnm-core-impl/nm-utils.c:2152
 msgid "Expected value of type \"a(ayuayu)\""
-msgstr ""
+msgstr "Очаква се стойност от тип „a(ayuayu)“"
 
-#: src/libnm-core-impl/nm-utils.c:2174
+#: src/libnm-core-impl/nm-utils.c:2176
 #, c-format
 msgid "Expected value of type \"(ayuayu)\" (idx=%u)"
-msgstr ""
+msgstr "Очаква се стойност от тип „(ayuayu)“ (idx=%u)"
 
-#: src/libnm-core-impl/nm-utils.c:2187
+#: src/libnm-core-impl/nm-utils.c:2189
 #, c-format
 msgid "IPv6 dest address with invalid length (idx=%u)"
 msgstr ""
 
-#: src/libnm-core-impl/nm-utils.c:2200
+#: src/libnm-core-impl/nm-utils.c:2202
 #, c-format
 msgid "IPv6 next-hop address with invalid length (idx=%u)"
 msgstr ""
 
-#: src/libnm-core-impl/nm-utils.c:2343 src/libnm-core-impl/nm-utils.c:2522
-#, fuzzy
+#: src/libnm-core-impl/nm-utils.c:2345 src/libnm-core-impl/nm-utils.c:2524
 msgid "Expected value of type \"aa{sv}\""
-msgstr "Грешка: „%s“ не е правилен аргумент за опцията „%s“."
+msgstr "Очаква се стойност от тип „aa{sv}“"
 
-#: src/libnm-core-impl/nm-utils.c:2361
+#: src/libnm-core-impl/nm-utils.c:2363
 #, c-format
 msgid "IP address requires fields \"address\" and \"prefix\" (idx=%u)"
 msgstr ""
 
-#: src/libnm-core-impl/nm-utils.c:2540
+#: src/libnm-core-impl/nm-utils.c:2542
 #, c-format
 msgid "Route requires fields \"dest\" and \"prefix\" (idx=%u)"
 msgstr ""
 
-#: src/libnm-core-impl/nm-utils.c:2662
+#: src/libnm-core-impl/nm-utils.c:2664
 #, fuzzy, c-format
 msgid "'%s' is not a valid handle."
 msgstr "Грешка: „%s“ не е правилен аргумент за опцията „%s“."
 
-#: src/libnm-core-impl/nm-utils.c:2810
+#: src/libnm-core-impl/nm-utils.c:2812
 #, c-format
 msgid "'%s' unexpected: parent already specified."
-msgstr ""
+msgstr "„%s“ неочаквано: родителският елемент вече е зададен."
 
-#: src/libnm-core-impl/nm-utils.c:2828
+#: src/libnm-core-impl/nm-utils.c:2830
 #, fuzzy, c-format
 msgid "invalid handle: '%s'"
 msgstr "грешно поле „%s“"
 
-#: src/libnm-core-impl/nm-utils.c:2850
-#, fuzzy
+#: src/libnm-core-impl/nm-utils.c:2852
 msgid "parent not specified."
-msgstr "Грешка: указването на „iface“ е задължително."
+msgstr "не е посочен родител."
 
-#: src/libnm-core-impl/nm-utils.c:2914
+#: src/libnm-core-impl/nm-utils.c:2916
 #, c-format
 msgid "unsupported qdisc option: '%s'."
-msgstr ""
+msgstr "неподдържана qdisc опция: „%s“."
 
-#: src/libnm-core-impl/nm-utils.c:3044
+#: src/libnm-core-impl/nm-utils.c:3046
 msgid "action name missing."
 msgstr "липсва име на действие."
 
-#: src/libnm-core-impl/nm-utils.c:3069
+#: src/libnm-core-impl/nm-utils.c:3071
 #, c-format
 msgid "unsupported action option: '%s'."
-msgstr ""
+msgstr "неподдържана опция за действие: „%s“."
 
-#: src/libnm-core-impl/nm-utils.c:3206
+#: src/libnm-core-impl/nm-utils.c:3208
 msgid "invalid action: "
 msgstr "невалидно действие: "
 
-#: src/libnm-core-impl/nm-utils.c:3210
+#: src/libnm-core-impl/nm-utils.c:3212
 #, c-format
 msgid "unsupported tfilter option: '%s'."
-msgstr ""
+msgstr "неподдържана tfilter опция: „%s“."
 
-#: src/libnm-core-impl/nm-utils.c:3510
+#: src/libnm-core-impl/nm-utils.c:3512
 #, c-format
 msgid "failed stat file %s: %s"
 msgstr ""
 
-#: src/libnm-core-impl/nm-utils.c:3521
+#: src/libnm-core-impl/nm-utils.c:3523
 #, c-format
 msgid "not a file (%s)"
 msgstr "не е файл (%s)"
 
-#: src/libnm-core-impl/nm-utils.c:3532
+#: src/libnm-core-impl/nm-utils.c:3534
 #, fuzzy, c-format
 msgid "invalid file owner %d for %s"
 msgstr "грешно поле „%s“"
 
-#: src/libnm-core-impl/nm-utils.c:3544
+#: src/libnm-core-impl/nm-utils.c:3546
 #, c-format
 msgid "file permissions for %s"
 msgstr "права̀ за достъп на файлове за %s"
 
-#: src/libnm-core-impl/nm-utils.c:3554
+#: src/libnm-core-impl/nm-utils.c:3556
 #, c-format
 msgid "reject %s"
-msgstr ""
+msgstr "отхвърляне на %s"
 
-#: src/libnm-core-impl/nm-utils.c:3574
+#: src/libnm-core-impl/nm-utils.c:3576
 #, c-format
 msgid "path is not absolute (%s)"
-msgstr ""
+msgstr "местоположението не е абсолютно (%s)"
 
-#: src/libnm-core-impl/nm-utils.c:3589
+#: src/libnm-core-impl/nm-utils.c:3591
 #, c-format
 msgid "Plugin file does not exist (%s)"
-msgstr ""
+msgstr "Файлът на приставката не съществува (%s)"
 
-#: src/libnm-core-impl/nm-utils.c:3598
+#: src/libnm-core-impl/nm-utils.c:3600
 #, c-format
 msgid "Plugin is not a valid file (%s)"
-msgstr ""
+msgstr "Приставката не е валиден файл (%s)"
 
-#: src/libnm-core-impl/nm-utils.c:3609
+#: src/libnm-core-impl/nm-utils.c:3611
 #, c-format
 msgid "libtool archives are not supported (%s)"
-msgstr ""
+msgstr "libtool архивите не се поддържат (%s)"
 
-#: src/libnm-core-impl/nm-utils.c:3686
+#: src/libnm-core-impl/nm-utils.c:3688
 #, c-format
 msgid "Could not find \"%s\" binary"
-msgstr ""
+msgstr "Двоичната програма „%s“ не може да бъде намерен"
 
-#: src/libnm-core-impl/nm-utils.c:4510
+#: src/libnm-core-impl/nm-utils.c:4590
 #, fuzzy
 msgid "unknown secret flags"
 msgstr "Непознат праг за съобщенията в журнала „%s“"
 
-#: src/libnm-core-impl/nm-utils.c:4520
+#: src/libnm-core-impl/nm-utils.c:4600
 msgid "conflicting secret flags"
 msgstr ""
 
-#: src/libnm-core-impl/nm-utils.c:4531
+#: src/libnm-core-impl/nm-utils.c:4611
 msgid "secret flags must not be \"not-required\""
 msgstr ""
 
-#: src/libnm-core-impl/nm-utils.c:4539
+#: src/libnm-core-impl/nm-utils.c:4619
 msgid "unsupported secret flags"
 msgstr ""
 
-#: src/libnm-core-impl/nm-utils.c:4569
+#: src/libnm-core-impl/nm-utils.c:4649
 msgid "can't be simultaneously disabled and enabled"
-msgstr ""
+msgstr "не може да бъде едновременно изключена и включена"
 
-#: src/libnm-core-impl/nm-utils.c:4577
+#: src/libnm-core-impl/nm-utils.c:4657
 #, fuzzy
 msgid "WPS is required"
 msgstr "Грешка: просрочване на времето от %d сек."
 
-#: src/libnm-core-impl/nm-utils.c:4645
+#: src/libnm-core-impl/nm-utils.c:4725
 #, fuzzy, c-format
 msgid "not a valid ethernet MAC address for mask at position %lld"
 msgstr "Грешка: „%s“ не е правилен аргумент за опцията „%s“."
 
-#: src/libnm-core-impl/nm-utils.c:4664
+#: src/libnm-core-impl/nm-utils.c:4744
 #, c-format
 msgid "not a valid ethernet MAC address #%u at position %lld"
 msgstr ""
 
-#: src/libnm-core-impl/nm-utils.c:5321
+#: src/libnm-core-impl/nm-utils.c:5401
 msgid "not valid utf-8"
 msgstr "не е правилен utf-8"
 
-#: src/libnm-core-impl/nm-utils.c:5342 src/libnm-core-impl/nm-utils.c:5395
+#: src/libnm-core-impl/nm-utils.c:5422 src/libnm-core-impl/nm-utils.c:5475
 msgid "is not a JSON object"
 msgstr "не е JSON обект"
 
-#: src/libnm-core-impl/nm-utils.c:5371
+#: src/libnm-core-impl/nm-utils.c:5451
 msgid "value is NULL"
 msgstr "стойността е NULL"
 
-#: src/libnm-core-impl/nm-utils.c:5371
+#: src/libnm-core-impl/nm-utils.c:5451
 msgid "value is empty"
 msgstr "стойността е празна"
 
-#: src/libnm-core-impl/nm-utils.c:5383
+#: src/libnm-core-impl/nm-utils.c:5463
 #, c-format
 msgid "invalid JSON at position %d (%s)"
 msgstr "неправилен JSON на позиция %d (%s)"
 
-#: src/libnm-core-impl/nm-utils.c:5508 src/libnm-core-impl/nm-utils.c:5528
+#: src/libnm-core-impl/nm-utils.c:5588 src/libnm-core-impl/nm-utils.c:5608
 msgid "unterminated escape sequence"
 msgstr ""
 
-#: src/libnm-core-impl/nm-utils.c:5554
+#: src/libnm-core-impl/nm-utils.c:5634
 #, c-format
 msgid "unknown attribute '%s'"
 msgstr "неизвестен атрибут „%s“"
 
-#: src/libnm-core-impl/nm-utils.c:5572
+#: src/libnm-core-impl/nm-utils.c:5652
 #, c-format
 msgid "missing key-value separator '%c' after '%s'"
 msgstr ""
 
-#: src/libnm-core-impl/nm-utils.c:5592
+#: src/libnm-core-impl/nm-utils.c:5672
 #, c-format
 msgid "invalid uint32 value '%s' for attribute '%s'"
 msgstr "невалидна uint32 стойност „%s“ за атрибут „%s“"
 
-#: src/libnm-core-impl/nm-utils.c:5606
+#: src/libnm-core-impl/nm-utils.c:5686
 #, c-format
 msgid "invalid int32 value '%s' for attribute '%s'"
 msgstr "невалидна int32 стойност „%s“ за атрибут „%s“"
 
-#: src/libnm-core-impl/nm-utils.c:5619
+#: src/libnm-core-impl/nm-utils.c:5699
 #, c-format
 msgid "invalid uint64 value '%s' for attribute '%s'"
 msgstr "невалидна uint64 стойност „%s“ за атрибут „%s“"
 
-#: src/libnm-core-impl/nm-utils.c:5632
+#: src/libnm-core-impl/nm-utils.c:5712
 #, c-format
 msgid "invalid uint8 value '%s' for attribute '%s'"
 msgstr "невалидна uint8 стойност „%s“ за атрибут „%s“"
 
-#: src/libnm-core-impl/nm-utils.c:5646
+#: src/libnm-core-impl/nm-utils.c:5726
 #, c-format
 msgid "invalid boolean value '%s' for attribute '%s'"
 msgstr "невалидна булева стойност „%s“ за атрибут „%s“"
 
-#: src/libnm-core-impl/nm-utils.c:5660
+#: src/libnm-core-impl/nm-utils.c:5740
 #, c-format
 msgid "unsupported attribute '%s' of type '%s'"
 msgstr "неподдържан атрибут „%s“ от вид „%s“"
 
-#: src/libnm-core-impl/nm-utils.c:5961
+#: src/libnm-core-impl/nm-utils.c:6041
 #, c-format
 msgid "Bridge VLANs %d and %d are not sorted by ascending vid"
 msgstr ""
 
-#: src/libnm-core-impl/nm-utils.c:5985
+#: src/libnm-core-impl/nm-utils.c:6065
 #, fuzzy, c-format
 msgid "duplicate bridge VLAN vid %u"
 msgstr "грешно поле „%s“"
 
-#: src/libnm-core-impl/nm-utils.c:5997
+#: src/libnm-core-impl/nm-utils.c:6077
 msgid "only one VLAN can be the PVID"
 msgstr ""
 
-#: src/libnm-core-impl/nm-utils.c:6140
+#: src/libnm-core-impl/nm-utils.c:6220
 #, c-format
 msgid "unknown flags 0x%x"
 msgstr "неизвестни флагове 0x%x"
 
-#: src/libnm-core-impl/nm-utils.c:6152
+#: src/libnm-core-impl/nm-utils.c:6232
 msgid ""
 "'fqdn-no-update' and 'fqdn-serv-update' flags cannot be set at the same time"
 msgstr ""
 
-#: src/libnm-core-impl/nm-utils.c:6163
+#: src/libnm-core-impl/nm-utils.c:6243
 msgid "'fqdn-clear-flags' flag is incompatible with other FQDN flags"
 msgstr ""
 
-#: src/libnm-core-impl/nm-utils.c:6171
+#: src/libnm-core-impl/nm-utils.c:6251
 msgid "DHCPv6 does not support the E (encoded) FQDN flag"
 msgstr ""
+
+#: src/libnm-core-impl/nm-utils.c:6440
+msgid "This function needs to be called by root"
+msgstr ""
+
+#: src/libnm-core-impl/nm-utils.c:6515
+#, fuzzy
+#| msgid "Error: failed to create temporary file %s."
+msgid "Failure creating the temporary file"
+msgstr "Грешка: временен файл %s не може да бъде създаден."
 
 #: src/libnm-core-impl/nm-vpn-editor-plugin.c:284
 #, c-format
 msgid "cannot load plugin \"%s\": %s"
-msgstr ""
+msgstr "приставката „%s“ не може да бъде заредена: %s"
 
 #: src/libnm-core-impl/nm-vpn-editor-plugin.c:295
 #, c-format
 msgid "failed to load nm_vpn_editor_plugin_factory() from %s (%s)"
-msgstr ""
+msgstr "грешка при зареждане на nm_vpn_editor_plugin_factory() от %s (%s)"
 
 #: src/libnm-core-impl/nm-vpn-editor-plugin.c:324
 #, c-format
 msgid "unknown error initializing plugin %s"
-msgstr ""
+msgstr "неизвестна грешка при стартиране на приставката %s"
 
 #: src/libnm-core-impl/nm-vpn-editor-plugin.c:344
 #, c-format
 msgid "cannot load VPN plugin in '%s': missing plugin name"
 msgstr ""
+"ВЧМ приставката не може да бъде заредена в „%s“: липсва име на приставката"
 
 #: src/libnm-core-impl/nm-vpn-editor-plugin.c:352
 #, c-format
 msgid "cannot load VPN plugin in '%s': invalid service name"
 msgstr ""
+"ВЧМ приставката не може да бъде заредена в „%s“: липсва име на услугата"
 
 #: src/libnm-core-impl/nm-vpn-editor-plugin.c:496
 msgid "the plugin does not support import capability"
-msgstr ""
+msgstr "приставката не поддържа функция за внасяне"
 
 #: src/libnm-core-impl/nm-vpn-editor-plugin.c:520
 msgid "the plugin does not support export capability"
-msgstr ""
+msgstr "приставката не поддържа функция за изнасяне"
 
 #: src/libnm-core-impl/nm-vpn-plugin-info.c:109
 msgid "missing filename"
-msgstr ""
+msgstr "липсва име на файл"
 
 #: src/libnm-core-impl/nm-vpn-plugin-info.c:117
 #, c-format
 msgid "filename must be an absolute path (%s)"
-msgstr ""
+msgstr "името на файла трябва да бъде абсолютен път (%s)"
 
 #: src/libnm-core-impl/nm-vpn-plugin-info.c:126
 #, c-format
 msgid "filename has invalid format (%s)"
-msgstr ""
+msgstr "името на файла има невалиден формат (%s)"
 
 #: src/libnm-core-impl/nm-vpn-plugin-info.c:419
 #, c-format
 msgid "there exists a conflicting plugin (%s) that has the same %s.%s value"
-msgstr ""
+msgstr "съществува конфликтна приставка (%s), която има същата стойност %s.%s"
 
 #: src/libnm-core-impl/nm-vpn-plugin-info.c:458
 #, c-format
 msgid "there exists a conflicting plugin with the same name (%s)"
-msgstr ""
+msgstr "съществува конфликтна приставка, която има същото име (%s)"
 
-#: src/libnm-core-impl/nm-vpn-plugin-info.c:1050
+#: src/libnm-core-impl/nm-vpn-plugin-info.c:1073
 msgid "missing \"plugin\" setting"
-msgstr ""
+msgstr "липсваща настройка „plugin“"
 
-#: src/libnm-core-impl/nm-vpn-plugin-info.c:1060
+#: src/libnm-core-impl/nm-vpn-plugin-info.c:1083
 #, c-format
 msgid "%s: don't retry loading plugin which already failed previously"
 msgstr ""
+"%s: не опитвай отново да заредиш приставката, който вече е била неуспешна"
 
-#: src/libnm-core-impl/nm-vpn-plugin-info.c:1134
+#: src/libnm-core-impl/nm-vpn-plugin-info.c:1157
 msgid "missing filename to load VPN plugin info"
-msgstr ""
+msgstr "липсва име на файл за зареждане на информация за ВЧМ приставка"
 
-#: src/libnm-core-impl/nm-vpn-plugin-info.c:1149
+#: src/libnm-core-impl/nm-vpn-plugin-info.c:1172
 msgid "missing name for VPN plugin info"
-msgstr ""
+msgstr "липсва име за информация за ВЧМ приставка"
 
-#: src/libnm-core-impl/nm-vpn-plugin-info.c:1163
+#: src/libnm-core-impl/nm-vpn-plugin-info.c:1186
 msgid "missing service for VPN plugin info"
-msgstr ""
+msgstr "липсва услуга за информация за ВЧМ приставка"
 
 #: src/libnm-crypto/nm-crypto-gnutls.c:58
 msgid "Failed to initialize the crypto engine."
@@ -4223,7 +4219,7 @@ msgstr "„%s::%s“ не е правилно име на свойство; „%
 #, c-format
 msgid "unable to set property '%s' of type '%s' from value of type '%s'"
 msgstr ""
-"не е възможно да се зададе свойството „%s“ от вид „%s“ от стойност от вид "
+"не е възможно да се зададе свойството „%s“ от тип „%s“ от стойност от тип "
 "„%s“"
 
 #: src/libnm-glib-aux/nm-shared-utils.c:2504
@@ -4412,7 +4408,7 @@ msgstr "изключване (външна)"
 #: src/libnmc-setting/nm-meta-setting-desc.c:2862 src/nmcli/connections.c:5751
 #: src/nmcli/connections.c:7759 src/nmcli/connections.c:7760
 #: src/nmcli/devices.c:591 src/nmcli/devices.c:597 src/nmcli/devices.c:603
-#: src/nmcli/devices.c:1427 src/nmcli/general.c:92 src/nmcli/utils.h:317
+#: src/nmcli/devices.c:1446 src/nmcli/general.c:92 src/nmcli/utils.h:317
 msgid "yes"
 msgstr "да"
 
@@ -4421,17 +4417,17 @@ msgstr "да"
 #: src/libnmc-setting/nm-meta-setting-desc.c:2865 src/nmcli/connections.c:5750
 #: src/nmcli/connections.c:7759 src/nmcli/connections.c:7760
 #: src/nmcli/devices.c:591 src/nmcli/devices.c:597 src/nmcli/devices.c:603
-#: src/nmcli/devices.c:1427 src/nmcli/general.c:93 src/nmcli/utils.h:317
+#: src/nmcli/devices.c:1446 src/nmcli/general.c:93 src/nmcli/utils.h:317
 msgid "no"
 msgstr "не"
 
 #: src/libnmc-base/nm-client-utils.c:344
 msgid "yes (guessed)"
-msgstr ""
+msgstr "да (познато)"
 
 #: src/libnmc-base/nm-client-utils.c:345
 msgid "no (guessed)"
-msgstr ""
+msgstr "не (познато)"
 
 #: src/libnmc-base/nm-client-utils.c:353
 msgid "No reason given"
@@ -4446,11 +4442,11 @@ msgstr "Непозната грешка"
 
 #: src/libnmc-base/nm-client-utils.c:355
 msgid "Device is now managed"
-msgstr ""
+msgstr "Устройството се управлява"
 
 #: src/libnmc-base/nm-client-utils.c:356
 msgid "Device is now unmanaged"
-msgstr ""
+msgstr "Устройството не се управлява"
 
 #: src/libnmc-base/nm-client-utils.c:358
 #, fuzzy
@@ -4597,13 +4593,12 @@ msgid "NetworkManager went to sleep"
 msgstr "Състояние на NetworkManager"
 
 #: src/libnmc-base/nm-client-utils.c:415
-#, fuzzy
 msgid "The device's active connection disappeared"
-msgstr "няма активна връзка или устройство"
+msgstr "Активната връзка на устройството изчезна"
 
 #: src/libnmc-base/nm-client-utils.c:417
 msgid "Device disconnected by user or client"
-msgstr ""
+msgstr "Устройството е изключено от потребител или клиент"
 
 #: src/libnmc-base/nm-client-utils.c:418
 msgid "Carrier/link changed"
@@ -4647,9 +4642,8 @@ msgid "InfiniBand device does not support connected mode"
 msgstr ""
 
 #: src/libnmc-base/nm-client-utils.c:437
-#, fuzzy
 msgid "A dependency of the connection failed"
-msgstr "неуспешно свързване"
+msgstr "Зависимост на връзката имаше грешка"
 
 #: src/libnmc-base/nm-client-utils.c:439
 msgid "A problem with the RFC 2684 Ethernet over ADSL bridge"
@@ -4657,7 +4651,7 @@ msgstr ""
 
 #: src/libnmc-base/nm-client-utils.c:441
 msgid "ModemManager is unavailable"
-msgstr ""
+msgstr "ModemManager не е наличен"
 
 #: src/libnmc-base/nm-client-utils.c:443
 msgid "The Wi-Fi network could not be found"
@@ -4678,11 +4672,11 @@ msgstr "неуспешно свързване"
 
 #: src/libnmc-base/nm-client-utils.c:449
 msgid "Modem failed or no longer available"
-msgstr ""
+msgstr "Модемът се провали или вече не е наличен"
 
 #: src/libnmc-base/nm-client-utils.c:451
 msgid "Modem now ready and available"
-msgstr ""
+msgstr "Модемът е готов и наличен"
 
 #: src/libnmc-base/nm-client-utils.c:452
 msgid "SIM PIN was incorrect"
@@ -4897,10 +4891,10 @@ msgstr ""
 
 #: src/libnmc-base/nm-secret-agent-simple.c:274
 #: src/libnmc-base/nm-secret-agent-simple.c:361
-#: src/libnmc-setting/nm-meta-setting-desc.c:5244
+#: src/libnmc-setting/nm-meta-setting-desc.c:5245
 #: src/nmtui/nmt-8021x-fields.c:183 src/nmtui/nmt-8021x-fields.c:516
 #: src/nmtui/nmt-8021x-fields.c:622 src/nmtui/nmt-page-dsl.c:51
-#: src/nmtui/nmt-page-wifi.c:345
+#: src/nmtui/nmt-page-wifi.c:344
 msgid "Username"
 msgstr "Потребителско име"
 
@@ -4913,10 +4907,10 @@ msgstr "Потребителско име"
 #: src/libnmc-base/nm-secret-agent-simple.c:1016
 #: src/libnmc-base/nm-vpn-helpers.c:144 src/libnmc-base/nm-vpn-helpers.c:148
 #: src/libnmc-base/nm-vpn-helpers.c:154 src/libnmc-base/nm-vpn-helpers.c:159
-#: src/nmcli/devices.c:4727 src/nmtui/nmt-8021x-fields.c:196
+#: src/nmcli/devices.c:4778 src/nmtui/nmt-8021x-fields.c:196
 #: src/nmtui/nmt-8021x-fields.c:536 src/nmtui/nmt-8021x-fields.c:642
-#: src/nmtui/nmt-page-dsl.c:64 src/nmtui/nmt-page-wifi.c:287
-#: src/nmtui/nmt-page-wifi.c:319 src/nmtui/nmt-page-wifi.c:358
+#: src/nmtui/nmt-page-dsl.c:64 src/nmtui/nmt-page-wifi.c:286
+#: src/nmtui/nmt-page-wifi.c:318 src/nmtui/nmt-page-wifi.c:357
 msgid "Password"
 msgstr "Парола"
 
@@ -4929,7 +4923,7 @@ msgstr "Самоличност"
 msgid "Private key password"
 msgstr "Парола за частния ключ"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:329 src/nmtui/nmt-page-wifi.c:298
+#: src/libnmc-base/nm-secret-agent-simple.c:329 src/nmtui/nmt-page-wifi.c:297
 msgid "Key"
 msgstr "Ключ"
 
@@ -4994,7 +4988,7 @@ msgstr "не е открито устройство за връзката „%s�
 
 #: src/libnmc-base/nm-secret-agent-simple.c:940
 msgid "PIN code required"
-msgstr ""
+msgstr "Изисква се PIN код"
 
 #: src/libnmc-base/nm-secret-agent-simple.c:941
 #, fuzzy
@@ -5021,7 +5015,7 @@ msgid "MACsec PSK authentication"
 msgstr "MACsec PSK удостоверяване"
 
 #: src/libnmc-base/nm-secret-agent-simple.c:968
-#: src/libnmc-setting/nm-meta-setting-desc.c:7175
+#: src/libnmc-setting/nm-meta-setting-desc.c:7176
 msgid "MKA CAK"
 msgstr ""
 
@@ -5113,15 +5107,15 @@ msgid "field '%s' has to be alone"
 msgstr "полето „%s“ трябва да е единствено"
 
 #: src/libnmc-setting/nm-meta-setting-access.c:523
-#, fuzzy, c-format
+#, c-format
 msgid "invalid field '%s%s%s%s%s'; %s%s%s"
-msgstr "Грешка при „dev wifi“ — %s; допустимите полета са %s"
+msgstr "неправилно поле „%s%s%s%s%s“; %s%s%s"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:258
 #: src/libnmc-setting/nm-meta-setting-desc.c:326
-#, fuzzy, c-format
+#, c-format
 msgid "invalid prefix '%s'; <0-%d> allowed"
-msgstr "грешно поле „%s“"
+msgstr "представката „%s“ не е правилна; позволено е <0-%d>"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:269
 #, c-format
@@ -5190,7 +5184,7 @@ msgstr "%s (%s)"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:1448
 #: src/libnmc-setting/nm-meta-setting-desc.c:1456
-#: src/libnmc-setting/nm-meta-setting-desc.c:4562
+#: src/libnmc-setting/nm-meta-setting-desc.c:4563
 msgid "'%s' is out of range [%"
 msgstr "„%s“ е извън обхват [%"
 
@@ -5264,12 +5258,12 @@ msgstr "не е запазено, "
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:1858
 msgid "not required, "
-msgstr ""
+msgstr "не се изисква, "
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:2063
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not valid; use <option>=<value>"
-msgstr "Грешка: „%s“ не е правилен аргумент за опцията „%s“."
+msgstr "„%s“ не е правилно; използвайте <option>=<value>"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:2073
 #, c-format
@@ -5282,9 +5276,9 @@ msgid "'%u' flags are not valid; use combination of %s"
 msgstr "Флаговете „%u“ не са правилни; използвайте комбинация от %s"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:2154
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid number (or out of range)"
-msgstr "Грешка: „%s“ не е правилен аргумент за опцията „%s“."
+msgstr "„%s“ не е правилно число (или е извън обхвата)"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:2254
 #, c-format
@@ -5292,14 +5286,13 @@ msgid "invalid IPv4 or subnet \"%s\""
 msgstr "неправилен IPv4 или подмрежа „%s“"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:2285
-#, fuzzy
 msgid "not a valid hex-string"
-msgstr "Грешка при дешифриране на частния ключ."
+msgstr "не е правилен шестнадесетичен низ"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:2303
 #, c-format
 msgid "'%s' is not a valid hex character"
-msgstr ""
+msgstr "„%s“ не е правилен шестнадесетичен знак"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:2391
 msgid ""
@@ -5332,9 +5325,8 @@ msgid ""
 msgstr ""
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:2663
-#, fuzzy
 msgid "Can not change the connection type"
-msgstr "Състояние на активната връзка: %s\n"
+msgstr "Видът на връзката не може да бъде променена"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:2744
 #, fuzzy, c-format
@@ -5342,9 +5334,9 @@ msgid "invalid permission \"%s\""
 msgstr "грешно поле „%s“"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:2844
-#, fuzzy, c-format
+#, c-format
 msgid "the value '%s' is not a valid UUID"
-msgstr "Ограничението на времето „%s“ не е правилно."
+msgstr "стойността „%s“ не е правилен универсално уникален ид."
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:2915
 msgid "0 (disabled)"
@@ -5460,84 +5452,86 @@ msgstr ""
 msgid "'%s' is not a valid channel"
 msgstr "„%s“ не е валиден канал"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4298
+#: src/libnmc-setting/nm-meta-setting-desc.c:4299
 #, c-format
 msgid "'%ld' is not a valid channel"
 msgstr "„%ld“ не е валиден канал"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4379
+#: src/libnmc-setting/nm-meta-setting-desc.c:4380
 #, c-format
 msgid ""
 "'%s' not compatible with %s '%s', please change the key or set the right %s "
 "first."
 msgstr ""
+"„%s“ не е съвместим с %s „%s“, променете ключа или първо задайте правилния "
+"%s."
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4395
+#: src/libnmc-setting/nm-meta-setting-desc.c:4396
 #, c-format
 msgid "WEP key is guessed to be of %s"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4402
+#: src/libnmc-setting/nm-meta-setting-desc.c:4403
 #, c-format
 msgid "WEP key index set to '%d'"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4478
+#: src/libnmc-setting/nm-meta-setting-desc.c:4479
 #, c-format
 msgid "'%s' is not compatible with '%s' type, please change or delete the key."
 msgstr ""
 
 # дадено устройство има сигнал по жицата
-#: src/libnmc-setting/nm-meta-setting-desc.c:4515 src/nmcli/utils.h:323
+#: src/libnmc-setting/nm-meta-setting-desc.c:4516 src/nmcli/utils.h:323
 msgid "on"
 msgstr "свързано"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4515 src/nmcli/utils.h:323
+#: src/libnmc-setting/nm-meta-setting-desc.c:4516 src/nmcli/utils.h:323
 msgid "off"
 msgstr "без връзка"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4580
-#, fuzzy, c-format
+#: src/libnmc-setting/nm-meta-setting-desc.c:4581
+#, c-format
 msgid "'%s' is not valid; use 'on', 'off', or 'ignore'"
-msgstr "Грешка: „%s“ не е правилен аргумент за опцията „%s“."
+msgstr "„%s“ не е правилен; използвайте „on“, „off“ или „ignore“."
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4677
+#: src/libnmc-setting/nm-meta-setting-desc.c:4678
 msgid "Bonding primary interface"
 msgstr ""
 
 #. this is a virtual property, only needed during "ask" mode.
-#: src/libnmc-setting/nm-meta-setting-desc.c:4685
+#: src/libnmc-setting/nm-meta-setting-desc.c:4686
 #: src/libnmc-setting/nm-meta-setting-desc.h:49
 msgid "Bonding monitoring mode"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4694
+#: src/libnmc-setting/nm-meta-setting-desc.c:4695
 msgid "Bonding miimon"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4703
+#: src/libnmc-setting/nm-meta-setting-desc.c:4704
 msgid "Bonding downdelay"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4712
+#: src/libnmc-setting/nm-meta-setting-desc.c:4713
 msgid "Bonding updelay"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4721
+#: src/libnmc-setting/nm-meta-setting-desc.c:4722
 msgid "Bonding arp-interval"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4730
+#: src/libnmc-setting/nm-meta-setting-desc.c:4731
 msgid "Bonding arp-ip-target"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4739
+#: src/libnmc-setting/nm-meta-setting-desc.c:4740
 msgid "LACP rate (slow/fast)"
 msgstr ""
 
 #. macro that returns @func as const (guint32(*)(NMSetting*)) type, but checks
 #. * that the actual type is (guint32(*)(type *)).
-#: src/libnmc-setting/nm-meta-setting-desc.c:4930
+#: src/libnmc-setting/nm-meta-setting-desc.c:4931
 msgid ""
 "nmcli can accepts both direct JSON configuration data and a file name "
 "containing the configuration. In the latter case the file is read and the "
@@ -5548,7 +5542,7 @@ msgid ""
 "          set team.config /etc/my-team.conf\n"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4938
+#: src/libnmc-setting/nm-meta-setting-desc.c:4939
 msgid ""
 "Enter a list of link watchers formatted as dictionaries where the keys are "
 "teamd properties. Dictionary pairs are in the form: key=value and pairs are "
@@ -5574,12 +5568,12 @@ msgid ""
 "name=ethtool delay-up=3\n"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4987
+#: src/libnmc-setting/nm-meta-setting-desc.c:4988
 #, fuzzy
 msgid "IEEE 802.15.4 (WPAN) parent device or connection UUID"
 msgstr "не е открито устройство за връзката „%s“"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5177
+#: src/libnmc-setting/nm-meta-setting-desc.c:5178
 msgid ""
 "Enter bytes as a list of hexadecimal values.\n"
 "Two formats are accepted:\n"
@@ -5592,96 +5586,95 @@ msgid ""
 "          ab 4 55 0xa6 ea 3a 74 C2\n"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5250
-#: src/libnmc-setting/nm-meta-setting-desc.c:5553
-#: src/libnmc-setting/nm-meta-setting-desc.c:6137
-#: src/libnmc-setting/nm-meta-setting-desc.c:7542
+#: src/libnmc-setting/nm-meta-setting-desc.c:5251
+#: src/libnmc-setting/nm-meta-setting-desc.c:5554
+#: src/libnmc-setting/nm-meta-setting-desc.c:6138
+#: src/libnmc-setting/nm-meta-setting-desc.c:7543
 msgid "Password [none]"
 msgstr "Парола [без]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5296
+#: src/libnmc-setting/nm-meta-setting-desc.c:5297
 msgid "Bluetooth device address"
 msgstr "Адрес на Bluetooth устройство"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5345
+#: src/libnmc-setting/nm-meta-setting-desc.c:5346
 #: src/nmtui/nmt-page-bond-port.c:51
 msgid "Queue ID"
 msgstr "Ид. на опашка"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5351
+#: src/libnmc-setting/nm-meta-setting-desc.c:5352
 #, fuzzy
 msgid "Port Priority"
 msgstr "грешно поле „%s“"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5363
-#: src/libnmc-setting/nm-meta-setting-desc.c:6284
-#: src/libnmc-setting/nm-meta-setting-desc.c:8300
-#: src/libnmc-setting/nm-meta-setting-desc.c:8338
-#: src/libnmc-setting/nm-meta-setting-desc.c:8550
-#: src/libnmc-setting/nm-meta-setting-desc.c:8815
+#: src/libnmc-setting/nm-meta-setting-desc.c:5364
+#: src/libnmc-setting/nm-meta-setting-desc.c:6285
+#: src/libnmc-setting/nm-meta-setting-desc.c:8301
+#: src/libnmc-setting/nm-meta-setting-desc.c:8339
+#: src/libnmc-setting/nm-meta-setting-desc.c:8551
+#: src/libnmc-setting/nm-meta-setting-desc.c:8816
 msgid "MAC [none]"
 msgstr "MAC [без]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5369
-#, fuzzy
+#: src/libnmc-setting/nm-meta-setting-desc.c:5370
 msgid "Enable STP"
-msgstr "включено"
+msgstr "Включване на STP"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5375
+#: src/libnmc-setting/nm-meta-setting-desc.c:5376
 #, fuzzy
 msgid "STP priority"
 msgstr "грешно поле „%s“"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5381
+#: src/libnmc-setting/nm-meta-setting-desc.c:5382
 #: src/nmtui/nmt-page-bridge.c:120
 msgid "Forward delay"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5387
+#: src/libnmc-setting/nm-meta-setting-desc.c:5388
 #: src/nmtui/nmt-page-bridge.c:134
 msgid "Hello time"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5393
+#: src/libnmc-setting/nm-meta-setting-desc.c:5394
 #: src/nmtui/nmt-page-bridge.c:148
 msgid "Max age"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5399
+#: src/libnmc-setting/nm-meta-setting-desc.c:5400
 msgid "MAC address ageing time"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5409
+#: src/libnmc-setting/nm-meta-setting-desc.c:5410
 #: src/nmtui/nmt-page-bridge.c:156
 msgid "Group forward mask"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5451
+#: src/libnmc-setting/nm-meta-setting-desc.c:5452
 #: src/nmtui/nmt-page-bridge.c:79
 msgid "Enable IGMP snooping"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5509
+#: src/libnmc-setting/nm-meta-setting-desc.c:5510
 #, fuzzy
 msgid "Bridge port priority"
 msgstr "Активни връзки"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5515
+#: src/libnmc-setting/nm-meta-setting-desc.c:5516
 #, fuzzy
 msgid "Bridge port STP path cost"
 msgstr "Активни връзки"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5521
+#: src/libnmc-setting/nm-meta-setting-desc.c:5522
 msgid "Hairpin"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5547
-#: src/libnmc-setting/nm-meta-setting-desc.c:6131
-#: src/libnmc-setting/nm-meta-setting-desc.c:8145
+#: src/libnmc-setting/nm-meta-setting-desc.c:5548
+#: src/libnmc-setting/nm-meta-setting-desc.c:6132
+#: src/libnmc-setting/nm-meta-setting-desc.c:8146
 msgid "Username [none]"
 msgstr "Потребителско име [без]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5652
+#: src/libnmc-setting/nm-meta-setting-desc.c:5653
 msgid ""
 "Enter a list of user permissions. This is a list of user names formatted "
 "as:\n"
@@ -5691,11 +5684,11 @@ msgid ""
 "Example: alice bob charlie\n"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5681
+#: src/libnmc-setting/nm-meta-setting-desc.c:5682
 msgid "Controller"
-msgstr ""
+msgstr "Контролер"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5740
+#: src/libnmc-setting/nm-meta-setting-desc.c:5741
 msgid ""
 "Enter secondary connections that should be activated when this connection "
 "is\n"
@@ -5708,7 +5701,7 @@ msgid ""
 "Example: private-openvpn, fe6ba5d8-c2fc-4aae-b2e3-97efddd8d9a7\n"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5797
+#: src/libnmc-setting/nm-meta-setting-desc.c:5798
 msgid ""
 "Enter a value which indicates whether the connection is subject to a data\n"
 "quota, usage costs or other limitations. Accepted options are:\n"
@@ -5717,55 +5710,53 @@ msgid ""
 "'unknown' to let NetworkManager choose a value using some heuristics\n"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6147
+#: src/libnmc-setting/nm-meta-setting-desc.c:6148
 msgid "APN"
 msgstr "APN"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6232
-#, fuzzy
+#: src/libnmc-setting/nm-meta-setting-desc.c:6233
 msgid "hsr port1"
-msgstr "Активни връзки"
+msgstr "hsr порт1"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6239
-#, fuzzy
+#: src/libnmc-setting/nm-meta-setting-desc.c:6240
 msgid "hsr port2"
-msgstr "Активни връзки"
+msgstr "hsr порт2"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6245
+#: src/libnmc-setting/nm-meta-setting-desc.c:6246
 msgid "hsr multicast spec"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6293
-#: src/libnmc-setting/nm-meta-setting-desc.c:7082
-#: src/libnmc-setting/nm-meta-setting-desc.c:8385
-#: src/libnmc-setting/nm-meta-setting-desc.c:8612
+#: src/libnmc-setting/nm-meta-setting-desc.c:6294
+#: src/libnmc-setting/nm-meta-setting-desc.c:7083
+#: src/libnmc-setting/nm-meta-setting-desc.c:8386
+#: src/libnmc-setting/nm-meta-setting-desc.c:8613
 #: src/nmtui/nmt-page-ethernet.c:124 src/nmtui/nmt-page-infiniband.c:81
 #: src/nmtui/nmt-page-ip-tunnel.c:178 src/nmtui/nmt-page-loopback.c:56
 #: src/nmtui/nmt-page-veth.c:80 src/nmtui/nmt-page-vlan.c:100
-#: src/nmtui/nmt-page-wifi.c:395 src/nmtui/nmt-page-wireguard.c:85
+#: src/nmtui/nmt-page-wifi.c:394 src/nmtui/nmt-page-wireguard.c:85
 msgid "MTU"
-msgstr ""
+msgstr "MTU"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6312
+#: src/libnmc-setting/nm-meta-setting-desc.c:6313
 msgid "P_KEY [none]"
-msgstr ""
+msgstr "P_KEY [без]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6330
+#: src/libnmc-setting/nm-meta-setting-desc.c:6331
 msgid "Parent interface [none]"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6359
+#: src/libnmc-setting/nm-meta-setting-desc.c:6360
 msgid ""
 "Enter a list of IPv4 addresses of DNS servers.\n"
 "\n"
 "Example: 8.8.8.8, 8.8.4.4\n"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6409
+#: src/libnmc-setting/nm-meta-setting-desc.c:6410
 msgid "IPv4 address (IP[/plen]) [none]"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6411
+#: src/libnmc-setting/nm-meta-setting-desc.c:6412
 msgid ""
 "Enter a list of IPv4 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -5774,11 +5765,11 @@ msgid ""
 "Example: 192.168.1.5/24, 10.0.0.11/24\n"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6430
+#: src/libnmc-setting/nm-meta-setting-desc.c:6431
 msgid "IPv4 gateway [none]"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6439
+#: src/libnmc-setting/nm-meta-setting-desc.c:6440
 msgid ""
 "Enter a list of IPv4 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -5791,14 +5782,14 @@ msgid ""
 "          10.1.2.0/24\n"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6479
+#: src/libnmc-setting/nm-meta-setting-desc.c:6480
 msgid ""
 "Enter a list of IPv4 routing rules formatted as:\n"
 "  priority [prio] [from [src]] [to [dst]], ,...\n"
 "\n"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6670
+#: src/libnmc-setting/nm-meta-setting-desc.c:6671
 msgid ""
 "Enter a list of IPv6 addresses of DNS servers.  If the IPv6 configuration "
 "method is 'auto' these DNS servers are appended to those (if any) returned "
@@ -5810,11 +5801,11 @@ msgid ""
 "Example: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6726
+#: src/libnmc-setting/nm-meta-setting-desc.c:6727
 msgid "IPv6 address (IP[/plen]) [none]"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6728
+#: src/libnmc-setting/nm-meta-setting-desc.c:6729
 msgid ""
 "Enter a list of IPv6 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -5823,11 +5814,11 @@ msgid ""
 "Example: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6747
+#: src/libnmc-setting/nm-meta-setting-desc.c:6748
 msgid "IPv6 gateway [none]"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6756
+#: src/libnmc-setting/nm-meta-setting-desc.c:6757
 msgid ""
 "Enter a list of IPv6 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -5841,433 +5832,429 @@ msgid ""
 "          abbe::/64 55\n"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6796
+#: src/libnmc-setting/nm-meta-setting-desc.c:6797
 msgid ""
 "Enter a list of IPv6 routing rules formatted as:\n"
 "  priority [prio] [from [src]] [to [dst]], ,...\n"
 "\n"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6988
-#: src/libnmc-setting/nm-meta-setting-desc.c:8200
+#: src/libnmc-setting/nm-meta-setting-desc.c:6989
+#: src/libnmc-setting/nm-meta-setting-desc.c:8201
 msgid "Parent device [none]"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6994
+#: src/libnmc-setting/nm-meta-setting-desc.c:6995
 msgid "Local endpoint [none]"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7001
-#: src/libnmc-setting/nm-meta-setting-desc.c:8219
+#: src/libnmc-setting/nm-meta-setting-desc.c:7002
+#: src/libnmc-setting/nm-meta-setting-desc.c:8220
 msgid "Remote"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7052
-#, fuzzy
+#: src/libnmc-setting/nm-meta-setting-desc.c:7053
 msgid "IPVLAN parent device or connection UUID"
-msgstr "не е открито устройство за връзката „%s“"
+msgstr "IPVLAN родителско устройство или универсално уникален ид. на връзка"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7148
+#: src/libnmc-setting/nm-meta-setting-desc.c:7149
 msgid "MACsec parent device or connection UUID"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7169
+#: src/libnmc-setting/nm-meta-setting-desc.c:7170
 msgid "Enable encryption"
 msgstr "Включване на шифриране"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7185
+#: src/libnmc-setting/nm-meta-setting-desc.c:7186
 msgid "MKA_CKN"
 msgstr "MKA_CKN"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7191
+#: src/libnmc-setting/nm-meta-setting-desc.c:7192
 #: src/nmtui/nmt-page-macsec.c:170
 msgid "SCI port"
 msgstr "SCI порт"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7220
-#, fuzzy
+#: src/libnmc-setting/nm-meta-setting-desc.c:7221
 msgid "MACVLAN parent device or connection UUID"
-msgstr "не е открито устройство за връзката „%s“"
+msgstr "MACVLAN родителско устройство или универсално уникален ид. на връзка"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7241
+#: src/libnmc-setting/nm-meta-setting-desc.c:7242
 msgid "Tap"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7312
-#: src/libnmc-setting/nm-meta-setting-desc.c:8510 src/nmtui/nmt-page-wifi.c:216
+#: src/libnmc-setting/nm-meta-setting-desc.c:7313
+#: src/libnmc-setting/nm-meta-setting-desc.c:8511 src/nmtui/nmt-page-wifi.c:215
 msgid "SSID"
 msgstr "SSID"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7322
+#: src/libnmc-setting/nm-meta-setting-desc.c:7323
 #, fuzzy
 msgid "OLPC Mesh channel"
 msgstr "Активни връзки"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7332
+#: src/libnmc-setting/nm-meta-setting-desc.c:7333
 msgid "DHCP anycast MAC address [none]"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7523
+#: src/libnmc-setting/nm-meta-setting-desc.c:7524
 msgid "PPPoE parent device"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7529
+#: src/libnmc-setting/nm-meta-setting-desc.c:7530
 msgid "Service [none]"
 msgstr "Услуга [none]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7536
+#: src/libnmc-setting/nm-meta-setting-desc.c:7537
 msgid "PPPoE username"
 msgstr "PPPoE потребителско име"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7585
+#: src/libnmc-setting/nm-meta-setting-desc.c:7586
 msgid "Browser only"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7591
+#: src/libnmc-setting/nm-meta-setting-desc.c:7592
 msgid "PAC URL"
 msgstr "PAC адрес"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7597
+#: src/libnmc-setting/nm-meta-setting-desc.c:7598
 msgid "PAC script"
 msgstr "PAC команден файл"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7733
-#: src/libnmc-setting/nm-meta-setting-desc.c:7922
+#: src/libnmc-setting/nm-meta-setting-desc.c:7734
+#: src/libnmc-setting/nm-meta-setting-desc.c:7923
 msgid "Team JSON configuration [none]"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8025
+#: src/libnmc-setting/nm-meta-setting-desc.c:8026
 msgid "User ID [none]"
 msgstr "Ид. на потребителя [без]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8031
+#: src/libnmc-setting/nm-meta-setting-desc.c:8032
 msgid "Group ID [none]"
 msgstr "Ид. на групата [без]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8037
+#: src/libnmc-setting/nm-meta-setting-desc.c:8038
 #, fuzzy
 msgid "Enable PI"
 msgstr "включено"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8043
+#: src/libnmc-setting/nm-meta-setting-desc.c:8044
 msgid "Enable VNET header"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8049
+#: src/libnmc-setting/nm-meta-setting-desc.c:8050
 msgid "Enable multi queue"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8062
+#: src/libnmc-setting/nm-meta-setting-desc.c:8063
 msgid "veth peer"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8075
+#: src/libnmc-setting/nm-meta-setting-desc.c:8076
 #, fuzzy
 msgid "VLAN parent device or connection UUID"
 msgstr "не е открито устройство за връзката „%s“"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8082
+#: src/libnmc-setting/nm-meta-setting-desc.c:8083
 msgid "VLAN ID (<0-4094>)"
 msgstr "VLAN Ид. (<0-4094>)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8088
+#: src/libnmc-setting/nm-meta-setting-desc.c:8089
 msgid "VLAN flags (<0-7>) [none]"
 msgstr "VLAN флагове (<0-7>) [без]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8104
+#: src/libnmc-setting/nm-meta-setting-desc.c:8105
 msgid "Ingress priority maps [none]"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8115
+#: src/libnmc-setting/nm-meta-setting-desc.c:8116
 msgid "Egress priority maps [none]"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8187
+#: src/libnmc-setting/nm-meta-setting-desc.c:8188
 msgid "Table"
 msgstr "Таблица"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8207
+#: src/libnmc-setting/nm-meta-setting-desc.c:8208
 msgid "VXLAN ID"
 msgstr "VXLAN Ид."
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8213
+#: src/libnmc-setting/nm-meta-setting-desc.c:8214
 msgid "Local address [none]"
 msgstr "Локален адрес [без]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8225
+#: src/libnmc-setting/nm-meta-setting-desc.c:8226
 #, fuzzy
 msgid "Minimum source port"
 msgstr "Грешка при дешифриране на частния ключ."
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8231
+#: src/libnmc-setting/nm-meta-setting-desc.c:8232
 #, fuzzy
 msgid "Maximum source port"
 msgstr "Грешка при дешифриране на частния ключ."
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8237
+#: src/libnmc-setting/nm-meta-setting-desc.c:8238
 msgid "Destination port"
 msgstr "Порт на крайната точка"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8277 src/nmtui/nmt-page-veth.c:54
+#: src/libnmc-setting/nm-meta-setting-desc.c:8278 src/nmtui/nmt-page-veth.c:54
 #: src/nmtui/nmt-wireguard-peer-editor.c:78
 msgid "Peer"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8307
-#, fuzzy
+#: src/libnmc-setting/nm-meta-setting-desc.c:8308
 msgid "WiMAX NSP name"
-msgstr "Списък с доставчици на WiMAX"
+msgstr "WiMAX NSP име"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8344
-#: src/libnmc-setting/nm-meta-setting-desc.c:8555
+#: src/libnmc-setting/nm-meta-setting-desc.c:8345
+#: src/libnmc-setting/nm-meta-setting-desc.c:8556
 msgid "Cloned MAC [none]"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8393
+#: src/libnmc-setting/nm-meta-setting-desc.c:8394
 msgid ""
 "Enter a list of subchannels (comma or space separated).\n"
 "\n"
 "Example: 0.0.0e20 0.0.0e21 0.0.0e22\n"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8764
+#: src/libnmc-setting/nm-meta-setting-desc.c:8765
 msgid ""
 "Enter the type of WEP keys. The accepted values are: 0 or unknown, 1 or key, "
 "and 2 or passphrase.\n"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8823
+#: src/libnmc-setting/nm-meta-setting-desc.c:8824
 msgid "Short address (<0x0000-0xffff>)"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8839
+#: src/libnmc-setting/nm-meta-setting-desc.c:8840
 msgid "PAN Identifier (<0x0000-0xffff>)"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8854
+#: src/libnmc-setting/nm-meta-setting-desc.c:8855
 msgid "Page (<default|0-31>)"
 msgstr "Страница (<стандартно|0-31>)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8868
+#: src/libnmc-setting/nm-meta-setting-desc.c:8869
 msgid "Channel (<default|0-26>)"
 msgstr ""
 
 #. ***************************************************************************
-#: src/libnmc-setting/nm-meta-setting-desc.c:9003
+#: src/libnmc-setting/nm-meta-setting-desc.c:9004
 msgid "6LOWPAN settings"
 msgstr "Настройки на 6LOWPAN"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9004
+#: src/libnmc-setting/nm-meta-setting-desc.c:9005
 msgid "802-1x settings"
 msgstr "Настройки на 802-1x"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9006
+#: src/libnmc-setting/nm-meta-setting-desc.c:9007
 msgid "bluetooth connection"
 msgstr "bluetooth връзка"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9007
+#: src/libnmc-setting/nm-meta-setting-desc.c:9008
 msgid "Bond device"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9008
+#: src/libnmc-setting/nm-meta-setting-desc.c:9009
 #, fuzzy
 msgid "Bond port"
 msgstr "Активни връзки"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9009
+#: src/libnmc-setting/nm-meta-setting-desc.c:9010
 #, fuzzy
 msgid "Bridge device"
 msgstr "Активни връзки"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9010
+#: src/libnmc-setting/nm-meta-setting-desc.c:9011
 #, fuzzy
 msgid "Bridge port"
 msgstr "Активни връзки"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9011
+#: src/libnmc-setting/nm-meta-setting-desc.c:9012
 #, fuzzy
 msgid "CDMA mobile broadband connection"
 msgstr "не е открито устройство за връзката „%s“"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9012
+#: src/libnmc-setting/nm-meta-setting-desc.c:9013
 msgid "General settings"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9013
+#: src/libnmc-setting/nm-meta-setting-desc.c:9014
 msgid "DCB settings"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9014
+#: src/libnmc-setting/nm-meta-setting-desc.c:9015
 msgid "Dummy settings"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9015
+#: src/libnmc-setting/nm-meta-setting-desc.c:9016
 msgid "Ethtool settings"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9016
+#: src/libnmc-setting/nm-meta-setting-desc.c:9017
 msgid "Generic settings"
 msgstr "Общи настройки"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9017
+#: src/libnmc-setting/nm-meta-setting-desc.c:9018
 #, fuzzy
 msgid "GSM mobile broadband connection"
 msgstr "не е открито устройство за връзката „%s“"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9018
+#: src/libnmc-setting/nm-meta-setting-desc.c:9019
 msgid "Hostname settings"
 msgstr "Настройки на името на хоста"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9019
+#: src/libnmc-setting/nm-meta-setting-desc.c:9020
 msgid "HSR settings"
 msgstr "Настройки на HSR"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9021
+#: src/libnmc-setting/nm-meta-setting-desc.c:9022
 msgid "IPv4 protocol"
 msgstr "IPv4 протокол"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9022
+#: src/libnmc-setting/nm-meta-setting-desc.c:9023
 msgid "IPv6 protocol"
 msgstr "IPv6 протокол"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9023
+#: src/libnmc-setting/nm-meta-setting-desc.c:9024
 msgid "IP-tunnel settings"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9024
+#: src/libnmc-setting/nm-meta-setting-desc.c:9025
 msgid "IPVLAN settings"
 msgstr "Настройки на IPVLAN"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9025
-#, fuzzy
-msgid "Link settings"
-msgstr "грешно поле „%s“"
-
 #: src/libnmc-setting/nm-meta-setting-desc.c:9026
+msgid "Link settings"
+msgstr "Настройки на връзката"
+
+#: src/libnmc-setting/nm-meta-setting-desc.c:9027
 #, fuzzy
 msgid "Loopback settings"
 msgstr "грешно поле „%s“"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9027
+#: src/libnmc-setting/nm-meta-setting-desc.c:9028
 msgid "MACsec connection"
 msgstr "MACsec връзка"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9028
+#: src/libnmc-setting/nm-meta-setting-desc.c:9029
 msgid "macvlan connection"
 msgstr "macvlan връзка"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9029
+#: src/libnmc-setting/nm-meta-setting-desc.c:9030
 msgid "Match"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9030
+#: src/libnmc-setting/nm-meta-setting-desc.c:9031
 #, fuzzy
 msgid "OLPC Mesh connection"
 msgstr "Активни връзки"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9031
+#: src/libnmc-setting/nm-meta-setting-desc.c:9032
 msgid "Open vSwitch bridge settings"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9032
+#: src/libnmc-setting/nm-meta-setting-desc.c:9033
 msgid "Open vSwitch DPDK interface settings"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9033
+#: src/libnmc-setting/nm-meta-setting-desc.c:9034
 msgid "OVS Other Config"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9034
+#: src/libnmc-setting/nm-meta-setting-desc.c:9035
 msgid "OVS External IDs"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9035
+#: src/libnmc-setting/nm-meta-setting-desc.c:9036
 msgid "Open vSwitch interface settings"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9036
+#: src/libnmc-setting/nm-meta-setting-desc.c:9037
 msgid "Open vSwitch patch interface settings"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9037
+#: src/libnmc-setting/nm-meta-setting-desc.c:9038
 msgid "Open vSwitch port settings"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9038
+#: src/libnmc-setting/nm-meta-setting-desc.c:9039
 msgid "PPP settings"
 msgstr "Настройки на PPP"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9039
+#: src/libnmc-setting/nm-meta-setting-desc.c:9040
 msgid "PPPoE"
 msgstr "PPPoE"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9040
+#: src/libnmc-setting/nm-meta-setting-desc.c:9041
 msgid "Prefix delegation settings"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9041
+#: src/libnmc-setting/nm-meta-setting-desc.c:9042
 msgid "Proxy"
 msgstr "Посредник"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9042
+#: src/libnmc-setting/nm-meta-setting-desc.c:9043
 msgid "Serial settings"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9043
+#: src/libnmc-setting/nm-meta-setting-desc.c:9044
 msgid "SR-IOV settings"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9044
+#: src/libnmc-setting/nm-meta-setting-desc.c:9045
 msgid "Traffic controls"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9045
+#: src/libnmc-setting/nm-meta-setting-desc.c:9046
 msgid "Team device"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9046
+#: src/libnmc-setting/nm-meta-setting-desc.c:9047
 msgid "Team port"
 msgstr ""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9047
+#: src/libnmc-setting/nm-meta-setting-desc.c:9048
 #, fuzzy
 msgid "Tun device"
 msgstr "Информация за устройството"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9048
+#: src/libnmc-setting/nm-meta-setting-desc.c:9049
 msgid "User settings"
 msgstr "Потребителски настройки"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9054
+#: src/libnmc-setting/nm-meta-setting-desc.c:9055
 msgid "Wi-Fi P2P connection"
 msgstr "Wi-Fi равноправна връзка"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9055
+#: src/libnmc-setting/nm-meta-setting-desc.c:9056
 msgid "WiMAX connection"
 msgstr "WiMAX връзка"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9056
+#: src/libnmc-setting/nm-meta-setting-desc.c:9057
 #, fuzzy
 msgid "Wired Ethernet"
 msgstr "Активни връзки"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9057
+#: src/libnmc-setting/nm-meta-setting-desc.c:9058
 msgid "WireGuard VPN settings"
 msgstr "Настройки на WireGuard ВЧМ"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9058
+#: src/libnmc-setting/nm-meta-setting-desc.c:9059
 msgid "Wi-Fi connection"
 msgstr "Wi-Fi връзка"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9059
+#: src/libnmc-setting/nm-meta-setting-desc.c:9060
 msgid "Wi-Fi security settings"
 msgstr "Настройки за сигурност на Wi-Fi"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9060
+#: src/libnmc-setting/nm-meta-setting-desc.c:9061
 msgid "WPAN settings"
 msgstr "Настройки на WPAN"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9490
+#: src/libnmc-setting/nm-meta-setting-desc.c:9491
 msgid "name"
 msgstr "име"
 
@@ -6323,9 +6310,8 @@ msgid "Tun mode"
 msgstr "Информация за устройството"
 
 #: src/libnmc-setting/nm-meta-setting-desc.h:70
-#, fuzzy
 msgid "IP Tunnel mode"
-msgstr "Системни връзки"
+msgstr "Режим на IP тунел"
 
 #: src/libnmc-setting/nm-meta-setting-desc.h:72
 msgid "IPVLAN mode"
@@ -7120,7 +7106,7 @@ msgstr ""
 
 #: src/libnmc-setting/settings-docs.h.in:95
 msgid "The Bluetooth address of the device."
-msgstr ""
+msgstr "Bluetooth адресът на устройството."
 
 #: src/libnmc-setting/settings-docs.h.in:96
 msgid ""
@@ -8589,14 +8575,12 @@ msgid "Enable or disable multicast snooping."
 msgstr "Включване и изключване на мрежата на системно ниво"
 
 #: src/libnmc-setting/settings-docs.h.in:307
-#, fuzzy
 msgid "Enable or disable RSTP."
-msgstr "Включване и изключване на устройства за безжични мрежи"
+msgstr "Включване или изключване на RSTP."
 
 #: src/libnmc-setting/settings-docs.h.in:308
-#, fuzzy
 msgid "Enable or disable STP."
-msgstr "Включване и изключване на устройства за безжични мрежи"
+msgstr "Включване или изключване на STP."
 
 #: src/libnmc-setting/settings-docs.h.in:309
 msgid "Open vSwitch DPDK device arguments."
@@ -9569,10 +9553,10 @@ msgstr ""
 
 #: src/libnmc-setting/settings-docs.h.in:455
 msgid ""
-"802.11 frequency band of the network.  One of \"a\" for 5GHz 802.11a or "
-"\"bg\" for 2.4GHz 802.11.  This will lock associations to the Wi-Fi network "
-"to the specific band, i.e. if \"a\" is specified, the device will not "
-"associate with the same network in the 2.4GHz band even if the network's "
+"802.11 frequency band of the network.  One of \"a\" for 5GHz, \"bg\" for "
+"2.4GHz or \"6GHz\".  This will lock associations to the Wi-Fi network to the "
+"specific band, i.e. if \"a\" is specified, the device will not associate "
+"with the same network in the 2.4GHz (bg) or 6GHz bands even if the network's "
 "settings are compatible.  This setting depends on specific driver capability "
 "and may not work with all drivers."
 msgstr ""
@@ -9986,7 +9970,7 @@ msgid ""
 "is mandatory."
 msgstr ""
 
-#: src/libnmt-newt/nmt-newt-utils.c:267 src/nmtui/nmt-editor.c:452
+#: src/libnmt-newt/nmt-newt-utils.c:267 src/nmtui/nmt-editor.c:456
 #: src/nmtui/nmt-password-dialog.c:163 src/nmtui/nmt-route-editor.c:105
 #: src/nmtui/nmt-wireguard-peer-editor.c:154 src/nmtui/nmtui-hostname.c:53
 #: src/nmtui/nmtui.c:115
@@ -9994,19 +9978,19 @@ msgid "OK"
 msgstr "ДОБРЕ"
 
 #: src/libnmt-newt/nmt-newt-utils.c:412 src/libnmt-newt/nmt-newt-utils.c:459
-#, fuzzy, c-format
+#, c-format
 msgid "Could not create temporary file: %s"
-msgstr "Няма достатъчно памет за данните за файла във формат PEM."
+msgstr "Временен файл не може да бъде създаден: %s"
 
 #: src/libnmt-newt/nmt-newt-utils.c:426
-#, fuzzy, c-format
+#, c-format
 msgid "Could not write to temporary file: %s"
-msgstr "Няма достатъчно памет за данните за файла във формат PEM."
+msgstr "Грешка при запис във временен файл: %s"
 
 #: src/libnmt-newt/nmt-newt-utils.c:465
-#, fuzzy, c-format
+#, c-format
 msgid "Editor failed: %s"
-msgstr "Грешка при приспиване — %s"
+msgstr "Редакторът е неупешен: %s"
 
 #: src/libnmt-newt/nmt-newt-utils.c:471
 #, fuzzy, c-format
@@ -10029,7 +10013,7 @@ msgstr "Грешка при създаване на обект-посредни�
 
 #: src/nm-online/nm-online.c:236
 msgid "Don't print anything"
-msgstr ""
+msgstr "Не извеждай нищо"
 
 #: src/nm-online/nm-online.c:242
 msgid "Wait for NetworkManager startup instead of a connection"
@@ -10051,9 +10035,8 @@ msgid ""
 msgstr ""
 
 #: src/nm-online/nm-online.c:289 src/nm-online/nm-online.c:296
-#, fuzzy
 msgid "Invalid option.  Please use --help to see a list of valid options."
-msgstr "Неправилна опция. Ползвайте --help, за да видите списъка с опции.\n"
+msgstr "Неправилна опция. Ползвайте --help, за да видите списъка с опции."
 
 #: src/nmcli/agent.c:25
 msgid ""
@@ -10117,9 +10100,9 @@ msgid "GROUP"
 msgstr "ГРУПА"
 
 #: src/nmcli/common.c:654
-#, fuzzy, c-format
+#, c-format
 msgid "Error: openconnect failed: %s\n"
-msgstr "Грешка при активиране на връзката: %s"
+msgstr "Грешка: openconnect е неуспешно: %s\n"
 
 #: src/nmcli/common.c:719
 #, c-format
@@ -10148,18 +10131,16 @@ msgid "Error: argument '%s' not understood. Try passing --help instead."
 msgstr ""
 
 #: src/nmcli/common.c:1535
-#, fuzzy
 msgid "Error: missing argument. Try passing --help."
-msgstr "Грешка: липсва аргумент на опцията „%s“."
+msgstr "Грешка: липсва аргумент. Опитайте да подадете --help."
 
 #: src/nmcli/common.c:1600
 msgid "access denied"
-msgstr ""
+msgstr "достъпът е отказан"
 
 #: src/nmcli/common.c:1602
-#, fuzzy
 msgid "NetworkManager is not running"
-msgstr "Състояние на NetworkManager"
+msgstr "NetworkManager не работи"
 
 #: src/nmcli/common.c:1612
 msgid "none"
@@ -10180,11 +10161,11 @@ msgstr ""
 #. define some prompts for connection editor
 #: src/nmcli/connections.c:61
 msgid "Setting name? "
-msgstr ""
+msgstr "Име на настройката? "
 
 #: src/nmcli/connections.c:62
 msgid "Property name? "
-msgstr ""
+msgstr "Име на свойството? "
 
 #: src/nmcli/connections.c:63
 msgid "Enter connection type: "
@@ -10255,11 +10236,11 @@ msgstr "Непозната връзка „%s“."
 
 #: src/nmcli/connections.c:676
 msgid "WiMax is no longer supported"
-msgstr ""
+msgstr "WiMax вече не се поддържа"
 
 #: src/nmcli/connections.c:682
 msgid "WEP encryption is known to be insecure"
-msgstr ""
+msgstr "Шифрирането с WEP не е сигурно"
 
 #: src/nmcli/connections.c:764
 msgid "never"
@@ -10676,23 +10657,21 @@ msgid "Error updating secrets for %s: %s\n"
 msgstr "грешка при обновяване на информацията за връзките — %s"
 
 #: src/nmcli/connections.c:1590
-#, fuzzy
 msgid "Connection profile details"
-msgstr "Информация за връзката"
+msgstr "Подробности за профила за връзката"
 
 #: src/nmcli/connections.c:1608 src/nmcli/connections.c:1715
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'connection show': %s"
-msgstr "Грешка при „con list“ — %s"
+msgstr "Грешка при „connection show“: %s"
 
 #: src/nmcli/connections.c:1697
-#, fuzzy
 msgid "Active connection details"
-msgstr "Активни връзки"
+msgstr "Подробности за активната връзка"
 
-#: src/nmcli/connections.c:1827 src/nmcli/devices.c:1681
-#: src/nmcli/devices.c:1698 src/nmcli/devices.c:1716 src/nmcli/devices.c:1735
-#: src/nmcli/devices.c:1799 src/nmcli/devices.c:1928
+#: src/nmcli/connections.c:1827 src/nmcli/devices.c:1700
+#: src/nmcli/devices.c:1717 src/nmcli/devices.c:1735 src/nmcli/devices.c:1754
+#: src/nmcli/devices.c:1818 src/nmcli/devices.c:1947
 msgid "NAME"
 msgstr "ИМЕ"
 
@@ -10747,34 +10726,34 @@ msgstr "Състояние на NetworkManager"
 #: src/nmcli/connections.c:2479 src/nmcli/connections.c:3200
 #: src/nmcli/connections.c:3212 src/nmcli/connections.c:3224
 #: src/nmcli/connections.c:3460 src/nmcli/connections.c:9919
-#: src/nmcli/connections.c:9938 src/nmcli/devices.c:3398
-#: src/nmcli/devices.c:3411 src/nmcli/devices.c:3423 src/nmcli/devices.c:3726
-#: src/nmcli/devices.c:3737 src/nmcli/devices.c:3756 src/nmcli/devices.c:3765
-#: src/nmcli/devices.c:3787 src/nmcli/devices.c:3798 src/nmcli/devices.c:3819
-#: src/nmcli/devices.c:4375 src/nmcli/devices.c:4386 src/nmcli/devices.c:4395
-#: src/nmcli/devices.c:4409 src/nmcli/devices.c:4427 src/nmcli/devices.c:4436
-#: src/nmcli/devices.c:4585 src/nmcli/devices.c:4596 src/nmcli/devices.c:4815
-#: src/nmcli/devices.c:4994 src/nmcli/devices.c:5215
+#: src/nmcli/connections.c:9938 src/nmcli/devices.c:3420
+#: src/nmcli/devices.c:3433 src/nmcli/devices.c:3445 src/nmcli/devices.c:3776
+#: src/nmcli/devices.c:3787 src/nmcli/devices.c:3806 src/nmcli/devices.c:3815
+#: src/nmcli/devices.c:3837 src/nmcli/devices.c:3848 src/nmcli/devices.c:3869
+#: src/nmcli/devices.c:4425 src/nmcli/devices.c:4436 src/nmcli/devices.c:4445
+#: src/nmcli/devices.c:4459 src/nmcli/devices.c:4478 src/nmcli/devices.c:4487
+#: src/nmcli/devices.c:4636 src/nmcli/devices.c:4647 src/nmcli/devices.c:4866
+#: src/nmcli/devices.c:5045 src/nmcli/devices.c:5266
 #, c-format
 msgid "Error: %s argument is missing."
 msgstr "Липсва аргумент за „%s“."
 
 #: src/nmcli/connections.c:2514
-#, fuzzy, c-format
+#, c-format
 msgid "Error: %s - no such connection profile."
-msgstr "Няма връзка „%s“."
+msgstr "Грешка: няма профил за свързване „%s“."
 
 #: src/nmcli/connections.c:2606 src/nmcli/connections.c:3186
 #: src/nmcli/connections.c:3260 src/nmcli/connections.c:9423
 #: src/nmcli/connections.c:9507 src/nmcli/connections.c:10043
-#: src/nmcli/devices.c:2028 src/nmcli/devices.c:2337 src/nmcli/devices.c:2504
-#: src/nmcli/devices.c:2630 src/nmcli/devices.c:2815 src/nmcli/devices.c:3598
-#: src/nmcli/devices.c:4549 src/nmcli/devices.c:5001 src/nmcli/general.c:1076
+#: src/nmcli/devices.c:2047 src/nmcli/devices.c:2359 src/nmcli/devices.c:2526
+#: src/nmcli/devices.c:2652 src/nmcli/devices.c:2837 src/nmcli/devices.c:3620
+#: src/nmcli/devices.c:4600 src/nmcli/devices.c:5052 src/nmcli/general.c:1076
 #, c-format
 msgid "Error: %s."
 msgstr "Грешка: %s."
 
-#: src/nmcli/connections.c:2704 src/nmcli/devices.c:4768
+#: src/nmcli/connections.c:2704 src/nmcli/devices.c:4819
 #, c-format
 msgid "no active connection on device '%s'"
 msgstr "няма активна връзка, използваща устройството „%s“"
@@ -10784,9 +10763,9 @@ msgid "no active connection or device"
 msgstr "няма активна връзка или устройство"
 
 #: src/nmcli/connections.c:2735
-#, fuzzy, c-format
+#, c-format
 msgid "device '%s' not compatible with connection '%s': "
-msgstr "устройството „%s“ не е съвместимо с връзката „%s“"
+msgstr "устройството „%s“ не е съвместимо с връзката „%s“: "
 
 #: src/nmcli/connections.c:2773
 #, c-format
@@ -10794,9 +10773,9 @@ msgid "device '%s' not compatible with connection '%s'"
 msgstr "устройството „%s“ не е съвместимо с връзката „%s“"
 
 #: src/nmcli/connections.c:2780
-#, fuzzy, c-format
+#, c-format
 msgid "device '%s' not found for connection '%s'"
-msgstr "не е открито устройство за връзката „%s“"
+msgstr "не е открито устройството „%s“ за връзката „%s“"
 
 #: src/nmcli/connections.c:2788
 #, c-format
@@ -10835,9 +10814,8 @@ msgid "unknown device '%s'."
 msgstr "неизвестно устройство „%s“."
 
 #: src/nmcli/connections.c:3094
-#, fuzzy
 msgid "neither a valid connection nor device given"
-msgstr "няма активна връзка или устройство"
+msgstr "не е дадена правилна връзка или устройство"
 
 #: src/nmcli/connections.c:3109
 #, fuzzy, c-format
@@ -10850,22 +10828,22 @@ msgid "invalid passwd-file '%s': %s"
 msgstr "грешно поле „%s“"
 
 #: src/nmcli/connections.c:3234 src/nmcli/connections.c:9947
-#: src/nmcli/devices.c:1985 src/nmcli/devices.c:2034 src/nmcli/devices.c:2510
-#: src/nmcli/devices.c:2703 src/nmcli/devices.c:2770 src/nmcli/devices.c:2970
-#: src/nmcli/devices.c:3458 src/nmcli/devices.c:3835 src/nmcli/devices.c:4446
-#: src/nmcli/devices.c:4602 src/nmcli/devices.c:4823 src/nmcli/devices.c:5006
-#, fuzzy, c-format
+#: src/nmcli/devices.c:2004 src/nmcli/devices.c:2053 src/nmcli/devices.c:2532
+#: src/nmcli/devices.c:2725 src/nmcli/devices.c:2792 src/nmcli/devices.c:2992
+#: src/nmcli/devices.c:3480 src/nmcli/devices.c:3885 src/nmcli/devices.c:4497
+#: src/nmcli/devices.c:4653 src/nmcli/devices.c:4874 src/nmcli/devices.c:5057
+#, c-format
 msgid "Error: invalid extra argument '%s'."
-msgstr "Грешка: „%s“ не е правилен параметър за „wwan“."
+msgstr "Грешка: допълнителният аргумент „%s“ не е правилен."
 
 #: src/nmcli/connections.c:3268
 msgid "preparing"
-msgstr ""
+msgstr "подготване"
 
 #: src/nmcli/connections.c:3376
-#, fuzzy, c-format
+#, c-format
 msgid "Connection '%s' (%s) successfully deleted.\n"
-msgstr "Успех: връзката на устройството „%s“ е прекъсната."
+msgstr "Връзката „%s“ (%s) е премахната успешно.\n"
 
 #: src/nmcli/connections.c:3392
 #, c-format
@@ -10874,29 +10852,26 @@ msgstr ""
 
 #: src/nmcli/connections.c:3441 src/nmcli/connections.c:9603
 #: src/nmcli/connections.c:9640 src/nmcli/connections.c:9829
-#, fuzzy
 msgid "Error: No connection specified."
-msgstr "Непозната връзка „%s“."
+msgstr "Грешка: не беше посочена връзка."
 
 #: src/nmcli/connections.c:3473
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' is not an active connection.\n"
-msgstr "Няма връзка „%s“."
+msgstr "Грешка: „%s“ не е активна връзка.\n"
 
 #: src/nmcli/connections.c:3474
-#, fuzzy
 msgid "Error: not all active connections found."
-msgstr "Грешка при получаване на активната връзка за „%s“."
+msgstr "Грешка: не бяха намерени всички активни връзки."
 
 #: src/nmcli/connections.c:3482
-#, fuzzy
 msgid "Error: no active connection provided."
-msgstr "няма активна връзка или устройство"
+msgstr "Грешка: няма предоставена активна връзка."
 
 #: src/nmcli/connections.c:3514
-#, fuzzy, c-format
+#, c-format
 msgid "Connection '%s' deactivation failed: %s\n"
-msgstr "Грешка при активиране на връзката: %s"
+msgstr "Грешка при изключване на връзката „%s“: %s\n"
 
 #: src/nmcli/connections.c:4009
 #, c-format
@@ -10913,7 +10888,7 @@ msgstr "Грешка: неправилно свойство „%s“: %s."
 #: src/nmcli/connections.c:4409
 #, c-format
 msgid "Error: failed to modify %s.%s: %s."
-msgstr ""
+msgstr "Грешка: %s.%s не може да бъде променено: %s."
 
 #: src/nmcli/connections.c:4410
 #, c-format
@@ -10936,14 +10911,14 @@ msgid "Error: bad connection type: %s"
 msgstr "Грешка: лош вид на връзка: %s"
 
 #: src/nmcli/connections.c:4715
-#, fuzzy
 msgid "Error: controller is required"
-msgstr "Грешка: просрочване на времето от %d сек."
+msgstr "Грешка: изисква се контролер"
 
 #: src/nmcli/connections.c:4816
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' is not a valid monitoring mode; use '%s' or '%s'.\n"
-msgstr "Грешка: „%s“ не е правилен аргумент за опцията „%s“."
+msgstr ""
+"Грешка: „%s“ не е валиден режим на наблюдение; използвайте „%s“ или „%s“.\n"
 
 #: src/nmcli/connections.c:4856
 #, c-format
@@ -10951,9 +10926,9 @@ msgid "Error: 'bt-type': '%s' not valid; use [%s, %s, %s (%s), %s]."
 msgstr ""
 
 #: src/nmcli/connections.c:5210
-#, fuzzy, c-format
+#, c-format
 msgid "Error: setting '%s' is mandatory and cannot be removed."
-msgstr "Грешка: устройството „%s“ не е открито."
+msgstr "Грешка: настройката „%s“ е задължителна и не може да бъде премахната."
 
 #: src/nmcli/connections.c:5226
 #, c-format
@@ -10990,10 +10965,10 @@ msgstr "Грешка: „%s“ е нееднозначно (%s.%s or %s.%s)."
 msgid "Error: invalid <setting>.<property> '%s'."
 msgstr "Грешка: „%s“ не е правилен параметър за „wifi“."
 
-#: src/nmcli/connections.c:5647 src/nmcli/devices.c:2217
+#: src/nmcli/connections.c:5647 src/nmcli/devices.c:2239
 #, c-format
 msgid "Warning: %s.\n"
-msgstr ""
+msgstr "Внимание: %s.\n"
 
 #: src/nmcli/connections.c:5663
 #, c-format
@@ -11023,7 +10998,7 @@ msgstr "Грешка: връзката „%s“ не може да бъде до
 #: src/nmcli/connections.c:5702
 #, c-format
 msgid "Connection '%s' (%s) successfully added.\n"
-msgstr ""
+msgstr "Връзката „%s“ (%s) е успешно добавена.\n"
 
 #: src/nmcli/connections.c:5851
 msgid ""
@@ -11039,11 +11014,11 @@ msgstr "Има %d опции по избор за %s.\n"
 #: src/nmcli/connections.c:5964
 #, c-format
 msgid "Do you want to provide them? %s"
-msgstr ""
+msgstr "Искате ли да ги предоставите? %s"
 
 #: src/nmcli/connections.c:6096
 msgid "Error: argument '--' can only be passed once"
-msgstr ""
+msgstr "Грешка: аргументът „--“ може да бъде предаден само веднъж"
 
 #: src/nmcli/connections.c:6110 src/nmcli/utils.c:280
 #, c-format
@@ -11323,13 +11298,15 @@ msgstr ""
 #: src/nmcli/connections.c:7793
 #, c-format
 msgid "The connection is not saved. Do you really want to quit? %s"
-msgstr ""
+msgstr "Връзката не е запазена. Наистина ли искате да спрете програмата? %s"
 
 #: src/nmcli/connections.c:7837
 msgid ""
 "The connection profile has been removed from another client. You may type "
 "'save' in the main menu to restore it.\n"
 msgstr ""
+"Профилът за свързване беше премахнат от друг клиент. Може да въведете „save“ "
+"в основното меню, за да го възстановите.\n"
 
 #: src/nmcli/connections.c:7869 src/nmcli/connections.c:8265
 #: src/nmcli/connections.c:8339
@@ -11341,18 +11318,18 @@ msgstr ""
 #: src/nmcli/connections.c:8343
 #, c-format
 msgid "Enter '%s' value: "
-msgstr ""
+msgstr "Въведете стойността за „%s“: "
 
 #: src/nmcli/connections.c:7884 src/nmcli/connections.c:7903
 #: src/nmcli/connections.c:8278 src/nmcli/connections.c:8354
 #, c-format
 msgid "Error: failed to set '%s' property: %s\n"
-msgstr ""
+msgstr "Грешка: свойството „%s“ не може да бъде зададено: %s\n"
 
 #: src/nmcli/connections.c:7895
 #, c-format
 msgid "Edit '%s' value: "
-msgstr ""
+msgstr "Редактиране на стойността за „%s“: "
 
 #: src/nmcli/connections.c:7918 src/nmcli/settings.c:444
 #, c-format
@@ -11367,7 +11344,7 @@ msgstr "Неизвестен команден аргумент: „%s“\n"
 #: src/nmcli/connections.c:8032
 #, c-format
 msgid "Available settings: %s\n"
-msgstr ""
+msgstr "Налични настройки: %s\n"
 
 #: src/nmcli/connections.c:8043
 #, c-format
@@ -11377,7 +11354,7 @@ msgstr "Грешка: неправилно име на настройка; %s\n"
 #: src/nmcli/connections.c:8060
 #, c-format
 msgid "Available properties: %s\n"
-msgstr ""
+msgstr "Налични свойства: %s\n"
 
 #: src/nmcli/connections.c:8068
 #, c-format
@@ -11395,19 +11372,21 @@ msgstr ""
 #: src/nmcli/connections.c:8199
 #, c-format
 msgid "You may edit the following settings: %s\n"
-msgstr ""
+msgstr "Може да редактирате следните настройки: %s\n"
 
 #: src/nmcli/connections.c:8227
 msgid ""
 "The connection profile has been removed from another client. You may type "
 "'save' to restore it.\n"
 msgstr ""
+"Профилът за свързване беше премахнат от друг клиент. Може да въведете "
+"„save“, за да го възстановите.\n"
 
 #: src/nmcli/connections.c:8284 src/nmcli/connections.c:8573
 #: src/nmcli/connections.c:8609
 #, c-format
 msgid "Error: no setting selected; valid are [%s]\n"
-msgstr ""
+msgstr "Грешка: няма избрана опция; позволени са [%s]\n"
 
 #: src/nmcli/connections.c:8286
 msgid "use 'goto <setting>' first, or 'set <setting>.<property>'\n"
@@ -11437,17 +11416,17 @@ msgstr "Грешка: неизвестна настройка „%s“\n"
 #: src/nmcli/connections.c:8413
 #, c-format
 msgid "You may edit the following properties: %s\n"
-msgstr ""
+msgstr "Може да редактирате следните свойства: %s\n"
 
 #: src/nmcli/connections.c:8459 src/nmcli/connections.c:8523
 #, c-format
 msgid "Error: failed to remove value of '%s': %s\n"
-msgstr ""
+msgstr "Грешка: стойността за „%s“ не може да бъде премахната: %s\n"
 
 #: src/nmcli/connections.c:8465
 #, c-format
 msgid "Error: no argument given; valid are [%s]\n"
-msgstr ""
+msgstr "Грешка: няма даден аргумент; позволени са [%s]\n"
 
 #: src/nmcli/connections.c:8485
 #, c-format
@@ -11490,21 +11469,21 @@ msgstr ""
 #: src/nmcli/connections.c:8720
 #, c-format
 msgid "Invalid verify option: %s\n"
-msgstr ""
+msgstr "Неправилна опция за потвърждаване: %s\n"
 
 #: src/nmcli/connections.c:8728
 #, c-format
 msgid "Verify setting '%s': %s\n"
-msgstr ""
+msgstr "Потвърждаване на настройката „%s“: %s\n"
 
 #: src/nmcli/connections.c:8745 src/nmcli/connections.c:8747
-#, fuzzy, c-format
+#, c-format
 msgid "Verify connection: %s\n"
-msgstr "Потребителски връзки"
+msgstr "Потвърждаване на връзката: %s\n"
 
 #: src/nmcli/connections.c:8751
 msgid "The error cannot be fixed automatically.\n"
-msgstr ""
+msgstr "Грешката не може да бъде оправена автоматично.\n"
 
 #: src/nmcli/connections.c:8771
 #, c-format
@@ -11512,9 +11491,9 @@ msgid "Error: invalid argument '%s'\n"
 msgstr "Грешка: неправилен аргумент „%s“\n"
 
 #: src/nmcli/connections.c:8828
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to save '%s' (%s) connection: %s\n"
-msgstr "Грешка при прекъсване на връзката на устройството „%s“ (%s) — %s"
+msgstr "Грешка: връзката „%s“ (%s) не може да бъде запазена: %s\n"
 
 #: src/nmcli/connections.c:8834
 #, fuzzy, c-format
@@ -11524,12 +11503,12 @@ msgstr "Грешка при прекъсване на връзката на ус
 #: src/nmcli/connections.c:8838
 #, c-format
 msgid "Connection '%s' (%s) successfully saved.\n"
-msgstr ""
+msgstr "Връзката „%s“ (%s) е запазена успешно.\n"
 
 #: src/nmcli/connections.c:8839
 #, c-format
 msgid "Connection '%s' (%s) successfully updated.\n"
-msgstr ""
+msgstr "Връзката „%s“ (%s) е обновена успешно.\n"
 
 #: src/nmcli/connections.c:8873
 #, fuzzy, c-format
@@ -11544,12 +11523,12 @@ msgstr "(непозната грешка)"
 
 #: src/nmcli/connections.c:8875
 msgid "You may try running 'verify fix' to fix errors.\n"
-msgstr ""
+msgstr "Може да опитате да изпълните „verify fix“, за да оправите грешките.\n"
 
 #. TRANSLATORS: do not translate 'save', leave it as it is
 #: src/nmcli/connections.c:8898
 msgid "Error: connection is not saved. Type 'save' first.\n"
-msgstr ""
+msgstr "Грешка: връзката не беше запазена. Въведете първо „save“.\n"
 
 #: src/nmcli/connections.c:8902
 #, c-format
@@ -11587,7 +11566,7 @@ msgstr "Грешка: show-secrets: %s\n"
 
 #: src/nmcli/connections.c:8993
 msgid "Current nmcli configuration:\n"
-msgstr ""
+msgstr "Текущи настройки на nmcli:\n"
 
 #: src/nmcli/connections.c:9001
 #, c-format
@@ -11642,12 +11621,12 @@ msgstr "Добавяне на нова връзка „%s“"
 #. TRANSLATORS: do not translate 'help', leave it as it is
 #: src/nmcli/connections.c:9346
 msgid "Type 'help' or '?' for available commands."
-msgstr ""
+msgstr "Въведете „help” или „?” за наличните команди."
 
 #. TRANSLATORS: do not translate 'print', leave it as it is
 #: src/nmcli/connections.c:9349
 msgid "Type 'print' to show all the connection properties."
-msgstr ""
+msgstr "Въведете „print“, за да видите всички свойства на връзката."
 
 #. TRANSLATORS: do not translate 'describe', leave it as it is
 #: src/nmcli/connections.c:9352
@@ -11662,12 +11641,12 @@ msgstr "Грешка: връзката „%s“ не може да бъде пр
 #: src/nmcli/connections.c:9387
 #, c-format
 msgid "Connection '%s' (%s) successfully modified.\n"
-msgstr ""
+msgstr "Връзката „%s“ (%s) е променена успешно.\n"
 
 #: src/nmcli/connections.c:9460
 #, c-format
 msgid "%s (%s) cloned as %s (%s).\n"
-msgstr ""
+msgstr "%s (%s) е клонирана като %s (%s).\n"
 
 #: src/nmcli/connections.c:9518
 msgid "New connection name: "
@@ -11762,7 +11741,7 @@ msgstr "Грешка: не може да бъде намерена приста�
 #: src/nmcli/connections.c:9983 src/nmcli/connections.c:10075
 #, c-format
 msgid "Error: failed to load VPN plugin: %s."
-msgstr ""
+msgstr "Грешка: ВЧМ приставката не може да бъде заредена: %s."
 
 #: src/nmcli/connections.c:9994
 #, c-format
@@ -11771,7 +11750,7 @@ msgstr "Грешка: „%s“ не може да бъде внесена: %s."
 
 #: src/nmcli/connections.c:10060
 msgid "Output file name: "
-msgstr ""
+msgstr "Име на изходния файл: "
 
 #: src/nmcli/connections.c:10065
 msgid "Error: the connection is not VPN."
@@ -11780,7 +11759,7 @@ msgstr "Грешка: връзката не е ВЧМ."
 #: src/nmcli/connections.c:10089
 #, c-format
 msgid "Error: failed to create temporary file %s."
-msgstr ""
+msgstr "Грешка: временен файл %s не може да бъде създаден."
 
 #: src/nmcli/connections.c:10099
 #, c-format
@@ -11790,7 +11769,7 @@ msgstr "Грешка: „%s“ не може да бъде изнесена: %s.
 #: src/nmcli/connections.c:10113
 #, c-format
 msgid "Error: failed to read temporary file '%s': %s."
-msgstr ""
+msgstr "Грешка: временният файл „%s“ не може да бъде прочетен: „%s“."
 
 #: src/nmcli/connections.c:10137
 msgid "Error: not all connections migrated."
@@ -11825,7 +11804,7 @@ msgid "Interface(s): "
 msgstr "Интерфейс(и): "
 
 # низът се използва когато дадена безжична мрежа няма флагове от рода на pair_ccmp, pair_wpe140 и т.н.
-#: src/nmcli/devices.c:72 src/nmcli/devices.c:1461
+#: src/nmcli/devices.c:72 src/nmcli/devices.c:1480
 msgid "(none)"
 msgstr "(без)"
 
@@ -11843,7 +11822,7 @@ msgstr ""
 msgid "%u Mb/s"
 msgstr "%u Mb/s"
 
-#: src/nmcli/devices.c:852
+#: src/nmcli/devices.c:853
 msgid ""
 "Usage: nmcli device { COMMAND | help }\n"
 "\n"
@@ -11875,8 +11854,8 @@ msgid ""
 "                         [bssid <BSSID>] [name <name>] [private yes|no] "
 "[hidden yes|no]\n"
 "\n"
-"  wifi hotspot [ifname <ifname>] [con-name <name>] [ssid <SSID>] [band a|bg] "
-"[channel <channel>] [password <password>]\n"
+"  wifi hotspot [ifname <ifname>] [con-name <name>] [ssid <SSID>] [band a|bg|"
+"6GHz] [channel <channel>] [password <password>]\n"
 "\n"
 "  wifi rescan [ifname <ifname>] [[ssid <SSID to scan>] ...]\n"
 "\n"
@@ -11886,7 +11865,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/nmcli/devices.c:880
+#: src/nmcli/devices.c:881
 msgid ""
 "Usage: nmcli device status { help }\n"
 "\n"
@@ -11903,7 +11882,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/nmcli/devices.c:895
+#: src/nmcli/devices.c:896
 msgid ""
 "Usage: nmcli device show { ARGUMENTS | help }\n"
 "\n"
@@ -11914,7 +11893,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/nmcli/devices.c:906
+#: src/nmcli/devices.c:907
 msgid ""
 "Usage: nmcli device connect { ARGUMENTS | help }\n"
 "\n"
@@ -11927,7 +11906,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/nmcli/devices.c:918
+#: src/nmcli/devices.c:919
 msgid ""
 "Usage: nmcli device reapply { ARGUMENTS | help }\n"
 "\n"
@@ -11938,7 +11917,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/nmcli/devices.c:930
+#: src/nmcli/devices.c:931
 msgid ""
 "Usage: nmcli device modify { ARGUMENTS | help }\n"
 "\n"
@@ -11959,7 +11938,7 @@ msgid ""
 "nmcli dev mod em1 -ipv6.addr \"abbe::cafe/56\"\n"
 msgstr ""
 
-#: src/nmcli/devices.c:950
+#: src/nmcli/devices.c:951
 msgid ""
 "Usage: nmcli device disconnect { ARGUMENTS | help }\n"
 "\n"
@@ -11971,7 +11950,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/nmcli/devices.c:962
+#: src/nmcli/devices.c:963
 msgid ""
 "Usage: nmcli device delete { ARGUMENTS | help }\n"
 "\n"
@@ -11984,7 +11963,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/nmcli/devices.c:975
+#: src/nmcli/devices.c:976
 msgid ""
 "Usage: nmcli device set { ARGUMENTS | help }\n"
 "\n"
@@ -11997,7 +11976,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/nmcli/devices.c:988
+#: src/nmcli/devices.c:989
 msgid ""
 "Usage: nmcli device monitor { ARGUMENTS | help }\n"
 "\n"
@@ -12009,7 +11988,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/nmcli/devices.c:1001
+#: src/nmcli/devices.c:1002
 msgid ""
 "Usage: nmcli device wifi { ARGUMENTS | help }\n"
 "\n"
@@ -12036,7 +12015,8 @@ msgid ""
 "It is also assumed that IP configuration is obtained via DHCP.\n"
 "\n"
 "ARGUMENTS := hotspot [ifname <ifname>] [con-name <name>] [ssid <SSID>]\n"
-"                     [band a|bg] [channel <channel>] [password <password>]\n"
+"                     [band a|bg|6GHz] [channel <channel>] [password "
+"<password>]\n"
 "\n"
 "Create a Wi-Fi hotspot. Use 'connection down' or 'device disconnect'\n"
 "to stop the hotspot.\n"
@@ -12062,7 +12042,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/nmcli/devices.c:1049
+#: src/nmcli/devices.c:1050
 msgid ""
 "Usage: nmcli device lldp { ARGUMENTS | help }\n"
 "\n"
@@ -12074,7 +12054,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/nmcli/devices.c:1060
+#: src/nmcli/devices.c:1061
 msgid ""
 "Usage: nmcli device checkpoint { ARGUMENTS | help }\n"
 "\n"
@@ -12086,413 +12066,427 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/nmcli/devices.c:1162
+#: src/nmcli/devices.c:1163
 msgid "Error: No interface specified."
 msgstr "Грешка: няма посочен интерфейс."
 
-#: src/nmcli/devices.c:1192
+#: src/nmcli/devices.c:1193
 #, c-format
 msgid "Warning: argument '%s' is duplicated.\n"
-msgstr ""
+msgstr "Внимание: аргументът „%s“ се повтаря.\n"
 
-#: src/nmcli/devices.c:1195
+#: src/nmcli/devices.c:1196
 #, c-format
 msgid "Error: Device '%s' not found.\n"
 msgstr "Грешка: устройството „%s“ не е открито.\n"
 
-#: src/nmcli/devices.c:1196 src/nmcli/devices.c:5239
+#: src/nmcli/devices.c:1197 src/nmcli/devices.c:5290
 msgid "Error: not all devices found."
 msgstr "Грешка: не бяха открити всички устройства."
 
-#: src/nmcli/devices.c:1225
+#: src/nmcli/devices.c:1226
 msgid "No interface specified"
 msgstr "Няма посочен интерфейс"
 
-#: src/nmcli/devices.c:1246
+#: src/nmcli/devices.c:1247
 #, c-format
 msgid "Device '%s' not found"
 msgstr "Устройството „%s“ не е открито"
 
-#: src/nmcli/devices.c:1362 src/nmcli/devices.c:1364
+#: src/nmcli/devices.c:1364 src/nmcli/devices.c:1366
 #, c-format
 msgid "%u MHz"
 msgstr "%u MHz"
 
-#: src/nmcli/devices.c:1363
+#: src/nmcli/devices.c:1365
 #, c-format
 msgid "%u Mbit/s"
 msgstr "%u Mbit/s"
 
+#: src/nmcli/devices.c:1374 src/nmtui/nmt-page-wifi.c:58
+#, fuzzy
+#| msgid "B/G (2.4 GHz)"
+msgid "2.4 GHz"
+msgstr "B/G (2.4 Гхц)"
+
+#: src/nmcli/devices.c:1377 src/nmtui/nmt-page-wifi.c:57
+#, fuzzy
+#| msgid "A (5 GHz)"
+msgid "5 GHz"
+msgstr "A (5 Гхц)"
+
+#: src/nmcli/devices.c:1380 src/nmtui/nmt-page-wifi.c:59
+msgid "6 GHz"
+msgstr ""
+
 # Режима на мрежата
-#: src/nmcli/devices.c:1413
+#: src/nmcli/devices.c:1431
 msgid "Ad-Hoc"
 msgstr "Инцидентен (ад хок)"
 
-#: src/nmcli/devices.c:1414
+#: src/nmcli/devices.c:1432
 msgid "Infra"
 msgstr ""
 
-#: src/nmcli/devices.c:1416
+#: src/nmcli/devices.c:1434
 msgid "N/A"
 msgstr "Липсва"
 
-#: src/nmcli/devices.c:1607
+#: src/nmcli/devices.c:1626
 msgid "Device details"
 msgstr "Информация за устройството"
 
-#: src/nmcli/devices.c:1624
-#, fuzzy, c-format
+#: src/nmcli/devices.c:1643
+#, c-format
 msgid "Error: 'device show': %s"
-msgstr "Грешка при „dev list“ — %s"
+msgstr "Грешка при „device show“: %s"
 
-#: src/nmcli/devices.c:2002
+#: src/nmcli/devices.c:2021
 msgid "Status of devices"
 msgstr "Състояние на устройствата"
 
-#: src/nmcli/devices.c:2006
-#, fuzzy, c-format
+#: src/nmcli/devices.c:2025
+#, c-format
 msgid "Error: 'device status': %s"
-msgstr "Грешка при „dev status“ — %s"
+msgstr "Грешка при „device status“: %s"
 
-#: src/nmcli/devices.c:2069 src/nmcli/general.c:535
+#: src/nmcli/devices.c:2088 src/nmcli/general.c:535
 #, c-format
 msgid "Error: Timeout %d sec expired."
 msgstr "Грешка: просрочване на времето от %d сек."
 
-#: src/nmcli/devices.c:2146
+#: src/nmcli/devices.c:2168
 #, c-format
 msgid "Device '%s' successfully activated with '%s'.\n"
 msgstr "Устройството „%s“ е включено успешно с „%s“.\n"
 
-#: src/nmcli/devices.c:2152
+#: src/nmcli/devices.c:2174
 msgid ""
 "Hint: \"nmcli dev wifi show-password\" shows the Wi-Fi name and password.\n"
 msgstr ""
 
-#: src/nmcli/devices.c:2156
+#: src/nmcli/devices.c:2178
 #, c-format
 msgid "Error: Connection activation failed: %s."
 msgstr "Грешка: връзката не може да бъде включена: %s."
 
-#: src/nmcli/devices.c:2198
+#: src/nmcli/devices.c:2220
 #, c-format
 msgid "Error: Failed to setup a Wi-Fi hotspot: %s"
-msgstr ""
+msgstr "Грешка: не може да бъде създадена Wi-Fi точка за достъп: %s"
 
-#: src/nmcli/devices.c:2202
+#: src/nmcli/devices.c:2224
 #, c-format
 msgid "Error: Failed to add/activate new connection: %s"
 msgstr "Грешка: връзката не може да бъде добавена/пусната: %s"
 
-#: src/nmcli/devices.c:2206
+#: src/nmcli/devices.c:2228
 #, c-format
 msgid "Error: Failed to activate connection: %s"
 msgstr "Грешка: връзката не може да бъде включена: %s"
 
-#: src/nmcli/devices.c:2287
+#: src/nmcli/devices.c:2309
 #, c-format
 msgid "Error: Device activation failed: %s"
 msgstr "Грешка: устройството не може да бъде включено: %s"
 
-#: src/nmcli/devices.c:2343
-#, fuzzy, c-format
+#: src/nmcli/devices.c:2365
+#, c-format
 msgid "Error: extra argument not allowed: '%s'."
-msgstr "Грешка: липсва аргумент на опцията „%s“."
+msgstr "Грешка: не се допуска допълнителен аргумент: „%s“."
 
-#: src/nmcli/devices.c:2412 src/nmcli/devices.c:2425 src/nmcli/devices.c:2680
+#: src/nmcli/devices.c:2434 src/nmcli/devices.c:2447 src/nmcli/devices.c:2702
 #, c-format
 msgid "Device '%s' successfully disconnected.\n"
 msgstr "Връзката на устройството „%s“ е прекъсната.\n"
 
-#: src/nmcli/devices.c:2414 src/nmcli/devices.c:2751
+#: src/nmcli/devices.c:2436 src/nmcli/devices.c:2773
 #, c-format
 msgid "Device '%s' successfully removed.\n"
 msgstr "Устройството „%s“ е премахнато.\n"
 
-#: src/nmcli/devices.c:2474 src/nmcli/devices.c:2556
+#: src/nmcli/devices.c:2496 src/nmcli/devices.c:2578
 #, fuzzy, c-format
 msgid "Error: Reapplying connection to device '%s' (%s) failed: %s"
 msgstr "Грешка при прекъсване на връзката на устройството „%s“ (%s) — %s"
 
-#: src/nmcli/devices.c:2484 src/nmcli/devices.c:2565
+#: src/nmcli/devices.c:2506 src/nmcli/devices.c:2587
 #, fuzzy, c-format
 msgid "Connection successfully reapplied to device '%s'.\n"
 msgstr "Успех: връзката на устройството „%s“ е прекъсната."
 
-#: src/nmcli/devices.c:2587
+#: src/nmcli/devices.c:2609
 #, fuzzy, c-format
 msgid "Error: Reading applied connection from device '%s' (%s) failed: %s"
 msgstr "Грешка при прекъсване на връзката на устройството „%s“ (%s) — %s"
 
-#: src/nmcli/devices.c:2664
+#: src/nmcli/devices.c:2686
 msgid "Error: not all devices disconnected."
 msgstr "Грешка: не всички устройства са изключени."
 
-#: src/nmcli/devices.c:2665
-#, fuzzy, c-format
+#: src/nmcli/devices.c:2687
+#, c-format
 msgid "Error: Device '%s' (%s) disconnecting failed: %s\n"
-msgstr "Грешка при прекъсване на връзката на устройството „%s“ (%s) — %s"
+msgstr "Грешка: устройството „%s“ (%s) не може да бъде прекъснато: %s\n"
 
-#: src/nmcli/devices.c:2742
+#: src/nmcli/devices.c:2764
 msgid "Error: not all devices deleted."
 msgstr "Грешка: не всички устройства са изтрити."
 
-#: src/nmcli/devices.c:2743
-#, fuzzy, c-format
+#: src/nmcli/devices.c:2765
+#, c-format
 msgid "Error: Device '%s' (%s) deletion failed: %s\n"
-msgstr "Грешка при прекъсване на връзката на устройството „%s“ (%s) — %s"
+msgstr "Грешка: устройството „%s“ (%s) не може да бъде изтрито: %s\n"
 
-#: src/nmcli/devices.c:2821
+#: src/nmcli/devices.c:2843
 msgid "Error: No property specified."
 msgstr "Грешка: няма посочено свойство."
 
-#: src/nmcli/devices.c:2838 src/nmcli/devices.c:2857 src/nmcli/general.c:805
+#: src/nmcli/devices.c:2860 src/nmcli/devices.c:2879 src/nmcli/general.c:805
 #: src/nmcli/general.c:827
 #, c-format
 msgid "Error: '%s' argument is missing."
 msgstr "Грешка: липсва аргумент за „%s“."
 
-#: src/nmcli/devices.c:2846
-#, fuzzy, c-format
+#: src/nmcli/devices.c:2868
+#, c-format
 msgid "Error: 'managed': %s."
-msgstr "Грешка при „dev wimax“ — %s"
+msgstr "Грешка при „managed“: %s."
 
-#: src/nmcli/devices.c:2865
-#, fuzzy, c-format
+#: src/nmcli/devices.c:2887
+#, c-format
 msgid "Error: 'autoconnect': %s."
-msgstr "Грешка при „con list“ — %s"
+msgstr "Грешка при „autoconnect“: %s."
 
-#: src/nmcli/devices.c:2872 src/nmcli/general.c:877
+#: src/nmcli/devices.c:2894 src/nmcli/general.c:877
 #, c-format
 msgid "Error: property '%s' is not known."
 msgstr "Грешка: свойството „%s“ не е познато."
 
-#: src/nmcli/devices.c:2919
+#: src/nmcli/devices.c:2941
 #, c-format
 msgid "%s: using connection '%s'\n"
 msgstr "%s: използва връзката „%s“\n"
 
-#: src/nmcli/devices.c:2945
+#: src/nmcli/devices.c:2967
 #, c-format
 msgid "%s: device created\n"
-msgstr ""
+msgstr "%s: устройството е създадено\n"
 
-#: src/nmcli/devices.c:2952
+#: src/nmcli/devices.c:2974
 #, c-format
 msgid "%s: device removed\n"
-msgstr ""
+msgstr "%s: устройството е премахнато\n"
 
-#: src/nmcli/devices.c:3132
-#, fuzzy
+#: src/nmcli/devices.c:3154
 msgid "Wi-Fi scan list"
-msgstr "Открити безжични мрежи"
+msgstr "Списък със сканирани Wi-Fi мрежи"
 
-#: src/nmcli/devices.c:3249 src/nmcli/devices.c:3530
+#: src/nmcli/devices.c:3271 src/nmcli/devices.c:3552
 #, fuzzy, c-format
 msgid "Error: Access point with bssid '%s' not found."
 msgstr "Не е открита точка за достъп с хардуерен адрес „%s“."
 
-#: src/nmcli/devices.c:3451
-#, fuzzy, c-format
+#: src/nmcli/devices.c:3473
+#, c-format
 msgid "Error: 'device wifi': %s"
-msgstr "Грешка при „dev wifi“ — %s"
+msgstr "Грешка при „device wifi“: %s"
 
-#: src/nmcli/devices.c:3471
+#: src/nmcli/devices.c:3493
 #, fuzzy, c-format
 msgid "Error: invalid rescan argument: '%s' not among [auto, no, yes]"
 msgstr ""
 "Грешка: „%s“ не е правилен параметър за „sleep“. Използвайте „true“ или "
 "„false“."
 
-#: src/nmcli/devices.c:3510
+#: src/nmcli/devices.c:3532
 #, c-format
 msgid "Error: Device '%s' not found."
 msgstr "Грешка: устройството „%s“ не е открито."
 
-#: src/nmcli/devices.c:3514
+#: src/nmcli/devices.c:3536
 #, c-format
 msgid ""
 "Error: Device '%s' was not recognized as a Wi-Fi device, check "
 "NetworkManager Wi-Fi plugin."
 msgstr ""
+"Грешка: устройството „%s“ не беше разпознато като Wi-Fi устройство, "
+"проверете Wi-Fi приставката на NetworkManager."
 
-#: src/nmcli/devices.c:3519 src/nmcli/devices.c:3870 src/nmcli/devices.c:4484
-#: src/nmcli/devices.c:4619 src/nmcli/devices.c:4754
-#, fuzzy, c-format
+#: src/nmcli/devices.c:3541 src/nmcli/devices.c:3920 src/nmcli/devices.c:4535
+#: src/nmcli/devices.c:4670 src/nmcli/devices.c:4805
+#, c-format
 msgid "Error: Device '%s' is not a Wi-Fi device."
-msgstr "„%s“ не е устройство за безжична мрежа."
+msgstr "Грешка: „%s“ не е устройство за безжична мрежа."
 
-#: src/nmcli/devices.c:3698
+#: src/nmcli/devices.c:3748
 msgid "SSID or BSSID: "
-msgstr ""
+msgstr "SSID или BSSID: "
 
-#: src/nmcli/devices.c:3703
+#: src/nmcli/devices.c:3753
 #, fuzzy
 msgid "Error: SSID or BSSID are missing."
 msgstr "Липсва аргумент за „%s“."
 
-#: src/nmcli/devices.c:3747
+#: src/nmcli/devices.c:3797
 #, fuzzy, c-format
 msgid "Error: bssid argument value '%s' is not a valid BSSID."
 msgstr "Ограничението на времето „%s“ не е правилно."
 
-#: src/nmcli/devices.c:3778
+#: src/nmcli/devices.c:3828
 #, c-format
 msgid ""
 "Error: wep-key-type argument value '%s' is invalid, use 'key' or 'phrase'."
 msgstr ""
 
-#: src/nmcli/devices.c:3806 src/nmcli/devices.c:3827
+#: src/nmcli/devices.c:3856 src/nmcli/devices.c:3877
 #, c-format
 msgid "Error: %s: %s."
 msgstr "Грешка: %s: %s."
 
-#: src/nmcli/devices.c:3849
+#: src/nmcli/devices.c:3899
 #, c-format
 msgid "Error: BSSID to connect to (%s) differs from bssid argument (%s)."
 msgstr ""
 
-#: src/nmcli/devices.c:3857
+#: src/nmcli/devices.c:3907
 #, c-format
 msgid "Error: Parameter '%s' is neither SSID nor BSSID."
 msgstr ""
 
-#: src/nmcli/devices.c:3873 src/nmcli/devices.c:4487 src/nmcli/devices.c:4622
-#: src/nmcli/devices.c:4854
-#, fuzzy
+#: src/nmcli/devices.c:3923 src/nmcli/devices.c:4538 src/nmcli/devices.c:4673
+#: src/nmcli/devices.c:4905
 msgid "Error: No Wi-Fi device found."
-msgstr "Не е намерено подходящо устройство."
+msgstr "Грешка: не е намерено Wi-Fi устройство."
 
-#: src/nmcli/devices.c:3895
+#: src/nmcli/devices.c:3945
 #, c-format
 msgid "Error: Failed to scan hidden SSID: %s."
 msgstr ""
 
-#: src/nmcli/devices.c:3927
+#: src/nmcli/devices.c:3977
 #, fuzzy, c-format
 msgid "Error: No network with SSID '%s' found."
 msgstr "Грешка: доставчикът „%s“ не е открит."
 
-#: src/nmcli/devices.c:3931
+#: src/nmcli/devices.c:3981
 #, fuzzy, c-format
 msgid "Error: No access point with BSSID '%s' found."
 msgstr "Не е открита точка за достъп с хардуерен адрес „%s“."
 
-#: src/nmcli/devices.c:3960
+#: src/nmcli/devices.c:4010
 #, c-format
 msgid "Error: Connection '%s' exists but properties don't match."
-msgstr ""
+msgstr "Грешка: връзката „%s“ съществува, но свойствата не съвпадат."
 
-#: src/nmcli/devices.c:4010
+#: src/nmcli/devices.c:4060
 #, c-format
 msgid ""
 "Warning: '%s' should be SSID for hidden APs; but it looks like a BSSID.\n"
 msgstr ""
 
-#: src/nmcli/devices.c:4177
+#: src/nmcli/devices.c:4227
 #, c-format
 msgid "'%s' is not valid WPA PSK"
 msgstr ""
 
-#: src/nmcli/devices.c:4198
+#: src/nmcli/devices.c:4248
 #, c-format
 msgid "'%s' is not valid WEP key (it should be 5 or 13 ASCII chars)"
 msgstr ""
 
-#: src/nmcli/devices.c:4217
+#: src/nmcli/devices.c:4267
 #, c-format
 msgid "Hotspot password: %s\n"
-msgstr ""
+msgstr "Парола за точката за достъп: %s\n"
 
-#: src/nmcli/devices.c:4400
+#: src/nmcli/devices.c:4450
 #, fuzzy
 msgid "Error: ssid is too long."
 msgstr "Грешка: устройството „%s“ не е открито."
 
-#: src/nmcli/devices.c:4418
+#: src/nmcli/devices.c:4468
 #, fuzzy, c-format
-msgid "Error: band argument value '%s' is invalid; use 'a' or 'bg'."
+msgid "Error: band argument value '%s' is invalid; use 'a', 'bg' or '6GHz'."
 msgstr "Ограничението на времето „%s“ не е правилно."
 
-#: src/nmcli/devices.c:4462
+#: src/nmcli/devices.c:4513
 msgid "Error: channel requires band too."
 msgstr ""
 
-#: src/nmcli/devices.c:4469
+#: src/nmcli/devices.c:4520
 #, fuzzy, c-format
 msgid "Error: channel '%s' not valid for band '%s'."
 msgstr "Грешка: „%s“ не е правилен аргумент за опцията „%s“."
 
-#: src/nmcli/devices.c:4500
+#: src/nmcli/devices.c:4551
 #, fuzzy, c-format
 msgid "Error: Device '%s' supports neither AP nor Ad-Hoc mode."
 msgstr "„%s“ не е устройство за безжична мрежа."
 
-#: src/nmcli/devices.c:4527
+#: src/nmcli/devices.c:4578
 #, c-format
 msgid "Error: Invalid 'password': %s."
 msgstr "Грешка: неправилна „password“ (парола): %s."
 
-#: src/nmcli/devices.c:4578 src/nmcli/devices.c:4808
-#, fuzzy, c-format
+#: src/nmcli/devices.c:4629 src/nmcli/devices.c:4859
+#, c-format
 msgid "Error: '%s' cannot repeat."
-msgstr "Грешка: устройството „%s“ не е открито."
+msgstr "Грешка при „%s“ не може да се повтаря."
 
-#: src/nmcli/devices.c:4713 src/nmcli/devices.c:4716 src/nmcli/devices.c:4720
-#: src/nmcli/devices.c:4723 src/nmtui/nmt-page-wifi.c:269
+#: src/nmcli/devices.c:4764 src/nmcli/devices.c:4767 src/nmcli/devices.c:4771
+#: src/nmcli/devices.c:4774 src/nmtui/nmt-page-wifi.c:268
 msgid "Security"
 msgstr "Сигурност"
 
-#: src/nmcli/devices.c:4713
+#: src/nmcli/devices.c:4764
 msgid "None"
 msgstr "Без"
 
 #. Main header name
-#: src/nmcli/devices.c:4895
+#: src/nmcli/devices.c:4946
 msgid "Device LLDP neighbors"
 msgstr ""
 
-#: src/nmcli/devices.c:5028
-#, fuzzy, c-format
+#: src/nmcli/devices.c:5079
+#, c-format
 msgid "Error: 'device lldp list': %s"
-msgstr "Грешка при „dev list“ — %s"
+msgstr "Грешка при „device lldp list“: %s"
 
-#: src/nmcli/devices.c:5096
-#, fuzzy
+#: src/nmcli/devices.c:5147
 msgid "Checkpoint was removed."
-msgstr "връзката е премахната"
+msgstr "Точката за достъп е премахната"
 
 #. The command is done, we're in the confirmation prompt.
-#: src/nmcli/devices.c:5103
+#: src/nmcli/devices.c:5154
 msgid "No"
 msgstr "Не"
 
-#: src/nmcli/devices.c:5116
-#, fuzzy, c-format
+#: src/nmcli/devices.c:5167
+#, c-format
 msgid "Error: Destroying a checkpoint failed: %s"
-msgstr "Грешка при активиране на връзката: %s"
+msgstr "Грешка: точка за достъп не може да бъде унищожена: %s"
 
-#: src/nmcli/devices.c:5138 src/nmcli/devices.c:5139
+#: src/nmcli/devices.c:5189 src/nmcli/devices.c:5190
 msgid "Yes"
 msgstr "Да"
 
-#: src/nmcli/devices.c:5165
-#, fuzzy, c-format
-#| msgid "Error: Connection activation failed: %s"
+#: src/nmcli/devices.c:5216
+#, c-format
 msgid "Error: Creating a checkpoint failed: %s"
-msgstr "Грешка при активиране на връзката: %s"
+msgstr "Грешка: точка за достъп не може да бъде създадена: %s"
 
-#: src/nmcli/devices.c:5181
+#: src/nmcli/devices.c:5232
 #, c-format
 msgid "Error: %s"
 msgstr "Грешка: %s"
 
-#: src/nmcli/devices.c:5220 src/nmcli/nmcli.c:891
+#: src/nmcli/devices.c:5271 src/nmcli/nmcli.c:891
 #, c-format
 msgid "Error: '%s' is not a valid timeout."
 msgstr ""
 
-#: src/nmcli/devices.c:5247
+#: src/nmcli/devices.c:5298
 msgid "Error: Expected a command to run after '--'"
 msgstr "Грешка: очакваше се команда да се изпълни след „--“"
 
@@ -12532,7 +12526,7 @@ msgstr "включване"
 
 #: src/nmcli/general.c:138
 msgid "started"
-msgstr ""
+msgstr "започна"
 
 #: src/nmcli/general.c:151 src/nmcli/general.c:162
 msgid "missing"
@@ -12786,14 +12780,13 @@ msgid "Error: extra argument '%s'"
 msgstr "Грешка: излишен аргумент „%s“"
 
 #: src/nmcli/general.c:738
-#, fuzzy
 msgid "NetworkManager logging"
-msgstr "Състояние на NetworkManager"
+msgstr "Журнал на NetworkManager"
 
 #: src/nmcli/general.c:742
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'general logging': %s"
-msgstr "Грешка при „con list“ — %s"
+msgstr "Грешка при „general logging“: %s"
 
 #: src/nmcli/general.c:775
 #, fuzzy, c-format
@@ -12801,9 +12794,9 @@ msgid "Error: failed to set logging: %s"
 msgstr "Грешка при „dev list“ — %s"
 
 #: src/nmcli/general.c:908
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to set hostname: %s"
-msgstr "Грешка при „dev status“ — %s"
+msgstr "Грешка: името на хоста не може да бъде зададено: %s"
 
 #: src/nmcli/general.c:969
 #, fuzzy, c-format
@@ -12811,9 +12804,9 @@ msgid "Error: '--fields' value '%s' is not valid here (allowed field: %s)"
 msgstr "Стойността „%s“ за „--fields“ не е правилна; допустимите полета са %s"
 
 #: src/nmcli/general.c:996
-#, fuzzy, c-format
+#, c-format
 msgid "Error: invalid '%s' argument: '%s' (use on/off)."
-msgstr "Грешка: „%s“ не е правилен параметър за „wifi“."
+msgstr "Грешка: неправилен аргумент „%s“: „%s“ (използвайте вкл./изкл.)."
 
 #: src/nmcli/general.c:1022
 #, fuzzy, c-format
@@ -12822,19 +12815,17 @@ msgstr "Грешка при „dev list“ — %s"
 
 #. no arguments -> get current state
 #: src/nmcli/general.c:1067 src/nmcli/general.c:1079
-#, fuzzy
 msgid "Connectivity"
-msgstr "свързване"
+msgstr "Свързаност"
 
 #: src/nmcli/general.c:1083
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'networking' command '%s' is not valid."
-msgstr "Грешка: „con“ не поддържа команда „%s“."
+msgstr "Грешка: „networking“ командата „%s“ не е валидна."
 
 #: src/nmcli/general.c:1096
-#, fuzzy
 msgid "Networking"
-msgstr "Мрежата е включена"
+msgstr "Мрежа"
 
 #. no argument, show all radio switches
 #: src/nmcli/general.c:1124
@@ -12842,9 +12833,9 @@ msgid "Radio switches"
 msgstr ""
 
 #: src/nmcli/general.c:1150
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to set Wi-Fi radio: %s"
-msgstr "Грешка при „dev list“ — %s"
+msgstr "Wi-Fi радиото не може да бъде зададено: %s"
 
 #. no argument, show current Wi-Fi state
 #: src/nmcli/general.c:1168
@@ -12857,28 +12848,26 @@ msgid "WWAN radio switch"
 msgstr ""
 
 #: src/nmcli/general.c:1244
-#, fuzzy
 msgid "NetworkManager is running"
-msgstr "Състояние на NetworkManager"
+msgstr "NetworkManager се изпълнява"
 
 #: src/nmcli/general.c:1244
-#, fuzzy
 msgid "NetworkManager is stopped"
-msgstr "Състояние на NetworkManager"
+msgstr "NetworkManager е спрян"
 
 #: src/nmcli/general.c:1255
 #, c-format
 msgid "Hostname set to '%s'\n"
-msgstr ""
+msgstr "Името на хоста е зададено като „%s“\n"
 
 #: src/nmcli/general.c:1270
 #, c-format
 msgid "'%s' is now the primary connection\n"
-msgstr ""
+msgstr "„%s“ сега е основната връзка\n"
 
 #: src/nmcli/general.c:1272
 msgid "There's no primary connection\n"
-msgstr ""
+msgstr "Няма основна връзка\n"
 
 #: src/nmcli/general.c:1285
 #, c-format
@@ -12888,7 +12877,7 @@ msgstr ""
 #: src/nmcli/general.c:1300
 #, c-format
 msgid "Networkmanager is now in the '%s' state\n"
-msgstr ""
+msgstr "Networkmanager сега е в състояние „%s“\n"
 
 #: src/nmcli/general.c:1321
 msgid "connection available"
@@ -12909,9 +12898,8 @@ msgid "fw missing"
 msgstr ""
 
 #: src/nmcli/general.c:1349
-#, fuzzy
 msgid "plugin missing"
-msgstr "Липсва аргумент за „%s“."
+msgstr "липсва приставка"
 
 #: src/nmcli/general.c:1359 src/nmcli/general.c:1374
 #, fuzzy
@@ -12948,9 +12936,8 @@ msgid "mtu"
 msgstr ""
 
 #: src/nmcli/general.c:1429
-#, fuzzy
 msgid "controller"
-msgstr "неуспешно свързване"
+msgstr "контролер"
 
 #: src/nmcli/general.c:1433 src/nmtui/nm-editor-utils.c:263
 #: src/nmtui/nmt-connect-connection-list.c:394
@@ -12993,9 +12980,9 @@ msgid ""
 msgstr ""
 
 #: src/nmcli/general.c:1618
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'monitor' command '%s' is not valid."
-msgstr "Грешка: „con“ не поддържа команда „%s“."
+msgstr "Грешка: „monitor“ командата „%s“ не е правилна."
 
 # CONTINUE
 #: src/nmcli/nmcli.c:246
@@ -13095,7 +13082,7 @@ msgstr "Грешка: опцията „--pretty“ е несъвместима 
 #: src/nmcli/nmcli.c:833
 #, c-format
 msgid "Error: '%s' is not a valid argument for '%s' option."
-msgstr ""
+msgstr "Грешка: „%s“ не е правилен аргумент за опцията „%s“."
 
 #: src/nmcli/nmcli.c:850 src/nmcli/nmcli.c:865
 #, c-format
@@ -13122,44 +13109,48 @@ msgid "Success"
 msgstr "Успех"
 
 #: src/nmcli/polkit-agent.c:40
-#, fuzzy, c-format
+#, c-format
 msgid "Error: polkit agent failed: %s\n"
-msgstr "Грешка при активиране на връзката: %s"
+msgstr "Грешка: polkit агентът е неуспешен: %s\n"
 
 #: src/nmcli/polkit-agent.c:93
 #, c-format
 msgid "Warning: polkit agent initialization failed: %s\n"
-msgstr ""
+msgstr "Внимание: polkit агентът не може да бъде стартиран: %s\n"
 
 #: src/nmcli/settings.c:32
 #, c-format
 msgid "Do you also want to set '%s' to '%s'? [yes]: "
-msgstr ""
+msgstr "Искате ли да зададете „%s“ на „%s“? [да]: "
 
 #: src/nmcli/settings.c:34
 #, c-format
 msgid "Do you also want to clear '%s'? [yes]: "
-msgstr ""
+msgstr "Искате ли да изчистите и „%s“? [да]: "
 
 #: src/nmcli/settings.c:250
 #, c-format
 msgid ""
 "Warning: %s.%s set to '%s', but it might be ignored in infrastructure mode\n"
 msgstr ""
+"Внимание: %s.%s е зададен на „%s“, но може да бъде игнориран в режим "
+"инфраструктура.\n"
 
 #: src/nmcli/settings.c:270
 #, c-format
 msgid "Warning: setting %s.%s requires removing ipv4 and ipv6 settings\n"
 msgstr ""
+"Внимание: настройката %s.%s изисква премахване на настройките ipv4 и ipv6\n"
 
 #: src/nmcli/settings.c:273
 msgid "Do you want to remove them? [yes] "
-msgstr ""
+msgstr "Искате ли да ги премахнете? [да] "
 
 #: src/nmcli/settings.c:380
 #, c-format
 msgid "Warning: %s is not an UUID of any existing connection profile\n"
 msgstr ""
+"Внимание: %s не е универсален уникален ид. на съществуващ профил за връзка\n"
 
 #: src/nmcli/settings.c:385 src/nmcli/settings.c:398
 #, c-format
@@ -13174,7 +13165,7 @@ msgstr "„%s” не е име на съществуващ профил"
 #: src/nmcli/settings.c:438
 #, c-format
 msgid "Warning: %s\n"
-msgstr ""
+msgstr "Внимание: %s\n"
 
 #: src/nmcli/settings.c:441
 #, c-format
@@ -13200,7 +13191,7 @@ msgstr ""
 #: src/nmcli/utils.c:308
 #, c-format
 msgid "Error: Argument '%s' was expected, but '%s' provided."
-msgstr ""
+msgstr "Грешка: очакваше се аргумент „%s“, но беше предоставен „%s“."
 
 #: src/nmcli/utils.c:315
 #, c-format
@@ -13242,6 +13233,8 @@ msgid ""
 "Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Restarting "
 "NetworkManager is advised.\n"
 msgstr ""
+"Предупреждение: версиите на nmcli (%s) и NetworkManager (%s) не съвпадат. "
+"Препоръчва се да рестартирате NetworkManager.\n"
 
 # или е драйвер,
 # или е грешка при прекъсване на връзката
@@ -13492,7 +13485,13 @@ msgstr "TTLS"
 msgid "PEAP"
 msgstr "PEAP"
 
-#: src/nmtui/nmt-device-entry.c:350
+#: src/nmtui/nmt-device-entry.c:418
+#, fuzzy
+#| msgid "connections available"
+msgid "No devices available"
+msgstr "налични връзки"
+
+#: src/nmtui/nmt-device-entry.c:477
 msgid "Select..."
 msgstr "Избор..."
 
@@ -13523,7 +13522,7 @@ msgstr "Пойазване"
 #: src/nmtui/nmt-editor.c:93
 #, c-format
 msgid "Could not create editor for connection '%s' of type '%s'."
-msgstr ""
+msgstr "Не може да се създаде редактор за връзка „%s“ от вид „%s“."
 
 #: src/nmtui/nmt-editor.c:97
 #, fuzzy, c-format
@@ -13544,28 +13543,28 @@ msgstr "Връзката не може да бъде запазена: %s"
 msgid "Unable to add new connection: %s"
 msgstr "Връзката не може да бъде добавена: %s"
 
-#: src/nmtui/nmt-editor.c:334
+#: src/nmtui/nmt-editor.c:335
 msgid "Profile name"
 msgstr "Име на профила"
 
-#: src/nmtui/nmt-editor.c:348
+#: src/nmtui/nmt-editor.c:352
 msgid "Ethernet device"
 msgstr ""
 
-#: src/nmtui/nmt-editor.c:350
+#: src/nmtui/nmt-editor.c:354
 msgid "Device"
 msgstr "Устройство"
 
 #. And finally the bottom widgets
-#: src/nmtui/nmt-editor.c:423
+#: src/nmtui/nmt-editor.c:427
 msgid "Automatically connect"
 msgstr "Свързване автоматично"
 
-#: src/nmtui/nmt-editor.c:431
+#: src/nmtui/nmt-editor.c:435
 msgid "Available to all users"
 msgstr "Налично за всички потребители"
 
-#: src/nmtui/nmt-editor.c:449 src/nmtui/nmt-password-dialog.c:160
+#: src/nmtui/nmt-editor.c:453 src/nmtui/nmt-password-dialog.c:160
 #: src/nmtui/nmt-route-editor.c:97 src/nmtui/nmt-wireguard-peer-editor.c:146
 #: src/nmtui/nmtui-edit.c:199 src/nmtui/nmtui-edit.c:510
 #: src/nmtui/nmtui-hostname.c:51
@@ -13615,7 +13614,7 @@ msgstr ""
 #. NB: the ordering/numbering here corresponds to NmtPageBondMonitoringMode
 #: src/nmtui/nmt-page-bond.c:92
 msgid "MII (recommended)"
-msgstr ""
+msgstr "MII (препоръчително)"
 
 #: src/nmtui/nmt-page-bond.c:93
 msgid "ARP"
@@ -13628,12 +13627,12 @@ msgstr ""
 #: src/nmtui/nmt-page-bond.c:346 src/nmtui/nmt-page-bridge.c:63
 #: src/nmtui/nmt-page-team.c:126
 msgid "Ports"
-msgstr ""
+msgstr "Портове"
 
 #: src/nmtui/nmt-page-bond.c:356 src/nmtui/nmt-page-ip-tunnel.c:128
-#: src/nmtui/nmt-page-macsec.c:113 src/nmtui/nmt-page-wifi.c:224
+#: src/nmtui/nmt-page-macsec.c:113 src/nmtui/nmt-page-wifi.c:223
 msgid "Mode"
-msgstr ""
+msgstr "Режим"
 
 #: src/nmtui/nmt-page-bond.c:361
 msgid "Primary"
@@ -13667,7 +13666,7 @@ msgstr ""
 
 #: src/nmtui/nmt-page-bond.c:404 src/nmtui/nmt-page-ethernet.c:116
 #: src/nmtui/nmt-page-veth.c:72 src/nmtui/nmt-page-vlan.c:92
-#: src/nmtui/nmt-page-wifi.c:387
+#: src/nmtui/nmt-page-wifi.c:386
 msgid "Cloned MAC address"
 msgstr ""
 
@@ -13677,7 +13676,7 @@ msgstr ""
 
 #: src/nmtui/nmt-page-bridge-port.c:51 src/nmtui/nmt-page-bridge.c:106
 msgid "Priority"
-msgstr ""
+msgstr "Приоритет"
 
 #: src/nmtui/nmt-page-bridge-port.c:59
 msgid "Path cost"
@@ -13774,19 +13773,19 @@ msgstr ""
 
 #: src/nmtui/nmt-page-ip-tunnel.c:139
 msgid "Local IP"
-msgstr ""
+msgstr "Локален адрес"
 
 #: src/nmtui/nmt-page-ip-tunnel.c:147
 msgid "Remote IP"
-msgstr ""
+msgstr "Отдалечен адрес"
 
 #: src/nmtui/nmt-page-ip-tunnel.c:155
 msgid "Input key"
-msgstr ""
+msgstr "Входен ключ"
 
 #: src/nmtui/nmt-page-ip-tunnel.c:164
 msgid "Output key"
-msgstr ""
+msgstr "Изходен ключ"
 
 #: src/nmtui/nmt-page-ip4.c:27 src/nmtui/nmt-page-ip6.c:33
 #: src/nmtui/nmt-page-macsec.c:69 src/nmtui/nmtui-radio.c:68
@@ -13977,7 +13976,7 @@ msgstr "Клиент"
 
 #: src/nmtui/nmt-page-wifi.c:52
 msgid "Access Point"
-msgstr ""
+msgstr "Точка за достъп"
 
 # Режима на мрежата
 #: src/nmtui/nmt-page-wifi.c:53
@@ -13989,104 +13988,94 @@ msgctxt "Wi-Fi"
 msgid "Automatic"
 msgstr "Автоматично"
 
-#. 802.11a Wi-Fi network
-#: src/nmtui/nmt-page-wifi.c:58
-msgid "A (5 GHz)"
-msgstr "A (5 Гхц)"
-
-#. 802.11b / 802.11g Wi-Fi network
-#: src/nmtui/nmt-page-wifi.c:60
-msgid "B/G (2.4 GHz)"
-msgstr "B/G (2.4 Гхц)"
-
-#: src/nmtui/nmt-page-wifi.c:67
+#: src/nmtui/nmt-page-wifi.c:66
 msgctxt "Wi-Fi security"
 msgid "None"
 msgstr "Без"
 
-#: src/nmtui/nmt-page-wifi.c:68
+#: src/nmtui/nmt-page-wifi.c:67
 msgid "WPA & WPA2 Personal"
 msgstr ""
 
-#: src/nmtui/nmt-page-wifi.c:69
+#: src/nmtui/nmt-page-wifi.c:68
 msgid "WPA3 Personal"
 msgstr ""
 
-#: src/nmtui/nmt-page-wifi.c:70
+#: src/nmtui/nmt-page-wifi.c:69
 msgid "WPA & WPA2 Enterprise"
 msgstr "WPA & WPA2 Индустр."
 
-#: src/nmtui/nmt-page-wifi.c:71
+#: src/nmtui/nmt-page-wifi.c:70
 msgid "LEAP"
 msgstr "LEAP"
 
-#: src/nmtui/nmt-page-wifi.c:72
+#: src/nmtui/nmt-page-wifi.c:71
 msgid "Enhanced Open (OWE)"
 msgstr ""
 
-#: src/nmtui/nmt-page-wifi.c:73
+#: src/nmtui/nmt-page-wifi.c:72
 msgid "WEP 40/128-bit Key (Hex or ASCII)"
 msgstr ""
 
-#: src/nmtui/nmt-page-wifi.c:74
+#: src/nmtui/nmt-page-wifi.c:73
 msgid "WEP 128-bit Passphrase"
 msgstr "128 битова парола WEP"
 
-#: src/nmtui/nmt-page-wifi.c:75
+#: src/nmtui/nmt-page-wifi.c:74
 msgid "Dynamic WEP (802.1x)"
 msgstr ""
 
-#: src/nmtui/nmt-page-wifi.c:80
+#: src/nmtui/nmt-page-wifi.c:79
 msgctxt "WEP key index"
 msgid "1 (Default)"
 msgstr "1 (Стандартно)"
 
-#: src/nmtui/nmt-page-wifi.c:81
+#: src/nmtui/nmt-page-wifi.c:80
 msgctxt "WEP key index"
 msgid "2"
 msgstr "2"
 
-#: src/nmtui/nmt-page-wifi.c:82
+#: src/nmtui/nmt-page-wifi.c:81
 msgctxt "WEP key index"
 msgid "3"
 msgstr "3"
 
-#: src/nmtui/nmt-page-wifi.c:83
+#: src/nmtui/nmt-page-wifi.c:82
 msgctxt "WEP key index"
 msgid "4"
 msgstr "4"
 
-#: src/nmtui/nmt-page-wifi.c:86
+#: src/nmtui/nmt-page-wifi.c:85
 msgid "Open System"
 msgstr "Открита система"
 
-#: src/nmtui/nmt-page-wifi.c:87
+#: src/nmtui/nmt-page-wifi.c:86
 msgid "Shared Key"
 msgstr "Споделен ключ"
 
-#: src/nmtui/nmt-page-wifi.c:203
+#: src/nmtui/nmt-page-wifi.c:202
 msgid "WI-FI"
 msgstr "WI-FI"
 
-#: src/nmtui/nmt-page-wifi.c:264
+#: src/nmtui/nmt-page-wifi.c:263
 msgid "Channel"
 msgstr "Канал"
 
-#: src/nmtui/nmt-page-wifi.c:301 src/nmtui/nmt-page-wifi.c:322
+#: src/nmtui/nmt-page-wifi.c:300 src/nmtui/nmt-page-wifi.c:321
 msgid "WEP index"
 msgstr "WEP указател"
 
-#: src/nmtui/nmt-page-wifi.c:311 src/nmtui/nmt-page-wifi.c:332
+#: src/nmtui/nmt-page-wifi.c:310 src/nmtui/nmt-page-wifi.c:331
 msgid "Authentication"
 msgstr "Удостоверяване"
 
 #. "dynamic-wep"
 #. FIXME
-#: src/nmtui/nmt-page-wifi.c:338
+#: src/nmtui/nmt-page-wifi.c:337
 msgid "(No support for dynamic-wep yet...)"
 msgstr ""
 
-#: src/nmtui/nmt-page-wifi.c:379
+#: src/nmtui/nmt-page-wifi.c:378
 msgid "BSSID"
 msgstr "BSSID"
 
@@ -14214,7 +14203,7 @@ msgstr "Свързване..."
 msgid "Could not activate connection: %s"
 msgstr "Връзката не може да бъде включена: %s"
 
-#: src/nmtui/nmtui-connect.c:324 src/nmtui/nmtui-connect.c:370
+#: src/nmtui/nmtui-connect.c:324 src/nmtui/nmtui-connect.c:613
 msgid "Activate"
 msgstr "Включване"
 
@@ -14222,22 +14211,46 @@ msgstr "Включване"
 msgid "Deactivate"
 msgstr "Изключване"
 
-#: src/nmtui/nmtui-connect.c:375 src/nmtui/nmtui-edit.c:96
+#: src/nmtui/nmtui-connect.c:427
+msgid "Rescanning Wi-Fi devices..."
+msgstr ""
+
+#: src/nmtui/nmtui-connect.c:456
+#, c-format
+msgid "Wi-Fi scan failed for device : %s"
+msgstr ""
+
+#: src/nmtui/nmtui-connect.c:462
+#, c-format
+msgid "Wi-Fi scan timed out for device : %s"
+msgstr ""
+
+#: src/nmtui/nmtui-connect.c:560
+#, fuzzy
+#| msgid "Error: No Wi-Fi device found."
+msgid "No active Wi-Fi devices found"
+msgstr "Грешка: не е намерено Wi-Fi устройство."
+
+#: src/nmtui/nmtui-connect.c:620
+msgid "Rescan Wi-Fi"
+msgstr ""
+
+#: src/nmtui/nmtui-connect.c:634 src/nmtui/nmtui-edit.c:96
 #: src/nmtui/nmtui.c:109
 msgid "Quit"
 msgstr "Спиране на програмата"
 
-#: src/nmtui/nmtui-connect.c:375 src/nmtui/nmtui-edit.c:96
+#: src/nmtui/nmtui-connect.c:634 src/nmtui/nmtui-edit.c:96
 #: src/nmtui/nmtui-radio.c:118
 msgid "Back"
 msgstr "Назад"
 
-#: src/nmtui/nmtui-connect.c:398
+#: src/nmtui/nmtui-connect.c:657
 #, c-format
 msgid "No such connection '%s'"
 msgstr "Няма такава връзка „%s”"
 
-#: src/nmtui/nmtui-connect.c:400
+#: src/nmtui/nmtui-connect.c:659
 msgid "Connection is already active"
 msgstr "Връзката вече е активна"
 
