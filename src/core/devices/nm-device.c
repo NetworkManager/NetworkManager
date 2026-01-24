@@ -906,10 +906,11 @@ static void concheck_update_state(NMDevice           *self,
 static void sriov_op_cb(GError *error, gpointer user_data);
 
 static void device_ifindex_changed_cb(NMManager *manager, NMDevice *device_changed, NMDevice *self);
-static gboolean device_link_changed(gpointer user_data);
-static gboolean _get_maybe_ipv6_disabled(NMDevice *self);
-static void     deactivate_ready(NMDevice *self, NMDeviceStateReason reason);
-static void     carrier_disconnected_action_cancel(NMDevice *self);
+static gboolean    device_link_changed(gpointer user_data);
+static gboolean    _get_maybe_ipv6_disabled(NMDevice *self);
+static void        deactivate_ready(NMDevice *self, NMDeviceStateReason reason);
+static void        carrier_disconnected_action_cancel(NMDevice *self);
+static const char *nm_device_get_effective_ip_config_method(NMDevice *self, int addr_family);
 
 /*****************************************************************************/
 
@@ -1523,6 +1524,40 @@ _prop_get_connection_dnssec(NMDevice *self, NMConnection *connection)
                                                        NM_SETTING_CONNECTION_DNSSEC_DEFAULT);
 }
 
+static NMSettingIp4ConfigClat
+_prop_get_ipv4_clat(NMDevice *self)
+{
+    NMSettingIP4Config    *s_ip4 = NULL;
+    NMSettingIp4ConfigClat clat;
+    const char            *method;
+
+    s_ip4 = nm_device_get_applied_setting(self, NM_TYPE_SETTING_IP4_CONFIG);
+    if (!s_ip4)
+        return NM_SETTING_IP4_CONFIG_CLAT_NO;
+
+    method = nm_device_get_effective_ip_config_method(self, AF_INET);
+    if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
+        return NM_SETTING_IP4_CONFIG_CLAT_NO;
+
+    clat = nm_setting_ip4_config_get_clat(s_ip4);
+    if (clat == NM_SETTING_IP4_CONFIG_CLAT_DEFAULT) {
+        clat = nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
+                                                           NM_CON_DEFAULT("ipv4.clat"),
+                                                           self,
+                                                           NM_SETTING_IP4_CONFIG_CLAT_NO,
+                                                           NM_SETTING_IP4_CONFIG_CLAT_FORCE,
+                                                           NM_SETTING_IP4_CONFIG_CLAT_NO);
+    }
+
+    if (clat == NM_SETTING_IP4_CONFIG_CLAT_AUTO
+        && !nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
+        /* clat=auto enables CLAT only with method=auto */
+        clat = NM_SETTING_IP4_CONFIG_CLAT_NO;
+    }
+
+    return clat;
+}
+
 static NMMptcpFlags
 _prop_get_connection_mptcp_flags(NMDevice *self, NMConnection *connection)
 {
@@ -1921,26 +1956,43 @@ _prop_get_ipvx_may_fail_cached(NMDevice *self, int addr_family, NMTernary *cache
 }
 
 static gboolean
-_prop_get_ipv4_dhcp_ipv6_only_preferred(NMDevice *self)
+_prop_get_ipv4_dhcp_ipv6_only_preferred(NMDevice *self, gboolean *out_is_auto)
 {
     NMSettingIP4Config               *s_ip4;
     NMSettingIP4DhcpIpv6OnlyPreferred ipv6_only;
+
+    NM_SET_OUT(out_is_auto, FALSE);
 
     s_ip4 = nm_device_get_applied_setting(self, NM_TYPE_SETTING_IP4_CONFIG);
     if (!s_ip4)
         return FALSE;
 
     ipv6_only = nm_setting_ip4_config_get_dhcp_ipv6_only_preferred(s_ip4);
-    if (ipv6_only != NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_DEFAULT)
-        return ipv6_only;
+    if (ipv6_only == NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_DEFAULT) {
+        ipv6_only = nm_config_data_get_connection_default_int64(
+            NM_CONFIG_GET_DATA,
+            NM_CON_DEFAULT("ipv4.dhcp-ipv6-only-preferred"),
+            self,
+            NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_NO,
+            NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_AUTO,
+            NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_AUTO);
+    }
 
-    return nm_config_data_get_connection_default_int64(
-        NM_CONFIG_GET_DATA,
-        NM_CON_DEFAULT("ipv4.dhcp-ipv6-only-preferred"),
-        self,
-        NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_NO,
-        NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_YES,
-        NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_NO);
+    if (NM_IN_SET(ipv6_only,
+                  NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_YES,
+                  NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_NO))
+        return ipv6_only == NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_YES;
+
+    /* auto */
+    NM_SET_OUT(out_is_auto, TRUE);
+
+    if (nm_streq0(nm_device_get_effective_ip_config_method(self, AF_INET6),
+                  NM_SETTING_IP6_CONFIG_METHOD_AUTO)
+        && _prop_get_ipv4_clat(self) != NM_SETTING_IP4_CONFIG_CLAT_NO) {
+        return TRUE;
+    }
+
+    return FALSE;
 }
 
 /**
@@ -3641,6 +3693,7 @@ nm_device_create_l3_config_data_from_connection(NMDevice *self, NMConnection *co
     nm_l3_config_data_set_dnssec(l3cd, _prop_get_connection_dnssec(self, connection));
     nm_l3_config_data_set_ip6_privacy(l3cd, _prop_get_ipv6_ip6_privacy(self, connection));
     nm_l3_config_data_set_mptcp_flags(l3cd, _prop_get_connection_mptcp_flags(self, connection));
+
     return l3cd;
 }
 
@@ -4923,7 +4976,7 @@ _dev_l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, N
         if (state >= NM_DEVICE_STATE_IP_CONFIG && state < NM_DEVICE_STATE_DEACTIVATING) {
             /* FIXME(l3cfg): MTU handling should be moved to l3cfg. */
             if (l3cd)
-                priv->ip6_mtu = nm_l3_config_data_get_ip6_mtu(l3cd);
+                priv->ip6_mtu = nm_l3_config_data_get_ip6_mtu_ra(l3cd);
             _commit_mtu(self);
         }
         _dev_ipll4_check_fallback(self, l3cd);
@@ -11467,6 +11520,8 @@ _dev_ipmanual_start(NMDevice *self)
         if (_prop_get_ipvx_routed_dns(self, AF_INET6) == NM_SETTING_IP_CONFIG_ROUTED_DNS_YES) {
             nm_l3_config_data_set_routed_dns(l3cd, AF_INET6, TRUE);
         }
+
+        nm_l3_config_data_set_clat(l3cd, _prop_get_ipv4_clat(self));
     }
 
     if (!l3cd) {
@@ -11775,8 +11830,9 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
         gboolean               hostname_is_fqdn;
         gboolean               send_client_id;
         guint8                 dscp;
-        gboolean               dscp_explicit  = FALSE;
-        gboolean               ipv6_only_pref = FALSE;
+        gboolean               dscp_explicit       = FALSE;
+        gboolean               ipv6_only_pref      = FALSE;
+        gboolean               ipv6_only_pref_auto = FALSE;
 
         client_id = _prop_get_ipv4_dhcp_client_id(self, connection, hwaddr, &send_client_id);
         dscp      = _prop_get_ipv4_dhcp_dscp(self, &dscp_explicit);
@@ -11795,13 +11851,15 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
             hostname         = nm_setting_ip_config_get_dhcp_hostname(s_ip);
         }
 
-        if (_prop_get_ipv4_dhcp_ipv6_only_preferred(self)) {
+        if (_prop_get_ipv4_dhcp_ipv6_only_preferred(self, &ipv6_only_pref_auto)) {
             if (nm_streq0(priv->ipv6_method, NM_SETTING_IP6_CONFIG_METHOD_DISABLED)) {
                 _LOGI_ipdhcp(
                     addr_family,
                     "not requesting the \"IPv6-only preferred\" option because IPv6 is disabled");
             } else {
-                _LOGD_ipdhcp(addr_family, "requesting the \"IPv6-only preferred\" option");
+                _LOGD_ipdhcp(addr_family,
+                             "requesting the \"IPv6-only preferred\" option (%s enabled)",
+                             ipv6_only_pref_auto ? "automatically" : "explicitly");
                 ipv6_only_pref = TRUE;
             }
         }

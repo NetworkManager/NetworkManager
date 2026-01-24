@@ -32,6 +32,15 @@ install_data(
 
 core_plugins = []
 
+subdir('bpf')
+
+base_sources_addon = []
+base_deps_addon = []
+if enable_clat
+  base_sources_addon += [clat_skel_h]
+  base_deps_addon += [libbpf]
+endif
+
 libNetworkManagerBase = static_library(
   'NetworkManagerBase',
   sources: files(
@@ -55,13 +64,13 @@ libNetworkManagerBase = static_library(
     'nm-l3cfg.c',
     'nm-bond-manager.c',
     'nm-ip-config.c',
-  ),
+  ) + base_sources_addon,
   dependencies: [
     core_default_dep,
     libnm_core_public_dep,
     libsystemd_dep,
     libudev_dep,
-  ],
+  ] + base_deps_addon,
 )
 
 nm_deps = [

@@ -955,6 +955,10 @@ ipv6.ip6-privacy=0
           <listitem><para>Whether to configure IPv4 sysctl interface-specific forwarding. When enabled, the interface will act as a router to forward the IPv4 packet from one interface to another. If left unspecified, "auto" is used, so NetworkManager sets the IPv4 forwarding if any shared connection is active, or it will use the kernel default value otherwise. The "ipv4.forwarding" property is ignored when "ipv4.method" is set to "shared", because forwarding is always enabled in this case. The accepted values are: 0: disabled, 1: enabled, 2: auto, 3: ignored (leave the forwarding unchanged).</para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>ipv4.clat</varname></term>
+          <listitem><para>If left unspecified, defaults to "no".</para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>ipv4.routed-dns</varname></term>
         </varlistentry>
         <varlistentry>
@@ -972,7 +976,7 @@ ipv6.ip6-privacy=0
         </varlistentry>
         <varlistentry>
           <term><varname>ipv4.dhcp-ipv6-only-preferred</varname></term>
-          <listitem><para>If left unspecified, the "IPv6-only preferred" DHCPv4 option is disabled.</para></listitem>
+          <listitem><para>If left unspecified, it defaults to "auto".</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>ipv4.dhcp-hostname-flags</varname></term>

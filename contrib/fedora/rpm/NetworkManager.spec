@@ -105,7 +105,12 @@ Release: __RELEASE_VERSION__%{?dist}
 %else
 %bcond_with polkit_noauth_group
 %endif
-
+%ifarch %{ix86}
+# there is no bpftool in i686
+%bcond_with clat
+%else
+%bcond_without clat
+%endif
 ###############################################################################
 
 %global dbus_version 1.9.18
@@ -183,6 +188,10 @@ Requires: dbus >= %{dbus_version}
 Requires: glib2 >= %{glib2_version}
 Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
 
+%if %{with clat}
+Requires: libbpf
+%endif
+
 %if 0%{?rhel} == 8
 # Older libndp versions use select() (rh#1933041). On well known distros,
 # choose a version that has the necessary fix.
@@ -230,6 +239,7 @@ Conflicts: NetworkManager-dispatcher-routing-rules <= 1:1.47.5-3
 %endif
 
 BuildRequires: gcc
+BuildRequires: clang
 BuildRequires: pkgconfig
 BuildRequires: meson
 BuildRequires: gettext-devel >= 0.19.8
@@ -284,6 +294,10 @@ BuildRequires: firewalld-filesystem
 BuildRequires: iproute
 BuildRequires: iproute-tc
 BuildRequires: libnvme-devel >= 1.5
+%if %{with clat}
+BuildRequires: libbpf-devel
+BuildRequires: bpftool
+%endif
 
 Provides: %{name}-dispatcher%{?_isa} = %{epoch}:%{version}-%{release}
 
@@ -611,6 +625,11 @@ Preferably use nmcli instead.
 	-Diwd=true \
 %else
 	-Diwd=false \
+%endif
+%if %{with clat}
+	-Dclat=true \
+%else
+	-Dclat=false \
 %endif
 %if %{with bluetooth}
 	-Dbluez5_dun=true \

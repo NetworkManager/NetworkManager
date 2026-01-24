@@ -109,7 +109,8 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex        *multi_idx,
                       int                       ifindex,
                       const NMNDiscData        *rdata,
                       NMSettingIP6ConfigPrivacy ip6_privacy,
-                      NMUtilsIPv6IfaceId       *token)
+                      NMUtilsIPv6IfaceId       *token,
+                      const char               *network_id)
 {
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
     guint32                                 ifa_flags;
@@ -211,13 +212,21 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex        *multi_idx,
     for (i = 0; i < rdata->dns_domains_n; i++)
         nm_l3_config_data_add_search(l3cd, AF_INET6, rdata->dns_domains[i].domain);
 
+    if (rdata->pref64.valid) {
+        nm_l3_config_data_set_pref64(l3cd, rdata->pref64.network, rdata->pref64.plen);
+    } else {
+        nm_l3_config_data_set_pref64_valid(l3cd, FALSE);
+    }
+
     nm_l3_config_data_set_ndisc_hop_limit(l3cd, rdata->hop_limit);
     nm_l3_config_data_set_ndisc_reachable_time_msec(l3cd, rdata->reachable_time_ms);
     nm_l3_config_data_set_ndisc_retrans_timer_msec(l3cd, rdata->retrans_timer_ms);
 
-    nm_l3_config_data_set_ip6_mtu(l3cd, rdata->mtu);
+    nm_l3_config_data_set_ip6_mtu_ra(l3cd, rdata->mtu);
     if (token)
         nm_l3_config_data_set_ip6_token(l3cd, *token);
+    if (network_id)
+        nm_l3_config_data_set_network_id(l3cd, network_id);
 
     return g_steal_pointer(&l3cd);
 }
@@ -437,7 +446,8 @@ nm_ndisc_emit_config_change(NMNDisc *self, NMNDiscConfigMap changed)
                                  nm_l3cfg_get_ifindex(priv->config.l3cfg),
                                  rdata,
                                  priv->config.ip6_privacy,
-                                 priv->iid_is_token ? &priv->iid : NULL);
+                                 priv->iid_is_token ? &priv->iid : NULL,
+                                 priv->config.network_id);
     l3cd = nm_l3_config_data_seal(l3cd);
 
     if (!nm_l3_config_data_equal(priv->l3cd, l3cd))
@@ -1525,6 +1535,19 @@ clean_routes(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint64 
 }
 
 static void
+clean_pref64(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint64 *next_msec)
+{
+    NMNDiscDataInternal *rdata = &NM_NDISC_GET_PRIVATE(ndisc)->rdata;
+
+    if (!rdata->public.pref64.valid)
+        return;
+    if (!expiry_next(now_msec, rdata->public.pref64.expiry_msec, next_msec)) {
+        rdata->public.pref64.valid = FALSE;
+        *changed |= NM_NDISC_CONFIG_PREF64;
+    }
+}
+
+static void
 clean_dns_servers(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint64 *next_msec)
 {
     NMNDiscDataInternal *rdata = &NM_NDISC_GET_PRIVATE(ndisc)->rdata;
@@ -1600,6 +1623,7 @@ check_timestamps(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap changed)
     clean_gateways(ndisc, now_msec, &changed, &next_msec);
     clean_addresses(ndisc, now_msec, &changed, &next_msec);
     clean_routes(ndisc, now_msec, &changed, &next_msec);
+    clean_pref64(ndisc, now_msec, &changed, &next_msec);
     clean_dns_servers(ndisc, now_msec, &changed, &next_msec);
     clean_dns_domains(ndisc, now_msec, &changed, &next_msec);
 

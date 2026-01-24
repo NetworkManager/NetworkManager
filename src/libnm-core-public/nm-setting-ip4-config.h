@@ -34,6 +34,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER "dhcp-vendor-class-identifier"
 #define NM_SETTING_IP4_CONFIG_DHCP_IPV6_ONLY_PREFERRED     "dhcp-ipv6-only-preferred"
 #define NM_SETTING_IP4_CONFIG_LINK_LOCAL                   "link-local"
+#define NM_SETTING_IP4_CONFIG_CLAT                         "clat"
 
 /**
  * NM_SETTING_IP4_CONFIG_METHOD_AUTO:
@@ -109,6 +110,8 @@ typedef enum {
  * @NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_DEFAULT: use the global default value
  * @NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_NO: the option is disabled
  * @NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_YES: the option is enabled
+ * @NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_AUTO: the option is enabled when
+ *    the IPv6 method is "auto" and CLAT is enabled. Since: 1.58
  *
  * #NMSettingIP4DhcpIpv6OnlyPreferred values specify if the "IPv6-Only Preferred"
  * option (RFC 8925) for DHCPv4 is enabled.
@@ -119,7 +122,31 @@ typedef enum {
     NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_DEFAULT = -1,
     NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_NO      = 0,
     NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_YES     = 1,
+    NM_SETTING_IP4_DHCP_IPV6_ONLY_PREFERRED_AUTO    = 2,
 } NMSettingIP4DhcpIpv6OnlyPreferred;
+
+/**
+ * NMSettingIp4ConfigClat:
+ * @NM_SETTING_IP4_CONFIG_CLAT_DEFAULT: use the global default value
+ * @NM_SETTING_IP4_CONFIG_CLAT_NO: disable CLAT
+ * @NM_SETTING_IP4_CONFIG_CLAT_AUTO: enable CLAT only when the IPv4 method
+ *   is 'auto' and the device doesn't have a native IPv4 gateway.
+ * @NM_SETTING_IP4_CONFIG_CLAT_FORCE: enable CLAT even with IPv4 methods
+ *   other than 'auto' and even if the device has a native IPv4 gateway.
+ *
+ * #NMSettingIP4ConfigClat values specify if CLAT (Customer-side translator)
+ * is enabled or not. CLAT is used to implement the client part of 464XLAT
+ * (RFC 6877), an architecture that provides IPv4 connectivity to hosts on
+ * IPv6-only networks.
+ *
+ * Since: 1.58
+ */
+typedef enum {
+    NM_SETTING_IP4_CONFIG_CLAT_DEFAULT = -1,
+    NM_SETTING_IP4_CONFIG_CLAT_NO      = 0,
+    NM_SETTING_IP4_CONFIG_CLAT_AUTO    = 1,
+    NM_SETTING_IP4_CONFIG_CLAT_FORCE   = 2,
+} NMSettingIp4ConfigClat;
 
 typedef struct _NMSettingIP4ConfigClass NMSettingIP4ConfigClass;
 
@@ -140,6 +167,9 @@ NMSettingIP4LinkLocal nm_setting_ip4_config_get_link_local(NMSettingIP4Config *s
 NM_AVAILABLE_IN_1_52
 NMSettingIP4DhcpIpv6OnlyPreferred
 nm_setting_ip4_config_get_dhcp_ipv6_only_preferred(NMSettingIP4Config *setting);
+
+NM_AVAILABLE_IN_1_58
+NMSettingIp4ConfigClat nm_setting_ip4_config_get_clat(NMSettingIP4Config *setting);
 
 G_END_DECLS
 

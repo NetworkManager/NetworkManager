@@ -14,6 +14,7 @@ struct _NMNDiscDataInternal {
     NMNDiscData public;
     GArray *gateways;
     GArray *addresses;
+    GArray *clat_addresses;
     GArray *routes;
     GArray *dns_servers;
     GArray *dns_domains;

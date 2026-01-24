@@ -11,6 +11,10 @@
 #include <linux/if_ether.h>
 #include <linux/rtnetlink.h>
 #include <linux/fib_rules.h>
+#if HAVE_CLAT
+#include <bpf/libbpf.h>
+#include <bpf/bpf.h>
+#endif /* HAVE_CLAT */
 
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-glib-aux/nm-prioq.h"
@@ -22,6 +26,13 @@
 #include "n-acd/src/n-acd.h"
 #include "nm-l3-ipv4ll.h"
 #include "nm-ip-config.h"
+#include "nm-core-utils.h"
+#if HAVE_CLAT
+#include "bpf/clat.h"
+NM_PRAGMA_WARNING_DISABLE("-Wcast-align")
+#include "bpf/clat.skel.h"
+NM_PRAGMA_WARNING_REENABLE
+#endif /* HAVE_CLAT */
 
 /*****************************************************************************/
 
@@ -289,6 +300,24 @@ typedef struct _NML3CfgPrivate {
         NMIPConfig *ipconfig_x[2];
     };
 
+#if HAVE_CLAT
+    /* The reserved IPv4 address for CLAT in the 192.0.0.0/28 range */
+    NMNetnsIPReservation *clat_address_4;
+    /* The IPv6 address for sending and receiving translated packets */
+    NMPlatformIP6Address clat_address_6;
+
+    /* The same addresses as above, but already committed previously */
+    NMNetnsIPReservation *clat_address_4_committed;
+    NMPlatformIP6Address  clat_address_6_committed;
+
+    /* If NULL, the BPF program hasn't been loaded or attached */
+    struct clat_bpf *clat_bpf;
+    struct bpf_link *clat_ingress_link;
+    struct bpf_link *clat_egress_link;
+
+    int clat_socket;
+#endif /* HAVE_CLAT */
+
     /* Whether we earlier configured MPTCP endpoints for the interface. */
     union {
         struct {
@@ -353,6 +382,9 @@ typedef struct _NML3CfgPrivate {
 
     bool rp_filter_handled : 1;
     bool rp_filter_set : 1;
+
+    bool clat_address_6_valid : 1;
+    bool clat_address_6_committed_valid : 1;
 } NML3CfgPrivate;
 
 struct _NML3CfgClass {
@@ -4123,6 +4155,13 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
     guint                                    i;
     gboolean                                 merged_changed   = FALSE;
     gboolean                                 commited_changed = FALSE;
+#if HAVE_CLAT
+    struct in6_addr           pref64;
+    guint32                   pref64_plen;
+    gboolean                  clat_enabled = FALSE;
+    const NMPlatformIP4Route *ip4_route;
+    NMDedupMultiIter          iter;
+#endif
 
     nm_assert(NM_IS_L3CFG(self));
     nm_assert(!out_old || !*out_old);
@@ -4220,6 +4259,212 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
                                     &hook_data);
         }
 
+#if HAVE_CLAT
+        switch (nm_l3_config_data_get_clat(l3cd)) {
+        case NM_SETTING_IP4_CONFIG_CLAT_FORCE:
+            clat_enabled = TRUE;
+            break;
+        case NM_SETTING_IP4_CONFIG_CLAT_NO:
+            clat_enabled = FALSE;
+            break;
+        case NM_SETTING_IP4_CONFIG_CLAT_AUTO:
+            clat_enabled = TRUE;
+            /* disable if there is a native IPv4 gateway */
+            nm_l3_config_data_iter_ip4_route_for_each (&iter, l3cd, &ip4_route) {
+                if (ip4_route->network == INADDR_ANY && ip4_route->plen == 0
+                    && ip4_route->gateway != INADDR_ANY)
+                    clat_enabled = FALSE;
+                break;
+            }
+            break;
+        case NM_SETTING_IP4_CONFIG_CLAT_DEFAULT:
+            nm_assert_not_reached();
+            clat_enabled = TRUE;
+            break;
+        }
+
+        if (clat_enabled && nm_l3_config_data_get_pref64_valid(l3cd)) {
+            NMPlatformIPXRoute          rx;
+            NMIPAddrTyped               best_v6_gateway;
+            const NMPlatformIP6Route   *best_v6_route;
+            const NMPlatformIP6Address *ip6_entry;
+            struct in6_addr             ip6;
+            const char                 *network_id;
+            char                        buf[512];
+            guint32                     route4_metric = NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP4;
+
+            /* If we have a valid NAT64 prefix, configure in kernel:
+             *
+             * - a CLAT IPv4 address (192.0.0.x)
+             * - a IPv4 default route via the best IPv6 gateway
+             *
+             * We also set clat_address_6 as an additional /64 IPv6 address
+             * determined according to https://www.rfc-editor.org/rfc/rfc6877#section-6.3 .
+             * This address is used for sending and receiving translated packets,
+             * but is not configured in kernel to avoid that it gets used by applications.
+             * Later in _l3_commit_pref64() we use IPV6_JOIN_ANYCAST to let the kernel
+             * handle ND for the address.
+             */
+
+            nm_l3_config_data_get_pref64(l3cd, &pref64, &pref64_plen);
+            network_id = nm_l3_config_data_get_network_id(l3cd);
+
+            if (!self->priv.p->clat_address_6_valid && network_id) {
+                nm_l3_config_data_iter_ip6_address_for_each (&iter, l3cd, &ip6_entry) {
+                    if (ip6_entry->addr_source == NM_IP_CONFIG_SOURCE_NDISC
+                        && ip6_entry->plen == 64) {
+                        ip6 = ip6_entry->address;
+
+                        nm_utils_ipv6_addr_set_stable_privacy(NM_UTILS_STABLE_TYPE_CLAT,
+                                                              &ip6,
+                                                              nm_l3cfg_get_ifname(self, TRUE),
+                                                              network_id,
+                                                              0);
+                        self->priv.p->clat_address_6 = (NMPlatformIP6Address) {
+                            .ifindex      = self->priv.ifindex,
+                            .address      = ip6,
+                            .peer_address = ip6,
+                            .addr_source  = NM_IP_CONFIG_SOURCE_CLAT,
+                            .plen         = ip6_entry->plen,
+                        };
+
+                        _LOGT("clat: using IPv6 address %s", nm_inet6_ntop(&ip6, buf));
+
+                        self->priv.p->clat_address_6_valid = TRUE;
+                        break;
+                    }
+                }
+            }
+
+            /* Don't get a v4 address if we have no v6 address (otherwise, we could
+               potentially create broken v4 connectivity) */
+            if (!self->priv.p->clat_address_6_valid) {
+                _LOGW("CLAT is currently only supported when SLAAC is in use.");
+                /* Deallocate the v4 address unless it's the committed one */
+                if (self->priv.p->clat_address_4 != self->priv.p->clat_address_4_committed) {
+                    nm_clear_pointer(&self->priv.p->clat_address_4,
+                                     nm_netns_ip_reservation_release);
+                } else {
+                    self->priv.p->clat_address_4 = NULL;
+                }
+            } else if (!self->priv.p->clat_address_4) {
+                /* We need a v4 /32 */
+                self->priv.p->clat_address_4 =
+                    nm_netns_ip_reservation_get(self->priv.netns,
+                                                NM_NETNS_IP_RESERVATION_TYPE_CLAT);
+            }
+
+            {
+                const NMPlatformIP4Route *r4;
+                guint32                   metric  = 0;
+                guint32                   penalty = 0;
+
+                /* Find the IPv4 metric for the CLAT default route.
+                 * If there is another non-CLAT default route on the device, use the
+                 * same metric + 1, so that native connectivity is always preferred.
+                 * Otherwise, use the metric from the connection profile.
+                 */
+
+                r4 = NMP_OBJECT_CAST_IP4_ROUTE(
+                    nm_l3_config_data_get_best_default_route(l3cd, AF_INET));
+
+                if (r4) {
+                    route4_metric = nm_add_clamped_u32(r4->metric, 1u);
+                } else {
+                    for (i = 0; i < l3_config_datas_len; i++) {
+                        const L3ConfigData *l3cd_data = l3_config_datas_arr[i];
+
+                        if (l3cd_data->default_route_metric_4
+                            != NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP4) {
+                            metric = l3cd_data->default_route_metric_4;
+                        }
+                        if (l3cd_data->default_route_penalty_4 != 0) {
+                            penalty = l3cd_data->default_route_penalty_4;
+                        }
+                    }
+                    route4_metric = nm_add_clamped_u32(metric, penalty);
+                }
+            }
+
+            if (self->priv.p->clat_address_4) {
+                best_v6_route = NMP_OBJECT_CAST_IP6_ROUTE(
+                    nm_l3_config_data_get_direct_route_for_host(l3cd, AF_INET6, &pref64));
+                if (!best_v6_route) {
+                    best_v6_route = NMP_OBJECT_CAST_IP6_ROUTE(
+                        nm_l3_config_data_get_best_default_route(l3cd, AF_INET6));
+                }
+                if (best_v6_route) {
+                    NMPlatformIP4Address addr = {
+                        .ifindex      = self->priv.ifindex,
+                        .address      = self->priv.p->clat_address_4->addr,
+                        .peer_address = self->priv.p->clat_address_4->addr,
+                        .addr_source  = NM_IP_CONFIG_SOURCE_CLAT,
+                        .plen         = 32,
+                    };
+                    const NMPlatformLink *pllink;
+                    guint                 mtu = 0;
+                    guint                 val = 0;
+
+                    best_v6_gateway.addr_family = AF_INET6;
+                    best_v6_gateway.addr.addr6  = best_v6_route->gateway;
+
+                    /* Determine the IPv6 MTU of the interface. Unfortunately,
+                     * the logic to set the MTU is in NMDevice and here we need
+                     * some duplication to find the actual value.
+                     * TODO: move the MTU handling into l3cfg. */
+
+                    /* Get the link MTU */
+                    pllink = nm_l3cfg_get_pllink(self, TRUE);
+                    if (pllink)
+                        mtu = pllink->mtu;
+                    if (mtu == 0)
+                        mtu = 1500;
+
+                    /* Update it with the IPv6 MTU value from the connection
+                     * or from RA */
+                    val = nm_l3_config_data_get_ip6_mtu_static(l3cd);
+                    if (val == 0) {
+                        val = nm_l3_config_data_get_ip6_mtu_ra(l3cd);
+                    }
+                    if (val != 0 && val < mtu) {
+                        mtu = val;
+                    }
+                    if (mtu < 1280)
+                        mtu = 1280;
+
+                    /* Leave 20 additional bytes for the ipv4 -> ipv6 header translation,
+                     * plus 8 for a potential fragmentation extension header */
+                    mtu -= 28;
+
+                    rx.r4 = (NMPlatformIP4Route) {
+                        .ifindex       = self->priv.ifindex,
+                        .rt_source     = NM_IP_CONFIG_SOURCE_CLAT,
+                        .network       = 0, /* default route */
+                        .plen          = 0,
+                        .table_coerced = nm_platform_route_table_coerce(RT_TABLE_MAIN),
+                        .scope_inv     = nm_platform_route_scope_inv(RT_SCOPE_UNIVERSE),
+                        .type_coerced  = nm_platform_route_type_coerce(RTN_UNICAST),
+                        .pref_src      = self->priv.p->clat_address_4->addr,
+                        .via           = best_v6_gateway,
+                        .metric        = route4_metric,
+                        .mtu           = mtu,
+                    };
+                    nm_platform_ip_route_normalize(AF_INET, &rx.rx);
+                    if (!nm_l3_config_data_lookup_route(l3cd, AF_INET, &rx.rx)) {
+                        nm_l3_config_data_add_route_4(l3cd, &rx.r4);
+                    }
+
+                    _LOGT("clat: route %s",
+                          nm_platform_ip4_route_to_string(&rx.r4, buf, sizeof(buf)));
+
+                    nm_l3_config_data_add_address_4(l3cd, &addr);
+                } else {
+                    _LOGW("Couldn't find a good ipv6 route! Unable to set up CLAT!");
+                }
+            }
+        }
+#endif /* HAVE_CLAT */
+
         if (self->priv.ifindex == NM_LOOPBACK_IFINDEX) {
             NMPlatformIPXAddress ax;
             NMPlatformIPXRoute   rx;
@@ -4279,6 +4524,18 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
 
     if (nm_l3_config_data_equal(l3cd, self->priv.p->combined_l3cd_merged))
         goto out;
+
+#if HAVE_CLAT
+    if (!l3cd) {
+        self->priv.p->clat_address_6_valid = FALSE;
+        /* Deallocate the v4 address unless it's the commited one */
+        if (self->priv.p->clat_address_4 != self->priv.p->clat_address_4_committed) {
+            nm_clear_pointer(&self->priv.p->clat_address_4, nm_netns_ip_reservation_release);
+        } else {
+            self->priv.p->clat_address_4 = NULL;
+        }
+    }
+#endif /* HAVE_CLAT */
 
     l3cd_old                           = g_steal_pointer(&self->priv.p->combined_l3cd_merged);
     self->priv.p->combined_l3cd_merged = nm_l3_config_data_seal(g_steal_pointer(&l3cd));
@@ -5379,6 +5636,174 @@ _l3_commit_one(NML3Cfg              *self,
     _failedobj_handle_routes(self, addr_family, routes_failed);
 }
 
+#if HAVE_CLAT
+static void
+_l3_clat_destroy(NML3Cfg *self)
+{
+    char buf[100];
+    int  err;
+
+    if (self->priv.p->clat_ingress_link) {
+        err = bpf_link__destroy(self->priv.p->clat_ingress_link);
+        if (err != 0) {
+            libbpf_strerror(err, buf, sizeof(buf));
+            _LOGD("clat: failed to destroy the ingress link");
+        }
+        self->priv.p->clat_ingress_link = NULL;
+    }
+
+    if (self->priv.p->clat_egress_link) {
+        err = bpf_link__destroy(self->priv.p->clat_egress_link);
+        if (err != 0) {
+            libbpf_strerror(err, buf, sizeof(buf));
+            _LOGD("clat: failed to destroy the egress link");
+        }
+        self->priv.p->clat_egress_link = NULL;
+    }
+
+    nm_clear_pointer(&self->priv.p->clat_bpf, clat_bpf__destroy);
+}
+
+static void
+_l3_commit_pref64(NML3Cfg *self, NML3CfgCommitType commit_type)
+{
+    int                    err  = 0;
+    const NML3ConfigData  *l3cd = self->priv.p->combined_l3cd_commited;
+    struct in6_addr        _l3cd_pref64_inner;
+    const struct in6_addr *l3cd_pref64 = NULL;
+    guint32                l3cd_pref64_plen;
+    char                   buf[100];
+    struct clat_config     clat_config;
+    gboolean               v6_changed;
+
+    if (l3cd && nm_l3_config_data_get_pref64(l3cd, &_l3cd_pref64_inner, &l3cd_pref64_plen)) {
+        l3cd_pref64 = &_l3cd_pref64_inner;
+    }
+
+    if (l3cd_pref64 && self->priv.p->clat_address_4 && self->priv.p->clat_address_6_valid) {
+        if (!self->priv.p->clat_bpf) {
+            _LOGT("clat: attaching the BPF program");
+
+            self->priv.p->clat_bpf = clat_bpf__open_and_load();
+            if (!self->priv.p->clat_bpf) {
+                libbpf_strerror(errno, buf, sizeof(buf));
+                _LOGW("clat: failed to open and load the BPF program: %s", buf);
+                return;
+            }
+
+            self->priv.p->clat_ingress_link =
+                bpf_program__attach_tcx(self->priv.p->clat_bpf->progs.clat_ingress,
+                                        self->priv.ifindex,
+                                        NULL);
+            if (!self->priv.p->clat_ingress_link) {
+                libbpf_strerror(errno, buf, sizeof(buf));
+                _LOGW("clat: failed to attach the ingress program: %s", buf);
+                return;
+            }
+
+            self->priv.p->clat_egress_link =
+                bpf_program__attach_tcx(self->priv.p->clat_bpf->progs.clat_egress,
+                                        self->priv.ifindex,
+                                        NULL);
+            if (!self->priv.p->clat_egress_link) {
+                libbpf_strerror(errno, buf, sizeof(buf));
+                _LOGW("clat: failed to attach the egress program: %s", buf);
+                return;
+            }
+
+            _LOGT("clat: program attached successfully");
+        }
+
+        /* Pass configuration to the BPF program */
+        memset(&clat_config, 0, sizeof(clat_config));
+        clat_config.local_v4.s_addr         = self->priv.p->clat_address_4->addr;
+        clat_config.local_v6                = self->priv.p->clat_address_6.address;
+        clat_config.pref64                  = *l3cd_pref64;
+        clat_config.pref64_len              = l3cd_pref64_plen;
+        self->priv.p->clat_bpf->bss->config = clat_config;
+
+        if (self->priv.p->clat_socket < 0) {
+            self->priv.p->clat_socket = socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
+            if (self->priv.p->clat_socket < 0) {
+                _LOGW("clat: couldn't create the socket: %s", nm_strerror_native(errno));
+            }
+        }
+        if (self->priv.p->clat_socket >= 0) {
+            err = setsockopt(self->priv.p->clat_socket,
+                             SOL_SOCKET,
+                             SO_BINDTOIFINDEX,
+                             &self->priv.ifindex,
+                             sizeof(self->priv.ifindex));
+            if (err < 0) {
+                _LOGW("clat: couldn't bind the socket: %s", nm_strerror_native(errno));
+            }
+        }
+
+        v6_changed =
+            (self->priv.p->clat_address_6_valid != self->priv.p->clat_address_6_committed_valid)
+            || (self->priv.p->clat_address_6_valid && self->priv.p->clat_address_6_committed_valid
+                && memcmp(&self->priv.p->clat_address_6.address,
+                          &self->priv.p->clat_address_6_committed.address,
+                          sizeof(self->priv.p->clat_address_6_committed.address)));
+
+        if (self->priv.p->clat_socket > 0 && v6_changed) {
+            struct ipv6_mreq mreq = {.ipv6mr_interface = self->priv.ifindex};
+
+            if (self->priv.p->clat_address_6_committed_valid) {
+                mreq.ipv6mr_multiaddr = self->priv.p->clat_address_6_committed.address;
+
+                err = setsockopt(self->priv.p->clat_socket,
+                                 SOL_IPV6,
+                                 IPV6_LEAVE_ANYCAST,
+                                 &mreq,
+                                 sizeof(mreq));
+                if (err < 0) {
+                    _LOGW("clat: couldn't leave the anycast group: %s", nm_strerror_native(errno));
+                }
+            }
+
+            if (self->priv.p->clat_address_6_valid) {
+                mreq.ipv6mr_multiaddr = self->priv.p->clat_address_6.address;
+
+                err = setsockopt(self->priv.p->clat_socket,
+                                 SOL_IPV6,
+                                 IPV6_JOIN_ANYCAST,
+                                 &mreq,
+                                 sizeof(mreq));
+                if (err < 0) {
+                    _LOGW("clat: couldn't join the anycast group: %s", nm_strerror_native(errno));
+                }
+            }
+        }
+    } else {
+        if (self->priv.p->clat_bpf) {
+            _l3_clat_destroy(self);
+        }
+
+        /* Committed will get cleaned up below */
+        self->priv.p->clat_address_6_valid = FALSE;
+
+        nm_clear_fd(&self->priv.p->clat_socket);
+
+        /* Deallocate the v4 address. Committed address will get cleaned up below,
+           but we need to make sure there's no double-free */
+        if (self->priv.p->clat_address_4 != self->priv.p->clat_address_4_committed) {
+            nm_clear_pointer(&self->priv.p->clat_address_4, nm_netns_ip_reservation_release);
+        } else {
+            self->priv.p->clat_address_4 = NULL;
+        }
+    }
+
+    /* Record the new state */
+    if (self->priv.p->clat_address_4_committed != self->priv.p->clat_address_4) {
+        nm_clear_pointer(&self->priv.p->clat_address_4_committed, nm_netns_ip_reservation_release);
+        self->priv.p->clat_address_4_committed = self->priv.p->clat_address_4;
+    }
+    self->priv.p->clat_address_6_committed       = self->priv.p->clat_address_6;
+    self->priv.p->clat_address_6_committed_valid = self->priv.p->clat_address_6_valid;
+}
+#endif /* HAVE_CLAT */
+
 static void
 _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
 {
@@ -5460,6 +5885,10 @@ _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
     _l3_commit_mptcp(self, commit_type);
 
     _l3_acd_data_process_changes(self);
+
+#if HAVE_CLAT
+    _l3_commit_pref64(self, commit_type);
+#endif /* HAVE_CLAT */
 
     nm_assert(self->priv.p->commit_reentrant_count == 1);
     self->priv.p->commit_reentrant_count--;
@@ -5842,6 +6271,10 @@ nm_l3cfg_init(NML3Cfg *self)
 {
     self->priv.p = G_TYPE_INSTANCE_GET_PRIVATE(self, NM_TYPE_L3CFG, NML3CfgPrivate);
 
+#if HAVE_CLAT
+    self->priv.p->clat_socket = -1;
+#endif /* HAVE_CLAT */
+
     c_list_init(&self->priv.p->acd_lst_head);
     c_list_init(&self->priv.p->acd_event_notify_lst_head);
     c_list_init(&self->priv.p->commit_type_lst_head);
@@ -5950,6 +6383,14 @@ finalize(GObject *object)
     if (changed)
         nmp_global_tracker_sync_mptcp_addrs(self->priv.global_tracker, FALSE);
 
+#if HAVE_CLAT
+    self->priv.p->clat_address_4_committed = NULL;
+    nm_clear_pointer(&self->priv.p->clat_address_4, nm_netns_ip_reservation_release);
+    nm_clear_fd(&self->priv.p->clat_socket);
+    if (self->priv.p->clat_bpf) {
+        _l3_clat_destroy(self);
+    }
+#endif
     g_clear_object(&self->priv.netns);
     g_clear_object(&self->priv.platform);
     nm_clear_pointer(&self->priv.global_tracker, nmp_global_tracker_unref);

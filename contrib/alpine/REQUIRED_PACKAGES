@@ -8,6 +8,7 @@ apk add \
     'alpine-sdk' \
     'autoconf' \
     'bash' \
+    'bpftool' \
     'clang' \
     'curl-dev' \
     'dbus' \
@@ -23,6 +24,7 @@ apk add \
     'iproute2' \
     'iptables' \
     'jansson-dev' \
+    'libbpf-dev' \
     'libgudev-dev' \
     'libndp-dev' \
     'libnvme-dev' \
