@@ -27,7 +27,7 @@
 #   * Run in a "clean" environment, i.e. no unusual environment variables set, on a recent
 #     Fedora, with suitable dependencies installed.
 #
-#   * First, ensure that you have a valid Gitlab's private token for gitlab.freedestkop.org
+#   * First, ensure that you have a valid Gitlab's private token for gitlab.freedesktop.org
 #     stored in ~/.config/nm-release-token, or pass one with --gitlab-token argument.
 #     Also, ensure you have a GPG key that you want to use for signing. Also, have gpg-agent running
 #     and possibly configure `git config --get user.signingkey` for the proper key.
@@ -155,8 +155,6 @@ set_version_number() {
 
 check_news() {
     local mode="$1"
-    shift
-    local ver_arr=("$@")
 
     case "$mode" in
         major|minor)
@@ -361,7 +359,7 @@ if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
     cmp <(git show "$ORIGIN/main:contrib/fedora/rpm/release.sh") "$BASH_SOURCE_ABSOLUTE" || die "$BASH_SOURCE is not identical to \`git show \"$ORIGIN/main:contrib/fedora/rpm/release.sh\"\`"
 fi
 
-if ! check_news "$RELEASE_MODE" "@{VERSION_ARR[@]}" ; then
+if ! check_news "$RELEASE_MODE"; then
     if [ "$CHECK_NEWS" == 1 ]; then
         die "NEWS file needs update to mention stable release (skip check with --no-check-news)"
     fi
@@ -409,31 +407,36 @@ if [ $CHECK_GITLAB = 1 ]; then
     fi
 fi
 
-PUSH_REFS=()
-BUILD_VERSION=
-
+# Work on a temporary branch
 CLEANUP_CHECKOUT_BRANCH="$CUR_BRANCH"
-
 git checkout -B "$TMP_BRANCH"
 CLEANUP_REFS+=("refs/heads/$TMP_BRANCH")
 
 case "$RELEASE_MODE" in
     minor)
-        BUILD_VERSION="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 1))"
+        # Version is already correct in meson.build
+        BUILD_VERSION="$VERSION_STR"
+        NEXT_VERSION="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$((${VERSION_ARR[2]} + 1))"
         ;;
     devel)
-        BUILD_VERSION="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 1))"
-        BUILD_VERSION_DESCR="$BUILD_VERSION (development)"
-        BUILD_VERSION="${BUILD_VERSION}-dev"
-        ;;
-    rc1)
-        BUILD_VERSION="${VERSION_ARR[0]}.$(("${VERSION_ARR[1]}" + 1))-rc1"
+        # Version is already correct in meson.build
+        BUILD_VERSION="$VERSION_STR"
+        NEXT_VERSION="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$((${VERSION_ARR[2]} + 1))-dev"
         ;;
     rc)
-        BUILD_VERSION="${VERSION_ARR[0]}.${VERSION_ARR[1]}-rc$(( $RC_VERSION + 1 ))"
+        # Version is already correct in meson.build
+        BUILD_VERSION="$VERSION_STR"
+        NEXT_VERSION="${VERSION_ARR[0]}.${VERSION_ARR[1]}-rc$((RC_VERSION + 1))"
+        ;;
+    rc1)
+        # Current version is wrong (dev version), need to set rc1 version
+        BUILD_VERSION="${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 1))-rc1"
+        NEXT_VERSION="${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 1))-rc2"
         ;;
     major)
+        # Current version is wrong (rc version), need to set major version
         BUILD_VERSION="${VERSION_ARR[0]}.${VERSION_ARR[1]}.0"
+        NEXT_VERSION="${VERSION_ARR[0]}.${VERSION_ARR[1]}.1"
         ;;
     major-post)
         # We create a merge commit with the content of current "main", with two
@@ -448,9 +451,9 @@ case "$RELEASE_MODE" in
         git commit --amend -m tmp -a || die "failed to commit major version bump"
         test x = "x$(git diff main HEAD)" || die "there is a diff after merge!"
 
-        BUILD_VERSION="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 1))"
-        BUILD_VERSION_DESCR="$BUILD_VERSION (development)"
-        BUILD_VERSION="${BUILD_VERSION}-dev"
+        # Version is already correct in meson.build
+        BUILD_VERSION="$VERSION_STR"
+        NEXT_VERSION="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$((${VERSION_ARR[2]} + 1))-dev"
         ;;
     *)
         die "Release mode $RELEASE_MODE not yet implemented"
@@ -458,49 +461,63 @@ case "$RELEASE_MODE" in
 esac
 
 build_version() {
+    local CURR_VERSION="$(get_version)"
     local BUILD_VERSION="$1"
-    local BUILD_VERSION_DESCR="$2"
+    local NEXT_VERSION="$2"
+    local BUILD_VERSION_DESCR="${BUILD_VERSION/-dev/ (development)}"
+    local NEXT_VERSION_DESCR="${NEXT_VERSION/-dev/ (development)}"
     local TAR_FILE="NetworkManager-$BUILD_VERSION.tar.xz"
     local SUM_FILE="$TAR_FILE.sha256sum"
 
-    set_version_number "$BUILD_VERSION"
-    git commit -m "release: bump version to $BUILD_VERSION_DESCR" -a || die "failed to commit release"
-    git tag -s -a -m "Release $BUILD_VERSION_DESCR" "$BUILD_VERSION" HEAD || die "failed to tag release"
+    # The current version is usually already correct, except for rc1 and major. Bump version in those cases.
+    if [[ "$BUILD_VERSION" != "$CURR_VERSION" ]]; then
+        set_version_number "$BUILD_VERSION"
+        git commit -m "release: bump version to $BUILD_VERSION_DESCR" -a || die "failed to commit release"
+    fi
 
+    # Tag the release
+    git tag -s -a -m "Release $BUILD_VERSION_DESCR" "$BUILD_VERSION" HEAD || die "failed to tag release"
     PUSH_REFS+=("$BUILD_VERSION")
     CLEANUP_REFS+=("refs/tags/$BUILD_VERSION")
 
-    git checkout "$BUILD_VERSION" || die "failed to checkout $BUILD_VERSION"
+    # Build to get the tarball for the release
     ./contrib/fedora/rpm/build_clean.sh -r || die "build release failed"
     cp "./build/meson-dist/$TAR_FILE" /tmp/ || die "failed to copy $TAR_FILE to /tmp"
     cp "./build/meson-dist/$SUM_FILE" /tmp/ || die "failed to copy $SUM_FILE to /tmp"
     git clean -fdx
 
+    # Store the release version for later use
     RELEASE_VERSIONS+=("$BUILD_VERSION")
+
+    # Bump to next version, so that build between now and the next release has the next version already.
+    # Otherwise the macros in nm_version.h don't work correctly.
+    set_version_number "$NEXT_VERSION"
+    git commit -m "release: bump version to $NEXT_VERSION_DESCR" -a || die "failed to commit version bump"
 }
 
+# Build and create tarball. Bump version as needed.
+PUSH_REFS=()
 RELEASE_VERSIONS=()
-if [ -n "$BUILD_VERSION" ]; then
-    build_version "$BUILD_VERSION" "${BUILD_VERSION_DESCR:-$BUILD_VERSION}"
-fi
-git checkout -B "$CUR_BRANCH" "$TMP_BRANCH" || die "cannot checkout $CUR_BRANCH"
-
-PUSH_REFS+=( "$CUR_BRANCH" )
+build_version "$BUILD_VERSION" "$NEXT_VERSION"
 
 if [ "$RELEASE_MODE" = rc1 ]; then
-    git branch "$RELEASE_BRANCH" "$TMP_BRANCH" || die "cannot checkout $CUR_BRANCH"
+    # Create the release branch (nm-1-xx)
+    git branch "$RELEASE_BRANCH" "$TMP_BRANCH" || die "cannot checkout $RELEASE_BRANCH"
     PUSH_REFS+=( "$RELEASE_BRANCH" )
     CLEANUP_REFS+=( "refs/heads/$RELEASE_BRANCH" )
 
-    git checkout "$TMP_BRANCH"
+    # Go back to the commit of the rc1 release, nm-1-xx is one commit further now.
+    git checkout -B "$TMP_BRANCH" "$BUILD_VERSION" || die "cannot checkout $TMP_BRANCH"
 
-    BUILD_VERSION="${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 2)).0"
-    BUILD_VERSION_DESCR="$BUILD_VERSION (development)"
-    BUILD_VERSION="${BUILD_VERSION}-dev"
-    build_version "$BUILD_VERSION" "$BUILD_VERSION_DESCR"
-
-    git checkout -B "$CUR_BRANCH" "$TMP_BRANCH" || die "cannot checkout $CUR_BRANCH"
+    # Second release for rc1: create new dev version on main
+    BUILD_VERSION="${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 2)).0-dev"
+    NEXT_VERSION="${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 2)).1-dev"
+    build_version "$BUILD_VERSION" "$NEXT_VERSION"
 fi
+
+# Work was done on the temporary branch, advance the real branch
+git checkout -B "$CUR_BRANCH" "$TMP_BRANCH" || die "cannot checkout $CUR_BRANCH"
+PUSH_REFS+=( "$CUR_BRANCH" )
 
 if [[ $GITLAB_TOKEN == "" ]]; then
     [[ -r ~/.config/nm-release-token ]] || die "cannot read ~/.config/nm-release-token"
@@ -514,8 +531,10 @@ if [ -z "$GITLAB_USER_ID" ] || [ "$GITLAB_USER_ID" = "null" ]; then
     die "failed to authenticate to gitlab.freedesktop.org with the private token"
 fi
 
+# Push the modified branches and tags to the origin repository
 do_command git push "$ORIGIN" "${PUSH_REFS[@]}" || die "failed to to push branches ${PUSH_REFS[@]} to $ORIGIN"
 
+# Create the releases
 CREATE_RELEASE_FAIL=0
 for BUILD_VERSION in "${RELEASE_VERSIONS[@]}"; do
     TAR_FILE="NetworkManager-$BUILD_VERSION.tar.xz"
@@ -571,7 +590,7 @@ for BUILD_VERSION in "${RELEASE_VERSIONS[@]}"; do
 END
             )" || FAIL=1
 
-    if [[ $? != 0 ]]; then
+    if [[ $FAIL = 1 ]]; then
         fail_msg "failed to create NetworkManager $BUILD_VERSION release"
         CREATE_RELEASE_FAIL=1
         continue
