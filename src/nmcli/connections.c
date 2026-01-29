@@ -4,6 +4,7 @@
  */
 
 #include "libnm-client-aux-extern/nm-default-client.h"
+#include "nmcli.h"
 
 #include "connections.h"
 
@@ -1070,13 +1071,13 @@ const NmcMetaGenericInfo
     "," NM_SETTING_DCB_SETTING_NAME "," NM_SETTING_TUN_SETTING_NAME                    \
     "," NM_SETTING_IP_TUNNEL_SETTING_NAME "," NM_SETTING_MACSEC_SETTING_NAME           \
     "," NM_SETTING_MACVLAN_SETTING_NAME "," NM_SETTING_VXLAN_SETTING_NAME              \
-    "," NM_SETTING_VRF_SETTING_NAME "," NM_SETTING_WPAN_SETTING_NAME                   \
-    "," NM_SETTING_6LOWPAN_SETTING_NAME "," NM_SETTING_WIREGUARD_SETTING_NAME          \
-    "," NM_SETTING_LINK_SETTING_NAME "," NM_SETTING_PROXY_SETTING_NAME                 \
-    "," NM_SETTING_TC_CONFIG_SETTING_NAME "," NM_SETTING_SRIOV_SETTING_NAME            \
-    "," NM_SETTING_ETHTOOL_SETTING_NAME "," NM_SETTING_OVS_DPDK_SETTING_NAME           \
-    "," NM_SETTING_HOSTNAME_SETTING_NAME "," NM_SETTING_HSR_SETTING_NAME               \
-    "," NM_SETTING_IPVLAN_SETTING_NAME
+    "," NM_SETTING_GENEVE_SETTING_NAME "," NM_SETTING_VRF_SETTING_NAME                 \
+    "," NM_SETTING_WPAN_SETTING_NAME "," NM_SETTING_6LOWPAN_SETTING_NAME               \
+    "," NM_SETTING_WIREGUARD_SETTING_NAME "," NM_SETTING_LINK_SETTING_NAME             \
+    "," NM_SETTING_PROXY_SETTING_NAME "," NM_SETTING_TC_CONFIG_SETTING_NAME            \
+    "," NM_SETTING_SRIOV_SETTING_NAME "," NM_SETTING_ETHTOOL_SETTING_NAME              \
+    "," NM_SETTING_OVS_DPDK_SETTING_NAME "," NM_SETTING_HOSTNAME_SETTING_NAME          \
+    "," NM_SETTING_HSR_SETTING_NAME "," NM_SETTING_IPVLAN_SETTING_NAME
 /* NM_SETTING_DUMMY_SETTING_NAME NM_SETTING_WIMAX_SETTING_NAME */
 
 const NmcMetaGenericInfo *const nmc_fields_con_active_details_groups[] = {
@@ -1305,6 +1306,9 @@ usage_connection_add(void)
           "                  [dev <parent device (ifname or connection UUID)>]\n"
           "                  [source-port-min <0-65535>]\n"
           "                  [source-port-max <0-65535>]\n"
+          "                  [destination-port <0-65535>]\n\n"
+          "    geneve:       id <GENEVE ID>\n"
+          "                  remote <IP address>\n"
           "                  [destination-port <0-65535>]\n\n"
           "    wpan:         [short-addr <0x0000-0xffff>]\n"
           "                  [pan-id <0x0000-0xffff>]\n"
