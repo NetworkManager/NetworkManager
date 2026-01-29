@@ -3527,6 +3527,22 @@ nm_connection_get_setting_generic(NMConnection *connection)
 }
 
 /**
+ * nm_connection_get_setting_geneve:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingGeneve the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingGeneve if the connection contains one, otherwise NULL
+ *
+ * Since: 1.56, 1.54.4
+ **/
+NMSettingGeneve *
+nm_connection_get_setting_geneve(NMConnection *connection)
+{
+    return _nm_connection_get_setting_by_metatype(connection, NM_META_SETTING_TYPE_GENEVE);
+}
+
+/**
  * nm_connection_get_setting_gsm:
  * @connection: the #NMConnection
  *

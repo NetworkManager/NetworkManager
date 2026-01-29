@@ -2094,3 +2094,17 @@ global:
 	nm_utils_copy_cert_as_user;
 	nm_vpn_plugin_info_supports_safe_private_file_access;
 } libnm_1_54_2;
+
+libnm_1_54_4 {
+global:
+	nm_connection_get_setting_geneve;
+	nm_setting_geneve_df_get_type;
+	nm_setting_geneve_get_destination_port;
+	nm_setting_geneve_get_df;
+	nm_setting_geneve_get_id;
+	nm_setting_geneve_get_remote;
+	nm_setting_geneve_get_tos;
+	nm_setting_geneve_get_ttl;
+	nm_setting_geneve_get_type;
+	nm_setting_geneve_new;
+} libnm_1_54_3;

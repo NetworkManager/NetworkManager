@@ -27,6 +27,7 @@
 #include "nm-setting-dummy.h"
 #include "nm-setting-ethtool.h"
 #include "nm-setting-generic.h"
+#include "nm-setting-geneve.h"
 #include "nm-setting-gsm.h"
 #include "nm-setting-hostname.h"
 #include "nm-setting-hsr.h"
@@ -323,6 +324,13 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
             .setting_priority  = NM_SETTING_PRIORITY_HW_BASE,
             .setting_name      = NM_SETTING_GENERIC_SETTING_NAME,
             .get_setting_gtype = nm_setting_generic_get_type,
+        },
+    [NM_META_SETTING_TYPE_GENEVE] =
+        {
+            .meta_type         = NM_META_SETTING_TYPE_GENEVE,
+            .setting_priority  = NM_SETTING_PRIORITY_HW_BASE,
+            .setting_name      = NM_SETTING_GENEVE_SETTING_NAME,
+            .get_setting_gtype = nm_setting_geneve_get_type,
         },
     [NM_META_SETTING_TYPE_GSM] =
         {
@@ -655,6 +663,7 @@ const NMMetaSettingType nm_meta_setting_types_by_priority[] = {
     NM_META_SETTING_TYPE_CDMA,
     NM_META_SETTING_TYPE_DUMMY,
     NM_META_SETTING_TYPE_GENERIC,
+    NM_META_SETTING_TYPE_GENEVE,
     NM_META_SETTING_TYPE_GSM,
     NM_META_SETTING_TYPE_HSR,
     NM_META_SETTING_TYPE_INFINIBAND,

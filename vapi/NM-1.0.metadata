@@ -29,6 +29,7 @@ SETTING_DNS_OPTION_*        parent="NM.SettingDnsOption"            name="SETTIN
 SETTING_DUMMY_*             parent="NM.SettingDummy"                name="SETTING_DUMMY_(.+)"
 SETTING_ETHTOOL_*           parent="NM.SettingEthtool"              name="SETTING_ETHTOOL_(.+)"
 SETTING_GENERIC_*           parent="NM.SettingGeneric"              name="SETTING_GENERIC_(.+)"
+SETTING_GENEVE_*            parent="NM.SettingGeneve"               name="SETTING_GENEVE_(.+)"
 SETTING_GSM_*               parent="NM.SettingGsm"                  name="SETTING_GSM_(.+)"
 SETTING_HOSTNAME_*          parent="NM.SettingHostname"             name="SETTING_HOSTNAME_(.+)"
 SETTING_HSR_*               parent="NM.SettingHsr"                  name="SETTING_HSR_(.+)"

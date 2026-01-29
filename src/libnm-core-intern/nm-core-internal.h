@@ -37,6 +37,7 @@
 #include "nm-setting-dcb.h"
 #include "nm-setting-dummy.h"
 #include "nm-setting-generic.h"
+#include "nm-setting-geneve.h"
 #include "nm-setting-gsm.h"
 #include "nm-setting-hsr.h"
 #include "nm-setting-hostname.h"
