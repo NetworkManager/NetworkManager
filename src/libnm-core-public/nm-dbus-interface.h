@@ -36,6 +36,7 @@
 #define NM_DBUS_INTERFACE_DEVICE_BRIDGE        NM_DBUS_INTERFACE_DEVICE ".Bridge"
 #define NM_DBUS_INTERFACE_DEVICE_DUMMY         NM_DBUS_INTERFACE_DEVICE ".Dummy"
 #define NM_DBUS_INTERFACE_DEVICE_GENERIC       NM_DBUS_INTERFACE_DEVICE ".Generic"
+#define NM_DBUS_INTERFACE_DEVICE_GENEVE        NM_DBUS_INTERFACE_DEVICE ".Geneve"
 #define NM_DBUS_INTERFACE_DEVICE_GRE           NM_DBUS_INTERFACE_DEVICE ".Gre"
 #define NM_DBUS_INTERFACE_DEVICE_HSR           NM_DBUS_INTERFACE_DEVICE ".Hsr"
 #define NM_DBUS_INTERFACE_DEVICE_INFINIBAND    NM_DBUS_INTERFACE_DEVICE ".Infiniband"
@@ -250,6 +251,7 @@ typedef enum {
  * @NM_DEVICE_TYPE_LOOPBACK: a loopback interface. Since: 1.42.
  * @NM_DEVICE_TYPE_HSR: A HSR/PRP device. Since: 1.46.
  * @NM_DEVICE_TYPE_IPVLAN: A IPVLAN device. Since: 1.52.
+ * @NM_DEVICE_TYPE_GENEVE: A GENEVE device. Since: 1.58, 1.56.1.
  *
  * #NMDeviceType values indicate the type of hardware represented by a
  * device object.
@@ -290,6 +292,7 @@ typedef enum {
     NM_DEVICE_TYPE_LOOPBACK      = 32,
     NM_DEVICE_TYPE_HSR           = 33,
     NM_DEVICE_TYPE_IPVLAN        = 34,
+    NM_DEVICE_TYPE_GENEVE        = 35,
 } NMDeviceType;
 
 /**

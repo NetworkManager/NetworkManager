@@ -5900,7 +5900,6 @@ nm_device_get_route_metric_default(NMDeviceType device_type)
      * in some aspects a VPN. */
     case NM_DEVICE_TYPE_WIREGUARD:
         return NM_VPN_ROUTE_METRIC_DEFAULT;
-
     case NM_DEVICE_TYPE_ETHERNET:
     case NM_DEVICE_TYPE_VETH:
         return 100;
@@ -5934,6 +5933,8 @@ nm_device_get_route_metric_default(NMDeviceType device_type)
         return 470;
     case NM_DEVICE_TYPE_VXLAN:
         return 500;
+    case NM_DEVICE_TYPE_GENEVE:
+        return 525;
     case NM_DEVICE_TYPE_DUMMY:
         return 550;
     case NM_DEVICE_TYPE_WIFI:
@@ -19535,7 +19536,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         nm_assert(priv->type == NM_DEVICE_TYPE_UNKNOWN);
         priv->type = g_value_get_uint(value);
         nm_assert(priv->type > NM_DEVICE_TYPE_UNKNOWN);
-        nm_assert(priv->type <= NM_DEVICE_TYPE_IPVLAN);
+        nm_assert(priv->type <= NM_DEVICE_TYPE_GENEVE);
         break;
     case PROP_LINK_TYPE:
         /* construct-only */
