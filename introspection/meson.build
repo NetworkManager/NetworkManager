@@ -15,6 +15,7 @@ ifaces = [
   'org.freedesktop.NetworkManager.Device.Bridge',
   'org.freedesktop.NetworkManager.Device.Dummy',
   'org.freedesktop.NetworkManager.Device.Generic',
+  'org.freedesktop.NetworkManager.Device.Geneve',
   'org.freedesktop.NetworkManager.Device.Hsr',
   'org.freedesktop.NetworkManager.Device.IPTunnel',
   'org.freedesktop.NetworkManager.Device.Infiniband',
