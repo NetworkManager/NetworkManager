@@ -1190,33 +1190,6 @@ nmp_ethtool_ioctl_supports_vlans(int ifindex)
     return !(features->features[block].active & (1 << bit));
 }
 
-int
-nmp_ethtool_ioctl_get_peer_ifindex(int ifindex)
-{
-    nm_auto_socket_handle SocketHandle shandle = SOCKET_HANDLE_INIT(ifindex);
-    gsize                              stats_len;
-    gs_free struct ethtool_stats      *stats_free = NULL;
-    struct ethtool_stats              *stats;
-    int                                peer_ifindex_stat;
-
-    g_return_val_if_fail(ifindex > 0, 0);
-
-    peer_ifindex_stat = ethtool_get_stringset_index(&shandle, ETH_SS_STATS, "peer_ifindex");
-    if (peer_ifindex_stat < 0) {
-        nm_log_dbg(LOGD_PLATFORM, "ethtool[%d]: peer_ifindex stat does not exist?", ifindex);
-        return FALSE;
-    }
-
-    stats_len      = sizeof(*stats) + (peer_ifindex_stat + 1) * sizeof(guint64);
-    stats          = nm_malloc0_maybe_a(300, stats_len, &stats_free);
-    stats->cmd     = ETHTOOL_GSTATS;
-    stats->n_stats = peer_ifindex_stat + 1;
-    if (_ethtool_call_handle(&shandle, stats, stats_len) < 0)
-        return 0;
-
-    return stats->data[peer_ifindex_stat];
-}
-
 gboolean
 nmp_ethtool_ioctl_get_wake_on_lan(int ifindex)
 {
