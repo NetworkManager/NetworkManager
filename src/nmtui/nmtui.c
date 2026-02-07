@@ -75,12 +75,11 @@ main_list_activated(NmtNewtWidget *widget, NmtNewtListbox *listbox)
 static NmtNewtForm *
 nmtui_main(gboolean is_top, int argc, char **argv)
 {
-    NmtNewtForm      *form;
-    NmtNewtWidget    *widget, *ok;
-    NmtNewtGrid      *grid;
-    NmtNewtListbox   *listbox;
-    NmtNewtButtonBox *bbox;
-    int               i;
+    NmtNewtForm    *form;
+    NmtNewtWidget  *widget;
+    NmtNewtGrid    *grid;
+    NmtNewtListbox *listbox;
+    int             i;
 
     form = g_object_new(NMT_TYPE_NEWT_FORM, "title", _("NetworkManager TUI"), NULL);
 
@@ -107,13 +106,6 @@ nmtui_main(gboolean is_top, int argc, char **argv)
     }
     nmt_newt_listbox_append(listbox, "", NULL);
     nmt_newt_listbox_append(listbox, _("Quit"), quit_func);
-
-    widget = nmt_newt_button_box_new(NMT_NEWT_BUTTON_BOX_HORIZONTAL);
-    nmt_newt_grid_add(grid, widget, 0, 2);
-    bbox = NMT_NEWT_BUTTON_BOX(widget);
-
-    ok = nmt_newt_button_box_add_end(bbox, _("OK"));
-    g_signal_connect(ok, "activated", G_CALLBACK(main_list_activated), listbox);
 
     toplevel_form = form;
 
