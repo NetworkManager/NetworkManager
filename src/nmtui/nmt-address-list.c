@@ -112,7 +112,7 @@ strings_transform_from_entry(GBinding     *binding,
 static gboolean
 hostname_filter(NmtNewtEntry *entry, const char *text, int ch, int position, gpointer user_data)
 {
-    return g_ascii_isalnum(ch) || ch == '.' || ch == '-';
+    return g_ascii_isalnum(ch) || ch == '.' || ch == '-' || ch == '~';
 }
 
 static NmtNewtWidget *
