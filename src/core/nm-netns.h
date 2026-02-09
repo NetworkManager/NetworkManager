@@ -109,4 +109,11 @@ void nm_netns_watcher_add(NMNetns                  *self,
 void nm_netns_watcher_remove_all(NMNetns *self, gconstpointer tag);
 void nm_netns_watcher_remove_dirty(NMNetns *self, gconstpointer tag);
 
+/*****************************************************************************/
+
+gboolean nm_netns_nexthop_id_is_reserved(NMNetns *self, guint32 id);
+gboolean nm_netns_nexthop_id_reserve(NMNetns *self, guint32 id, gconstpointer tag);
+void     nm_netns_nexthop_id_release(NMNetns *self, guint32 id);
+void     nm_netns_nexthop_id_release_all(NMNetns *self, gconstpointer tag);
+
 #endif /* __NM_NETNS_H__ */
