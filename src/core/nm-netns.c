@@ -83,6 +83,11 @@ typedef struct {
      * by IP address. */
     GHashTable *watcher_ip_data_idx;
 
+    /* Tracks reserved nexthop IDs. Maps guint32 id -> gconstpointer tag.
+     * This is used to avoid nexthop ID collisions across different
+     * interfaces/ndisc instances within the same network namespace. */
+    GHashTable *nexthop_id_reserved;
+
     CList    l3cfg_signal_pending_lst_head;
     GSource *signal_pending_idle_source;
 } NMNetnsPrivate;
@@ -1523,6 +1528,76 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
 
 /*****************************************************************************/
 
+gboolean
+nm_netns_nexthop_id_is_reserved(NMNetns *self, guint32 id)
+{
+    NMNetnsPrivate *priv;
+
+    g_return_val_if_fail(NM_IS_NETNS(self), FALSE);
+    nm_assert(id != 0);
+
+    priv = NM_NETNS_GET_PRIVATE(self);
+    return g_hash_table_contains(priv->nexthop_id_reserved, GUINT_TO_POINTER(id));
+}
+
+gboolean
+nm_netns_nexthop_id_reserve(NMNetns *self, guint32 id, gconstpointer tag)
+{
+    NMNetnsPrivate *priv;
+    gpointer        existing_tag;
+
+    g_return_val_if_fail(NM_IS_NETNS(self), FALSE);
+    nm_assert(id != 0);
+    nm_assert(tag);
+
+    priv = NM_NETNS_GET_PRIVATE(self);
+
+    if (g_hash_table_lookup_extended(priv->nexthop_id_reserved,
+                                     GUINT_TO_POINTER(id),
+                                     NULL,
+                                     &existing_tag)) {
+        /* The ID is already reserved. If it's by the same tag, it's
+         * idempotent; otherwise it's a collision. */
+        return existing_tag == tag;
+    }
+
+    g_hash_table_insert(priv->nexthop_id_reserved, GUINT_TO_POINTER(id), (gpointer) tag);
+    return TRUE;
+}
+
+void
+nm_netns_nexthop_id_release(NMNetns *self, guint32 id)
+{
+    NMNetnsPrivate *priv;
+
+    g_return_if_fail(NM_IS_NETNS(self));
+    nm_assert(id != 0);
+
+    priv = NM_NETNS_GET_PRIVATE(self);
+    g_hash_table_remove(priv->nexthop_id_reserved, GUINT_TO_POINTER(id));
+}
+
+void
+nm_netns_nexthop_id_release_all(NMNetns *self, gconstpointer tag)
+{
+    NMNetnsPrivate *priv;
+    GHashTableIter  iter;
+    gpointer        value;
+
+    g_return_if_fail(NM_IS_NETNS(self));
+    nm_assert(tag);
+
+    priv = NM_NETNS_GET_PRIVATE(self);
+
+    g_hash_table_iter_init(&iter, priv->nexthop_id_reserved);
+    while (g_hash_table_iter_next(&iter, NULL, &value)) {
+        if (value == tag)
+            g_hash_table_iter_remove(&iter);
+    }
+}
+
+/*****************************************************************************/
+
 static void
 nm_netns_init(NMNetns *self)
 {
@@ -1547,6 +1622,8 @@ nm_netns_init(NMNetns *self)
                                                      (GDestroyNotify) _watcher_by_tag_destroy,
                                                      NULL);
     priv->watcher_ip_data_idx = g_hash_table_new(_watcher_ip_data_hash, _watcher_ip_data_equal);
+
+    priv->nexthop_id_reserved = g_hash_table_new(nm_direct_hash, NULL);
 }
 
 static void
@@ -1638,6 +1715,8 @@ dispose(GObject *object)
     nm_clear_pointer(&priv->watcher_idx, g_hash_table_destroy);
     nm_clear_pointer(&priv->watcher_by_tag_idx, g_hash_table_destroy);
     nm_clear_pointer(&priv->watcher_ip_data_idx, g_hash_table_destroy);
+
+    nm_clear_pointer(&priv->nexthop_id_reserved, g_hash_table_destroy);
 
     nm_clear_g_source_inst(&priv->signal_pending_idle_source);
 
