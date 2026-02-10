@@ -194,15 +194,15 @@ typedef enum _nm_packed {
     NMP_OBJECT_TYPE_MAX = __NMP_OBJECT_TYPE_LAST - 1,
 } NMPObjectType;
 
-static inline guint32
+static inline guint64
 nmp_object_type_to_flags(NMPObjectType obj_type)
 {
-    G_STATIC_ASSERT_EXPR(NMP_OBJECT_TYPE_MAX < 32);
+    G_STATIC_ASSERT_EXPR(NMP_OBJECT_TYPE_MAX < 64);
 
     nm_assert(_NM_INT_NOT_NEGATIVE(obj_type));
     nm_assert(obj_type < NMP_OBJECT_TYPE_MAX);
 
-    return ((guint32) 1u) << obj_type;
+    return ((guint64) 1u) << obj_type;
 }
 
 /*****************************************************************************/

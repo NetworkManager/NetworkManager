@@ -1230,7 +1230,7 @@ out:
 }
 
 gboolean
-nmtstp_check_platform_full(NMPlatform *platform, guint32 obj_type_flags, gboolean do_assert)
+nmtstp_check_platform_full(NMPlatform *platform, guint64 obj_type_flags, gboolean do_assert)
 {
     static const NMPObjectType obj_types[] = {
         NMP_OBJECT_TYPE_IP4_ADDRESS,
@@ -1265,7 +1265,7 @@ nmtstp_check_platform_full(NMPlatform *platform, guint32 obj_type_flags, gboolea
 
     for (i_obj_types = 0; i_obj_types < (int) G_N_ELEMENTS(obj_types); i_obj_types++) {
         const NMPObjectType          obj_type         = obj_types[i_obj_types];
-        const guint32                i_obj_type_flags = nmp_object_type_to_flags(obj_type);
+        const guint64                i_obj_type_flags = nmp_object_type_to_flags(obj_type);
         gs_unref_ptrarray GPtrArray *arr1             = NULL;
         gs_unref_ptrarray GPtrArray *arr2             = NULL;
         NMPLookup                    lookup;
@@ -1408,7 +1408,7 @@ nmtstp_check_platform_full(NMPlatform *platform, guint32 obj_type_flags, gboolea
 }
 
 void
-nmtstp_check_platform(NMPlatform *platform, guint32 obj_type_flags)
+nmtstp_check_platform(NMPlatform *platform, guint64 obj_type_flags)
 {
     if (!nmtstp_check_platform_full(platform, obj_type_flags, FALSE)) {
         /* It's unclear why this failure sometimes happens. It happens
