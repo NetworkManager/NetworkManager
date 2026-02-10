@@ -54,7 +54,7 @@ G_DEFINE_ABSTRACT_TYPE(NMIPConfig, nm_ip_config, NM_TYPE_DBUS_OBJECT)
 
 /*****************************************************************************/
 
-static void _handle_platform_change(NMIPConfig *self, guint32 obj_type_flags, gboolean is_init);
+static void _handle_platform_change(NMIPConfig *self, guint64 obj_type_flags, gboolean is_init);
 static void _handle_l3cd_changed(NMIPConfig *self, const NML3ConfigData *l3cd);
 
 /*****************************************************************************/
@@ -75,7 +75,7 @@ static void
 _notify_platform_handle(NMIPConfig *self, gint64 now_msec)
 {
     NMIPConfigPrivate *priv = NM_IP_CONFIG_GET_PRIVATE(self);
-    guint32            obj_type_flags;
+    guint64            obj_type_flags;
 
     nm_clear_g_source_inst(&priv->notify_platform_timeout_source);
 
@@ -96,7 +96,7 @@ _notify_platform_cb(gpointer user_data)
 }
 
 static void
-_notify_platform(NMIPConfig *self, guint32 obj_type_flags)
+_notify_platform(NMIPConfig *self, guint64 obj_type_flags)
 {
     const int          addr_family = nm_ip_config_get_addr_family(self);
     const int          IS_IPv4     = NM_IS_IPv4(addr_family);
@@ -844,7 +844,7 @@ _handle_l3cd_changed(NMIPConfig *self, const NML3ConfigData *l3cd)
 }
 
 static void
-_handle_platform_change(NMIPConfig *self, guint32 obj_type_flags, gboolean is_init)
+_handle_platform_change(NMIPConfig *self, guint64 obj_type_flags, gboolean is_init)
 {
     const int                    addr_family = nm_ip_config_get_addr_family(self);
     const int                    IS_IPv4     = NM_IS_IPv4(addr_family);

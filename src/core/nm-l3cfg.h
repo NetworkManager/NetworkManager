@@ -178,7 +178,7 @@ typedef struct {
         } platform_change;
 
         struct {
-            guint32 obj_type_flags;
+            guint64 obj_type_flags;
         } platform_change_on_idle;
 
         struct {
@@ -207,7 +207,7 @@ struct _NML3Cfg {
      * NML3Cfg instance. We track some per-l3cfg-data that is only
      * relevant to NMNetns here. */
     struct {
-        guint32 signal_pending_obj_type_flags;
+        guint64 signal_pending_obj_type_flags;
         CList   signal_pending_lst;
         CList   ecmp_track_ifindex_lst_head;
     } internal_netns;
@@ -223,7 +223,7 @@ NML3Cfg *nm_l3cfg_new(NMNetns *netns, int ifindex);
 
 gboolean nm_l3cfg_is_ready(NML3Cfg *self);
 
-void _nm_l3cfg_notify_platform_change_on_idle(NML3Cfg *self, guint32 obj_type_flags);
+void _nm_l3cfg_notify_platform_change_on_idle(NML3Cfg *self, guint64 obj_type_flags);
 
 void _nm_l3cfg_notify_platform_change(NML3Cfg                   *self,
                                       NMPlatformSignalChangeType change_type,
