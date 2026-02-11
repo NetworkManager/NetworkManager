@@ -2114,6 +2114,9 @@ global:
 	nm_device_geneve_get_tos;
 	nm_device_geneve_get_ttl;
 	nm_device_geneve_get_type;
+	nm_device_managed_flags_get_type;
+	nm_device_set_managed_async;
+	nm_device_set_managed_finish;
 	nm_setting_geneve_df_get_type;
 	nm_setting_geneve_get_destination_port;
 	nm_setting_geneve_get_df;

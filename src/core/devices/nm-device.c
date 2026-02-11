@@ -14842,6 +14842,109 @@ impl_device_get_applied_connection(NMDBusObject                      *obj,
 
 /*****************************************************************************/
 
+typedef struct {
+    gboolean             managed_state;
+    NMDeviceManagedFlags managed_flags;
+} SetManagedData;
+
+static gboolean
+set_managed(NMDevice *self, gboolean managed, NMDeviceManagedFlags flags, GError **error)
+{
+    nm_assert((flags & ~NM_DEVICE_MANAGED_FLAGS_ALL) == 0);
+
+    g_object_set(self, NM_DEVICE_MANAGED, managed, NULL);
+
+    return TRUE;
+}
+
+static void
+set_managed_cb(NMDevice              *self,
+               GDBusMethodInvocation *context,
+               NMAuthSubject         *subject,
+               GError                *error,
+               gpointer               user_data)
+{
+    SetManagedData      *set_managed_data = user_data;
+    gboolean             managed;
+    NMDeviceManagedFlags flags;
+    GError              *local = NULL;
+
+    managed = set_managed_data->managed_state;
+    flags   = set_managed_data->managed_flags;
+    nm_g_slice_free(set_managed_data);
+
+    if (!error && (flags & ~NM_DEVICE_MANAGED_FLAGS_ALL) != 0) {
+        g_set_error_literal(&error,
+                            NM_DEVICE_ERROR,
+                            NM_DEVICE_ERROR_INVALID_ARGUMENT,
+                            "Invalid flags");
+    }
+
+    if (error) {
+        nm_audit_log_device_op(NM_AUDIT_OP_DEVICE_MANAGED,
+                               self,
+                               FALSE,
+                               NULL,
+                               subject,
+                               error->message);
+        g_dbus_method_invocation_return_gerror(context, error);
+        return;
+    }
+
+    if (!set_managed(self, managed, flags, &local)) {
+        nm_audit_log_device_op(NM_AUDIT_OP_DEVICE_MANAGED,
+                               self,
+                               FALSE,
+                               NULL,
+                               subject,
+                               local->message);
+        g_dbus_method_invocation_take_error(context, g_steal_pointer(&local));
+        return;
+    }
+
+    nm_audit_log_device_op(NM_AUDIT_OP_DEVICE_MANAGED, self, TRUE, NULL, subject, NULL);
+    g_dbus_method_invocation_return_value(context, NULL);
+}
+
+static void
+impl_device_set_managed(NMDBusObject                      *obj,
+                        const NMDBusInterfaceInfoExtended *interface_info,
+                        const NMDBusMethodInfoExtended    *method_info,
+                        GDBusConnection                   *connection,
+                        const char                        *sender,
+                        GDBusMethodInvocation             *invocation,
+                        GVariant                          *parameters)
+{
+    NMDevice             *self  = NM_DEVICE(obj);
+    gs_free_error GError *error = NULL;
+    gboolean              managed;
+    guint32               flags_u;
+    NMDeviceManagedFlags  flags;
+    SetManagedData       *set_managed_data;
+
+    g_variant_get(parameters, "(bu)", &managed, &flags_u);
+
+    flags = flags_u;
+    nm_assert(flags == flags_u);
+
+    set_managed_data  = g_slice_new(SetManagedData);
+    *set_managed_data = (SetManagedData) {
+        .managed_state = managed,
+        .managed_flags = flags,
+    };
+
+    nm_device_auth_request(self,
+                           invocation,
+                           nm_device_get_applied_connection(self),
+                           NM_AUTH_PERMISSION_NETWORK_CONTROL,
+                           TRUE,
+                           NULL,
+                           set_managed_cb,
+                           set_managed_data);
+}
+
+/*****************************************************************************/
+
 static void
 disconnect_cb(NMDevice              *self,
               GDBusMethodInvocation *context,
@@ -19865,6 +19968,12 @@ static const NMDBusInterfaceInfoExtended interface_info_device = {
                         NM_DEFINE_GDBUS_ARG_INFO("connection", "a{sa{sv}}"),
                         NM_DEFINE_GDBUS_ARG_INFO("version_id", "t"), ), ),
                 .handle = impl_device_get_applied_connection, ),
+            NM_DEFINE_DBUS_METHOD_INFO_EXTENDED(
+                NM_DEFINE_GDBUS_METHOD_INFO_INIT("SetManaged",
+                                                 .in_args = NM_DEFINE_GDBUS_ARG_INFOS(
+                                                     NM_DEFINE_GDBUS_ARG_INFO("managed", "b"),
+                                                     NM_DEFINE_GDBUS_ARG_INFO("flags", "u"), ), ),
+                .handle = impl_device_set_managed, ),
             NM_DEFINE_DBUS_METHOD_INFO_EXTENDED(NM_DEFINE_GDBUS_METHOD_INFO_INIT("Disconnect", ),
                                                 .handle = impl_device_disconnect, ),
             NM_DEFINE_DBUS_METHOD_INFO_EXTENDED(NM_DEFINE_GDBUS_METHOD_INFO_INIT("Delete", ),
