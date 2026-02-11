@@ -150,6 +150,15 @@ NM_AVAILABLE_IN_1_2
 NM_DEPRECATED_IN_1_22
 _NM_DEPRECATED_SYNC_METHOD
 void nm_device_set_managed(NMDevice *device, gboolean managed);
+NM_AVAILABLE_IN_1_58
+void nm_device_set_managed_async(NMDevice            *device,
+                                 gboolean             managed,
+                                 NMDeviceManagedFlags flags,
+                                 GCancellable        *cancellable,
+                                 GAsyncReadyCallback  callback,
+                                 gpointer             user_data);
+NM_AVAILABLE_IN_1_58
+gboolean nm_device_set_managed_finish(NMDevice *device, GAsyncResult *result, GError **error);
 
 gboolean nm_device_get_autoconnect(NMDevice *device);
 
