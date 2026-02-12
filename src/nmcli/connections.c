@@ -5651,6 +5651,7 @@ connection_warnings(NmCli *nmc, NMConnection *connection)
     guint            i, found;
     const char      *id;
     const char      *deprecated;
+    gs_free char    *gw_warning = NULL;
 
     deprecated = nmc_connection_check_deprecated(NM_CONNECTION(connection));
     if (deprecated)
@@ -5679,6 +5680,10 @@ connection_warnings(NmCli *nmc, NMConnection *connection)
                      nm_connection_get_uuid(NM_CONNECTION(connection)),
                      found);
     }
+
+    gw_warning = nm_connection_get_unreachable_gateways_warning(connection, TRUE);
+    if (gw_warning)
+        nmc_printerr("Warning: %s.\n", gw_warning);
 }
 
 static void
