@@ -854,7 +854,8 @@ usage(void)
           "delete | monitor | wifi | lldp }\n\n"
           "  status\n\n"
           "  show [<ifname>]\n\n"
-          "  set [ifname] <ifname> [autoconnect yes|no] [managed yes|no]\n\n"
+          "  set [ifname] <ifname> [autoconnect yes|no] [managed [--permanent|--permanent-only] "
+          "yes|no|up|down|reset]\n\n"
           "  connect <ifname>\n\n"
           "  reapply <ifname>\n\n"
           "  modify <ifname> ([+|-]<setting>.<property> <value>)+\n\n"
@@ -972,14 +973,15 @@ usage_device_delete(void)
 static void
 usage_device_set(void)
 {
-    nmc_printerr(_("Usage: nmcli device set { ARGUMENTS | help }\n"
-                   "\n"
-                   "ARGUMENTS := DEVICE { PROPERTY [ PROPERTY ... ] }\n"
-                   "DEVICE    := [ifname] <ifname> \n"
-                   "PROPERTY  := { autoconnect { yes | no } |\n"
-                   "             { managed { yes | no }\n"
-                   "\n"
-                   "Modify device properties.\n\n"));
+    nmc_printerr(_(
+        "Usage: nmcli device set { ARGUMENTS | help }\n"
+        "\n"
+        "ARGUMENTS := DEVICE { PROPERTY [ PROPERTY ... ] }\n"
+        "DEVICE    := [ifname] <ifname> \n"
+        "PROPERTY  := { autoconnect { yes | no } |\n"
+        "             { managed [--permanent | --permanent-only] { yes | no | up | down | reset }\n"
+        "\n"
+        "Modify device properties.\n\n"));
 }
 
 static void
@@ -2796,17 +2798,18 @@ do_devices_delete(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
 static void
 do_device_set(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv)
 {
-#define DEV_SET_AUTOCONNECT 0
-#define DEV_SET_MANAGED     1
     NMDevice *device = NULL;
     int       i;
     struct {
         int      idx;
         gboolean value;
-    } values[2] = {
-        [DEV_SET_AUTOCONNECT] = {-1},
-        [DEV_SET_MANAGED]     = {-1},
-    };
+    } autoconnect_data = {-1};
+    struct {
+        int             idx;
+        NMDeviceManaged value;
+        guint32         flags;
+    } managed_data = {-1};
+
     gs_free_error GError *error = NULL;
 
     next_arg(nmc, &argc, &argv, NULL);
@@ -2828,49 +2831,120 @@ do_device_set(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *ar
 
     i = 0;
     do {
-        gboolean flag;
-
         if (argc == 1 && nmc->complete)
             nmc_complete_strings(*argv, "managed", "autoconnect");
 
         if (matches(*argv, "managed")) {
+            NMDeviceManaged val;
+            guint32         flags = 0;
+            gboolean        val_bool;
+            gboolean        perm = FALSE, perm_only = FALSE;
+
             argc--;
             argv++;
+
+            if (argc == 1 && nmc->complete) {
+                nmc_complete_strings(*argv,
+                                     "true",
+                                     "yes",
+                                     "on",
+                                     "false",
+                                     "no",
+                                     "off",
+                                     "up",
+                                     "down",
+                                     "reset",
+                                     "--permanent",
+                                     "--permanent-only");
+            }
+
+            if (managed_data.idx != -1) {
+                g_string_printf(nmc->return_text, _("Error: 'managed' can only be set once."));
+                nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+                return;
+            }
+
+            while (argc > 0) {
+                /* --perm matches with --permanent, the most common,
+                 * but --permanent-only requires a exact match */
+                if (nm_streq0(*argv, "--permanent-only"))
+                    perm_only = TRUE;
+                else if (matches(*argv, "--permanent"))
+                    perm = TRUE;
+                else
+                    break;
+                argc--;
+                argv++;
+            }
+
+            if (perm_only && perm) {
+                g_string_printf(
+                    nmc->return_text,
+                    _("Error: '--permanent-only' and '--permanent' cannot be used together."));
+                nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+                return;
+            } else if (perm) {
+                flags |= NM_DEVICE_MANAGED_FLAGS_RUNTIME | NM_DEVICE_MANAGED_FLAGS_PERMANENT;
+            } else if (perm_only) {
+                flags |= NM_DEVICE_MANAGED_FLAGS_PERMANENT;
+            } else {
+                /* If --permanent/--permanent-only are missing, set only the runtime flag, as this
+                 * is how it used to work when these options didn't exist. */
+                flags |= NM_DEVICE_MANAGED_FLAGS_RUNTIME;
+            }
+
             if (!argc) {
-                g_string_printf(nmc->return_text,
-                                _("Error: '%s' argument is missing."),
-                                *(argv - 1));
+                g_string_printf(nmc->return_text, _("Error: 'managed' argument is missing."));
                 nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
                 return;
             }
-            if (argc == 1 && nmc->complete)
-                nmc_complete_bool(*argv);
-            if (!nmc_string_to_bool(*argv, &flag, &error)) {
-                g_string_printf(nmc->return_text, _("Error: 'managed': %s."), error->message);
+
+            if (matches(*argv, "up") || matches(*argv, "down")) {
+                flags |= NM_DEVICE_MANAGED_FLAGS_SET_ADMIN_STATE;
+                val = matches(*argv, "up") ? NM_DEVICE_MANAGED_YES : NM_DEVICE_MANAGED_NO;
+            } else if (matches(*argv, "reset")) {
+                val = NM_DEVICE_MANAGED_RESET;
+            } else if (nmc_string_to_bool(*argv, &val_bool, NULL)) {
+                val = val_bool ? NM_DEVICE_MANAGED_YES : NM_DEVICE_MANAGED_NO;
+            } else {
+                g_string_printf(
+                    nmc->return_text,
+                    _("Error: 'managed': '%s' is not valid, use 'yes/no/up/down/reset'."),
+                    *argv);
                 nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
                 return;
             }
-            values[DEV_SET_MANAGED].idx   = ++i;
-            values[DEV_SET_MANAGED].value = flag;
+
+            managed_data.idx   = i++;
+            managed_data.value = val;
+            managed_data.flags = flags;
         } else if (matches(*argv, "autoconnect")) {
+            gboolean val;
+
             argc--;
             argv++;
+
             if (!argc) {
-                g_string_printf(nmc->return_text,
-                                _("Error: '%s' argument is missing."),
-                                *(argv - 1));
+                g_string_printf(nmc->return_text, _("Error: 'autoconnect' argument is missing."));
                 nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
                 return;
             }
+            if (autoconnect_data.idx != -1) {
+                g_string_printf(nmc->return_text, _("Error: 'autoconnect' can only be set once."));
+                nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+                return;
+            }
+
             if (argc == 1 && nmc->complete)
                 nmc_complete_bool(*argv);
-            if (!nmc_string_to_bool(*argv, &flag, &error)) {
+
+            if (!nmc_string_to_bool(*argv, &val, &error)) {
                 g_string_printf(nmc->return_text, _("Error: 'autoconnect': %s."), error->message);
                 nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
                 return;
             }
-            values[DEV_SET_AUTOCONNECT].idx   = ++i;
-            values[DEV_SET_AUTOCONNECT].value = flag;
+            autoconnect_data.idx   = i++;
+            autoconnect_data.value = val;
         } else {
             g_string_printf(nmc->return_text, _("Error: property '%s' is not known."), *argv);
             nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
@@ -2883,15 +2957,19 @@ do_device_set(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *ar
 
     /* when multiple properties are specified, set them in the order as they
      * are specified on the command line. */
-    if (values[DEV_SET_AUTOCONNECT].idx >= 0 && values[DEV_SET_MANAGED].idx >= 0
-        && values[DEV_SET_MANAGED].idx < values[DEV_SET_AUTOCONNECT].idx) {
-        nm_device_set_managed(device, values[DEV_SET_MANAGED].value);
-        values[DEV_SET_MANAGED].idx = -1;
+    for (i = 0; i < 2; i++) {
+        if (autoconnect_data.idx == i) {
+            nm_device_set_autoconnect(device, autoconnect_data.value);
+        }
+        if (managed_data.idx == i) {
+            nm_device_set_managed_async(device,
+                                        managed_data.value,
+                                        managed_data.flags,
+                                        NULL,
+                                        NULL,
+                                        NULL);
+        }
     }
-    if (values[DEV_SET_AUTOCONNECT].idx >= 0)
-        nm_device_set_autoconnect(device, values[DEV_SET_AUTOCONNECT].value);
-    if (values[DEV_SET_MANAGED].idx >= 0)
-        nm_device_set_managed(device, values[DEV_SET_MANAGED].value);
 }
 
 static void

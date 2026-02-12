@@ -1436,15 +1436,31 @@
           </arg>
           <arg>
             <option>managed</option>
+            <group>
+              <arg choice='plain'>--permanent</arg>
+              <arg choice='plain'>--permanent-only</arg>
+            </group>
             <group choice='req'>
               <arg choice='plain'>yes</arg>
               <arg choice='plain'>no</arg>
+              <arg choice='plain'>up</arg>
+              <arg choice='plain'>down</arg>
+              <arg choice='plain'>reset</arg>
             </group>
           </arg>
         </term>
 
         <listitem>
           <para>Set device properties.</para>
+
+          <para>The <option>managed</option> property accepts a <option>--permanent</option>
+          option to persist the managed state to disk, and not only in runtime. With
+          <option>--permanent-only</option> only the permanent managed state is set, and not the
+          runtime managed state. The special values <option>up</option> and <option>down</option>
+          can be used to set the administrative state of the device at the same time as the runtime
+          managed state. The <option>reset</option> value clears the explicit managed setting, and
+          with <option>--permanent</option> or <option>--permanent-only</option> it also removes
+          the persisted managed setting.</para>
         </listitem>
       </varlistentry>
 
