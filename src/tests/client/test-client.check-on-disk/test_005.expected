@@ -1,0 +1,15 @@
+size: 683
+location: src/tests/client/test-client.py:test_005()/1
+cmd: $NMCLI c add type ethernet ifname eth0 con-name con-xx1 ipv4.method manual ipv4.addresses 192.168.1.1/24 ipv4.gateway 192.168.2.1 ipv4.routes '192.168.4.4 192.168.4.1'
+lang: C
+returncode: 0
+stdout: 80 bytes
+>>>
+Connection 'con-xx1' (UUID-con-xx1-REPLACED-REPLACED-REPLA) successfully added.
+
+<<<
+stderr: 300 bytes
+>>>
+Warning: the following gateways are not directly reachable from any configured address or route: 192.168.2.1, 192.168.4.1. NetworkManager currently adds on-link routes for them automatically, but this will change in the future. Consider adding addresses or routes whose subnets cover these gateways.
+
+<<<
