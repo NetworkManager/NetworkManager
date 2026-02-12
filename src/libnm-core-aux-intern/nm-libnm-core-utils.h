@@ -346,6 +346,8 @@ gboolean nm_setting_ovs_other_config_check_val(const char *val, GError **error);
 
 const char **nm_connection_get_unreachable_gateways(NMConnection *connection);
 
+char *nm_connection_get_unreachable_gateways_warning(NMConnection *connection, gboolean translate);
+
 /*****************************************************************************/
 
 /* Wi-Fi frequencies range for each band */
