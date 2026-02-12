@@ -344,6 +344,10 @@ gboolean nm_setting_ovs_other_config_check_val(const char *val, GError **error);
 
 /*****************************************************************************/
 
+const char **nm_connection_get_unreachable_gateways(NMConnection *connection);
+
+/*****************************************************************************/
+
 /* Wi-Fi frequencies range for each band */
 #define _NM_WIFI_FREQ_MIN_2GHZ 2412
 #define _NM_WIFI_FREQ_MAX_2GHZ 2484
