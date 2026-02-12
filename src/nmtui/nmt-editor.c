@@ -14,6 +14,7 @@
 
 #include "nmt-editor.h"
 
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "nm-utils.h"
 
 #include "nmtui.h"
@@ -153,9 +154,15 @@ save_connection_and_exit(NmtNewtButton *button, gpointer user_data)
     NmtEditor        *editor = user_data;
     NmtEditorPrivate *priv   = NMT_EDITOR_GET_PRIVATE(editor);
     NmtSyncOp         op;
-    GError           *error = NULL;
+    GError           *error      = NULL;
+    gs_free char     *gw_warning = NULL;
 
     nm_connection_replace_settings_from_connection(priv->orig_connection, priv->edit_connection);
+
+    gw_warning = nm_connection_get_unreachable_gateways_warning(priv->orig_connection, TRUE);
+    if (gw_warning) {
+        nmt_newt_message_dialog(_("Warning: %s"), gw_warning);
+    }
 
     nmt_sync_op_init(&op);
     if (NM_IS_REMOTE_CONNECTION(priv->orig_connection)) {
