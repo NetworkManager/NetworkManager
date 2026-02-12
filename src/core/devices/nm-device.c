@@ -3684,6 +3684,7 @@ nm_device_create_l3_config_data_from_connection(NMDevice *self, NMConnection *co
 {
     NML3ConfigData *l3cd;
     int             ifindex;
+    gs_free char   *gw_warning = NULL;
 
     nm_assert(NM_IS_DEVICE(self));
     nm_assert(!connection || NM_IS_CONNECTION(connection));
@@ -3703,6 +3704,10 @@ nm_device_create_l3_config_data_from_connection(NMDevice *self, NMConnection *co
     nm_l3_config_data_set_dnssec(l3cd, _prop_get_connection_dnssec(self, connection));
     nm_l3_config_data_set_ip6_privacy(l3cd, _prop_get_ipv6_ip6_privacy(self, connection));
     nm_l3_config_data_set_mptcp_flags(l3cd, _prop_get_connection_mptcp_flags(self, connection));
+
+    gw_warning = nm_connection_get_unreachable_gateways_warning(connection, FALSE);
+    if (gw_warning)
+        _LOGW(LOGD_IP, "%s", gw_warning);
 
     return l3cd;
 }
