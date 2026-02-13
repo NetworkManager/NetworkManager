@@ -14921,6 +14921,16 @@ set_managed(NMDevice *self, NMDeviceManaged managed, NMDeviceManagedFlags flags,
                                              NM_DEVICE_STATE_REASON_UNMANAGED_USER_EXPLICIT);
         } else {
             g_object_set(self, NM_DEVICE_MANAGED, !!managed, NULL);
+
+            /* If requested, set the administrative state of the device to UP if the
+             * new managed state is YES, and to DOWN if it's NO. */
+            if (flags & NM_DEVICE_MANAGED_FLAGS_SET_ADMIN_STATE) {
+                if (nm_device_get_ifindex(self))
+                    nm_platform_link_change_flags(nm_device_get_platform(self),
+                                                  nm_device_get_ifindex(self),
+                                                  IFF_UP,
+                                                  !!managed);
+            }
         }
     }
 
