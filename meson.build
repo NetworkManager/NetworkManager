@@ -517,8 +517,8 @@ config_h.set10('HAVE_SELINUX', enable_selinux)
 # CLAT support
 enable_clat = get_option('clat')
 if enable_clat
-  libbpf = dependency('libbpf', version: '>= 0.1.0', required: false)
-  assert(libbpf.found(), 'You must have libbpf installed to build. Use -Dclat=false to disable use of it')
+  libbpf = dependency('libbpf', version: '>= 1.3.0', required: false)
+  assert(libbpf.found(), 'You must have libbpf >= 1.3.0 installed to build. Use -Dclat=false to disable use of it')
   libndp_dep = dependency('libndp', version: '>= 1.9', required: false)
   assert(libndp_dep.found(), 'You must have libndp >= 1.9 installed to build with CLAT support. Use -Dclat=false to disable it')
 endif
