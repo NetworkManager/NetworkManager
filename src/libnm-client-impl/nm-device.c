@@ -1485,7 +1485,7 @@ nm_device_set_managed(NMDevice *device, gboolean managed)
  **/
 void
 nm_device_set_managed_async(NMDevice            *device,
-                            gboolean             managed,
+                            NMDeviceManaged      managed,
                             NMDeviceManagedFlags flags,
                             GCancellable        *cancellable,
                             GAsyncReadyCallback  callback,
@@ -1503,7 +1503,7 @@ nm_device_set_managed_async(NMDevice            *device,
                          _nm_object_get_path(device),
                          NM_DBUS_INTERFACE_DEVICE,
                          "SetManaged",
-                         g_variant_new("(bu)", managed, flags),
+                         g_variant_new("(uu)", managed, flags),
                          G_VARIANT_TYPE("()"),
                          G_DBUS_CALL_FLAGS_NONE,
                          NM_DBUS_DEFAULT_TIMEOUT_MSEC,

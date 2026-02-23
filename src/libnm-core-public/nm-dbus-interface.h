@@ -1249,6 +1249,22 @@ typedef enum /*< flags >*/ {
 } NMDeviceReapplyFlags;
 
 /**
+ * NMDeviceManaged:
+ * @NM_DEVICE_MANAGED_NO: the device is not managed.
+ * @NM_DEVICE_MANAGED_YES: the device is managed.
+ * @NM_DEVICE_MANAGED_RESET: reset the device managed state to the default value.
+ *
+ * Values for the SetManaged() D-Bus call of a device and nm_device_set_managed_async().
+ *
+ * Since: 1.58
+ */
+typedef enum {
+    NM_DEVICE_MANAGED_NO    = 0,
+    NM_DEVICE_MANAGED_YES   = 1,
+    NM_DEVICE_MANAGED_RESET = 2,
+} NMDeviceManaged;
+
+/**
  * NMDeviceManagedFlags:
  * @NM_DEVICE_MANAGED_FLAGS_NONE: no flag set.
  * @NM_DEVICE_MANAGED_FLAGS_RUNTIME: to set the device managed state to the runtime value.

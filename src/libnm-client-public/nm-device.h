@@ -152,7 +152,7 @@ _NM_DEPRECATED_SYNC_METHOD
 void nm_device_set_managed(NMDevice *device, gboolean managed);
 NM_AVAILABLE_IN_1_58
 void nm_device_set_managed_async(NMDevice            *device,
-                                 gboolean             managed,
+                                 NMDeviceManaged      managed,
                                  NMDeviceManagedFlags flags,
                                  GCancellable        *cancellable,
                                  GAsyncReadyCallback  callback,
