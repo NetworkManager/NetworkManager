@@ -14843,7 +14843,7 @@ impl_device_get_applied_connection(NMDBusObject                      *obj,
 /*****************************************************************************/
 
 typedef struct {
-    gboolean             managed_state;
+    NMDeviceManaged      managed_state;
     NMDeviceManagedFlags managed_flags;
 } SetManagedData;
 
@@ -14861,11 +14861,13 @@ typedef struct {
  * Returns: %TRUE if the managed state was set successfully, %FALSE otherwise.
  */
 static gboolean
-set_managed(NMDevice *self, gboolean managed, NMDeviceManagedFlags flags, GError **error)
+set_managed(NMDevice *self, NMDeviceManaged managed, NMDeviceManagedFlags flags, GError **error)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
-    NMTernary        old  = NM_TERNARY_DEFAULT;
+    NMTernary        managed_to_disk, old = NM_TERNARY_DEFAULT;
 
+    nm_assert(
+        NM_IN_SET(managed, NM_DEVICE_MANAGED_NO, NM_DEVICE_MANAGED_YES, NM_DEVICE_MANAGED_RESET));
     nm_assert((flags & ~NM_DEVICE_MANAGED_FLAGS_ALL) == 0);
 
     if (!NM_FLAGS_ANY(flags, NM_DEVICE_MANAGED_FLAGS_PERMANENT | NM_DEVICE_MANAGED_FLAGS_RUNTIME)) {
@@ -14877,11 +14879,12 @@ set_managed(NMDevice *self, gboolean managed, NMDeviceManagedFlags flags, GError
     }
 
     if (flags & NM_DEVICE_MANAGED_FLAGS_PERMANENT) {
+        managed_to_disk = managed == NM_DEVICE_MANAGED_RESET ? NM_TERNARY_DEFAULT : !!managed;
         nm_config_get_device_managed(nm_manager_get_config(priv->manager), self, &old, error);
 
         if (!nm_config_set_device_managed(nm_manager_get_config(priv->manager),
                                           self,
-                                          managed,
+                                          managed_to_disk,
                                           flags & NM_DEVICE_MANAGED_FLAGS_BY_MAC,
                                           error))
             return FALSE;
@@ -14889,7 +14892,8 @@ set_managed(NMDevice *self, gboolean managed, NMDeviceManagedFlags flags, GError
         /* Update the unmanaged flags after the change on disk */
         nm_device_set_unmanaged_by_user_conf(self);
 
-        if (!!nm_device_get_unmanaged_flags(self, NM_UNMANAGED_USER_CONF) != !managed) {
+        if (managed_to_disk != NM_TERNARY_DEFAULT
+            && managed_to_disk != !nm_device_get_unmanaged_flags(self, NM_UNMANAGED_USER_CONF)) {
             /* We failed to make the new state effective on disk. Maybe the new config
              * collides with other config. Try to revert and return error. Otherwise,
              * we would set the runtime state correctly, but get an unexpected state
@@ -14910,7 +14914,14 @@ set_managed(NMDevice *self, gboolean managed, NMDeviceManagedFlags flags, GError
     }
 
     if (flags & NM_DEVICE_MANAGED_FLAGS_RUNTIME) {
-        g_object_set(self, NM_DEVICE_MANAGED, !!managed, NULL);
+        if (managed == NM_DEVICE_MANAGED_RESET) {
+            nm_device_set_unmanaged_by_flags(self,
+                                             NM_UNMANAGED_USER_EXPLICIT,
+                                             NM_UNMAN_FLAG_OP_FORGET,
+                                             NM_DEVICE_STATE_REASON_UNMANAGED_USER_EXPLICIT);
+        } else {
+            g_object_set(self, NM_DEVICE_MANAGED, !!managed, NULL);
+        }
     }
 
     return TRUE;
@@ -14924,7 +14935,7 @@ set_managed_cb(NMDevice              *self,
                gpointer               user_data)
 {
     SetManagedData      *set_managed_data = user_data;
-    gboolean             managed;
+    NMDeviceManaged      managed;
     NMDeviceManagedFlags flags;
     GError              *local = NULL;
 
@@ -14932,11 +14943,20 @@ set_managed_cb(NMDevice              *self,
     flags   = set_managed_data->managed_flags;
     nm_g_slice_free(set_managed_data);
 
-    if (!error && (flags & ~NM_DEVICE_MANAGED_FLAGS_ALL) != 0) {
-        g_set_error_literal(&error,
-                            NM_DEVICE_ERROR,
-                            NM_DEVICE_ERROR_INVALID_ARGUMENT,
-                            "Invalid flags");
+    if (!error) {
+        if (!NM_IN_SET(managed,
+                       NM_DEVICE_MANAGED_NO,
+                       NM_DEVICE_MANAGED_YES,
+                       NM_DEVICE_MANAGED_RESET))
+            g_set_error_literal(&error,
+                                NM_DEVICE_ERROR,
+                                NM_DEVICE_ERROR_INVALID_ARGUMENT,
+                                "Invalid managed value");
+        else if ((flags & ~NM_DEVICE_MANAGED_FLAGS_ALL) != 0)
+            g_set_error_literal(&error,
+                                NM_DEVICE_ERROR,
+                                NM_DEVICE_ERROR_INVALID_ARGUMENT,
+                                "Invalid flags");
     }
 
     if (error) {
@@ -14976,15 +14996,17 @@ impl_device_set_managed(NMDBusObject                      *obj,
 {
     NMDevice             *self  = NM_DEVICE(obj);
     gs_free_error GError *error = NULL;
-    gboolean              managed;
+    guint32               managed_u;
+    NMDeviceManaged       managed;
     guint32               flags_u;
     NMDeviceManagedFlags  flags;
     SetManagedData       *set_managed_data;
 
-    g_variant_get(parameters, "(bu)", &managed, &flags_u);
+    g_variant_get(parameters, "(uu)", &managed_u, &flags_u);
 
-    flags = flags_u;
-    nm_assert(flags == flags_u);
+    managed = managed_u;
+    flags   = flags_u;
+    nm_assert(managed == managed_u && flags == flags_u);
 
     set_managed_data  = g_slice_new(SetManagedData);
     *set_managed_data = (SetManagedData) {
@@ -20030,7 +20052,7 @@ static const NMDBusInterfaceInfoExtended interface_info_device = {
             NM_DEFINE_DBUS_METHOD_INFO_EXTENDED(
                 NM_DEFINE_GDBUS_METHOD_INFO_INIT("SetManaged",
                                                  .in_args = NM_DEFINE_GDBUS_ARG_INFOS(
-                                                     NM_DEFINE_GDBUS_ARG_INFO("managed", "b"),
+                                                     NM_DEFINE_GDBUS_ARG_INFO("managed", "u"),
                                                      NM_DEFINE_GDBUS_ARG_INFO("flags", "u"), ), ),
                 .handle = impl_device_set_managed, ),
             NM_DEFINE_DBUS_METHOD_INFO_EXTENDED(NM_DEFINE_GDBUS_METHOD_INFO_INIT("Disconnect", ),
