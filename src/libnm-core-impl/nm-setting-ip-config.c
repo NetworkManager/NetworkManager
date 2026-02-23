@@ -5079,6 +5079,9 @@ routing_rules_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
     gboolean                  any = FALSE;
     guint                     i;
 
+    if (!_nm_connection_serialize_non_secret(flags))
+        return NULL;
+
     priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(self);
 
     if (!priv->routing_rules || priv->routing_rules->len == 0)
