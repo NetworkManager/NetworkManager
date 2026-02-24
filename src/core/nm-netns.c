@@ -207,6 +207,7 @@ _ecmp_track_sort_lst_cmp(const CList *a, const CList *b, const void *user_data)
     NM_CMP_FIELD(route_a, route_b, ifindex);
     NM_CMP_FIELD(route_b, route_a, weight);
     NM_CMP_DIRECT(htonl(route_a->gateway), htonl(route_b->gateway));
+    NM_CMP_DIRECT(route_a->r_rtm_flags & RTNH_F_ONLINK, route_b->r_rtm_flags & RTNH_F_ONLINK);
 
     return nm_assert_unreachable_val(
         nm_platform_ip4_route_cmp(route_a, route_b, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID));
@@ -275,9 +276,10 @@ _ecmp_track_init_merged_obj(EcmpTrackEcmpid *track_ecmpid, const NMPObject **out
             NMPlatformIP4RtNextHop   *nh = (gpointer) &obj_new->_ip4_route.extra_nexthops[i - 1];
 
             *nh = (NMPlatformIP4RtNextHop) {
-                .ifindex = r->ifindex,
-                .gateway = r->gateway,
-                .weight  = r->weight,
+                .ifindex    = r->ifindex,
+                .gateway    = r->gateway,
+                .weight     = r->weight,
+                .rtnh_flags = r->r_rtm_flags & RTNH_F_ONLINK,
             };
         }
         i++;
