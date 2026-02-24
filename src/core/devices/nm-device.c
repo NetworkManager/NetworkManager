@@ -14847,12 +14847,71 @@ typedef struct {
     NMDeviceManagedFlags managed_flags;
 } SetManagedData;
 
+/**
+ * set_managed:
+ * @self: the device
+ * @managed: the new managed state to set.
+ * @flags: flags to select different behaviors like storing to disk.
+ * @error: return location for a #GError, or %NULL
+ *
+ * Sets the managed state of the device. It can affect the runtime managed state
+ * if the %NM_DEVICE_MANAGED_FLAGS_RUNTIME is set, and to the value stored on disk
+ * (persistent across reboots) state if the %NM_DEVICE_MANAGED_FLAGS_PERMANENT is set.
+ *
+ * Returns: %TRUE if the managed state was set successfully, %FALSE otherwise.
+ */
 static gboolean
 set_managed(NMDevice *self, gboolean managed, NMDeviceManagedFlags flags, GError **error)
 {
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+    NMTernary        old  = NM_TERNARY_DEFAULT;
+
     nm_assert((flags & ~NM_DEVICE_MANAGED_FLAGS_ALL) == 0);
 
-    g_object_set(self, NM_DEVICE_MANAGED, managed, NULL);
+    if (!NM_FLAGS_ANY(flags, NM_DEVICE_MANAGED_FLAGS_PERMANENT | NM_DEVICE_MANAGED_FLAGS_RUNTIME)) {
+        g_set_error_literal(error,
+                            NM_DEVICE_ERROR,
+                            NM_DEVICE_ERROR_INVALID_ARGUMENT,
+                            _("set managed: no permanent or runtime was selected"));
+        return FALSE;
+    }
+
+    if (flags & NM_DEVICE_MANAGED_FLAGS_PERMANENT) {
+        nm_config_get_device_managed(nm_manager_get_config(priv->manager), self, &old, error);
+
+        if (!nm_config_set_device_managed(nm_manager_get_config(priv->manager),
+                                          self,
+                                          managed,
+                                          flags & NM_DEVICE_MANAGED_FLAGS_BY_MAC,
+                                          error))
+            return FALSE;
+
+        /* Update the unmanaged flags after the change on disk */
+        nm_device_set_unmanaged_by_user_conf(self);
+
+        if (!!nm_device_get_unmanaged_flags(self, NM_UNMANAGED_USER_CONF) != !managed) {
+            /* We failed to make the new state effective on disk. Maybe the new config
+             * collides with other config. Try to revert and return error. Otherwise,
+             * we would set the runtime state correctly, but get an unexpected state
+             * after a reboot. */
+            nm_config_set_device_managed(nm_manager_get_config(priv->manager),
+                                         self,
+                                         old,
+                                         flags & NM_DEVICE_MANAGED_FLAGS_BY_MAC,
+                                         NULL);
+            g_set_error(error,
+                        NM_DEVICE_ERROR,
+                        NM_DEVICE_ERROR_FAILED,
+                        _("failed to persist 'managed=%d' on disk, other configurations may be "
+                          "overriding it"),
+                        managed);
+            return FALSE;
+        }
+    }
+
+    if (flags & NM_DEVICE_MANAGED_FLAGS_RUNTIME) {
+        g_object_set(self, NM_DEVICE_MANAGED, !!managed, NULL);
+    }
 
     return TRUE;
 }
