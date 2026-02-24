@@ -397,10 +397,11 @@
     <!--
         SetManaged:
         @managed: Whether the device is managed.
-        @flags: Flags which would modify the behavior of the SetManaged call.
+        @flags: (<link linkend="NMDeviceManagedFlags">NMDeviceManagedFlags</link>) flags.
         @since: 1.58
 
-        Set the managed state of the device.
+        Set the managed state of the device. With the flags argument different
+        behaviors can be achieved, like storing the new managed state to disk.
     -->
     <method name="SetManaged">
       <arg name="managed" type="b" direction="in"/>
