@@ -2461,6 +2461,78 @@ done:
 }
 
 /*****************************************************************************/
+static void
+test_ip4_rtnh_onlink(void)
+{
+    /* Extra nexthops that differ only in rtnh_flags ONLINK should
+     * compare as different. */
+    NMPlatformIP4RtNextHop nh_a = {
+        .ifindex    = 2,
+        .gateway    = nmtst_inet4_from_string("10.10.10.10"),
+        .weight     = 1,
+        .rtnh_flags = 0,
+    };
+
+    NMPlatformIP4RtNextHop nh_b = nh_a;
+    nh_b.rtnh_flags             = RTNH_F_ONLINK;
+
+    g_assert_cmpint(nm_platform_ip4_rt_nexthop_cmp(&nh_a, &nh_b, TRUE), !=, 0);
+    g_assert_cmpint(nm_platform_ip4_rt_nexthop_cmp(&nh_a, &nh_b, FALSE), !=, 0);
+
+    nh_b.rtnh_flags = 0;
+    g_assert_cmpint(nm_platform_ip4_rt_nexthop_cmp(&nh_a, &nh_b, TRUE), ==, 0);
+    g_assert_cmpint(nm_platform_ip4_rt_nexthop_cmp(&nh_a, &nh_b, FALSE), ==, 0);
+}
+
+static void
+test_ip4_route_onlink_per_nexthop(void)
+{
+    NMPlatformIP4Route r_a = {};
+    NMPlatformIP4Route r_b;
+
+    /* Two single-hop routes that are identical, except for the onlink flag. */
+    r_a.ifindex      = 1;
+    r_a.rt_source    = NM_IP_CONFIG_SOURCE_USER;
+    r_a.network      = nmtst_inet4_from_string("10.10.10.10");
+    r_a.plen         = 24;
+    r_a.gateway      = nmtst_inet4_from_string("10.10.10.1");
+    r_a.metric       = 100;
+    r_a.n_nexthops   = 1;
+    r_a.type_coerced = nm_platform_route_type_coerce(RTN_UNICAST);
+    r_a.scope_inv    = nm_platform_route_scope_inv(RT_SCOPE_UNIVERSE);
+
+    r_b             = r_a;
+    r_b.r_rtm_flags = RTNH_F_ONLINK;
+
+    /* Onlink flag should result in the same ECMP_ID but different IDs. */
+    g_assert_cmpint(nm_platform_ip4_route_cmp(&r_a, &r_b, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ECMP_ID),
+                    ==,
+                    0);
+
+    g_assert_cmpint(nm_platform_ip4_route_cmp(&r_a, &r_b, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID), !=, 0);
+    g_assert_cmpint(
+        nm_platform_ip4_route_cmp(&r_a, &r_b, NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY),
+        !=,
+        0);
+    g_assert_cmpint(nm_platform_ip4_route_cmp(&r_a, &r_b, NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL),
+                    !=,
+                    0);
+
+    r_b.r_rtm_flags = 0;
+    g_assert_cmpint(nm_platform_ip4_route_cmp(&r_a, &r_b, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID), ==, 0);
+    g_assert_cmpint(nm_platform_ip4_route_cmp(&r_a, &r_b, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ECMP_ID),
+                    ==,
+                    0);
+    g_assert_cmpint(
+        nm_platform_ip4_route_cmp(&r_a, &r_b, NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY),
+        ==,
+        0);
+    g_assert_cmpint(nm_platform_ip4_route_cmp(&r_a, &r_b, NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL),
+                    ==,
+                    0);
+}
+
+/*****************************************************************************/
 
 NMTstpSetupFunc const _nmtstp_setup_platform_func = SETUP;
 
@@ -2480,6 +2552,8 @@ _nmtstp_setup_tests(void)
     nmtstp_env1_add_test_func_data(testpath, test_func, arg, 2, TRUE)
 
     add_test_func("/route/ip4", test_ip4_route);
+    add_test_func("/route/ip4_onlink_per_nexthop", test_ip4_route_onlink_per_nexthop);
+    add_test_func("/route/ip4_rtnh_onlink", test_ip4_rtnh_onlink);
     add_test_func("/route/ip6", test_ip6_route);
     add_test_func("/route/ip4_metric0", test_ip4_route_metric0);
     add_test_func_data("/route/ip4_options/1", test_ip4_route_options, GINT_TO_POINTER(1));

@@ -4033,6 +4033,7 @@ _new_from_nl_route(const struct nlmsghdr *nlh, gboolean id_only, ParseNlmsgIter 
         int      ifindex;
         NMIPAddr gateway;
         gboolean is_via;
+        unsigned rtnh_flags;
     } nh = {
         .found    = FALSE,
         .has_more = FALSE,
@@ -4142,9 +4143,10 @@ _new_from_nl_route(const struct nlmsghdr *nlh, gboolean id_only, ParseNlmsgIter 
                     v4_nh_extra_nexthops = v4_nh_extra_nexthops_heap;
                 }
                 nm_assert(v4_n_nexthops - 1u < v4_nh_extra_alloc);
-                new_nexthop          = &v4_nh_extra_nexthops[v4_n_nexthops - 1u];
-                new_nexthop->ifindex = rtnh->rtnh_ifindex;
-                new_nexthop->weight  = NM_MAX(((guint) rtnh->rtnh_hops) + 1u, 1u);
+                new_nexthop             = &v4_nh_extra_nexthops[v4_n_nexthops - 1u];
+                new_nexthop->ifindex    = rtnh->rtnh_ifindex;
+                new_nexthop->weight     = NM_MAX(((guint) rtnh->rtnh_hops) + 1u, 1u);
+                new_nexthop->rtnh_flags = rtnh->rtnh_flags;
                 if (rtnh->rtnh_len > sizeof(*rtnh)) {
                     struct nlattr *ntb[RTA_MAX + 1];
 
@@ -4159,9 +4161,10 @@ _new_from_nl_route(const struct nlmsghdr *nlh, gboolean id_only, ParseNlmsgIter 
                         memcpy(&new_nexthop->gateway, nla_data(ntb[RTA_GATEWAY]), addr_len);
                 }
             } else if (IS_IPv4 || idx == multihop_idx) {
-                nh.found   = TRUE;
-                nh.ifindex = rtnh->rtnh_ifindex;
-                nh.weight  = NM_MAX(((guint) rtnh->rtnh_hops) + 1u, 1u);
+                nh.found      = TRUE;
+                nh.ifindex    = rtnh->rtnh_ifindex;
+                nh.weight     = NM_MAX(((guint) rtnh->rtnh_hops) + 1u, 1u);
+                nh.rtnh_flags = rtnh->rtnh_flags;
                 if (rtnh->rtnh_len > sizeof(*rtnh)) {
                     struct nlattr *ntb[RTA_MAX + 1];
 
@@ -4409,7 +4412,16 @@ rta_multipath_done:
     }
 
     obj->ip_route.r_rtm_flags = rtm->rtm_flags;
-    obj->ip_route.rt_source   = nmp_utils_ip_config_source_from_rtprot(rtm->rtm_protocol);
+
+    if (IS_IPv4 && v4_n_nexthops > 1u) {
+        /* For multipath routes, rtm_flags at the route level does not contain
+         * RTNH_F_ONLINK. Instead, each nexthop has its own rtnh_flags. Merge the
+         * first nexthop's RTNH_F_ONLINK into r_rtm_flags, since the first nexthop
+         * is embedded in the route struct. */
+        obj->ip_route.r_rtm_flags |= (nh.rtnh_flags & RTNH_F_ONLINK);
+    }
+
+    obj->ip_route.rt_source = nmp_utils_ip_config_source_from_rtprot(rtm->rtm_protocol);
 
     if (nh.has_more) {
         parse_nlmsg_iter->iter_more               = TRUE;
@@ -5813,15 +5825,18 @@ _nl_msg_new_route(uint16_t nlmsg_type, uint16_t nlmsg_flags, const NMPObject *ob
             }
             NLA_PUT_U32(msg, RTA_GATEWAY, gw);
 
-            rtnh->rtnh_flags = 0;
+            if (i == 0u) {
+                rtnh->rtnh_flags =
+                    (gw != 0 && NM_FLAGS_HAS(obj->ip_route.r_rtm_flags, (unsigned) RTNH_F_ONLINK))
+                        ? RTNH_F_ONLINK
+                        : 0;
+            } else {
+                const NMPlatformIP4RtNextHop *n2 = &obj->_ip4_route.extra_nexthops[i - 1u];
 
-            if (obj->ip4_route.n_nexthops > 1
-                && NM_FLAGS_HAS(obj->ip_route.r_rtm_flags, (unsigned) (RTNH_F_ONLINK)) && gw != 0) {
-                /* Unlike kernel, we only track the onlink flag per NMPlatformIP4Address, and
-                 * not per nexthop. That is fine for NetworkManager configuring addresses.
-                 * It is not fine for tracking addresses from kernel in platform cache,
-                 * because the rtnh_flags of the nexthops need to be part of nmp_object_id_cmp(). */
-                rtnh->rtnh_flags |= RTNH_F_ONLINK;
+                rtnh->rtnh_flags =
+                    (gw != 0 && NM_FLAGS_HAS(n2->rtnh_flags, (unsigned) RTNH_F_ONLINK))
+                        ? RTNH_F_ONLINK
+                        : 0;
             }
 
             rtnh->rtnh_len = (char *) nlmsg_tail(nlmsg_hdr(msg)) - (char *) rtnh;
