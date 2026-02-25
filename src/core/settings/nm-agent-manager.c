@@ -1083,6 +1083,39 @@ _con_get_request_start_validated(NMAuthChain           *chain,
     _con_get_request_start_proceed(req, req->con.current_has_modify);
 }
 
+static gboolean
+_req_has_existing_secrets(Request *req)
+{
+    GVariantIter iter;
+    const char  *setting_name;
+    GVariant    *setting_dict;
+    gboolean     has;
+
+    if (!req->con.get.existing_secrets)
+        return FALSE;
+
+    nm_assert(g_variant_is_of_type(req->con.get.existing_secrets, NM_VARIANT_TYPE_CONNECTION));
+
+    g_variant_iter_init(&iter, req->con.get.existing_secrets);
+    while (g_variant_iter_next(&iter, "{&s@a{sv}}", &setting_name, &setting_dict)) {
+        GVariantIter setting_iter;
+        GVariant    *val;
+
+        g_variant_iter_init(&setting_iter, setting_dict);
+        while (g_variant_iter_next(&setting_iter, "{&sv}", NULL, &val)) {
+            has = !g_variant_is_container(val) || g_variant_n_children(val) > 0;
+            g_variant_unref(val);
+            if (has) {
+                g_variant_unref(setting_dict);
+                return TRUE;
+            }
+        }
+        g_variant_unref(setting_dict);
+    }
+
+    return FALSE;
+}
+
 static void
 _con_get_request_start(Request *req)
 {
@@ -1103,7 +1136,7 @@ _con_get_request_start(Request *req)
      * unprivileged users.
      */
     if ((req->con.get.flags != NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE)
-        && (req->con.get.existing_secrets
+        && (_req_has_existing_secrets(req)
             || _nm_connection_aggregate(req->con.connection,
                                         NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS,
                                         NULL))) {
