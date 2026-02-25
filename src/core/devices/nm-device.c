@@ -14847,6 +14847,43 @@ typedef struct {
     NMDeviceManagedFlags managed_flags;
 } SetManagedData;
 
+static gboolean
+get_managed_match_by_mac(NMDevice *self, NMDeviceManagedFlags flags, gboolean *out, GError **error)
+{
+    gboolean is_fake_hwaddr;
+
+    nm_assert(out);
+
+    if ((flags & NM_DEVICE_MANAGED_FLAGS_PERMANENT_BY_MAC)
+        && (flags & NM_DEVICE_MANAGED_FLAGS_PERMANENT_BY_NAME)) {
+        g_set_error_literal(error,
+                            NM_DEVICE_ERROR,
+                            NM_DEVICE_ERROR_INVALID_ARGUMENT,
+                            "cannot match both by 'mac' and by 'interface-name'");
+        return FALSE;
+    }
+
+    nm_device_get_permanent_hw_address_full(self, TRUE, &is_fake_hwaddr);
+
+    if ((flags & NM_DEVICE_MANAGED_FLAGS_PERMANENT_BY_MAC) && is_fake_hwaddr) {
+        g_set_error_literal(
+            error,
+            NM_DEVICE_ERROR,
+            NM_DEVICE_ERROR_INVALID_ARGUMENT,
+            "cannot match by 'mac': the device doesn't have a permanent MAC address");
+        return FALSE;
+    }
+
+    if (flags & NM_DEVICE_MANAGED_FLAGS_PERMANENT_BY_MAC)
+        *out = TRUE;
+    else if (flags & NM_DEVICE_MANAGED_FLAGS_PERMANENT_BY_NAME)
+        *out = FALSE;
+    else
+        *out = !is_fake_hwaddr;
+
+    return TRUE;
+}
+
 /**
  * set_managed:
  * @self: the device
@@ -14864,7 +14901,6 @@ static gboolean
 set_managed(NMDevice *self, NMDeviceManaged managed, NMDeviceManagedFlags flags, GError **error)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
-    NMTernary        managed_to_disk, old = NM_TERNARY_DEFAULT;
 
     nm_assert(
         NM_IN_SET(managed, NM_DEVICE_MANAGED_NO, NM_DEVICE_MANAGED_YES, NM_DEVICE_MANAGED_RESET));
@@ -14879,13 +14915,18 @@ set_managed(NMDevice *self, NMDeviceManaged managed, NMDeviceManagedFlags flags,
     }
 
     if (flags & NM_DEVICE_MANAGED_FLAGS_PERMANENT) {
+        NMTernary managed_to_disk, old = NM_TERNARY_DEFAULT;
+        gboolean  by_mac;
+
         managed_to_disk = managed == NM_DEVICE_MANAGED_RESET ? NM_TERNARY_DEFAULT : !!managed;
         nm_config_get_device_managed(nm_manager_get_config(priv->manager), self, &old, error);
+        if (!get_managed_match_by_mac(self, flags, &by_mac, error))
+            return FALSE;
 
         if (!nm_config_set_device_managed(nm_manager_get_config(priv->manager),
                                           self,
                                           managed_to_disk,
-                                          flags & NM_DEVICE_MANAGED_FLAGS_BY_MAC,
+                                          by_mac,
                                           error))
             return FALSE;
 
@@ -14901,7 +14942,7 @@ set_managed(NMDevice *self, NMDeviceManaged managed, NMDeviceManagedFlags flags,
             nm_config_set_device_managed(nm_manager_get_config(priv->manager),
                                          self,
                                          old,
-                                         flags & NM_DEVICE_MANAGED_FLAGS_BY_MAC,
+                                         by_mac,
                                          NULL);
             g_set_error(error,
                         NM_DEVICE_ERROR,
