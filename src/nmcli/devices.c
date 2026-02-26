@@ -766,17 +766,19 @@ const NmcMetaGenericInfo *const nmc_fields_dev_wimax_list[] = {
 const NmcMetaGenericInfo *const nmc_fields_dev_show_controller_prop[] = {
     NMC_META_GENERIC("NAME"),   /* 0 */
     NMC_META_GENERIC("SLAVES"), /* 1 */
+    NMC_META_GENERIC("PORTS"),  /* 2 */
     NULL,
 };
-#define NMC_FIELDS_DEV_SHOW_CONTROLLER_PROP_COMMON "NAME,SLAVES"
+#define NMC_FIELDS_DEV_SHOW_CONTROLLER_PROP_COMMON "NAME,SLAVES,PORTS"
 
 const NmcMetaGenericInfo *const nmc_fields_dev_show_team_prop[] = {
     NMC_META_GENERIC("NAME"),   /* 0 */
     NMC_META_GENERIC("SLAVES"), /* 1 */
-    NMC_META_GENERIC("CONFIG"), /* 2 */
+    NMC_META_GENERIC("PORTS"),  /* 2 */
+    NMC_META_GENERIC("CONFIG"), /* 3 */
     NULL,
 };
-#define NMC_FIELDS_DEV_SHOW_TEAM_PROP_COMMON "NAME,SLAVES,CONFIG"
+#define NMC_FIELDS_DEV_SHOW_TEAM_PROP_COMMON "NAME,SLAVES,PORTS,CONFIG"
 
 const NmcMetaGenericInfo *const nmc_fields_dev_show_vlan_prop[] = {
     NMC_META_GENERIC("NAME"),   /* 0 */
@@ -1537,7 +1539,8 @@ print_bond_bridge_info(NMDevice   *device,
 
     arr = nmc_dup_fields_array(tmpl, NMC_OF_FLAG_SECTION_PREFIX);
     set_val_strc(arr, 0, group_prefix); /* i.e. BOND, TEAM, BRIDGE */
-    set_val_str(arr, 1, g_string_free(ports_str, FALSE));
+    set_val_str(arr, 1, g_strdup(ports_str->str));
+    set_val_str(arr, 2, g_string_free(ports_str, FALSE));
     g_ptr_array_add(out.output_data, arr);
 
     print_data_prepare_width(out.output_data);
@@ -1600,8 +1603,9 @@ print_team_info(NMDevice *device, NmCli *nmc, const char *group_prefix, const ch
 
     arr = nmc_dup_fields_array(tmpl, NMC_OF_FLAG_SECTION_PREFIX);
     set_val_strc(arr, 0, group_prefix); /* TEAM */
-    set_val_str(arr, 1, g_string_free(ports_str, FALSE));
-    set_val_str(arr, 2, sanitize_team_config(nm_device_team_get_config(NM_DEVICE_TEAM(device))));
+    set_val_str(arr, 1, g_strdup(ports_str->str));
+    set_val_str(arr, 2, g_string_free(ports_str, FALSE));
+    set_val_str(arr, 3, sanitize_team_config(nm_device_team_get_config(NM_DEVICE_TEAM(device))));
     g_ptr_array_add(out.output_data, arr);
 
     print_data_prepare_width(out.output_data);

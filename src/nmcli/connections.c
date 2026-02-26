@@ -920,6 +920,7 @@ _metagen_con_active_general_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
          * but the settings-connection profile. There is no guarantee, that they agree. */
         return s_con ? nm_setting_connection_get_zone(s_con) : NULL;
     case NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_CONTROLLER_PATH:
+    case NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_MASTER_PATH:
         dev = nm_active_connection_get_controller(ac);
         return dev ? nm_object_get_path(NM_OBJECT(dev)) : NULL;
     default:
@@ -949,6 +950,8 @@ const NmcMetaGenericInfo
         _METAGEN_CON_ACTIVE_GENERAL(NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_CON_PATH, "CON-PATH"),
         _METAGEN_CON_ACTIVE_GENERAL(NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_ZONE, "ZONE"),
         _METAGEN_CON_ACTIVE_GENERAL(NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_CONTROLLER_PATH,
+                                    "CONTROLLER-PATH"),
+        _METAGEN_CON_ACTIVE_GENERAL(NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_MASTER_PATH,
                                     "MASTER-PATH"),
 };
 
