@@ -176,14 +176,14 @@ create_and_realize(NMDevice              *device,
     if (str) {
         if (!nm_inet_parse_bin(AF_INET, str, NULL, &props.local)
             && !nm_inet_parse_bin(AF_INET6, str, NULL, &props.local6))
-            return FALSE;
+            return nm_assert_unreachable_val(FALSE);
     }
 
     str = nm_setting_vxlan_get_remote(s_vxlan);
     if (str) {
         if (!nm_inet_parse_bin(AF_INET, str, NULL, &props.group)
             && !nm_inet_parse_bin(AF_INET6, str, NULL, &props.group6))
-            return FALSE;
+            return nm_assert_unreachable_val(FALSE);
     }
 
     props.tos          = nm_setting_vxlan_get_tos(s_vxlan);
