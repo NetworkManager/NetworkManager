@@ -962,6 +962,106 @@ rewrite_icmpv6(struct __sk_buff *skb, int *out_length_diff, bool has_eth)
     return 0;
 }
 
+/* Add a Node Identification extension to the ICMPv4 packet when the IPv6 source
+ * is not translatable and was replaced with the dummy IPv4 address, as per
+ * draft-ietf-v6ops-icmpext-xlat-v6only-source-01. */
+static __always_inline void
+icmp_add_node_id_ext(struct __sk_buff *skb, bool has_eth, struct in6_addr *addr)
+{
+    void           *data_end = SKB_DATA_END(skb);
+    void           *data     = SKB_DATA(skb);
+    struct icmphdr *icmp;
+    struct iphdr   *ip;
+    __u16           icmp_orig_len; /* Length of the "original datagram field" */
+    int             padding = 0;
+    __u32           csum;
+    __be32          len_be;
+    struct {
+        struct icmp_ext_hdr    ext;
+        struct icmp_extobj_hdr obj;
+        __be16                 afi;
+        __be16                 res;
+        struct in6_addr        addr;
+    } icmp_ext = {};
+
+    if (!ensure_header(&icmp, skb, &data, &data_end, L2_H_LEN(has_eth) + IP_H_LEN))
+        return;
+
+    ip = data + L2_H_LEN(has_eth);
+
+    if (bpf_ntohs(ip->tot_len) < ICMP_H_LEN + IP_H_LEN)
+        return;
+
+    icmp_orig_len = bpf_ntohs(ip->tot_len) - ICMP_H_LEN - IP_H_LEN;
+    if (icmp_orig_len == 0) {
+        /* No "original datagram" */
+        return;
+    }
+
+    if (icmp->un.reserved[1] != 0) {
+        /* The packet already contains an extensions header. For now we don't support
+         * appending new objects to an existing extension. */
+        return;
+    }
+
+    if (icmp_orig_len < 128) {
+        /* RFC 4884:
+         * When the ICMP Extension Structure is appended to an ICMP message
+         * and that ICMP message contains an "original datagram" field, the
+         * "original datagram" field MUST contain at least 128 octets.*/
+         padding = 128 - icmp_orig_len;
+    } else if (icmp_orig_len % 4 != 0) {
+        /* When the ICMP Extension Structure is appended to an ICMPv4 message
+         * and that ICMPv4 message contains an "original datagram" field, the
+         * "original datagram" field MUST be zero padded to the nearest
+         * 32-bit boundary. */
+        padding = 4 - (icmp_orig_len % 4);
+    }
+
+    /* Add room at the end of the packet for the padding and extension header */
+    if (bpf_skb_change_tail(skb, skb->len + padding + sizeof(icmp_ext), 0))
+        return;
+
+    data_end = SKB_DATA_END(skb);
+    data     = SKB_DATA(skb);
+
+    if (!ensure_header(&icmp, skb, &data, &data_end, L2_H_LEN(has_eth) + IP_H_LEN))
+        return;
+
+    /* The length attribute represents length of the padded "original datagram"
+     * field, measured in 32-bit words.*/
+    icmp->un.reserved[1] = (icmp_orig_len + padding) / 4;
+    len_be               = bpf_htonl((icmp_orig_len + padding) / 4);
+
+    icmp_ext.ext.version    = 2;             /* ICMP extension version number */
+    icmp_ext.obj.length     = bpf_htons(24); /* Length of the object */
+    icmp_ext.obj.class_num  = 5;             /* Node Identification Object */
+    icmp_ext.obj.class_type = (1 << 2);      /* IP Address Sub-Object */
+    icmp_ext.afi            = bpf_htons(2);  /* Address family: IPv6 */
+    icmp_ext.addr           = *addr;
+    icmp_ext.ext.checksum   = csum_fold_helper(
+        bpf_csum_diff((__be32 *) &icmp_ext, 0, (__be32 *) &icmp_ext, sizeof(icmp_ext), 0));
+
+    if (bpf_skb_store_bytes(skb, skb->len - sizeof(icmp_ext), &icmp_ext, sizeof(icmp_ext), 0))
+        return;
+
+    data_end = SKB_DATA_END(skb);
+    data     = SKB_DATA(skb);
+
+    if (!ensure_header(&ip, skb, &data, &data_end, L2_H_LEN(has_eth)))
+        return;
+
+    /* Update the total IP length */
+    ip->tot_len = bpf_htons(bpf_ntohs(ip->tot_len) + sizeof(icmp_ext) + padding);
+    ip->check   = 0;
+    ip->check   = csum_fold_helper(bpf_csum_diff((__be32 *) ip, 0, (__be32 *) ip, IP_H_LEN, 0));
+
+    /* Fix the ICMP checksum */
+    csum = bpf_csum_diff((__be32 *) &icmp_ext, 0, (__be32 *) &icmp_ext, sizeof(icmp_ext), 0);
+    csum = bpf_csum_diff((__be32 *) &len_be, 0, (__be32 *) &len_be, 4, csum);
+    bpf_l4_csum_replace(skb, L2_H_LEN(has_eth) + IP_H_LEN + 2, 0, csum, 0);
+}
+
 /* ipv6 traffic from the PLAT, to be translated into ipv4 and sent to an application */
 static __always_inline int
 clat_handle_v6(struct __sk_buff *skb, bool has_eth)
@@ -975,8 +1075,10 @@ clat_handle_v6(struct __sk_buff *skb, bool has_eth)
     struct iphdr    dst_hdr;
     struct in6_addr subnet_v6;
     __be32          addr4;
-    int             length_diff = 0;
-    bool            fragmented  = false;
+    int             length_diff     = 0;
+    bool            fragmented      = false;
+    bool            do_add_icmp_ext = false;
+    struct in6_addr icmp_ext_addr;
 
     if (!ensure_header(&ip6h, skb, &data, &data_end, L2_H_LEN(has_eth)))
         goto out;
@@ -996,7 +1098,6 @@ clat_handle_v6(struct __sk_buff *skb, bool has_eth)
         goto out;
     if (!v6addr_equal(&subnet_v6, &config.pref64)) {
         struct icmp6hdr *icmp6;
-
         /* Follow draft-ietf-v6ops-icmpext-xlat-v6only-source-01:
          *
          * "Whenever a translator translates an ICMPv6 Destination Unreachable,
@@ -1023,6 +1124,9 @@ clat_handle_v6(struct __sk_buff *skb, bool has_eth)
             &ip6h->saddr);
 
         addr4 = __cpu_to_be32(INADDR_DUMMY);
+
+        do_add_icmp_ext = true;
+        icmp_ext_addr   = ip6h->saddr;
     }
 
     /* At this point we know the packet needs translation. If we can't
@@ -1142,6 +1246,9 @@ clat_handle_v6(struct __sk_buff *skb, bool has_eth)
     }
 
     *iph = dst_hdr;
+
+    if (do_add_icmp_ext)
+        icmp_add_node_id_ext(skb, has_eth, &icmp_ext_addr);
 
     if (fragmented)
         __sync_fetch_and_add(&stats.ingress_fragment, 1);
