@@ -2795,11 +2795,52 @@ do_devices_delete(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
     }
 }
 
+typedef struct {
+    NmCli   *nmc;
+    GSource *timeout_source;
+} DeviceSetCbInfo;
+
+static void
+device_set_cb_info_finish(DeviceSetCbInfo *info)
+{
+    nm_clear_g_source_inst(&info->timeout_source);
+    g_slice_free(DeviceSetCbInfo, info);
+    quit();
+}
+
+static gboolean
+device_set_timeout_cb(gpointer user_data)
+{
+    DeviceSetCbInfo *cb_info = user_data;
+
+    timeout_cb(cb_info->nmc);
+    device_set_cb_info_finish(cb_info);
+    return G_SOURCE_REMOVE;
+}
+
+static void
+device_set_cb(GObject *object, GAsyncResult *result, gpointer user_data)
+{
+    NMDevice             *device = NM_DEVICE(object);
+    DeviceSetCbInfo      *info   = (DeviceSetCbInfo *) user_data;
+    NmCli                *nmc    = info->nmc;
+    gs_free_error GError *error  = NULL;
+
+    /* Only 'managed' is treated asynchronously, 'autoconnect' is treated synchronously */
+    if (!nm_device_set_managed_finish(device, result, &error)) {
+        g_string_printf(nmc->return_text, _("Error: set managed failed: %s."), error->message);
+        nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+    }
+
+    device_set_cb_info_finish(info);
+}
+
 static void
 do_device_set(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv)
 {
-    NMDevice *device = NULL;
-    int       i;
+    NMDevice        *device  = NULL;
+    DeviceSetCbInfo *cb_info = NULL;
+    int              i;
     struct {
         int      idx;
         gboolean value;
@@ -2962,12 +3003,21 @@ do_device_set(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *ar
             nm_device_set_autoconnect(device, autoconnect_data.value);
         }
         if (managed_data.idx == i) {
+            cb_info      = g_slice_new0(DeviceSetCbInfo);
+            cb_info->nmc = nmc;
+            if (nmc->timeout > 0)
+                cb_info->timeout_source =
+                    nm_g_timeout_add_seconds_source(nmc->timeout, device_set_timeout_cb, cb_info);
+
+            nmc->nowait_flag = (nmc->timeout == 0);
+            nmc->should_wait++;
+
             nm_device_set_managed_async(device,
                                         managed_data.value,
                                         managed_data.flags,
                                         NULL,
-                                        NULL,
-                                        NULL);
+                                        device_set_cb,
+                                        cb_info);
         }
     }
 }
