@@ -2604,15 +2604,15 @@ nm_l3_config_data_cmp_full(const NML3ConfigData *a,
         const NMPObject *def_route_a = a->best_default_route_x[IS_IPv4];
         const NMPObject *def_route_b = b->best_default_route_x[IS_IPv4];
 
-        if (def_route_a != def_route_b) {
-            if (NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_ROUTES)) {
-                NM_CMP_RETURN(
-                    nmp_object_cmp_full(def_route_a,
-                                        def_route_b,
-                                        NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_IFINDEX)
-                                            ? NMP_OBJECT_CMP_FLAGS_NONE
-                                            : NMP_OBJECT_CMP_FLAGS_IGNORE_IFINDEX));
-            } else if (NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_ROUTES_ID)) {
+        if (NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_ROUTES)) {
+            NM_CMP_RETURN(nmp_object_cmp_full(def_route_a,
+                                              def_route_b,
+                                              NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_IFINDEX)
+                                                  ? NMP_OBJECT_CMP_FLAGS_NONE
+                                                  : NMP_OBJECT_CMP_FLAGS_IGNORE_IFINDEX));
+        } else if (NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_ROUTES_ID)) {
+            NM_CMP_DIRECT(!!def_route_a, !!def_route_b);
+            if (def_route_a && def_route_b) {
                 if (NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_IFINDEX)) {
                     NM_CMP_DIRECT(def_route_a->obj_with_ifindex.ifindex,
                                   def_route_b->obj_with_ifindex.ifindex);
