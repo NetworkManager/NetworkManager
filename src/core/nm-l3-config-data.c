@@ -3208,12 +3208,9 @@ _init_from_connection_ip(NML3ConfigData *self, int addr_family, NMConnection *co
              * the one we create here (because the "onlink" flag is part of the
              * identifier of a route, see nm_platform_ip4_route_cmp()).
              *
-             * Note however that for ECMP routes we currently can only merge routes
-             * that agree in their onlink flag. So a route without gateway cannot
-             * merge with an onlink route that has a gateway. That needs fixing,
-             * by not treating the onlink flag as for the entire route, but allowing
-             * to merge ECMP routes with different onlink flag. And first, we need
-             * to track the onlink flag for the nexthop (NMPlatformIP4RtNextHop). */
+             * The onlink flag is tracked per-nexthop (in NMPlatformIP4RtNextHop.rtnh_flags
+             * for extra nexthops, and in r_rtm_flags for the first nexthop). ECMP routes
+             * can be merged regardless of per-nexthop onlink flags. */
             r.r4.r_rtm_flags &= ~((unsigned) RTNH_F_ONLINK);
         }
 

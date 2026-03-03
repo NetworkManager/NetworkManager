@@ -287,7 +287,7 @@ guint _nm_platform_signal_id_get(NMPlatformSignalIdType signal_type);
 #define __NMPlatformIPRoute_COMMON                                                        \
     __NMPlatformObjWithIfindex_COMMON;                                                    \
                                                                                           \
-    /* rtnh_flags
+    /* rtm_flags and rtnh_flags
      *
      * Routes with rtm_flags RTM_F_CLONED are hidden by platform and
      * do not exist from the point-of-view of platform users.
@@ -295,8 +295,15 @@ guint _nm_platform_signal_id_get(NMPlatformSignalIdType signal_type);
      *
      * NOTE: currently we ignore all flags except RTM_F_CLONED
      * and RTNH_F_ONLINK.
-     * We also may not properly consider the flags as part of the ID
-     * in route-cmp. */                                                                         \
+     *
+     * For IPv4 routes, the RTNH_F_ONLINK flag here applies to the
+     * first nexthop (which is embedded in the route struct). Extra
+     * nexthops (NMPlatformIP4RtNextHop) each have their own
+     * rtnh_flags field.
+     *
+     * For single-hop routes, this field comes directly from
+     * rtm_flags. For multi-hop routes from kernel, the first
+     * nexthop's RTNH_F_ONLINK from rtnh_flags is merged here. */                                                           \
     unsigned r_rtm_flags;                                                                 \
                                                                                           \
     /* RTA_METRICS.RTAX_ADVMSS (iproute2: advmss) */                                      \
@@ -733,10 +740,10 @@ typedef struct {
      */
     guint16 weight;
 
-    /* FIXME: each next hop in kernel also has a rtnh_flags (for example to
-     * set RTNH_F_ONLINK). As the next hop is part of the identifier of an
-     * IPv4 route, so is their flags. We must also track the flag, otherwise
-     * two routes that look different for kernel, get merged by platform cache. */
+    /* Each next hop in kernel has its own rtnh_flags (for example to
+     * set RTNH_F_ONLINK). The flags are part of the identifier of a
+     * route. */
+    unsigned rtnh_flags;
 } NMPlatformIP4RtNextHop;
 
 typedef struct {
