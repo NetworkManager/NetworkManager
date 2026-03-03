@@ -1282,7 +1282,7 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      *        won't get merged. If the route finds no merge partner, it is
      *        configured as single hop route.</para> <para>Note that in
      *        NetworkManager, currently all nexthops of a ECMP route must share
-     *        the same "onlink" flag in order to be mergable.</para>
+     *        the same "onlink" flag in order to be mergeable.</para>
      *      </listitem>
      *      <listitem>
      *        <para><literal>"window"</literal> - an unsigned 32 bit integer.</para>
