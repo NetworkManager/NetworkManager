@@ -3223,7 +3223,6 @@ gboolean
 nm_platform_link_veth_get_properties(NMPlatform *self, int ifindex, int *out_peer_ifindex)
 {
     const NMPlatformLink *plink;
-    int                   peer_ifindex;
 
     plink = nm_platform_link_get(self, ifindex);
     if (!plink)
@@ -3232,23 +3231,10 @@ nm_platform_link_veth_get_properties(NMPlatform *self, int ifindex, int *out_pee
     if (plink->type != NM_LINK_TYPE_VETH)
         return FALSE;
 
-    if (plink->parent != 0) {
-        NM_SET_OUT(out_peer_ifindex, plink->parent);
-        return TRUE;
-    }
+    if (plink->parent == 0)
+        return FALSE;
 
-    /* Pre-4.1 kernel did not expose the peer_ifindex as IFA_LINK. Lookup via ethtool. */
-    if (out_peer_ifindex) {
-        nm_auto_pop_netns NMPNetns *netns = NULL;
-
-        if (!nm_platform_netns_push(self, &netns))
-            return FALSE;
-        peer_ifindex = nmp_ethtool_ioctl_get_peer_ifindex(plink->ifindex);
-        if (peer_ifindex <= 0)
-            return FALSE;
-
-        *out_peer_ifindex = peer_ifindex;
-    }
+    NM_SET_OUT(out_peer_ifindex, plink->parent);
     return TRUE;
 }
 

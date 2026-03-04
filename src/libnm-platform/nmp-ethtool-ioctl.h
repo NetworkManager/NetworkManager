@@ -9,8 +9,6 @@ gboolean nmp_ethtool_ioctl_supports_carrier_detect(int ifindex);
 
 gboolean nmp_ethtool_ioctl_supports_vlans(int ifindex);
 
-int nmp_ethtool_ioctl_get_peer_ifindex(int ifindex);
-
 gboolean nmp_ethtool_ioctl_get_wake_on_lan(int ifindex);
 
 gboolean nmp_ethtool_ioctl_set_wake_on_lan(int                      ifindex,
