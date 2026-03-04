@@ -39,7 +39,9 @@ typedef struct {
     bool               activation_lifetime_bound_to_profile_visibility : 1;
     bool               settings_connection_is_unsaved : 1;
     bool               settings_connection_is_shadowed_owned : 1;
+    bool               permanent_managed_by_mac : 1;
     NMUnmanFlagOp      unmanaged_explicit;
+    NMTernary          permanent_managed;
     NMActivationReason activation_reason;
     gulong             dev_exported_change_id;
 } DeviceCheckpoint;
@@ -496,14 +498,19 @@ nm_checkpoint_rollback(NMCheckpoint *self)
     /* Start rolling-back each device */
     g_hash_table_iter_init(&iter, priv->devices);
     while (g_hash_table_iter_next(&iter, (gpointer *) &device, (gpointer *) &dev_checkpoint)) {
-        guint32 result = NM_ROLLBACK_RESULT_OK;
+        guint32   result              = NM_ROLLBACK_RESULT_OK;
+        NMTernary perm_managed        = NM_TERNARY_DEFAULT;
+        gboolean  perm_managed_by_mac = FALSE;
+        gboolean  force_perm_managed;
 
         _LOGD("rollback: restoring device %s (state %d, realized %d, explicitly unmanaged %d, "
-              "connection-unsaved %d, connection-shadowed %d, connection-shadowed-owned %d)",
+              "permanently managed %d, connection-unsaved %d, connection-shadowed %d, "
+              "connection-shadowed-owned %d)",
               dev_checkpoint->original_dev_name,
               (int) dev_checkpoint->state,
               dev_checkpoint->realized,
               dev_checkpoint->unmanaged_explicit,
+              dev_checkpoint->permanent_managed,
               dev_checkpoint->settings_connection_is_unsaved,
               !!dev_checkpoint->settings_connection_shadowed,
               dev_checkpoint->settings_connection_is_shadowed_owned);
@@ -538,6 +545,43 @@ nm_checkpoint_rollback(NMCheckpoint *self)
             nm_device_set_unmanaged_by_flags_queue(device,
                                                    NM_UNMANAGED_USER_EXPLICIT,
                                                    dev_checkpoint->unmanaged_explicit,
+                                                   NM_DEVICE_STATE_REASON_NOW_MANAGED);
+        }
+
+        force_perm_managed = !nm_config_get_device_managed(nm_config_get(),
+                                                           device,
+                                                           &perm_managed,
+                                                           &perm_managed_by_mac,
+                                                           NULL);
+
+        if (force_perm_managed || (perm_managed != dev_checkpoint->permanent_managed)
+            || (dev_checkpoint->permanent_managed != NM_TERNARY_DEFAULT
+                && perm_managed_by_mac != dev_checkpoint->permanent_managed_by_mac)) {
+            gs_free_error GError *error = NULL;
+            NMUnmanFlagOp         set_op;
+
+            _LOGD("rollback: restore permanent managed state");
+
+            if (!nm_config_set_device_managed(nm_config_get(),
+                                              device,
+                                              dev_checkpoint->permanent_managed,
+                                              dev_checkpoint->permanent_managed_by_mac,
+                                              &error)) {
+                _LOGE("rollback: failed to restore permanent managed state: %s", error->message);
+                result = NM_ROLLBACK_RESULT_ERR_FAILED;
+                /* even if this failed, we try to continue the rollback */
+            }
+
+            if (dev_checkpoint->permanent_managed == NM_TERNARY_TRUE)
+                set_op = NM_UNMAN_FLAG_OP_SET_MANAGED;
+            else if (dev_checkpoint->permanent_managed == NM_TERNARY_FALSE)
+                set_op = NM_UNMAN_FLAG_OP_SET_UNMANAGED;
+            else
+                set_op = NM_UNMAN_FLAG_OP_FORGET;
+
+            nm_device_set_unmanaged_by_flags_queue(device,
+                                                   NM_UNMANAGED_USER_CONF,
+                                                   set_op,
                                                    NM_DEVICE_STATE_REASON_NOW_MANAGED);
         }
 
@@ -703,6 +747,8 @@ device_checkpoint_create(NMCheckpoint *self, NMDevice *device)
     NMSettingsConnection *settings_connection;
     const char           *path;
     NMActRequest         *act_request;
+    gboolean              perm_managed_by_mac;
+    gs_free_error GError *error = NULL;
 
     nm_assert(NM_IS_DEVICE(device));
     nm_assert(nm_device_is_real(device));
@@ -728,12 +774,26 @@ device_checkpoint_create(NMCheckpoint *self, NMDevice *device)
     } else
         dev_checkpoint->unmanaged_explicit = NM_UNMAN_FLAG_OP_FORGET;
 
+    if (nm_config_get_device_managed(nm_config_get(),
+                                     device,
+                                     &dev_checkpoint->permanent_managed,
+                                     &perm_managed_by_mac,
+                                     NULL)) {
+        dev_checkpoint->permanent_managed_by_mac = perm_managed_by_mac;
+    } else {
+        dev_checkpoint->permanent_managed        = NM_TERNARY_DEFAULT;
+        dev_checkpoint->permanent_managed_by_mac = FALSE;
+        _LOGW("error getting permanent managed state for %s: %s",
+              nm_device_get_iface(device),
+              error->message);
+        g_clear_error(&error);
+    }
+
     act_request = nm_device_get_act_request(device);
     if (act_request) {
-        NMSettingsStorage    *storage;
-        gboolean              shadowed_owned = FALSE;
-        const char           *shadowed_file;
-        gs_free_error GError *error = NULL;
+        NMSettingsStorage *storage;
+        gboolean           shadowed_owned = FALSE;
+        const char        *shadowed_file;
 
         settings_connection = nm_act_request_get_settings_connection(act_request);
         applied_connection  = nm_act_request_get_applied_connection(act_request);
@@ -764,6 +824,7 @@ device_checkpoint_create(NMCheckpoint *self, NMDevice *device)
                 _LOGW("error reading shadowed connection file for %s: %s",
                       nm_device_get_iface(device),
                       error->message);
+                g_clear_error(&error);
             }
         }
     }
