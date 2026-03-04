@@ -482,6 +482,7 @@ struct _NMMetaType {
     NMObjBaseClass parent;
     const char    *type_name;
     const char *(*get_name)(const NMMetaAbstractInfo *abstract_info, gboolean for_header);
+    const char *(*get_alias)(const NMMetaAbstractInfo *abstract_info);
     const NMMetaAbstractInfo *const *(*get_nested)(const NMMetaAbstractInfo *abstract_info,
                                                    guint                    *out_len,
                                                    gpointer                 *out_to_free);

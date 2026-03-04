@@ -36,6 +36,7 @@ const NMMetaSettingInfoEditor *const *nm_meta_setting_infos_editor_p(void);
 
 const char *nm_meta_abstract_info_get_name(const NMMetaAbstractInfo *abstract_info,
                                            gboolean                  for_header);
+const char *nm_meta_abstract_info_get_alias(const NMMetaAbstractInfo *abstract_info);
 
 const NMMetaAbstractInfo *const *
 nm_meta_abstract_info_get_nested(const NMMetaAbstractInfo *abstract_info,

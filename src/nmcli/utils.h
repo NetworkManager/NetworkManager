@@ -261,6 +261,7 @@ struct _NmcMetaGenericInfo {
     NmcGenericInfoType               info_type;
     const char                      *name;
     const char                      *name_header;
+    const char                      *alias;
     const NmcMetaGenericInfo *const *nested;
 
 #define NMC_META_GENERIC_INFO_GET_FCN_ARGS                                     \
