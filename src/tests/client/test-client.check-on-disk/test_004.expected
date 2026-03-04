@@ -1080,30 +1080,30 @@ Strony podręcznika nmcli(1) i nmcli-examples(7) zawierają pełne informacje
 o użyciu.
 
 <<<
-size: 1448
+size: 1444
 location: src/tests/client/test-client.py:test_004()/25
 cmd: $NMCLI -f all connection show --order na:-active
 lang: C
 returncode: 0
-stdout: 1288 bytes
+stdout: 1284 bytes
 >>>
-NAME       UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE      ACTIVE-PATH                                         SLAVE  FILENAME                                         
-con-1      5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/1  no      --      --         --                                                  --     /etc/NetworkManager/system-connections/con-1     
-con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  vpn       0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  yes     wlan0   activated  /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/con-vpn-1 
-con-xx1    UUID-con-xx1-REPLACED-REPLACED-REPLA  wifi      0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/2  yes     wlan0   activated  /org/freedesktop/NetworkManager/ActiveConnection/1  --     /etc/NetworkManager/system-connections/con-xx1   
+NAME       UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE      ACTIVE-PATH                                         PORT  FILENAME                                         
+con-1      5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/1  no      --      --         --                                                  --    /etc/NetworkManager/system-connections/con-1     
+con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  vpn       0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  yes     wlan0   activated  /org/freedesktop/NetworkManager/ActiveConnection/2  --    /etc/NetworkManager/system-connections/con-vpn-1 
+con-xx1    UUID-con-xx1-REPLACED-REPLACED-REPLA  wifi      0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/2  yes     wlan0   activated  /org/freedesktop/NetworkManager/ActiveConnection/1  --    /etc/NetworkManager/system-connections/con-xx1   
 
 <<<
-size: 1448
+size: 1444
 location: src/tests/client/test-client.py:test_004()/26
 cmd: $NMCLI -f all connection show --order active:-na
 lang: C
 returncode: 0
-stdout: 1288 bytes
+stdout: 1284 bytes
 >>>
-NAME       UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE      ACTIVE-PATH                                         SLAVE  FILENAME                                         
-con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  vpn       0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  yes     wlan0   activated  /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/con-vpn-1 
-con-xx1    UUID-con-xx1-REPLACED-REPLACED-REPLA  wifi      0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/2  yes     wlan0   activated  /org/freedesktop/NetworkManager/ActiveConnection/1  --     /etc/NetworkManager/system-connections/con-xx1   
-con-1      5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/1  no      --      --         --                                                  --     /etc/NetworkManager/system-connections/con-1     
+NAME       UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE      ACTIVE-PATH                                         PORT  FILENAME                                         
+con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  vpn       0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  yes     wlan0   activated  /org/freedesktop/NetworkManager/ActiveConnection/2  --    /etc/NetworkManager/system-connections/con-vpn-1 
+con-xx1    UUID-con-xx1-REPLACED-REPLACED-REPLA  wifi      0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/2  yes     wlan0   activated  /org/freedesktop/NetworkManager/ActiveConnection/1  --    /etc/NetworkManager/system-connections/con-xx1   
+con-1      5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/1  no      --      --         --                                                  --    /etc/NetworkManager/system-connections/con-1     
 
 <<<
 size: 6858
@@ -58613,34 +58613,34 @@ wlan1   wifi      rozłączono  nieznane          nieznane          /org/freedes
 wlan1   wifi      rozłączono  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
 
 <<<
-size: 2074
+size: 2068
 location: src/tests/client/test-client.py:test_004()/932
 cmd: $NMCLI -f all connection show
 lang: C
 returncode: 0
-stdout: 1932 bytes
+stdout: 1926 bytes
 >>>
-NAME       UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE      ACTIVE-PATH                                         SLAVE  FILENAME                                         
-con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  vpn       0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  yes     wlan0   activated  /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/con-vpn-1 
-con-xx1    UUID-con-xx1-REPLACED-REPLACED-REPLA  wifi      0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/2  yes     wlan0   activated  /org/freedesktop/NetworkManager/ActiveConnection/1  --     /etc/NetworkManager/system-connections/con-xx1   
-con-xx1    UUID-con-xx1-REPLACED-REPLACED-REPLA  wifi      0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/2  yes     wlan0   activated  /org/freedesktop/NetworkManager/ActiveConnection/4  --     /etc/NetworkManager/system-connections/con-xx1   
-con-xx2    UUID-con-xx2-REPLACED-REPLACED-REPLA  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/4  yes     eth0    activated  /org/freedesktop/NetworkManager/ActiveConnection/3  --     /etc/NetworkManager/system-connections/con-xx2   
-con-1      5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/1  no      --      --         --                                                  --     /etc/NetworkManager/system-connections/con-1     
+NAME       UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE      ACTIVE-PATH                                         PORT  FILENAME                                         
+con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  vpn       0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  yes     wlan0   activated  /org/freedesktop/NetworkManager/ActiveConnection/2  --    /etc/NetworkManager/system-connections/con-vpn-1 
+con-xx1    UUID-con-xx1-REPLACED-REPLACED-REPLA  wifi      0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/2  yes     wlan0   activated  /org/freedesktop/NetworkManager/ActiveConnection/1  --    /etc/NetworkManager/system-connections/con-xx1   
+con-xx1    UUID-con-xx1-REPLACED-REPLACED-REPLA  wifi      0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/2  yes     wlan0   activated  /org/freedesktop/NetworkManager/ActiveConnection/4  --    /etc/NetworkManager/system-connections/con-xx1   
+con-xx2    UUID-con-xx2-REPLACED-REPLACED-REPLA  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/4  yes     eth0    activated  /org/freedesktop/NetworkManager/ActiveConnection/3  --    /etc/NetworkManager/system-connections/con-xx2   
+con-1      5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/1  no      --      --         --                                                  --    /etc/NetworkManager/system-connections/con-1     
 
 <<<
-size: 2090
+size: 2084
 location: src/tests/client/test-client.py:test_004()/933
 cmd: $NMCLI -f all connection show
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1938 bytes
+stdout: 1932 bytes
 >>>
-NAME       UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE       ACTIVE-PATH                                         SLAVE  FILENAME                                         
-con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  vpn       0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/3  tak     wlan0   aktywowano  /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/con-vpn-1 
-con-xx1    UUID-con-xx1-REPLACED-REPLACED-REPLA  wifi      0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/2  tak     wlan0   aktywowano  /org/freedesktop/NetworkManager/ActiveConnection/1  --     /etc/NetworkManager/system-connections/con-xx1   
-con-xx1    UUID-con-xx1-REPLACED-REPLACED-REPLA  wifi      0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/2  tak     wlan0   aktywowano  /org/freedesktop/NetworkManager/ActiveConnection/4  --     /etc/NetworkManager/system-connections/con-xx1   
-con-xx2    UUID-con-xx2-REPLACED-REPLACED-REPLA  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/4  tak     eth0    aktywowano  /org/freedesktop/NetworkManager/ActiveConnection/3  --     /etc/NetworkManager/system-connections/con-xx2   
-con-1      5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/1  nie     --      --          --                                                  --     /etc/NetworkManager/system-connections/con-1     
+NAME       UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE       ACTIVE-PATH                                         PORT  FILENAME                                         
+con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  vpn       0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/3  tak     wlan0   aktywowano  /org/freedesktop/NetworkManager/ActiveConnection/2  --    /etc/NetworkManager/system-connections/con-vpn-1 
+con-xx1    UUID-con-xx1-REPLACED-REPLACED-REPLA  wifi      0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/2  tak     wlan0   aktywowano  /org/freedesktop/NetworkManager/ActiveConnection/1  --    /etc/NetworkManager/system-connections/con-xx1   
+con-xx1    UUID-con-xx1-REPLACED-REPLACED-REPLA  wifi      0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/2  tak     wlan0   aktywowano  /org/freedesktop/NetworkManager/ActiveConnection/4  --    /etc/NetworkManager/system-connections/con-xx1   
+con-xx2    UUID-con-xx2-REPLACED-REPLACED-REPLA  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/4  tak     eth0    aktywowano  /org/freedesktop/NetworkManager/ActiveConnection/3  --    /etc/NetworkManager/system-connections/con-xx2   
+con-1      5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/1  nie     --      --          --                                                  --    /etc/NetworkManager/system-connections/con-1     
 
 <<<
 size: 359
