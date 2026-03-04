@@ -418,7 +418,6 @@ lease_parse_routes(NDhcp4ClientLease *lease,
     in_addr_t     gateway;
     uint8_t       plen;
     guint32       m;
-    gboolean      has_router_from_classless   = FALSE;
     gboolean      has_classless               = FALSE;
     guint32       default_route_metric_offset = 0;
     const guint8 *l_data;
@@ -434,7 +433,7 @@ lease_parse_routes(NDhcp4ClientLease *lease,
      * We will however also parse one of the options into the "l3cd" for configuring routing.
      * Thereby we prefer 121 over 249 over 33.
      *
-     * Preferring 121 over 33 is defined by RFC 3443.
+     * Preferring 121 over 33 is defined by RFC 3442.
      * Preferring 121 over 249 over 33 is made up as it makes sense (the MS docs are not very clear).
      */
     for (i = 0; i < 2; i++) {
@@ -460,8 +459,7 @@ lease_parse_routes(NDhcp4ClientLease *lease,
             if (plen == 0) {
                 /* if there are multiple default routes, we add them with differing
                  * metrics. */
-                m                         = default_route_metric_offset++;
-                has_router_from_classless = TRUE;
+                m = default_route_metric_offset++;
             } else
                 m = 0;
 
@@ -495,7 +493,7 @@ lease_parse_routes(NDhcp4ClientLease *lease,
             nm_str_buf_append_printf(sbuf, "%s/%d %s", dest_str, (int) plen, gateway_str);
 
             if (has_classless) {
-                /* RFC 3443: if the DHCP server returns both a Classless Static Routes
+                /* RFC 3442: if the DHCP server returns both a Classless Static Routes
                  * option and a Static Routes option, the DHCP client MUST ignore the
                  * Static Routes option. */
                 continue;
@@ -539,13 +537,10 @@ lease_parse_routes(NDhcp4ClientLease *lease,
                 continue;
             }
 
-            if (has_router_from_classless) {
-                /* If the DHCP server returns both a Classless Static Routes option and a
-                 * Router option, the DHCP client MUST ignore the Router option [RFC 3442].
-                 *
-                 * Be more lenient and ignore the Router option only if Classless Static
-                 * Routes contain a default gateway (as other DHCP backends do).
-                 */
+            if (has_classless) {
+                /* RFC 3442: if the DHCP server returns both a Classless Static Routes
+                 * option and a Router option, the DHCP client MUST ignore the Router
+                 * option. */
                 continue;
             }
 

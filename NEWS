@@ -48,6 +48,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   and only prompt for new secrets during the last authentication attempt before
   failing.
 * Add support for GENEVE interface.
+* The DHCPv4 internal client now ignores option 3 (Router) if the lease
+  contains option 121 (Classless Static Route), as recommended by RFC 3442.
 
 =============================================
 NetworkManager-1.56
