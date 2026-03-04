@@ -14919,7 +14919,7 @@ set_managed(NMDevice *self, NMDeviceManaged managed, NMDeviceManagedFlags flags,
         gboolean  by_mac;
 
         managed_to_disk = managed == NM_DEVICE_MANAGED_RESET ? NM_TERNARY_DEFAULT : !!managed;
-        nm_config_get_device_managed(nm_manager_get_config(priv->manager), self, &old, error);
+        nm_config_get_device_managed(nm_manager_get_config(priv->manager), self, &old, NULL, error);
         if (!get_managed_match_by_mac(self, flags, &by_mac, error))
             return FALSE;
 

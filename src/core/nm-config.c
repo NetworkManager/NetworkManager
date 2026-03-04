@@ -2105,7 +2105,11 @@ normalize_hwaddr_for_group_name(const char *hwaddr, char *out, GError **error)
  * Returns: TRUE if there were no errors, FALSE otherwise.
  */
 gboolean
-nm_config_get_device_managed(NMConfig *self, NMDevice *device, NMTernary *out, GError **error)
+nm_config_get_device_managed(NMConfig  *self,
+                             NMDevice  *device,
+                             NMTernary *out_managed,
+                             gboolean  *out_by_mac,
+                             GError   **error)
 {
     NMConfigPrivate *priv;
     const GKeyFile  *keyfile       = NULL;
@@ -2118,14 +2122,15 @@ nm_config_get_device_managed(NMConfig *self, NMDevice *device, NMTernary *out, G
 
     g_return_val_if_fail(NM_IS_CONFIG(self), FALSE);
     g_return_val_if_fail(NM_CONFIG_GET_PRIVATE(self)->config_data, FALSE);
-    g_return_val_if_fail(out, FALSE);
+    g_return_val_if_fail(out_managed, FALSE);
     g_return_val_if_fail(ifname, FALSE);
 
     priv    = NM_CONFIG_GET_PRIVATE(self);
     keyfile = _nm_config_data_get_keyfile_intern(priv->config_data);
 
     if (!keyfile) {
-        *out = NM_TERNARY_DEFAULT;
+        NM_SET_OUT(out_managed, NM_TERNARY_DEFAULT);
+        NM_SET_OUT(out_by_mac, FALSE);
         return TRUE;
     }
 
@@ -2152,16 +2157,20 @@ nm_config_get_device_managed(NMConfig *self, NMDevice *device, NMTernary *out, G
     }
 
     if (val_by_name != NM_TERNARY_DEFAULT && val_by_mac == NM_TERNARY_DEFAULT) {
-        *out = val_by_name;
+        NM_SET_OUT(out_managed, val_by_name);
+        NM_SET_OUT(out_by_mac, FALSE);
         return TRUE;
     } else if (val_by_mac != NM_TERNARY_DEFAULT && val_by_name == NM_TERNARY_DEFAULT) {
-        *out = val_by_mac;
+        NM_SET_OUT(out_managed, val_by_mac);
+        NM_SET_OUT(out_by_mac, TRUE);
         return TRUE;
     } else if (val_by_name == NM_TERNARY_DEFAULT && val_by_mac == NM_TERNARY_DEFAULT) {
-        *out = NM_TERNARY_DEFAULT;
+        NM_SET_OUT(out_managed, NM_TERNARY_DEFAULT);
+        NM_SET_OUT(out_by_mac, FALSE);
         return TRUE;
     } else if (val_by_name == val_by_mac) {
-        *out = val_by_name;
+        NM_SET_OUT(out_managed, val_by_name);
+        NM_SET_OUT(out_by_mac, FALSE);
         return TRUE;
     }
 

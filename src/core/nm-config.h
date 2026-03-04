@@ -145,6 +145,7 @@ void nm_config_set_connectivity_check_enabled(NMConfig *self, gboolean enabled);
 gboolean nm_config_get_device_managed(NMConfig  *self,
                                       NMDevice  *device,
                                       NMTernary *out_managed,
+                                      gboolean  *out_by_mac,
                                       GError   **error);
 gboolean nm_config_set_device_managed(NMConfig *self,
                                       NMDevice *device,
