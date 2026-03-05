@@ -818,8 +818,11 @@ _metagen_con_show_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 }
 
 const NmcMetaGenericInfo *const metagen_con_show[_NMC_GENERIC_INFO_TYPE_CON_SHOW_NUM + 1] = {
-#define _METAGEN_CON_SHOW(type, name) \
-    [type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_con_show_get_fcn)
+#define _METAGEN_CON_SHOW(type, name, ...)                            \
+    [type] = NMC_META_GENERIC(name,                                   \
+                              .info_type = type,                      \
+                              .get_fcn   = _metagen_con_show_get_fcn, \
+                              __VA_ARGS__)
     _METAGEN_CON_SHOW(NMC_GENERIC_INFO_TYPE_CON_SHOW_NAME, "NAME"),
     _METAGEN_CON_SHOW(NMC_GENERIC_INFO_TYPE_CON_SHOW_UUID, "UUID"),
     _METAGEN_CON_SHOW(NMC_GENERIC_INFO_TYPE_CON_SHOW_TYPE, "TYPE"),
@@ -833,7 +836,7 @@ const NmcMetaGenericInfo *const metagen_con_show[_NMC_GENERIC_INFO_TYPE_CON_SHOW
     _METAGEN_CON_SHOW(NMC_GENERIC_INFO_TYPE_CON_SHOW_DEVICE, "DEVICE"),
     _METAGEN_CON_SHOW(NMC_GENERIC_INFO_TYPE_CON_SHOW_STATE, "STATE"),
     _METAGEN_CON_SHOW(NMC_GENERIC_INFO_TYPE_CON_SHOW_ACTIVE_PATH, "ACTIVE-PATH"),
-    _METAGEN_CON_SHOW(NMC_GENERIC_INFO_TYPE_CON_SHOW_PORT, "SLAVE"),
+    _METAGEN_CON_SHOW(NMC_GENERIC_INFO_TYPE_CON_SHOW_PORT, "PORT", .alias = "SLAVE"),
     _METAGEN_CON_SHOW(NMC_GENERIC_INFO_TYPE_CON_SHOW_FILENAME, "FILENAME"),
 };
 #define NMC_FIELDS_CON_SHOW_COMMON "NAME,UUID,TYPE,DEVICE"
@@ -920,6 +923,7 @@ _metagen_con_active_general_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
          * but the settings-connection profile. There is no guarantee, that they agree. */
         return s_con ? nm_setting_connection_get_zone(s_con) : NULL;
     case NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_CONTROLLER_PATH:
+    case NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_MASTER_PATH:
         dev = nm_active_connection_get_controller(ac);
         return dev ? nm_object_get_path(NM_OBJECT(dev)) : NULL;
     default:
@@ -949,6 +953,8 @@ const NmcMetaGenericInfo
         _METAGEN_CON_ACTIVE_GENERAL(NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_CON_PATH, "CON-PATH"),
         _METAGEN_CON_ACTIVE_GENERAL(NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_ZONE, "ZONE"),
         _METAGEN_CON_ACTIVE_GENERAL(NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_CONTROLLER_PATH,
+                                    "CONTROLLER-PATH"),
+        _METAGEN_CON_ACTIVE_GENERAL(NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_MASTER_PATH,
                                     "MASTER-PATH"),
 };
 

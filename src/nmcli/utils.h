@@ -157,6 +157,7 @@ typedef enum {
     NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_CON_PATH,
     NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_ZONE,
     NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_CONTROLLER_PATH,
+    NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_MASTER_PATH,
     _NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_NUM,
 
     NMC_GENERIC_INFO_TYPE_CON_VPN_TYPE = 0,
@@ -260,6 +261,7 @@ struct _NmcMetaGenericInfo {
     NmcGenericInfoType               info_type;
     const char                      *name;
     const char                      *name_header;
+    const char                      *alias;
     const NmcMetaGenericInfo *const *nested;
 
 #define NMC_META_GENERIC_INFO_GET_FCN_ARGS                                     \

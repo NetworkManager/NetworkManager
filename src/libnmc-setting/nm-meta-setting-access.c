@@ -191,6 +191,17 @@ nm_meta_abstract_info_get_name(const NMMetaAbstractInfo *abstract_info, gboolean
     return n;
 }
 
+const char *
+nm_meta_abstract_info_get_alias(const NMMetaAbstractInfo *abstract_info)
+{
+    nm_assert(abstract_info);
+    nm_assert(abstract_info->meta_type);
+
+    if (abstract_info->meta_type->get_alias)
+        return abstract_info->meta_type->get_alias(abstract_info);
+    return NULL;
+}
+
 const NMMetaAbstractInfo *const *
 nm_meta_abstract_info_get_nested(const NMMetaAbstractInfo *abstract_info,
                                  guint                    *out_len,
@@ -466,10 +477,15 @@ _output_selection_select_one(const NMMetaAbstractInfo *const *fields_array,
 
     for (i = 0; fields_array[i]; i++) {
         const NMMetaAbstractInfo        *fi = fields_array[i];
+        const char                      *name, *alias;
         const NMMetaAbstractInfo *const *nested;
         gs_free gpointer                 nested_to_free = NULL;
 
-        if (g_ascii_strcasecmp(i_name, nm_meta_abstract_info_get_name(fi, FALSE)) != 0)
+        name  = nm_meta_abstract_info_get_name(fi, FALSE);
+        alias = nm_meta_abstract_info_get_alias(fi);
+
+        if (g_ascii_strcasecmp(i_name, name) != 0
+            && (alias == NULL || g_ascii_strcasecmp(i_name, alias) != 0))
             continue;
 
         if (!right || !validate_nested) {
@@ -480,8 +496,11 @@ _output_selection_select_one(const NMMetaAbstractInfo *const *fields_array,
         nested = nm_meta_abstract_info_get_nested(fi, NULL, &nested_to_free);
         if (nested) {
             for (j = 0; nested[j]; nested++) {
-                if (g_ascii_strcasecmp(right, nm_meta_abstract_info_get_name(nested[j], FALSE))
-                    == 0) {
+                name  = nm_meta_abstract_info_get_name(nested[j], FALSE);
+                alias = nm_meta_abstract_info_get_alias(nested[j]);
+
+                if (g_ascii_strcasecmp(right, name) == 0
+                    || (alias && g_ascii_strcasecmp(right, alias) == 0)) {
                     found = TRUE;
                     break;
                 }
