@@ -3160,6 +3160,12 @@ get_private_files(NMSetting *setting, GPtrArray *files)
          nm_setting_802_1x_get_phase2_private_key_scheme,
          nm_setting_802_1x_get_phase2_private_key_path},
     };
+    const struct {
+        const char *property;
+        const char *(*get_path_func)(NMSetting8021x *);
+    } path_props[] = {
+        {NM_SETTING_802_1X_PAC_FILE, nm_setting_802_1x_get_pac_file},
+    };
     NMSetting8021x *s_8021x = NM_SETTING_802_1X(setting);
     const char     *path;
     guint           i;
@@ -3182,8 +3188,16 @@ get_private_files(NMSetting *setting, GPtrArray *files)
                 continue;
 
             found = FALSE;
+
             for (j = 0; j < G_N_ELEMENTS(cert_props); j++) {
                 if (nm_streq0(properties[i]->name, cert_props[j].property)) {
+                    found = TRUE;
+                    break;
+                }
+            }
+
+            for (j = 0; j < G_N_ELEMENTS(path_props); j++) {
+                if (nm_streq0(properties[i]->name, path_props[j].property)) {
                     found = TRUE;
                     break;
                 }
@@ -3199,6 +3213,14 @@ get_private_files(NMSetting *setting, GPtrArray *files)
             nm_assert(prop);
             nm_assert(prop->flags & NM_SETTING_PARAM_CERT_KEY_FILE);
         }
+
+        for (i = 0; i < G_N_ELEMENTS(path_props); i++) {
+            GParamSpec *prop;
+
+            prop = g_object_class_find_property(klass, path_props[i].property);
+            nm_assert(prop);
+            nm_assert(prop->flags & NM_SETTING_PARAM_CERT_KEY_FILE);
+        }
     }
 
     for (i = 0; i < G_N_ELEMENTS(cert_props); i++) {
@@ -3207,6 +3229,13 @@ get_private_files(NMSetting *setting, GPtrArray *files)
             if (path) {
                 g_ptr_array_add(files, (gpointer) path);
             }
+        }
+    }
+
+    for (i = 0; i < G_N_ELEMENTS(path_props); i++) {
+        path = path_props[i].get_path_func(s_8021x);
+        if (path) {
+            g_ptr_array_add(files, (gpointer) path);
         }
     }
 }
@@ -3390,7 +3419,7 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               obj_properties,
                                               NM_SETTING_802_1X_PAC_FILE,
                                               PROP_PAC_FILE,
-                                              NM_SETTING_PARAM_NONE,
+                                              NM_SETTING_PARAM_CERT_KEY_FILE,
                                               NMSetting8021xPrivate,
                                               pac_file,
                                               .direct_string_allow_empty = TRUE);

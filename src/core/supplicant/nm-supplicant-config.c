@@ -1598,7 +1598,13 @@ nm_supplicant_config_add_setting_8021x(NMSupplicantConfig *self,
 
     /* PAC file */
     path = nm_setting_802_1x_get_pac_file(setting);
-    if (path) {
+    bytes = priv->private_user ? nm_g_hash_table_lookup(files, path) : NULL;
+    if (bytes) {
+        if (!nm_supplicant_config_add_blob_for_connection(self, bytes, "pac_file", con_uuid, error))
+            return FALSE;
+    } else if (path) {
+        /* Private connections cannot use paths */
+        g_return_val_if_fail(!priv->private_user, FALSE);
         if (!add_string_val(self, path, "pac_file", FALSE, NULL, error))
             return FALSE;
     } else {
