@@ -3133,6 +3133,12 @@ need_secrets(NMSetting *setting, gboolean check_rerequest)
 
 /*****************************************************************************/
 
+static NMSetting8021xCKScheme
+_force_private_key_scheme_path(NMSetting8021x *_sett)
+{
+    return NM_SETTING_802_1X_CK_SCHEME_PATH;
+}
+
 static void
 get_private_files(NMSetting *setting, GPtrArray *files)
 {
@@ -3159,6 +3165,9 @@ get_private_files(NMSetting *setting, GPtrArray *files)
         {NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
          nm_setting_802_1x_get_phase2_private_key_scheme,
          nm_setting_802_1x_get_phase2_private_key_path},
+        {NM_SETTING_802_1X_PAC_FILE,
+         _force_private_key_scheme_path,
+         nm_setting_802_1x_get_pac_file},
     };
     NMSetting8021x *s_8021x = NM_SETTING_802_1X(setting);
     const char     *path;
@@ -3390,7 +3399,7 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               obj_properties,
                                               NM_SETTING_802_1X_PAC_FILE,
                                               PROP_PAC_FILE,
-                                              NM_SETTING_PARAM_NONE,
+                                              NM_SETTING_PARAM_CERT_KEY_FILE,
                                               NMSetting8021xPrivate,
                                               pac_file,
                                               .direct_string_allow_empty = TRUE);
