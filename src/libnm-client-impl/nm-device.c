@@ -1446,9 +1446,7 @@ nm_device_get_managed(NMDevice *device)
  *
  * Since: 1.2
  *
- * Deprecated: 1.22: Use the async command nm_client_dbus_set_property() on
- * nm_object_get_path(), interface %NM_DBUS_INTERFACE_DEVICE to set the
- * "Managed" property to a "(b)" boolean value.
+ * Deprecated: 1.22: Use nm_device_set_managed_async() instead.
  * This function is deprecated because it calls a synchronous D-Bus method
  * and modifies the content of the NMClient cache client side. Also, it does
  * not emit a property changed signal.
@@ -1469,6 +1467,72 @@ nm_device_set_managed(NMDevice *device, gboolean managed)
                                         "b",
                                         managed);
 }
+
+/**
+ * nm_device_set_managed_async:
+ * @device: a #NMDevice
+ * @managed: the managed state
+ * @flags: the flags argument. See #NMDeviceManagedFlags.
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: callback to be called when the set_managed operation completes
+ * @user_data: caller-specific data passed to @callback
+ *
+ * Asynchronously begins setting the managed state of the device. With the flags
+ * argument different behaviors can be achieved, such as persisting the state to
+ * disk or matching the device by MAC address.
+ *
+ * Since: 1.58
+ **/
+void
+nm_device_set_managed_async(NMDevice            *device,
+                            NMDeviceManaged      managed,
+                            NMDeviceManagedFlags flags,
+                            GCancellable        *cancellable,
+                            GAsyncReadyCallback  callback,
+                            gpointer             user_data)
+{
+    g_return_if_fail(NM_IS_DEVICE(device));
+    g_return_if_fail(!cancellable || G_IS_CANCELLABLE(cancellable));
+
+    _nm_client_dbus_call(_nm_object_get_client(device),
+                         device,
+                         nm_device_set_managed_async,
+                         cancellable,
+                         callback,
+                         user_data,
+                         _nm_object_get_path(device),
+                         NM_DBUS_INTERFACE_DEVICE,
+                         "SetManaged",
+                         g_variant_new("(uu)", managed, flags),
+                         G_VARIANT_TYPE("()"),
+                         G_DBUS_CALL_FLAGS_NONE,
+                         NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+                         nm_dbus_connection_call_finish_void_strip_dbus_error_cb);
+}
+
+/**
+ * nm_device_set_managed_finish:
+ * @device: a #NMDevice
+ * @result: the result passed to the #GAsyncReadyCallback
+ * @error: location for a #GError, or %NULL
+ *
+ * Gets the result of a call to nm_device_set_managed_async().
+ *
+ * Returns: %TRUE on success, %FALSE on error, in which case @error
+ * will be set.
+ *
+ * Since: 1.58
+ **/
+gboolean
+nm_device_set_managed_finish(NMDevice *device, GAsyncResult *result, GError **error)
+{
+    g_return_val_if_fail(NM_IS_DEVICE(device), FALSE);
+    g_return_val_if_fail(nm_g_task_is_valid(result, device, nm_device_set_managed_async), FALSE);
+
+    return g_task_propagate_boolean(G_TASK(result), error);
+}
+
+/*****************************************************************************/
 
 /**
  * nm_device_get_autoconnect:

@@ -5,6 +5,7 @@ src/core/NetworkManagerUtils.c
 src/core/devices/adsl/nm-device-adsl.c
 src/core/devices/bluetooth/nm-bluez-manager.c
 src/core/devices/bluetooth/nm-device-bt.c
+src/core/devices/nm-device.c
 src/core/devices/nm-device-6lowpan.c
 src/core/devices/nm-device-bond.c
 src/core/devices/nm-device-bridge.c

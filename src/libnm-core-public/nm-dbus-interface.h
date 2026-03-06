@@ -1249,6 +1249,54 @@ typedef enum /*< flags >*/ {
 } NMDeviceReapplyFlags;
 
 /**
+ * NMDeviceManaged:
+ * @NM_DEVICE_MANAGED_NO: the device is not managed.
+ * @NM_DEVICE_MANAGED_YES: the device is managed.
+ * @NM_DEVICE_MANAGED_RESET: reset the device managed state to the default value.
+ *
+ * Values for the SetManaged() D-Bus call of a device and nm_device_set_managed_async().
+ *
+ * Since: 1.58
+ */
+typedef enum {
+    NM_DEVICE_MANAGED_NO    = 0,
+    NM_DEVICE_MANAGED_YES   = 1,
+    NM_DEVICE_MANAGED_RESET = 2,
+} NMDeviceManaged;
+
+/**
+ * NMDeviceManagedFlags:
+ * @NM_DEVICE_MANAGED_FLAGS_NONE: no flag set.
+ * @NM_DEVICE_MANAGED_FLAGS_RUNTIME: to set the device managed state to the runtime value.
+ * @NM_DEVICE_MANAGED_FLAGS_PERMANENT: to set the device managed state to the permanent (on disk) value.
+ * @NM_DEVICE_MANAGED_FLAGS_PERMANENT_BY_NAME: to match the device by name, not by MAC address.
+ * @NM_DEVICE_MANAGED_FLAGS_PERMANENT_BY_MAC: to match the device by MAC address, not by name.
+ * @NM_DEVICE_MANAGED_FLAGS_SET_ADMIN_STATE: to set the administrative state of the
+ *   device to up if the managed state is %NM_DEVICE_MANAGED_YES, and down if the managed state
+ *   is %NM_DEVICE_MANAGED_NO. If the flag is not set, the administrative state is not changed.
+ *   The flag is ignored for %NM_DEVICE_MANAGED_RESET.
+ * @NM_DEVICE_MANAGED_FLAGS_ALL: all flags.
+ *
+ * Flags for the SetManaged() D-Bus call of a device and nm_device_set_managed_async().
+ *
+ * %NM_DEVICE_MANAGED_FLAGS_PERMANENT_BY_NAME and %NM_DEVICE_MANAGED_FLAGS_PERMANENT_BY_MAC
+ * are mutually exclusive, and they only make sense together with %NM_DEVICE_MANAGED_FLAGS_PERMANENT.
+ * If none is set, the matching criteria is selected automatically.
+ *
+ * Since: 1.58
+ */
+typedef enum /*< flags >*/ {
+    NM_DEVICE_MANAGED_FLAGS_NONE              = 0,
+    NM_DEVICE_MANAGED_FLAGS_RUNTIME           = 0x1,
+    NM_DEVICE_MANAGED_FLAGS_PERMANENT         = 0x2,
+    NM_DEVICE_MANAGED_FLAGS_PERMANENT_BY_NAME = 0x4,
+    NM_DEVICE_MANAGED_FLAGS_PERMANENT_BY_MAC  = 0x8,
+    NM_DEVICE_MANAGED_FLAGS_SET_ADMIN_STATE   = 0x10,
+
+    NM_DEVICE_MANAGED_FLAGS_ALL = 0x1F, /* <skip> */
+} NMDeviceManagedFlags;
+
+/**
  * NMTernary:
  * @NM_TERNARY_DEFAULT: use the globally-configured default value.
  * @NM_TERNARY_FALSE: the option is disabled.

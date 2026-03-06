@@ -175,6 +175,9 @@
         property has a similar effect to configuring the device as unmanaged via
         the keyfile.unmanaged-devices setting in NetworkManager.conf. Changes to
         this value are not persistent and lost after NetworkManager restart.
+
+        DEPRECATED: 1.58: Use the SetManaged method instead, which supports
+        additional features like persisting the state to disk
     -->
     <property name="Managed" type="b" access="readwrite"/>
 
@@ -390,6 +393,20 @@
         device.
     -->
     <method name="Delete"/>
+
+    <!--
+        SetManaged:
+        @managed:(<link linkend="NMDeviceManaged">NMDeviceManaged</link>) Whether the device is managed. Possible values are "no" (0), "yes" (1) and "reset" (2).
+        @flags: (<link linkend="NMDeviceManagedFlags">NMDeviceManagedFlags</link>) flags.
+        @since: 1.58
+
+        Set the managed state of the device. With the flags argument different
+        behaviors can be achieved, like storing the new managed state to disk.
+    -->
+    <method name="SetManaged">
+      <arg name="managed" type="u" direction="in"/>
+      <arg name="flags" type="u" direction="in"/>
+      </method>
 
     <!--
         StateChanged:

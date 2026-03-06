@@ -2058,12 +2058,15 @@ _match_section_infos_construct(GKeyFile *keyfile, gboolean is_device)
 {
     char            **groups;
     gsize             i, j, ngroups;
-    char             *connection_tag      = NULL;
+    char             *main_group          = NULL;
     MatchSectionInfo *match_section_infos = NULL;
-    const char       *prefix;
+    const char       *prefix, *prefix_intern;
 
     prefix =
         is_device ? NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE : NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION;
+    prefix_intern =
+        is_device ? NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE
+                  : NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION;
 
     /* get the list of existing [connection.\+]/[device.\+] sections.
      *
@@ -2074,27 +2077,36 @@ _match_section_infos_construct(GKeyFile *keyfile, gboolean is_device)
     if (!groups)
         return NULL;
 
-    if (ngroups > 0) {
-        gsize l = strlen(prefix);
-
-        for (i = 0, j = 0; i < ngroups; i++) {
-            if (g_str_has_prefix(groups[i], prefix)) {
-                if (groups[i][l] == '\0')
-                    connection_tag = groups[i];
-                else
-                    groups[j++] = groups[i];
-            } else
-                g_free(groups[i]);
+    for (i = 0, j = 0; i < ngroups; i++) {
+        if (nm_streq0(groups[i], prefix)) {
+            main_group = groups[i];
+        } else if (nm_streq0(groups[i], prefix_intern)) {
+            /* [.intern.connection] and [.intern.device] should not exist */
+            _nm_log(LOGL_WARN,
+                    LOGD_CORE,
+                    0,
+                    NULL,
+                    NULL,
+                    "Invalid [.intern.*] section 'connection' or 'device' found");
+            g_free(groups[i]);
+            continue;
+        } else if (g_str_has_prefix(groups[i], prefix)) {
+            groups[j++] = groups[i];
+        } else if (g_str_has_prefix(groups[i], prefix_intern)) {
+            /* [.intern.connection-whatever] and [.intern.device-whatever] can exist */
+            groups[j++] = groups[i];
+        } else {
+            g_free(groups[i]);
         }
-        ngroups = j;
     }
+    ngroups = j;
 
-    if (ngroups == 0 && !connection_tag) {
+    if (ngroups == 0 && !main_group) {
         g_free(groups);
         return NULL;
     }
 
-    match_section_infos = g_new0(MatchSectionInfo, ngroups + 1 + (connection_tag ? 1 : 0));
+    match_section_infos            = g_new0(MatchSectionInfo, ngroups + 1 + (main_group ? 1 : 0));
     match_section_infos->is_device = is_device;
     for (i = 0; i < ngroups; i++) {
         /* pass ownership of @group on... */
@@ -2103,9 +2115,9 @@ _match_section_infos_construct(GKeyFile *keyfile, gboolean is_device)
                                  groups[ngroups - i - 1],
                                  is_device);
     }
-    if (connection_tag) {
-        /* pass ownership of @connection_tag on... */
-        _match_section_info_init(&match_section_infos[i], keyfile, connection_tag, is_device);
+    if (main_group) {
+        /* pass ownership of @main_group on... */
+        _match_section_info_init(&match_section_infos[i], keyfile, main_group, is_device);
     }
     g_free(groups);
 
