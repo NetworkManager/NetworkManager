@@ -167,6 +167,28 @@ nm_ip6_addr_is_ula(const struct in6_addr *address)
     return (address->s6_addr32[0] & htonl(0xfe000000u)) == htonl(0xfc000000u);
 }
 
+/**
+ * nm_ip6_addr_common_prefix_len:
+ * @a: first IPv6 address
+ * @b: second IPv6 address
+ *
+ * Returns: the number of leading bits that @a and @b have in common,
+ * from 0 to 128.
+ */
+guint
+nm_ip6_addr_common_prefix_len(const struct in6_addr *a, const struct in6_addr *b)
+{
+    guint i;
+
+    for (i = 0; i < 16; i++) {
+        guint8 diff = a->s6_addr[i] ^ b->s6_addr[i];
+
+        if (diff != 0)
+            return i * 8u + __builtin_clz((guint) diff) - 24u;
+    }
+    return 128;
+}
+
 /*****************************************************************************/
 
 gconstpointer

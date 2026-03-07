@@ -2380,6 +2380,60 @@ test_inet_utils(void)
 
 /*****************************************************************************/
 
+static void
+test_ip6_addr_common_prefix_len(void)
+{
+    struct in6_addr a;
+    struct in6_addr b;
+
+    /* identical addresses -> 128 */
+    a = nmtst_inet6_from_string("2001:db8::1");
+    b = nmtst_inet6_from_string("2001:db8::1");
+    g_assert_cmpuint(nm_ip6_addr_common_prefix_len(&a, &b), ==, 128);
+
+    /* completely different -> 0 */
+    a = nmtst_inet6_from_string("8000::");
+    b = nmtst_inet6_from_string("::");
+    g_assert_cmpuint(nm_ip6_addr_common_prefix_len(&a, &b), ==, 0);
+
+    /* first 64 bits in common, differ at bit 65 */
+    a = nmtst_inet6_from_string("2001:db8:abcd:1234:8000::");
+    b = nmtst_inet6_from_string("2001:db8:abcd:1234::");
+    g_assert_cmpuint(nm_ip6_addr_common_prefix_len(&a, &b), ==, 64);
+
+    /* same /48 prefix */
+    a = nmtst_inet6_from_string("2001:db8:abcd::");
+    b = nmtst_inet6_from_string("2001:db8:abcd:ffff::");
+    g_assert_cmpuint(nm_ip6_addr_common_prefix_len(&a, &b), ==, 48);
+
+    /* differ in 5th bit -> 4 common bits */
+    a = nmtst_inet6_from_string("f800::");
+    b = nmtst_inet6_from_string("f000::");
+    g_assert_cmpuint(nm_ip6_addr_common_prefix_len(&a, &b), ==, 4);
+
+    /* differ in 2nd bit -> 1 common bit */
+    a = nmtst_inet6_from_string("c000::");
+    b = nmtst_inet6_from_string("8000::");
+    g_assert_cmpuint(nm_ip6_addr_common_prefix_len(&a, &b), ==, 1);
+
+    /* both zero -> 128 */
+    a = nmtst_inet6_from_string("::");
+    b = nmtst_inet6_from_string("::");
+    g_assert_cmpuint(nm_ip6_addr_common_prefix_len(&a, &b), ==, 128);
+
+    /* first 120 bits in common, differ at MSB of last byte */
+    a = nmtst_inet6_from_string("2001:db8::80");
+    b = nmtst_inet6_from_string("2001:db8::");
+    g_assert_cmpuint(nm_ip6_addr_common_prefix_len(&a, &b), ==, 120);
+
+    /* first 127 bits in common, differ only in last bit */
+    a = nmtst_inet6_from_string("2001:db8::fe");
+    b = nmtst_inet6_from_string("2001:db8::ff");
+    g_assert_cmpuint(nm_ip6_addr_common_prefix_len(&a, &b), ==, 127);
+}
+
+/*****************************************************************************/
+
 static gboolean
 _inet_parse(int addr_family, const char *str, gboolean accept_legacy, gpointer out_addr)
 {
@@ -2940,6 +2994,7 @@ main(int argc, char **argv)
     g_test_add_func("/general/test_path_simplify", test_path_simplify);
     g_test_add_func("/general/test_hostname_is_valid", test_hostname_is_valid);
     g_test_add_func("/general/test_inet_utils", test_inet_utils);
+    g_test_add_func("/general/test_ip6_addr_common_prefix_len", test_ip6_addr_common_prefix_len);
     g_test_add_func("/general/test_inet_parse_ip4_legacy", test_inet_parse_ip4_legacy);
     g_test_add_func("/general/test_garray", test_garray);
     g_test_add_func("/general/test_nm_prioq", test_nm_prioq);
