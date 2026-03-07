@@ -4140,6 +4140,50 @@ update_routes:
     }
 }
 
+/**
+ * _clat_compare_prefix:
+ * @best: current best candidate (or %NULL)
+ * @candidate: the new candidate prefix
+ * @pref64: the NAT64 prefix
+ *
+ * Compare two SLAAC candidate prefixes to be used for CLAT,
+ * as recommended by draft-ietf-v6ops-claton Section 7. Apply
+ * rules 6 and 8 of the source address selection algorithm from
+ * RFC 6724, Section 5.
+ *
+ * Returns %TRUE if @candidate is better than @best.
+ */
+static gboolean
+_clat_compare_prefix(const NMPlatformIP6Address *best,
+                     const NMPlatformIP6Address *candidate,
+                     const struct in6_addr      *pref64)
+{
+    guint pref64_label;
+    guint best_label;
+    guint cand_label;
+    guint best_prefix_len;
+    guint cand_prefix_len;
+
+    if (!best)
+        return TRUE;
+
+    /* Rule 6: prefer the address whose RFC 6724 label matches
+     * the label of the NAT64 prefix. */
+    pref64_label = nm_ip6_addr_rfc6724_label(pref64);
+    best_label   = nm_ip6_addr_rfc6724_label(&best->address);
+    cand_label   = nm_ip6_addr_rfc6724_label(&candidate->address);
+    if ((cand_label == pref64_label) != (best_label == pref64_label))
+        return cand_label == pref64_label;
+
+    /* Rule 8: longest matching prefix with the NAT64 prefix. */
+    best_prefix_len = nm_ip6_addr_common_prefix_len(&best->address, pref64);
+    cand_prefix_len = nm_ip6_addr_common_prefix_len(&candidate->address, pref64);
+    if (cand_prefix_len != best_prefix_len)
+        return cand_prefix_len > best_prefix_len;
+
+    return FALSE;
+}
+
 static void
 _l3cfg_update_clat_config(NML3Cfg             *self,
                           NML3ConfigData      *l3cd,
@@ -4206,28 +4250,36 @@ _l3cfg_update_clat_config(NML3Cfg             *self,
         network_id = nm_l3_config_data_get_network_id(l3cd);
 
         if (!self->priv.p->clat_address_6_valid && network_id) {
+            const NMPlatformIP6Address *best_prefix = NULL;
+
+            /* Select the best SLAAC prefix for the CLAT address per
+             * draft-ietf-v6ops-claton-14 Section 7 */
             nm_l3_config_data_iter_ip6_address_for_each (&iter, l3cd, &ip6_entry) {
                 if (ip6_entry->addr_source == NM_IP_CONFIG_SOURCE_NDISC && ip6_entry->plen == 64) {
-                    ip6 = ip6_entry->address;
-
-                    nm_utils_ipv6_addr_set_stable_privacy(NM_UTILS_STABLE_TYPE_CLAT,
-                                                          &ip6,
-                                                          nm_l3cfg_get_ifname(self, TRUE),
-                                                          network_id,
-                                                          0);
-                    self->priv.p->clat_address_6 = (NMPlatformIP6Address) {
-                        .ifindex      = self->priv.ifindex,
-                        .address      = ip6,
-                        .peer_address = ip6,
-                        .addr_source  = NM_IP_CONFIG_SOURCE_CLAT,
-                        .plen         = ip6_entry->plen,
-                    };
-
-                    _LOGT("clat: using IPv6 address %s", nm_inet6_ntop(&ip6, buf));
-
-                    self->priv.p->clat_address_6_valid = TRUE;
-                    break;
+                    if (_clat_compare_prefix(best_prefix, ip6_entry, &pref64))
+                        best_prefix = ip6_entry;
                 }
+            }
+
+            if (best_prefix) {
+                ip6 = best_prefix->address;
+
+                nm_utils_ipv6_addr_set_stable_privacy(NM_UTILS_STABLE_TYPE_CLAT,
+                                                      &ip6,
+                                                      nm_l3cfg_get_ifname(self, TRUE),
+                                                      network_id,
+                                                      0);
+                self->priv.p->clat_address_6 = (NMPlatformIP6Address) {
+                    .ifindex      = self->priv.ifindex,
+                    .address      = ip6,
+                    .peer_address = ip6,
+                    .addr_source  = NM_IP_CONFIG_SOURCE_CLAT,
+                    .plen         = best_prefix->plen,
+                };
+
+                _LOGT("clat: using IPv6 address %s", nm_inet6_ntop(&ip6, buf));
+
+                self->priv.p->clat_address_6_valid = TRUE;
             }
         }
 
