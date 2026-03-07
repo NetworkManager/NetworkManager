@@ -282,6 +282,8 @@ gboolean nm_ip6_addr_is_ula(const struct in6_addr *address);
 
 guint nm_ip6_addr_common_prefix_len(const struct in6_addr *a, const struct in6_addr *b);
 
+guint nm_ip6_addr_rfc6724_label(const struct in6_addr *addr);
+
 /*****************************************************************************/
 
 #define NM_IPV4LL_NETWORK   ((in_addr_t) htonl(0xA9FE0000lu)) /* 169.254.0.0 */

@@ -189,6 +189,70 @@ nm_ip6_addr_common_prefix_len(const struct in6_addr *a, const struct in6_addr *b
     return 128;
 }
 
+/**
+ * nm_ip6_addr_rfc6724_label:
+ * @addr: an IPv6 address
+ *
+ * Returns the label for @addr from the default policy table defined
+ * in RFC 6724, Section 2.1:
+ *
+ *   Prefix        Precedence Label
+ *   ::1/128               50     0
+ *   ::/0                  40     1
+ *   ::ffff:0:0/96         35     4
+ *   2002::/16             30     2
+ *   2001::/32              5     5
+ *   fc00::/7               3    13
+ *   ::/96                  1     3
+ *   fec0::/10              1    11
+ *   3ffe::/16              1    12
+ *
+ * Returns: the label value (0-13). It can be used in the Source
+ *   Address Selection algorithm to prefer a source whose label
+ *   matches with the label of the destination.
+ */
+guint
+nm_ip6_addr_rfc6724_label(const struct in6_addr *addr)
+{
+    /* Checked from most-specific to least-specific prefix length. */
+
+    /* ::1/128 (loopback) */
+    if (IN6_IS_ADDR_LOOPBACK(addr))
+        return 0;
+
+    /* ::ffff:0:0/96 (IPv4-mapped) */
+    if (IN6_IS_ADDR_V4MAPPED(addr))
+        return 4;
+
+    /* ::/96 (IPv4-compatible, deprecated) */
+    if (addr->s6_addr32[0] == 0 && addr->s6_addr32[1] == 0 && addr->s6_addr32[2] == 0
+        && !IN6_IS_ADDR_UNSPECIFIED(addr))
+        return 3;
+
+    /* 2001::/32 (Teredo) */
+    if (addr->s6_addr32[0] == htonl(0x20010000u))
+        return 5;
+
+    /* 2002::/16 (6to4) */
+    if ((addr->s6_addr32[0] & htonl(0xFFFF0000u)) == htonl(0x20020000u))
+        return 2;
+
+    /* 3ffe::/16 (deprecated 6bone) */
+    if ((addr->s6_addr32[0] & htonl(0xFFFF0000u)) == htonl(0x3FFE0000u))
+        return 12;
+
+    /* fec0::/10 (deprecated site-local) */
+    if ((addr->s6_addr32[0] & htonl(0xFFC00000u)) == htonl(0xFEC00000u))
+        return 11;
+
+    /* fc00::/7 (ULA) */
+    if (nm_ip6_addr_is_ula(addr))
+        return 13;
+
+    /* ::/0 (default) */
+    return 1;
+}
+
 /*****************************************************************************/
 
 gconstpointer
