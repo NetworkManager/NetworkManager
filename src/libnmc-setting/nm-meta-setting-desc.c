@@ -3845,7 +3845,7 @@ _objlist_set_fcn_ovs_port_trunks(NMSetting  *setting,
                            NM_UTILS_ERROR_INVALID_ARGUMENT,
                            "%s. %s",
                            local->message,
-                           _("The valid syntax is: '<value>' or '<start>-<end>"));
+                           _("The valid syntax is: '<value>' or '<start>-<end>'"));
         return FALSE;
     }
 
@@ -4928,7 +4928,7 @@ static const NMMetaPropertyType _pt_objlist = {
     ((guint32 (*) (NMSetting *)) ((sizeof (func == ((guint32 (*) (type *)) func))) ? func : func) )
 
 #define TEAM_DESCRIBE_MESSAGE \
-    N_("nmcli can accepts both direct JSON configuration data and a file name containing " \
+    N_("nmcli can accept both direct JSON configuration data and a file name containing " \
        "the configuration. In the latter case the file is read and the contents is put " \
        "into this property.\n\n" \
        "Examples: set team.config " \
