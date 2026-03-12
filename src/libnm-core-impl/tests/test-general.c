@@ -11613,6 +11613,328 @@ test_dhcp_iaid_hexstr(void)
 
 /*****************************************************************************/
 
+static void
+test_unreachable_gateways(void)
+{
+    NMConnection        *conn;
+    NMSettingIPConfig   *s_ip4;
+    NMSettingIPConfig   *s_ip6;
+    gs_free const char **result = NULL;
+
+    /* IPv4 gateway reachable via address prefix route */
+    {
+        conn =
+            nmtst_create_minimal_connection("test-ugw", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+        s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new();
+        g_object_set(s_ip4,
+                     NM_SETTING_IP_CONFIG_METHOD,
+                     NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+                     NM_SETTING_IP_CONFIG_GATEWAY,
+                     "192.168.1.1",
+                     NULL);
+        nmtst_setting_ip_config_add_address(s_ip4, "192.168.1.5", 24);
+        nm_connection_add_setting(conn, NM_SETTING(s_ip4));
+
+        result = nm_connection_get_unreachable_gateways(conn);
+        g_assert(!result);
+        g_object_unref(conn);
+    }
+
+    /* IPv4 gateway NOT reachable */
+    {
+        conn =
+            nmtst_create_minimal_connection("test-ugw", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+        s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new();
+        g_object_set(s_ip4,
+                     NM_SETTING_IP_CONFIG_METHOD,
+                     NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+                     NM_SETTING_IP_CONFIG_GATEWAY,
+                     "10.0.0.1",
+                     NULL);
+        nmtst_setting_ip_config_add_address(s_ip4, "192.168.1.5", 24);
+        nmtst_setting_ip_config_add_address(s_ip4, "172.16.1.1", 16);
+        nm_connection_add_setting(conn, NM_SETTING(s_ip4));
+
+        result = nm_connection_get_unreachable_gateways(conn);
+        g_assert(result);
+        g_assert_cmpint(g_strv_length((char **) result), ==, 1);
+        g_assert_cmpstr(result[0], ==, "10.0.0.1");
+        nm_clear_g_free(&result);
+        g_object_unref(conn);
+    }
+
+    /* IPv4 gateway NOT reachable. It's ignored because of method "auto" */
+    {
+        conn =
+            nmtst_create_minimal_connection("test-ugw", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+        s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new();
+        g_object_set(s_ip4,
+                     NM_SETTING_IP_CONFIG_METHOD,
+                     NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+                     NM_SETTING_IP_CONFIG_GATEWAY,
+                     "10.0.0.1",
+                     NULL);
+        nmtst_setting_ip_config_add_address(s_ip4, "192.168.1.5", 24);
+        nmtst_setting_ip_config_add_address(s_ip4, "172.16.1.1", 16);
+        nm_connection_add_setting(conn, NM_SETTING(s_ip4));
+
+        result = nm_connection_get_unreachable_gateways(conn);
+        g_assert(!result);
+        g_object_unref(conn);
+    }
+
+    /* Route gateway reachable via address prefix route */
+    {
+        conn =
+            nmtst_create_minimal_connection("test-ugw", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+        s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new();
+        g_object_set(s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL, NULL);
+        nmtst_setting_ip_config_add_address(s_ip4, "192.168.1.5", 24);
+        nmtst_setting_ip_config_add_route(s_ip4, "10.0.0.0", 8, "192.168.1.254", 100);
+        nm_connection_add_setting(conn, NM_SETTING(s_ip4));
+
+        result = nm_connection_get_unreachable_gateways(conn);
+        g_assert(!result);
+        g_object_unref(conn);
+    }
+
+    /* Route gateway NOT reachable, check sorting */
+    {
+        conn =
+            nmtst_create_minimal_connection("test-ugw", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+        s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new();
+        g_object_set(s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL, NULL);
+        nmtst_setting_ip_config_add_address(s_ip4, "192.168.1.5", 24);
+        nmtst_setting_ip_config_add_route(s_ip4, "10.0.0.0", 16, "172.16.0.2", 100);
+        nmtst_setting_ip_config_add_route(s_ip4, "10.1.0.0", 16, "172.16.0.4", 100);
+        nmtst_setting_ip_config_add_route(s_ip4, "10.2.0.0", 16, "172.16.0.3", 100);
+        nmtst_setting_ip_config_add_route(s_ip4, "10.3.0.0", 16, "172.16.0.1", 100);
+        nm_connection_add_setting(conn, NM_SETTING(s_ip4));
+
+        result = nm_connection_get_unreachable_gateways(conn);
+        g_assert(result);
+        g_assert_cmpint(g_strv_length((char **) result), ==, 4);
+        g_assert_cmpstr(result[0], ==, "172.16.0.1");
+        g_assert_cmpstr(result[1], ==, "172.16.0.2");
+        g_assert_cmpstr(result[2], ==, "172.16.0.3");
+        g_assert_cmpstr(result[3], ==, "172.16.0.4");
+        nm_clear_g_free(&result);
+        g_object_unref(conn);
+    }
+
+    /* Route gateway reachable via a direct route in the setting */
+    {
+        conn =
+            nmtst_create_minimal_connection("test-ugw", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+        s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new();
+        g_object_set(s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL, NULL);
+        nmtst_setting_ip_config_add_address(s_ip4, "192.168.1.5", 24);
+        nmtst_setting_ip_config_add_route(s_ip4, "172.16.0.0", 16, NULL, 100);
+        nmtst_setting_ip_config_add_route(s_ip4, "10.0.0.0", 8, "172.16.0.1", 100);
+        nm_connection_add_setting(conn, NM_SETTING(s_ip4));
+
+        result = nm_connection_get_unreachable_gateways(conn);
+        g_assert(!result);
+        g_object_unref(conn);
+    }
+
+    /* No gateways */
+    {
+        conn =
+            nmtst_create_minimal_connection("test-ugw", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+        s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new();
+        g_object_set(s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL, NULL);
+        nmtst_setting_ip_config_add_address(s_ip4, "192.168.1.5", 24);
+        nm_connection_add_setting(conn, NM_SETTING(s_ip4));
+
+        result = nm_connection_get_unreachable_gateways(conn);
+        g_assert(!result);
+        g_object_unref(conn);
+    }
+
+    /* Both default gateway and route gateway unreachable */
+    {
+        conn =
+            nmtst_create_minimal_connection("test-ugw", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+        s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new();
+        g_object_set(s_ip4,
+                     NM_SETTING_IP_CONFIG_METHOD,
+                     NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+                     NM_SETTING_IP_CONFIG_GATEWAY,
+                     "10.0.0.1",
+                     NULL);
+        nmtst_setting_ip_config_add_address(s_ip4, "192.168.1.5", 24);
+        nmtst_setting_ip_config_add_route(s_ip4, "10.0.0.0", 8, "172.16.0.1", 100);
+        nm_connection_add_setting(conn, NM_SETTING(s_ip4));
+
+        result = nm_connection_get_unreachable_gateways(conn);
+        g_assert(result);
+        g_assert_cmpint(g_strv_length((char **) result), ==, 2);
+        g_assert_cmpstr(result[0], ==, "10.0.0.1");
+        g_assert_cmpstr(result[1], ==, "172.16.0.1");
+        nm_clear_g_free(&result);
+        g_object_unref(conn);
+    }
+
+    /* Test deduplication */
+    {
+        conn =
+            nmtst_create_minimal_connection("test-ugw", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+        s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new();
+        g_object_set(s_ip4,
+                     NM_SETTING_IP_CONFIG_METHOD,
+                     NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+                     NM_SETTING_IP_CONFIG_GATEWAY,
+                     "192.168.1.1",
+                     NULL);
+        nmtst_setting_ip_config_add_address(s_ip4, "192.168.1.5", 24);
+        nmtst_setting_ip_config_add_route(s_ip4, "10.0.0.0", 16, "172.16.0.1", 100);
+        nmtst_setting_ip_config_add_route(s_ip4, "10.1.0.0", 16, "172.16.0.1", 100);
+        nmtst_setting_ip_config_add_route(s_ip4, "10.2.0.0", 16, "172.16.0.1", 100);
+        nm_connection_add_setting(conn, NM_SETTING(s_ip4));
+
+        result = nm_connection_get_unreachable_gateways(conn);
+        g_assert(result);
+        g_assert_cmpint(g_strv_length((char **) result), ==, 1);
+        g_assert_cmpstr(result[0], ==, "172.16.0.1");
+        nm_clear_g_free(&result);
+        g_object_unref(conn);
+    }
+
+    /* IPv6 gateway reachable via address prefix route */
+    {
+        conn =
+            nmtst_create_minimal_connection("test-ugw", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+        s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new();
+        g_object_set(s_ip6,
+                     NM_SETTING_IP_CONFIG_METHOD,
+                     NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+                     NM_SETTING_IP_CONFIG_GATEWAY,
+                     "fd01::1",
+                     NULL);
+        nmtst_setting_ip_config_add_address(s_ip6, "fd01::10", 64);
+        nm_connection_add_setting(conn, NM_SETTING(s_ip6));
+
+        result = nm_connection_get_unreachable_gateways(conn);
+        g_assert(!result);
+        g_object_unref(conn);
+    }
+
+    /* IPv6 gateway NOT reachable */
+    {
+        conn =
+            nmtst_create_minimal_connection("test-ugw", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+        s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new();
+        g_object_set(s_ip6,
+                     NM_SETTING_IP_CONFIG_METHOD,
+                     NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+                     NM_SETTING_IP_CONFIG_GATEWAY,
+                     "fd02::1",
+                     NULL);
+        nmtst_setting_ip_config_add_address(s_ip6, "fd01::10", 64);
+        nm_connection_add_setting(conn, NM_SETTING(s_ip6));
+
+        result = nm_connection_get_unreachable_gateways(conn);
+        g_assert(result);
+        g_assert_cmpint(g_strv_length((char **) result), ==, 1);
+        g_assert_cmpstr(result[0], ==, "fd02::1");
+        nm_clear_g_free(&result);
+        g_object_unref(conn);
+    }
+
+    /* Multiple addresses, gateway reachable via second address */
+    {
+        conn =
+            nmtst_create_minimal_connection("test-ugw", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+        s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new();
+        g_object_set(s_ip4,
+                     NM_SETTING_IP_CONFIG_METHOD,
+                     NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+                     NM_SETTING_IP_CONFIG_GATEWAY,
+                     "10.0.0.1",
+                     NULL);
+        nmtst_setting_ip_config_add_address(s_ip4, "192.168.1.5", 24);
+        nmtst_setting_ip_config_add_address(s_ip4, "10.0.0.5", 24);
+        nm_connection_add_setting(conn, NM_SETTING(s_ip4));
+
+        result = nm_connection_get_unreachable_gateways(conn);
+        g_assert(!result);
+        g_object_unref(conn);
+    }
+
+    /* Unreachable gateways in both IPv4 and IPv6 */
+    {
+        conn =
+            nmtst_create_minimal_connection("test-ugw", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+        s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new();
+        g_object_set(s_ip4,
+                     NM_SETTING_IP_CONFIG_METHOD,
+                     NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+                     NM_SETTING_IP_CONFIG_GATEWAY,
+                     "10.0.0.1",
+                     NULL);
+        nmtst_setting_ip_config_add_address(s_ip4, "192.168.1.5", 24);
+        nm_connection_add_setting(conn, NM_SETTING(s_ip4));
+
+        s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new();
+        g_object_set(s_ip6,
+                     NM_SETTING_IP_CONFIG_METHOD,
+                     NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+                     NM_SETTING_IP_CONFIG_GATEWAY,
+                     "fd02::1",
+                     NULL);
+        nmtst_setting_ip_config_add_address(s_ip6, "fd01::10", 64);
+        nm_connection_add_setting(conn, NM_SETTING(s_ip6));
+
+        result = nm_connection_get_unreachable_gateways(conn);
+        g_assert(result);
+        g_assert_cmpint(g_strv_length((char **) result), ==, 2);
+        g_assert_cmpstr(result[0], ==, "10.0.0.1");
+        g_assert_cmpstr(result[1], ==, "fd02::1");
+        nm_clear_g_free(&result);
+        g_object_unref(conn);
+    }
+
+    /* Onlink and IPv6-link-local routes */
+    {
+        NMIPRoute *route;
+
+        conn =
+            nmtst_create_minimal_connection("test-ugw", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+
+        s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new();
+        g_object_set(s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL, NULL);
+        nmtst_setting_ip_config_add_address(s_ip4, "192.168.1.5", 24);
+
+        route = nm_ip_route_new(AF_INET, "10.0.0.1", 8, "192.168.20.1", 100, NULL);
+        g_assert(route);
+        nm_ip_route_set_attribute(route, NM_IP_ROUTE_ATTRIBUTE_ONLINK, g_variant_new_boolean(TRUE));
+        g_assert(nm_setting_ip_config_add_route(s_ip4, route));
+        nm_ip_route_unref(route);
+
+        nm_connection_add_setting(conn, NM_SETTING(s_ip4));
+
+        s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new();
+        g_object_set(s_ip6, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL, NULL);
+        nmtst_setting_ip_config_add_address(s_ip6, "fd01::10", 64);
+        nm_connection_add_setting(conn, NM_SETTING(s_ip6));
+
+        route = nm_ip_route_new(AF_INET6, "fd02::", 64, "fd03::1111", 100, NULL);
+        g_assert(route);
+        nm_ip_route_set_attribute(route, NM_IP_ROUTE_ATTRIBUTE_ONLINK, g_variant_new_boolean(TRUE));
+        g_assert(nm_setting_ip_config_add_route(s_ip6, route));
+        nm_ip_route_unref(route);
+
+        nmtst_setting_ip_config_add_route(s_ip6, "fd04::", 64, "fe80::1111", 100);
+
+        result = nm_connection_get_unreachable_gateways(conn);
+        g_assert(!result);
+        g_object_unref(conn);
+    }
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -11963,6 +12285,7 @@ main(int argc, char **argv)
     g_test_add_func("/core/general/test_dns_uri_get_legacy", test_dns_uri_parse_plain);
     g_test_add_func("/core/general/test_dns_uri_normalize", test_dns_uri_normalize);
     g_test_add_func("/core/general/test_dhcp_iaid_hexstr", test_dhcp_iaid_hexstr);
+    g_test_add_func("/core/general/test_unreachable_gateways", test_unreachable_gateways);
 
     return g_test_run();
 }

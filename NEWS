@@ -12,6 +12,14 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   suffixes when appropriate. This affects, for example, the URL and filename
   of the release tarball and the version reported by nmcli and the daemon.
   As an exception, the C API will continue to use the 90+ scheme for RC versions.
+* Connection profiles with manual IP addressing and with gateways that are not
+  directly reachable will generate a warning on activation and when they are
+  added/modified via nmcli and nmtui. NetworkManager currently adds on-link
+  routes for them automatically, but this will change in the future. To fix the
+  warning, users should add addresses or routes whose subnets cover these
+  gateways. A gateway (either the default gateway or the next-hop of a route) is
+  considered directly reachable if it falls within the subnet of a direct route
+  (a route without a next hop) or of a prefix route from a static address.
 * Restrict the connectivity check to use the DNS servers defined on the
   same link. If the link has no DNS servers, the connectivity check will
   use any servers available in the system.

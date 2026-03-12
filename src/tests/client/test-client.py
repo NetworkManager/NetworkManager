@@ -2222,6 +2222,41 @@ class TestNmcli(unittest.TestCase):
             replace_stdout=replace_uuids,
         )
 
+    @nm_test
+    def test_005(self):
+        self.init_001()
+
+        replace_uuids = []
+
+        replace_uuids.append(
+            self.ctx.srv.ReplaceTextConUuid(
+                "con-xx1", "UUID-con-xx1-REPLACED-REPLACED-REPLA"
+            )
+        )
+
+        # Check the warning about unreachable gateways
+        self.call_nmcli(
+            [
+                "c",
+                "add",
+                "type",
+                "ethernet",
+                "ifname",
+                "eth0",
+                "con-name",
+                "con-xx1",
+                "ipv4.method",
+                "manual",
+                "ipv4.addresses",
+                "192.168.1.1/24",
+                "ipv4.gateway",
+                "192.168.2.1",
+                "ipv4.routes",
+                "192.168.4.4 192.168.4.1",
+            ],
+            replace_stdout=replace_uuids,
+        )
+
     @nm_test_no_dbus
     def test_offline(self):
         # Make sure we're not using D-Bus
