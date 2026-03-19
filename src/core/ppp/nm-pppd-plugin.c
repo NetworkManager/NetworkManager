@@ -198,7 +198,7 @@ nm_ip_up(void *data, int arg)
         g_variant_builder_add(&builder,
                               "{sv}",
                               NM_PPP_IP4_CONFIG_GATEWAY,
-                              g_variant_new_uint32(peer_opts.ouraddr));
+                              g_variant_new_uint32(peer_opts.hisaddr));
     }
 
     g_variant_builder_add(&builder, "{sv}", NM_PPP_IP4_CONFIG_PREFIX, g_variant_new_uint32(32));
