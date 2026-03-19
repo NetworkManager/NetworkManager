@@ -10,6 +10,7 @@
 
 #include <fcntl.h>
 #include <limits.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <sys/sendfile.h>
 #include <sys/stat.h>
@@ -8146,6 +8147,27 @@ nm_manager_start(NMManager *self, GError **error)
     return TRUE;
 }
 
+static int
+compare_device_remove_order(const CList *a, const CList *b, const void *user_data)
+{
+    NMDevice *dev_a = c_list_entry(a, NMDevice, devices_lst);
+    NMDevice *dev_b = c_list_entry(b, NMDevice, devices_lst);
+
+    gboolean a_has_dhcp =
+        nm_device_get_dhcp_config(dev_a, AF_INET) || nm_device_get_dhcp_config(dev_a, AF_INET6);
+    gboolean b_has_dhcp =
+        nm_device_get_dhcp_config(dev_b, AF_INET) || nm_device_get_dhcp_config(dev_b, AF_INET6);
+    gboolean a_is_software = nm_device_is_software(dev_a);
+    gboolean b_is_software = nm_device_is_software(dev_b);
+
+    /* priority: software AND dhcp first, then dhcp only
+     * then everything else,*/
+    uint a_score = a_has_dhcp ? (a_is_software ? 2 : 1) : 0;
+    uint b_score = b_has_dhcp ? (b_is_software ? 2 : 1) : 0;
+
+    return b_score - a_score;
+}
+
 void
 nm_manager_stop(NMManager *self)
 {
@@ -8167,6 +8189,12 @@ nm_manager_stop(NMManager *self)
 
     nm_dbus_manager_stop(nm_dbus_object_get_manager(NM_DBUS_OBJECT(self)));
 
+    /* When OVS internal interface or linux bridge holds DHCP, if we delete its
+     * physical interface first, then we cannot send out DHCP release request
+     * anymore. To fix that, we need to remove/deactivate software interfaces that
+     * holds DHCP config first.
+     */
+    c_list_sort(&priv->devices_lst_head, compare_device_remove_order, NULL);
     while ((device = c_list_first_entry(&priv->devices_lst_head, NMDevice, devices_lst)))
         remove_device(self, device, TRUE);
 
