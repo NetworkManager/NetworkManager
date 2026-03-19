@@ -1257,34 +1257,28 @@ read_base_config(GKeyFile   *keyfile,
     return TRUE;
 }
 
+/* We want to use GDir instead of GFile here to avoid loading GVFS modules and
+ * initalizing DBUS infra for communicating with GVFS.
+ * https://redhat.atlassian.net/browse/RHEL-140113
+ */
 static GPtrArray *
 _get_config_dir_files(const char *config_dir)
 {
-    GFile           *dir;
-    GFileEnumerator *direnum;
-    GFileInfo       *info;
-    GPtrArray       *confs;
-    const char      *name;
-
+    GDir       *dir;
+    GPtrArray  *confs;
+    const char *name;
     g_return_val_if_fail(config_dir, NULL);
-
     confs = g_ptr_array_new_with_free_func(g_free);
     if (!*config_dir)
         return confs;
-
-    dir     = g_file_new_for_path(config_dir);
-    direnum = g_file_enumerate_children(dir, G_FILE_ATTRIBUTE_STANDARD_NAME, 0, NULL, NULL);
-    if (direnum) {
-        while ((info = g_file_enumerator_next_file(direnum, NULL, NULL))) {
-            name = g_file_info_get_name(info);
+    dir = g_dir_open(config_dir, 0, NULL);
+    if (dir) {
+        while ((name = g_dir_read_name(dir))) {
             if (NM_STR_HAS_SUFFIX(name, ".conf"))
                 g_ptr_array_add(confs, g_strdup(name));
-            g_object_unref(info);
         }
-        g_object_unref(direnum);
+        g_dir_close(dir);
     }
-    g_object_unref(dir);
-
     g_ptr_array_sort(confs, nm_strcmp_p);
     return confs;
 }
@@ -1340,8 +1334,7 @@ read_entire_config(const NMConfigCmdLineOptions *cli,
         run_config_dir = RUN_CONFIG_DIR;
 
     /* create a default configuration file. */
-    keyfile = nm_config_create_keyfile();
-
+    keyfile      = nm_config_create_keyfile();
     system_confs = _get_config_dir_files(system_config_dir);
     confs        = _get_config_dir_files(config_dir);
     run_confs    = _get_config_dir_files(run_config_dir);
@@ -3293,7 +3286,6 @@ init_sync(GInitable *initable, GCancellable *cancellable, GError **error)
         g_set_error(error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND, "unspecified error");
         g_return_val_if_reached(FALSE);
     }
-
     s                = priv->cli.config_dir ?: "" DEFAULT_CONFIG_DIR;
     priv->config_dir = g_strdup(s[0] == '/' ? s : "");
 
@@ -3301,12 +3293,10 @@ init_sync(GInitable *initable, GCancellable *cancellable, GError **error)
     if (s[0] != '/' || nm_streq(s, priv->config_dir))
         s = "";
     priv->system_config_dir = g_strdup(s);
-
     if (priv->cli.intern_config_file)
         priv->intern_config_file = g_strdup(priv->cli.intern_config_file);
     else
         priv->intern_config_file = g_strdup(DEFAULT_INTERN_CONFIG_FILE);
-
     warnings = g_ptr_array_new_with_free_func(g_free);
 
     keyfile = read_entire_config(&priv->cli,
