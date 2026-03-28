@@ -289,8 +289,10 @@ nm_dhcp_manager_init(NMDhcpManager *self)
                                  NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY);
     client = client_free;
     if (client) {
-        client_factory = _client_factory_available(_client_factory_find_by_name(client));
+        client_factory = _client_factory_find_by_name(client);
         if (!client_factory)
+            _LOGW(AF_UNSPEC, "init: unknown DHCP client '%s', ignoring", client);
+        else if (!(client_factory = _client_factory_available(client_factory)))
             _LOGW(AF_UNSPEC, "init: DHCP client '%s' not available", client);
     }
     if (!client_factory) {
