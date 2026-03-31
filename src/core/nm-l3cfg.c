@@ -4140,6 +4140,7 @@ update_routes:
     }
 }
 
+#if HAVE_CLAT
 /**
  * _clat_prefix_is_better:
  * @best: current best candidate (or %NULL)
@@ -4186,6 +4187,7 @@ _clat_prefix_is_better(const NMPlatformIP6Address *best,
 
     return FALSE;
 }
+#endif /* HAVE_CLAT */
 
 static void
 _l3cfg_update_clat_config(NML3Cfg             *self,
