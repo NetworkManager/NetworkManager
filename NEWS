@@ -61,6 +61,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Allow persisting the managed state across reboots from nmcli and the D-Bus API.
 * Allow changing the device's administrative state in the kernel at the same
   time as a change to the managed state from nmcli and the D-Bus API.
+* Allow configuring all bond options in nmtui by introducing a
+  "other options" field, which covers options not already covered by a
+  dedicated input field.
 
 =============================================
 NetworkManager-1.56

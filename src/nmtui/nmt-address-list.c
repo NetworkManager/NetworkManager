@@ -5,14 +5,13 @@
 
 /**
  * SECTION:nmt-address-list
- * @short_description: An editable list of IP addresses or hostnames
+ * @short_description: An editable list of IP addresses, hostnames, or key=value pairs
  *
  * #NmtAddressList is a subclass of #NmtWidgetList that contains
- * entries displaying IP addresses, address/prefix strings, or
- * hostnames. This is designed for binding its #NmtAddressList:strings
- * property to an appropriate #NMSettingIP4Config or
- * #NMSettingIP6Config property via one of the nm-editor-bindings
- * functions.
+ * entries displaying IP addresses, address/prefix strings,
+ * hostnames, or key=value pairs. This is designed for binding its
+ * #NmtAddressList:strings property to an appropriate property via one
+ * of the nm-editor-bindings functions.
  */
 
 #include "libnm-client-aux-extern/nm-default-client.h"
@@ -115,6 +114,18 @@ hostname_filter(NmtNewtEntry *entry, const char *text, int ch, int position, gpo
     return g_ascii_isalnum(ch) || ch == '.' || ch == '-' || ch == '~';
 }
 
+static gboolean
+key_value_validate(NmtNewtEntry *entry, const char *text, gpointer user_data)
+{
+    const char *val;
+
+    if (!text || !text[0])
+        return TRUE;
+
+    val = strchr(text, '=');
+    return val && val != text && val[1];
+}
+
 static NmtNewtWidget *
 nmt_address_list_create_widget(NmtWidgetList *list, int num)
 {
@@ -132,6 +143,9 @@ nmt_address_list_create_widget(NmtWidgetList *list, int num)
     } else if (priv->list_type == NMT_ADDRESS_LIST_HOSTNAME) {
         entry = nmt_newt_entry_new(25, NMT_NEWT_ENTRY_NONEMPTY);
         nmt_newt_entry_set_filter(NMT_NEWT_ENTRY(entry), hostname_filter, list);
+    } else if (priv->list_type == NMT_ADDRESS_LIST_KEY_VALUE) {
+        entry = nmt_newt_entry_new(40, 0);
+        nmt_newt_entry_set_validator(NMT_NEWT_ENTRY(entry), key_value_validate, NULL);
     } else {
         g_return_val_if_reached(NULL);
     }

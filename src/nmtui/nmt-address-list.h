@@ -35,7 +35,8 @@ typedef enum {
     NMT_ADDRESS_LIST_IP4,
     NMT_ADDRESS_LIST_IP6_WITH_PREFIX,
     NMT_ADDRESS_LIST_IP6,
-    NMT_ADDRESS_LIST_HOSTNAME
+    NMT_ADDRESS_LIST_HOSTNAME,
+    NMT_ADDRESS_LIST_KEY_VALUE
 } NmtAddressListType;
 
 NmtNewtWidget *nmt_address_list_new(NmtAddressListType list_type);
