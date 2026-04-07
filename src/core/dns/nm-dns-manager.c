@@ -371,7 +371,7 @@ _ASSERT_dns_config_ip_data(const NMDnsConfigIPData *ip_data)
         gboolean has_default = FALSE;
         gsize    i;
 
-        for (i = 0; ip_data->domains.search && ip_data->domains.search; i++) {
+        for (i = 0; ip_data->domains.search && ip_data->domains.search[i]; i++) {
             const char *d = ip_data->domains.search[i];
 
             d = nm_utils_parse_dns_domain(d, NULL);
