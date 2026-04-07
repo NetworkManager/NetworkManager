@@ -253,7 +253,7 @@ ip6_subnet_from_delegation(IP6PrefixDelegation *delegation, NMDevice *device)
     }
 
     /* Check for out-of-prefixes condition */
-    num_subnets = 1 << (64 - delegation->prefix.plen);
+    num_subnets = 1ULL << (64 - delegation->prefix.plen);
     if (nm_g_hash_table_size(delegation->map_subnet_id_to_ifindex) >= num_subnets) {
         _LOGD(LOGD_IP6,
               "ipv6-pd: no more prefixes in %s/%u",
