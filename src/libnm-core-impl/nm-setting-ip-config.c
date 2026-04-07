@@ -1401,7 +1401,7 @@ _ip_route_attribute_validate(const char           *name,
                         NM_CONNECTION_ERROR_FAILED,
                         family == AF_INET ? _("'%s' is not a valid IPv4 address")
                                           : _("'%s' is not a valid IPv6 address"),
-                        string);
+                        addr);
             return FALSE;
         }
         break;
