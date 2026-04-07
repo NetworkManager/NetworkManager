@@ -170,6 +170,7 @@ nmt_wireguard_peer_list_add_peer(NmtWireguardPeerList *list)
     NmtNewtForm                 *editor;
 
     editor = nmt_wireguard_peer_editor_new(priv->setting, peer);
+    nm_wireguard_peer_unref(peer);
 
     if (!editor)
         return;
