@@ -4082,13 +4082,12 @@ test_roundtrip_conversion(gconstpointer test_data)
             if (flag == NM_CONNECTION_SERIALIZE_ALL) {
                 s_wg2 = NM_SETTING_WIREGUARD(
                     nm_connection_get_setting(con2, NM_TYPE_SETTING_WIREGUARD));
-
-                if (flag == NM_CONNECTION_SERIALIZE_ALL)
-                    _rndt_wg_peers_assert_equal(s_wg2, wg_peers, TRUE, TRUE, FALSE);
-                else if (flag == NM_CONNECTION_SERIALIZE_WITH_NON_SECRET)
-                    _rndt_wg_peers_assert_equal(s_wg2, wg_peers, FALSE, FALSE, TRUE);
-                else
-                    g_assert_not_reached();
+                _rndt_wg_peers_assert_equal(s_wg2, wg_peers, TRUE, TRUE, FALSE);
+            } else if (flag == NM_CONNECTION_SERIALIZE_WITH_NON_SECRET) {
+                con2  = _connection_new_from_dbus_strict(con_var, FALSE);
+                s_wg2 = NM_SETTING_WIREGUARD(
+                    nm_connection_get_setting(con2, NM_TYPE_SETTING_WIREGUARD));
+                _rndt_wg_peers_assert_equal(s_wg2, wg_peers, FALSE, FALSE, TRUE);
             }
             break;
         }
