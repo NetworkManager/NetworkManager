@@ -13,7 +13,7 @@
 #include "nmt-page-bridge.h"
 
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
-#include "nmt-address-list.h"
+#include "nmt-list.h"
 #include "nmt-port-list.h"
 
 G_DEFINE_TYPE(NmtPageBridge, nmt_page_bridge, NMT_TYPE_EDITOR_PAGE_DEVICE)

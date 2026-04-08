@@ -4,19 +4,19 @@
  */
 
 /**
- * SECTION:nmt-address-list
+ * SECTION:nmt-list
  * @short_description: An editable list of IP addresses, hostnames, or key=value pairs
  *
- * #NmtAddressList is a subclass of #NmtWidgetList that contains
+ * #NmtList is a subclass of #NmtWidgetList that contains
  * entries displaying IP addresses, address/prefix strings,
  * hostnames, or key=value pairs. This is designed for binding its
- * #NmtAddressList:strings property to an appropriate property via one
+ * #NmtList:strings property to an appropriate property via one
  * of the nm-editor-bindings functions.
  */
 
 #include "libnm-client-aux-extern/nm-default-client.h"
 
-#include "nmt-address-list.h"
+#include "nmt-list.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -24,15 +24,14 @@
 
 #include "nmt-ip-entry.h"
 
-G_DEFINE_TYPE(NmtAddressList, nmt_address_list, NMT_TYPE_WIDGET_LIST)
+G_DEFINE_TYPE(NmtList, nmt_list, NMT_TYPE_WIDGET_LIST)
 
-#define NMT_ADDRESS_LIST_GET_PRIVATE(o) \
-    (G_TYPE_INSTANCE_GET_PRIVATE((o), NMT_TYPE_ADDRESS_LIST, NmtAddressListPrivate))
+#define NMT_LIST_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE((o), NMT_TYPE_LIST, NmtListPrivate))
 
 typedef struct {
-    NmtAddressListType list_type;
-    char             **strings;
-} NmtAddressListPrivate;
+    NmtListType list_type;
+    char      **strings;
+} NmtListPrivate;
 
 enum {
     PROP_0,
@@ -43,32 +42,32 @@ enum {
 };
 
 /**
- * NmtAddressListType:
- * @NMT_ADDRESS_LIST_IP4_WITH_PREFIX: IPv4 address/prefix strings
- * @NMT_ADDRESS_LIST_IP4: IPv4 addresses
- * @NMT_ADDRESS_LIST_IP6_WITH_PREFIX: IPv6 address/prefix strings
- * @NMT_ADDRESS_LIST_IP6: IPv6 addresses
- * @NMT_ADDRESS_LIST_HOSTNAME: hostnames
+ * NmtListType:
+ * @NMT_LIST_IP4_WITH_PREFIX: IPv4 address/prefix strings
+ * @NMT_LIST_IP4: IPv4 addresses
+ * @NMT_LIST_IP6_WITH_PREFIX: IPv6 address/prefix strings
+ * @NMT_LIST_IP6: IPv6 addresses
+ * @NMT_LIST_HOSTNAME: hostnames
  *
- * The type of address in an #NmtAddressList
+ * The type of address in an #NmtList
  */
 
 /**
- * nmt_address_list_new:
+ * nmt_list_new:
  * @list_type: the type of address the list will contain
  *
- * Creates a new #NmtAddressList
+ * Creates a new #NmtList
  *
- * Returns: a new #NmtAddressList
+ * Returns: a new #NmtList
  */
 NmtNewtWidget *
-nmt_address_list_new(NmtAddressListType list_type)
+nmt_list_new(NmtListType list_type)
 {
-    return g_object_new(NMT_TYPE_ADDRESS_LIST, "list-type", list_type, NULL);
+    return g_object_new(NMT_TYPE_LIST, "list-type", list_type, NULL);
 }
 
 static void
-nmt_address_list_init(NmtAddressList *list)
+nmt_list_init(NmtList *list)
 {}
 
 static gboolean
@@ -94,9 +93,9 @@ strings_transform_from_entry(GBinding     *binding,
                              GValue       *target_value,
                              gpointer      user_data)
 {
-    NmtAddressList        *list = NMT_ADDRESS_LIST(g_binding_get_source(binding));
-    NmtAddressListPrivate *priv = NMT_ADDRESS_LIST_GET_PRIVATE(list);
-    int                    n    = GPOINTER_TO_INT(user_data);
+    NmtList        *list = NMT_LIST(g_binding_get_source(binding));
+    NmtListPrivate *priv = NMT_LIST_GET_PRIVATE(list);
+    int             n    = GPOINTER_TO_INT(user_data);
 
     if (n >= g_strv_length(priv->strings))
         return FALSE;
@@ -127,23 +126,23 @@ key_value_validate(NmtNewtEntry *entry, const char *text, gpointer user_data)
 }
 
 static NmtNewtWidget *
-nmt_address_list_create_widget(NmtWidgetList *list, int num)
+nmt_list_create_widget(NmtWidgetList *list, int num)
 {
-    NmtAddressListPrivate *priv = NMT_ADDRESS_LIST_GET_PRIVATE(list);
-    NmtNewtWidget         *entry;
+    NmtListPrivate *priv = NMT_LIST_GET_PRIVATE(list);
+    NmtNewtWidget  *entry;
 
-    if (priv->list_type == NMT_ADDRESS_LIST_IP4_WITH_PREFIX) {
+    if (priv->list_type == NMT_LIST_IP4_WITH_PREFIX) {
         entry = nmt_ip_entry_new(25, AF_INET, TRUE, FALSE);
-    } else if (priv->list_type == NMT_ADDRESS_LIST_IP4) {
+    } else if (priv->list_type == NMT_LIST_IP4) {
         entry = nmt_ip_entry_new(25, AF_INET, FALSE, FALSE);
-    } else if (priv->list_type == NMT_ADDRESS_LIST_IP6_WITH_PREFIX) {
+    } else if (priv->list_type == NMT_LIST_IP6_WITH_PREFIX) {
         entry = nmt_ip_entry_new(25, AF_INET6, TRUE, FALSE);
-    } else if (priv->list_type == NMT_ADDRESS_LIST_IP6) {
+    } else if (priv->list_type == NMT_LIST_IP6) {
         entry = nmt_ip_entry_new(25, AF_INET6, FALSE, FALSE);
-    } else if (priv->list_type == NMT_ADDRESS_LIST_HOSTNAME) {
+    } else if (priv->list_type == NMT_LIST_HOSTNAME) {
         entry = nmt_newt_entry_new(25, NMT_NEWT_ENTRY_NONEMPTY);
         nmt_newt_entry_set_filter(NMT_NEWT_ENTRY(entry), hostname_filter, list);
-    } else if (priv->list_type == NMT_ADDRESS_LIST_KEY_VALUE) {
+    } else if (priv->list_type == NMT_LIST_KEY_VALUE) {
         entry = nmt_newt_entry_new(40, 0);
         nmt_newt_entry_set_validator(NMT_NEWT_ENTRY(entry), key_value_validate, NULL);
     } else {
@@ -164,10 +163,10 @@ nmt_address_list_create_widget(NmtWidgetList *list, int num)
 }
 
 static void
-nmt_address_list_add_clicked(NmtWidgetList *list)
+nmt_list_add_clicked(NmtWidgetList *list)
 {
-    NmtAddressListPrivate *priv = NMT_ADDRESS_LIST_GET_PRIVATE(list);
-    int                    len;
+    NmtListPrivate *priv = NMT_LIST_GET_PRIVATE(list);
+    int             len;
 
     len                    = priv->strings ? g_strv_length(priv->strings) : 0;
     priv->strings          = g_renew(char *, priv->strings, len + 2);
@@ -179,10 +178,10 @@ nmt_address_list_add_clicked(NmtWidgetList *list)
 }
 
 static void
-nmt_address_list_remove_clicked(NmtWidgetList *list, int num)
+nmt_list_remove_clicked(NmtWidgetList *list, int num)
 {
-    NmtAddressListPrivate *priv = NMT_ADDRESS_LIST_GET_PRIVATE(list);
-    int                    len;
+    NmtListPrivate *priv = NMT_LIST_GET_PRIVATE(list);
+    int             len;
 
     len = g_strv_length(priv->strings);
     g_free(priv->strings[num]);
@@ -193,12 +192,9 @@ nmt_address_list_remove_clicked(NmtWidgetList *list, int num)
 }
 
 static void
-nmt_address_list_set_property(GObject      *object,
-                              guint         prop_id,
-                              const GValue *value,
-                              GParamSpec   *pspec)
+nmt_list_set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-    NmtAddressListPrivate *priv = NMT_ADDRESS_LIST_GET_PRIVATE(object);
+    NmtListPrivate *priv = NMT_LIST_GET_PRIVATE(object);
 
     switch (prop_id) {
     case PROP_LIST_TYPE:
@@ -218,9 +214,9 @@ nmt_address_list_set_property(GObject      *object,
 }
 
 static void
-nmt_address_list_get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
+nmt_list_get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NmtAddressListPrivate *priv = NMT_ADDRESS_LIST_GET_PRIVATE(object);
+    NmtListPrivate *priv = NMT_LIST_GET_PRIVATE(object);
 
     switch (prop_id) {
     case PROP_LIST_TYPE:
@@ -236,23 +232,23 @@ nmt_address_list_get_property(GObject *object, guint prop_id, GValue *value, GPa
 }
 
 static void
-nmt_address_list_class_init(NmtAddressListClass *list_class)
+nmt_list_class_init(NmtListClass *list_class)
 {
     GObjectClass       *object_class      = G_OBJECT_CLASS(list_class);
     NmtWidgetListClass *widget_list_class = NMT_WIDGET_LIST_CLASS(list_class);
 
-    g_type_class_add_private(list_class, sizeof(NmtAddressListPrivate));
+    g_type_class_add_private(list_class, sizeof(NmtListPrivate));
 
     /* virtual methods */
-    object_class->set_property = nmt_address_list_set_property;
-    object_class->get_property = nmt_address_list_get_property;
+    object_class->set_property = nmt_list_set_property;
+    object_class->get_property = nmt_list_get_property;
 
-    widget_list_class->create_widget  = nmt_address_list_create_widget;
-    widget_list_class->add_clicked    = nmt_address_list_add_clicked;
-    widget_list_class->remove_clicked = nmt_address_list_remove_clicked;
+    widget_list_class->create_widget  = nmt_list_create_widget;
+    widget_list_class->add_clicked    = nmt_list_add_clicked;
+    widget_list_class->remove_clicked = nmt_list_remove_clicked;
 
     /**
-     * NmtAddressList:list-type:
+     * NmtList:list-type:
      *
      * The type of address the list holds.
      */
@@ -267,7 +263,7 @@ nmt_address_list_class_init(NmtAddressListClass *list_class)
                           0,
                           G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
     /**
-     * NmtAddressList:strings:
+     * NmtList:strings:
      *
      * The strings in the list's entries.
      */

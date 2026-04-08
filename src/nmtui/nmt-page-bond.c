@@ -21,7 +21,7 @@
 
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "nmt-mac-entry.h"
-#include "nmt-address-list.h"
+#include "nmt-list.h"
 #include "nmt-port-list.h"
 
 G_DEFINE_TYPE(NmtPageBond, nmt_page_bond, NMT_TYPE_EDITOR_PAGE_DEVICE)
@@ -41,15 +41,15 @@ typedef struct {
     /* Note: when adding new options to the UI also ensure they are
      * initialized in bond_connection_setup_func()
      */
-    NmtNewtPopup   *mode;
-    NmtNewtEntry   *primary;
-    NmtNewtPopup   *monitoring;
-    NmtNewtEntry   *miimon;
-    NmtNewtEntry   *updelay;
-    NmtNewtEntry   *downdelay;
-    NmtNewtEntry   *arp_interval;
-    NmtAddressList *arp_ip_target;
-    NmtAddressList *other_options;
+    NmtNewtPopup *mode;
+    NmtNewtEntry *primary;
+    NmtNewtPopup *monitoring;
+    NmtNewtEntry *miimon;
+    NmtNewtEntry *updelay;
+    NmtNewtEntry *downdelay;
+    NmtNewtEntry *arp_interval;
+    NmtList      *arp_ip_target;
+    NmtList      *other_options;
 
     NmtPageBondMonitoringMode monitoring_mode;
 
@@ -78,7 +78,7 @@ _is_other_option(const char *option)
 }
 
 static void
-_bond_update_other_options(NMSettingBond *s_bond, NmtAddressList *list)
+_bond_update_other_options(NMSettingBond *s_bond, NmtList *list)
 {
     gs_unref_ptrarray GPtrArray *arr      = g_ptr_array_new_with_free_func(g_free);
     guint                        num_opts = nm_setting_bond_get_num_options(s_bond);
@@ -471,15 +471,15 @@ nmt_page_bond_constructed(GObject *object)
     nmt_editor_grid_append(grid, _("Monitoring frequency"), widget, label);
     priv->arp_interval = NMT_NEWT_ENTRY(widget);
 
-    widget = nmt_address_list_new(NMT_ADDRESS_LIST_IP4);
+    widget = nmt_list_new(NMT_LIST_IP4);
     g_signal_connect(widget, "notify::strings", G_CALLBACK(arp_ip_target_widget_changed), bond);
     nmt_editor_grid_append(grid, _("ARP targets"), widget, NULL);
-    priv->arp_ip_target = NMT_ADDRESS_LIST(widget);
+    priv->arp_ip_target = NMT_LIST(widget);
 
-    widget = nmt_address_list_new(NMT_ADDRESS_LIST_KEY_VALUE);
+    widget = nmt_list_new(NMT_LIST_KEY_VALUE);
     g_signal_connect(widget, "notify::strings", G_CALLBACK(other_options_widget_changed), bond);
     nmt_editor_grid_append(grid, _("Other options (key=value)"), widget, NULL);
-    priv->other_options = NMT_ADDRESS_LIST(widget);
+    priv->other_options = NMT_LIST(widget);
 
     widget = nmt_mac_entry_new(40, ETH_ALEN, NMT_MAC_ENTRY_TYPE_CLONED_ETHERNET);
     g_object_bind_property(s_wired,

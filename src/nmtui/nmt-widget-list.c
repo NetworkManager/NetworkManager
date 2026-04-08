@@ -11,7 +11,7 @@
  * buttons next to each one, and an "Add" button at the button to add
  * new ones.
  *
- * It is the base class for #NmtAddressList, and is used internally by
+ * It is the base class for #NmtList, and is used internally by
  * #NmtRouteTable.
  *
  * FIXME: The way this works is sort of weird.
