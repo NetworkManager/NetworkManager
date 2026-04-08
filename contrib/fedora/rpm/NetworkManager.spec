@@ -100,11 +100,7 @@ Release: __RELEASE_VERSION__%{?dist}
 %else
 %bcond_without iwd
 %endif
-%if 0%{?fedora} <= 43 || 0%{?rhel} <= 10
 %bcond_without polkit_noauth_group
-%else
-%bcond_with polkit_noauth_group
-%endif
 %ifarch %{ix86}
 # there is no bpftool in i686
 %bcond_with clat
