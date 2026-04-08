@@ -296,7 +296,8 @@ config_h.set10('WITH_JANSSON', jansson_dep.found())
 jansson_msg = 'no'
 if jansson_dep.found()
   jansson_libdir = jansson_dep.get_variable(pkgconfig: 'libdir')
-  res = run_command(find_program('eu-readelf', 'readelf'), '-d', join_paths(jansson_libdir, 'libjansson.so'), check: false)
+  jansson_sysroot = meson.is_cross_build() ? meson.get_external_property('sys_root', '') : ''
+  res = run_command(find_program('eu-readelf', 'readelf'), '-d', jansson_sysroot + join_paths(jansson_libdir, 'libjansson.so'), check: false)
   jansson_soname = ''
   foreach line: res.stdout().split('\n')
     if line.strip().contains('SONAME')
