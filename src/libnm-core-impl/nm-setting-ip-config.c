@@ -6960,7 +6960,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      * activation will fail. The property is currently implemented only for IPv4.
      *
      * A zero value means that no duplicate address detection is performed, -1 means
-     * the default value (either the value configured globally in NetworkManger.conf
+     * the default value (either the value configured globally in NetworkManager.conf
      * or 200ms).  A value greater than zero is a timeout in milliseconds.  Note that
      * the time intervals are subject to randomization as per RFC 5227 and so the
      * actual duration can be between half and the full time specified in this
@@ -7006,7 +7006,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      * This property is useful for example if both IPv4 and IPv6 are enabled and
      * are allowed to fail. Normally the connection succeeds as soon as one of
      * the two address families completes; by setting a required timeout for
-     * e.g. IPv4, one can ensure that even if IP6 succeeds earlier than IPv4,
+     * e.g. IPv4, one can ensure that even if IPv6 succeeds earlier than IPv4,
      * NetworkManager waits some time for IPv4 before the connection becomes
      * active.
      *
