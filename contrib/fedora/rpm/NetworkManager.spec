@@ -174,10 +174,7 @@ Source9: readme-ifcfg-rh-migrated.txt
 #Patch1: 0001-some.patch
 
 Requires(post): systemd
-Requires(post): systemd-udev
-Requires(post): /usr/sbin/update-alternatives
 Requires(preun): systemd
-Requires(preun): /usr/sbin/update-alternatives
 Requires(postun): systemd
 
 Requires: dbus >= %{dbus_version}
@@ -562,6 +559,8 @@ Group: System Environment/Base
 BuildArch: noarch
 Requires: NetworkManager
 Requires: /usr/bin/nmcli
+Requires(post): /usr/sbin/update-alternatives
+Requires(preun): /usr/sbin/update-alternatives
 Obsoletes: NetworkManager < %{obsoletes_initscripts_updown}
 
 %description initscripts-updown
@@ -840,8 +839,12 @@ fi
 
 
 %postun
-/usr/bin/udevadm control --reload-rules || :
-/usr/bin/udevadm trigger --subsystem-match=net || :
+# skip triggering if udevd isn't even accessible, e.g. containers or
+# rpm-ostree-based systems
+if [ -S /run/udev/control ]; then
+    /usr/bin/udevadm control --reload-rules || :
+    /usr/bin/udevadm trigger --subsystem-match=net || :
+fi
 %firewalld_reload
 
 %systemd_postun %{systemd_units}

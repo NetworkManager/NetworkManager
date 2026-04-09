@@ -468,7 +468,12 @@ static const NMDBusInterfaceInfoExtended interface_info_device_macvlan = {
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("NoPromisc",
                                                            "b",
                                                            NM_DEVICE_MACVLAN_NO_PROMISC),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Tab", "b", NM_DEVICE_MACVLAN_TAP), ), ),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Tap", "b", NM_DEVICE_MACVLAN_TAP),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE(
+                "Tab",
+                "b",
+                NM_DEVICE_MACVLAN_TAP,
+                .annotations = NM_GDBUS_ANNOTATION_INFO_LIST_DEPRECATED(), ), ), ),
 };
 
 static void
