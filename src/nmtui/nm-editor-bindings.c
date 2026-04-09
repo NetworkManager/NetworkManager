@@ -195,7 +195,7 @@ ip_addresses_with_prefix_from_strv(GBinding     *binding,
  * @source: the source object (eg, an #NMSettingIP4Config)
  * @source_property: the property on @source to bind (eg,
  *   %NM_SETTING_IP4_CONFIG_ADDRESSES)
- * @target: the target object (eg, an #NmtAddressList)
+ * @target: the target object (eg, an #NmtList)
  * @target_property: the property on @target to bind
  *   (eg, "strings")
  * @flags: %GBindingFlags
@@ -253,7 +253,7 @@ ip_addresses_check_and_copy(GBinding     *binding,
  * @source: the source object (eg, an #NMSettingIP4Config)
  * @source_property: the property on @source to bind (eg,
  *   %NM_SETTING_IP4_CONFIG_DNS)
- * @target: the target object (eg, an #NmtAddressList)
+ * @target: the target object (eg, an #NmtList)
  * @target_property: the property on @target to bind
  *   (eg, "strings")
  * @flags: %GBindingFlags

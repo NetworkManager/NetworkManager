@@ -16,7 +16,7 @@
 
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "nmt-ip-entry.h"
-#include "nmt-address-list.h"
+#include "nmt-list.h"
 #include "nmt-route-editor.h"
 
 #include "nm-editor-bindings.h"
@@ -114,7 +114,7 @@ nmt_page_ip6_constructed(GObject *object)
     section = nmt_editor_section_new(_("IPv6 CONFIGURATION"), widget, show_by_default);
     grid    = nmt_editor_section_get_body(section);
 
-    widget = nmt_address_list_new(NMT_ADDRESS_LIST_IP6_WITH_PREFIX);
+    widget = nmt_list_new(NMT_LIST_IP6_WITH_PREFIX);
     nm_editor_bind_ip_addresses_with_prefix_to_strv(AF_INET6,
                                                     s_ip6,
                                                     NM_SETTING_IP_CONFIG_ADDRESSES,
@@ -133,7 +133,7 @@ nmt_page_ip6_constructed(GObject *object)
                                         G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
     nmt_editor_grid_append(grid, _("Gateway"), widget, NULL);
 
-    widget = nmt_address_list_new(NMT_ADDRESS_LIST_IP6);
+    widget = nmt_list_new(NMT_LIST_IP6);
     nm_editor_bind_ip_addresses_to_strv(AF_INET6,
                                         s_ip6,
                                         NM_SETTING_IP_CONFIG_DNS,
@@ -142,7 +142,7 @@ nmt_page_ip6_constructed(GObject *object)
                                         G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
     nmt_editor_grid_append(grid, _("DNS servers"), widget, NULL);
 
-    widget = nmt_address_list_new(NMT_ADDRESS_LIST_HOSTNAME);
+    widget = nmt_list_new(NMT_LIST_HOSTNAME);
     g_object_bind_property(s_ip6,
                            NM_SETTING_IP_CONFIG_DNS_SEARCH,
                            widget,
