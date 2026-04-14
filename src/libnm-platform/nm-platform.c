@@ -6373,6 +6373,7 @@ nm_platform_lnk_bond_to_string(const NMPlatformLnkBond *lnk, char *buf, gsize le
     char sbuf_resend_igmp[30];
     char sbuf_lp_interval[30];
     char sbuf_tlb_dynamic_lb[30];
+    char sbuf_arp_missed_max[30];
     int  i;
 
     if (!nm_utils_to_string_buffer_init_null(lnk, &buf, &len))
@@ -6403,7 +6404,7 @@ nm_platform_lnk_bond_to_string(const NMPlatformLnkBond *lnk, char *buf, gsize le
         " xmit_hash_policy %u"
         " num_gray_arp %u"
         " all_ports_active %u"
-        " arp_missed_max %u"
+        "%s" /* arp_missed_max %u */
         " lacp_rate %u"
         "%s" /* lacp_active */
         " ad_select %u"
@@ -6455,7 +6456,12 @@ nm_platform_lnk_bond_to_string(const NMPlatformLnkBond *lnk, char *buf, gsize le
         lnk->xmit_hash_policy,
         lnk->num_grat_arp,
         lnk->all_ports_active,
-        lnk->arp_missed_max,
+        lnk->arp_missed_max_has || lnk->arp_missed_max != 0
+            ? nm_sprintf_buf(sbuf_arp_missed_max,
+                             " arp_missed_max%s %u",
+                             !lnk->arp_missed_max_has ? "?" : "",
+                             (int) lnk->arp_missed_max)
+            : "",
         lnk->lacp_rate,
         lnk->lacp_active_has || lnk->lacp_active != 0
             ? nm_sprintf_buf(sbuf_lacp_active,
@@ -8388,7 +8394,8 @@ nm_platform_lnk_bond_hash_update(const NMPlatformLnkBond *obj, NMHashState *h)
                                               obj->tlb_dynamic_lb,
                                               obj->tlb_dynamic_lb_has,
                                               obj->updelay_has,
-                                              obj->use_carrier));
+                                              obj->use_carrier,
+                                              obj->arp_missed_max_has));
 
     nm_hash_update(h, obj->arp_ip_target, obj->arp_ip_targets_num * sizeof(obj->arp_ip_target[0]));
     nm_hash_update(h, obj->ns_ip6_target, obj->ns_ip6_targets_num * sizeof(obj->ns_ip6_target[0]));
@@ -8466,6 +8473,7 @@ nm_platform_lnk_bond_cmp(const NMPlatformLnkBond *a, const NMPlatformLnkBond *b)
     NM_CMP_FIELD_BOOL(a, b, tlb_dynamic_lb_has);
     NM_CMP_FIELD_BOOL(a, b, updelay_has);
     NM_CMP_FIELD_BOOL(a, b, use_carrier);
+    NM_CMP_FIELD_BOOL(a, b, arp_missed_max_has);
 
     return 0;
 }
