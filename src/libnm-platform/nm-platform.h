@@ -833,6 +833,7 @@ typedef struct {
     bool            tlb_dynamic_lb_has : 1;
     bool            updelay_has : 1;
     bool            use_carrier : 1;
+    bool            arp_missed_max_has : 1;
 } _nm_alignas(NMPlatformObject) NMPlatformLnkBond;
 
 typedef struct {
