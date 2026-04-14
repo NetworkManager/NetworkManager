@@ -5533,7 +5533,7 @@ test_bond_meta(void)
     _A(_nm_setting_bond_opt_value_as_u16, set, NM_SETTING_BOND_OPTION_AD_ACTOR_SYS_PRIO, 0, EINVAL);
     _A(_nm_setting_bond_opt_value_as_u16, set, NM_SETTING_BOND_OPTION_AD_USER_PORT_KEY, 0, EINVAL);
     _A(_nm_setting_bond_opt_value_as_u8, set, NM_SETTING_BOND_OPTION_NUM_GRAT_ARP, 1, 0);
-    _A(_nm_setting_bond_opt_value_as_u8, set, NM_SETTING_BOND_OPTION_ARP_MISSED_MAX, 0, 0);
+    _A(_nm_setting_bond_opt_value_as_u8, set, NM_SETTING_BOND_OPTION_ARP_MISSED_MAX, 2, 0);
     _A(_nm_setting_bond_opt_value_as_u8, set, NM_SETTING_BOND_OPTION_ALL_SLAVES_ACTIVE, 0, 0);
     _A(_nm_setting_bond_opt_value_as_intbool, set, NM_SETTING_BOND_OPTION_USE_CARRIER, 1, 0);
     _A(_nm_setting_bond_opt_value_as_intbool,
