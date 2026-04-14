@@ -1766,8 +1766,12 @@ _parse_lnk_bond(const char *kind, struct nlattr *info_data)
         props->num_grat_arp = nla_get_u8(tb[IFLA_BOND_NUM_PEER_NOTIF]);
     if (tb[IFLA_BOND_ALL_PORTS_ACTIVE])
         props->all_ports_active = nla_get_u8(tb[IFLA_BOND_ALL_PORTS_ACTIVE]);
-    if (tb[IFLA_BOND_MISSED_MAX])
-        props->arp_missed_max = nla_get_u8(tb[IFLA_BOND_MISSED_MAX]);
+    if (tb[IFLA_BOND_MISSED_MAX]) {
+        props->arp_missed_max     = nla_get_u8(tb[IFLA_BOND_MISSED_MAX]);
+        props->arp_missed_max_has = TRUE;
+    } else {
+        props->arp_missed_max_has = FALSE;
+    }
     if (tb[IFLA_BOND_MIN_LINKS])
         props->min_links = nla_get_u32(tb[IFLA_BOND_MIN_LINKS]);
     if (tb[IFLA_BOND_LP_INTERVAL])
@@ -5126,7 +5130,7 @@ _nl_msg_new_link_set_linkinfo(struct nl_msg *msg, NMLinkType link_type, gconstpo
                     &props->ad_actor_system);
         if (props->ad_select)
             NLA_PUT_U8(msg, IFLA_BOND_AD_SELECT, props->ad_select);
-        if (props->arp_missed_max)
+        if (props->arp_missed_max_has)
             NLA_PUT_U8(msg, IFLA_BOND_MISSED_MAX, props->arp_missed_max);
 
         NLA_PUT_U8(msg, IFLA_BOND_ALL_PORTS_ACTIVE, props->all_ports_active);
