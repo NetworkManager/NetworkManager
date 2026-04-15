@@ -409,7 +409,7 @@ reader_read_all_connections_from_fw(Reader *reader, const char *sysfs_dir)
 
         if (!nmi_ibft_update_connection_from_nic(connection, nic, &error)) {
             _LOGW(LOGD_CORE, "Unable to merge iBFT configuration: %s", error->message);
-            g_error_free(error);
+            g_clear_error(&error);
             continue;
         }
 
