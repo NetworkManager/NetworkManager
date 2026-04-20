@@ -17968,6 +17968,14 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
             nm_device_cleanup(self, reason, CLEANUP_TYPE_DECONFIGURE);
         }
         break;
+    case NM_DEVICE_STATE_DEACTIVATING:
+        /* When deactivating, certain devices are removed/disconnected after the
+         * STATE_CHANGED signal is sent and before the DHCP release packet
+         * can be sent. To ensure the release packet is sent, we cleanup DHCP
+         * before the signal is emitted*/
+        _dev_ipdhcpx_cleanup(self, AF_INET, TRUE, FALSE);
+        _dev_ipdhcpx_cleanup(self, AF_INET6, TRUE, FALSE);
+        break;
     case NM_DEVICE_STATE_DISCONNECTED:
         if (old_state > NM_DEVICE_STATE_DISCONNECTED) {
             /* Ensure devices that previously assumed a connection now have
@@ -18017,6 +18025,7 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
                                (guint32) state,
                                (guint32) old_state,
                                (guint32) reason);
+
     g_signal_emit(self,
                   signals[STATE_CHANGED],
                   0,
