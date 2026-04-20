@@ -11575,10 +11575,11 @@ _dev_ipdhcpx_set_state(NMDevice *self, int addr_family, NMDeviceIPState state)
 static void
 _dev_ipdhcpx_cleanup(NMDevice *self, int addr_family, gboolean full_cleanup, gboolean force_release)
 {
-    NMDevicePrivate   *priv    = NM_DEVICE_GET_PRIVATE(self);
-    const int          IS_IPv4 = NM_IS_IPv4(addr_family);
-    NMSettingIPConfig *s_ip4   = NULL;
-    NMSettingIPConfig *s_ip6   = NULL;
+    NMDevicePrivate   *priv            = NM_DEVICE_GET_PRIVATE(self);
+    const int          IS_IPv4         = NM_IS_IPv4(addr_family);
+    NMSettingIPConfig *s_ip4           = NULL;
+    NMSettingIPConfig *s_ip6           = NULL;
+    const char        *setting_release = NULL;
     gboolean           release;
 
     _dev_ipdhcpx_set_state(self, addr_family, NM_DEVICE_IP_STATE_NONE);
@@ -11590,16 +11591,14 @@ _dev_ipdhcpx_cleanup(NMDevice *self, int addr_family, gboolean full_cleanup, gbo
 
     if ((IS_IPv4 && s_ip4) || (!IS_IPv4 && s_ip6)) {
         if (nm_setting_ip_config_get_dhcp_send_release(IS_IPv4 ? s_ip4 : s_ip6)
-            == NM_TERNARY_DEFAULT)
-            release = nm_config_data_get_connection_default_int64(
+            == NM_TERNARY_DEFAULT) {
+            setting_release = nm_config_data_get_connection_default(
                 NM_CONFIG_GET_DATA,
                 IS_IPv4 ? NM_CON_DEFAULT("ipv4.dhcp-send-release")
                         : NM_CON_DEFAULT("ipv6.dhcp-send-release"),
-                self,
-                NM_TERNARY_FALSE,
-                NM_TERNARY_TRUE,
-                NM_TERNARY_FALSE);
-        else
+                self);
+            release = _nm_utils_ascii_str_to_bool(setting_release, NM_OPTION_BOOL_FALSE);
+        } else
             release = nm_setting_ip_config_get_dhcp_send_release(IS_IPv4 ? s_ip4 : s_ip6);
 
         release = force_release || (release && full_cleanup);
