@@ -801,6 +801,8 @@ typedef struct _NMDevicePrivate {
 
     bool needs_ip6_subnet : 1;
 
+    bool dhcp_cleanup_done : 1;
+
     NMOptionBool promisc_reset;
 
     GVariant *ports_variant; /* Array of port devices D-Bus path */
@@ -9272,10 +9274,13 @@ nm_device_removed(NMDevice *self, gboolean unconfigure_ip_config)
 
     g_return_if_fail(NM_IS_DEVICE(self));
 
-    _dev_ipdhcpx_cleanup(self, AF_INET, TRUE, FALSE);
-    _dev_ipdhcpx_cleanup(self, AF_INET6, TRUE, FALSE);
-
     priv = NM_DEVICE_GET_PRIVATE(self);
+
+    if (!priv->dhcp_cleanup_done) {
+        _dev_ipdhcpx_cleanup(self, AF_INET, TRUE, FALSE);
+        _dev_ipdhcpx_cleanup(self, AF_INET6, TRUE, FALSE);
+        priv->dhcp_cleanup_done = TRUE;
+    }
     if (priv->controller) {
         /* this is called when something externally messes with the port or during shut-down.
          * Release the port from controller, but don't touch the device. */
@@ -14270,7 +14275,8 @@ _cleanup_ip_pre(NMDevice *self, int addr_family, CleanupType cleanup_type, gbool
     _dev_ipdev_cleanup(self, AF_UNSPEC);
     _dev_ipdev_cleanup(self, addr_family);
 
-    _dev_ipdhcpx_cleanup(self, addr_family, !preserve_dhcp || !keep_reapply, FALSE);
+    if (!priv->dhcp_cleanup_done)
+        _dev_ipdhcpx_cleanup(self, addr_family, !preserve_dhcp || !keep_reapply, FALSE);
 
     if (IS_IPv4) {
         priv->ipll_data_4.v4.mode = NM_SETTING_IP4_LL_DISABLED;
@@ -18001,6 +18007,7 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
         break;
     case NM_DEVICE_STATE_PREPARE:
         nm_device_update_initial_hw_address(self);
+        priv->dhcp_cleanup_done = FALSE;
         break;
     case NM_DEVICE_STATE_NEED_AUTH:
         if (old_state > NM_DEVICE_STATE_NEED_AUTH) {
@@ -18028,6 +18035,17 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
                                (guint32) state,
                                (guint32) old_state,
                                (guint32) reason);
+
+    /* In case where an internal OVS ports holds a DHCP lease, and
+     * we need to send a RELEASE packet, we must cleanup DHCP before
+     * the STATE_CHANGD signal is emitted so that the internal port
+     * is not detached from the controller OVS Port and removed from
+     * the kernel link by ovs-vswitchd */
+    if (state == NM_DEVICE_STATE_DEACTIVATING && !priv->dhcp_cleanup_done) {
+        _dev_ipdhcpx_cleanup(self, AF_INET, TRUE, FALSE);
+        _dev_ipdhcpx_cleanup(self, AF_INET6, TRUE, FALSE);
+        priv->dhcp_cleanup_done = TRUE;
+    }
     g_signal_emit(self,
                   signals[STATE_CHANGED],
                   0,
