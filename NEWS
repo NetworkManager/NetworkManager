@@ -64,6 +64,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Allow configuring all bond options in nmtui by introducing a
   "other options" field, which covers options not already covered by a
   dedicated input field.
+* IPv6 interfaces that receive PD via DHCPv6 are considered healthy without a
+  non-temporary address. The delegated prefix can be used via an interface
+  configured with "ipv6.method: shared"
 
 =============================================
 NetworkManager-1.56
