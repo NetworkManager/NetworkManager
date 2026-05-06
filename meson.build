@@ -624,7 +624,7 @@ if enable_ppp
     pppd_version = pppd_dep.version()
     NM_PPP_VERSION_2_5_OR_NEWER = true
   else
-    assert(cc.has_header('pppd/pppd.h'), 'couldn\'t find pppd.h. pppd development headers are required')
+    assert(cc.has_header('pppd/pppd.h'), 'couldn\'t find pppd.h. pppd development headers are required. Use -Dppp=false to build without it.')
     pppd_version = '2.4.9'
   endif
 
