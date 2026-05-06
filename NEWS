@@ -1,4 +1,13 @@
 =============================================
+NetworkManager-1.54.5
+Overview of changes since NetworkManager-1.54.4
+=============================================
+
+* IPv6 interfaces that receive PD via DHCPv6 are considered healthy without a
+  non-temporary address. The delegated prefix can be used via an interface
+  configured with "ipv6.method: shared"
+
+=============================================
 NetworkManager-1.54.4
 Overview of changes since NetworkManager-1.54.3
 =============================================
