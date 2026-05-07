@@ -8161,8 +8161,8 @@ compare_device_remove_order(const CList *a, const CList *b, const void *user_dat
 
     /* priority: software AND dhcp first, then dhcp only
      * then everything else,*/
-    uint a_score = a_has_dhcp ? (a_is_software ? 2 : 1) : 0;
-    uint b_score = b_has_dhcp ? (b_is_software ? 2 : 1) : 0;
+    int a_score = a_has_dhcp ? (a_is_software ? 2 : 1) : 0;
+    int b_score = b_has_dhcp ? (b_is_software ? 2 : 1) : 0;
 
     return b_score - a_score;
 }
