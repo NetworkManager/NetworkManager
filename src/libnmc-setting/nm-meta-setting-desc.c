@@ -6112,6 +6112,57 @@ static const NMMetaPropertyInfo *const property_infos_GENERIC[] = {
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_GENEVE
+static const NMMetaPropertyInfo *const property_infos_GENEVE[] = {
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_GENEVE_ID,
+        .is_cli_option =                TRUE,
+        .property_alias =               "id",
+        .inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
+        .prompt =                       N_("GENEVE ID"),
+        .property_type =                &_pt_gobject_int,
+    ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_GENEVE_REMOTE,
+        .is_cli_option =                TRUE,
+        .property_alias =               "remote",
+        .inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
+        .prompt =                       N_("Remote"),
+        .property_type =                &_pt_gobject_string,
+    ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_GENEVE_DESTINATION_PORT,
+        .is_cli_option =                TRUE,
+        .property_alias =               "destination-port",
+        .prompt =                       N_("Destination port"),
+        .property_type =                &_pt_gobject_int,
+    ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_GENEVE_TOS,
+        .property_type =                &_pt_gobject_int,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
+            .value_infos =              INT_VALUE_INFOS (
+                {
+                    .value.u64 = 1,
+                    .nick = "inherit",
+                },
+            ),
+        ),
+    ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_GENEVE_TTL,
+        .property_type =                &_pt_gobject_int,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
+            .value_infos =              INT_VALUE_INFOS (
+                {
+                    .value.i64 = -1,
+                    .nick = "inherit",
+                },
+            ),
+        ),
+    ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_GENEVE_DF,
+        .property_type =                &_pt_gobject_enum,
+    ),
+    NULL
+};
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_GSM
 static const NMMetaPropertyInfo *const property_infos_GSM[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_GSM_AUTO_CONFIG,
@@ -9014,6 +9065,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_DUMMY               N_("Dummy settings")
 #define SETTING_PRETTY_NAME_ETHTOOL             N_("Ethtool settings")
 #define SETTING_PRETTY_NAME_GENERIC             N_("Generic settings")
+#define SETTING_PRETTY_NAME_GENEVE              N_("Geneve settings")
 #define SETTING_PRETTY_NAME_GSM                 N_("GSM mobile broadband connection")
 #define SETTING_PRETTY_NAME_HOSTNAME            N_("Hostname settings")
 #define SETTING_PRETTY_NAME_HSR                 N_("HSR settings")
@@ -9150,6 +9202,14 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
         .valid_parts = NM_META_SETTING_VALID_PARTS (
             NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
             NM_META_SETTING_VALID_PART_ITEM (GENERIC,               TRUE),
+        ),
+    ),
+    SETTING_INFO (GENEVE,
+        .valid_parts = NM_META_SETTING_VALID_PARTS (
+            NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+            NM_META_SETTING_VALID_PART_ITEM (GENEVE,                 TRUE),
+            NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
+            NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
         ),
     ),
     SETTING_INFO (GSM,

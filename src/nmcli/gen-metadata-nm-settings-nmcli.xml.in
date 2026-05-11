@@ -629,7 +629,7 @@
                   alias="type"
                   nmcli-description="Base type of the connection. For hardware-dependent connections, should contain the setting name of the hardware-type specific setting (ie, &quot;802-3-ethernet&quot; or &quot;802-11-wireless&quot; or &quot;bluetooth&quot;, etc), and for non-hardware dependent connections like VPN or otherwise, should contain the setting name of that setting type (ie, &quot;vpn&quot; or &quot;bridge&quot;, etc)."
                   format="string"
-                  values="6lowpan, 802-11-olpc-mesh, 802-11-wireless, 802-3-ethernet, adsl, bluetooth, bond, bridge, cdma, dummy, generic, gsm, hsr, infiniband, ip-tunnel, ipvlan, loopback, macsec, macvlan, ovs-bridge, ovs-interface, ovs-port, pppoe, team, tun, veth, vlan, vpn, vrf, vxlan, wifi-p2p, wimax, wireguard, wpan" />
+                  values="6lowpan, 802-11-olpc-mesh, 802-11-wireless, 802-3-ethernet, adsl, bluetooth, bond, bridge, cdma, dummy, generic, geneve, gsm, hsr, infiniband, ip-tunnel, ipvlan, loopback, macsec, macvlan, ovs-bridge, ovs-interface, ovs-port, pppoe, team, tun, veth, vlan, vpn, vrf, vxlan, wifi-p2p, wimax, wireguard, wpan" />
         <property name="interface-name"
                   alias="ifname"
                   nmcli-description="The name of the network interface this connection is bound to. If not set, then the connection can be attached to any interface of the appropriate type (subject to restrictions imposed by other settings). For software devices this specifies the name of the created device. For connection types where interface names cannot easily be made persistent (e.g. mobile broadband or USB Ethernet), this property should not be used. Setting this property restricts the interfaces a connection can be used with, and if interface names change or are reordered the connection may be applied to the wrong interface."
@@ -1109,6 +1109,36 @@
         <property name="device-handler"
                   nmcli-description="Name of the device handler that will be invoked to add and delete the device for this connection. The name can only contain ASCII alphanumeric characters and &apos;-&apos;, &apos;_&apos;, &apos;.&apos;. It cannot start with &apos;.&apos;. See the NetworkManager-dispatcher(8) man page for more details about how to write the device handler. By setting this property the generic connection becomes &quot;virtual&quot;, meaning that it can be activated without an existing device; the device will be created at the time the connection is started by invoking the device-handler."
                   format="string" />
+    </setting>
+    <setting name="geneve" >
+        <property name="id"
+                  alias="id"
+                  nmcli-description="Specifies the GENEVE Network Identifier (or GENEVE Segment Identifier) to use."
+                  format="integer"
+                  values="0 - 16777215" />
+        <property name="remote"
+                  alias="remote"
+                  nmcli-description="Specifies the unicast destination IP address to use in outgoing packets when communicating with the remote GENEVE tunnel endpoint."
+                  format="string" />
+        <property name="destination-port"
+                  alias="destination-port"
+                  nmcli-description="Specifies the UDP destination port to communicate to the remote GENEVE tunnel endpoint."
+                  format="integer"
+                  values="0 - 65535" />
+        <property name="tos"
+                  nmcli-description="Specifies the TOS value to use in outgoing packets. The special value &quot;inherit&quot; (1) means inherit from outer packet."
+                  format="integer"
+                  values="0 - 255"
+                  special-values="inherit (1)" />
+        <property name="ttl"
+                  nmcli-description="Specifies the time-to-live value to use in outgoing packets. The special value &quot;inherit&quot; (-1) means inherit from outer packet, 0 means auto, 1-255 are fixed values."
+                  format="integer"
+                  values="-1 - 255"
+                  special-values="inherit (-1)" />
+        <property name="df"
+                  nmcli-description="Specifies how the Don&apos;t Fragment (DF) flag should be handled in the outer IP header of GENEVE tunnel packets. &quot;unset&quot; (0) (0): Don&apos;t set the DF flag, packets may be fragmented. &quot;set&quot; (1) (1): Always set the DF flag, packets will not be fragmented. &quot;inherit&quot; (2) (2): Inherit the DF flag from the inner IP header."
+                  format="choice (NMSettingGeneveDf)"
+                  values="unset (0), set (1), inherit (2)" />
     </setting>
     <setting name="gsm" >
         <property name="auto-config"

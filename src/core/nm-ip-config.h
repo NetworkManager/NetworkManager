@@ -35,7 +35,7 @@ struct _NMIPConfigPrivate {
     GSource *notify_platform_timeout_source;
     gint64   notify_platform_rlimited_until_msec;
     gulong   l3cfg_notify_id;
-    guint32  notify_platform_obj_type_flags;
+    guint64  notify_platform_obj_type_flags;
 };
 
 struct _NMIPConfig {

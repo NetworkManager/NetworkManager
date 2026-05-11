@@ -130,6 +130,7 @@ typedef enum {
 #define _NM_LINK_TYPE_SW_FIRST NM_LINK_TYPE_BNEP
     NM_LINK_TYPE_BNEP, /* Bluetooth Ethernet emulation */
     NM_LINK_TYPE_DUMMY,
+    NM_LINK_TYPE_GENEVE,
     NM_LINK_TYPE_GRE,
     NM_LINK_TYPE_GRETAP,
     NM_LINK_TYPE_IFB,
