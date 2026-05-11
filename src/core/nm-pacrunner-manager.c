@@ -122,43 +122,6 @@ NM_AUTO_DEFINE_FCN0(NMPacrunnerConfId *, _nm_auto_unref_conf_id, conf_id_unref);
 
 /*****************************************************************************/
 
-static void
-get_ip_domains(GPtrArray *domains, const NML3ConfigData *l3cd, int addr_family)
-{
-    NMDedupMultiIter           ipconf_iter;
-    char                      *cidr;
-    guint                      num;
-    guint                      i;
-    char                       sbuf[NM_INET_ADDRSTRLEN];
-    const NMPlatformIPAddress *address;
-    const NMPlatformIPRoute   *route;
-    const char *const         *strv;
-
-    strv = nm_l3_config_data_get_searches(l3cd, addr_family, &num);
-    for (i = 0; i < num; i++)
-        g_ptr_array_add(domains, g_strdup(strv[i]));
-
-    strv = nm_l3_config_data_get_domains(l3cd, addr_family, &num);
-    for (i = 0; i < num; i++)
-        g_ptr_array_add(domains, g_strdup(strv[i]));
-
-    nm_l3_config_data_iter_ip_address_for_each (&ipconf_iter, l3cd, addr_family, &address) {
-        cidr = g_strdup_printf("%s/%u",
-                               nm_inet_ntop(addr_family, address->address_ptr, sbuf),
-                               address->plen);
-        g_ptr_array_add(domains, cidr);
-    }
-
-    nm_l3_config_data_iter_ip_route_for_each (&ipconf_iter, l3cd, addr_family, &route) {
-        if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT(route))
-            continue;
-        cidr = g_strdup_printf("%s/%u",
-                               nm_inet_ntop(addr_family, route->network_ptr, sbuf),
-                               route->plen);
-        g_ptr_array_add(domains, cidr);
-    }
-}
-
 static GVariant *
 _make_request_create_proxy_configuration(const char *iface, const NML3ConfigData *l3cd)
 {
@@ -197,23 +160,6 @@ _make_request_create_proxy_configuration(const char *iface, const NML3ConfigData
         "{sv}",
         "BrowserOnly",
         g_variant_new_boolean(l3cd ? !!nm_l3_config_data_get_proxy_browser_only(l3cd) : FALSE));
-
-    if (l3cd) {
-        gs_unref_ptrarray GPtrArray *domains = NULL;
-
-        domains = g_ptr_array_new_with_free_func(g_free);
-
-        get_ip_domains(domains, l3cd, AF_INET);
-        get_ip_domains(domains, l3cd, AF_INET6);
-
-        if (domains->len > 0) {
-            g_variant_builder_add(
-                &builder,
-                "{sv}",
-                "Domains",
-                g_variant_new_strv((const char *const *) domains->pdata, domains->len));
-        }
-    }
 
     return g_variant_new("(a{sv})", &builder);
 }
