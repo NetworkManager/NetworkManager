@@ -4,6 +4,9 @@ Overview of changes since NetworkManager-1.56
 =============================================
 
 * Add support for GENEVE interface.
+* Allow persisting the managed state across reboots from nmcli and the D-Bus API.
+* Allow changing the device's administrative state in the kernel at the same
+  time as a change to the managed state from nmcli and the D-Bus API.
 
 =============================================
 NetworkManager-1.56
