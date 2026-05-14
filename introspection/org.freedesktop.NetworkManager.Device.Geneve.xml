@@ -9,7 +9,7 @@
 
     <!--
         Id:
-        @since: 1.58, 1.56.1
+        @since: 1.56.1
 
         The GENEVE Virtual Network Identifier (VNI).
     -->
@@ -17,7 +17,7 @@
 
     <!--
         Remote:
-        @since: 1.58, 1.56.1
+        @since: 1.56.1
 
         The IP (v4 or v6) address of the remote endpoint to which GENEVE packets
         are sent.
@@ -26,7 +26,7 @@
 
     <!--
         Tos:
-        @since: 1.58, 1.56.1
+        @since: 1.56.1
 
         The value to use in the IP ToS field for GENEVE packets sent to the remote
         endpoint.
@@ -35,7 +35,7 @@
 
     <!--
         Ttl:
-        @since: 1.58, 1.56.1
+        @since: 1.56.1
 
         The value to use in the IP TTL field for GENEVE packets sent to the remote
         endpoint.
@@ -44,7 +44,7 @@
 
     <!--
         Df:
-        @since: 1.58, 1.56.1
+        @since: 1.56.1
 
         The Don't Fragment (DF) flag setting for GENEVE packets. 0 means unset,
         1 means set, 2 means inherit from the underlying interface.
@@ -53,7 +53,7 @@
 
     <!--
         DstPort:
-        @since: 1.58, 1.56.1
+        @since: 1.56.1
 
         Destination port for outgoing GENEVE packets.
     -->
