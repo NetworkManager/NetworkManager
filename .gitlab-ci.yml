@@ -60,7 +60,7 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-8e4bbc59695b'
+  ALPINE_TAG:  'tag-9a076a2431b8'
   CENTOS_TAG:  'tag-caf6673db1a7'
   DEBIAN_TAG:  'tag-e394e8e726e1'
   FEDORA_TAG:  'tag-caf6673db1a7'
