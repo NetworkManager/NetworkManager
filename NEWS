@@ -1,3 +1,10 @@
+=============================================
+NetworkManager-1.54.4
+Overview of changes since NetworkManager-1.54.3
+=============================================
+
+* Add support for GENEVE interface.
+
 ===============================================
 NetworkManager-1.54.3
 Overview of changes since NetworkManager-1.54.2

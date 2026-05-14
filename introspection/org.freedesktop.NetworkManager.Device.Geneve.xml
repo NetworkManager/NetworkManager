@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+  <!--
+      org.freedesktop.NetworkManager.Device.Geneve:
+      @short_description: GENEVE Device.
+
+  -->
+  <interface name="org.freedesktop.NetworkManager.Device.Geneve">
+
+    <!--
+        Id:
+        @since: 1.54.4
+
+        The GENEVE Virtual Network Identifier (VNI).
+    -->
+    <property name="Id" type="u" access="read"/>
+
+    <!--
+        Remote:
+        @since: 1.54.4
+
+        The IP (v4 or v6) address of the remote endpoint to which GENEVE packets
+        are sent.
+    -->
+    <property name="Remote" type="s" access="read"/>
+
+    <!--
+        Tos:
+        @since: 1.54.4
+
+        The value to use in the IP ToS field for GENEVE packets sent to the remote
+        endpoint.
+    -->
+    <property name="Tos" type="y" access="read"/>
+
+    <!--
+        Ttl:
+        @since: 1.54.4
+
+        The value to use in the IP TTL field for GENEVE packets sent to the remote
+        endpoint.
+    -->
+    <property name="Ttl" type="i" access="read"/>
+
+    <!--
+        Df:
+        @since: 1.54.4
+
+        The Don't Fragment (DF) flag setting for GENEVE packets. 0 means unset,
+        1 means set, 2 means inherit from the underlying interface.
+    -->
+    <property name="Df" type="y" access="read"/>
+
+    <!--
+        DstPort:
+        @since: 1.54.4
+
+        Destination port for outgoing GENEVE packets.
+    -->
+    <property name="DstPort" type="q" access="read"/>
+
+  </interface>
+</node>

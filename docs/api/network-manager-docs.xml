@@ -183,6 +183,7 @@
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Bridge.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Dummy.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Generic.xml"/>
+      <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Geneve.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Hsr.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.IPTunnel.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Infiniband.xml"/>
