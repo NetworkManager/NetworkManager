@@ -2075,6 +2075,210 @@ nm_config_set_connectivity_check_enabled(NMConfig *self, gboolean enabled)
     g_key_file_unref(keyfile);
 }
 
+/*****************************************************************************/
+
+static gboolean
+normalize_hwaddr_for_group_name(const char *hwaddr, char *out, GError **error)
+{
+    guint8 hwaddr_bin[NM_UTILS_HWADDR_LEN_MAX];
+    gsize  hwaddr_bin_len;
+
+    if (!_nm_utils_hwaddr_aton(hwaddr, hwaddr_bin, sizeof(hwaddr_bin), &hwaddr_bin_len)) {
+        g_set_error(error,
+                    NM_DEVICE_ERROR,
+                    NM_DEVICE_ERROR_INVALID_ARGUMENT,
+                    "Invalid MAC address: %s",
+                    hwaddr);
+        return FALSE;
+    }
+    nm_utils_bin2hexstr_full(hwaddr_bin, hwaddr_bin_len, '-', TRUE, out);
+    return TRUE;
+}
+
+/**
+ * nm_config_get_device_managed:
+ * @self: the NMConfig instance
+ * @device: the interface
+ * @out: (out): the managed state of the device
+ * @error: return location for a #GError, or %NULL
+ *
+ * Returns: TRUE if there were no errors, FALSE otherwise.
+ */
+gboolean
+nm_config_get_device_managed(NMConfig  *self,
+                             NMDevice  *device,
+                             NMTernary *out_managed,
+                             gboolean  *out_by_mac,
+                             GError   **error)
+{
+    NMConfigPrivate *priv;
+    const GKeyFile  *keyfile       = NULL;
+    gs_free char    *group_by_name = NULL;
+    gs_free char    *group_by_mac  = NULL;
+    const char      *ifname        = nm_device_get_iface(device);
+    const char      *hwaddr        = nm_device_get_permanent_hw_address(device);
+    char             mac_group_name[NM_UTILS_HWADDR_LEN_MAX * 3 + 1];
+    NMTernary        val_by_name, val_by_mac = NM_TERNARY_DEFAULT;
+
+    g_return_val_if_fail(NM_IS_CONFIG(self), FALSE);
+    g_return_val_if_fail(NM_CONFIG_GET_PRIVATE(self)->config_data, FALSE);
+    g_return_val_if_fail(out_managed, FALSE);
+    g_return_val_if_fail(ifname, FALSE);
+
+    priv    = NM_CONFIG_GET_PRIVATE(self);
+    keyfile = _nm_config_data_get_keyfile_intern(priv->config_data);
+
+    if (!keyfile) {
+        NM_SET_OUT(out_managed, NM_TERNARY_DEFAULT);
+        NM_SET_OUT(out_by_mac, FALSE);
+        return TRUE;
+    }
+
+    group_by_name =
+        g_strdup_printf(NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_DEVICE "-manage-%s", ifname);
+
+    val_by_name = (NMTernary) nm_config_keyfile_get_boolean(keyfile,
+                                                            group_by_name,
+                                                            NM_CONFIG_KEYFILE_KEY_DEVICE_MANAGED,
+                                                            NM_TERNARY_DEFAULT);
+
+    /* Devices without a kernel link (i.e. OVS ports) don't have a MAC address */
+    if (hwaddr) {
+        if (!normalize_hwaddr_for_group_name(hwaddr, mac_group_name, error))
+            return FALSE;
+
+        group_by_mac = g_strdup_printf(NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_DEVICE "-manage-%s",
+                                       mac_group_name);
+
+        val_by_mac = (NMTernary) nm_config_keyfile_get_boolean(keyfile,
+                                                               group_by_mac,
+                                                               NM_CONFIG_KEYFILE_KEY_DEVICE_MANAGED,
+                                                               NM_TERNARY_DEFAULT);
+    }
+
+    if (val_by_name != NM_TERNARY_DEFAULT && val_by_mac == NM_TERNARY_DEFAULT) {
+        NM_SET_OUT(out_managed, val_by_name);
+        NM_SET_OUT(out_by_mac, FALSE);
+        return TRUE;
+    } else if (val_by_mac != NM_TERNARY_DEFAULT && val_by_name == NM_TERNARY_DEFAULT) {
+        NM_SET_OUT(out_managed, val_by_mac);
+        NM_SET_OUT(out_by_mac, TRUE);
+        return TRUE;
+    } else if (val_by_name == NM_TERNARY_DEFAULT && val_by_mac == NM_TERNARY_DEFAULT) {
+        NM_SET_OUT(out_managed, NM_TERNARY_DEFAULT);
+        NM_SET_OUT(out_by_mac, FALSE);
+        return TRUE;
+    } else if (val_by_name == val_by_mac) {
+        NM_SET_OUT(out_managed, val_by_name);
+        NM_SET_OUT(out_by_mac, FALSE);
+        return TRUE;
+    }
+
+    g_set_error(error,
+                NM_DEVICE_ERROR,
+                NM_DEVICE_ERROR_FAILED,
+                "Multiple managed states found for device: %s",
+                nm_device_get_iface(device));
+    return FALSE;
+}
+
+/**
+ * nm_config_set_device_managed:
+ * @self: the NMConfig instance
+ * @device: the NMDevice instance associated with this config change
+ * @managed: the managed state to set
+ * @by_mac: if %TRUE, match by MAC address, otherwise by interface name. This is
+ *   only used when @managed = TRUE.
+ * @error: return location for a #GError, or %NULL
+ *
+ * Sets the managed state of the device to the intern keyfile. Here we store the
+ * configuration received via the D-Bus API. Configurations from other config
+ * files are still in place and may have higher precedence.
+ *
+ * Prior to setting the new state, the existing configuration is removed. If
+ * @managed is set to %NM_TERNARY_DEFAULT, we only do the removal of the previous
+ * configuration.
+ */
+gboolean
+nm_config_set_device_managed(NMConfig *self,
+                             NMDevice *device,
+                             NMTernary managed,
+                             gboolean  by_mac,
+                             GError  **error)
+{
+    NMConfigPrivate *priv;
+    g_autoptr(GKeyFile) keyfile = NULL;
+    char         *group;
+    gs_free char *group_by_name = NULL;
+    gs_free char *group_by_mac  = NULL;
+    gs_free char *match_value   = NULL;
+    gboolean      changed       = FALSE;
+    const char   *ifname        = nm_device_get_iface(device);
+    const char   *hwaddr        = nm_device_get_permanent_hw_address(device);
+    char          mac_group_name[NM_UTILS_HWADDR_LEN_MAX * 3 + 1];
+
+    g_return_val_if_fail(NM_IS_CONFIG(self), FALSE);
+    g_return_val_if_fail(NM_CONFIG_GET_PRIVATE(self)->config_data, FALSE);
+    g_return_val_if_fail(ifname, FALSE);
+
+    if (by_mac && !hwaddr) {
+        g_set_error(error,
+                    NM_DEVICE_ERROR,
+                    NM_DEVICE_ERROR_INVALID_ARGUMENT,
+                    "the device has no MAC address, but match by MAC was requested");
+        return FALSE;
+    }
+
+    if (hwaddr && !normalize_hwaddr_for_group_name(hwaddr, mac_group_name, error))
+        return FALSE;
+
+    priv    = NM_CONFIG_GET_PRIVATE(self);
+    keyfile = nm_config_data_clone_keyfile_intern(priv->config_data);
+
+    /* Remove existing configs. Search them by group name [.intern.device-manage-*]. In
+     * the intern file, 'device-manage' sections are only used for this purpose, so we
+     * won't remove any other device's config. */
+    group_by_name =
+        g_strdup_printf(NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_DEVICE "-manage-%s", ifname);
+
+    if (g_key_file_remove_group(keyfile, group_by_name, NULL))
+        changed = TRUE;
+
+    /* Devices without a kernel link (i.e. OVS ports) don't have a MAC address */
+    if (hwaddr) {
+        group_by_mac = g_strdup_printf(NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_DEVICE "-manage-%s",
+                                       mac_group_name);
+
+        if (g_key_file_remove_group(keyfile, group_by_mac, NULL))
+            changed = TRUE;
+    }
+
+    /* If the new state is not explicitly TRUE of FALSE, we only remove the configs */
+    if (managed == NM_TERNARY_DEFAULT)
+        goto done;
+
+    /* Set new values */
+    if (by_mac) {
+        group       = group_by_mac;
+        match_value = g_strdup_printf("mac:%s", hwaddr);
+    } else {
+        group       = group_by_name;
+        match_value = g_strdup_printf("interface-name:=%s", ifname);
+    }
+
+    g_key_file_set_value(keyfile, group, NM_CONFIG_KEYFILE_KEY_MATCH_DEVICE, match_value);
+    g_key_file_set_value(keyfile, group, NM_CONFIG_KEYFILE_KEY_DEVICE_MANAGED, managed ? "1" : "0");
+    changed = TRUE;
+
+done:
+    if (changed)
+        nm_config_set_values(self, keyfile, TRUE, FALSE);
+
+    return TRUE;
+}
+
+/*****************************************************************************/
+
 /**
  * nm_config_set_values:
  * @self: the NMConfig instance
