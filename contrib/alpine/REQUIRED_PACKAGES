@@ -30,7 +30,6 @@ apk add \
     'libnvme-dev' \
     'libnl3-dev' \
     'libpsl-dev' \
-    'libsoup-dev' \
     'libteam-dev' \
     'linux-headers' \
     'meson' \
