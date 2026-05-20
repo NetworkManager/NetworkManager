@@ -19,6 +19,7 @@ G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectIP6Route))
 G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectLink));
 G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectLnkBond));
 G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectLnkBridge));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectLnkGeneve));
 G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectLnkGre));
 G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectLnkInfiniband));
 G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectLnkIp6Tnl));
@@ -49,6 +50,7 @@ G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformIPXRoute)
 G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformLink));
 G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformLnkBond));
 G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformLnkBridge));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformLnkGeneve));
 G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformLnkGre));
 G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformLnkInfiniband));
 G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformLnkIp6Tnl));

@@ -18,6 +18,7 @@ libnm_client_headers = files(
   'nm-device-dummy.h',
   'nm-device-ethernet.h',
   'nm-device-generic.h',
+  'nm-device-geneve.h',
   'nm-device-hsr.h',
   'nm-device-infiniband.h',
   'nm-device-ip-tunnel.h',

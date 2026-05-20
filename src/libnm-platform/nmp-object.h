@@ -251,6 +251,10 @@ typedef struct {
 } NMPObjectLnkBond;
 
 typedef struct {
+    NMPlatformLnkGeneve _public;
+} NMPObjectLnkGeneve;
+
+typedef struct {
     NMPlatformLnkGre _public;
 } NMPObjectLnkGre;
 
@@ -382,6 +386,9 @@ struct _NMPObject {
 
         NMPlatformLnkBond lnk_bond;
         NMPObjectLnkBond  _lnk_bond;
+
+        NMPlatformLnkGeneve lnk_geneve;
+        NMPObjectLnkGeneve  _lnk_geneve;
 
         NMPlatformLnkGre lnk_gre;
         NMPObjectLnkGre  _lnk_gre;
@@ -543,6 +550,7 @@ _NMP_OBJECT_TYPE_IS_OBJ_WITH_IFINDEX(NMPObjectType obj_type)
 
     case NMP_OBJECT_TYPE_LNK_BRIDGE:
     case NMP_OBJECT_TYPE_LNK_BOND:
+    case NMP_OBJECT_TYPE_LNK_GENEVE:
     case NMP_OBJECT_TYPE_LNK_GRE:
     case NMP_OBJECT_TYPE_LNK_GRETAP:
     case NMP_OBJECT_TYPE_LNK_HSR:

@@ -1495,11 +1495,10 @@ nm_utils_ip_route_attribute_to_platform(int                addr_family,
         r4->scope_inv = nm_platform_route_scope_inv(scope);
     }
 
-    /* Note that for IPv4 routes in kernel, the onlink flag can be set for
-     * each next hop separately (rtnh_flags). Not for NetworkManager. We can
-     * only merge routes as ECMP routes (when setting a weight) if they all
-     * share the same onlink flag. See NM_PLATFORM_IP_ROUTE_CMP_TYPE_ECMP_ID.
-     * That simplifies the code. */
+    /* For IPv4 routes in kernel, the onlink flag is per-nexthop (rtnh_flags).
+     * Here we set the flag on r_rtm_flags which represents the first nexthop's
+     * flags. For ECMP routes, each nexthop carries its own onlink flag, so
+     * routes with different onlink settings per-nexthop can be merged. */
     GET_ATTR(NM_IP_ROUTE_ATTRIBUTE_ONLINK, onlink, BOOLEAN, boolean, FALSE);
     r->r_rtm_flags = ((onlink) ? (unsigned) RTNH_F_ONLINK : 0u);
 

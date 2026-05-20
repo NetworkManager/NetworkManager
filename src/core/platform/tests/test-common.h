@@ -140,9 +140,9 @@ int nmtstp_run_command(const char *format, ...) _nm_printf(1, 2);
 /*****************************************************************************/
 
 gboolean
-nmtstp_check_platform_full(NMPlatform *platform, guint32 obj_type_flags, gboolean do_assert);
+nmtstp_check_platform_full(NMPlatform *platform, guint64 obj_type_flags, gboolean do_assert);
 
-void nmtstp_check_platform(NMPlatform *platform, guint32 obj_type_flags);
+void nmtstp_check_platform(NMPlatform *platform, guint64 obj_type_flags);
 
 /*****************************************************************************/
 
@@ -474,6 +474,10 @@ const NMPlatformLink *nmtstp_link_veth_add(NMPlatform *platform,
                                            const char *peer);
 const NMPlatformLink *
 nmtstp_link_dummy_add(NMPlatform *platform, int external_command, const char *name);
+const NMPlatformLink *nmtstp_link_geneve_add(NMPlatform                *platform,
+                                             int                        external_command,
+                                             const char                *name,
+                                             const NMPlatformLnkGeneve *lnk);
 const NMPlatformLink *nmtstp_link_gre_add(NMPlatform             *platform,
                                           int                     external_command,
                                           const char             *name,

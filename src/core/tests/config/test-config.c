@@ -312,6 +312,108 @@ test_config_override(void)
 }
 
 static void
+test_config_managed(void)
+{
+    NMConfig     *config;
+    const char   *CONFIG_USER   = BUILD_DIR "/test-config-managed.conf";
+    const char   *CONFIG_INTERN = BUILD_DIR "/test-config-managed-intern.conf";
+    NMDevice     *dev;
+    gs_free char *group_by_name = NULL;
+    const char   *ifname, *group_by_mac;
+    NMTernary     managed;
+    gboolean      by_mac;
+    GKeyFile     *kf = nm_config_create_keyfile();
+
+    dev    = nm_test_device_new("11:11:11:11:11:11");
+    ifname = nm_device_get_iface(dev);
+    group_by_name =
+        g_strdup_printf(NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_DEVICE "-manage-%s", ifname);
+    group_by_mac = NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_DEVICE "-manage-11-11-11-11-11-11";
+
+    g_assert(g_file_set_contents(CONFIG_USER, "", 0, NULL));
+    g_assert(g_file_set_contents(CONFIG_INTERN, "", 0, NULL));
+
+    config = setup_config(NULL, CONFIG_USER, CONFIG_INTERN, NULL, "/no/such/dir", "", NULL);
+
+    g_assert(nm_config_get_device_managed(config, dev, &managed, NULL, NULL));
+    g_assert_cmpint(managed, ==, NM_TERNARY_DEFAULT);
+
+    /* Matching by name */
+    NMTST_EXPECT_NM_INFO("config: signal: *");
+    g_assert(nm_config_set_device_managed(config, dev, NM_TERNARY_TRUE, FALSE, NULL));
+    g_assert(nm_config_get_device_managed(config, dev, &managed, &by_mac, NULL));
+    g_assert_cmpint(managed, ==, NM_TERNARY_TRUE);
+    g_assert_false(by_mac);
+    g_key_file_load_from_file(kf, CONFIG_INTERN, G_KEY_FILE_NONE, NULL);
+    g_assert_false(g_key_file_has_key(kf, group_by_mac, "managed", NULL));
+    g_assert_true(g_key_file_has_key(kf, group_by_name, "managed", NULL));
+    g_assert_cmpint(g_key_file_get_integer(kf, group_by_name, "managed", NULL), ==, 1);
+
+    NMTST_EXPECT_NM_INFO("config: signal: *");
+    g_assert(nm_config_set_device_managed(config, dev, NM_TERNARY_FALSE, FALSE, NULL));
+    g_assert(nm_config_get_device_managed(config, dev, &managed, &by_mac, NULL));
+    g_assert_cmpint(managed, ==, NM_TERNARY_FALSE);
+    g_assert_false(by_mac);
+    g_key_file_load_from_file(kf, CONFIG_INTERN, G_KEY_FILE_NONE, NULL);
+    g_assert_false(g_key_file_has_key(kf, group_by_mac, "managed", NULL));
+    g_assert_true(g_key_file_has_key(kf, group_by_name, "managed", NULL));
+    g_assert_cmpint(g_key_file_get_integer(kf, group_by_name, "managed", NULL), ==, 0);
+
+    /* Matching by MAC address */
+    NMTST_EXPECT_NM_INFO("config: signal: *");
+    g_assert(nm_config_set_device_managed(config, dev, NM_TERNARY_TRUE, TRUE, NULL));
+    g_assert(nm_config_get_device_managed(config, dev, &managed, &by_mac, NULL));
+    g_assert_cmpint(managed, ==, NM_TERNARY_TRUE);
+    g_assert_true(by_mac);
+    g_key_file_load_from_file(kf, CONFIG_INTERN, G_KEY_FILE_NONE, NULL);
+    g_assert_false(g_key_file_has_key(kf, group_by_name, "managed", NULL));
+    g_assert_true(g_key_file_has_key(kf, group_by_mac, "managed", NULL));
+    g_assert_cmpint(g_key_file_get_integer(kf, group_by_mac, "managed", NULL), ==, 1);
+
+    NMTST_EXPECT_NM_INFO("config: signal: *");
+    g_assert(nm_config_set_device_managed(config, dev, NM_TERNARY_FALSE, TRUE, NULL));
+    g_assert(nm_config_get_device_managed(config, dev, &managed, &by_mac, NULL));
+    g_assert_cmpint(managed, ==, NM_TERNARY_FALSE);
+    g_assert_true(by_mac);
+    g_key_file_load_from_file(kf, CONFIG_INTERN, G_KEY_FILE_NONE, NULL);
+    g_assert_false(g_key_file_has_key(kf, group_by_name, "managed", NULL));
+    g_assert_true(g_key_file_has_key(kf, group_by_mac, "managed", NULL));
+    g_assert_cmpint(g_key_file_get_integer(kf, group_by_mac, "managed", NULL), ==, 0);
+
+    /* Resetting the managed state */
+    NMTST_EXPECT_NM_INFO("config: signal: *");
+    g_assert(nm_config_set_device_managed(config, dev, NM_TERNARY_DEFAULT, FALSE, NULL));
+    g_assert(nm_config_get_device_managed(config, dev, &managed, NULL, NULL));
+    g_assert_cmpint(managed, ==, NM_TERNARY_DEFAULT);
+    g_key_file_load_from_file(kf, CONFIG_INTERN, G_KEY_FILE_NONE, NULL);
+    g_assert_false(g_key_file_has_key(kf, group_by_name, "managed", NULL));
+    g_assert_false(g_key_file_has_key(kf, group_by_mac, "managed", NULL));
+
+    g_object_unref(config);
+
+    /* Both values set in the intern config file, different values */
+    g_key_file_set_string(kf, group_by_name, "managed", "1");
+    g_key_file_set_string(kf, group_by_mac, "managed", "0");
+    g_assert(g_key_file_save_to_file(kf, CONFIG_INTERN, NULL));
+    config = setup_config(NULL, CONFIG_USER, CONFIG_INTERN, NULL, "/no/such/dir", "", NULL);
+    g_assert(!nm_config_get_device_managed(config, dev, &managed, NULL, NULL));
+
+    g_object_unref(config);
+
+    /* Both values set in the intern config file, same values */
+    g_key_file_set_string(kf, group_by_name, "managed", "1");
+    g_key_file_set_string(kf, group_by_mac, "managed", "1");
+    g_assert(g_key_file_save_to_file(kf, CONFIG_INTERN, NULL));
+    config = setup_config(NULL, CONFIG_USER, CONFIG_INTERN, NULL, "/no/such/dir", "", NULL);
+    g_assert(nm_config_get_device_managed(config, dev, &managed, NULL, NULL));
+    g_assert_cmpint(managed, ==, NM_TERNARY_TRUE);
+
+    g_key_file_unref(kf);
+    g_object_unref(dev);
+    g_object_unref(config);
+}
+
+static void
 test_config_global_dns(void)
 {
     NMConfig                *config;
@@ -1412,6 +1514,7 @@ main(int argc, char **argv)
 
     g_test_add_func("/config/set-values", test_config_set_values);
     g_test_add_func("/config/global-dns", test_config_global_dns);
+    g_test_add_func("/config/managed", test_config_managed);
     g_test_add_func("/config/connectivity-check", test_config_connectivity_check);
 
     g_test_add_func("/config/signal", test_config_signal);

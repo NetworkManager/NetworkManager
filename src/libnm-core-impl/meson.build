@@ -17,6 +17,7 @@ libnm_core_settings_sources = files(
   'nm-setting-dummy.c',
   'nm-setting-ethtool.c',
   'nm-setting-generic.c',
+  'nm-setting-geneve.c',
   'nm-setting-gsm.c',
   'nm-setting-hostname.c',
   'nm-setting-hsr.c',

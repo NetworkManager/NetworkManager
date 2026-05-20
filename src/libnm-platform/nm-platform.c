@@ -1388,6 +1388,12 @@ nm_platform_link_add(NMPlatform            *self,
                case NM_LINK_TYPE_VETH:
                    nm_sprintf_buf(buf, ", veth-peer \"%s\"", (const char *) extra_data);
                    break;
+               case NM_LINK_TYPE_GENEVE:
+                   nm_strbuf_append_str(&buf_p, &buf_len, ", ");
+                   nm_platform_lnk_geneve_to_string((const NMPlatformLnkGeneve *) extra_data,
+                                                    buf_p,
+                                                    buf_len);
+                   break;
                case NM_LINK_TYPE_GRE:
                case NM_LINK_TYPE_GRETAP:
                    nm_strbuf_append_str(&buf_p, &buf_len, ", ");
@@ -2563,6 +2569,12 @@ const NMPlatformLnkBridge *
 nm_platform_link_get_lnk_bridge(NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
     return _link_get_lnk(self, ifindex, NM_LINK_TYPE_BRIDGE, out_link);
+}
+
+const NMPlatformLnkGeneve *
+nm_platform_link_get_lnk_geneve(NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
+{
+    return _link_get_lnk(self, ifindex, NM_LINK_TYPE_GENEVE, out_link);
 }
 
 const NMPlatformLnkGre *
@@ -6495,6 +6507,52 @@ nm_platform_lnk_bond_to_string(const NMPlatformLnkBond *lnk, char *buf, gsize le
 }
 
 const char *
+nm_platform_lnk_geneve_to_string(const NMPlatformLnkGeneve *lnk, char *buf, gsize len)
+{
+    char str_remote[NM_INET_ADDRSTRLEN];
+    char str_remote1[30 + NM_INET_ADDRSTRLEN];
+    char str_remote6[NM_INET_ADDRSTRLEN];
+    char str_remote6_1[30 + NM_INET_ADDRSTRLEN];
+    char str_ttl[30];
+    char str_tos[30];
+    char str_id[30];
+    char str_dstport[30];
+
+    if (!nm_utils_to_string_buffer_init_null(lnk, &buf, &len))
+        return buf;
+
+    g_snprintf(
+        buf,
+        len,
+        "geneve"
+        "%s" /* id */
+        "%s" /* remote */
+        "%s" /* remote6 */
+        "%s" /* dst_port */
+        "%s" /* ttl */
+        "%s" /* tos */
+        "%s" /* df */
+        "",
+        lnk->id ? nm_sprintf_buf(str_id, " id %u", lnk->id) : "",
+        lnk->remote
+            ? nm_sprintf_buf(str_remote, " remote %s", nm_inet4_ntop(lnk->remote, str_remote1))
+            : "",
+        !IN6_IS_ADDR_UNSPECIFIED(&lnk->remote6)
+            ? nm_sprintf_buf(str_remote6, " remote %s", nm_inet6_ntop(&lnk->remote6, str_remote6_1))
+            : "",
+        lnk->dst_port ? nm_sprintf_buf(str_dstport, " dstport %u", lnk->dst_port) : "",
+        lnk->ttl > 0    ? nm_sprintf_buf(str_ttl, " ttl %u", lnk->ttl & 0xff)
+        : lnk->ttl == 0 ? "ttl auto"
+                        : "ttl inherit",
+        lnk->tos ? (lnk->tos == 1 ? " tos inherit" : nm_sprintf_buf(str_tos, " tos 0x%x", lnk->tos))
+                 : "",
+        lnk->df == 1   ? " df set "
+        : lnk->df == 2 ? " df inherit "
+                       : "");
+    return buf;
+}
+
+const char *
 nm_platform_lnk_gre_to_string(const NMPlatformLnkGre *lnk, char *buf, gsize len)
 {
     char str_local[30];
@@ -7363,13 +7421,16 @@ nm_platform_ip4_route_to_string_full(const NMPlatformIP4Route     *route,
                         "%s"         /* ifindex */
                         "%s%s"       /* gateway */
                         " weight %s" /* weight */
+                        "%s"         /* onlink */
                         "",
                         NM_PRINT_FMT_QUOTED2(nexthop->gateway != 0 || nexthop->ifindex <= 0,
                                              " via ",
                                              nm_inet4_ntop(nexthop->gateway, s_gateway),
                                              ""),
                         _to_string_dev(str_dev, nexthop->ifindex),
-                        nm_sprintf_buf(weight_str, "%u", nexthop->weight));
+                        nm_sprintf_buf(weight_str, "%u", nexthop->weight),
+                        NM_FLAGS_HAS(nexthop->rtnh_flags, (unsigned) RTNH_F_ONLINK) ? " onlink"
+                                                                                    : "");
                 }
             }
         }
@@ -8488,6 +8549,27 @@ nm_platform_lnk_gre_cmp(const NMPlatformLnkGre *a, const NMPlatformLnkGre *b)
 }
 
 void
+nm_platform_lnk_geneve_hash_update(const NMPlatformLnkGeneve *obj, NMHashState *h)
+{
+    nm_hash_update_vals(h, obj->id, obj->remote, obj->dst_port, obj->ttl, obj->tos, obj->df);
+    nm_hash_update_mem(h, &obj->remote6, sizeof(obj->remote6));
+}
+
+int
+nm_platform_lnk_geneve_cmp(const NMPlatformLnkGeneve *a, const NMPlatformLnkGeneve *b)
+{
+    NM_CMP_SELF(a, b);
+    NM_CMP_FIELD(a, b, id);
+    NM_CMP_FIELD(a, b, remote);
+    NM_CMP_FIELD_MEMCMP(a, b, remote6);
+    NM_CMP_FIELD(a, b, ttl);
+    NM_CMP_FIELD(a, b, tos);
+    NM_CMP_FIELD(a, b, dst_port);
+    NM_CMP_FIELD(a, b, df);
+    return 0;
+}
+
+void
 nm_platform_lnk_hsr_hash_update(const NMPlatformLnkHsr *obj, NMHashState *h)
 {
     nm_hash_update_vals(h,
@@ -8927,7 +9009,11 @@ nm_platform_ip4_rt_nexthop_hash_update(const NMPlatformIP4RtNextHop *obj,
     nm_assert(obj);
 
     w = for_id ? NM_MAX(obj->weight, 1u) : obj->weight;
-    nm_hash_update_vals(h, obj->ifindex, obj->gateway, w);
+    nm_hash_update_vals(h,
+                        obj->ifindex,
+                        obj->gateway,
+                        w,
+                        for_id ? (obj->rtnh_flags & RTNH_F_ONLINK) : obj->rtnh_flags);
 }
 
 void
@@ -8964,7 +9050,6 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
                                 obj->initrwnd,
                                 obj->mtu,
                                 obj->rto_min,
-                                obj->r_rtm_flags & RTNH_F_ONLINK,
                                 NM_HASH_COMBINE_BOOLS(guint16,
                                                       obj->quickack,
                                                       obj->lock_window,
@@ -8979,7 +9064,8 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
                                     obj->ifindex,
                                     n_nexthops,
                                     obj->gateway,
-                                    _ip4_route_weight_normalize(n_nexthops, obj->weight, FALSE));
+                                    _ip4_route_weight_normalize(n_nexthops, obj->weight, FALSE),
+                                    obj->r_rtm_flags & RTNH_F_ONLINK);
             }
         }
         break;
@@ -9072,6 +9158,11 @@ nm_platform_ip4_rt_nexthop_cmp(const NMPlatformIP4RtNextHop *a,
     w_b = for_id ? NM_MAX(b->weight, 1u) : b->weight;
     NM_CMP_DIRECT(w_a, w_b);
 
+    if (for_id)
+        NM_CMP_DIRECT(a->rtnh_flags & RTNH_F_ONLINK, b->rtnh_flags & RTNH_F_ONLINK);
+    else
+        NM_CMP_FIELD(a, b, rtnh_flags);
+
     return 0;
 }
 
@@ -9112,12 +9203,6 @@ nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
             NM_CMP_FIELD(a, b, mtu);
             NM_CMP_FIELD(a, b, rto_min);
 
-            /* Note that for NetworkManager, the onlink flag is only part of the entire route.
-             * For kernel, each next hop has it's own onlink flag (rtnh_flags). This means,
-             * we can only merge ECMP routes, if they agree with their onlink flag, and then
-             * all next hops are onlink (or not). */
-            NM_CMP_DIRECT(a->r_rtm_flags & RTNH_F_ONLINK, b->r_rtm_flags & RTNH_F_ONLINK);
-
             NM_CMP_FIELD_UNSAFE(a, b, quickack);
             NM_CMP_FIELD_UNSAFE(a, b, lock_window);
             NM_CMP_FIELD_UNSAFE(a, b, lock_cwnd);
@@ -9132,6 +9217,10 @@ nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
                 NM_CMP_DIRECT(n_nexthops, nm_platform_ip4_route_get_n_nexthops(b));
                 NM_CMP_DIRECT(_ip4_route_weight_normalize(n_nexthops, a->weight, FALSE),
                               _ip4_route_weight_normalize(n_nexthops, b->weight, FALSE));
+                /* The onlink flag is per-nexthop. For the first nexthop it is in
+                 * r_rtm_flags. For extra nexthops, it's compared via
+                 * nm_platform_ip4_rt_nexthop_cmp(). */
+                NM_CMP_DIRECT(a->r_rtm_flags & RTNH_F_ONLINK, b->r_rtm_flags & RTNH_F_ONLINK);
             }
         }
         break;

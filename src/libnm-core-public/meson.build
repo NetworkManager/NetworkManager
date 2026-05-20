@@ -22,6 +22,7 @@ libnm_core_headers = files(
   'nm-setting-dummy.h',
   'nm-setting-ethtool.h',
   'nm-setting-generic.h',
+  'nm-setting-geneve.h',
   'nm-setting-gsm.h',
   'nm-setting-hsr.h',
   'nm-setting-hostname.h',
