@@ -368,6 +368,17 @@ out_dec_pending:
     }
 }
 
+static void
+flush_caches_done(GObject *source, GAsyncResult *r, gpointer user_data)
+{
+    gs_unref_variant GVariant *v     = NULL;
+    gs_free_error GError      *error = NULL;
+
+    v = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), r, &error);
+    if (nm_utils_error_is_cancelled(error))
+        return;
+}
+
 static gboolean
 update_add_ip_config(NMDnsSystemdResolved    *self,
                      const NMDnsConfigIPData *ip_data,
@@ -789,6 +800,23 @@ send_updates(NMDnsSystemdResolved *self)
                                call_done,
                                _request_item_ref(request_item));
     }
+
+    /* When we apply changes to the DNS config, old DNS queries may be in cache,
+     * so we need to invalidate them to ensure that we get the right results with
+     * the new config. */
+    _LOGT("send-updates: flushing DNS caches");
+    g_dbus_connection_call(priv->dbus_connection,
+                           priv->dbus_owner,
+                           SYSTEMD_RESOLVED_DBUS_PATH,
+                           SYSTEMD_RESOLVED_MANAGER_IFACE,
+                           "FlushCaches",
+                           NULL,
+                           NULL,
+                           G_DBUS_CALL_FLAGS_NONE,
+                           -1,
+                           priv->cancellable,
+                           flush_caches_done,
+                           NULL);
 
 start_resolve:
     c_list_for_each_entry (handle, &priv->handle_lst_head, handle_lst) {
