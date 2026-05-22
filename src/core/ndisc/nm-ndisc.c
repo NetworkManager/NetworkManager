@@ -1695,7 +1695,7 @@ clean_dns_domains(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gi
         j++;
     }
 
-    if (i != 0) {
+    if (i != j) {
         *changed |= NM_NDISC_CONFIG_DNS_DOMAINS;
         g_array_set_size(rdata->dns_domains, j);
     }
