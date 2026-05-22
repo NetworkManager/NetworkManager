@@ -1596,7 +1596,7 @@ clean_routes(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint64 
         g_array_set_size(rdata->routes, j);
     }
 
-    if (_array_set_size_max(rdata->gateways, _SIZE_MAX_ROUTES))
+    if (_array_set_size_max(rdata->routes, _SIZE_MAX_ROUTES))
         *changed |= NM_NDISC_CONFIG_ROUTES;
 }
 
@@ -1665,7 +1665,7 @@ clean_dns_servers(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gi
         g_array_set_size(rdata->dns_servers, j);
     }
 
-    if (_array_set_size_max(rdata->gateways, _SIZE_MAX_DNS_SERVERS))
+    if (_array_set_size_max(rdata->dns_servers, _SIZE_MAX_DNS_SERVERS))
         *changed |= NM_NDISC_CONFIG_DNS_SERVERS;
 }
 
@@ -1700,7 +1700,7 @@ clean_dns_domains(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gi
         g_array_set_size(rdata->dns_domains, j);
     }
 
-    if (_array_set_size_max(rdata->gateways, _SIZE_MAX_DNS_DOMAINS))
+    if (_array_set_size_max(rdata->dns_domains, _SIZE_MAX_DNS_DOMAINS))
         *changed |= NM_NDISC_CONFIG_DNS_DOMAINS;
 }
 
