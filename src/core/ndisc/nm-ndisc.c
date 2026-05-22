@@ -1562,7 +1562,7 @@ clean_addresses(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint
     }
 
     if (i != j) {
-        *changed = NM_NDISC_CONFIG_ADDRESSES;
+        *changed |= NM_NDISC_CONFIG_ADDRESSES;
         g_array_set_size(rdata->addresses, j);
     }
 
