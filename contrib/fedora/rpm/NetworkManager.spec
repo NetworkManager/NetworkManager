@@ -170,6 +170,7 @@ Source6: 22-wifi-mac-addr.conf
 Source7: 70-nm-connectivity.conf
 Source8: readme-ifcfg-rh.txt
 Source9: readme-ifcfg-rh-migrated.txt
+Source10: 24-clat-auto.conf
 
 #Patch1: 0001-some.patch
 
@@ -726,6 +727,9 @@ cp %{SOURCE7} %{buildroot}%{_sysctldir}
 %if 0%{?fedora} >= 40
 cp %{SOURCE6} %{buildroot}%{nmlibdir}/conf.d/
 %endif
+%if 0%{?fedora} >= 45
+cp %{SOURCE10} %{buildroot}%{nmlibdir}/conf.d/
+%endif
 
 %if %{with ifcfg_warning}
 cp %{SOURCE8} %{buildroot}%{_sysconfdir}/sysconfig/network-scripts
@@ -878,6 +882,9 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/NetworkManager.conf
 %if 0%{?fedora} >= 40
 %{nmlibdir}/conf.d/22-wifi-mac-addr.conf
+%endif
+%if 0%{?fedora} >= 45
+%{nmlibdir}/conf.d/24-clat-auto.conf
 %endif
 %ghost %{_sysconfdir}/%{name}/VPN
 %{_bindir}/nm-online
