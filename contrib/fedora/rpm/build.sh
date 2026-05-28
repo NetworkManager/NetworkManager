@@ -143,6 +143,7 @@ SOURCE_CONFIG_WIFI_MAC_ADDR="$(abs_path "$SOURCE_CONFIG_WIFI_MAC_ADDR" "$SCRIPTD
 SOURCE_SYSCTL_RP_FILTER_REDHAT="$(abs_path "$SOURCE_SYSCTL_RP_FILTER_REDHAT" "$SCRIPTDIR/70-nm-connectivity.conf")" || die "invalid \$SOURCE_SYSCTL_RP_FILTER_REDHAT argument"
 SOURCE_README_IFCFG_FILES="$(abs_path "$SOURCE_README_IFCFG_FILES" "$SCRIPTDIR/readme-ifcfg-rh.txt")" || die "invalid \$SOURCE_README_IFCFG_FILES argument"
 SOURCE_README_IFCFG_MIGRATED="$(abs_path "$SOURCE_README_IFCFG_MIGRATED" "$SCRIPTDIR/readme-ifcfg-rh-migrated.txt")" || die "invalid \$SOURCE_README_IFCFG_MIGRATED argument"
+SOURCE_CONFIG_CLAT_AUTO="$(abs_path "$SOURCE_CONFIG_CLAT_AUTO" "$SCRIPTDIR/24-clat-auto.conf")" || die "invalid \$SOURCE_CONFIG_CLAT_AUTO argument"
 
 TEMP="$(mktemp -d "$SCRIPTDIR/NetworkManager.$DATE.XXXXXX")"
 TEMPBASE="$(basename "$TEMP")"
@@ -202,6 +203,7 @@ cp "$SOURCE_CONFIG_WIFI_MAC_ADDR" "$TEMP/SOURCES/22-wifi-mac-addr.conf" || die "
 cp "$SOURCE_SYSCTL_RP_FILTER_REDHAT" "$TEMP/SOURCES/70-nm-connectivity.conf" || die "Could not copy source $SOURCE_SYSCTL_RP_FILTER_REDHAT to $TEMP/SOURCES"
 cp "$SOURCE_README_IFCFG_FILES" "$TEMP/SOURCES/readme-ifcfg-rh.txt" || die "Could not copy source $SOURCE_README_IFCFG_FILES to $TEMP/SOURCES"
 cp "$SOURCE_README_IFCFG_MIGRATED" "$TEMP/SOURCES/readme-ifcfg-rh-migrated.txt" || die "Could not copy source $SOURCE_README_IFCFG_MIGRATED to $TEMP/SOURCES"
+cp "$SOURCE_CONFIG_CLAT_AUTO" "$TEMP/SOURCES/24-clat-auto.conf" || die "Could not copy source $SOURCE_CONFIG_CLAT_AUTO to $TEMP/SOURCES"
 
 write_changelog
 

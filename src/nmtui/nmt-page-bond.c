@@ -87,8 +87,10 @@ _bond_update_other_options(NMSettingBond *s_bond, NmtList *list)
     for (i = 0; i < num_opts; i++) {
         const char *opt_name;
         const char *opt_value;
+        gboolean    ret;
 
-        nm_assert(nm_setting_bond_get_option(s_bond, i, &opt_name, &opt_value));
+        ret = nm_setting_bond_get_option(s_bond, i, &opt_name, &opt_value);
+        nm_assert(ret);
 
         if (_is_other_option(opt_name)) {
             g_ptr_array_add(arr, g_strdup_printf("%s=%s", opt_name, opt_value));
@@ -355,6 +357,7 @@ other_options_widget_changed(GObject *object, GParamSpec *pspec, gpointer user_d
     NmtPageBondPrivate *priv          = NMT_PAGE_BOND_GET_PRIVATE(bond);
     gs_strfreev char  **other_options = NULL;
     const char         *name;
+    gboolean            ret;
     guint               num;
     guint               i;
 
@@ -368,7 +371,8 @@ other_options_widget_changed(GObject *object, GParamSpec *pspec, gpointer user_d
 again:
     num = nm_setting_bond_get_num_options(priv->s_bond);
     for (i = 0; i < num; i++) {
-        nm_assert(nm_setting_bond_get_option(priv->s_bond, i, &name, NULL));
+        ret = nm_setting_bond_get_option(priv->s_bond, i, &name, NULL);
+        nm_assert(ret);
 
         if (_is_other_option(name)) {
             nm_setting_bond_remove_option(priv->s_bond, name);
