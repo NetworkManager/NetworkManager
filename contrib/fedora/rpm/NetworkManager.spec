@@ -21,7 +21,17 @@ Release: __RELEASE_VERSION__%{?dist}
 %global wpa_supplicant_version 1:1.1
 
 %global ppp_version %(pkg-config --modversion pppd 2>/dev/null || sed -n 's/^#define\\s*VERSION\\s*"\\([^\\s]*\\)"$/\\1/p' %{_includedir}/pppd/patchlevel.h 2>/dev/null | grep . || echo bad)
+
+# Certain environments (e.g Packit) disable shell expansion, so we need a fallback
+%if "%{?ppp_version}" == ""
+%global ppp_version 2.5.2
+%endif
+
 %global glib2_version %(pkg-config --modversion glib-2.0 2>/dev/null || echo bad)
+
+%if "%{?glib2_version}" == ""
+%global glib2_version 2.80.0
+%endif
 
 %global bcond_default_debug __BCOND_DEFAULT_DEBUG__
 %global bcond_default_lto __BCOND_DEFAULT_LTO__
