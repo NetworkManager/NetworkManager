@@ -2773,7 +2773,8 @@ nm_l3_config_data_get_direct_route_for_host(const NML3ConfigData *self,
         if (!nm_ip_addr_same_prefix(addr_family, host, item->rx.network_ptr, item->rx.plen))
             continue;
 
-        if (best_route && best_route->rx.metric <= item->rx.metric)
+        if (best_route && best_route->rx.plen == item->rx.plen
+            && best_route->rx.metric <= item->rx.metric)
             continue;
 
         best_route_obj = item_obj;
