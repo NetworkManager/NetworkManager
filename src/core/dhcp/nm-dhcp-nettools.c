@@ -1525,7 +1525,8 @@ ip4_start(NMDhcpClient *client, GError **error)
 
     _LOGT("dhcp-client4: start " NM_HASH_OBFUSCATE_PTR_FMT, NM_HASH_OBFUSCATE_PTR(priv->client));
 
-    nm_dhcp_client_set_effective_client_id(client, effective_client_id);
+    if (effective_client_id)
+        nm_dhcp_client_set_effective_client_id(client, effective_client_id);
 
     return TRUE;
 }
