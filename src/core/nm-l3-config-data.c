@@ -2490,8 +2490,8 @@ _dedup_multi_index_cmp(const NML3ConfigData *a,
             switch (obj_type) {
             case NMP_OBJECT_TYPE_IP4_ADDRESS:
                 NM_CMP_DIRECT(obj_a->ip4_address.plen, obj_b->ip4_address.plen);
-                NM_CMP_DIRECT(obj_b->ip4_address.address, obj_b->ip4_address.address);
-                NM_CMP_DIRECT(obj_b->ip4_address.peer_address, obj_b->ip4_address.peer_address);
+                NM_CMP_DIRECT(obj_a->ip4_address.address, obj_b->ip4_address.address);
+                NM_CMP_DIRECT(obj_a->ip4_address.peer_address, obj_b->ip4_address.peer_address);
                 break;
             case NMP_OBJECT_TYPE_IP6_ADDRESS:
                 NM_CMP_DIRECT(obj_a->ip6_address.plen, obj_b->ip6_address.plen);
