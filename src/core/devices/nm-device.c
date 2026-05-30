@@ -7278,6 +7278,8 @@ nm_device_controller_release_port(NMDevice           *self,
         if (ret == NM_TERNARY_DEFAULT) {
             port_priv->port_detach_count++;
             port_priv->port_detach_reason = reason;
+        } else {
+            g_object_unref(port);
         }
     }
 
