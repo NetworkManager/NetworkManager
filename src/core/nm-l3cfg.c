@@ -4216,9 +4216,10 @@ _l3cfg_update_clat_config(NML3Cfg             *self,
         /* disable if there is a native IPv4 gateway */
         nm_l3_config_data_iter_ip4_route_for_each (&iter, l3cd, &ip4_route) {
             if (ip4_route->network == INADDR_ANY && ip4_route->plen == 0
-                && ip4_route->gateway != INADDR_ANY)
+                && ip4_route->gateway != INADDR_ANY) {
                 clat_enabled = FALSE;
-            break;
+                break;
+            }
         }
         break;
     case NM_SETTING_IP4_CONFIG_CLAT_DEFAULT:
