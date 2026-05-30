@@ -1470,7 +1470,9 @@ ip4_start(NMDhcpClient *client, GError **error)
             } else {
                 fqdn_len = strlen(client_config->hostname);
                 if (fqdn_len > sizeof(buffer) - 3) {
-                    nm_utils_error_set(error, r, "failed to set DHCP FQDN: name too long");
+                    nm_utils_error_set_literal(error,
+                                               NM_UTILS_ERROR_UNKNOWN,
+                                               "failed to set DHCP FQDN: name too long");
                     return FALSE;
                 }
                 memcpy(buffer + 3, client_config->hostname, fqdn_len);
