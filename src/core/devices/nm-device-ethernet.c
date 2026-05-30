@@ -1684,11 +1684,13 @@ complete_connection(NMDevice            *device,
 
         con_peer_name = nm_setting_veth_get_peer(s_veth);
         if (con_peer_name) {
-            nm_utils_error_set(error,
-                               NM_UTILS_ERROR_UNKNOWN,
-                               "mismatching veth peer \"%s\"",
-                               con_peer_name);
-            return FALSE;
+            if (!nm_streq(con_peer_name, peer_name)) {
+                nm_utils_error_set(error,
+                                   NM_UTILS_ERROR_UNKNOWN,
+                                   "mismatching veth peer \"%s\"",
+                                   con_peer_name);
+                return FALSE;
+            }
         } else
             g_object_set(s_veth, NM_SETTING_VETH_PEER, peer_name, NULL);
 
