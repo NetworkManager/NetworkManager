@@ -1866,6 +1866,8 @@ impl_settings_connection_update2(NMDBusObject                      *obj,
 
     g_variant_iter_init(&iter, args);
     while (g_variant_iter_next(&iter, "{&sv}", &args_name, &args_value)) {
+        gs_unref_variant GVariant *args_value_unref = args_value;
+
         if (plugin_name == NULL && nm_streq(args_name, "plugin")
             && g_variant_is_of_type(args_value, G_VARIANT_TYPE_STRING)) {
             plugin_name = g_variant_dup_string(args_value, NULL);
