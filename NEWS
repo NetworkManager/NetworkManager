@@ -67,6 +67,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * IPv6 interfaces that receive PD via DHCPv6 are considered healthy without a
   non-temporary address. The delegated prefix can be used via an interface
   configured with "ipv6.method: shared"
+* nmtui now offers a "Show password" checkbox in the dialog that prompts for
+  secrets when activating a connection, matching the connection editor.
 
 =============================================
 NetworkManager-1.56
