@@ -6427,7 +6427,7 @@ nm_utils_copy_cert_as_user(const char *filename, const char *user, GError **erro
     nm_str_buf_destroy(&info.output_buffer);
     nm_str_buf_destroy(&info.error_buffer);
 
-    mkdir(RUN_CERT_DIR, 0600);
+    mkdir(RUN_CERT_DIR, 0700);
     fd = mkstemp(dst_path);
     if (fd < 0) {
         g_set_error_literal(error,
