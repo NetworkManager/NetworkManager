@@ -46,7 +46,7 @@ gboolean nm_supplicant_config_add_setting_wireless(NMSupplicantConfig *self,
 
 gboolean nm_supplicant_config_add_bgscan(NMSupplicantConfig *self,
                                          NMConnection       *connection,
-                                         guint               num_seen_bssids,
+                                         gboolean            multiple_aps,
                                          GError            **error);
 
 gboolean nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig        *self,
