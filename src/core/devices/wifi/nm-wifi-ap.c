@@ -58,7 +58,13 @@ struct _NMWifiAPPrivate {
     NM80211ApSecurityFlags wpa_flags; /* WPA-related flags */
     NM80211ApSecurityFlags rsn_flags; /* RSN (WPA2) -related flags */
 
+    NMEtherAddr mld_addr; /* MLD MAC address of the AP-MLD this BSS belongs to
+                           * (802.11be Multi-Link element). Valid only when
+                           * mld_addr_valid is set. */
+
     bool metered : 1;
+
+    bool mld_addr_valid : 1;
 
     /* Non-scanned attributes */
     bool fake : 1;    /* Whether or not the AP is from a scan */
@@ -191,6 +197,41 @@ nm_wifi_ap_set_address(NMWifiAP *ap, const char *addr)
         g_return_val_if_reached(FALSE);
 
     return nm_wifi_ap_set_address_bin(ap, &addr_buf);
+}
+
+gboolean
+nm_wifi_ap_get_mld_address(const NMWifiAP *ap, NMEtherAddr *out_mld_addr)
+{
+    const NMWifiAPPrivate *priv;
+
+    g_return_val_if_fail(NM_IS_WIFI_AP(ap), FALSE);
+
+    priv = NM_WIFI_AP_GET_PRIVATE(ap);
+    if (!priv->mld_addr_valid)
+        return FALSE;
+
+    NM_SET_OUT(out_mld_addr, priv->mld_addr);
+    return TRUE;
+}
+
+static gboolean
+nm_wifi_ap_set_mld_address_bin(NMWifiAP *ap, gboolean valid, const NMEtherAddr *addr)
+{
+    NMWifiAPPrivate *priv = NM_WIFI_AP_GET_PRIVATE(ap);
+
+    /* As with the BSSID, we only ever learn a better value; never clear a
+     * previously-seen MLD address on a scan update that lacks the element. */
+    if (!valid)
+        return FALSE;
+
+    nm_assert(addr);
+
+    if (priv->mld_addr_valid && nm_ether_addr_equal(&priv->mld_addr, addr))
+        return FALSE;
+
+    priv->mld_addr       = *addr;
+    priv->mld_addr_valid = TRUE;
+    return TRUE;
 }
 
 _NM80211Mode
@@ -419,6 +460,8 @@ nm_wifi_ap_update_from_properties(NMWifiAP *ap, const NMSupplicantBssInfo *bss_i
     else {
         /* we don't actually clear the value. */
     }
+
+    changed |= nm_wifi_ap_set_mld_address_bin(ap, bss_info->mld_addr_valid, &bss_info->mld_addr);
 
     changed |= nm_wifi_ap_set_max_bitrate(ap, bss_info->max_rate);
     changed |= nm_wifi_ap_set_bandwidth(ap, bss_info->bandwidth);
