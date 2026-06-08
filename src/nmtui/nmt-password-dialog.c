@@ -109,12 +109,13 @@ maybe_save_input_and_exit(NmtNewtWidget *widget, gpointer dialog)
 static void
 nmt_password_dialog_constructed(GObject *object)
 {
-    NmtPasswordDialog        *dialog = NMT_PASSWORD_DIALOG(object);
-    NmtPasswordDialogPrivate *priv   = NMT_PASSWORD_DIALOG_GET_PRIVATE(dialog);
-    NmtNewtWidget            *widget;
-    NmtNewtGrid              *grid, *secret_grid;
-    NmtNewtButtonBox         *bbox;
-    int                       i;
+    NmtPasswordDialog           *dialog = NMT_PASSWORD_DIALOG(object);
+    NmtPasswordDialogPrivate    *priv   = NMT_PASSWORD_DIALOG_GET_PRIVATE(dialog);
+    NmtNewtWidget               *widget;
+    NmtNewtGrid                 *grid, *secret_grid;
+    NmtNewtButtonBox            *bbox;
+    gs_unref_ptrarray GPtrArray *masked_entries = g_ptr_array_new();
+    int                          i;
 
     widget = nmt_newt_grid_new();
     nmt_newt_form_set_content(NMT_NEWT_FORM(dialog), widget);
@@ -133,23 +134,39 @@ nmt_password_dialog_constructed(GObject *object)
     for (i = 0; i < priv->secrets->len; i++) {
         NMSecretAgentSimpleSecret *secret = priv->secrets->pdata[i];
         NmtNewtEntryFlags          flags;
+        gboolean                   masked;
 
         widget = nmt_newt_label_new(secret->pretty_name);
         nmt_newt_grid_add(secret_grid, widget, 0, i);
         nmt_newt_widget_set_padding(widget, 4, 0, 1, 0);
 
-        flags = NMT_NEWT_ENTRY_NONEMPTY;
-        if (secret->is_secret && !secret->force_echo)
+        flags  = NMT_NEWT_ENTRY_NONEMPTY;
+        masked = secret->is_secret && !secret->force_echo;
+        if (masked)
             flags |= NMT_NEWT_ENTRY_PASSWORD;
         widget = nmt_newt_entry_new(30, flags);
         if (secret->value)
             nmt_newt_entry_set_text(NMT_NEWT_ENTRY(widget), secret->value);
         nmt_newt_grid_add(secret_grid, widget, 1, i);
         g_ptr_array_add(priv->entries, widget);
+        if (masked)
+            g_ptr_array_add(masked_entries, widget);
 
         if (i == priv->secrets->len - 1) {
             priv->last_entry = widget;
             g_signal_connect(widget, "activated", G_CALLBACK(maybe_save_input_and_exit), dialog);
+        }
+    }
+
+    if (masked_entries->len > 0) {
+        widget = nmt_newt_checkbox_new(_("Show password"));
+        nmt_newt_grid_add(secret_grid, widget, 1, priv->secrets->len);
+        for (i = 0; i < masked_entries->len; i++) {
+            g_object_bind_property(widget,
+                                   "active",
+                                   masked_entries->pdata[i],
+                                   "password",
+                                   G_BINDING_INVERT_BOOLEAN | G_BINDING_SYNC_CREATE);
         }
     }
 
