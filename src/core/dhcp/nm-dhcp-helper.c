@@ -205,8 +205,7 @@ do_notify:
 
     if (!NM_IN_STRSET(s_err, "org.freedesktop.DBus.Error.UnknownMethod")) {
         /* Some unexpected error. We treat that as a failure. In particular,
-         * the daemon will fail the request if ACD fails. This causes nm-dhcp-helper
-         * to fail, which in turn causes dhclient to send a DECLINE. */
+         * the daemon will fail the request if ACD fails. */
         _LOGW("failure to call notify: %s (try signal via Event)", error->message);
         success = FALSE;
         goto out;

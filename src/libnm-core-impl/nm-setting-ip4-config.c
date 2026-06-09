@@ -953,10 +953,7 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * this is normally not recommended.
      *
      * If unset, a globally configured default from NetworkManager.conf is
-     * used. If still unset, the default depends on the DHCP plugin. The
-     * internal dhcp client will default to "mac" and the dhclient plugin will
-     * try to use one from its config file if present, or won't sent any
-     * client-id otherwise.
+     * used. If still unset, internal dhcp client will default to "mac".
      **/
     /* ---nmcli---
      * property: dhcp-client-id

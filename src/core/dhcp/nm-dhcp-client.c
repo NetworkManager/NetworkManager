@@ -266,9 +266,8 @@ nm_dhcp_client_create_options_dict(NMDhcpClient *self, gboolean static_keys)
         guint option = IS_IPv4 ? NM_DHCP_OPTION_DHCP4_CLIENT_ID : NM_DHCP_OPTION_DHCP6_CLIENT_ID;
         gs_free char *str = nm_dhcp_utils_duid_to_string(effective_client_id);
 
-        /* Note that for the nm-dhcp-helper based plugins (dhclient), the plugin
-         * may send the used client-id/DUID via the environment variables and
-         * overwrite them yet again. */
+        /* Note that nm-dhcp-helper based plugins may send the used client-id/DUID
+         * via the environment variables and overwrite them yet again. */
 
         nm_dhcp_option_take_option(options,
                                    static_keys,
@@ -827,8 +826,7 @@ _nm_dhcp_client_notify(NMDhcpClient         *self,
 
     if (!IS_IPv4 && l3cd) {
         /* nm_dhcp_utils_merge_new_dhcp6_lease() relies on "life_starts" option
-         * for merging, which is only set by dhclient. Internal client never sets that,
-         * but it supports multiple IP addresses per lease. */
+         * for merging. The internal client supports multiple IP addresses per lease. */
         if (nm_dhcp_utils_merge_new_dhcp6_lease(priv->l3cd_next, l3cd, &l3cd_merged)) {
             _LOGD("lease merged with existing one");
             l3cd = nm_l3_config_data_seal(l3cd_merged);
@@ -1692,21 +1690,14 @@ maybe_add_option(NMDhcpClient *self, GHashTable *hash, const char *key, GVariant
 
     g_hash_table_insert(hash, g_strdup(key), str_value);
 
-    /* dhclient has no special labels for private dhcp options: it uses "unknown_xyz"
-     * labels for that. We need to identify those to alias them to our "private_xyz"
-     * format unused in the internal dchp plugins.
-     */
+    /* "unknown_xyz" labels are aliased to our "private_xyz" format. */
     if ((priv_opt_num = label_is_unknown_xyz(key)) > 0) {
         gs_free guint8 *check_val = NULL;
         char           *hex_str   = NULL;
         gsize           len;
 
-        /* dhclient passes values from dhcp private options in its own "string" format:
-         * if the raw values are printable as ascii strings, it will pass the string
-         * representation; if the values are not printable as an ascii string, it will
-         * pass a string displaying the hex values (hex string). Try to enforce passing
-         * always an hex string, converting string representation if needed.
-         */
+        /* Private options may arrive as printable ascii strings or as hex strings.
+         * Normalize to always use hex string format. */
         check_val = nm_utils_hexstr2bin_alloc(str_value, FALSE, TRUE, ":", 0, &len);
         hex_str   = nm_utils_bin2hexstr_full(check_val ?: (guint8 *) str_value,
                                            check_val ? len : strlen(str_value),

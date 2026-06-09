@@ -36,9 +36,6 @@ const NMDhcpClientFactory *const _nm_dhcp_manager_factories[6] = {
 #endif
     &_nm_dhcp_client_factory_systemd,
     &_nm_dhcp_client_factory_nettools,
-#if WITH_DHCLIENT
-    &_nm_dhcp_client_factory_dhclient,
-#endif
 };
 
 /*****************************************************************************/

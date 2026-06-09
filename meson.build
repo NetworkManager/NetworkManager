@@ -681,7 +681,7 @@ config_dhcp_default = get_option('config_dhcp_default')
 config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_DHCP', config_dhcp_default)
 config_dhcp_clients_enabled = [ 'internal' ]
 dhcp_summary = ''
-foreach client : [ 'dhcpcd', 'dhclient' ]
+foreach client : [ 'dhcpcd' ]
   client_path = get_option(client)
   client_enable = (client_path != 'no')
   if client_enable
@@ -712,9 +712,6 @@ foreach client : [ 'dhcpcd', 'dhclient' ]
   if (client_enable)
     dhcp_summary += (' ' + client_path)
     config_dhcp_clients_enabled += client
-  endif
-  if (client == 'dhclient')
-    dhcp_summary += ' (deprecated)'
   endif
   dhcp_summary += '\n'
 endforeach

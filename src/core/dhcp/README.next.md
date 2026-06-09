@@ -54,17 +54,14 @@ complexity out of `NMDevice`.
       mean that it gave up. It will keep retrying, it's just that there is little
       hope of getting a new lease. This happens, when you try to run DHCP on a Layer3
       link (WireGuard). There is little hope to succeed, but `NMDhcpClient`
-      (theoretically) will retry and may recover from this. Another example is when
-      we fail to start dhclient because it's not installed. In that case, we are not
-      optimistic to recover, however `NMDhcpDhclient` will retry (with backoff
-      timeout) and might still recover from this. For most cases, `NMDevice` will
+      (theoretically) will retry and may recover from this. For most cases, `NMDevice` will
       treat the no-lease cases the same, but in case of "bad" it might give up
       earlier.
 
 When a lease expires, that does not necessarily mean that we are now in a bad
 state. It might mean that the DHCP server is temporarily down, but we might
 recover from that easily. "bad" really means, something is wrong on our side
-which prevents us from getting a lease. Also, imagine `dhclient` dies (we would
+which prevents us from getting a lease. Also, imagine the DHCP client dies (we would
 try to restart, but assume that fails too), but we still have a valid lease,
 then possibly `NMDhcpClient` should still pretend all is good and we still have
 a lease until it expires. It may be we can recover before that happens. The
@@ -88,8 +85,7 @@ optionally does ACD first, then configures the IP address first and calls
 different lease). With this, the above state "has a lease" has actually three
 flavors: "has a lease but not yet ACD probed" and "has a lease but
 accepted/declined" (but `NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED` gets only emitted
-when we get the lease, not when we accept/decline it). With `dhclient`, when we
-receive a lease, it means  "has a lease but accepted" right away.
+when we get the lease, not when we accept/decline it).
 
 - for IPv6 prefix delegation, there is also `needed_prefixes` and
   `NM_DHCP_CLIENT_NOTIFY_TYPE_PREFIX_DELEGATED`. Currently `needed_prefixes` needs

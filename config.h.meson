@@ -1,9 +1,6 @@
 /* Define if building universal (internal helper macro) */
 #mesondefine AC_APPLE_UNIVERSAL_BUILD
 
-/* Define to path of dhclient binary */
-#mesondefine DHCLIENT_PATH
-
 /* Define to path of dhcpcd binary */
 #mesondefine DHCPCD_PATH
 
@@ -220,9 +217,6 @@
 
 /* Define if you want connectivity checking support */
 #mesondefine WITH_CONCHECK
-
-/* Define if you have dhclient */
-#mesondefine WITH_DHCLIENT
 
 /* Define if you have dhcpcd */
 #mesondefine WITH_DHCPCD

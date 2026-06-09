@@ -269,7 +269,7 @@ lease_parse_address(NMDhcpNettools    *self /* for logging context only */,
         char str2[NM_INET_ADDRSTRLEN];
 
         /* Some DHCP servers may not set the subnet-mask (issue#1037).
-         * Do the same as the dhclient plugin and use a default. */
+         * Use a default. */
         a_plen    = nm_ip4_addr_get_default_prefix(a_address.s_addr);
         a_netmask = nm_ip4_addr_netmask_from_prefix(a_plen);
         _LOGT("missing subnet mask (option 1). Guess %s based on IP address %s",

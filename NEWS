@@ -86,6 +86,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   routes are now correctly suppressed on reapply without a connection restart.
 * Accept 64 hex-character PSK in WPS credentials which are returned by some
   access points.
+* Drop support for dhclient as a DHCP backend, which has been deprecated
+  since NetworkManager-1.50.
 
 =============================================
 NetworkManager-1.56

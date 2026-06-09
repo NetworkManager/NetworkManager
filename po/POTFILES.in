@@ -28,8 +28,6 @@ src/core/devices/wifi/nm-device-olpc-mesh.c
 src/core/devices/wifi/nm-device-wifi.c
 src/core/devices/wifi/nm-wifi-utils.c
 src/core/devices/wwan/nm-modem-broadband.c
-src/core/dhcp/nm-dhcp-dhclient-utils.c
-src/core/dhcp/nm-dhcp-dhclient.c
 src/core/dhcp/nm-dhcp-manager.c
 src/core/dns/nm-dns-manager.c
 src/core/main-utils.c
