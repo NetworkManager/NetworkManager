@@ -69,6 +69,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   configured with "ipv6.method: shared"
 * nmtui now offers a "Show password" checkbox in the dialog that prompts for
   secrets when activating a connection, matching the connection editor.
+* Fix an out-of-bounds read in the internal DHCPv4 client that an on-link
+  attacker could trigger with a malformed UDP packet, crashing NetworkManager.
 
 =============================================
 NetworkManager-1.56
