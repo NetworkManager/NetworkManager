@@ -221,6 +221,16 @@ find_existing_config(NMDhcpDhclient *self, int addr_family, const char *iface, c
     return NULL;
 }
 
+static gboolean
+_dhclient_hostname_is_valid(const char *hostname)
+{
+    for (const char *p = hostname; *p; p++) {
+        if (!g_ascii_isalnum(*p) && !NM_IN_SET(*p, '-', '.'))
+            return FALSE;
+    }
+    return TRUE;
+}
+
 /* NM provides interface-specific options; thus the same dhclient config
  * file cannot be used since DHCP transactions can happen in parallel.
  * Since some distros don't have default per-interface dhclient config files,
@@ -250,6 +260,12 @@ create_dhclient_config(NMDhcpDhclient     *self,
     GError       *error        = NULL;
 
     g_return_val_if_fail(iface != NULL, NULL);
+
+    if (hostname && !_dhclient_hostname_is_valid(hostname)) {
+        _LOGW("hostname '%s' contains unsafe characters for dhclient config, will be ignored",
+              hostname);
+        hostname = NULL;
+    }
 
     new_path = g_strdup_printf(NMSTATEDIR "/dhclient%s-%s.conf",
                                _addr_family_to_path_part(addr_family),
