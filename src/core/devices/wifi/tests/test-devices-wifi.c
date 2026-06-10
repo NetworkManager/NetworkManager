@@ -1459,6 +1459,50 @@ test_ssids_options_to_ptrarray(void)
 
 /*****************************************************************************/
 
+static void
+test_wps_key_to_psk(void)
+{
+    static const struct {
+        const char *key;
+        gsize       key_len;
+        gboolean    valid;
+    } cases[] = {
+        {"12345678", 8, TRUE},
+        {"supersecret123", 14, TRUE},
+        {"caf\xc3\xa9_key", 9, TRUE},
+        {"123456789012345678901234567890123456789012345678901234567890123", 63, TRUE},
+        {"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", 64, TRUE},
+        {"0123456789ABCDEF0123456789abcdef0123456789abcdef0123456789abcdeF", 64, TRUE},
+        {"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdeg", 64, FALSE},
+        {"", 0, FALSE},
+        {"1234567", 7, FALSE},
+        {"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0", 65, FALSE},
+        {"abc\xff"
+         "def123",
+         10,
+         FALSE},
+        {"0123456789abcdef0123456789abcdef\0"
+         "23456789abcdef0123456789abcdef0",
+         64,
+         FALSE},
+    };
+    gsize i;
+
+    for (i = 0; i < G_N_ELEMENTS(cases); i++) {
+        char     psk[65];
+        gboolean ok;
+
+        ok = nm_wifi_utils_wps_key_to_psk((const guint8 *) cases[i].key, cases[i].key_len, &psk);
+        g_assert_cmpint(ok, ==, cases[i].valid);
+        if (ok) {
+            g_assert_cmpmem(psk, cases[i].key_len, cases[i].key, cases[i].key_len);
+            g_assert_cmpint(psk[cases[i].key_len], ==, '\0');
+        }
+    }
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -1604,6 +1648,8 @@ main(int argc, char **argv)
     g_test_add_func("/wifi/strength/all", test_strength_all);
 
     g_test_add_func("/wifi/ssids_options_to_ptrarray", test_ssids_options_to_ptrarray);
+
+    g_test_add_func("/wifi/wps_key_to_psk", test_wps_key_to_psk);
 
     return g_test_run();
 }
