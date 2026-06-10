@@ -827,64 +827,6 @@ nm_dhcp_utils_get_leasefile_path(int         addr_family,
     return FALSE;
 }
 
-gboolean
-nm_dhcp_utils_merge_new_dhcp6_lease(const NML3ConfigData  *l3cd_old,
-                                    const NML3ConfigData  *l3cd_new,
-                                    const NML3ConfigData **out_l3cd_merged)
-{
-    nm_auto_unref_l3cd_init NML3ConfigData *l3cd_merged = NULL;
-    const NMPlatformIP6Address             *addr;
-    NMDhcpLease                            *lease_old;
-    NMDhcpLease                            *lease_new;
-    NMDedupMultiIter                        iter;
-    const char                             *start;
-    const char                             *iaid;
-
-    nm_assert(out_l3cd_merged && !*out_l3cd_merged);
-
-    if (!l3cd_old)
-        return FALSE;
-    if (!l3cd_new)
-        return FALSE;
-
-    lease_new = nm_l3_config_data_get_dhcp_lease(l3cd_new, AF_INET6);
-    if (!lease_new)
-        return FALSE;
-
-    lease_old = nm_l3_config_data_get_dhcp_lease(l3cd_old, AF_INET6);
-    if (!lease_old)
-        return FALSE;
-
-    start = nm_dhcp_lease_lookup_option(lease_new, "life_starts");
-    if (!start)
-        return FALSE;
-    iaid = nm_dhcp_lease_lookup_option(lease_new, "iaid");
-    if (!iaid)
-        return FALSE;
-
-    if (!nm_streq0(start, nm_dhcp_lease_lookup_option(lease_old, "life_starts")))
-        return FALSE;
-    if (!nm_streq0(iaid, nm_dhcp_lease_lookup_option(lease_old, "iaid")))
-        return FALSE;
-
-    /* If the server sends multiple IPv6 addresses, we receive a state
-     * changed event for each of them. Use the event ID to merge IPv6
-     * addresses from the same transaction into a single configuration.
-     **/
-
-    l3cd_merged = nm_l3_config_data_new_clone(l3cd_old, 0);
-
-    nm_l3_config_data_iter_ip6_address_for_each (&iter, l3cd_new, &addr)
-        nm_l3_config_data_add_address_6(l3cd_merged, addr);
-
-    /* FIXME(l3cfg): Note that we keep the original NMDhcpLease. All we take from the new lease are the
-     * addresses. Maybe this is not right and we should merge the leases too?? */
-    nm_l3_config_data_set_dhcp_lease(l3cd_merged, AF_INET6, lease_old);
-
-    *out_l3cd_merged = nm_l3_config_data_ref_and_seal(g_steal_pointer(&l3cd_merged));
-    return TRUE;
-}
-
 /*****************************************************************************/
 
 void

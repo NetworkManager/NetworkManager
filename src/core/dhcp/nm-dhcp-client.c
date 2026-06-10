@@ -785,13 +785,12 @@ _nm_dhcp_client_notify(NMDhcpClient         *self,
                        NMDhcpClientEventType client_event_type,
                        const NML3ConfigData *l3cd)
 {
-    NMDhcpClientPrivate                     *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
-    GHashTable                              *options;
-    gboolean                                 l3cd_changed;
-    NMOptionBool                             acd_state;
-    const int                                IS_IPv4     = NM_IS_IPv4(priv->config.addr_family);
-    nm_auto_unref_l3cd const NML3ConfigData *l3cd_merged = NULL;
-    char                                     sbuf1[NM_HASH_OBFUSCATE_PTR_STR_BUF_SIZE];
+    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+    GHashTable          *options;
+    gboolean             l3cd_changed;
+    NMOptionBool         acd_state;
+    const int            IS_IPv4 = NM_IS_IPv4(priv->config.addr_family);
+    char                 sbuf1[NM_HASH_OBFUSCATE_PTR_STR_BUF_SIZE];
 
     nm_assert(NM_IN_SET(client_event_type,
                         NM_DHCP_CLIENT_EVENT_TYPE_UNSPECIFIED,
@@ -823,15 +822,6 @@ _nm_dhcp_client_notify(NMDhcpClient         *self,
 
     if (client_event_type >= NM_DHCP_CLIENT_EVENT_TYPE_TIMEOUT)
         watch_cleanup(self);
-
-    if (!IS_IPv4 && l3cd) {
-        /* nm_dhcp_utils_merge_new_dhcp6_lease() relies on "life_starts" option
-         * for merging. The internal client supports multiple IP addresses per lease. */
-        if (nm_dhcp_utils_merge_new_dhcp6_lease(priv->l3cd_next, l3cd, &l3cd_merged)) {
-            _LOGD("lease merged with existing one");
-            l3cd = nm_l3_config_data_seal(l3cd_merged);
-        }
-    }
 
     if (l3cd) {
         nm_clear_g_source_inst(&priv->no_lease_timeout_source);

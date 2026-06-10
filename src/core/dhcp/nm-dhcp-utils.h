@@ -33,12 +33,6 @@ gboolean nm_dhcp_utils_get_leasefile_path(int         addr_family,
                                           const char *uuid,
                                           char      **out_leasefile_path);
 
-char *nm_dhcp_utils_get_dhcp6_event_id(GHashTable *lease);
-
-gboolean nm_dhcp_utils_merge_new_dhcp6_lease(const NML3ConfigData  *l3cd_old,
-                                             const NML3ConfigData  *l3cd_new,
-                                             const NML3ConfigData **out_l3cd_merged);
-
 /*****************************************************************************/
 
 static inline gboolean
