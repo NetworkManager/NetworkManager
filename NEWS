@@ -84,6 +84,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   and ipv6.never-default properties when DHCPv6 was not restarted (for example
   when the IPv6 DNS came from a DHCPv6 lease), so that DHCPv6-provided DNS and
   routes are now correctly suppressed on reapply without a connection restart.
+* Accept 64 hex-character PSK in WPS credentials which are returned by some
+  access points.
 
 =============================================
 NetworkManager-1.56
