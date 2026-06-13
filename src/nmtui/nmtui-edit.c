@@ -19,6 +19,7 @@
 #include "nmt-edit-connection-list.h"
 #include "nmt-editor.h"
 #include "nmt-utils.h"
+#include "nmt-wifi-qr-dialog.h"
 
 #include "nm-editor-utils.h"
 
@@ -40,6 +41,13 @@ static void
 list_remove_connection(NmtEditConnectionList *list, NMRemoteConnection *connection, gpointer form)
 {
     nmt_remove_connection(connection);
+    nmt_newt_form_set_focus(form, NMT_NEWT_WIDGET(list));
+}
+
+static void
+list_share_connection(NmtEditConnectionList *list, NMConnection *connection, gpointer form)
+{
+    nmt_wifi_qr_dialog_run(connection);
     nmt_newt_form_set_focus(form, NMT_NEWT_WIDGET(list));
 }
 
@@ -103,6 +111,7 @@ nmt_edit_main_connection_list(gboolean is_top)
     g_signal_connect(list, "add-connection", G_CALLBACK(list_add_connection), form);
     g_signal_connect(list, "edit-connection", G_CALLBACK(list_edit_connection), form);
     g_signal_connect(list, "remove-connection", G_CALLBACK(list_remove_connection), form);
+    g_signal_connect(list, "share-connection", G_CALLBACK(list_share_connection), form);
 
     nmt_edit_connection_list_bind_search(NMT_EDIT_CONNECTION_LIST(list), form);
 

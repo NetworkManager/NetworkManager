@@ -32,6 +32,7 @@ typedef struct {
     void (*add_connection)(NmtEditConnectionList *list);
     void (*edit_connection)(NmtEditConnectionList *list, NMConnection *connection);
     void (*remove_connection)(NmtEditConnectionList *list, NMRemoteConnection *connection);
+    void (*share_connection)(NmtEditConnectionList *list, NMConnection *connection);
 } NmtEditConnectionListClass;
 
 GType nmt_edit_connection_list_get_type(void);
