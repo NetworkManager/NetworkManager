@@ -201,19 +201,6 @@ save_connection_and_exit(NmtNewtButton *button, gpointer user_data)
     nmt_newt_form_quit(NMT_NEWT_FORM(editor));
 }
 
-static void
-got_secrets(GObject *object, GAsyncResult *result, gpointer op)
-{
-    GVariant *secrets;
-    GError   *error = NULL;
-
-    secrets = nm_remote_connection_get_secrets_finish(NM_REMOTE_CONNECTION(object), result, &error);
-    if (secrets)
-        g_variant_ref(secrets);
-    nmt_sync_op_complete_pointer(op, secrets, error);
-    g_clear_error(&error);
-}
-
 static NMConnection *
 build_edit_connection(NMConnection *orig_connection)
 {
@@ -221,7 +208,6 @@ build_edit_connection(NMConnection *orig_connection)
     GVariant     *settings, *secrets;
     GVariantIter  iter;
     const char   *setting_name;
-    NmtSyncOp     op;
 
     edit_connection = nm_simple_connection_new_clone(orig_connection);
 
@@ -234,14 +220,8 @@ build_edit_connection(NMConnection *orig_connection)
         if (!nm_meta_setting_info_editor_has_secrets(
                 nm_meta_setting_info_editor_find_by_name(setting_name, FALSE)))
             continue;
-        nmt_sync_op_init(&op);
-        nm_remote_connection_get_secrets_async(NM_REMOTE_CONNECTION(orig_connection),
-                                               setting_name,
-                                               NULL,
-                                               got_secrets,
-                                               &op);
         /* FIXME: error handling */
-        secrets = nmt_sync_op_wait_pointer(&op, NULL);
+        secrets = nmt_sync_get_secrets(NM_REMOTE_CONNECTION(orig_connection), setting_name, NULL);
         if (secrets) {
             (void) nm_connection_update_secrets(edit_connection, setting_name, secrets, NULL);
             g_variant_unref(secrets);

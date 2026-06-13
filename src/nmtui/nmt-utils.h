@@ -50,4 +50,7 @@ NmtSearch *nmt_search_new(NmtNewtEntry      *entry,
 void nmt_search_bind_form(NmtSearch *search, NmtNewtForm *form);
 void nmt_search_update_label(NmtSearch *search);
 
+GVariant *
+nmt_sync_get_secrets(NMRemoteConnection *connection, const char *setting_name, GError **error);
+
 #endif /* NMT_UTILS_H */

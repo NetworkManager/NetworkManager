@@ -305,3 +305,35 @@ nmt_search_bind_form(NmtSearch *search, NmtNewtForm *form)
      * the entry is first revealed. */
     nmt_search_update_label(search);
 }
+
+static void
+get_secrets_cb(GObject *object, GAsyncResult *result, gpointer op)
+{
+    GVariant *secrets;
+    GError   *error = NULL;
+
+    secrets = nm_remote_connection_get_secrets_finish(NM_REMOTE_CONNECTION(object), result, &error);
+    nmt_sync_op_complete_pointer(op, secrets, error);
+    g_clear_error(&error);
+}
+
+/**
+ * nmt_sync_get_secrets:
+ * @connection: the #NMRemoteConnection to fetch secrets from
+ * @setting_name: the setting to fetch secrets for
+ * @error: return location for a #GError
+ *
+ * Synchronously requests @setting_name's secrets for @connection, running the
+ * main loop until the request completes.
+ *
+ * Returns: (transfer full): the secrets variant, or %NULL on error.
+ */
+GVariant *
+nmt_sync_get_secrets(NMRemoteConnection *connection, const char *setting_name, GError **error)
+{
+    NmtSyncOp op;
+
+    nmt_sync_op_init(&op);
+    nm_remote_connection_get_secrets_async(connection, setting_name, NULL, get_secrets_cb, &op);
+    return nmt_sync_op_wait_pointer(&op, error);
+}
