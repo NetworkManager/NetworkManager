@@ -123,6 +123,7 @@ if enable_tests
   subdir('libnm-core-impl/tests')
   subdir('libnm-client-impl/tests')
   subdir('libnm-client-aux-extern/tests')
+  subdir('libnmc-base/tests')
   subdir('libnmc-setting/tests')
   subdir('nm-dispatcher/tests')
   subdir('nm-initrd-generator/tests')
