@@ -66,6 +66,14 @@ char *nmc_wifi_qr_uri_new(const char *ssid, const char *key_mgmt, const char *ps
 
 char *nmc_wifi_qr_render_string(const char *str);
 
+/* Whether @key_mgmt denotes a passphrase-protected network (a "WPA"-type QR
+ * code), i.e. one whose QR code is useless without the password. */
+static inline gboolean
+nmc_wifi_key_mgmt_uses_psk(const char *key_mgmt)
+{
+    return NM_IN_STRSET(key_mgmt, "wpa-psk", "sae", "wpa-none");
+}
+
 GHashTable *nmc_utils_parse_passwd_file(char *contents, gssize *out_error_line, GError **error);
 
 GHashTable *

@@ -93,6 +93,19 @@ test_wifi_qr_render_too_long(void)
     g_assert(!qr);
 }
 
+static void
+test_wifi_key_mgmt_uses_psk(void)
+{
+    g_assert(nmc_wifi_key_mgmt_uses_psk("wpa-psk"));
+    g_assert(nmc_wifi_key_mgmt_uses_psk("sae"));
+    g_assert(nmc_wifi_key_mgmt_uses_psk("wpa-none"));
+
+    g_assert(!nmc_wifi_key_mgmt_uses_psk(NULL));
+    g_assert(!nmc_wifi_key_mgmt_uses_psk("none"));
+    g_assert(!nmc_wifi_key_mgmt_uses_psk("owe"));
+    g_assert(!nmc_wifi_key_mgmt_uses_psk("wpa-eap"));
+}
+
 /*****************************************************************************/
 
 NMTST_DEFINE();
@@ -107,6 +120,7 @@ main(int argc, char **argv)
     g_test_add_func("/client-utils/wifi-qr/uri/escaping", test_wifi_qr_uri_escaping);
     g_test_add_func("/client-utils/wifi-qr/render", test_wifi_qr_render);
     g_test_add_func("/client-utils/wifi-qr/render-too-long", test_wifi_qr_render_too_long);
+    g_test_add_func("/client-utils/wifi/key-mgmt-uses-psk", test_wifi_key_mgmt_uses_psk);
 
     return g_test_run();
 }
