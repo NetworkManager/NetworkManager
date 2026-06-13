@@ -62,6 +62,10 @@ const char *nmc_password_subst_char(void);
 
 void nmc_print_qrcode(const char *str);
 
+char *nmc_wifi_qr_uri_new(const char *ssid, const char *key_mgmt, const char *psk, gboolean hidden);
+
+char *nmc_wifi_qr_render_string(const char *str);
+
 GHashTable *nmc_utils_parse_passwd_file(char *contents, gssize *out_error_line, GError **error);
 
 GHashTable *

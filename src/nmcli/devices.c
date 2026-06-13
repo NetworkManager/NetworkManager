@@ -4834,44 +4834,15 @@ do_device_wifi_rescan(const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
 }
 
 static void
-string_append_mecard(GString *string, const char *tag, const char *text)
-{
-    const char *p;
-    bool        is_hex = TRUE;
-    int         start;
-
-    if (!text)
-        return;
-
-    g_string_append(string, tag);
-    start = string->len;
-
-    for (p = text; *p; p++) {
-        if (!g_ascii_isxdigit(*p))
-            is_hex = FALSE;
-        if (strchr("\\\":;,", *p))
-            g_string_append_c(string, '\\');
-        g_string_append_c(string, *p);
-    }
-
-    if (is_hex) {
-        g_string_insert_c(string, start, '\"');
-        g_string_append_c(string, '\"');
-    }
-    g_string_append_c(string, ';');
-}
-
-static void
 print_wifi_connection(const NmcConfig *nmc_config, NMConnection *connection)
 {
-    NMSettingWireless            *s_wireless;
-    NMSettingWirelessSecurity    *s_wsec;
-    const char                   *key_mgmt = NULL;
-    const char                   *psk      = NULL;
-    const char                   *type     = NULL;
-    GBytes                       *ssid_bytes;
-    gs_free char                 *ssid   = NULL;
-    nm_auto_free_gstring GString *string = NULL;
+    NMSettingWireless         *s_wireless;
+    NMSettingWirelessSecurity *s_wsec;
+    const char                *key_mgmt = NULL;
+    const char                *psk      = NULL;
+    GBytes                    *ssid_bytes;
+    gs_free char              *ssid = NULL;
+    gs_free char              *uri  = NULL;
 
     s_wireless = nm_connection_get_setting_wireless(connection);
     g_return_if_fail(s_wireless);
@@ -4882,9 +4853,6 @@ print_wifi_connection(const NmcConfig *nmc_config, NMConnection *connection)
     g_return_if_fail(ssid);
     nmc_print("SSID: %s\n", ssid);
 
-    string = g_string_sized_new(64);
-    g_string_append(string, "WIFI:");
-
     s_wsec = nm_connection_get_setting_wireless_security(connection);
     if (s_wsec) {
         key_mgmt = nm_setting_wireless_security_get_key_mgmt(s_wsec);
@@ -4892,33 +4860,23 @@ print_wifi_connection(const NmcConfig *nmc_config, NMConnection *connection)
     }
 
     if (key_mgmt == NULL) {
-        type = "nopass";
         nmc_print("%s: %s\n", _("Security"), _("None"));
     } else if (strcmp(key_mgmt, "none") == 0 || strcmp(key_mgmt, "ieee8021x") == 0) {
-        type = "WEP";
         nmc_print("%s: WEP\n", _("Security"));
     } else if (strcmp(key_mgmt, "wpa-none") == 0 || strcmp(key_mgmt, "wpa-psk") == 0
                || strcmp(key_mgmt, "sae") == 0) {
-        type = "WPA";
         nmc_print("%s: WPA\n", _("Security"));
     } else if (strcmp(key_mgmt, "owe") == 0) {
-        type = "nopass";
         nmc_print("%s: OWE\n", _("Security"));
     }
 
     if (psk)
         nmc_print("%s: %s\n", _("Password"), psk);
 
-    string_append_mecard(string, "T:", type);
-    string_append_mecard(string, "S:", ssid);
-    string_append_mecard(string, "P:", psk);
+    uri = nmc_wifi_qr_uri_new(ssid, key_mgmt, psk, nm_setting_wireless_get_hidden(s_wireless));
 
-    if (nm_setting_wireless_get_hidden(s_wireless))
-        g_string_append(string, "H:true;");
-
-    g_string_append_c(string, ';');
     if (nmc_config->use_colors)
-        nmc_print_qrcode(string->str);
+        nmc_print_qrcode(uri);
 
     nmc_print("\n");
 }
