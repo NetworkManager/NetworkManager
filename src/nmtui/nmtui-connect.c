@@ -598,7 +598,6 @@ connect_search_count(gpointer list)
 static NmtNewtForm *
 nmt_connect_connection_list(gboolean is_top)
 {
-    int                          screen_width, screen_height;
     NmtNewtForm                 *form;
     NmtNewtWidget               *list, *activate, *quit, *bbox, *grid, *rescan;
     NmtNewtWidget               *search_row, *search_label, *search_entry;
@@ -606,9 +605,7 @@ nmt_connect_connection_list(gboolean is_top)
     RescanBatch                 *batch_data;
     gs_unref_ptrarray GPtrArray *all_active_wifi_devices = NULL;
 
-    newtGetScreenSize(&screen_width, &screen_height);
-
-    form = g_object_new(NMT_TYPE_NEWT_FORM, "y", 2, "height", screen_height - 4, NULL);
+    form = g_object_new(NMT_TYPE_NEWT_FORM, "fullscreen-vertical", TRUE, NULL);
 
     grid = nmt_newt_grid_new();
 

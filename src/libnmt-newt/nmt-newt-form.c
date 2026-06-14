@@ -14,6 +14,8 @@
 #include "libnm-client-aux-extern/nm-default-client.h"
 
 #include <fcntl.h>
+#include <signal.h>
+#include <slang.h>
 #include <unistd.h>
 
 #include "nmt-newt-form.h"
@@ -36,6 +38,7 @@ typedef struct {
     gboolean fixed_x, fixed_y;
     gboolean fixed_width, fixed_height;
     gboolean stable_width;
+    gboolean fullscreen_vertical, fullscreen_horizontal;
     char    *title_lc;
 
     gboolean       dirty;
@@ -205,6 +208,20 @@ nmt_newt_form_build(NmtNewtForm *form)
     if (!priv->fixed_y)
         priv->y = (screen_height - form_height) / 2;
 
+    if (priv->fullscreen_horizontal) {
+        priv->x     = 2;
+        priv->width = screen_width - 4;
+    }
+    if (priv->fullscreen_vertical) {
+        priv->y      = 2;
+        priv->height = screen_height - 4;
+    }
+
+    if ((int) priv->x < 0)
+        priv->x = 0;
+    if ((int) priv->y < 0)
+        priv->y = 0;
+
     nmt_newt_widget_size_allocate(priv->content,
                                   priv->padding,
                                   priv->padding,
@@ -332,6 +349,7 @@ nmt_newt_form_iterate(NmtNewtForm *form)
  */
 static GSList  *form_stack;
 static GSource *keypress_source;
+static GSource *winch_source;
 
 static gboolean
 nmt_newt_form_keypress_callback(int fd, GIOCondition condition, gpointer user_data)
@@ -340,6 +358,48 @@ nmt_newt_form_keypress_callback(int fd, GIOCondition condition, gpointer user_da
 
     nmt_newt_form_iterate(form_stack->data);
     return TRUE;
+}
+
+/* On SIGWINCH, refit every form in the stack to the new terminal size. The
+ * windows must be popped top-to-bottom (newt's window stack is LIFO) and rebuilt
+ * bottom-to-top to restore the original z-order.
+ */
+static void
+nmt_newt_form_resize(void)
+{
+    GSList *bottom_up;
+    GSList *iter;
+
+    for (iter = form_stack; iter; iter = iter->next) {
+        NmtNewtForm        *form = iter->data;
+        NmtNewtFormPrivate *priv = NMT_NEWT_FORM_GET_PRIVATE(form);
+
+        if (priv->form)
+            nmt_newt_form_destroy(form);
+    }
+
+    /* newtResizeScreen() updates SLtt's screen size but skips the
+     * SLsmg_reinit_smg() that resizes the screen buffer (commented out
+     * upstream), so rows newly exposed by a taller terminal go unpainted. Do
+     * it ourselves, then repaint the root. */
+    SLtt_get_screen_size();
+    SLsmg_reinit_smg();
+    newtCls();
+
+    bottom_up = g_slist_reverse(g_slist_copy(form_stack));
+    for (iter = bottom_up; iter; iter = iter->next)
+        nmt_newt_form_build(iter->data);
+    g_slist_free(bottom_up);
+
+    nmt_newt_form_redraw(form_stack->data);
+}
+
+static gboolean
+nmt_newt_form_winch_callback(gpointer user_data)
+{
+    if (form_stack)
+        nmt_newt_form_resize();
+    return G_SOURCE_CONTINUE;
 }
 
 static gboolean
@@ -369,6 +429,8 @@ nmt_newt_form_real_show(NmtNewtForm *form)
         g_source_set_can_recurse(keypress_source, TRUE);
         g_source_attach(keypress_source, NULL);
     }
+    if (!winch_source)
+        winch_source = nm_g_unix_signal_add_source(SIGWINCH, nmt_newt_form_winch_callback, NULL);
 
     nmt_newt_form_build(form);
     form_stack = g_slist_prepend(form_stack, g_object_ref(form));
@@ -434,8 +496,10 @@ nmt_newt_form_quit(NmtNewtForm *form)
 
     if (form_stack)
         nmt_newt_form_iterate(form_stack->data);
-    else
+    else {
         nm_clear_g_source_inst(&keypress_source);
+        nm_clear_g_source_inst(&winch_source);
+    }
 
     g_signal_emit(form, signals[QUIT], 0);
     g_object_unref(form);
@@ -506,7 +570,6 @@ static void
 nmt_newt_form_set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
     NmtNewtFormPrivate *priv = NMT_NEWT_FORM_GET_PRIVATE(object);
-    int                 screen_width, screen_height;
 
     switch (prop_id) {
     case PROP_TITLE:
@@ -516,32 +579,13 @@ nmt_newt_form_set_property(GObject *object, guint prop_id, const GValue *value, 
             priv->title_lc = NULL;
         break;
     case PROP_FULLSCREEN:
-        if (g_value_get_boolean(value)) {
-            newtGetScreenSize(&screen_width, &screen_height);
-            priv->x = priv->y = 2;
-            priv->fixed_x = priv->fixed_y = TRUE;
-            priv->width                   = screen_width - 4;
-            priv->height                  = screen_height - 4;
-            priv->fixed_width = priv->fixed_height = TRUE;
-        }
+        priv->fullscreen_horizontal = priv->fullscreen_vertical = g_value_get_boolean(value);
         break;
     case PROP_FULLSCREEN_VERTICAL:
-        if (g_value_get_boolean(value)) {
-            newtGetScreenSize(&screen_width, &screen_height);
-            priv->y            = 2;
-            priv->fixed_y      = TRUE;
-            priv->height       = screen_height - 4;
-            priv->fixed_height = TRUE;
-        }
+        priv->fullscreen_vertical = g_value_get_boolean(value);
         break;
     case PROP_FULLSCREEN_HORIZONTAL:
-        if (g_value_get_boolean(value)) {
-            newtGetScreenSize(&screen_width, &screen_height);
-            priv->x           = 2;
-            priv->fixed_x     = TRUE;
-            priv->width       = screen_width - 4;
-            priv->fixed_width = TRUE;
-        }
+        priv->fullscreen_horizontal = g_value_get_boolean(value);
         break;
     case PROP_X:
         if (g_value_get_uint(value)) {

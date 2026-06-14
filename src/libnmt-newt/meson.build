@@ -27,6 +27,7 @@ libnmt_newt = static_library(
   dependencies: [
     libnm_dep,
     newt_dep,
+    slang_dep,
     glib_dep,
   ],
 )

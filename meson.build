@@ -853,6 +853,8 @@ enable_nmtui = get_option('nmtui')
 if enable_nmtui
   newt_dep = dependency('libnewt', version: '>= 0.52.15', required: false)
   assert(newt_dep.found(), 'You must have libnewt installed to build nmtui. Use -Dnmtui=false to disable it')
+  slang_dep = dependency('slang', required: false)
+  assert(slang_dep.found(), 'You must have slang installed to build nmtui. Use -Dnmtui=false to disable it')
 endif
 
 enable_nm_cloud_setup = get_option('nm_cloud_setup')
