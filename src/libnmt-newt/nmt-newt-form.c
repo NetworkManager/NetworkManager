@@ -38,6 +38,7 @@ typedef struct {
 
     gboolean       dirty;
     NmtNewtWidget *focus;
+    GArray        *hotkeys;
 #ifdef HAVE_NEWTFORMGETSCROLLPOSITION
     int scroll_position = 0;
 #endif
@@ -60,6 +61,7 @@ enum {
 
 enum {
     QUIT,
+    HOTKEY,
 
     LAST_SIGNAL
 };
@@ -118,6 +120,7 @@ nmt_newt_form_finalize(GObject *object)
 
     g_free(priv->title_lc);
     g_clear_object(&priv->focus);
+    nm_clear_pointer(&priv->hotkeys, g_array_unref);
 
     G_OBJECT_CLASS(nmt_newt_form_parent_class)->finalize(object);
 }
@@ -211,6 +214,12 @@ nmt_newt_form_build(NmtNewtForm *form)
         priv->form = newtForm(NULL, NULL, NEWT_FLAG_NOF12);
 
     newtFormAddHotKey(priv->form, NEWT_KEY_ESCAPE);
+    if (priv->hotkeys) {
+        guint h;
+
+        for (h = 0; h < priv->hotkeys->len; h++)
+            newtFormAddHotKey(priv->form, nm_g_array_index(priv->hotkeys, int, h));
+    }
 
     cos = nmt_newt_widget_get_components(priv->content);
     for (i = 0; cos[i]; i++)
@@ -269,6 +278,17 @@ nmt_newt_form_iterate(NmtNewtForm *form)
 
     newtFormSetTimer(priv->form, 1);
     newtFormRun(priv->form, &es);
+
+    if (es.reason == NEWT_EXIT_HOTKEY) {
+        gboolean handled = FALSE;
+
+        /* Give listeners (eg, the connection-list search) a chance to consume the
+         * key. Esc is included, so a listener can make it cancel a transient mode
+         * instead of closing the form. */
+        g_signal_emit(form, signals[HOTKEY], 0, (int) es.u.key, &handled);
+        if (handled)
+            return;
+    }
 
     if (es.reason == NEWT_EXIT_HOTKEY || es.reason == NEWT_EXIT_ERROR) {
         /* The user hit Esc or there was an error. */
@@ -434,6 +454,28 @@ nmt_newt_form_set_focus(NmtNewtForm *form, NmtNewtWidget *widget)
         g_object_ref(priv->focus);
 }
 
+/**
+ * nmt_newt_form_add_hotkey:
+ * @form: an #NmtNewtForm
+ * @key: a key code (eg, a character, or an %NEWT_KEY_ value)
+ *
+ * Registers @key as a hotkey on @form. When the user presses it, the
+ * #NmtNewtForm::hotkey signal is emitted; a handler returning %TRUE consumes
+ * the key, otherwise the form's default handling applies.
+ */
+void
+nmt_newt_form_add_hotkey(NmtNewtForm *form, int key)
+{
+    NmtNewtFormPrivate *priv = NMT_NEWT_FORM_GET_PRIVATE(form);
+
+    if (!priv->hotkeys)
+        priv->hotkeys = g_array_new(FALSE, FALSE, sizeof(int));
+    g_array_append_val(priv->hotkeys, key);
+
+    if (priv->form)
+        newtFormAddHotKey(priv->form, key);
+}
+
 static void
 nmt_newt_form_set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
@@ -578,6 +620,28 @@ nmt_newt_form_class_init(NmtNewtFormClass *form_class)
                                  NULL,
                                  G_TYPE_NONE,
                                  0);
+
+    /**
+     * NmtNewtForm::hotkey:
+     * @form: the #NmtNewtForm
+     * @key: the key that was pressed
+     *
+     * Emitted when a key registered via nmt_newt_form_add_hotkey() (or Esc) is
+     * pressed. A handler returning %TRUE consumes the key; otherwise the form's
+     * default handling applies (Esc closes the form).
+     *
+     * Returns: %TRUE if the key was handled.
+     */
+    signals[HOTKEY] = g_signal_new("hotkey",
+                                   G_OBJECT_CLASS_TYPE(object_class),
+                                   G_SIGNAL_RUN_LAST,
+                                   G_STRUCT_OFFSET(NmtNewtFormClass, hotkey),
+                                   g_signal_accumulator_true_handled,
+                                   NULL,
+                                   NULL,
+                                   G_TYPE_BOOLEAN,
+                                   1,
+                                   G_TYPE_INT);
 
     /**
      * NmtNewtForm:title:

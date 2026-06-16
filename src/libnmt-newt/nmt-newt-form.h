@@ -26,6 +26,7 @@ typedef struct {
 
     /* signals */
     void (*quit)(NmtNewtForm *form);
+    gboolean (*hotkey)(NmtNewtForm *form, int key);
 
     /* methods */
     void (*show)(NmtNewtForm *form);
@@ -44,5 +45,7 @@ NmtNewtWidget *nmt_newt_form_run_sync(NmtNewtForm *form);
 void           nmt_newt_form_quit(NmtNewtForm *form);
 
 void nmt_newt_form_set_focus(NmtNewtForm *form, NmtNewtWidget *widget);
+
+void nmt_newt_form_add_hotkey(NmtNewtForm *form, int key);
 
 #endif /* NMT_NEWT_FORM_H */
