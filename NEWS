@@ -71,6 +71,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   secrets when activating a connection, matching the connection editor.
 * Fix an out-of-bounds read in the internal DHCPv4 client that an on-link
   attacker could trigger with a malformed UDP packet, crashing NetworkManager.
+* The nmtui connection lists ("nmtui connect" and "nmtui edit") support a
+  vim-style "/" search that filters the list to matching entries as you type.
 
 =============================================
 NetworkManager-1.56
