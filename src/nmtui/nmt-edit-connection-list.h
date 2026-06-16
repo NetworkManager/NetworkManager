@@ -42,4 +42,6 @@ typedef gboolean (*NmtEditConnectionListFilter)(NmtEditConnectionList *list,
 
 void nmt_edit_connection_list_recommit(NmtEditConnectionList *list);
 
+void nmt_edit_connection_list_bind_search(NmtEditConnectionList *list, NmtNewtForm *form);
+
 #endif /* NMT_EDIT_CONNECTION_LIST_H */

@@ -17,6 +17,7 @@
 #include <sys/wait.h>
 
 #include "libnm-glib-aux/nm-io-utils.h"
+#include "libnm-glib-aux/nm-str-buf.h"
 
 static void
 nmt_newt_dialog_g_log_handler(const char    *log_domain,
@@ -384,6 +385,44 @@ nmt_newt_text_width(const char *str)
     }
 
     return width;
+}
+
+/**
+ * nmt_newt_text_truncate
+ * @str: a UTF-8 string
+ * @max_width: the maximum width in terminal columns
+ *
+ * Truncates @str to at most @max_width columns, appending an ellipsis if
+ * anything was dropped (the ellipsis is counted in @max_width).
+ *
+ * Returns: (transfer full): a newly-allocated truncated copy of @str.
+ */
+char *
+nmt_newt_text_truncate(const char *str, int max_width)
+{
+    nm_auto_str_buf NMStrBuf buf = NM_STR_BUF_INIT(0, FALSE);
+    const char              *p;
+    int                      width = 0;
+
+    if (max_width <= 0)
+        return g_strdup("");
+    if (nmt_newt_text_width(str) <= max_width)
+        return g_strdup(str);
+
+    max_width--; /* reserve one column for the ellipsis */
+
+    for (p = str; *p; p = g_utf8_next_char(p)) {
+        gunichar ch = g_utf8_get_char(p);
+        int      w  = g_unichar_iszerowidth(ch) ? 0 : (g_unichar_iswide(ch) ? 2 : 1);
+
+        if (width + w > max_width)
+            break;
+        width += w;
+        nm_str_buf_append_len(&buf, p, g_utf8_next_char(p) - p);
+    }
+    nm_str_buf_append(&buf, "\xe2\x80\xa6"); /* U+2026 HORIZONTAL ELLIPSIS */
+
+    return nm_str_buf_dup_str(&buf);
 }
 
 /**

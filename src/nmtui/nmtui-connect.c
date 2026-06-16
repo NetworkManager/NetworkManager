@@ -583,12 +583,26 @@ wifi_rescan(NmtNewtButton *button, gpointer data_batch)
     }
 }
 
+static void
+connect_search_apply(gpointer list, const char *text)
+{
+    nmt_connect_connection_list_set_filter_text(NMT_CONNECT_CONNECTION_LIST(list), text);
+}
+
+static int
+connect_search_count(gpointer list)
+{
+    return nmt_connect_connection_list_get_match_count(NMT_CONNECT_CONNECTION_LIST(list));
+}
+
 static NmtNewtForm *
 nmt_connect_connection_list(gboolean is_top)
 {
     int                          screen_width, screen_height;
     NmtNewtForm                 *form;
     NmtNewtWidget               *list, *activate, *quit, *bbox, *grid, *rescan;
+    NmtNewtWidget               *search_row, *search_label, *search_entry;
+    NmtSearch                   *search;
     RescanBatch                 *batch_data;
     gs_unref_ptrarray GPtrArray *all_active_wifi_devices = NULL;
 
@@ -633,6 +647,31 @@ nmt_connect_connection_list(gboolean is_top)
 
     quit = nmt_newt_button_box_add_end(NMT_NEWT_BUTTON_BOX(bbox), is_top ? _("Quit") : _("Back"));
     nmt_newt_widget_set_exit_on_activate(quit, TRUE);
+
+    /* Search row below the list. The row is always present so revealing the
+     * entry does not resize the form; vim-style '/' shows the entry, and once a
+     * filter is applied the label reports it ("Matching '...' (N)"). */
+    search_row = nmt_newt_grid_new();
+    nmt_newt_grid_add(NMT_NEWT_GRID(grid), search_row, 0, 1);
+    nmt_newt_grid_set_flags(NMT_NEWT_GRID(grid),
+                            search_row,
+                            NMT_NEWT_GRID_FILL_X | NMT_NEWT_GRID_EXPAND_X);
+
+    search_label = nmt_newt_label_new("");
+    nmt_newt_grid_add(NMT_NEWT_GRID(search_row), search_label, 0, 0);
+
+    search_entry = nmt_newt_entry_new(NMT_SEARCH_ENTRY_WIDTH, 0);
+    nmt_newt_grid_add(NMT_NEWT_GRID(search_row), search_entry, 1, 0);
+    nmt_newt_widget_set_padding(search_entry, 1, 0, 0, 0);
+
+    search = nmt_search_new(NMT_NEWT_ENTRY(search_entry),
+                            NMT_NEWT_LABEL(search_label),
+                            list,
+                            connect_search_apply,
+                            connect_search_count,
+                            list);
+    nmt_search_bind_form(search, form);
+    g_object_set_data_full(G_OBJECT(form), "search-data", search, g_free);
 
     nmt_newt_form_set_content(form, grid);
     return form;

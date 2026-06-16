@@ -31,9 +31,11 @@ typedef struct {
     NmtNewtWidget *content;
 
     guint    x, y, width, height;
+    guint    form_width_max;
     guint    padding;
     gboolean fixed_x, fixed_y;
     gboolean fixed_width, fixed_height;
+    gboolean stable_width;
     char    *title_lc;
 
     gboolean       dirty;
@@ -183,6 +185,15 @@ nmt_newt_form_build(NmtNewtForm *form)
 
     nmt_newt_widget_size_request(priv->content, &form_width, &form_height);
     newtGetScreenSize(&screen_width, &screen_height);
+
+    if (priv->stable_width) {
+        /* Never let the form get narrower across rebuilds. Otherwise content
+         * that shrinks (eg, a filtered list) makes the window recenter and
+         * "jump". Only forms that opt in get this; see
+         * nmt_newt_form_set_stable_width(). */
+        priv->form_width_max = NM_MAX(priv->form_width_max, (guint) NM_MAX(form_width, 0));
+        form_width           = priv->form_width_max;
+    }
 
     if (!priv->fixed_width)
         priv->width = NM_MIN(form_width + 2 * ((gint64) priv->padding), screen_width - 2);
@@ -474,6 +485,21 @@ nmt_newt_form_add_hotkey(NmtNewtForm *form, int key)
 
     if (priv->form)
         newtFormAddHotKey(priv->form, key);
+}
+
+/**
+ * nmt_newt_form_set_stable_width:
+ * @form: an #NmtNewtForm
+ *
+ * Stops @form from getting narrower across rebuilds: its width grows to fit
+ * content but never shrinks. Use for forms whose content shrinks in place (eg,
+ * a list filtered by a search box) where recentering would make the window
+ * "jump".
+ */
+void
+nmt_newt_form_set_stable_width(NmtNewtForm *form)
+{
+    NMT_NEWT_FORM_GET_PRIVATE(form)->stable_width = TRUE;
 }
 
 static void

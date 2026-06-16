@@ -48,4 +48,6 @@ void nmt_newt_form_set_focus(NmtNewtForm *form, NmtNewtWidget *widget);
 
 void nmt_newt_form_add_hotkey(NmtNewtForm *form, int key);
 
+void nmt_newt_form_set_stable_width(NmtNewtForm *form);
+
 #endif /* NMT_NEWT_FORM_H */
