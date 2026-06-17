@@ -40,7 +40,7 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   default.
 * Use an internal implementation of the ping functionality when the
   "connection.gateway-ping-timeout" or "connection.ip-ping-addresses"
-  properties are set, instead of relying on the "ping" tool.  
+  properties are set, instead of relying on the "ping" tool.
 * The powersave property now functions with the iwd backend.
 * The "band" property of Wi-fi connections now accepts the "6GHz"
   value.
@@ -80,6 +80,10 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Validate hostnames and MUD URLs before pasting them into the dhclient
   configuration file, rejecting characters that could alter the config
   syntax (CVE-2026-10805).
+* Fix reapply not honoring the ipv6.ignore-auto-dns, ipv6.ignore-auto-routes
+  and ipv6.never-default properties when DHCPv6 was not restarted (for example
+  when the IPv6 DNS came from a DHCPv6 lease), so that DHCPv6-provided DNS and
+  routes are now correctly suppressed on reapply without a connection restart.
 
 =============================================
 NetworkManager-1.56
@@ -98,8 +102,8 @@ Overview of changes since NetworkManager-1.54
 * Add gsm device-uid setting to restrict the devices the connection applies to.
 * Support configuring the HSR protocol version via the
   "hsr.protocol-version" property.
-* Fix a bug that makes broadband connections auto-connect getting 
-  blocked if the connection tries to reconnect when modem status is 
+* Fix a bug that makes broadband connections auto-connect getting
+  blocked if the connection tries to reconnect when modem status is
   "disconnecting" / "disconnected".
 * Treat modem connection not having an operator code available
   as a recoverable error.

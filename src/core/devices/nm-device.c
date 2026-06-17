@@ -14688,6 +14688,12 @@ check_and_reapply_connection(NMDevice            *self,
 
         reactivate_proxy_config(self);
 
+        /* Reapply may have changed the per-device L3 merge flags (ignore-auto-dns,
+         * ignore-auto-routes, never-default). Re-register the active l3cds so the
+         * refreshed flags reach l3cfg even for sources that are not restarted on
+         * reapply (e.g. DHCPv6 when the NDisc DHCP level is unchanged). */
+        _dev_l3_register_l3cds(self, priv->l3cfg, TRUE, FALSE);
+
         nm_device_l3cfg_commit(
             self,
             NM_FLAGS_HAS(reapply_flags, NM_DEVICE_REAPPLY_FLAGS_PRESERVE_EXTERNAL_IP)
