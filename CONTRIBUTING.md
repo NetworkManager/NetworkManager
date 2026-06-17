@@ -147,6 +147,28 @@ $ git config --add 'blame.ignoreRevsFile' '.git-blame-ignore-revs'
 
 You may integrate clang-formatter in your editor (for [vim](https://github.com/rhysd/vim-clang-format)).
 
+### pre-commit hooks
+
+A [pre-commit](https://pre-commit.com/) config (`.pre-commit-config.yaml`) is
+provided to catch the two issues that most often fail CI's "check-tree" stage
+before you push:
+
+- clang-format on the C/H files you touched, via
+  `contrib/scripts/nm-code-format-container.sh` so it matches CI's clang-format
+  version (requires podman);
+- `POTFILES.in` consistency (`src/tests/check-potfile-list.py`).
+
+To enable it, install pre-commit (`pip install pre-commit`, or your distro's
+package) and run once in the checkout:
+
+```
+$ pre-commit install
+```
+
+The hooks then run on every `git commit`. Use `git commit --no-verify` to skip
+them for a work-in-progress commit, or `pre-commit run --all-files` to check the
+whole tree.
+
 ### Style
 
 As we use clang-format, our style is in parts determined by the tool.

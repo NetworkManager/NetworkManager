@@ -1,0 +1,28 @@
+repos:
+  - repo: local
+    hooks:
+      - id: nm-clang-format
+        name: clang-format (CI version, container)
+        entry: ./contrib/scripts/nm-code-format-container.sh -n
+        language: script
+        files: \.[ch]$
+        require_serial: true
+        exclude: |
+          (?x)^(
+            src/c-list/|
+            src/c-rbtree/|
+            src/c-siphash/|
+            src/c-stdaux/|
+            src/libnm-std-aux/unaligned(-fundamental)?\.h|
+            src/libnm-systemd-core/src/|
+            src/libnm-systemd-shared/src/|
+            src/linux-headers/|
+            src/n-acd/|
+            src/n-dhcp4/
+          )
+      - id: nm-potfiles
+        name: POTFILES.in consistency
+        entry: src/tests/check-potfile-list.py
+        language: script
+        pass_filenames: false
+        always_run: true
