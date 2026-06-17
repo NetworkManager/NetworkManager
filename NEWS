@@ -5,6 +5,10 @@ Overview of changes since NetworkManager-1.56
 * Validate hostnames and MUD URLs before pasting them into the dhclient
   configuration file, rejecting characters that could alter the config
   syntax (CVE-2026-10805).
+* Fix reapply not honoring the ipv6.ignore-auto-dns, ipv6.ignore-auto-routes
+  and ipv6.never-default properties when DHCPv6 was not restarted (for example
+  when the IPv6 DNS came from a DHCPv6 lease), so that DHCPv6-provided DNS and
+  routes are now correctly suppressed on reapply without a connection restart.
 
 =============================================
 NetworkManager-1.56.1
