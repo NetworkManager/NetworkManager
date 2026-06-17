@@ -17,6 +17,7 @@
 #include "nmtui-edit.h"
 #include "nmt-edit-connection-list.h"
 #include "nmt-editor.h"
+#include "nmt-utils.h"
 
 #include "nm-editor-utils.h"
 
@@ -34,6 +35,10 @@ typedef struct {
 
     NmtNewtListbox   *listbox;
     NmtNewtButtonBox *buttons;
+
+    NmtSearch *search;
+    char      *filter_text;
+    int        match_count;
 
     NmtNewtWidget *add;
     NmtNewtWidget *edit;
@@ -68,13 +73,16 @@ static void add_clicked(NmtNewtButton *button, gpointer list);
 static void edit_clicked(NmtNewtButton *button, gpointer list);
 static void delete_clicked(NmtNewtButton *button, gpointer list);
 static void listbox_activated(NmtNewtWidget *listbox, gpointer list);
+static void edit_search_apply(gpointer list, const char *text);
+static int  edit_search_count(gpointer list);
 
 static void
 nmt_edit_connection_list_init(NmtEditConnectionList *list)
 {
     NmtEditConnectionListPrivate *priv = NMT_EDIT_CONNECTION_LIST_GET_PRIVATE(list);
-    NmtNewtWidget                *listbox, *buttons;
+    NmtNewtWidget                *listbox, *buttons, *search_row, *search_label, *search;
     NmtNewtGrid                  *grid = NMT_NEWT_GRID(list);
+    NmtNewtGrid                  *search_grid;
 
     listbox       = g_object_new(NMT_TYPE_NEWT_LISTBOX,
                            "flags",
@@ -89,6 +97,28 @@ nmt_edit_connection_list_init(NmtEditConnectionList *list)
                             NMT_NEWT_GRID_FILL_X | NMT_NEWT_GRID_FILL_Y | NMT_NEWT_GRID_EXPAND_X
                                 | NMT_NEWT_GRID_EXPAND_Y);
     g_signal_connect(priv->listbox, "activated", G_CALLBACK(listbox_activated), list);
+
+    /* Search row below the listbox. The row is always present so revealing the
+     * entry does not resize the form; vim-style '/' shows the entry, and once a
+     * filter is applied the label reports it ("Matching '...' (N)"). */
+    search_row  = nmt_newt_grid_new();
+    search_grid = NMT_NEWT_GRID(search_row);
+    nmt_newt_grid_add(grid, search_row, 0, 1);
+    nmt_newt_grid_set_flags(grid, search_row, NMT_NEWT_GRID_FILL_X | NMT_NEWT_GRID_EXPAND_X);
+
+    search_label = nmt_newt_label_new("");
+    nmt_newt_grid_add(search_grid, search_label, 0, 0);
+
+    search = nmt_newt_entry_new(NMT_SEARCH_ENTRY_WIDTH, 0);
+    nmt_newt_grid_add(search_grid, search, 1, 0);
+    nmt_newt_widget_set_padding(search, 1, 0, 0, 0);
+
+    priv->search = nmt_search_new(NMT_NEWT_ENTRY(search),
+                                  NMT_NEWT_LABEL(search_label),
+                                  NMT_NEWT_WIDGET(priv->listbox),
+                                  edit_search_apply,
+                                  edit_search_count,
+                                  list);
 
     buttons       = nmt_newt_button_box_new(NMT_NEWT_BUTTON_BOX_VERTICAL);
     priv->buttons = NMT_NEWT_BUTTON_BOX(buttons);
@@ -157,7 +187,7 @@ nmt_edit_connection_list_rebuild(NmtEditConnectionList *list)
     gboolean                      did_header = FALSE, did_vpn = FALSE, did_any = FALSE;
     NMEditorConnectionTypeData  **types;
     NMConnection                 *conn, *selected_conn;
-    int                           i, row, selected_row;
+    int                           i, row, selected_row, n_matches = 0;
 
     selected_row  = nmt_newt_listbox_get_active(priv->listbox);
     selected_conn = nmt_newt_listbox_get_active_key(priv->listbox);
@@ -185,17 +215,21 @@ nmt_edit_connection_list_rebuild(NmtEditConnectionList *list)
 
     if (!priv->grouped) {
         /* Just add the connections in order */
-        for (iter = priv->connections, row = 0; iter; iter = iter->next, row++) {
+        for (iter = priv->connections, row = 0; iter; iter = iter->next) {
             conn = iter->data;
+            if (!nmt_utils_filter_match(nm_connection_get_id(conn), priv->filter_text))
+                continue;
             nmt_newt_listbox_append(priv->listbox, nm_connection_get_id(conn), conn);
             if (conn == selected_conn)
                 selected_row = row;
+            row++;
+            n_matches++;
         }
         if (selected_row >= row)
             selected_row = row - 1;
         nmt_newt_listbox_set_active(priv->listbox, selected_row);
 
-        did_any = !!priv->connections;
+        did_any = n_matches > 0;
 
         goto done;
     }
@@ -220,6 +254,8 @@ nmt_edit_connection_list_rebuild(NmtEditConnectionList *list)
                 continue;
             if (!nm_connection_is_type(conn, nm_setting_get_name(setting)))
                 continue;
+            if (!nmt_utils_filter_match(nm_connection_get_id(conn), priv->filter_text))
+                continue;
 
             if (!did_header) {
                 nmt_newt_listbox_append(priv->listbox, types[i]->name, NULL);
@@ -240,6 +276,7 @@ nmt_edit_connection_list_rebuild(NmtEditConnectionList *list)
             if (conn == selected_conn)
                 selected_row = row;
             row++;
+            n_matches++;
         }
     }
 
@@ -248,6 +285,9 @@ nmt_edit_connection_list_rebuild(NmtEditConnectionList *list)
     nmt_newt_listbox_set_active(priv->listbox, selected_row);
 
 done:
+    priv->match_count = n_matches;
+    if (priv->search)
+        nmt_search_update_label(priv->search);
     nmt_newt_component_set_sensitive(NMT_NEWT_COMPONENT(priv->edit), did_any);
     nmt_newt_component_set_sensitive(NMT_NEWT_COMPONENT(priv->delete), did_any);
 }
@@ -316,6 +356,31 @@ listbox_activated(NmtNewtWidget *listbox, gpointer list)
 }
 
 static void
+edit_search_apply(gpointer list, const char *text)
+{
+    NmtEditConnectionListPrivate *priv = NMT_EDIT_CONNECTION_LIST_GET_PRIVATE(list);
+
+    if (nm_streq0(text, priv->filter_text))
+        return;
+
+    g_free(priv->filter_text);
+    priv->filter_text = g_strdup(text);
+    nmt_edit_connection_list_rebuild(list);
+}
+
+static int
+edit_search_count(gpointer list)
+{
+    return NMT_EDIT_CONNECTION_LIST_GET_PRIVATE(list)->match_count;
+}
+
+void
+nmt_edit_connection_list_bind_search(NmtEditConnectionList *list, NmtNewtForm *form)
+{
+    nmt_search_bind_form(NMT_EDIT_CONNECTION_LIST_GET_PRIVATE(list)->search, form);
+}
+
+static void
 connection_saved(GObject *conn, GAsyncResult *result, gpointer user_data)
 {
     nm_remote_connection_save_finish(NM_REMOTE_CONNECTION(conn), result, NULL);
@@ -348,6 +413,8 @@ nmt_edit_connection_list_finalize(GObject *object)
 
     free_connections(NMT_EDIT_CONNECTION_LIST(object));
     g_clear_object(&priv->extra);
+    nm_clear_pointer(&priv->search, g_free);
+    nm_clear_g_free(&priv->filter_text);
 
     G_OBJECT_CLASS(nmt_edit_connection_list_parent_class)->finalize(object);
 }

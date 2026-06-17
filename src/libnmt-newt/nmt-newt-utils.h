@@ -23,6 +23,8 @@ char *nmt_newt_locale_from_utf8(const char *str_utf8);
 
 int nmt_newt_text_width(const char *str);
 
+char *nmt_newt_text_truncate(const char *str, int max_width);
+
 void nmt_newt_message_dialog(const char *message, ...) _nm_printf(1, 2);
 int  nmt_newt_choice_dialog(const char *button1, const char *button2, const char *message, ...)
     _nm_printf(3, 4);

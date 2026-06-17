@@ -107,6 +107,8 @@ nmt_edit_main_connection_list(gboolean is_top)
     g_signal_connect(list, "edit-connection", G_CALLBACK(list_edit_connection), form);
     g_signal_connect(list, "remove-connection", G_CALLBACK(list_remove_connection), form);
 
+    nmt_edit_connection_list_bind_search(NMT_EDIT_CONNECTION_LIST(list), form);
+
     nmt_newt_form_set_content(form, list);
     return form;
 }

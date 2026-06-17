@@ -40,6 +40,10 @@ GType nmt_connect_connection_list_get_type(void);
 
 NmtNewtWidget *nmt_connect_connection_list_new(void);
 
+void nmt_connect_connection_list_set_filter_text(NmtConnectConnectionList *list, const char *text);
+
+int nmt_connect_connection_list_get_match_count(NmtConnectConnectionList *list);
+
 gboolean nmt_connect_connection_list_get_connection(NmtConnectConnectionList *list,
                                                     const char               *identifier,
                                                     NMConnection            **connection,

@@ -17,6 +17,7 @@
 
 #include "nmtui.h"
 #include "nmt-connect-connection-list.h"
+#include "nmt-utils.h"
 #include "libnmc-base/nm-client-utils.h"
 
 G_DEFINE_TYPE(NmtConnectConnectionList, nmt_connect_connection_list, NMT_TYPE_NEWT_LISTBOX)
@@ -47,6 +48,8 @@ typedef struct {
 
 typedef struct {
     GSList *nmt_devices;
+    char   *filter_text;
+    int     match_count;
 } NmtConnectConnectionListPrivate;
 
 /**
@@ -444,6 +447,13 @@ connection_find_ac(NMConnection *conn, const GPtrArray *acs)
     return NULL;
 }
 
+static gboolean
+connection_matches(NmtConnectConnection *nmtconn, const char *needle)
+{
+    return nmt_utils_filter_match(nmtconn->name, needle)
+           || nmt_utils_filter_match(nmtconn->ssid, needle);
+}
+
 static void
 nmt_connect_connection_list_rebuild(NmtConnectConnectionList *list)
 {
@@ -456,6 +466,8 @@ nmt_connect_connection_list_rebuild(NmtConnectConnectionList *list)
     GSList                          *nmt_devices, *diter, *citer;
     NmtConnectDevice                *nmtdev;
     NmtConnectConnection            *nmtconn;
+    gboolean                         did_group;
+    int                              n_matches = 0;
 
     g_slist_free_full(priv->nmt_devices, (GDestroyNotify) nmt_connect_device_free);
     priv->nmt_devices = NULL;
@@ -486,17 +498,31 @@ nmt_connect_connection_list_rebuild(NmtConnectConnectionList *list)
         }
     }
 
+    did_group = FALSE;
     for (diter = nmt_devices; diter; diter = diter->next) {
+        gboolean dev_matches = FALSE;
+
         nmtdev = diter->data;
 
-        if (nmtdev->conns) {
-            if (diter != nmt_devices)
-                nmt_newt_listbox_append(listbox, "", NULL);
-            nmt_newt_listbox_append(listbox, nmtdev->name, NULL);
+        for (citer = nmtdev->conns; citer; citer = citer->next) {
+            if (connection_matches(citer->data, priv->filter_text)) {
+                dev_matches = TRUE;
+                break;
+            }
         }
+        if (!dev_matches)
+            continue;
+
+        if (did_group)
+            nmt_newt_listbox_append(listbox, "", NULL);
+        nmt_newt_listbox_append(listbox, nmtdev->name, NULL);
+        did_group = TRUE;
 
         for (citer = nmtdev->conns; citer; citer = citer->next) {
             nmtconn = citer->data;
+
+            if (!connection_matches(nmtconn, priv->filter_text))
+                continue;
 
             if (nmtconn->conn)
                 nmtconn->active = connection_find_ac(nmtconn->conn, acs);
@@ -523,13 +549,34 @@ nmt_connect_connection_list_rebuild(NmtConnectConnectionList *list)
 
             nmt_newt_listbox_append(listbox, row, nmtconn);
             g_free(row);
+            n_matches++;
         }
     }
 
     priv->nmt_devices = nmt_devices;
+    priv->match_count = n_matches;
 
     g_object_notify(G_OBJECT(listbox), "active");
     g_object_notify(G_OBJECT(listbox), "active-key");
+}
+
+void
+nmt_connect_connection_list_set_filter_text(NmtConnectConnectionList *list, const char *text)
+{
+    NmtConnectConnectionListPrivate *priv = NMT_CONNECT_CONNECTION_LIST_GET_PRIVATE(list);
+
+    if (nm_streq0(text, priv->filter_text))
+        return;
+
+    g_free(priv->filter_text);
+    priv->filter_text = g_strdup(text);
+    nmt_connect_connection_list_rebuild(list);
+}
+
+int
+nmt_connect_connection_list_get_match_count(NmtConnectConnectionList *list)
+{
+    return NMT_CONNECT_CONNECTION_LIST_GET_PRIVATE(list)->match_count;
 }
 
 static void
@@ -567,6 +614,7 @@ nmt_connect_connection_list_finalize(GObject *object)
     NmtConnectConnectionListPrivate *priv = NMT_CONNECT_CONNECTION_LIST_GET_PRIVATE(object);
 
     g_slist_free_full(priv->nmt_devices, (GDestroyNotify) nmt_connect_device_free);
+    nm_clear_g_free(&priv->filter_text);
 
     g_signal_handlers_disconnect_by_func(nm_client,
                                          G_CALLBACK(rebuild_on_property_changed),
