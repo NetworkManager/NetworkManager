@@ -11914,6 +11914,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
             .vendor_class_identifier = vendor_class_identifier,
             .use_fqdn                = hostname_is_fqdn,
             .reject_servers          = reject_servers,
+            .user_class              = nm_setting_ip_config_get_dhcp_user_class(s_ip, NULL),
             .v4 =
                 {
                     .request_broadcast   = request_broadcast,
@@ -11951,6 +11952,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
             .mud_url         = _prop_get_connection_mud_url(self, s_con),
             .timeout         = no_lease_timeout_sec,
             .anycast_address = _device_get_dhcp_anycast_address(self),
+            .user_class      = nm_setting_ip_config_get_dhcp_user_class(s_ip, NULL),
             .v6 =
                 {
                     .enforce_duid  = enforce_duid,
