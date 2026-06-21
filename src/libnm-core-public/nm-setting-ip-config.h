@@ -379,6 +379,7 @@ char *nm_ip_routing_rule_to_string(const NMIPRoutingRule       *self,
 #define NM_SETTING_IP_CONFIG_REQUIRED_TIMEOUT       "required-timeout"
 #define NM_SETTING_IP_CONFIG_DHCP_IAID              "dhcp-iaid"
 #define NM_SETTING_IP_CONFIG_DHCP_REJECT_SERVERS    "dhcp-reject-servers"
+#define NM_SETTING_IP_CONFIG_DHCP_USER_CLASS        "dhcp-user-class"
 #define NM_SETTING_IP_CONFIG_AUTO_ROUTE_EXT_GW      "auto-route-ext-gw"
 #define NM_SETTING_IP_CONFIG_REPLACE_LOCAL_RULE     "replace-local-rule"
 #define NM_SETTING_IP_CONFIG_DHCP_SEND_RELEASE      "dhcp-send-release"
@@ -550,6 +551,16 @@ NM_AVAILABLE_IN_1_28
 void nm_setting_ip_config_remove_dhcp_reject_server(NMSettingIPConfig *setting, guint idx);
 NM_AVAILABLE_IN_1_28
 void nm_setting_ip_config_clear_dhcp_reject_servers(NMSettingIPConfig *setting);
+
+NM_AVAILABLE_IN_1_58
+const char *const *nm_setting_ip_config_get_dhcp_user_class(NMSettingIPConfig *setting,
+                                                            guint             *out_len);
+NM_AVAILABLE_IN_1_58
+void nm_setting_ip_config_add_dhcp_user_class(NMSettingIPConfig *setting, const char *user_class);
+NM_AVAILABLE_IN_1_58
+void nm_setting_ip_config_remove_dhcp_user_class(NMSettingIPConfig *setting, guint idx);
+NM_AVAILABLE_IN_1_58
+void nm_setting_ip_config_clear_dhcp_user_class(NMSettingIPConfig *setting);
 NM_AVAILABLE_IN_1_42
 NMTernary nm_setting_ip_config_get_auto_route_ext_gw(NMSettingIPConfig *setting);
 NM_AVAILABLE_IN_1_44

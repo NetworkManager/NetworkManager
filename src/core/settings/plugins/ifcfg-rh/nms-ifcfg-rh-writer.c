@@ -3627,6 +3627,28 @@ do_write_construct(NMConnection                   *connection,
                                   FALSE);
             return FALSE;
         }
+        if (nm_setting_ip_config_get_dhcp_user_class(s_ip4, NULL)[0]) {
+            set_error_unsupported(error,
+                                  connection,
+                                  NM_SETTING_IP4_CONFIG_SETTING_NAME
+                                  "." NM_SETTING_IP_CONFIG_DHCP_USER_CLASS,
+                                  FALSE);
+            return FALSE;
+        }
+    }
+
+    {
+        NMSettingIPConfig *s_ip6_unsup;
+
+        s_ip6_unsup = NM_SETTING_IP_CONFIG(nm_connection_get_setting_ip6_config(connection));
+        if (s_ip6_unsup && nm_setting_ip_config_get_dhcp_user_class(s_ip6_unsup, NULL)[0]) {
+            set_error_unsupported(error,
+                                  connection,
+                                  NM_SETTING_IP6_CONFIG_SETTING_NAME
+                                  "." NM_SETTING_IP_CONFIG_DHCP_USER_CLASS,
+                                  FALSE);
+            return FALSE;
+        }
     }
 
     write_ip4_setting(connection,

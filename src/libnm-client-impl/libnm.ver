@@ -2131,6 +2131,10 @@ global:
 	nm_setting_geneve_new;
 	nm_setting_ip4_config_clat_get_type;
 	nm_setting_ip4_config_get_clat;
+	nm_setting_ip_config_add_dhcp_user_class;
+	nm_setting_ip_config_clear_dhcp_user_class;
+	nm_setting_ip_config_get_dhcp_user_class;
+	nm_setting_ip_config_remove_dhcp_user_class;
 	nm_utils_wifi_6ghz_freqs;
 	nm_utils_wifi_freq_to_band;
 	nm_wifi_band_get_type;

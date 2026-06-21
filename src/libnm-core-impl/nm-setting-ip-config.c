@@ -4004,6 +4004,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingIPConfig,
                              PROP_REQUIRED_TIMEOUT,
                              PROP_DHCP_IAID,
                              PROP_DHCP_REJECT_SERVERS,
+                             PROP_DHCP_USER_CLASS,
                              PROP_AUTO_ROUTE_EXT_GW,
                              PROP_REPLACE_LOCAL_RULE,
                              PROP_DHCP_SEND_RELEASE,
@@ -5481,6 +5482,88 @@ nm_setting_ip_config_clear_dhcp_reject_servers(NMSettingIPConfig *setting)
 }
 
 /**
+ * nm_setting_ip_config_get_dhcp_user_class:
+ * @setting: the #NMSettingIPConfig
+ * @out_len: (out) (optional): the number of returned elements
+ *
+ * Returns: (array length=out_len zero-terminated=1) (transfer none):
+ *   A %NULL terminated array of DHCP user class strings. Even if no user
+ *   classes are configured, this always returns a non %NULL value.
+ *
+ * Since: 1.58
+ */
+const char *const *
+nm_setting_ip_config_get_dhcp_user_class(NMSettingIPConfig *setting, guint *out_len)
+{
+    g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), NULL);
+
+    return nm_strvarray_get_strv_notnull(
+        NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->dhcp_user_class.arr,
+        out_len);
+}
+
+/**
+ * nm_setting_ip_config_add_dhcp_user_class:
+ * @setting: the #NMSettingIPConfig
+ * @user_class: the DHCP user class to add
+ *
+ * Adds a new DHCP user class string to the setting.
+ *
+ * Since: 1.58
+ **/
+void
+nm_setting_ip_config_add_dhcp_user_class(NMSettingIPConfig *setting, const char *user_class)
+{
+    g_return_if_fail(NM_IS_SETTING_IP_CONFIG(setting));
+    g_return_if_fail(user_class);
+
+    nm_strvarray_ensure_and_add(&NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->dhcp_user_class.arr,
+                                user_class);
+    _notify(setting, PROP_DHCP_USER_CLASS);
+}
+
+/**
+ * nm_setting_ip_config_remove_dhcp_user_class:
+ * @setting: the #NMSettingIPConfig
+ * @idx: index number of the DHCP user class
+ *
+ * Removes the DHCP user class at index @idx.
+ *
+ * Since: 1.58
+ **/
+void
+nm_setting_ip_config_remove_dhcp_user_class(NMSettingIPConfig *setting, guint idx)
+{
+    NMSettingIPConfigPrivate *priv;
+
+    g_return_if_fail(NM_IS_SETTING_IP_CONFIG(setting));
+
+    priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
+
+    g_return_if_fail(idx < nm_g_array_len(priv->dhcp_user_class.arr));
+
+    nm_strvarray_remove_index(priv->dhcp_user_class.arr, idx);
+    _notify(setting, PROP_DHCP_USER_CLASS);
+}
+
+/**
+ * nm_setting_ip_config_clear_dhcp_user_class:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Removes all configured DHCP user classes.
+ *
+ * Since: 1.58
+ **/
+void
+nm_setting_ip_config_clear_dhcp_user_class(NMSettingIPConfig *setting)
+{
+    g_return_if_fail(NM_IS_SETTING_IP_CONFIG(setting));
+
+    if (nm_strvarray_clear(&NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->dhcp_user_class.arr))
+        _notify(setting, PROP_DHCP_USER_CLASS);
+}
+
+/**
  * nm_setting_ip_config_get_auto_route_ext_gw:
  * @setting: the #NMSettingIPConfig
  *
@@ -5906,6 +5989,67 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                                NM_SETTING_IP_CONFIG_DHCP_REJECT_SERVERS);
                 return FALSE;
             }
+        }
+    }
+
+    /* Validate user class.
+     * On the wire, each user class string is prefixed by a length field:
+     * 1 byte for DHCPv4 (RFC 3004), 2 bytes for DHCPv6 (RFC 8415).
+     * The maximum for a single string and for the total option payload
+     * is determined by the length field width. */
+    if (priv->dhcp_user_class.arr && priv->dhcp_user_class.arr->len > 0) {
+        const gboolean is_IPv4       = NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting) == AF_INET;
+        const gsize    uc_len_max    = is_IPv4 ? G_MAXUINT8 : G_MAXUINT16;
+        const gsize    uc_prefix_len = is_IPv4 ? 1u : 2u;
+        gsize          uc_total      = 0;
+
+        for (i = 0; i < priv->dhcp_user_class.arr->len; i++) {
+            const char *uc = nm_g_array_index(priv->dhcp_user_class.arr, const char *, i);
+            gsize       uc_len;
+
+            if (!uc || uc[0] == '\0') {
+                g_set_error_literal(error,
+                                    NM_CONNECTION_ERROR,
+                                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                    _("user class cannot be empty"));
+                g_prefix_error(error,
+                               "%s.%s: ",
+                               nm_setting_get_name(setting),
+                               NM_SETTING_IP_CONFIG_DHCP_USER_CLASS);
+                return FALSE;
+            }
+
+            uc_len = strlen(uc);
+
+            if (uc_len > uc_len_max) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("user class '%s' is too long (max %zu bytes)"),
+                            uc,
+                            uc_len_max);
+                g_prefix_error(error,
+                               "%s.%s: ",
+                               nm_setting_get_name(setting),
+                               NM_SETTING_IP_CONFIG_DHCP_USER_CLASS);
+                return FALSE;
+            }
+
+            uc_total += uc_prefix_len + uc_len;
+        }
+
+        if (uc_total > uc_len_max) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("user class option data is too long (%zu bytes, max %zu)"),
+                        uc_total,
+                        uc_len_max);
+            g_prefix_error(error,
+                           "%s.%s: ",
+                           nm_setting_get_name(setting),
+                           NM_SETTING_IP_CONFIG_DHCP_USER_CLASS);
+            return FALSE;
         }
     }
 
@@ -6380,6 +6524,13 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
                                      NM_STRUCT_OFFSET_ENSURE_TYPE(NMValueStrv,
                                                                   NMSettingIPConfigPrivate,
                                                                   dhcp_reject_servers));
+
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_DHCP_USER_CLASS],
+        &nm_sett_info_propert_type_direct_strv,
+        .direct_offset =
+            NM_STRUCT_OFFSET_ENSURE_TYPE(NMValueStrv, NMSettingIPConfigPrivate, dhcp_user_class));
 
     _nm_properties_override_gobj(
         properties_override,
@@ -7114,6 +7265,24 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      **/
     obj_properties[PROP_DHCP_REJECT_SERVERS] =
         g_param_spec_boxed(NM_SETTING_IP_CONFIG_DHCP_REJECT_SERVERS,
+                           "",
+                           "",
+                           G_TYPE_STRV,
+                           G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
+
+    /**
+     * NMSettingIPConfig:dhcp-user-class:
+     *
+     * Array of User Class strings to send to the DHCP server (RFC 3004
+     * for DHCPv4, RFC 8415 section 21.16 for DHCPv6). The User Class
+     * option allows grouping of clients to provide differentiated
+     * services (e.g. different IP address ranges or configuration
+     * parameters).
+     *
+     * Since: 1.58
+     **/
+    obj_properties[PROP_DHCP_USER_CLASS] =
+        g_param_spec_boxed(NM_SETTING_IP_CONFIG_DHCP_USER_CLASS,
                            "",
                            "",
                            G_TYPE_STRV,
