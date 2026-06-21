@@ -2138,6 +2138,10 @@ global:
 
 libnm_1_60_0 {
 global:
+	nm_setting_ip_config_add_dhcp_user_class;
+	nm_setting_ip_config_clear_dhcp_user_class;
+	nm_setting_ip_config_get_dhcp_user_class;
+	nm_setting_ip_config_remove_dhcp_user_class;
 	nm_setting_wifi_p2p_get_wps_pin;
 	nm_setting_wifi_p2p_get_wps_pin_flags;
 } libnm_1_58_0;

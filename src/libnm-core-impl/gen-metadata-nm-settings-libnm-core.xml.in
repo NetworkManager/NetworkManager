@@ -1736,6 +1736,10 @@
                   dbus-type="i"
                   gprop-type="gint"
                   />
+        <property name="dhcp-user-class"
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
         <property name="dhcp-vendor-class-identifier"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -1898,6 +1902,10 @@
         <property name="dhcp-timeout"
                   dbus-type="i"
                   gprop-type="gint"
+                  />
+        <property name="dhcp-user-class"
+                  dbus-type="as"
+                  gprop-type="GStrv"
                   />
         <property name="dns"
                   dbus-type="aay"

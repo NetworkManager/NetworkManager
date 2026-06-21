@@ -181,6 +181,7 @@ struct _NMSettingIPConfigClass {
 typedef struct {
     NMValueStrv dns_search; /* array of domain name strings */
     NMValueStrv dhcp_reject_servers;
+    NMValueStrv dhcp_user_class;
     NMValueStrv dns_options; /* array of DNS options */
     GPtrArray  *dns;         /* array of IP address strings */
     GPtrArray  *addresses;   /* array of NMIPAddress */
