@@ -3669,6 +3669,31 @@ _multilist_remove_by_value_fcn_ip_config_dhcp_reject_servers(NMSettingIPConfig *
     return TRUE;
 }
 
+static guint
+_multilist_get_num_fcn_ip_config_dhcp_user_class(NMSettingIPConfig *setting)
+{
+    guint num;
+
+    nm_setting_ip_config_get_dhcp_user_class(setting, &num);
+
+    return num;
+}
+
+static gboolean
+_multilist_remove_by_value_fcn_ip_config_dhcp_user_class(NMSettingIPConfig *setting,
+                                                         const char        *item)
+{
+    const char *const *strv;
+    guint              num;
+    gssize             idx;
+
+    strv = nm_setting_ip_config_get_dhcp_user_class(setting, &num);
+    idx  = nm_strv_find_first(strv, num, item);
+    if (idx >= 0)
+        nm_setting_ip_config_remove_dhcp_user_class(setting, idx);
+    return TRUE;
+}
+
 static gconstpointer
 _get_fcn_olpc_mesh_ssid(ARGS_GET_FCN)
 {
@@ -6677,6 +6702,18 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
             .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_IPV4,
         ),
     ),
+    PROPERTY_INFO (NM_SETTING_IP_CONFIG_DHCP_USER_CLASS, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DHCP_USER_CLASS,
+        .property_type =                &_pt_multilist,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+            PROPERTY_TYP_DATA_SUBTYPE (multilist,
+                .get_num_fcn_u =        MULTILIST_GET_NUM_FCN_U       (NMSettingIPConfig, _multilist_get_num_fcn_ip_config_dhcp_user_class),
+                .add2_fcn =             MULTILIST_ADD2_FCN            (NMSettingIPConfig, nm_setting_ip_config_add_dhcp_user_class),
+                .remove_by_idx_fcn_u =  MULTILIST_REMOVE_BY_IDX_FCN_U (NMSettingIPConfig, nm_setting_ip_config_remove_dhcp_user_class),
+                .remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingIPConfig, _multilist_remove_by_value_fcn_ip_config_dhcp_user_class),
+            ),
+            .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_STRING,
+        ),
+    ),
     PROPERTY_INFO (NM_SETTING_IP_CONFIG_AUTO_ROUTE_EXT_GW, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_AUTO_ROUTE_EXT_GW,
         .property_type =                &_pt_gobject_ternary,
     ),
@@ -7008,6 +7045,18 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
                 .get_gtype =            nm_dhcp_hostname_flags_get_type,
             ),
         )
+    ),
+    PROPERTY_INFO (NM_SETTING_IP_CONFIG_DHCP_USER_CLASS, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_DHCP_USER_CLASS,
+        .property_type =                &_pt_multilist,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+            PROPERTY_TYP_DATA_SUBTYPE (multilist,
+                .get_num_fcn_u =        MULTILIST_GET_NUM_FCN_U       (NMSettingIPConfig, _multilist_get_num_fcn_ip_config_dhcp_user_class),
+                .add2_fcn =             MULTILIST_ADD2_FCN            (NMSettingIPConfig, nm_setting_ip_config_add_dhcp_user_class),
+                .remove_by_idx_fcn_u =  MULTILIST_REMOVE_BY_IDX_FCN_U (NMSettingIPConfig, nm_setting_ip_config_remove_dhcp_user_class),
+                .remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingIPConfig, _multilist_remove_by_value_fcn_ip_config_dhcp_user_class),
+            ),
+            .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_STRING,
+        ),
     ),
     PROPERTY_INFO (NM_SETTING_IP_CONFIG_AUTO_ROUTE_EXT_GW, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_AUTO_ROUTE_EXT_GW,
         .property_type =                &_pt_gobject_ternary,
