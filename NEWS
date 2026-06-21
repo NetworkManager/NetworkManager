@@ -12,6 +12,8 @@ Core:
 * Flush systemd-resolved caches after updating the DNS configuration.
 * Improve the error message returned when a connection activation
   fails because no compatible device is found.
+* Add "ipv4.dhcp-user-class" and "ipv6.dhcp-user-class" properties to send
+  the DHCP User Class option (RFC 3004 for DHCPv4, RFC 8415 for DHCPv6).
 
 initrd:
 * Add the "rd.net.timeout.ip-required" kernel command line argument

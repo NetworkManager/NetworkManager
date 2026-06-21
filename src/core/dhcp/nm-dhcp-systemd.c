@@ -394,6 +394,15 @@ ip6_start(NMDhcpClient *client, const struct in6_addr *ll_addr, GError **error)
         }
     }
 
+    if (client_config->user_class && client_config->user_class[0]) {
+        r = sd_dhcp6_client_set_request_user_class(sd_client,
+                                                   (char *const *) client_config->user_class);
+        if (r < 0) {
+            nm_utils_error_set_errno(error, r, "failed to set user class: %s");
+            return FALSE;
+        }
+    }
+
     prefix_delegation = FALSE;
     if (client_config->v6.needed_prefixes > 0) {
         if (client_config->v6.needed_prefixes > 1) {

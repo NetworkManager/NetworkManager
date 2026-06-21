@@ -1516,6 +1516,38 @@ ip4_start(NMDhcpClient *client, GError **error)
         }
     }
 
+    if (client_config->user_class && client_config->user_class[0]) {
+        gs_free uint8_t *buf     = NULL;
+        gsize            buf_len = 0;
+
+        /* RFC 3004: User Class is a sequence of (1-byte length, data) pairs.
+         * verify() already ensures the total encoded size fits in 255 bytes. */
+        for (i = 0; client_config->user_class[i]; i++)
+            buf_len += 1 + strlen(client_config->user_class[i]);
+
+        nm_assert(buf_len <= 255);
+
+        buf = g_malloc(buf_len);
+
+        buf_len = 0;
+        for (i = 0; client_config->user_class[i]; i++) {
+            gsize uc_len = strlen(client_config->user_class[i]);
+
+            buf[buf_len++] = (uint8_t) uc_len;
+            memcpy(&buf[buf_len], client_config->user_class[i], uc_len);
+            buf_len += uc_len;
+        }
+
+        r = n_dhcp4_client_probe_config_append_option(config,
+                                                      NM_DHCP_OPTION_DHCP4_USER_CLASS,
+                                                      buf,
+                                                      buf_len);
+        if (r) {
+            set_error_nettools(error, r, "failed to set user class");
+            return FALSE;
+        }
+    }
+
     g_free(priv->lease_file);
     priv->lease_file = g_steal_pointer(&lease_file);
 

@@ -1898,6 +1898,7 @@ config_init(NMDhcpClientConfig *config, const NMDhcpClientConfig *src)
     config->mud_url         = g_strdup(config->mud_url);
 
     config->reject_servers = nm_strv_dup_packed(config->reject_servers, -1);
+    config->user_class     = nm_strv_dup_packed(config->user_class, -1);
 
     if (NM_IS_IPv4(config->addr_family))
         config->v4.last_address = g_strdup(config->v4.last_address);
@@ -1960,6 +1961,7 @@ config_clear(NMDhcpClientConfig *config)
     nm_clear_g_free((gpointer *) &config->hostname);
     nm_clear_g_free((gpointer *) &config->mud_url);
     nm_clear_g_free((gpointer *) &config->reject_servers);
+    nm_clear_g_free((gpointer *) &config->user_class);
 
     if (config->addr_family == AF_INET) {
         nm_clear_g_free((gpointer *) &config->v4.last_address);
