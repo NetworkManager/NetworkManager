@@ -141,6 +141,9 @@ typedef struct {
     /* A list of servers from which offers should be rejected */
     const char *const *reject_servers;
 
+    /* User Class strings to send (RFC 3004 for DHCPv4, RFC 8415 for DHCPv6) */
+    const char *const *user_class;
+
     /* The client identifier (DHCPv4) or DUID (DHCPv6) to send */
     GBytes *client_id;
 

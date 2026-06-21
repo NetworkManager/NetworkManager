@@ -11844,6 +11844,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
         gs_unref_bytes GBytes *client_id               = NULL;
         gs_unref_bytes GBytes *vendor_class_identifier = NULL;
         const char *const     *reject_servers;
+        const char *const     *user_class;
         const char            *hostname;
         gboolean               hostname_is_fqdn;
         gboolean               send_client_id;
@@ -11858,6 +11859,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
         vendor_class_identifier =
             _prop_get_ipv4_dhcp_vendor_class_identifier(self, NM_SETTING_IP4_CONFIG(s_ip));
         reject_servers = nm_setting_ip_config_get_dhcp_reject_servers(s_ip, NULL);
+        user_class     = nm_setting_ip_config_get_dhcp_user_class(s_ip, NULL);
 
         bcast_hwaddr = nmp_link_address_get_as_bytes(&pllink->l_broadcast);
 
@@ -11900,6 +11902,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
             .vendor_class_identifier = vendor_class_identifier,
             .use_fqdn                = hostname_is_fqdn,
             .reject_servers          = reject_servers,
+            .user_class              = user_class,
             .v4 =
                 {
                     .request_broadcast   = request_broadcast,
@@ -11937,6 +11940,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
             .mud_url         = _prop_get_connection_mud_url(self, s_con),
             .timeout         = no_lease_timeout_sec,
             .anycast_address = _device_get_dhcp_anycast_address(self),
+            .user_class      = nm_setting_ip_config_get_dhcp_user_class(s_ip, NULL),
             .v6 =
                 {
                     .enforce_duid  = enforce_duid,

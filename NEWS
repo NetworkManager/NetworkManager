@@ -56,6 +56,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   and only prompt for new secrets during the last authentication attempt before
   failing.
 * Add support for GENEVE interface.
+* Add ipv4.dhcp-user-class and ipv6.dhcp-user-class properties to send
+  DHCP User Class option (RFC 3004 for DHCPv4, RFC 8415 for DHCPv6).
 * The DHCPv4 internal client now ignores option 3 (Router) if the lease
   contains option 121 (Classless Static Route), as recommended by RFC 3442.
 * Allow persisting the managed state across reboots from nmcli and the D-Bus API.
