@@ -1496,6 +1496,9 @@
         <property name="dhcp-reject-servers"
                   nmcli-description="Array of servers from which DHCP offers must be rejected. This property is useful to avoid getting a lease from misconfigured or rogue servers. For DHCPv4, each element must be an IPv4 address, optionally followed by a slash and a prefix length (e.g. &quot;192.168.122.0/24&quot;). This property is currently not implemented for DHCPv6."
                   format="list of IPv4 addresses" />
+        <property name="dhcp-user-class"
+                  nmcli-description="Array of User Class strings to send to the DHCP server (RFC 3004 for DHCPv4, RFC 8415 section 21.16 for DHCPv6). The User Class option allows grouping of clients to provide differentiated services (e.g. different IP address ranges or configuration parameters)."
+                  format="list of strings" />
         <property name="auto-route-ext-gw"
                   nmcli-description="VPN connections will default to add the route automatically unless this setting is set to FALSE. For other connection types, adding such an automatic route is currently not supported and setting this to TRUE has no effect."
                   format="ternary"
@@ -1638,6 +1641,9 @@
                   nmcli-description="Flags for the DHCP hostname and FQDN. Currently, this property only includes flags to control the FQDN flags set in the DHCP FQDN option. Supported FQDN flags are &quot;fqdn-serv-update&quot; (0x1), &quot;fqdn-encoded&quot; (0x2) and &quot;fqdn-no-update&quot; (0x4).  When no FQDN flag is set and &quot;fqdn-clear-flags&quot; (0x8) is set, the DHCP FQDN option will contain no flag. Otherwise, if no FQDN flag is set and &quot;fqdn-clear-flags&quot; (0x8) is not set, the standard FQDN flags are set in the request: &quot;fqdn-serv-update&quot; (0x1), &quot;fqdn-encoded&quot; (0x2) for IPv4 and &quot;fqdn-serv-update&quot; (0x1) for IPv6. When this property is set to the default value &quot;none&quot; (0x0), a global default is looked up in NetworkManager configuration. If that value is unset or also &quot;none&quot; (0x0), then the standard FQDN flags described above are sent in the DHCP requests."
                   format="flags (NMDhcpHostnameFlags)"
                   values="none (0x0), fqdn-serv-update (0x1), fqdn-encoded (0x2), fqdn-no-update (0x4), fqdn-clear-flags (0x8)" />
+        <property name="dhcp-user-class"
+                  nmcli-description="Array of User Class strings to send to the DHCP server (RFC 3004 for DHCPv4, RFC 8415 section 21.16 for DHCPv6). The User Class option allows grouping of clients to provide differentiated services (e.g. different IP address ranges or configuration parameters)."
+                  format="list of strings" />
         <property name="auto-route-ext-gw"
                   nmcli-description="VPN connections will default to add the route automatically unless this setting is set to FALSE. For other connection types, adding such an automatic route is currently not supported and setting this to TRUE has no effect."
                   format="ternary"
