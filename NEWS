@@ -8,6 +8,9 @@ subject to change and not guaranteed to be compatible with
 the later release.
 USE AT YOUR OWN RISK. NOT RECOMMENDED FOR PRODUCTION USE!
 
+Core:
+* Add "ipv4.dhcp-user-class" and "ipv6.dhcp-user-class" properties to send
+  the DHCP User Class option (RFC 3004 for DHCPv4, RFC 8415 for DHCPv6).
 
 =============================================
 NetworkManager-1.58
