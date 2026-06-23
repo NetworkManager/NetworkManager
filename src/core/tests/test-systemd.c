@@ -83,6 +83,42 @@ test_sd_event(void)
 
 /*****************************************************************************/
 
+static void
+test_http_url_is_valid_https(void)
+{
+    /* CVE-2026-10805: connection.mud-url is pasted verbatim into the dhclient
+     * config inside a quoted string ("send mudurl \"%s\";"). This function
+     * gates the property at verify() time, so it must reject characters that
+     * break out of the quotes or inject config syntax. */
+#define _assert_valid(url)   g_assert(nm_sd_http_url_is_valid_https("" url))
+#define _assert_invalid(url) g_assert(!nm_sd_http_url_is_valid_https("" url))
+
+    _assert_valid("https://example.com/mud.json");
+    _assert_valid("https://example.com");
+    _assert_valid("https://example.com/a?b=c&d=e#frag");
+    _assert_valid("https://[2001:db8::1]/x");
+    _assert_valid("https://user@example.com/~p/(a)*,;=+!$'");
+    _assert_valid("https://user:pass@example.com/p%20q?x=%2F");
+
+    _assert_invalid("http://example.com");
+    _assert_invalid("ftp://example.com");
+    _assert_invalid("example.com");
+    _assert_invalid("");
+    _assert_invalid("https://");
+
+    _assert_invalid("https://example.com/\""); /* breaks out of the quoted string */
+    _assert_invalid("https://example.com/\\"); /* escapes the following char */
+    _assert_invalid("https://example.com/\n");
+    _assert_invalid("https://example.com/\t");
+    _assert_invalid("https://example.com/a\x01b");
+    _assert_invalid("https://example.com/\xc3\xa4"); /* non-ASCII */
+
+#undef _assert_valid
+#undef _assert_invalid
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -91,6 +127,7 @@ main(int argc, char **argv)
     nmtst_init(&argc, &argv, TRUE);
 
     g_test_add_func("/systemd/sd-event", test_sd_event);
+    g_test_add_func("/systemd/http-url-is-valid-https", test_http_url_is_valid_https);
 
     return g_test_run();
 }
