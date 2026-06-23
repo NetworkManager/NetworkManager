@@ -1,4 +1,12 @@
 =============================================
+NetworkManager-1.56.2
+Overview of changes since NetworkManager-1.56
+=============================================
+* Validate hostnames and MUD URLs before pasting them into the dhclient
+  configuration file, rejecting characters that could alter the config
+  syntax (CVE-2026-10805).
+
+=============================================
 NetworkManager-1.56.1
 Overview of changes since NetworkManager-1.56
 =============================================
