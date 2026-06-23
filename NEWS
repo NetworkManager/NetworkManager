@@ -75,6 +75,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   vim-style "/" search that filters the list to matching entries as you type.
 * nmtui now redraws its forms when the terminal is resized, instead of leaving
   them off-center or clipped until the form is reopened.
+* Validate hostnames and MUD URLs before pasting them into the dhclient
+  configuration file, rejecting characters that could alter the config
+  syntax (CVE-2026-10805).
 
 =============================================
 NetworkManager-1.56
