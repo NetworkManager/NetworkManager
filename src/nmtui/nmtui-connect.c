@@ -376,19 +376,17 @@ active_wifi_devices(void)
     active_wifi_devices = g_ptr_array_new_with_free_func(g_object_unref);
 
     for (guint i = 0; i < devices->len; i++) {
-        NMDevice              *dev      = g_ptr_array_index((GPtrArray *) devices, i);
-        NMDeviceInterfaceFlags devflags = nm_device_get_interface_flags(dev);
+        NMDevice *dev = g_ptr_array_index((GPtrArray *) devices, i);
 
-        if ((devflags & NM_DEVICE_INTERFACE_FLAG_UP) == 0)
+        if (!NM_IS_DEVICE_WIFI(dev))
+            continue;
+        if (NM_IN_SET(nm_device_get_state(dev),
+                      NM_DEVICE_STATE_UNAVAILABLE,
+                      NM_DEVICE_STATE_UNMANAGED,
+                      NM_DEVICE_STATE_FAILED))
             continue;
 
-        if (NM_IS_DEVICE_WIFI(dev)
-            && !NM_IN_SET(nm_device_get_state(dev),
-                          NM_DEVICE_STATE_UNAVAILABLE,
-                          NM_DEVICE_STATE_UNMANAGED,
-                          NM_DEVICE_STATE_FAILED)) {
-            g_ptr_array_add(active_wifi_devices, g_object_ref(dev));
-        }
+        g_ptr_array_add(active_wifi_devices, g_object_ref(dev));
     }
     return active_wifi_devices;
 }
