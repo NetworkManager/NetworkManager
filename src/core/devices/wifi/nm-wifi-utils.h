@@ -42,6 +42,8 @@ gboolean nm_wifi_utils_complete_connection(GBytes       *ssid,
 
 gboolean nm_wifi_utils_is_manf_default_ssid(GBytes *ssid);
 
+gboolean nm_wifi_utils_wps_key_to_psk(const guint8 *key, gsize key_len, char (*out_psk)[65]);
+
 gboolean nm_wifi_connection_get_iwd_ssid_and_security(NMConnection         *connection,
                                                       char                **ssid,
                                                       NMIwdNetworkSecurity *security);

@@ -890,6 +890,28 @@ nm_wifi_utils_is_manf_default_ssid(GBytes *ssid)
     return FALSE;
 }
 
+/* Convert a WPS "Key" credential into a PSK string. The key is either an
+ * 8..63 character passphrase or a 64 character hexadecimal PSK. The actual
+ * WPA-PSK validity check is shared with nm_utils_wpa_psk_valid(). */
+gboolean
+nm_wifi_utils_wps_key_to_psk(const guint8 *key, gsize key_len, char (*out_psk)[65])
+{
+    if (key_len > 64)
+        return FALSE;
+    if (key_len < 64 && !g_utf8_validate((const char *) key, key_len, NULL))
+        return FALSE;
+
+    memcpy(*out_psk, key, key_len);
+    (*out_psk)[key_len] = '\0';
+
+    /* An embedded NUL would make nm_utils_wpa_psk_valid() see a truncated
+     * string, so reject it explicitly. */
+    if (strlen(*out_psk) != key_len)
+        return FALSE;
+
+    return nm_utils_wpa_psk_valid(*out_psk);
+}
+
 /* To be used for connections where the SSID has been validated before */
 gboolean
 nm_wifi_connection_get_iwd_ssid_and_security(NMConnection         *connection,
