@@ -77,6 +77,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   them off-center or clipped until the form is reopened.
 * The "Activate a connection" screen in nmtui now has a "Rescan Wi-Fi" button
   that scans for nearby Wi-Fi networks on demand.
+* Validate hostnames and MUD URLs before pasting them into the dhclient
+  configuration file, rejecting characters that could alter the config
+  syntax (CVE-2026-10805).
 
 =============================================
 NetworkManager-1.56
