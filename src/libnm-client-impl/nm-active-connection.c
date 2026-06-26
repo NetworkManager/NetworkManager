@@ -383,7 +383,7 @@ nm_active_connection_get_vpn(NMActiveConnection *connection)
  *
  * Gets the controller #NMDevice of the connection.
  *
- * Returns: (transfer none): the controller #NMDevice of the #NMActiveConnection.
+ * Returns: (type NMDevice) (transfer none): the controller #NMDevice of the #NMActiveConnection.
  *
  * Deprecated: 1.44: Use nm_active_connection_get_controller() instead.
  **/
@@ -400,7 +400,7 @@ nm_active_connection_get_master(NMActiveConnection *connection)
  * Gets the controller #NMDevice of the connection. This replaces the
  * deprecated nm_active_connection_get_master() method.
  *
- * Returns: (transfer none): the controller #NMDevice of the #NMActiveConnection.
+ * Returns: (type NMDevice) (transfer none): the controller #NMDevice of the #NMActiveConnection.
  *
  * Since: 1.44
  **/

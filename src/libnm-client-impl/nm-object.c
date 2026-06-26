@@ -98,7 +98,7 @@ nm_object_get_path(NMObject *object)
  * this returns %NULL. So it can be used to check whether the
  * object is still alive.
  *
- * Returns: (transfer none): the #NMClient cache in which the
+ * Returns: (type NMClient) (transfer none): the #NMClient cache in which the
  * object can be found, or %NULL if the object is no longer
  * cached.
  *
