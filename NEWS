@@ -94,6 +94,10 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * nmcli "device wifi show-password" no longer prints a QR code when the
   Wi-Fi password cannot be read (for example, without root privileges); it
   prints a warning instead.
+* Fix stale global connectivity state with connectivity checking enabled:
+  NetworkManager could report limited connectivity while another device had full
+  connectivity, or keep reporting limited after a device regained internet
+  access.
 
 =============================================
 NetworkManager-1.56
