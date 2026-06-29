@@ -1124,7 +1124,8 @@ nm_ndisc_set_config(NMNDisc *ndisc, const NML3ConfigData *l3cd)
     const NMPObject   *obj;
     guint              len;
     guint              i;
-    gint32             fake_now = NM_NDISC_EXPIRY_BASE_TIMESTAMP / 1000;
+    gint64             now_msec = nm_utils_get_monotonic_timestamp_msec();
+    gint32             now      = now_msec / 1000;
 
     nm_assert(NM_IS_NDISC(ndisc));
     nm_assert(nm_ndisc_get_node_type(ndisc) == NM_NDISC_NODE_TYPE_ROUTER);
@@ -1147,16 +1148,15 @@ nm_ndisc_set_config(NMNDisc *ndisc, const NML3ConfigData *l3cd)
         lifetime = nmp_utils_lifetime_get(addr->timestamp,
                                           addr->lifetime,
                                           addr->preferred,
-                                          &fake_now,
+                                          &now,
                                           &preferred);
         if (!lifetime)
             continue;
 
         a = (NMNDiscAddress) {
-            .address     = addr->address,
-            .expiry_msec = _nm_ndisc_lifetime_to_expiry(NM_NDISC_EXPIRY_BASE_TIMESTAMP, lifetime),
-            .expiry_preferred_msec =
-                _nm_ndisc_lifetime_to_expiry(NM_NDISC_EXPIRY_BASE_TIMESTAMP, preferred),
+            .address               = addr->address,
+            .expiry_msec           = _nm_ndisc_lifetime_to_expiry(now_msec, lifetime),
+            .expiry_preferred_msec = _nm_ndisc_lifetime_to_expiry(now_msec, preferred),
         };
 
         if (nm_ndisc_add_address(ndisc, &a, 0, FALSE))
@@ -1176,8 +1176,7 @@ nm_ndisc_set_config(NMNDisc *ndisc, const NML3ConfigData *l3cd)
 
         n = (NMNDiscDNSServer) {
             .address     = a.addr6,
-            .expiry_msec = _nm_ndisc_lifetime_to_expiry(NM_NDISC_EXPIRY_BASE_TIMESTAMP,
-                                                        NM_NDISC_ROUTER_LIFETIME),
+            .expiry_msec = _nm_ndisc_lifetime_to_expiry(now_msec, NM_NDISC_ROUTER_LIFETIME),
         };
         if (nm_ndisc_add_dns_server(ndisc, &n, G_MININT64))
             changed = TRUE;
@@ -1192,8 +1191,7 @@ nm_ndisc_set_config(NMNDisc *ndisc, const NML3ConfigData *l3cd)
 
         n = (NMNDiscDNSDomain) {
             .domain      = (char *) strvarr[i],
-            .expiry_msec = _nm_ndisc_lifetime_to_expiry(NM_NDISC_EXPIRY_BASE_TIMESTAMP,
-                                                        NM_NDISC_ROUTER_LIFETIME),
+            .expiry_msec = _nm_ndisc_lifetime_to_expiry(now_msec, NM_NDISC_ROUTER_LIFETIME),
         };
         if (nm_ndisc_add_dns_domain(ndisc, &n, G_MININT64))
             changed = TRUE;

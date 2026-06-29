@@ -487,7 +487,8 @@ send_ra(NMNDisc *ndisc, GError **error)
     struct in6_addr         *addr;
     struct ndp_msg          *msg;
     guint                    i;
-    nm_auto_str_buf NMStrBuf sbuf = NM_STR_BUF_INIT(0, FALSE);
+    nm_auto_str_buf NMStrBuf sbuf     = NM_STR_BUF_INIT(0, FALSE);
+    gint64                   now_msec = nm_utils_get_monotonic_timestamp_msec();
 
     errsv = ndp_msg_new(&msg, NDP_MSG_RA);
     if (errsv) {
@@ -531,13 +532,9 @@ send_ra(NMNDisc *ndisc, GError **error)
         prefix->nd_opt_pi_flags_reserved |= ND_OPT_PI_FLAG_ONLINK;
         prefix->nd_opt_pi_flags_reserved |= ND_OPT_PI_FLAG_AUTO;
         prefix->nd_opt_pi_valid_time =
-            htonl(_nm_ndisc_lifetime_from_expiry(NM_NDISC_EXPIRY_BASE_TIMESTAMP,
-                                                 address->expiry_msec,
-                                                 TRUE));
+            htonl(_nm_ndisc_lifetime_from_expiry(now_msec, address->expiry_msec, TRUE));
         prefix->nd_opt_pi_preferred_time =
-            htonl(_nm_ndisc_lifetime_from_expiry(NM_NDISC_EXPIRY_BASE_TIMESTAMP,
-                                                 address->expiry_preferred_msec,
-                                                 TRUE));
+            htonl(_nm_ndisc_lifetime_from_expiry(now_msec, address->expiry_preferred_msec, TRUE));
         prefix->nd_opt_pi_prefix.s6_addr32[0] = address->address.s6_addr32[0];
         prefix->nd_opt_pi_prefix.s6_addr32[1] = address->address.s6_addr32[1];
         prefix->nd_opt_pi_prefix.s6_addr32[2] = 0;
