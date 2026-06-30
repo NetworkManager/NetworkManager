@@ -1,10 +1,15 @@
-name: Continuous Integration
+name: "Continuous Integration"
 
 on:
-  push:
   pull_request:
-  schedule:
-  - cron:  '0 0 * * *'
+  push:
+    branches-ignore: ["pr/**"]
+    tags: ["**"]
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: "bash"
 
 jobs:
   ci-linux:
@@ -23,10 +28,15 @@ jobs:
       cabuild_ref: "v1"
       linux: false
       macos: true
-  ci-windows:
-    name: Windows CI
-    uses: bus1/cabuild/.github/workflows/ci-c-util.yml@v1
-    with:
-      cabuild_ref: "v1"
-      linux: false
-      windows: true
+#
+# Windows CI is disabled, as it constantly causes headaches and no-one
+# takes care of them. If you need c-stdaux on Windows, feel free to help out.
+#
+#  ci-windows:
+#    name: Windows CI
+#    uses: bus1/cabuild/.github/workflows/ci-c-util.yml@v1
+#    with:
+#      cabuild_ref: "v1"
+#      linux: false
+#      windows: true
+#
