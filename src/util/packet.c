@@ -241,7 +241,7 @@ int packet_sendto_udp(int sockfd,
 }
 
 /**
- * packet_recvfrom_upd() - receive UDP packet from AF_PACKET socket
+ * packet_recvfrom_udp() - receive UDP packet from AF_PACKET socket
  * @sockfd:             AF_PACKET/SOCK_DGRAM socket
  * @buf:                buffor for payload
  * @n_buf:              max length of payload in bytes
@@ -371,6 +371,12 @@ int packet_recvfrom_udp(int sockfd,
                 /*
                  * The UDP header specified a longer length than the returned
                  * packet, so discard it entirely.
+                 */
+                return 0;
+        } else if (ntohs(udp_hdr.len) < sizeof(struct udphdr)) {
+                /*
+                 * The UDP length field is smaller than the UDP header it is
+                 * supposed to count, so discard it entirely.
                  */
                 return 0;
         }

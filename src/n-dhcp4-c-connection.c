@@ -430,7 +430,8 @@ static int n_dhcp4_c_connection_udp_send(NDhcp4CConnection *connection,
 }
 
 static void n_dhcp4_c_connection_init_header(NDhcp4CConnection *connection,
-                                             NDhcp4Header *header) {
+                                             NDhcp4Header *header,
+                                             uint8_t type) {
         bool broadcast = connection->client_config->request_broadcast;
 
         header->op = N_DHCP4_OP_BOOTREQUEST;
@@ -455,22 +456,37 @@ static void n_dhcp4_c_connection_init_header(NDhcp4CConnection *connection,
                 break;
         }
 
-        if (connection->client_ip != INADDR_ANY) {
+        /*
+         * Set ciaddr according to RFC2131 section 4:
+         * - must be zero for initial messages (DISCOVER, SELECT)
+         * - must be zero for REBOOT and DECLINE
+         * - must be client's IP for all other messages (RENEW, REBIND, RELEASE, INFORM)
+         */
+        switch (type) {
+        case N_DHCP4_C_MESSAGE_DISCOVER:    /* 4.4.1 - must be zero */
+        case N_DHCP4_C_MESSAGE_SELECT:      /* 4.3.2 - must be zero in SELECTING */
+        case N_DHCP4_C_MESSAGE_REBOOT:      /* 4.3.2 - must be zero in INIT-REBOOT */
+        case N_DHCP4_C_MESSAGE_DECLINE:     /* 4.4   - must be zero per RFC2131 table */
+                header->ciaddr = INADDR_ANY;
+                break;
+        default:
+                /* All other message types must use client's current IP */
                 header->ciaddr = connection->client_ip;
-        } else {
-                /*
-                 * When the IP stack has not been configured, we may
-                 * not be able to receive unicast packets, depending
-                 * on the hardware. If that is the case we must request
-                 * replies from the server to be broadcast.
-                 *
-                 * Once the IP stack has been configured, receiving
-                 * unicast packets is never a problem, so the broadcast
-                 * flag should not be set.
-                 */
-                if (broadcast)
-                        header->flags |= N_DHCP4_MESSAGE_FLAG_BROADCAST;
+                break;
         }
+
+        /*
+         * When the IP stack has not been configured, we may
+         * not be able to receive unicast packets, depending
+         * on the hardware. If that is the case we must request
+         * replies from the server to be broadcast.
+         *
+         * Once the IP stack has been configured, receiving
+         * unicast packets is never a problem, so the broadcast
+         * flag should not be set.
+         */
+        if (connection->client_ip == INADDR_ANY && broadcast)
+                header->flags |= N_DHCP4_MESSAGE_FLAG_BROADCAST;
 }
 
 static int n_dhcp4_c_connection_new_message(NDhcp4CConnection *connection,
@@ -535,7 +551,7 @@ static int n_dhcp4_c_connection_new_message(NDhcp4CConnection *connection,
                 return r;
 
         header = n_dhcp4_outgoing_get_header(message);
-        n_dhcp4_c_connection_init_header(connection, header);
+        n_dhcp4_c_connection_init_header(connection, header, type);
 
         message->userdata.type = type;
         message->userdata.message_type = message_type;
@@ -1012,9 +1028,9 @@ static const char *message_type_to_str(uint8_t type) {
         }
 }
 
-static int n_dhcp4_c_connection_send_request(NDhcp4CConnection *connection,
-                                             NDhcp4Outgoing *request,
-                                             uint64_t timestamp) {
+int n_dhcp4_c_connection_send_request(NDhcp4CConnection *connection,
+                                      NDhcp4Outgoing *request,
+                                      uint64_t timestamp) {
         char server_addr[INET_ADDRSTRLEN];
         char client_addr[INET_ADDRSTRLEN];
         char error_msg[128];

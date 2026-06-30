@@ -161,6 +161,7 @@ NDhcp4ClientProbe *n_dhcp4_client_probe_free(NDhcp4ClientProbe *probe);
 
 void n_dhcp4_client_probe_set_userdata(NDhcp4ClientProbe *probe, void *userdata);
 void n_dhcp4_client_probe_get_userdata(NDhcp4ClientProbe *probe, void **userdatap);
+int n_dhcp4_client_probe_release(NDhcp4ClientProbe *probe);
 
 /* client leases */
 

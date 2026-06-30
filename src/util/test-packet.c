@@ -7,6 +7,7 @@
 #include <c-stdaux.h>
 #include <errno.h>
 #include <net/if_arp.h>
+#include <netinet/udp.h>
 #include <stdlib.h>
 #include <string.h>
 #include "n-dhcp4-private.h"
@@ -322,6 +323,119 @@ static void test_shutdown(Link *link_src,
         link_del_ip4(link_src, &paddr_src->sin_addr, 8);
 }
 
+/*
+ * @udp_len:     value to write into the UDP length field
+ * @payload_len: bytes of UDP payload actually sent
+ * @udp_check:   UDP checksum field (non-zero exercises the checksum gate)
+ * @expect_drop: whether packet_recvfrom_udp() must discard the packet
+ */
+struct udp_len_case {
+        uint16_t udp_len;
+        size_t   payload_len;
+        uint16_t udp_check;
+        bool     expect_drop;
+};
+
+static void test_udp_packet_len_one(Link *link_src,
+                                    Link *link_dst,
+                                    const struct sockaddr_in *paddr_src,
+                                    const struct sockaddr_in *paddr_dst,
+                                    const struct udp_len_case *tc) {
+        _c_cleanup_(c_closep) int sk_src = -1, sk_dst = -1;
+        struct sockaddr_ll addr = {
+                .sll_family = AF_PACKET,
+                .sll_protocol = htons(ETH_P_IP),
+                .sll_ifindex = link_src->ifindex,
+                .sll_halen = ETH_ALEN,
+        };
+        struct {
+                struct iphdr ip;
+                struct udphdr udp;
+                uint8_t payload[8];
+        } _c_packed_ frame = {};
+        size_t frame_len = sizeof(frame.ip) + sizeof(frame.udp) + tc->payload_len;
+        uint16_t accept_sentinel = 0xffff;
+        struct sockaddr_in src = { .sin_port = accept_sentinel };
+        uint8_t buf[1024];
+        size_t len;
+        ssize_t slen;
+        int r;
+
+        c_assert(tc->payload_len <= sizeof(frame.payload));
+
+        link_socket(link_src, &sk_src, AF_PACKET, SOCK_DGRAM | SOCK_CLOEXEC);
+        test_new_packet_socket(link_dst, &sk_dst);
+
+        memcpy(addr.sll_addr, &link_dst->mac, ETH_ALEN);
+
+        frame.ip.version  = IPVERSION;
+        frame.ip.ihl      = 5;
+        frame.ip.tot_len  = htons(frame_len);
+        frame.ip.ttl      = 64;
+        frame.ip.protocol = IPPROTO_UDP;
+        frame.ip.saddr    = paddr_src->sin_addr.s_addr;
+        frame.ip.daddr    = paddr_dst->sin_addr.s_addr;
+        frame.ip.check    = packet_internet_checksum((uint8_t *)&frame.ip,
+                                                     sizeof(frame.ip));
+
+        frame.udp.source  = paddr_src->sin_port;
+        frame.udp.dest    = paddr_dst->sin_port;
+        frame.udp.len     = htons(tc->udp_len);
+        frame.udp.check   = tc->udp_check;
+
+        slen = sendto(sk_src, &frame, frame_len, 0,
+                      (struct sockaddr *)&addr, sizeof(addr));
+        c_assert(slen == (ssize_t)frame_len);
+
+        /*
+         * packet_recvfrom_udp() fills @src only when it accepts the packet.
+         * A zero-payload accept and a drop both report a zero length, so the
+         * sentinel sin_port is what tells them apart: it survives a drop and
+         * is overwritten with the source port on accept.
+         */
+        r = packet_recvfrom_udp(sk_dst, buf, sizeof(buf), &len, &src);
+        c_assert(!r);
+        if (tc->expect_drop) {
+                c_assert(len == 0);
+                c_assert(src.sin_port == accept_sentinel);
+        } else {
+                c_assert(len == tc->payload_len);
+                c_assert(src.sin_port == frame.udp.source);
+        }
+}
+
+/*
+ * Regression test: a UDP packet whose udp.len is shorter than the 8-byte
+ * UDP header underflows the payload-length computation in
+ * packet_recvfrom_udp() and triggers an out-of-bounds read. Sampled lengths
+ * from the underflowing range (0, 1, and the top value 7) must be discarded
+ * whether or not the packet carries a UDP checksum, while the zero-payload
+ * udp.len == sizeof(struct udphdr) boundary and a header+payload packet must
+ * still be accepted.
+ */
+static void test_udp_packet_short_len(Link *link_src,
+                                      Link *link_dst,
+                                      const struct sockaddr_in *paddr_src,
+                                      const struct sockaddr_in *paddr_dst) {
+        static const struct udp_len_case cases[] = {
+                /* malformed, with a UDP checksum: an unguarded parser reaches the read */
+                { .udp_len = 0,                         .udp_check = 1, .expect_drop = true },
+                { .udp_len = 1,                         .udp_check = 1, .expect_drop = true },
+                { .udp_len = sizeof(struct udphdr) - 1, .udp_check = 1, .expect_drop = true },
+                /* malformed, without a UDP checksum: the checksum gate is skipped */
+                { .udp_len = 0,                         .udp_check = 0, .expect_drop = true },
+                { .udp_len = 1,                         .udp_check = 0, .expect_drop = true },
+                { .udp_len = sizeof(struct udphdr) - 1, .udp_check = 0, .expect_drop = true },
+                /* valid: the zero-payload boundary pins the check to '<' */
+                { .udp_len = sizeof(struct udphdr),     .expect_drop = false },
+                /* valid: header plus payload */
+                { .udp_len = sizeof(struct udphdr) + 4, .payload_len = 4, .expect_drop = false },
+        };
+
+        for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i)
+                test_udp_packet_len_one(link_src, link_dst, paddr_src, paddr_dst, &cases[i]);
+}
+
 static void test_ip_hdr(Link *link_src,
                         Link *link_dst,
                         const struct sockaddr_in *paddr_src,
@@ -393,6 +507,7 @@ static void test_packet(void) {
         test_packet_packet(&link_src, &link_dst, &paddr_src, &paddr_dst);
         test_packet_udp(&link_src, &link_dst, &paddr_src, &paddr_dst);
         test_udp_packet(&link_src, &link_dst, &paddr_src, &paddr_dst);
+        test_udp_packet_short_len(&link_src, &link_dst, &paddr_src, &paddr_dst);
         test_udp_udp(&link_src, &link_dst, &paddr_src, &paddr_dst);
 
         /* behavior tests */

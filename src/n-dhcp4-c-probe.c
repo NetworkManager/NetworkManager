@@ -1321,3 +1321,33 @@ int n_dhcp4_client_probe_dispatch_io(NDhcp4ClientProbe *probe, uint32_t events) 
 int n_dhcp4_client_probe_update_mtu(NDhcp4ClientProbe *probe, uint16_t mtu) {
         return 0;
 }
+
+/**
+ * n_dhcp4_client_probe_release() - send a release request
+ * @probe:                          probe to operate on
+ *
+ * This sends a RELEASE message on the connection used by the probe.
+ *
+ * Return: 0 if successful otherwise non-zero value is returned.
+ */
+ int n_dhcp4_client_probe_release(NDhcp4ClientProbe *probe) {
+        _c_cleanup_(n_dhcp4_outgoing_freep) NDhcp4Outgoing *request_out = NULL;
+        int r;
+
+        if (probe->connection.state != N_DHCP4_C_CONNECTION_STATE_DRAINING
+                && probe->connection.state != N_DHCP4_C_CONNECTION_STATE_UDP)
+                return -ENOTRECOVERABLE;
+
+        r = n_dhcp4_c_connection_release_new(&probe->connection, &request_out, NULL);
+        if (r)
+                return r;
+
+        r = n_dhcp4_c_connection_send_request(&probe->connection, request_out, 0);
+        if (r)
+                return r;
+
+        probe->state = N_DHCP4_CLIENT_PROBE_STATE_INIT;
+        n_dhcp4_client_lease_unlink(probe->current_lease);
+
+        return 0;
+}
