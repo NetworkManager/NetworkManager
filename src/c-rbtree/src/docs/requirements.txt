@@ -1,5 +1,5 @@
-c-apidocs>=0.0.3
-clang>=6
-hawkmoth>=0.7
+c-apidocs>=1.0.0
+hawkmoth>=0.20
 meson>=0.60
 ninja>=1.10
+sphinx-rtd-theme>=3.0.0
