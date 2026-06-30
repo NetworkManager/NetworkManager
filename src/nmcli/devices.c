@@ -4842,7 +4842,7 @@ print_wifi_connection(const NmcConfig *nmc_config, NMConnection *connection)
     const char                *psk      = NULL;
     GBytes                    *ssid_bytes;
     gs_free char              *ssid = NULL;
-    gs_free char              *uri  = NULL;
+    nm_auto_free_secret char  *uri  = NULL;
 
     s_wireless = nm_connection_get_setting_wireless(connection);
     g_return_if_fail(s_wireless);
@@ -4870,8 +4870,15 @@ print_wifi_connection(const NmcConfig *nmc_config, NMConnection *connection)
         nmc_print("%s: OWE\n", _("Security"));
     }
 
-    if (psk)
+    if (psk && psk[0]) {
         nmc_print("%s: %s\n", _("Password"), psk);
+    } else if (nmc_wifi_key_mgmt_uses_psk(key_mgmt)) {
+        /* A QR code for a secured network without its password connects to
+         * nothing, so don't print one. */
+        nmc_printerr(
+            _("Warning: cannot read the Wi-Fi password due to insufficient privileges.\n"));
+        return;
+    }
 
     uri = nmc_wifi_qr_uri_new(ssid, key_mgmt, psk, nm_setting_wireless_get_hidden(s_wireless));
 
