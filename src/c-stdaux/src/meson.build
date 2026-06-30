@@ -6,7 +6,9 @@
 
 libcstdaux_vars = {
         'cflags': ' '.join(cflags),
+        # Deprecated: pkg-config does not support dashes in variable names.
         'version-scripts': use_version_scripts,
+        'version_scripts': use_version_scripts,
 }
 
 libcstdaux_dep = declare_dependency(

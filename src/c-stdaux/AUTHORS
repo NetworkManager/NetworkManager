@@ -31,13 +31,16 @@ AUTHORS-LGPL:
 
 COPYRIGHT: (ordered alphabetically)
         Copyright (C) 2018-2022 Red Hat, Inc.
+        Copyright (C) 2022-2023 David Rheinsberg
 
 AUTHORS: (ordered alphabetically)
-        David Rheinsberg <david.rheinsberg@gmail.com>
+        Adrian Vovk <adrianvovk@gmail.com>
+        David Rheinsberg <david@readahead.eu>
         Evgeny Vereshchagin <evvers@ya.ru>
         Jan Engelhardt <jengelh@inai.de>
         Lorenzo Arena <lorenzo.arena@powersoft.com>
         Michele Dionisio <michele.dionisio@gmail.com>
+        Nikita Popov <npopov@redhat.com>
         Thomas Haller <thaller@redhat.com>
         Tom Gundersen <teg@jklm.no>
         Yuri Chornoivan <yurchor@ukr.net>
