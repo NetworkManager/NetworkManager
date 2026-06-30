@@ -876,6 +876,7 @@ nm_lldp_listener_get_neighbors(NMLldpListener *self)
 
 NMLldpListener *
 nm_lldp_listener_new(int                  ifindex,
+                     const char          *own_hw_addr,
                      NMLldpListenerNotify notify_callback,
                      gpointer             notify_user_data,
                      GError             **error)
@@ -897,12 +898,23 @@ nm_lldp_listener_new(int                  ifindex,
 
     nm_assert(nm_g_main_context_is_thread_default(g_main_context_default()));
 
-    lldp_rx = nm_lldp_rx_new(&((NMLldpRXConfig) {
-        .ifindex       = ifindex,
-        .neighbors_max = MAX_NEIGHBORS,
-        .callback      = lldp_event_handler,
-        .userdata      = self,
-    }));
+    {
+        NMLldpRXConfig config = {
+            .ifindex       = ifindex,
+            .neighbors_max = MAX_NEIGHBORS,
+            .callback      = lldp_event_handler,
+            .userdata      = self,
+        };
+        NMEtherAddr own_addr;
+        gsize       addr_len;
+
+        if (own_hw_addr
+            && _nm_utils_hwaddr_aton(own_hw_addr, &own_addr, sizeof(own_addr), &addr_len)
+            && addr_len == sizeof(own_addr))
+            config.filter_address = own_addr;
+
+        lldp_rx = nm_lldp_rx_new(&config);
+    }
 
     r = nm_lldp_rx_start(lldp_rx);
     if (r < 0) {

@@ -10787,8 +10787,11 @@ lldp_setup(NMDevice *self, NMTernary enabled)
     if (enabled && !priv->lldp_listener) {
         gs_free_error GError *error = NULL;
 
-        priv->lldp_listener =
-            nm_lldp_listener_new(ifindex, _lldp_neighbors_changed_cb, self, &error);
+        priv->lldp_listener = nm_lldp_listener_new(ifindex,
+                                                   nm_device_get_hw_address(self),
+                                                   _lldp_neighbors_changed_cb,
+                                                   self,
+                                                   &error);
         if (!priv->lldp_listener) {
             /* This really shouldn't happen. It's likely a bug. Investigate when this happens! */
             _LOGW(LOGD_DEVICE,
