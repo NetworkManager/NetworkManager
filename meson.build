@@ -6,14 +6,14 @@ project(
         ],
         license: 'Apache',
         meson_version: '>=0.60.0',
-        version: '1.0.0',
+        version: '1.1.0',
 )
 major = meson.project_version().split('.')[0]
 project_description = 'Streaming-capable SipHash Implementation'
 
 mod_pkgconfig = import('pkgconfig')
 
-dep_cstdaux = dependency('libcstdaux-1')
+dep_cstdaux = dependency('libcstdaux-1', version: '>=1.5.0')
 add_project_arguments(dep_cstdaux.get_variable('cflags').split(' '), language: 'c')
 
 subdir('src')
