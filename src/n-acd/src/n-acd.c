@@ -366,14 +366,17 @@ _c_public_ int n_acd_new(NAcd **acdp, NAcdConfig *config) {
 
         acd->max_bpf_map = 8;
 
-        /* Let's try to create a BPF map. If we fail, we want to ignore it
-         * only if we lack permissions to create it, and proceed without eBPF. */
+        /* Let's try to create a BPF map. If we fail, we want to ignore it and
+         * proceed without eBPF when we lack permissions to create it (-EPERM)
+         * or the bpf() syscall is unavailable (-ENOSYS), e.g. blocked by a
+         * seccomp policy or missing from the kernel. Other errors signal a real
+         * bpf problem and stay fatal. */
         r = n_acd_bpf_map_create(&acd->fd_bpf_map, acd->max_bpf_map);
         if (r == 0) {
                 r = n_acd_bpf_compile(&fd_bpf_prog, acd->fd_bpf_map, (struct ether_addr*) acd->mac);
                 if (r)
                         return r;
-        } else if (r != -EPERM) {
+        } else if (r != -EPERM && r != -ENOSYS) {
                 return r;
         }
 
