@@ -71,9 +71,9 @@ typedef struct CRBTree CRBTree;
  * or :c:macro:`C_RBNODE_INIT()`.
  */
 struct CRBNode {
-        /** Anonymous union for alignment guarantees */
+        /* Anonymous union for alignment guarantees */
         union {
-                /** Internal state encoding the parent pointer and state */
+                /* Internal state encoding the parent pointer and state */
                 unsigned long __parent_and_flags;
                 /* enforce >=4-byte alignment for @__parent_and_flags */
                 alignas(4) unsigned char __align_dummy;

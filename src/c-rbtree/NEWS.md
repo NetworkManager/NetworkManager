@@ -1,5 +1,19 @@
 # c-rbtree - Intrusive Red-Black Tree Collection
 
+## CHANGES WITH 3.2.0:
+
+        * Use new c-stdaux variables to allow dynamic-linking and fix
+          problems with pkg-config and variables including dashes.
+
+        * Add hawmoth/sphinx based documentation.
+
+        * Adjust to the new c-util CI workflows. This simplifies the entire
+          CI system significantly.
+
+        Contributions from: David Rheinsberg
+
+        - Dußlingen, 2023-12-12
+
 ## CHANGES WITH 3.1.0:
 
         * Add 'ptrace' build option to enable running tests using 'ptrace'

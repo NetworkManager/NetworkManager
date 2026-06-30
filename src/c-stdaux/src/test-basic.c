@@ -503,7 +503,7 @@ static void test_basic_gnuc(int non_constant_expr) {
                 c_assert(foo == 11);
 
                 c_assert(__builtin_constant_p(c_div_round_up(1, 5)));
-                c_assert(!__builtin_constant_p(c_div_round_up(1, non_constant_expr)));
+                c_assert(!__builtin_constant_p(c_div_round_up(8, 1 + !non_constant_expr)));
 
                 /* alternative calculation is [(x + y - 1) / y], but it may overflow */
                 for (i = 0; i <= 0xffff; ++i) {
@@ -545,7 +545,7 @@ static void test_basic_gnuc(int non_constant_expr) {
                 c_assert(__builtin_constant_p(c_align_to(16, 8)));
                 c_assert(!__builtin_constant_p(c_align_to(non_constant_expr, 8)));
                 c_assert(!__builtin_constant_p(c_align_to(16, non_constant_expr)));
-                c_assert(!__builtin_constant_p(c_align_to(16, non_constant_expr ? 8 : 16)));
+                c_assert(!__builtin_constant_p(c_align_to(8, non_constant_expr ? 8 : 16)));
                 c_assert(__builtin_constant_p(c_align_to(16, 7 + 1)));
                 c_assert(c_align_to(15, non_constant_expr ? 8 : 16) == 16);
         }
