@@ -19,7 +19,7 @@ libcrbtree_both = both_libraries(
         ],
         dependencies: libcrbtree_deps,
         install: not meson.is_subproject(),
-        link_args: dep_cstdaux.get_variable('version-scripts') == 'yes' ? [
+        link_args: dep_cstdaux.get_variable('version_scripts') == 'yes' ? [
                 '-Wl,--version-script=@0@'.format(libcrbtree_symfile),
         ] : [],
         link_depends: libcrbtree_symfile,

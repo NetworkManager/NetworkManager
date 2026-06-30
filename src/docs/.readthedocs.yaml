@@ -4,11 +4,13 @@ version: 2
 
 build:
   apt_packages:
-  - "clang"
+  - "libclang-14-dev"
   jobs:
     pre_build:
     - meson subprojects download
-  os: "ubuntu-22.04"
+    post_install:
+    - python -m pip install --upgrade --no-cache-dir clang==14.0.6
+  os: "ubuntu-lts-latest"
   tools:
     python: "3"
 
@@ -17,7 +19,6 @@ formats: "all"
 python:
   install:
   - requirements: "src/docs/requirements.txt"
-  system_packages: true
 
 sphinx:
   configuration: "src/docs/conf.py"

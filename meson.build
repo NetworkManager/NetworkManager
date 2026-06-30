@@ -6,7 +6,7 @@ project(
         ],
         license: 'Apache',
         meson_version: '>=0.60.0',
-        version: '3.1.0',
+        version: '3.2.0',
 )
 major = meson.project_version().split('.')[0]
 project_description = 'Intrusive Red-Black Tree Collection'
@@ -14,7 +14,7 @@ project_description = 'Intrusive Red-Black Tree Collection'
 mod_pkgconfig = import('pkgconfig')
 use_ptrace = get_option('ptrace')
 
-dep_cstdaux = dependency('libcstdaux-1')
+dep_cstdaux = dependency('libcstdaux-1', version: '>=1.5.0')
 add_project_arguments(dep_cstdaux.get_variable('cflags').split(' '), language: 'c')
 
 subdir('src')
