@@ -227,8 +227,14 @@ if [[ "$DO_TEST_BUILD" == yes ]]; then
             -Dnft=/usr/bin/nft \
             -Dnbft=${_WITH_NBFT}
 
-	ninja -j$(nproc) -C ./build
-	ninja test -j$(nproc) -C ./build
+	# Avoid OOM during LTO linking: each link job can use 2+ GB RAM.
+	_nproc=$(nproc)
+	_mem_gb=$(awk '/MemTotal/ {printf "%d", $2/1024/1024}' /proc/meminfo)
+	_jobs=$((_mem_gb / 2))
+	[ "$_jobs" -gt "$_nproc" ] && _jobs=$_nproc
+	[ "$_jobs" -lt 1 ] && _jobs=1
+	ninja -j$_jobs -C ./build
+	ninja test -j$_jobs -C ./build
     else
         NOCONFIGURE=yes ./autogen.sh
 
