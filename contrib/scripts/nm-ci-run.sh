@@ -43,9 +43,11 @@ fi
 IS_FEDORA=0
 IS_CENTOS=0
 IS_ALPINE=0
+IS_ARCH=0
 grep -q '^NAME=.*\(CentOS\)' /etc/os-release && IS_CENTOS=1
 grep -q '^NAME=.*\(Fedora\)' /etc/os-release && IS_FEDORA=1
 grep -q '^NAME=.*\(Alpine\)' /etc/os-release && IS_ALPINE=1
+grep -q '^NAME=.*\(Arch\)' /etc/os-release && IS_ARCH=1
 
 ###############################################################################
 
@@ -119,6 +121,12 @@ _with_valgrind() {
     if [ "$IS_ALPINE" = 1 ]; then
         # on Alpine we have no debug symbols and the suppressions
         # don't work. Skip valgrind tests.
+        WITH_VALGRIND=0
+    fi
+
+    if [ "$IS_ARCH" = 1 ]; then
+        # Arch ships a glibc newer than the valgrind release can handle,
+        # against ld-linux. Skip valgrind tests.
         WITH_VALGRIND=0
     fi
 
