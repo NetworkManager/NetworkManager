@@ -74,9 +74,13 @@ get_nm_git_bundle() {
     fi
     mkdir nm-git-bundle
     pushd nm-git-bundle
-    time curl "$NM_GIT_BUNDLE" \
-      | rpm2cpio - \
-      | cpio -idmv
+    if ! time curl --fail -o nm-git-bundle.rpm "$NM_GIT_BUNDLE"; then
+        # The bundle is only a fetch speed-up; fall back to the git fetch below.
+        echo "nm-git-bundle unavailable at $NM_GIT_BUNDLE, falling back to upstream git fetch" >&2
+        popd
+        return 0
+    fi
+    rpm2cpio nm-git-bundle.rpm | cpio -idmv
     popd
     git remote add nm-git-bundle "$PWD/nm-git-bundle/usr/share/NetworkManager/nm-git-bundle.git"
     git fetch nm-git-bundle
