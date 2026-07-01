@@ -3847,10 +3847,19 @@ _get_best_connectivity(NMManager *self, int addr_family)
         if (NM_IS_DEVICE_LOOPBACK(dev))
             continue;
 
-        r = nm_device_get_best_default_route(dev, addr_family);
-        if (r)
+        r     = nm_device_get_best_default_route(dev, addr_family);
+        state = nm_device_get_connectivity_state(dev, addr_family);
+
+        if (r) {
+            /* If a default-route device is FULL, that is the global state: its
+             * route carries no penalty, so it outranks any non-FULL device (which
+             * gets +20000). Decide on the state directly, not the metric, which is
+             * stale here because the penalty commits to the route asynchronously
+             * after this recompute. */
+            if (nm_connectivity_state_cmp(state, NM_CONNECTIVITY_FULL) >= 0)
+                return NM_CONNECTIVITY_FULL;
             metric = NMP_OBJECT_CAST_IP_ROUTE(r)->metric;
-        else {
+        } else {
             /* if all devices have no default-route, we still include the best
              * of all connectivity state of all the devices. */
             metric = G_MAXINT64;
@@ -3858,11 +3867,10 @@ _get_best_connectivity(NMManager *self, int addr_family)
 
         if (metric > best_metric) {
             /* we already have a default route with better metric. The connectivity state
-             * of this device is irreleavnt. */
+             * of this device is irrelevant. */
             continue;
         }
 
-        state = nm_device_get_connectivity_state(dev, addr_family);
         if (metric < best_metric) {
             /* this device has a better default route. It wins. */
             best_metric = metric;
