@@ -2490,8 +2490,8 @@ _dedup_multi_index_cmp(const NML3ConfigData *a,
             switch (obj_type) {
             case NMP_OBJECT_TYPE_IP4_ADDRESS:
                 NM_CMP_DIRECT(obj_a->ip4_address.plen, obj_b->ip4_address.plen);
-                NM_CMP_DIRECT(obj_b->ip4_address.address, obj_b->ip4_address.address);
-                NM_CMP_DIRECT(obj_b->ip4_address.peer_address, obj_b->ip4_address.peer_address);
+                NM_CMP_DIRECT(obj_a->ip4_address.address, obj_b->ip4_address.address);
+                NM_CMP_DIRECT(obj_a->ip4_address.peer_address, obj_b->ip4_address.peer_address);
                 break;
             case NMP_OBJECT_TYPE_IP6_ADDRESS:
                 NM_CMP_DIRECT(obj_a->ip6_address.plen, obj_b->ip6_address.plen);
@@ -2773,7 +2773,8 @@ nm_l3_config_data_get_direct_route_for_host(const NML3ConfigData *self,
         if (!nm_ip_addr_same_prefix(addr_family, host, item->rx.network_ptr, item->rx.plen))
             continue;
 
-        if (best_route && best_route->rx.metric <= item->rx.metric)
+        if (best_route && best_route->rx.plen == item->rx.plen
+            && best_route->rx.metric <= item->rx.metric)
             continue;
 
         best_route_obj = item_obj;

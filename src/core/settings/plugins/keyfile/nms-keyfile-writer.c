@@ -143,7 +143,9 @@ cert_writer(NMConnection                     *connection,
                                             vtable->setting_key,
                                             strrchr(new_path, '/') + 1);
         } else {
-            nm_log_warn(LOGD_SETTINGS,
+            g_set_error(error,
+                        NM_SETTINGS_ERROR,
+                        NM_SETTINGS_ERROR_FAILED,
                         "keyfile: %s.%s: failed to write certificate to file %s: %s",
                         setting_name,
                         vtable->setting_key,

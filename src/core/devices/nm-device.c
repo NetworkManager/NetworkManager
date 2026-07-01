@@ -1294,7 +1294,7 @@ _prop_get_ipv6_dhcp_duid(NMDevice     *self,
             gint64  time;
             guint32 timestamp;
 
-#define EPOCH_DATETIME_THREE_YEARS (356 * 24 * 3600 * 3)
+#define EPOCH_DATETIME_THREE_YEARS (365 * 24 * 3600 * 3)
 
             /* We want a variable time between the host_id timestamp and three years
              * before. Let's compute the time (in seconds) from 0 to 3 years; then we'll
@@ -7278,6 +7278,8 @@ nm_device_controller_release_port(NMDevice           *self,
         if (ret == NM_TERNARY_DEFAULT) {
             port_priv->port_detach_count++;
             port_priv->port_detach_reason = reason;
+        } else {
+            g_object_unref(port);
         }
     }
 
