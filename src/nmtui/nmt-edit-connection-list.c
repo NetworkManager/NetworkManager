@@ -43,6 +43,7 @@ typedef struct {
     NmtNewtWidget *add;
     NmtNewtWidget *edit;
     NmtNewtWidget *delete;
+    NmtNewtWidget *share;
     NmtNewtWidget *extra;
 } NmtEditConnectionListPrivate;
 
@@ -63,6 +64,7 @@ enum {
     ADD_CONNECTION,
     EDIT_CONNECTION,
     REMOVE_CONNECTION,
+    SHARE_CONNECTION,
 
     LAST_SIGNAL
 };
@@ -72,9 +74,11 @@ static guint signals[LAST_SIGNAL] = {0};
 static void add_clicked(NmtNewtButton *button, gpointer list);
 static void edit_clicked(NmtNewtButton *button, gpointer list);
 static void delete_clicked(NmtNewtButton *button, gpointer list);
+static void share_clicked(NmtNewtButton *button, gpointer list);
 static void listbox_activated(NmtNewtWidget *listbox, gpointer list);
 static void edit_search_apply(gpointer list, const char *text);
 static int  edit_search_count(gpointer list);
+static void update_share_sensitive(NmtEditConnectionList *list);
 
 static void
 nmt_edit_connection_list_init(NmtEditConnectionList *list)
@@ -97,6 +101,10 @@ nmt_edit_connection_list_init(NmtEditConnectionList *list)
                             NMT_NEWT_GRID_FILL_X | NMT_NEWT_GRID_FILL_Y | NMT_NEWT_GRID_EXPAND_X
                                 | NMT_NEWT_GRID_EXPAND_Y);
     g_signal_connect(priv->listbox, "activated", G_CALLBACK(listbox_activated), list);
+    g_signal_connect_swapped(priv->listbox,
+                             "notify::active",
+                             G_CALLBACK(update_share_sensitive),
+                             list);
 
     /* Search row below the listbox. The row is always present so revealing the
      * entry does not resize the form; vim-style '/' shows the entry, and once a
@@ -136,6 +144,9 @@ nmt_edit_connection_list_init(NmtEditConnectionList *list)
 
     priv->delete = nmt_newt_button_box_add_start(priv->buttons, _("Delete"));
     g_signal_connect(priv->delete, "clicked", G_CALLBACK(delete_clicked), list);
+
+    priv->share = nmt_newt_button_box_add_start(priv->buttons, _("Share QR..."));
+    g_signal_connect(priv->share, "clicked", G_CALLBACK(share_clicked), list);
 }
 
 static int
@@ -290,6 +301,7 @@ done:
         nmt_search_update_label(priv->search);
     nmt_newt_component_set_sensitive(NMT_NEWT_COMPONENT(priv->edit), did_any);
     nmt_newt_component_set_sensitive(NMT_NEWT_COMPONENT(priv->delete), did_any);
+    update_share_sensitive(list);
 }
 
 static void
@@ -345,6 +357,29 @@ delete_clicked(NmtNewtButton *button, gpointer list)
     g_return_if_fail(connection != NULL);
 
     g_signal_emit(list, signals[REMOVE_CONNECTION], 0, connection);
+}
+
+static void
+share_clicked(NmtNewtButton *button, gpointer list)
+{
+    NmtEditConnectionListPrivate *priv = NMT_EDIT_CONNECTION_LIST_GET_PRIVATE(list);
+    NMConnection                 *connection;
+
+    connection = nmt_newt_listbox_get_active_key(priv->listbox);
+    g_return_if_fail(connection != NULL);
+
+    g_signal_emit(list, signals[SHARE_CONNECTION], 0, connection);
+}
+
+static void
+update_share_sensitive(NmtEditConnectionList *list)
+{
+    NmtEditConnectionListPrivate *priv = NMT_EDIT_CONNECTION_LIST_GET_PRIVATE(list);
+    NMConnection                 *connection;
+
+    connection = nmt_newt_listbox_get_active_key(priv->listbox);
+    nmt_newt_component_set_sensitive(NMT_NEWT_COMPONENT(priv->share),
+                                     connection && nm_connection_get_setting_wireless(connection));
 }
 
 static void
@@ -550,6 +585,25 @@ nmt_edit_connection_list_class_init(NmtEditConnectionListClass *list_class)
                      G_OBJECT_CLASS_TYPE(object_class),
                      G_SIGNAL_RUN_FIRST,
                      G_STRUCT_OFFSET(NmtEditConnectionListClass, remove_connection),
+                     NULL,
+                     NULL,
+                     NULL,
+                     G_TYPE_NONE,
+                     1,
+                     NM_TYPE_CONNECTION);
+
+    /**
+     * NmtEditConnectionList::share-connection:
+     * @list: the #NmtEditConnectionList
+     * @connection: the connection to share
+     *
+     * Emitted when the user clicks the list's "Share QR..." button.
+     */
+    signals[SHARE_CONNECTION] =
+        g_signal_new("share-connection",
+                     G_OBJECT_CLASS_TYPE(object_class),
+                     G_SIGNAL_RUN_FIRST,
+                     G_STRUCT_OFFSET(NmtEditConnectionListClass, share_connection),
                      NULL,
                      NULL,
                      NULL,

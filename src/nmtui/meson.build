@@ -42,6 +42,7 @@ executable(
     'nmt-route-editor.c',
     'nmt-route-entry.c',
     'nmt-route-table.c',
+    'nmt-wifi-qr-dialog.c',
     'nmt-port-list.c',
     'nmt-wireguard-peer-list.c',
     'nmt-wireguard-peer-editor.c',

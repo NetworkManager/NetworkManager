@@ -697,10 +697,29 @@ NM_PRAGMA_WARNING_DISABLE("-Wdeclaration-after-statement")
 NM_PRAGMA_WARNING_REENABLE
 #pragma GCC visibility pop
 
+/* Encode @str into @qrcode (sized qrcodegen_BUFFER_LEN_FOR_VERSION(VERSION_MAX)).
+ * Returns the QR side length in modules, or -1 if @str is too long to encode. */
+static int
+_qr_encode(const char *str, uint8_t *qrcode)
+{
+    uint8_t tempBuffer[qrcodegen_BUFFER_LEN_FOR_VERSION(qrcodegen_VERSION_MAX)];
+
+    if (!qrcodegen_encodeText(str,
+                              tempBuffer,
+                              qrcode,
+                              qrcodegen_Ecc_LOW,
+                              qrcodegen_VERSION_MIN,
+                              qrcodegen_VERSION_MAX,
+                              qrcodegen_Mask_AUTO,
+                              FALSE))
+        return -1;
+
+    return qrcodegen_getSize(qrcode);
+}
+
 void
 nmc_print_qrcode(const char *str)
 {
-    uint8_t  tempBuffer[qrcodegen_BUFFER_LEN_FOR_VERSION(qrcodegen_VERSION_MAX)];
     uint8_t  qrcode[qrcodegen_BUFFER_LEN_FOR_VERSION(qrcodegen_VERSION_MAX)];
     gboolean term_linux;
     int      size;
@@ -711,18 +730,9 @@ nmc_print_qrcode(const char *str)
     if (!term_linux && !can_show_graphics())
         return;
 
-    if (!qrcodegen_encodeText(str,
-                              tempBuffer,
-                              qrcode,
-                              qrcodegen_Ecc_LOW,
-                              qrcodegen_VERSION_MIN,
-                              qrcodegen_VERSION_MAX,
-                              qrcodegen_Mask_AUTO,
-                              FALSE)) {
+    size = _qr_encode(str, qrcode);
+    if (size < 0)
         return;
-    }
-
-    size = qrcodegen_getSize(qrcode);
 
     g_print("\n");
 
@@ -754,6 +764,124 @@ nmc_print_qrcode(const char *str)
             g_print("\033[0m\n");
         }
     }
+}
+
+static void
+_qr_append_mecard(GString *string, const char *tag, const char *text)
+{
+    const char *p;
+    bool        is_hex = TRUE;
+    int         start;
+
+    if (!text)
+        return;
+
+    g_string_append(string, tag);
+    start = string->len;
+
+    for (p = text; *p; p++) {
+        if (!g_ascii_isxdigit(*p))
+            is_hex = FALSE;
+        if (strchr("\\\":;,", *p))
+            g_string_append_c(string, '\\');
+        g_string_append_c(string, *p);
+    }
+
+    if (is_hex && text[0]) {
+        g_string_insert_c(string, start, '\"');
+        g_string_append_c(string, '\"');
+    }
+    g_string_append_c(string, ';');
+}
+
+/**
+ * nmc_wifi_qr_uri_new:
+ * @ssid: the network SSID (UTF-8)
+ * @key_mgmt: the wireless security key management, or %NULL for an open network
+ * @psk: the pre-shared key, or %NULL
+ * @hidden: whether the network is hidden
+ *
+ * Builds a "WIFI:" provisioning URI (the format encoded in Wi-Fi QR codes).
+ *
+ * Returns: (transfer full): a newly-allocated URI string.
+ */
+char *
+nmc_wifi_qr_uri_new(const char *ssid, const char *key_mgmt, const char *psk, gboolean hidden)
+{
+    GString    *string;
+    const char *type = NULL;
+
+    string = g_string_sized_new(64);
+    g_string_append(string, "WIFI:");
+
+    if (key_mgmt == NULL)
+        type = "nopass";
+    else if (NM_IN_STRSET(key_mgmt, "none", "ieee8021x"))
+        type = "WEP";
+    else if (NM_IN_STRSET(key_mgmt, "wpa-none", "wpa-psk", "sae"))
+        type = "WPA";
+    else if (nm_streq(key_mgmt, "owe"))
+        type = "nopass";
+
+    _qr_append_mecard(string, "T:", type);
+    _qr_append_mecard(string, "S:", ssid);
+    _qr_append_mecard(string, "P:", psk);
+
+    if (hidden)
+        g_string_append(string, "H:true;");
+
+    g_string_append_c(string, ';');
+
+    return g_string_free(string, FALSE);
+}
+
+/**
+ * nmc_wifi_qr_render_string:
+ * @str: the text to encode
+ *
+ * Encodes @str as a QR code and renders it into a newline-joined string of
+ * Unicode half-block glyphs. Dark modules are drawn as foreground glyphs and
+ * light modules as spaces, so the result is scannable on a black-on-white
+ * surface (unlike nmc_print_qrcode(), which prints ANSI-colored output to a
+ * terminal). Two module rows are packed per character row.
+ *
+ * Returns: (transfer full): the rendered string, or %NULL if @str is too long
+ *   to encode.
+ */
+char *
+nmc_wifi_qr_render_string(const char *str)
+{
+    uint8_t  qrcode[qrcodegen_BUFFER_LEN_FOR_VERSION(qrcodegen_VERSION_MAX)];
+    GString *gstr;
+    int      size;
+    int      x;
+    int      y;
+
+    size = _qr_encode(str, qrcode);
+    if (size < 0)
+        return NULL;
+
+    gstr = g_string_sized_new(2048);
+
+    for (y = -2; y < size + 2; y += 2) {
+        for (x = -2; x < size + 2; x++) {
+            bool top    = qrcodegen_getModule(qrcode, x, y);
+            bool bottom = qrcodegen_getModule(qrcode, x, y + 1);
+
+            if (top && bottom)
+                g_string_append(gstr, "█");
+            else if (top)
+                g_string_append(gstr, "▀");
+            else if (bottom)
+                g_string_append(gstr, "▄");
+            else
+                g_string_append_c(gstr, ' ');
+        }
+        if (y + 2 < size + 2)
+            g_string_append_c(gstr, '\n');
+    }
+
+    return g_string_free(gstr, FALSE);
 }
 
 /**

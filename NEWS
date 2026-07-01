@@ -88,6 +88,12 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   access points.
 * Drop support for dhclient as a DHCP backend, which has been deprecated
   since NetworkManager-1.50.
+* nmtui can now share a Wi-Fi connection as a QR code via the "Share QR..."
+  button in the "Edit a connection" view, mirroring "nmcli device wifi
+  show-password".
+* nmcli "device wifi show-password" no longer prints a QR code when the
+  Wi-Fi password cannot be read (for example, without root privileges); it
+  prints a warning instead.
 
 =============================================
 NetworkManager-1.56

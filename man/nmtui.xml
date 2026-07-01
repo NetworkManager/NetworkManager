@@ -84,6 +84,11 @@
           <para>Show a connection editor that supports adding, modifying, viewing and
           deleting connections. It provides similar functionality as
           <command>nm-connection-editor</command>.</para>
+          <para>For Wi-Fi connections, the <option>Share QR...</option> button
+          displays a QR code that encodes the network credentials, so they can be
+          scanned to join the network from another device. When the password is
+          available, it is shown alongside the code; when it cannot be read
+          (for example, due to insufficient privileges), a warning is shown instead.</para>
         </listitem>
       </varlistentry>
 
