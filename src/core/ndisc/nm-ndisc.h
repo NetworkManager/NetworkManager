@@ -50,18 +50,6 @@ const char *nm_ndisc_dhcp_level_to_string(NMNDiscDHCPLevel level);
  * unit of it is milliseconds. But of course, infinity has not really a unit. */
 #define NM_NDISC_EXPIRY_INFINITY G_MAXINT64
 
-/* in common cases, the expiry_msec tracks the timestamp in nm_utils_get_monotonic_timestamp_mses()
- * timestamp when the item expires.
- *
- * When we configure an NMNDiscAddress to be announced via the router advertisement,
- * then that address does not have a fixed expiry point in time, instead, the expiry
- * really contains the lifetime from the moment when we send the router advertisement.
- * In that case, the expiry_msec is more a "lifetime" that starts counting at timestamp
- * zero.
- *
- * The unit is milliseconds (but of course, the timestamp is zero, so it doesn't really matter). */
-#define NM_NDISC_EXPIRY_BASE_TIMESTAMP ((gint64) 0)
-
 static inline gint64
 _nm_ndisc_lifetime_to_expiry(gint64 now_msec, guint32 lifetime)
 {
