@@ -7885,6 +7885,12 @@ device_link_changed(gpointer user_data)
                                                NM_UNMANAGED_PLATFORM_INIT,
                                                NM_UNMAN_FLAG_OP_SET_MANAGED,
                                                nm_device_get_manage_reason_external(self));
+
+        /* Now that we got UDEV's announcement we need to check ignore-carrier again.
+         * This is because the permanent MAC might have been set or changed. If we don't
+         * recheck we would ignore rules matching by MAC address. */
+        priv->ignore_carrier =
+            nm_config_data_get_ignore_carrier_by_device(nm_config_get_data(nm_config_get()), self);
     }
 
     _dev_unmanaged_check_external_down(self, FALSE, FALSE);
@@ -8561,10 +8567,13 @@ realize_start_setup(NMDevice             *self,
     nm_device_update_initial_hw_address(self);
     nm_device_update_permanent_hw_address(self, FALSE);
 
-    /* Note: initial hardware address must be read before calling get_ignore_carrier() */
+    /* Note: initial hardware address must be read before calling get_ignore_carrier(). We'll
+     * need to recheck ignore_carrier again after UDEV's announcement, as the permanent MAC
+     * address may be set by UDEV. */
     config = nm_config_get();
     priv->ignore_carrier =
         nm_config_data_get_ignore_carrier_by_device(nm_config_get_data(config), self);
+
     if (!priv->config_changed_id) {
         priv->config_changed_id = g_signal_connect(config,
                                                    NM_CONFIG_SIGNAL_CONFIG_CHANGED,
