@@ -42,11 +42,6 @@ Release: __RELEASE_VERSION__%{?dist}
 %global systemd_units_cloud_setup nm-cloud-setup.service nm-cloud-setup.timer
 
 ###############################################################################
-%if 0%{?fedora} > 40 || 0%{?rhel} >= 10
-%bcond_with dhclient
-%else
-%bcond_without dhclient
-%endif
 %bcond_without adsl
 %bcond_without bluetooth
 %bcond_without wwan
@@ -585,11 +580,6 @@ Preferably use nmcli instead.
 	-Dnft=%{_sbindir}/nft \
 	-Diptables=%{_sbindir}/iptables \
 	-Dip6tables=%{_sbindir}/ip6tables \
-%if %{with dhclient}
-	-Ddhclient=%{_sbindir}/dhclient \
-%else
-	-Ddhclient=no \
-%endif
 	-Ddhcpcd=no \
 	-Dcrypto=gnutls \
 %if %{with debug}

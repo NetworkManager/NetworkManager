@@ -7050,8 +7050,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      * values "duid" and "ipv6-duid" to generate the client-id.
      *
      * For DHCPv6, note that at the moment this property is
-     * only supported by the "internal" DHCPv6 plugin. The "dhclient" DHCPv6
-     * plugin always derives the IAID from the MAC address.
+     * only supported by the "internal" DHCPv6 plugin.
      *
      * The actually used DHCPv6 IAID for a currently activated interface is
      * exposed in the lease information of the device.

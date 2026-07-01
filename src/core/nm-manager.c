@@ -11,7 +11,6 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <stdlib.h>
-#include <sys/sendfile.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -3585,34 +3584,6 @@ get_existing_connection(NMManager *self, NMDevice *device, gboolean *out_generat
 }
 
 static gboolean
-copy_lease(const char *src, const char *dst)
-{
-    nm_auto_close int src_fd = -1;
-    int               dst_fd;
-    ssize_t           res, size = SSIZE_MAX;
-
-    src_fd = open(src, O_RDONLY | O_CLOEXEC);
-    if (src_fd < 0)
-        return FALSE;
-
-    dst_fd = open(dst, O_CREAT | O_EXCL | O_CLOEXEC | O_WRONLY, 0644);
-    if (dst_fd < 0)
-        return FALSE;
-
-    while ((res = sendfile(dst_fd, src_fd, NULL, size)) > 0)
-        size -= res;
-
-    nm_close(dst_fd);
-
-    if (res != 0) {
-        unlink(dst);
-        return FALSE;
-    }
-
-    return TRUE;
-}
-
-static gboolean
 recheck_assume_connection(NMManager *self, NMDevice *device)
 {
     NMSettingsConnection *sett_conn;
@@ -3652,18 +3623,9 @@ recheck_assume_connection(NMManager *self, NMDevice *device)
     if (state == NM_DEVICE_STATE_UNMANAGED) {
         gs_free char *initramfs_lease =
             g_strdup_printf(RUNSTATEDIR "/initramfs/net.%s.lease", nm_device_get_iface(device));
-        gs_free char *connection_lease = g_strdup_printf(NMRUNDIR "/dhclient-%s-%s.lease",
-                                                         nm_settings_connection_get_uuid(sett_conn),
-                                                         nm_device_get_iface(device));
 
-        if (copy_lease(initramfs_lease, connection_lease)) {
+        if (g_file_test(initramfs_lease, G_FILE_TEST_EXISTS)) {
             unlink(initramfs_lease);
-            /*
-             * We've managed to steal the lease used by initramfs before it
-             * killed off the dhclient. We need to take ownership of the configured
-             * connection and act like the device was configured by us.
-             * Otherwise, the address would just expire.
-             */
             _LOG2I(LOGD_DEVICE, device, "assume: taking over an initramfs-configured connection");
             activation_type_assume = TRUE;
 

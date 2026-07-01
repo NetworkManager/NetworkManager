@@ -1265,11 +1265,9 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * DUID and filled as an opaque value in the Client Identifier option.
      *
      * The special value "lease" will retrieve the DUID previously used from the
-     * lease file belonging to the connection. If no DUID is found and "dhclient"
-     * is the configured dhcp client, the DUID is searched in the system-wide
-     * dhclient lease file. If still no DUID is found, or another dhcp client is
-     * used, a global and permanent DUID-UUID (RFC 6355) will be generated based
-     * on the machine-id.
+     * lease file belonging to the connection. If no DUID is found, a global
+     * and permanent DUID-UUID (RFC 6355) will be generated based on the
+     * machine-id.
      *
      * The special values "llt" and "ll" will generate a DUID of type LLT or LL
      * (see RFC 3315) based on the current MAC address of the device. In order to

@@ -263,11 +263,7 @@ if [ -z "$P_LOGGING_BACKEND_DEFAULT" ] ; then
 fi
 
 if [ -z "$P_DHCP_DEFAULT" ] ; then
-    if [ "$P_FEDORA" -ge 31 -o "$P_RHEL" -ge 8 ] ; then
-        P_DHCP_DEFAULT=internal
-    else
-        P_DHCP_DEFAULT=dhclient
-    fi
+    P_DHCP_DEFAULT=internal
 fi
 
 if [ -z "$P_FIREWALLD_ZONE" ] ; then
@@ -377,7 +373,6 @@ meson setup\
     -Dnft="${D_SBINDIR}/nft" \
     -Diptables="${D_SBINDIR}/iptables" \
     -Dip6tables="${D_SBINDIR}/ip6tables" \
-    -Ddhclient="${D_SBINDIR}/dhclient" \
     -Ddhcpcd=no \
     -Dconfig_dhcp_default="$P_DHCP_DEFAULT" \
     "-Dcrypto=$P_CRYPTO" \

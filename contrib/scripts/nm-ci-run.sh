@@ -194,7 +194,6 @@ meson setup build \
     -D ofono=true \
     -D teamdctl=$_WITH_LIBTEAM \
     \
-    -D dhclient=/bin/nowhere/dhclient \
     -D dhcpcd=/bin/nowhere/dhcpd \
     \
     -D netconfig=/bin/nowhere/netconfig \

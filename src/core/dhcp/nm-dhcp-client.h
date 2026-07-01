@@ -53,8 +53,8 @@ typedef enum _nm_packed {
      * As such, it's never officially in a non-recoverable state.
      * However, there are cases when it really looks like we won't
      * be able to get a lease. For example, if the underlying interface
-     * is layer 3 only, if we have no IPv6 link local address for a prolonged
-     * time, or if dhclient is not installed.
+     * is layer 3 only, or if we have no IPv6 link local address for a prolonged
+     * time.
      * But even these cases are potentially recoverable. This is only
      * a hint to the user (which they might ignore).
      *
@@ -311,7 +311,6 @@ typedef struct {
 
 GType nm_dhcp_nettools_get_type(void);
 
-extern const NMDhcpClientFactory _nm_dhcp_client_factory_dhclient;
 extern const NMDhcpClientFactory _nm_dhcp_client_factory_dhcpcd;
 extern const NMDhcpClientFactory _nm_dhcp_client_factory_internal;
 extern const NMDhcpClientFactory _nm_dhcp_client_factory_systemd;

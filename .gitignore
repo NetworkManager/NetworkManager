@@ -249,7 +249,6 @@ test-*.trs
 /src/core/devices/wifi/tests/test-devices-wifi
 /src/core/devices/wwan/tests/test-service-providers
 /src/core/dhcp/nm-dhcp-helper
-/src/core/dhcp/tests/test-dhcp-dhclient
 /src/core/dhcp/tests/test-dhcp-options
 /src/core/dhcp/tests/test-dhcp-utils
 /src/core/dnsmasq/tests/test-dnsmasq-utils
@@ -427,11 +426,9 @@ test-*.trs
 /src/devices/wifi/tests/test-wifi-ap-utils
 /src/devices/wwan/tests/test-service-providers
 /src/dhcp-manager/nm-dhcp-helper
-/src/dhcp-manager/tests/test-dhcp-dhclient
 /src/dhcp-manager/tests/test-dhcp-options
 /src/dhcp-manager/tests/test-dhcp-utils
 /src/dhcp/nm-dhcp-helper
-/src/dhcp/tests/test-dhcp-dhclient
 /src/dhcp/tests/test-dhcp-options
 /src/dhcp/tests/test-dhcp-utils
 /src/dnsmasq-manager/tests/test-dnsmasq-utils
