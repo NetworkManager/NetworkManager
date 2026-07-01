@@ -92,12 +92,25 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   button in the "Edit a connection" view, mirroring "nmcli device wifi
   show-password".
 * nmcli "device wifi show-password" no longer prints a QR code when the
-  Wi-Fi password cannot be read (for example, without root privileges); it
-  prints a warning instead.
+  Wi-Fi password cannot be read due to insufficient privileges; it prints a
+  warning instead.
 * Fix stale global connectivity state with connectivity checking enabled:
   NetworkManager could report limited connectivity while another device had full
   connectivity, or keep reporting limited after a device regained internet
   access.
+* nmcli "connection show" now labels the ports column "PORT" instead of
+  "SLAVE" (the "SLAVE" field name is still accepted as an alias), and adds
+  the BRIDGE.PORTS, TEAM.PORTS and GENERAL.CONTROLLER-PATH fields.
+* Add a "polkit_noauth_group" build option to install a polkit rule that
+  lets admin users in the given group (typically "sudo" or "wheel") make
+  system-wide connection changes from a local console without entering a
+  password. It is empty (disabled) by default and is discouraged.
+* When wpa_supplicant reports a WPA3-SAE password mismatch, prompt the
+  user for the password again instead of failing, matching the WPA-PSK
+  behavior.
+* Fix VPN connections with "ipv4.dns-search" or "ipv6.dns-search" set
+  ignoring the search domains pushed by the VPN; the manually configured
+  and VPN-provided search domains are now merged.
 
 =============================================
 NetworkManager-1.56
