@@ -60,17 +60,29 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-9a076a2431b8'
-  CENTOS_TAG:  'tag-e1774f6bed52'
-  DEBIAN_TAG:  'tag-dbd8526db9a5'
-  FEDORA_TAG:  'tag-e1774f6bed52'
-  UBUNTU_TAG:  'tag-dbd8526db9a5'
+  ALPINE_TAG:  'tag-c501b92e52c1'
+  CENTOS_TAG:  'tag-e01fd12e49d7'
+  DEBIAN_TAG:  'tag-7c9bad89a15e'
+  FEDORA_TAG:  'tag-e01fd12e49d7'
+  UBUNTU_TAG:  'tag-7c9bad89a15e'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   DEBIAN_EXEC: 'bash .gitlab-ci/debian-install.sh'
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   UBUNTU_EXEC: 'bash .gitlab-ci/debian-install.sh'
+
+# Retry only on transient infrastructure failures. script_failure is
+# intentionally excluded so real (and flaky) test failures stay visible.
+default:
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+      - scheduler_failure
+      - api_failure
+      - unknown_failure
 
 .nm_artifacts:
   variables:

@@ -77,6 +77,18 @@ variables:
   {{"%-13s"| format(distro_group.name.upper() + '_EXEC:')}}'bash .gitlab-ci/{{base_types[distro_group.name]}}-install.sh'
 {% endfor %}
 
+# Retry only on transient infrastructure failures. script_failure is
+# intentionally excluded so real (and flaky) test failures stay visible.
+default:
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+      - scheduler_failure
+      - api_failure
+      - unknown_failure
+
 .nm_artifacts:
   variables:
     NM_BUILD_TARBALL: 1
