@@ -32,7 +32,6 @@ install_ignore_missing() {
 
 install \
     \
-    bpftool \
     clang \
     dbus \
     dbus-x11 \
@@ -79,6 +78,16 @@ install \
     udev \
     uuid-dev \
     valgrind \
+    \
+    #end
+
+# bpftool is a virtual package on Ubuntu 22.04 and 24.04 (provided by
+# linux-tools-*), with no install candidate. Install it where a candidate
+# exists (Debian, Fedora, Ubuntu 25.04+) and skip it otherwise. It only
+# builds the CLAT skeleton, and CLAT needs libndp >= 1.9, which those images
+# lack (they ship 1.8), so their builds run with clat off and never use it.
+install_ignore_missing \
+    bpftool \
     \
     #end
 
