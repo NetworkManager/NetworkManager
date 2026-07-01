@@ -544,6 +544,7 @@ typedef struct {
 
 typedef struct {
     struct nl_sock *sk_genl_sync;
+    struct nl_sock *sk_rtnl_sync;
 
     union {
         struct {
@@ -9877,9 +9878,8 @@ link_get_bridge_vlans(NMPlatform            *platform,
                       NMPlatformBridgeVlan **out_vlans,
                       guint                 *out_num_vlans)
 {
-    gboolean                     ret   = FALSE;
+    NMLinuxPlatformPrivate      *priv  = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
     nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-    struct nl_sock              *sk    = NULL;
     BridgeVlanData               data;
     int                          nle;
 
@@ -9887,20 +9887,12 @@ link_get_bridge_vlans(NMPlatform            *platform,
     if (!nlmsg)
         g_return_val_if_reached(FALSE);
 
-    nle = nl_socket_new(&sk, NETLINK_ROUTE, NL_SOCKET_FLAGS_DISABLE_MSG_PEEK, 0, 0);
-    if (nle < 0) {
-        _LOGD("get-bridge-vlan: error opening socket: %s (%d)", nm_strerror(nle), nle);
-        ret = FALSE;
-        goto err;
-    }
-
     NLA_PUT_U32(nlmsg, IFLA_EXT_MASK, RTEXT_FILTER_BRVLAN_COMPRESSED);
 
-    nle = nl_send_auto(sk, nlmsg);
+    nle = nl_send_auto(priv->sk_rtnl_sync, nlmsg);
     if (nle < 0) {
         _LOGD("get-bridge-vlans: failed sending request: %s (%d)", nm_strerror(nle), nle);
-        ret = FALSE;
-        goto err;
+        return FALSE;
     }
 
     data = ((BridgeVlanData) {
@@ -9908,7 +9900,7 @@ link_get_bridge_vlans(NMPlatform            *platform,
     });
 
     do {
-        nle = nl_recvmsgs(sk,
+        nle = nl_recvmsgs(priv->sk_rtnl_sync,
                           &((const struct nl_cb) {
                               .valid_cb  = get_bridge_vlans_cb,
                               .valid_arg = &data,
@@ -9917,8 +9909,7 @@ link_get_bridge_vlans(NMPlatform            *platform,
 
     if (nle < 0) {
         _LOGD("get-bridge-vlan: recv failed: %s (%d)", nm_strerror(nle), nle);
-        ret = FALSE;
-        goto err;
+        return FALSE;
     }
 
     if (data.vlans) {
@@ -9932,11 +9923,7 @@ link_get_bridge_vlans(NMPlatform            *platform,
     if (data.vlans)
         g_array_free(data.vlans, !out_vlans);
 
-    ret = TRUE;
-err:
-    if (sk)
-        nl_socket_free(sk);
-    return ret;
+    return TRUE;
 
 nla_put_failure:
     g_return_val_if_reached(FALSE);
@@ -10637,8 +10624,8 @@ parse_fdb_cb(const struct nl_msg *msg, void *arg)
 NMEtherAddr **
 nm_linux_platform_get_bridge_fdb(NMPlatform *platform, int *ifindexes, guint ifindexes_len)
 {
+    NMLinuxPlatformPrivate        *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
     int                            nle;
-    struct nl_sock                *sk        = NULL;
     nm_auto_nlmsg struct nl_msg   *msg       = NULL;
     gs_unref_hashtable GHashTable *fdb_addrs = NULL;
     FdbData                        data;
@@ -10658,18 +10645,12 @@ nm_linux_platform_get_bridge_fdb(NMPlatform *platform, int *ifindexes, guint ifi
     msg = nlmsg_alloc_new(0, RTM_GETNEIGH, NLM_F_REQUEST | NLM_F_DUMP);
 
     if (nlmsg_append_struct(msg, &ndm) < 0)
-        goto err;
+        return NULL;
 
-    nle = nl_socket_new(&sk, NETLINK_ROUTE, NL_SOCKET_FLAGS_DISABLE_MSG_PEEK, 0, 0);
-    if (nle < 0) {
-        _LOGD("get-link-fdb: error opening socket: %s (%d)", nm_strerror(nle), nle);
-        goto err;
-    }
-
-    nle = nl_send_auto(sk, msg);
+    nle = nl_send_auto(priv->sk_rtnl_sync, msg);
     if (nle < 0) {
         _LOGD("get-link-fdb: failed sending request: %s (%d)", nm_strerror(nle), nle);
-        goto err;
+        return NULL;
     }
 
     data = ((FdbData) {
@@ -10679,7 +10660,7 @@ nm_linux_platform_get_bridge_fdb(NMPlatform *platform, int *ifindexes, guint ifi
     });
 
     do {
-        nle = nl_recvmsgs(sk,
+        nle = nl_recvmsgs(priv->sk_rtnl_sync,
                           &((const struct nl_cb) {
                               .valid_cb  = parse_fdb_cb,
                               .valid_arg = &data,
@@ -10688,18 +10669,12 @@ nm_linux_platform_get_bridge_fdb(NMPlatform *platform, int *ifindexes, guint ifi
 
     if (nle < 0) {
         _LOGD("get-link-fdb: recv failed: %s (%d)", nm_strerror(nle), nle);
-        goto err;
+        return NULL;
     }
 
     ret = g_hash_table_get_keys_as_array(fdb_addrs, NULL);
     g_hash_table_steal_all(fdb_addrs);
-    nl_socket_free(sk);
     return NM_CAST_ALIGN(NMEtherAddr *, ret);
-
-err:
-    if (sk)
-        nl_socket_free(sk);
-    return NULL;
 }
 
 /*****************************************************************************/
@@ -12241,6 +12216,13 @@ constructed(GObject *_object)
           nl_socket_get_local_port(priv->sk_genl_sync),
           nl_socket_get_fd(priv->sk_genl_sync));
 
+    nle = nl_socket_new(&priv->sk_rtnl_sync, NETLINK_ROUTE, NL_SOCKET_FLAGS_DISABLE_MSG_PEEK, 0, 0);
+    g_assert(!nle);
+
+    _LOGD("rtnl: route netlink socket for sync operations created: port=%u, fd=%d",
+          nl_socket_get_local_port(priv->sk_rtnl_sync),
+          nl_socket_get_fd(priv->sk_rtnl_sync));
+
     /*************************************************************************/
 
     /* disable MSG_PEEK, we will handle lost messages ourselves. */
@@ -12430,6 +12412,7 @@ finalize(GObject *object)
     nm_clear_g_source_inst(&priv->event_source_rtnl);
 
     nl_socket_free(priv->sk_genl_sync);
+    nl_socket_free(priv->sk_rtnl_sync);
     nl_socket_free(priv->sk_genl);
     nl_socket_free(priv->sk_rtnl);
 
