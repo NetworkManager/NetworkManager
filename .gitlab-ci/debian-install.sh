@@ -31,6 +31,13 @@ if [ $IS_DEBIAN_9 = 1 -o $IS_UBUNTU_18_04 = 1 ]; then
     ln -sf /bin/true /usr/bin/chfn
 fi
 
+# The udev postinst runs systemd-tmpfiles, which fails to chown the
+# read-only /dev/kvm, /dev/vhost-* nodes the CI runner exposes. We only
+# need udev for its pkgconfig file, not the daemon; mask the offending
+# tmpfiles so the postinst succeeds.
+mkdir -p /etc/tmpfiles.d
+: > /etc/tmpfiles.d/static-nodes-permissions.conf
+
 DEBIAN_FRONTEND=noninteractive apt-get update
 DEBIAN_FRONTEND=noninteractive NM_INSTALL="apt-get --yes install" bash -x ./contrib/debian/REQUIRED_PACKAGES
 
