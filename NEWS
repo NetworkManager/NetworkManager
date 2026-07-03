@@ -8,10 +8,16 @@ subject to change and not guaranteed to be compatible with
 the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
+General:
+
 * Unify the versioning to use everywhere the scheme with the -rcX or -dev
   suffixes when appropriate. This affects, for example, the URL and filename
   of the release tarball and the version reported by nmcli and the daemon.
   As an exception, the C API will continue to use the 90+ scheme for RC versions.
+* Install the systemd units in the initramfs using a systemd generator.
+
+Core:
+
 * Connection profiles with manual IP addressing and with gateways that are not
   directly reachable will generate a warning on activation and when they are
   added/modified via nmcli and nmtui. NetworkManager currently adds on-link
@@ -20,97 +26,117 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   gateways. A gateway (either the default gateway or the next-hop of a route) is
   considered directly reachable if it falls within the subnet of a direct route
   (a route without a next hop) or of a prefix route from a static address.
-* Restrict the connectivity check to use the DNS servers defined on the
-  same link. If the link has no DNS servers, the connectivity check will
-  use any servers available in the system.
-* Install the systemd units in the initramfs using a systemd generator.
-* A new "check-connectivity" configuration option is available to disable the
-  connectivity check for selected interfaces.
-* Remove the modify_system build option that allowed setting up the
-  polkit permissions to allow non-admin users to create system-wide
-  connection. That configuration is discouraged because it can be used
-  to bypass filesystem permissions.
-* For private connections (the ones that specify a user in the
-  "connection.permissions" property), verify that the user can access
-  the 802.1X certificates and keys set in the connection.
-* Introduce a libnm function that can be used by VPN plugins to check
-  user permissions on certificate and keys.
-* The support for Wireless Extensions is deprecated and will be
-  removed in a future release. Wireless Extensions are now disabled by
-  default.
 * Use an internal implementation of the ping functionality when the
   "connection.gateway-ping-timeout" or "connection.ip-ping-addresses"
   properties are set, instead of relying on the "ping" tool.
-* The powersave property now functions with the iwd backend.
-* The "band" property of Wi-fi connections now accepts the "6GHz"
-  value.
-* Show the Wi-Fi band of APs in the scan results from nmcli.
-* New <Select...> button in nmtui that allows users to chose from list of
-  available devices when creating connection profiles for physical interfaces
-  (Ethernet, Wi-Fi, etc.).
 * Add support for CLAT (464XLAT) using a BPF program.
 * Change the default value of the ipv4.dhcp-ipv6-only-preferred property
   to a new value "auto" which automatically enables the option when CLAT
   is enabled ("yes" or "auto") in the connection profile.
-* WIFI connections using wpa-psk respect the setting connection.auth-retry
-  and only prompt for new secrets during the last authentication attempt before
-  failing.
 * Add support for GENEVE interface.
-* The DHCPv4 internal client now ignores option 3 (Router) if the lease
-  contains option 121 (Classless Static Route), as recommended by RFC 3442.
-* Allow persisting the managed state across reboots from nmcli and the D-Bus API.
+* Allow persisting the managed state across reboots from the D-Bus API and nmcli.
 * Allow changing the device's administrative state in the kernel at the same
-  time as a change to the managed state from nmcli and the D-Bus API.
-* Allow configuring all bond options in nmtui by introducing a
-  "other options" field, which covers options not already covered by a
-  dedicated input field.
+  time as a change to the managed state from the D-Bus API and nmcli.
 * IPv6 interfaces that receive PD via DHCPv6 are considered healthy without a
   non-temporary address. The delegated prefix can be used via an interface
   configured with "ipv6.method: shared"
-* nmtui now offers a "Show password" checkbox in the dialog that prompts for
-  secrets when activating a connection, matching the connection editor.
-* Fix an out-of-bounds read in the internal DHCPv4 client that an on-link
-  attacker could trigger with a malformed UDP packet, crashing NetworkManager.
-* The nmtui connection lists ("nmtui connect" and "nmtui edit") support a
-  vim-style "/" search that filters the list to matching entries as you type.
-* nmtui now redraws its forms when the terminal is resized, instead of leaving
-  them off-center or clipped until the form is reopened.
-* The "Activate a connection" screen in nmtui now has a "Rescan Wi-Fi" button
-  that scans for nearby Wi-Fi networks on demand.
-* Validate hostnames and MUD URLs before pasting them into the dhclient
-  configuration file, rejecting characters that could alter the config
-  syntax (CVE-2026-10805).
 * Fix reapply not honoring the ipv6.ignore-auto-dns, ipv6.ignore-auto-routes
   and ipv6.never-default properties when DHCPv6 was not restarted (for example
   when the IPv6 DNS came from a DHCPv6 lease), so that DHCPv6-provided DNS and
   routes are now correctly suppressed on reapply without a connection restart.
-* Accept 64 hex-character PSK in WPS credentials which are returned by some
-  access points.
-* Drop support for dhclient as a DHCP backend, which has been deprecated
-  since NetworkManager-1.50.
-* nmtui can now share a Wi-Fi connection as a QR code via the "Share QR..."
-  button in the "Edit a connection" view, mirroring "nmcli device wifi
-  show-password".
-* nmcli "device wifi show-password" no longer prints a QR code when the
-  Wi-Fi password cannot be read due to insufficient privileges; it prints a
-  warning instead.
+
+Connectivity:
+
+* A new "check-connectivity" configuration option is available to disable the
+  connectivity check for selected interfaces.
+* Restrict the connectivity check to use the DNS servers defined on the
+  same link. If the link has no DNS servers, the connectivity check will
+  use any servers available in the system.
 * Fix stale global connectivity state with connectivity checking enabled:
   NetworkManager could report limited connectivity while another device had full
   connectivity, or keep reporting limited after a device regained internet
   access.
+
+DHCP:
+
+* The internal DHCPv4 client now ignores option 3 (Router) if the lease
+  contains option 121 (Classless Static Route), as recommended by RFC 3442.
+* Fix an out-of-bounds read in the internal DHCPv4 client that an on-link
+  attacker could trigger with a malformed UDP packet, crashing NetworkManager.
+* Validate hostnames and MUD URLs before pasting them into the dhclient
+  configuration file, rejecting characters that could alter the config
+  syntax (CVE-2026-10805).
+
+Wi-Fi:
+
+* The "band" property of Wi-fi connections now accepts the "6GHz"
+  value.
+* The powersave property now functions with the iwd backend.
+* WIFI connections using wpa-psk respect the setting connection.auth-retry
+  and only prompt for new secrets during the last authentication attempt before
+  failing.
+* Accept 64 hex-character PSK in WPS credentials which are returned by some
+  access points.
+* When wpa_supplicant reports a WPA3-SAE password mismatch, prompt the
+  user for the password again instead of failing, matching the WPA-PSK
+  behavior.
+
+nmtui / nmcli:
+
+* Show the Wi-Fi band of APs in the scan results from nmcli.
+* New <Select...> button in nmtui that allows users to chose from list of
+  available devices when creating connection profiles for physical interfaces
+  (Ethernet, Wi-Fi, etc.).
+* Allow configuring all bond options in nmtui by introducing a
+  "other options" field, which covers options not already covered by a
+  dedicated input field.
+* nmtui now offers a "Show password" checkbox in the dialog that prompts for
+  secrets when activating a connection, matching the connection editor.
+* The nmtui connection lists ("nmtui connect" and "nmtui edit") support a
+  vim-style "/" search that filters the list to matching entries as you type.
+* The "Activate a connection" screen in nmtui now has a "Rescan Wi-Fi" button
+  that scans for nearby Wi-Fi networks on demand.
+* nmtui can now share a Wi-Fi connection as a QR code via the "Share QR..."
+  button in the "Edit a connection" view, mirroring "nmcli device wifi
+  show-password".
 * nmcli "connection show" now labels the ports column "PORT" instead of
   "SLAVE" (the "SLAVE" field name is still accepted as an alias), and adds
   the BRIDGE.PORTS, TEAM.PORTS and GENERAL.CONTROLLER-PATH fields.
+* nmtui now redraws its forms when the terminal is resized, instead of leaving
+  them off-center or clipped until the form is reopened.
+* nmcli "device wifi show-password" no longer prints a QR code when the
+  Wi-Fi password cannot be read due to insufficient privileges; it prints a
+  warning instead.
+
+VPN:
+
+* Introduce a libnm function that can be used by VPN plugins to check
+  user permissions on certificate and keys.
+* Fix VPN connections with "ipv4.dns-search" or "ipv6.dns-search" set
+  ignoring the search domains pushed by the VPN; the manually configured
+  and VPN-provided search domains are now merged.
+
+Security:
+
+* For private connections (the ones that specify a user in the
+  "connection.permissions" property), verify that the user can access
+  the 802.1X certificates and keys set in the connection.
 * Add a "polkit_noauth_group" build option to install a polkit rule that
   lets admin users in the given group (typically "sudo" or "wheel") make
   system-wide connection changes from a local console without entering a
   password. It is empty (disabled) by default and is discouraged.
-* When wpa_supplicant reports a WPA3-SAE password mismatch, prompt the
-  user for the password again instead of failing, matching the WPA-PSK
-  behavior.
-* Fix VPN connections with "ipv4.dns-search" or "ipv6.dns-search" set
-  ignoring the search domains pushed by the VPN; the manually configured
-  and VPN-provided search domains are now merged.
+
+Deprecations and removals:
+
+* The support for Wireless Extensions is deprecated and will be
+  removed in a future release. Wireless Extensions are now disabled by
+  default.
+* Remove the modify_system build option that allowed setting up the
+  polkit permissions to allow non-admin users to create system-wide
+  connection. That configuration is discouraged because it can be used
+  to bypass filesystem permissions.
+* Drop support for dhclient as a DHCP backend, which has been deprecated
+  since NetworkManager-1.50.
 
 =============================================
 NetworkManager-1.56
