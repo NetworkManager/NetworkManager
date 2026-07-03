@@ -29,7 +29,8 @@ Core:
 * Use an internal implementation of the ping functionality when the
   "connection.gateway-ping-timeout" or "connection.ip-ping-addresses"
   properties are set, instead of relying on the "ping" tool.
-* Add support for CLAT (464XLAT) using a BPF program.
+* Add support for CLAT (464XLAT) using a BPF program, controlled by the
+  "ipv4.clat" property. CLAT is still disabled by default for now.
 * Change the default value of the ipv4.dhcp-ipv6-only-preferred property
   to a new value "auto" which automatically enables the option when CLAT
   is enabled ("yes" or "auto") in the connection profile.
