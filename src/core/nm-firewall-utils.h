@@ -22,6 +22,9 @@ typedef struct _NMFirewallConfig NMFirewallConfig;
 
 NMFirewallConfig *nm_firewall_config_new_shared(const char *ip_iface, in_addr_t addr, guint8 plen);
 
+NMFirewallConfig *
+nm_firewall_config_new_shared6(const char *ip_iface, const struct in6_addr *addr, guint8 plen);
+
 void nm_firewall_config_free(NMFirewallConfig *self);
 
 void nm_firewall_config_set_wg_rule(const char        *ifname,

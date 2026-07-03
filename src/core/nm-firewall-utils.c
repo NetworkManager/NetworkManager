@@ -221,27 +221,33 @@ _iptables_call_v(const char *const *argv)
                      __VA_ARGS__))
 
 static gboolean
-_share_iptables_chain_op(const char *table, const char *chain, const char *op)
+_share_ipxtables_chain_op(int family, const char *table, const char *chain, const char *op)
 {
-    return _ipxtables_call(AF_INET, "--table", table, op, chain);
+    return _ipxtables_call(family, "--table", table, op, chain);
 }
 
 static gboolean
-_share_iptables_chain_delete(const char *table, const char *chain)
+_share_ipxtables_chain_delete(int family, const char *table, const char *chain)
 {
-    _share_iptables_chain_op(table, chain, "--flush");
-    return _share_iptables_chain_op(table, chain, "--delete-chain");
+    _share_ipxtables_chain_op(family, table, chain, "--flush");
+    return _share_ipxtables_chain_op(family, table, chain, "--delete-chain");
 }
 
 static gboolean
-_share_iptables_chain_add(const char *table, const char *chain)
+_share_ipxtables_chain_add(int family, const char *table, const char *chain)
 {
-    if (_share_iptables_chain_op(table, chain, "--new-chain"))
+    if (_share_ipxtables_chain_op(family, table, chain, "--new-chain"))
         return TRUE;
 
-    _share_iptables_chain_delete(table, chain);
-    return _share_iptables_chain_op(table, chain, "--new-chain");
+    _share_ipxtables_chain_delete(family, table, chain);
+    return _share_ipxtables_chain_op(family, table, chain, "--new-chain");
 }
+
+#define _share_iptables_chain_op(table, chain, op) \
+    _share_ipxtables_chain_op(AF_INET, table, chain, op)
+#define _share_iptables_chain_delete(table, chain) \
+    _share_ipxtables_chain_delete(AF_INET, table, chain)
+#define _share_iptables_chain_add(table, chain) _share_ipxtables_chain_add(AF_INET, table, chain)
 
 static void
 _share_iptables_set_masquerade_sync(gboolean up, const char *ip_iface, in_addr_t addr, guint8 plen)
@@ -424,6 +430,144 @@ _share_iptables_set_shared_sync(gboolean up, const char *ip_iface, in_addr_t add
 
     if (!up)
         _share_iptables_set_shared_chains_delete(chain_input, chain_forward);
+}
+
+/*****************************************************************************/
+
+#define _SHARE_IP6_SUBNET_TO_STR_LEN (INET6_ADDRSTRLEN + 1 + 3 + 1)
+
+static const char *
+_share_ip6_subnet_to_str(char                   buf[static _SHARE_IP6_SUBNET_TO_STR_LEN],
+                         const struct in6_addr *addr,
+                         guint8                 plen)
+{
+    char buf_addr[INET6_ADDRSTRLEN];
+    int  l;
+
+    l = g_snprintf(buf, _SHARE_IP6_SUBNET_TO_STR_LEN, "%s/%u", nm_inet6_ntop(addr, buf_addr), plen);
+    nm_assert(l < _SHARE_IP6_SUBNET_TO_STR_LEN);
+    return buf;
+}
+
+static void
+_share_ip6tables_set_masquerade_sync(gboolean               up,
+                                     const char            *ip_iface,
+                                     const struct in6_addr *addr,
+                                     guint8                 plen)
+{
+    char          str_subnet[_SHARE_IP6_SUBNET_TO_STR_LEN];
+    gs_free char *comment_name = NULL;
+
+    comment_name = _iptables_get_name(FALSE, "nm-shared6", ip_iface);
+
+    _share_ip6_subnet_to_str(str_subnet, addr, plen);
+    _ipxtables_call(AF_INET6,
+                    "--table",
+                    "nat",
+                    up ? "--insert" : "--delete",
+                    "POSTROUTING",
+                    "--source",
+                    str_subnet,
+                    "!",
+                    "--destination",
+                    str_subnet,
+                    "--jump",
+                    "MASQUERADE",
+                    "-m",
+                    "comment",
+                    "--comment",
+                    comment_name);
+}
+
+static void
+_share_ip6tables_set_shared_sync(gboolean               up,
+                                 const char            *ip_iface,
+                                 const struct in6_addr *addr,
+                                 guint8                 plen)
+{
+    char          str_subnet[_SHARE_IP6_SUBNET_TO_STR_LEN];
+    gs_free char *comment_name  = NULL;
+    gs_free char *chain_forward = NULL;
+
+    comment_name  = _iptables_get_name(FALSE, "nm-shared6", ip_iface);
+    chain_forward = _iptables_get_name(TRUE, "nm-s6-fw", ip_iface);
+
+    _share_ip6_subnet_to_str(str_subnet, addr, plen);
+
+    if (up) {
+        _share_ipxtables_chain_add(AF_INET6, "filter", chain_forward);
+
+        _ipxtables_call(AF_INET6,
+                        "--table",
+                        "filter",
+                        "--append",
+                        chain_forward,
+                        "--destination",
+                        str_subnet,
+                        "--out-interface",
+                        ip_iface,
+                        "--match",
+                        "state",
+                        "--state",
+                        "ESTABLISHED,RELATED",
+                        "--jump",
+                        "ACCEPT");
+        _ipxtables_call(AF_INET6,
+                        "--table",
+                        "filter",
+                        "--append",
+                        chain_forward,
+                        "--source",
+                        str_subnet,
+                        "--in-interface",
+                        ip_iface,
+                        "--jump",
+                        "ACCEPT");
+        _ipxtables_call(AF_INET6,
+                        "--table",
+                        "filter",
+                        "--append",
+                        chain_forward,
+                        "--in-interface",
+                        ip_iface,
+                        "--out-interface",
+                        ip_iface,
+                        "--jump",
+                        "ACCEPT");
+        _ipxtables_call(AF_INET6,
+                        "--table",
+                        "filter",
+                        "--append",
+                        chain_forward,
+                        "--out-interface",
+                        ip_iface,
+                        "--jump",
+                        "REJECT");
+        _ipxtables_call(AF_INET6,
+                        "--table",
+                        "filter",
+                        "--append",
+                        chain_forward,
+                        "--in-interface",
+                        ip_iface,
+                        "--jump",
+                        "REJECT");
+    }
+
+    _ipxtables_call(AF_INET6,
+                    "--table",
+                    "filter",
+                    up ? "--insert" : "--delete",
+                    "FORWARD",
+                    "--jump",
+                    chain_forward,
+                    "-m",
+                    "comment",
+                    "--comment",
+                    comment_name);
+
+    if (!up)
+        _share_ipxtables_chain_delete(AF_INET6, "filter", chain_forward);
 }
 
 /*****************************************************************************/
@@ -763,6 +907,68 @@ _fw_nft_set_shared_construct(gboolean up, const char *ip_iface, in_addr_t addr, 
                 ip_iface);
         _append(&strbuf,
                 "add rule ip %s filter_forward oifname \"%s\" reject;",
+                table_name,
+                ip_iface);
+    }
+
+    return nm_str_buf_finalize_to_gbytes(&strbuf);
+}
+
+static GBytes *
+_fw_nft_set_shared6_construct(gboolean               up,
+                              const char            *ip_iface,
+                              const struct in6_addr *addr,
+                              guint8                 plen)
+{
+    nm_auto_str_buf NMStrBuf strbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_1000, FALSE);
+    gs_free char            *table_name = NULL;
+    char                     str_subnet[_SHARE_IP6_SUBNET_TO_STR_LEN];
+
+    table_name = _iptables_get_name(FALSE, "nm-shared6", ip_iface);
+
+    _share_ip6_subnet_to_str(str_subnet, addr, plen);
+
+    _fw_nft_append_cmd_table(&strbuf, "ip6", table_name, up);
+
+    if (up) {
+        _append(&strbuf,
+                "add chain ip6 %s nat_postrouting {"
+                " type nat hook postrouting priority 100; policy accept; "
+                "};",
+                table_name);
+        _append(&strbuf,
+                "add rule ip6 %s nat_postrouting ip6 saddr %s ip6 daddr != %s masquerade;",
+                table_name,
+                str_subnet,
+                str_subnet);
+
+        _append(&strbuf,
+                "add chain ip6 %s filter_forward {"
+                " type filter hook forward priority 0; policy accept; "
+                "};",
+                table_name);
+        _append(&strbuf,
+                "add rule ip6 %s filter_forward ip6 daddr %s oifname \"%s\" "
+                " ct state { established, related } accept;",
+                table_name,
+                str_subnet,
+                ip_iface);
+        _append(&strbuf,
+                "add rule ip6 %s filter_forward ip6 saddr %s iifname \"%s\" accept;",
+                table_name,
+                str_subnet,
+                ip_iface);
+        _append(&strbuf,
+                "add rule ip6 %s filter_forward iifname \"%s\" oifname \"%s\" accept;",
+                table_name,
+                ip_iface,
+                ip_iface);
+        _append(&strbuf,
+                "add rule ip6 %s filter_forward iifname \"%s\" reject;",
+                table_name,
+                ip_iface);
+        _append(&strbuf,
+                "add rule ip6 %s filter_forward oifname \"%s\" reject;",
                 table_name,
                 ip_iface);
     }
@@ -1161,9 +1367,13 @@ out:
 /*****************************************************************************/
 
 struct _NMFirewallConfig {
-    char     *ip_iface;
-    in_addr_t addr;
-    guint8    plen;
+    char  *ip_iface;
+    int    addr_family;
+    guint8 plen;
+    union {
+        in_addr_t       v4;
+        struct in6_addr v6;
+    } addr;
 };
 
 NMFirewallConfig *
@@ -1177,9 +1387,29 @@ nm_firewall_config_new_shared(const char *ip_iface, in_addr_t addr, guint8 plen)
 
     self  = g_slice_new(NMFirewallConfig);
     *self = (NMFirewallConfig) {
-        .ip_iface = g_strdup(ip_iface),
-        .addr     = addr,
-        .plen     = plen,
+        .ip_iface    = g_strdup(ip_iface),
+        .addr_family = AF_INET,
+        .plen        = plen,
+        .addr.v4     = addr,
+    };
+    return self;
+}
+
+NMFirewallConfig *
+nm_firewall_config_new_shared6(const char *ip_iface, const struct in6_addr *addr, guint8 plen)
+{
+    NMFirewallConfig *self;
+
+    nm_assert(ip_iface);
+    nm_assert(addr);
+    nm_assert(plen <= 128);
+
+    self  = g_slice_new(NMFirewallConfig);
+    *self = (NMFirewallConfig) {
+        .ip_iface    = g_strdup(ip_iface),
+        .addr_family = AF_INET6,
+        .plen        = plen,
+        .addr.v6     = *addr,
     };
     return self;
 }
@@ -1226,14 +1456,24 @@ nm_firewall_config_apply_sync(NMFirewallConfig *self, gboolean up)
 {
     switch (nm_firewall_utils_get_backend()) {
     case NM_FIREWALL_BACKEND_IPTABLES:
-        _share_iptables_set_masquerade_sync(up, self->ip_iface, self->addr, self->plen);
-        _share_iptables_set_shared_sync(up, self->ip_iface, self->addr, self->plen);
+        if (self->addr_family == AF_INET) {
+            _share_iptables_set_masquerade_sync(up, self->ip_iface, self->addr.v4, self->plen);
+            _share_iptables_set_shared_sync(up, self->ip_iface, self->addr.v4, self->plen);
+        } else {
+            _share_ip6tables_set_masquerade_sync(up, self->ip_iface, &self->addr.v6, self->plen);
+            _share_ip6tables_set_shared_sync(up, self->ip_iface, &self->addr.v6, self->plen);
+        }
         break;
     case NM_FIREWALL_BACKEND_NFTABLES:
     {
         gs_unref_bytes GBytes *stdin_buf = NULL;
 
-        stdin_buf = _fw_nft_set_shared_construct(up, self->ip_iface, self->addr, self->plen);
+        if (self->addr_family == AF_INET) {
+            stdin_buf = _fw_nft_set_shared_construct(up, self->ip_iface, self->addr.v4, self->plen);
+        } else {
+            stdin_buf =
+                _fw_nft_set_shared6_construct(up, self->ip_iface, &self->addr.v6, self->plen);
+        }
         _fw_nft_call_sync(stdin_buf, NULL);
         break;
     }
