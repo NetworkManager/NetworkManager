@@ -66,13 +66,13 @@ daemon or provided by a device plugin; a plugin is a dynamic library
 for optional functionality that depend on external software. In this
 way, it is possible to install a minimal version of NetworkManager
 with a limited set of dependencies. As there is no stable API/ABI for
-those plugins, they must be built together with the daemonq and
+those plugins, they must be built together with the daemon and
 maintained as part of NetworkManager.
 
 Currently the following device types are provided by plugins:
 
  - Wi-Fi (depends on wpa_supplicant)
- - OVS (depends on openswitch)
+ - OVS (depends on Open vSwitch)
  - PPP (depends on pppd)
  - Bluetooth (depends on bluez)
  - team (depends on teamd)

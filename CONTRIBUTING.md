@@ -16,7 +16,7 @@ Report issues
 -------------
 
 Report issues or feature requests in our [Gitlab's issue tracker](https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/issues)
-or our maling list.
+or our mailing list.
 
 For bug reports usually NetworkManager's logs will be needed to understand the
 problem. Attach the full logs to the issue. For WiFi related issues, attach also
