@@ -119,7 +119,7 @@ gen_metadata_nm_settings_libnm_core = executable(
   link_depends: linker_script_binary,
 )
 
-if enable_docs
+if enable_introspection
   gen_metadata_nm_settings_libnm_core_xml = custom_target(
     'gen-metadata-nm-settings-libnm-core.xml',
     output: 'gen-metadata-nm-settings-libnm-core.xml',
@@ -134,11 +134,5 @@ if enable_docs
       source_root + '/src/libnm-core-impl/gen-metadata-nm-settings-libnm-core.xml.in',
       gen_metadata_nm_settings_libnm_core_xml,
     ],
-  )
-else
-  gen_metadata_nm_settings_libnm_core_xml = configure_file(
-    input: 'gen-metadata-nm-settings-libnm-core.xml.in',
-    output: '@BASENAME@',
-    configuration: configuration_data(),
   )
 endif
