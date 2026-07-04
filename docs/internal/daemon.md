@@ -158,7 +158,7 @@ The diagram shows other objects on the right side:
  - *DbusManager*: creates a connection to the system D-Bus instance
     and allows exporting objects
  
- - *SleepMonitor*: gets notifications for sleep and wake events by
+ - *PowerMonitor*: gets notifications for sleep and wake events by
     registering to the available subsystem provided by the distro such
     as systemd-logind or ConsoleKit.
     
