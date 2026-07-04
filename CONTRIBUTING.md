@@ -297,13 +297,11 @@ Code Structure
 
 `./data`- Contains some configurations and rules.
 
-`./docs`- Contains the generated documentation for libnm and for the D-Bus API.
+`./docs`- Contains generated libnm and D-Bus API documentation, plus hand-written internal architecture notes (`internal/`) and `sandboxing.md`.
 
 `./examples`- Some code examples for basic networking operations and status checking.
 
 `./introspection`- XML docs describing various D-Bus interface and their properties.
-
-`./m4`- Contains M4 macros source files for autoconf.
 
 `./man`- NM manual files.
 
