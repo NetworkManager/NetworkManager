@@ -345,7 +345,8 @@ nm_setting_adsl_class_init(NMSettingAdslClass *klass)
     /**
      * NMSettingAdsl:vpi:
      *
-     * VPI of ADSL connection
+     * The virtual path identifier (VPI) of the ATM permanent virtual circuit
+     * (PVC) that carries the ADSL connection.
      **/
     _nm_setting_property_define_direct_uint32(properties_override,
                                               obj_properties,
@@ -361,7 +362,8 @@ nm_setting_adsl_class_init(NMSettingAdslClass *klass)
     /**
      * NMSettingAdsl:vci:
      *
-     * VCI of ADSL connection
+     * The virtual channel identifier (VCI) of the ATM permanent virtual circuit
+     * (PVC) that carries the ADSL connection.
      **/
     _nm_setting_property_define_direct_uint32(properties_override,
                                               obj_properties,
