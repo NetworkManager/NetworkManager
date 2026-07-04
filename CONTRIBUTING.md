@@ -5,7 +5,7 @@ Guidelines for Contributing
 Community
 ---------
 
-Check out website https://networkmanager.dev and our [GNOME page](https://wiki.gnome.org/Projects/NetworkManager).
+Check out our website https://networkmanager.dev.
 
 The release tarballs can be found at [download.gnome.org](https://download.gnome.org/sources/NetworkManager/).
 
