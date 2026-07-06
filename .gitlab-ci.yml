@@ -23,6 +23,10 @@ include:
   - project: 'freedesktop/ci-templates'
     ref: *template_sha
     file: '/templates/alpine.yml'
+  # Arch container builder template
+  - project: 'freedesktop/ci-templates'
+    ref: *template_sha
+    file: '/templates/arch.yml'
   # Centos container builder template
   - project: 'freedesktop/ci-templates'
     ref: *template_sha
@@ -60,13 +64,15 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-c501b92e52c1'
-  CENTOS_TAG:  'tag-e01fd12e49d7'
-  DEBIAN_TAG:  'tag-7c9bad89a15e'
-  FEDORA_TAG:  'tag-e01fd12e49d7'
-  UBUNTU_TAG:  'tag-7c9bad89a15e'
+  ALPINE_TAG:  'tag-51e137bcb9e2'
+  ARCH_TAG:    'tag-3ba0130d5a19'
+  CENTOS_TAG:  'tag-9015970c04eb'
+  DEBIAN_TAG:  'tag-dff535da4e03'
+  FEDORA_TAG:  'tag-9015970c04eb'
+  UBUNTU_TAG:  'tag-dff535da4e03'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
+  ARCH_EXEC:   'bash .gitlab-ci/arch-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   DEBIAN_EXEC: 'bash .gitlab-ci/debian-install.sh'
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
@@ -378,6 +384,20 @@ tier3:alpine:3.19@prep:
       when: manual
       allow_failure: true
 
+tier3:arch:rolling@prep:
+  extends:
+    - .fdo.container-build@arch
+  stage: prep
+  variables:
+    GIT_STRATEGY: none
+    FDO_DISTRIBUTION_VERSION: 'rolling'
+    FDO_DISTRIBUTION_TAG: $ARCH_TAG
+    FDO_DISTRIBUTION_EXEC: $ARCH_EXEC
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
+      when: manual
+      allow_failure: true
+
 #################################################################
 #                                                               #
 # tierN stage                                                   #
@@ -666,6 +686,20 @@ t_alpine:3.19:
     FDO_DISTRIBUTION_TAG: $ALPINE_TAG
   needs:
     - "tier3:alpine:3.19@prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
+
+t_arch:rolling:
+  extends:
+    - .build@template
+    - .fdo.distribution-image@arch
+    - .nm_artifacts_debug
+  stage: tier3
+  variables:
+    FDO_DISTRIBUTION_VERSION: 'rolling'
+    FDO_DISTRIBUTION_TAG: $ARCH_TAG
+  needs:
+    - "tier3:arch:rolling@prep"
   rules:
     - if: $CI_PIPELINE_SOURCE != 'schedule'
 

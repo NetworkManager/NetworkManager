@@ -15,6 +15,7 @@ base_types:
   debian: debian
   ubuntu: debian
   alpine: alpine
+  arch: arch
 
 # The list of all distributions we want to create job for.
 distributions:
@@ -75,3 +76,7 @@ distributions:
       - '3.21'
       - '3.20'
       - '3.19'
+  - name: arch
+    tier: 3
+    versions:
+      - 'rolling'

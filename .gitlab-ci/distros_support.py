@@ -12,7 +12,7 @@ except ImportError:
 
 
 # These are the distros that we currently check, ordered by priority to be chosen as Tier 1
-ci_distros = ("fedora", "centos", "debian", "ubuntu", "alpine")
+ci_distros = ("fedora", "centos", "debian", "ubuntu", "alpine", "arch")
 
 
 def _parse_date(date_str) -> datetime.date:
@@ -198,6 +198,7 @@ base_types:
   debian: debian
   ubuntu: debian
   alpine: alpine
+  arch: arch
 
 # The list of all distributions we want to create job for.
 distributions:
