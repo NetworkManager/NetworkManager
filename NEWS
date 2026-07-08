@@ -8,6 +8,8 @@ subject to change and not guaranteed to be compatible with
 the later release.
 USE AT YOUR OWN RISK. NOT RECOMMENDED FOR PRODUCTION USE!
 
+Core:
+* Flush systemd-resolved caches after updating the DNS configuration.
 
 =============================================
 NetworkManager-1.58

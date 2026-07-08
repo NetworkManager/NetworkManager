@@ -38,6 +38,7 @@ static const char *const DBUS_OP_SET_LINK_DEFAULT_ROUTE = "SetLinkDefaultRoute";
 static const char *const DBUS_OP_SET_LINK_DNS_OVER_TLS  = "SetLinkDNSOverTLS";
 static const char *const DBUS_OP_SET_LINK_DNS_EX        = "SetLinkDNSEx";
 static const char *const DBUS_OP_SET_LINK_DNSSEC        = "SetLinkDNSSEC";
+static const char *const DBUS_OP_FLUSH_CACHES           = "FlushCaches";
 
 /*****************************************************************************/
 
@@ -900,6 +901,13 @@ update(NMDnsPlugin             *plugin,
             };
             prepare_one_interface(self, &ic);
         }
+    }
+
+    /* If there are requests, append a FlushCaches() request since otherwise
+     * in some configurations network connectivity checks or automatic
+     * proxy configuration might fail. */
+    if (!c_list_is_empty(&priv->request_queue_lst_head)) {
+        _request_item_append(self, DBUS_OP_FLUSH_CACHES, 0, g_variant_new("()"));
     }
 
     priv->send_updates_waiting = TRUE;
