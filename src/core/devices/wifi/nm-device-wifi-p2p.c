@@ -47,6 +47,8 @@ typedef struct {
     NMSupplicantInterface *mgmt_iface;
     NMSupplicantInterface *group_iface;
 
+    NMActRequestGetSecretsCallId *wifi_secrets_id;
+
     CList peers_lst_head;
 
     GSource *find_peer_timeout_source;
@@ -78,9 +80,10 @@ static const NMDBusInterfaceInfoExtended interface_info_device_wifi_p2p;
 static const GDBusSignalInfo             nm_signal_info_wifi_p2p_peer_added;
 static const GDBusSignalInfo             nm_signal_info_wifi_p2p_peer_removed;
 
-static void supplicant_group_interface_release(NMDeviceWifiP2P *self);
-static void supplicant_interfaces_release(NMDeviceWifiP2P *self, gboolean set_is_waiting);
-static void apply_device_name(NMDeviceWifiP2P *self);
+static void     supplicant_group_interface_release(NMDeviceWifiP2P *self);
+static void     supplicant_interfaces_release(NMDeviceWifiP2P *self, gboolean set_is_waiting);
+static void     apply_device_name(NMDeviceWifiP2P *self);
+static gboolean handle_wps_pin_fail(NMDeviceWifiP2P *self);
 
 /*****************************************************************************/
 
@@ -407,6 +410,18 @@ supplicant_connection_timeout_cb(gpointer user_data)
     nm_supplicant_interface_p2p_cancel_connect(priv->mgmt_iface);
 
     if (nm_device_is_activating(device)) {
+        /* TODO: A failed WPS enrollment (e.g. a wrong PIN) is only ever
+         * detected here, when the connect attempt times out. wpa_supplicant
+         * does emit "WpsFailed" and "GroupFormationFailure", but on the D-Bus
+         * path of the interface that runs the WPS exchange -- for the client
+         * role an on-the-fly group interface that NM only learns about from
+         * "GroupStarted", that is, on success -- and neither signal carries
+         * anything that identifies the peer or the requesting interface.
+         * Once wpa_supplicant identifies the peer in these signals, subscribe
+         * to them to fail fast instead of waiting out this timeout. */
+        if (handle_wps_pin_fail(self))
+            return G_SOURCE_REMOVE;
+
         _LOGW(LOGD_DEVICE | LOGD_WIFI,
               "Activation: (wifi-p2p) connecting took too long, failing activation");
         nm_device_state_changed(device,
@@ -417,15 +432,143 @@ supplicant_connection_timeout_cb(gpointer user_data)
     return G_SOURCE_REMOVE;
 }
 
+/*****************************************************************************/
+/* WPS-PIN secrets                                                           */
+
+static void
+wifi_secrets_cb(NMActRequest                 *req,
+                NMActRequestGetSecretsCallId *call_id,
+                NMSettingsConnection         *connection,
+                GError                       *error,
+                gpointer                      user_data)
+{
+    NMDeviceWifiP2P        *self   = user_data;
+    NMDevice               *device = user_data;
+    NMDeviceWifiP2PPrivate *priv;
+
+    g_return_if_fail(NM_IS_DEVICE_WIFI_P2P(self));
+    g_return_if_fail(NM_IS_ACT_REQUEST(req));
+
+    priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE(self);
+
+    g_return_if_fail(priv->wifi_secrets_id == call_id);
+    priv->wifi_secrets_id = NULL;
+
+    if (g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+        return;
+
+    g_return_if_fail(req == nm_device_get_act_request(device));
+    g_return_if_fail(nm_device_get_state(device) == NM_DEVICE_STATE_NEED_AUTH);
+    g_return_if_fail(nm_act_request_get_settings_connection(req) == connection);
+
+    if (error) {
+        _LOGW(LOGD_WIFI, "%s", error->message);
+        nm_device_state_changed(device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NO_SECRETS);
+        return;
+    }
+
+    /* Re-run activation now that we have the PIN. */
+    nm_device_activate_schedule_stage1_device_prepare(device, FALSE);
+}
+
+static void
+wifi_secrets_cancel(NMDeviceWifiP2P *self)
+{
+    NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE(self);
+
+    if (priv->wifi_secrets_id)
+        nm_act_request_cancel_secrets(NULL, priv->wifi_secrets_id);
+    nm_assert(!priv->wifi_secrets_id);
+}
+
+static void
+wifi_secrets_get_secrets(NMDeviceWifiP2P             *self,
+                         const char                  *setting_name,
+                         NMSecretAgentGetSecretsFlags flags)
+{
+    NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE(self);
+    NMActRequest           *req;
+
+    wifi_secrets_cancel(self);
+
+    req = nm_device_get_act_request(NM_DEVICE(self));
+    g_return_if_fail(NM_IS_ACT_REQUEST(req));
+
+    priv->wifi_secrets_id =
+        nm_act_request_get_secrets(req, TRUE, setting_name, flags, NULL, wifi_secrets_cb, self);
+    g_return_if_fail(priv->wifi_secrets_id);
+}
+
+/* Handle a failed WPS enrollment for the PIN method.
+ *
+ * The peer usually generates the PIN anew for every pairing, so a PIN that is
+ * saved in the profile goes stale as soon as it has been used once. Discard it
+ * and ask an agent for a new one, instead of failing every future activation
+ * with the same unusable code.
+ *
+ * Returns TRUE if a new PIN was requested, in which case the caller must not
+ * fail the activation. */
+static gboolean
+handle_wps_pin_fail(NMDeviceWifiP2P *self)
+{
+    NMDevice         *device = NM_DEVICE(self);
+    NMConnection     *connection;
+    NMSettingWifiP2P *s_wifi_p2p;
+    NMActRequest     *req;
+    const char       *setting_name;
+
+    if (!nm_device_is_activating(device))
+        return FALSE;
+
+    connection = nm_device_get_applied_connection(device);
+    if (!connection)
+        return FALSE;
+
+    s_wifi_p2p =
+        NM_SETTING_WIFI_P2P(nm_connection_get_setting(connection, NM_TYPE_SETTING_WIFI_P2P));
+    if (!s_wifi_p2p
+        || nm_setting_wifi_p2p_get_wps_method(s_wifi_p2p)
+               != NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN)
+        return FALSE;
+
+    req = nm_device_get_act_request(device);
+    if (!req)
+        return FALSE;
+
+    if (!nm_device_auth_retries_try_next(device))
+        return FALSE;
+
+    nm_act_request_clear_secrets(req);
+
+    setting_name = nm_connection_need_secrets(connection, NULL);
+    if (!setting_name)
+        return FALSE;
+
+    _LOGI(LOGD_DEVICE | LOGD_WIFI,
+          "Activation: (wifi-p2p) WPS enrollment failed, asking for a new PIN");
+
+    nm_device_state_changed(device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
+    wifi_secrets_get_secrets(self,
+                             setting_name,
+                             NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
+                                 | NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW);
+    return TRUE;
+}
+
+/*****************************************************************************/
+
 static NMActStageReturn
 act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-    NMDeviceWifiP2P        *self = NM_DEVICE_WIFI_P2P(device);
-    NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE(self);
-    NMConnection           *connection;
-    NMSettingWifiP2P       *s_wifi_p2p;
-    NMWifiP2PPeer          *peer;
-    GBytes                 *wfd_ies;
+    NMDeviceWifiP2P                   *self = NM_DEVICE_WIFI_P2P(device);
+    NMDeviceWifiP2PPrivate            *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE(self);
+    NMConnection                      *connection;
+    NMSettingWifiP2P                  *s_wifi_p2p;
+    NMWifiP2PPeer                     *peer;
+    GBytes                            *wfd_ies;
+    NMSettingWirelessSecurityWpsMethod wps_method;
+    const char                        *wps_pin;
+    const char                        *wps_method_str;
 
     if (nm_clear_g_source_inst(&priv->find_peer_timeout_source))
         nm_assert_not_reached();
@@ -456,13 +599,47 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     /* Re-assert the P2P device name so that the peer sees it during pairing. */
     apply_device_name(self);
 
-    /* TODO: Grab secrets if we don't have them yet! */
+    wps_method = nm_setting_wifi_p2p_get_wps_method(s_wifi_p2p);
+    wps_pin    = nm_setting_wifi_p2p_get_wps_pin(s_wifi_p2p);
 
-    /* TODO: Fix "pbc" being hardcoded here! */
+    /* For the PIN method the peer (e.g. a display-capable Miracast sink) shows a
+     * code the user must enter. If we do not have it yet, ask a secret agent and
+     * retry once it arrives. */
+    if (wps_method == NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN && (!wps_pin || !wps_pin[0])) {
+        const char *setting_name = nm_connection_need_secrets(connection, NULL);
+
+        if (setting_name && nm_device_auth_retries_try_next(device)) {
+            nm_device_state_changed(device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
+            wifi_secrets_get_secrets(self,
+                                     setting_name,
+                                     NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION);
+            return NM_ACT_STAGE_RETURN_POSTPONE;
+        }
+
+        /* Either the profile says that the PIN is not required (but PIN
+         * enrollment cannot proceed without one), or no agent provided a
+         * usable PIN within the allowed number of tries. */
+        _LOGW(LOGD_DEVICE | LOGD_WIFI, "Activation: (wifi-p2p) no usable WPS PIN");
+        NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_NO_SECRETS);
+        return NM_ACT_STAGE_RETURN_FAILURE;
+    }
+
+    switch (wps_method) {
+    case NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN:
+        /* We have the PIN the peer displayed; enter it ("keypad"). */
+        wps_method_str = "keypad";
+        break;
+    default:
+        /* PBC and the automatic methods use push-button. */
+        wps_method_str = "pbc";
+        wps_pin        = NULL;
+        break;
+    }
+
     nm_supplicant_interface_p2p_connect(priv->mgmt_iface,
                                         nm_wifi_p2p_peer_get_supplicant_path(peer),
-                                        "pbc",
-                                        NULL);
+                                        wps_method_str,
+                                        wps_pin);
 
     /* Set up a timeout on the connect attempt */
     if (!priv->sup_timeout_source) {
@@ -955,6 +1132,9 @@ device_state_changed(NMDevice           *device,
 
     update_disconnect_on_connection_peer_missing(self);
 
+    if (new_state <= NM_DEVICE_STATE_UNAVAILABLE || new_state > NM_DEVICE_STATE_ACTIVATED)
+        wifi_secrets_cancel(self);
+
     if (new_state <= NM_DEVICE_STATE_UNAVAILABLE) {
         /* Clean up the supplicant interface because in these states the
          * device cannot be used.
@@ -999,6 +1179,7 @@ device_state_changed(NMDevice           *device,
                                                          FALSE);
         break;
     case NM_DEVICE_STATE_DISCONNECTED:
+        wifi_secrets_cancel(self);
         nm_supplicant_manager_set_wfd_ies(priv->sup_mgr, NULL);
         break;
     default:
@@ -1346,6 +1527,8 @@ dispose(GObject *object)
 {
     NMDeviceWifiP2P        *self = NM_DEVICE_WIFI_P2P(object);
     NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE(object);
+
+    wifi_secrets_cancel(self);
 
     g_clear_object(&priv->sup_mgr);
 
