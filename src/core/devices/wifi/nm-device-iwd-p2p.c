@@ -40,6 +40,8 @@ typedef struct {
     GCancellable *connect_cancellable;
     GCancellable *name_cancellable;
 
+    NMActRequestGetSecretsCallId *wifi_secrets_id;
+
     bool enabled : 1;
 
     bool stage2_ready : 1;
@@ -67,6 +69,7 @@ static const NMDBusInterfaceInfoExtended interface_info_device_wifi_p2p;
 static const GDBusSignalInfo             nm_signal_info_wifi_p2p_peer_added;
 static const GDBusSignalInfo             nm_signal_info_wifi_p2p_peer_removed;
 static gboolean                          iwd_discovery_timeout_cb(gpointer user_data);
+static void                              cleanup_connect_attempt(NMDeviceIwdP2P *self);
 
 /*****************************************************************************/
 
@@ -490,10 +493,145 @@ iwd_discovery_timeout_cb(gpointer user_data)
     return G_SOURCE_REMOVE;
 }
 
+/*****************************************************************************/
+/* WPS-PIN secrets                                                           */
+
+static void
+wifi_secrets_cb(NMActRequest                 *req,
+                NMActRequestGetSecretsCallId *call_id,
+                NMSettingsConnection         *connection,
+                GError                       *error,
+                gpointer                      user_data)
+{
+    NMDeviceIwdP2P        *self   = user_data;
+    NMDevice              *device = user_data;
+    NMDeviceIwdP2PPrivate *priv;
+
+    g_return_if_fail(NM_IS_DEVICE_IWD_P2P(self));
+    g_return_if_fail(NM_IS_ACT_REQUEST(req));
+
+    priv = NM_DEVICE_IWD_P2P_GET_PRIVATE(self);
+
+    g_return_if_fail(priv->wifi_secrets_id == call_id);
+    priv->wifi_secrets_id = NULL;
+
+    if (g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+        return;
+
+    g_return_if_fail(req == nm_device_get_act_request(device));
+    g_return_if_fail(nm_device_get_state(device) == NM_DEVICE_STATE_NEED_AUTH);
+    g_return_if_fail(nm_act_request_get_settings_connection(req) == connection);
+
+    if (error) {
+        _LOGW(LOGD_WIFI, "%s", error->message);
+        cleanup_connect_attempt(self);
+        nm_device_state_changed(device,
+                                NM_DEVICE_STATE_FAILED,
+                                NM_DEVICE_STATE_REASON_NO_SECRETS);
+        return;
+    }
+
+    /* Re-run activation now that we have the PIN. */
+    nm_device_activate_schedule_stage1_device_prepare(device, FALSE);
+}
+
+static void
+wifi_secrets_cancel(NMDeviceIwdP2P *self)
+{
+    NMDeviceIwdP2PPrivate *priv = NM_DEVICE_IWD_P2P_GET_PRIVATE(self);
+
+    if (priv->wifi_secrets_id)
+        nm_act_request_cancel_secrets(NULL, priv->wifi_secrets_id);
+    nm_assert(!priv->wifi_secrets_id);
+}
+
+static void
+wifi_secrets_get_secrets(NMDeviceIwdP2P              *self,
+                         const char                  *setting_name,
+                         NMSecretAgentGetSecretsFlags flags)
+{
+    NMDeviceIwdP2PPrivate *priv = NM_DEVICE_IWD_P2P_GET_PRIVATE(self);
+    NMActRequest          *req;
+
+    wifi_secrets_cancel(self);
+
+    req = nm_device_get_act_request(NM_DEVICE(self));
+    g_return_if_fail(NM_IS_ACT_REQUEST(req));
+
+    priv->wifi_secrets_id =
+        nm_act_request_get_secrets(req, TRUE, setting_name, flags, NULL, wifi_secrets_cb, self);
+    g_return_if_fail(priv->wifi_secrets_id);
+}
+
+/* Handle a failed WPS enrollment for the PIN method.
+ *
+ * The peer usually generates the PIN anew for every pairing, so a PIN that is
+ * saved in the profile goes stale as soon as it has been used once. Discard it
+ * and ask an agent for a new one, instead of failing every future activation
+ * with the same unusable code.
+ *
+ * Returns TRUE if a new PIN was requested, in which case the caller must not
+ * fail the activation. */
+static gboolean
+handle_wps_pin_fail(NMDeviceIwdP2P *self)
+{
+    NMDevice         *device = NM_DEVICE(self);
+    NMConnection     *connection;
+    NMSettingWifiP2P *s_wifi_p2p;
+    NMActRequest     *req;
+    const char       *setting_name;
+
+    if (!nm_device_is_activating(device))
+        return FALSE;
+
+    connection = nm_device_get_applied_connection(device);
+    if (!connection)
+        return FALSE;
+
+    s_wifi_p2p =
+        NM_SETTING_WIFI_P2P(nm_connection_get_setting(connection, NM_TYPE_SETTING_WIFI_P2P));
+    if (!s_wifi_p2p
+        || nm_setting_wifi_p2p_get_wps_method(s_wifi_p2p)
+               != NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN)
+        return FALSE;
+
+    req = nm_device_get_act_request(device);
+    if (!req)
+        return FALSE;
+
+    if (!nm_device_auth_retries_try_next(device))
+        return FALSE;
+
+    /* Drop the failed attempt, so that the retry starts from a clean state.
+     * This also releases the WFD registration, which the prepare stage takes
+     * again when it re-runs. */
+    cleanup_connect_attempt(self);
+
+    nm_act_request_clear_secrets(req);
+
+    setting_name = nm_connection_need_secrets(connection, NULL);
+    if (!setting_name)
+        return FALSE;
+
+    _LOGI(LOGD_DEVICE | LOGD_WIFI,
+          "Activation: (wifi-p2p) WPS enrollment failed, asking for a new PIN");
+
+    nm_device_state_changed(device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
+    wifi_secrets_get_secrets(self,
+                             setting_name,
+                             NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
+                                 | NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW);
+    return TRUE;
+}
+
+/*****************************************************************************/
+
 static void
 cleanup_connect_attempt(NMDeviceIwdP2P *self)
 {
     NMDeviceIwdP2PPrivate *priv = NM_DEVICE_IWD_P2P_GET_PRIVATE(self);
+
+    wifi_secrets_cancel(self);
 
     if (priv->find_peer_timeout_source)
         iwd_release_discovery(self);
@@ -628,14 +766,23 @@ iwd_wsc_connect_cb(GObject *source, GAsyncResult *res, gpointer user_data)
 
     variant = g_dbus_proxy_call_finish(G_DBUS_PROXY(source), res, &error);
     if (!variant) {
-        _LOGE(LOGD_DEVICE | LOGD_WIFI,
-              "Activation: (wifi-p2p) IWD SimpleConfiguration.PushButton/StartPin() failed: %s",
-              error->message);
-
         if (nm_utils_error_is_cancelled(error) && !nm_device_is_activating(device))
             return;
 
         nm_clear_g_cancellable(&priv->connect_cancellable);
+
+        /* A failed PIN enrollment is retried with a new PIN, so it is not
+         * fatal on its own. */
+        if (handle_wps_pin_fail(self)) {
+            _LOGW(LOGD_DEVICE | LOGD_WIFI,
+                  "Activation: (wifi-p2p) IWD SimpleConfiguration.StartPin() failed: %s",
+                  error->message);
+            return;
+        }
+
+        _LOGE(LOGD_DEVICE | LOGD_WIFI,
+              "Activation: (wifi-p2p) IWD SimpleConfiguration.PushButton/StartPin() failed: %s",
+              error->message);
         nm_device_state_changed(device,
                                 NM_DEVICE_STATE_FAILED,
                                 NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
@@ -704,13 +851,15 @@ apply_device_name(NMDeviceIwdP2P *self)
 static NMActStageReturn
 act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-    NMDeviceIwdP2P             *self = NM_DEVICE_IWD_P2P(device);
-    NMDeviceIwdP2PPrivate      *priv = NM_DEVICE_IWD_P2P_GET_PRIVATE(self);
-    NMConnection               *connection;
-    NMSettingWifiP2P           *s_wifi_p2p;
-    NMWifiP2PPeer              *peer;
-    gs_unref_object GDBusProxy *peer_proxy = NULL;
-    gs_unref_object GDBusProxy *wsc_proxy  = NULL;
+    NMDeviceIwdP2P                    *self = NM_DEVICE_IWD_P2P(device);
+    NMDeviceIwdP2PPrivate             *priv = NM_DEVICE_IWD_P2P_GET_PRIVATE(self);
+    NMConnection                      *connection;
+    NMSettingWifiP2P                  *s_wifi_p2p;
+    NMWifiP2PPeer                     *peer;
+    gs_unref_object GDBusProxy        *peer_proxy = NULL;
+    gs_unref_object GDBusProxy        *wsc_proxy  = NULL;
+    NMSettingWirelessSecurityWpsMethod wps_method;
+    const char                        *wps_pin;
 
     if (priv->stage2_ready)
         return NM_ACT_STAGE_RETURN_SUCCESS;
@@ -739,12 +888,31 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 
     s_wifi_p2p =
         NM_SETTING_WIFI_P2P(nm_connection_get_setting(connection, NM_TYPE_SETTING_WIFI_P2P));
-    if (nm_setting_wifi_p2p_get_wps_method(s_wifi_p2p)
-        == NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN) {
-        /* TODO: check we have the pin secret, if so use StartPin(pin) otherwise request pin,
-         * move to NEED_AUTH and return postpone */
+    wps_method = nm_setting_wifi_p2p_get_wps_method(s_wifi_p2p);
+    wps_pin    = nm_setting_wifi_p2p_get_wps_pin(s_wifi_p2p);
+
+    /* For the PIN method the peer (e.g. a display-capable Miracast sink) shows a
+     * code the user must enter. If we do not have it yet, ask a secret agent and
+     * retry once it arrives. */
+    if (wps_method == NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN && (!wps_pin || !wps_pin[0])) {
+        const char *setting_name = nm_connection_need_secrets(connection, NULL);
+
+        if (setting_name && nm_device_auth_retries_try_next(device)) {
+            nm_device_state_changed(device,
+                                    NM_DEVICE_STATE_NEED_AUTH,
+                                    NM_DEVICE_STATE_REASON_NONE);
+            wifi_secrets_get_secrets(self,
+                                     setting_name,
+                                     NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION);
+            return NM_ACT_STAGE_RETURN_POSTPONE;
+        }
+
+        /* Either the profile says that the PIN is not required (but PIN
+         * enrollment cannot proceed without one), or no agent provided a
+         * usable PIN within the allowed number of tries. */
+        _LOGW(LOGD_DEVICE | LOGD_WIFI, "Activation: (wifi-p2p) no usable WPS PIN");
         cleanup_connect_attempt(self);
-        NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
+        NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_NO_SECRETS);
         return NM_ACT_STAGE_RETURN_FAILURE;
     }
 
@@ -764,14 +932,26 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
         return NM_ACT_STAGE_RETURN_FAILURE;
     }
 
-    g_dbus_proxy_call(wsc_proxy,
-                      "PushButton",
-                      NULL,
-                      G_DBUS_CALL_FLAGS_NONE,
-                      G_MAXINT,
-                      priv->connect_cancellable,
-                      iwd_wsc_connect_cb,
-                      self);
+    if (wps_method == NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN) {
+        /* We have the PIN the peer displayed; enter it via StartPin. */
+        g_dbus_proxy_call(wsc_proxy,
+                          "StartPin",
+                          g_variant_new("(s)", wps_pin),
+                          G_DBUS_CALL_FLAGS_NONE,
+                          G_MAXINT,
+                          priv->connect_cancellable,
+                          iwd_wsc_connect_cb,
+                          self);
+    } else {
+        g_dbus_proxy_call(wsc_proxy,
+                          "PushButton",
+                          NULL,
+                          G_DBUS_CALL_FLAGS_NONE,
+                          G_MAXINT,
+                          priv->connect_cancellable,
+                          iwd_wsc_connect_cb,
+                          self);
+    }
 
     priv->dbus_peer_proxy = g_steal_pointer(&peer_proxy);
     return NM_ACT_STAGE_RETURN_POSTPONE;
@@ -962,9 +1142,6 @@ deactivate(NMDevice *device)
     NMDeviceIwdP2P        *self = NM_DEVICE_IWD_P2P(device);
     NMDeviceIwdP2PPrivate *priv = NM_DEVICE_IWD_P2P_GET_PRIVATE(self);
 
-    if (priv->find_peer_timeout_source)
-        iwd_release_discovery(self);
-
     if (priv->dbus_peer_proxy) {
         g_dbus_proxy_call(priv->dbus_peer_proxy,
                           "Disconnect",
@@ -974,9 +1151,12 @@ deactivate(NMDevice *device)
                           NULL,
                           NULL,
                           self);
-
-        cleanup_connect_attempt(self);
     }
+
+    /* Also cancels a pending secrets request and unregisters the WFD
+     * service when the activation did not get as far as the peer proxy,
+     * e.g. when it is aborted while waiting for the WPS PIN in NEED_AUTH. */
+    cleanup_connect_attempt(self);
 }
 
 static guint32
@@ -1001,6 +1181,9 @@ device_state_changed(NMDevice           *device,
     NMDeviceIwdP2P        *self = NM_DEVICE_IWD_P2P(device);
     NMDeviceIwdP2PPrivate *priv = NM_DEVICE_IWD_P2P_GET_PRIVATE(self);
 
+    if (new_state <= NM_DEVICE_STATE_UNAVAILABLE || new_state > NM_DEVICE_STATE_ACTIVATED)
+        wifi_secrets_cancel(self);
+
     switch (new_state) {
     case NM_DEVICE_STATE_UNMANAGED:
         break;
@@ -1010,6 +1193,9 @@ device_state_changed(NMDevice           *device,
                                               NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
                                               NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
         }
+        break;
+    case NM_DEVICE_STATE_DISCONNECTED:
+        wifi_secrets_cancel(self);
         break;
     case NM_DEVICE_STATE_IP_CONFIG:
         /* TODO: start periodic RSSI and bitrate updates? */
@@ -1275,6 +1461,8 @@ dispose(GObject *object)
 {
     NMDeviceIwdP2P        *self = NM_DEVICE_IWD_P2P(object);
     NMDeviceIwdP2PPrivate *priv = NM_DEVICE_IWD_P2P_GET_PRIVATE(object);
+
+    wifi_secrets_cancel(self);
 
     nm_clear_g_source_inst(&priv->peer_dump_source);
     nm_clear_g_cancellable(&priv->name_cancellable);
