@@ -24,6 +24,10 @@ Core:
 * With Ethernet autonegotiation enabled, advertise all supported link modes
   matching the configured speed and duplex, including fibre and backplane
   modes.
+* The "Reload" D-Bus method returns an error when reading the
+  configuration fails, for example on a parse error, instead of only
+  logging the failure and reporting success. "nmcli general reload" and
+  "systemctl reload NetworkManager" fail in that case too.
 
 initrd:
 * Add the "rd.net.timeout.ip-required" kernel command line argument

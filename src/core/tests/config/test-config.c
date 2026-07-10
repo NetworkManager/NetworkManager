@@ -930,7 +930,7 @@ _set_values_user(NMConfig                  *config,
     else
         NMTST_EXPECT_NM_INFO("config: signal: SIGHUP (no changes from disk)*");
 
-    nm_config_reload(config, NM_CONFIG_CHANGE_CAUSE_SIGHUP, FALSE);
+    nm_config_reload(config, NM_CONFIG_CHANGE_CAUSE_SIGHUP, FALSE, NULL);
 
     g_test_assert_expected_messages();
 
@@ -1341,15 +1341,15 @@ test_config_signal(void)
 
     expected = NM_CONFIG_CHANGE_CAUSE_SIGUSR1;
     NMTST_EXPECT_NM_INFO("config: signal: SIGUSR1");
-    nm_config_reload(config, expected, FALSE);
+    nm_config_reload(config, expected, FALSE, NULL);
 
     expected = NM_CONFIG_CHANGE_CAUSE_SIGUSR2;
     NMTST_EXPECT_NM_INFO("config: signal: SIGUSR2");
-    nm_config_reload(config, expected, FALSE);
+    nm_config_reload(config, expected, FALSE, NULL);
 
     expected = NM_CONFIG_CHANGE_CAUSE_SIGHUP;
     NMTST_EXPECT_NM_INFO("config: signal: SIGHUP (no changes from disk)*");
-    nm_config_reload(config, expected, FALSE);
+    nm_config_reload(config, expected, FALSE, NULL);
 
     /* test with subscribing two signals...
      *
@@ -1361,7 +1361,7 @@ test_config_signal(void)
                      &expected);
     expected = NM_CONFIG_CHANGE_CAUSE_SIGUSR2;
     NMTST_EXPECT_NM_INFO("config: signal: SIGUSR2");
-    nm_config_reload(config, NM_CONFIG_CHANGE_CAUSE_SIGUSR2, FALSE);
+    nm_config_reload(config, NM_CONFIG_CHANGE_CAUSE_SIGUSR2, FALSE, NULL);
     g_signal_handlers_disconnect_by_func(config, _test_signal_config_changed_cb2, &expected);
 
     g_signal_handlers_disconnect_by_func(config, _test_signal_config_changed_cb, &expected);
@@ -1370,6 +1370,70 @@ test_config_signal(void)
 }
 
 /*****************************************************************************/
+
+static void
+_test_reload_error_config_changed_cb(NMConfig           *config,
+                                     NMConfigData       *config_data,
+                                     NMConfigChangeFlags changes,
+                                     NMConfigData       *old_data,
+                                     gpointer            user_data)
+{
+    NMConfigChangeFlags *expected = user_data;
+
+    _test_signal_config_changed_cb(config, config_data, changes, old_data, expected);
+    *expected = NM_CONFIG_CHANGE_NONE;
+}
+
+static void
+test_config_reload_error(void)
+{
+    const char                   *filename = BUILD_DIR "/test-config-reload.conf";
+    gs_unref_object NMConfig     *config   = NULL;
+    gs_unref_object NMConfigData *old_data = NULL;
+    gs_free_error GError         *error    = NULL;
+    NMConfigChangeFlags           expected;
+    gpointer                      logging;
+
+    logging = nmtst_logging_disable(FALSE);
+    g_assert(g_file_set_contents(filename, "[test-reload]\nvalue=before\n", -1, NULL));
+    config   = setup_config(NULL, filename, "", NULL, "", "", NULL);
+    old_data = g_object_ref(nm_config_get_data(config));
+    assert_config_value(old_data, "test-reload", "value", "before");
+    g_signal_connect(config,
+                     NM_CONFIG_SIGNAL_CONFIG_CHANGED,
+                     G_CALLBACK(_test_reload_error_config_changed_cb),
+                     &expected);
+
+    g_assert(g_file_set_contents(filename, "[test-reload\n", -1, NULL));
+    expected = NM_CONFIG_CHANGE_NONE;
+    g_assert(!nm_config_reload(config, NM_CONFIG_CHANGE_CAUSE_CONF, FALSE, &error));
+    g_assert_error(error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_PARSE);
+    g_clear_error(&error);
+    g_assert(nm_config_get_data(config) == old_data);
+
+    expected = NM_CONFIG_CHANGE_CAUSE_SIGHUP;
+    g_assert(!nm_config_reload(config, expected, FALSE, NULL));
+    g_assert_cmpint(expected, ==, NM_CONFIG_CHANGE_NONE);
+    g_assert(nm_config_get_data(config) == old_data);
+
+    expected = NM_CONFIG_CHANGE_CAUSE_CONF | NM_CONFIG_CHANGE_CAUSE_DNS_FULL;
+    g_assert(!nm_config_reload(config, expected, FALSE, &error));
+    g_assert_cmpint(expected, ==, NM_CONFIG_CHANGE_NONE);
+    g_assert_error(error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_PARSE);
+    g_clear_error(&error);
+    g_signal_handlers_disconnect_by_func(config, _test_reload_error_config_changed_cb, &expected);
+    g_assert(nm_config_get_data(config) == old_data);
+    g_assert(nm_config_reload(config, NM_CONFIG_CHANGE_CAUSE_SIGUSR1, FALSE, &error));
+    g_assert_no_error(error);
+    g_assert(nm_config_get_data(config) == old_data);
+
+    g_assert(g_file_set_contents(filename, "[test-reload]\nvalue=after\n", -1, NULL));
+    g_assert(nm_config_reload(config, NM_CONFIG_CHANGE_CAUSE_CONF, FALSE, &error));
+    g_assert_no_error(error);
+    assert_config_value(nm_config_get_data(config), "test-reload", "value", "after");
+    nmtst_file_unlink(filename);
+    nmtst_logging_reenable(logging);
+}
 
 static void
 test_config_enable(void)
@@ -1518,6 +1582,7 @@ main(int argc, char **argv)
     g_test_add_func("/config/connectivity-check", test_config_connectivity_check);
 
     g_test_add_func("/config/signal", test_config_signal);
+    g_test_add_func("/config/reload-error", test_config_reload_error);
 
     g_test_add_func("/config/enable", test_config_enable);
 

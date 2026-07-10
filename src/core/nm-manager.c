@@ -1791,18 +1791,38 @@ _reload_auth_cb(NMAuthChain *chain, GDBusMethodInvocation *context, gpointer use
         }
     }
 
+    /* Keep the auditd socket open until the reload result is recorded. */
+    nm_audit_manager_config_freeze(nm_audit_manager_get());
+
+    if (!ret_error) {
+        gs_free_error GError *local = NULL;
+
+        if (!nm_config_reload(priv->config, reload_type, TRUE, &local)) {
+            gs_free char *msg_free = NULL;
+
+            /* GKeyFile errors can quote invalid UTF-8, which D-Bus rejects. */
+            ret_error =
+                g_error_new_literal(NM_MANAGER_ERROR,
+                                    NM_MANAGER_ERROR_FAILED,
+                                    nm_utils_str_utf8safe_escape(local->message,
+                                                                 NM_UTILS_STR_UTF8_SAFE_FLAG_NONE,
+                                                                 &msg_free));
+        }
+    }
+
     nm_audit_log_control_op(NM_AUDIT_OP_RELOAD,
                             nm_sprintf_buf(s_buf, "%u", flags),
                             ret_error == NULL,
                             subject,
                             ret_error ? ret_error->message : NULL);
 
+    nm_audit_manager_config_thaw(nm_audit_manager_get());
+
     if (ret_error) {
         g_dbus_method_invocation_take_error(context, ret_error);
         return;
     }
 
-    nm_config_reload(priv->config, reload_type, TRUE);
     g_dbus_method_invocation_return_value(context, NULL);
 }
 

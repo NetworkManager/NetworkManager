@@ -138,7 +138,7 @@ nm_main_config_reload(int signal)
      *
      * Hence, a NMConfig singleton instance must always be
      * available. */
-    nm_config_reload(nm_config_get(), reload_flags, TRUE);
+    nm_config_reload(nm_config_get(), reload_flags, TRUE, NULL);
 }
 
 static void
