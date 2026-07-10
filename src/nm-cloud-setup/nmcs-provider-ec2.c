@@ -75,11 +75,23 @@ _detect_get_token_done_cb(GObject *source, GAsyncResult *result, gpointer user_d
         return;
     }
 
-    /* We use the token as-is. Special characters can cause confusion (e.g.
-     * response splitting), but we're not crossing a security boundary.
-     * None of the examples in AWS documentation does any sort of
-     * sanitization either.  */
-    self->token = g_strconcat(NM_EC2_TOKEN_HEADER, g_bytes_get_data(response, NULL), NULL);
+    {
+        const char *token;
+        gsize       token_len;
+
+        token = g_bytes_get_data(response, &token_len);
+
+        /* libcurl passes custom HTTP headers verbatim, including control
+         * characters. */
+        if (token_len == 0 || strlen(token) != token_len
+            || !NM_STRCHAR_ALL(token, ch, g_ascii_isgraph(ch))) {
+            nm_utils_error_set(&error, NM_UTILS_ERROR_UNKNOWN, "EC2 metadata token is invalid");
+            g_task_return_error(task, g_steal_pointer(&error));
+            return;
+        }
+
+        self->token = g_strconcat(NM_EC2_TOKEN_HEADER, token, NULL);
+    }
 
     g_task_return_boolean(task, TRUE);
 }
