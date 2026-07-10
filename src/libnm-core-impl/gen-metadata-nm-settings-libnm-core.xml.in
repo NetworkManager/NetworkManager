@@ -2759,6 +2759,16 @@
                   dbus-type="u"
                   gprop-type="guint"
                   />
+        <property name="wps-pin"
+                  is-secret="1"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
+        <property name="wps-pin-flags"
+                  is-secret-flags="1"
+                  dbus-type="u"
+                  gprop-type="NMSettingSecretFlags"
+                  />
     </setting>
     <setting name="wimax"
              gtype="NMSettingWimax"

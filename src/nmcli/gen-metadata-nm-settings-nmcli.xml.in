@@ -2323,12 +2323,19 @@
                   nmcli-description="The P2P device that should be connected to. Currently, this is the only way to create or join a group."
                   format="MAC address" />
         <property name="wps-method"
-                  nmcli-description="Flags indicating which mode of WPS is to be used. There&apos;s little point in changing the default setting as NetworkManager will automatically determine the best method to use."
+                  nmcli-description="Flags indicating which mode of WPS is to be used. With the default setting, the push-button method (&quot;pbc&quot; (0x4)) is used. To pair with a peer that displays a WPS PIN (for example a display-capable Miracast sink), set this to &quot;pin&quot; (0x8) and provide the code with the &quot;wps-pin&quot; property."
                   format="flags (NMSettingWirelessSecurityWpsMethod)"
                   values="default (0x0), disabled (0x1), auto (0x2), pbc (0x4), pin (0x8)" />
         <property name="wfd-ies"
                   nmcli-description="The Wi-Fi Display (WFD) Information Elements (IEs) to set. Wi-Fi Display requires a protocol specific information element to be set in certain Wi-Fi frames. These can be specified here for the purpose of establishing a connection. This setting is only useful when implementing a Wi-Fi Display client."
                   format="bytes" />
+        <property name="wps-pin"
+                  nmcli-description="The WPS PIN used when the &quot;wps-method&quot; property is &quot;pin&quot; (0x8): the code that the peer (for example a display-capable Miracast sink) generates and displays, and that the user then enters on this machine. The opposite direction, where this machine would display a generated PIN, is not currently supported. When the PIN is not set, NetworkManager asks a secret agent for it; if enrollment then fails, it asks again for a new one. Peers usually generate the code anew for every pairing, in which case saving it is pointless: set the &quot;wps-pin-flags&quot; property to &quot;not-saved&quot; (0x2) so that the user is asked every time."
+                  format="string" />
+        <property name="wps-pin-flags"
+                  nmcli-description="Flags indicating how to handle the &quot;wps-pin&quot; property."
+                  format="flags (NMSettingSecretFlags)"
+                  values="none (0x0), agent-owned (0x1), not-saved (0x2), not-required (0x4)" />
     </setting>
     <setting name="wimax" >
         <property name="mac-address"
