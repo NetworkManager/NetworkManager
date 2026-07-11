@@ -591,13 +591,19 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
             return NM_ACT_STAGE_RETURN_FAILURE;
         }
 
-        if (!nm_iwd_manager_register_wfd(nm_iwd_manager_get(), &wfd_info)) {
-            _LOGE(LOGD_DEVICE | LOGD_WIFI, "Activation: (wifi-p2p) Can't register WFD service");
-            NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
-            return NM_ACT_STAGE_RETURN_FAILURE;
-        }
+        /* This stage may run more than once for one activation, e.g. when it
+         * is restarted after requesting secrets. Only register the WFD
+         * service once: cleanup_connect_attempt() unregisters only one
+         * registration and a second one would leak the manager's use count. */
+        if (!priv->wfd_registered) {
+            if (!nm_iwd_manager_register_wfd(nm_iwd_manager_get(), &wfd_info)) {
+                _LOGE(LOGD_DEVICE | LOGD_WIFI, "Activation: (wifi-p2p) Can't register WFD service");
+                NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+                return NM_ACT_STAGE_RETURN_FAILURE;
+            }
 
-        priv->wfd_registered = TRUE;
+            priv->wfd_registered = TRUE;
+        }
     }
 
     peer = nm_wifi_p2p_peers_find_first_compatible(&priv->peers_lst_head, connection, TRUE);
