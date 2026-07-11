@@ -919,6 +919,19 @@ request_secrets_from_ui(RequestData *request)
 
         if (!add_wireless_secrets(request, secrets))
             goto out_fail;
+    } else if (nm_connection_is_type(request->connection, NM_SETTING_WIFI_P2P_SETTING_NAME)) {
+        NMSettingWifiP2P *s_wifi_p2p = NM_SETTING_WIFI_P2P(
+            nm_connection_get_setting(request->connection, NM_TYPE_SETTING_WIFI_P2P));
+
+        title = _("WPS PIN required");
+        msg   = g_strdup_printf(_("Enter the WPS PIN displayed by the peer to connect to '%s'"),
+                              nm_connection_get_id(request->connection));
+
+        secret = _secret_real_new_plain(NM_SECRET_AGENT_SECRET_TYPE_SECRET,
+                                        _("PIN"),
+                                        NM_SETTING(s_wifi_p2p),
+                                        NM_SETTING_WIFI_P2P_WPS_PIN);
+        g_ptr_array_add(secrets, secret);
     } else if (nm_connection_is_type(request->connection, NM_SETTING_WIRED_SETTING_NAME)) {
         title = _("Wired 802.1X authentication");
         msg   = g_strdup_printf(_("Secrets are required to access the wired network '%s'"),
