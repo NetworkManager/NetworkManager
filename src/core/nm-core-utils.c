@@ -3705,6 +3705,43 @@ nm_utils_ipv6_addr_set_stable_privacy_may_fail(NMUtilsStableType stable_type,
     return TRUE;
 }
 
+/**
+ * nm_utils_ipv6_generate_ula_prefix:
+ * @ifname: the interface name
+ * @out_prefix: (out): the generated ULA /64 prefix (interface ID part zeroed)
+ *
+ * Generate a stable RFC 4193 Unique Local Address prefix (fd00::/8) by
+ * hashing the interface name and per-host secret key.
+ * The result is a /64 prefix: fd + 40-bit Global ID + 16-bit Subnet ID.
+ */
+void
+nm_utils_ipv6_generate_ula_prefix(const char *ifname, struct in6_addr *out_prefix)
+{
+    nm_auto_free_checksum GChecksum *sum = NULL;
+    guint8                           digest[NM_UTILS_CHECKSUM_LENGTH_SHA256];
+    const guint32                    salted_header = htonl(0x5ab31a07u);
+    const guint8                    *host_id;
+    gsize                            host_id_len;
+
+    nm_assert(ifname);
+    nm_assert(out_prefix);
+
+    nm_utils_host_id_get(&host_id, &host_id_len);
+
+    sum = g_checksum_new(G_CHECKSUM_SHA256);
+    g_checksum_update(sum, (const guchar *) &salted_header, sizeof(salted_header));
+    g_checksum_update(sum, (const guchar *) ifname, strlen(ifname) + 1);
+    g_checksum_update(sum, (const guchar *) host_id, host_id_len);
+    nm_utils_checksum_get_digest(sum, digest);
+
+    memset(out_prefix, 0, sizeof(*out_prefix));
+
+    /* RFC 4193: fd + 40-bit Global ID + 16-bit Subnet ID = /64 prefix */
+    out_prefix->s6_addr[0] = 0xfd;
+    memcpy(&out_prefix->s6_addr[1], digest, 5);
+    memcpy(&out_prefix->s6_addr[6], &digest[5], 2);
+}
+
 /*****************************************************************************/
 
 static void
