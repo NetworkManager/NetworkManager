@@ -348,6 +348,8 @@ gboolean nm_utils_ipv6_addr_set_stable_privacy_may_fail(NMUtilsStableType stable
                                                         guint32           dad_counter,
                                                         GError          **error);
 
+void nm_utils_ipv6_generate_ula_prefix(const char *ifname, struct in6_addr *out_prefix);
+
 char *nm_utils_hw_addr_gen_random_eth(const char *current_mac_address,
                                       const char *generate_mac_address_mask);
 char *nm_utils_hw_addr_gen_stable_eth_impl(NMUtilsStableType stable_type,
