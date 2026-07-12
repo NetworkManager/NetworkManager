@@ -8853,6 +8853,9 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
             PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
                 .get_gtype =            nm_setting_wireless_security_wps_method_get_type,
+                /* "pin-display" is only implemented for Wi-Fi P2P. */
+                .min =                  NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DEFAULT,
+                .max =                  NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN,
             ),
         ),
     ),

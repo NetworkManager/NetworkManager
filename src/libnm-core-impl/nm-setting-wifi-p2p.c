@@ -179,6 +179,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                                        NM_SETTING_WIFI_P2P_SETTING_NAME,
                                        NM_SETTING_WIFI_P2P_WPS_METHOD,
                                        TRUE,
+                                       TRUE,
                                        error))
         return FALSE;
 
@@ -191,8 +192,12 @@ need_secrets(NMSetting *setting, gboolean check_rerequest)
     NMSettingWifiP2PPrivate *priv    = NM_SETTING_WIFI_P2P_GET_PRIVATE(setting);
     GPtrArray               *secrets = NULL;
 
-    /* Only the PIN method needs a secret; PBC and the automatic methods do not. */
-    if (priv->wps_method != NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN)
+    /* Only the PIN methods need a secret; PBC and the automatic methods do not.
+     * For the PIN-display method the secret is the code that we show and the
+     * user enters on the peer, so an agent may well make one up. */
+    if (!NM_IN_SET(priv->wps_method,
+                   NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN,
+                   NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN_DISPLAY))
         return NULL;
 
     if (!check_rerequest && priv->wps_pin && *priv->wps_pin)
@@ -271,10 +276,15 @@ nm_setting_wifi_p2p_class_init(NMSettingWifiP2PClass *setting_wifi_p2p_class)
      * Flags indicating which mode of WPS is to be used.
      *
      * With the default setting, the push-button method
-     * (%NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PBC) is used. To pair with a
-     * peer that displays a WPS PIN (for example a display-capable Miracast
-     * sink), set this to %NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN and
-     * provide the code with the #NMSettingWifiP2P:wps-pin property.
+     * (%NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PBC) is used. For the PIN
+     * method there are two directions: set this to
+     * %NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN to enter the code that
+     * the peer displays (for example a display-capable Miracast sink), or to
+     * %NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN_DISPLAY to instead show a
+     * code that the user enters on the peer. Either way the code is the
+     * #NMSettingWifiP2P:wps-pin property.
+     * %NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN_DISPLAY is not supported
+     * by the IWD backend.
      *
      * Since: 1.16
      */
@@ -312,15 +322,20 @@ nm_setting_wifi_p2p_class_init(NMSettingWifiP2PClass *setting_wifi_p2p_class)
     /**
      * NMSettingWifiP2P:wps-pin:
      *
-     * The WPS PIN used when the #NMSettingWifiP2P:wps-method property is
-     * %NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN: the code that the peer
-     * (for example a display-capable Miracast sink) generates and displays,
-     * and that the user then enters on this machine. The opposite direction,
-     * where this machine would display a generated PIN, is not currently
-     * supported. When the PIN is not set, NetworkManager asks a secret agent
-     * for it; if enrollment then fails, it asks again for a new one. Peers
-     * usually generate the code anew for every pairing, in which case saving
-     * it is pointless: set the #NMSettingWifiP2P:wps-pin-flags property to
+     * The WPS PIN used by the PIN methods of the #NMSettingWifiP2P:wps-method
+     * property. With %NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN it is the
+     * code that the peer (for example a display-capable Miracast sink)
+     * generates and displays, and that the user then enters on this machine.
+     * With %NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN_DISPLAY it is the
+     * code that the user enters on the peer instead; whoever provides the
+     * code is expected to show it: a client that sets it in the profile, or
+     * otherwise the secret agent that is asked for it, which may simply make
+     * one up.
+     *
+     * When the PIN is not set, NetworkManager asks a secret agent for it; if
+     * enrollment then fails, it asks again for a new one. The code is normally
+     * used only once, in which case saving it is pointless: set the
+     * #NMSettingWifiP2P:wps-pin-flags property to
      * %NM_SETTING_SECRET_FLAG_NOT_SAVED so that the user is asked every
      * time.
      *

@@ -28,6 +28,7 @@ gboolean _nm_utils_wps_method_validate(NMSettingWirelessSecurityWpsMethod wps_me
                                        const char                        *setting_name,
                                        const char                        *property_name,
                                        gboolean                           wps_required,
+                                       gboolean                           allow_pin_display,
                                        GError                           **error);
 
 /* D-Bus transform funcs */
