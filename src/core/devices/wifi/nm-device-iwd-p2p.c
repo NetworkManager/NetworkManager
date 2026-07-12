@@ -156,6 +156,16 @@ check_connection_compatible(NMDevice     *device,
         return FALSE;
     }
 
+    /* IWD advertises the keypad configuration method whenever it is given a
+     * PIN, so it cannot display one for the peer to enter. */
+    if (nm_setting_wifi_p2p_get_wps_method(s_wifi_p2p)
+        == NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN_DISPLAY) {
+        nm_utils_error_set_literal(error,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
+                                   "IWD does not support the WPS PIN-display method");
+        return FALSE;
+    }
+
     wfd_ies = nm_setting_wifi_p2p_get_wfd_ies(s_wifi_p2p);
     if (wfd_ies && !nm_wifi_utils_parse_wfd_ies(wfd_ies, NULL)) {
         nm_utils_error_set_literal(error,
@@ -525,9 +535,7 @@ wifi_secrets_cb(NMActRequest                 *req,
     if (error) {
         _LOGW(LOGD_WIFI, "%s", error->message);
         cleanup_connect_attempt(self);
-        nm_device_state_changed(device,
-                                NM_DEVICE_STATE_FAILED,
-                                NM_DEVICE_STATE_REASON_NO_SECRETS);
+        nm_device_state_changed(device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NO_SECRETS);
         return;
     }
 
@@ -898,9 +906,7 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
         const char *setting_name = nm_connection_need_secrets(connection, NULL);
 
         if (setting_name && nm_device_auth_retries_try_next(device)) {
-            nm_device_state_changed(device,
-                                    NM_DEVICE_STATE_NEED_AUTH,
-                                    NM_DEVICE_STATE_REASON_NONE);
+            nm_device_state_changed(device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
             wifi_secrets_get_secrets(self,
                                      setting_name,
                                      NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION);

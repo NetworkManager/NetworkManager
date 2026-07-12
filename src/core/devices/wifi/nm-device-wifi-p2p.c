@@ -499,12 +499,13 @@ wifi_secrets_get_secrets(NMDeviceWifiP2P             *self,
     g_return_if_fail(priv->wifi_secrets_id);
 }
 
-/* Handle a failed WPS enrollment for the PIN method.
+/* Handle a failed WPS enrollment for either of the PIN methods.
  *
- * The peer usually generates the PIN anew for every pairing, so a PIN that is
- * saved in the profile goes stale as soon as it has been used once. Discard it
- * and ask an agent for a new one, instead of failing every future activation
- * with the same unusable code.
+ * A PIN is only good for one pairing, so a PIN that is saved in the profile
+ * goes stale as soon as it has been used once. Discard it and ask an agent for
+ * a new one, instead of failing every future activation with the same unusable
+ * code. With the PIN-display method the agent is the one that shows the code,
+ * so it shows the new one in turn.
  *
  * Returns TRUE if a new PIN was requested, in which case the caller must not
  * fail the activation. */
@@ -527,8 +528,9 @@ handle_wps_pin_fail(NMDeviceWifiP2P *self)
     s_wifi_p2p =
         NM_SETTING_WIFI_P2P(nm_connection_get_setting(connection, NM_TYPE_SETTING_WIFI_P2P));
     if (!s_wifi_p2p
-        || nm_setting_wifi_p2p_get_wps_method(s_wifi_p2p)
-               != NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN)
+        || !NM_IN_SET(nm_setting_wifi_p2p_get_wps_method(s_wifi_p2p),
+                      NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN,
+                      NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN_DISPLAY))
         return FALSE;
 
     req = nm_device_get_act_request(device);
@@ -602,10 +604,15 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     wps_method = nm_setting_wifi_p2p_get_wps_method(s_wifi_p2p);
     wps_pin    = nm_setting_wifi_p2p_get_wps_pin(s_wifi_p2p);
 
-    /* For the PIN method the peer (e.g. a display-capable Miracast sink) shows a
-     * code the user must enter. If we do not have it yet, ask a secret agent and
-     * retry once it arrives. */
-    if (wps_method == NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN && (!wps_pin || !wps_pin[0])) {
+    /* Both PIN methods need a code: with "pin" it is the one that the peer
+     * (e.g. a display-capable Miracast sink) shows and the user enters here,
+     * with "pin-display" it is the one that we show and the user enters on the
+     * peer. If we do not have it yet, ask a secret agent and retry once it
+     * arrives. */
+    if (NM_IN_SET(wps_method,
+                  NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN,
+                  NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN_DISPLAY)
+        && (!wps_pin || !wps_pin[0])) {
         const char *setting_name = nm_connection_need_secrets(connection, NULL);
 
         if (setting_name && nm_device_auth_retries_try_next(device)) {
@@ -628,6 +635,10 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     case NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN:
         /* We have the PIN the peer displayed; enter it ("keypad"). */
         wps_method_str = "keypad";
+        break;
+    case NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN_DISPLAY:
+        /* We show the PIN and the user enters it on the peer ("display"). */
+        wps_method_str = "display";
         break;
     default:
         /* PBC and the automatic methods use push-button. */
