@@ -162,7 +162,9 @@ parse_hfi(GPtrArray *a, struct nbft_info_hfi *hfi, const char *table_name, char 
     gs_free char                         *conn_name = NULL;
     gs_unref_object NMSetting            *s_ip4     = NULL;
     gs_unref_object NMSetting            *s_ip6     = NULL;
+    NMSettingConnection                  *s_con     = NULL;
     nm_auto_unref_ip_address NMIPAddress *ipaddr    = NULL;
+    const char                           *parent_uuid;
     guint                                 prefix;
     gs_free_error GError                 *error  = NULL;
     int                                   family = AF_UNSPEC;
@@ -218,6 +220,10 @@ parse_hfi(GPtrArray *a, struct nbft_info_hfi *hfi, const char *table_name, char 
 
         s_vlan = nm_setting_vlan_new();
         g_object_set(s_vlan, NM_SETTING_VLAN_ID, hfi->tcp_info.vlan, NULL);
+        s_con = nm_connection_get_setting_connection(parent_connection);
+        nm_assert(s_con);
+        parent_uuid = nm_setting_connection_get_uuid(s_con);
+        g_object_set(s_vlan, NM_SETTING_VLAN_PARENT, parent_uuid, NULL);
         nm_connection_add_setting(connection, s_vlan);
     } else {
         /* No VLANS */
