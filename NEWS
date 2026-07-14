@@ -11,6 +11,9 @@ USE AT YOUR OWN RISK. NOT RECOMMENDED FOR PRODUCTION USE!
 Core:
 * Flush systemd-resolved caches after updating the DNS configuration.
 
+Wi-Fi:
+* Keep the long background scan interval for a single Wi-Fi 7 AP-MLD.
+
 =============================================
 NetworkManager-1.58
 Overview of changes since NetworkManager-1.56
