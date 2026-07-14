@@ -3410,7 +3410,7 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
      *
      * Certificate data is specified using a "scheme"; three are currently
      * supported: blob, path and pkcs#11 URL. When using the blob scheme this property
-     * should be set to the certificate's DER encoded data. When using the path
+     * should be set to the certificate's PEM or DER encoded data. When using the path
      * scheme, this property should be set to the full UTF-8 encoded path of the
      * certificate, prefixed with the string "file://" and ending with a terminating
      * NUL byte.
@@ -3619,7 +3619,7 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
      * Certificate data is specified using a "scheme"; two are currently
      * supported: blob and path. When using the blob scheme (which is backwards
      * compatible with NM 0.7.x) this property should be set to the
-     * certificate's DER encoded data. When using the path scheme, this property
+     * certificate's PEM or DER encoded data. When using the path scheme, this property
      * should be set to the full UTF-8 encoded path of the certificate, prefixed
      * with the string "file://" and ending with a terminating NUL byte.
      *
@@ -3860,7 +3860,7 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
      *
      * Certificate data is specified using a "scheme"; three are currently
      * supported: blob, path and pkcs#11 URL. When using the blob scheme this property
-     * should be set to the certificate's DER encoded data. When using the path
+     * should be set to the certificate's PEM or DER encoded data. When using the path
      * scheme, this property should be set to the full UTF-8 encoded path of the
      * certificate, prefixed with the string "file://" and ending with a terminating
      * NUL byte.
@@ -4066,7 +4066,7 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
      * Certificate data is specified using a "scheme"; two are currently
      * supported: blob and path. When using the blob scheme (which is backwards
      * compatible with NM 0.7.x) this property should be set to the
-     * certificate's DER encoded data. When using the path scheme, this property
+     * certificate's PEM or DER encoded data. When using the path scheme, this property
      * should be set to the full UTF-8 encoded path of the certificate, prefixed
      * with the string "file://" and ending with a terminating NUL byte. This
      * property can be unset even if the EAP method supports CA certificates,
