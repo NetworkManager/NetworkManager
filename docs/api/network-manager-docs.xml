@@ -51,7 +51,7 @@
       </para>
       <para>
         The application developers who prefer not to use the D-Bus API directly can use the
-        <ulink url="https://developer.gnome.org/libnm/stable/">libnm</ulink> library
+        <ulink url="https://networkmanager.dev/docs/libnm/latest/">libnm</ulink> library
         shipped with NetworkManager or its bindings to a higher level language such as
         Python, Ruby or Vala via GObject introspection.
       </para>
