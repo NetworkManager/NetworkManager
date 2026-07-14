@@ -469,6 +469,22 @@ nmtconn_is_known(NmtConnectConnection *nmtconn)
     return s_con && nm_setting_connection_get_timestamp(s_con) > 0;
 }
 
+/* Whether joining this AP needs a passphrase or credentials. OWE ("enhanced
+ * open") encrypts without a secret, so it is treated as open. */
+static gboolean
+nmtconn_ap_is_protected(NMAccessPoint *ap)
+{
+    guint32 flags     = nm_access_point_get_flags(ap);
+    guint32 wpa_flags = nm_access_point_get_wpa_flags(ap);
+    guint32 rsn_flags = nm_access_point_get_rsn_flags(ap);
+    guint32 owe       = NM_802_11_AP_SEC_KEY_MGMT_OWE | NM_802_11_AP_SEC_KEY_MGMT_OWE_TM;
+
+    if ((wpa_flags & ~owe) || (rsn_flags & ~owe))
+        return TRUE;
+    /* WEP advertises only the privacy bit; OWE sets it too but is passwordless. */
+    return (flags & NM_802_11_AP_FLAGS_PRIVACY) && !(rsn_flags & owe);
+}
+
 static void
 append_section_header(NmtNewtListbox *listbox, const char *label)
 {
@@ -485,7 +501,7 @@ nmt_connect_connection_list_rebuild(NmtConnectConnectionList *list)
     const GPtrArray                 *devices, *acs, *connections;
     int                              max_width;
     char                           **names, *row, active_col;
-    const char                      *strength_col;
+    const char                      *strength_col, *security_col;
     GSList                          *nmt_devices, *diter, *citer;
     NmtConnectDevice                *nmtdev;
     NmtConnectConnection            *nmtconn;
@@ -580,16 +596,21 @@ nmt_connect_connection_list_rebuild(NmtConnectConnectionList *list)
                 guint8 strength = nm_access_point_get_strength(nmtconn->ap);
 
                 strength_col = nmc_wifi_strength_bars(strength);
-            } else
+                security_col = nmc_wifi_security_icon(nmtconn_ap_is_protected(nmtconn->ap));
+            } else {
                 strength_col = NULL;
+                security_col = NULL;
+            }
 
-            row = g_strdup_printf("%c %s%-*s%s%s",
+            row = g_strdup_printf("%c %s%-*s%s%s%s%s",
                                   active_col,
                                   nmtconn->name,
                                   (int) (max_width - nmt_newt_text_width(nmtconn->name)),
                                   "",
                                   strength_col ? " " : "",
-                                  strength_col ?: "");
+                                  strength_col ?: "",
+                                  security_col ? " " : "",
+                                  security_col ?: "");
 
             nmt_newt_listbox_append(listbox, row, nmtconn);
             g_free(row);

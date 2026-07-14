@@ -670,6 +670,22 @@ nmc_wifi_strength_bars(guint8 strength)
 }
 
 /**
+ * nmc_wifi_security_icon:
+ * @is_protected: whether the network requires a passphrase or credentials
+ *
+ * Returns an indicator for protected Wi-Fi networks: a padlock when the
+ * terminal can render it, otherwise "[+]". Returns %NULL for open networks so
+ * they read as unmarked.
+ */
+const char *
+nmc_wifi_security_icon(gboolean is_protected)
+{
+    if (!is_protected)
+        return NULL;
+    return can_show_graphics() ? /* 🔒 */ "\360\237\224\222" : "[+]";
+}
+
+/**
  * nmc_utils_password_subst_char:
  *
  * Returns: the string substituted when hiding actual password glyphs
