@@ -245,7 +245,9 @@ nm_setting_wireless_ap_security_compatible(NMSettingWireless         *s_wireless
         || !strcmp(key_mgmt, "owe")) {
         if (!strcmp(key_mgmt, "wpa-psk")) {
             if (!(ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_PSK)
-                && !(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_PSK))
+                && !(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_PSK)
+                /* key-mgmt=wpa-psk allows connecting to SAE networks */
+                && !(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_SAE))
                 return FALSE;
         } else if (!strcmp(key_mgmt, "wpa-eap")) {
             if (!(ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
