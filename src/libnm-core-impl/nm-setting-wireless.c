@@ -97,7 +97,7 @@ match_cipher(const char *cipher,
              guint32     rsn_flags,
              guint32     flag)
 {
-    if (strcmp(cipher, expected) != 0)
+    if (!nm_streq(cipher, expected))
         return FALSE;
 
     if (!(wpa_flags & flag) && !(rsn_flags & flag))
@@ -157,7 +157,7 @@ nm_setting_wireless_ap_security_compatible(NMSettingWireless         *s_wireless
         return FALSE;
 
     /* Static WEP */
-    if (!strcmp(key_mgmt, "none")) {
+    if (nm_streq(key_mgmt, "none")) {
         if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY) || (ap_wpa != NM_802_11_AP_SEC_NONE)
             || (ap_rsn != NM_802_11_AP_SEC_NONE))
             return FALSE;
@@ -166,7 +166,7 @@ nm_setting_wireless_ap_security_compatible(NMSettingWireless         *s_wireless
 
     /* Adhoc WPA2 (ie, RSN IBSS) */
     if (ap_mode == NM_802_11_MODE_ADHOC) {
-        if (strcmp(key_mgmt, "wpa-psk"))
+        if (!nm_streq(key_mgmt, "wpa-psk"))
             return FALSE;
 
         /* Ensure the AP has RSN PSK capability */
@@ -177,7 +177,7 @@ nm_setting_wireless_ap_security_compatible(NMSettingWireless         *s_wireless
     }
 
     /* Dynamic WEP or LEAP */
-    if (!strcmp(key_mgmt, "ieee8021x")) {
+    if (nm_streq(key_mgmt, "ieee8021x")) {
         if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
             return FALSE;
 
@@ -241,21 +241,20 @@ nm_setting_wireless_ap_security_compatible(NMSettingWireless         *s_wireless
     }
 
     /* WPA[2]-PSK and WPA[2] Enterprise */
-    if (!strcmp(key_mgmt, "wpa-psk") || !strcmp(key_mgmt, "wpa-eap") || !strcmp(key_mgmt, "sae")
-        || !strcmp(key_mgmt, "owe")) {
-        if (!strcmp(key_mgmt, "wpa-psk")) {
+    if (NM_IN_STRSET(key_mgmt, "wpa-psk", "wpa-eap", "sae", "owe")) {
+        if (nm_streq(key_mgmt, "wpa-psk")) {
             if (!(ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_PSK)
                 && !(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_PSK))
                 return FALSE;
-        } else if (!strcmp(key_mgmt, "wpa-eap")) {
+        } else if (nm_streq(key_mgmt, "wpa-eap")) {
             if (!(ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
                 && !(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_802_1X))
                 return FALSE;
-        } else if (!strcmp(key_mgmt, "sae")) {
+        } else if (nm_streq(key_mgmt, "sae")) {
             if (!(ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_SAE)
                 && !(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_SAE))
                 return FALSE;
-        } else if (!strcmp(key_mgmt, "owe")) {
+        } else if (nm_streq(key_mgmt, "owe")) {
             if (!NM_FLAGS_ANY(ap_wpa,
                               NM_802_11_AP_SEC_KEY_MGMT_OWE | NM_802_11_AP_SEC_KEY_MGMT_OWE_TM)
                 && !NM_FLAGS_ANY(ap_rsn,
@@ -306,7 +305,7 @@ nm_setting_wireless_ap_security_compatible(NMSettingWireless         *s_wireless
     }
 
     /* WPA3 Enterprise Suite B 192 */
-    if (!strcmp(key_mgmt, "wpa-eap-suite-b-192")) {
+    if (nm_streq(key_mgmt, "wpa-eap-suite-b-192")) {
         if (!(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_EAP_SUITE_B_192)) {
             return FALSE;
         }
@@ -1173,8 +1172,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }
     }
 
-    if ((g_strcmp0(priv->mode, NM_SETTING_WIRELESS_MODE_MESH) == 0)
-        && !(priv->channel && priv->band)) {
+    if (nm_streq0(priv->mode, NM_SETTING_WIRELESS_MODE_MESH) && !(priv->channel && priv->band)) {
         g_set_error(error,
                     NM_CONNECTION_ERROR,
                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
