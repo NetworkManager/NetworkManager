@@ -28,8 +28,6 @@
 #include "nm-dbus-manager.h"
 #include "settings/plugins/keyfile/nms-keyfile-storage.h"
 
-#define SEEN_BSSIDS_MAX 30
-
 #define _NM_SETTINGS_UPDATE2_FLAG_ALL_PERSIST_MODES                          \
     ((NMSettingsUpdate2Flags) (NM_SETTINGS_UPDATE2_FLAG_TO_DISK              \
                                | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY          \
@@ -220,9 +218,7 @@ static const GDBusSignalInfo             signal_info_updated;
 static const GDBusSignalInfo             signal_info_removed;
 static const NMDBusInterfaceInfoExtended interface_info_settings_connection;
 
-static void  update_agent_secrets_cache(NMSettingsConnection *self, NMConnection *new);
-static guint _get_seen_bssids(NMSettingsConnection *self,
-                              const char           *strv_buf[static(SEEN_BSSIDS_MAX + 1)]);
+static void update_agent_secrets_cache(NMSettingsConnection *self, NMConnection *new);
 
 /*****************************************************************************/
 
@@ -1405,7 +1401,7 @@ get_settings_auth_cb(NMSettingsConnection  *self,
                      GError                *error,
                      gpointer               data)
 {
-    const char                      *seen_bssids_strv[SEEN_BSSIDS_MAX + 1];
+    const char                      *seen_bssids_strv[NM_SETTINGS_CONNECTION_SEEN_BSSIDS_MAX + 1];
     NMConnectionSerializationOptions options = {};
 
     if (error) {
@@ -1426,7 +1422,7 @@ get_settings_auth_cb(NMSettingsConnection  *self,
      * from the same reason as timestamp. Thus we put it here to GetSettings()
      * return settings too.
      */
-    _get_seen_bssids(self, seen_bssids_strv);
+    nm_settings_connection_get_seen_bssids(self, seen_bssids_strv);
     options.seen_bssids = seen_bssids_strv;
 
     /* Secrets should *never* be returned by the GetSettings method, they
@@ -2436,7 +2432,7 @@ _nm_settings_connection_register_kf_dbs(NMSettingsConnection *self,
             SeenBssidEntry *entry;
 
             nm_assert(result_len == nm_g_hash_table_size(priv->seen_bssids_hash));
-            if (result_len >= SEEN_BSSIDS_MAX)
+            if (result_len >= NM_SETTINGS_CONNECTION_SEEN_BSSIDS_MAX)
                 break;
 
             if (!_nm_utils_hwaddr_aton_exact(tmp_strv[i], &addr_bin, sizeof(addr_bin)))
@@ -2461,12 +2457,14 @@ _nm_settings_connection_register_kf_dbs(NMSettingsConnection *self,
             nm_clear_pointer(&priv->seen_bssids_hash, g_hash_table_destroy);
 
         nm_assert(nm_g_hash_table_size(priv->seen_bssids_hash) == result_len);
-        nm_assert(result_len <= SEEN_BSSIDS_MAX);
+        nm_assert(result_len <= NM_SETTINGS_CONNECTION_SEEN_BSSIDS_MAX);
     }
 }
 
-static guint
-_get_seen_bssids(NMSettingsConnection *self, const char *strv_buf[static(SEEN_BSSIDS_MAX + 1)])
+guint
+nm_settings_connection_get_seen_bssids(
+    NMSettingsConnection *self,
+    const char           *strv_buf[static(NM_SETTINGS_CONNECTION_SEEN_BSSIDS_MAX + 1)])
 {
     NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
     SeenBssidEntry              *entry;
@@ -2474,7 +2472,7 @@ _get_seen_bssids(NMSettingsConnection *self, const char *strv_buf[static(SEEN_BS
 
     i = 0;
     c_list_for_each_entry (entry, &priv->seen_bssids_lst_head, seen_bssids_lst) {
-        nm_assert(i <= SEEN_BSSIDS_MAX);
+        nm_assert(i <= NM_SETTINGS_CONNECTION_SEEN_BSSIDS_MAX);
         strv_buf[i++] = entry->bssid;
     }
     strv_buf[i] = NULL;
@@ -2517,7 +2515,7 @@ void
 nm_settings_connection_add_seen_bssid(NMSettingsConnection *self, const char *seen_bssid)
 {
     NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
-    const char                  *seen_bssids_strv[SEEN_BSSIDS_MAX + 1];
+    const char                  *seen_bssids_strv[NM_SETTINGS_CONNECTION_SEEN_BSSIDS_MAX + 1];
     NMEtherAddr                  addr_bin;
     const char                  *connection_uuid;
     SeenBssidEntry               entry_stack;
@@ -2548,14 +2546,14 @@ nm_settings_connection_add_seen_bssid(NMSettingsConnection *self, const char *se
         if (!g_hash_table_add(priv->seen_bssids_hash, entry))
             nm_assert_not_reached();
 
-        if (g_hash_table_size(priv->seen_bssids_hash) > SEEN_BSSIDS_MAX) {
+        if (g_hash_table_size(priv->seen_bssids_hash) > NM_SETTINGS_CONNECTION_SEEN_BSSIDS_MAX) {
             g_hash_table_remove(
                 priv->seen_bssids_hash,
                 c_list_last_entry(&priv->seen_bssids_lst_head, SeenBssidEntry, seen_bssids_lst));
         }
     }
 
-    nm_assert(g_hash_table_size(priv->seen_bssids_hash) <= SEEN_BSSIDS_MAX);
+    nm_assert(g_hash_table_size(priv->seen_bssids_hash) <= NM_SETTINGS_CONNECTION_SEEN_BSSIDS_MAX);
     nm_assert(g_hash_table_size(priv->seen_bssids_hash)
               == c_list_length(&priv->seen_bssids_lst_head));
 
@@ -2566,7 +2564,7 @@ nm_settings_connection_add_seen_bssid(NMSettingsConnection *self, const char *se
     if (!connection_uuid)
         return;
 
-    i = _get_seen_bssids(self, seen_bssids_strv);
+    i = nm_settings_connection_get_seen_bssids(self, seen_bssids_strv);
     nm_key_file_db_set_string_list(priv->kf_db_seen_bssids, connection_uuid, seen_bssids_strv, i);
 }
 

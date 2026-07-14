@@ -348,6 +348,12 @@ void nm_settings_connection_add_seen_bssid(NMSettingsConnection *self, const cha
 
 guint nm_settings_connection_get_num_seen_bssids(NMSettingsConnection *self);
 
+#define NM_SETTINGS_CONNECTION_SEEN_BSSIDS_MAX 30u
+
+guint nm_settings_connection_get_seen_bssids(
+    NMSettingsConnection *self,
+    const char           *strv_buf[static(NM_SETTINGS_CONNECTION_SEEN_BSSIDS_MAX + 1)]);
+
 gboolean nm_settings_connection_autoconnect_is_blocked(NMSettingsConnection *self);
 
 NMSettingsAutoconnectBlockedReason

@@ -185,11 +185,18 @@ typedef struct _NMSupplicantBssInfo {
 
     NMEtherAddr bssid;
 
+    /* MLD MAC address of the AP-MLD this BSS is affiliated with, parsed from
+     * the Basic Multi-Link element (802.11be). Valid only when
+     * mld_addr_valid is set. */
+    NMEtherAddr mld_addr;
+
     NM80211ApFlags ap_flags : 5;
 
     _NM80211Mode mode : 4;
 
     bool bssid_valid : 1;
+
+    bool mld_addr_valid : 1;
 
     bool metered : 1;
 

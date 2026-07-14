@@ -4905,6 +4905,17 @@ get_bandwidth_vht(const guint8 *bytes, guint len, guint32 *out_bandwidth)
 #define WLAN_EID_VHT_CAPABILITY  191
 #define WLAN_EID_VHT_OPERATION   192
 #define WLAN_EID_VENDOR_SPECIFIC 221
+#define WLAN_EID_EXTENSION       255
+
+/* Element ID Extension values (ieee80211_eid_ext), carried inside a
+ * WLAN_EID_EXTENSION element. */
+#define WLAN_EID_EXT_EHT_MULTI_LINK 107
+
+/* Multi-Link element Type subfield (bits 0-2 of the Multi-Link Control
+ * field). Type 0 is the Basic Multi-Link element, which is the only
+ * variant whose Common Info carries the MLD MAC Address. */
+#define WLAN_ML_CONTROL_TYPE_MASK  0x0007u
+#define WLAN_ML_CONTROL_TYPE_BASIC 0u
 
 void
 nm_wifi_utils_parse_ies(const guint8 *bytes,
@@ -4912,7 +4923,9 @@ nm_wifi_utils_parse_ies(const guint8 *bytes,
                         guint32      *out_max_rate,
                         guint32      *out_bandwidth,
                         gboolean     *out_metered,
-                        gboolean     *out_owe_transition_mode)
+                        gboolean     *out_owe_transition_mode,
+                        NMEtherAddr  *out_mld_addr,
+                        gboolean     *out_mld_addr_valid)
 {
     guint8  id, elem_len;
     guint32 m;
@@ -4921,6 +4934,9 @@ nm_wifi_utils_parse_ies(const guint8 *bytes,
     NM_SET_OUT(out_bandwidth, 0);
     NM_SET_OUT(out_metered, FALSE);
     NM_SET_OUT(out_owe_transition_mode, FALSE);
+    NM_SET_OUT(out_mld_addr_valid, FALSE);
+    if (out_mld_addr)
+        memset(out_mld_addr, 0, sizeof(*out_mld_addr));
 
     while (len) {
         if (len < 2)
@@ -4966,6 +4982,20 @@ nm_wifi_utils_parse_ies(const guint8 *bytes,
                 && bytes[1] == 0x6f && bytes[2] == 0x9a
                 && bytes[3] == 0x1c) /* OUI type: OWE Transition Mode */
                 NM_SET_OUT(out_owe_transition_mode, TRUE);
+            break;
+        case WLAN_EID_EXTENSION:
+            /* Basic Multi-Link element (802.11be). Layout after the element
+             * header: Element ID Extension (1) + Multi-Link Control (2) +
+             * Common Info Length (1) + MLD MAC Address (6). The MLD MAC
+             * Address is present unconditionally in the Basic variant. */
+            if (out_mld_addr && elem_len >= 10 && bytes[0] == WLAN_EID_EXT_EHT_MULTI_LINK) {
+                guint16 ml_control = bytes[1] | ((guint16) bytes[2] << 8);
+
+                if ((ml_control & WLAN_ML_CONTROL_TYPE_MASK) == WLAN_ML_CONTROL_TYPE_BASIC) {
+                    memcpy(out_mld_addr, &bytes[4], sizeof(*out_mld_addr));
+                    NM_SET_OUT(out_mld_addr_valid, TRUE);
+                }
+            }
             break;
         }
 
