@@ -1097,21 +1097,29 @@ check_platform_config(NMConnectivity *self,
 
     if (NM_IS_IPv4(addr_family)) {
         const NMPlatformIP4Route *route;
-        gboolean                  found_global = FALSE;
+        gboolean                  found_suitable = FALSE;
         NMDedupMultiIter          iter;
         const NMPObject          *plobj;
 
-        /* For IPv4 also require a route with global scope. */
+        /* For IPv4, also require either a route with global scope or a
+         * default route with link scope. A default route with link scope
+         * is valid for point-to-point interfaces (such as PPP) that don't
+         * have a gateway address. */
         nmp_cache_iter_for_each (&iter, routes, &plobj) {
             route = NMP_OBJECT_CAST_IP4_ROUTE(plobj);
             if (nm_platform_route_scope_inv(route->scope_inv) == RT_SCOPE_UNIVERSE) {
-                found_global = TRUE;
+                found_suitable = TRUE;
+                break;
+            }
+            if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT(route)
+                && nm_platform_route_scope_inv(route->scope_inv) == RT_SCOPE_LINK) {
+                found_suitable = TRUE;
                 break;
             }
         }
 
-        if (!found_global) {
-            NM_SET_OUT(reason, "no global route configured");
+        if (!found_suitable) {
+            NM_SET_OUT(reason, "no suitable route configured");
             return NM_CONNECTIVITY_LIMITED;
         }
     } else {
