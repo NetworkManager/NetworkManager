@@ -20,8 +20,10 @@
 #include "libnm-platform/nmp-object.h"
 #include "libnm-platform/nmp-global-tracker.h"
 #include "nm-device-factory.h"
+#include "nm-device-loopback.h"
 #include "nm-active-connection.h"
 #include "nm-act-request.h"
+#include "nm-manager.h"
 #include "dns/nm-dns-manager.h"
 #include "nm-firewall-utils.h"
 
@@ -42,10 +44,10 @@
 
 /* TODO: honor the TTL of DNS to determine when to retry resolving endpoints. */
 
-/* TODO: when we get multiple IP addresses when resolving a peer endpoint. We currently
- *   just take the first from GAI. We should only accept AAAA/IPv6 if we also have a suitable
- *   IPv6 address. The problem is, that we have to recheck that when IP addressing on other
- *   interfaces changes. This makes it almost too cumbersome to implement. */
+/* When resolving a peer endpoint we get multiple IP addresses. We prefer an address of
+ * the family for which we have addresses on other interfaces, to avoid picking an address
+ * that is only reachable through the tunnel itself. We don't re-check if addresses change
+ * on other interfaces; the check is done at resolution time only. */
 
 /*****************************************************************************/
 
@@ -724,6 +726,57 @@ _peers_retry_in_msec(PeerData *peer_data, gboolean after_failure)
     return NM_MIN(RETRY_IN_MSEC_MAX, (1l << peer_data->ep_resolv.resolv_fail_count) * 500);
 }
 
+/* Check which address families have usable addresses on interfaces other
+ * than @self and loopback. For IPv6, link-local addresses don't count
+ * since they cannot reach a global endpoint. */
+static void
+_peers_resolve_get_available_addr_families(NMDeviceWireGuard *self,
+                                           gboolean          *out_has_ipv4,
+                                           gboolean          *out_has_ipv6)
+{
+    const CList *tmp_list;
+    NMDevice    *device;
+    gboolean     has_ipv4 = FALSE;
+    gboolean     has_ipv6 = FALSE;
+
+    nm_manager_for_each_device (NM_MANAGER_GET, device, tmp_list) {
+        NML3Cfg              *l3cfg;
+        const NML3ConfigData *l3cd;
+
+        if (has_ipv4 && has_ipv6)
+            break;
+
+        if (device == NM_DEVICE(self) || NM_IS_DEVICE_LOOPBACK(device))
+            continue;
+
+        l3cfg = nm_device_get_l3cfg(device);
+        if (!l3cfg)
+            continue;
+
+        l3cd = nm_l3cfg_get_combined_l3cd(l3cfg, TRUE);
+        if (!l3cd)
+            continue;
+
+        if (!has_ipv4 && nm_l3_config_data_get_num_addresses(l3cd, AF_INET) > 0)
+            has_ipv4 = TRUE;
+
+        if (!has_ipv6) {
+            NMDedupMultiIter            iter;
+            const NMPlatformIP6Address *addr;
+
+            nm_l3_config_data_iter_ip6_address_for_each (&iter, l3cd, &addr) {
+                if (!IN6_IS_ADDR_LINKLOCAL(&addr->address)) {
+                    has_ipv6 = TRUE;
+                    break;
+                }
+            }
+        }
+    }
+
+    *out_has_ipv4 = has_ipv4;
+    *out_has_ipv6 = has_ipv6;
+}
+
 static void
 _peers_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
@@ -781,7 +834,17 @@ _peers_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
     changed  = FALSE;
 
     if (!resolv_error) {
-        GList *iter;
+        GList   *iter;
+        gboolean has_ipv4_other;
+        gboolean has_ipv6_other;
+        gboolean filter_af;
+
+        _peers_resolve_get_available_addr_families(self, &has_ipv4_other, &has_ipv6_other);
+
+        /* Filter by address family only when exactly one family is available
+         * on other interfaces. When both are available, RFC 6724 ordering is
+         * fine; when neither is, we shouldn't discard all results. */
+        filter_af = (has_ipv4_other != has_ipv6_other);
 
         for (iter = list; iter; iter = iter->next) {
             GInetAddress    *a = iter->data;
@@ -792,6 +855,8 @@ _peers_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
 
             switch (g_inet_address_get_family(a)) {
             case G_SOCKET_FAMILY_IPV4:
+                if (filter_af && !has_ipv4_other)
+                    continue;
                 nm_assert(g_inet_address_get_native_size(a) == sizeof(struct in_addr));
                 s->in = (struct sockaddr_in) {
                     .sin_family = AF_INET,
@@ -801,6 +866,8 @@ _peers_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
                 memcpy(&s->in.sin_addr, g_inet_address_to_bytes(a), sizeof(struct in_addr));
                 break;
             case G_SOCKET_FAMILY_IPV6:
+                if (filter_af && !has_ipv6_other)
+                    continue;
                 nm_assert(g_inet_address_get_native_size(a) == sizeof(struct in6_addr));
                 s->in6 = (struct sockaddr_in6) {
                     .sin6_family   = AF_INET6,
