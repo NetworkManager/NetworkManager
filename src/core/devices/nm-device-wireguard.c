@@ -819,7 +819,7 @@ _peers_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
             if (peer_data->ep_resolv.sockaddr.sa.sa_family == AF_UNSPEC)
                 break;
 
-            if (nm_sock_addr_union_cmp(&peer_data->ep_resolv.sockaddr, &sockaddr) == 0) {
+            if (nm_sock_addr_union_cmp(&peer_data->ep_resolv.sockaddr, s) == 0) {
                 changed = FALSE;
                 break;
             }
