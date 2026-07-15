@@ -31,6 +31,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMWifiP2PPeer,
                              PROP_MODEL_NUMBER,
                              PROP_SERIAL,
                              PROP_WFD_IES,
+                             PROP_WPS_CONFIG_METHODS,
                              PROP_HW_ADDRESS,
                              PROP_STRENGTH,
                              PROP_LAST_SEEN,
@@ -51,6 +52,8 @@ struct _NMWifiP2PPeerPrivate {
     GBytes *wfd_ies;
 
     const char **groups;
+
+    guint16 wps_config_methods;
 
     guint8 strength;
 
@@ -282,6 +285,32 @@ nm_wifi_p2p_peer_set_wfd_ies(NMWifiP2PPeer *peer, GBytes *wfd_ies)
     return TRUE;
 }
 
+guint16
+nm_wifi_p2p_peer_get_wps_config_methods(const NMWifiP2PPeer *peer)
+{
+    g_return_val_if_fail(NM_IS_WIFI_P2P_PEER(peer), 0);
+
+    return NM_WIFI_P2P_PEER_GET_PRIVATE(peer)->wps_config_methods;
+}
+
+gboolean
+nm_wifi_p2p_peer_set_wps_config_methods(NMWifiP2PPeer *peer, guint16 wps_config_methods)
+{
+    NMWifiP2PPeerPrivate *priv;
+
+    g_return_val_if_fail(NM_IS_WIFI_P2P_PEER(peer), FALSE);
+
+    priv = NM_WIFI_P2P_PEER_GET_PRIVATE(peer);
+
+    if (priv->wps_config_methods == wps_config_methods)
+        return FALSE;
+
+    priv->wps_config_methods = wps_config_methods;
+
+    _notify(peer, PROP_WPS_CONFIG_METHODS);
+    return TRUE;
+}
+
 const char *const *
 nm_wifi_p2p_peer_get_groups(const NMWifiP2PPeer *peer)
 {
@@ -408,6 +437,7 @@ nm_wifi_p2p_peer_update_from_properties(NMWifiP2PPeer *peer, const NMSupplicantP
     }
 
     changed |= nm_wifi_p2p_peer_set_wfd_ies(peer, peer_info->ies);
+    changed |= nm_wifi_p2p_peer_set_wps_config_methods(peer, peer_info->config_methods);
     changed |= nm_wifi_p2p_peer_set_last_seen(peer, peer_info->last_seen_msec / 1000u);
 
     /* We currently only use the groups information internally to check if
@@ -603,6 +633,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_WFD_IES:
         g_value_take_variant(value, nm_g_bytes_to_variant_ay(priv->wfd_ies));
         break;
+    case PROP_WPS_CONFIG_METHODS:
+        g_value_set_uint(value, priv->wps_config_methods);
+        break;
     case PROP_HW_ADDRESS:
         g_value_set_string(value, priv->address);
         break;
@@ -702,6 +735,9 @@ static const NMDBusInterfaceInfoExtended interface_info_p2p_peer = {
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("WfdIEs",
                                                            "ay",
                                                            NM_WIFI_P2P_PEER_WFD_IES),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("WpsConfigMethods",
+                                                           "u",
+                                                           NM_WIFI_P2P_PEER_WPS_CONFIG_METHODS),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("HwAddress",
                                                            "s",
                                                            NM_WIFI_P2P_PEER_HW_ADDRESS),
@@ -773,6 +809,15 @@ nm_wifi_p2p_peer_class_init(NMWifiP2PPeerClass *klass)
                                                         G_VARIANT_TYPE("ay"),
                                                         NULL,
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
+    obj_properties[PROP_WPS_CONFIG_METHODS] =
+        g_param_spec_uint(NM_WIFI_P2P_PEER_WPS_CONFIG_METHODS,
+                          "",
+                          "",
+                          0,
+                          G_MAXUINT16,
+                          0,
+                          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     obj_properties[PROP_HW_ADDRESS] =
         g_param_spec_string(NM_WIFI_P2P_PEER_HW_ADDRESS,

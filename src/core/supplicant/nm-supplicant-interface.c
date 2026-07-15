@@ -1002,6 +1002,13 @@ _peer_info_properties_changed(NMSupplicantInterface *self,
         g_variant_unref(v_v);
     }
 
+    {
+        guint16 v_u16;
+
+        if (nm_g_variant_lookup(properties, "config_method", "q", &v_u16))
+            peer_info->config_methods = v_u16;
+    }
+
     _peer_info_changed_emit(self, peer_info, TRUE);
 }
 

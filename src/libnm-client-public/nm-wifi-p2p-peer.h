@@ -24,16 +24,17 @@ G_BEGIN_DECLS
 #define NM_WIFI_P2P_PEER_GET_CLASS(obj) \
     (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_WIFI_P2P_PEER, NMWifiP2PPeerClass))
 
-#define NM_WIFI_P2P_PEER_FLAGS        "flags"
-#define NM_WIFI_P2P_PEER_NAME         "name"
-#define NM_WIFI_P2P_PEER_MANUFACTURER "manufacturer"
-#define NM_WIFI_P2P_PEER_MODEL        "model"
-#define NM_WIFI_P2P_PEER_MODEL_NUMBER "model-number"
-#define NM_WIFI_P2P_PEER_SERIAL       "serial"
-#define NM_WIFI_P2P_PEER_WFD_IES      "wfd-ies"
-#define NM_WIFI_P2P_PEER_HW_ADDRESS   "hw-address"
-#define NM_WIFI_P2P_PEER_STRENGTH     "strength"
-#define NM_WIFI_P2P_PEER_LAST_SEEN    "last-seen"
+#define NM_WIFI_P2P_PEER_FLAGS              "flags"
+#define NM_WIFI_P2P_PEER_NAME               "name"
+#define NM_WIFI_P2P_PEER_MANUFACTURER       "manufacturer"
+#define NM_WIFI_P2P_PEER_MODEL              "model"
+#define NM_WIFI_P2P_PEER_MODEL_NUMBER       "model-number"
+#define NM_WIFI_P2P_PEER_SERIAL             "serial"
+#define NM_WIFI_P2P_PEER_WFD_IES            "wfd-ies"
+#define NM_WIFI_P2P_PEER_WPS_CONFIG_METHODS "wps-config-methods"
+#define NM_WIFI_P2P_PEER_HW_ADDRESS         "hw-address"
+#define NM_WIFI_P2P_PEER_STRENGTH           "strength"
+#define NM_WIFI_P2P_PEER_LAST_SEEN          "last-seen"
 
 /**
  * NMWifiP2PPeer:
@@ -62,6 +63,9 @@ const char *nm_wifi_p2p_peer_get_serial(NMWifiP2PPeer *peer);
 
 NM_AVAILABLE_IN_1_16
 GBytes *nm_wifi_p2p_peer_get_wfd_ies(NMWifiP2PPeer *peer);
+
+NM_AVAILABLE_IN_1_60
+NMWpsConfigMethods nm_wifi_p2p_peer_get_wps_config_methods(NMWifiP2PPeer *peer);
 
 NM_AVAILABLE_IN_1_16
 const char *nm_wifi_p2p_peer_get_hw_address(NMWifiP2PPeer *peer);
