@@ -144,10 +144,12 @@ create_wired_conn(struct nbft_info_hfi *hfi,
                  NULL);
     nm_connection_add_setting(connection, s_connection);
 
-    /* MAC address */
-    s_wired = nm_setting_wired_new();
-    g_object_set(s_wired, NM_SETTING_WIRED_MAC_ADDRESS, hwaddr, NULL);
-    nm_connection_add_setting(connection, s_wired);
+    if (hwaddr) {
+        /* MAC address */
+        s_wired = nm_setting_wired_new();
+        g_object_set(s_wired, NM_SETTING_WIRED_MAC_ADDRESS, hwaddr, NULL);
+        nm_connection_add_setting(connection, s_wired);
+    }
 
     return connection;
 }
@@ -216,7 +218,7 @@ parse_hfi(GPtrArray *a, struct nbft_info_hfi *hfi, const char *table_name, char 
         }
 
         conn_name  = format_conn_name(table_name, hfi, TRUE);
-        connection = create_wired_conn(hfi, conn_name, hwaddr, TRUE);
+        connection = create_wired_conn(hfi, conn_name, NULL, TRUE);
 
         s_vlan = nm_setting_vlan_new();
         g_object_set(s_vlan, NM_SETTING_VLAN_ID, hfi->tcp_info.vlan, NULL);
