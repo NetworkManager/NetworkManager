@@ -846,6 +846,18 @@ _peers_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
          * fine; when neither is, we shouldn't discard all results. */
         filter_af = (has_ipv4_other != has_ipv6_other);
 
+        _LOGT(LOGD_DEVICE,
+              "wireguard-peer[%s]: resolving endpoint \"%s\", existing %s, "
+              "has-ipv4-other=%d, has-ipv6-other=%d, filter-af=%d",
+              nm_wireguard_peer_get_public_key(peer_data->peer),
+              nm_wireguard_peer_get_endpoint(peer_data->peer),
+              nm_sock_addr_union_to_string(&peer_data->ep_resolv.sockaddr,
+                                           s_sockaddr,
+                                           sizeof(s_sockaddr)),
+              has_ipv4_other,
+              has_ipv6_other,
+              filter_af);
+
         for (iter = list; iter; iter = iter->next) {
             GInetAddress    *a = iter->data;
             NMSockAddrUnion  sockaddr_tmp;
@@ -855,8 +867,13 @@ _peers_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
 
             switch (g_inet_address_get_family(a)) {
             case G_SOCKET_FAMILY_IPV4:
-                if (filter_af && !has_ipv4_other)
+                if (filter_af && !has_ipv4_other) {
+                    _LOGT(LOGD_DEVICE,
+                          "wireguard-peer[%s]:   result: %s (IPv4, skipped)",
+                          nm_wireguard_peer_get_public_key(peer_data->peer),
+                          nm_inet_ntop(AF_INET, g_inet_address_to_bytes(a), s_sockaddr));
                     continue;
+                }
                 nm_assert(g_inet_address_get_native_size(a) == sizeof(struct in_addr));
                 s->in = (struct sockaddr_in) {
                     .sin_family = AF_INET,
@@ -866,8 +883,13 @@ _peers_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
                 memcpy(&s->in.sin_addr, g_inet_address_to_bytes(a), sizeof(struct in_addr));
                 break;
             case G_SOCKET_FAMILY_IPV6:
-                if (filter_af && !has_ipv6_other)
+                if (filter_af && !has_ipv6_other) {
+                    _LOGT(LOGD_DEVICE,
+                          "wireguard-peer[%s]:   result: %s (IPv6, skipped)",
+                          nm_wireguard_peer_get_public_key(peer_data->peer),
+                          nm_inet_ntop(AF_INET6, g_inet_address_to_bytes(a), s_sockaddr));
                     continue;
+                }
                 nm_assert(g_inet_address_get_native_size(a) == sizeof(struct in6_addr));
                 s->in6 = (struct sockaddr_in6) {
                     .sin6_family   = AF_INET6,
@@ -883,13 +905,27 @@ _peers_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
             }
 
             changed = TRUE;
-            if (peer_data->ep_resolv.sockaddr.sa.sa_family == AF_UNSPEC)
+            if (peer_data->ep_resolv.sockaddr.sa.sa_family == AF_UNSPEC) {
+                _LOGT(LOGD_DEVICE,
+                      "wireguard-peer[%s]:   result: %s (accepted, first)",
+                      nm_wireguard_peer_get_public_key(peer_data->peer),
+                      nm_sock_addr_union_to_string(s, s_sockaddr, sizeof(s_sockaddr)));
                 break;
+            }
 
             if (nm_sock_addr_union_cmp(&peer_data->ep_resolv.sockaddr, s) == 0) {
+                _LOGT(LOGD_DEVICE,
+                      "wireguard-peer[%s]:   result: %s (matches existing, keeping)",
+                      nm_wireguard_peer_get_public_key(peer_data->peer),
+                      nm_sock_addr_union_to_string(s, s_sockaddr, sizeof(s_sockaddr)));
                 changed = FALSE;
                 break;
             }
+
+            _LOGT(LOGD_DEVICE,
+                  "wireguard-peer[%s]:   result: %s (candidate, checking more)",
+                  nm_wireguard_peer_get_public_key(peer_data->peer),
+                  nm_sock_addr_union_to_string(s, s_sockaddr, sizeof(s_sockaddr)));
         }
 
         g_list_free_full(list, g_object_unref);
@@ -902,8 +938,16 @@ _peers_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
          * a possibly good IP address, since WireGuard supports automatic roaming
          * anyway. Either the IP address is still good (and we would wrongly
          * reject it), or it isn't -- in which case it does not hurt much. */
-    } else if (changed)
+    } else if (changed) {
+        _LOGT(LOGD_DEVICE,
+              "wireguard-peer[%s]: endpoint changed: %s -> %s",
+              nm_wireguard_peer_get_public_key(peer_data->peer),
+              nm_sock_addr_union_to_string(&peer_data->ep_resolv.sockaddr,
+                                           s_sockaddr,
+                                           sizeof(s_sockaddr)),
+              nm_sock_addr_union_to_string(&sockaddr, s_retry, sizeof(s_retry)));
         peer_data->ep_resolv.sockaddr = sockaddr;
+    }
 
     if (resolv_error || peer_data->ep_resolv.sockaddr.sa.sa_family == AF_UNSPEC) {
         /* while it technically did not fail, something is probably odd. Retry frequently to
