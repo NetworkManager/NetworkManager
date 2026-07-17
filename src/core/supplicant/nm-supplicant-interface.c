@@ -1312,7 +1312,7 @@ parse_capabilities(NMSupplicantInterface *self, GVariant *capabilities)
          * request will be rejected with "fi.w1.wpa_supplicant1.InvalidArgs"
          * Body: ('Did not receive correct message arguments.', 'Too many ssids specified. Specify at most four')
          * */
-        priv->max_scan_ssids = CLAMP(max_scan_ssids, 0, WPAS_MAX_SCAN_SSIDS);
+        priv->max_scan_ssids = NM_CLAMP(max_scan_ssids, 0, WPAS_MAX_SCAN_SSIDS);
     }
 
     if (old_max_scan_ssids != priv->max_scan_ssids || old_prop_scan_active != priv->prop_scan_active

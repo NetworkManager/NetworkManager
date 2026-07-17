@@ -211,7 +211,7 @@ nmt_newt_popup_set_active(NmtNewtPopup *popup, int active)
 {
     NmtNewtPopupPrivate *priv = NMT_NEWT_POPUP_GET_PRIVATE(popup);
 
-    active = CLAMP(active, 0, priv->entries->len - 1);
+    active = NM_CLAMP(active, 0, (int) priv->entries->len - 1);
 
     if (active != priv->active) {
         priv->active = active;

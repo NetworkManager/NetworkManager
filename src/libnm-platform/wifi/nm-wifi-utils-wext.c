@@ -378,13 +378,13 @@ wext_qual_to_percent(const struct iw_quality *qual, const struct iw_quality *max
         int noise     = FALLBACK_NOISE_FLOOR_DBM;
         int level     = qual->level - 0x100;
 
-        level = CLAMP(level, FALLBACK_NOISE_FLOOR_DBM, FALLBACK_SIGNAL_MAX_DBM);
+        level = NM_CLAMP(level, FALLBACK_NOISE_FLOOR_DBM, FALLBACK_SIGNAL_MAX_DBM);
 
         if ((qual->noise > 0) && !(qual->updated & IW_QUAL_NOISE_INVALID))
             noise = qual->noise - 0x100;
         else if ((max_qual->noise > 0) && !(max_qual->updated & IW_QUAL_NOISE_INVALID))
             noise = max_qual->noise - 0x100;
-        noise = CLAMP(noise, FALLBACK_NOISE_FLOOR_DBM, FALLBACK_SIGNAL_MAX_DBM - 1);
+        noise = NM_CLAMP(noise, FALLBACK_NOISE_FLOOR_DBM, FALLBACK_SIGNAL_MAX_DBM - 1);
 
         /* A sort of signal-to-noise ratio calculation */
         level_percent = (int) (100
@@ -406,7 +406,7 @@ wext_qual_to_percent(const struct iw_quality *qual, const struct iw_quality *max
         int level = qual->level;
 
         /* Signal level is relavtive (0 -> max_qual->level) */
-        level         = CLAMP(level, 0, max_qual->level);
+        level         = NM_CLAMP(level, 0, (int) max_qual->level);
         level_percent = (int) (100 * ((double) level / (double) max_qual->level));
         _LOGD(LOGD_WIFI,
               "QL2: level_percent is %d.  max_level %d, level %d.",
@@ -422,8 +422,8 @@ wext_qual_to_percent(const struct iw_quality *qual, const struct iw_quality *max
     if ((percent < 1) && (level_percent >= 0))
         percent = level_percent;
 
-    _LOGD(LOGD_WIFI, "QL: Final quality percent is %d (%d).", percent, CLAMP(percent, 0, 100));
-    return (CLAMP(percent, 0, 100));
+    _LOGD(LOGD_WIFI, "QL: Final quality percent is %d (%d).", percent, NM_CLAMP(percent, 0, 100));
+    return (NM_CLAMP(percent, 0, 100));
 }
 
 static int
