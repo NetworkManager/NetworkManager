@@ -13433,8 +13433,6 @@ activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family)
         if (priv->ipll_data_4.v4.mode == NM_SETTING_IP4_LL_ENABLED)
             _dev_ipll4_start(self);
 
-        _dev_ipforwarding4_start(self, addr_family);
-
         if (nm_streq(priv->ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_AUTO))
             _dev_ipdhcpx_start(self, AF_INET);
         else if (nm_streq(priv->ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)) {
@@ -13503,6 +13501,9 @@ activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family)
     }
 
 out_devip:
+    if (IS_IPv4 && nm_device_get_ip_ifindex(self) > 0)
+        _dev_ipforwarding4_start(self, addr_family);
+
     if (klass->act_stage3_ip_config)
         klass->act_stage3_ip_config(self, addr_family);
 
