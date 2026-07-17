@@ -992,17 +992,30 @@ nm_g_set_error_take(GError **error, GError *error_take)
  * @NM_UTILS_ERROR_NOT_READY: the failure is related to being currently
  *   not ready to perform the operation.
  *
- * @NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE: used for a very particular
- *   purpose during nm_device_check_connection_compatible() to indicate that
- *   the profile does not match the device already because their type differs.
- *   That is, there is a fundamental reason of trying to check a profile that
- *   cannot possibly match on this device.
- * @NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_UNMANAGED_DEVICE: used for a very particular
- *   purpose during nm_device_check_connection_available(), to indicate that the
- *   connection is unavailable because the device is unmanaged.
- * @NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER: the profile is currently
- *   unavailable/incompatible with the device for some other reason, which may
- *   be only temporary.
+ * @NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE_NAME: the profile's
+ *   connection.interface-name does not match the device's interface name.
+ *   Lowest CONNECTION_UNAVAILABLE code, because a name mismatch is the
+ *   clearest signal that this is the wrong device for the profile.
+ * @NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE: the profile is
+ *   fundamentally incompatible with the device (wrong connection type,
+ *   or a match.interface-name/match.driver/match.path mismatch).
+ * @NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_DISALLOWED: the profile is
+ *   compatible with the device but blocked by NetworkManager configuration
+ *   policy (allowed-connections). Cannot be overridden by the user, but
+ *   ranks below STRICTLY_UNMANAGED because the device did not get past
+ *   the compatibility check.
+ * @NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_STRICTLY_UNMANAGED_DEVICE: the
+ *   device is compatible with the profile but strictly unmanaged for
+ *   authoritative reasons that cannot be overridden.
+ * @NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_UNMANAGED_DEVICE: the device is
+ *   compatible with the profile but currently unmanaged. Unlike
+ *   STRICTLY_UNMANAGED_DEVICE, this can be overridden for explicit user
+ *   requests.
+ * @NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER: the device is compatible
+ *   and managed, but a specific condition prevents activation (for example
+ *   no carrier, access point not visible, SR-IOV not supported, MAC or
+ *   property mismatch, modem not ready). Highest CONNECTION_UNAVAILABLE
+ *   code, because the device got the furthest through the checks.
  *
  * @NM_UTILS_ERROR_SETTING_MISSING: the setting is missing
  *
@@ -1018,22 +1031,25 @@ typedef enum {
 
     NM_UTILS_ERROR_AMBIGUOUS, /*< nick=Ambiguous >*/
 
-    /* the following codes have a special meaning and are exactly used for
-     * nm_device_check_connection_compatible() and nm_device_check_connection_available().
+    /* The following codes are returned by nm_device_check_connection_compatible()
+     * and nm_device_check_connection_available() to indicate why a profile
+     * cannot be activated on a device.
      *
-     * Actually, their meaning is not very important (so, don't think too
-     * hard about the name of these error codes). What is important, is their
-     * relative order (i.e. the integer value of the codes). When manager
-     * searches for a suitable device, it will check all devices whether
-     * a profile can be activated. If they all fail, it will pick the error
-     * message from the device that returned the *highest* error code,
-     * in the hope that this message makes the most sense for the caller.
-     * */
-    NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_STRICTLY_UNMANAGED_DEVICE,
+     * Their relative order matters: when the manager searches for a suitable
+     * device, it checks all devices and, if none match, reports the error from
+     * the device that returned the highest code. A higher code means the
+     * device is a closer match (it got further through the checks), so the
+     * reported error is the most relevant one.
+     *
+     * The check order in check_connection_compatible() and
+     * _nm_device_check_connection_available() must follow the same order:
+     * checks that return lower codes run first. */
+    NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE_NAME,
     NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
+    NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_DISALLOWED,
+    NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_STRICTLY_UNMANAGED_DEVICE,
     NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_UNMANAGED_DEVICE,
     NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
-    NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_DISALLOWED,
 
     NM_UTILS_ERROR_SETTING_MISSING,
 

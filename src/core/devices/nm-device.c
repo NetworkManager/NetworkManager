@@ -9996,7 +9996,7 @@ check_connection_compatible(NMDevice     *self,
         }
     } else if (!nm_streq0(conn_iface, device_iface)) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE_NAME,
                                    "mismatching interface name");
         return FALSE;
     }
@@ -10009,7 +10009,7 @@ check_connection_compatible(NMDevice     *self,
         patterns = nm_setting_match_get_interface_names(s_match, &num_patterns);
         if (num_patterns > 0 && !nm_wildcard_match_check(device_iface, patterns, num_patterns)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
                                        "device does not satisfy match.interface-name property");
             return FALSE;
         }
@@ -10026,7 +10026,7 @@ check_connection_compatible(NMDevice     *self,
         if (num_patterns > 0
             && !nm_wildcard_match_check(nm_device_get_driver(self), patterns, num_patterns)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
                                        "device does not satisfy match.driver property");
             return FALSE;
         }
