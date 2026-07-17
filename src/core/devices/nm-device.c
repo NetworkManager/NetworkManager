@@ -9966,7 +9966,7 @@ check_connection_compatible(NMDevice     *self,
          * connection_type_check_compatible. That means, it is by default not compatible
          * with any connection type. */
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
                                    "device does not support any connections");
         return FALSE;
     }
@@ -9975,7 +9975,7 @@ check_connection_compatible(NMDevice     *self,
         s_sriov = (NMSettingSriov *) nm_connection_get_setting(connection, NM_TYPE_SETTING_SRIOV);
         if (s_sriov && nm_setting_sriov_get_total_vfs(s_sriov)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "device does not support SR-IOV");
             return FALSE;
         }
@@ -9989,14 +9989,14 @@ check_connection_compatible(NMDevice     *self,
     if (!conn_iface) {
         if (nm_connection_is_virtual(connection)) {
             nm_utils_error_set(error,
-                               NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                               NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                "cannot get interface name due to %s",
                                local->message);
             return FALSE;
         }
     } else if (!nm_streq0(conn_iface, device_iface)) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                    "mismatching interface name");
         return FALSE;
     }
@@ -10009,7 +10009,7 @@ check_connection_compatible(NMDevice     *self,
         patterns = nm_setting_match_get_interface_names(s_match, &num_patterns);
         if (num_patterns > 0 && !nm_wildcard_match_check(device_iface, patterns, num_patterns)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "device does not satisfy match.interface-name property");
             return FALSE;
         }
@@ -10026,7 +10026,7 @@ check_connection_compatible(NMDevice     *self,
         if (num_patterns > 0
             && !nm_wildcard_match_check(nm_device_get_driver(self), patterns, num_patterns)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "device does not satisfy match.driver property");
             return FALSE;
         }
@@ -10034,7 +10034,7 @@ check_connection_compatible(NMDevice     *self,
         patterns = nm_setting_match_get_paths(s_match, &num_patterns);
         if (num_patterns > 0 && !nm_wildcard_match_check(priv->path, patterns, num_patterns)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
                                        "device does not satisfy match.path property");
             return FALSE;
         }
@@ -10044,7 +10044,7 @@ check_connection_compatible(NMDevice     *self,
         nm_config_data_get_device_allowed_connections_specs(NM_CONFIG_GET_DATA, self, &has_match);
     if (has_match && !nm_utils_connection_match_spec_list(connection, specs, FALSE)) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_DISALLOWED,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_DISALLOWED,
                                    "device configuration doesn't allow this connection");
         return FALSE;
     }
@@ -10057,7 +10057,7 @@ check_connection_compatible(NMDevice     *self,
  * @self: an #NMDevice
  * @connection: an #NMConnection
  * @error: optional reason why it is incompatible. Note that the
- *   error code is set to %NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+ *   error code is set to %NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
  *   if the profile is fundamentally incompatible with the device
  *   (most commonly, because the device-type does not support the
  *   connection-type).
@@ -16936,7 +16936,7 @@ _nm_device_check_connection_available(NMDevice                      *self,
             return TRUE;
         }
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_UNMANAGED_DEVICE,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_UNMANAGED_DEVICE,
                                    "hardware device is not realized");
         return FALSE;
     }
@@ -16944,7 +16944,7 @@ _nm_device_check_connection_available(NMDevice                      *self,
     state = nm_device_get_state(self);
     if (state < NM_DEVICE_STATE_UNMANAGED) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_UNMANAGED_DEVICE,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_UNMANAGED_DEVICE,
                                    "device is in unknown state");
         return FALSE;
     }
@@ -16956,7 +16956,7 @@ _nm_device_check_connection_available(NMDevice                      *self,
                 /* device is strictly unmanaged by authoritative unmanaged reasons. */
                 nm_utils_error_set_literal(
                     error,
-                    NM_UTILS_ERROR_CONNECTION_AVAILABLE_STRICTLY_UNMANAGED_DEVICE,
+                    NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_STRICTLY_UNMANAGED_DEVICE,
                     "device is strictly unmanaged");
                 return FALSE;
             }
@@ -16964,7 +16964,7 @@ _nm_device_check_connection_available(NMDevice                      *self,
                               _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_OVERRULE_UNMANAGED)) {
                 /* device could be managed for an explict user-request, but this is not such a request. */
                 nm_utils_error_set_literal(error,
-                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_UNMANAGED_DEVICE,
+                                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_UNMANAGED_DEVICE,
                                            "device is currently unmanaged");
                 return FALSE;
             }
@@ -16974,11 +16974,11 @@ _nm_device_check_connection_available(NMDevice                      *self,
         if (!nm_device_is_available(self, _device_check_dev_available_flags_from_con(flags))) {
             if (NM_FLAGS_HAS(flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST)) {
                 nm_utils_error_set_literal(error,
-                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                            "device is not available");
             } else {
                 nm_utils_error_set_literal(error,
-                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                            "device is not available for internal request");
             }
             return FALSE;
@@ -17121,7 +17121,7 @@ check_connection_available(NMDevice                      *self,
     }
 
     nm_utils_error_set_literal(error,
-                               NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                               NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                "device has no carrier");
     return FALSE;
 }

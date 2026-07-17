@@ -213,7 +213,7 @@ check_connection_compatible(NMDevice     *device,
 
         if (priv->props.id != nm_setting_geneve_get_id(s_geneve)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "geneve id mismatches");
             return FALSE;
         }
@@ -222,35 +222,35 @@ check_connection_compatible(NMDevice     *device,
                              priv->props.remote,
                              &priv->props.remote6)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "geneve remote address mismatches");
             return FALSE;
         }
 
         if (priv->props.dst_port != nm_setting_geneve_get_destination_port(s_geneve)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "geneve destination port mismatches");
             return FALSE;
         }
 
         if (priv->props.tos != nm_setting_geneve_get_tos(s_geneve)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "geneve TOS mismatches");
             return FALSE;
         }
 
         if (priv->props.ttl != nm_setting_geneve_get_ttl(s_geneve)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "geneve TTL mismatches");
             return FALSE;
         }
 
         if (priv->props.df != nm_setting_geneve_get_df(s_geneve)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "geneve DF mismatches");
             return FALSE;
         }

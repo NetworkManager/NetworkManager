@@ -563,7 +563,7 @@ _startup_complete_check_is_ready(NMSettings           *self,
         if (!nm_device_check_connection_compatible(device, conn, TRUE, &error)
             && !g_error_matches(error,
                                 NM_UTILS_ERROR,
-                                NM_UTILS_ERROR_CONNECTION_AVAILABLE_DISALLOWED))
+                                NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_DISALLOWED))
             continue;
 
         return TRUE;

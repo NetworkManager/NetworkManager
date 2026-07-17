@@ -130,7 +130,7 @@ check_connection_compatible(NMDevice     *device,
             hw_addr = nm_device_get_permanent_hw_address(device);
             if (!hw_addr || !nm_utils_hwaddr_matches(mac, -1, hw_addr, -1)) {
                 nm_utils_error_set_literal(error,
-                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                            "MAC address mismatches");
                 return FALSE;
             }

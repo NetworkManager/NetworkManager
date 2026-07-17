@@ -240,20 +240,20 @@ check_connection_compatible(NMDevice     *device,
     if (check_properties && nm_device_is_real(device)) {
         if (setting_mode_to_platform(nm_setting_ipvlan_get_mode(s_ipvlan)) != priv->props.mode) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "IPVLAN mode setting differs");
             return FALSE;
         }
 
         if (nm_setting_ipvlan_get_private(s_ipvlan) != priv->props.private_flag) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "IPVLAN private flag setting differs");
             return FALSE;
         }
         if (nm_setting_ipvlan_get_vepa(s_ipvlan) != priv->props.vepa) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "IPVLAN VEPA flag setting differs");
             return FALSE;
         }
@@ -263,7 +263,7 @@ check_connection_compatible(NMDevice     *device,
         if (parent) {
             if (!nm_device_match_parent(device, parent)) {
                 nm_utils_error_set_literal(error,
-                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                            "IPVLAN parent setting differs");
                 return FALSE;
             }
@@ -271,7 +271,7 @@ check_connection_compatible(NMDevice     *device,
             /* Parent could be a MAC address in an NMSettingWired */
             if (!nm_device_match_parent_hwaddr(device, connection, TRUE)) {
                 nm_utils_error_set_literal(error,
-                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                            "IPVLAN parent mac setting differs");
                 return FALSE;
             }

@@ -759,7 +759,7 @@ check_connection_compatible(NMDevice     *device,
     ssid_bytes = g_bytes_get_data(ssid, &ssid_len);
     if (!g_utf8_validate((const char *) ssid_bytes, ssid_len, NULL)) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
                                    "non-UTF-8 connection SSID not supported by IWD backend");
         return FALSE;
     }
@@ -769,7 +769,7 @@ check_connection_compatible(NMDevice     *device,
     if (perm_hw_addr) {
         if (mac && !nm_utils_hwaddr_matches(mac, -1, perm_hw_addr, -1)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
                                        "device MAC address does not match the profile");
             return FALSE;
         }
@@ -781,14 +781,14 @@ check_connection_compatible(NMDevice     *device,
 
             if (nm_utils_hwaddr_matches(mac_blacklist[i], -1, perm_hw_addr, -1)) {
                 nm_utils_error_set_literal(error,
-                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                            "MAC address blacklisted");
                 return FALSE;
             }
         }
     } else if (mac) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                    "device has no valid MAC address as required by profile");
         return FALSE;
     }
@@ -796,7 +796,7 @@ check_connection_compatible(NMDevice     *device,
     if (!nm_wifi_connection_get_iwd_ssid_and_security(connection, NULL, &security)
         || security == NM_IWD_NETWORK_SECURITY_WEP) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
                                    "connection authentication type not supported by IWD backend");
         return FALSE;
     }
@@ -808,7 +808,7 @@ check_connection_compatible(NMDevice     *device,
         && !NM_IN_STRSET(mode, NULL, NM_SETTING_WIRELESS_MODE_INFRA)) {
         nm_utils_error_set_literal(
             error,
-            NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+            NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
             "non-infrastructure hidden networks not supported by the IWD backend");
         return FALSE;
     }
@@ -821,7 +821,7 @@ check_connection_compatible(NMDevice     *device,
             if (!is_connection_known_network(priv->manager, connection)
                 && !nm_iwd_manager_is_recently_mirrored(priv->manager, ssid)) {
                 nm_utils_error_set_literal(error,
-                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+                                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
                                            "802.1x connections must have IWD provisioning files");
                 return FALSE;
             }
@@ -829,7 +829,7 @@ check_connection_compatible(NMDevice     *device,
                               NM_IWD_NETWORK_SECURITY_OPEN,
                               NM_IWD_NETWORK_SECURITY_PSK)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
                                        "IWD backend only supports Open, PSK and 802.1x network "
                                        "authentication in Infrastructure mode");
             return FALSE;
@@ -840,7 +840,7 @@ check_connection_compatible(NMDevice     *device,
 
         if (!(priv->capabilities & _NM_WIFI_DEVICE_CAP_AP)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
                                        "device does not support Access Point mode");
             return FALSE;
         }
@@ -848,7 +848,7 @@ check_connection_compatible(NMDevice     *device,
         if (!NM_IN_SET(security, NM_IWD_NETWORK_SECURITY_PSK) || !s_wireless_sec
             || !nm_streq0(nm_setting_wireless_security_get_key_mgmt(s_wireless_sec), "wpa-psk")) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
                                        "IWD backend only supports PSK authentication in AP mode");
             return FALSE;
         }
@@ -858,7 +858,7 @@ check_connection_compatible(NMDevice     *device,
 
         if (!(priv->capabilities & _NM_WIFI_DEVICE_CAP_ADHOC)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
                                        "device does not support Ad-Hoc mode");
             return FALSE;
         }
@@ -869,13 +869,13 @@ check_connection_compatible(NMDevice     *device,
                               "wpa-psk"))) {
             nm_utils_error_set_literal(
                 error,
-                NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+                NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
                 "IWD backend only supports Open and PSK authentication in Ad-Hoc mode");
             return FALSE;
         }
     } else {
         nm_utils_error_set(error,
-                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
                            "'%s' type profiles not supported by IWD backend",
                            mode);
         return FALSE;
@@ -908,13 +908,13 @@ check_connection_available(NMDevice                      *device,
         ap = nm_wifi_ap_lookup_for_device(NM_DEVICE(self), specific_object);
         if (!ap) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "requested access point not found");
             return FALSE;
         }
         if (!nm_wifi_ap_check_compatible(ap, connection)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "requested access point is not compatible with profile");
             return FALSE;
         }
@@ -942,7 +942,7 @@ check_connection_available(NMDevice                      *device,
 
     if (!ap) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                    "no compatible access point found");
         return FALSE;
     }
@@ -957,7 +957,7 @@ check_connection_available(NMDevice                      *device,
                                                     nm_setting_wireless_get_ssid(s_wifi))) {
             nm_utils_error_set_literal(
                 error,
-                NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                 "802.1x network is not an IWD Known Network (missing provisioning file?)");
             return FALSE;
         }

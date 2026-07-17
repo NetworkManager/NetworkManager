@@ -146,7 +146,7 @@ check_connection_compatible(NMDevice     *device,
     if (nm_setting_wifi_p2p_get_wps_method(s_wifi_p2p)
         == NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DISABLED) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
                                    "No WPS method enabled");
         return FALSE;
     }
@@ -154,7 +154,7 @@ check_connection_compatible(NMDevice     *device,
     wfd_ies = nm_setting_wifi_p2p_get_wfd_ies(s_wifi_p2p);
     if (wfd_ies && !nm_wifi_utils_parse_wfd_ies(wfd_ies, NULL)) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
                                    "Can't parse connection WFD IEs");
         return FALSE;
     }
@@ -165,7 +165,7 @@ check_connection_compatible(NMDevice     *device,
                          NULL,
                          NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
                                    "P2P implies 'auto' IPv4 config method");
         return FALSE;
     }
@@ -191,7 +191,7 @@ check_connection_available(NMDevice                      *device,
         if (!peer) {
             g_set_error(error,
                         NM_UTILS_ERROR,
-                        NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                        NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                         "The P2P peer %s is unknown",
                         specific_object);
             return FALSE;
@@ -199,7 +199,7 @@ check_connection_available(NMDevice                      *device,
 
         if (!nm_wifi_p2p_peer_check_compatible(peer, connection, FALSE)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "Requested P2P peer is not compatible with profile");
             return FALSE;
         }
@@ -207,7 +207,7 @@ check_connection_available(NMDevice                      *device,
         peer = nm_wifi_p2p_peers_find_first_compatible(&priv->peers_lst_head, connection, FALSE);
         if (!peer) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "No compatible P2P peer found");
             return FALSE;
         }
@@ -221,14 +221,14 @@ check_connection_available(NMDevice                      *device,
 
         if (!nm_wifi_utils_parse_wfd_ies(wfd_ies, &wfd_info)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
                                        "Can't parse connection WFD IEs");
             return FALSE;
         }
 
         if (!nm_iwd_manager_check_wfd_info_compatible(nm_iwd_manager_get(), &wfd_info)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "An incompatible WFD connection is active");
             return FALSE;
         }

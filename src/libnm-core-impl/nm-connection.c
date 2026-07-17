@@ -378,7 +378,7 @@ _nm_connection_check_main_setting(NMConnection *connection,
 
     if (!nm_connection_is_type(connection, setting_name)) {
         nm_utils_error_set(error,
-                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
                            "connection type is not \"%s\"",
                            setting_name);
         return NULL;
@@ -387,7 +387,7 @@ _nm_connection_check_main_setting(NMConnection *connection,
     setting = nm_connection_get_setting_by_name(connection, setting_name);
     if (!setting) {
         nm_utils_error_set(error,
-                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
                            "connection misses \"%s\" settings",
                            setting_name);
         return NULL;

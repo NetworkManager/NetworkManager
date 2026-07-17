@@ -145,14 +145,14 @@ get_connection_bt_type_check(NMDeviceBt              *self,
 
     if (bt_type == NM_BT_CAPABILITY_NONE) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                    "profile is not a PANU/DUN bluetooth type");
         return FALSE;
     }
 
     if (!NM_FLAGS_ALL(NM_DEVICE_BT_GET_PRIVATE(self)->capabilities, bt_type)) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                    "device does not support bluetooth type");
         return FALSE;
     }
@@ -214,13 +214,13 @@ check_connection_compatible(NMDevice     *device,
     bdaddr = nm_setting_bluetooth_get_bdaddr(s_bt);
     if (!bdaddr) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                    "profile lacks bdaddr setting");
         return FALSE;
     }
     if (!nm_utils_hwaddr_matches(priv->bdaddr, -1, bdaddr, -1)) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                    "devices bdaddr setting mismatches");
         return FALSE;
     }
@@ -244,7 +244,7 @@ check_connection_available(NMDevice                      *device,
 
     if (bt_type == NM_BT_CAPABILITY_DUN && !priv->mm_running) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                    "ModemManager missing for DUN profile");
         return FALSE;
     }

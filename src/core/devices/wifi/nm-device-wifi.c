@@ -1035,7 +1035,7 @@ check_connection_compatible(NMDevice     *device,
     if (perm_hw_addr) {
         if (mac && !nm_utils_hwaddr_matches(mac, -1, perm_hw_addr, -1)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "device MAC address does not match the profile");
             return FALSE;
         }
@@ -1050,14 +1050,14 @@ check_connection_compatible(NMDevice     *device,
 
             if (nm_utils_hwaddr_matches(mac_blacklist[i], -1, perm_hw_addr, -1)) {
                 nm_utils_error_set_literal(error,
-                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                            "MAC address blacklisted");
                 return FALSE;
             }
         }
     } else if (mac) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                    "device has no valid MAC address as required by profile");
         return FALSE;
     }
@@ -1067,14 +1067,14 @@ check_connection_compatible(NMDevice     *device,
     if (g_strcmp0(mode, NM_SETTING_WIRELESS_MODE_ADHOC) == 0) {
         if (!(priv->capabilities & _NM_WIFI_DEVICE_CAP_ADHOC)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "the device does not support Ad-Hoc networks");
             return FALSE;
         }
     } else if (g_strcmp0(mode, NM_SETTING_WIRELESS_MODE_AP) == 0) {
         if (!(priv->capabilities & _NM_WIFI_DEVICE_CAP_AP)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "the device does not support Access Point mode");
             return FALSE;
         }
@@ -1083,7 +1083,7 @@ check_connection_compatible(NMDevice     *device,
             if (nm_supplicant_interface_get_capability(priv->sup_iface, NM_SUPPL_CAP_TYPE_AP)
                 == NM_TERNARY_FALSE) {
                 nm_utils_error_set_literal(error,
-                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                            "wpa_supplicant does not support Access Point mode");
                 return FALSE;
             }
@@ -1091,7 +1091,7 @@ check_connection_compatible(NMDevice     *device,
     } else if (g_strcmp0(mode, NM_SETTING_WIRELESS_MODE_MESH) == 0) {
         if (!(priv->capabilities & _NM_WIFI_DEVICE_CAP_MESH)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "the device does not support Mesh mode");
             return FALSE;
         }
@@ -1100,7 +1100,7 @@ check_connection_compatible(NMDevice     *device,
             if (nm_supplicant_interface_get_capability(priv->sup_iface, NM_SUPPL_CAP_TYPE_MESH)
                 == NM_TERNARY_FALSE) {
                 nm_utils_error_set_literal(error,
-                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                            "wpa_supplicant does not support Mesh mode");
                 return FALSE;
             }
@@ -1116,7 +1116,7 @@ check_connection_compatible(NMDevice     *device,
                    == NM_TERNARY_FALSE
             && NM_IN_STRSET(key_mgmt, "ieee8021x", "none")) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "wpa_supplicant does not support WEP encryption");
             return FALSE;
         }
@@ -1153,13 +1153,13 @@ check_connection_available(NMDevice                      *device,
         ap = nm_wifi_ap_lookup_for_device(NM_DEVICE(self), specific_object);
         if (!ap) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "requested access point not found");
             return FALSE;
         }
         if (!nm_wifi_ap_check_compatible(ap, connection)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "requested access point is not compatible with profile");
             return FALSE;
         }
@@ -1189,7 +1189,7 @@ check_connection_available(NMDevice                      *device,
 
     if (!nm_wifi_aps_find_first_compatible(&priv->aps_lst_head, connection)) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                    "no compatible access point found");
         return FALSE;
     }

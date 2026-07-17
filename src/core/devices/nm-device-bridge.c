@@ -74,7 +74,7 @@ check_connection_available(NMDevice                      *device,
 
         if (!nm_bt_vtable_network_server) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "bluetooth plugin not available to activate NAP profile");
             return FALSE;
         }
@@ -87,12 +87,12 @@ check_connection_available(NMDevice                      *device,
                                                                                     : NULL)) {
             if (bdaddr)
                 nm_utils_error_set(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                    "no suitable NAP device \"%s\" available",
                                    bdaddr);
             else
                 nm_utils_error_set_literal(error,
-                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                            "no suitable NAP device available");
             return FALSE;
         }
@@ -119,7 +119,7 @@ check_connection_compatible(NMDevice     *device,
         s_bridge = nm_connection_get_setting_bridge(connection);
         if (!s_bridge) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "missing bridge setting for bluetooth NAP profile");
             return FALSE;
         }
@@ -141,7 +141,7 @@ check_connection_compatible(NMDevice     *device,
         hw_addr = nm_device_get_hw_address(device);
         if (!hw_addr || !nm_utils_hwaddr_matches(hw_addr, -1, mac_address, -1)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "mac address mismatches");
             return FALSE;
         }

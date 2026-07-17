@@ -374,7 +374,7 @@ check_connection_compatible(NMDevice     *device,
 
         if (!match_subchans(self, s_wired, &try_mac)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "s390 subchannels don't match");
             return FALSE;
         }
@@ -384,7 +384,7 @@ check_connection_compatible(NMDevice     *device,
         if (perm_hw_addr) {
             if (try_mac && mac && !nm_utils_hwaddr_matches(mac, -1, perm_hw_addr, -1)) {
                 nm_utils_error_set_literal(error,
-                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                            "permanent MAC address doesn't match");
                 return FALSE;
             }
@@ -394,21 +394,21 @@ check_connection_compatible(NMDevice     *device,
             for (i = 0; mac_denylist[i]; i++) {
                 if (!nm_utils_hwaddr_valid(mac_denylist[i], ETH_ALEN)) {
                     nm_utils_error_set_literal(error,
-                                               NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                               NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                                "invalid MAC in blacklist");
                     return FALSE;
                 }
 
                 if (nm_utils_hwaddr_matches(mac_denylist[i], -1, perm_hw_addr, -1)) {
                     nm_utils_error_set_literal(error,
-                                               NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                               NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                                "permanent MAC address of device blacklisted");
                     return FALSE;
                 }
             }
         } else if (mac) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "device has no permanent MAC address to match");
             return FALSE;
         }

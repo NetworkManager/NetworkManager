@@ -517,7 +517,7 @@ check_connection_compatible(NMDevice     *device,
 
     if (mode != priv->mode) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                    "incompatible IP tunnel mode");
         return FALSE;
     }
@@ -527,7 +527,7 @@ check_connection_compatible(NMDevice     *device,
         parent = nm_setting_ip_tunnel_get_parent(s_ip_tunnel);
         if (parent && !nm_device_match_parent(device, parent)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "IP tunnel parent mismatches");
             return FALSE;
         }
@@ -536,7 +536,7 @@ check_connection_compatible(NMDevice     *device,
                               nm_setting_ip_tunnel_get_local(s_ip_tunnel),
                               priv->local)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "local IP tunnel address mismatches");
             return FALSE;
         }
@@ -545,7 +545,7 @@ check_connection_compatible(NMDevice     *device,
                               nm_setting_ip_tunnel_get_remote(s_ip_tunnel),
                               priv->remote)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "remote IP tunnel address mismatches");
             return FALSE;
         }
@@ -553,7 +553,7 @@ check_connection_compatible(NMDevice     *device,
         if (!NM_IN_SET(mode, NM_IP_TUNNEL_MODE_VTI, NM_IP_TUNNEL_MODE_VTI6)
             && nm_setting_ip_tunnel_get_ttl(s_ip_tunnel) != priv->ttl) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "TTL of IP tunnel mismatches");
             return FALSE;
         }
@@ -561,7 +561,7 @@ check_connection_compatible(NMDevice     *device,
         if (!NM_IN_SET(mode, NM_IP_TUNNEL_MODE_VTI, NM_IP_TUNNEL_MODE_VTI6)
             && nm_setting_ip_tunnel_get_tos(s_ip_tunnel) != priv->tos) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "TOS of IP tunnel mismatches");
             return FALSE;
         }
@@ -571,7 +571,7 @@ check_connection_compatible(NMDevice     *device,
                 && nm_setting_ip_tunnel_get_path_mtu_discovery(s_ip_tunnel)
                        != priv->path_mtu_discovery) {
                 nm_utils_error_set(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                    "MTU discovery setting of IP tunnel mismatches: %d vs %d",
                                    nm_setting_ip_tunnel_get_path_mtu_discovery(s_ip_tunnel),
                                    priv->path_mtu_discovery);
@@ -580,14 +580,14 @@ check_connection_compatible(NMDevice     *device,
         } else {
             if (nm_setting_ip_tunnel_get_encapsulation_limit(s_ip_tunnel) != priv->encap_limit) {
                 nm_utils_error_set_literal(error,
-                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                            "encapsulation limit of IP tunnel mismatches");
                 return FALSE;
             }
 
             if (nm_setting_ip_tunnel_get_flow_label(s_ip_tunnel) != priv->flow_label) {
                 nm_utils_error_set_literal(error,
-                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                            "flow-label of IP tunnel mismatches");
                 return FALSE;
             }

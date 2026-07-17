@@ -992,16 +992,17 @@ nm_g_set_error_take(GError **error, GError *error_take)
  * @NM_UTILS_ERROR_NOT_READY: the failure is related to being currently
  *   not ready to perform the operation.
  *
- * @NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE: used for a very particular
+ * @NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE: used for a very particular
  *   purpose during nm_device_check_connection_compatible() to indicate that
  *   the profile does not match the device already because their type differs.
  *   That is, there is a fundamental reason of trying to check a profile that
  *   cannot possibly match on this device.
- * @NM_UTILS_ERROR_CONNECTION_AVAILABLE_UNMANAGED_DEVICE: used for a very particular
+ * @NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_UNMANAGED_DEVICE: used for a very particular
  *   purpose during nm_device_check_connection_available(), to indicate that the
- *   device is not available because it is unmanaged.
- * @NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY: the profile is currently not
- *   available/compatible with the device, but this may be only temporary.
+ *   connection is unavailable because the device is unmanaged.
+ * @NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER: the profile is currently
+ *   unavailable/incompatible with the device for some other reason, which may
+ *   be only temporary.
  *
  * @NM_UTILS_ERROR_SETTING_MISSING: the setting is missing
  *
@@ -1028,11 +1029,11 @@ typedef enum {
      * message from the device that returned the *highest* error code,
      * in the hope that this message makes the most sense for the caller.
      * */
-    NM_UTILS_ERROR_CONNECTION_AVAILABLE_STRICTLY_UNMANAGED_DEVICE,
-    NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
-    NM_UTILS_ERROR_CONNECTION_AVAILABLE_UNMANAGED_DEVICE,
-    NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
-    NM_UTILS_ERROR_CONNECTION_AVAILABLE_DISALLOWED,
+    NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_STRICTLY_UNMANAGED_DEVICE,
+    NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
+    NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_UNMANAGED_DEVICE,
+    NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
+    NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_DISALLOWED,
 
     NM_UTILS_ERROR_SETTING_MISSING,
 

@@ -238,7 +238,7 @@ check_connection_compatible(NMDevice     *device,
     s_con = nm_connection_get_setting_connection(connection);
     if (!nm_setting_connection_get_interface_name(s_con)) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                    "generic profiles need an interface name");
         return FALSE;
     }
