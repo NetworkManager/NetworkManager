@@ -10,6 +10,8 @@ USE AT YOUR OWN RISK. NOT RECOMMENDED FOR PRODUCTION USE!
 
 Core:
 * Flush systemd-resolved caches after updating the DNS configuration.
+* Improve the error message returned when a connection activation
+  fails because no compatible device is found.
 
 Wi-Fi:
 * Keep the long background scan interval for a single Wi-Fi 7 AP-MLD.

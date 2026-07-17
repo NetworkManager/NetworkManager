@@ -9955,32 +9955,6 @@ check_connection_compatible(NMDevice     *self,
     gboolean              has_match = FALSE;
     NMSettingSriov       *s_sriov   = NULL;
 
-    klass = NM_DEVICE_GET_CLASS(self);
-    if (klass->connection_type_check_compatible) {
-        if (!_nm_connection_check_main_setting(connection,
-                                               klass->connection_type_check_compatible,
-                                               error))
-            return FALSE;
-    } else if (klass->check_connection_compatible == check_connection_compatible) {
-        /* the device class does not implement check_connection_compatible nor set
-         * connection_type_check_compatible. That means, it is by default not compatible
-         * with any connection type. */
-        nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
-                                   "device does not support any connections");
-        return FALSE;
-    }
-
-    if (!nm_device_has_capability(self, NM_DEVICE_CAP_SRIOV)) {
-        s_sriov = (NMSettingSriov *) nm_connection_get_setting(connection, NM_TYPE_SETTING_SRIOV);
-        if (s_sriov && nm_setting_sriov_get_total_vfs(s_sriov)) {
-            nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
-                                       "device does not support SR-IOV");
-            return FALSE;
-        }
-    }
-
     conn_iface = nm_manager_get_connection_iface(NM_MANAGER_GET, connection, NULL, NULL, &local);
 
     /* We always need a interface name for virtual devices, but for
@@ -10001,6 +9975,22 @@ check_connection_compatible(NMDevice     *self,
         return FALSE;
     }
 
+    klass = NM_DEVICE_GET_CLASS(self);
+    if (klass->connection_type_check_compatible) {
+        if (!_nm_connection_check_main_setting(connection,
+                                               klass->connection_type_check_compatible,
+                                               error))
+            return FALSE;
+    } else if (klass->check_connection_compatible == check_connection_compatible) {
+        /* the device class does not implement check_connection_compatible nor set
+         * connection_type_check_compatible. That means, it is by default not compatible
+         * with any connection type. */
+        nm_utils_error_set_literal(error,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
+                                   "device does not support any connections");
+        return FALSE;
+    }
+
     s_match = (NMSettingMatch *) nm_connection_get_setting(connection, NM_TYPE_SETTING_MATCH);
     if (s_match) {
         const char *const *patterns;
@@ -10013,14 +10003,6 @@ check_connection_compatible(NMDevice     *self,
                                        "device does not satisfy match.interface-name property");
             return FALSE;
         }
-
-        patterns = nm_setting_match_get_kernel_command_lines(s_match, &num_patterns);
-        if (num_patterns > 0
-            && !nm_utils_kernel_cmdline_match_check(nm_utils_proc_cmdline_split(),
-                                                    patterns,
-                                                    num_patterns,
-                                                    error))
-            return FALSE;
 
         patterns = nm_setting_match_get_drivers(s_match, &num_patterns);
         if (num_patterns > 0
@@ -10038,6 +10020,14 @@ check_connection_compatible(NMDevice     *self,
                                        "device does not satisfy match.path property");
             return FALSE;
         }
+
+        patterns = nm_setting_match_get_kernel_command_lines(s_match, &num_patterns);
+        if (num_patterns > 0
+            && !nm_utils_kernel_cmdline_match_check(nm_utils_proc_cmdline_split(),
+                                                    patterns,
+                                                    num_patterns,
+                                                    error))
+            return FALSE;
     }
 
     specs =
@@ -10047,6 +10037,16 @@ check_connection_compatible(NMDevice     *self,
                                    NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_DISALLOWED,
                                    "device configuration doesn't allow this connection");
         return FALSE;
+    }
+
+    if (!nm_device_has_capability(self, NM_DEVICE_CAP_SRIOV)) {
+        s_sriov = (NMSettingSriov *) nm_connection_get_setting(connection, NM_TYPE_SETTING_SRIOV);
+        if (s_sriov && nm_setting_sriov_get_total_vfs(s_sriov)) {
+            nm_utils_error_set_literal(error,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
+                                       "device does not support SR-IOV");
+            return FALSE;
+        }
     }
 
     return TRUE;
@@ -16941,6 +16941,18 @@ _nm_device_check_connection_available(NMDevice                      *self,
         return FALSE;
     }
 
+    if (!nm_device_check_connection_compatible(self, connection, TRUE, error ? &local : NULL)) {
+        if (error) {
+            nm_utils_error_set(error,
+                               local->domain == NM_UTILS_ERROR ? local->code
+                                                               : NM_UTILS_ERROR_UNKNOWN,
+                               "profile is not compatible with device (%s)",
+                               local->message);
+            g_error_free(local);
+        }
+        return FALSE;
+    }
+
     state = nm_device_get_state(self);
     if (state < NM_DEVICE_STATE_UNMANAGED) {
         nm_utils_error_set_literal(error,
@@ -16983,18 +16995,6 @@ _nm_device_check_connection_available(NMDevice                      *self,
             }
             return FALSE;
         }
-    }
-
-    if (!nm_device_check_connection_compatible(self, connection, TRUE, error ? &local : NULL)) {
-        if (error) {
-            nm_utils_error_set(error,
-                               local->domain == NM_UTILS_ERROR ? local->code
-                                                               : NM_UTILS_ERROR_UNKNOWN,
-                               "profile is not compatible with device (%s)",
-                               local->message);
-            g_error_free(local);
-        }
-        return FALSE;
     }
 
     return NM_DEVICE_GET_CLASS(self)->check_connection_available(self,
