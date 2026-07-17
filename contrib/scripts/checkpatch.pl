@@ -217,6 +217,11 @@ s/\s*\/\*.*//;
 s/\s*\/\/.*//;
 /^\s* \* / and next;
 
+complain ("Use NM_MIN() or NM_MIN_CONST() instead of MIN()") if $_ =~ /\bMIN\s*\(/;
+complain ("Use NM_MAX() or NM_MAX_CONST() instead of MAX()") if $_ =~ /\bMAX\s*\(/;
+complain ("Use NM_CLAMP() instead of CLAMP()") if $_ =~ /\bCLAMP\s*\(/;
+complain ("Don't use g_alloca0() and g_newa0() because they don't behave as functions and evaluate their arguments multiple times") if $_ =~ /\b(g_alloca0|g_newa0)\s*\(/;
+
 if (/^typedef*/) {
 	# We expect the { on the same line as the typedef. Otherwise it
 	# looks too much like a function declaration
