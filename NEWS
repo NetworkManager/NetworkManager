@@ -19,6 +19,10 @@ Core:
   in which case PD is used instead; "yes" always sets up ULA+NAT
   together with PD, if available; "no" never sets up ULA+NAT and
   only uses PD.
+* Add ipv6.dhcp-request-prefix property to control whether a prefix
+  delegation (PD) is requested via DHCPv6. Allowed values are "default"
+  (use global default), "auto" (request only when needed by a downstream
+  interface), "yes" (always request), and "no" (never request).
 
 Wi-Fi:
 * Keep the long background scan interval for a single Wi-Fi 7 AP-MLD.

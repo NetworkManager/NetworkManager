@@ -47,7 +47,8 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_IP6_PRIVACY,
                                   PROP_DHCP_DUID,
                                   PROP_RA_TIMEOUT,
                                   PROP_MTU,
-                                  PROP_DHCP_PD_HINT, );
+                                  PROP_DHCP_PD_HINT,
+                                  PROP_DHCP_REQUEST_PREFIX, );
 
 typedef struct {
     NMSettingIPConfigPrivate parent;
@@ -61,6 +62,7 @@ typedef struct {
     gint32  addr_gen_mode;
     gint32  ra_timeout;
     guint32 mtu;
+    int     dhcp_request_prefix;
 } NMSettingIP6ConfigPrivate;
 
 /**
@@ -157,6 +159,27 @@ nm_setting_ip6_config_get_dhcp_pd_hint(NMSettingIP6Config *setting)
     g_return_val_if_fail(NM_IS_SETTING_IP6_CONFIG(setting), NULL);
 
     return NM_SETTING_IP6_CONFIG_GET_PRIVATE(setting)->dhcp_pd_hint;
+}
+
+/**
+ * nm_setting_ip6_config_get_dhcp_request_prefix:
+ * @setting: the #NMSettingIP6Config
+ *
+ * Returns the value contained in the #NMSettingIP6Config:dhcp-request-prefix
+ * property.
+ *
+ * Returns: the #NMSettingIP6ConfigDhcpRequestPrefix value indicating whether
+ * a prefix delegation is requested via DHCPv6.
+ *
+ * Since: 1.60
+ **/
+NMSettingIP6ConfigDhcpRequestPrefix
+nm_setting_ip6_config_get_dhcp_request_prefix(NMSettingIP6Config *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_IP6_CONFIG(setting),
+                         NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX_DEFAULT);
+
+    return NM_SETTING_IP6_CONFIG_GET_PRIVATE(setting)->dhcp_request_prefix;
 }
 
 /**
@@ -426,6 +449,22 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                            NM_SETTING_IP6_CONFIG_DHCP_PD_HINT);
             return FALSE;
         }
+    }
+
+    if (!NM_IN_SET(priv->dhcp_request_prefix,
+                   NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX_DEFAULT,
+                   NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX_AUTO,
+                   NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX_YES,
+                   NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX_NO)) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("property is invalid"));
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_IP6_CONFIG_SETTING_NAME,
+                       NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX);
+        return FALSE;
     }
 
     if (nm_setting_ip_config_get_dhcp_dscp(s_ip)) {
@@ -1352,6 +1391,46 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
                                               .direct_data.set_string =
                                                   _set_string_fcn_dhcp_pd_hint,
                                               .direct_string_allow_empty = TRUE);
+
+    /**
+     * NMSettingIP6Config:dhcp-request-prefix:
+     *
+     * Controls whether a prefix delegation (PD) is requested via DHCPv6.
+     *
+     * If set to %NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX_DEFAULT (the default),
+     * the global default from NetworkManager.conf is used. If no global default
+     * is configured, it falls back to "auto".
+     *
+     * If set to %NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX_AUTO, a prefix is
+     * only requested when needed by a downstream interface.
+     *
+     * If set to %NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX_YES, a prefix is
+     * always requested via DHCPv6.
+     *
+     * If set to %NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX_NO, a prefix is
+     * never requested via DHCPv6.
+     *
+     * Since: 1.60
+     **/
+    /* ---ifcfg-rh---
+     * property: dhcp-request-prefix
+     * variable: DHCPV6_REQUEST_PREFIX(+)
+     * values: default, auto, yes, no
+     * default: default
+     * description: Controls whether DHCPv6 prefix delegation is requested.
+     * example: DHCPV6_REQUEST_PREFIX=yes
+     * ---end---
+     */
+    _nm_setting_property_define_direct_real_enum(properties_override,
+                                                 obj_properties,
+                                                 NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX,
+                                                 PROP_DHCP_REQUEST_PREFIX,
+                                                 NM_TYPE_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX,
+                                                 NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX_DEFAULT,
+                                                 NM_SETTING_PARAM_NONE,
+                                                 NULL,
+                                                 NMSettingIP6ConfigPrivate,
+                                                 dhcp_request_prefix);
 
     /* IP6-specific property overrides */
 
