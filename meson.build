@@ -409,7 +409,8 @@ systemd_systemdsystemunitdir = get_option('systemdsystemunitdir')
 install_systemdunitdir = (systemd_systemdsystemunitdir != 'no')
 
 if install_systemdunitdir and systemd_systemdsystemunitdir == ''
-  assert(systemd_dep.found(), 'systemd required but not found, please provide a valid systemd user unit dir or disable it')
+  assert(systemd_dep.found(),
+         'systemd required to determine system unit directory. Install systemd.pc, pass -Dsystemdsystemunitdir=/path, or use -Dsystemdsystemunitdir=no.')
   systemd_systemdsystemunitdir = systemd_dep.get_variable(pkgconfig: 'systemdsystemunitdir', pkgconfig_define: ['rootprefix', nm_prefix])
 endif
 
@@ -417,13 +418,15 @@ systemd_systemdsystemgeneratordir = get_option('systemdsystemgeneratordir')
 install_systemdgeneratordir = (systemd_systemdsystemgeneratordir != 'no')
 
 if install_systemdgeneratordir and systemd_systemdsystemgeneratordir == ''
-  assert(systemd_dep.found(), 'systemd required but not found, please provide a valid systemd user generator dir or disable it')
+  assert(systemd_dep.found(),
+         'systemd required to determine system generator directory. Install systemd.pc, pass -Dsystemdsystemgeneratordir=/path, or use -Dsystemdsystemgeneratordir=no.')
   systemd_systemdsystemgeneratordir = systemd_dep.get_variable(pkgconfig: 'systemdsystemgeneratordir', pkgconfig_define: ['rootprefix', nm_prefix])
 endif
 
 enable_systemd_journal = get_option('systemd_journal')
 if enable_systemd_journal
-  assert(libsystemd_dep.found(), 'Missing systemd-journald support')
+  assert(libsystemd_dep.found(),
+         'systemd-journald support requires libsystemd. Use -Dsystemd_journal=false to disable it.')
 endif
 config_h.set10('SYSTEMD_JOURNAL', enable_systemd_journal)
 
@@ -448,7 +451,8 @@ if session_tracking == 'systemd'
   logind_dep = libsystemd_dep
   if not logind_dep.found()
     logind_dep = dependency('libsystemd-login', required: false)
-    assert(logind_dep.found(), 'You must have libsystemd or libsystemd-login installed to build with systemd-logind support')
+    assert(logind_dep.found(),
+           'systemd-logind support requires libsystemd or libsystemd-login. Use -Dsession_tracking=no or -Dsession_tracking=elogind.')
   endif
   session_trackers += 'systemd-logind'
   config_h.set10('SESSION_TRACKING_SYSTEMD', true)
