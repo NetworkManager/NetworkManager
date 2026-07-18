@@ -3643,6 +3643,15 @@ do_write_construct(NMConnection                   *connection,
                                   FALSE);
             return FALSE;
         }
+        if (nm_setting_ip6_config_get_dhcp_request_prefix(NM_SETTING_IP6_CONFIG(s_ip6))
+            != NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX_DEFAULT) {
+            set_error_unsupported(error,
+                                  connection,
+                                  NM_SETTING_IP6_CONFIG_SETTING_NAME
+                                  "." NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX,
+                                  FALSE);
+            return FALSE;
+        }
     }
 
     write_ip4_setting(connection,

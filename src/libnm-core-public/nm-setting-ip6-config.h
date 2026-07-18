@@ -46,6 +46,8 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_IP6_CONFIG_DHCP_PD_HINT "dhcp-pd-hint"
 
+#define NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX "dhcp-request-prefix"
+
 /**
  * NM_SETTING_IP6_CONFIG_METHOD_IGNORE:
  *
@@ -153,6 +155,29 @@ typedef enum {
     NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT          = 3,
 } NMSettingIP6ConfigAddrGenMode;
 
+/**
+ * NMSettingIP6ConfigDhcpRequestPrefix:
+ * @NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX_DEFAULT: Use the global default
+ *   from NetworkManager.conf, or fall back to "auto".
+ * @NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX_AUTO: Only request a prefix via
+ *   DHCPv6 when needed by a downstream interface.
+ * @NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX_YES: Always request a prefix
+ *   via DHCPv6.
+ * @NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX_NO: Never request a prefix
+ *   via DHCPv6.
+ *
+ * #NMSettingIP6ConfigDhcpRequestPrefix controls whether a prefix delegation
+ * (PD) is requested via DHCPv6.
+ *
+ * Since: 1.60
+ */
+typedef enum {
+    NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX_DEFAULT = 0,
+    NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX_AUTO    = 1,
+    NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX_YES     = 2,
+    NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX_NO      = 3,
+} NMSettingIP6ConfigDhcpRequestPrefix;
+
 typedef struct _NMSettingIP6ConfigClass NMSettingIP6ConfigClass;
 
 GType nm_setting_ip6_config_get_type(void);
@@ -176,6 +201,9 @@ NM_AVAILABLE_IN_1_40
 guint32 nm_setting_ip6_config_get_mtu(NMSettingIP6Config *setting);
 NM_AVAILABLE_IN_1_44
 const char *nm_setting_ip6_config_get_dhcp_pd_hint(NMSettingIP6Config *setting);
+NM_AVAILABLE_IN_1_60
+NMSettingIP6ConfigDhcpRequestPrefix
+nm_setting_ip6_config_get_dhcp_request_prefix(NMSettingIP6Config *setting);
 
 G_END_DECLS
 

@@ -1887,6 +1887,10 @@
                   dbus-type="as"
                   gprop-type="GStrv"
                   />
+        <property name="dhcp-request-prefix"
+                  dbus-type="i"
+                  gprop-type="NMSettingIP6ConfigDhcpRequestPrefix"
+                  />
         <property name="dhcp-send-hostname"
                   dbus-type="b"
                   gprop-type="gboolean"
