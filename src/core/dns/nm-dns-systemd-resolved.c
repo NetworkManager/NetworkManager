@@ -332,7 +332,7 @@ call_done(GObject *source, GAsyncResult *r, gpointer user_data)
                 _LOGD("systemd-resolved support for SetLinkDNSEx(): API not supported");
 
                 _LOGW("systemd-resolved does not support SetLinkDNSEx API (v246). "
-                      "Cannot set DoT server name (SNI)");
+                      "Cannot set server port or DoT server name (SNI)");
 
                 /* We need to reconfigure with the SetLinkDNS fallback.
                  *
@@ -415,7 +415,7 @@ update_add_ip_config(NMDnsSystemdResolved    *self,
             continue;
         }
 
-        if (dns_server.servername) {
+        if (dns_server.port != NM_DNS_PORT_UNDEFINED || dns_server.servername) {
             NM_SET_OUT(out_require_dns_ex, TRUE);
             if (priv->has_set_link_dns_ex == FALSE) {
                 /* The caller won't care about this result anymore. We can skip setting it. */
@@ -429,7 +429,7 @@ update_add_ip_config(NMDnsSystemdResolved    *self,
             g_variant_builder_add_value(
                 dns_ex,
                 nm_g_variant_new_ay((gconstpointer) &dns_server.addr, addr_size));
-            g_variant_builder_add(dns_ex, "q", 0);
+            g_variant_builder_add(dns_ex, "q", dns_server.port);
             g_variant_builder_add(dns_ex, "s", dns_server.servername ?: "");
             g_variant_builder_close(dns_ex);
         }
@@ -532,7 +532,7 @@ prepare_one_interface(NMDnsSystemdResolved *self, const InterfaceConfig *ic)
     if (!require_dns_ex) {
         /* No need to use the new API. SetLinkDNS() is sufficient. */
     } else if (!priv->has_set_link_dns_ex) {
-        /* API to set server name is not supported. Nothing we can do. */
+        /* API to set port and server name is not supported. Nothing we can do. */
         require_dns_ex = FALSE;
     } else {
         g_variant_builder_init(&dns_ex, G_VARIANT_TYPE("(ia(iayqs))"));
