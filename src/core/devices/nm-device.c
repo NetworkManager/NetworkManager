@@ -1387,6 +1387,29 @@ _prop_get_ipv6_ra_timeout(NMDevice *self)
                                                        0);
 }
 
+/* Returns the resolved ipv4.nat setting for ipv4.method=shared. The
+ * returned value is always a concrete setting (AUTO, YES, or NO),
+ * never DEFAULT. */
+static NMSettingIPConfigNat
+_prop_get_ipv4_nat(NMDevice *self)
+{
+    NMConnection        *connection;
+    NMSettingIPConfigNat nat;
+
+    connection = nm_device_get_applied_connection(self);
+
+    nat = nm_setting_ip_config_get_nat(nm_connection_get_setting_ip4_config(connection));
+    if (nat != NM_SETTING_IP_CONFIG_NAT_DEFAULT)
+        return nat;
+
+    return nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
+                                                       NM_CON_DEFAULT("ipv4.nat"),
+                                                       self,
+                                                       NM_SETTING_IP_CONFIG_NAT_DEFAULT,
+                                                       NM_SETTING_IP_CONFIG_NAT_NO,
+                                                       NM_SETTING_IP_CONFIG_NAT_AUTO);
+}
+
 static NMSettingIPConfigRoutedDns
 _prop_get_ipvx_routed_dns(NMDevice *self, int addr_family)
 {
@@ -13934,9 +13957,11 @@ _dev_ipshared4_start(NMDevice *self)
     if (!_dev_ipshared4_init(self))
         goto out_fail;
 
-    priv->ipshared_data_4.v4.firewall_config =
-        nm_firewall_config_new_shared(ip_iface, ip4_addr.address, ip4_addr.plen);
-    nm_firewall_config_apply_sync(priv->ipshared_data_4.v4.firewall_config, TRUE);
+    if (_prop_get_ipv4_nat(self) != NM_SETTING_IP_CONFIG_NAT_NO) {
+        priv->ipshared_data_4.v4.firewall_config =
+            nm_firewall_config_new_shared(ip_iface, ip4_addr.address, ip4_addr.plen);
+        nm_firewall_config_apply_sync(priv->ipshared_data_4.v4.firewall_config, TRUE);
+    }
 
     priv->ipshared_data_4.v4.l3cd = nm_l3_config_data_ref(l3cd);
     _dev_l3_register_l3cds_set_one(self, L3_CONFIG_DATA_TYPE_SHARED_4, l3cd, FALSE);
@@ -13963,7 +13988,6 @@ _dev_ipshared4_spawn_dnsmasq(NMDevice *self)
     const char            *shared_dhcp_range;
     int                    shared_dhcp_lease_time;
 
-    nm_assert(priv->ipshared_data_4.v4.firewall_config);
     nm_assert(priv->ipshared_data_4.v4.dnsmasq_state_id == 0);
     nm_assert(!priv->ipshared_data_4.v4.dnsmasq_manager);
     nm_assert(priv->ipshared_data_4.v4.l3cd);

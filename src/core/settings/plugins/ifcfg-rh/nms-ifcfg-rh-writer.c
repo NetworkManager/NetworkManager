@@ -3627,6 +3627,13 @@ do_write_construct(NMConnection                   *connection,
                                   FALSE);
             return FALSE;
         }
+        if (nm_setting_ip_config_get_nat(s_ip4) != NM_SETTING_IP_CONFIG_NAT_DEFAULT) {
+            set_error_unsupported(error,
+                                  connection,
+                                  NM_SETTING_IP4_CONFIG_SETTING_NAME "." NM_SETTING_IP_CONFIG_NAT,
+                                  FALSE);
+            return FALSE;
+        }
     }
     if ((s_ip6 = nm_connection_get_setting_ip6_config(connection))) {
         const char *shared_mode = nm_setting_ip_config_get_shared_mode(s_ip6);

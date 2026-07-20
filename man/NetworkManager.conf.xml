@@ -1022,6 +1022,14 @@ ipv6.ip6-privacy=0
           </para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>ipv4.nat</varname></term>
+          <listitem><para>Controls the use of NAT for IP connection sharing
+            (ipv4.method=shared). Set to 1 ("auto") or 2 ("yes") to enable
+            NAT, or 3 ("no") to disable it. If left unspecified, defaults
+            to 1 ("auto").
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>ipv6.routed-dns</varname></term>
         </varlistentry>
         <varlistentry>
