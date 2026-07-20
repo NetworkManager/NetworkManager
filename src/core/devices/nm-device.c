@@ -1418,6 +1418,30 @@ _prop_get_ipvx_nat(NMDevice *self, int addr_family)
         NM_SETTING_IP_CONFIG_NAT_AUTO);
 }
 
+/* Returns the resolved ipv6.dhcp-request-prefix setting. The returned
+ * value is always a concrete setting (AUTO, YES, or NO), never DEFAULT. */
+static NMSettingIP6ConfigDhcpRequestPrefix
+_prop_get_ipv6_dhcp_request_prefix(NMDevice *self)
+{
+    NMConnection                       *connection;
+    NMSettingIP6ConfigDhcpRequestPrefix val;
+
+    connection = nm_device_get_applied_connection(self);
+
+    val = nm_setting_ip6_config_get_dhcp_request_prefix(
+        NM_SETTING_IP6_CONFIG(nm_connection_get_setting_ip6_config(connection)));
+    if (val != NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX_DEFAULT)
+        return val;
+
+    return nm_config_data_get_connection_default_int64(
+        NM_CONFIG_GET_DATA,
+        NM_CON_DEFAULT("ipv6.dhcp-request-prefix"),
+        self,
+        NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX_DEFAULT,
+        NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX_NO,
+        NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX_AUTO);
+}
+
 static NMSettingIPConfigRoutedDns
 _prop_get_ipvx_routed_dns(NMDevice *self, int addr_family)
 {
@@ -11991,7 +12015,10 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
                     .iaid          = iaid,
                     .iaid_explicit = iaid_explicit,
                     .info_only     = (priv->ipdhcp_data_6.v6.mode == NM_NDISC_DHCP_LEVEL_OTHERCONF),
-                    .needed_prefixes = priv->ipdhcp_data_6.v6.needed_prefixes,
+                    .needed_prefixes = _prop_get_ipv6_dhcp_request_prefix(self)
+                                               == NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX_YES
+                                           ? NM_MAX(priv->ipdhcp_data_6.v6.needed_prefixes, 1u)
+                                           : priv->ipdhcp_data_6.v6.needed_prefixes,
                 },
         };
 
@@ -12089,7 +12116,10 @@ _dev_ipdhcp6_set_dhcp_level(NMDevice *self, NMNDiscDHCPLevel dhcp_level)
                         NM_NDISC_DHCP_LEVEL_OTHERCONF,
                         NM_NDISC_DHCP_LEVEL_MANAGED));
 
-    if (dhcp_level == NM_NDISC_DHCP_LEVEL_NONE && priv->ipdhcp_data_6.v6.needed_prefixes > 0)
+    if (dhcp_level == NM_NDISC_DHCP_LEVEL_NONE
+        && (priv->ipdhcp_data_6.v6.needed_prefixes > 0
+            || _prop_get_ipv6_dhcp_request_prefix(self)
+                   == NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX_YES))
         dhcp_level = NM_NDISC_DHCP_LEVEL_OTHERCONF;
 
     if (priv->ipdhcp_data_6.v6.mode == dhcp_level)
@@ -12114,6 +12144,13 @@ void
 nm_device_request_ip6_prefixes(NMDevice *self, guint needed_prefixes)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+
+    if (needed_prefixes > 0
+        && _prop_get_ipv6_dhcp_request_prefix(self)
+               == NM_SETTING_IP6_CONFIG_DHCP_REQUEST_PREFIX_NO) {
+        _LOGD(LOGD_IP6, "ipv6-pd: dhcp-request-prefix=no, refusing to request prefixes");
+        needed_prefixes = 0;
+    }
 
     if (priv->ipdhcp_data_6.v6.needed_prefixes == needed_prefixes)
         return;
