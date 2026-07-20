@@ -119,6 +119,98 @@ test_http_url_is_valid_https(void)
 
 /*****************************************************************************/
 
+static gpointer
+_test_check_skip_thread_func(gpointer user_data)
+{
+    /* Wait a little so the main thread is likely blocked inside poll()
+     * (which releases the GMainContext lock).  Then attach a source with
+     * poll fds to the default context.  g_source_attach() calls
+     * g_main_context_add_poll_unlocked() which sets context->poll_changed
+     * and wakes up the poll via g_wakeup_signal().
+     *
+     * When the main thread re-enters g_main_context_check_unlocked() and
+     * sees poll_changed, it returns immediately without calling any
+     * source's check() callback -- including sd_event's. */
+    GSource *source;
+    GPollFD  pollfd;
+    int      pipefd[2];
+
+    g_usleep(G_USEC_PER_SEC / 10);
+
+    g_assert(pipe(pipefd) == 0);
+
+    source         = g_source_new((GSourceFuncs *) &(const GSourceFuncs) {0}, sizeof(GSource));
+    pollfd.fd      = pipefd[0];
+    pollfd.events  = G_IO_IN;
+    pollfd.revents = 0;
+    g_source_add_poll(source, &pollfd);
+    g_source_attach(source, NULL);
+    g_source_destroy(source);
+    g_source_unref(source);
+
+    nm_close(pipefd[0]);
+    nm_close(pipefd[1]);
+
+    return NULL;
+}
+
+static void
+test_sd_event_check_skip(void)
+{
+    /* Regression test for sd_event GSource check() being skipped.
+     *
+     * The sd_event GSource adapter (nm-sd.c) wraps sd_event in prepare/
+     * check/dispatch callbacks that advance an internal state machine:
+     *   prepare  -> sd_event_prepare()  (INITIAL -> ARMED)
+     *   check    -> sd_event_wait()     (ARMED   -> INITIAL | PENDING)
+     *   dispatch -> sd_event_dispatch() (PENDING -> INITIAL)
+     *
+     * GLib releases the GMainContext lock during poll().  If another thread
+     * attaches a source with poll fds at that moment, it sets
+     * context->poll_changed.  When g_main_context_check_unlocked() sees
+     * this flag, it bails out immediately without calling any source's
+     * check().  The sd_event stays in ARMED state, and the next prepare()
+     * hits assert(state == INITIAL).
+     *
+     * This is exactly what happens when GIO creates a GDBusProxy on the
+     * default main context from a non-main thread (e.g. during
+     * connectivity checks): the D-Bus socket source attachment races
+     * with the main thread's event loop.
+     *
+     * Reproduce by blocking the main thread in poll() and having a helper
+     * thread attach a source with a poll fd. */
+    GSource *sd_source nm_auto_destroy_and_unref_gsource = NULL;
+    GThread           *thread;
+    int                i;
+
+    {
+        guint sd_id;
+
+        sd_id     = nm_sd_event_attach_default();
+        sd_source = g_main_context_find_source_by_id(NULL, sd_id);
+        g_assert(sd_source);
+        g_source_ref(sd_source);
+    }
+
+    for (i = 0; i < 5; i++) {
+        thread = g_thread_new("check-skip", _test_check_skip_thread_func, NULL);
+
+        /* Blocking iteration: the main thread enters poll() with the context
+         * lock released.  The helper thread's g_source_attach() sets
+         * poll_changed and wakes us up. */
+        g_main_context_iteration(NULL, TRUE);
+
+        g_thread_join(thread);
+
+        /* Non-blocking iteration: sd_event is still ARMED from the previous
+         * iteration where check() was skipped.  Without the fix, this
+         * crashes in sd_event_prepare(). */
+        g_main_context_iteration(NULL, FALSE);
+    }
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -127,6 +219,7 @@ main(int argc, char **argv)
     nmtst_init(&argc, &argv, TRUE);
 
     g_test_add_func("/systemd/sd-event", test_sd_event);
+    g_test_add_func("/systemd/sd-event/check-skip", test_sd_event_check_skip);
     g_test_add_func("/systemd/http-url-is-valid-https", test_http_url_is_valid_https);
 
     return g_test_run();

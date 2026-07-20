@@ -23,7 +23,25 @@ typedef struct SDEventSource {
 static gboolean
 event_prepare(GSource *source, int *timeout_)
 {
-    return sd_event_prepare(((SDEventSource *) source)->event) > 0;
+    sd_event *event = ((SDEventSource *) source)->event;
+
+    /* GLib does not guarantee that check() is always called between two
+     * consecutive prepare() invocations. For example, if another thread
+     * attaches/removes a source with poll fds to this GMainContext while
+     * the main thread is inside poll(), context->poll_changed is set and
+     * g_main_context_check_unlocked() returns immediately without calling
+     * any source's check(). A similar skip can happen due to priority-
+     * based filtering.
+     *
+     * If check() was skipped, the sd_event is still in SD_EVENT_ARMED
+     * state.  Return FALSE to let the normal poll() -> check() -> dispatch()
+     * path complete the cycle: the sd_event's epoll fd is already armed from
+     * the previous sd_event_prepare(), so poll() will wake correctly and
+     * event_check() will call sd_event_wait() to advance the state machine. */
+    if (sd_event_get_state(event) == SD_EVENT_ARMED)
+        return FALSE;
+
+    return sd_event_prepare(event) > 0;
 }
 
 static gboolean
