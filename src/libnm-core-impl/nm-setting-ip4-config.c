@@ -1361,6 +1361,7 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      *        </listitem>
      *        <listitem>
      *          <para><literal>"shared"</literal> - Provides network access to other computers. If you do not specify an IP address and subnet mask in "ipv4.addresses", NetworkManager assigns 10.42.x.1/24 to the interface. Additionally, NetworkManager starts a DHCP server and DNS forwarder. Hosts that connect to this interface will then receive an IP address from the configured range, and NetworkManager configures NAT to map client addresses to the one of the current default network connection.</para>
+     *          <para>Currently, NetworkManager uses dnsmasq as the DHCP/DNS server for connection sharing. You can provide additional dnsmasq configuration by adding files to <filename>/etc/NetworkManager/dnsmasq-shared.d/</filename>. Note however that this is not recommended because NetworkManager may switch to a different implementation in the future.</para>
      *        </listitem>
      *        <listitem>
      *          <para><literal>"link-local"</literal> - Enables link-local addresses according to RFC 3927. NetworkManager assigns a random link-local address from the 169.254.0.0/16 subnet to the interface.</para>
