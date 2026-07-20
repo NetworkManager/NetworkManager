@@ -3628,6 +3628,18 @@ do_write_construct(NMConnection                   *connection,
             return FALSE;
         }
     }
+    if ((s_ip6 = nm_connection_get_setting_ip6_config(connection))) {
+        const char *shared_mode = nm_setting_ip_config_get_shared_mode(s_ip6);
+
+        if (shared_mode && shared_mode[0]) {
+            set_error_unsupported(error,
+                                  connection,
+                                  NM_SETTING_IP6_CONFIG_SETTING_NAME
+                                  "." NM_SETTING_IP_CONFIG_SHARED_MODE,
+                                  FALSE);
+            return FALSE;
+        }
+    }
 
     write_ip4_setting(connection,
                       ifcfg,

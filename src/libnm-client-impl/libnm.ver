@@ -2135,3 +2135,9 @@ global:
 	nm_utils_wifi_freq_to_band;
 	nm_wifi_band_get_type;
 } libnm_1_56_0;
+
+libnm_1_60_0 {
+global:
+	nm_setting_ip_config_get_nat;
+	nm_setting_ip_config_nat_get_type;
+} libnm_1_58_0;

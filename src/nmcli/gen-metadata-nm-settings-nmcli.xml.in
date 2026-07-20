@@ -1508,6 +1508,10 @@
                   format="integer"
                   values="0 - 2147483647"
                   special-values="default (0), infinity (2147483647)" />
+        <property name="nat"
+                  nmcli-description="Controls the use of NAT for IP connection sharing (method=shared). For IPv4, &quot;auto&quot; (1) and &quot;yes&quot; (2) enable NAT, and &quot;no&quot; (3) disables it. For IPv6, the valid values are: &quot;auto&quot; (1): set up ULA+NAT unless Prefix Delegation is available from an upstream interface within a short interval, in which case PD is used instead. &quot;yes&quot; (2): always set up ULA+NAT, together with Prefix Delegation if available. &quot;no&quot; (3): never set up ULA+NAT; only use Prefix Delegation. When set to &quot;default&quot; (0) (the default), the global default from NetworkManager.conf is used. If no global default is configured, &quot;auto&quot; is used."
+                  format="choice (NMSettingIPConfigNat)"
+                  values="default (0), auto (1), yes (2), no (3)" />
     </setting>
     <setting name="ipv6" >
         <property name="method"
@@ -1645,6 +1649,10 @@
         <property name="token"
                   nmcli-description="Configure the token for draft-chown-6man-tokenised-ipv6-identifiers-02 IPv6 tokenized interface identifiers. Useful with eui64 addr-gen-mode. When set, the token is used as IPv6 interface identifier instead of the hardware address. This only applies to addresses from stateless autoconfiguration, not to IPv6 link local addresses."
                   format="string" />
+        <property name="nat"
+                  nmcli-description="Controls the use of NAT for IP connection sharing (method=shared). For IPv4, &quot;auto&quot; (1) and &quot;yes&quot; (2) enable NAT, and &quot;no&quot; (3) disables it. For IPv6, the valid values are: &quot;auto&quot; (1): set up ULA+NAT unless Prefix Delegation is available from an upstream interface within a short interval, in which case PD is used instead. &quot;yes&quot; (2): always set up ULA+NAT, together with Prefix Delegation if available. &quot;no&quot; (3): never set up ULA+NAT; only use Prefix Delegation. When set to &quot;default&quot; (0) (the default), the global default from NetworkManager.conf is used. If no global default is configured, &quot;auto&quot; is used."
+                  format="choice (NMSettingIPConfigNat)"
+                  values="default (0), auto (1), yes (2), no (3)" />
     </setting>
     <setting name="ipvlan" >
         <property name="parent"

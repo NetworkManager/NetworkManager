@@ -464,6 +464,22 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         return FALSE;
     }
 
+    if (!NM_IN_SET(nm_setting_ip_config_get_nat(s_ip),
+                   NM_SETTING_IP_CONFIG_NAT_DEFAULT,
+                   NM_SETTING_IP_CONFIG_NAT_AUTO,
+                   NM_SETTING_IP_CONFIG_NAT_YES,
+                   NM_SETTING_IP_CONFIG_NAT_NO)) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("property is invalid"));
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_IP6_CONFIG_SETTING_NAME,
+                       NM_SETTING_IP_CONFIG_NAT);
+        return FALSE;
+    }
+
     /* Failures from here on, are NORMALIZABLE_ERROR... */
 
     if (token_needs_normalization) {

@@ -6698,6 +6698,9 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
             ),
         ),
     ),
+    PROPERTY_INFO (NM_SETTING_IP_CONFIG_NAT, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_NAT,
+        .property_type =                &_pt_gobject_enum,
+    ),
     NULL
 };
 
@@ -7014,6 +7017,9 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_IP6_CONFIG_TOKEN,
         .property_type =                &_pt_gobject_string,
+    ),
+    PROPERTY_INFO (NM_SETTING_IP_CONFIG_NAT, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_NAT,
+        .property_type =                &_pt_gobject_enum,
     ),
     NULL
 };

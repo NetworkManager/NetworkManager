@@ -74,6 +74,34 @@ typedef enum {
     NM_SETTING_IP_CONFIG_FORWARDING_AUTO    = 2,
 } NMSettingIPConfigForwarding;
 
+/**
+ * NMSettingIPConfigNat:
+ * @NM_SETTING_IP_CONFIG_NAT_DEFAULT: Use the global default from
+ *   NetworkManager.conf, or fall back to "auto".
+ * @NM_SETTING_IP_CONFIG_NAT_AUTO: Enable NAT for connection sharing
+ *   (method=shared). For IPv4, this is equivalent to "yes". For IPv6,
+ *   set up ULA+NAT unless Prefix Delegation is available from an
+ *   upstream interface within a short interval, in which case PD is
+ *   used instead (without ULA/NAT).
+ * @NM_SETTING_IP_CONFIG_NAT_YES: Always enable NAT for connection
+ *   sharing. For IPv6, ULA+NAT is set up together with Prefix
+ *   Delegation, if available.
+ * @NM_SETTING_IP_CONFIG_NAT_NO: Disable NAT for connection sharing.
+ *   For IPv6, only Prefix Delegation is used, without any local
+ *   prefix or NAT setup.
+ *
+ * #NMSettingIPConfigNat controls the use of NAT for IP connection
+ * sharing (method=shared).
+ *
+ * Since: 1.60
+ */
+typedef enum {
+    NM_SETTING_IP_CONFIG_NAT_DEFAULT = 0,
+    NM_SETTING_IP_CONFIG_NAT_AUTO    = 1,
+    NM_SETTING_IP_CONFIG_NAT_YES     = 2,
+    NM_SETTING_IP_CONFIG_NAT_NO      = 3,
+} NMSettingIPConfigNat;
+
 typedef struct NMIPAddress NMIPAddress;
 
 GType nm_ip_address_get_type(void);
@@ -385,6 +413,7 @@ char *nm_ip_routing_rule_to_string(const NMIPRoutingRule       *self,
 #define NM_SETTING_IP_CONFIG_ROUTED_DNS             "routed-dns"
 #define NM_SETTING_IP_CONFIG_SHARED_DHCP_RANGE      "shared-dhcp-range"
 #define NM_SETTING_IP_CONFIG_SHARED_DHCP_LEASE_TIME "shared-dhcp-lease-time"
+#define NM_SETTING_IP_CONFIG_NAT                    "nat"
 #define NM_SETTING_IP_CONFIG_FORWARDING             "forwarding"
 
 /* these are not real GObject properties. */
@@ -566,6 +595,8 @@ NM_AVAILABLE_IN_1_52
 int nm_setting_ip_config_get_shared_dhcp_lease_time(NMSettingIPConfig *setting);
 NM_AVAILABLE_IN_1_54
 NMSettingIPConfigForwarding nm_setting_ip_config_get_forwarding(NMSettingIPConfig *setting);
+NM_AVAILABLE_IN_1_60
+NMSettingIPConfigNat nm_setting_ip_config_get_nat(NMSettingIPConfig *setting);
 
 NM_AVAILABLE_IN_1_56
 gboolean nm_dns_server_validate(const char *str, int family, GError **error);
