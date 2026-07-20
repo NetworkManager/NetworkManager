@@ -119,6 +119,120 @@ test_http_url_is_valid_https(void)
 
 /*****************************************************************************/
 
+static gpointer
+_test_check_skip_monitor_thread_func(gpointer user_data)
+{
+    /* Wait a little so the main thread is likely blocked inside poll()
+     * (which releases the GMainContext lock).*/
+    g_usleep(G_USEC_PER_SEC / 2);
+
+    /* When creating the netlink monitor, the socket is attached to the
+     * main context from a different thread, triggering the bug. */
+    g_network_monitor_get_default();
+
+    return NULL;
+}
+
+/* Regression test for sd_event GSource check() being skipped.
+ *
+ * The sd_event GSource adapter (nm-sd.c) wraps sd_event in prepare/
+ * check/dispatch callbacks that advance an internal state machine:
+ *   prepare  -> sd_event_prepare()  (INITIAL -> ARMED)
+ *   check    -> sd_event_wait()     (ARMED   -> INITIAL | PENDING)
+ *   dispatch -> sd_event_dispatch() (PENDING -> INITIAL)
+ *
+ * GLib releases the GMainContext lock during poll(). If another thread
+ * attaches a source with poll fds at that moment, it sets
+ * context->poll_changed. When g_main_context_check_unlocked() sees
+ * this flag, it bails out immediately without calling any source's
+ * check(). The sd_event stays in ARMED state, and the next prepare()
+ * hits assert(state == INITIAL).
+ *
+ * To trigger this path, create a netlink GNetworkMonitor inside a thread.
+ * In the NetworkManager code, this happens when the connectivity check
+ * instantiates a GResolver. */
+static void
+test_sd_event_check_skip_monitor(void)
+{
+    GSource *sd_source nm_auto_destroy_and_unref_gsource = NULL;
+    GThread           *thread;
+    guint              sd_id;
+
+    g_setenv("GIO_USE_NETWORK_MONITOR", "netlink", TRUE);
+
+    sd_id     = nm_sd_event_attach_default();
+    sd_source = g_main_context_find_source_by_id(NULL, sd_id);
+    g_assert(sd_source);
+    g_source_ref(sd_source);
+
+    g_main_context_iteration(NULL, FALSE);
+    thread = g_thread_new("check-skip", _test_check_skip_monitor_thread_func, NULL);
+
+    /* Blocking iteration: the main thread enters poll() with the context
+     * lock released.  The helper thread's g_source_attach() sets
+     * poll_changed and wakes us up. */
+    g_main_context_iteration(NULL, TRUE);
+
+    g_thread_join(thread);
+
+    /* Non-blocking iteration: sd_event is still ARMED from the previous
+     * iteration where check() was skipped.  Without the fix, this
+     * crashes in sd_event_prepare(). */
+    g_main_context_iteration(NULL, FALSE);
+}
+
+/*****************************************************************************/
+
+static gpointer
+_test_check_skip_fd_thread_func(gpointer user_data)
+{
+    GSource *source;
+    GPollFD  pollfd;
+    int      pipefd[2];
+
+    g_usleep(G_USEC_PER_SEC / 2);
+
+    g_assert(pipe(pipefd) == 0);
+
+    source         = g_source_new((GSourceFuncs *) &(const GSourceFuncs) {0}, sizeof(GSource));
+    pollfd.fd      = pipefd[0];
+    pollfd.events  = G_IO_IN;
+    pollfd.revents = 0;
+    g_source_add_poll(source, &pollfd);
+    g_source_attach(source, NULL);
+    g_source_destroy(source);
+    g_source_unref(source);
+
+    nm_close(pipefd[0]);
+    nm_close(pipefd[1]);
+
+    return NULL;
+}
+
+/* Check the same as test_sd_event_check_skip_monitor(), but without relying
+ * on the monitor internals. Instead of creating the monitor, explicitly attach
+ * a file descriptor to the main context from a thread. */
+static void
+test_sd_event_check_skip_fd(void)
+{
+    GSource *sd_source nm_auto_destroy_and_unref_gsource = NULL;
+    GThread           *thread;
+    guint              sd_id;
+
+    sd_id     = nm_sd_event_attach_default();
+    sd_source = g_main_context_find_source_by_id(NULL, sd_id);
+    g_assert(sd_source);
+    g_source_ref(sd_source);
+
+    g_main_context_iteration(NULL, FALSE);
+    thread = g_thread_new("check-skip", _test_check_skip_fd_thread_func, NULL);
+    g_main_context_iteration(NULL, TRUE);
+    g_thread_join(thread);
+    g_main_context_iteration(NULL, FALSE);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -127,6 +241,8 @@ main(int argc, char **argv)
     nmtst_init(&argc, &argv, TRUE);
 
     g_test_add_func("/systemd/sd-event", test_sd_event);
+    g_test_add_func("/systemd/sd-event/check-skip/monitor", test_sd_event_check_skip_monitor);
+    g_test_add_func("/systemd/sd-event/check-skip/fd", test_sd_event_check_skip_fd);
     g_test_add_func("/systemd/http-url-is-valid-https", test_http_url_is_valid_https);
 
     return g_test_run();
