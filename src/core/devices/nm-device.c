@@ -185,6 +185,7 @@ typedef enum {
     ((IS_IPv4) ? L3_CONFIG_DATA_TYPE_DHCP_4 : L3_CONFIG_DATA_TYPE_DHCP_6)
 
     L3_CONFIG_DATA_TYPE_SHARED_4,
+    L3_CONFIG_DATA_TYPE_SHARED_6,
     L3_CONFIG_DATA_TYPE_DEVIP_UNSPEC,
     L3_CONFIG_DATA_TYPE_DEVIP_4,
     L3_CONFIG_DATA_TYPE_DEVIP_6,
@@ -285,6 +286,9 @@ typedef struct {
             const NML3ConfigData *l3cd;
         } v4;
         struct {
+            NMFirewallConfig     *firewall_config;
+            const NML3ConfigData *l3cd;
+            GSource              *pd_timeout_source;
         } v6;
     };
 } IPSharedStateData;
@@ -362,6 +366,7 @@ enum {
     L3CD_CHANGED,
     IP6_PREFIX_DELEGATED,
     IP6_SUBNET_NEEDED,
+    IP6_DEFAULT_DEVICE_NEEDED,
     REMOVED,
     RECHECK_ASSUME,
     DNS_LOOKUP_DONE,
@@ -911,6 +916,7 @@ static gboolean    _get_maybe_ipv6_disabled(NMDevice *self);
 static void        deactivate_ready(NMDevice *self, NMDeviceStateReason reason);
 static void        carrier_disconnected_action_cancel(NMDevice *self);
 static const char *nm_device_get_effective_ip_config_method(NMDevice *self, int addr_family);
+static gboolean    _dev_ipshared6_setup_nat(NMDevice *self);
 
 /*****************************************************************************/
 
@@ -1387,27 +1393,29 @@ _prop_get_ipv6_ra_timeout(NMDevice *self)
                                                        0);
 }
 
-/* Returns the resolved ipv4.nat setting for ipv4.method=shared. The
- * returned value is always a concrete setting (AUTO, YES, or NO),
- * never DEFAULT. */
+/* Returns the resolved ip.nat setting for method=shared. The returned
+ * value is always a concrete setting (AUTO, YES, or NO), never DEFAULT. */
 static NMSettingIPConfigNat
-_prop_get_ipv4_nat(NMDevice *self)
+_prop_get_ipvx_nat(NMDevice *self, int addr_family)
 {
     NMConnection        *connection;
     NMSettingIPConfigNat nat;
 
     connection = nm_device_get_applied_connection(self);
 
-    nat = nm_setting_ip_config_get_nat(nm_connection_get_setting_ip4_config(connection));
+    nat = nm_setting_ip_config_get_nat(addr_family == AF_INET
+                                           ? nm_connection_get_setting_ip4_config(connection)
+                                           : nm_connection_get_setting_ip6_config(connection));
     if (nat != NM_SETTING_IP_CONFIG_NAT_DEFAULT)
         return nat;
 
-    return nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
-                                                       NM_CON_DEFAULT("ipv4.nat"),
-                                                       self,
-                                                       NM_SETTING_IP_CONFIG_NAT_DEFAULT,
-                                                       NM_SETTING_IP_CONFIG_NAT_NO,
-                                                       NM_SETTING_IP_CONFIG_NAT_AUTO);
+    return nm_config_data_get_connection_default_int64(
+        NM_CONFIG_GET_DATA,
+        addr_family == AF_INET ? NM_CON_DEFAULT("ipv4.nat") : NM_CON_DEFAULT("ipv6.nat"),
+        self,
+        NM_SETTING_IP_CONFIG_NAT_DEFAULT,
+        NM_SETTING_IP_CONFIG_NAT_NO,
+        NM_SETTING_IP_CONFIG_NAT_AUTO);
 }
 
 static NMSettingIPConfigRoutedDns
@@ -4640,6 +4648,7 @@ _dev_l3_get_config_settings(NMDevice             *self,
     case L3_CONFIG_DATA_TYPE_LL_6:
     case L3_CONFIG_DATA_TYPE_PD_6:
     case L3_CONFIG_DATA_TYPE_SHARED_4:
+    case L3_CONFIG_DATA_TYPE_SHARED_6:
     case L3_CONFIG_DATA_TYPE_DEVIP_4:
     case L3_CONFIG_DATA_TYPE_AC_6:
     case L3_CONFIG_DATA_TYPE_DHCP_6:
@@ -4671,6 +4680,7 @@ after_acd_timeout:
     case L3_CONFIG_DATA_TYPE_LL_6:
     case L3_CONFIG_DATA_TYPE_PD_6:
     case L3_CONFIG_DATA_TYPE_SHARED_4:
+    case L3_CONFIG_DATA_TYPE_SHARED_6:
     case L3_CONFIG_DATA_TYPE_DHCP_4:
     case L3_CONFIG_DATA_TYPE_DEVIP_4:
     case L3_CONFIG_DATA_TYPE_AC_6:
@@ -4694,6 +4704,7 @@ after_acd_defend_type:
     case L3_CONFIG_DATA_TYPE_LL_6:
     case L3_CONFIG_DATA_TYPE_PD_6:
     case L3_CONFIG_DATA_TYPE_SHARED_4:
+    case L3_CONFIG_DATA_TYPE_SHARED_6:
         *out_merge_flags = NM_L3_CONFIG_MERGE_FLAGS_NONE;
         goto after_merge_flags;
 
@@ -12226,12 +12237,22 @@ nm_device_needs_ip6_subnet(NMDevice *self)
 
 /*
  * Called on the ipv6.method=shared interface when a new subnet is allocated
- * or the prefix from which it is allocated is renewed.
+ * from a delegated prefix (IA_PD), or when the prefix is renewed.
+ *
+ * With nat=yes (or once the nat=auto delay has already expired and
+ * ULA+NAT is active), the delegated GUA prefix is added alongside the
+ * ULA prefix. RFC 6724 ensures clients prefer the GUA for external
+ * traffic.
+ *
+ * With nat=auto, if PD arrives while the RA delay timer is still
+ * running, cancel the timer and use the delegated prefix alone,
+ * without setting up ULA+NAT.
  */
 void
 nm_device_use_ip6_subnet(NMDevice *self, const NMPlatformIP6Address *subnet)
 {
-    NMConnection *connection = nm_device_get_applied_connection(self);
+    NMDevicePrivate *priv       = NM_DEVICE_GET_PRIVATE(self);
+    NMConnection    *connection = nm_device_get_applied_connection(self);
 
     if (connection) {
         NMSettingIPConfig *s_ip6 = nm_connection_get_setting_ip6_config(connection);
@@ -12240,9 +12261,16 @@ nm_device_use_ip6_subnet(NMDevice *self, const NMPlatformIP6Address *subnet)
             nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
             char                                    sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
             NMPlatformIP6Address                    address;
+
+            /* If the RA delay timer is running, PD arrived in time: cancel
+             * it and use the delegated prefix alone (nat=auto without
+             * ULA+NAT). */
+            if (nm_clear_g_source_inst(&priv->ipshared_data_6.v6.pd_timeout_source))
+                _LOGD_ipshared(AF_INET6,
+                               "prefix delegation received during RA delay, skipping NAT setup");
+
             l3cd = nm_device_create_l3_config_data(self, NM_IP_CONFIG_SOURCE_SHARED);
 
-            /* Assign a ::1 address in the subnet for us. */
             address = *subnet;
             address.address.s6_addr32[3] |= htonl(1);
 
@@ -13182,6 +13210,9 @@ _dev_ipac6_start(NMDevice *self)
             nm_device_sysctl_ip_conf_set(self, AF_INET6, "forwarding", "1");
         }
 
+        /* Prefix Delegation is requested regardless of ip.nat: "auto" needs
+         * it to decide whether to set up NAT, "yes" wants to combine it with
+         * NAT if available, and "no" relies on it exclusively. */
         priv->needs_ip6_subnet = TRUE;
         g_signal_emit(self, signals[IP6_SUBNET_NEEDED], 0);
     }
@@ -13821,6 +13852,16 @@ _dev_ipsharedx_cleanup(NMDevice *self, int addr_family)
 
         _dev_l3_register_l3cds_set_one(self, L3_CONFIG_DATA_TYPE_SHARED_4, NULL, FALSE);
     } else {
+        nm_clear_g_source_inst(&priv->ipshared_data_6.v6.pd_timeout_source);
+
+        if (priv->ipshared_data_6.v6.firewall_config) {
+            nm_firewall_config_apply_sync(priv->ipshared_data_6.v6.firewall_config, FALSE);
+            nm_clear_pointer(&priv->ipshared_data_6.v6.firewall_config, nm_firewall_config_free);
+        }
+
+        nm_clear_l3cd(&priv->ipshared_data_6.v6.l3cd);
+
+        _dev_l3_register_l3cds_set_one(self, L3_CONFIG_DATA_TYPE_SHARED_6, NULL, FALSE);
         _dev_l3_register_l3cds_set_one(self, L3_CONFIG_DATA_TYPE_PD_6, NULL, FALSE);
     }
 
@@ -13870,21 +13911,33 @@ _dev_ipshared4_new_l3cd(NMDevice *self, NMConnection *connection, NMPlatformIP4A
 }
 
 static gboolean
-_dev_ipshared4_init(NMDevice *self)
+_dev_ipsharedx_init(NMDevice *self, int addr_family)
 {
-    static const char *const modules_iptables[] = {"ip_tables", "iptable_nat"};
-    static const char *const modules_nftables[] =
-        {"nf_nat_ftp", "nf_nat_irc", "nf_nat_sip", "nf_nat_tftp", "nf_nat_pptp", "nf_nat_h323"};
-    int   errsv;
-    guint i;
+    static const char *const modules_iptables_4[] = {"ip_tables", "iptable_nat", NULL};
+    static const char *const modules_iptables_6[] = {"ip6_tables", "ip6table_nat", NULL};
+    static const char *const modules_nftables[]   = {"nf_nat_ftp",
+                                                     "nf_nat_irc",
+                                                     "nf_nat_sip",
+                                                     "nf_nat_tftp",
+                                                     "nf_nat_pptp",
+                                                     "nf_nat_h323",
+                                                     NULL};
+    const gboolean           IS_IPv4              = NM_IS_IPv4(addr_family);
+    const char *const       *modules;
+    int                      errsv;
+    guint                    i;
+
+    nm_assert_addr_family(addr_family);
 
     switch (nm_firewall_utils_get_backend()) {
     case NM_FIREWALL_BACKEND_IPTABLES:
-        for (i = 0; i < G_N_ELEMENTS(modules_iptables); i++)
-            nmp_utils_modprobe(NULL, FALSE, modules_iptables[i], NULL);
+        modules = IS_IPv4 ? modules_iptables_4 : modules_iptables_6;
+        for (i = 0; modules[i]; i++)
+            nmp_utils_modprobe(NULL, FALSE, modules[i], NULL);
         break;
     case NM_FIREWALL_BACKEND_NFTABLES:
-        for (i = 0; i < G_N_ELEMENTS(modules_nftables); i++)
+        /* nftables conntrack helper modules are address-family-agnostic */
+        for (i = 0; modules_nftables[i]; i++)
             nmp_utils_modprobe(NULL, FALSE, modules_nftables[i], NULL);
         break;
     case NM_FIREWALL_BACKEND_NONE:
@@ -13894,6 +13947,9 @@ _dev_ipshared4_init(NMDevice *self)
         nm_assert_not_reached();
         break;
     }
+
+    if (!IS_IPv4)
+        return TRUE;
 
     if (nm_platform_sysctl_get_int32(nm_device_get_platform(self),
                                      NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv4/ip_dynaddr"),
@@ -13954,10 +14010,10 @@ _dev_ipshared4_start(NMDevice *self)
         goto out_fail;
     }
 
-    if (!_dev_ipshared4_init(self))
+    if (!_dev_ipsharedx_init(self, AF_INET))
         goto out_fail;
 
-    if (_prop_get_ipv4_nat(self) != NM_SETTING_IP_CONFIG_NAT_NO) {
+    if (_prop_get_ipvx_nat(self, AF_INET) != NM_SETTING_IP_CONFIG_NAT_NO) {
         priv->ipshared_data_4.v4.firewall_config =
             nm_firewall_config_new_shared(ip_iface, ip4_addr.address, ip4_addr.plen);
         nm_firewall_config_apply_sync(priv->ipshared_data_4.v4.firewall_config, TRUE);
@@ -14064,15 +14120,161 @@ out_fail:
 
 /*****************************************************************************/
 
+/* Set up NAT for ipv6.method=shared: determine a ULA /64 prefix,
+ * configure firewall masquerade rules, and register the l3cd.
+ *
+ * The ULA prefix is chosen as follows:
+ *   1. If the connection profile has a static IPv6 address in the
+ *      fd00::/8 ULA range with prefix length /64, use its /64 network
+ *      portion. Only /64 is accepted because SLAAC requires it in RAs.
+ *   2. Otherwise, generate a stable prefix deterministically from the
+ *      connection's stable-id, the interface name, and the machine's
+ *      secret host-id.
+ *
+ * Returns TRUE on success, FALSE on failure (state set to FAILED). */
+static gboolean
+_dev_ipshared6_setup_nat(NMDevice *self)
+{
+    NMDevicePrivate                        *priv = NM_DEVICE_GET_PRIVATE(self);
+    nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
+    NMSettingIPConfig                      *s_ip6;
+    struct in6_addr                         ula_prefix;
+    gboolean                                have_user_prefix = FALSE;
+    const char                             *ip_iface;
+    NMConnection                           *applied;
+    char                                    sbuf[NM_INET_ADDRSTRLEN];
+    guint                                   i;
+    guint                                   n;
+
+    nm_assert(!priv->ipshared_data_6.v6.firewall_config);
+
+    ip_iface = nm_device_get_ip_iface(self);
+    g_return_val_if_fail(ip_iface, FALSE);
+
+    applied = nm_device_get_applied_connection(self);
+    g_return_val_if_fail(applied, FALSE);
+
+    s_ip6 = nm_connection_get_setting_ip6_config(applied);
+    g_return_val_if_fail(s_ip6, FALSE);
+
+    n = nm_setting_ip_config_get_num_addresses(s_ip6);
+    for (i = 0; i < n; i++) {
+        NMIPAddress    *user_addr = nm_setting_ip_config_get_address(s_ip6, i);
+        struct in6_addr a;
+
+        if (nm_ip_address_get_prefix(user_addr) != 64)
+            continue;
+
+        nm_ip_address_get_address_binary(user_addr, &a);
+
+        if (!nm_ip6_addr_is_ula(&a) || a.s6_addr[0] != 0xfd)
+            continue;
+
+        ula_prefix = a;
+        memset(&ula_prefix.s6_addr[8], 0, 8);
+        have_user_prefix = TRUE;
+        break;
+    }
+
+    if (!have_user_prefix)
+        nm_utils_ipv6_generate_ula_prefix(ip_iface, &ula_prefix);
+
+    _LOGD_ipshared(AF_INET6,
+                   "NAT: using ULA prefix %s/64 (%s)",
+                   nm_inet6_ntop(&ula_prefix, sbuf),
+                   have_user_prefix ? "user-specified" : "generated");
+
+    /* Copy the address and DNS info into the l3cd */
+    l3cd = nm_device_create_l3_config_data(self, NM_IP_CONFIG_SOURCE_SHARED);
+
+    /* Ask the policy for the device with the default IPv6 route, so its
+     * DNS configuration can be advertised via RA to the downstream
+     * network. */
+    g_signal_emit(self, signals[IP6_DEFAULT_DEVICE_NEEDED], 0);
+
+    if (!have_user_prefix) {
+        /* When using a generated prefix, assign prefix::1 as the router
+         * address on this interface. With a user-specified address this
+         * is unnecessary because the static address is already applied
+         * via the connection's regular IP configuration. */
+        NMPlatformIP6Address ip6_addr;
+
+        ip6_addr = (NMPlatformIP6Address) {
+            .address   = ula_prefix,
+            .plen      = 64,
+            .lifetime  = NM_PLATFORM_LIFETIME_PERMANENT,
+            .preferred = NM_PLATFORM_LIFETIME_PERMANENT,
+        };
+        ip6_addr.address.s6_addr32[3] |= htonl(1);
+
+        nm_l3_config_data_add_address_6(l3cd, &ip6_addr);
+    }
+
+    if (!_dev_ipsharedx_init(self, AF_INET6))
+        return FALSE;
+
+    priv->ipshared_data_6.v6.firewall_config =
+        nm_firewall_config_new_shared6(ip_iface, &ula_prefix, 64);
+    nm_firewall_config_apply_sync(priv->ipshared_data_6.v6.firewall_config, TRUE);
+
+    priv->ipshared_data_6.v6.l3cd = nm_l3_config_data_ref(l3cd);
+    _dev_l3_register_l3cds_set_one(self, L3_CONFIG_DATA_TYPE_SHARED_6, l3cd, FALSE);
+    _dev_l3_cfg_commit(self, TRUE);
+
+    return TRUE;
+}
+
+/* RA delay timer callback (nat=auto): the delay period expired without
+ * PD arriving, so fall back to ULA+NAT. If PD arrives later,
+ * nm_device_use_ip6_subnet() will update ndisc to include the GUA prefix
+ * alongside it. */
+static gboolean
+_dev_ipshared6_ra_delay_cb(gpointer user_data)
+{
+    NMDevice        *self = user_data;
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+
+    nm_clear_g_source_inst(&priv->ipshared_data_6.v6.pd_timeout_source);
+
+    _LOGD_ipshared(AF_INET6, "RA delay expired without prefix delegation, setting up ULA+NAT");
+
+    if (!_dev_ipshared6_setup_nat(self)) {
+        nm_clear_l3cd(&priv->ipshared_data_6.v6.l3cd);
+        _dev_ipsharedx_set_state(self, AF_INET6, NM_DEVICE_IP_STATE_FAILED);
+        _dev_ip_state_check_async(self, AF_INET6);
+        return G_SOURCE_CONTINUE;
+    }
+
+    _dev_ipac6_ndisc_set_router_config(self);
+    return G_SOURCE_CONTINUE;
+}
+
+/* Start IPv6 shared mode.
+ *
+ * The behavior depends on the resolved ip.nat setting:
+ *
+ *  AUTO: Delay advertising a prefix for a short interval to give
+ *     Prefix Delegation a chance to arrive from an upstream interface.
+ *     If PD arrives within the delay, use it alone, without ULA/NAT.
+ *     If not, fall back to ULA+NAT and advertise it; PD may still
+ *     arrive later and get added alongside ULA+NAT.
+ *
+ *  YES: Set up ULA+NAT immediately and advertise it right away.
+ *     Prefix Delegation is still requested and, if it arrives, is
+ *     added alongside ULA+NAT.
+ *
+ *  NO: No ULA/NAT setup. Only Prefix Delegation is used; the prefix
+ *     is advertised once PD delivers it. */
 static void
 _dev_ipshared6_start(NMDevice *self)
 {
-    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
-
-    _dev_ipac6_start(self);
+    NMDevicePrivate     *priv = NM_DEVICE_GET_PRIVATE(self);
+    NMSettingIPConfigNat nat;
 
     if (priv->ipshared_data_6.state != NM_DEVICE_IP_STATE_NONE)
         return;
+
+    nat = _prop_get_ipvx_nat(self, AF_INET6);
 
     if (!nm_platform_sysctl_set(
             nm_device_get_platform(self),
@@ -14083,6 +14285,36 @@ _dev_ipshared6_start(NMDevice *self)
         _dev_ip_state_check_async(self, AF_INET6);
         return;
     }
+
+    if (nat == NM_SETTING_IP_CONFIG_NAT_YES) {
+        _LOGD_ipshared(AF_INET6, "nat=yes: setting up ULA+NAT immediately");
+        if (!_dev_ipshared6_setup_nat(self)) {
+            nm_clear_l3cd(&priv->ipshared_data_6.v6.l3cd);
+            _dev_ipsharedx_set_state(self, AF_INET6, NM_DEVICE_IP_STATE_FAILED);
+            _dev_ip_state_check_async(self, AF_INET6);
+            return;
+        }
+    } else if (nat == NM_SETTING_IP_CONFIG_NAT_AUTO) {
+        /* Don't set up ULA+NAT yet: start a delay timer to give Prefix
+         * Delegation a chance to arrive first. nm_device_use_ip6_subnet()
+         * cancels the timer if PD arrives in time; otherwise
+         * _dev_ipshared6_ra_delay_cb() falls back to ULA+NAT. */
+        _LOGD_ipshared(AF_INET6,
+                       "nat=auto: holding RA for 10 seconds to allow prefix "
+                       "delegation before falling back to ULA+NAT");
+        priv->ipshared_data_6.v6.pd_timeout_source =
+            nm_g_timeout_add_seconds_source(10, _dev_ipshared6_ra_delay_cb, self);
+    } else {
+        nm_assert(nat == NM_SETTING_IP_CONFIG_NAT_NO);
+        _LOGD_ipshared(AF_INET6, "nat=no: waiting for prefix delegation only");
+    }
+
+    /* Start the ND router so that Router Advertisements are sent to the
+     * downstream network. The RA content comes from the combined l3cd,
+     * which at this point may already contain the ULA prefix (nat=yes)
+     * or may be empty (nat=auto/no). A delegated prefix is always
+     * requested; see _dev_ipac6_start(). */
+    _dev_ipac6_start(self);
 
     _dev_ipsharedx_set_state(self, AF_INET6, NM_DEVICE_IP_STATE_READY);
     _dev_ip_state_check_async(self, AF_INET6);
@@ -20697,6 +20929,16 @@ nm_device_class_init(NMDeviceClass *klass)
                                               NULL,
                                               G_TYPE_NONE,
                                               0);
+
+    signals[IP6_DEFAULT_DEVICE_NEEDED] = g_signal_new(NM_DEVICE_IP6_DEFAULT_DEVICE_NEEDED,
+                                                      G_OBJECT_CLASS_TYPE(object_class),
+                                                      G_SIGNAL_RUN_FIRST,
+                                                      0,
+                                                      NULL,
+                                                      NULL,
+                                                      NULL,
+                                                      G_TYPE_NONE,
+                                                      0);
 
     signals[REMOVED] = g_signal_new(NM_DEVICE_REMOVED,
                                     G_OBJECT_CLASS_TYPE(object_class),

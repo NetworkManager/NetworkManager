@@ -13,6 +13,12 @@ Core:
 * Add the new ip.nat enum property (on the base IP config setting) to
   control the use of NAT for IP connection sharing (method=shared).
   For IPv4, "auto" and "yes" enable NAT, "no" disables it.
+* Add NAT support for ipv6.method=shared. For IPv6, "auto" (the
+  default) sets up ULA+NAT unless DHCPv6 Prefix Delegation (IA_PD)
+  is available from an upstream interface within a short interval,
+  in which case PD is used instead; "yes" always sets up ULA+NAT
+  together with PD, if available; "no" never sets up ULA+NAT and
+  only uses PD.
 
 Wi-Fi:
 * Keep the long background scan interval for a single Wi-Fi 7 AP-MLD.

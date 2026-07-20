@@ -1104,6 +1104,17 @@ ipv6.ip6-privacy=0
           </para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>ipv6.nat</varname></term>
+          <listitem><para>Controls the use of NAT for IP connection sharing
+            (ipv6.method=shared). Set to 1 ("auto") to set up ULA with NAT
+            unless Prefix Delegation is available from an upstream
+            interface within a short interval, 2 ("yes") to always set up
+            ULA with NAT together with Prefix Delegation if available, or
+            3 ("no") to never set up ULA with NAT and only use Prefix
+            Delegation. If left unspecified, defaults to 1 ("auto").
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>loopback.mtu</varname></term>
           <listitem><para>If configured explicitly to 0, the MTU is not reconfigured during device activation unless it is required due to IPv6 constraints. If left unspecified, a DHCP/IPv6 SLAAC provided value is used or the MTU is left unspecified on activation.</para></listitem>
         </varlistentry>

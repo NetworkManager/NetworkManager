@@ -456,6 +456,24 @@ device_ip6_subnet_needed(NMDevice *device, gpointer user_data)
     nm_device_copy_ip6_dns_config(device, get_default_device(self, AF_INET6));
 }
 
+static void
+device_ip6_default_device_needed(NMDevice *device, gpointer user_data)
+{
+    NMPolicyPrivate *priv = user_data;
+    NMPolicy        *self = _PRIV_TO_SELF(priv);
+
+    _LOGD(LOGD_IP6, "ipv6-nat: %s needs the default IPv6 device", nm_device_get_iface(device));
+
+    if (!priv->default_ac6) {
+        _LOGI(LOGD_IP6,
+              "ipv6-nat: no default IPv6 device to copy DNS configuration for %s",
+              nm_device_get_iface(device));
+        return;
+    }
+
+    nm_device_copy_ip6_dns_config(device, get_default_device(self, AF_INET6));
+}
+
 /*****************************************************************************/
 
 static NMDevice *
@@ -2592,6 +2610,10 @@ devices_list_register(NMPolicy *self, NMDevice *device)
     g_signal_connect(device,
                      NM_DEVICE_IP6_SUBNET_NEEDED,
                      G_CALLBACK(device_ip6_subnet_needed),
+                     priv);
+    g_signal_connect(device,
+                     NM_DEVICE_IP6_DEFAULT_DEVICE_NEEDED,
+                     G_CALLBACK(device_ip6_default_device_needed),
                      priv);
     g_signal_connect(device,
                      "notify::" NM_DEVICE_AUTOCONNECT,
