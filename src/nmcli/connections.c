@@ -457,11 +457,11 @@ get_vpn_connection_type(NMConnection *connection)
 }
 
 /* VPN parameters can be found at:
- * http://git.gnome.org/browse/network-manager-openvpn/tree/src/nm-openvpn-service.h
- * http://git.gnome.org/browse/network-manager-vpnc/tree/src/nm-vpnc-service.h
- * http://git.gnome.org/browse/network-manager-pptp/tree/src/nm-pptp-service.h
- * http://git.gnome.org/browse/network-manager-openconnect/tree/src/nm-openconnect-service.h
- * http://git.gnome.org/browse/network-manager-openswan/tree/src/nm-openswan-service.h
+ * https://gitlab.gnome.org/GNOME/NetworkManager-openvpn/-/blob/main/shared/nm-service-defines.h
+ * https://gitlab.gnome.org/GNOME/NetworkManager-vpnc/-/blob/main/shared/nm-service-defines.h
+ * https://gitlab.gnome.org/GNOME/NetworkManager-pptp/-/blob/main/shared/nm-service-defines.h
+ * https://gitlab.gnome.org/GNOME/NetworkManager-openconnect/-/blob/main/shared/nm-service-defines.h
+ * https://gitlab.gnome.org/GNOME/NetworkManager-libreswan/-/blob/main/shared/nm-service-defines.h
  * See also 'properties' directory in these plugins.
  */
 static const char *

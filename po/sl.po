@@ -13,18 +13,18 @@ msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: https://gitlab.freedesktop.org/NetworkManager/"
 "NetworkManager/issues\n"
-"POT-Creation-Date: 2026-02-17 20:21+0000\n"
-"PO-Revision-Date: 2026-02-21 18:41+0100\n"
+"POT-Creation-Date: 2026-07-01 13:59+0000\n"
+"PO-Revision-Date: 2026-07-04 16:34+0200\n"
 "Last-Translator: Martin Srebotnjak <miles@filmsi.net>\n"
 "Language-Team: Slovenian GNOME Translation Team <gnome-si@googlegroups.com>\n"
 "Language: sl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=4; plural=(n%100==1 ? 1 : n%100==2 ? 2 : n%100==3 || n"
-"%100==4 ? 3 : 0);\n"
+"Plural-Forms: nplurals=4; plural=(n%100==1 ? 1 : n%100==2 ? 2 : n%100==3 || "
+"n%100==4 ? 3 : 0);\n"
 "X-Poedit-SourceCharset: utf-8\n"
-"X-Generator: Poedit 2.2.1\n"
+"X-Generator: Poedit 3.8\n"
 
 #: data/org.freedesktop.NetworkManager.policy.in:13
 msgid "Enable or disable system networking"
@@ -261,11 +261,24 @@ msgstr "Neznana/neobdelana vrsta povezave Bluetooth"
 msgid "connection does not match device"
 msgstr "povezava se ne ujema z napravo"
 
+#: src/core/devices/nm-device.c:15035
+msgid "set managed: no permanent or runtime was selected"
+msgstr "nastavi managed: noben »permanent« ali program ni izbran"
+
+#: src/core/devices/nm-device.c:15072
+#, c-format
+msgid ""
+"failed to persist 'managed=%d' on disk, other configurations may be "
+"overriding it"
+msgstr ""
+"Neuspelo vztrajanje pri 'managed=%d' na disku, druge prilagoditve jo morda "
+"preglasijo"
+
 #: src/core/devices/nm-device-6lowpan.c:154
 msgid "6LOWPAN connection"
 msgstr "Povezava 6LOWPAN"
 
-#: src/core/devices/nm-device-bond.c:94
+#: src/core/devices/nm-device-bond.c:95
 msgid "Bond connection"
 msgstr "Povezava vezi"
 
@@ -287,11 +300,11 @@ msgstr "Žična povezava %d"
 msgid "Veth connection"
 msgstr "Povezava Veth"
 
-#: src/core/devices/nm-device-ethernet.c:1717
+#: src/core/devices/nm-device-ethernet.c:1719
 msgid "PPPoE connection"
 msgstr "Povezava PPPoE"
 
-#: src/core/devices/nm-device-ethernet.c:1717
+#: src/core/devices/nm-device-ethernet.c:1719
 msgid "Wired connection"
 msgstr "Žična povezava"
 
@@ -343,7 +356,7 @@ msgstr "Povezava WPAN"
 msgid "Team connection"
 msgstr "Povezava skupine"
 
-#: src/core/devices/wifi/nm-device-olpc-mesh.c:112 src/nmcli/devices.c:1433
+#: src/core/devices/wifi/nm-device-olpc-mesh.c:112 src/nmcli/devices.c:1437
 msgid "Mesh"
 msgstr "Mreževina"
 
@@ -497,19 +510,6 @@ msgstr ""
 msgid "Failed to determine AP security information"
 msgstr "Varnostnih podatkov AP ni bilo mogoče določiti"
 
-#: src/core/dhcp/nm-dhcp-dhclient-utils.c:323
-msgid "# Created by NetworkManager\n"
-msgstr "#Ustvarjeno z upravljalnikom omrežij\n"
-
-#: src/core/dhcp/nm-dhcp-dhclient-utils.c:336
-#, c-format
-msgid ""
-"# Merged from %s\n"
-"\n"
-msgstr ""
-"# Združeno iz %s\n"
-"\n"
-
 #: src/core/main-utils.c:85
 #, c-format
 msgid "Writing to %s failed: %s\n"
@@ -650,24 +650,24 @@ msgstr "Možnosti programa NetworkManager"
 msgid "Show NetworkManager options"
 msgstr "Pokaži možnosti programa NetworkManager"
 
-#: src/core/nm-manager.c:7001 src/libnmc-setting/nm-meta-setting-desc.c:9107
+#: src/core/nm-manager.c:6971 src/libnmc-setting/nm-meta-setting-desc.c:9107
 msgid "VPN connection"
 msgstr "Povezava VPN"
 
 #: src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5660
-#: src/libnm-client-impl/nm-device.c:1783
+#: src/libnm-client-impl/nm-device.c:1847
 #: src/libnm-core-impl/nm-connection.c:3344 src/nmtui/nm-editor-utils.c:204
 msgid "Bond"
 msgstr "Vez"
 
 #: src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5731
-#: src/libnm-client-impl/nm-device.c:1785
+#: src/libnm-client-impl/nm-device.c:1849
 #: src/libnm-core-impl/nm-connection.c:3346 src/nmtui/nm-editor-utils.c:222
 msgid "Team"
 msgstr "Skupina"
 
 #: src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:6068
-#: src/libnm-client-impl/nm-device.c:1787
+#: src/libnm-client-impl/nm-device.c:1851
 #: src/libnm-core-impl/nm-connection.c:3348 src/nmtui/nm-editor-utils.c:213
 msgid "Bridge"
 msgstr "Most"
@@ -919,149 +919,149 @@ msgstr "Naprava nima zmogljivosti WPA2/RSN, ki jih zahteva povezava."
 msgid "The connection was not a wpan connection."
 msgstr "Povezava ni bila povezava wpan."
 
-#: src/libnm-client-impl/nm-device.c:1763 src/nmtui/nm-editor-utils.c:144
+#: src/libnm-client-impl/nm-device.c:1827 src/nmtui/nm-editor-utils.c:144
 msgid "Ethernet"
 msgstr "Ethernet"
 
-#: src/libnm-client-impl/nm-device.c:1765 src/nmtui/nm-editor-utils.c:168
+#: src/libnm-client-impl/nm-device.c:1829 src/nmtui/nm-editor-utils.c:168
 #: src/nmtui/nmtui-radio.c:58
 msgid "Wi-Fi"
 msgstr "Wi-Fi"
 
-#: src/libnm-client-impl/nm-device.c:1767
+#: src/libnm-client-impl/nm-device.c:1831
 msgid "Bluetooth"
 msgstr "Bluetooth"
 
-#: src/libnm-client-impl/nm-device.c:1769
+#: src/libnm-client-impl/nm-device.c:1833
 msgid "OLPC Mesh"
 msgstr "Mreževina OLPC"
 
-#: src/libnm-client-impl/nm-device.c:1771
+#: src/libnm-client-impl/nm-device.c:1835
 msgid "Open vSwitch Interface"
 msgstr "Odpri vmesnik vSwitch"
 
-#: src/libnm-client-impl/nm-device.c:1773
+#: src/libnm-client-impl/nm-device.c:1837
 msgid "Open vSwitch Port"
 msgstr "Odpri vrata vSwitch"
 
-#: src/libnm-client-impl/nm-device.c:1775
+#: src/libnm-client-impl/nm-device.c:1839
 msgid "Open vSwitch Bridge"
 msgstr "Odpri most vSwitch"
 
-#: src/libnm-client-impl/nm-device.c:1777
+#: src/libnm-client-impl/nm-device.c:1841
 msgid "WiMAX"
 msgstr "WiMAX"
 
-#: src/libnm-client-impl/nm-device.c:1779 src/nmtui/nm-editor-utils.c:186
+#: src/libnm-client-impl/nm-device.c:1843 src/nmtui/nm-editor-utils.c:186
 msgid "Mobile Broadband"
 msgstr "Mobilni širokopasovni dostop"
 
-#: src/libnm-client-impl/nm-device.c:1781
+#: src/libnm-client-impl/nm-device.c:1845
 #: src/libnm-core-impl/nm-connection.c:3352 src/nmtui/nm-editor-utils.c:177
 msgid "InfiniBand"
 msgstr "InfiniBand"
 
-#: src/libnm-client-impl/nm-device.c:1789
+#: src/libnm-client-impl/nm-device.c:1853
 #: src/libnm-core-impl/nm-connection.c:3350 src/nmtui/nm-editor-utils.c:231
 #: src/nmtui/nmt-page-vlan.c:57
 msgid "VLAN"
 msgstr "VLAN"
 
-#: src/libnm-client-impl/nm-device.c:1791
+#: src/libnm-client-impl/nm-device.c:1855
 msgid "ADSL"
 msgstr "ADSL"
 
-#: src/libnm-client-impl/nm-device.c:1793
+#: src/libnm-client-impl/nm-device.c:1857
 msgid "MACVLAN"
 msgstr "MACVLAN"
 
-#: src/libnm-client-impl/nm-device.c:1795
+#: src/libnm-client-impl/nm-device.c:1859
 msgid "VXLAN"
 msgstr "VXLAN"
 
-#: src/libnm-client-impl/nm-device.c:1797
+#: src/libnm-client-impl/nm-device.c:1861
 msgid "GENEVE"
 msgstr "GENEVE"
 
-#: src/libnm-client-impl/nm-device.c:1799
+#: src/libnm-client-impl/nm-device.c:1863
 msgid "IPTunnel"
 msgstr "IPTunnel"
 
-#: src/libnm-client-impl/nm-device.c:1801
+#: src/libnm-client-impl/nm-device.c:1865
 msgid "Tun"
 msgstr "Tun"
 
-#: src/libnm-client-impl/nm-device.c:1803
+#: src/libnm-client-impl/nm-device.c:1867
 #: src/libnm-core-impl/nm-connection.c:3362 src/nmtui/nm-editor-utils.c:152
 msgid "Veth"
 msgstr "Veth"
 
-#: src/libnm-client-impl/nm-device.c:1805 src/nmtui/nm-editor-utils.c:247
+#: src/libnm-client-impl/nm-device.c:1869 src/nmtui/nm-editor-utils.c:247
 #: src/nmtui/nmt-page-macsec.c:99
 msgid "MACsec"
 msgstr "MACsec"
 
-#: src/libnm-client-impl/nm-device.c:1807
+#: src/libnm-client-impl/nm-device.c:1871
 msgid "Dummy"
 msgstr "Preizkusno"
 
-#: src/libnm-client-impl/nm-device.c:1809
+#: src/libnm-client-impl/nm-device.c:1873
 msgid "PPP"
 msgstr "PPP"
 
-#: src/libnm-client-impl/nm-device.c:1811
+#: src/libnm-client-impl/nm-device.c:1875
 msgid "IEEE 802.15.4"
 msgstr "IEEE 802.15.4"
 
-#: src/libnm-client-impl/nm-device.c:1813
+#: src/libnm-client-impl/nm-device.c:1877
 msgid "6LoWPAN"
 msgstr "6LoWPAN"
 
-#: src/libnm-client-impl/nm-device.c:1815
+#: src/libnm-client-impl/nm-device.c:1879
 #: src/libnm-core-impl/nm-connection.c:3358 src/nmtui/nm-editor-utils.c:279
 #: src/nmtui/nmt-page-wireguard.c:57
 msgid "WireGuard"
 msgstr "WireGuard"
 
-#: src/libnm-client-impl/nm-device.c:1817
+#: src/libnm-client-impl/nm-device.c:1881
 msgid "Wi-Fi P2P"
 msgstr "Wi-Fi P2P"
 
-#: src/libnm-client-impl/nm-device.c:1819
+#: src/libnm-client-impl/nm-device.c:1883
 msgid "VRF"
 msgstr "VRF"
 
-#: src/libnm-client-impl/nm-device.c:1821
+#: src/libnm-client-impl/nm-device.c:1885
 #: src/libnm-core-impl/nm-connection.c:3364 src/nmtui/nm-editor-utils.c:160
 msgid "Loopback"
 msgstr "Povratna zanka"
 
-#: src/libnm-client-impl/nm-device.c:1823
+#: src/libnm-client-impl/nm-device.c:1887
 msgid "HSR"
 msgstr "Visoke hitrosti"
 
-#: src/libnm-client-impl/nm-device.c:1825
+#: src/libnm-client-impl/nm-device.c:1889
 msgid "IPVLAN"
 msgstr "IPVLAN"
 
 #. TRANSLATORS: Unknown reason for a device state change (NMDeviceStateReason)
 #. TRANSLATORS: Unknown reason for a connection state change (NMActiveConnectionStateReason)
-#: src/libnm-client-impl/nm-device.c:1832 src/libnmc-base/nm-client-utils.c:352
-#: src/libnmc-base/nm-client-utils.c:505 src/nmcli/utils.c:1853
+#: src/libnm-client-impl/nm-device.c:1896 src/libnmc-base/nm-client-utils.c:352
+#: src/libnmc-base/nm-client-utils.c:505 src/nmcli/utils.c:1862
 msgid "Unknown"
 msgstr "Neznano"
 
-#: src/libnm-client-impl/nm-device.c:1857
+#: src/libnm-client-impl/nm-device.c:1921
 msgid "Wired"
 msgstr "Žično"
 
-#: src/libnm-client-impl/nm-device.c:1889
+#: src/libnm-client-impl/nm-device.c:1953
 msgid "PCI"
 msgstr ""
 "Informacijski modul <acronym>PCI</acronym>-bus/nameščenih <acronym>PCI</"
 "acronym> kartic"
 
-#: src/libnm-client-impl/nm-device.c:1891
+#: src/libnm-client-impl/nm-device.c:1955
 msgid "USB"
 msgstr "USB"
 
@@ -1071,19 +1071,19 @@ msgstr "USB"
 #. * "%2$s (%1$s)" if there's no grammatical way to combine
 #. * the strings otherwise.
 #.
-#: src/libnm-client-impl/nm-device.c:2190
-#: src/libnm-client-impl/nm-device.c:2209
+#: src/libnm-client-impl/nm-device.c:2254
+#: src/libnm-client-impl/nm-device.c:2273
 #, c-format
 msgctxt "long device name"
 msgid "%s %s"
 msgstr "%s %s"
 
-#: src/libnm-client-impl/nm-device.c:2869
+#: src/libnm-client-impl/nm-device.c:2933
 #, c-format
 msgid "The connection was not valid: %s"
 msgstr "Povezava ni bila veljavna: %s"
 
-#: src/libnm-client-impl/nm-device.c:2881
+#: src/libnm-client-impl/nm-device.c:2945
 msgid "The interface names of the device and the connection didn't match"
 msgstr "Imena vmesnikov naprave in povezave se ne ujemata"
 
@@ -1285,6 +1285,19 @@ msgstr "vrednost je prevelika"
 msgid "value is not valid UTF8"
 msgstr "vrednost ni veljaven UTF8"
 
+#: src/libnm-core-aux-intern/nm-libnm-core-utils.c:1328
+#, c-format
+msgid ""
+"the following gateways are not directly reachable from any configured "
+"address or route: %s. NetworkManager currently adds on-link routes for them "
+"automatically, but this will change in the future. Consider adding addresses "
+"or routes whose subnets cover these gateways"
+msgstr ""
+"Naslednji prehodi niso neposredno dosegljivi z nobenega prilagojenega "
+"naslova ali poti: %s. NetworkManager trenutno zanje doda poti na povezavi "
+"samodejno, a to se bo v prihodnje spremenilo. Razmislite o tem, da dodate "
+"naslove ali poti, katerih podmreže prekrivajo te prehode."
+
 #: src/libnm-core-impl/nm-connection.c:424
 msgid "wrong type; should be a list of strings."
 msgstr "napačna vrsta; moral bi biti seznam nizov."
@@ -1351,7 +1364,7 @@ msgstr "nepričakovan uuid %s namesto %s"
 #: src/libnm-core-impl/nm-setting-connection.c:1483
 #: src/libnm-core-impl/nm-setting-connection.c:1521
 #: src/libnm-core-impl/nm-setting-connection.c:2020
-#: src/libnm-core-impl/nm-setting-ip-config.c:5632
+#: src/libnm-core-impl/nm-setting-ip-config.c:5635
 #: src/libnm-core-impl/nm-setting-ip-tunnel.c:405
 #: src/libnm-core-impl/nm-setting-olpc-mesh.c:97
 #: src/libnm-core-impl/nm-setting-ovs-patch.c:75
@@ -1724,7 +1737,7 @@ msgstr "geslo ni podprto, če potrdilo ni v žetonu PKCS#11"
 #: src/libnm-core-impl/nm-setting-gsm.c:575
 #: src/libnm-core-impl/nm-setting-gsm.c:618
 #: src/libnm-core-impl/nm-setting-gsm.c:627
-#: src/libnm-core-impl/nm-setting-ip-config.c:5641
+#: src/libnm-core-impl/nm-setting-ip-config.c:5644
 #: src/libnm-core-impl/nm-setting-ip4-config.c:330
 #: src/libnm-core-impl/nm-setting-ip4-config.c:342
 #: src/libnm-core-impl/nm-setting-pppoe.c:149
@@ -1841,111 +1854,111 @@ msgstr ""
 "Povezava z nastavitvijo »%s« mora imeti vrsto vrat nastavljeno na »%s«. "
 "Namesto tega je »%s«"
 
-#: src/libnm-core-impl/nm-setting-bond.c:524
+#: src/libnm-core-impl/nm-setting-bond.c:528
 #, c-format
 msgid "'%s' option is empty"
 msgstr "Možnost »%s« je prazna"
 
-#: src/libnm-core-impl/nm-setting-bond.c:537
+#: src/libnm-core-impl/nm-setting-bond.c:541
 #, c-format
 msgid "'%s' is not a valid %s address for '%s' option"
 msgstr "»%s« ni veljaven naslov %s za možnost »%s«"
 
-#: src/libnm-core-impl/nm-setting-bond.c:565
+#: src/libnm-core-impl/nm-setting-bond.c:569
 msgid "missing option name"
 msgstr "manjkajoče ime možnosti"
 
-#: src/libnm-core-impl/nm-setting-bond.c:570
+#: src/libnm-core-impl/nm-setting-bond.c:574
 #, c-format
 msgid "invalid option '%s'"
 msgstr "Neveljavna možnost »%s«"
 
-#: src/libnm-core-impl/nm-setting-bond.c:609
+#: src/libnm-core-impl/nm-setting-bond.c:613
 #, c-format
 msgid "invalid value '%s' for option '%s'"
 msgstr "neveljavna vrednost »%s« za možnost »%s«"
 
-#: src/libnm-core-impl/nm-setting-bond.c:923
+#: src/libnm-core-impl/nm-setting-bond.c:930
 #, c-format
 msgid "mandatory option '%s' is missing"
 msgstr "manjka obvezna možnost »%s«"
 
-#: src/libnm-core-impl/nm-setting-bond.c:933
+#: src/libnm-core-impl/nm-setting-bond.c:940
 #, c-format
 msgid "'%s' is not a valid value for '%s'"
 msgstr "»%s« ni veljavna vrednost za »%s«"
 
-#: src/libnm-core-impl/nm-setting-bond.c:946
-#: src/libnm-core-impl/nm-setting-bond.c:957
+#: src/libnm-core-impl/nm-setting-bond.c:953
+#: src/libnm-core-impl/nm-setting-bond.c:967
 #, c-format
 msgid "'%s=%s' is incompatible with '%s > 0'"
 msgstr "'%s=%s' ni združljivo z '%s > 0'"
 
-#: src/libnm-core-impl/nm-setting-bond.c:974
+#: src/libnm-core-impl/nm-setting-bond.c:984
 #, c-format
 msgid "'%s' is not valid for the '%s' option: %s"
 msgstr "»%s« ne velja za možnost »%s«: %s"
 
-#: src/libnm-core-impl/nm-setting-bond.c:986
+#: src/libnm-core-impl/nm-setting-bond.c:996
 #, c-format
 msgid "'%s' option is only valid for '%s=%s'"
 msgstr "Možnost »%s« je veljavna samo za »%s=%s«"
 
-#: src/libnm-core-impl/nm-setting-bond.c:999
+#: src/libnm-core-impl/nm-setting-bond.c:1009
 #, c-format
 msgid "'%s=%s' is not a valid configuration for '%s'"
 msgstr "»%s=%s« ni veljavna prilagoditev za »%s«."
 
-#: src/libnm-core-impl/nm-setting-bond.c:1014
-#: src/libnm-core-impl/nm-setting-bond.c:1025
-#: src/libnm-core-impl/nm-setting-bond.c:1038
+#: src/libnm-core-impl/nm-setting-bond.c:1024
+#: src/libnm-core-impl/nm-setting-bond.c:1035
+#: src/libnm-core-impl/nm-setting-bond.c:1048
 #, c-format
 msgid "'%s' option requires '%s' option to be enabled"
 msgstr "Možnost »%s« zahteva, da je možnost »%s« omogočena"
 
-#: src/libnm-core-impl/nm-setting-bond.c:1055
+#: src/libnm-core-impl/nm-setting-bond.c:1065
 #, c-format
 msgid "'%s' option needs to be a value multiple of '%s' value"
 msgstr "Možnost »%s« mora biti večkratnik vrednosti »%s«"
 
-#: src/libnm-core-impl/nm-setting-bond.c:1073
+#: src/libnm-core-impl/nm-setting-bond.c:1083
 #, c-format
 msgid "'%s' option requires '%s' or '%s'option to be set"
 msgstr "Možnost »%s« zahteva nastavitev možnosti »%s« ali »%s«"
 
-#: src/libnm-core-impl/nm-setting-bond.c:1085
 #: src/libnm-core-impl/nm-setting-bond.c:1095
+#: src/libnm-core-impl/nm-setting-bond.c:1105
 #, c-format
 msgid "'%s' option requires '%s' option to be set"
 msgstr "Možnost »%s« zahteva nastavitev možnosti »%s«"
 
-#: src/libnm-core-impl/nm-setting-bond.c:1108
-#: src/libnm-core-impl/nm-setting-bond.c:1120
+#: src/libnm-core-impl/nm-setting-bond.c:1118
+#: src/libnm-core-impl/nm-setting-bond.c:1130
 #, c-format
 msgid "'%s' option is only valid with mode '%s'"
 msgstr "Možnost »%s« je veljavna samo v načinu »%s«"
 
-#: src/libnm-core-impl/nm-setting-bond.c:1133
+#: src/libnm-core-impl/nm-setting-bond.c:1143
 #, c-format
 msgid "'%s' and '%s' cannot have different values"
 msgstr "»%s« in »%s« ne moreta imeti različnih vrednosti"
 
-#: src/libnm-core-impl/nm-setting-bond.c:1146
+#: src/libnm-core-impl/nm-setting-bond.c:1156
 #, c-format
 msgid "%s requires bond mode \"%s\""
 msgstr "%s zahteva način povezave »%s«"
 
-#: src/libnm-core-impl/nm-setting-bond.c:1159
+#: src/libnm-core-impl/nm-setting-bond.c:1169
 #, c-format
 msgid "%s requires xmit_hash_policy \"vlan+srcmac\""
 msgstr "%s zahteva xmit_hash_policy »vlan+srcmac«"
 
-#: src/libnm-core-impl/nm-setting-bond.c:1182
+#: src/libnm-core-impl/nm-setting-bond.c:1192
 #, c-format
 msgid "'%s' option should be string"
 msgstr "Možnost »%s« mora biti niz"
 
-#: src/libnm-core-impl/nm-setting-bond.c:1195
+#: src/libnm-core-impl/nm-setting-bond.c:1205
 #, c-format
 msgid "'%s' option is not valid with mode '%s'"
 msgstr "Možnost »%s« ni veljavna v načinu »%s«"
@@ -2534,89 +2547,89 @@ msgstr "pravilo je neveljavno: %s"
 msgid "invalid address family"
 msgstr "neveljavna družina naslovov"
 
-#: src/libnm-core-impl/nm-setting-ip-config.c:5134
+#: src/libnm-core-impl/nm-setting-ip-config.c:5137
 #, c-format
 msgid "rule #%u is invalid: %s"
 msgstr "pravilo #%u je neveljavno: %s"
 
-#: src/libnm-core-impl/nm-setting-ip-config.c:5662
+#: src/libnm-core-impl/nm-setting-ip-config.c:5665
 #, c-format
 msgid "%u. DNS server address is invalid: %s"
 msgstr "%u. Naslov strežnika DNS je neveljaven: %s"
 
-#: src/libnm-core-impl/nm-setting-ip-config.c:5685
+#: src/libnm-core-impl/nm-setting-ip-config.c:5688
 #, c-format
 msgid "DNS search domain '%s' is invalid"
 msgstr "Iskalna domena DNS »%s« je neveljavna"
 
-#: src/libnm-core-impl/nm-setting-ip-config.c:5705
+#: src/libnm-core-impl/nm-setting-ip-config.c:5708
 #, c-format
 msgid "%d. IP address is invalid"
 msgstr "%d. naslov IP je neveljaven"
 
-#: src/libnm-core-impl/nm-setting-ip-config.c:5720
+#: src/libnm-core-impl/nm-setting-ip-config.c:5723
 #, c-format
 msgid "%d. IP address has 'label' property with invalid type"
 msgstr "%d. naslov IP ima lastnost »label« z neveljavno vrsto"
 
-#: src/libnm-core-impl/nm-setting-ip-config.c:5732
+#: src/libnm-core-impl/nm-setting-ip-config.c:5735
 #, c-format
 msgid "%d. IP address has invalid label '%s'"
 msgstr "%d. Naslov IP ima neveljavno oznako »%s«"
 
-#: src/libnm-core-impl/nm-setting-ip-config.c:5750
+#: src/libnm-core-impl/nm-setting-ip-config.c:5753
 msgid "gateway cannot be set if there are no addresses configured"
 msgstr "prehoda ni mogoče nastaviti, če ni nastavljenih naslovov"
 
-#: src/libnm-core-impl/nm-setting-ip-config.c:5762
+#: src/libnm-core-impl/nm-setting-ip-config.c:5765
 msgid "gateway is invalid"
 msgstr "prehod je neveljaven"
 
-#: src/libnm-core-impl/nm-setting-ip-config.c:5780
+#: src/libnm-core-impl/nm-setting-ip-config.c:5783
 #, c-format
 msgid "%d. route is invalid"
 msgstr "%d. pot je neveljavna"
 
-#: src/libnm-core-impl/nm-setting-ip-config.c:5793
+#: src/libnm-core-impl/nm-setting-ip-config.c:5796
 #, c-format
 msgid "invalid attribute: %s"
 msgstr "neveljaven atribut: %s"
 
-#: src/libnm-core-impl/nm-setting-ip-config.c:5813
+#: src/libnm-core-impl/nm-setting-ip-config.c:5816
 #, c-format
 msgid "%u. rule has wrong address-family"
 msgstr "%u. pravilo ima napačen address-family"
 
-#: src/libnm-core-impl/nm-setting-ip-config.c:5825
+#: src/libnm-core-impl/nm-setting-ip-config.c:5828
 #, c-format
 msgid "%u. rule is invalid: %s"
 msgstr "%u. pravilo je neveljavno: %s"
 
-#: src/libnm-core-impl/nm-setting-ip-config.c:5841
+#: src/libnm-core-impl/nm-setting-ip-config.c:5844
 #, c-format
 msgid "'%s' is not a valid IAID"
 msgstr "»%s« ni veljaven IAID"
 
-#: src/libnm-core-impl/nm-setting-ip-config.c:5855
+#: src/libnm-core-impl/nm-setting-ip-config.c:5858
 #, c-format
 msgid "the property cannot be set when '%s' is disabled"
 msgstr "lastnosti ni mogoče nastaviti, če je »%s« onemogočeno"
 
-#: src/libnm-core-impl/nm-setting-ip-config.c:5881
+#: src/libnm-core-impl/nm-setting-ip-config.c:5884
 msgid "the property is currently supported only for DHCPv4"
 msgstr "lastnost je trenutno podprta le za DHCPv4"
 
-#: src/libnm-core-impl/nm-setting-ip-config.c:5898
+#: src/libnm-core-impl/nm-setting-ip-config.c:5901
 #, c-format
 msgid "'%s' is not a valid IP or subnet"
 msgstr "»%s« ni veljaven IP ali podomrežje"
 
-#: src/libnm-core-impl/nm-setting-ip-config.c:5942
+#: src/libnm-core-impl/nm-setting-ip-config.c:5945
 #, c-format
 msgid "a gateway is incompatible with '%s'"
 msgstr "prehod ni združljiv z »%s«"
 
-#: src/libnm-core-impl/nm-setting-ip-config.c:5956
+#: src/libnm-core-impl/nm-setting-ip-config.c:5959
 #, c-format
 msgid "the value is inconsistent with '%s'"
 msgstr "vrednost ni skladna z »%s«"
@@ -4326,8 +4339,8 @@ msgstr "»%s« je dvoumen: %s"
 msgid "missing name, try one of [%s]"
 msgstr "manjkajoče ime, poskusite z enim izmed [%s]"
 
-#: src/libnmc-base/nm-client-utils.c:248 src/nmcli/connections.c:3786
-#: src/nmcli/connections.c:3852
+#: src/libnmc-base/nm-client-utils.c:248 src/nmcli/connections.c:3792
+#: src/nmcli/connections.c:3858
 #, c-format
 msgid "'%s' not among [%s]"
 msgstr "»%s« ni med [%s]"
@@ -4409,19 +4422,19 @@ msgstr "onemogočanje (zunaj)"
 
 #: src/libnmc-base/nm-client-utils.c:342
 #: src/libnmc-setting/nm-meta-setting-desc.c:875
-#: src/libnmc-setting/nm-meta-setting-desc.c:2862 src/nmcli/connections.c:5755
-#: src/nmcli/connections.c:7763 src/nmcli/connections.c:7764
+#: src/libnmc-setting/nm-meta-setting-desc.c:2862 src/nmcli/connections.c:5766
+#: src/nmcli/connections.c:7774 src/nmcli/connections.c:7775
 #: src/nmcli/devices.c:591 src/nmcli/devices.c:597 src/nmcli/devices.c:603
-#: src/nmcli/devices.c:1446 src/nmcli/general.c:92 src/nmcli/utils.h:320
+#: src/nmcli/devices.c:1450 src/nmcli/general.c:92 src/nmcli/utils.h:322
 msgid "yes"
 msgstr "da"
 
 #: src/libnmc-base/nm-client-utils.c:343
 #: src/libnmc-setting/nm-meta-setting-desc.c:875
-#: src/libnmc-setting/nm-meta-setting-desc.c:2865 src/nmcli/connections.c:5754
-#: src/nmcli/connections.c:7763 src/nmcli/connections.c:7764
+#: src/libnmc-setting/nm-meta-setting-desc.c:2865 src/nmcli/connections.c:5765
+#: src/nmcli/connections.c:7774 src/nmcli/connections.c:7775
 #: src/nmcli/devices.c:591 src/nmcli/devices.c:597 src/nmcli/devices.c:603
-#: src/nmcli/devices.c:1446 src/nmcli/general.c:93 src/nmcli/utils.h:320
+#: src/nmcli/devices.c:1450 src/nmcli/general.c:93 src/nmcli/utils.h:322
 msgid "no"
 msgstr "ne"
 
@@ -4438,8 +4451,8 @@ msgid "No reason given"
 msgstr "Razlog ni podan"
 
 #. We should not really come here
-#: src/libnmc-base/nm-client-utils.c:354 src/nmcli/connections.c:3806
-#: src/nmcli/connections.c:3878
+#: src/libnmc-base/nm-client-utils.c:354 src/nmcli/connections.c:3812
+#: src/nmcli/connections.c:3884
 msgid "Unknown error"
 msgstr "Neznana napaka"
 
@@ -4838,33 +4851,34 @@ msgstr "Programske povezave ni bilo mogoče ustvariti"
 msgid "The device disappeared"
 msgstr "Naprava je izginila"
 
-#: src/libnmc-base/nm-client-utils.c:858
+#: src/libnmc-base/nm-client-utils.c:986
 msgid "missing colon for \"<setting>.<property>:<secret>\" format"
 msgstr "manjkajoče dvopičje za obliko zapisa »<setting>.<property>:<secret>«"
 
-#: src/libnmc-base/nm-client-utils.c:875
+#: src/libnmc-base/nm-client-utils.c:1003
 msgid "missing dot for \"<setting>.<property>:<secret>\" format"
 msgstr "manjkajoča pika za obliko zapisa »<setting>.<property>:<secret>«"
 
-#: src/libnmc-base/nm-client-utils.c:881
+#: src/libnmc-base/nm-client-utils.c:1009
 msgid "missing setting for \"<setting>.<property>:<secret>\" format"
 msgstr ""
 "manjkajoča nastavitev za obliko zapisa »<nastavitev>.<lastnost>:<skrivnost>«"
 
-#: src/libnmc-base/nm-client-utils.c:892
+#: src/libnmc-base/nm-client-utils.c:1020
 msgid "missing property for \"<setting>.<property>:<secret>\" format"
 msgstr ""
 "manjkajoča lastnost za obliko zapisa »<nastavitev>.<lastnost>:<skrivnost>«"
 
-#: src/libnmc-base/nm-client-utils.c:902
+#: src/libnmc-base/nm-client-utils.c:1030
 msgid "invalid setting name"
 msgstr "Neveljavno ime nastavitve"
 
-#: src/libnmc-base/nm-client-utils.c:916
+#: src/libnmc-base/nm-client-utils.c:1044
 msgid "property name is not UTF-8"
 msgstr "ime lastnosti ni UTF-8"
 
-#: src/libnmc-base/nm-client-utils.c:933 src/libnmc-base/nm-client-utils.c:939
+#: src/libnmc-base/nm-client-utils.c:1061
+#: src/libnmc-base/nm-client-utils.c:1067
 msgid "secret is not UTF-8"
 msgstr "skrivnost ni UTF-8"
 
@@ -4901,10 +4915,11 @@ msgstr "Uporabniško ime"
 #: src/libnmc-base/nm-secret-agent-simple.c:1016
 #: src/libnmc-base/nm-vpn-helpers.c:144 src/libnmc-base/nm-vpn-helpers.c:148
 #: src/libnmc-base/nm-vpn-helpers.c:154 src/libnmc-base/nm-vpn-helpers.c:159
-#: src/nmcli/devices.c:4778 src/nmtui/nmt-8021x-fields.c:196
+#: src/nmcli/devices.c:4874 src/nmtui/nmt-8021x-fields.c:196
 #: src/nmtui/nmt-8021x-fields.c:536 src/nmtui/nmt-8021x-fields.c:642
 #: src/nmtui/nmt-page-dsl.c:64 src/nmtui/nmt-page-wifi.c:286
 #: src/nmtui/nmt-page-wifi.c:318 src/nmtui/nmt-page-wifi.c:357
+#: src/nmtui/nmt-wifi-qr-dialog.c:150
 msgid "Password"
 msgstr "Geslo"
 
@@ -5096,12 +5111,12 @@ msgstr "izstopil na signal %d"
 msgid "insufficent secrets returned"
 msgstr "vrnjene so nezadostne skrivnosti"
 
-#: src/libnmc-setting/nm-meta-setting-access.c:501
+#: src/libnmc-setting/nm-meta-setting-access.c:520
 #, c-format
 msgid "field '%s' has to be alone"
 msgstr "polje »%s« mora biti samostojno."
 
-#: src/libnmc-setting/nm-meta-setting-access.c:523
+#: src/libnmc-setting/nm-meta-setting-access.c:542
 #, c-format
 msgid "invalid field '%s%s%s%s%s'; %s%s%s"
 msgstr "neveljavno polje »%s%s%s%s%s«; %s%s%s"
@@ -5119,8 +5134,8 @@ msgstr "neveljaven naslov IP: %s"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:294
 msgid ""
-"The valid syntax is: 'ip[/prefix] [next-hop] [metric] [attribute=val]... [,"
-"ip[/prefix] ...]'"
+"The valid syntax is: 'ip[/prefix] [next-hop] [metric] [attribute=val]... "
+"[,ip[/prefix] ...]'"
 msgstr ""
 "Veljavna skladnja: 'ip[/predpona] [naslednji-skok] [metrika] "
 "[atribut=vred]... [,ip[/predpona] …]’"
@@ -5430,8 +5445,8 @@ msgstr ""
 "Veljavna skladnja je: '[root | parent <ročica>] [handle <ročica>] <vrsta>'"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:3848
-msgid "The valid syntax is: '<value>' or '<start>-<end>"
-msgstr "Veljavna skladnja je: '<vrednonst>' ali '<začetek>-<konec>’"
+msgid "The valid syntax is: '<value>' or '<start>-<end>'"
+msgstr "Veljavna skladnja je: '<vrednost>' ali '<začetek>-<konec>'"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:3878
 msgid "The valid syntax is: '<vid>[-<vid>] [pvid] [untagged]'"
@@ -5492,11 +5507,11 @@ msgstr "Indeks ključa WEP nastavljen na »%d«"
 msgid "'%s' is not compatible with '%s' type, please change or delete the key."
 msgstr "»%s« ni združljivo z vrsto \"%s\", spremenite ali izbrišite ključ."
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4516 src/nmcli/utils.h:326
+#: src/libnmc-setting/nm-meta-setting-desc.c:4516 src/nmcli/utils.h:328
 msgid "on"
 msgstr "omogočeno"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4516 src/nmcli/utils.h:326
+#: src/libnmc-setting/nm-meta-setting-desc.c:4516 src/nmcli/utils.h:328
 msgid "off"
 msgstr "onemogočeno"
 
@@ -5543,7 +5558,7 @@ msgstr "Hitrost LACP (počasna/hitra)"
 #. * that the actual type is (guint32(*)(type *)).
 #: src/libnmc-setting/nm-meta-setting-desc.c:4931
 msgid ""
-"nmcli can accepts both direct JSON configuration data and a file name "
+"nmcli can accept both direct JSON configuration data and a file name "
 "containing the configuration. In the latter case the file is read and the "
 "contents is put into this property.\n"
 "\n"
@@ -5557,7 +5572,7 @@ msgstr ""
 "\n"
 "Primeri: set team.config { \"device\": \"team0\", \"runner\": {\"name\": "
 "\"roundrobin\"}, \"ports\": {\"eth1\": {}, \"eth2\": {}} }\n"
-"          nastavite team.config /etc/my-team.conf\n"
+"          Set team.config /etc/my-team.conf\n"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:4939
 msgid ""
@@ -5938,8 +5953,8 @@ msgid ""
 "Missing next-hop is regarded as \"::\".\n"
 "Missing metric means default (NM/kernel will set a default value).\n"
 "\n"
-"Examples: 2001:db8:beef:2::/64 2001:db8:beef::2, 2001:db8:beef:3::/64 2001:"
-"db8:beef::3 2\n"
+"Examples: 2001:db8:beef:2::/64 2001:db8:beef::2, 2001:db8:beef:3::/64 "
+"2001:db8:beef::3 2\n"
 "          abbe::/64 55\n"
 msgstr ""
 "Vnesite seznam poti IPv6, ki je oblikovan kot:\n"
@@ -5950,8 +5965,8 @@ msgstr ""
 "Manjkajoča metrika pomeni privzeto (NM/jedro bo nastavilo privzeto "
 "vrednost).\n"
 "\n"
-"Primeri: 2001:db8:beef:2::/64 2001:db8:beef::2, 2001:db8:beef:3::/64 2001:"
-"db8:beef::3 2\n"
+"Primeri: 2001:db8:beef:2::/64 2001:db8:beef::2, 2001:db8:beef:3::/64 "
+"2001:db8:beef::3 2\n"
 "          abbe::/64 55\n"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:6851
@@ -6004,6 +6019,7 @@ msgstr "Tap"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:7367
 #: src/libnmc-setting/nm-meta-setting-desc.c:8565 src/nmtui/nmt-page-wifi.c:215
+#: src/nmtui/nmt-wifi-qr-dialog.c:143
 msgid "SSID"
 msgstr "SSID"
 
@@ -6479,11 +6495,12 @@ msgstr ""
 "tekmuje z že aktivnim profilom. Upoštevajte, da samodejna povezava ni "
 "implementirana za profile VPN. Oglejte si »sekundarne« kot alternativo za "
 "samodejno povezovanje profilov VPN. Če je več profilov pripravljenih za "
-"samodejno povezavo na isti napravi, je izbran tisti z boljšo »connection."
-"autoconnect-priority«. Če so prednostne naloge enake, se aktivira nazadnje "
-"povezani profil. Če profili prej niso bili povezani ali je njihov "
-"»connection.timestamp« enak, je izbira nedoločena. Odvisno od »connection."
-"multi-connect« se lahko profil (samodejno) poveže samo enkrat ali večkrat."
+"samodejno povezavo na isti napravi, je izbran tisti z boljšo "
+"»connection.autoconnect-priority«. Če so prednostne naloge enake, se "
+"aktivira nazadnje povezani profil. Če profili prej niso bili povezani ali je "
+"njihov »connection.timestamp« enak, je izbira nedoločena. Odvisno od "
+"»connection.multi-connect« se lahko profil (samodejno) poveže samo enkrat "
+"ali večkrat."
 
 #: src/libnmc-setting/settings-docs.h.in:5
 msgid ""
@@ -6716,8 +6733,8 @@ msgstr ""
 "večvrstnega oddajanja (LLMNR). LLMNR je protokol, ki temelji na obliki "
 "paketa DNS (Domain Name System), ki gostiteljem IPv4 in IPv6 omogoča "
 "razreševanje imen za gostitelje na isti krajevni povezavi. Dovoljene "
-"vrednosti so: »yes« (2) registriraj ime gostitelja in razreši povezavo, "
-"»no« (0) onemogoči LLMNR za vmesnik, »resolve« (1) ne registriraj imena "
+"vrednosti so: »yes« (2) registriraj ime gostitelja in razreši povezavo, »no« "
+"(0) onemogoči LLMNR za vmesnik, »resolve« (1) ne registriraj imena "
 "gostitelja, vendar dovoli razreševanje imen gostiteljev LLMNR. Če ni "
 "določeno, je »default« na koncu odvisen od vstavka DNS (kar za systemd-"
 "resolved trenutno pomeni »yes«). Ta funkcija zahteva vstavek, ki podpira "
@@ -6735,8 +6752,8 @@ msgstr ""
 
 #: src/libnmc-setting/settings-docs.h.in:22
 msgid ""
-"Whether mDNS is enabled for the connection. The permitted values are: \"yes"
-"\" (2) register hostname and resolving for the connection, \"no\" (0) "
+"Whether mDNS is enabled for the connection. The permitted values are: "
+"\"yes\" (2) register hostname and resolving for the connection, \"no\" (0) "
 "disable mDNS for the interface, \"resolve\" (1) do not register hostname but "
 "allow resolving of mDNS host names and \"default\" (-1) to allow lookup of a "
 "global default in NetworkManager.conf. If unspecified, \"default\" "
@@ -6785,9 +6802,9 @@ msgid ""
 "route (0.0.0.0/0 or ::/0) in the main routing table. The flag \"also-without-"
 "default-route\" (0x8) can override that. When MPTCP handling is enabled then "
 "endpoints are configured with the specified address flags \"signal\" (0x10), "
-"\"subflow\" (0x20), \"backup\" (0x40), \"fullmesh\" (0x80), \"laminar"
-"\" (0x100). See ip-mptcp(8) manual for additional information about the "
-"flags. If the flags are zero (0x0), the global connection default from "
+"\"subflow\" (0x20), \"backup\" (0x40), \"fullmesh\" (0x80), \"laminar\" "
+"(0x100). See ip-mptcp(8) manual for additional information about the flags. "
+"If the flags are zero (0x0), the global connection default from "
 "NetworkManager.conf is honored. If still unspecified, the fallback is "
 "\"enabled,subflow\". Note that this means that MPTCP is by default done "
 "depending on the \"/proc/sys/net/mptcp/enabled\" sysctl. NetworkManager does "
@@ -6806,13 +6823,13 @@ msgstr ""
 "edinstveni krajevni naslovi IPv6 (ULA, fc00::/7) in naslovi razširitev "
 "zasebnosti IPv6 (rfc3041, ipv6.ip6-privacy) izključeni iz prilagoditve kot "
 "končne točke. Če je »disabled« (0x1), je obdelava MPTCP za vmesnik "
-"onemogočena in nobena končna točka ni registrirana. Zastavica "
-"»enabled« (0x2) pomeni, da je omogočena obdelava MPTCP. Ta zastavico je "
-"mogoče sklepati tudi iz prisotnosti drugih zastav. Tudi če je omogočeno, bo "
-"ravnanje z MPTCP privzeto še vedno onemogočeno, razen če je vklopljen sysctl "
-"»/proc/sys/net/mptcp/enabled«. NetworkManager ne spremeni sysctl in to je "
-"odvisno od skrbnika ali distribucije. Če želite prilagoditi končne točke, "
-"tudi če je sysctl onemogočen, lahko uporabite zastavico »also-without-"
+"onemogočena in nobena končna točka ni registrirana. Zastavica »enabled« "
+"(0x2) pomeni, da je omogočena obdelava MPTCP. Ta zastavico je mogoče "
+"sklepati tudi iz prisotnosti drugih zastav. Tudi če je omogočeno, bo "
+"ravnanje z MPTCP privzeto še vedno onemogočeno, razen če je vklopljen "
+"sysctl »/proc/sys/net/mptcp/enabled«. NetworkManager ne spremeni sysctl in "
+"to je odvisno od skrbnika ali distribucije. Če želite prilagoditi končne "
+"točke, tudi če je sysctl onemogočen, lahko uporabite zastavico »also-without-"
 "sysctl« (0x4). V tem primeru NetworkManager ne gleda na sysctl in prilagodi "
 "končne točke ne glede na to. Tudi če je omogočeno, bo NetworkManager "
 "konfiguriral končne točke MPTCP samo za določeno družino naslovov, če je v "
@@ -6938,18 +6955,18 @@ msgid ""
 "activation time. Currently, supported are \"${CONNECTION}\", \"${DEVICE}\", "
 "\"${MAC}\", \"${NETWORK_SSID}\", \"${BOOT}\", \"${RANDOM}\".  These "
 "effectively create unique IDs per-connection, per-device, per-SSID, per-"
-"boot, or every time.  The \"${CONNECTION}\" uses the profile's connection."
-"uuid, the \"${DEVICE}\" uses the interface name of the device and \"${MAC}\" "
-"the permanent MAC address of the device. \"${NETWORK_SSID}\" uses the SSID "
-"for Wi-Fi networks and falls back to \"${CONNECTION}\" on other networks. "
-"Any unrecognized patterns following '$' are treated verbatim, however are "
-"reserved for future use. You are thus advised to avoid '$' or escape it as "
-"\"$$\".  For example, set it to \"${CONNECTION}-${BOOT}-${DEVICE}\" to "
-"create a unique id for this connection that changes with every reboot and "
-"differs depending on the interface where the profile activates. If the value "
-"is unset, a global connection default is consulted. If the value is still "
-"unset, the default is \"default${CONNECTION}\" go generate an ID unique per "
-"connection profile."
+"boot, or every time.  The \"${CONNECTION}\" uses the profile's "
+"connection.uuid, the \"${DEVICE}\" uses the interface name of the device and "
+"\"${MAC}\" the permanent MAC address of the device. \"${NETWORK_SSID}\" uses "
+"the SSID for Wi-Fi networks and falls back to \"${CONNECTION}\" on other "
+"networks. Any unrecognized patterns following '$' are treated verbatim, "
+"however are reserved for future use. You are thus advised to avoid '$' or "
+"escape it as \"$$\".  For example, set it to \"${CONNECTION}-${BOOT}-$"
+"{DEVICE}\" to create a unique id for this connection that changes with every "
+"reboot and differs depending on the interface where the profile activates. "
+"If the value is unset, a global connection default is consulted. If the "
+"value is still unset, the default is \"default${CONNECTION}\" go generate an "
+"ID unique per connection profile."
 msgstr ""
 "To predstavlja identiteto povezave, ki se uporablja za različne namene. "
 "Omogoča prilagajanje več profilov za skupno rabo identitete. Tudi stable-id "
@@ -6959,9 +6976,9 @@ msgstr ""
 "tudi za sejanje ustvarjenega kloniranega naslova MAC za ethernet.cloned-mac-"
 "address=stable in wifi.cloned-mac-address=stable. Uporablja se tudi za "
 "izpeljavo identifikatorja odjemalca DHCP z ipv4.dhcp-client-id=stable, "
-"DHCPv6 DUID z ipv6.dhcp-duid=stable-[llt,ll,uuid] in DHCP IAID z ipv4."
-"iaid=stable in ipv6.iaid=stable. Upoštevajte, da so glede na kontekst, v "
-"katerem se uporablja, v algoritem za generiranje vključeni tudi drugi "
+"DHCPv6 DUID z ipv6.dhcp-duid=stable-[llt,ll,uuid] in DHCP IAID z "
+"ipv4.iaid=stable in ipv6.iaid=stable. Upoštevajte, da so glede na kontekst, "
+"v katerem se uporablja, v algoritem za generiranje vključeni tudi drugi "
 "parametri. Primer: običajno je vključen tudi ključ za posameznega "
 "gostitelja, tako da različni sistemi na koncu ustvarijo različne ID-je. Ali "
 "pa: z ipv6.addr-gen-mode=stable-privacy je vključeno tudi ime naprave, tako "
@@ -6969,9 +6986,9 @@ msgstr ""
 "gostitelja je identiteta vašega računalnika in je shranjen v /var/lib/"
 "NetworkManager/secret_key. Glejte priročnik NetworkManager(8) o skrivnem "
 "ključu in identiteti gostitelja. Znak »$« je obravnavan kot poseben za "
-"izvajanje dinamičnih zamenjav v času aktiviranja. Trenutno so podprti "
-"»${CONNECTION}\", »${DEVICE}«, »${MAC}«, »${NETWORK_SSID}«, »${BOOT}«, "
-"»${RANDOM}«. Ti učinkovito ustvarjajo edinstvene ID-je na povezavo, napravo, "
+"izvajanje dinamičnih zamenjav v času aktiviranja. Trenutno so podprti »$"
+"{CONNECTION}\", »${DEVICE}«, »${MAC}«, »${NETWORK_SSID}«, »${BOOT}«, »$"
+"{RANDOM}«. Ti učinkovito ustvarjajo edinstvene ID-je na povezavo, napravo, "
 "SSID, zagon ali vsakokrat. »${CONNECTION}« uporablja connection.uuid "
 "profila, »${DEVICE}« uporablja ime vmesnika naprave in »${MAC}« trajni "
 "naslov MAC naprave. »${NETWORK_SSID}« uporablja SSID za omrežja Wi-Fi, v "
@@ -7216,8 +7233,8 @@ msgid ""
 "the allowed combinations."
 msgstr ""
 "Dovoljena metoda EAP, ki se uporablja pri preverjanju pristnosti v omrežju s "
-"standardom 802.1x.  Veljavne metode so: \"leap\", \"md5\", \"tls\", \"peap"
-"\", \"ttls\", \"pwd\" in \"fast\".  Vsaka metoda zahteva drugačno "
+"standardom 802.1x.  Veljavne metode so: \"leap\", \"md5\", \"tls\", "
+"\"peap\", \"ttls\", \"pwd\" in \"fast\".  Vsaka metoda zahteva drugačno "
 "prilagoditev z uporabo lastnosti te nastavitve; za dovoljene kombinacije "
 "glejte dokumentacijo wpa_supplicant."
 
@@ -7312,17 +7329,17 @@ msgstr ""
 msgid ""
 "Enables or disables in-line provisioning of EAP-FAST credentials when FAST "
 "is specified as the EAP method in the \"eap\" property. Recognized values "
-"are \"0\" (disabled), \"1\" (allow unauthenticated provisioning), "
-"\"2\" (allow authenticated provisioning), and \"3\" (allow both "
-"authenticated and unauthenticated provisioning).  See the wpa_supplicant "
-"documentation for more details."
+"are \"0\" (disabled), \"1\" (allow unauthenticated provisioning), \"2\" "
+"(allow authenticated provisioning), and \"3\" (allow both authenticated and "
+"unauthenticated provisioning).  See the wpa_supplicant documentation for "
+"more details."
 msgstr ""
 "Omogoči ali onemogoči omogočanje poverilnic EAP-FAST v vrstici, ko je FAST "
-"določen kot metoda EAP v lastnosti »eap«. Priznane vrednosti so "
-"»0« (onemogočeno), »1« (dovoli omogočanje brez preverjanja pristnosti), "
-"»2« (dovoli omogočanje overjene pristnosti) in »3« (dovoli omogočanje "
-"uporabe s preverjeno pristnostjo in brez preverjanja pristnosti). Za "
-"podrobnosti si oglejte dokumentacijo wpa_supplicant."
+"določen kot metoda EAP v lastnosti »eap«. Priznane vrednosti so »0« "
+"(onemogočeno), »1« (dovoli omogočanje brez preverjanja pristnosti), »2« "
+"(dovoli omogočanje overjene pristnosti) in »3« (dovoli omogočanje uporabe s "
+"preverjeno pristnostjo in brez preverjanja pristnosti). Za podrobnosti si "
+"oglejte dokumentacijo wpa_supplicant."
 
 #: src/libnmc-setting/settings-docs.h.in:63
 msgid ""
@@ -7412,8 +7429,8 @@ msgstr ""
 "Vsebuje pot do potrdila CA »faze 2«, če ga uporablja metoda EAP, določena v "
 "lastnostih 802-1x.phase2-auth ali 802-1x.phase2-autheap. To lastnost lahko "
 "prekličete, tudi če metoda EAP podpira potrdila CA, vendar to omogoča napade "
-"s posrednikom in NI priporočljivo. Upoštevajte, da bo omogočanje 802-1x."
-"system-ca-certs preglasilo to nastavitev za uporabo vgrajene poti, če "
+"s posrednikom in NI priporočljivo. Upoštevajte, da bo omogočanje "
+"802-1x.system-ca-certs preglasilo to nastavitev za uporabo vgrajene poti, če "
 "vgrajena pot ni mapa."
 
 #: src/libnmc-setting/settings-docs.h.in:69
@@ -7437,9 +7454,9 @@ msgstr ""
 msgid ""
 "UTF-8 encoded path to a directory containing PEM or DER formatted "
 "certificates to be added to the verification chain in addition to the "
-"certificate specified in the \"phase2-ca-cert\" property. If NMSetting8021x:"
-"system-ca-certs is enabled and the built-in CA path is an existing "
-"directory, then this setting is ignored."
+"certificate specified in the \"phase2-ca-cert\" property. If "
+"NMSetting8021x:system-ca-certs is enabled and the built-in CA path is an "
+"existing directory, then this setting is ignored."
 msgstr ""
 "Kodirana pot UTF-8 do mape, ki vsebuje potrdila v obliki PEM ali DER, ki se "
 "doda v verifikacijsko verigo poleg potrdila, določenega v lastnosti »phase2-"
@@ -7592,11 +7609,11 @@ msgid ""
 "When TRUE, overrides the \"ca-path\" and \"phase2-ca-path\" properties using "
 "the system CA directory specified at configure time with the --system-ca-"
 "path switch.  The certificates in this directory are added to the "
-"verification chain in addition to any certificates specified by the \"ca-cert"
-"\" and \"phase2-ca-cert\" properties. If the path provided with --system-ca-"
-"path is rather a file name (bundle of trusted CA certificates), it overrides "
-"\"ca-cert\" and \"phase2-ca-cert\" properties instead (sets ca_cert/ca_cert2 "
-"options for wpa_supplicant)."
+"verification chain in addition to any certificates specified by the \"ca-"
+"cert\" and \"phase2-ca-cert\" properties. If the path provided with --system-"
+"ca-path is rather a file name (bundle of trusted CA certificates), it "
+"overrides \"ca-cert\" and \"phase2-ca-cert\" properties instead (sets "
+"ca_cert/ca_cert2 options for wpa_supplicant)."
 msgstr ""
 "Če je TRUE, preglasi lastnosti »ca-path« in »phase2-ca-path« z uporabo mape "
 "sistemskega CA, ki je določen v času prilagoditve s stikalom --system-ca-"
@@ -7672,8 +7689,8 @@ msgstr ""
 "Če je navedeno, je naslov MAC skupine večvrstnega oddajanja, ki jo ta most "
 "uporablja za STP. Naslov mora biti krajevni naslov povezave v standardnem "
 "formatu naslova Ethernet MAC, tj. naslov v obliki 01:80:C2:00:00:0X, pri "
-"čemer je X v [0, 4..F]. Če ni določeno, je privzeta vrednost 01:80:"
-"C2:00:00:00."
+"čemer je X v [0, 4..F]. Če ni določeno, je privzeta vrednost "
+"01:80:C2:00:00:00."
 
 #: src/libnmc-setting/settings-docs.h.in:101
 msgid ""
@@ -7697,10 +7714,10 @@ msgstr "Pozdravni čas protokola Spanning Tree Protocol (STP) v sekundah."
 #: src/libnmc-setting/settings-docs.h.in:103
 msgid ""
 "If specified, the MAC address of bridge. When creating a new bridge, this "
-"MAC address will be set. If this field is left unspecified, the \"ethernet."
-"cloned-mac-address\" is referred instead to generate the initial MAC "
-"address. Note that setting \"ethernet.cloned-mac-address\" anyway overwrites "
-"the MAC address of the bridge later while activating the bridge."
+"MAC address will be set. If this field is left unspecified, the "
+"\"ethernet.cloned-mac-address\" is referred instead to generate the initial "
+"MAC address. Note that setting \"ethernet.cloned-mac-address\" anyway "
+"overwrites the MAC address of the bridge later while activating the bridge."
 msgstr ""
 "Naslov MAR mostu, če je naveden. Pri ustvarjanju novega mostu bo nastavljen "
 "ta naslov MAC. Če to polje ni določeno, se namesto tega sklicuje na "
@@ -7953,8 +7970,8 @@ msgstr ""
 #: src/libnmc-setting/settings-docs.h.in:134
 msgid ""
 "Specifies the NMSettingDcbFlags for the DCB FCoE application.  Flags may be "
-"any combination of \"enable\" (0x1), \"advertise\" (0x2), and \"willing"
-"\" (0x4)."
+"any combination of \"enable\" (0x1), \"advertise\" (0x2), and \"willing\" "
+"(0x4)."
 msgstr ""
 "Določa NMSettingDcbFlags za program DCB FCoE.  Zastavice so lahko poljubna "
 "kombinacija \"enable\" (0x1), \"advertise\" (0x2) in \"willing\" (0x4)."
@@ -7982,8 +7999,8 @@ msgstr ""
 #: src/libnmc-setting/settings-docs.h.in:137
 msgid ""
 "Specifies the NMSettingDcbFlags for the DCB FIP application.  Flags may be "
-"any combination of \"enable\" (0x1), \"advertise\" (0x2), and \"willing"
-"\" (0x4)."
+"any combination of \"enable\" (0x1), \"advertise\" (0x2), and \"willing\" "
+"(0x4)."
 msgstr ""
 "Določa NMSettingDcbFlags za program DCB FIP.  Zastavice so lahko poljubna "
 "kombinacija »enable« (0x1), »advertise« (0x2) in »willing« (0x4)."
@@ -8001,8 +8018,8 @@ msgstr ""
 #: src/libnmc-setting/settings-docs.h.in:139
 msgid ""
 "Specifies the NMSettingDcbFlags for the DCB iSCSI application.  Flags may be "
-"any combination of \"enable\" (0x1), \"advertise\" (0x2), and \"willing"
-"\" (0x4)."
+"any combination of \"enable\" (0x1), \"advertise\" (0x2), and \"willing\" "
+"(0x4)."
 msgstr ""
 "Določa NMSettingDcbFlags za program DCB iSCSI. Zastavice so lahko poljubna "
 "kombinacija »enable« (0x1), »advertise« (0x2) in »willing« (0x4)."
@@ -8047,8 +8064,8 @@ msgid ""
 "\"willing\" (0x4)."
 msgstr ""
 "Določa NMSettingDcbFlags za prednostni nadzor pretoka DCB (PFC). Zastavice "
-"so lahko poljubna kombinacija »enable« (0x1), »advertise« (0x2) in "
-"»willing« (0x4)."
+"so lahko poljubna kombinacija »enable« (0x1), »advertise« (0x2) in »willing« "
+"(0x4)."
 
 #: src/libnmc-setting/settings-docs.h.in:144
 msgid ""
@@ -8106,10 +8123,10 @@ msgid ""
 "for this connection. The name can only contain ASCII alphanumeric characters "
 "and '-', '_', '.'. It cannot start with '.'. See the NetworkManager-"
 "dispatcher(8) man page for more details about how to write the device "
-"handler. By setting this property the generic connection becomes \"virtual"
-"\", meaning that it can be activated without an existing device; the device "
-"will be created at the time the connection is started by invoking the device-"
-"handler."
+"handler. By setting this property the generic connection becomes "
+"\"virtual\", meaning that it can be activated without an existing device; "
+"the device will be created at the time the connection is started by invoking "
+"the device-handler."
 msgstr ""
 "Ime rutine za obravnavo naprave, ki bo priklicana za dodajanje in brisanje "
 "naprave za to povezavo. Ime lahko vsebuje samo alfanumerične znake ASCII in "
@@ -8367,8 +8384,8 @@ msgid ""
 "62439-3:2010). \"hsr-2012\" (1) sets the protocol version to HSRv1 (IEC "
 "62439-3:2012)."
 msgstr ""
-"Prilagodi različico protokola, ki se uporablja za vmesnik HSR/PRP. "
-"»default« (-1) nastavi različico protokola na privzeto različico protokola. "
+"Prilagodi različico protokola, ki se uporablja za vmesnik HSR/PRP. »default« "
+"(-1) nastavi različico protokola na privzeto različico protokola. "
 "\"hsr-2010\" (0) nastavi različico protokola na HSRv0 (IEC 62439-3:2010). "
 "\"hsr-2012\" (1) nastavi različico protokola na HSRv1 (IEC 62439-3:2012)."
 
@@ -8391,13 +8408,13 @@ msgstr ""
 msgid ""
 "The InfiniBand p-key to use for this device. A value of -1 means to use the "
 "default p-key (aka \"the p-key at index 0\"). Otherwise, it is a 16-bit "
-"unsigned integer, whose high bit 0x8000 is set if it is a \"full membership"
-"\" p-key. The values 0 and 0x8000 are not allowed. With the p-key set, the "
-"interface name is always \"$parent.$p_key\". Setting \"connection.interface-"
-"name\" to another name is not supported. Note that kernel will internally "
-"always set the full membership bit, although the interface name does not "
-"reflect that. Usually the user would want to configure a full membership p-"
-"key with 0x8000 flag set."
+"unsigned integer, whose high bit 0x8000 is set if it is a \"full "
+"membership\" p-key. The values 0 and 0x8000 are not allowed. With the p-key "
+"set, the interface name is always \"$parent.$p_key\". Setting "
+"\"connection.interface-name\" to another name is not supported. Note that "
+"kernel will internally always set the full membership bit, although the "
+"interface name does not reflect that. Usually the user would want to "
+"configure a full membership p-key with 0x8000 flag set."
 msgstr ""
 "InfiniBand p-tipka, ki jo uporabljate za to napravo. Vrednost -1 pomeni "
 "uporabo privzetega p-ključa (znanega tudi kot »p-ključ pri indeksu 0«). V "
@@ -8473,10 +8490,10 @@ msgstr ""
 "IPv4 in IPv6. Nastavitev »no« (0) popolnoma onemogoči CLAT. »auto« (1) "
 "omogoča CLAT le, kadar je metoda IPv4 »auto« in naprava nima domorodnega "
 "prehoda IPv4. »force« (2) omogoča CLAT tudi, če metoda IPv4 ni »auto« in "
-"tudi če ima naprava domorodni prehod IPv4. Ko je nastavljeno na "
-"»default« (-1), se dejanska vrednost poišče v globalni prilagoditvi; če ni "
-"navedeno, se privzeto nastavi na »no« (0). V prihodnje se bo privzeta "
-"rezervna vrednost spremenila v »auto« (1)."
+"tudi če ima naprava domorodni prehod IPv4. Ko je nastavljeno na »default« "
+"(-1), se dejanska vrednost poišče v globalni prilagoditvi; če ni navedeno, "
+"se privzeto nastavi na »no« (0). V prihodnje se bo privzeta rezervna "
+"vrednost spremenila v »auto« (1)."
 
 #: src/libnmc-setting/settings-docs.h.in:190
 #: src/libnmc-setting/settings-docs.h.in:228
@@ -8485,21 +8502,21 @@ msgid ""
 "IP addresses on the network.  If an address conflict is detected, the "
 "activation will fail. The property is currently implemented only for IPv4. A "
 "zero value means that no duplicate address detection is performed, -1 means "
-"the default value (either the value configured globally in NetworkManger."
-"conf or 200ms).  A value greater than zero is a timeout in milliseconds.  "
-"Note that the time intervals are subject to randomization as per RFC 5227 "
-"and so the actual duration can be between half and the full time specified "
-"in this property."
+"the default value (either the value configured globally in "
+"NetworkManager.conf or 200ms).  A value greater than zero is a timeout in "
+"milliseconds.  Note that the time intervals are subject to randomization as "
+"per RFC 5227 and so the actual duration can be between half and the full "
+"time specified in this property."
 msgstr ""
 "Največja časovna omejitev v milisekundah, ki se uporablja za preverjanje "
 "prisotnosti podvojenih naslovov IP v omrežju.  Če je zaznan spor pri "
 "naslovih, aktiviranje ne bo uspelo. Lastnost je trenutno implementirana samo "
 "za IPv4. Ničelna vrednost pomeni, da se ne izvede zaznavanje podvojenih "
 "naslovov, -1 pomeni privzeto vrednost (bodisi vrednost, ki je globalno "
-"konfigurirana v NetworkManger.conf ali 200ms).  Vrednost, večja od nič, je "
+"prilagojena v NetworkManger.conf ali 200 ms).  Vrednost, večja od nič, je "
 "časovna omejitev v milisekundah.  Upoštevajte, da so časovni intervali "
-"predmet randomizacije v skladu z RFC 5227, zato je dejansko trajanje lahko "
-"med polovico in polnim časom, določenim v tej lastnosti."
+"predmet naključnosti v skladu z RFC 5227, zato je dejansko trajanje lahko "
+"med polovico in polnim časom, določenim s to lastnostjo."
 
 #: src/libnmc-setting/settings-docs.h.in:191
 msgid ""
@@ -8507,28 +8524,26 @@ msgid ""
 "DHCP server may use to customize the DHCP lease and options. When the "
 "property is a hex string ('aa:bb:cc') it is interpreted as a binary client "
 "ID, in which case the first byte is assumed to be the 'type' field as per "
-"RFC 2132 section 9.14 and the remaining bytes may be an hardware address (e."
-"g. '01:xx:xx:xx:xx:xx:xx' where 1 is the Ethernet ARP type and the rest is a "
-"MAC address). If the property is not a hex string it is considered as a non-"
-"hardware-address client ID and the 'type' field is set to 0. The special "
+"RFC 2132 section 9.14 and the remaining bytes may be an hardware address "
+"(e.g. '01:xx:xx:xx:xx:xx:xx' where 1 is the Ethernet ARP type and the rest "
+"is a MAC address). If the property is not a hex string it is considered as a "
+"non-hardware-address client ID and the 'type' field is set to 0. The special "
 "values \"mac\" and \"perm-mac\" are supported, which use the current or "
 "permanent MAC address of the device to generate a client identifier with "
 "type ethernet (01). Currently, these options only work for ethernet type of "
 "links. The special value \"ipv6-duid\" uses the DUID from \"ipv6.dhcp-duid\" "
-"property as an RFC4361-compliant client identifier. As IAID it uses \"ipv4."
-"dhcp-iaid\" and falls back to \"ipv6.dhcp-iaid\" if unset. The special value "
-"\"duid\" generates a RFC4361-compliant client identifier based on \"ipv4."
-"dhcp-iaid\" and uses a DUID generated by hashing /etc/machine-id. The "
-"special value \"stable\" is supported to generate a type 0 client identifier "
-"based on the stable-id (see connection.stable-id) and a per-host key. If you "
-"set the stable-id, you may want to include the \"${DEVICE}\" or \"${MAC}\" "
-"specifier to get a per-device key. The special value \"none\" prevents any "
-"client identifier from being sent. Note that this is normally not "
-"recommended. If unset, a globally configured default from NetworkManager."
-"conf is used. If still unset, the default depends on the DHCP plugin. The "
-"internal dhcp client will default to \"mac\" and the dhclient plugin will "
-"try to use one from its config file if present, or won't sent any client-id "
-"otherwise."
+"property as an RFC4361-compliant client identifier. As IAID it uses "
+"\"ipv4.dhcp-iaid\" and falls back to \"ipv6.dhcp-iaid\" if unset. The "
+"special value \"duid\" generates a RFC4361-compliant client identifier based "
+"on \"ipv4.dhcp-iaid\" and uses a DUID generated by hashing /etc/machine-id. "
+"The special value \"stable\" is supported to generate a type 0 client "
+"identifier based on the stable-id (see connection.stable-id) and a per-host "
+"key. If you set the stable-id, you may want to include the \"${DEVICE}\" or "
+"\"${MAC}\" specifier to get a per-device key. The special value \"none\" "
+"prevents any client identifier from being sent. Note that this is normally "
+"not recommended. If unset, a globally configured default from "
+"NetworkManager.conf is used. If still unset, internal dhcp client will "
+"default to \"mac\"."
 msgstr ""
 "Niz, poslan strežniku DHCP za identifikacijo krajevnega računalnika, ki ga "
 "strežnik DHCP lahko uporabi za prilagajanje najema in možnosti DHCP. Kadar "
@@ -8542,22 +8557,22 @@ msgstr ""
 "trajni naslov MAC naprave za ustvarjanje identifikatorja odjemalca z vrsto "
 "ethernet (01). Trenutno te možnosti delujejo samo za ethernetne povezave. "
 "Posebna vrednost »ipv6-duid« uporablja DUID iz lastnosti »ipv6.dhcp-duid« "
-"kot identifikator odjemalca, skladen s RFC4361. Kot IAID uporablja »ipv4."
-"dhcp-iaid« in se vrne na »ipv6.dhcp-iaid«, če ni nastavljen. Posebna "
+"kot identifikator odjemalca, skladen s RFC4361. Kot IAID uporablja "
+"»ipv4.dhcp-iaid« in se vrne na »ipv6.dhcp-iaid«, če ni nastavljen. Posebna "
 "vrednost »duid« ustvari identifikator odjemalca, skladen s RFC4361, ki "
 "temelji na »ipv4.dhcp-iaid« in uporabi DUID, ki ga ustvari zgoščevanje /etc/"
 "machine-id. Posebna vrednost »stable« je podprta za ustvarjanje "
-"identifikatorja odjemalca tipa 0, ki temelji na stable-id (glejte connection."
-"stable-id) in ključu na gostitelja. Če nastavite stabilni id, boste morda "
-"želeli vključiti specifikacijo »${DEVICE}« ali »${MAC}«, da dobite ključ za "
-"posamezno napravo. Posebna vrednost »none« preprečuje pošiljanje "
-"identifikatorja odjemalca. Upoštevajte, da to običajno ni priporočljivo. Če "
-"ni nastavljena, se uporabi globalno prilagojena privzeta nastavitev iz "
-"NetworkManager.conf. Če še vedno ni nastavljena, je privzeta nastavitev "
-"odvisna od vtičnika DHCP. Notranji odjemalec dhcp bo privzeto »mac« in "
-"vtičnik dhclient bo poskušal uporabiti enega iz svoje prilagoditvene "
-"datoteke, če je prisoten, ali pa drugače ne bo poslal nobenega ID-ja "
-"odjemalca."
+"identifikatorja odjemalca tipa 0, ki temelji na stable-id (glejte "
+"connection.stable-id) in ključu na gostitelja. Če nastavite stabilni id, "
+"boste morda želeli vključiti specifikacijo »${DEVICE}« ali »${MAC}«, da "
+"dobite ključ za posamezno napravo. Posebna vrednost »none« preprečuje "
+"pošiljanje identifikatorja odjemalca. Upoštevajte, da to običajno ni "
+"priporočljivo. Če ni nastavljena, se uporabi globalno prilagojena privzeta "
+"nastavitev iz NetworkManager.conf. Če še vedno ni nastavljena, je privzeta "
+"nastavitev odvisna od vtičnika DHCP. Notranji odjemalec dhcp bo privzeto "
+"»mac« in vtičnik dhclient bo poskušal uporabiti enega iz svoje "
+"prilagoditvene datoteke, če je prisoten, ali pa drugače ne bo poslal "
+"nobenega ID-ja odjemalca."
 
 #: src/libnmc-setting/settings-docs.h.in:192
 #: src/libnmc-setting/settings-docs.h.in:229
@@ -8615,11 +8630,11 @@ msgstr ""
 "Podprte zastavice FQDN so »fqdn-serv-update« (0x1), »fqdn-encoded« (0x2) in "
 "»fqdn-no-update« (0x4). Če zastavica FQDN ni nastavljena in je nastavljena "
 "»fqdn-clear-flags« (0x8), možnost DHCP FQDN ne bo vsebovala zastavice. V "
-"nasprotnem primeru, če zastavica FQDN ni nastavljena in »fqdn-clear-"
-"flags« (0x8) ni nastavljena, so v zahtevi nastavljene standardne zastavice "
-"FQDN: »fqdn-serv-update« (0x1), »fqdn-encoded« (0x2) za IPv4 in »fqdn-serv-"
-"update« (0x1) za IPv6. Ko je ta lastnost nastavljena na privzeto vrednost "
-"»none« (0x0), se v prilagoditvi upravitelja omrežja poišče globalna privzeta "
+"nasprotnem primeru, če zastavica FQDN ni nastavljena in »fqdn-clear-flags« "
+"(0x8) ni nastavljena, so v zahtevi nastavljene standardne zastavice FQDN: "
+"»fqdn-serv-update« (0x1), »fqdn-encoded« (0x2) za IPv4 in »fqdn-serv-update« "
+"(0x1) za IPv6. Ko je ta lastnost nastavljena na privzeto vrednost »none« "
+"(0x0), se v prilagoditvi upravitelja omrežja poišče globalna privzeta "
 "vrednost. Če ta vrednost ni nastavljena ali je »none« (0x0), se v zahteve "
 "DHCP pošljejo standardne zastavice FQDN, opisane zgoraj."
 
@@ -8629,19 +8644,18 @@ msgid ""
 "A string containing the \"Identity Association Identifier\" (IAID) used by "
 "the DHCP client. The string can be a 32-bit number (either decimal, "
 "hexadecimal or as colon separated hexadecimal numbers). Alternatively it can "
-"be set to the special values \"mac\", \"perm-mac\", \"ifname\" or \"stable"
-"\". When set to \"mac\" (or \"perm-mac\"), the last 4 bytes of the current "
-"(or permanent) MAC address are used as IAID. When set to \"ifname\", the "
-"IAID is computed by hashing the interface name. The special value \"stable\" "
-"can be used to generate an IAID based on the stable-id (see connection."
-"stable-id), a per-host key and the interface name. When the property is "
-"unset, the value from global configuration is used; if no global default is "
-"set then the IAID is assumed to be \"ifname\". For DHCPv4, the IAID is only "
-"used with \"ipv4.dhcp-client-id\" values \"duid\" and \"ipv6-duid\" to "
-"generate the client-id. For DHCPv6, note that at the moment this property is "
-"only supported by the \"internal\" DHCPv6 plugin. The \"dhclient\" DHCPv6 "
-"plugin always derives the IAID from the MAC address. The actually used "
-"DHCPv6 IAID for a currently activated interface is exposed in the lease "
+"be set to the special values \"mac\", \"perm-mac\", \"ifname\" or "
+"\"stable\". When set to \"mac\" (or \"perm-mac\"), the last 4 bytes of the "
+"current (or permanent) MAC address are used as IAID. When set to \"ifname\", "
+"the IAID is computed by hashing the interface name. The special value "
+"\"stable\" can be used to generate an IAID based on the stable-id (see "
+"connection.stable-id), a per-host key and the interface name. When the "
+"property is unset, the value from global configuration is used; if no global "
+"default is set then the IAID is assumed to be \"ifname\". For DHCPv4, the "
+"IAID is only used with \"ipv4.dhcp-client-id\" values \"duid\" and \"ipv6-"
+"duid\" to generate the client-id. For DHCPv6, note that at the moment this "
+"property is only supported by the \"internal\" DHCPv6 plugin. The actually "
+"used DHCPv6 IAID for a currently activated interface is exposed in the lease "
 "information of the device."
 msgstr ""
 "Niz, ki vsebuje »Identity Association Identifier« (IAID), ki ga uporablja "
@@ -8669,15 +8683,15 @@ msgid ""
 "list; if the DHCP server sends the option back, the host stops the DHCP "
 "client for the time interval specified in the option. Enable this feature if "
 "the host supports an IPv6-only mode, i.e. either all applications are IPv6-"
-"only capable or there is a form of CLAT (464XLAT) deployed. If set to \"auto"
-"\" (2), the option is automatically turned on when the IPv6 method is \"auto"
-"\" and the connection profile has ipv4.clat set to \"yes\" or \"auto\". If "
-"these two conditions are met, the host can operate in IPv6-only mode and "
-"therefore it is safe to disable DHCPv4 when the network also supports it. "
-"When set to \"default\" (-1), the actual value is looked up in the global "
-"configuration; if not specified, it defaults to \"auto\" (2). If the "
-"connection has IPv6 method set to \"disabled\", this property does not have "
-"effect and the \"IPv6-Only Preferred\" option is always disabled."
+"only capable or there is a form of CLAT (464XLAT) deployed. If set to "
+"\"auto\" (2), the option is automatically turned on when the IPv6 method is "
+"\"auto\" and the connection profile has ipv4.clat set to \"yes\" or "
+"\"auto\". If these two conditions are met, the host can operate in IPv6-only "
+"mode and therefore it is safe to disable DHCPv4 when the network also "
+"supports it. When set to \"default\" (-1), the actual value is looked up in "
+"the global configuration; if not specified, it defaults to \"auto\" (2). If "
+"the connection has IPv6 method set to \"disabled\", this property does not "
+"have effect and the \"IPv6-Only Preferred\" option is always disabled."
 msgstr ""
 "Nadzira možnost DHCPv6 »Prednostno samo IPv6« (možnost 108 - RFC 8925). Ko "
 "je nastavljen na »yes« (1), gostitelj doda možnost na seznam zahtev za "
@@ -8688,10 +8702,10 @@ msgstr ""
 "»auto« (2), se možnost samodejno vklopi, ko je metoda IPv6 »auto« in ima "
 "profil povezave ipv4.clat nastavljeno na »yes« ali »auto«. Če sta ta pogoja "
 "izpolnjena, lahko gostitelj operira v načinu samo IPv6 in je tako varno "
-"omogočiti DHCPv4, če ga tudi omrežje podpira. Če je nastavljena na "
-"»default« (-1), se dejanska vrednost poišče v globalni prilagoditvi; če ni "
-"določeno, je privzeto »auto« (2). Če je v povezavi metoda IPv6 nastavljena "
-"na »disabled«, ta lastnost ne učinkuje in možnost »Prednostno samo IPv6« je "
+"omogočiti DHCPv4, če ga tudi omrežje podpira. Če je nastavljena na »default« "
+"(-1), se dejanska vrednost poišče v globalni prilagoditvi; če ni določeno, "
+"je privzeto »auto« (2). Če je v povezavi metoda IPv6 nastavljena na "
+"»disabled«, ta lastnost ne učinkuje in možnost »Prednostno samo IPv6« je "
 "vedno onemogočena."
 
 #: src/libnmc-setting/settings-docs.h.in:198
@@ -8718,8 +8732,8 @@ msgid ""
 "on."
 msgstr ""
 "Od različice 1.52 je ta lastnost zastarela in se uporablja samo kot "
-"nadomestna vrednost za dhcp-send-hostname, če je nastavljena na "
-"»default« (privzeto). To je storjeno le, da se izognemo okvari obstoječih "
+"nadomestna vrednost za dhcp-send-hostname, če je nastavljena na »default« "
+"(privzeto). To je storjeno le, da se izognemo okvari obstoječih "
 "prilagoditev, od zdaj naprej je treba uporabljati novo lastnost."
 
 #: src/libnmc-setting/settings-docs.h.in:200
@@ -8793,15 +8807,15 @@ msgid ""
 msgstr ""
 "Polje strežnikov DNS. Vsak strežnik lahko določite kot navaden naslov IP (po "
 "želji mu sledi »#« in ime strežnika SNI za DNS prek TLS) ali s skladnjo URI. "
-"Če je določen kot URI, so podprti naslednji obrazci: dns+udp://NASLOV[:"
-"VRATA], dns+tls://NASLOV[:VRATA][IMESTREŽNIKA]. Pri uporabi skladnje URI "
-"morajo biti naslovi IPv6 v oglatih oklepajih (»[', ']')."
+"Če je določen kot URI, so podprti naslednji obrazci: dns+udp://"
+"NASLOV[:VRATA], dns+tls://NASLOV[:VRATA][IMESTREŽNIKA]. Pri uporabi skladnje "
+"URI morajo biti naslovi IPv6 v oglatih oklepajih (»[', ']')."
 
 #: src/libnmc-setting/settings-docs.h.in:205
 msgid ""
 "DNS options for /etc/resolv.conf as described in resolv.conf(5) manual. The "
-"currently supported options are \"attempts\", \"debug\", \"edns0\", \"ndots"
-"\", \"no-aaaa\", \"no-check-names\", \"no-reload\", \"no-tld-query\", "
+"currently supported options are \"attempts\", \"debug\", \"edns0\", "
+"\"ndots\", \"no-aaaa\", \"no-check-names\", \"no-reload\", \"no-tld-query\", "
 "\"rotate\", \"single-request\", \"single-request-reopen\", \"timeout\", "
 "\"trust-ad\", \"use-vc\". See the resolv.conf(5) manual. Note that there is "
 "a distinction between an unset (default) list and an empty list. In nmcli, "
@@ -8814,20 +8828,20 @@ msgid ""
 "are automatically added. The valid \"ipv4.dns-options\" and \"ipv6.dns-"
 "options\" get merged together."
 msgstr ""
-"Možnosti DNS za /etc/resolv.conf, kot je opisano v priročniku resolv."
-"conf(5). Trenutno podprte možnosti so »attempts«, »debug«, »edns0«, »ndots«, "
-"»no-aaaa«, »no-check-names«, »no-reload«, »no-tld-query«, »rotate«, »single-"
-"request«, »single-request-reopen«, »timeout«, »trust-ad«, »use-vc«. Glejte "
-"priročnik resolv.conf(5). Upoštevajte, da obstaja razlika med nenastavljenim "
-"(privzetim) seznamom in praznim seznamom. Če želite v nmcli odstraniti "
-"nastavitev seznama, nastavite vrednost na »«. Če želite nastaviti prazen "
-"seznam, ga nastavite na \" \". Trenutno ima nenastavljeni seznam enak pomen "
-"kot prazen seznam. To se lahko v prihodnosti spremeni. Nastavitev »trust-ad« "
-"se upošteva le, če profil prispeva imenske strežnike v resolv.conf in če "
-"imajo vsi sodelujoči profili omogočeno »trust-ad«. Ko uporabljate vtičnik "
-"DNS za predpomnjenje (dnsmasq ali systemd-resolved v NetworkManager.conf), "
-"se samodejno dodata \"edns0\" in \"trust-ad\". Veljavni »ipv4.dns-options« "
-"in »ipv6.dns-options« se združita."
+"Možnosti DNS za /etc/resolv.conf, kot je opisano v priročniku "
+"resolv.conf(5). Trenutno podprte možnosti so »attempts«, »debug«, »edns0«, "
+"»ndots«, »no-aaaa«, »no-check-names«, »no-reload«, »no-tld-query«, »rotate«, "
+"»single-request«, »single-request-reopen«, »timeout«, »trust-ad«, »use-vc«. "
+"Glejte priročnik resolv.conf(5). Upoštevajte, da obstaja razlika med "
+"nenastavljenim (privzetim) seznamom in praznim seznamom. Če želite v nmcli "
+"odstraniti nastavitev seznama, nastavite vrednost na »«. Če želite nastaviti "
+"prazen seznam, ga nastavite na \" \". Trenutno ima nenastavljeni seznam enak "
+"pomen kot prazen seznam. To se lahko v prihodnosti spremeni. Nastavitev "
+"»trust-ad« se upošteva le, če profil prispeva imenske strežnike v "
+"resolv.conf in če imajo vsi sodelujoči profili omogočeno »trust-ad«. Ko "
+"uporabljate vtičnik DNS za predpomnjenje (dnsmasq ali systemd-resolved v "
+"NetworkManager.conf), se samodejno dodata \"edns0\" in \"trust-ad\". "
+"Veljavni »ipv4.dns-options« in »ipv6.dns-options« se združita."
 
 #: src/libnmc-setting/settings-docs.h.in:206
 #: src/libnmc-setting/settings-docs.h.in:242
@@ -8952,13 +8966,13 @@ msgstr ""
 "omogočen, bo vmesnik deloval kot usmerjevalnik za posredovanje paketa iz "
 "enega vmesnika v drugega. Če je nastavljena na »privzeto« (-1), se uporabi "
 "vrednost iz globalne prilagoditve; če ni določena nobena globalna privzeta "
-"vrednost, se uporabi »samodejnno« (2). Lastnost "
-"»posredovanje« (»forwarding«) je prezrta, če je »method« nastavljeno na »v "
-"skupni rabi« (»shared«), ker je posredovanje v tem primeru vedno omogočeno. "
-"Sprejete vrednosti so: »privzeto« (»default«) (-1): uporabi globalno "
-"privzeto. »Ne« (»no«) (0): onemogočeno. »Da« (»yes«) (1): Omogočeno. \"Auto"
-"\" (2): Omogoči, če je aktivna povezava v skupni rabi, v nasprotnem primeru "
-"uporabite privzeto jedro."
+"vrednost, se uporabi »samodejnno« (2). Lastnost »posredovanje« "
+"(»forwarding«) je prezrta, če je »method« nastavljeno na »v skupni rabi« "
+"(»shared«), ker je posredovanje v tem primeru vedno omogočeno. Sprejete "
+"vrednosti so: »privzeto« (»default«) (-1): uporabi globalno privzeto. »Ne« "
+"(»no«) (0): onemogočeno. »Da« (»yes«) (1): Omogočeno. \"Auto\" (2): Omogoči, "
+"če je aktivna povezava v skupni rabi, v nasprotnem primeru uporabite "
+"privzeto jedro."
 
 #: src/libnmc-setting/settings-docs.h.in:209
 #: src/libnmc-setting/settings-docs.h.in:245
@@ -9014,8 +9028,9 @@ msgid ""
 "is dependent on \"ipv4.method\". When set to \"default\", it honors the "
 "global connection default, before falling back to \"auto\". Note that if "
 "\"ipv4.method\" is \"disabled\", then link local addressing is always "
-"disabled too. The default is \"default\". Since 1.52, when set to \"fallback"
-"\", a link-local address is obtained if no other IPv4 address is set."
+"disabled too. The default is \"default\". Since 1.52, when set to "
+"\"fallback\", a link-local address is obtained if no other IPv4 address is "
+"set."
 msgstr ""
 "Omogočite in onemogočite krajevno prilagoditev povezave IPv4 neodvisno od "
 "prilagoditve ipv4.method. To omogoča, da se poleg drugih naslovov, kot so "
@@ -9076,7 +9091,7 @@ msgid ""
 "example if both IPv4 and IPv6 are enabled and are allowed to fail. Normally "
 "the connection succeeds as soon as one of the two address families "
 "completes; by setting a required timeout for e.g. IPv4, one can ensure that "
-"even if IP6 succeeds earlier than IPv4, NetworkManager waits some time for "
+"even if IPv6 succeeds earlier than IPv4, NetworkManager waits some time for "
 "IPv4 before the connection becomes active. Note that if \"may-fail\" is "
 "FALSE for the same address family, this property has no effect as "
 "NetworkManager needs to wait for the full DHCP timeout. A zero value means "
@@ -9203,8 +9218,8 @@ msgstr ""
 msgid ""
 "This option allows you to specify a custom DHCP range for the shared "
 "connection method. The value is expected to be in `<START_ADDRESS>,"
-"<END_ADDRESS>` format. The range should be part of network set by ipv4."
-"address option and it should not contain network address or broadcast "
+"<END_ADDRESS>` format. The range should be part of network set by "
+"ipv4.address option and it should not contain network address or broadcast "
 "address. If this option is not specified, the DHCP range will be "
 "automatically determined based on the interface address. The range will be "
 "selected to be adjacent to the interface address, either before or after it, "
@@ -9215,13 +9230,14 @@ msgid ""
 msgstr ""
 "S to možnostjo lahko določite obseg DHCP po meri za način povezave v skupni "
 "rabi. Pričakuje se, da bo vrednost v obliki »<ZAČETNI_NASLOV>,"
-"<KONČNI_NASLOV>«. Obseg mora biti del omrežja, ki ga nastavi možnost ipv4."
-"address, in ne sme vsebovati omrežnega naslova ali naslova oddajanja. Če ta "
-"možnost ni določena, bo obseg DHCP samodejno določen na podlagi naslova "
-"vmesnika. Obseg bo izbran tako, da bo sosednji naslovu vmesnika, pred ali za "
-"njim, pri čemer bo zaželen večji možni razpon. Obseg bo prilagojen tako, da "
-"zapolni razpoložljivi naslovni prostor, razen za omrežja z dolžino predpone, "
-"večjo od 24, ki bodo obravnavana, kot da imajo dolžino predpone 24."
+"<KONČNI_NASLOV>«. Obseg mora biti del omrežja, ki ga nastavi možnost "
+"ipv4.address, in ne sme vsebovati omrežnega naslova ali naslova oddajanja. "
+"Če ta možnost ni določena, bo obseg DHCP samodejno določen na podlagi "
+"naslova vmesnika. Obseg bo izbran tako, da bo sosednji naslovu vmesnika, "
+"pred ali za njim, pri čemer bo zaželen večji možni razpon. Obseg bo "
+"prilagojen tako, da zapolni razpoložljivi naslovni prostor, razen za omrežja "
+"z dolžino predpone, večjo od 24, ki bodo obravnavana, kot da imajo dolžino "
+"predpone 24."
 
 #: src/libnmc-setting/settings-docs.h.in:225
 msgid ""
@@ -9238,11 +9254,11 @@ msgid ""
 "address to generate addresses for stateless autoconfiguration. If the "
 "property is set to \"stable-privacy\", the interface identifier is generated "
 "as specified by RFC7217. This works by hashing a host specific key (see "
-"NetworkManager(8) manual), the interface name, the connection's \"connection."
-"stable-id\" property and the address prefix.  This improves privacy by "
-"making it harder to use the address to track the host's presence and the "
-"address is stable when the network interface hardware is replaced. The "
-"special values \"default\" and \"default-or-eui64\" will fallback to the "
+"NetworkManager(8) manual), the interface name, the connection's "
+"\"connection.stable-id\" property and the address prefix.  This improves "
+"privacy by making it harder to use the address to track the host's presence "
+"and the address is stable when the network interface hardware is replaced. "
+"The special values \"default\" and \"default-or-eui64\" will fallback to the "
 "global connection default as documented in the NetworkManager.conf(5) "
 "manual. If the global default is not specified, the fallback value is "
 "\"stable-privacy\" or \"eui64\", respectively. If not specified, when "
@@ -9269,38 +9285,36 @@ msgstr ""
 "izboljša zasebnost, saj oteži uporabo naslova za sledenje prisotnosti "
 "gostitelja, naslov pa je stabilen, ko zamenjate strojno opremo omrežnega "
 "vmesnika. Posebni vrednosti »default« in »default-or-eui64« se vrneta na "
-"privzeto globalno povezavo, kot je dokumentirano v priročniku NetworkManager."
-"conf(5). Če globalna privzeta vrednost ni določena, je nadomestna vrednost "
-"»stable-privacy« oziroma »eui64«. Če ni določeno, je pri ustvarjanju novega "
-"profila privzeto »default«. Upoštevajte, da se ta nastavitev razlikuje od "
-"razširitev zasebnosti, ki jih prilagodi lastnost »ip6-privacy«, in ne vpliva "
-"na začasne naslove, prilagojene s to možnostjo."
+"privzeto globalno povezavo, kot je dokumentirano v priročniku "
+"NetworkManager.conf(5). Če globalna privzeta vrednost ni določena, je "
+"nadomestna vrednost »stable-privacy« oziroma »eui64«. Če ni določeno, je pri "
+"ustvarjanju novega profila privzeto »default«. Upoštevajte, da se ta "
+"nastavitev razlikuje od razširitev zasebnosti, ki jih prilagodi lastnost "
+"»ip6-privacy«, in ne vpliva na začasne naslove, prilagojene s to možnostjo."
 
 #: src/libnmc-setting/settings-docs.h.in:226
 msgid ""
 "A list of IPv6 addresses and their prefix length. Multiple addresses can be "
-"separated by comma. For example \"2001:db8:85a3::8a2e:370:7334/64, 2001:"
-"db8:85a3::5/64\". The addresses are listed in decreasing priority, meaning "
-"the first address will be the primary address. This can make a difference "
-"with IPv6 source address selection (RFC 6724, section 5)."
+"separated by comma. For example \"2001:db8:85a3::8a2e:370:7334/64, "
+"2001:db8:85a3::5/64\". The addresses are listed in decreasing priority, "
+"meaning the first address will be the primary address. This can make a "
+"difference with IPv6 source address selection (RFC 6724, section 5)."
 msgstr ""
 "Seznam naslovov IPv6 in dolžina njihovih predpon. Več naslovov je mogoče "
-"ločiti z vejico. Primer: \"2001:db8:85a3::8a2e:370:7334/64, 2001:"
-"db8:85a3::5/64\". Naslovi so navedeni v padajoči prioriteti, kar pomeni, da "
-"bo prvi naslov primarni naslov. To lahko spremeni izbiro izvornega naslova "
-"IPv6 (RFC 6724, razdelek 5)."
+"ločiti z vejico. Primer: \"2001:db8:85a3::8a2e:370:7334/64, "
+"2001:db8:85a3::5/64\". Naslovi so navedeni v padajoči prioriteti, kar "
+"pomeni, da bo prvi naslov primarni naslov. To lahko spremeni izbiro "
+"izvornega naslova IPv6 (RFC 6724, razdelek 5)."
 
 #: src/libnmc-setting/settings-docs.h.in:230
 msgid ""
 "A string containing the DHCPv6 Unique Identifier (DUID) used by the dhcp "
 "client to identify itself to DHCPv6 servers (RFC 3315). The DUID is carried "
-"in the Client Identifier option. If the property is a hex string ('aa:bb:"
-"cc') it is interpreted as a binary DUID and filled as an opaque value in the "
-"Client Identifier option. The special value \"lease\" will retrieve the DUID "
-"previously used from the lease file belonging to the connection. If no DUID "
-"is found and \"dhclient\" is the configured dhcp client, the DUID is "
-"searched in the system-wide dhclient lease file. If still no DUID is found, "
-"or another dhcp client is used, a global and permanent DUID-UUID (RFC 6355) "
+"in the Client Identifier option. If the property is a hex string "
+"('aa:bb:cc') it is interpreted as a binary DUID and filled as an opaque "
+"value in the Client Identifier option. The special value \"lease\" will "
+"retrieve the DUID previously used from the lease file belonging to the "
+"connection. If no DUID is found, a global and permanent DUID-UUID (RFC 6355) "
 "will be generated based on the machine-id. The special values \"llt\" and "
 "\"ll\" will generate a DUID of type LLT or LL (see RFC 3315) based on the "
 "current MAC address of the device. In order to try providing a stable DUID-"
@@ -9320,7 +9334,7 @@ msgid ""
 msgstr ""
 "Niz, ki vsebuje edinstveni identifikator DHCPv6 (DUID), ki ga odjemalec dhcp "
 "uporablja za identifikacijo strežnikov DHCPv6 (RFC 3315). DUID se nahaja v "
-"možnosti Identifikatorja stranke ( Client Identifier). Če je lastnost "
+"možnosti Identifikatorja stranke (Client Identifier). Če je lastnost "
 "šestnajstiški niz ('aa:bb:cc'), se interpretira kot binarni DUID in izpolni "
 "kot prekrivna vrednost v možnosti identifikatorja odjemalca. Posebna "
 "vrednost »lease« pridobi DUID, ki je bil prej uporabljen, iz najemne "
@@ -9354,14 +9368,14 @@ msgstr ""
 "Naslov IPv6, ki mu sledita poševnica in dolžina predpone. Če je nastavljena, "
 "se vrednost pošlje strežniku DHCPv6 kot namig, ki označuje delegiranje "
 "predpone (IA_PD), ki jo želimo prejeti. Če želite samo namig na dolžino "
-"predpone brez predpone, nastavite naslovni del na ničelni naslov (na primer "
-"»::/60«)."
+"predpone brez predpone, nastavite naslovni del na ničelni naslov (na "
+"primer »::/60«)."
 
 #: src/libnmc-setting/settings-docs.h.in:241
 msgid ""
 "DNS options for /etc/resolv.conf as described in resolv.conf(5) manual. The "
-"currently supported options are \"attempts\", \"debug\", \"edns0\", \"ndots"
-"\", \"no-aaaa\", \"no-check-names\", \"no-reload\", \"no-tld-query\", "
+"currently supported options are \"attempts\", \"debug\", \"edns0\", "
+"\"ndots\", \"no-aaaa\", \"no-check-names\", \"no-reload\", \"no-tld-query\", "
 "\"rotate\", \"single-request\", \"single-request-reopen\", \"timeout\", "
 "\"trust-ad\", \"use-vc\" and \"inet6\", \"ip6-bytestring\", \"ip6-dotint\", "
 "\"no-ip6-dotint\". See the resolv.conf(5) manual. Note that there is a "
@@ -9375,22 +9389,22 @@ msgid ""
 "are automatically added. The valid \"ipv4.dns-options\" and \"ipv6.dns-"
 "options\" get merged together."
 msgstr ""
-"Možnosti DNS za /etc/resolv.conf, kot je opisano v priročniku resolv."
-"conf(5). Trenutno podprte možnosti so »poskusi«, \"attempts\", \"debug\", "
-"\"edns0\", \"ndots\", \"no-aaaa\", \"no-check-names\", \"no-reload\", \"no-"
-"tld-query\", \"rotate\", \"single-request\", \"single-request-reopen\", "
-"\"timeout\", \"trust-ad\", \"use-vc\" in \"inet6\", \"ip6-bytestring\", "
-"\"ip6-dotint\", \"no-ip6-dotint\". Glejte priročnik resolv.conf(5). "
-"Upoštevajte, da obstaja razlika med nenastavljenim (privzetim) seznamom in "
-"praznim seznamom. Če želite v nmcli odstraniti nastavitev seznama, nastavite "
-"vrednost na \"\". Če želite nastaviti prazen seznam, ga nastavite na \" \". "
-"Trenutno ima nenastavljeni seznam enak pomen kot prazen seznam. To se lahko "
-"v prihodnosti spremeni. Nastavitev »trust-ad« se upošteva le, če profil "
-"prispeva imenske strežnike v resolv.conf in če imajo vsi sodelujoči profili "
-"omogočeno »trust-ad«. Ko uporabljate vtičnik DNS za predpomnjenje (dnsmasq "
-"ali systemd-resolved v NetworkManager.conf), se samodejno dodata \"edns0\" "
-"in \"trust-ad\". Veljavni »ipv4.dns-options« in »ipv6.dns-options« se "
-"združita."
+"Možnosti DNS za /etc/resolv.conf, kot je opisano v priročniku "
+"resolv.conf(5). Trenutno podprte možnosti so »poskusi«, \"attempts\", "
+"\"debug\", \"edns0\", \"ndots\", \"no-aaaa\", \"no-check-names\", \"no-"
+"reload\", \"no-tld-query\", \"rotate\", \"single-request\", \"single-request-"
+"reopen\", \"timeout\", \"trust-ad\", \"use-vc\" in \"inet6\", \"ip6-"
+"bytestring\", \"ip6-dotint\", \"no-ip6-dotint\". Glejte priročnik "
+"resolv.conf(5). Upoštevajte, da obstaja razlika med nenastavljenim "
+"(privzetim) seznamom in praznim seznamom. Če želite v nmcli odstraniti "
+"nastavitev seznama, nastavite vrednost na \"\". Če želite nastaviti prazen "
+"seznam, ga nastavite na \" \". Trenutno ima nenastavljeni seznam enak pomen "
+"kot prazen seznam. To se lahko v prihodnosti spremeni. Nastavitev »trust-ad« "
+"se upošteva le, če profil prispeva imenske strežnike v resolv.conf in če "
+"imajo vsi sodelujoči profili omogočeno »trust-ad«. Ko uporabljate vtičnik "
+"DNS za predpomnjenje (dnsmasq ali systemd-resolved v NetworkManager.conf), "
+"se samodejno dodata \"edns0\" in \"trust-ad\". Veljavni »ipv4.dns-options« "
+"in »ipv6.dns-options« se združita."
 
 #: src/libnmc-setting/settings-docs.h.in:248
 msgid ""
@@ -9674,19 +9688,19 @@ msgstr ""
 
 #: src/libnmc-setting/settings-docs.h.in:289
 msgid ""
-"Specifies the MACsec offload mode. \"off\" (0) disables MACsec offload. \"phy"
-"\" (1) and \"mac\" (2) request offload respectively to the PHY or to the "
-"MAC; if the selected mode is not available, the connection will fail. "
+"Specifies the MACsec offload mode. \"off\" (0) disables MACsec offload. "
+"\"phy\" (1) and \"mac\" (2) request offload respectively to the PHY or to "
+"the MAC; if the selected mode is not available, the connection will fail. "
 "\"default\" (-1) uses the global default value specified in NetworkManager "
-"configuration; if no global default is defined, the built-in default is \"off"
-"\" (0)."
+"configuration; if no global default is defined, the built-in default is "
+"\"off\" (0)."
 msgstr ""
 "Določa način razbremenitve MACsec. »off« (0) onemogoči razbremenitev MACsec. "
 "»phy« (1) in »mac« (2) zahtevata preklop na PHY oziroma MAC; če izbrani "
 "način ni na voljo, povezava ne bo uspela. »default« (-1) uporablja globalno "
 "privzeto vrednost, določeno v prilagoditvi NetworkManager; če ni določena "
-"nobena globalna privzeta nastavitev, je vgrajena privzeta nastavitev "
-"»off« (0)."
+"nobena globalna privzeta nastavitev, je vgrajena privzeta nastavitev »off« "
+"(0)."
 
 #: src/libnmc-setting/settings-docs.h.in:290
 msgid ""
@@ -9774,10 +9788,10 @@ msgid ""
 "AND). By default, an element is optional. This means that an element \"foo\" "
 "behaves the same as \"|foo\". An element can also be inverted with "
 "exclamation mark (!) between the pipe symbol (or the ampersand) and before "
-"the pattern. Note that \"!foo\" is a shortcut for the mandatory match \"&!foo"
-"\". Finally, a backslash can be used at the beginning of the element (after "
-"the optional special characters) to escape the start of the pattern. For "
-"example, \"&\\!a\" is an mandatory match for literally \"!a\"."
+"the pattern. Note that \"!foo\" is a shortcut for the mandatory match \"&!"
+"foo\". Finally, a backslash can be used at the beginning of the element "
+"(after the optional special characters) to escape the start of the pattern. "
+"For example, \"&\\!a\" is an mandatory match for literally \"!a\"."
 msgstr ""
 "Seznam imen vmesnikov, ki se ujemajo. Vsak element je vzorec nadomestnega "
 "znaka lupine. Element ima lahko predpono s simbolom cevi (|) ali ampersandom "
@@ -9787,8 +9801,8 @@ msgstr ""
 "elementi, se morajo vsi ujemati (logično IN). Element je privzeto izbiren. "
 "To pomeni, da se element \"foo\" obnaša enako kot \"|foo\". Element se lahko "
 "obrne tudi s klicajem (!) med simbolom cevi (ali ampersandom) in pred "
-"vzorcem. Upoštevajte, da je \"!foo\" bližnjica za obvezno ujemanje \"&!foo"
-"\". Končno lahko na začetku elementa (za izbirnimi posebnimi znaki) "
+"vzorcem. Upoštevajte, da je \"!foo\" bližnjica za obvezno ujemanje \"&!"
+"foo\". Končno lahko na začetku elementa (za izbirnimi posebnimi znaki) "
 "uporabite poševnico, da se izognete začetku vzorca. Primer: \"&\\!a\" je "
 "obvezno ujemanje za dobesedno \"!a\"."
 
@@ -9833,12 +9847,12 @@ msgstr ""
 "(pci, usb, platforma itd.) in identifikator, specifičen za podsistem. Za "
 "naprave PCI ima pot obliko »pci-$domain:$bus:$device.$function«, kjer je "
 "vsaka spremenljivka šestnajstiška vrednost; primer: \"PCI-0000:0A:00.0\". "
-"Pot naprave lahko dobite z »udevadm info /sys/class/net/$dev | grep ID_PATH="
-"\" ali s pogledom na lastnost »path«, ki jo izvozi NetworkManager (»nmcli -f "
-"general.path device show $dev«). Vsak element seznama je vzorec nadomestnega "
-"znaka lupine. Glejte NMSettingMatch:interface-name za uporabo posebnih "
-"znakov '|', '&', '!' in '\\' za izbirne in obvezne ujemanja in obrnitev "
-"vzorca."
+"Pot naprave lahko dobite z »udevadm info /sys/class/net/$dev | grep "
+"ID_PATH=\" ali s pogledom na lastnost »path«, ki jo izvozi NetworkManager "
+"(»nmcli -f general.path device show $dev«). Vsak element seznama je vzorec "
+"nadomestnega znaka lupine. Glejte NMSettingMatch:interface-name za uporabo "
+"posebnih znakov '|', '&', '!' in '\\' za izbirne in obvezne ujemanja in "
+"obrnitev vzorca."
 
 #: src/libnmc-setting/settings-docs.h.in:302
 msgid "Channel on which the mesh network to join is located."
@@ -9969,8 +9983,8 @@ msgstr "Časovna vrata morajo biti neaktivna, da se štejejo zaprta."
 msgid ""
 "Bonding mode. One of \"active-backup\", \"balance-slb\", or \"balance-tcp\"."
 msgstr ""
-"Način vezave. Ena izmed \"active-backup\", \"balance-slb\" ali \"balance-tcp"
-"\"."
+"Način vezave. Ena izmed \"active-backup\", \"balance-slb\" ali \"balance-"
+"tcp\"."
 
 #: src/libnmc-setting/settings-docs.h.in:320
 msgid "The time port must be active before it starts forwarding traffic."
@@ -10229,16 +10243,16 @@ msgid ""
 "this succeeds a new network interface will be instantiated for each VF. If "
 "set to \"false\" (0), VFs will not be claimed and no network interfaces will "
 "be created for them. When set to \"default\" (-1), the global default is "
-"used; in case the global default is unspecified it is assumed to be \"true"
-"\" (1)."
+"used; in case the global default is unspecified it is assumed to be \"true\" "
+"(1)."
 msgstr ""
 "Ali želite samodejno sondirati navidezne funkcije z združljivim gonilnikom. "
 "Če je nastavljena na »true« (1), bo jedro poskušalo povezati VF-je na "
 "združljiv gonilnik in če bo to uspelo, bo za vsak VF ustvarjen nov omrežni "
 "vmesnik. Če je nastavljena na »false« (0), VF-ji ne bodo zahtevani in zanje "
-"ne bodo ustvarjeni nobeni omrežni vmesniki. Če je nastavljena na "
-"»default« (-1), se uporabi globalna privzeta vrednost; v primeru, da "
-"globalna privzeta vrednost ni določena, se domneva, da je »true« (1)."
+"ne bodo ustvarjeni nobeni omrežni vmesniki. Če je nastavljena na »default« "
+"(-1), se uporabi globalna privzeta vrednost; v primeru, da globalna privzeta "
+"vrednost ni določena, se domneva, da je »true« (1)."
 
 #: src/libnmc-setting/settings-docs.h.in:358
 msgid ""
@@ -10287,10 +10301,10 @@ msgid ""
 "their default value. The SR-IOV parameters are those specified in this "
 "setting (the \"sriov\" setting), like the number of VFs to create, the "
 "eswitch configuration, etc. If set to \"no\" (0), NetworkManager resets the "
-"SR-IOV parameters when the connection is deactivated. When set to \"yes"
-"\" (1), NetworkManager preserves those parameters on the device. If the "
-"value is \"default\" (-1), NetworkManager looks up a global default value in "
-"the configuration; in case no such value is defined, it uses \"no\" (0) as "
+"SR-IOV parameters when the connection is deactivated. When set to \"yes\" "
+"(1), NetworkManager preserves those parameters on the device. If the value "
+"is \"default\" (-1), NetworkManager looks up a global default value in the "
+"configuration; in case no such value is defined, it uses \"no\" (0) as "
 "fallback."
 msgstr ""
 "To nadzira, ali NetworkManager ohrani parametre SR-IOV, nastavljene v "
@@ -10299,10 +10313,10 @@ msgstr ""
 "»sriov«), kot so število VF-jev, ki jih je treba ustvariti, nastavitev "
 "eswitch itn. Če je nastavljena na »ne« (0), NetworkManager ponastavi "
 "parametre SR-IOV, ko je povezava deaktivirana. Če je nastavljen na »da« (1), "
-"NetworkManager ohrani te parametre v napravi. Če je vrednost "
-"»privzeta« (-1), NetworkManager poišče globalno privzeto vrednost v "
-"prilagoditvi; v primeru, da taka vrednost ni določena, se kot nadomestna "
-"vrednost uporabi »ne« (0)."
+"NetworkManager ohrani te parametre v napravi. Če je vrednost »privzeta« "
+"(-1), NetworkManager poišče globalno privzeto vrednost v prilagoditvi; v "
+"primeru, da taka vrednost ni določena, se kot nadomestna vrednost uporabi "
+"»ne« (0)."
 
 #: src/libnmc-setting/settings-docs.h.in:362
 msgid ""
@@ -10338,8 +10352,8 @@ msgstr ""
 "check=true«. Več VF je mogoče določiti z vejico kot ločilom. Trenutno so "
 "podprti naslednji atributi: mac, spoof-check, trust, min-tx-rate, max-tx-"
 "rate, vlans. Atribut »vlans« je predstavljen kot seznam deskriptorjev VLAN, "
-"ločen s podpičjem, kjer ima vsak deskriptor obliko »ID[.PREDNOST[. "
-"PROTO]]\". PROTO je lahko 'q' za 802.1Q (privzeto) ali 'ad' za 802.1ad."
+"ločen s podpičjem, kjer ima vsak deskriptor obliko »ID[.PREDNOST[. PROTO]]"
+"\". PROTO je lahko 'q' za 802.1Q (privzeto) ali 'ad' za 802.1ad."
 
 #: src/libnmc-setting/settings-docs.h.in:364
 msgid ""
@@ -10564,8 +10578,8 @@ msgstr ""
 #: src/libnmc-setting/settings-docs.h.in:396
 msgid ""
 "For outgoing packets, a list of mappings from Linux SKB priorities to 802.1p "
-"priorities.  The mapping is given in the format \"from:to\" where both \"from"
-"\" and \"to\" are unsigned integers, ie \"7:3\"."
+"priorities.  The mapping is given in the format \"from:to\" where both "
+"\"from\" and \"to\" are unsigned integers, ie \"7:3\"."
 msgstr ""
 "Za odhodne pakete seznam preslikav iz prednostnih nalog Linux SKB na "
 "prednostne naloge 802.1p.  Preslikava je podana v obliki \"from:to\", kjer "
@@ -10602,8 +10616,8 @@ msgstr ""
 #: src/libnmc-setting/settings-docs.h.in:399
 msgid ""
 "For incoming packets, a list of mappings from 802.1p priorities to Linux SKB "
-"priorities.  The mapping is given in the format \"from:to\" where both \"from"
-"\" and \"to\" are unsigned integers, ie \"7:3\"."
+"priorities.  The mapping is given in the format \"from:to\" where both "
+"\"from\" and \"to\" are unsigned integers, ie \"7:3\"."
 msgstr ""
 "Za dohodne pakete seznam preslikav iz prednostnih nalog 802.1p v prioritete "
 "Linux SKB. Preslikava je podana v obliki \"from:to\", kjer sta \"from\" in "
@@ -10860,9 +10874,9 @@ msgid ""
 "and \"duplex\" properties are both specified, only that single mode will be "
 "advertised and accepted during the link auto-negotiation process: this works "
 "only for BASE-T 802.3 specifications and is useful for enforcing gigabits "
-"modes, as in these cases link negotiation is mandatory. When FALSE, \"speed"
-"\" and \"duplex\" properties should be both set or link configuration will "
-"be skipped."
+"modes, as in these cases link negotiation is mandatory. When FALSE, "
+"\"speed\" and \"duplex\" properties should be both set or link configuration "
+"will be skipped."
 msgstr ""
 "Ko je TRUE, uveljavite samodejno pogajanje o hitrosti in dupleksnem načinu. "
 "Če sta določeni lastnosti »speed« in »duplex«, bo med postopkom samodejnega "
@@ -10883,24 +10897,25 @@ msgid ""
 "creates a random MAC address on each connect. \"stable\" creates a hashed "
 "MAC address based on connection.stable-id and a machine dependent key. If "
 "unspecified, the value can be overwritten via global defaults, see manual of "
-"NetworkManager.conf. If still unspecified, it defaults to \"preserve"
-"\" (older versions of NetworkManager may use a different default value). On "
-"D-Bus, this field is expressed as \"assigned-mac-address\" or the deprecated "
+"NetworkManager.conf. If still unspecified, it defaults to \"preserve\" "
+"(older versions of NetworkManager may use a different default value). On D-"
+"Bus, this field is expressed as \"assigned-mac-address\" or the deprecated "
 "\"cloned-mac-address\"."
 msgstr ""
 "Če je navedeno, zahtevajte, da naprava namesto tega uporabi ta naslov MAC. "
 "To je znano kot kloniranje ali ponarejanje MAC. Poleg eksplicitnega "
-"določanja naslova MAC so podprte posebne vrednosti \"preserve\", \"permanent"
-"\", \"random\" in \"stable\". »preserve« pomeni, da se ob aktivaciji ne "
-"dotaknete naslova MAC. »permanent« pomeni uporabo stalnega naslova strojne "
-"opreme, če ga ima naprava (v nasprotnem primeru se to obravnava kot "
-"»preserve«). \"random\" ustvari naključni naslov MAC pri vsaki povezavi. "
-"»stable« ustvari zgoščen naslov MAC, ki temelji na connection.stable-id in "
-"strojno odvisnem ključu. Če ni določena, lahko vrednost prepišete prek "
-"globalnih privzetih nastavitev, glejte priročnik NetworkManager.conf. Če še "
-"vedno ni določeno, je privzeto »ohrani« (starejše različice NetworkManagerja "
-"morda uporabljajo drugačno privzeto vrednost). Na D-Bus je to polje izraženo "
-"kot \"assigned-mac-address\" ali zastareli \"cloned-mac-address\"."
+"določanja naslova MAC so podprte posebne vrednosti \"preserve\", "
+"\"permanent\", \"random\" in \"stable\". »preserve« pomeni, da se ob "
+"aktivaciji ne dotaknete naslova MAC. »permanent« pomeni uporabo stalnega "
+"naslova strojne opreme, če ga ima naprava (v nasprotnem primeru se to "
+"obravnava kot »preserve«). \"random\" ustvari naključni naslov MAC pri vsaki "
+"povezavi. »stable« ustvari zgoščen naslov MAC, ki temelji na "
+"connection.stable-id in strojno odvisnem ključu. Če ni določena, lahko "
+"vrednost prepišete prek globalnih privzetih nastavitev, glejte priročnik "
+"NetworkManager.conf. Če še vedno ni določeno, je privzeto »ohrani« (starejše "
+"različice NetworkManagerja morda uporabljajo drugačno privzeto vrednost). Na "
+"D-Bus je to polje izraženo kot \"assigned-mac-address\" ali zastareli "
+"\"cloned-mac-address\"."
 
 #: src/libnmc-setting/settings-docs.h.in:433
 msgid ""
@@ -10970,13 +10985,13 @@ msgstr ""
 "(»random«) ali stabilnega (»stable«) algoritma. Če vrednost vsebuje en "
 "dodaten naslov MAC za masko, se ta naslov uporabi namesto trenutnega naslova "
 "MAC za zapolnitev bitov, ki ne bodo naključno razvrščeni. Primer: vrednost "
-"»FE:FF:FF:00:00:00 68:F7:28:00:00:00« bo nastavila OUI naslova MAC na 68:"
-"F7:28, medtem ko so spodnji biti naključni. Vrednost »02:00:00:00:00:00:00 "
-"00:00:00:00:00« bo ustvarila popolnoma kodiran globalno upravljan in vdelan "
-"naslov MAC. Če vrednost vsebuje več kot en dodatni naslov MAC, je eden od "
-"njih izbran naključno. Primer: »02:00:00:00:00:00 00:00:00:00:00:00:00 "
-"02:00:00:00:00:00« bo ustvaril popolnoma kodiran naslov MAC, ki se naključno "
-"upravlja krajevno ali globalno."
+"»FE:FF:FF:00:00:00 68:F7:28:00:00:00« bo nastavila OUI naslova MAC na "
+"68:F7:28, medtem ko so spodnji biti naključni. Vrednost "
+"»02:00:00:00:00:00:00 00:00:00:00:00« bo ustvarila popolnoma kodiran "
+"globalno upravljan in vdelan naslov MAC. Če vrednost vsebuje več kot en "
+"dodatni naslov MAC, je eden od njih izbran naključno. Primer: "
+"»02:00:00:00:00:00 00:00:00:00:00:00:00 02:00:00:00:00:00« bo ustvaril "
+"popolnoma kodiran naslov MAC, ki se naključno upravlja krajevno ali globalno."
 
 #: src/libnmc-setting/settings-docs.h.in:435
 msgid ""
@@ -11070,12 +11085,12 @@ msgid ""
 "be the only one advertised during link negotiation: this works only for BASE-"
 "T 802.3 specifications and is useful for enforcing gigabit speeds, as in "
 "this case link negotiation is mandatory. If the value is unset (0, the "
-"default), the link configuration will be either skipped (if \"auto-negotiate"
-"\" is \"no\", the default) or will be auto-negotiated (if \"auto-negotiate\" "
-"is \"yes\") and the local device will advertise all the supported speeds. In "
-"Mbit/s, ie 100 == 100Mbit/s. Must be set together with the \"duplex\" "
-"property when non-zero. Before specifying a speed value be sure your device "
-"supports it."
+"default), the link configuration will be either skipped (if \"auto-"
+"negotiate\" is \"no\", the default) or will be auto-negotiated (if \"auto-"
+"negotiate\" is \"yes\") and the local device will advertise all the "
+"supported speeds. In Mbit/s, ie 100 == 100Mbit/s. Must be set together with "
+"the \"duplex\" property when non-zero. Before specifying a speed value be "
+"sure your device supports it."
 msgstr ""
 "Ko je nastavljena vrednost, večja od 0, prilagodi napravo tako, da uporablja "
 "določeno hitrost. Če je »auto-negotiate« »yes«, bo določena hitrost edina, "
@@ -11094,15 +11109,15 @@ msgid ""
 "The NMSettingWiredWakeOnLan options to enable. Not all devices support all "
 "options. May be any combination of \"phy\" (0x2), \"unicast\" (0x4), "
 "\"multicast\" (0x8), \"broadcast\" (0x10), \"arp\" (0x20), \"magic\" (0x40) "
-"or the special values \"default\" (0x1) (to use global settings) and \"ignore"
-"\" (0x8000) (to disable management of Wake-on-LAN in NetworkManager)."
+"or the special values \"default\" (0x1) (to use global settings) and "
+"\"ignore\" (0x8000) (to disable management of Wake-on-LAN in NetworkManager)."
 msgstr ""
 "Možnosti NMSettingWiredWakeOnLan za omogočanje. Vse naprave ne podpirajo "
-"vseh možnosti. Lahko je katera koli kombinacija »phy« (0x2), "
-"»unicast« (0x4), »multicast« (0x8), »broadcast« (0x10), »arp« (0x20), "
-"»magic« (0x40) ali posebnih vrednosti »default« (0x1) (za uporabo globalnih "
-"nastavitev) in »ignore« (0x8000) (za onemogočanje upravljanja funkcije Wake-"
-"on-LAN v programu NetworkManager)."
+"vseh možnosti. Lahko je katera koli kombinacija »phy« (0x2), »unicast« "
+"(0x4), »multicast« (0x8), »broadcast« (0x10), »arp« (0x20), »magic« (0x40) "
+"ali posebnih vrednosti »default« (0x1) (za uporabo globalnih nastavitev) in "
+"»ignore« (0x8000) (za onemogočanje upravljanja funkcije Wake-on-LAN v "
+"programu NetworkManager)."
 
 #: src/libnmc-setting/settings-docs.h.in:445
 msgid ""
@@ -11306,27 +11321,27 @@ msgid ""
 msgstr ""
 "Določa širino brezžičnega kanala v načinu dostopne točke. Če je nastavljena "
 "na »auto« (0) (privzeto), se širina kanala določi samodejno. Trenutno to "
-"pomeni, da je izbrana najvarnejša (najmanjša) širina. Če vrednost ni "
-"»auto« (0), je treba nastaviti tudi lastnost »channel«. Pri uporabi pasu 2.4 "
-"GHz je lahko širina največ 40 MHz. To lastnost lahko nastavite na vrednost, "
-"ki se razlikuje od »auto« (0) samo, če je vmesnik prilagojen v načinu AP."
+"pomeni, da je izbrana najvarnejša (najmanjša) širina. Če vrednost ni »auto« "
+"(0), je treba nastaviti tudi lastnost »channel«. Pri uporabi pasu 2.4 GHz je "
+"lahko širina največ 40 MHz. To lastnost lahko nastavite na vrednost, ki se "
+"razlikuje od »auto« (0) samo, če je vmesnik prilagojen v načinu AP."
 
 #: src/libnmc-setting/settings-docs.h.in:460
 msgid ""
 "If specified, request that the device use this MAC address instead. This is "
 "known as MAC cloning or spoofing. Beside explicitly specifying a MAC "
-"address, the special values \"preserve\", \"permanent\", \"random\", \"stable"
-"\" and \"stable-ssid\" are supported. \"preserve\" means not to touch the "
-"MAC address on activation. \"permanent\" means to use the permanent hardware "
-"address of the device. \"random\" creates a random MAC address on each "
-"connect. \"stable\" creates a hashed MAC address based on connection.stable-"
-"id and a machine dependent key. \"stable-ssid\" creates a hashed MAC address "
-"based on the SSID, the same as setting the stable-id to \"${NETWORK_SSID}\". "
-"If unspecified, the value can be overwritten via global defaults, see manual "
-"of NetworkManager.conf. If still unspecified, it defaults to \"preserve"
-"\" (older versions of NetworkManager may use a different default value). On "
-"D-Bus, this field is expressed as \"assigned-mac-address\" or the deprecated "
-"\"cloned-mac-address\"."
+"address, the special values \"preserve\", \"permanent\", \"random\", "
+"\"stable\" and \"stable-ssid\" are supported. \"preserve\" means not to "
+"touch the MAC address on activation. \"permanent\" means to use the "
+"permanent hardware address of the device. \"random\" creates a random MAC "
+"address on each connect. \"stable\" creates a hashed MAC address based on "
+"connection.stable-id and a machine dependent key. \"stable-ssid\" creates a "
+"hashed MAC address based on the SSID, the same as setting the stable-id to "
+"\"${NETWORK_SSID}\". If unspecified, the value can be overwritten via global "
+"defaults, see manual of NetworkManager.conf. If still unspecified, it "
+"defaults to \"preserve\" (older versions of NetworkManager may use a "
+"different default value). On D-Bus, this field is expressed as \"assigned-"
+"mac-address\" or the deprecated \"cloned-mac-address\"."
 msgstr ""
 "Če je navedeno, zahtevajte, da naprava namesto tega uporabi ta naslov MAC. "
 "To je znano kot kloniranje ali ponarejanje MAC. Poleg eksplicitnega "
@@ -11334,14 +11349,15 @@ msgstr ""
 "»random«, »stable« in »stable-ssid«. »Preserve« pomeni, da se ob aktivaciji "
 "ne dotaknete naslova MAC. »permanent« pomeni uporabo stalnega naslova "
 "strojne opreme naprave. \"random\" ustvari naključni naslov MAC pri vsaki "
-"povezavi. »stable« ustvari zgoščen naslov MAC, ki temelji na connection."
-"stable-id in strojno odvisnem ključu. »stable-ssid« ustvari zgoščen naslov "
-"MAC na podlagi SSID-ja, enako kot nastavitev stabilnega ID-ja na "
-"»${NETWORK_SSID}«. Če ni določena, lahko vrednost prepišete prek globalnih "
-"privzetih nastavitev, glejte priročnik NetworkManager.conf. Če še vedno ni "
-"določeno, je privzeto »preserve« (starejše različice NetworkManagerja morda "
-"uporabljajo drugačno privzeto vrednost). Na D-Bus je to polje izraženo kot "
-"\"assigned-mac-address\" ali zastareli \"cloned-mac-address\"."
+"povezavi. »stable« ustvari zgoščen naslov MAC, ki temelji na "
+"connection.stable-id in strojno odvisnem ključu. »stable-ssid« ustvari "
+"zgoščen naslov MAC na podlagi SSID-ja, enako kot nastavitev stabilnega ID-ja "
+"na »${NETWORK_SSID}«. Če ni določena, lahko vrednost prepišete prek "
+"globalnih privzetih nastavitev, glejte priročnik NetworkManager.conf. Če še "
+"vedno ni določeno, je privzeto »preserve« (starejše različice "
+"NetworkManagerja morda uporabljajo drugačno privzeto vrednost). Na D-Bus je "
+"to polje izraženo kot \"assigned-mac-address\" ali zastareli \"cloned-mac-"
+"address\"."
 
 #: src/libnmc-setting/settings-docs.h.in:462
 msgid ""
@@ -11389,9 +11405,9 @@ msgstr ""
 #: src/libnmc-setting/settings-docs.h.in:466
 msgid ""
 "One of \"default\" (0) (never randomize unless the user has set a global "
-"default to randomize and the supplicant supports randomization),  \"never"
-"\" (1) (never randomize the MAC address), or \"always\" (2) (always "
-"randomize the MAC address)."
+"default to randomize and the supplicant supports randomization),  \"never\" "
+"(1) (never randomize the MAC address), or \"always\" (2) (always randomize "
+"the MAC address)."
 msgstr ""
 "Ena izmed »default« (0) (nikoli ne naključno, razen če je uporabnik nastavil "
 "globalno privzeto nastavitev za naključno določitev in prosilec podpira "
@@ -11400,11 +11416,11 @@ msgstr ""
 
 #: src/libnmc-setting/settings-docs.h.in:467
 msgid ""
-"Wi-Fi network mode; one of \"infrastructure\", \"mesh\", \"adhoc\" or \"ap"
-"\".  If blank, infrastructure is assumed."
+"Wi-Fi network mode; one of \"infrastructure\", \"mesh\", \"adhoc\" or "
+"\"ap\".  If blank, infrastructure is assumed."
 msgstr ""
-"Način omrežja Wi-Fi; eden od \"infrastructure\", »mesh«, \"adhoc\" ali \"ap"
-"\".  Če je prazno, se predpostavlja infrastructure."
+"Način omrežja Wi-Fi; eden od \"infrastructure\", »mesh«, \"adhoc\" ali "
+"\"ap\".  Če je prazno, se predpostavlja infrastructure."
 
 #: src/libnmc-setting/settings-docs.h.in:469
 msgid ""
@@ -11451,18 +11467,17 @@ msgstr "SSID omrežja Wi-Fi. Mora biti naveden."
 msgid ""
 "The NMSettingWirelessWakeOnWLan options to enable. Not all devices support "
 "all options. May be any combination of \"any\" (0x2), \"disconnect\" (0x4), "
-"\"magic\" (0x8), \"gtk-rekey-failure\" (0x10), \"eap-identity-request"
-"\" (0x20), \"4way-handshake\" (0x40), \"rfkill-release\" (0x80), \"tcp"
-"\" (0x100) or the special values \"default\" (0x1) (to use global settings) "
-"and \"ignore\" (0x8000) (to disable management of Wake-on-LAN in "
-"NetworkManager)."
+"\"magic\" (0x8), \"gtk-rekey-failure\" (0x10), \"eap-identity-request\" "
+"(0x20), \"4way-handshake\" (0x40), \"rfkill-release\" (0x80), \"tcp\" "
+"(0x100) or the special values \"default\" (0x1) (to use global settings) and "
+"\"ignore\" (0x8000) (to disable management of Wake-on-LAN in NetworkManager)."
 msgstr ""
 "Možnosti NMSettingWirelessWakeOnWLan za omogočanje. Vse naprave ne podpirajo "
-"vseh možnosti. Lahko je katera koli kombinacija »any« (0x2), "
-"»disconnect« (0x4), »magic« (0x8), »gtk-rekey-failure« (0x10), »eap-identity-"
-"request« (0x20), »4way-handshake« (0x40), »rfkill-release« (0x80), "
-"»tcp« (0x100) ali posebnih vrednosti »default« (0x1) (za uporabo globalnih "
-"nastavitev) in »ignore« (0x8000) (za onemogočanje upravljanja Wake-on-LAN v "
+"vseh možnosti. Lahko je katera koli kombinacija »any« (0x2), »disconnect« "
+"(0x4), »magic« (0x8), »gtk-rekey-failure« (0x10), »eap-identity-request« "
+"(0x20), »4way-handshake« (0x40), »rfkill-release« (0x80), »tcp« (0x100) ali "
+"posebnih vrednosti »default« (0x1) (za uporabo globalnih nastavitev) in "
+"»ignore« (0x8000) (za onemogočanje upravljanja Wake-on-LAN v "
 "NetworkManagerju)."
 
 #: src/libnmc-setting/settings-docs.h.in:475
@@ -11482,11 +11497,11 @@ msgstr ""
 #: src/libnmc-setting/settings-docs.h.in:476
 msgid ""
 "Indicates whether Fast Initial Link Setup (802.11ai) must be enabled for the "
-"connection.  One of \"default\" (0) (use global default value), \"disable"
-"\" (1) (disable FILS), \"optional\" (2) (enable FILS if the supplicant and "
-"the access point support it) or \"required\" (3) (enable FILS and fail if "
-"not supported).  When set to \"default\" (0) and no global default is set, "
-"FILS will be optionally enabled."
+"connection.  One of \"default\" (0) (use global default value), \"disable\" "
+"(1) (disable FILS), \"optional\" (2) (enable FILS if the supplicant and the "
+"access point support it) or \"required\" (3) (enable FILS and fail if not "
+"supported).  When set to \"default\" (0) and no global default is set, FILS "
+"will be optionally enabled."
 msgstr ""
 "Označuje, ali mora biti za povezavo omogočena hitra nastavitev začetne "
 "povezave (802.11ai). Eden od »default« (0) (uporabite globalno privzeto "
@@ -11559,11 +11574,11 @@ msgstr ""
 #: src/libnmc-setting/settings-docs.h.in:483
 msgid ""
 "Indicates whether Protected Management Frames (802.11w) must be enabled for "
-"the connection.  One of \"default\" (0) (use global default value), \"disable"
-"\" (1) (disable PMF), \"optional\" (2) (enable PMF if the supplicant and the "
-"access point support it) or \"required\" (3) (enable PMF and fail if not "
-"supported).  When set to \"default\" (0) and no global default is set, PMF "
-"will be optionally enabled."
+"the connection.  One of \"default\" (0) (use global default value), "
+"\"disable\" (1) (disable PMF), \"optional\" (2) (enable PMF if the "
+"supplicant and the access point support it) or \"required\" (3) (enable PMF "
+"and fail if not supported).  When set to \"default\" (0) and no global "
+"default is set, PMF will be optionally enabled."
 msgstr ""
 "Označuje, ali morajo biti za povezavo omogočeni zaščiteni okvirji za "
 "upravljanje (802.11w). Ena izmed »default« (0) (uporabi globalno privzeto "
@@ -11815,9 +11830,9 @@ msgstr ""
 msgid ""
 "If set to \"true\" (1), NetworkManager attempts to get the hostname via "
 "DHCPv4/DHCPv6 or reverse DNS lookup on this device only when the device has "
-"the default route for the given address family (IPv4/IPv6). If set to \"false"
-"\" (0), the hostname can be set from this device even if it doesn't have the "
-"default route. When set to \"default\" (-1), the value from global "
+"the default route for the given address family (IPv4/IPv6). If set to "
+"\"false\" (0), the hostname can be set from this device even if it doesn't "
+"have the default route. When set to \"default\" (-1), the value from global "
 "configuration is used. If the property doesn't have a value in the global "
 "configuration, NetworkManager assumes the value to be \"false\" (0)."
 msgstr ""
@@ -11924,29 +11939,28 @@ msgid ""
 "is mandatory."
 msgstr "Ta lastnost določa ime vmesnika veth vrstnika. Ta lastnost je obvezna."
 
-#: src/libnmt-newt/nmt-newt-utils.c:267 src/nmtui/nmt-editor.c:456
-#: src/nmtui/nmt-password-dialog.c:163 src/nmtui/nmt-route-editor.c:105
+#: src/libnmt-newt/nmt-newt-utils.c:268 src/nmtui/nmt-editor.c:443
+#: src/nmtui/nmt-password-dialog.c:180 src/nmtui/nmt-route-editor.c:105
 #: src/nmtui/nmt-wireguard-peer-editor.c:154 src/nmtui/nmtui-hostname.c:53
-#: src/nmtui/nmtui.c:115
 msgid "OK"
 msgstr "V redu"
 
-#: src/libnmt-newt/nmt-newt-utils.c:412 src/libnmt-newt/nmt-newt-utils.c:459
+#: src/libnmt-newt/nmt-newt-utils.c:451 src/libnmt-newt/nmt-newt-utils.c:498
 #, c-format
 msgid "Could not create temporary file: %s"
 msgstr "Ni mogoče ustvariti začasne datoteke: %s"
 
-#: src/libnmt-newt/nmt-newt-utils.c:426
+#: src/libnmt-newt/nmt-newt-utils.c:465
 #, c-format
 msgid "Could not write to temporary file: %s"
 msgstr "Ni mogoče pisati v začasno datoteko: %s"
 
-#: src/libnmt-newt/nmt-newt-utils.c:465
+#: src/libnmt-newt/nmt-newt-utils.c:504
 #, c-format
 msgid "Editor failed: %s"
 msgstr "Urejevalnik je spodletel: %s"
 
-#: src/libnmt-newt/nmt-newt-utils.c:471
+#: src/libnmt-newt/nmt-newt-utils.c:510
 #, c-format
 msgid "Could not re-read file: %s"
 msgstr "Datoteke ni bilo mogoče ponovno prebrati: %s"
@@ -12073,7 +12087,7 @@ msgid "Error: polkit agent initialization failed: %s"
 msgstr "Napaka: inicializacija agenta polkit ni uspela: %s"
 
 #: src/nmcli/common.c:380 src/nmcli/common.c:381 src/nmcli/common.c:411
-#: src/nmcli/common.c:412 src/nmcli/connections.c:1774
+#: src/nmcli/common.c:412 src/nmcli/connections.c:1780
 msgid "GROUP"
 msgstr "SKUPINA"
 
@@ -12225,7 +12239,7 @@ msgstr "Znano je, da šifriranje WEP ni varno"
 msgid "never"
 msgstr "nikoli"
 
-#: src/nmcli/connections.c:1117
+#: src/nmcli/connections.c:1123
 msgid ""
 "Usage: nmcli connection { COMMAND | help }\n"
 "\n"
@@ -12301,7 +12315,7 @@ msgstr ""
 "  export [id | uuid | path] <ID> [<izhodna datoteka>]\n"
 "\n"
 
-#: src/nmcli/connections.c:1143
+#: src/nmcli/connections.c:1149
 msgid ""
 "Usage: nmcli connection show { ARGUMENTS | help }\n"
 "\n"
@@ -12348,7 +12362,7 @@ msgstr ""
 "Uporabite možnost global --show-secrets, da razkrijete tudi povezane "
 "skrivnosti.\n"
 
-#: src/nmcli/connections.c:1165
+#: src/nmcli/connections.c:1171
 msgid ""
 "Usage: nmcli connection up { ARGUMENTS | help }\n"
 "\n"
@@ -12392,7 +12406,7 @@ msgstr ""
 "passwd-file - datoteka z geslom, potrebnim za aktiviranje povezave\n"
 "\n"
 
-#: src/nmcli/connections.c:1189
+#: src/nmcli/connections.c:1195
 msgid ""
 "Usage: nmcli connection down { ARGUMENTS | help }\n"
 "\n"
@@ -12414,7 +12428,7 @@ msgstr ""
 "s svojim imenom, UUIID-jem ali potjo D-Bus.\n"
 "\n"
 
-#: src/nmcli/connections.c:1202
+#: src/nmcli/connections.c:1208
 msgid ""
 "Usage: nmcli connection add { ARGUMENTS | help }\n"
 "\n"
@@ -12753,7 +12767,7 @@ msgstr ""
 "                  [ip6 <naslov IPv6>] [gw6 <prehod IPv6>]\n"
 "\n"
 
-#: src/nmcli/connections.c:1335
+#: src/nmcli/connections.c:1341
 msgid ""
 "Usage: nmcli connection modify { ARGUMENTS | help }\n"
 "\n"
@@ -12783,8 +12797,8 @@ msgid ""
 msgstr ""
 "Uporaba: nmcli connection modify { ARGUMENTI | help }\n"
 "\n"
-"ARGUMENTI := [id | uuid | pot] <ID> ([+|-]<nastavitev>.<lastnost> "
-"<vrednost>)+\n"
+"ARGUMENTI := [id | uuid | pot] <ID> ([+|-]<nastavitev>.<lastnost> <vrednost>)"
+"+\n"
 "\n"
 "Spremenite eno ali več lastnosti profila povezave.\n"
 "Profil je označen z imenom, UUID ali potjo D-Bus. Za več vrednostne\n"
@@ -12810,7 +12824,7 @@ msgstr ""
 "nmcli con mod em1-1 remove sriov\n"
 "\n"
 
-#: src/nmcli/connections.c:1363
+#: src/nmcli/connections.c:1369
 msgid ""
 "Usage: nmcli connection clone { ARGUMENTS | help }\n"
 "\n"
@@ -12831,7 +12845,7 @@ msgstr ""
 "id (zagotovljeno kot argument <novo ime>).\n"
 "\n"
 
-#: src/nmcli/connections.c:1375
+#: src/nmcli/connections.c:1381
 msgid ""
 "Usage: nmcli connection edit { ARGUMENTS | help }\n"
 "\n"
@@ -12857,7 +12871,7 @@ msgstr ""
 "Dodajte nov profil povezave v interaktivnem urejevalniku.\n"
 "\n"
 
-#: src/nmcli/connections.c:1390
+#: src/nmcli/connections.c:1396
 msgid ""
 "Usage: nmcli connection delete { ARGUMENTS | help }\n"
 "\n"
@@ -12875,7 +12889,7 @@ msgstr ""
 "Profili so označeni z imenom, UUID ali potjo D-Bus.\n"
 "\n"
 
-#: src/nmcli/connections.c:1401
+#: src/nmcli/connections.c:1407
 msgid ""
 "Usage: nmcli connection monitor { ARGUMENTS | help }\n"
 "\n"
@@ -12895,7 +12909,7 @@ msgstr ""
 "Spremlja vse profile povezave, če noben ni določen.\n"
 "\n"
 
-#: src/nmcli/connections.c:1413
+#: src/nmcli/connections.c:1419
 msgid ""
 "Usage: nmcli connection reload { help }\n"
 "\n"
@@ -12907,7 +12921,7 @@ msgstr ""
 "Znova naložite vse datoteke za povezavo z diska.\n"
 "\n"
 
-#: src/nmcli/connections.c:1422
+#: src/nmcli/connections.c:1428
 msgid ""
 "Usage: nmcli connection load { ARGUMENTS | help }\n"
 "\n"
@@ -12930,7 +12944,7 @@ msgstr ""
 "stanjem.\n"
 "\n"
 
-#: src/nmcli/connections.c:1435
+#: src/nmcli/connections.c:1441
 msgid ""
 "Usage: nmcli connection import { ARGUMENTS | help }\n"
 "\n"
@@ -12953,7 +12967,7 @@ msgstr ""
 "se uvozi z vstavki VPN NetworkManager.\n"
 "\n"
 
-#: src/nmcli/connections.c:1449
+#: src/nmcli/connections.c:1455
 msgid ""
 "Usage: nmcli connection export { ARGUMENTS | help }\n"
 "\n"
@@ -12971,7 +12985,7 @@ msgstr ""
 "Podatki so usmerjeni v standardni izhod ali v datoteko, če je navedeno ime.\n"
 "\n"
 
-#: src/nmcli/connections.c:1460
+#: src/nmcli/connections.c:1466
 msgid ""
 "Usage: nmcli connection migrate { ARGUMENTS | help }\n"
 "\n"
@@ -12989,227 +13003,227 @@ msgstr ""
 "npr. »keyfile« (privzeto) ali »ifcfg-rh«.\n"
 "\n"
 
-#: src/nmcli/connections.c:1543
+#: src/nmcli/connections.c:1549
 #, c-format
 msgid "Error updating secrets for %s: %s\n"
 msgstr "Napaka pri posodabljanju skrivnosti za %s: %s\n"
 
-#: src/nmcli/connections.c:1594
+#: src/nmcli/connections.c:1600
 msgid "Connection profile details"
 msgstr "Podrobnosti profila povezave"
 
-#: src/nmcli/connections.c:1612 src/nmcli/connections.c:1719
+#: src/nmcli/connections.c:1618 src/nmcli/connections.c:1725
 #, c-format
 msgid "Error: 'connection show': %s"
 msgstr "Napaka: 'connection show’: %s"
 
-#: src/nmcli/connections.c:1701
+#: src/nmcli/connections.c:1707
 msgid "Active connection details"
 msgstr "Podrobnosti o aktivni povezavi"
 
-#: src/nmcli/connections.c:1831 src/nmcli/devices.c:1700
-#: src/nmcli/devices.c:1717 src/nmcli/devices.c:1735 src/nmcli/devices.c:1754
-#: src/nmcli/devices.c:1818 src/nmcli/devices.c:1947
+#: src/nmcli/connections.c:1837 src/nmcli/devices.c:1706
+#: src/nmcli/devices.c:1723 src/nmcli/devices.c:1741 src/nmcli/devices.c:1760
+#: src/nmcli/devices.c:1824 src/nmcli/devices.c:1953
 msgid "NAME"
 msgstr "IME"
 
-#: src/nmcli/connections.c:1946
+#: src/nmcli/connections.c:1952
 #, c-format
 msgid "invalid field '%s'; allowed fields: %s and %s, or %s,%s"
 msgstr "neveljavno polje »%s«; Dovoljena polja: %s in %s ali %s.%s"
 
-#: src/nmcli/connections.c:1963 src/nmcli/connections.c:1974
+#: src/nmcli/connections.c:1969 src/nmcli/connections.c:1980
 #, c-format
 msgid "'%s' has to be alone"
 msgstr "»%s« mora biti samostojno"
 
-#: src/nmcli/connections.c:2230
+#: src/nmcli/connections.c:2236
 #, c-format
 msgid "incorrect string '%s' of '--order' option"
 msgstr "napačen niz '%s' možnosti '--order'"
 
-#: src/nmcli/connections.c:2254
+#: src/nmcli/connections.c:2260
 #, c-format
 msgid "incorrect item '%s' in '--order' option"
 msgstr "napačen element '%s' v možnosti '--order'"
 
-#: src/nmcli/connections.c:2299
+#: src/nmcli/connections.c:2305
 msgid "No connection specified"
 msgstr "Ni določene povezave"
 
-#: src/nmcli/connections.c:2312
+#: src/nmcli/connections.c:2318
 #, c-format
 msgid "%s argument is missing"
 msgstr "argument %s manjka"
 
-#: src/nmcli/connections.c:2333
+#: src/nmcli/connections.c:2339
 #, c-format
 msgid "unknown connection '%s'"
 msgstr "neznana povezava »%s«"
 
-#: src/nmcli/connections.c:2362
+#: src/nmcli/connections.c:2368
 msgid "'--order' argument is missing"
 msgstr "Argument »--order« manjka"
 
-#: src/nmcli/connections.c:2426
+#: src/nmcli/connections.c:2432
 msgid "NetworkManager active profiles"
 msgstr "Aktivni profili NetworkManager"
 
-#: src/nmcli/connections.c:2427
+#: src/nmcli/connections.c:2433
 msgid "NetworkManager connection profiles"
 msgstr "Profili povezav NetworkManager"
 
-#: src/nmcli/connections.c:2483 src/nmcli/connections.c:3204
-#: src/nmcli/connections.c:3216 src/nmcli/connections.c:3228
-#: src/nmcli/connections.c:3464 src/nmcli/connections.c:9923
-#: src/nmcli/connections.c:9942 src/nmcli/devices.c:3420
-#: src/nmcli/devices.c:3433 src/nmcli/devices.c:3445 src/nmcli/devices.c:3776
-#: src/nmcli/devices.c:3787 src/nmcli/devices.c:3806 src/nmcli/devices.c:3815
-#: src/nmcli/devices.c:3837 src/nmcli/devices.c:3848 src/nmcli/devices.c:3869
-#: src/nmcli/devices.c:4425 src/nmcli/devices.c:4436 src/nmcli/devices.c:4445
-#: src/nmcli/devices.c:4459 src/nmcli/devices.c:4478 src/nmcli/devices.c:4487
-#: src/nmcli/devices.c:4636 src/nmcli/devices.c:4647 src/nmcli/devices.c:4866
-#: src/nmcli/devices.c:5045 src/nmcli/devices.c:5266
+#: src/nmcli/connections.c:2489 src/nmcli/connections.c:3210
+#: src/nmcli/connections.c:3222 src/nmcli/connections.c:3234
+#: src/nmcli/connections.c:3470 src/nmcli/connections.c:9934
+#: src/nmcli/connections.c:9953 src/nmcli/devices.c:3552
+#: src/nmcli/devices.c:3565 src/nmcli/devices.c:3577 src/nmcli/devices.c:3908
+#: src/nmcli/devices.c:3919 src/nmcli/devices.c:3938 src/nmcli/devices.c:3947
+#: src/nmcli/devices.c:3969 src/nmcli/devices.c:3980 src/nmcli/devices.c:4001
+#: src/nmcli/devices.c:4557 src/nmcli/devices.c:4568 src/nmcli/devices.c:4577
+#: src/nmcli/devices.c:4591 src/nmcli/devices.c:4610 src/nmcli/devices.c:4619
+#: src/nmcli/devices.c:4768 src/nmcli/devices.c:4779 src/nmcli/devices.c:4963
+#: src/nmcli/devices.c:5142 src/nmcli/devices.c:5363
 #, c-format
 msgid "Error: %s argument is missing."
 msgstr "Napaka: manjka argument %s."
 
-#: src/nmcli/connections.c:2518
+#: src/nmcli/connections.c:2524
 #, c-format
 msgid "Error: %s - no such connection profile."
 msgstr "Napaka: %s - ni takšnega profila povezave."
 
-#: src/nmcli/connections.c:2610 src/nmcli/connections.c:3190
-#: src/nmcli/connections.c:3264 src/nmcli/connections.c:9427
-#: src/nmcli/connections.c:9511 src/nmcli/connections.c:10047
-#: src/nmcli/devices.c:2047 src/nmcli/devices.c:2359 src/nmcli/devices.c:2526
-#: src/nmcli/devices.c:2652 src/nmcli/devices.c:2837 src/nmcli/devices.c:3620
-#: src/nmcli/devices.c:4600 src/nmcli/devices.c:5052 src/nmcli/general.c:1076
+#: src/nmcli/connections.c:2616 src/nmcli/connections.c:3196
+#: src/nmcli/connections.c:3270 src/nmcli/connections.c:9438
+#: src/nmcli/connections.c:9522 src/nmcli/connections.c:10058
+#: src/nmcli/devices.c:2053 src/nmcli/devices.c:2365 src/nmcli/devices.c:2532
+#: src/nmcli/devices.c:2658 src/nmcli/devices.c:2885 src/nmcli/devices.c:3752
+#: src/nmcli/devices.c:4732 src/nmcli/devices.c:5149 src/nmcli/general.c:1076
 #, c-format
 msgid "Error: %s."
 msgstr "Napaka: %s."
 
-#: src/nmcli/connections.c:2708 src/nmcli/devices.c:4819
+#: src/nmcli/connections.c:2714 src/nmcli/devices.c:4916
 #, c-format
 msgid "no active connection on device '%s'"
 msgstr "ni dejavnih povezav na napravi »%s«"
 
-#: src/nmcli/connections.c:2716
+#: src/nmcli/connections.c:2722
 msgid "no active connection or device"
 msgstr "ni dejavne povezave ali naprave"
 
-#: src/nmcli/connections.c:2739
+#: src/nmcli/connections.c:2745
 #, c-format
 msgid "device '%s' not compatible with connection '%s': "
 msgstr "naprava »%s« ni združljiva s povezavo »%s«"
 
-#: src/nmcli/connections.c:2777
+#: src/nmcli/connections.c:2783
 #, c-format
 msgid "device '%s' not compatible with connection '%s'"
 msgstr "naprava »%s« ni združljiva s povezavo »%s«"
 
-#: src/nmcli/connections.c:2784
+#: src/nmcli/connections.c:2790
 #, c-format
 msgid "device '%s' not found for connection '%s'"
 msgstr "Naprava »%s« ni najdena za povezavo »%s«"
 
-#: src/nmcli/connections.c:2792
+#: src/nmcli/connections.c:2798
 #, c-format
 msgid "no device found for connection '%s'"
 msgstr "ni naprave za povezavo »%s«"
 
-#: src/nmcli/connections.c:2843
+#: src/nmcli/connections.c:2849
 #, c-format
 msgid "Hint: use '%s' to get more details."
 msgstr "Namig: za več podrobnosti uporabite »%s«."
 
-#: src/nmcli/connections.c:2861
+#: src/nmcli/connections.c:2867
 #, c-format
 msgid "Connection successfully activated (%s) (D-Bus active path: %s)\n"
 msgstr "Povezava je uspešno aktivirana (%s) (dejavna pot vodila D-Bus: %s)\n"
 
-#: src/nmcli/connections.c:2865 src/nmcli/connections.c:3016
-#: src/nmcli/connections.c:7655
+#: src/nmcli/connections.c:2871 src/nmcli/connections.c:3022
+#: src/nmcli/connections.c:7666
 #, c-format
 msgid "Connection successfully activated (D-Bus active path: %s)\n"
 msgstr "Povezava je uspešno vzpostavljena (dejavna pot vodila D-Bus: %s)\n"
 
-#: src/nmcli/connections.c:2872 src/nmcli/connections.c:2995
+#: src/nmcli/connections.c:2878 src/nmcli/connections.c:3001
 #, c-format
 msgid "Error: Connection activation failed: %s"
 msgstr "Napaka: začenjanje povezave ni uspelo: %s."
 
-#: src/nmcli/connections.c:2908
+#: src/nmcli/connections.c:2914
 #, c-format
 msgid "Error: Timeout expired (%d seconds)"
 msgstr "Napaka: časovna omejitev je potekla (%d s)"
 
-#: src/nmcli/connections.c:3090
+#: src/nmcli/connections.c:3096
 #, c-format
 msgid "unknown device '%s'."
 msgstr "neznana naprava »%s«."
 
-#: src/nmcli/connections.c:3098
+#: src/nmcli/connections.c:3104
 msgid "neither a valid connection nor device given"
 msgstr "niti veljavna povezava niti naprava ni podana"
 
-#: src/nmcli/connections.c:3113
+#: src/nmcli/connections.c:3119
 #, c-format
 msgid "invalid passwd-file '%s' at line %zd: %s"
 msgstr "neveljavna datoteka passwd-file »%s« v vrstici %zd: %s"
 
-#: src/nmcli/connections.c:3121
+#: src/nmcli/connections.c:3127
 #, c-format
 msgid "invalid passwd-file '%s': %s"
 msgstr "neveljavna datoteka passwd-file »%s«: %s"
 
-#: src/nmcli/connections.c:3238 src/nmcli/connections.c:9951
-#: src/nmcli/devices.c:2004 src/nmcli/devices.c:2053 src/nmcli/devices.c:2532
-#: src/nmcli/devices.c:2725 src/nmcli/devices.c:2792 src/nmcli/devices.c:2992
-#: src/nmcli/devices.c:3480 src/nmcli/devices.c:3885 src/nmcli/devices.c:4497
-#: src/nmcli/devices.c:4653 src/nmcli/devices.c:4874 src/nmcli/devices.c:5057
+#: src/nmcli/connections.c:3244 src/nmcli/connections.c:9962
+#: src/nmcli/devices.c:2010 src/nmcli/devices.c:2059 src/nmcli/devices.c:2538
+#: src/nmcli/devices.c:2731 src/nmcli/devices.c:2798 src/nmcli/devices.c:3124
+#: src/nmcli/devices.c:3612 src/nmcli/devices.c:4017 src/nmcli/devices.c:4629
+#: src/nmcli/devices.c:4785 src/nmcli/devices.c:4971 src/nmcli/devices.c:5154
 #, c-format
 msgid "Error: invalid extra argument '%s'."
 msgstr "Napaka: neveljaven dodatni argument »%s«."
 
-#: src/nmcli/connections.c:3272
+#: src/nmcli/connections.c:3278
 msgid "preparing"
 msgstr "poteka pripravljanje …"
 
-#: src/nmcli/connections.c:3380
+#: src/nmcli/connections.c:3386
 #, c-format
 msgid "Connection '%s' (%s) successfully deleted.\n"
 msgstr "Povezava »%s« (%s) je bila uspešno izbrisana.\n"
 
-#: src/nmcli/connections.c:3396
+#: src/nmcli/connections.c:3402
 #, c-format
 msgid "Connection '%s' successfully deactivated (D-Bus active path: %s)\n"
 msgstr "Povezava '%s' je bila uspešno deaktivirana (aktivna pot D-Bus: %s)\n"
 
-#: src/nmcli/connections.c:3445 src/nmcli/connections.c:9607
-#: src/nmcli/connections.c:9644 src/nmcli/connections.c:9833
+#: src/nmcli/connections.c:3451 src/nmcli/connections.c:9618
+#: src/nmcli/connections.c:9655 src/nmcli/connections.c:9844
 msgid "Error: No connection specified."
 msgstr "Napaka: Povezava ni določena."
 
-#: src/nmcli/connections.c:3477
+#: src/nmcli/connections.c:3483
 #, c-format
 msgid "Error: '%s' is not an active connection.\n"
 msgstr "Napaka: »%s« ni aktivna povezava.\n"
 
-#: src/nmcli/connections.c:3478
+#: src/nmcli/connections.c:3484
 msgid "Error: not all active connections found."
 msgstr "Napaka: niso bile najdene vse aktivne povezave."
 
-#: src/nmcli/connections.c:3486
+#: src/nmcli/connections.c:3492
 msgid "Error: no active connection provided."
 msgstr "Napaka: aktivna povezava ni zagotovljena."
 
-#: src/nmcli/connections.c:3518
+#: src/nmcli/connections.c:3524
 #, c-format
 msgid "Connection '%s' deactivation failed: %s\n"
 msgstr "Deaktivacija povezave »%s« ni uspela: %s\n"
 
-#: src/nmcli/connections.c:4013
+#: src/nmcli/connections.c:4019
 #, c-format
 msgid ""
 "Warning: controller '%s' doesn't refer to any existing profile of type "
@@ -13217,94 +13231,94 @@ msgid ""
 msgstr ""
 "Opozorilo: krmilnik '%s' se ne nanaša na noben obstoječi profil vrste '%s'.\n"
 
-#: src/nmcli/connections.c:4395
+#: src/nmcli/connections.c:4401
 #, c-format
 msgid "Error: invalid property '%s': %s."
 msgstr "Napaka: neveljavna lastnost »%s«: %s."
 
-#: src/nmcli/connections.c:4413
+#: src/nmcli/connections.c:4419
 #, c-format
 msgid "Error: failed to modify %s.%s: %s."
 msgstr "Napaka: ni uspelo spremeniti %s.%s: %s."
 
-#: src/nmcli/connections.c:4414
+#: src/nmcli/connections.c:4420
 #, c-format
 msgid "Error: failed to remove a value from %s.%s: %s."
 msgstr "Napaka: vrednosti iz %s.%s ni bilo mogoče odstraniti: %s."
 
-#: src/nmcli/connections.c:4494
+#: src/nmcli/connections.c:4500
 #, c-format
 msgid "Error: invalid port type; %s."
 msgstr "Napaka: neveljavna vrsta vrat; %s."
 
-#: src/nmcli/connections.c:4505
+#: src/nmcli/connections.c:4511
 #, c-format
 msgid "Error: invalid connection type; %s."
 msgstr "Napaka: neveljavna vrsta povezave; %s."
 
-#: src/nmcli/connections.c:4643
+#: src/nmcli/connections.c:4649
 #, c-format
 msgid "Error: bad connection type: %s"
 msgstr "Napaka: slaba vrsta povezave: %s"
 
-#: src/nmcli/connections.c:4719
+#: src/nmcli/connections.c:4725
 msgid "Error: controller is required"
 msgstr "Napaka: zahtevan je krmilnik"
 
-#: src/nmcli/connections.c:4820
+#: src/nmcli/connections.c:4826
 #, c-format
 msgid "Error: '%s' is not a valid monitoring mode; use '%s' or '%s'.\n"
 msgstr "Napaka: »%s« ni veljaven način spremljanja; uporabite »%s« ali »%s«.\n"
 
-#: src/nmcli/connections.c:4860
+#: src/nmcli/connections.c:4866
 #, c-format
 msgid "Error: 'bt-type': '%s' not valid; use [%s, %s, %s (%s), %s]."
 msgstr "Napaka: 'bt-type': '%s' ni veljavno; Uporabite [%s, %s, %s (%s), %s]."
 
-#: src/nmcli/connections.c:5214
+#: src/nmcli/connections.c:5220
 #, c-format
 msgid "Error: setting '%s' is mandatory and cannot be removed."
 msgstr "Napaka: nastavitev »%s« je obvezna in je ni mogoče odstraniti."
 
-#: src/nmcli/connections.c:5230
+#: src/nmcli/connections.c:5236
 #, c-format
 msgid "Error: value for '%s' is missing."
 msgstr "Napaka: manjka vrednost za »%s«."
 
-#: src/nmcli/connections.c:5435
+#: src/nmcli/connections.c:5441
 msgid "Error: missing setting."
 msgstr "Napaka: manjka nastavitev."
 
-#: src/nmcli/connections.c:5449
+#: src/nmcli/connections.c:5455
 #, c-format
 msgid "Error: invalid setting argument '%s'."
 msgstr "Napaka: neveljaven argument nastavitve »%s«."
 
-#: src/nmcli/connections.c:5510
+#: src/nmcli/connections.c:5516
 msgid "port connections cannot have IP configuration"
 msgstr "povezave vrat ne morejo imeti prilagoditve IP"
 
-#: src/nmcli/connections.c:5518
+#: src/nmcli/connections.c:5524
 #, c-format
 msgid "Error: invalid or not allowed setting '%s': %s."
 msgstr "Napaka: neveljavna ali nedovoljena nastavitev »%s«: %s."
 
-#: src/nmcli/connections.c:5573 src/nmcli/connections.c:5594
+#: src/nmcli/connections.c:5579 src/nmcli/connections.c:5600
 #, c-format
 msgid "Error: '%s' is ambiguous (%s.%s or %s.%s)."
 msgstr "Napaka: »%s« je dvoumno (%s.%s ali %s.%s)."
 
-#: src/nmcli/connections.c:5618
+#: src/nmcli/connections.c:5624
 #, c-format
 msgid "Error: invalid <setting>.<property> '%s'."
 msgstr "Napaka: neveljavna <nastavitev>.<lastnost> '%s'."
 
-#: src/nmcli/connections.c:5651 src/nmcli/devices.c:2239
+#: src/nmcli/connections.c:5658 src/nmcli/devices.c:2245
 #, c-format
 msgid "Warning: %s.\n"
 msgstr "Opozorilo: %s.\n"
 
-#: src/nmcli/connections.c:5667
+#: src/nmcli/connections.c:5674
 #, c-format
 msgid ""
 "Warning: There is another connection with the name '%1$s'. Reference the "
@@ -13325,7 +13339,7 @@ msgstr[3] ""
 "Opozorilo: obstajajo še %3$u druge povezave z imenom »%1$s«. Na povezavo se "
 "sklicujte z njenim uuid »%2$s«\n"
 
-#: src/nmcli/connections.c:5689 src/nmcli/connections.c:9459
+#: src/nmcli/connections.c:5700 src/nmcli/connections.c:9470
 #, c-format
 msgid "Error: Failed to add '%s' connection: %s"
 msgstr "Napaka: Dodajanje povezave »%s« ni uspelo: %s"
@@ -13339,47 +13353,47 @@ msgstr "Napaka: Dodajanje povezave »%s« ni uspelo: %s"
 #. *
 #. * This is true for many messages that the user might parse. But this one
 #. * seems in particular interesting for a user to parse.
-#: src/nmcli/connections.c:5706
+#: src/nmcli/connections.c:5717
 #, c-format
 msgid "Connection '%s' (%s) successfully added.\n"
 msgstr "Povezava '%s' (%s) je bila uspešno dodana.\n"
 
-#: src/nmcli/connections.c:5855
+#: src/nmcli/connections.c:5866
 msgid ""
 "You can specify this option more than once. Press <Enter> when you're done.\n"
 msgstr "To možnost lahko določite večkrat. Pritisnite <Enter> , ko končate.\n"
 
 #. Ask for optional arguments.
-#: src/nmcli/connections.c:5966
+#: src/nmcli/connections.c:5977
 #, c-format
 msgid "There are %d optional settings for %s.\n"
 msgstr "Na voljo je %d izbirnih nastavitev za %s.\n"
 
-#: src/nmcli/connections.c:5968
+#: src/nmcli/connections.c:5979
 #, c-format
 msgid "Do you want to provide them? %s"
 msgstr "Ali jih želite zagotoviti? %s"
 
-#: src/nmcli/connections.c:6100
+#: src/nmcli/connections.c:6111
 msgid "Error: argument '--' can only be passed once"
 msgstr "Napaka: argument »--« je možno posredovati samo enkrat"
 
-#: src/nmcli/connections.c:6114 src/nmcli/utils.c:280
+#: src/nmcli/connections.c:6125 src/nmcli/utils.c:289
 #, c-format
 msgid "Error: value for '%s' argument is required."
 msgstr "Napaka: zahteva se vrednost argumenta »%s«."
 
-#: src/nmcli/connections.c:6120
+#: src/nmcli/connections.c:6131
 #, c-format
 msgid "Error: 'save': %s."
 msgstr "Napaka: 'save': %s."
 
-#: src/nmcli/connections.c:6224 src/nmcli/connections.c:6237
+#: src/nmcli/connections.c:6235 src/nmcli/connections.c:6248
 #, c-format
 msgid "Error: '%s' argument is required."
 msgstr "Napaka: argument »%s« je obvezen."
 
-#: src/nmcli/connections.c:7203
+#: src/nmcli/connections.c:7214
 #, c-format
 msgid "['%s' setting values]\n"
 msgstr "['%s' nastavlja vrednosti]\n"
@@ -13387,7 +13401,7 @@ msgstr "['%s' nastavlja vrednosti]\n"
 #. TRANSLATORS: do not translate command names and keywords before ::
 #. *              However, you should translate terms enclosed in <>.
 #.
-#: src/nmcli/connections.c:7314
+#: src/nmcli/connections.c:7325
 msgid ""
 "---[ Main menu ]---\n"
 "goto     [<setting> | <prop>]        :: go to a setting or property\n"
@@ -13419,7 +13433,7 @@ msgstr ""
 "NMCLI    <conf-option> <vrednost>    :: prilagoditev NMCLI\n"
 "quit                                 :: izhod iz nmcli\n"
 
-#: src/nmcli/connections.c:7342
+#: src/nmcli/connections.c:7353
 msgid ""
 "goto <setting>[.<prop>] | <prop>  :: enter setting/property for editing\n"
 "\n"
@@ -13438,7 +13452,7 @@ msgstr ""
 "          nmcli connection> goto secondaries\n"
 "          nmcli> goto ipv4.addresses\n"
 
-#: src/nmcli/connections.c:7350
+#: src/nmcli/connections.c:7361
 msgid ""
 "remove <setting>[.<prop>]  :: remove setting or reset property value\n"
 "\n"
@@ -13458,7 +13472,7 @@ msgstr ""
 "Primeri: nmcli> remove wifi-sec\n"
 "          nmcli> remove eth.mtu\n"
 
-#: src/nmcli/connections.c:7357
+#: src/nmcli/connections.c:7368
 msgid ""
 "set [<setting>.<prop> <value>]  :: set property value\n"
 "\n"
@@ -13472,7 +13486,7 @@ msgstr ""
 "\n"
 "Primer: nmcli> set con.id Moja povezava\n"
 
-#: src/nmcli/connections.c:7362
+#: src/nmcli/connections.c:7373
 msgid ""
 "add [<setting>.<prop> <value>]  :: add property value\n"
 "\n"
@@ -13486,7 +13500,7 @@ msgstr ""
 "\n"
 "Primer: nmcli> add ipv4.addresses 192.168.1.1/24\n"
 
-#: src/nmcli/connections.c:7367
+#: src/nmcli/connections.c:7378
 msgid ""
 "describe [<setting>.<prop>]  :: describe property\n"
 "\n"
@@ -13498,7 +13512,7 @@ msgstr ""
 "Prikaže opis nastanitve. Na strani priročnika nm-settings(5) si lahko "
 "ogledate vse nastavitve in lastnosti NM.\n"
 
-#: src/nmcli/connections.c:7372
+#: src/nmcli/connections.c:7383
 msgid ""
 "print [all]  :: print setting or connection values\n"
 "\n"
@@ -13512,7 +13526,7 @@ msgstr ""
 "\n"
 "Primer: nmcli ipv4> print all\n"
 
-#: src/nmcli/connections.c:7378
+#: src/nmcli/connections.c:7389
 msgid ""
 "verify [all | fix]  :: verify setting or connection validity\n"
 "\n"
@@ -13537,7 +13551,7 @@ msgstr ""
 "          nmcli> verify fix\n"
 "          nmcli bond> verify\n"
 
-#: src/nmcli/connections.c:7388
+#: src/nmcli/connections.c:7399
 msgid ""
 "save [persistent|temporary]  :: save the connection\n"
 "\n"
@@ -13565,7 +13579,7 @@ msgstr ""
 "povezava\n"
 "treba izbrisati.\n"
 
-#: src/nmcli/connections.c:7399
+#: src/nmcli/connections.c:7410
 msgid ""
 "activate [<ifname>] [/<ap>|<nsp>]  :: activate the connection\n"
 "\n"
@@ -13585,7 +13599,7 @@ msgstr ""
 "/<ap>|<nsp> - AP (Wi-Fi) ali NSP (WiMAX) (na začetku / ko <ifname> ni "
 "določeno)\n"
 
-#: src/nmcli/connections.c:7407 src/nmcli/connections.c:7566
+#: src/nmcli/connections.c:7418 src/nmcli/connections.c:7577
 msgid ""
 "back  :: go to upper menu level\n"
 "\n"
@@ -13593,13 +13607,13 @@ msgstr ""
 "back :: pojdi na zgornjo raven menija\n"
 "\n"
 
-#: src/nmcli/connections.c:7410
+#: src/nmcli/connections.c:7421
 msgid ""
 "help/? [<command>]  :: help for the nmcli commands\n"
 "\n"
 msgstr "help/? [<ukaz>] :: Pomoč za ukaze nmcli\n"
 
-#: src/nmcli/connections.c:7413
+#: src/nmcli/connections.c:7424
 #, c-format
 msgid ""
 "nmcli [<conf-option> <value>]  :: nmcli configuration\n"
@@ -13626,7 +13640,7 @@ msgstr ""
 "          nmcli> nmcli save-confirmation no\n"
 "          nmcli> nmcli prompt-color 3\n"
 
-#: src/nmcli/connections.c:7435 src/nmcli/connections.c:7572
+#: src/nmcli/connections.c:7446 src/nmcli/connections.c:7583
 msgid ""
 "quit  :: exit nmcli\n"
 "\n"
@@ -13638,8 +13652,8 @@ msgstr ""
 "Ta ukaz zapusti nmcli. Ko povezava, ki jo urejate, ni shranjena, je "
 "uporabnik pozvan, da potrdi dejanje.\n"
 
-#: src/nmcli/connections.c:7440 src/nmcli/connections.c:7577
-#: src/nmcli/connections.c:7969 src/nmcli/connections.c:9021
+#: src/nmcli/connections.c:7451 src/nmcli/connections.c:7588
+#: src/nmcli/connections.c:7980 src/nmcli/connections.c:9032
 #, c-format
 msgid "Unknown command: '%s'\n"
 msgstr "Neznan ukaz: »%s«\n"
@@ -13647,7 +13661,7 @@ msgstr "Neznan ukaz: »%s«\n"
 #. TRANSLATORS: do not translate command names and keywords before ::
 #. *              However, you should translate terms enclosed in <>.
 #.
-#: src/nmcli/connections.c:7505
+#: src/nmcli/connections.c:7516
 msgid ""
 "---[ Property menu ]---\n"
 "set      [<value>]               :: set new value\n"
@@ -13673,7 +13687,7 @@ msgstr ""
 "help/?   [<ukaz>]             :: izpiše to pomoč ali opis ukaza\n"
 "quit                             :: Izhod iz nmcli\n"
 
-#: src/nmcli/connections.c:7529
+#: src/nmcli/connections.c:7540
 msgid ""
 "set [<value>]  :: set new value\n"
 "\n"
@@ -13683,7 +13697,7 @@ msgstr ""
 "\n"
 "Ta ukaz nastavi <vrednost> tej lastnosti\n"
 
-#: src/nmcli/connections.c:7533
+#: src/nmcli/connections.c:7544
 msgid ""
 "add [<value>]  :: append new value to the property\n"
 "\n"
@@ -13697,7 +13711,7 @@ msgstr ""
 "lastnostih z enojno vrednostjo se vrednost lastnosti nadomesti (enako kot "
 "\"set\").\n"
 
-#: src/nmcli/connections.c:7539
+#: src/nmcli/connections.c:7550
 msgid ""
 "change  :: change current value\n"
 "\n"
@@ -13707,7 +13721,7 @@ msgstr ""
 "\n"
 "Prikaže trenutno vrednost in omogoča njeno urejanje.\n"
 
-#: src/nmcli/connections.c:7544
+#: src/nmcli/connections.c:7555
 msgid ""
 "remove [<value>|<index>|<option name>]  :: delete the value\n"
 "\n"
@@ -13739,7 +13753,7 @@ msgstr ""
 "          nmcli bond.options> remove downdelay\n"
 "\n"
 
-#: src/nmcli/connections.c:7555
+#: src/nmcli/connections.c:7566
 msgid ""
 "describe  :: describe property\n"
 "\n"
@@ -13751,7 +13765,7 @@ msgstr ""
 "Prikaže opis nastanitve. Na strani priročnika nm-settings(5) si lahko "
 "ogledate vse nastavitve in lastnosti NM.\n"
 
-#: src/nmcli/connections.c:7560
+#: src/nmcli/connections.c:7571
 msgid ""
 "print [property|setting|connection]  :: print property (setting, connection) "
 "value(s)\n"
@@ -13765,28 +13779,28 @@ msgstr ""
 "Prikaže vrednost lastnosti. Če navedete argument, lahko prikažete tudi "
 "vrednosti za celotno nastavitev ali povezavo.\n"
 
-#: src/nmcli/connections.c:7569
+#: src/nmcli/connections.c:7580
 msgid ""
 "help/? [<command>]  :: help for nmcli commands\n"
 "\n"
 msgstr "pomoč/? [<ukaz>] :: Pomoč za ukaze nmcli\n"
 
-#: src/nmcli/connections.c:7661
+#: src/nmcli/connections.c:7672
 msgid "Error: Connection activation failed.\n"
 msgstr "Napaka: Aktiviranje povezave ni uspelo.\n"
 
 #. TRANSLATORS: status line in nmcli connection editor
-#: src/nmcli/connections.c:7759
+#: src/nmcli/connections.c:7770
 #, c-format
 msgid "[ Type: %s | Name: %s | UUID: %s | Dirty: %s | Temp: %s ]\n"
 msgstr "[ Vrsta: %s | Ime: %s | UUID: %s | Umazano: %s | Začasno: %s ]\n"
 
-#: src/nmcli/connections.c:7797
+#: src/nmcli/connections.c:7808
 #, c-format
 msgid "The connection is not saved. Do you really want to quit? %s"
 msgstr "Povezava ni shranjena. Ali res želite prenehati? %s"
 
-#: src/nmcli/connections.c:7841
+#: src/nmcli/connections.c:7852
 msgid ""
 "The connection profile has been removed from another client. You may type "
 "'save' in the main menu to restore it.\n"
@@ -13794,60 +13808,60 @@ msgstr ""
 "Profil povezave je bil odstranjen iz drugega odjemalca. V glavni meni lahko "
 "vnesete »save«, da ga obnovite.\n"
 
-#: src/nmcli/connections.c:7873 src/nmcli/connections.c:8269
-#: src/nmcli/connections.c:8343
+#: src/nmcli/connections.c:7884 src/nmcli/connections.c:8280
+#: src/nmcli/connections.c:8354
 #, c-format
 msgid "Allowed values for '%s' property: %s\n"
 msgstr "Dovoljene vrednosti za lastnost »%s«: %s\n"
 
-#: src/nmcli/connections.c:7875 src/nmcli/connections.c:8274
-#: src/nmcli/connections.c:8347
+#: src/nmcli/connections.c:7886 src/nmcli/connections.c:8285
+#: src/nmcli/connections.c:8358
 #, c-format
 msgid "Enter '%s' value: "
 msgstr "Vnesite vrednost »%s«: "
 
-#: src/nmcli/connections.c:7888 src/nmcli/connections.c:7907
-#: src/nmcli/connections.c:8282 src/nmcli/connections.c:8358
+#: src/nmcli/connections.c:7899 src/nmcli/connections.c:7918
+#: src/nmcli/connections.c:8293 src/nmcli/connections.c:8369
 #, c-format
 msgid "Error: failed to set '%s' property: %s\n"
 msgstr "Napaka: ni uspelo nastaviti lastnosti »%s«: %s\n"
 
-#: src/nmcli/connections.c:7899
+#: src/nmcli/connections.c:7910
 #, c-format
 msgid "Edit '%s' value: "
 msgstr "Uredite vrednost »%s«: "
 
-#: src/nmcli/connections.c:7922 src/nmcli/settings.c:444
+#: src/nmcli/connections.c:7933 src/nmcli/settings.c:444
 #, c-format
 msgid "Error: %s\n"
 msgstr "Napaka: %s\n"
 
-#: src/nmcli/connections.c:7941
+#: src/nmcli/connections.c:7952
 #, c-format
 msgid "Unknown command argument: '%s'\n"
 msgstr "Neznan argument ukaza: »%s«\n"
 
-#: src/nmcli/connections.c:8036
+#: src/nmcli/connections.c:8047
 #, c-format
 msgid "Available settings: %s\n"
 msgstr "Razpoložljive nastavitve: %s\n"
 
-#: src/nmcli/connections.c:8047
+#: src/nmcli/connections.c:8058
 #, c-format
 msgid "Error: invalid setting name; %s\n"
 msgstr "Napaka: neveljavno ime nastavitve; %s\n"
 
-#: src/nmcli/connections.c:8064
+#: src/nmcli/connections.c:8075
 #, c-format
 msgid "Available properties: %s\n"
 msgstr "Razpoložljive lastnosti: %s\n"
 
-#: src/nmcli/connections.c:8072
+#: src/nmcli/connections.c:8083
 #, c-format
 msgid "Error: property %s\n"
 msgstr "Napaka: lastnost %s\n"
 
-#: src/nmcli/connections.c:8117
+#: src/nmcli/connections.c:8128
 #, c-format
 msgid ""
 "Saving the connection with 'autoconnect=yes'. That might result in an "
@@ -13858,12 +13872,12 @@ msgstr ""
 "aktivacijo povezave.\n"
 "Ali še vedno želite shraniti? %s"
 
-#: src/nmcli/connections.c:8203
+#: src/nmcli/connections.c:8214
 #, c-format
 msgid "You may edit the following settings: %s\n"
 msgstr "Uredite lahko naslednje nastavitve: %s\n"
 
-#: src/nmcli/connections.c:8231
+#: src/nmcli/connections.c:8242
 msgid ""
 "The connection profile has been removed from another client. You may type "
 "'save' to restore it.\n"
@@ -13871,417 +13885,417 @@ msgstr ""
 "Profil povezave je bil odstranjen iz drugega odjemalca. Lahko vnesete "
 "»save«, da ga obnovite.\n"
 
-#: src/nmcli/connections.c:8288 src/nmcli/connections.c:8577
-#: src/nmcli/connections.c:8613
+#: src/nmcli/connections.c:8299 src/nmcli/connections.c:8588
+#: src/nmcli/connections.c:8624
 #, c-format
 msgid "Error: no setting selected; valid are [%s]\n"
 msgstr "Napaka: nastavitev ni izbrana; veljavne so [%s]\n"
 
-#: src/nmcli/connections.c:8290
+#: src/nmcli/connections.c:8301
 msgid "use 'goto <setting>' first, or 'set <setting>.<property>'\n"
 msgstr ""
 "Najprej uporabite »goto <nastavitev>« ali »set <nastavitev>.<lastnost>«.\n"
 
-#: src/nmcli/connections.c:8311 src/nmcli/connections.c:8493
-#: src/nmcli/connections.c:8602
+#: src/nmcli/connections.c:8322 src/nmcli/connections.c:8504
+#: src/nmcli/connections.c:8613
 #, c-format
 msgid "Error: invalid setting argument '%s'; valid are [%s]\n"
 msgstr "Napaka: neveljaven argument nastavitve »%s«; veljavni so [%s]\n"
 
-#: src/nmcli/connections.c:8321
+#: src/nmcli/connections.c:8332
 #, c-format
 msgid "Error: missing setting for '%s' property\n"
 msgstr "Napaka: manjka nastavitev za lastnost »%s«\n"
 
-#: src/nmcli/connections.c:8328
+#: src/nmcli/connections.c:8339
 #, c-format
 msgid "Error: invalid property: %s\n"
 msgstr "Napaka: neveljavna lastnost: %s\n"
 
-#: src/nmcli/connections.c:8391
+#: src/nmcli/connections.c:8402
 #, c-format
 msgid "Error: unknown setting '%s'\n"
 msgstr "Napaka: neznana nastavitev »%s«\n"
 
-#: src/nmcli/connections.c:8417
+#: src/nmcli/connections.c:8428
 #, c-format
 msgid "You may edit the following properties: %s\n"
 msgstr "Urejate lahko naslednje lastnosti: %s\n"
 
-#: src/nmcli/connections.c:8463 src/nmcli/connections.c:8527
+#: src/nmcli/connections.c:8474 src/nmcli/connections.c:8538
 #, c-format
 msgid "Error: failed to remove value of '%s': %s\n"
 msgstr "Napaka: vrednosti »%s« ni možno odstraniti: %s\n"
 
-#: src/nmcli/connections.c:8469
+#: src/nmcli/connections.c:8480
 #, c-format
 msgid "Error: no argument given; valid are [%s]\n"
 msgstr "Napaka: ni podan argument; veljavni so [%s]\n"
 
-#: src/nmcli/connections.c:8489
+#: src/nmcli/connections.c:8500
 #, c-format
 msgid "Setting '%s' is not present in the connection.\n"
 msgstr "Nastavitev »%s« ni prisotna v povezavi.\n"
 
-#: src/nmcli/connections.c:8553
+#: src/nmcli/connections.c:8564
 #, c-format
 msgid "Error: %s properties, nor it is a setting name.\n"
 msgstr "Napaka: lastnosti %s, niti ni ime nastavitve.\n"
 
-#: src/nmcli/connections.c:8580 src/nmcli/connections.c:8616
+#: src/nmcli/connections.c:8591 src/nmcli/connections.c:8627
 msgid "use 'goto <setting>' first, or 'describe <setting>.<property>'\n"
 msgstr ""
 "najprej uporabite 'goto <setting>' ali ‘describe <setting>.<property>\n"
 
-#: src/nmcli/connections.c:8639
+#: src/nmcli/connections.c:8650
 #, c-format
 msgid "Error: invalid property: %s, neither a valid setting name.\n"
 msgstr "Napaka: neveljavna lastnost: %s, niti veljavno ime nastavitve.\n"
 
-#: src/nmcli/connections.c:8669
+#: src/nmcli/connections.c:8680
 #, c-format
 msgid "Error: unknown setting: '%s'\n"
 msgstr "Napaka: neznana nastavitev »%s«\n"
 
-#: src/nmcli/connections.c:8674
+#: src/nmcli/connections.c:8685
 #, c-format
 msgid "Error: '%s' setting not present in the connection\n"
 msgstr "Napaka: Nastavitev »%s« ni prisotna v povezavi\n"
 
-#: src/nmcli/connections.c:8706
+#: src/nmcli/connections.c:8717
 #, c-format
 msgid "Error: invalid property: %s%s\n"
 msgstr "Napaka: neveljavna lastnost: %s%s\n"
 
-#: src/nmcli/connections.c:8708
+#: src/nmcli/connections.c:8719
 msgid ", neither a valid setting name"
 msgstr ", niti ni veljavno ime nastavitve"
 
-#: src/nmcli/connections.c:8724
+#: src/nmcli/connections.c:8735
 #, c-format
 msgid "Invalid verify option: %s\n"
 msgstr "Neveljavna možnost preverjanja: %s\n"
 
-#: src/nmcli/connections.c:8732
+#: src/nmcli/connections.c:8743
 #, c-format
 msgid "Verify setting '%s': %s\n"
 msgstr "Preveri nastavitev »%s«: %s\n"
 
-#: src/nmcli/connections.c:8749 src/nmcli/connections.c:8751
+#: src/nmcli/connections.c:8760 src/nmcli/connections.c:8762
 #, c-format
 msgid "Verify connection: %s\n"
 msgstr "Preveri povezavo: %s\n"
 
-#: src/nmcli/connections.c:8755
+#: src/nmcli/connections.c:8766
 msgid "The error cannot be fixed automatically.\n"
 msgstr "Napake ni mogoče odpraviti samodejno.\n"
 
-#: src/nmcli/connections.c:8775
+#: src/nmcli/connections.c:8786
 #, c-format
 msgid "Error: invalid argument '%s'\n"
 msgstr "Napaka: neveljaven argument »%s«\n"
 
-#: src/nmcli/connections.c:8832
+#: src/nmcli/connections.c:8843
 #, c-format
 msgid "Error: Failed to save '%s' (%s) connection: %s\n"
 msgstr "Napaka: Shranjevanje povezave »%s« (%s) ni uspelo: %s\n"
 
-#: src/nmcli/connections.c:8838
+#: src/nmcli/connections.c:8849
 #, c-format
 msgid "Error: Timeout saving '%s' (%s) connection\n"
 msgstr "Napaka: Časovna prekoračitev shranjevanja povezave »%s« (%s)\n"
 
-#: src/nmcli/connections.c:8842
+#: src/nmcli/connections.c:8853
 #, c-format
 msgid "Connection '%s' (%s) successfully saved.\n"
 msgstr "Povezava »%s« (%s) je bila uspešno shranjena.\n"
 
-#: src/nmcli/connections.c:8843
+#: src/nmcli/connections.c:8854
 #, c-format
 msgid "Connection '%s' (%s) successfully updated.\n"
 msgstr "Povezava »%s« (%s) je bila uspešno posodobljena.\n"
 
-#: src/nmcli/connections.c:8877
+#: src/nmcli/connections.c:8888
 #, c-format
 msgid "Error: connection verification failed: %s\n"
 msgstr "Napaka: preverjanje povezave ni uspelo: %s\n"
 
-#: src/nmcli/connections.c:8878
+#: src/nmcli/connections.c:8889
 msgid "(unknown error)"
 msgstr "(neznana napaka)"
 
-#: src/nmcli/connections.c:8879
+#: src/nmcli/connections.c:8890
 msgid "You may try running 'verify fix' to fix errors.\n"
 msgstr "Morda poskusite zagnati »verify fix«, da popravite napake.\n"
 
 #. TRANSLATORS: do not translate 'save', leave it as it is
-#: src/nmcli/connections.c:8902
+#: src/nmcli/connections.c:8913
 msgid "Error: connection is not saved. Type 'save' first.\n"
 msgstr "Napaka: povezava ni shranjena. Najprej vnesite »save«.\n"
 
-#: src/nmcli/connections.c:8906
+#: src/nmcli/connections.c:8917
 #, c-format
 msgid "Error: connection is not valid: %s\n"
 msgstr "Napaka: povezava ni veljavna: %s\n"
 
-#: src/nmcli/connections.c:8922
+#: src/nmcli/connections.c:8933
 #, c-format
 msgid "Error: Cannot activate connection: %s.\n"
 msgstr "Napaka: Povezave ni mogoče aktivirati: %s.\n"
 
-#: src/nmcli/connections.c:8931
+#: src/nmcli/connections.c:8942
 #, c-format
 msgid "Error: Failed to activate '%s' (%s) connection: %s\n"
 msgstr "Napaka: Povezave »%s« (%s) ni bilo mogoče aktivirati: %s\n"
 
-#: src/nmcli/connections.c:8938
+#: src/nmcli/connections.c:8949
 msgid "Monitoring connection activation (press any key to continue)\n"
 msgstr ""
 "Spremljanje aktiviranja povezave (za nadaljevanje pritisnite poljubno "
 "tipko)\n"
 
-#: src/nmcli/connections.c:8973
+#: src/nmcli/connections.c:8984
 #, c-format
 msgid "Error: status-line: %s\n"
 msgstr "Napaka: status-line: %s\n"
 
-#: src/nmcli/connections.c:8981
+#: src/nmcli/connections.c:8992
 #, c-format
 msgid "Error: save-confirmation: %s\n"
 msgstr "Napaka: save-confirmation: %s\n"
 
-#: src/nmcli/connections.c:8989
+#: src/nmcli/connections.c:9000
 #, c-format
 msgid "Error: show-secrets: %s\n"
 msgstr "Napaka: show-secrets: %s\n"
 
-#: src/nmcli/connections.c:8997
+#: src/nmcli/connections.c:9008
 msgid "Current nmcli configuration:\n"
 msgstr "Trenutna prilagoditev nmcli:\n"
 
-#: src/nmcli/connections.c:9005
+#: src/nmcli/connections.c:9016
 #, c-format
 msgid "Invalid configuration option '%s'; allowed [%s]\n"
 msgstr "Neveljavna možnost prilagoditve »%s«; dovoljeno [%s]\n"
 
-#: src/nmcli/connections.c:9237
+#: src/nmcli/connections.c:9248
 msgid "Error: only one of 'id', 'filename', uuid, or 'path' can be provided."
 msgstr ""
 "Napaka: lahko navedete samo enega od 'id', 'filename', uuid ali 'path'."
 
-#: src/nmcli/connections.c:9252
+#: src/nmcli/connections.c:9263
 #, c-format
 msgid "Error: Unknown connection '%s'."
 msgstr "Napaka: neznana povezava: »%s«."
 
-#: src/nmcli/connections.c:9270
+#: src/nmcli/connections.c:9281
 #, c-format
 msgid "Warning: editing existing connection '%s'; 'type' argument is ignored\n"
 msgstr ""
 "Opozorilo: urejanje obstoječe povezave »%s«; Argument »type« je prezrt\n"
 
-#: src/nmcli/connections.c:9274
+#: src/nmcli/connections.c:9285
 #, c-format
 msgid ""
 "Warning: editing existing connection '%s'; 'con-name' argument is ignored\n"
 msgstr ""
 "Opozorilo: urejanje obstoječe povezave »%s«; Argument 'con-name' je prezrt\n"
 
-#: src/nmcli/connections.c:9301
+#: src/nmcli/connections.c:9312
 #, c-format
 msgid "Valid connection types: %s\n"
 msgstr "Veljavne vrste povezav: %s\n"
 
-#: src/nmcli/connections.c:9303
+#: src/nmcli/connections.c:9314
 #, c-format
 msgid "Error: invalid connection type; %s\n"
 msgstr "Napaka: neveljavna vrsta povezave; %s\n"
 
-#: src/nmcli/connections.c:9342
+#: src/nmcli/connections.c:9353
 msgid "===| nmcli interactive connection editor |==="
 msgstr "===| urejevalnik interaktivnih povezav nmcli |==="
 
-#: src/nmcli/connections.c:9345
+#: src/nmcli/connections.c:9356
 #, c-format
 msgid "Editing existing '%s' connection: '%s'"
 msgstr "Urejanje obstoječe povezave »%s«: »%s«"
 
-#: src/nmcli/connections.c:9347
+#: src/nmcli/connections.c:9358
 #, c-format
 msgid "Adding a new '%s' connection"
 msgstr "Dodajanje nove povezave »%s«"
 
 #. TRANSLATORS: do not translate 'help', leave it as it is
-#: src/nmcli/connections.c:9350
+#: src/nmcli/connections.c:9361
 msgid "Type 'help' or '?' for available commands."
 msgstr "Vnesite »help« ali »?« za ukaze, ki so na voljo."
 
 #. TRANSLATORS: do not translate 'print', leave it as it is
-#: src/nmcli/connections.c:9353
+#: src/nmcli/connections.c:9364
 msgid "Type 'print' to show all the connection properties."
 msgstr "Vnesite »print«, da prikažete vse lastnosti povezave."
 
 #. TRANSLATORS: do not translate 'describe', leave it as it is
-#: src/nmcli/connections.c:9356
+#: src/nmcli/connections.c:9367
 msgid "Type 'describe [<setting>.<prop>]' for detailed property description."
 msgstr "Vnesite ‘describe [<setting><prop>]’ za podroben opis lastnosti."
 
-#: src/nmcli/connections.c:9383
+#: src/nmcli/connections.c:9394
 #, c-format
 msgid "Error: Failed to modify connection '%s': %s"
 msgstr "Napaka: Sprememba povezave »%s« ni uspela: %s"
 
-#: src/nmcli/connections.c:9391
+#: src/nmcli/connections.c:9402
 #, c-format
 msgid "Connection '%s' (%s) successfully modified.\n"
 msgstr "Povezava »%s« (%s) je bila uspešno spremenjena.\n"
 
-#: src/nmcli/connections.c:9464
+#: src/nmcli/connections.c:9475
 #, c-format
 msgid "%s (%s) cloned as %s (%s).\n"
 msgstr "%s (%s) klonirana kot %s (%s).\n"
 
-#: src/nmcli/connections.c:9522
+#: src/nmcli/connections.c:9533
 msgid "New connection name: "
 msgstr "Novo ime povezave: "
 
-#: src/nmcli/connections.c:9524
+#: src/nmcli/connections.c:9535
 msgid "Error: <new name> argument is missing."
 msgstr "Napaka: argument <novo ime> manjka."
 
-#: src/nmcli/connections.c:9530 src/nmcli/connections.c:10058
+#: src/nmcli/connections.c:9541 src/nmcli/connections.c:10069
 #, c-format
 msgid "Error: unknown extra argument: '%s'."
 msgstr "Napaka: neznan dodatni argument: »%s«."
 
-#: src/nmcli/connections.c:9564
+#: src/nmcli/connections.c:9575
 msgid "Error: not all connections deleted."
 msgstr "Napaka: vse povezave niso izbrisane."
 
-#: src/nmcli/connections.c:9565
+#: src/nmcli/connections.c:9576
 #, c-format
 msgid "Error: Connection deletion failed: %s\n"
 msgstr "Napaka: Izbris povezave ni uspel: %s\n"
 
-#: src/nmcli/connections.c:9620 src/nmcli/connections.c:9749
-#: src/nmcli/connections.c:10211
+#: src/nmcli/connections.c:9631 src/nmcli/connections.c:9760
+#: src/nmcli/connections.c:10222
 #, c-format
 msgid "Error: %s.\n"
 msgstr "Napaka: %s.\n"
 
-#: src/nmcli/connections.c:9621 src/nmcli/connections.c:9750
-#: src/nmcli/connections.c:10212
+#: src/nmcli/connections.c:9632 src/nmcli/connections.c:9761
+#: src/nmcli/connections.c:10223
 msgid "Error: not all connections found."
 msgstr "Napaka: niso bile najdene vse povezave."
 
-#: src/nmcli/connections.c:9682
+#: src/nmcli/connections.c:9693
 #, c-format
 msgid "Error: cannot delete unknown connection(s): %s."
 msgstr "Napaka: neznanih povezav ni mogoče izbrisati: %s."
 
-#: src/nmcli/connections.c:9690
+#: src/nmcli/connections.c:9701
 #, c-format
 msgid "%s: connection profile changed\n"
 msgstr "%s: spremenjen profil povezave\n"
 
-#: src/nmcli/connections.c:9716
+#: src/nmcli/connections.c:9727
 #, c-format
 msgid "%s: connection profile created\n"
 msgstr "%s: ustvarjen profil povezave\n"
 
-#: src/nmcli/connections.c:9725
+#: src/nmcli/connections.c:9736
 #, c-format
 msgid "%s: connection profile removed\n"
 msgstr "%s: profil povezave odstranjen\n"
 
-#: src/nmcli/connections.c:9793
+#: src/nmcli/connections.c:9804
 #, c-format
 msgid "Error: failed to reload connections: %s."
 msgstr "Napaka: povezav ni bilo mogoče ponovno naložiti: %s."
 
-#: src/nmcli/connections.c:9865
+#: src/nmcli/connections.c:9876
 #, c-format
 msgid "Error: failed to load connection: %s."
 msgstr "Napaka: nalaganje povezave ni uspelo: %s."
 
-#: src/nmcli/connections.c:9873
+#: src/nmcli/connections.c:9884
 #, c-format
 msgid "Could not load file '%s'\n"
 msgstr "Ni mogoče naložiti datoteke »%s«\n"
 
-#: src/nmcli/connections.c:9877
+#: src/nmcli/connections.c:9888
 msgid "File to import: "
 msgstr "Datoteka za uvoz: "
 
-#: src/nmcli/connections.c:9908
+#: src/nmcli/connections.c:9919
 msgid "Error: No arguments provided."
 msgstr "Napaka: Argumenti niso na voljo."
 
-#: src/nmcli/connections.c:9963
+#: src/nmcli/connections.c:9974
 msgid "Error: 'type' argument is required."
 msgstr "Napaka: Argument »type« je obvezen."
 
-#: src/nmcli/connections.c:9968
+#: src/nmcli/connections.c:9979
 msgid "Error: 'file' argument is required."
 msgstr "Napaka: Argument »file« je obvezen."
 
-#: src/nmcli/connections.c:9978
+#: src/nmcli/connections.c:9989
 #, c-format
 msgid "Error: failed to find VPN plugin for %s."
 msgstr "Napaka: vstavka VPN za %s ni bilo mogoče najti."
 
-#: src/nmcli/connections.c:9987 src/nmcli/connections.c:10079
+#: src/nmcli/connections.c:9998 src/nmcli/connections.c:10090
 #, c-format
 msgid "Error: failed to load VPN plugin: %s."
 msgstr "Napaka: vstavka VPN ni možno naložiti: %s."
 
-#: src/nmcli/connections.c:9998
+#: src/nmcli/connections.c:10009
 #, c-format
 msgid "Error: failed to import '%s': %s."
 msgstr "Napaka: uvoz »%s« ni uspel: %s."
 
-#: src/nmcli/connections.c:10064
+#: src/nmcli/connections.c:10075
 msgid "Output file name: "
 msgstr "Ime izhodne datoteke: "
 
-#: src/nmcli/connections.c:10069
+#: src/nmcli/connections.c:10080
 msgid "Error: the connection is not VPN."
 msgstr "Napaka: povezava ni VPN."
 
-#: src/nmcli/connections.c:10093
+#: src/nmcli/connections.c:10104
 #, c-format
 msgid "Error: failed to create temporary file %s."
 msgstr "Napaka: ni bilo mogoče ustvariti začasne datoteke %s."
 
-#: src/nmcli/connections.c:10103
+#: src/nmcli/connections.c:10114
 #, c-format
 msgid "Error: failed to export '%s': %s."
 msgstr "Napaka: izvoz »%s« ni uspel: %s."
 
-#: src/nmcli/connections.c:10117
+#: src/nmcli/connections.c:10128
 #, c-format
 msgid "Error: failed to read temporary file '%s': %s."
 msgstr "Napaka: branje začasne datoteke »%s« ni uspelo: %s."
 
-#: src/nmcli/connections.c:10141
+#: src/nmcli/connections.c:10152
 msgid "Error: not all connections migrated."
 msgstr "Napaka: vse povezave niso bile preseljene."
 
-#: src/nmcli/connections.c:10142
+#: src/nmcli/connections.c:10153
 #, c-format
 msgid "Error: Connection migration failed: %s\n"
 msgstr "Napaka: Selitev povezave ni uspela: %s\n"
 
-#: src/nmcli/connections.c:10146
+#: src/nmcli/connections.c:10157
 #, c-format
 msgid "Connection '%s' (%s) successfully migrated.\n"
 msgstr "Povezava »%s« (%s) je bila uspešno preseljena.\n"
 
-#: src/nmcli/connections.c:10178
+#: src/nmcli/connections.c:10189
 msgid "'--plugin' argument is missing"
 msgstr "Manjka argument '--plugin'"
 
-#: src/nmcli/connections.c:10274
+#: src/nmcli/connections.c:10285
 #, c-format
 msgid "Error: cannot migrate unknown connection(s): %s."
 msgstr "Napaka: ni mogoče preseliti neznanih povezav: %s."
@@ -14295,7 +14309,7 @@ msgstr "Vmesnik: "
 msgid "Interface(s): "
 msgstr "Vmesnik(i): "
 
-#: src/nmcli/devices.c:72 src/nmcli/devices.c:1480
+#: src/nmcli/devices.c:72 src/nmcli/devices.c:1484
 msgid "(none)"
 msgstr "(brez)"
 
@@ -14313,7 +14327,7 @@ msgstr "<invisible>"
 msgid "%u Mb/s"
 msgstr "%u Mb/s"
 
-#: src/nmcli/devices.c:853
+#: src/nmcli/devices.c:855
 msgid ""
 "Usage: nmcli device { COMMAND | help }\n"
 "\n"
@@ -14324,7 +14338,8 @@ msgid ""
 "\n"
 "  show [<ifname>]\n"
 "\n"
-"  set [ifname] <ifname> [autoconnect yes|no] [managed yes|no]\n"
+"  set [ifname] <ifname> [autoconnect yes|no] [managed [--permanent|--"
+"permanent-only] yes|no|up|down|reset]\n"
 "\n"
 "  connect <ifname>\n"
 "\n"
@@ -14364,7 +14379,8 @@ msgstr ""
 "\n"
 "  show [<ifname>]\n"
 "\n"
-"  set [ifname] <ifname> [autoconnect yes|no] [managed yes|no]\n"
+"  set [ifname] <ifname> [autoconnect yes|no] [managed [--permanent|--"
+"permanent-only] yes|no|up|down|reset]\n"
 "\n"
 "  connect <ifname>\n"
 "\n"
@@ -14395,7 +14411,7 @@ msgstr ""
 "  lldp [list [ifname <ifname>]]\n"
 "\n"
 
-#: src/nmcli/devices.c:881
+#: src/nmcli/devices.c:884
 msgid ""
 "Usage: nmcli device status { help }\n"
 "\n"
@@ -14424,7 +14440,7 @@ msgstr ""
 "Privzeti ukaz, ki pomeni »nmcli device«, pokliče »ncmli device status«.\n"
 "\n"
 
-#: src/nmcli/devices.c:896
+#: src/nmcli/devices.c:899
 msgid ""
 "Usage: nmcli device show { ARGUMENTS | help }\n"
 "\n"
@@ -14442,7 +14458,7 @@ msgstr ""
 "Ukaz navede podrobnosti za vse naprave ali za določeno napravo.\n"
 "\n"
 
-#: src/nmcli/devices.c:907
+#: src/nmcli/devices.c:910
 msgid ""
 "Usage: nmcli device connect { ARGUMENTS | help }\n"
 "\n"
@@ -14464,7 +14480,7 @@ msgstr ""
 "vzpostavljanje.\n"
 "\n"
 
-#: src/nmcli/devices.c:919
+#: src/nmcli/devices.c:922
 msgid ""
 "Usage: nmcli device reapply { ARGUMENTS | help }\n"
 "\n"
@@ -14482,7 +14498,7 @@ msgstr ""
 "opravljene od zadnje uveljavitve.\n"
 "\n"
 
-#: src/nmcli/devices.c:931
+#: src/nmcli/devices.c:934
 msgid ""
 "Usage: nmcli device modify { ARGUMENTS | help }\n"
 "\n"
@@ -14522,7 +14538,7 @@ msgstr ""
 "nmcli dev mod em1 -ipv4.dns 1\n"
 "nmcli dev mod em1 -ipv6.addr \"abbe::café/56\"\n"
 
-#: src/nmcli/devices.c:951
+#: src/nmcli/devices.c:954
 msgid ""
 "Usage: nmcli device disconnect { ARGUMENTS | help }\n"
 "\n"
@@ -14542,7 +14558,7 @@ msgstr ""
 "nadaljnje povezave brez posredovanja uporabnika/ročnega posredovanja.\n"
 "\n"
 
-#: src/nmcli/devices.c:963
+#: src/nmcli/devices.c:966
 msgid ""
 "Usage: nmcli device delete { ARGUMENTS | help }\n"
 "\n"
@@ -14564,14 +14580,15 @@ msgstr ""
 "izbrisati.\n"
 "\n"
 
-#: src/nmcli/devices.c:976
+#: src/nmcli/devices.c:980
 msgid ""
 "Usage: nmcli device set { ARGUMENTS | help }\n"
 "\n"
 "ARGUMENTS := DEVICE { PROPERTY [ PROPERTY ... ] }\n"
 "DEVICE    := [ifname] <ifname> \n"
 "PROPERTY  := { autoconnect { yes | no } |\n"
-"             { managed { yes | no }\n"
+"             { managed [--permanent | --permanent-only] { yes | no | up | "
+"down | reset }\n"
 "\n"
 "Modify device properties.\n"
 "\n"
@@ -14581,12 +14598,13 @@ msgstr ""
 "ARGUMENTI := NAPRAVA { LASTNOST [ LASTNOST ... ] }\n"
 "NAPRAVA := [ifname] <ifname> \n"
 "LASTNOST := { autoconnect { yes | no } |\n"
-"             { managed { yes | no }\n"
+"             { managed [--permanent | --permanent-only] { yes | no | up | "
+"down | reset }\n"
 "\n"
 "Spremenite lastnosti naprave.\n"
 "\n"
 
-#: src/nmcli/devices.c:989
+#: src/nmcli/devices.c:993
 msgid ""
 "Usage: nmcli device monitor { ARGUMENTS | help }\n"
 "\n"
@@ -14606,7 +14624,7 @@ msgstr ""
 "Spremlja vse naprave, če vmesnik ni določen.\n"
 "\n"
 
-#: src/nmcli/devices.c:1002
+#: src/nmcli/devices.c:1006
 msgid ""
 "Usage: nmcli device wifi { ARGUMENTS | help }\n"
 "\n"
@@ -14714,7 +14732,7 @@ msgstr ""
 "Za to uporabite ’nmcli device wifi list'.\n"
 "\n"
 
-#: src/nmcli/devices.c:1050
+#: src/nmcli/devices.c:1054
 msgid ""
 "Usage: nmcli device lldp { ARGUMENTS | help }\n"
 "\n"
@@ -14734,7 +14752,7 @@ msgstr ""
 "\n"
 "</ifname>\n"
 
-#: src/nmcli/devices.c:1061
+#: src/nmcli/devices.c:1065
 msgid ""
 "Usage: nmcli device checkpoint { ARGUMENTS | help }\n"
 "\n"
@@ -14754,242 +14772,262 @@ msgstr ""
 "se kontrolna točka samodejno obnovi po časovni omejitvi.\n"
 "\n"
 
-#: src/nmcli/devices.c:1163
+#: src/nmcli/devices.c:1167
 msgid "Error: No interface specified."
 msgstr "Napaka: Vmesnik ni določen."
 
-#: src/nmcli/devices.c:1193
+#: src/nmcli/devices.c:1197
 #, c-format
 msgid "Warning: argument '%s' is duplicated.\n"
 msgstr "Opozorilo: argument »%s« je podvojen.\n"
 
-#: src/nmcli/devices.c:1196
+#: src/nmcli/devices.c:1200
 #, c-format
 msgid "Error: Device '%s' not found.\n"
 msgstr "Napaka: naprave »%s« ni mogoče najti.\n"
 
-#: src/nmcli/devices.c:1197 src/nmcli/devices.c:5290
+#: src/nmcli/devices.c:1201 src/nmcli/devices.c:5387
 msgid "Error: not all devices found."
 msgstr "Napaka: vse naprave niso najdene."
 
-#: src/nmcli/devices.c:1226
+#: src/nmcli/devices.c:1230
 msgid "No interface specified"
 msgstr "Vmesnik ni določen"
 
-#: src/nmcli/devices.c:1247
+#: src/nmcli/devices.c:1251
 #, c-format
 msgid "Device '%s' not found"
 msgstr "Naprave »%s« ni mogoče najti"
 
-#: src/nmcli/devices.c:1364 src/nmcli/devices.c:1366
+#: src/nmcli/devices.c:1368 src/nmcli/devices.c:1370
 #, c-format
 msgid "%u MHz"
 msgstr "%u MHz"
 
-#: src/nmcli/devices.c:1365
+#: src/nmcli/devices.c:1369
 #, c-format
 msgid "%u Mbit/s"
 msgstr "%u Mbit/s"
 
-#: src/nmcli/devices.c:1374 src/nmtui/nmt-page-wifi.c:58
+#: src/nmcli/devices.c:1378 src/nmtui/nmt-page-wifi.c:58
 msgid "2.4 GHz"
 msgstr "2,4 GHz"
 
-#: src/nmcli/devices.c:1377 src/nmtui/nmt-page-wifi.c:57
+#: src/nmcli/devices.c:1381 src/nmtui/nmt-page-wifi.c:57
 msgid "5 GHz"
 msgstr "5 GHz"
 
-#: src/nmcli/devices.c:1380 src/nmtui/nmt-page-wifi.c:59
+#: src/nmcli/devices.c:1384 src/nmtui/nmt-page-wifi.c:59
 msgid "6 GHz"
 msgstr "6 GHz"
 
-#: src/nmcli/devices.c:1431
+#: src/nmcli/devices.c:1435
 msgid "Ad-Hoc"
 msgstr "Ad-hoc"
 
-#: src/nmcli/devices.c:1432
+#: src/nmcli/devices.c:1436
 msgid "Infra"
 msgstr "Infra"
 
-#: src/nmcli/devices.c:1434
+#: src/nmcli/devices.c:1438
 msgid "N/A"
 msgstr "ni na voljo"
 
-#: src/nmcli/devices.c:1626
+#: src/nmcli/devices.c:1632
 msgid "Device details"
 msgstr "Podrobnosti naprave"
 
-#: src/nmcli/devices.c:1643
+#: src/nmcli/devices.c:1649
 #, c-format
 msgid "Error: 'device show': %s"
 msgstr "Napaka: 'device show': %s"
 
-#: src/nmcli/devices.c:2021
+#: src/nmcli/devices.c:2027
 msgid "Status of devices"
 msgstr "Stanje naprav"
 
-#: src/nmcli/devices.c:2025
+#: src/nmcli/devices.c:2031
 #, c-format
 msgid "Error: 'device status': %s"
 msgstr "Napaka: 'device status': %s"
 
-#: src/nmcli/devices.c:2088 src/nmcli/general.c:535
+#: src/nmcli/devices.c:2094 src/nmcli/general.c:535
 #, c-format
 msgid "Error: Timeout %d sec expired."
 msgstr "Napaka: časovna omejitev %d s je potekla."
 
-#: src/nmcli/devices.c:2168
+#: src/nmcli/devices.c:2174
 #, c-format
 msgid "Device '%s' successfully activated with '%s'.\n"
 msgstr "Naprava »%s« uspešno aktivirana s/z »%s«.\n"
 
-#: src/nmcli/devices.c:2174
+#: src/nmcli/devices.c:2180
 msgid ""
 "Hint: \"nmcli dev wifi show-password\" shows the Wi-Fi name and password.\n"
 msgstr "Namig: »nmcli dev wifi show-password« prikazuje ime in geslo Wi-Fi.\n"
 
-#: src/nmcli/devices.c:2178
+#: src/nmcli/devices.c:2184
 #, c-format
 msgid "Error: Connection activation failed: %s."
 msgstr "Napaka: aktiviranje povezave ni uspelo: %s."
 
-#: src/nmcli/devices.c:2220
+#: src/nmcli/devices.c:2226
 #, c-format
 msgid "Error: Failed to setup a Wi-Fi hotspot: %s"
 msgstr "Napaka: Nastavitev dostopne točke Wi-Fi ni uspela: %s"
 
-#: src/nmcli/devices.c:2224
+#: src/nmcli/devices.c:2230
 #, c-format
 msgid "Error: Failed to add/activate new connection: %s"
 msgstr "Napaka: dodajanje/aktiviranje nove povezave je spodletelo: %s"
 
-#: src/nmcli/devices.c:2228
+#: src/nmcli/devices.c:2234
 #, c-format
 msgid "Error: Failed to activate connection: %s"
 msgstr "Napaka: Povezave ni bilo mogoče aktivirati: %s"
 
-#: src/nmcli/devices.c:2309
+#: src/nmcli/devices.c:2315
 #, c-format
 msgid "Error: Device activation failed: %s"
 msgstr "Napaka: Aktivacija naprave ni uspela: %s"
 
-#: src/nmcli/devices.c:2365
+#: src/nmcli/devices.c:2371
 #, c-format
 msgid "Error: extra argument not allowed: '%s'."
 msgstr "Napaka: dodatni argument ni dovoljen: '%s'."
 
-#: src/nmcli/devices.c:2434 src/nmcli/devices.c:2447 src/nmcli/devices.c:2702
+#: src/nmcli/devices.c:2440 src/nmcli/devices.c:2453 src/nmcli/devices.c:2708
 #, c-format
 msgid "Device '%s' successfully disconnected.\n"
 msgstr "Naprava »%s« uspešno odklopljena.\n"
 
-#: src/nmcli/devices.c:2436 src/nmcli/devices.c:2773
+#: src/nmcli/devices.c:2442 src/nmcli/devices.c:2779
 #, c-format
 msgid "Device '%s' successfully removed.\n"
 msgstr "Naprava »%s« uspešno odstranjena.\n"
 
-#: src/nmcli/devices.c:2496 src/nmcli/devices.c:2578
+#: src/nmcli/devices.c:2502 src/nmcli/devices.c:2584
 #, c-format
 msgid "Error: Reapplying connection to device '%s' (%s) failed: %s"
 msgstr ""
 "Napaka: Vnovična vzpostavitev povezave z napravo »%s« (%s) ni uspela: %s"
 
-#: src/nmcli/devices.c:2506 src/nmcli/devices.c:2587
+#: src/nmcli/devices.c:2512 src/nmcli/devices.c:2593
 #, c-format
 msgid "Connection successfully reapplied to device '%s'.\n"
 msgstr "Povezava je bila uspešno ponovno uporabljena za napravo »%s«.\n"
 
-#: src/nmcli/devices.c:2609
+#: src/nmcli/devices.c:2615
 #, c-format
 msgid "Error: Reading applied connection from device '%s' (%s) failed: %s"
 msgstr ""
 "Napaka: Branje uveljavljene povezave iz naprave »%s« (%s) ni uspelo: %s"
 
-#: src/nmcli/devices.c:2686
+#: src/nmcli/devices.c:2692
 msgid "Error: not all devices disconnected."
 msgstr "Napaka: vse naprave niso bile odklopljene."
 
-#: src/nmcli/devices.c:2687
+#: src/nmcli/devices.c:2693
 #, c-format
 msgid "Error: Device '%s' (%s) disconnecting failed: %s\n"
 msgstr "Napaka: Prekinitev povezave naprave »%s« (%s) ni uspela: %s\n"
 
-#: src/nmcli/devices.c:2764
+#: src/nmcli/devices.c:2770
 msgid "Error: not all devices deleted."
 msgstr "Napaka: vse naprave niso izbrisane."
 
-#: src/nmcli/devices.c:2765
+#: src/nmcli/devices.c:2771
 #, c-format
 msgid "Error: Device '%s' (%s) deletion failed: %s\n"
 msgstr "Napaka: Izbris naprave »%s« (%s) ni uspel: %s\n"
 
-#: src/nmcli/devices.c:2843
+#: src/nmcli/devices.c:2854
+#, c-format
+msgid "Error: set managed failed: %s."
+msgstr "Napaka: nastavljanje managed ni uspelo: %s."
+
+#: src/nmcli/devices.c:2891
 msgid "Error: No property specified."
 msgstr "Napaka: Lastnost ni določena."
 
-#: src/nmcli/devices.c:2860 src/nmcli/devices.c:2879 src/nmcli/general.c:805
-#: src/nmcli/general.c:827
-#, c-format
-msgid "Error: '%s' argument is missing."
-msgstr "Napaka: manjka argument »%s«"
+#: src/nmcli/devices.c:2926
+msgid "Error: 'managed' can only be set once."
+msgstr "Napaka: argument »managed« je možno nastaviti samo enkrat."
 
-#: src/nmcli/devices.c:2868
-#, c-format
-msgid "Error: 'managed': %s."
-msgstr "Napaka: 'managed': %s."
+#: src/nmcli/devices.c:2947
+msgid "Error: '--permanent-only' and '--permanent' cannot be used together."
+msgstr ""
+"Napaka: '--permanent-only' in '--permanent' ni možno uporabljati skupaj."
 
-#: src/nmcli/devices.c:2887
+#: src/nmcli/devices.c:2961
+msgid "Error: 'managed' argument is missing."
+msgstr "Napaka: manjka argument »managed«."
+
+#: src/nmcli/devices.c:2976
+#, c-format
+msgid "Error: 'managed': '%s' is not valid, use 'yes/no/up/down/reset'."
+msgstr "Napaka: 'managed': '%s' ni veljaven, uporabite 'yes/no/up/down/reset'."
+
+#: src/nmcli/devices.c:2992
+msgid "Error: 'autoconnect' argument is missing."
+msgstr "Napaka: manjka argument »autoconnect«."
+
+#: src/nmcli/devices.c:2997
+msgid "Error: 'autoconnect' can only be set once."
+msgstr "Napaka: »autoconnect« je možno nastaviti samo enkrat."
+
+#: src/nmcli/devices.c:3006
 #, c-format
 msgid "Error: 'autoconnect': %s."
 msgstr "Napaka: 'autoconnect': %s."
 
-#: src/nmcli/devices.c:2894 src/nmcli/general.c:877
+#: src/nmcli/devices.c:3013 src/nmcli/general.c:877
 #, c-format
 msgid "Error: property '%s' is not known."
 msgstr "Napaka: lastnost »%s« ni znana."
 
-#: src/nmcli/devices.c:2941
+#: src/nmcli/devices.c:3073
 #, c-format
 msgid "%s: using connection '%s'\n"
 msgstr "%s: uporaba povezave »%s«\n"
 
-#: src/nmcli/devices.c:2967
+#: src/nmcli/devices.c:3099
 #, c-format
 msgid "%s: device created\n"
 msgstr "%s: ustvarjena naprava\n"
 
-#: src/nmcli/devices.c:2974
+#: src/nmcli/devices.c:3106
 #, c-format
 msgid "%s: device removed\n"
 msgstr "%s: naprava je odstranjena\n"
 
-#: src/nmcli/devices.c:3154
+#: src/nmcli/devices.c:3286
 msgid "Wi-Fi scan list"
 msgstr "Seznam preiskovanja Wi-Fi"
 
-#: src/nmcli/devices.c:3271 src/nmcli/devices.c:3552
+#: src/nmcli/devices.c:3403 src/nmcli/devices.c:3684
 #, c-format
 msgid "Error: Access point with bssid '%s' not found."
 msgstr "Napaka: dostopne točke z bssid »%s« ni mogoče najti."
 
-#: src/nmcli/devices.c:3473
+#: src/nmcli/devices.c:3605
 #, c-format
 msgid "Error: 'device wifi': %s"
 msgstr "Napaka: 'device wifi': %s"
 
-#: src/nmcli/devices.c:3493
+#: src/nmcli/devices.c:3625
 #, c-format
 msgid "Error: invalid rescan argument: '%s' not among [auto, no, yes]"
 msgstr ""
 "Napaka: neveljaven argument ponovnega pregledovanja: »%s« ni eden izmed "
 "[auto, no, yes]"
 
-#: src/nmcli/devices.c:3532
+#: src/nmcli/devices.c:3664
 #, c-format
 msgid "Error: Device '%s' not found."
 msgstr "Napaka: naprave »%s« ni mogoče najti"
 
-#: src/nmcli/devices.c:3536
+#: src/nmcli/devices.c:3668
 #, c-format
 msgid ""
 "Error: Device '%s' was not recognized as a Wi-Fi device, check "
@@ -14998,26 +15036,26 @@ msgstr ""
 "Napaka: Naprava »%s« ni bila prepoznana kot naprava Wi-Fi, preverite vstavek "
 "NetworkManager Wi-Fi."
 
-#: src/nmcli/devices.c:3541 src/nmcli/devices.c:3920 src/nmcli/devices.c:4535
-#: src/nmcli/devices.c:4670 src/nmcli/devices.c:4805
+#: src/nmcli/devices.c:3673 src/nmcli/devices.c:4052 src/nmcli/devices.c:4667
+#: src/nmcli/devices.c:4802 src/nmcli/devices.c:4902
 #, c-format
 msgid "Error: Device '%s' is not a Wi-Fi device."
 msgstr "Napaka: naprava »%s« ni naprava Wi-Fi."
 
-#: src/nmcli/devices.c:3748
+#: src/nmcli/devices.c:3880
 msgid "SSID or BSSID: "
 msgstr "SSID ali BSSID: "
 
-#: src/nmcli/devices.c:3753
+#: src/nmcli/devices.c:3885
 msgid "Error: SSID or BSSID are missing."
 msgstr "Napaka: manjka podatek SSID ali BSSID."
 
-#: src/nmcli/devices.c:3797
+#: src/nmcli/devices.c:3929
 #, c-format
 msgid "Error: bssid argument value '%s' is not a valid BSSID."
 msgstr "Napaka: vrednost bssid »%s« ni veljavna oznaka BSSID."
 
-#: src/nmcli/devices.c:3828
+#: src/nmcli/devices.c:3960
 #, c-format
 msgid ""
 "Error: wep-key-type argument value '%s' is invalid, use 'key' or 'phrase'."
@@ -15025,48 +15063,48 @@ msgstr ""
 "Napaka: vrednost wep-key-type »%s« ni veljavna, uporabljena sta lahko le "
 "»key« ali »phrase«."
 
-#: src/nmcli/devices.c:3856 src/nmcli/devices.c:3877
+#: src/nmcli/devices.c:3988 src/nmcli/devices.c:4009
 #, c-format
 msgid "Error: %s: %s."
 msgstr "Napaka: %s: %s."
 
-#: src/nmcli/devices.c:3899
+#: src/nmcli/devices.c:4031
 #, c-format
 msgid "Error: BSSID to connect to (%s) differs from bssid argument (%s)."
 msgstr ""
 "Napaka: BSSID za povezavo z (%s) se razlikuje od podane vrednosti bssid (%s)."
 
-#: src/nmcli/devices.c:3907
+#: src/nmcli/devices.c:4039
 #, c-format
 msgid "Error: Parameter '%s' is neither SSID nor BSSID."
 msgstr "Napaka: parameter »%s« ni niti SSID niti BSSID."
 
-#: src/nmcli/devices.c:3923 src/nmcli/devices.c:4538 src/nmcli/devices.c:4673
-#: src/nmcli/devices.c:4905
+#: src/nmcli/devices.c:4055 src/nmcli/devices.c:4670 src/nmcli/devices.c:4805
+#: src/nmcli/devices.c:5002
 msgid "Error: No Wi-Fi device found."
 msgstr "Napaka: naprave Wi-Fi ni mogoče najti."
 
-#: src/nmcli/devices.c:3945
+#: src/nmcli/devices.c:4077
 #, c-format
 msgid "Error: Failed to scan hidden SSID: %s."
 msgstr "Napaka: Skritega SSID-ja ni bilo mogoče pregledati: %s."
 
-#: src/nmcli/devices.c:3977
+#: src/nmcli/devices.c:4109
 #, c-format
 msgid "Error: No network with SSID '%s' found."
 msgstr "Napaka: omrežja s SSID »%s« ni mogoče najti."
 
-#: src/nmcli/devices.c:3981
+#: src/nmcli/devices.c:4113
 #, c-format
 msgid "Error: No access point with BSSID '%s' found."
 msgstr "Napaka: dostopne točke z BSSID »%s« ni mogoče najti."
 
-#: src/nmcli/devices.c:4010
+#: src/nmcli/devices.c:4142
 #, c-format
 msgid "Error: Connection '%s' exists but properties don't match."
 msgstr "Napaka: Povezava »%s« obstaja, vendar se lastnosti ne ujemajo."
 
-#: src/nmcli/devices.c:4060
+#: src/nmcli/devices.c:4192
 #, c-format
 msgid ""
 "Warning: '%s' should be SSID for hidden APs; but it looks like a BSSID.\n"
@@ -15074,109 +15112,114 @@ msgstr ""
 "Opozorilo: »%s« bi moral biti SSID za skrite dostopne točke; vendar je "
 "videti kot BSSID.\n"
 
-#: src/nmcli/devices.c:4227
+#: src/nmcli/devices.c:4359
 #, c-format
 msgid "'%s' is not valid WPA PSK"
 msgstr "»%s« ni veljaven WPA PSK"
 
-#: src/nmcli/devices.c:4248
+#: src/nmcli/devices.c:4380
 #, c-format
 msgid "'%s' is not valid WEP key (it should be 5 or 13 ASCII chars)"
 msgstr "»%s« ni veljaven ključ WEP (mora biti 5 ali 13 znakov ASCII)"
 
-#: src/nmcli/devices.c:4267
+#: src/nmcli/devices.c:4399
 #, c-format
 msgid "Hotspot password: %s\n"
 msgstr "Geslo za dostopno točko: %s\n"
 
-#: src/nmcli/devices.c:4450
+#: src/nmcli/devices.c:4582
 msgid "Error: ssid is too long."
 msgstr "Napaka: ssid je predolg."
 
-#: src/nmcli/devices.c:4468
+#: src/nmcli/devices.c:4600
 #, c-format
 msgid "Error: band argument value '%s' is invalid; use 'a', 'bg' or '6GHz'."
 msgstr ""
 "Napaka: Vrednost argumenta pasu »%s« je neveljavna; Uporabite 'a', 'bg' ali "
 "'6GHz'."
 
-#: src/nmcli/devices.c:4513
+#: src/nmcli/devices.c:4645
 msgid "Error: channel requires band too."
 msgstr "Napaka: kanal zahteva tudi pas."
 
-#: src/nmcli/devices.c:4520
+#: src/nmcli/devices.c:4652
 #, c-format
 msgid "Error: channel '%s' not valid for band '%s'."
 msgstr "Napaka: kanal »%s« ne velja za pas »%s«."
 
-#: src/nmcli/devices.c:4551
+#: src/nmcli/devices.c:4683
 #, c-format
 msgid "Error: Device '%s' supports neither AP nor Ad-Hoc mode."
 msgstr "Napaka: Naprava »%s« ne podpira niti načina AP niti Ad-Hoc."
 
-#: src/nmcli/devices.c:4578
+#: src/nmcli/devices.c:4710
 #, c-format
 msgid "Error: Invalid 'password': %s."
 msgstr "Napaka: Neveljavno geslo ‘password’: %s."
 
-#: src/nmcli/devices.c:4629 src/nmcli/devices.c:4859
+#: src/nmcli/devices.c:4761 src/nmcli/devices.c:4956
 #, c-format
 msgid "Error: '%s' cannot repeat."
 msgstr "Napaka: »%s« se ne more ponoviti."
 
-#: src/nmcli/devices.c:4764 src/nmcli/devices.c:4767 src/nmcli/devices.c:4771
-#: src/nmcli/devices.c:4774 src/nmtui/nmt-page-wifi.c:268
+#: src/nmcli/devices.c:4863 src/nmcli/devices.c:4865 src/nmcli/devices.c:4868
+#: src/nmcli/devices.c:4870 src/nmtui/nmt-page-wifi.c:268
 msgid "Security"
 msgstr "Varnost"
 
-#: src/nmcli/devices.c:4764
+#: src/nmcli/devices.c:4863
 msgid "None"
 msgstr "Brez"
 
+#: src/nmcli/devices.c:4879
+msgid ""
+"Warning: cannot read the Wi-Fi password due to insufficient privileges.\n"
+msgstr "Opozorilo: ni možno prebrati gesla Wi-Fi zaradi nezadostnih pravic.\n"
+
 #. Main header name
-#: src/nmcli/devices.c:4946
+#: src/nmcli/devices.c:5043
 msgid "Device LLDP neighbors"
 msgstr "Sosedje naprave LLDP"
 
-#: src/nmcli/devices.c:5079
+#: src/nmcli/devices.c:5176
 #, c-format
 msgid "Error: 'device lldp list': %s"
 msgstr "Napaka: 'device lidp list': %s"
 
-#: src/nmcli/devices.c:5147
+#: src/nmcli/devices.c:5244
 msgid "Checkpoint was removed."
 msgstr "Nadzorna točka je bila odstranjena."
 
 #. The command is done, we're in the confirmation prompt.
-#: src/nmcli/devices.c:5154
+#: src/nmcli/devices.c:5251
 msgid "No"
 msgstr "Ne"
 
-#: src/nmcli/devices.c:5167
+#: src/nmcli/devices.c:5264
 #, c-format
 msgid "Error: Destroying a checkpoint failed: %s"
 msgstr "Napaka: Uničenje kontrolne točke ni uspelo: %s"
 
-#: src/nmcli/devices.c:5189 src/nmcli/devices.c:5190
+#: src/nmcli/devices.c:5286 src/nmcli/devices.c:5287
 msgid "Yes"
 msgstr "Da"
 
-#: src/nmcli/devices.c:5216
+#: src/nmcli/devices.c:5313
 #, c-format
 msgid "Error: Creating a checkpoint failed: %s"
 msgstr "Napaka: Ustvarjanje kontrolne točke ni uspelo: %s"
 
-#: src/nmcli/devices.c:5232
+#: src/nmcli/devices.c:5329
 #, c-format
 msgid "Error: %s"
 msgstr "Napaka: %s"
 
-#: src/nmcli/devices.c:5271 src/nmcli/nmcli.c:891
+#: src/nmcli/devices.c:5368 src/nmcli/nmcli.c:891
 #, c-format
 msgid "Error: '%s' is not a valid timeout."
 msgstr "Napaka: »%s« ni veljavna časovna omejitev."
 
-#: src/nmcli/devices.c:5298
+#: src/nmcli/devices.c:5395
 msgid "Error: Expected a command to run after '--'"
 msgstr "Napaka: Pričakovano je, da se bo po »--« zagnal ukaz"
 
@@ -15358,8 +15401,8 @@ msgstr ""
 "\n"
 "'conf'        Ponovno naložite prilagoditev programa NetworkManager.conf\n"
 "                z diska. Upoštevajte, da to ne vključuje povezav, ki se jih\n"
-"                namesto tega lahko ponovno naloži z \"nmcli connection reload"
-"\".\n"
+"                namesto tega lahko ponovno naloži z \"nmcli connection "
+"reload\".\n"
 "\n"
 "'dns-rc'      Posodobitev prilagoditve DNS, ki običajno vključuje pisanje\n"
 "                /etc/resolv.conf znova. To je enakovredno pošiljanju\n"
@@ -15557,7 +15600,7 @@ msgid "Error: only these fields are allowed: %s"
 msgstr "Napaka: dovoljena so samo ta polja: %s"
 
 #. NetworkManager quit while we were waiting.
-#: src/nmcli/general.c:562 src/nmtui/nmtui.c:243
+#: src/nmcli/general.c:562 src/nmtui/nmtui.c:235
 msgid "NetworkManager is not running."
 msgstr "NetworkManager ni zagnan."
 
@@ -15600,6 +15643,11 @@ msgstr "Napaka: 'general logging': %s"
 #, c-format
 msgid "Error: failed to set logging: %s"
 msgstr "Napaka: pisanje zapisnika ni bilo mogoče nastaviti: %s"
+
+#: src/nmcli/general.c:805 src/nmcli/general.c:827
+#, c-format
+msgid "Error: '%s' argument is missing."
+msgstr "Napaka: manjka argument »%s«"
 
 #: src/nmcli/general.c:908
 #, c-format
@@ -15745,7 +15793,7 @@ msgid "controller"
 msgstr "krmilnik"
 
 #: src/nmcli/general.c:1433 src/nmtui/nm-editor-utils.c:263
-#: src/nmtui/nmt-connect-connection-list.c:394
+#: src/nmtui/nmt-connect-connection-list.c:397
 msgid "VPN"
 msgstr "VPN"
 
@@ -16005,46 +16053,46 @@ msgstr "[Opis lastnosti NM]"
 msgid "[nmcli specific description]"
 msgstr "[Specifični opis NMCLI]"
 
-#: src/nmcli/utils.c:308
+#: src/nmcli/utils.c:317
 #, c-format
 msgid "Error: Argument '%s' was expected, but '%s' provided."
 msgstr "Napaka: Argument »%s« je bil pričakovan, vendar je bil podan »%s«."
 
-#: src/nmcli/utils.c:315
+#: src/nmcli/utils.c:324
 #, c-format
 msgid "Error: Unexpected argument '%s'"
 msgstr "Napaka: nepričakovan argument »%s«"
 
-#: src/nmcli/utils.c:702
+#: src/nmcli/utils.c:711
 #, c-format
 msgid "invalid field '%s%s%s'; no such field"
 msgstr "neveljavno polje »%s%s%s«; takšnega polja ni"
 
-#: src/nmcli/utils.c:710
+#: src/nmcli/utils.c:719
 #, c-format
 msgid "invalid field '%s%s%s'; allowed fields: [%s]"
 msgstr "neveljavno polje »%s%s%s«; dovoljena polja: [%s]"
 
-#: src/nmcli/utils.c:806
+#: src/nmcli/utils.c:815
 msgid "failure to select field"
 msgstr "neuspeh pri izbiri polja"
 
-#: src/nmcli/utils.c:1473
+#: src/nmcli/utils.c:1482
 #, c-format
 msgid "Failed to create pager pipe: %s\n"
 msgstr "Ni uspelo ustvariti cevi osebnega klicnika: %s\n"
 
-#: src/nmcli/utils.c:1487
+#: src/nmcli/utils.c:1496
 #, c-format
 msgid "Failed to fork pager: %s\n"
 msgstr "Ni uspelo razcepiti osebnega klicnika: %s\n"
 
-#: src/nmcli/utils.c:1531 src/nmcli/utils.c:1535
+#: src/nmcli/utils.c:1540 src/nmcli/utils.c:1544
 #, c-format
 msgid "Failed to duplicate pager pipe: %s\n"
 msgstr "Podvajanje cevi osebnega klicnika ni uspelo: %s\n"
 
-#: src/nmcli/utils.c:1850
+#: src/nmcli/utils.c:1859
 #, c-format
 msgid ""
 "Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Restarting "
@@ -16053,16 +16101,16 @@ msgstr ""
 "Opozorilo: različici nmcli (%s) in NetworkManager (%s) se ne ujemata. "
 "Priporočamo ponovni zagon NetworkManagerja.\n"
 
-#: src/nmcli/utils.h:314
+#: src/nmcli/utils.h:316
 msgid "(unknown)"
 msgstr "(neznano)"
 
-#: src/nmcli/utils.h:354
+#: src/nmcli/utils.h:356
 #, c-format
 msgid "%lld (%s)"
 msgstr "%lld (%s)"
 
-#: src/nmcli/utils.h:361
+#: src/nmcli/utils.h:363
 #, c-format
 msgid "%lld - %s"
 msgstr "%lld - %s"
@@ -16303,21 +16351,25 @@ msgstr "Ni razpoložljivih naprav"
 msgid "Select..."
 msgstr "Izberi ..."
 
-#: src/nmtui/nmt-edit-connection-list.c:101
+#: src/nmtui/nmt-edit-connection-list.c:139
 #: src/nmtui/nmt-wireguard-peer-list.c:126
 msgid "Add"
 msgstr "Dodaj"
 
-#: src/nmtui/nmt-edit-connection-list.c:104 src/nmtui/nmt-page-ip4.c:163
+#: src/nmtui/nmt-edit-connection-list.c:142 src/nmtui/nmt-page-ip4.c:163
 #: src/nmtui/nmt-page-ip6.c:163 src/nmtui/nmt-page-team-port.c:92
 #: src/nmtui/nmt-page-team.c:145 src/nmtui/nmt-wireguard-peer-list.c:129
 msgid "Edit..."
 msgstr "Uredi ..."
 
-#: src/nmtui/nmt-edit-connection-list.c:107
-#: src/nmtui/nmt-wireguard-peer-list.c:132 src/nmtui/nmtui-edit.c:511
+#: src/nmtui/nmt-edit-connection-list.c:145
+#: src/nmtui/nmt-wireguard-peer-list.c:132 src/nmtui/nmtui-edit.c:519
 msgid "Delete"
 msgstr "Izbriši"
+
+#: src/nmtui/nmt-edit-connection-list.c:148
+msgid "Share QR..."
+msgstr "Deli kodo QR …"
 
 #: src/nmtui/nmt-editor-section.c:89
 msgid "Hide"
@@ -16327,54 +16379,59 @@ msgstr "Skrij"
 msgid "Show"
 msgstr "Pokaži"
 
-#: src/nmtui/nmt-editor.c:93
+#: src/nmtui/nmt-editor.c:94
 #, c-format
 msgid "Could not create editor for connection '%s' of type '%s'."
 msgstr "Urejevalnika za povezavo »%s« vrste »%s« ni bilo mogoče ustvariti."
 
-#: src/nmtui/nmt-editor.c:97
+#: src/nmtui/nmt-editor.c:98
 #, c-format
 msgid "Could not create editor for invalid connection '%s'."
 msgstr "Urejevalnika ni bilo mogoče ustvariti za neveljavno povezavo »%s«."
 
-#: src/nmtui/nmt-editor.c:110
+#: src/nmtui/nmt-editor.c:111
 msgid "Edit Connection"
 msgstr "Uredi povezavo"
 
-#: src/nmtui/nmt-editor.c:168
+#: src/nmtui/nmt-editor.c:164
+#, c-format
+msgid "Warning: %s"
+msgstr "Opozorilo: %s"
+
+#: src/nmtui/nmt-editor.c:175
 #, c-format
 msgid "Unable to save connection: %s"
 msgstr "Povezave ni mogoče shraniti: %s"
 
-#: src/nmtui/nmt-editor.c:185
+#: src/nmtui/nmt-editor.c:192
 #, c-format
 msgid "Unable to add new connection: %s"
 msgstr "Nove povezave ni mogoče dodati: %s"
 
-#: src/nmtui/nmt-editor.c:335
+#: src/nmtui/nmt-editor.c:322
 msgid "Profile name"
 msgstr "Ime profila"
 
-#: src/nmtui/nmt-editor.c:352
+#: src/nmtui/nmt-editor.c:339
 msgid "Ethernet device"
 msgstr "Žična omrežna naprava"
 
-#: src/nmtui/nmt-editor.c:354
+#: src/nmtui/nmt-editor.c:341
 msgid "Device"
 msgstr "Naprava"
 
 #. And finally the bottom widgets
-#: src/nmtui/nmt-editor.c:427
+#: src/nmtui/nmt-editor.c:414
 msgid "Automatically connect"
 msgstr "Samodejno poveži"
 
-#: src/nmtui/nmt-editor.c:435
+#: src/nmtui/nmt-editor.c:422
 msgid "Available to all users"
 msgstr "Na voljo vsem uporabnikom"
 
-#: src/nmtui/nmt-editor.c:453 src/nmtui/nmt-password-dialog.c:160
+#: src/nmtui/nmt-editor.c:440 src/nmtui/nmt-password-dialog.c:177
 #: src/nmtui/nmt-route-editor.c:97 src/nmtui/nmt-wireguard-peer-editor.c:146
-#: src/nmtui/nmtui-edit.c:199 src/nmtui/nmtui-edit.c:510
+#: src/nmtui/nmtui-edit.c:207 src/nmtui/nmtui-edit.c:518
 #: src/nmtui/nmtui-hostname.c:51
 msgid "Cancel"
 msgstr "Prekliči"
@@ -16391,88 +16448,92 @@ msgstr "bajtov"
 msgid "BOND PORT"
 msgstr "VEZ VRATA"
 
-#: src/nmtui/nmt-page-bond.c:82
+#: src/nmtui/nmt-page-bond.c:122
 msgid "Round-robin"
 msgstr "Krožno dodeljevanje"
 
-#: src/nmtui/nmt-page-bond.c:83
+#: src/nmtui/nmt-page-bond.c:123
 msgid "Active Backup"
 msgstr "Dejavna varnostna kopija"
 
-#: src/nmtui/nmt-page-bond.c:84
+#: src/nmtui/nmt-page-bond.c:124
 msgid "XOR"
 msgstr "XALI (XOR)"
 
-#: src/nmtui/nmt-page-bond.c:85
+#: src/nmtui/nmt-page-bond.c:125
 msgid "Broadcast"
 msgstr "Razpršeno oddajanje"
 
-#: src/nmtui/nmt-page-bond.c:86
+#: src/nmtui/nmt-page-bond.c:126
 msgid "802.3ad"
 msgstr "802.3ad"
 
-#: src/nmtui/nmt-page-bond.c:87
+#: src/nmtui/nmt-page-bond.c:127
 msgid "Adaptive Transmit Load Balancing (tlb)"
 msgstr "Prilagodljivo uravnavanje obremenitve prenosa (tlb)"
 
-#: src/nmtui/nmt-page-bond.c:88
+#: src/nmtui/nmt-page-bond.c:128
 msgid "Adaptive Load Balancing (alb)"
 msgstr "Prilagodljivo uravnavanje obremenitve (alb)"
 
 #. NB: the ordering/numbering here corresponds to NmtPageBondMonitoringMode
-#: src/nmtui/nmt-page-bond.c:92
+#: src/nmtui/nmt-page-bond.c:132
 msgid "MII (recommended)"
 msgstr "MII (priporočeno)"
 
-#: src/nmtui/nmt-page-bond.c:93
+#: src/nmtui/nmt-page-bond.c:133
 msgid "ARP"
 msgstr "ARP"
 
-#: src/nmtui/nmt-page-bond.c:342
+#: src/nmtui/nmt-page-bond.c:427
 msgid "BOND"
 msgstr "VEZ"
 
-#: src/nmtui/nmt-page-bond.c:346 src/nmtui/nmt-page-bridge.c:63
+#: src/nmtui/nmt-page-bond.c:431 src/nmtui/nmt-page-bridge.c:63
 #: src/nmtui/nmt-page-team.c:126
 msgid "Ports"
 msgstr "Vrata"
 
-#: src/nmtui/nmt-page-bond.c:356 src/nmtui/nmt-page-ip-tunnel.c:128
+#: src/nmtui/nmt-page-bond.c:441 src/nmtui/nmt-page-ip-tunnel.c:128
 #: src/nmtui/nmt-page-macsec.c:113 src/nmtui/nmt-page-wifi.c:223
 msgid "Mode"
 msgstr "Način"
 
-#: src/nmtui/nmt-page-bond.c:361
+#: src/nmtui/nmt-page-bond.c:446
 msgid "Primary"
 msgstr "Primarni"
 
-#: src/nmtui/nmt-page-bond.c:366
+#: src/nmtui/nmt-page-bond.c:451
 msgid "Link monitoring"
 msgstr "Nadzorovanje povezav"
 
-#: src/nmtui/nmt-page-bond.c:371 src/nmtui/nmt-page-bond.c:377
-#: src/nmtui/nmt-page-bond.c:383 src/nmtui/nmt-page-bond.c:389
+#: src/nmtui/nmt-page-bond.c:456 src/nmtui/nmt-page-bond.c:462
+#: src/nmtui/nmt-page-bond.c:468 src/nmtui/nmt-page-bond.c:474
 msgctxt "milliseconds"
 msgid "ms"
 msgstr "ms"
 
-#: src/nmtui/nmt-page-bond.c:372 src/nmtui/nmt-page-bond.c:390
+#: src/nmtui/nmt-page-bond.c:457 src/nmtui/nmt-page-bond.c:475
 msgid "Monitoring frequency"
 msgstr "Pogostost nadzora"
 
-#: src/nmtui/nmt-page-bond.c:378
+#: src/nmtui/nmt-page-bond.c:463
 msgid "Link up delay"
 msgstr "Zamik povezave navzgor"
 
-#: src/nmtui/nmt-page-bond.c:384
+#: src/nmtui/nmt-page-bond.c:469
 msgid "Link down delay"
 msgstr "Zamik povezave navzdol"
 
-#: src/nmtui/nmt-page-bond.c:395
+#: src/nmtui/nmt-page-bond.c:480
 msgid "ARP targets"
 msgstr "Cilji ARP"
 
-#: src/nmtui/nmt-page-bond.c:404 src/nmtui/nmt-page-ethernet.c:116
+#: src/nmtui/nmt-page-bond.c:485
+msgid "Other options (key=value)"
+msgstr "Druge možnosti (ključ=vrednost)"
+
+#: src/nmtui/nmt-page-bond.c:494 src/nmtui/nmt-page-ethernet.c:116
 #: src/nmtui/nmt-page-veth.c:72 src/nmtui/nmt-page-vlan.c:92
 #: src/nmtui/nmt-page-wifi.c:386
 msgid "Cloned MAC address"
@@ -16906,6 +16967,10 @@ msgstr "Dodaj soležne poti"
 msgid "Peers"
 msgstr "Soležniki"
 
+#: src/nmtui/nmt-password-dialog.c:162 src/nmtui/nmt-password-fields.c:144
+msgid "Show password"
+msgstr "Pokaži geslo"
+
 #: src/nmtui/nmt-password-fields.c:136
 msgid "Store password for all users"
 msgstr "Shrani geslo za vse uporabnike"
@@ -16917,10 +16982,6 @@ msgstr "Shrani geslo samo za tega uporabnika"
 #: src/nmtui/nmt-password-fields.c:138
 msgid "Ask password every time"
 msgstr "Vsakič vprašaj za geslo"
-
-#: src/nmtui/nmt-password-fields.c:144
-msgid "Show password"
-msgstr "Pokaži geslo"
 
 #: src/nmtui/nmt-port-list.c:127
 msgid "Select the type of port connection you wish to add."
@@ -16946,6 +17007,18 @@ msgstr "Metrika"
 msgid "No custom routes are defined."
 msgstr "Poti po meri niso določene."
 
+#: src/nmtui/nmt-utils.c:176 src/nmtui/nmt-utils.c:180
+msgid "Search:"
+msgstr "Poišči:"
+
+#. Echo the filter, but elide it so the confirmed label never exceeds
+#. * the reserved width; otherwise the form grows when a long search is
+#. * confirmed with Enter.
+#: src/nmtui/nmt-utils.c:189 src/nmtui/nmt-utils.c:194
+#, c-format
+msgid "Matching '%s' (%d)"
+msgstr "Zadetki za »%s« (%d)"
+
 #: src/nmtui/nmt-widget-list.c:131
 msgid "Add..."
 msgstr "Dodaj ..."
@@ -16953,6 +17026,26 @@ msgstr "Dodaj ..."
 #: src/nmtui/nmt-widget-list.c:193
 msgid "Remove"
 msgstr "Odstrani"
+
+#: src/nmtui/nmt-wifi-qr-dialog.c:119
+msgid "Share Wi-Fi"
+msgstr "Deli omrežje Wi-Fi z drugimi"
+
+#: src/nmtui/nmt-wifi-qr-dialog.c:129
+msgid "Warning: cannot read the Wi-Fi password due to insufficient privileges."
+msgstr "Opozorilo: ni možno prebrati gesla Wi-Fi zaradi nezadostnih pravic."
+
+#: src/nmtui/nmt-wifi-qr-dialog.c:136
+msgid "The terminal is too small to display the QR code."
+msgstr "Terminal je premajhen za prikaz kode QR."
+
+#: src/nmtui/nmt-wifi-qr-dialog.c:137
+msgid "The Wi-Fi credentials could not be encoded."
+msgstr "Poverilnic Wi-Fi ni možno kodirati."
+
+#: src/nmtui/nmt-wifi-qr-dialog.c:161
+msgid "Close"
+msgstr "Zapri"
 
 #: src/nmtui/nmt-wireguard-peer-editor.c:82
 msgid "Public key"
@@ -17011,7 +17104,7 @@ msgstr "Vzpostavljanje povezave …"
 msgid "Could not activate connection: %s"
 msgstr "Povezave ni mogoče aktivirati: %s"
 
-#: src/nmtui/nmtui-connect.c:324 src/nmtui/nmtui-connect.c:613
+#: src/nmtui/nmtui-connect.c:324 src/nmtui/nmtui-connect.c:622
 msgid "Activate"
 msgstr "Aktiviraj"
 
@@ -17019,56 +17112,56 @@ msgstr "Aktiviraj"
 msgid "Deactivate"
 msgstr "Deaktiviraj"
 
-#: src/nmtui/nmtui-connect.c:427
+#: src/nmtui/nmtui-connect.c:425
 msgid "Rescanning Wi-Fi devices..."
 msgstr "Ponovno pregledovanje naprav Wi-Fi ..."
 
-#: src/nmtui/nmtui-connect.c:456
+#: src/nmtui/nmtui-connect.c:454
 #, c-format
 msgid "Wi-Fi scan failed for device : %s"
 msgstr "Pregled Wi-Fi za napravo ni uspel : %s"
 
-#: src/nmtui/nmtui-connect.c:462
+#: src/nmtui/nmtui-connect.c:460
 #, c-format
 msgid "Wi-Fi scan timed out for device : %s"
 msgstr "Pregled Wi-Fi za napravo je potekel : %s"
 
-#: src/nmtui/nmtui-connect.c:560
+#: src/nmtui/nmtui-connect.c:558
 msgid "No active Wi-Fi devices found"
 msgstr "Aktivnih naprav Wi-Fi ni možno najti"
 
-#: src/nmtui/nmtui-connect.c:620
+#: src/nmtui/nmtui-connect.c:629
 msgid "Rescan Wi-Fi"
 msgstr "Ponovno preglej Wi-Fi"
 
-#: src/nmtui/nmtui-connect.c:634 src/nmtui/nmtui-edit.c:96
-#: src/nmtui/nmtui.c:109
+#: src/nmtui/nmtui-connect.c:643 src/nmtui/nmtui-edit.c:101
+#: src/nmtui/nmtui.c:108
 msgid "Quit"
 msgstr "Izhod"
 
-#: src/nmtui/nmtui-connect.c:634 src/nmtui/nmtui-edit.c:96
+#: src/nmtui/nmtui-connect.c:643 src/nmtui/nmtui-edit.c:101
 #: src/nmtui/nmtui-radio.c:118
 msgid "Back"
 msgstr "Nazaj"
 
-#: src/nmtui/nmtui-connect.c:657
+#: src/nmtui/nmtui-connect.c:691
 #, c-format
 msgid "No such connection '%s'"
 msgstr "Ni takšne povezave »%s«"
 
-#: src/nmtui/nmtui-connect.c:659
+#: src/nmtui/nmtui-connect.c:693
 msgid "Connection is already active"
 msgstr "Povezava je že aktivna"
 
-#: src/nmtui/nmtui-edit.c:208
+#: src/nmtui/nmtui-edit.c:216
 msgid "Create"
 msgstr "Ustvari"
 
-#: src/nmtui/nmtui-edit.c:349
+#: src/nmtui/nmtui-edit.c:357
 msgid "Select the type of connection you wish to create."
 msgstr "Izberite vrsto povezave, ki jo želite ustvariti."
 
-#: src/nmtui/nmtui-edit.c:358
+#: src/nmtui/nmtui-edit.c:366
 msgid ""
 "If you are creating a VPN, and the VPN connection you wish to create does "
 "not appear in the list, you may not have the correct VPN plugin installed."
@@ -17076,21 +17169,21 @@ msgstr ""
 "V primeru, da vrste povezave VPN, ki jo želite ustvariti, ni na seznamu, "
 "morda ni nameščenega ustreznega vstavka VPN."
 
-#: src/nmtui/nmtui-edit.c:394 src/nmtui/nmtui-edit.c:410
+#: src/nmtui/nmtui-edit.c:402 src/nmtui/nmtui-edit.c:418
 msgid "New Connection"
 msgstr "Nova povezava"
 
-#: src/nmtui/nmtui-edit.c:452
+#: src/nmtui/nmtui-edit.c:460
 #, c-format
 msgid "Unable to delete connection: %s"
 msgstr "Povezave ni mogoče izbrisati: %s"
 
-#: src/nmtui/nmtui-edit.c:490
+#: src/nmtui/nmtui-edit.c:498
 #, c-format
 msgid "Could not delete connection '%s': %s"
 msgstr "Povezave »%s« ni bilo mogoče izbrisati: %s"
 
-#: src/nmtui/nmtui-edit.c:512
+#: src/nmtui/nmtui-edit.c:520
 #, c-format
 msgid "Are you sure you want to delete the connection '%s'?"
 msgstr "Ali ste prepričani, da želite izbrisati povezavo »%s«?"
@@ -17167,23 +17260,23 @@ msgstr "izbirni gumb"
 msgid "Radio"
 msgstr "Izbirni gumb"
 
-#: src/nmtui/nmtui.c:85
+#: src/nmtui/nmtui.c:84
 msgid "NetworkManager TUI"
 msgstr "TUI NetworkManager"
 
-#: src/nmtui/nmtui.c:91
+#: src/nmtui/nmtui.c:90
 msgid "Please select an option"
 msgstr "Izberite možnost."
 
-#: src/nmtui/nmtui.c:138
+#: src/nmtui/nmtui.c:130
 msgid "Usage"
 msgstr "Raba"
 
-#: src/nmtui/nmtui.c:225
+#: src/nmtui/nmtui.c:217
 msgid "Could not parse arguments"
 msgstr "Argumentov ni mogoče razčleniti"
 
-#: src/nmtui/nmtui.c:238
+#: src/nmtui/nmtui.c:230
 #, c-format
 msgid "Could not contact NetworkManager: %s.\n"
 msgstr "Ni mogoče vzpostaviti povezave s programom NetworkManager: %s.\n"

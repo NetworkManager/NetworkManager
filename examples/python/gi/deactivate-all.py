@@ -9,9 +9,9 @@
 # It makes use of libnm via GObject introspection.
 #
 # Links:
-# https://developer.gnome.org/libnm/1.0/
-# https://wiki.gnome.org/GObjectIntrospection
-# https://wiki.gnome.org/PyGObject
+# https://networkmanager.dev/docs/libnm/latest/
+# https://gi.readthedocs.io/
+# https://pygobject.gnome.org/
 #
 
 import sys

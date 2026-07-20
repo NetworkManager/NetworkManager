@@ -1,4 +1,20 @@
 =============================================
+NetworkManager-1.60
+Overview of changes since NetworkManager-1.58
+=============================================
+
+This is a snapshot of NetworkManager development. The API is
+subject to change and not guaranteed to be compatible with
+the later release.
+USE AT YOUR OWN RISK. NOT RECOMMENDED FOR PRODUCTION USE!
+
+Core:
+* Flush systemd-resolved caches after updating the DNS configuration.
+
+Wi-Fi:
+* Keep the long background scan interval for a single Wi-Fi 7 AP-MLD.
+
+=============================================
 NetworkManager-1.58
 Overview of changes since NetworkManager-1.56
 =============================================

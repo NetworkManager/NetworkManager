@@ -1,0 +1,59 @@
+#!/bin/bash
+
+set -xe
+
+# A list of packages useful/needed to build and develop
+# NetworkManager on Arch Linux.
+
+SUDO=
+[ "$EUID" -eq 0 ] || SUDO=sudo
+
+install() {
+    if [ "$NM_INSTALL" != "" ]; then
+        $NM_INSTALL "$@"
+    else
+        $SUDO pacman -S --needed --noconfirm "$@"
+    fi
+}
+
+install \
+    audit \
+    base-devel \
+    bpf \
+    clang \
+    curl \
+    dbus \
+    dnsmasq \
+    git \
+    glib2 \
+    glib2-devel \
+    gnutls \
+    gobject-introspection \
+    gtk-doc \
+    intltool \
+    iproute2 \
+    iptables \
+    jansson \
+    libbpf \
+    libndp \
+    libnewt \
+    libnvme \
+    libpsl \
+    libteam \
+    meson \
+    mobile-broadband-provider-info \
+    modemmanager \
+    nftables \
+    nss \
+    polkit \
+    ppp \
+    python-dbus \
+    python-gobject \
+    python-pexpect \
+    python-setuptools \
+    readline \
+    systemd \
+    util-linux-libs \
+    valgrind \
+    \
+    #end

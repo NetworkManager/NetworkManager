@@ -9,7 +9,7 @@
 # The code uses libnm (NM) via GObject Introspection.
 #
 # Documentation links:
-# https://developer.gnome.org/libnm/1.0/
+# https://networkmanager.dev/docs/libnm/latest/
 # https://networkmanager.dev/docs/api/latest/ref-settings.html
 #
 

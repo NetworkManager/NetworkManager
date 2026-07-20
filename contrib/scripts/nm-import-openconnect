@@ -6,7 +6,7 @@
 
 -- Script for importing/converting OpenConnect VPN configuration files for NetworkManager
 -- In general, the implementation follows the logic of import() from
--- https://git.gnome.org/browse/network-manager-openconnect/tree/properties/nm-openconnect.c
+-- https://gitlab.gnome.org/GNOME/NetworkManager-openconnect/-/blob/main/properties/nm-openconnect-editor-plugin.c
 
 ----------------------
 -- Helper functions --

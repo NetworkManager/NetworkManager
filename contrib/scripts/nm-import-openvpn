@@ -6,7 +6,7 @@
 
 -- Script for importing/converting OpenVPN configuration files for NetworkManager
 -- In general, the implementation follows the logic of import() from
--- https://git.gnome.org/browse/network-manager-openvpn/tree/properties/import-export.c
+-- https://gitlab.gnome.org/GNOME/NetworkManager-openvpn/-/blob/main/properties/import-export.c
 
 
 ----------------------

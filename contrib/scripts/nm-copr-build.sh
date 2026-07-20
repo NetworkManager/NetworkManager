@@ -6,6 +6,10 @@
 # On a new upstream release, add new copr jobs named "NetworkManager-X.Y" and
 # "NetworkManager-X.Y-debug".
 #
+# Both jobs can be created automatically with
+#   contrib/scripts/nm-copr-create-release.sh X.Y
+# Otherwise, set them up manually:
+#
 #   - best, look at the latest copr project and replicate the settings.
 #   - add a custom build with the following script:
 #

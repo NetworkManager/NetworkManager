@@ -129,7 +129,7 @@ build_supplicant_config(NMConnection  *connection,
     g_assert_no_error(error);
     g_assert(success);
 
-    success = nm_supplicant_config_add_bgscan(config, connection, 0, &error);
+    success = nm_supplicant_config_add_bgscan(config, connection, FALSE, &error);
     g_assert_no_error(error);
     g_assert(success);
 
@@ -914,6 +914,60 @@ test_suppl_cap_mask(void)
 
 /*****************************************************************************/
 
+static void
+test_wifi_bgscan(void)
+{
+    /* nm_supplicant_config_add_bgscan() maps the caller's multiple_aps
+     * decision to a bgscan interval: a single AP (or single AP-MLD) gets the
+     * long interval, multiple APs get the short interval. The AP-MLD
+     * detection itself lives in nm-device-wifi (it needs the scanned AP
+     * list) and is not exercised here.
+     */
+    gs_unref_object NMConnection *connection  = NULL;
+    const unsigned char           ssid_data[] = {'b', 'g', 's', 'c', 'a', 'n'};
+    gs_unref_bytes GBytes        *ssid        = g_bytes_new(ssid_data, sizeof(ssid_data));
+
+    connection = new_basic_connection("bgscan Wi-Fi", ssid, NULL);
+    g_object_set(nm_connection_get_setting_wireless(connection),
+                 NM_SETTING_WIRELESS_BAND,
+                 "a",
+                 NULL);
+
+    /* Single AP / single AP-MLD: long interval. */
+    {
+        gs_unref_object NMSupplicantConfig *config = NULL;
+        GError                             *error  = NULL;
+        gboolean                            success;
+
+        config =
+            nm_supplicant_config_new(NM_SUPPL_CAP_MASK_NONE,
+                                     nm_utils_get_connection_first_permissions_user(connection));
+        NMTST_EXPECT_NM_INFO("Config: added 'bgscan' value 'simple:30:-70:86400'*");
+        success = nm_supplicant_config_add_bgscan(config, connection, FALSE, &error);
+        g_assert_no_error(error);
+        g_assert(success);
+        g_test_assert_expected_messages();
+    }
+
+    /* Multiple distinct APs: short interval for more reliable roaming. */
+    {
+        gs_unref_object NMSupplicantConfig *config = NULL;
+        GError                             *error  = NULL;
+        gboolean                            success;
+
+        config =
+            nm_supplicant_config_new(NM_SUPPL_CAP_MASK_NONE,
+                                     nm_utils_get_connection_first_permissions_user(connection));
+        NMTST_EXPECT_NM_INFO("Config: added 'bgscan' value 'simple:30:-65:300'*");
+        success = nm_supplicant_config_add_bgscan(config, connection, TRUE, &error);
+        g_assert_no_error(error);
+        g_assert(success);
+        g_test_assert_expected_messages();
+    }
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -930,6 +984,7 @@ main(int argc, char **argv)
     g_test_add_func("/supplicant-config/wifi-sae", test_wifi_sae);
     g_test_add_func("/supplicant-config/test_suppl_cap_mask", test_suppl_cap_mask);
     g_test_add_func("/supplicant-config/wifi-eap-suite-b-192", test_wifi_eap_suite_b_generation);
+    g_test_add_func("/supplicant-config/wifi-bgscan", test_wifi_bgscan);
 
     return g_test_run();
 }

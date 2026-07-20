@@ -15,27 +15,44 @@
 /*****************************************************************************/
 
 static NMConnection *
-find_connection_for_mac(NMConnection **nbft_connections, const char *expected_mac, guint32 vlan_id)
+find_connection_for_mac(NMConnection **nbft_connections, const char *expected_mac)
 {
     NMConnection  **c;
     NMSettingWired *s_wired;
-    NMSettingVlan  *s_vlan;
     const char     *mac_address;
 
     for (c = nbft_connections; c && *c; c++) {
         s_wired = nm_connection_get_setting_wired(*c);
-        g_assert(s_wired);
+        if (!s_wired)
+            continue;
         mac_address = nm_setting_wired_get_mac_address(s_wired);
         g_assert(mac_address);
         if (!nm_utils_hwaddr_matches(mac_address, -1, expected_mac, -1))
             continue;
+        return *c;
+    }
+
+    return NULL;
+}
+
+static NMConnection *
+find_connection_for_parent(NMConnection **nbft_connections, const char *uuid, guint32 vlan_id)
+{
+    NMConnection **c;
+    NMSettingVlan *s_vlan;
+    const char    *parent;
+
+    g_assert(uuid);
+    g_assert(vlan_id > 0);
+    for (c = nbft_connections; c && *c; c++) {
         s_vlan = nm_connection_get_setting_vlan(*c);
-        if (vlan_id > 0) {
-            if (!s_vlan)
-                continue;
-            if (nm_setting_vlan_get_id(s_vlan) != vlan_id)
-                continue;
-        } else if (s_vlan)
+        if (!s_vlan)
+            continue;
+        if (nm_setting_vlan_get_id(s_vlan) != vlan_id)
+            continue;
+        parent = nm_setting_vlan_get_parent(s_vlan);
+        g_assert(parent);
+        if (!nm_streq(uuid, parent))
             continue;
         return *c;
     }
@@ -44,7 +61,10 @@ find_connection_for_mac(NMConnection **nbft_connections, const char *expected_ma
 }
 
 static void
-verify_connection(NMConnection *c, const char *expected_mac, guint32 expected_vlan_id)
+verify_connection(NMConnection *c,
+                  const char   *expected_mac,
+                  guint32       expected_vlan_id,
+                  const char   *expected_parent)
 {
     NMSettingConnection *s_con;
     NMSettingWired      *s_wired;
@@ -61,11 +81,13 @@ verify_connection(NMConnection *c, const char *expected_mac, guint32 expected_vl
     g_assert(nm_setting_connection_get_autoconnect_priority(s_con)
              == NMI_AUTOCONNECT_PRIORITY_FIRMWARE);
 
-    s_wired = nm_connection_get_setting_wired(c);
-    g_assert(s_wired);
-    mac_address = nm_setting_wired_get_mac_address(s_wired);
-    g_assert(mac_address);
-    g_assert(nm_utils_hwaddr_matches(mac_address, -1, expected_mac, -1));
+    if (expected_mac) {
+        s_wired = nm_connection_get_setting_wired(c);
+        g_assert(s_wired);
+        mac_address = nm_setting_wired_get_mac_address(s_wired);
+        g_assert(mac_address);
+        g_assert(nm_utils_hwaddr_matches(mac_address, -1, expected_mac, -1));
+    }
 
     if (expected_vlan_id > 0) {
         g_assert_cmpstr(nm_setting_connection_get_connection_type(s_con),
@@ -74,7 +96,7 @@ verify_connection(NMConnection *c, const char *expected_mac, guint32 expected_vl
         s_vlan = nm_connection_get_setting_vlan(c);
         g_assert(s_vlan);
         g_assert_cmpint(nm_setting_vlan_get_id(s_vlan), ==, expected_vlan_id);
-        g_assert_cmpstr(nm_setting_vlan_get_parent(s_vlan), ==, NULL);
+        g_assert_cmpstr(nm_setting_vlan_get_parent(s_vlan), ==, expected_parent);
     } else {
         g_assert_cmpstr(nm_setting_connection_get_connection_type(s_con),
                         ==,
@@ -207,43 +229,43 @@ test_read_nbft_ipv4_static(void)
 
     /* NBFT-multi HFI 1 */
     expected_mac_address = "52:54:00:72:c5:ae";
-    connection           = find_connection_for_mac(nbft_connections, expected_mac_address, 0);
-    verify_connection(connection, expected_mac_address, 0);
+    connection           = find_connection_for_mac(nbft_connections, expected_mac_address);
+    verify_connection(connection, expected_mac_address, 0, NULL);
     verify_ipv4(connection, "192.168.122.158", 24, "192.168.122.1");
     verify_ipv6_disabled(connection);
 
     /* NBFT-multi HFI 2 */
     expected_mac_address = "52:54:00:72:c5:af";
-    connection           = find_connection_for_mac(nbft_connections, expected_mac_address, 0);
-    verify_connection(connection, expected_mac_address, 0);
+    connection           = find_connection_for_mac(nbft_connections, expected_mac_address);
+    verify_connection(connection, expected_mac_address, 0, NULL);
     verify_ipv4_dhcp(connection);
     verify_ipv6_disabled(connection);
 
     /* NBFT-Dell.PowerEdge.R660-fw1.5.5-mpath+discovery HFI 1 */
     expected_mac_address = "00:62:0b:cb:eb:70";
-    connection           = find_connection_for_mac(nbft_connections, expected_mac_address, 0);
-    verify_connection(connection, expected_mac_address, 0);
+    connection           = find_connection_for_mac(nbft_connections, expected_mac_address);
+    verify_connection(connection, expected_mac_address, 0, NULL);
     verify_ipv4(connection, "172.18.240.1", 24, NULL);
     verify_ipv6_disabled(connection);
 
     /* NBFT-Dell.PowerEdge.R660-fw1.5.5-mpath+discovery HFI 2 */
     expected_mac_address = "00:62:0b:cb:eb:71";
-    connection           = find_connection_for_mac(nbft_connections, expected_mac_address, 0);
-    verify_connection(connection, expected_mac_address, 0);
+    connection           = find_connection_for_mac(nbft_connections, expected_mac_address);
+    verify_connection(connection, expected_mac_address, 0, NULL);
     verify_ipv4(connection, "172.18.230.2", 24, NULL);
     verify_ipv6_disabled(connection);
 
     /* NBFT-rhpoc */
     expected_mac_address = "ea:eb:d3:58:89:58";
-    connection           = find_connection_for_mac(nbft_connections, expected_mac_address, 0);
-    verify_connection(connection, expected_mac_address, 0);
+    connection           = find_connection_for_mac(nbft_connections, expected_mac_address);
+    verify_connection(connection, expected_mac_address, 0, NULL);
     verify_ipv4(connection, "192.168.101.30", 24, NULL);
     verify_ipv6_disabled(connection);
 
     /* NBFT-static-ipv4 */
     expected_mac_address = "52:54:00:b8:19:b9";
-    connection           = find_connection_for_mac(nbft_connections, expected_mac_address, 0);
-    verify_connection(connection, expected_mac_address, 0);
+    connection           = find_connection_for_mac(nbft_connections, expected_mac_address);
+    verify_connection(connection, expected_mac_address, 0, NULL);
     verify_ipv4(connection, "192.168.49.50", 24, NULL);
     verify_ipv6_disabled(connection);
 
@@ -264,15 +286,15 @@ test_read_nbft_ipv4_dhcp(void)
 
     /* NBFT-dhcp-ipv4 */
     expected_mac_address = "52:54:00:b8:19:b9";
-    connection           = find_connection_for_mac(nbft_connections, expected_mac_address, 0);
-    verify_connection(connection, expected_mac_address, 0);
+    connection           = find_connection_for_mac(nbft_connections, expected_mac_address);
+    verify_connection(connection, expected_mac_address, 0, NULL);
     verify_ipv4_dhcp(connection);
     verify_ipv6_disabled(connection);
 
     /* NBFT-Dell.PowerEdge.R760 */
     expected_mac_address = "b0:26:28:e8:7c:0e";
-    connection           = find_connection_for_mac(nbft_connections, expected_mac_address, 0);
-    verify_connection(connection, expected_mac_address, 0);
+    connection           = find_connection_for_mac(nbft_connections, expected_mac_address);
+    verify_connection(connection, expected_mac_address, 0, NULL);
     verify_ipv4_dhcp(connection);
     verify_ipv6_disabled(connection);
 
@@ -293,8 +315,8 @@ test_read_nbft_ipv6_static(void)
 
     /* NBFT-static-ipv6 */
     expected_mac_address = "52:54:00:9e:20:1a";
-    connection           = find_connection_for_mac(nbft_connections, expected_mac_address, 0);
-    verify_connection(connection, expected_mac_address, 0);
+    connection           = find_connection_for_mac(nbft_connections, expected_mac_address);
+    verify_connection(connection, expected_mac_address, 0, NULL);
     verify_ipv6(connection, "fd09:9a46:b5c1:1fe::10", 64, NULL);
     verify_ipv4_disabled(connection);
 
@@ -315,22 +337,22 @@ test_read_nbft_ipv6_auto(void)
 
     /* NBFT-auto-ipv6 */
     expected_mac_address = "52:54:00:9e:20:1a";
-    connection           = find_connection_for_mac(nbft_connections, expected_mac_address, 0);
-    verify_connection(connection, expected_mac_address, 0);
+    connection           = find_connection_for_mac(nbft_connections, expected_mac_address);
+    verify_connection(connection, expected_mac_address, 0, NULL);
     verify_ipv6(connection, "fd09:9a46:b5c1:1ff:5054:ff:fe9e:201a", 64, NULL);
     verify_ipv4_disabled(connection);
 
     /* NBFT-dhcp-ipv6 */
     expected_mac_address = "52:54:00:b8:19:b9";
-    connection           = find_connection_for_mac(nbft_connections, expected_mac_address, 0);
-    verify_connection(connection, expected_mac_address, 0);
+    connection           = find_connection_for_mac(nbft_connections, expected_mac_address);
+    verify_connection(connection, expected_mac_address, 0, NULL);
     verify_ipv6_auto(connection);
     verify_ipv4_disabled(connection);
 
     /* NBFT-ipv6-noip+disc */
     expected_mac_address = "40:a6:b7:c0:8a:c9";
-    connection           = find_connection_for_mac(nbft_connections, expected_mac_address, 0);
-    verify_connection(connection, expected_mac_address, 0);
+    connection           = find_connection_for_mac(nbft_connections, expected_mac_address);
+    verify_connection(connection, expected_mac_address, 0, NULL);
     verify_ipv6_auto(connection);
     verify_ipv4_disabled(connection);
 
@@ -340,10 +362,12 @@ test_read_nbft_ipv6_auto(void)
 static void
 test_read_nbft_vlan(void)
 {
-    NMConnection **nbft_connections;
-    NMConnection  *connection;
-    const char    *expected_mac_address;
-    gs_free char  *hostname = NULL;
+    NMConnection       **nbft_connections;
+    NMConnection        *connection;
+    NMSettingConnection *s_conn;
+    const char          *expected_mac_address;
+    gs_free char        *hostname = NULL;
+    const char          *parent;
 
     nbft_connections = nmi_nbft_reader_parse(TEST_INITRD_DIR "/nbft-vlan", &hostname);
     g_assert_cmpstr(hostname, ==, NULL);
@@ -351,29 +375,31 @@ test_read_nbft_vlan(void)
 
     /* NBFT-qemu-vlans-incomplete HFI 1 */
     expected_mac_address = "52:54:00:72:c5:ae";
-    connection           = find_connection_for_mac(nbft_connections, expected_mac_address, 0);
-    verify_connection(connection, expected_mac_address, 0);
+    connection           = find_connection_for_mac(nbft_connections, expected_mac_address);
+    verify_connection(connection, expected_mac_address, 0, NULL);
     verify_ipv4(connection, "192.168.122.158", 24, "192.168.122.1");
     verify_ipv6_disabled(connection);
 
     /* NBFT-qemu-vlans-incomplete HFI 2 */
     expected_mac_address = "52:54:00:72:c5:af";
-    connection           = find_connection_for_mac(nbft_connections, expected_mac_address, 0);
-    verify_connection(connection, expected_mac_address, 0);
+    connection           = find_connection_for_mac(nbft_connections, expected_mac_address);
+    s_conn               = nm_connection_get_setting_connection(connection);
+    parent               = nm_setting_connection_get_uuid(s_conn);
+    verify_connection(connection, expected_mac_address, 0, NULL);
     verify_ipv4_disabled(connection);
     verify_ipv6_disabled(connection);
 
     /* NBFT-qemu-vlans-incomplete HFI 2 VLAN 11 */
-    expected_mac_address = "52:54:00:72:c5:af";
-    connection           = find_connection_for_mac(nbft_connections, expected_mac_address, 11);
-    verify_connection(connection, expected_mac_address, 11);
+    connection = find_connection_for_parent(nbft_connections, parent, 11);
+    g_assert(connection);
+    verify_connection(connection, NULL, 11, parent);
     verify_ipv4(connection, "192.168.124.58", 24, NULL);
     verify_ipv6_disabled(connection);
 
     /* NBFT-qemu-vlans-incomplete HFI 2 VLAN 12 */
-    expected_mac_address = "52:54:00:72:c5:af";
-    connection           = find_connection_for_mac(nbft_connections, expected_mac_address, 12);
-    verify_connection(connection, expected_mac_address, 12);
+    connection = find_connection_for_parent(nbft_connections, parent, 12);
+    g_assert(connection);
+    verify_connection(connection, NULL, 12, parent);
     verify_ipv4(connection, "192.168.125.58", 24, NULL);
     verify_ipv6_disabled(connection);
 

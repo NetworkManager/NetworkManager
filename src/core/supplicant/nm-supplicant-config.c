@@ -755,7 +755,7 @@ nm_supplicant_config_add_setting_wireless(NMSupplicantConfig *self,
 gboolean
 nm_supplicant_config_add_bgscan(NMSupplicantConfig *self,
                                 NMConnection       *connection,
-                                guint               num_seen_bssids,
+                                gboolean            multiple_aps,
                                 GError            **error)
 {
     NMSettingWireless         *s_wifi;
@@ -792,8 +792,13 @@ nm_supplicant_config_add_bgscan(NMSupplicantConfig *self,
      * in which we want more reliable roaming between APs. Thus trigger scans
      * when the signal is still somewhat OK so we have an up-to-date roam
      * candidate list when the signal gets bad.
+     *
+     * @multiple_aps is FALSE when the seen BSSIDs all belong to a single
+     * Wi-Fi 7 AP-MLD (per-link addresses of one physical AP); the caller
+     * determines this from the parsed Multi-Link element. See
+     * NMDeviceWifi.build_supplicant_config().
      */
-    if (num_seen_bssids > 1u
+    if (multiple_aps
         || ((s_wsec = nm_connection_get_setting_wireless_security(connection))
             && NM_IN_STRSET(nm_setting_wireless_security_get_key_mgmt(s_wsec),
                             "ieee8021x",

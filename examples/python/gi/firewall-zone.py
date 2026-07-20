@@ -20,9 +20,9 @@ from gi.repository import GLib, NM
 # If you used D-Bus calls, you would call GetSettings() and then Update().
 #
 # Links:
-# https://developer.gnome.org/libnm/1.0/
-# https://wiki.gnome.org/GObjectIntrospection
-# https://wiki.gnome.org/PyGObject
+# https://networkmanager.dev/docs/libnm/latest/
+# https://gi.readthedocs.io/
+# https://pygobject.gnome.org/
 #
 
 main_loop = None

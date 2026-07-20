@@ -879,7 +879,7 @@ test_recv(TestRecvFixture *fixture, gconstpointer user_data)
         return;
     }
 
-    listener = nm_lldp_listener_new(fixture->ifindex, lldp_neighbors_changed, &info, &error);
+    listener = nm_lldp_listener_new(fixture->ifindex, NULL, lldp_neighbors_changed, &info, &error);
     nmtst_assert_success(listener, error);
 
     loop = g_main_loop_new(NULL, FALSE);
@@ -1276,6 +1276,52 @@ TEST_RECV_FRAME_DEFINE(
 
 /*****************************************************************************/
 
+static void
+test_recv_self_filter(TestRecvFixture *fixture, gconstpointer user_data)
+{
+    NMLldpListener      *listener;
+    GMainLoop           *loop;
+    TestRecvCallbackInfo info     = {};
+    GError              *error    = NULL;
+    gs_free char        *src_addr = NULL;
+
+    if (fixture->ifindex == 0) {
+        g_test_skip("Tun device not available");
+        return;
+    }
+
+    /* Use the source MAC of frame0 (bytes 6-11) as the filter address.
+     * frame0 must be dropped; frame1 has a different source and must be accepted. */
+    src_addr = nm_utils_hwaddr_ntoa(&_test_recv_data0_frame0.frame[ETH_ALEN], ETH_ALEN);
+    listener =
+        nm_lldp_listener_new(fixture->ifindex, src_addr, lldp_neighbors_changed, &info, &error);
+    nmtst_assert_success(listener, error);
+
+    loop = g_main_loop_new(NULL, FALSE);
+
+    g_assert_cmpint(
+        write(fixture->fd, _test_recv_data0_frame0.frame, _test_recv_data0_frame0.frame_len),
+        ==,
+        (gssize) _test_recv_data0_frame0.frame_len);
+    g_assert_cmpint(
+        write(fixture->fd, _test_recv_data1_frame0.frame, _test_recv_data1_frame0.frame_len),
+        ==,
+        (gssize) _test_recv_data1_frame0.frame_len);
+
+    info.loop_to_quit = loop;
+    if (!nmtst_main_loop_run(loop, 500))
+        g_assert_not_reached();
+    info.loop_to_quit = NULL;
+
+    g_assert_cmpint(info.num_called, ==, 1);
+    g_assert_cmpint(g_variant_n_children(nm_lldp_listener_get_neighbors(listener)), ==, 1);
+
+    nm_clear_pointer(&listener, nm_lldp_listener_destroy);
+    nm_clear_pointer(&loop, g_main_loop_unref);
+}
+
+/*****************************************************************************/
+
 NMTstpSetupFunc const _nmtstp_setup_platform_func = nm_linux_platform_setup;
 
 void
@@ -1298,6 +1344,13 @@ _nmtstp_setup_tests(void)
     _TEST_ADD_RECV("/lldp/recv/0_twice", &_test_recv_data0_twice);
     _TEST_ADD_RECV("/lldp/recv/1", &_test_recv_data1);
     _TEST_ADD_RECV("/lldp/recv/2_ttl1", &_test_recv_data2_ttl1);
+
+    g_test_add("/lldp/recv/self_filter",
+               TestRecvFixture,
+               NULL,
+               _test_recv_fixture_setup,
+               test_recv_self_filter,
+               _test_recv_fixture_teardown);
 
     g_test_add_data_func("/lldp/parse-frames/0", &_test_recv_data0_frame0, test_parse_frames);
     g_test_add_data_func("/lldp/parse-frames/1", &_test_recv_data1_frame0, test_parse_frames);

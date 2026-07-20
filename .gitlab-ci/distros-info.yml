@@ -159,3 +159,12 @@ alpine:
 - version: 3.19
   support: 2025-11-01
   nm: 1.44
+
+# Arch Linux:
+#   cadence: rolling release, no versioning, no EOL
+# Releases and support info: https://archlinux.org/
+# NetworkManager versions info: https://archlinux.org/packages/extra/x86_64/networkmanager/
+arch:
+- version: rolling
+  support: yes
+  nm: main

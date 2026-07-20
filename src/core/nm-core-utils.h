@@ -464,7 +464,9 @@ void nm_wifi_utils_parse_ies(const guint8 *bytes,
                              guint32      *out_max_rate,
                              guint32      *out_bandwidth,
                              gboolean     *out_metered,
-                             gboolean     *out_owe_transition_mode);
+                             gboolean     *out_owe_transition_mode,
+                             NMEtherAddr  *out_mld_addr,
+                             gboolean     *out_mld_addr_valid);
 
 guint8 nm_wifi_utils_level_to_quality(int val);
 

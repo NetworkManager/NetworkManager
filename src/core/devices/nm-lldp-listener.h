@@ -11,6 +11,7 @@
 typedef void (*NMLldpListenerNotify)(NMLldpListener *self, gpointer user_data);
 
 NMLldpListener *nm_lldp_listener_new(int                  ifindex,
+                                     const char          *own_hw_addr,
                                      NMLldpListenerNotify notify_callback,
                                      gpointer             notify_user_data,
                                      GError             **error);

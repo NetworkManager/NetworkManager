@@ -2872,6 +2872,80 @@ test_l3_config_data_cmp_default_routes(void)
 
 /*****************************************************************************/
 
+static void
+test_wifi_utils_parse_ies_mld(void)
+{
+    /* A real Basic Multi-Link element (802.11be) captured from a TP-Link
+     * Deco BE63 link BSS: element ID 255, length 16, element ID extension
+     * 107, Multi-Link Control 0x01b0 (Type 0 = Basic), Common Info Length
+     * 13, MLD MAC ec:75:0c:74:4b:77, then trailing common-info fields. */
+    const guint8      ies_with_mld[] = {0xff,
+                                        0x10,
+                                        0x6b,
+                                        0xb0,
+                                        0x01,
+                                        0x0d,
+                                        0xec,
+                                        0x75,
+                                        0x0c,
+                                        0x74,
+                                        0x4b,
+                                        0x77,
+                                        0x01,
+                                        0x00,
+                                        0x01,
+                                        0x40,
+                                        0x21,
+                                        0x00};
+    const NMEtherAddr expected       = {.ether_addr_octet = {0xec, 0x75, 0x0c, 0x74, 0x4b, 0x77}};
+    /* SSID element (0) + a non-Basic Multi-Link element (Type 1): no MLD. */
+    const guint8 ies_without_mld[] =
+        {0x00, 0x03, 'a', 'b', 'c', 0xff, 0x04, 0x6b, 0x01, 0x00, 0x00};
+    NMEtherAddr mld;
+    gboolean    mld_valid;
+
+    nm_wifi_utils_parse_ies(ies_with_mld,
+                            sizeof(ies_with_mld),
+                            NULL,
+                            NULL,
+                            NULL,
+                            NULL,
+                            &mld,
+                            &mld_valid);
+    g_assert(mld_valid);
+    g_assert(nm_ether_addr_equal(&mld, &expected));
+
+    /* No Basic Multi-Link element: mld_valid must be FALSE and the address
+     * cleared. */
+    nm_wifi_utils_parse_ies(ies_without_mld,
+                            sizeof(ies_without_mld),
+                            NULL,
+                            NULL,
+                            NULL,
+                            NULL,
+                            &mld,
+                            &mld_valid);
+    g_assert(!mld_valid);
+    g_assert(nm_utils_memeqzero(&mld, sizeof(mld)));
+
+    /* Truncated element (claims an MLD but too short) must not parse. */
+    {
+        const guint8 ies_truncated[] = {0xff, 0x05, 0x6b, 0xb0, 0x01, 0x0d, 0xec};
+
+        nm_wifi_utils_parse_ies(ies_truncated,
+                                sizeof(ies_truncated),
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                &mld,
+                                &mld_valid);
+        g_assert(!mld_valid);
+    }
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -2952,6 +3026,8 @@ main(int argc, char **argv)
 
     g_test_add_func("/core/general/test_l3_config_data_cmp_default_routes",
                     test_l3_config_data_cmp_default_routes);
+
+    g_test_add_func("/core/general/test_wifi_utils_parse_ies_mld", test_wifi_utils_parse_ies_mld);
 
     return g_test_run();
 }
