@@ -4010,6 +4010,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingIPConfig,
                              PROP_ROUTED_DNS,
                              PROP_SHARED_DHCP_RANGE,
                              PROP_SHARED_DHCP_LEASE_TIME,
+                             PROP_NAT,
                              PROP_FORWARDING, );
 
 G_DEFINE_ABSTRACT_TYPE(NMSettingIPConfig, nm_setting_ip_config, NM_TYPE_SETTING)
@@ -5583,6 +5584,25 @@ nm_setting_ip_config_get_shared_dhcp_lease_time(NMSettingIPConfig *setting)
 }
 
 /**
+ * nm_setting_ip_config_get_nat:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns the value contained in the #NMSettingIPConfig:nat
+ * property.
+ *
+ * Returns: whether NAT is used for connection sharing
+ *
+ * Since: 1.60
+ **/
+NMSettingIPConfigNat
+nm_setting_ip_config_get_nat(NMSettingIPConfig *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), NM_SETTING_IP_CONFIG_NAT_DEFAULT);
+
+    return NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->nat;
+}
+
+/**
  * nm_setting_ip_config_get_forwarding:
  * @setting: the #NMSettingIPConfig
  *
@@ -6402,6 +6422,13 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
         &nm_sett_info_propert_type_direct_int32,
         .direct_offset =
             NM_STRUCT_OFFSET_ENSURE_TYPE(gint32, NMSettingIPConfigPrivate, shared_dhcp_lease_time));
+
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_NAT],
+        &nm_sett_info_propert_type_direct_enum,
+        .direct_offset = NM_STRUCT_OFFSET_ENSURE_TYPE(int, NMSettingIPConfigPrivate, nat),
+        .direct_data.enum_gtype = NM_TYPE_SETTING_IP_CONFIG_NAT);
 
     _nm_properties_override_gobj(
         properties_override,
@@ -7303,6 +7330,40 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                          0,
                          G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | NM_SETTING_PARAM_FUZZY_IGNORE
                              | G_PARAM_STATIC_STRINGS);
+
+    /**
+     * NMSettingIPConfig:nat:
+     *
+     * Controls the use of NAT for IP connection sharing (method=shared).
+     *
+     * For IPv4, %NM_SETTING_IP_CONFIG_NAT_AUTO and
+     * %NM_SETTING_IP_CONFIG_NAT_YES enable NAT, and
+     * %NM_SETTING_IP_CONFIG_NAT_NO disables it.
+     *
+     * For IPv6, the valid values are:
+     *   %NM_SETTING_IP_CONFIG_NAT_AUTO: set up ULA+NAT unless Prefix
+     *        Delegation is available from an upstream interface within
+     *        a short interval, in which case PD is used instead.
+     *   %NM_SETTING_IP_CONFIG_NAT_YES: always set up ULA+NAT, together
+     *        with Prefix Delegation if available.
+     *   %NM_SETTING_IP_CONFIG_NAT_NO: never set up ULA+NAT; only use
+     *        Prefix Delegation.
+     *
+     * When set to %NM_SETTING_IP_CONFIG_NAT_DEFAULT (the default), the
+     * global default from NetworkManager.conf is used. If no global
+     * default is configured, "auto" is used.
+     *
+     * Since: 1.60
+     */
+    obj_properties[PROP_NAT] = g_param_spec_int(NM_SETTING_IP_CONFIG_NAT,
+                                                "",
+                                                "",
+                                                NM_SETTING_IP_CONFIG_NAT_DEFAULT,
+                                                NM_SETTING_IP_CONFIG_NAT_NO,
+                                                NM_SETTING_IP_CONFIG_NAT_DEFAULT,
+                                                G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY
+                                                    | NM_SETTING_PARAM_FUZZY_IGNORE
+                                                    | G_PARAM_STATIC_STRINGS);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

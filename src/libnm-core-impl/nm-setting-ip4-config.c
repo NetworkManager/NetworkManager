@@ -391,6 +391,22 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         && !nm_utils_validate_dhcp4_vendor_class_id(priv->dhcp_vendor_class_identifier, error))
         return FALSE;
 
+    if (!NM_IN_SET(nm_setting_ip_config_get_nat(s_ip),
+                   NM_SETTING_IP_CONFIG_NAT_DEFAULT,
+                   NM_SETTING_IP_CONFIG_NAT_AUTO,
+                   NM_SETTING_IP_CONFIG_NAT_YES,
+                   NM_SETTING_IP_CONFIG_NAT_NO)) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("property is invalid"));
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_IP4_CONFIG_SETTING_NAME,
+                       NM_SETTING_IP_CONFIG_NAT);
+        return FALSE;
+    }
+
     /* Failures from here on are NORMALIZABLE_ERROR... */
 
     if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_SHARED)

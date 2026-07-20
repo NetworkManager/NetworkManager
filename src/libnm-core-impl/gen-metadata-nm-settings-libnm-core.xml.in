@@ -1788,6 +1788,10 @@
                   dbus-type="s"
                   gprop-type="gchararray"
                   />
+        <property name="nat"
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="never-default"
                   dbus-type="b"
                   gprop-type="gboolean"
@@ -1950,6 +1954,10 @@
         <property name="mtu"
                   dbus-type="u"
                   gprop-type="guint"
+                  />
+        <property name="nat"
+                  dbus-type="i"
+                  gprop-type="gint"
                   />
         <property name="never-default"
                   dbus-type="b"
