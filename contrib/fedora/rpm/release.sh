@@ -444,11 +444,13 @@ case "$RELEASE_MODE" in
         # is the release, so that `git log --first-parent` follows the path with the
         # release candidates, and not the devel part during that time. Hence this
         # switcheroo here.
-        git checkout -B "$TMP_BRANCH" "${VERSION_ARR[0]}.$((${VERSION_ARR[1]} - 1)).0" || die "merge0"
-        git merge -Xours --commit -m tmp main || die "merge1"
+        PREV_VERSION="${VERSION_ARR[0]}.$((${VERSION_ARR[1]} - 1)).0"
+        MERGE_MSG="merge: branch 'nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} - 1))' ($PREV_VERSION release)"
+        git checkout -B "$TMP_BRANCH" "$PREV_VERSION" || die "merge0"
+        git merge -Xours --commit -m "$MERGE_MSG" main || die "merge1"
         git rm --cached -r . || die "merge2"
         git checkout main -- . || die "merge3"
-        git commit --amend -m tmp -a || die "failed to commit major version bump"
+        git commit --amend -m "$MERGE_MSG" -a || die "failed to commit major version bump"
         test x = "x$(git diff main HEAD)" || die "there is a diff after merge!"
 
         # Version is already correct in meson.build
