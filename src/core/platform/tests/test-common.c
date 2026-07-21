@@ -1508,7 +1508,9 @@ nmtstp_wait_for_signal(NMPlatform *platform, gint64 timeout_msec)
      * a zero timeout: we check whether there are any events pending in platform,
      * and quite the mainloop immediately afterwards. But we always check. */
 
-    data.id = g_timeout_add(CLAMP(timeout_msec, 0, G_MAXUINT32), _wait_for_signal_timeout, &data);
+    data.id = g_timeout_add(NM_CLAMP(timeout_msec, 0, (gint64) G_MAXUINT32),
+                            _wait_for_signal_timeout,
+                            &data);
 
     g_main_loop_run(data.loop);
 

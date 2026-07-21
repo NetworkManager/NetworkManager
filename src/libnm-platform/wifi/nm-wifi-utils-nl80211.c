@@ -414,7 +414,7 @@ nl80211_xbm_to_percent(gint32 xbm, guint32 divisor)
 #define SIGNAL_MAX_DBM  -20
 
     xbm /= divisor;
-    xbm = CLAMP(xbm, NOISE_FLOOR_DBM, SIGNAL_MAX_DBM);
+    xbm = NM_CLAMP(xbm, NOISE_FLOOR_DBM, SIGNAL_MAX_DBM);
 
     return 100
            - 70

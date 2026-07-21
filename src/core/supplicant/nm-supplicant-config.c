@@ -1517,7 +1517,7 @@ nm_supplicant_config_add_setting_8021x(NMSupplicantConfig *self,
     hdrs = 14; /* EAPOL + EAP-TLS */
     frag = 1280 - hdrs;
     if (mtu > hdrs)
-        frag = CLAMP(mtu - hdrs, 100, frag);
+        frag = NM_CLAMP(mtu - hdrs, 100u, frag);
     frag_str = g_strdup_printf("%u", frag);
 
     if (!nm_supplicant_config_add_option(self, "fragment_size", frag_str, -1, NULL, error))
