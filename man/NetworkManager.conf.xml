@@ -337,8 +337,10 @@ no-auto-default=*
         push the DNS configuration to systemd-resolved</para>
 
         <para><literal>dnsconfd</literal>: NetworkManager will
-        push the DNS configuration to dnsconfd</para> and by default set ipvX.routed-dns to
-        yes, so servers are contacted through right interfaces.
+        push the DNS configuration to
+        <ulink url="https://github.com/InfrastructureServices/dnsconfd">dnsconfd</ulink>
+        and by default set ipvX.routed-dns to
+        yes, so servers are contacted through right interfaces.</para>
 
         <para><literal>none</literal>: NetworkManager will not
         modify resolv.conf. This implies
