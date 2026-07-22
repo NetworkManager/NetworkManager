@@ -58,6 +58,8 @@ NMActiveConnectionState nmc_activation_get_effective_state(NMActiveConnection *a
 
 const char *nmc_wifi_strength_bars(guint8 strength);
 
+const char *nmc_wifi_security_icon(gboolean is_protected);
+
 const char *nmc_password_subst_char(void);
 
 void nmc_print_qrcode(const char *str);

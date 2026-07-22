@@ -454,6 +454,45 @@ connection_matches(NmtConnectConnection *nmtconn, const char *needle)
            || nmt_utils_filter_match(nmtconn->ssid, needle);
 }
 
+/* A network counts as "known" only if its profile has been activated
+ * successfully at least once (non-zero timestamp). A profile that only ever
+ * failed to connect still exists but is not treated as known. */
+static gboolean
+nmtconn_is_known(NmtConnectConnection *nmtconn)
+{
+    NMSettingConnection *s_con;
+
+    if (!nmtconn->conn)
+        return FALSE;
+
+    s_con = nm_connection_get_setting_connection(nmtconn->conn);
+    return s_con && nm_setting_connection_get_timestamp(s_con) > 0;
+}
+
+/* Whether joining this AP needs a passphrase or credentials. OWE ("enhanced
+ * open") encrypts without a secret, so it is treated as open. */
+static gboolean
+nmtconn_ap_is_protected(NMAccessPoint *ap)
+{
+    guint32 flags     = nm_access_point_get_flags(ap);
+    guint32 wpa_flags = nm_access_point_get_wpa_flags(ap);
+    guint32 rsn_flags = nm_access_point_get_rsn_flags(ap);
+    guint32 owe       = NM_802_11_AP_SEC_KEY_MGMT_OWE | NM_802_11_AP_SEC_KEY_MGMT_OWE_TM;
+
+    if ((wpa_flags & ~owe) || (rsn_flags & ~owe))
+        return TRUE;
+    /* WEP advertises only the privacy bit; OWE sets it too but is passwordless. */
+    return (flags & NM_802_11_AP_FLAGS_PRIVACY) && !(rsn_flags & owe);
+}
+
+static void
+append_section_header(NmtNewtListbox *listbox, const char *label)
+{
+    gs_free char *header = g_strdup_printf("  == %s ==", label);
+
+    nmt_newt_listbox_append(listbox, header, NULL);
+}
+
 static void
 nmt_connect_connection_list_rebuild(NmtConnectConnectionList *list)
 {
@@ -462,7 +501,7 @@ nmt_connect_connection_list_rebuild(NmtConnectConnectionList *list)
     const GPtrArray                 *devices, *acs, *connections;
     int                              max_width;
     char                           **names, *row, active_col;
-    const char                      *strength_col;
+    const char                      *strength_col, *security_col;
     GSList                          *nmt_devices, *diter, *citer;
     NmtConnectDevice                *nmtdev;
     NmtConnectConnection            *nmtconn;
@@ -500,7 +539,10 @@ nmt_connect_connection_list_rebuild(NmtConnectConnectionList *list)
 
     did_group = FALSE;
     for (diter = nmt_devices; diter; diter = diter->next) {
-        gboolean dev_matches = FALSE;
+        gboolean show_split;
+        gboolean known_header_done = FALSE;
+        gboolean other_header_done = FALSE;
+        gboolean dev_matches       = FALSE;
 
         nmtdev = diter->data;
 
@@ -513,6 +555,10 @@ nmt_connect_connection_list_rebuild(NmtConnectConnectionList *list)
         if (!dev_matches)
             continue;
 
+        /* Label the sections on Wi-Fi devices even when only one kind is
+         * present, so it is always clear whether a network is known. */
+        show_split = nmtdev->device && NM_IS_DEVICE_WIFI(nmtdev->device);
+
         if (did_group)
             nmt_newt_listbox_append(listbox, "", NULL);
         nmt_newt_listbox_append(listbox, nmtdev->name, NULL);
@@ -523,6 +569,20 @@ nmt_connect_connection_list_rebuild(NmtConnectConnectionList *list)
 
             if (!connection_matches(nmtconn, priv->filter_text))
                 continue;
+
+            /* sort_connections() keeps known connections (timestamp descending)
+             * ahead of never-activated ones and access points, so each section is
+             * contiguous and its header can be emitted lazily on first sight. */
+            if (show_split && !known_header_done && nmtconn_is_known(nmtconn)) {
+                append_section_header(listbox, _("Known networks"));
+                known_header_done = TRUE;
+            }
+            if (show_split && !other_header_done && !nmtconn_is_known(nmtconn)) {
+                if (known_header_done)
+                    nmt_newt_listbox_append(listbox, "", NULL);
+                append_section_header(listbox, _("Other networks"));
+                other_header_done = TRUE;
+            }
 
             if (nmtconn->conn)
                 nmtconn->active = connection_find_ac(nmtconn->conn, acs);
@@ -536,16 +596,21 @@ nmt_connect_connection_list_rebuild(NmtConnectConnectionList *list)
                 guint8 strength = nm_access_point_get_strength(nmtconn->ap);
 
                 strength_col = nmc_wifi_strength_bars(strength);
-            } else
+                security_col = nmc_wifi_security_icon(nmtconn_ap_is_protected(nmtconn->ap));
+            } else {
                 strength_col = NULL;
+                security_col = NULL;
+            }
 
-            row = g_strdup_printf("%c %s%-*s%s%s",
+            row = g_strdup_printf("%c %s%-*s%s%s%s%s",
                                   active_col,
                                   nmtconn->name,
                                   (int) (max_width - nmt_newt_text_width(nmtconn->name)),
                                   "",
                                   strength_col ? " " : "",
-                                  strength_col ?: "");
+                                  strength_col ?: "",
+                                  security_col ? " " : "",
+                                  security_col ?: "");
 
             nmt_newt_listbox_append(listbox, row, nmtconn);
             g_free(row);

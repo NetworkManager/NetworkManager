@@ -14,6 +14,12 @@ Core:
 Wi-Fi:
 * Keep the long background scan interval for a single Wi-Fi 7 AP-MLD.
 
+nmtui:
+* Group known and other Wi-Fi networks separately in the "Activate a
+  connection" list.
+* Mark protected Wi-Fi networks with a lock in the "Activate a
+  connection" list; open networks are left unmarked.
+
 =============================================
 NetworkManager-1.58
 Overview of changes since NetworkManager-1.56
