@@ -2535,7 +2535,8 @@ gboolean nm_platform_ip_nexthop_sync(NMPlatform *self,
                                      int         ifindex,
                                      GPtrArray  *known_nexthops,
                                      GPtrArray  *nexthops_prune,
-                                     GPtrArray  *nexthops_platform);
+                                     GPtrArray  *nexthops_platform,
+                                     GPtrArray **out_nexthops_delete_failed);
 
 int nm_platform_routing_rule_add(NMPlatform                  *self,
                                  NMPNlmFlags                  flags,
