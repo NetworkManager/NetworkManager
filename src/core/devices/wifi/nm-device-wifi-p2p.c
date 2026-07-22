@@ -48,10 +48,10 @@ typedef struct {
 
     CList peers_lst_head;
 
-    guint find_peer_timeout_id;
-    guint sup_timeout_id;
-    guint peer_dump_id;
-    guint peer_missing_id;
+    GSource *find_peer_timeout_source;
+    GSource *sup_timeout_source;
+    GSource *peer_dump_source;
+    GSource *peer_missing_source;
 
     bool is_waiting_for_supplicant : 1;
     bool enabled : 1;
@@ -104,7 +104,7 @@ peer_list_dump(gpointer user_data)
     NMDeviceWifiP2P        *self = NM_DEVICE_WIFI_P2P(user_data);
     NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE(self);
 
-    priv->peer_dump_id = 0;
+    nm_clear_g_source_inst(&priv->peer_dump_source);
 
     if (_LOGD_ENABLED(LOGD_WIFI_SCAN)) {
         NMWifiP2PPeer *peer;
@@ -122,8 +122,8 @@ schedule_peer_list_dump(NMDeviceWifiP2P *self)
 {
     NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE(self);
 
-    if (!priv->peer_dump_id && _LOGD_ENABLED(LOGD_WIFI_SCAN))
-        priv->peer_dump_id = g_timeout_add_seconds(1, peer_list_dump, self);
+    if (!priv->peer_dump_source && _LOGD_ENABLED(LOGD_WIFI_SCAN))
+        priv->peer_dump_source = nm_g_timeout_add_seconds_source(1, peer_list_dump, self);
 }
 
 /*****************************************************************************/
@@ -189,7 +189,7 @@ disconnect_on_connection_peer_missing_cb(gpointer user_data)
 
     _LOGW(LOGD_WIFI, "Peer requested in connection is missing for too long, failing connection.");
 
-    priv->peer_missing_id = 0;
+    nm_clear_g_source_inst(&priv->peer_missing_source);
 
     nm_device_state_changed(device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_PEER_NOT_FOUND);
     return FALSE;
@@ -203,20 +203,20 @@ update_disconnect_on_connection_peer_missing(NMDeviceWifiP2P *self)
 
     state = nm_device_get_state(NM_DEVICE(self));
     if (state < NM_DEVICE_STATE_IP_CONFIG || state > NM_DEVICE_STATE_ACTIVATED) {
-        nm_clear_g_source(&priv->peer_missing_id);
+        nm_clear_g_source_inst(&priv->peer_missing_source);
         return;
     }
 
     if (check_connection_peer_joined(self)) {
-        if (nm_clear_g_source(&priv->peer_missing_id))
+        if (nm_clear_g_source_inst(&priv->peer_missing_source))
             _LOGD(LOGD_WIFI, "Peer requested in connection is joined, removing timeout");
         return;
     }
 
-    if (priv->peer_missing_id == 0) {
+    if (!priv->peer_missing_source) {
         _LOGD(LOGD_WIFI, "Peer requested in connection is missing, adding timeout");
-        priv->peer_missing_id =
-            g_timeout_add_seconds(5, disconnect_on_connection_peer_missing_cb, self);
+        priv->peer_missing_source =
+            nm_g_timeout_add_seconds_source(5, disconnect_on_connection_peer_missing_cb, self);
     }
 }
 
@@ -336,7 +336,7 @@ supplicant_find_timeout_cb(gpointer user_data)
     NMDeviceWifiP2P        *self   = NM_DEVICE_WIFI_P2P(user_data);
     NMDeviceWifiP2PPrivate *priv   = NM_DEVICE_WIFI_P2P_GET_PRIVATE(self);
 
-    priv->find_peer_timeout_id = 0;
+    nm_clear_g_source_inst(&priv->find_peer_timeout_source);
 
     nm_supplicant_interface_p2p_cancel_connect(priv->mgmt_iface);
 
@@ -375,9 +375,9 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     peer = nm_wifi_p2p_peers_find_first_compatible(&priv->peers_lst_head, connection, FALSE);
     if (!peer) {
         /* Set up a timeout on the find attempt and run a find for the same period of time */
-        if (priv->find_peer_timeout_id == 0) {
-            priv->find_peer_timeout_id =
-                g_timeout_add_seconds(10, supplicant_find_timeout_cb, self);
+        if (!priv->find_peer_timeout_source) {
+            priv->find_peer_timeout_source =
+                nm_g_timeout_add_seconds_source(10, supplicant_find_timeout_cb, self);
 
             nm_supplicant_interface_p2p_start_find(priv->mgmt_iface, 10);
         }
@@ -400,7 +400,7 @@ supplicant_connection_timeout_cb(gpointer user_data)
     NMDeviceWifiP2P        *self   = NM_DEVICE_WIFI_P2P(user_data);
     NMDeviceWifiP2PPrivate *priv   = NM_DEVICE_WIFI_P2P_GET_PRIVATE(self);
 
-    priv->sup_timeout_id = 0;
+    nm_clear_g_source_inst(&priv->sup_timeout_source);
 
     nm_supplicant_interface_p2p_cancel_connect(priv->mgmt_iface);
 
@@ -425,7 +425,7 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     NMWifiP2PPeer          *peer;
     GBytes                 *wfd_ies;
 
-    if (nm_clear_g_source(&priv->find_peer_timeout_id))
+    if (nm_clear_g_source_inst(&priv->find_peer_timeout_source))
         nm_assert_not_reached();
 
     if (!priv->mgmt_iface) {
@@ -460,8 +460,9 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
                                         NULL);
 
     /* Set up a timeout on the connect attempt */
-    if (priv->sup_timeout_id == 0) {
-        priv->sup_timeout_id = g_timeout_add_seconds(45, supplicant_connection_timeout_cb, self);
+    if (!priv->sup_timeout_source) {
+        priv->sup_timeout_source =
+            nm_g_timeout_add_seconds_source(45, supplicant_connection_timeout_cb, self);
     }
 
     /* We'll get stage3 started when the P2P group has been started */
@@ -516,7 +517,7 @@ peer_add_remove(NMDeviceWifiP2P *self,
     if (is_adding) {
         /* If we are in prepare state, then we are currently runnign a find
          * to search for the requested peer. */
-        if (priv->find_peer_timeout_id != 0) {
+        if (priv->find_peer_timeout_source) {
             NMConnection *connection;
 
             nm_assert(nm_device_get_state(device) == NM_DEVICE_STATE_PREPARE);
@@ -528,7 +529,7 @@ peer_add_remove(NMDeviceWifiP2P *self,
                 nm_wifi_p2p_peers_find_first_compatible(&priv->peers_lst_head, connection, FALSE);
             if (peer) {
                 /* A peer for the connection was found, cancel the timeout and go to configure state. */
-                nm_clear_g_source(&priv->find_peer_timeout_id);
+                nm_clear_g_source_inst(&priv->find_peer_timeout_source);
                 nm_device_activate_schedule_stage1_device_prepare(device, FALSE);
             }
         }
@@ -614,9 +615,9 @@ deactivate(NMDevice *device)
     int                     ifindex = nm_device_get_ip_ifindex(device);
     NMDeviceWifiP2PPrivate *priv    = NM_DEVICE_WIFI_P2P_GET_PRIVATE(self);
 
-    nm_clear_g_source(&priv->find_peer_timeout_id);
-    nm_clear_g_source(&priv->sup_timeout_id);
-    nm_clear_g_source(&priv->peer_missing_id);
+    nm_clear_g_source_inst(&priv->find_peer_timeout_source);
+    nm_clear_g_source_inst(&priv->sup_timeout_source);
+    nm_clear_g_source_inst(&priv->peer_missing_source);
 
     if (priv->mgmt_iface)
         nm_supplicant_interface_p2p_cancel_connect(priv->mgmt_iface);
@@ -753,7 +754,7 @@ check_group_iface_ready(NMDeviceWifiP2P *self)
     if (!nm_supplicant_interface_get_p2p_group_joined(priv->group_iface))
         return;
 
-    nm_clear_g_source(&priv->sup_timeout_id);
+    nm_clear_g_source_inst(&priv->sup_timeout_source);
     update_disconnect_on_connection_peer_missing(self);
 
     nm_device_activate_schedule_stage3_ip_config(NM_DEVICE(self), FALSE);
@@ -900,7 +901,7 @@ supplicant_interfaces_release(NMDeviceWifiP2P *self, gboolean set_is_waiting)
 {
     NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE(self);
 
-    nm_clear_g_source(&priv->peer_dump_id);
+    nm_clear_g_source_inst(&priv->peer_dump_source);
 
     remove_all_peers(self);
 
@@ -909,8 +910,8 @@ supplicant_interfaces_release(NMDeviceWifiP2P *self, gboolean set_is_waiting)
         nm_supplicant_manager_set_wfd_ies(priv->sup_mgr, NULL);
         g_signal_handlers_disconnect_by_data(priv->mgmt_iface, self);
         g_clear_object(&priv->mgmt_iface);
-        nm_clear_g_source(&priv->find_peer_timeout_id);
-        nm_clear_g_source(&priv->sup_timeout_id);
+        nm_clear_g_source_inst(&priv->find_peer_timeout_source);
+        nm_clear_g_source_inst(&priv->sup_timeout_source);
     }
 
     supplicant_group_interface_release(self);
