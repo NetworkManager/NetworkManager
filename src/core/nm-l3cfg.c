@@ -5743,19 +5743,33 @@ _l3_commit_one(NML3Cfg              *self,
                                     ? NMP_IP_ADDRESS_SYNC_FLAGS_NONE
                                     : NMP_IP_ADDRESS_SYNC_FLAGS_WITH_NOPREFIXROUTE);
 
-    nm_platform_ip_nexthop_sync(self->priv.platform,
-                                addr_family,
-                                self->priv.ifindex,
-                                nexthops,
-                                nexthops_prune,
-                                nexthops_platform);
+    {
+        gs_unref_ptrarray GPtrArray *nexthops_delete_failed = NULL;
 
-    /* Update the set of nexthop IDs we have configured. */
-    g_hash_table_remove_all(self->priv.p->nexthop_configured_ids_x[IS_IPv4]);
-    for (i = 0; i < nm_g_ptr_array_len(nexthops); i++) {
-        guint32 id = NMP_OBJECT_CAST_IP_NEXTHOP(nexthops->pdata[i])->id;
+        nm_platform_ip_nexthop_sync(self->priv.platform,
+                                    addr_family,
+                                    self->priv.ifindex,
+                                    nexthops,
+                                    nexthops_prune,
+                                    nexthops_platform,
+                                    &nexthops_delete_failed);
 
-        g_hash_table_add(self->priv.p->nexthop_configured_ids_x[IS_IPv4], GUINT_TO_POINTER(id));
+        /* Update the set of nexthop IDs we have configured. */
+        g_hash_table_remove_all(self->priv.p->nexthop_configured_ids_x[IS_IPv4]);
+        for (i = 0; i < nm_g_ptr_array_len(nexthops); i++) {
+            guint32 id = NMP_OBJECT_CAST_IP_NEXTHOP(nexthops->pdata[i])->id;
+
+            g_hash_table_add(self->priv.p->nexthop_configured_ids_x[IS_IPv4],
+                             GUINT_TO_POINTER(id));
+        }
+        /* Also keep tracking nexthops that we failed to delete (still in kernel),
+         * so they remain in the prune list on the next sync. */
+        for (i = 0; i < nm_g_ptr_array_len(nexthops_delete_failed); i++) {
+            guint32 id = NMP_OBJECT_CAST_IP_NEXTHOP(nexthops_delete_failed->pdata[i])->id;
+
+            g_hash_table_add(self->priv.p->nexthop_configured_ids_x[IS_IPv4],
+                             GUINT_TO_POINTER(id));
+        }
     }
 
     self->priv.p->commit_reentrant_count_ip_address_sync_x[IS_IPv4]--;
