@@ -525,8 +525,16 @@ if [[ $GITLAB_TOKEN == "" ]]; then
 fi
 
 # This step is not necessary for authentication, we use it only to provide a meaningful error message.
-GITLAB_USER_ID=$(curl --request GET --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
-                      "https://gitlab.freedesktop.org/api/v4/personal_access_tokens/self" 2>/dev/null | jq ".user_id" || true)
+# The endpoint intermittently returns gateway errors, retry with backoff.
+GITLAB_USER_ID=
+BACKOFF=10
+for _ in 1 2 3; do
+    GITLAB_USER_ID=$(curl --request GET --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+                          "https://gitlab.freedesktop.org/api/v4/personal_access_tokens/self" 2>/dev/null | jq ".user_id" 2>/dev/null || true)
+    [ -n "$GITLAB_USER_ID" ] && [ "$GITLAB_USER_ID" != "null" ] && break
+    sleep "$BACKOFF"
+    BACKOFF=$((BACKOFF * 3))
+done
 if [ -z "$GITLAB_USER_ID" ] || [ "$GITLAB_USER_ID" = "null" ]; then
     die "failed to authenticate to gitlab.freedesktop.org with the private token"
 fi
