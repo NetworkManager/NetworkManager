@@ -89,6 +89,7 @@ typedef struct _NMNDiscGateway {
     gint64             expiry_msec;
     NMIcmpv6RouterPref preference;
     guint32            nexthop_id;
+    bool               is_router : 1;
 } NMNDiscGateway;
 
 typedef struct _NMNDiscAddress {
