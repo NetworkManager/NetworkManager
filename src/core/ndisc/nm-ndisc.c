@@ -432,6 +432,9 @@ _ASSERT_data_gateways(const NMNDiscDataInternal *data)
     guint                 i, j;
     const NMNDiscGateway *item_prev = NULL;
 
+    if (data->gateways_idx_valid)
+        nm_assert(g_hash_table_size(data->gateways_idx) == data->gateways->len);
+
     if (!data->gateways->len)
         return;
 
@@ -439,6 +442,10 @@ _ASSERT_data_gateways(const NMNDiscDataInternal *data)
         const NMNDiscGateway *item = &nm_g_array_index(data->gateways, NMNDiscGateway, i);
 
         nm_assert(!IN6_IS_ADDR_UNSPECIFIED(&item->address));
+
+        if (data->gateways_idx_valid)
+            nm_assert(g_hash_table_lookup(data->gateways_idx, &item->address) == item);
+
         for (j = 0; j < i; j++) {
             const NMNDiscGateway *item2 = &nm_g_array_index(data->gateways, NMNDiscGateway, j);
 
@@ -455,7 +462,32 @@ _ASSERT_data_gateways(const NMNDiscDataInternal *data)
 #endif
 }
 
+/* Rebuilds the gateways_idx hash table to point at the current locations of
+ * the elements in the gateways array. This must be called before accessing
+ * the hash table when it is invalid, i.e. when the array was changed and the
+ * hash table was not updated. The gateways array is limited to _SIZE_MAX_GATEWAYS
+ * (100) entries, so rebuilding it from scratch is cheap. */
+static void
+_rebuild_gateways_idx(NMNDiscDataInternal *rdata)
+{
+    guint i;
+
+    g_hash_table_remove_all(rdata->gateways_idx);
+
+    for (i = 0; i < rdata->gateways->len; i++) {
+        /* The address is the first field of NMNDiscGateway, so a pointer to
+         * the gateway can double as a pointer to its address. We add the
+         * gateway itself to the hash table (as a set, key==value), so that a
+         * lookup by address returns the NMNDiscGateway pointer directly. */
+        g_hash_table_add(rdata->gateways_idx,
+                         &nm_g_array_index(rdata->gateways, NMNDiscGateway, i));
+    }
+    rdata->gateways_idx_valid = TRUE;
+    _ASSERT_data_gateways(rdata);
+}
+
 /*****************************************************************************/
+
 static bool
 is_duplicate_route(const NMNDiscRoute *r0, const NMNDiscRoute *r1)
 {
@@ -559,6 +591,7 @@ nm_ndisc_add_gateway(NMNDisc *ndisc, const NMNDiscGateway *new_item, gint64 now_
             if (new_item->expiry_msec <= now_msec) {
                 _nexthop_id_release_one(ndisc, item->nexthop_id);
                 g_array_remove_index(rdata->gateways, i);
+                rdata->gateways_idx_valid = FALSE;
                 _ASSERT_data_gateways(rdata);
                 return TRUE;
             }
@@ -568,6 +601,7 @@ nm_ndisc_add_gateway(NMNDisc *ndisc, const NMNDiscGateway *new_item, gint64 now_
                  * reuse it when re-inserting at the correct position. */
                 old_nexthop_id = item->nexthop_id;
                 g_array_remove_index(rdata->gateways, i);
+                rdata->gateways_idx_valid = FALSE;
                 continue;
             }
 
@@ -626,6 +660,7 @@ nm_ndisc_add_gateway(NMNDisc *ndisc, const NMNDiscGateway *new_item, gint64 now_
     g_array_insert_val(rdata->gateways,
                        insert_idx == G_MAXUINT ? rdata->gateways->len : insert_idx,
                        gw);
+    rdata->gateways_idx_valid = FALSE;
 
     _ASSERT_data_gateways(rdata);
     return TRUE;
@@ -1453,11 +1488,13 @@ nm_ndisc_stop(NMNDisc *ndisc)
     rdata = &priv->rdata;
 
     g_array_set_size(rdata->gateways, 0);
+    g_hash_table_remove_all(rdata->gateways_idx);
     g_array_set_size(rdata->addresses, 0);
     g_array_set_size(rdata->routes, 0);
     g_array_set_size(rdata->dns_servers, 0);
     g_array_set_size(rdata->dns_domains, 0);
-    priv->rdata.public.hop_limit = 64;
+    rdata->gateways_idx_valid = TRUE;
+    rdata->public.hop_limit   = 64;
 
     nm_clear_g_source_inst(&priv->ra_timeout_source);
     nm_clear_g_source(&priv->send_ra_id);
@@ -1665,6 +1702,9 @@ clean_gateways(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint6
         g_array_set_size(rdata->gateways, _SIZE_MAX_GATEWAYS);
         *changed |= NM_NDISC_CONFIG_GATEWAYS;
     }
+
+    if (*changed & NM_NDISC_CONFIG_GATEWAYS)
+        rdata->gateways_idx_valid = FALSE;
 
     _ASSERT_data_gateways(rdata);
 }
@@ -2169,7 +2209,11 @@ nm_ndisc_init(NMNDisc *ndisc)
     rdata->dns_servers = g_array_new(FALSE, FALSE, sizeof(NMNDiscDNSServer));
     rdata->dns_domains = g_array_new(FALSE, FALSE, sizeof(NMNDiscDNSDomain));
     g_array_set_clear_func(rdata->dns_domains, dns_domain_free);
-    priv->rdata.public.hop_limit = 64;
+
+    /* The address is the first member of the struct, we use it as key */
+    rdata->gateways_idx       = g_hash_table_new(nm_ip6_addr_hash, nm_ip6_addr_equal);
+    rdata->gateways_idx_valid = TRUE;
+    rdata->public.hop_limit   = 64;
 }
 
 static void
@@ -2197,6 +2241,7 @@ finalize(GObject *object)
 
     nm_netns_nexthop_id_release_all(nm_l3cfg_get_netns(priv->config.l3cfg), ndisc);
 
+    g_hash_table_unref(rdata->gateways_idx);
     g_array_unref(rdata->gateways);
     g_array_unref(rdata->addresses);
     g_array_unref(rdata->routes);

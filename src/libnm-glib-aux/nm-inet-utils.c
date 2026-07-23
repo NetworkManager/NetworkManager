@@ -253,6 +253,28 @@ nm_ip6_addr_rfc6724_label(const struct in6_addr *addr)
     return 1;
 }
 
+guint
+nm_ip6_addr_hash(gconstpointer key)
+{
+    const struct in6_addr *addr = key;
+
+    nm_assert(addr);
+
+    return nm_hash_mem(1748633951u, addr, sizeof(*addr));
+}
+
+gboolean
+nm_ip6_addr_equal(gconstpointer a, gconstpointer b)
+{
+    const struct in6_addr *addr_a = a;
+    const struct in6_addr *addr_b = b;
+
+    nm_assert(addr_a);
+    nm_assert(addr_b);
+
+    return IN6_ARE_ADDR_EQUAL(addr_a, addr_b);
+}
+
 /*****************************************************************************/
 
 gconstpointer
