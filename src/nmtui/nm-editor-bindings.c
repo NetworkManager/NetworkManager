@@ -1040,6 +1040,18 @@ wireless_security_target_changed(GObject *object, GParamSpec *pspec, gpointer us
                      NULL,
                      NULL);
         need_8021x = TRUE;
+    } else if (nm_streq(method, "wpa3-enterprise-suite-b-192")) {
+        g_object_set(binding->s_wsec,
+                     NM_SETTING_WIRELESS_SECURITY_KEY_MGMT,
+                     "wpa-eap-suite-b-192",
+                     NM_SETTING_WIRELESS_SECURITY_AUTH_ALG,
+                     NULL,
+                     NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE,
+                     NM_WEP_KEY_TYPE_UNKNOWN,
+                     NM_SETTING_WIRELESS_SECURITY_PSK,
+                     NULL,
+                     NULL);
+        need_8021x = TRUE;
     } else
         g_warn_if_reached();
 
@@ -1083,8 +1095,8 @@ wireless_security_target_destroyed(gpointer user_data, GObject *ex_target)
  * %G_BINDING_BIDIRECTIONAL).
  *
  * @target_property will be of the values "none", "wpa-personal",
- * "wpa-enterprise", "wep-key", "wep-passphrase", "dynamic-wep", or
- * "leap".
+ * "wpa3-personal", "wpa-enterprise", "wpa3-enterprise-suite-b-192",
+ * "owe", "wep-key", "wep-passphrase", "dynamic-wep", or "leap".
  *
  * If binding bidirectionally, @s_wsec will be automatically added to
  * or removed from @connection as needed when @target_property
