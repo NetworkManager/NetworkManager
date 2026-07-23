@@ -38,6 +38,10 @@ gboolean nm_ndisc_add_pref64(NMNDisc *ndisc, const NMNDiscPref64 *new_item, gint
 gboolean nm_ndisc_add_dns_server(NMNDisc *ndisc, const NMNDiscDNSServer *new_item, gint64 now_msec);
 gboolean nm_ndisc_add_dns_domain(NMNDisc *ndisc, const NMNDiscDNSDomain *new_item, gint64 now_msec);
 
+void nm_ndisc_update_gateway_router_flag(NMNDisc               *ndisc,
+                                         const struct in6_addr *addr,
+                                         gboolean               is_router);
+
 /*****************************************************************************/
 
 #define _NMLOG_DOMAIN      LOGD_IP6

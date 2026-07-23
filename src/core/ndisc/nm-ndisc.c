@@ -679,6 +679,51 @@ nm_ndisc_add_gateway(NMNDisc *ndisc, const NMNDiscGateway *new_item, gint64 now_
 }
 
 /**
+ * nm_ndisc_update_gateway_router_flag:
+ * @ndisc: the #NMNDisc
+ * @addr: the address of the neighbor that sent the Neighbor Advertisement
+ * @is_router: the value of the R (Router) flag from the Neighbor Advertisement
+ *
+ * RFC 4861, section 7.2.5: when a Neighbor Advertisement is received, and the
+ * neighbor is currently tracked as a router (i.e., it is present in our
+ * default router list), the IsRouter flag of the corresponding entry must be
+ * updated. If the flag changes from set to clear, the router must no longer
+ * be used as a default router.
+ *
+ * We keep tracking the gateway (and its preference/lifetime) in
+ * rdata->gateways regardless of the IsRouter flag, so that we don't lose that
+ * state and can readily start using it again should it start advertising
+ * itself as a router again (either via a later Neighbor Advertisement with
+ * the R flag set, or via a Router Advertisement).
+ *
+ * If @addr does not match any tracked gateway, this is a no-op: we only care
+ * about the router flag of neighbors that we already learned about via a
+ * Router Advertisement.
+ */
+void
+nm_ndisc_update_gateway_router_flag(NMNDisc *ndisc, const struct in6_addr *addr, gboolean is_router)
+{
+    NMNDiscDataInternal *rdata = &NM_NDISC_GET_PRIVATE(ndisc)->rdata;
+    NMNDiscGateway      *gw;
+    char                 buf[INET6_ADDRSTRLEN];
+
+    gw = g_hash_table_lookup(rdata->gateways_idx, addr);
+    if (!gw)
+        return;
+
+    is_router = !!is_router;
+    if (gw->is_router == is_router)
+        return;
+
+    _LOGD("neighbor advertisement: gateway %s is-router flag changed to %d",
+          nm_inet6_ntop(addr, buf),
+          is_router);
+
+    gw->is_router = is_router;
+    nm_ndisc_emit_config_change(ndisc, NM_NDISC_CONFIG_GATEWAYS);
+}
+
+/**
  * complete_address:
  * @ndisc: the #NMNDisc
  * @addr: the #NMNDiscAddress

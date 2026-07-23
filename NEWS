@@ -13,6 +13,9 @@ Core:
 * IPv6 default routes generated from Router Advertisements now refer
   to nexthop objects to avoid that multiple routes are coalesced into
   a single ECMP route by kernel.
+* When a router sends an IPv6 Neighbor Advertisement with the "Router"
+  bit cleared, NetworkManager stops using it as default gateway, as
+  per RFC 4861.
 
 Wi-Fi:
 * Keep the long background scan interval for a single Wi-Fi 7 AP-MLD.
