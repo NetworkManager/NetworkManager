@@ -256,6 +256,15 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex        *multi_idx,
         for (i = 0; i < rdata->gateways_n; i++) {
             NMPlatformIP6NextHop nh;
 
+            if (!rdata->gateways[i].is_router) {
+                /* RFC 4861, section 7.2.5: if a Neighbor Advertisement is
+                 * received with the IsRouter flag cleared, the sender must be
+                 * removed from the Default Router List. Don't add a default
+                 * route for it, but keep tracking it in rdata->gateways in
+                 * case it starts advertising itself as a router again. */
+                continue;
+            }
+
             r.rt_pref = rdata->gateways[i].preference;
             nm_assert((NMIcmpv6RouterPref) r.rt_pref == rdata->gateways[i].preference);
 
@@ -608,13 +617,17 @@ nm_ndisc_add_gateway(NMNDisc *ndisc, const NMNDiscGateway *new_item, gint64 now_
                 item->nexthop_id = nexthop_id_alloc(ndisc, &in6addr_any, 0, &new_item->address);
                 if (item->nexthop_id > 0) {
                     item->expiry_msec = new_item->expiry_msec;
+                    item->is_router   = TRUE;
                     return TRUE;
                 }
             }
 
-            if (item->expiry_msec == new_item->expiry_msec)
+            if (item->expiry_msec == new_item->expiry_msec && item->is_router)
                 return FALSE;
 
+            /* A Router Advertisement is, by definition, proof that the sender
+             * is currently a router */
+            item->is_router   = TRUE;
             item->expiry_msec = new_item->expiry_msec;
             _ASSERT_data_gateways(rdata);
             return TRUE;
@@ -641,7 +654,8 @@ nm_ndisc_add_gateway(NMNDisc *ndisc, const NMNDiscGateway *new_item, gint64 now_
 
     /* Make a copy of the gateway and assign a nexthop id, reusing the existing
      * one if possible */
-    gw = *new_item;
+    gw           = *new_item;
+    gw.is_router = TRUE;
     if (old_nexthop_id != 0) {
         gw.nexthop_id = old_nexthop_id;
     } else {
@@ -1596,10 +1610,11 @@ _config_changed_log(NMNDisc *ndisc, NMNDiscConfigMap changed)
     for (i = 0; i < rdata->gateways->len; i++) {
         const NMNDiscGateway *gateway = &nm_g_array_index(rdata->gateways, NMNDiscGateway, i);
 
-        _LOGD("  gateway %s pref %s nhid %u exp %s",
+        _LOGD("  gateway %s pref %s nhid %u is-router %d exp %s",
               nm_inet6_ntop(&gateway->address, addrstr),
               nm_icmpv6_router_pref_to_string(gateway->preference, str_pref, sizeof(str_pref)),
               gateway->nexthop_id,
+              gateway->is_router,
               get_exp(str_exp, now_msec, gateway));
     }
     for (i = 0; i < rdata->addresses->len; i++) {
