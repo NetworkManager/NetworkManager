@@ -87,6 +87,30 @@ static NmtNewtPopupEntry wep_auth[] = {{N_("Open System"), "open"},
                                        {N_("Shared Key"), "shared"},
                                        {NULL, NULL}};
 
+static NmtNewtPopupEntry wifi_pmf[] = {{N_("Default"), "default"},
+                                       {N_("Disable"), "disable"},
+                                       {N_("Optional"), "optional"},
+                                       {N_("Required"), "required"},
+                                       {NULL, NULL}};
+
+static gboolean
+security_transform_to_pmf_visibility(GBinding     *binding,
+                                     const GValue *source_value,
+                                     GValue       *target_value,
+                                     gpointer      user_data)
+{
+    const char *security = g_value_get_string(source_value);
+
+    g_value_set_boolean(target_value,
+                        NM_IN_STRSET(security,
+                                     "wpa-personal",
+                                     "wpa3-personal",
+                                     "wpa-enterprise",
+                                     "wpa3-enterprise-suite-b-192",
+                                     "owe"));
+    return TRUE;
+}
+
 static gboolean
 mode_transform_to_band_visibility(GBinding     *binding,
                                   const GValue *source_value,
@@ -373,14 +397,6 @@ nmt_page_wifi_constructed(GObject *object)
 
     nmt_editor_grid_append(grid, NULL, nmt_newt_separator_new(), NULL);
 
-    widget = nmt_mac_entry_new(40, ETH_ALEN, NMT_MAC_ENTRY_TYPE_MAC);
-    g_object_bind_property(s_wireless,
-                           NM_SETTING_WIRELESS_BSSID,
-                           widget,
-                           "mac-address",
-                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-    nmt_editor_grid_append(grid, _("BSSID"), widget, NULL);
-
     widget = nmt_mac_entry_new(40, ETH_ALEN, NMT_MAC_ENTRY_TYPE_CLONED_WIFI);
     g_object_bind_property(s_wireless,
                            NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS,
@@ -396,6 +412,44 @@ nmt_page_wifi_constructed(GObject *object)
                            "mtu",
                            G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
     nmt_editor_grid_append(grid, _("MTU"), widget, NULL);
+
+    nmt_editor_page_add_section(NMT_EDITOR_PAGE(wifi), section);
+
+    section = nmt_editor_section_new(_("ADVANCED WI-FI"), NULL, FALSE);
+    grid    = nmt_editor_section_get_body(section);
+
+    widget = nmt_newt_checkbox_new(_("Hidden network"));
+    g_object_bind_property(s_wireless,
+                           NM_SETTING_WIRELESS_HIDDEN,
+                           widget,
+                           "active",
+                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+    nmt_editor_grid_append(grid, NULL, widget, NULL);
+
+    widget = nmt_mac_entry_new(40, ETH_ALEN, NMT_MAC_ENTRY_TYPE_MAC);
+    g_object_bind_property(s_wireless,
+                           NM_SETTING_WIRELESS_BSSID,
+                           widget,
+                           "mac-address",
+                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+    nmt_editor_grid_append(grid, _("BSSID"), widget, NULL);
+
+    widget = nmt_newt_popup_new(wifi_pmf);
+    g_object_bind_property(s_wsec,
+                           NM_SETTING_WIRELESS_SECURITY_PMF,
+                           widget,
+                           "active",
+                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+    nmt_editor_grid_append(grid, _("PMF"), widget, NULL);
+    g_object_bind_property_full(security,
+                                "active-id",
+                                widget,
+                                "visible",
+                                G_BINDING_SYNC_CREATE,
+                                security_transform_to_pmf_visibility,
+                                NULL,
+                                NULL,
+                                NULL);
 
     nmt_editor_page_add_section(NMT_EDITOR_PAGE(wifi), section);
 
