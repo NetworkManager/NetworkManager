@@ -429,6 +429,26 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
     return 0;
 }
 
+static int
+receive_na(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
+{
+    NMNDisc          *ndisc = (NMNDisc *) user_data;
+    struct ndp_msgna *msgna = ndp_msgna(msg);
+    struct in6_addr   neigh_addr;
+
+    /* Per RFC 4861, we should use the Target Address field.
+     * libndp doesn't expose it yet, so we use the source IPv6 address
+     * of the NA, which for routers should be basically equivalent.
+     * TODO: switch to the Target Address when libndp exposes it. */
+    neigh_addr = *ndp_msg_addrto(msg);
+    if (IN6_IS_ADDR_UNSPECIFIED(&neigh_addr))
+        return 0;
+
+    nm_ndisc_update_gateway_router_flag(ndisc, &neigh_addr, ndp_msgna_flag_router(msgna));
+
+    return 0;
+}
+
 static void *
 _ndp_msg_add_option(struct ndp_msg *msg, gsize len)
 {
@@ -712,6 +732,11 @@ start(NMNDisc *ndisc)
                                     NDP_MSG_RA,
                                     nm_ndisc_get_ifindex(ndisc),
                                     ndisc);
+        ndp_msgrcv_handler_register(priv->ndp,
+                                    receive_na,
+                                    NDP_MSG_NA,
+                                    nm_ndisc_get_ifindex(ndisc),
+                                    ndisc);
         break;
     case NM_NDISC_NODE_TYPE_ROUTER:
         ndp_msgrcv_handler_register(priv->ndp,
@@ -738,6 +763,11 @@ _cleanup(NMNDisc *ndisc)
             ndp_msgrcv_handler_unregister(priv->ndp,
                                           receive_ra,
                                           NDP_MSG_RA,
+                                          nm_ndisc_get_ifindex(ndisc),
+                                          ndisc);
+            ndp_msgrcv_handler_unregister(priv->ndp,
+                                          receive_na,
+                                          NDP_MSG_NA,
                                           nm_ndisc_get_ifindex(ndisc),
                                           ndisc);
             break;
