@@ -93,7 +93,8 @@ nmt_page_ethernet_constructed(GObject *object)
     has_8021x = !!s_8021x;
     if (!s_8021x) {
         s_8021x = NM_SETTING_802_1X(nm_setting_802_1x_new());
-        nm_setting_802_1x_add_eap_method(s_8021x, "TLS");
+        nm_setting_802_1x_add_eap_method(s_8021x, "peap");
+        g_object_set(s_8021x, NM_SETTING_802_1X_PHASE2_AUTH, "mschapv2", NULL);
     }
     priv->s_8021x = g_object_ref(s_8021x);
 
