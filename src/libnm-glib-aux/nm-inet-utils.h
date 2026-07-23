@@ -284,6 +284,12 @@ guint nm_ip6_addr_common_prefix_len(const struct in6_addr *a, const struct in6_a
 
 guint nm_ip6_addr_rfc6724_label(const struct in6_addr *addr);
 
+/* nm_ip6_addr_hash() and nm_ip6_addr_equal() are GHashTable compatible hash/equal
+ * functions for keys that are pointers to "struct in6_addr". */
+guint nm_ip6_addr_hash(gconstpointer key);
+
+gboolean nm_ip6_addr_equal(gconstpointer a, gconstpointer b);
+
 /*****************************************************************************/
 
 #define NM_IPV4LL_NETWORK   ((in_addr_t) htonl(0xA9FE0000lu)) /* 169.254.0.0 */

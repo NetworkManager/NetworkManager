@@ -18,6 +18,11 @@ struct _NMNDiscDataInternal {
     GArray *routes;
     GArray *dns_servers;
     GArray *dns_domains;
+
+    GHashTable *gateways_idx; /* gateways indexed by address, for O(1) lookup.
+                               * Keys point into elements of the "gateways" array
+                               * above and are only valid until the next mutation
+                               * of that array (see _rebuild_gateways_idx()). */
 };
 
 typedef struct _NMNDiscDataInternal NMNDiscDataInternal;
