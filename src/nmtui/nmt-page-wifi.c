@@ -60,13 +60,14 @@ static NmtNewtPopupEntry wifi_band[] = {{NC_("Wi-Fi", "Automatic"), NULL},
                                         {NULL, NULL}};
 
 static struct {
-    NmtNewtPopupEntry common[6];
+    NmtNewtPopupEntry common[7];
     NmtNewtPopupEntry wep[4];
 } wifi_security = {
     {{NC_("Wi-Fi security", "None"), "none"},
      {N_("WPA/WPA2/WPA3 Personal"), "wpa-personal"},
      {N_("WPA3 Personal"), "wpa3-personal"},
      {N_("WPA/WPA2/WPA3 Enterprise"), "wpa-enterprise"},
+     {N_("WPA3 Enterprise Suite-B (192-bit only)"), "wpa3-enterprise-suite-b-192"},
      {N_("LEAP"), "leap"},
      {N_("Enhanced Open (OWE)"), "owe"}},
     {{N_("WEP 40/128-bit Key (Hex or ASCII)"), "wep-key"},
@@ -287,8 +288,10 @@ nmt_page_wifi_constructed(GObject *object)
     nmt_newt_stack_add(stack, "wpa-personal", subgrid);
     nmt_newt_stack_add(stack, "wpa3-personal", subgrid);
 
-    /* "wpa-enterprise" */
-    nmt_newt_stack_add(stack, "wpa-enterprise", nmt_8021x_fields_new(s_8021x, FALSE));
+    /* "wpa-enterprise" / "wpa3-enterprise-suite-b-192" */
+    widget = nmt_8021x_fields_new(s_8021x, FALSE);
+    nmt_newt_stack_add(stack, "wpa-enterprise", widget);
+    nmt_newt_stack_add(stack, "wpa3-enterprise-suite-b-192", widget);
 
     /* wep-key */
     subgrid = nmt_editor_grid_new();
