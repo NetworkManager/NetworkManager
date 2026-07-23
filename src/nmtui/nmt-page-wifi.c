@@ -64,9 +64,9 @@ static struct {
     NmtNewtPopupEntry wep[4];
 } wifi_security = {
     {{NC_("Wi-Fi security", "None"), "none"},
-     {N_("WPA & WPA2 Personal"), "wpa-personal"},
+     {N_("WPA/WPA2/WPA3 Personal"), "wpa-personal"},
      {N_("WPA3 Personal"), "wpa3-personal"},
-     {N_("WPA & WPA2 Enterprise"), "wpa-enterprise"},
+     {N_("WPA/WPA2/WPA3 Enterprise"), "wpa-enterprise"},
      {N_("LEAP"), "leap"},
      {N_("Enhanced Open (OWE)"), "owe"}},
     {{N_("WEP 40/128-bit Key (Hex or ASCII)"), "wep-key"},
