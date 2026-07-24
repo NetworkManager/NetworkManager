@@ -421,11 +421,11 @@
                   format="string"
                   values="vcmux, llc" />
         <property name="vpi"
-                  nmcli-description="VPI of ADSL connection"
+                  nmcli-description="The virtual path identifier (VPI) of the ATM permanent virtual circuit (PVC) that carries the ADSL connection."
                   format="integer"
                   values="0 - 65536" />
         <property name="vci"
-                  nmcli-description="VCI of ADSL connection"
+                  nmcli-description="The virtual channel identifier (VCI) of the ATM permanent virtual circuit (PVC) that carries the ADSL connection."
                   format="integer"
                   values="0 - 65536" />
     </setting>

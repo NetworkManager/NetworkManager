@@ -9,23 +9,59 @@
   <interface name="org.freedesktop.NetworkManager.PPP">
     <annotation name="org.gtk.GDBus.C.Name" value="PPP_Manager"/>
 
+    <!--
+        NeedSecrets:
+        @username: The username for the PPP connection.
+        @password: The password for the PPP connection.
+
+        Called by the pppd plugin to obtain the secrets (username and password)
+        needed to establish the PPP connection.
+    -->
     <method name="NeedSecrets">
       <arg name="username" type="s" direction="out"/>
       <arg name="password" type="s" direction="out"/>
     </method>
 
+    <!--
+        SetIp4Config:
+        @config: The IPv4 configuration, as a dictionary of properties.
+
+        Called by the pppd plugin to pass the IPv4 configuration negotiated for
+        the PPP link to NetworkManager.
+    -->
     <method name="SetIp4Config">
       <arg name="config" type="a{sv}" direction="in"/>
     </method>
 
+    <!--
+        SetIp6Config:
+        @config: The IPv6 configuration, as a dictionary of properties.
+
+        Called by the pppd plugin to pass the IPv6 configuration negotiated for
+        the PPP link to NetworkManager.
+    -->
     <method name="SetIp6Config">
       <arg name="config" type="a{sv}" direction="in"/>
     </method>
 
+    <!--
+        SetState:
+        @state: The new PPP state (an NMPPPStatus value).
+
+        Called by the pppd plugin to report a change in the state of the PPP
+        connection.
+    -->
     <method name="SetState">
       <arg name="state" type="u" direction="in"/>
     </method>
 
+    <!--
+        SetIfindex:
+        @ifindex: The interface index of the PPP network interface.
+
+        Called by the pppd plugin to inform NetworkManager of the ifindex of the
+        PPP interface once it has been created.
+    -->
     <method name="SetIfindex">
       <arg name="ifindex" type="i" direction="in"/>
     </method>
