@@ -222,12 +222,12 @@ There are some additional tasks that the script doesn't handle:
 - For RC releases:
   - The NEWS file should reflect a curated summary of the changes that the new
     stable release will include.
-  - The release should be announced on the mailing list.
+  - The release should be announced on the mailing list (networkmanager@lists.freedesktop.org).
 - For stable releases:
   - The official documentation must be updated on the website when there is a new
     stable release. Use the [import-docs.sh](https://gitlab.freedesktop.org/NetworkManager/networkmanager.pages.freedesktop.org/-/blob/main/scripts/import-docs.sh)
     script from the website's repo.
-  - The release should be announced on the mailing list.
+  - The release should be announced on the mailing list (networkmanager@lists.freedesktop.org).
 
 
 VPN plugins and nm-applet release process
@@ -270,7 +270,7 @@ When doing a release, follow this process:
 7. Check that the Gitlab's pipeline finishes without errors. If that happens,
    the release is done and available both in the Gitlab's releases section and
    https://download.gnome.org/sources/*
-8. Announce the release on the mailing list.
+8. Announce the release on the mailing list (networkmanager@lists.freedesktop.org).
 
 Notes:
 - You need access to master.gnome.org, see [here](https://handbook.gnome.org/infrastructure/accounts.html).
