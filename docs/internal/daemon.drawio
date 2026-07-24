@@ -88,7 +88,7 @@
         <mxCell id="iPdrRtlw78q6A_erutjM-32" value="&lt;div&gt;FirewalldManager&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
           <mxGeometry x="694" y="739.9999999999999" width="100" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="iPdrRtlw78q6A_erutjM-34" value="SleepMonitor" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+        <mxCell id="iPdrRtlw78q6A_erutjM-34" value="PowerMonitor" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
           <mxGeometry x="1059" y="544" width="140" height="40" as="geometry" />
         </mxCell>
         <mxCell id="iPdrRtlw78q6A_erutjM-35" value="SessionMonitor" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
@@ -226,7 +226,7 @@
             <mxPoint x="820" y="530" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="xCeQDJBRfkX65UmuQ1iu-5" value="DhcpDhclient" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+        <mxCell id="xCeQDJBRfkX65UmuQ1iu-5" value="DhcpDhcpcd" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
           <mxGeometry x="850" y="738.9999999999999" width="100" height="40" as="geometry" />
         </mxCell>
         <mxCell id="xCeQDJBRfkX65UmuQ1iu-6" value="DhcpSystemd" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
