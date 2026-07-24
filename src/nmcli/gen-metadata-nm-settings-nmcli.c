@@ -558,13 +558,11 @@ main(int argc, char *argv[])
                  * they are themselves generated (see "settings-docs.h"). Some of them are instead
                  * explicitly (manually) set.
                  *
-                 * In any case, they serve little purpose outside of nmcli's interactive mode,
-                 * because their formatting/wording would not be suitable.
-                 *
-                 * We generate this XML mainly to generate `man nm-settings-nmcli`, but the
-                 * descriptions in "describe_doc" field are not suitable there.
-                 *
-                 * Name them something else ("<nmcli-description>") which isn't actually used. */
+                 * Emit them as a separate "nmcli-description" attribute so that they don't
+                 * override the gir/property-infos descriptions when this XML is merged for
+                 * `man nm-settings-nmcli`. The merge script only falls back to this attribute
+                 * for properties that have no other description, like the dynamic ethtool
+                 * optnames which are not GObject properties. */
                 g_print("\n%snmcli-description=%s",
                         _indent_level(2 * INDENT + 10),
                         descr = _xml_escape_attribute(prop_info->describe_doc));

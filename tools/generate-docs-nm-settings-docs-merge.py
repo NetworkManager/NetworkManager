@@ -278,6 +278,18 @@ for setting_name in iter_keys_of_dicts(settings_roots, key_fcn_setting_name):
         properties_attrs = [p.get(property_name) for p in properties]
 
         description, description_docbook = find_description(properties_attrs)
+        if description is None:
+            # For dynamic optnames (like the ethtool properties) there is no
+            # GObject property, hence no gir or property-infos description; the
+            # nmcli-description attribute from the gen-metadata XML is the only
+            # documentation they have.
+            x = node_get_attr(properties_attrs, "nmcli-description")
+            if x:
+                description = ET.Element("description")
+                description.text = x
+                description_docbook = ET.Element("description-docbook")
+                para = ET.SubElement(description_docbook, "para")
+                para.text = x
         deprecated = find_deprecated(properties_attrs)
 
         if skip_property(setting_name, property_name):
