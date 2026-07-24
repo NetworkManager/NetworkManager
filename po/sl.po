@@ -13,8 +13,8 @@ msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: https://gitlab.freedesktop.org/NetworkManager/"
 "NetworkManager/issues\n"
-"POT-Creation-Date: 2026-07-01 13:59+0000\n"
-"PO-Revision-Date: 2026-07-04 16:34+0200\n"
+"POT-Creation-Date: 2026-07-22 19:49+0000\n"
+"PO-Revision-Date: 2026-07-23 12:58+0200\n"
 "Last-Translator: Martin Srebotnjak <miles@filmsi.net>\n"
 "Language-Team: Slovenian GNOME Translation Team <gnome-si@googlegroups.com>\n"
 "Language: sl\n"
@@ -261,11 +261,11 @@ msgstr "Neznana/neobdelana vrsta povezave Bluetooth"
 msgid "connection does not match device"
 msgstr "povezava se ne ujema z napravo"
 
-#: src/core/devices/nm-device.c:15035
+#: src/core/devices/nm-device.c:15039
 msgid "set managed: no permanent or runtime was selected"
 msgstr "nastavi managed: noben »permanent« ali program ni izbran"
 
-#: src/core/devices/nm-device.c:15072
+#: src/core/devices/nm-device.c:15076
 #, c-format
 msgid ""
 "failed to persist 'managed=%d' on disk, other configurations may be "
@@ -4851,34 +4851,34 @@ msgstr "Programske povezave ni bilo mogoče ustvariti"
 msgid "The device disappeared"
 msgstr "Naprava je izginila"
 
-#: src/libnmc-base/nm-client-utils.c:986
+#: src/libnmc-base/nm-client-utils.c:1002
 msgid "missing colon for \"<setting>.<property>:<secret>\" format"
 msgstr "manjkajoče dvopičje za obliko zapisa »<setting>.<property>:<secret>«"
 
-#: src/libnmc-base/nm-client-utils.c:1003
+#: src/libnmc-base/nm-client-utils.c:1019
 msgid "missing dot for \"<setting>.<property>:<secret>\" format"
 msgstr "manjkajoča pika za obliko zapisa »<setting>.<property>:<secret>«"
 
-#: src/libnmc-base/nm-client-utils.c:1009
+#: src/libnmc-base/nm-client-utils.c:1025
 msgid "missing setting for \"<setting>.<property>:<secret>\" format"
 msgstr ""
 "manjkajoča nastavitev za obliko zapisa »<nastavitev>.<lastnost>:<skrivnost>«"
 
-#: src/libnmc-base/nm-client-utils.c:1020
+#: src/libnmc-base/nm-client-utils.c:1036
 msgid "missing property for \"<setting>.<property>:<secret>\" format"
 msgstr ""
 "manjkajoča lastnost za obliko zapisa »<nastavitev>.<lastnost>:<skrivnost>«"
 
-#: src/libnmc-base/nm-client-utils.c:1030
+#: src/libnmc-base/nm-client-utils.c:1046
 msgid "invalid setting name"
 msgstr "Neveljavno ime nastavitve"
 
-#: src/libnmc-base/nm-client-utils.c:1044
+#: src/libnmc-base/nm-client-utils.c:1060
 msgid "property name is not UTF-8"
 msgstr "ime lastnosti ni UTF-8"
 
-#: src/libnmc-base/nm-client-utils.c:1061
-#: src/libnmc-base/nm-client-utils.c:1067
+#: src/libnmc-base/nm-client-utils.c:1077
+#: src/libnmc-base/nm-client-utils.c:1083
 msgid "secret is not UTF-8"
 msgstr "skrivnost ni UTF-8"
 
@@ -16342,6 +16342,14 @@ msgstr "TTLS"
 #: src/nmtui/nmt-8021x-fields.c:678
 msgid "PEAP"
 msgstr "PEAP"
+
+#: src/nmtui/nmt-connect-connection-list.c:577
+msgid "Known networks"
+msgstr "Znana omrežja"
+
+#: src/nmtui/nmt-connect-connection-list.c:583
+msgid "Other networks"
+msgstr "Druga omrežja"
 
 #: src/nmtui/nmt-device-entry.c:418
 msgid "No devices available"
