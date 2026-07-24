@@ -289,11 +289,11 @@ check_connection_compatible(NMDevice     *device,
     if (nm_setting_macvlan_get_tap(s_macvlan) != priv->props.tap) {
         if (priv->props.tap) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "macvtap device does not match macvlan profile");
         } else {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "macvlan device does not match macvtap profile");
         }
         return FALSE;
@@ -303,14 +303,14 @@ check_connection_compatible(NMDevice     *device,
     if (check_properties && nm_device_is_real(device)) {
         if (setting_mode_to_platform(nm_setting_macvlan_get_mode(s_macvlan)) != priv->props.mode) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "macvlan mode setting differs");
             return FALSE;
         }
 
         if (nm_setting_macvlan_get_promiscuous(s_macvlan) == priv->props.no_promisc) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "macvlan promiscuous setting differs");
             return FALSE;
         }
@@ -320,7 +320,7 @@ check_connection_compatible(NMDevice     *device,
         if (parent) {
             if (!nm_device_match_parent(device, parent)) {
                 nm_utils_error_set_literal(error,
-                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                            "macvlan parent setting differs");
                 return FALSE;
             }
@@ -328,7 +328,7 @@ check_connection_compatible(NMDevice     *device,
             /* Parent could be a MAC address in an NMSettingWired */
             if (!nm_device_match_parent_hwaddr(device, connection, TRUE)) {
                 nm_utils_error_set_literal(error,
-                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                            "macvlan parent mac setting differs");
                 return FALSE;
             }

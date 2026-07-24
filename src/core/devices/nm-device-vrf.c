@@ -159,7 +159,7 @@ check_connection_compatible(NMDevice     *device,
 
         if (priv->props.table != nm_setting_vrf_get_table(s_vrf)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "vrf table mismatches");
             return FALSE;
         }

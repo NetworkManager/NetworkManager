@@ -131,7 +131,7 @@ check_connection_compatible(NMDevice     *device,
                       "internal",
                       "patch")) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                    "unsupported OVS interface type in profile");
         return FALSE;
     }

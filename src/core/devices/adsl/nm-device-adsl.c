@@ -85,7 +85,7 @@ check_connection_compatible(NMDevice     *device,
     if (nm_streq0(protocol, NM_SETTING_ADSL_PROTOCOL_IPOATM)) {
         /* FIXME: we don't yet support IPoATM */
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                    "IPoATM protocol is not yet supported");
         return FALSE;
     }

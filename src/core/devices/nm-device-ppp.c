@@ -163,7 +163,7 @@ check_connection_compatible(NMDevice     *device,
     s_pppoe = nm_connection_get_setting_pppoe(connection);
     if (!s_pppoe || !nm_setting_pppoe_get_parent(s_pppoe)) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE,
                                    "the connection doesn't specify a PPPoE parent interface");
         return FALSE;
     }

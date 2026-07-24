@@ -1117,13 +1117,13 @@ nm_modem_check_connection_compatible(NMModem *self, NMConnection *connection, GE
         if (str) {
             if (!priv->device_id) {
                 nm_utils_error_set_literal(error,
-                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                            "GSM profile has device-id, device does not");
                 return FALSE;
             }
             if (!nm_streq(str, priv->device_id)) {
                 nm_utils_error_set_literal(error,
-                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                            "device has differing device-id than GSM profile");
                 return FALSE;
             }
@@ -1133,13 +1133,13 @@ nm_modem_check_connection_compatible(NMModem *self, NMConnection *connection, GE
         if (str) {
             if (!priv->device_uid) {
                 nm_utils_error_set_literal(error,
-                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                            "GSM profile has device-uid, device does not");
                 return FALSE;
             }
             if (!nm_streq(str, priv->device_uid)) {
                 nm_utils_error_set_literal(error,
-                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                            "device has differing device-uid than GSM profile");
                 return FALSE;
             }
@@ -1153,7 +1153,7 @@ nm_modem_check_connection_compatible(NMModem *self, NMConnection *connection, GE
         if (priv->sim_id && (str = nm_setting_gsm_get_sim_id(s_gsm))) {
             if (!nm_streq(str, priv->sim_id)) {
                 nm_utils_error_set_literal(error,
-                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                            "device has differing sim-id than GSM profile");
                 return FALSE;
             }
@@ -1162,7 +1162,7 @@ nm_modem_check_connection_compatible(NMModem *self, NMConnection *connection, GE
         if (priv->sim_operator_id && (str = nm_setting_gsm_get_sim_operator_id(s_gsm))) {
             if (!nm_streq(str, priv->sim_operator_id)) {
                 nm_utils_error_set_literal(error,
-                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                            "device has differing sim-operator-id than GSM profile");
                 return FALSE;
             }

@@ -257,14 +257,14 @@ check_connection_compatible(NMDevice     *device,
         parent = nm_setting_vxlan_get_parent(s_vxlan);
         if (parent && !nm_device_match_parent(device, parent)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "vxlan parent mismatches");
             return FALSE;
         }
 
         if (priv->props.id != nm_setting_vxlan_get_id(s_vxlan)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "vxlan id mismatches");
             return FALSE;
         }
@@ -273,7 +273,7 @@ check_connection_compatible(NMDevice     *device,
                              priv->props.local,
                              &priv->props.local6)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "vxlan local address mismatches");
             return FALSE;
         }
@@ -282,84 +282,84 @@ check_connection_compatible(NMDevice     *device,
                              priv->props.group,
                              &priv->props.group6)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "vxlan remote address mismatches");
             return FALSE;
         }
 
         if (priv->props.src_port_min != nm_setting_vxlan_get_source_port_min(s_vxlan)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "vxlan source port min mismatches");
             return FALSE;
         }
 
         if (priv->props.src_port_max != nm_setting_vxlan_get_source_port_max(s_vxlan)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "vxlan source port max mismatches");
             return FALSE;
         }
 
         if (priv->props.dst_port != nm_setting_vxlan_get_destination_port(s_vxlan)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "vxlan destination port mismatches");
             return FALSE;
         }
 
         if (priv->props.tos != nm_setting_vxlan_get_tos(s_vxlan)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "vxlan TOS mismatches");
             return FALSE;
         }
 
         if (priv->props.ttl != nm_setting_vxlan_get_ttl(s_vxlan)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "vxlan TTL mismatches");
             return FALSE;
         }
 
         if (priv->props.learning != nm_setting_vxlan_get_learning(s_vxlan)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "vxlan learning mismatches");
             return FALSE;
         }
 
         if (priv->props.ageing != nm_setting_vxlan_get_ageing(s_vxlan)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "vxlan ageing mismatches");
             return FALSE;
         }
 
         if (priv->props.proxy != nm_setting_vxlan_get_proxy(s_vxlan)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "vxlan proxy mismatches");
             return FALSE;
         }
 
         if (priv->props.rsc != nm_setting_vxlan_get_rsc(s_vxlan)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "vxlan rsc mismatches");
             return FALSE;
         }
 
         if (priv->props.l2miss != nm_setting_vxlan_get_l2_miss(s_vxlan)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "vxlan l2miss mismatches");
             return FALSE;
         }
 
         if (priv->props.l3miss != nm_setting_vxlan_get_l3_miss(s_vxlan)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "vxlan l3miss mismatches");
             return FALSE;
         }

@@ -405,8 +405,8 @@ check_connection_compatible(NMDevice     *device,
                         NM_UTILS_ERROR,
                         g_error_matches(local,
                                         NM_UTILS_ERROR,
-                                        NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE)
-                            ? NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE
+                                        NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE)
+                            ? NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_INCOMPATIBLE
                             : NM_UTILS_ERROR_UNKNOWN,
                         "modem is incompatible with connection: %s",
                         local->message);
@@ -430,14 +430,14 @@ check_connection_available(NMDevice                      *device,
 
     if (!priv->rf_enabled) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                    "RFKILL for modem enabled");
         return FALSE;
     }
 
     if (!priv->modem) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                    "modem not available");
         return FALSE;
     }
@@ -445,14 +445,14 @@ check_connection_available(NMDevice                      *device,
     state = nm_modem_get_state(priv->modem);
     if (state <= NM_MODEM_STATE_INITIALIZING) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                    "modem not initialized");
         return FALSE;
     }
 
     if (!NM_MODEM_GET_CLASS(priv->modem)->set_mm_enabled && state <= NM_MODEM_STATE_DISABLING) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                    "modem is disabled and NM cannot enable it");
         return FALSE;
     }
@@ -460,7 +460,7 @@ check_connection_available(NMDevice                      *device,
     if (state == NM_MODEM_STATE_LOCKED) {
         if (!nm_connection_get_setting_gsm(connection)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "modem is locked without pin available");
             return FALSE;
         }

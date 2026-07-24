@@ -309,7 +309,7 @@ check_connection_compatible(NMDevice     *device,
             break;
         default:
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "invalid tun type on device");
             return FALSE;
         }
@@ -318,7 +318,7 @@ check_connection_compatible(NMDevice     *device,
 
         if (mode != nm_setting_tun_get_mode(s_tun)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "tun mode setting mismatches");
             return FALSE;
         }
@@ -326,7 +326,7 @@ check_connection_compatible(NMDevice     *device,
                       priv->props.owner_valid,
                       priv->props.owner)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "tun owner setting mismatches");
             return FALSE;
         }
@@ -334,25 +334,25 @@ check_connection_compatible(NMDevice     *device,
                       priv->props.group_valid,
                       priv->props.group)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "tun group setting mismatches");
             return FALSE;
         }
         if (nm_setting_tun_get_pi(s_tun) != priv->props.pi) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "tun pi setting mismatches");
             return FALSE;
         }
         if (nm_setting_tun_get_vnet_hdr(s_tun) != priv->props.vnet_hdr) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "tun vnet-hdr setting mismatches");
             return FALSE;
         }
         if (nm_setting_tun_get_multi_queue(s_tun) != priv->props.multi_queue) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                        "tun multi-queue setting mismatches");
             return FALSE;
         }

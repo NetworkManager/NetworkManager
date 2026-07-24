@@ -2046,7 +2046,7 @@ nm_utils_kernel_cmdline_match_check(const char *const *proc_cmdline,
         if (is_mandatory) {
             if (!match) {
                 nm_utils_error_set(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                   NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                                    "device does not satisfy match.kernel-command-line property %s",
                                    patterns[i]);
                 return FALSE;
@@ -2060,7 +2060,7 @@ nm_utils_kernel_cmdline_match_check(const char *const *proc_cmdline,
 
     if (!has_optional && has_any_optional) {
         nm_utils_error_set(error,
-                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                           NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_OTHER,
                            "device does not satisfy any match.kernel-command-line property");
         return FALSE;
     }
