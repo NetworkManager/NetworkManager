@@ -362,6 +362,47 @@ test_if_auto_with_mtu(void)
 }
 
 static void
+test_ip_required_timeout(void)
+{
+    struct {
+        const char *const *cmdline;
+        int                timeout_msec;
+    } data[] = {
+        {NM_MAKE_STRV("ip=dhcp,dhcp6"), NMI_IP_REQUIRED_TIMEOUT_MSEC},
+        {NM_MAKE_STRV("ip=dhcp,dhcp6", "rd.net.timeout.ip-required=0"), 0},
+        {NM_MAKE_STRV("ip=dhcp,dhcp6", "rd.net.timeout.ip-required=5"), 5000},
+        {NM_MAKE_STRV("ip=dhcp,dhcp6", "rd.net.timeout.ip-required=foobar"),
+         NMI_IP_REQUIRED_TIMEOUT_MSEC},
+        {NM_MAKE_STRV("ip=dhcp,dhcp6", "rd.net.timeout.ip-required=infinity"), G_MAXINT32},
+        {NM_MAKE_STRV("ip=eth0:dhcp,dhcp6", "rd.net.timeout.ip-required=3"), 3000},
+    };
+    guint i;
+
+    for (i = 0; i < G_N_ELEMENTS(data); i++) {
+        gs_unref_hashtable GHashTable *connections = NULL;
+        GList                         *values      = NULL;
+        NMConnection                  *connection;
+        NMSettingIPConfig             *s_ip4;
+        NMSettingIPConfig             *s_ip6;
+
+        connections = _parse_cons(data[i].cmdline);
+        g_assert_cmpint(g_hash_table_size(connections), ==, 1);
+        values     = g_hash_table_get_values(connections);
+        connection = values->data;
+        g_assert(NM_IS_CONNECTION(connection));
+        g_list_free(values);
+
+        s_ip4 = nm_connection_get_setting_ip4_config(connection);
+        g_assert(s_ip4);
+        g_assert_cmpint(nm_setting_ip_config_get_required_timeout(s_ip4), ==, data[i].timeout_msec);
+
+        s_ip6 = nm_connection_get_setting_ip6_config(connection);
+        g_assert(s_ip6);
+        g_assert_cmpint(nm_setting_ip_config_get_required_timeout(s_ip6), ==, data[i].timeout_msec);
+    }
+}
+
+static void
 test_if_dhcp6(void)
 {
     const char *const            *ARGV       = NM_MAKE_STRV("ip=eth1:dhcp6");
@@ -3001,6 +3042,7 @@ main(int argc, char **argv)
     g_test_add_func("/initrd/cmdline/dhcp_with_mtu", test_dhcp_with_mtu);
     g_test_add_func("/initrd/cmdline/dhcp_timeout", test_dhcp_timeout);
     g_test_add_func("/initrd/cmdline/if_auto_with_mtu", test_if_auto_with_mtu);
+    g_test_add_func("/initrd/cmdline/ip_required_timeout", test_ip_required_timeout);
     g_test_add_func("/initrd/cmdline/if_dhcp6", test_if_dhcp6);
     g_test_add_func("/initrd/cmdline/if_auto_with_mtu_and_mac", test_if_auto_with_mtu_and_mac);
     g_test_add_func("/initrd/cmdline/if_ip4_manual", test_if_ip4_manual);

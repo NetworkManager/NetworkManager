@@ -167,6 +167,7 @@
             <member><option>rd.net.dhcp.vendor-class</option></member>
             <member><option>rd.net.dhcp.dscp</option></member>
             <member><option>rd.net.timeout.carrier</option></member>
+            <member><option>rd.net.timeout.ip-required</option></member>
             <member><option>rd.znet</option></member>
             <member><option>rd.znet_ifname</option></member>
             <member><option>BOOTIF</option></member>
@@ -283,6 +284,22 @@
         for more details. Examples:
         <literal>rd.net.dhcp.client-id=eth0:01-52-54-00-45-87-42</literal>,
         <literal>rd.net.dhcp.client-id=enp1s0:@example.com</literal>.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>NetworkManager supports the
+        <option>rd.net.timeout.ip-required</option>=<replaceable>SECONDS</replaceable>
+        kernel command line option to configure, in seconds, the minimum
+        amount of time that NetworkManager waits for both the IPv4 and IPv6
+        configuration attempts to complete when using
+        <literal>ip=dhcp,dhcp6</literal>. This corresponds to the
+        <literal>ipv4.required-timeout</literal> and
+        <literal>ipv6.required-timeout</literal> connection properties. It
+        defaults to 20 seconds; a value of <literal>0</literal> disables the
+        required wait, and the special value <literal>infinity</literal>
+        makes NetworkManager wait indefinitely. For example:
+        <literal>rd.net.timeout.ip-required=5</literal>.
         </para>
       </listitem>
 

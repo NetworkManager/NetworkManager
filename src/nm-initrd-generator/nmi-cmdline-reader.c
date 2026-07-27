@@ -45,6 +45,11 @@ typedef struct {
     char    *dhcp_dscp;
 
     gint64 carrier_timeout_sec;
+
+    /* The required-timeout (in milliseconds) used for IP configurations
+     * that need to wait for both IPv4 and IPv6 attempts (i.e.
+     * "dhcp,dhcp6"). Configurable via "rd.net.timeout.ip-required". */
+    gint64 ip_required_timeout_msec;
 } Reader;
 
 static Reader *
@@ -57,9 +62,10 @@ reader_new(void)
         .hash = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_object_unref),
         .explicit_ip_connections =
             g_hash_table_new_full(nm_direct_hash, NULL, g_object_unref, NULL),
-        .vlan_parents = g_ptr_array_new_with_free_func(g_free),
-        .array        = g_ptr_array_new(),
-        .znet_ifnames = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_free),
+        .vlan_parents             = g_ptr_array_new_with_free_func(g_free),
+        .array                    = g_ptr_array_new(),
+        .znet_ifnames             = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_free),
+        .ip_required_timeout_msec = NMI_IP_REQUIRED_TIMEOUT_MSEC,
     };
 
     return reader;
@@ -133,7 +139,7 @@ reader_create_connection(Reader                  *reader,
                  NM_SETTING_IP_CONFIG_DHCP_DSCP,
                  reader->dhcp_dscp,
                  NM_SETTING_IP_CONFIG_REQUIRED_TIMEOUT,
-                 NMI_IP_REQUIRED_TIMEOUT_MSEC,
+                 (int) reader->ip_required_timeout_msec,
                  NULL);
 
     setting = nm_setting_ip6_config_new();
@@ -780,14 +786,15 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
                          NULL);
         }
     } else if (nm_streq(kind, "dhcp4+auto6")) {
-        /* Both DHCPv4 and IPv6 autoconf are enabled, and
-         * each of them is tried for at least IP_REQUIRED_TIMEOUT_MSEC,
-         * even if the other one completes before.
+        /* Both DHCPv4 and IPv6 autoconf are enabled, and each of them is
+         * tried for at least reader->ip_required_timeout_msec (20 seconds
+         * by default, configurable via "rd.net.timeout.ip-required"), even
+         * if the other one completes beforehand.
          */
         clear_ip4_required_timeout = FALSE;
         g_object_set(s_ip6,
                      NM_SETTING_IP_CONFIG_REQUIRED_TIMEOUT,
-                     NMI_IP_REQUIRED_TIMEOUT_MSEC,
+                     (int) reader->ip_required_timeout_msec,
                      NULL);
     } else if (nm_streq(kind, "link6")) {
         g_object_set(s_ip6,
@@ -1609,6 +1616,22 @@ nmi_cmdline_reader_parse(const char        *etc_connections_dir,
         } else if (nm_streq(tag, "rd.net.timeout.carrier")) {
             reader->carrier_timeout_sec =
                 _nm_utils_ascii_str_to_int64(argument, 10, 0, G_MAXINT32, 0);
+        } else if (nm_streq(tag, "rd.net.timeout.ip-required")) {
+            /* The required-timeout (in seconds) that "ip=dhcp,dhcp6" uses to
+             * wait for both IPv4 and IPv6 to complete. This allows
+             * overriding the default of 20 seconds. */
+            if (nm_streq0(argument, "infinity")) {
+                reader->ip_required_timeout_msec = G_MAXINT32;
+            } else {
+                gint64 timeout_sec;
+
+                timeout_sec = _nm_utils_ascii_str_to_int64(argument,
+                                                           10,
+                                                           0,
+                                                           G_MAXINT32 / 1000,
+                                                           reader->ip_required_timeout_msec / 1000);
+                reader->ip_required_timeout_msec = timeout_sec * 1000;
+            }
         }
     }
 
