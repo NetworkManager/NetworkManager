@@ -8,16 +8,12 @@ fedora:
 - version: rawhide
   support: yes
   nm: main
+- version: 44
+  support: 2027-06-02
+  nm: 1.56
 - version: 43
   support: 2026-12-02
   nm: 1.54
-- version: 42
-  support: 2026-05-13
-  nm: 1.52
-  tier1-default: yes
-- version: 41
-  support: 2025-11-19
-  nm: 1.50
 
 # CentOS Stream
 centos:
@@ -38,6 +34,9 @@ centos:
 # Releases and support info: https://access.redhat.com/support/policy/updates/errata
 rhel:
 # Not released yet
+- version: 10.2
+  support: yes
+  nm: 1.56
 - version: 10.1
   support: yes
   nm: 1.54
@@ -66,18 +65,10 @@ rhel:
   support: 2025-05-31
   extended-support: 2027-05-31
   nm: 1.42
-- version: 9.0
-  support: 2024-05-31
-  extended-support: 2026-05-31
-  nm: 1.36
 - version: 8.8
   support: 2025-05-31
   extended-support: 2027-05-31
   nm: 1.40
-- version: 8.6
-  support: 2024-05-31
-  extended-support: 2026-05-31
-  nm: 1.36
 
 # Ubuntu:
 # LTS:
@@ -93,10 +84,11 @@ ubuntu:
 - version: devel
   support: yes
   nm: main
-- version: 25.04
-  name: plucky
-  support: 2026-01-15
-  nm: 1.52
+- version: 26.04
+  name: resolute
+  support: 2031-04-30
+  extended-support: 2036-04-30
+  nm: 1.54
 - version: 24.04
   name: noble
   support: 2029-05-31
@@ -147,18 +139,18 @@ alpine:
 - version: edge
   support: yes
   nm: main
+- version: 3.24
+  support: 2028-06-01
+  nm: 1.52
+- version: 3.23
+  support: 2027-11-01
+  nm: 1.54
 - version: 3.22
   support: 2027-05-01
   nm: 1.52
 - version: 3.21
   support: 2026-11-01
   nm: 1.50
-- version: 3.20
-  support: 2026-04-01
-  nm: 1.46
-- version: 3.19
-  support: 2025-11-01
-  nm: 1.44
 
 # Arch Linux:
 #   cadence: rolling release, no versioning, no EOL
