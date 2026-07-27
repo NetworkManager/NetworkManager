@@ -64,12 +64,12 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-51e137bcb9e2'
-  ARCH_TAG:    'tag-3ba0130d5a19'
-  CENTOS_TAG:  'tag-9015970c04eb'
-  DEBIAN_TAG:  'tag-dff535da4e03'
-  FEDORA_TAG:  'tag-9015970c04eb'
-  UBUNTU_TAG:  'tag-dff535da4e03'
+  ALPINE_TAG:  'tag-09864ad32008'
+  ARCH_TAG:    'tag-ed7f886a4731'
+  CENTOS_TAG:  'tag-3996b69cb9bd'
+  DEBIAN_TAG:  'tag-ec990732d695'
+  FEDORA_TAG:  'tag-3996b69cb9bd'
+  UBUNTU_TAG:  'tag-ec990732d695'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   ARCH_EXEC:   'bash .gitlab-ci/arch-install.sh'
@@ -120,13 +120,13 @@ default:
 # Build a container for each distribution + version. The ci-templates
 # will re-use the containers if the tag doesn't change.
 
-tier1:fedora:42@prep:
+tier1:fedora:44@prep:
   extends:
     - .fdo.container-build@fedora
   stage: prep
   variables:
     GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '42'
+    FDO_DISTRIBUTION_VERSION: '44'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
     FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
   rules:
@@ -244,27 +244,13 @@ tier3:fedora:43@prep:
       when: manual
       allow_failure: true
 
-tier3:fedora:41@prep:
-  extends:
-    - .fdo.container-build@fedora
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '41'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-    FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
-  rules:
-    - if: $CI_PIPELINE_SOURCE != 'schedule'
-      when: manual
-      allow_failure: true
-
-tier3:ubuntu:25.04@prep:
+tier3:ubuntu:26.04@prep:
   extends:
     - .fdo.container-build@ubuntu
   stage: prep
   variables:
     GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '25.04'
+    FDO_DISTRIBUTION_VERSION: '26.04'
     FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
     FDO_DISTRIBUTION_EXEC: $UBUNTU_EXEC
   rules:
@@ -314,15 +300,29 @@ tier3:debian:13@prep:
       when: manual
       allow_failure: true
 
-tier3:debian:12@prep:
+tier3:alpine:3.24@prep:
   extends:
-    - .fdo.container-build@debian
+    - .fdo.container-build@alpine
   stage: prep
   variables:
     GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '12'
-    FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
-    FDO_DISTRIBUTION_EXEC: $DEBIAN_EXEC
+    FDO_DISTRIBUTION_VERSION: '3.24'
+    FDO_DISTRIBUTION_TAG: $ALPINE_TAG
+    FDO_DISTRIBUTION_EXEC: $ALPINE_EXEC
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
+      when: manual
+      allow_failure: true
+
+tier3:alpine:3.23@prep:
+  extends:
+    - .fdo.container-build@alpine
+  stage: prep
+  variables:
+    GIT_STRATEGY: none
+    FDO_DISTRIBUTION_VERSION: '3.23'
+    FDO_DISTRIBUTION_TAG: $ALPINE_TAG
+    FDO_DISTRIBUTION_EXEC: $ALPINE_EXEC
   rules:
     - if: $CI_PIPELINE_SOURCE != 'schedule'
       when: manual
@@ -349,34 +349,6 @@ tier3:alpine:3.21@prep:
   variables:
     GIT_STRATEGY: none
     FDO_DISTRIBUTION_VERSION: '3.21'
-    FDO_DISTRIBUTION_TAG: $ALPINE_TAG
-    FDO_DISTRIBUTION_EXEC: $ALPINE_EXEC
-  rules:
-    - if: $CI_PIPELINE_SOURCE != 'schedule'
-      when: manual
-      allow_failure: true
-
-tier3:alpine:3.20@prep:
-  extends:
-    - .fdo.container-build@alpine
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '3.20'
-    FDO_DISTRIBUTION_TAG: $ALPINE_TAG
-    FDO_DISTRIBUTION_EXEC: $ALPINE_EXEC
-  rules:
-    - if: $CI_PIPELINE_SOURCE != 'schedule'
-      when: manual
-      allow_failure: true
-
-tier3:alpine:3.19@prep:
-  extends:
-    - .fdo.container-build@alpine
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '3.19'
     FDO_DISTRIBUTION_TAG: $ALPINE_TAG
     FDO_DISTRIBUTION_EXEC: $ALPINE_EXEC
   rules:
@@ -414,7 +386,7 @@ tier3:arch:rolling@prep:
   dependencies: []
 
 
-t_fedora:42:
+t_fedora:44:
   extends:
     - .build@template
     - .fdo.distribution-image@fedora
@@ -430,10 +402,10 @@ t_fedora:42:
         - tarball
         - subtree
   variables:
-    FDO_DISTRIBUTION_VERSION: '42'
+    FDO_DISTRIBUTION_VERSION: '44'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
   needs:
-    - "tier1:fedora:42@prep"
+    - "tier1:fedora:44@prep"
   rules:
     - if: $CI_PIPELINE_SOURCE != 'schedule'
 
@@ -549,31 +521,17 @@ t_fedora:43:
   rules:
     - if: $CI_PIPELINE_SOURCE != 'schedule'
 
-t_fedora:41:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@fedora
-    - .nm_artifacts_debug
-  stage: tier3
-  variables:
-    FDO_DISTRIBUTION_VERSION: '41'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-  needs:
-    - "tier3:fedora:41@prep"
-  rules:
-    - if: $CI_PIPELINE_SOURCE != 'schedule'
-
-t_ubuntu:25.04:
+t_ubuntu:26.04:
   extends:
     - .build@template
     - .fdo.distribution-image@ubuntu
     - .nm_artifacts_debug
   stage: tier3
   variables:
-    FDO_DISTRIBUTION_VERSION: '25.04'
+    FDO_DISTRIBUTION_VERSION: '26.04'
     FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
   needs:
-    - "tier3:ubuntu:25.04@prep"
+    - "tier3:ubuntu:26.04@prep"
   rules:
     - if: $CI_PIPELINE_SOURCE != 'schedule'
 
@@ -619,17 +577,31 @@ t_debian:13:
   rules:
     - if: $CI_PIPELINE_SOURCE != 'schedule'
 
-t_debian:12:
+t_alpine:3.24:
   extends:
     - .build@template
-    - .fdo.distribution-image@debian
+    - .fdo.distribution-image@alpine
     - .nm_artifacts_debug
   stage: tier3
   variables:
-    FDO_DISTRIBUTION_VERSION: '12'
-    FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
+    FDO_DISTRIBUTION_VERSION: '3.24'
+    FDO_DISTRIBUTION_TAG: $ALPINE_TAG
   needs:
-    - "tier3:debian:12@prep"
+    - "tier3:alpine:3.24@prep"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'schedule'
+
+t_alpine:3.23:
+  extends:
+    - .build@template
+    - .fdo.distribution-image@alpine
+    - .nm_artifacts_debug
+  stage: tier3
+  variables:
+    FDO_DISTRIBUTION_VERSION: '3.23'
+    FDO_DISTRIBUTION_TAG: $ALPINE_TAG
+  needs:
+    - "tier3:alpine:3.23@prep"
   rules:
     - if: $CI_PIPELINE_SOURCE != 'schedule'
 
@@ -661,34 +633,6 @@ t_alpine:3.21:
   rules:
     - if: $CI_PIPELINE_SOURCE != 'schedule'
 
-t_alpine:3.20:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@alpine
-    - .nm_artifacts_debug
-  stage: tier3
-  variables:
-    FDO_DISTRIBUTION_VERSION: '3.20'
-    FDO_DISTRIBUTION_TAG: $ALPINE_TAG
-  needs:
-    - "tier3:alpine:3.20@prep"
-  rules:
-    - if: $CI_PIPELINE_SOURCE != 'schedule'
-
-t_alpine:3.19:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@alpine
-    - .nm_artifacts_debug
-  stage: tier3
-  variables:
-    FDO_DISTRIBUTION_VERSION: '3.19'
-    FDO_DISTRIBUTION_TAG: $ALPINE_TAG
-  needs:
-    - "tier3:alpine:3.19@prep"
-  rules:
-    - if: $CI_PIPELINE_SOURCE != 'schedule'
-
 t_arch:rolling:
   extends:
     - .build@template
@@ -713,10 +657,10 @@ check-patch:
   extends:
     - .fdo.distribution-image@fedora
   variables:
-    FDO_DISTRIBUTION_VERSION: '42'
+    FDO_DISTRIBUTION_VERSION: '44'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
   needs:
-    - "tier1:fedora:42@prep"
+    - "tier1:fedora:44@prep"
   rules:
     - if: $CI_PIPELINE_SOURCE != 'schedule'
   stage: tier1
@@ -728,10 +672,10 @@ check-tree:
   extends:
     - .fdo.distribution-image@fedora
   variables:
-    FDO_DISTRIBUTION_VERSION: '42'
+    FDO_DISTRIBUTION_VERSION: '44'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
   needs:
-    - "tier1:fedora:42@prep"
+    - "tier1:fedora:44@prep"
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME != $CI_DEFAULT_BRANCH
       allow_failure: true
@@ -761,9 +705,9 @@ pages:
       when: never
     - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   dependencies:
-    - "t_fedora:42: [meson+gcc+docs+valgrind]"
+    - "t_fedora:44: [meson+gcc+docs+valgrind]"
   needs:
-    - "t_fedora:42: [meson+gcc+docs+valgrind]"
+    - "t_fedora:44: [meson+gcc+docs+valgrind]"
 
 triage:issues:
   stage: triage
@@ -780,11 +724,11 @@ coverity:
   extends:
     - .fdo.distribution-image@fedora
   variables:
-    FDO_DISTRIBUTION_VERSION: '42'
+    FDO_DISTRIBUTION_VERSION: '44'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
   stage: coverity
   needs:
-    - "tier1:fedora:42@prep"
+    - "tier1:fedora:44@prep"
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $SCHEDULED_PIPELINE_NAME == "weekly"
   script:
