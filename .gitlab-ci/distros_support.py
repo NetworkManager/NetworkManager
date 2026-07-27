@@ -179,8 +179,7 @@ for centos_ver_info in distros_info["centos"]:
 # Print the config.yml needed for the corresponding stable branch
 branch = "main" if nm_version == "main" else "nm-" + nm_version.replace(".", "-")
 print("\n# .gitlab-ci/config.yml for branch '{}'".format(branch))
-print(
-    """---
+print("""---
 # This file contains the configuration for the gitlab ci.
 #
 # To recreate the .gitlab-ci.yml file, run
@@ -203,18 +202,15 @@ base_types:
 # The list of all distributions we want to create job for.
 distributions:
   # TIER 1: CI run for all MRs.
-  # The first tier:1 in the list is used to build the pages and check-{tree,patch}."""
-)
+  # The first tier:1 in the list is used to build the pages and check-{tree,patch}.""")
 print("  - name: {}".format(tier1_distro))
 print("    tier: 1")
 print("    versions:")
 print("      - '{}'".format(tier1_version))
 
-print(
-    """
+print("""
   # TIER 2: distribution versions that will or might use the current NM version.
-  # Run when doing a release."""
-)
+  # Run when doing a release.""")
 for distro, versions in tier2.items():
     print("  - name: {}".format(distro))
     print("    tier: 2")
@@ -222,11 +218,9 @@ for distro, versions in tier2.items():
     for version in versions:
         print("      - '{}'".format(version))
 
-print(
-    """
+print("""
   # TIER 3: distribution versions not in EOL but don't use the current NM version.
-  # Run when doing a release, but a failure won't be blocking for the release."""
-)
+  # Run when doing a release, but a failure won't be blocking for the release.""")
 for distro, versions in tier3.items():
     print("  - name: {}".format(distro))
     print("    tier: 3")

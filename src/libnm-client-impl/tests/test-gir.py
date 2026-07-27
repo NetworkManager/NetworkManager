@@ -71,7 +71,7 @@ def syms_from_ver(verfile):
             m = re.search(r"^libnm_([0-9]+)_([0-9]+)_([0-9]+)$", line)
             if not m:
                 continue
-            (major, minor, micro) = m.groups()
+            major, minor, micro = m.groups()
             if int(major) > 1 or int(minor) > 0:
                 if int(micro) > 0:
                     # Snap to next major version. Perhaps not

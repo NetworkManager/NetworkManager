@@ -302,7 +302,7 @@ class Util:
 
     @staticmethod
     def popen_wait(p, timeout=0):
-        (res, b_stdout, b_stderr) = Util.popen_wait_read(
+        res, b_stdout, b_stderr = Util.popen_wait_read(
             p, timeout=timeout, read_std_pipes=False
         )
         return res
@@ -991,7 +991,7 @@ class AsyncProcess:
     def poll(self, timeout=0):
         self.start()
 
-        (return_code, b_stdout, b_stderr) = Util.popen_wait_read(self._p, timeout)
+        return_code, b_stdout, b_stderr = Util.popen_wait_read(self._p, timeout)
 
         self._p_stdout_buf += b_stdout
         self._p_stderr_buf += b_stderr
@@ -1008,10 +1008,10 @@ class AsyncProcess:
         p = self._p
         self._p = None
 
-        (return_code, b_stdout, b_stderr) = Util.popen_wait_read(
+        return_code, b_stdout, b_stderr = Util.popen_wait_read(
             p, max(0, self._timeout_remaining_time()) / 1000
         )
-        (stdout, stderr) = (p.stdout.read(), p.stderr.read())
+        stdout, stderr = (p.stdout.read(), p.stderr.read())
         p.stdout.close()
         p.stderr.close()
 
@@ -1144,9 +1144,7 @@ class NMTestContext:
         if self._nmc is None:
             return
 
-        (exitstatus, signalstatus, _valgrind_log) = self.cmd_close_pexpect(
-            self._nmc.pexp
-        )
+        exitstatus, signalstatus, _valgrind_log = self.cmd_close_pexpect(self._nmc.pexp)
         if signalstatus is not None:
             print(
                 "*** pexpect'd process killed by %s ***"
@@ -2375,7 +2373,7 @@ class TestNmcli(unittest.TestCase):
         pexp.expect(r"Do you want to provide them\? \(yes/no\) \[yes]")
         pexp.sendline("no")
         pexp.expect(r"Connection 'ethernet' \(.*\) successfully added.")
-        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        exitstatus, signalstatus, valgrind_log = self.ctx.cmd_close_pexpect(pexp)
         Util.valgrind_check_log(valgrind_log, "test_ask_mode")
         self.assertIsNone(
             signalstatus,
@@ -2429,7 +2427,7 @@ class TestNmcli(unittest.TestCase):
             r"\r\n"
             r"\[proxy\]\r\n"
         )
-        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        exitstatus, signalstatus, valgrind_log = self.ctx.cmd_close_pexpect(pexp)
         Util.valgrind_check_log(valgrind_log, "test_ask_offline")
         self.assertIsNone(
             signalstatus,
@@ -2446,7 +2444,7 @@ class TestNmcli(unittest.TestCase):
             return pexp
 
         def end_mon(self, pexp):
-            (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(
+            exitstatus, signalstatus, valgrind_log = self.ctx.cmd_close_pexpect(
                 pexp, signal=signal.SIGINT
             )
             Util.valgrind_check_log(valgrind_log, "test_monitor")
@@ -2550,7 +2548,7 @@ class TestNmCloudSetup(unittest.TestCase):
                 preexec_fn=pass_socket,
             )
 
-            (hostaddr, port) = s.getsockname()
+            hostaddr, port = s.getsockname()
             self.md_conn = HTTPConnection(hostaddr, port=port)
             self.md_url = "http://%s:%d" % (hostaddr, port)
             s.close()
@@ -2678,7 +2676,7 @@ class TestNmCloudSetup(unittest.TestCase):
         pexp.expect("skip applied connection due to missing IPv4 configuration")
         # The other one was lacking an address set it up.
         pexp.expect("some changes were applied for provider aliyun")
-        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        exitstatus, signalstatus, valgrind_log = self.ctx.cmd_close_pexpect(pexp)
         Util.valgrind_check_log(valgrind_log, "test_aliyun")
         self.assertIsNone(
             signalstatus,
@@ -2708,7 +2706,7 @@ class TestNmCloudSetup(unittest.TestCase):
         # No changes this time
         pexp.expect('device needs no update to applied connection "con-eth0"')
         pexp.expect("no changes were applied for provider aliyun")
-        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        exitstatus, signalstatus, valgrind_log = self.ctx.cmd_close_pexpect(pexp)
         Util.valgrind_check_log(valgrind_log, "test_aliyun")
         self.assertIsNone(
             signalstatus,
@@ -2780,7 +2778,7 @@ class TestNmCloudSetup(unittest.TestCase):
         pexp.expect("skip applied connection due to missing IPv4 configuration")
         # The other one was lacking an address set it up.
         pexp.expect("some changes were applied for provider azure")
-        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        exitstatus, signalstatus, valgrind_log = self.ctx.cmd_close_pexpect(pexp)
         Util.valgrind_check_log(valgrind_log, "test_azure")
         self.assertIsNone(
             signalstatus,
@@ -2810,7 +2808,7 @@ class TestNmCloudSetup(unittest.TestCase):
         # No changes this time
         pexp.expect('device needs no update to applied connection "con-eth0"')
         pexp.expect("no changes were applied for provider azure")
-        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        exitstatus, signalstatus, valgrind_log = self.ctx.cmd_close_pexpect(pexp)
         Util.valgrind_check_log(valgrind_log, "test_azure")
         self.assertIsNone(
             signalstatus,
@@ -2865,7 +2863,7 @@ class TestNmCloudSetup(unittest.TestCase):
         pexp.expect("skip applied connection due to missing IPv4 configuration")
         # The other one was lacking an address set it up.
         pexp.expect("some changes were applied for provider ec2")
-        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        exitstatus, signalstatus, valgrind_log = self.ctx.cmd_close_pexpect(pexp)
         Util.valgrind_check_log(valgrind_log, "test_ec2")
         self.assertIsNone(
             signalstatus,
@@ -2895,7 +2893,7 @@ class TestNmCloudSetup(unittest.TestCase):
         # No changes this time
         pexp.expect('device needs no update to applied connection "con-eth0"')
         pexp.expect("no changes were applied for provider ec2")
-        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        exitstatus, signalstatus, valgrind_log = self.ctx.cmd_close_pexpect(pexp)
         Util.valgrind_check_log(valgrind_log, "test_ec2")
         self.assertIsNone(
             signalstatus,
@@ -2942,7 +2940,7 @@ class TestNmCloudSetup(unittest.TestCase):
         pexp.expect("skip applied connection due to missing IPv4 configuration")
         # The other one was lacking an address set it up.
         pexp.expect("some changes were applied for provider GCP")
-        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        exitstatus, signalstatus, valgrind_log = self.ctx.cmd_close_pexpect(pexp)
         Util.valgrind_check_log(valgrind_log, "test_gcp")
         self.assertIsNone(
             signalstatus,
@@ -2972,7 +2970,7 @@ class TestNmCloudSetup(unittest.TestCase):
         # No changes this time
         pexp.expect('device needs no update to applied connection "con-eth0"')
         pexp.expect("no changes were applied for provider GCP")
-        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        exitstatus, signalstatus, valgrind_log = self.ctx.cmd_close_pexpect(pexp)
         Util.valgrind_check_log(valgrind_log, "test_gcp")
         self.assertIsNone(
             signalstatus,
@@ -3039,7 +3037,7 @@ class TestNmCloudSetup(unittest.TestCase):
         pexp.expect("skip applied connection due to missing IPv4 configuration")
         # The other one was lacking an address set it up.
         pexp.expect("some changes were applied for provider oci")
-        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        exitstatus, signalstatus, valgrind_log = self.ctx.cmd_close_pexpect(pexp)
         Util.valgrind_check_log(valgrind_log, "test_oci")
         self.assertIsNone(
             signalstatus,
@@ -3069,7 +3067,7 @@ class TestNmCloudSetup(unittest.TestCase):
         # No changes this time
         pexp.expect('device needs no update to applied connection "con-eth0"')
         pexp.expect("no changes were applied for provider oci")
-        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        exitstatus, signalstatus, valgrind_log = self.ctx.cmd_close_pexpect(pexp)
         Util.valgrind_check_log(valgrind_log, "test_oci")
         self.assertIsNone(
             signalstatus,
@@ -3156,7 +3154,7 @@ class TestNmCloudSetup(unittest.TestCase):
         pexp.expect("creating vlan connection for VLAN 700 on C0:00:00:00:00:10...")
         pexp.expect("some changes were applied for provider oci")
 
-        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        exitstatus, signalstatus, valgrind_log = self.ctx.cmd_close_pexpect(pexp)
         Util.valgrind_check_log(valgrind_log, "test_oci_vlans")
         self.assertIsNone(
             signalstatus,
@@ -3195,7 +3193,7 @@ class TestNmCloudSetup(unittest.TestCase):
         pexp.expect("skip applied connection due to missing IPv4 configuration")
         pexp.expect("no changes were applied for provider oci")
 
-        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        exitstatus, signalstatus, valgrind_log = self.ctx.cmd_close_pexpect(pexp)
         Util.valgrind_check_log(valgrind_log, "test_oci_vlans")
         self.assertIsNone(
             signalstatus,
@@ -3271,7 +3269,7 @@ class TestNmCloudSetup(unittest.TestCase):
         # Finished!
         pexp.expect("some changes were applied for provider oci")
 
-        (exitstatus, signalstatus, valgrind_log) = self.ctx.cmd_close_pexpect(pexp)
+        exitstatus, signalstatus, valgrind_log = self.ctx.cmd_close_pexpect(pexp)
         Util.valgrind_check_log(valgrind_log, "test_oci_vm_vnic")
         self.assertIsNone(
             signalstatus,
