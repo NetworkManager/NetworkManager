@@ -160,8 +160,8 @@ test_ip4_route_metric0(void)
 {
     int         ifindex       = nm_platform_link_get_ifindex(NM_PLATFORM_GET, DEVICE_NAME);
     SignalData *route_added   = add_signal(NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,
-                                         NM_PLATFORM_SIGNAL_ADDED,
-                                         ip4_route_callback);
+                                           NM_PLATFORM_SIGNAL_ADDED,
+                                           ip4_route_callback);
     SignalData *route_changed = add_signal(NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,
                                            NM_PLATFORM_SIGNAL_CHANGED,
                                            ip4_route_callback);
@@ -246,14 +246,14 @@ test_ip4_route(void)
 {
     int                ifindex       = nm_platform_link_get_ifindex(NM_PLATFORM_GET, DEVICE_NAME);
     SignalData        *route_added   = add_signal(NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,
-                                         NM_PLATFORM_SIGNAL_ADDED,
-                                         ip4_route_callback);
+                                                  NM_PLATFORM_SIGNAL_ADDED,
+                                                  ip4_route_callback);
     SignalData        *route_changed = add_signal(NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,
-                                           NM_PLATFORM_SIGNAL_CHANGED,
-                                           ip4_route_callback);
+                                                  NM_PLATFORM_SIGNAL_CHANGED,
+                                                  ip4_route_callback);
     SignalData        *route_removed = add_signal(NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,
-                                           NM_PLATFORM_SIGNAL_REMOVED,
-                                           ip4_route_callback);
+                                                  NM_PLATFORM_SIGNAL_REMOVED,
+                                                  ip4_route_callback);
     GPtrArray         *routes;
     NMPlatformIP4Route rts[3];
     in_addr_t          network;
@@ -393,14 +393,14 @@ test_ip6_route(void)
 {
     int                ifindex       = nm_platform_link_get_ifindex(NM_PLATFORM_GET, DEVICE_NAME);
     SignalData        *route_added   = add_signal(NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED,
-                                         NM_PLATFORM_SIGNAL_ADDED,
-                                         ip6_route_callback);
+                                                  NM_PLATFORM_SIGNAL_ADDED,
+                                                  ip6_route_callback);
     SignalData        *route_changed = add_signal(NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED,
-                                           NM_PLATFORM_SIGNAL_CHANGED,
-                                           ip6_route_callback);
+                                                  NM_PLATFORM_SIGNAL_CHANGED,
+                                                  ip6_route_callback);
     SignalData        *route_removed = add_signal(NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED,
-                                           NM_PLATFORM_SIGNAL_REMOVED,
-                                           ip6_route_callback);
+                                                  NM_PLATFORM_SIGNAL_REMOVED,
+                                                  ip6_route_callback);
     GPtrArray         *routes;
     NMPlatformIP6Route rts[3];
     struct in6_addr    network;
@@ -734,13 +734,13 @@ test_ip4_route_options(gconstpointer test_data)
         break;
     case 2:
         addr[addr_n++]   = ((NMPlatformIP4Address) {
-              .ifindex      = IFINDEX,
-              .address      = nmtst_inet4_from_string("172.16.1.5"),
-              .peer_address = nmtst_inet4_from_string("172.16.1.5"),
-              .plen         = 24,
-              .lifetime     = NM_PLATFORM_LIFETIME_PERMANENT,
-              .preferred    = NM_PLATFORM_LIFETIME_PERMANENT,
-              .n_ifa_flags  = 0,
+            .ifindex      = IFINDEX,
+            .address      = nmtst_inet4_from_string("172.16.1.5"),
+            .peer_address = nmtst_inet4_from_string("172.16.1.5"),
+            .plen         = 24,
+            .lifetime     = NM_PLATFORM_LIFETIME_PERMANENT,
+            .preferred    = NM_PLATFORM_LIFETIME_PERMANENT,
+            .n_ifa_flags  = 0,
         });
         rts_add[rts_n++] = ((NMPlatformIP4Route) {
             .ifindex    = IFINDEX,
@@ -894,13 +894,13 @@ test_ip6_route_options(gconstpointer test_data)
         break;
     case 2:
         addr[addr_n++]   = ((NMPlatformIP6Address) {
-              .ifindex      = IFINDEX,
-              .address      = nmtst_inet6_from_string("2000::2"),
-              .plen         = 128,
-              .peer_address = in6addr_any,
-              .lifetime     = NM_PLATFORM_LIFETIME_PERMANENT,
-              .preferred    = NM_PLATFORM_LIFETIME_PERMANENT,
-              .n_ifa_flags  = 0,
+            .ifindex      = IFINDEX,
+            .address      = nmtst_inet6_from_string("2000::2"),
+            .plen         = 128,
+            .peer_address = in6addr_any,
+            .lifetime     = NM_PLATFORM_LIFETIME_PERMANENT,
+            .preferred    = NM_PLATFORM_LIFETIME_PERMANENT,
+            .n_ifa_flags  = 0,
         });
         rts_add[rts_n++] = ((NMPlatformIP6Route) {
             .ifindex   = IFINDEX,
@@ -914,13 +914,13 @@ test_ip6_route_options(gconstpointer test_data)
         break;
     case 3:
         addr[addr_n++]   = ((NMPlatformIP6Address) {
-              .ifindex      = IFINDEX,
-              .address      = nmtst_inet6_from_string("2001:db8:8086::5"),
-              .plen         = 128,
-              .peer_address = in6addr_any,
-              .lifetime     = NM_PLATFORM_LIFETIME_PERMANENT,
-              .preferred    = NM_PLATFORM_LIFETIME_PERMANENT,
-              .n_ifa_flags  = 0,
+            .ifindex      = IFINDEX,
+            .address      = nmtst_inet6_from_string("2001:db8:8086::5"),
+            .plen         = 128,
+            .peer_address = in6addr_any,
+            .lifetime     = NM_PLATFORM_LIFETIME_PERMANENT,
+            .preferred    = NM_PLATFORM_LIFETIME_PERMANENT,
+            .n_ifa_flags  = 0,
         });
         rts_add[rts_n++] = ((NMPlatformIP6Route) {
             .ifindex   = IFINDEX,
@@ -1208,9 +1208,9 @@ _rule_check_kernel_support(NMPlatform *platform, int attribute)
     {
         nm_auto_nmpobj const NMPObject *obj = NULL;
         const NMPlatformRoutingRule     rr  = {
-                 .addr_family              = AF_INET,
-                 .priority                 = PROBE_PRORITY,
-                 .suppress_ifgroup_inverse = ~((guint32) 1245),
+            .addr_family              = AF_INET,
+            .priority                 = PROBE_PRORITY,
+            .suppress_ifgroup_inverse = ~((guint32) 1245),
         };
 
         obj = _rule_check_kernel_support_one(platform, &rr);
@@ -1223,9 +1223,9 @@ _rule_check_kernel_support(NMPlatform *platform, int attribute)
     {
         nm_auto_nmpobj const NMPObject *obj = NULL;
         const NMPlatformRoutingRule     rr  = {
-                 .addr_family                = AF_INET,
-                 .priority                   = PROBE_PRORITY,
-                 .suppress_prefixlen_inverse = ~((guint32) 1245),
+            .addr_family                = AF_INET,
+            .priority                   = PROBE_PRORITY,
+            .suppress_prefixlen_inverse = ~((guint32) 1245),
         };
 
         obj = _rule_check_kernel_support_one(platform, &rr);
@@ -1238,9 +1238,9 @@ _rule_check_kernel_support(NMPlatform *platform, int attribute)
     {
         nm_auto_nmpobj const NMPObject *obj = NULL;
         const NMPlatformRoutingRule     rr  = {
-                 .addr_family = AF_INET,
-                 .priority    = PROBE_PRORITY,
-                 .l3mdev      = TRUE,
+            .addr_family = AF_INET,
+            .priority    = PROBE_PRORITY,
+            .l3mdev      = TRUE,
         };
 
         obj = _rule_check_kernel_support_one(platform, &rr);
@@ -1252,14 +1252,14 @@ _rule_check_kernel_support(NMPlatform *platform, int attribute)
     {
         nm_auto_nmpobj const NMPObject *obj = NULL;
         const NMPlatformRoutingRule     rr  = {
-                 .addr_family = AF_INET,
-                 .priority    = PROBE_PRORITY,
-                 .uid_range =
+            .addr_family = AF_INET,
+            .priority    = PROBE_PRORITY,
+            .uid_range =
                 {
-                         .start = 0,
-                         .end   = 0,
+                    .start = 0,
+                    .end   = 0,
                 },
-                 .uid_range_has = TRUE,
+            .uid_range_has = TRUE,
         };
 
         obj = _rule_check_kernel_support_one(platform, &rr);
@@ -1271,9 +1271,9 @@ _rule_check_kernel_support(NMPlatform *platform, int attribute)
     {
         nm_auto_nmpobj const NMPObject *obj = NULL;
         const NMPlatformRoutingRule     rr  = {
-                 .addr_family = AF_INET,
-                 .priority    = PROBE_PRORITY,
-                 .protocol    = 30,
+            .addr_family = AF_INET,
+            .priority    = PROBE_PRORITY,
+            .protocol    = 30,
         };
 
         obj = _rule_check_kernel_support_one(platform, &rr);
@@ -1285,9 +1285,9 @@ _rule_check_kernel_support(NMPlatform *platform, int attribute)
     {
         nm_auto_nmpobj const NMPObject *obj = NULL;
         const NMPlatformRoutingRule     rr  = {
-                 .addr_family = AF_INET,
-                 .priority    = PROBE_PRORITY,
-                 .ip_proto    = 30,
+            .addr_family = AF_INET,
+            .priority    = PROBE_PRORITY,
+            .ip_proto    = 30,
         };
 
         obj = _rule_check_kernel_support_one(platform, &rr);

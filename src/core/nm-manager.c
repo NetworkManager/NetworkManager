@@ -1225,8 +1225,8 @@ nm_manager_get_activatable_connections(NMManager *manager,
 {
     NMManagerPrivate                         *priv = NM_MANAGER_GET_PRIVATE(manager);
     const GetActivatableConnectionsFilterData d    = {
-           .self                = manager,
-           .for_auto_activation = for_auto_activation,
+        .self                = manager,
+        .for_auto_activation = for_auto_activation,
     };
 
     return nm_settings_get_connections_clone(
@@ -2513,9 +2513,9 @@ nm_manager_get_connection_iface(NMManager    *self,
 
     parent = find_parent_device_for_connection(self, connection, factory, out_parent_spec);
     iface  = nm_device_factory_get_connection_iface(factory,
-                                                   connection,
-                                                   parent ? nm_device_get_ip_iface(parent) : NULL,
-                                                   error);
+                                                    connection,
+                                                    parent ? nm_device_get_ip_iface(parent) : NULL,
+                                                    error);
     if (!iface)
         return NULL;
 
@@ -9540,9 +9540,9 @@ static const NMDBusInterfaceInfoExtended interface_info_manager = {
                         NM_DEFINE_GDBUS_ARG_INFO("add_timeout", "u"), ), ),
                 .handle = impl_manager_checkpoint_adjust_rollback_timeout, ), ),
         .signals    = NM_DEFINE_GDBUS_SIGNAL_INFOS(&signal_info_check_permissions,
-                                                &signal_info_state_changed,
-                                                &signal_info_device_added,
-                                                &signal_info_device_removed, ),
+                                                   &signal_info_state_changed,
+                                                   &signal_info_device_added,
+                                                   &signal_info_device_removed, ),
         .properties = NM_DEFINE_GDBUS_PROPERTY_INFOS(
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Devices", "ao", NM_MANAGER_DEVICES),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("AllDevices",

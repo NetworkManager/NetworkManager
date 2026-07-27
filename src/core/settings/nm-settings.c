@@ -4108,10 +4108,10 @@ nm_settings_start(NMSettings *self, GError **error)
     priv->hostname_manager = g_object_ref(nm_hostname_manager_get());
 
     priv->kf_db_timestamps  = nm_key_file_db_new(NMSTATEDIR "/timestamps",
-                                                "timestamps",
-                                                _kf_db_log_fcn,
-                                                _kf_db_got_dirty_fcn,
-                                                self);
+                                                 "timestamps",
+                                                 _kf_db_log_fcn,
+                                                 _kf_db_got_dirty_fcn,
+                                                 self);
     priv->kf_db_seen_bssids = nm_key_file_db_new(NMSTATEDIR "/seen-bssids",
                                                  "seen-bssids",
                                                  _kf_db_log_fcn,
@@ -4431,7 +4431,7 @@ static const NMDBusInterfaceInfoExtended interface_info_settings = {
                         NM_DEFINE_GDBUS_ARG_INFOS(NM_DEFINE_GDBUS_ARG_INFO("hostname", "s"), ), ),
                 .handle = impl_settings_save_hostname, ), ),
         .signals    = NM_DEFINE_GDBUS_SIGNAL_INFOS(&signal_info_new_connection,
-                                                &signal_info_connection_removed, ),
+                                                   &signal_info_connection_removed, ),
         .properties = NM_DEFINE_GDBUS_PROPERTY_INFOS(
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Connections",
                                                            "ao",

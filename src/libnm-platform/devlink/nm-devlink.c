@@ -191,14 +191,14 @@ devlink_send_and_recv(NMDevlink     *self,
     int                cb_result = CB_RESULT_PENDING;
     void              *err_arg[] = {self, &cb_result, err_msg};
     const struct nl_cb cb        = {
-               .err_cb     = err_cb_handler,
-               .err_arg    = err_arg,
-               .finish_cb  = finish_cb_handler,
-               .finish_arg = &cb_result,
-               .ack_cb     = ack_cb_handler,
-               .ack_arg    = &cb_result,
-               .valid_cb   = valid_handler,
-               .valid_arg  = valid_data,
+        .err_cb     = err_cb_handler,
+        .err_arg    = err_arg,
+        .finish_cb  = finish_cb_handler,
+        .finish_arg = &cb_result,
+        .ack_cb     = ack_cb_handler,
+        .ack_arg    = &cb_result,
+        .valid_cb   = valid_handler,
+        .valid_arg  = valid_data,
     };
 
     g_return_val_if_fail(msg != NULL, -ENOMEM);

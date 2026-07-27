@@ -827,9 +827,9 @@ nm_sd_notify(const char *state)
     struct sockaddr_un sockaddr;
     struct iovec       iovec;
     struct msghdr      msghdr = {
-             .msg_iov    = &iovec,
-             .msg_iovlen = 1,
-             .msg_name   = &sockaddr,
+        .msg_iov    = &iovec,
+        .msg_iovlen = 1,
+        .msg_name   = &sockaddr,
     };
     nm_auto_close int fd = -1;
     const char       *e;

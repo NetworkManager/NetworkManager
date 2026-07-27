@@ -916,10 +916,10 @@ _handle_l3cd_changed(NMIPConfig *self, const NML3ConfigData *l3cd)
                                                             &clat_pref64_plen_old,
                                                             &clat_ip4_old);
         clat_enabled     = nm_l3_config_data_get_clat_state(priv->l3cd,
-                                                        &clat_ip6,
-                                                        &clat_pref64,
-                                                        &clat_pref64_plen,
-                                                        &clat_ip4);
+                                                            &clat_ip6,
+                                                            &clat_pref64,
+                                                            &clat_pref64_plen,
+                                                            &clat_ip4);
 
         /* CLAT address */
         if (clat_enabled != clat_enabled_old) {

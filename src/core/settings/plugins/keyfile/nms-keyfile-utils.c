@@ -147,9 +147,9 @@ nms_keyfile_nmmeta_read(const char  *dirname,
             return FALSE;
 
         loaded_path      = g_key_file_get_string(kf,
-                                            NMMETA_KF_GROUP_NAME_NMMETA,
-                                            NMMETA_KF_KEY_NAME_NMMETA_LOADED_PATH,
-                                            NULL);
+                                                 NMMETA_KF_GROUP_NAME_NMMETA,
+                                                 NMMETA_KF_KEY_NAME_NMMETA_LOADED_PATH,
+                                                 NULL);
         shadowed_storage = g_key_file_get_string(kf,
                                                  NMMETA_KF_GROUP_NAME_NMMETA,
                                                  NMMETA_KF_KEY_NAME_NMMETA_SHADOWED_STORAGE,

@@ -697,11 +697,11 @@ nm_platform_sysctl_ip_conf_set_ipv6_hop_limit_safe(NMPlatform *self, const char 
 
     path = nm_utils_sysctl_ip_conf_path(AF_INET6, buf, iface, "hop_limit");
     cur  = nm_platform_sysctl_get_int_checked(self,
-                                             NMP_SYSCTL_PATHID_ABSOLUTE(path),
-                                             10,
-                                             1,
-                                             G_MAXINT32,
-                                             -1);
+                                              NMP_SYSCTL_PATHID_ABSOLUTE(path),
+                                              10,
+                                              1,
+                                              G_MAXINT32,
+                                              -1);
 
     /* only allow increasing the hop-limit to avoid DOS by an attacker
      * setting a low hop-limit (CVE-2015-2924, rh#1209902) */
@@ -10195,26 +10195,26 @@ nm_platform_ip6_dadfailed_set(NMPlatform            *self,
 const _NMPlatformVTableRouteUnion nm_platform_vtable_route = {
     .v4 =
         {
-            .is_ip4          = TRUE,
-            .obj_type        = NMP_OBJECT_TYPE_IP4_ROUTE,
-            .addr_family     = AF_INET,
-            .sizeof_route    = sizeof(NMPlatformIP4Route),
-            .route_cmp       = (int (*)(const NMPlatformIPXRoute *a,
-                                  const NMPlatformIPXRoute *b,
-                                  NMPlatformIPRouteCmpType  cmp_type)) nm_platform_ip4_route_cmp,
+            .is_ip4       = TRUE,
+            .obj_type     = NMP_OBJECT_TYPE_IP4_ROUTE,
+            .addr_family  = AF_INET,
+            .sizeof_route = sizeof(NMPlatformIP4Route),
+            .route_cmp    = (int (*)(const NMPlatformIPXRoute *a,
+                                     const NMPlatformIPXRoute *b,
+                                     NMPlatformIPRouteCmpType  cmp_type)) nm_platform_ip4_route_cmp,
             .route_to_string = (const char *(*) (const NMPlatformIPXRoute *route,
                                                  char                     *buf,
                                                  gsize len)) nm_platform_ip4_route_to_string,
         },
     .v6 =
         {
-            .is_ip4          = FALSE,
-            .obj_type        = NMP_OBJECT_TYPE_IP6_ROUTE,
-            .addr_family     = AF_INET6,
-            .sizeof_route    = sizeof(NMPlatformIP6Route),
-            .route_cmp       = (int (*)(const NMPlatformIPXRoute *a,
-                                  const NMPlatformIPXRoute *b,
-                                  NMPlatformIPRouteCmpType  cmp_type)) nm_platform_ip6_route_cmp,
+            .is_ip4       = FALSE,
+            .obj_type     = NMP_OBJECT_TYPE_IP6_ROUTE,
+            .addr_family  = AF_INET6,
+            .sizeof_route = sizeof(NMPlatformIP6Route),
+            .route_cmp    = (int (*)(const NMPlatformIPXRoute *a,
+                                     const NMPlatformIPXRoute *b,
+                                     NMPlatformIPRouteCmpType  cmp_type)) nm_platform_ip6_route_cmp,
             .route_to_string = (const char *(*) (const NMPlatformIPXRoute *route,
                                                  char                     *buf,
                                                  gsize len)) nm_platform_ip6_route_to_string,
@@ -10287,8 +10287,8 @@ constructor(GType type, guint n_construct_params, GObjectConstructParam *constru
 
     object = G_OBJECT_CLASS(nm_platform_parent_class)
                  ->constructor(type, n_construct_params, construct_params);
-    self = NM_PLATFORM(object);
-    priv = NM_PLATFORM_GET_PRIVATE(self);
+    self   = NM_PLATFORM(object);
+    priv   = NM_PLATFORM_GET_PRIVATE(self);
 
     nm_assert(priv->multi_idx);
 

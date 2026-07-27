@@ -1333,14 +1333,14 @@ ip_route_add(NMPlatform *platform, NMPNlmFlags flags, NMPObject *obj_stack, char
 
     /* we manipulate the cache the same was as NMLinuxPlatform does it. */
     cache_op   = nmp_cache_update_netlink_route(cache,
-                                              obj,
-                                              FALSE,
-                                              nlmsgflags,
-                                              TRUE,
-                                              &obj_old,
-                                              &obj_new,
-                                              &obj_replace,
-                                              NULL);
+                                                obj,
+                                                FALSE,
+                                                nlmsgflags,
+                                                TRUE,
+                                                &obj_old,
+                                                &obj_new,
+                                                &obj_replace,
+                                                NULL);
     only_dirty = FALSE;
     if (cache_op != NMP_CACHE_OPS_UNCHANGED) {
         if (obj_replace) {

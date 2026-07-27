@@ -2990,7 +2990,7 @@ _wireguard_read_info(NMPlatform     *platform /* used only as logging context */
     WireGuardPeerConstruct      *peer_c_safe;
     gs_unref_array GArray       *allowed_ips = NULL;
     WireGuardParseData           parse_data  = {
-                   .ifindex = ifindex,
+        .ifindex = ifindex,
     };
     guint i;
 
@@ -5671,10 +5671,10 @@ _nl_msg_new_link_full(uint16_t    nlmsg_type,
 {
     nm_auto_nlmsg struct nl_msg *msg = NULL;
     const struct ifinfomsg       ifi = {
-              .ifi_family = family,
-              .ifi_change = flags_mask,
-              .ifi_flags  = flags_set,
-              .ifi_index  = ifindex,
+        .ifi_family = family,
+        .ifi_change = flags_mask,
+        .ifi_flags  = flags_set,
+        .ifi_index  = ifindex,
     };
 
     nm_assert(NM_IN_SET(nlmsg_type, RTM_DELLINK, RTM_NEWLINK, RTM_GETLINK, RTM_SETLINK));
@@ -5717,11 +5717,11 @@ _nl_msg_new_address(uint16_t      nlmsg_type,
 {
     nm_auto_nlmsg struct nl_msg *msg = NULL;
     struct ifaddrmsg             am  = {
-                     .ifa_family    = family,
-                     .ifa_index     = ifindex,
-                     .ifa_prefixlen = plen,
-                     .ifa_flags     = flags,
-                     .ifa_scope     = scope,
+        .ifa_family    = family,
+        .ifa_index     = ifindex,
+        .ifa_prefixlen = plen,
+        .ifa_flags     = flags,
+        .ifa_scope     = scope,
     };
     gsize addr_len;
 
@@ -6122,11 +6122,11 @@ _nl_msg_new_qdisc(uint16_t nlmsg_type, uint16_t nlmsg_flags, const NMPlatformQdi
     nm_auto_nlmsg struct nl_msg *msg = NULL;
     struct nlattr               *tc_options;
     const struct tcmsg           tcm = {
-                  .tcm_family  = qdisc->addr_family,
-                  .tcm_ifindex = qdisc->ifindex,
-                  .tcm_handle  = qdisc->handle,
-                  .tcm_parent  = qdisc->parent,
-                  .tcm_info    = qdisc->info,
+        .tcm_family  = qdisc->addr_family,
+        .tcm_ifindex = qdisc->ifindex,
+        .tcm_handle  = qdisc->handle,
+        .tcm_parent  = qdisc->parent,
+        .tcm_info    = qdisc->info,
     };
 
     msg = nlmsg_alloc_new(0, nlmsg_type, nlmsg_flags | NMP_NLM_FLAG_F_ECHO);
@@ -6210,11 +6210,11 @@ _nl_msg_new_tfilter(uint16_t nlmsg_type, uint16_t nlmsg_flags, const NMPlatformT
     struct nlattr               *tc_options;
     struct nlattr               *act_tab;
     const struct tcmsg           tcm = {
-                  .tcm_family  = tfilter->addr_family,
-                  .tcm_ifindex = tfilter->ifindex,
-                  .tcm_handle  = tfilter->handle,
-                  .tcm_parent  = tfilter->parent,
-                  .tcm_info    = tfilter->info,
+        .tcm_family  = tfilter->addr_family,
+        .tcm_ifindex = tfilter->ifindex,
+        .tcm_handle  = tfilter->handle,
+        .tcm_parent  = tfilter->parent,
+        .tcm_info    = tfilter->info,
     };
 
     msg = nlmsg_alloc_new(0, nlmsg_type, nlmsg_flags | NMP_NLM_FLAG_F_ECHO);
@@ -9175,10 +9175,10 @@ link_set_address(NMPlatform *platform, int ifindex, gconstpointer address, size_
 {
     nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
     const ChangeLinkData         d     = {
-                    .set_address =
+        .set_address =
             {
-                            .address = address,
-                            .length  = length,
+                .address = address,
+                .length  = length,
             },
     };
 
@@ -9259,7 +9259,7 @@ sriov_read_sysctl_uint(NMPlatform *platform,
     nm_assert(NM_STRLEN("device/%s") + strlen(dev_file));
 
     path = nm_sprintf_bufa(256, "device/%s", dev_file);
-    val  = nm_platform_sysctl_get_int_checked(platform,
+    val = nm_platform_sysctl_get_int_checked(platform,
                                              NMP_SYSCTL_PATHID_NETDIR_UNSAFE_A(dirfd, ifname, path),
                                              10,
                                              0,
@@ -9442,9 +9442,9 @@ sriov_async_step2_set_eswitch_mode(SriovAsyncState *async_state)
     gs_free NMDevlink      *devlink        = NULL;
     gs_free_error GError   *error          = NULL;
     NMDevlinkEswitchParams  eswitch_params = {
-         .mode        = async_state->sriov_params.eswitch_mode,
-         .inline_mode = async_state->sriov_params.eswitch_inline_mode,
-         .encap_mode  = async_state->sriov_params.eswitch_encap_mode,
+        .mode        = async_state->sriov_params.eswitch_mode,
+        .inline_mode = async_state->sriov_params.eswitch_inline_mode,
+        .encap_mode  = async_state->sriov_params.eswitch_encap_mode,
     };
 
     _LOGD("setting eswitch params (mode=%d, inline-mode=%d, encap-mode=%d)",
@@ -10643,7 +10643,7 @@ nm_linux_platform_get_bridge_fdb(NMPlatform *platform, int *ifindexes, guint ifi
     gs_unref_hashtable GHashTable *fdb_addrs = NULL;
     FdbData                        data;
     const struct ndmsg             ndm = {
-                    .ndm_family = AF_BRIDGE,
+        .ndm_family = AF_BRIDGE,
     };
     gpointer *ret = NULL;
 
@@ -10933,11 +10933,11 @@ ip_route_get(NMPlatform   *platform,
 
         seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
         nle        = _nl_send_nlmsghdr(platform,
-                                &req.n,
-                                &seq_result,
-                                NULL,
-                                DELAYED_ACTION_RESPONSE_TYPE_ROUTE_GET,
-                                &route);
+                                       &req.n,
+                                       &seq_result,
+                                       NULL,
+                                       DELAYED_ACTION_RESPONSE_TYPE_ROUTE_GET,
+                                       &route);
         if (nle < 0) {
             _LOGE("get-route: failure sending netlink request \"%s\" (%d)",
                   nm_strerror_native(-nle),
@@ -11074,8 +11074,8 @@ tc_delete(NMPlatform *platform,
     const char                  *log_tag;
     nm_auto_nlmsg struct nl_msg *msg = NULL;
     const struct tcmsg           tcm = {
-                  .tcm_ifindex = ifindex,
-                  .tcm_parent  = parent,
+        .tcm_ifindex = ifindex,
+        .tcm_parent  = parent,
     };
     int try_count = 0;
 
@@ -11374,11 +11374,11 @@ continue_reading:
         char                     buf_nlmsghdr[400];
         const char              *extack_msg = NULL;
         const struct nl_msg_lite msg        = {
-                   .nm_protocol = nmp_netlink_protocol_info(netlink_protocol)->netlink_protocol,
-                   .nm_src      = &nla,
-                   .nm_creds    = &creds,
-                   .nm_size     = NLMSG_ALIGN(hdr->nlmsg_len),
-                   .nm_nlh      = hdr,
+            .nm_protocol = nmp_netlink_protocol_info(netlink_protocol)->netlink_protocol,
+            .nm_src      = &nla,
+            .nm_creds    = &creds,
+            .nm_size     = NLMSG_ALIGN(hdr->nlmsg_len),
+            .nm_nlh      = hdr,
         };
         const guint32 seq_number = msg.nm_nlh->nlmsg_seq;
 
@@ -11813,8 +11813,8 @@ mptcp_addr_update(NMPlatform *platform, NMOptionBool add, const NMPlatformMptcpA
     int                          nle;
     char                         extack_msg[EXTACK_MSG_BUFSIZE];
     const struct nl_cb           cb = {
-                  .err_cb  = _mptcp_addr_update_err_cb,
-                  .err_arg = extack_msg,
+        .err_cb  = _mptcp_addr_update_err_cb,
+        .err_arg = extack_msg,
     };
 
     extack_msg[0] = '\0';

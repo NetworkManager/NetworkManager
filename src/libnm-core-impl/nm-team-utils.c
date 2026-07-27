@@ -2321,8 +2321,8 @@ _team_setting_verify_properties(const NMTeamSetting *self, GError **error)
         gboolean has_activebackup_attrs;
 
         has_lacp_attrs         = _team_setting_has_fields_any(self,
-                                                      NM_TEAM_ATTRIBUTE_PORT_LACP_PRIO,
-                                                      NM_TEAM_ATTRIBUTE_PORT_LACP_KEY);
+                                                              NM_TEAM_ATTRIBUTE_PORT_LACP_PRIO,
+                                                              NM_TEAM_ATTRIBUTE_PORT_LACP_KEY);
         has_activebackup_attrs = _team_setting_has_fields_any(self,
                                                               NM_TEAM_ATTRIBUTE_PORT_PRIO,
                                                               NM_TEAM_ATTRIBUTE_PORT_STICKY);

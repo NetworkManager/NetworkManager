@@ -137,7 +137,7 @@ NM_DEFINE_SINGLETON_GETTER(NMNetns, nm_netns_get, NM_TYPE_NETNS);
 
 /*****************************************************************************/
 
-static WatcherDataIPAddr             *
+static WatcherDataIPAddr *
 _watcher_ip_data_lookup(NMNetns *self, int addr_family, gconstpointer addr);
 static void _watcher_handle_notify(NMNetns                       *self,
                                    NMNetnsWatcherHandle          *handle,
@@ -1543,9 +1543,9 @@ nm_netns_init(NMNetns *self)
     priv->watcher_idx = g_hash_table_new(_watcher_handle_hash, _watcher_handle_equal);
     G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(WatcherByTag, tag) == 0);
     priv->watcher_by_tag_idx  = g_hash_table_new_full(nm_pdirect_hash,
-                                                     nm_pdirect_equal,
-                                                     (GDestroyNotify) _watcher_by_tag_destroy,
-                                                     NULL);
+                                                      nm_pdirect_equal,
+                                                      (GDestroyNotify) _watcher_by_tag_destroy,
+                                                      NULL);
     priv->watcher_ip_data_idx = g_hash_table_new(_watcher_ip_data_hash, _watcher_ip_data_equal);
 }
 

@@ -184,7 +184,7 @@ _nm_auto_freev(gpointer ptr)
 /*****************************************************************************/
 
 /* http://stackoverflow.com/a/11172679 */
-#define _NM_UTILS_MACRO_FIRST(...)                __NM_UTILS_MACRO_FIRST_HELPER(__VA_ARGS__, throwaway)
+#define _NM_UTILS_MACRO_FIRST(...) __NM_UTILS_MACRO_FIRST_HELPER(__VA_ARGS__, throwaway)
 #define __NM_UTILS_MACRO_FIRST_HELPER(first, ...) first
 
 #define _NM_UTILS_MACRO_REST(...) \

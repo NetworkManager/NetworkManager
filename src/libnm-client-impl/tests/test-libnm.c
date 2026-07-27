@@ -3025,9 +3025,9 @@ test_nml_dbus_meta(void)
 
                     for (ii = 0; ii < 2; ii++) {
                         const _NMObjectClassFieldInfo *p_prev = NULL;
-                        const _NMObjectClassFieldInfo *p0     = ii == 0
-                                                                    ? nm_object_class->property_o_info
-                                                                    : nm_object_class->property_ao_info;
+                        const _NMObjectClassFieldInfo *p0 = ii == 0
+                                                                ? nm_object_class->property_o_info
+                                                                : nm_object_class->property_ao_info;
                         const _NMObjectClassFieldInfo *p;
 
                         for (p = p0; p; p = p->parent) {

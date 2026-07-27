@@ -227,7 +227,7 @@ void nmc_empty_output_fields(NmcOutputData *output_data);
 #define NMC_OUTPUT_DATA_DEFINE_SCOPED(out)                               \
     gs_unref_array GArray                         *out##_indices = NULL; \
     nm_auto(nmc_empty_output_fields) NmcOutputData out           = {     \
-                  .output_data = g_ptr_array_new_full(20, g_free),       \
+        .output_data = g_ptr_array_new_full(20, g_free),                 \
     }
 
 /*****************************************************************************/

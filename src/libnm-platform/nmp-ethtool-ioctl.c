@@ -554,7 +554,7 @@ ethtool_get_features(SocketHandle *shandle)
 
         gfeatures_len = sizeof(struct ethtool_gfeatures)
                         + (NM_DIV_ROUND_UP(ss_features->len, 32u) * sizeof(gfeatures->features[0]));
-        gfeatures       = nm_malloc0_maybe_a(300, gfeatures_len, &gfeatures_free);
+        gfeatures     = nm_malloc0_maybe_a(300, gfeatures_len, &gfeatures_free);
         gfeatures->cmd  = ETHTOOL_GFEATURES;
         gfeatures->size = NM_DIV_ROUND_UP(ss_features->len, 32u);
         if (_ethtool_call_handle(shandle, gfeatures, gfeatures_len) < 0)
@@ -1452,7 +1452,7 @@ nmp_ethtool_ioctl_set_link_settings(int                      ifindex,
 {
     nm_auto_socket_handle SocketHandle shandle = SOCKET_HANDLE_INIT(ifindex);
     struct ethtool_cmd                 edata   = {
-                          .cmd = ETHTOOL_GSET,
+        .cmd = ETHTOOL_GSET,
     };
     NMOptionBool ret;
 

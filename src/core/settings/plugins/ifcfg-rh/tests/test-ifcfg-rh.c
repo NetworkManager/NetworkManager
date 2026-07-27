@@ -3575,9 +3575,9 @@ test_roundtrip_ethtool(void)
         NMSettingWiredWakeOnLan       wake_on_lan;
 
         con2    = nmtst_create_minimal_connection("test_roundtrip_ethtool",
-                                               NULL,
-                                               NM_SETTING_WIRED_SETTING_NAME,
-                                               NULL);
+                                                  NULL,
+                                                  NM_SETTING_WIRED_SETTING_NAME,
+                                                  NULL);
         s_wired = nmtst_connection_assert_setting(con2, NM_TYPE_SETTING_WIRED);
         g_object_set(s_wired, NM_SETTING_WIRED_AUTO_NEGOTIATE, nmtst_get_rand_bool(), NULL);
 
@@ -5859,18 +5859,18 @@ test_write_wifi_open_hex_ssid(void)
     NMSettingIPConfig            *s_ip4;
     NMSettingIPConfig            *s_ip6;
     gs_unref_bytes GBytes        *ssid = nmtst_gbytes_from_arr(0x11,
-                                                        0x22,
-                                                        0x33,
-                                                        0x44,
-                                                        0x55,
-                                                        0x66,
-                                                        0x77,
-                                                        0x88,
-                                                        0x99,
-                                                        0xaa,
-                                                        0xbb,
-                                                        0xcc,
-                                                        0xdd);
+                                                               0x22,
+                                                               0x33,
+                                                               0x44,
+                                                               0x55,
+                                                               0x66,
+                                                               0x77,
+                                                               0x88,
+                                                               0x99,
+                                                               0xaa,
+                                                               0xbb,
+                                                               0xcc,
+                                                               0xdd);
 
     connection = nm_simple_connection_new();
 

@@ -1470,9 +1470,9 @@ nmtstp_wait_for_signal(NMPlatform *platform, gint64 timeout_msec)
     data.loop = g_main_loop_new(NULL, FALSE);
 
     id_link        = g_signal_connect(platform,
-                               NM_PLATFORM_SIGNAL_LINK_CHANGED,
-                               G_CALLBACK(_wait_for_signal_cb),
-                               &data);
+                                      NM_PLATFORM_SIGNAL_LINK_CHANGED,
+                                      G_CALLBACK(_wait_for_signal_cb),
+                                      &data);
     id_ip4_address = g_signal_connect(platform,
                                       NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED,
                                       G_CALLBACK(_wait_for_signal_cb),
@@ -1482,21 +1482,21 @@ nmtstp_wait_for_signal(NMPlatform *platform, gint64 timeout_msec)
                                       G_CALLBACK(_wait_for_signal_cb),
                                       &data);
     id_ip4_route   = g_signal_connect(platform,
-                                    NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,
-                                    G_CALLBACK(_wait_for_signal_cb),
-                                    &data);
+                                      NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,
+                                      G_CALLBACK(_wait_for_signal_cb),
+                                      &data);
     id_ip6_route   = g_signal_connect(platform,
-                                    NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED,
-                                    G_CALLBACK(_wait_for_signal_cb),
-                                    &data);
+                                      NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED,
+                                      G_CALLBACK(_wait_for_signal_cb),
+                                      &data);
     id_qdisc       = g_signal_connect(platform,
-                                NM_PLATFORM_SIGNAL_QDISC_CHANGED,
-                                G_CALLBACK(_wait_for_signal_cb),
-                                &data);
+                                      NM_PLATFORM_SIGNAL_QDISC_CHANGED,
+                                      G_CALLBACK(_wait_for_signal_cb),
+                                      &data);
     id_tfilter     = g_signal_connect(platform,
-                                  NM_PLATFORM_SIGNAL_TFILTER_CHANGED,
-                                  G_CALLBACK(_wait_for_signal_cb),
-                                  &data);
+                                      NM_PLATFORM_SIGNAL_TFILTER_CHANGED,
+                                      G_CALLBACK(_wait_for_signal_cb),
+                                      &data);
 
     /* if timeout_msec is negative, it means the wait-time already expired.
      * Maybe, we should do nothing and return right away, without even

@@ -3491,7 +3491,7 @@ nm_utils_stable_id_parse(const char *stable_id,
 
             if (ssid) {
                 type_id = "s:";
-                value   = nm_utils_buf_utf8safe_escape_bytes(ssid,
+                value = nm_utils_buf_utf8safe_escape_bytes(ssid,
                                                            NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL,
                                                            &value_free);
             } else {

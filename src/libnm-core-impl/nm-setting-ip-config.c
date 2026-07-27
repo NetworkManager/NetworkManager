@@ -1496,9 +1496,9 @@ _nm_ip_route_attribute_validate_all(const NMIPRoute *route, GError **error)
     guint                      attrs_len;
     guint                      i;
     IPRouteAttrParseData       parse_data = {
-              .type   = RTN_UNICAST,
-              .scope  = -1,
-              .weight = 0,
+        .type   = RTN_UNICAST,
+        .scope  = -1,
+        .weight = 0,
     };
 
     g_return_val_if_fail(route, FALSE);

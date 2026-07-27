@@ -76,9 +76,9 @@ test_ip4_address_general(void)
 {
     const int   ifindex         = DEVICE_IFINDEX;
     SignalData *address_added   = add_signal_ifindex(NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED,
-                                                   NM_PLATFORM_SIGNAL_ADDED,
-                                                   ip4_address_callback,
-                                                   ifindex);
+                                                     NM_PLATFORM_SIGNAL_ADDED,
+                                                     ip4_address_callback,
+                                                     ifindex);
     SignalData *address_changed = add_signal_ifindex(NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED,
                                                      NM_PLATFORM_SIGNAL_CHANGED,
                                                      ip4_address_callback,
@@ -143,9 +143,9 @@ test_ip6_address_general(void)
 {
     const int   ifindex         = DEVICE_IFINDEX;
     SignalData *address_added   = add_signal_ifindex(NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED,
-                                                   NM_PLATFORM_SIGNAL_ADDED,
-                                                   ip6_address_callback,
-                                                   ifindex);
+                                                     NM_PLATFORM_SIGNAL_ADDED,
+                                                     ip6_address_callback,
+                                                     ifindex);
     SignalData *address_changed = add_signal_ifindex(NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED,
                                                      NM_PLATFORM_SIGNAL_CHANGED,
                                                      ip6_address_callback,
@@ -220,8 +220,8 @@ test_ip4_address_general_2(void)
 {
     const int   ifindex         = DEVICE_IFINDEX;
     SignalData *address_added   = add_signal(NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED,
-                                           NM_PLATFORM_SIGNAL_ADDED,
-                                           ip4_address_callback);
+                                             NM_PLATFORM_SIGNAL_ADDED,
+                                             ip4_address_callback);
     SignalData *address_removed = add_signal(NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED,
                                              NM_PLATFORM_SIGNAL_REMOVED,
                                              ip4_address_callback);
@@ -259,11 +259,11 @@ test_ip6_address_general_2(void)
 {
     const int       ifindex         = DEVICE_IFINDEX;
     SignalData     *address_added   = add_signal(NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED,
-                                           NM_PLATFORM_SIGNAL_ADDED,
-                                           ip6_address_callback);
+                                                 NM_PLATFORM_SIGNAL_ADDED,
+                                                 ip6_address_callback);
     SignalData     *address_removed = add_signal(NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED,
-                                             NM_PLATFORM_SIGNAL_REMOVED,
-                                             ip6_address_callback);
+                                                 NM_PLATFORM_SIGNAL_REMOVED,
+                                                 ip6_address_callback);
     struct in6_addr addr;
     guint32         lifetime  = 2000;
     guint32         preferred = 1000;
@@ -308,11 +308,11 @@ test_ip4_address_peer(void)
 {
     const int                   ifindex         = DEVICE_IFINDEX;
     SignalData                 *address_added   = add_signal(NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED,
-                                           NM_PLATFORM_SIGNAL_ADDED,
-                                           ip4_address_callback);
+                                                             NM_PLATFORM_SIGNAL_ADDED,
+                                                             ip4_address_callback);
     SignalData                 *address_removed = add_signal(NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED,
-                                             NM_PLATFORM_SIGNAL_REMOVED,
-                                             ip4_address_callback);
+                                                             NM_PLATFORM_SIGNAL_REMOVED,
+                                                             ip4_address_callback);
     in_addr_t                   addr, addr_peer, addr_peer2;
     guint32                     lifetime  = 2000;
     guint32                     preferred = 1000;

@@ -348,11 +348,11 @@ nm_dhcp_option_find(int addr_family, guint option)
 {
     const int                        IS_IPv4 = NM_IS_IPv4(addr_family);
     const NMDhcpOption *const *const sorted  = IS_IPv4 ? _sorted_options_4 : _sorted_options_6;
-    const int                        n       = IS_IPv4 ? G_N_ELEMENTS(_nm_dhcp_option_dhcp4_options)
-                                                       : G_N_ELEMENTS(_nm_dhcp_option_dhcp6_options);
-    int                              imin    = 0;
-    int                              imax    = n - 1;
-    int                              imid    = (n - 1) / 2;
+    const int                        n    = IS_IPv4 ? G_N_ELEMENTS(_nm_dhcp_option_dhcp4_options)
+                                                    : G_N_ELEMENTS(_nm_dhcp_option_dhcp6_options);
+    int                              imin = 0;
+    int                              imax = n - 1;
+    int                              imid = (n - 1) / 2;
 
 #if NM_MORE_ASSERTS > 10
     nm_assert(n < G_MAXINT / 2);

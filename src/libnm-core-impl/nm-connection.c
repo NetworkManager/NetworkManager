@@ -2756,9 +2756,9 @@ _nm_connection_find_secret(NMConnection              *self,
 {
     gs_unref_variant GVariant *dummy = NULL;
     FindSecretData             data  = {
-                     .find_func      = callback,
-                     .find_func_data = callback_data,
-                     .found          = FALSE,
+        .find_func      = callback,
+        .find_func_data = callback_data,
+        .found          = FALSE,
     };
 
     dummy = _nm_connection_for_each_secret(self, secrets, FALSE, find_secret_for_each_func, &data);

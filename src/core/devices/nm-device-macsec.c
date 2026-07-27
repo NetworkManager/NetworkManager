@@ -199,7 +199,7 @@ build_supplicant_config(NMDeviceMacsec *self, GError **error)
 
     con_uuid = nm_connection_get_uuid(connection);
     mtu      = nm_platform_link_get_mtu(nm_device_get_platform(NM_DEVICE(self)),
-                                   nm_device_get_ifindex(NM_DEVICE(self)));
+                                        nm_device_get_ifindex(NM_DEVICE(self)));
 
     config = nm_supplicant_config_new(NM_SUPPL_CAP_MASK_NONE,
                                       nm_utils_get_connection_first_permissions_user(connection));
@@ -942,12 +942,12 @@ nm_device_macsec_class_init(NMDeviceMacsecClass *klass)
                                                          0,
                                                          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
     obj_properties[PROP_WINDOW]     = g_param_spec_uint(NM_DEVICE_MACSEC_WINDOW,
-                                                    "",
-                                                    "",
-                                                    0,
-                                                    G_MAXUINT32,
-                                                    0,
-                                                    G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+                                                        "",
+                                                        "",
+                                                        0,
+                                                        G_MAXUINT32,
+                                                        0,
+                                                        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
     obj_properties[PROP_ENCODING_SA] =
         g_param_spec_uchar(NM_DEVICE_MACSEC_ENCODING_SA,
                            "",
@@ -979,10 +979,10 @@ nm_device_macsec_class_init(NMDeviceMacsecClass *klass)
                              FALSE,
                              G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
     obj_properties[PROP_ES]  = g_param_spec_boolean(NM_DEVICE_MACSEC_ES,
-                                                   "",
-                                                   "",
-                                                   FALSE,
-                                                   G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+                                                    "",
+                                                    "",
+                                                    FALSE,
+                                                    G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
     obj_properties[PROP_SCB] = g_param_spec_boolean(NM_DEVICE_MACSEC_SCB,
                                                     "",
                                                     "",

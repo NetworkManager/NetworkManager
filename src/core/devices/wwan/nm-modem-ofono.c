@@ -1613,9 +1613,9 @@ nm_modem_ofono_init(NMModemOfono *self)
     priv->modem_proxy_cancellable = g_cancellable_new();
     priv->connections = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_object_unref);
     priv->contexts    = g_hash_table_new_full(nm_str_hash,
-                                           g_str_equal,
-                                           g_free,
-                                           (GDestroyNotify) ofono_context_data_free);
+                                              g_str_equal,
+                                              g_free,
+                                              (GDestroyNotify) ofono_context_data_free);
     priv->settings    = g_object_ref(NM_SETTINGS_GET);
 }
 

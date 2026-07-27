@@ -529,7 +529,7 @@ _config_data_get_main_auth_polkit(const NMConfigData *self, gboolean *out_invali
     NMAuthPolkitMode auth_polkit_mode;
     gs_free char    *str = NULL;
 
-    str              = nm_config_data_get_value(self,
+    str = nm_config_data_get_value(self,
                                    NM_CONFIG_KEYFILE_GROUP_MAIN,
                                    NM_CONFIG_KEYFILE_KEY_MAIN_AUTH_POLKIT,
                                    NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY);
@@ -2349,11 +2349,11 @@ constructed(GObject *object)
                                           NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY,
                                           NM_CONFIG_KEYFILE_KEY_CONNECTIVITY_URI,
                                           NULL));
-    priv->connectivity.response       = g_key_file_get_string(priv->keyfile,
+    priv->connectivity.response = g_key_file_get_string(priv->keyfile,
                                                         NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY,
                                                         NM_CONFIG_KEYFILE_KEY_CONNECTIVITY_RESPONSE,
                                                         NULL);
-    str                               = nm_config_keyfile_get_value(priv->keyfile,
+    str = nm_config_keyfile_get_value(priv->keyfile,
                                       NM_CONFIG_KEYFILE_GROUP_MAIN,
                                       NM_CONFIG_KEYFILE_KEY_MAIN_AUTOCONNECT_RETRIES_DEFAULT,
                                       NM_CONFIG_GET_VALUE_NONE);
@@ -2384,9 +2384,9 @@ constructed(GObject *object)
     g_free(str);
 
     priv->dns_mode   = nm_strstrip(g_key_file_get_string(priv->keyfile,
-                                                       NM_CONFIG_KEYFILE_GROUP_MAIN,
-                                                       NM_CONFIG_KEYFILE_KEY_MAIN_DNS,
-                                                       NULL));
+                                                         NM_CONFIG_KEYFILE_GROUP_MAIN,
+                                                         NM_CONFIG_KEYFILE_KEY_MAIN_DNS,
+                                                         NULL));
     priv->rc_manager = nm_strstrip(g_key_file_get_string(priv->keyfile,
                                                          NM_CONFIG_KEYFILE_GROUP_MAIN,
                                                          NM_CONFIG_KEYFILE_KEY_MAIN_RC_MANAGER,
@@ -2638,9 +2638,9 @@ nm_global_dns_config_clone(NMGlobalDnsConfig *old_dns_config)
         new_dns_config->searches = nm_strv_dup(old_dns_config->searches, -1, TRUE);
         new_dns_config->options  = nm_strv_dup(old_dns_config->options, -1, TRUE);
         new_dns_config->domains  = g_hash_table_new_full(nm_str_hash,
-                                                        g_str_equal,
-                                                        g_free,
-                                                        (GDestroyNotify) global_dns_domain_free);
+                                                         g_str_equal,
+                                                         g_free,
+                                                         (GDestroyNotify) global_dns_domain_free);
         if (old_dns_config->domains) {
             g_hash_table_iter_init(&iter, old_dns_config->domains);
             while (g_hash_table_iter_next(&iter, &key, &value)) {

@@ -579,7 +579,7 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
         if (nm_supplicant_interface_get_p2p_assigned_addr(priv->group_iface, &addr, &plen)) {
             nm_auto_unref_l3cd_init NML3ConfigData *l3cd    = NULL;
             NMPlatformIP4Address                    address = {
-                                   .addr_source = NM_IP_CONFIG_SOURCE_DHCP,
+                .addr_source = NM_IP_CONFIG_SOURCE_DHCP,
             };
 
             nm_platform_ip4_address_set_addr(&address, addr, plen);
@@ -1244,7 +1244,7 @@ static const NMDBusInterfaceInfoExtended interface_info_device_wifi_p2p = {
             NM_DEFINE_DBUS_METHOD_INFO_EXTENDED(NM_DEFINE_GDBUS_METHOD_INFO_INIT("StopFind", ),
                                                 .handle = impl_device_wifi_p2p_stop_find, ), ),
         .signals    = NM_DEFINE_GDBUS_SIGNAL_INFOS(&nm_signal_info_wifi_p2p_peer_added,
-                                                &nm_signal_info_wifi_p2p_peer_removed, ),
+                                                   &nm_signal_info_wifi_p2p_peer_removed, ),
         .properties = NM_DEFINE_GDBUS_PROPERTY_INFOS(
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE(
                 "HwAddress",

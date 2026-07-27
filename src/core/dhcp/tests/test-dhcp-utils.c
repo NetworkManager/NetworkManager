@@ -407,7 +407,7 @@ test_fedora_dhclient_classless_static_routes(void)
     static const Option                      data[]               = {
         /* Fedora dhclient format */
         {"classless_static_routes",
-                                            "0 192.168.0.113 25.129.210.177.132 192.168.0.113 7.2 10.34.255.6"},
+         "0 192.168.0.113 25.129.210.177.132 192.168.0.113 7.2 10.34.255.6"},
         {NULL, NULL}};
 
     options = fill_table(generic_options, NULL);

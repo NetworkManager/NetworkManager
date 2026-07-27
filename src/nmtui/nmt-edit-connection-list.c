@@ -89,11 +89,11 @@ nmt_edit_connection_list_init(NmtEditConnectionList *list)
     NmtNewtGrid                  *search_grid;
 
     listbox       = g_object_new(NMT_TYPE_NEWT_LISTBOX,
-                           "flags",
-                           NMT_NEWT_LISTBOX_SCROLL | NMT_NEWT_LISTBOX_BORDER,
-                           "skip-null-keys",
-                           TRUE,
-                           NULL);
+                                 "flags",
+                                 NMT_NEWT_LISTBOX_SCROLL | NMT_NEWT_LISTBOX_BORDER,
+                                 "skip-null-keys",
+                                 TRUE,
+                                 NULL);
     priv->listbox = NMT_NEWT_LISTBOX(listbox);
     nmt_newt_grid_add(grid, listbox, 0, 0);
     nmt_newt_grid_set_flags(grid,

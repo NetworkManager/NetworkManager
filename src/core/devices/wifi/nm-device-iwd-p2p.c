@@ -698,8 +698,8 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
                                                    nm_wifi_p2p_peer_get_supplicant_path(peer),
                                                    NM_IWD_P2P_PEER_INTERFACE);
     wsc_proxy  = nm_iwd_manager_get_dbus_interface(nm_iwd_manager_get(),
-                                                  nm_wifi_p2p_peer_get_supplicant_path(peer),
-                                                  NM_IWD_WSC_INTERFACE);
+                                                   nm_wifi_p2p_peer_get_supplicant_path(peer),
+                                                   NM_IWD_WSC_INTERFACE);
 
     if (!wsc_proxy || !peer_proxy) {
         cleanup_connect_attempt(self);
@@ -1141,7 +1141,7 @@ static const NMDBusInterfaceInfoExtended interface_info_device_wifi_p2p = {
             NM_DEFINE_DBUS_METHOD_INFO_EXTENDED(NM_DEFINE_GDBUS_METHOD_INFO_INIT("StopFind", ),
                                                 .handle = impl_device_iwd_p2p_stop_find, ), ),
         .signals    = NM_DEFINE_GDBUS_SIGNAL_INFOS(&nm_signal_info_wifi_p2p_peer_added,
-                                                &nm_signal_info_wifi_p2p_peer_removed, ),
+                                                   &nm_signal_info_wifi_p2p_peer_removed, ),
         .properties = NM_DEFINE_GDBUS_PROPERTY_INFOS(
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE(
                 "HwAddress",

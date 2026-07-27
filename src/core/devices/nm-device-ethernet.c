@@ -627,7 +627,7 @@ build_supplicant_config(NMDeviceEthernet *self, GError **error)
 
     con_uuid = nm_connection_get_uuid(connection);
     mtu      = nm_platform_link_get_mtu(nm_device_get_platform(NM_DEVICE(self)),
-                                   nm_device_get_ifindex(NM_DEVICE(self)));
+                                        nm_device_get_ifindex(NM_DEVICE(self)));
 
     config = nm_supplicant_config_new(NM_SUPPL_CAP_MASK_NONE,
                                       nm_utils_get_connection_first_permissions_user(connection));

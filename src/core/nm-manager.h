@@ -12,10 +12,10 @@
 #include "nm-dbus-manager.h"
 #include "nm-config-data.h"
 
-#define NM_TYPE_MANAGER            (nm_manager_get_type())
-#define NM_MANAGER(obj)            (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_MANAGER, NMManager))
-#define NM_MANAGER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_MANAGER, NMManagerClass))
-#define NM_IS_MANAGER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_MANAGER))
+#define NM_TYPE_MANAGER         (nm_manager_get_type())
+#define NM_MANAGER(obj)         (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_MANAGER, NMManager))
+#define NM_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_MANAGER, NMManagerClass))
+#define NM_IS_MANAGER(obj)      (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_MANAGER))
 #define NM_IS_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_MANAGER))
 #define NM_MANAGER_GET_CLASS(obj) \
     (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_MANAGER, NMManagerClass))

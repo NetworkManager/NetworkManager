@@ -884,16 +884,16 @@ _dispatcher_call(NMDispatcherAction    action,
                                                         l3cd,
                                                         FALSE);
             ret                 = g_dbus_connection_call_sync(gl.dbus_connection,
-                                              NM_DISPATCHER_DBUS_SERVICE,
-                                              NM_DISPATCHER_DBUS_PATH,
-                                              NM_DISPATCHER_DBUS_INTERFACE,
-                                              "Action",
-                                              g_steal_pointer(&parameters_floating),
-                                              G_VARIANT_TYPE("(a(sus))"),
-                                              G_DBUS_CALL_FLAGS_NONE,
-                                              CALL_TIMEOUT,
-                                              NULL,
-                                              &error);
+                                                              NM_DISPATCHER_DBUS_SERVICE,
+                                                              NM_DISPATCHER_DBUS_PATH,
+                                                              NM_DISPATCHER_DBUS_INTERFACE,
+                                                              "Action",
+                                                              g_steal_pointer(&parameters_floating),
+                                                              G_VARIANT_TYPE("(a(sus))"),
+                                                              G_DBUS_CALL_FLAGS_NONE,
+                                                              CALL_TIMEOUT,
+                                                              NULL,
+                                                              &error);
             is_action2          = FALSE;
         }
 

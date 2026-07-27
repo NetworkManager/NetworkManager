@@ -135,8 +135,8 @@ _metagen_device_status_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
     g_return_val_if_reached(NULL);
 }
 
-const NmcMetaGenericInfo
-    *const metagen_device_status[_NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_NUM + 1] = {
+const NmcMetaGenericInfo *const
+    metagen_device_status[_NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_NUM + 1] = {
 #define _METAGEN_DEVICE_STATUS(type, name) \
     [type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_device_status_get_fcn)
         _METAGEN_DEVICE_STATUS(NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_DEVICE, "DEVICE"),
@@ -254,8 +254,8 @@ _metagen_device_detail_general_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
     g_return_val_if_reached(NULL);
 }
 
-const NmcMetaGenericInfo
-    *const metagen_device_detail_general[_NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_NUM + 1] = {
+const NmcMetaGenericInfo *const
+    metagen_device_detail_general[_NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_NUM + 1] = {
 #define _METAGEN_DEVICE_DETAIL_GENERAL(type, name) \
     [type] = NMC_META_GENERIC(name,                \
                               .info_type = type,   \
@@ -494,9 +494,9 @@ _metagen_device_detail_capabilities_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
     g_return_val_if_reached(NULL);
 }
 
-const NmcMetaGenericInfo
-    *const metagen_device_detail_capabilities[_NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_CAPABILITIES_NUM
-                                              + 1] = {
+const NmcMetaGenericInfo *const
+    metagen_device_detail_capabilities[_NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_CAPABILITIES_NUM
+                                       + 1] = {
 #define _METAGEN_DEVICE_DETAIL_CAPABILITIES(type, name) \
     [type] = NMC_META_GENERIC(name,                     \
                               .info_type = type,        \
@@ -747,7 +747,7 @@ const NmcMetaGenericInfo *const nmc_fields_dev_wifi_list[] = {
     NMC_META_GENERIC("DBUS-PATH"), /* 18 */
     NULL,
 };
-#define NMC_FIELDS_DEV_WIFI_LIST_COMMON       "IN-USE,BSSID,SSID,MODE,BAND,CHAN,RATE,SIGNAL,BARS,SECURITY"
+#define NMC_FIELDS_DEV_WIFI_LIST_COMMON "IN-USE,BSSID,SSID,MODE,BAND,CHAN,RATE,SIGNAL,BARS,SECURITY"
 #define NMC_FIELDS_DEV_WIFI_LIST_FOR_DEV_LIST "NAME," NMC_FIELDS_DEV_WIFI_LIST_COMMON
 
 const NmcMetaGenericInfo *const nmc_fields_dev_wimax_list[] = {
@@ -1790,12 +1790,12 @@ show_device_info(NMDevice *device, NmCli *nmc)
                     gs_unref_ptrarray GPtrArray *aps        = NULL;
                     int                          info_index = 0;
                     const APInfo                 info       = {
-                                              .nmc          = nmc,
-                                              .p_index      = &info_index,
-                                              .output_flags = NMC_OF_FLAG_SECTION_PREFIX,
-                                              .active_ap    = active_ap,
-                                              .device       = nm_device_get_iface(device),
-                                              .output_data  = out.output_data,
+                        .nmc          = nmc,
+                        .p_index      = &info_index,
+                        .output_flags = NMC_OF_FLAG_SECTION_PREFIX,
+                        .active_ap    = active_ap,
+                        .device       = nm_device_get_iface(device),
+                        .output_data  = out.output_data,
                     };
 
                     aps = sort_access_points(
@@ -3053,10 +3053,10 @@ device_state(NMDevice *device, GParamSpec *pspec, NmCli *nmc)
 
     color = nmc_device_state_to_color(device);
     str   = nmc_colorize(&nmc->nmc_config,
-                       color,
-                       "%s: %s\n",
-                       nm_device_get_iface(device),
-                       gettext(nmc_device_state_to_string_with_external(device)));
+                         color,
+                         "%s: %s\n",
+                         nm_device_get_iface(device),
+                         gettext(nmc_device_state_to_string_with_external(device)));
 
     nmc_print("%s", str);
 }
@@ -3256,12 +3256,12 @@ show_access_point_info(NMDeviceWifi *wifi, NmCli *nmc, NmcOutputData *out)
         gs_unref_ptrarray GPtrArray *aps        = NULL;
         int                          info_index = 0;
         const APInfo                 info       = {
-                                  .nmc          = nmc,
-                                  .p_index      = &info_index,
-                                  .output_flags = 0,
-                                  .active_ap    = active_ap,
-                                  .device       = nm_device_get_iface(NM_DEVICE(wifi)),
-                                  .output_data  = out->output_data,
+            .nmc          = nmc,
+            .p_index      = &info_index,
+            .output_flags = 0,
+            .active_ap    = active_ap,
+            .device       = nm_device_get_iface(NM_DEVICE(wifi)),
+            .output_data  = out->output_data,
         };
 
         aps = sort_access_points(nm_device_wifi_get_access_points(wifi));
@@ -3311,11 +3311,11 @@ wifi_print_aps(NMDeviceWifi                    *wifi,
         if (ap) {
             int          info_index = 0;
             const APInfo info       = {
-                      .nmc          = nmc,
-                      .p_index      = &info_index,
-                      .output_flags = 0,
-                      .device       = nm_device_get_iface(NM_DEVICE(wifi)),
-                      .output_data  = out.output_data,
+                .nmc          = nmc,
+                .p_index      = &info_index,
+                .output_flags = 0,
+                .device       = nm_device_get_iface(NM_DEVICE(wifi)),
+                .output_data  = out.output_data,
             };
 
             /* Add headers (field names) */
@@ -3721,9 +3721,9 @@ do_device_wifi_list(const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
 
         if (timeout_msec > 0) {
             wifi_list_data->last_scan_id     = g_signal_connect(wifi,
-                                                            "notify::" NM_DEVICE_WIFI_LAST_SCAN,
-                                                            G_CALLBACK(wifi_last_scan_updated),
-                                                            wifi_list_data),
+                                                                "notify::" NM_DEVICE_WIFI_LAST_SCAN,
+                                                                G_CALLBACK(wifi_last_scan_updated),
+                                                                wifi_list_data),
             wifi_list_data->scan_cancellable = g_cancellable_new(),
             nm_device_wifi_request_scan_async(wifi,
                                               wifi_list_data->scan_cancellable,

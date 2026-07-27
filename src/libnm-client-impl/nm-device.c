@@ -3074,9 +3074,9 @@ nm_lldp_neighbor_new(void)
     *neigh = (NMLldpNeighbor) {
         .refcount = 1,
         .attrs    = g_hash_table_new_full(nm_str_hash,
-                                       g_str_equal,
-                                       g_free,
-                                       (GDestroyNotify) g_variant_unref),
+                                          g_str_equal,
+                                          g_free,
+                                          (GDestroyNotify) g_variant_unref),
     };
 
     return neigh;

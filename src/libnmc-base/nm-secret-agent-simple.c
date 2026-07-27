@@ -224,9 +224,9 @@ _secret_real_new_wireguard_peer_psk(NMSettingWireGuard *s_wg,
         .base.secret_type        = NM_SECRET_AGENT_SECRET_TYPE_WIREGUARD_PEER_PSK,
         .base.pretty_name        = g_strdup_printf(_("Preshared-key for %s"), public_key),
         .base.entry_id           = g_strdup_printf(NM_SETTING_WIREGUARD_SETTING_NAME
-                                         "." NM_SETTING_WIREGUARD_PEERS
-                                         ".%s." NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY,
-                                         public_key),
+                                                   "." NM_SETTING_WIREGUARD_PEERS
+                                                   ".%s." NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY,
+                                                   public_key),
         .base.value              = g_strdup(preshared_key),
         .base.is_secret          = TRUE,
         .base.no_prompt_entry_id = TRUE,
@@ -922,14 +922,14 @@ request_secrets_from_ui(RequestData *request)
     } else if (nm_connection_is_type(request->connection, NM_SETTING_WIRED_SETTING_NAME)) {
         title = _("Wired 802.1X authentication");
         msg   = g_strdup_printf(_("Secrets are required to access the wired network '%s'"),
-                              nm_connection_get_id(request->connection));
+                                nm_connection_get_id(request->connection));
 
         if (!add_8021x_secrets(request, secrets))
             goto out_fail;
     } else if (nm_connection_is_type(request->connection, NM_SETTING_PPPOE_SETTING_NAME)) {
         title = _("DSL authentication");
         msg   = g_strdup_printf(_("Secrets are required for the DSL connection '%s'"),
-                              nm_connection_get_id(request->connection));
+                                nm_connection_get_id(request->connection));
 
         if (!add_pppoe_secrets(request, secrets))
             goto out_fail;
@@ -948,7 +948,7 @@ request_secrets_from_ui(RequestData *request)
         } else {
             title = _("Mobile broadband network password");
             msg   = g_strdup_printf(_("A password is required to connect to '%s'."),
-                                  nm_connection_get_id(request->connection));
+                                    nm_connection_get_id(request->connection));
 
             secret = _secret_real_new_plain(NM_SECRET_AGENT_SECRET_TYPE_SECRET,
                                             _("Password"),
@@ -983,7 +983,7 @@ request_secrets_from_ui(RequestData *request)
 
         title = _("Mobile broadband network password");
         msg   = g_strdup_printf(_("A password is required to connect to '%s'."),
-                              nm_connection_get_id(request->connection));
+                                nm_connection_get_id(request->connection));
 
         secret = _secret_real_new_plain(NM_SECRET_AGENT_SECRET_TYPE_SECRET,
                                         _("Password"),
@@ -1010,7 +1010,7 @@ request_secrets_from_ui(RequestData *request)
 
         title = _("Mobile broadband network password");
         msg   = g_strdup_printf(_("A password is required to connect to '%s'."),
-                              nm_connection_get_id(request->connection));
+                                nm_connection_get_id(request->connection));
 
         secret = _secret_real_new_plain(NM_SECRET_AGENT_SECRET_TYPE_SECRET,
                                         _("Password"),

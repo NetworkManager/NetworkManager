@@ -854,9 +854,9 @@ _nm_client_notify_event_queue_with_ptr(NMClient                    *self,
     NMClientNotifyEventWithPtr *notify_event;
 
     notify_event            = _nm_client_notify_event_queue(self,
-                                                 priority,
-                                                 (NMClientNotifyEventCb) callback,
-                                                 sizeof(NMClientNotifyEventWithPtr));
+                                                            priority,
+                                                            (NMClientNotifyEventCb) callback,
+                                                            sizeof(NMClientNotifyEventWithPtr));
     notify_event->user_data = user_data;
     return notify_event;
 }
@@ -1826,7 +1826,7 @@ nml_dbus_property_o_notify(NMClient               *self,
         changed = TRUE;
     }
     if (!pr_o->obj_watcher && dbus_path) {
-        pr_o->obj_watcher                           = _dbobjs_obj_watcher_register_r(self,
+        pr_o->obj_watcher = _dbobjs_obj_watcher_register_r(self,
                                                            nm_ref_string_new(dbus_path),
                                                            nml_dbus_property_o_notify_watch_cb,
                                                            sizeof(PropertyOData));
@@ -2218,7 +2218,7 @@ nml_dbus_property_ao_notify(NMClient               *self,
                 }
                 nm_c_list_move_tail(&pr_ao->data_lst_head, &pr_ao_data->data_lst);
             } else {
-                pr_ao_data                   = _dbobjs_obj_watcher_register_r(self,
+                pr_ao_data = _dbobjs_obj_watcher_register_r(self,
                                                             g_steal_pointer(&dbus_path_r),
                                                             nml_dbus_property_ao_notify_watch_cb,
                                                             sizeof(PropertyAOData)),
@@ -2615,7 +2615,7 @@ _obj_handle_dbus_iface_changes(NMClient            *self,
 
     if (G_UNLIKELY(!db_iface_data->nmobj_checked)) {
         db_iface_data->nmobj_checked = TRUE;
-        type_compatible              = db_iface_data->dbus_iface.meta->get_type_fcn
+        type_compatible = db_iface_data->dbus_iface.meta->get_type_fcn
                           && g_type_is_a(G_OBJECT_TYPE(dbobj->nmobj),
                                          db_iface_data->dbus_iface.meta->get_type_fcn());
         db_iface_data->nmobj_compatible = type_compatible;
@@ -3933,7 +3933,7 @@ _request_wait_start(GTask      *task_take,
                        op_name,
                        dbobj->dbus_path->str);
 
-    request_data->obj_watcher            = _dbobjs_obj_watcher_register_o(self,
+    request_data->obj_watcher = _dbobjs_obj_watcher_register_o(self,
                                                                dbobj,
                                                                _request_wait_obj_watcher_cb,
                                                                sizeof(NMLDBusObjWatcherWithPtr));

@@ -2262,11 +2262,11 @@ read_aliases(NMSettingIPConfig *s_ip4, gboolean read_defroute, const char *filen
 
             addr = NULL;
             ok   = read_full_ip4_address(parsed,
-                                       -1,
-                                       base_addr,
-                                       &addr,
-                                       read_defroute ? &gateway : NULL,
-                                       &err);
+                                         -1,
+                                         base_addr,
+                                         &addr,
+                                         read_defroute ? &gateway : NULL,
+                                         &err);
             if (ok) {
                 nm_ip_address_set_attribute(addr,
                                             NM_IP_ADDRESS_ATTRIBUTE_LABEL,
@@ -2429,11 +2429,11 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
             ip6_privacy = (g_strcmp0(v, "rfc4941") == 0) || (g_strcmp0(v, "rfc3041") == 0);
     }
     ip6_privacy_prefer_public_ip = svGetValueBoolean(ifcfg, "IPV6_PRIVACY_PREFER_PUBLIC_IP", FALSE);
-    ip6_privacy_val              = v ? (ip6_privacy ? (ip6_privacy_prefer_public_ip
-                                                           ? NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR
-                                                           : NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR)
-                                                    : NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED)
-                                     : NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
+    ip6_privacy_val = v ? (ip6_privacy ? (ip6_privacy_prefer_public_ip
+                                              ? NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR
+                                              : NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR)
+                                       : NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED)
+                        : NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
 
     /* the route table (policy routing) is ignored if we don't handle routes. */
     route_table = svGetValueInt64(ifcfg, "IPV6_ROUTE_TABLE", 10, 0, G_MAXUINT32, 0);
@@ -4159,8 +4159,8 @@ make_wpa_setting(shvarFile       *ifcfg,
     const char                                *v;
     gboolean wpa_psk = FALSE, wpa_sae = FALSE, wpa_owe = FALSE, wpa_eap = FALSE, ieee8021x = FALSE,
              wpa3_eap = FALSE;
-    int     i_val;
-    GError *local = NULL;
+    int      i_val;
+    GError  *local = NULL;
 
     wsec = NM_SETTING_WIRELESS_SECURITY(nm_setting_wireless_security_new());
 

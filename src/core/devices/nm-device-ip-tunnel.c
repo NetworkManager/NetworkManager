@@ -883,9 +883,9 @@ create_and_realize(NMDevice              *device,
                                    ? IPPROTO_IPIP
                                    : IPPROTO_IPV6;
             r                = nm_platform_link_ip6tnl_add(nm_device_get_platform(device),
-                                            iface,
-                                            &lnk_ip6tnl,
-                                            out_plink);
+                                                           iface,
+                                                           &lnk_ip6tnl,
+                                                           out_plink);
         }
         if (r < 0) {
             g_set_error(error,
@@ -1200,7 +1200,7 @@ nm_device_ip_tunnel_class_init(NMDeviceIPTunnelClass *klass)
 
     device_class->connection_type_supported        = NM_SETTING_IP_TUNNEL_SETTING_NAME;
     device_class->connection_type_check_compatible = NM_SETTING_IP_TUNNEL_SETTING_NAME;
-    device_class->link_types                       = NM_DEVICE_DEFINE_LINK_TYPES(NM_LINK_TYPE_GRE,
+    device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES(NM_LINK_TYPE_GRE,
                                                            NM_LINK_TYPE_GRETAP,
                                                            NM_LINK_TYPE_IP6TNL,
                                                            NM_LINK_TYPE_IP6GRE,

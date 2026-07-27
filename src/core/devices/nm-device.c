@@ -514,8 +514,8 @@ typedef struct _NMDevicePrivate {
     char                *firmware_version;
     bool                 firmware_missing : 1;
     bool                 nm_plugin_missing : 1;
-    bool
-        hw_addr_perm_fake : 1; /* whether the permanent HW address could not be read and is a fake */
+    bool                 hw_addr_perm_fake
+        : 1; /* whether the permanent HW address could not be read and is a fake */
 
     guint8 in_state_changed : 4;
 
@@ -2208,9 +2208,9 @@ static gboolean
 _prop_get_ipvx_dhcp_send_hostname(NMDevice *self, int addr_family)
 {
     const int          IS_IPv4 = NM_IS_IPv4(addr_family);
-    NMSettingIPConfig *s_ip    = IS_IPv4
-                                     ? nm_device_get_applied_setting(self, NM_TYPE_SETTING_IP4_CONFIG)
-                                     : nm_device_get_applied_setting(self, NM_TYPE_SETTING_IP6_CONFIG);
+    NMSettingIPConfig *s_ip = IS_IPv4
+                                  ? nm_device_get_applied_setting(self, NM_TYPE_SETTING_IP4_CONFIG)
+                                  : nm_device_get_applied_setting(self, NM_TYPE_SETTING_IP6_CONFIG);
     gboolean           send_hostname;
     gboolean           send_hostname_v2;
 
@@ -6454,7 +6454,7 @@ concheck_periodic_schedule_do(NMDevice *self, int addr_family, gint64 now_ns)
 
     expiry = priv->concheck_x[IS_IPv4].p_cur_basetime_ns
              + (priv->concheck_x[IS_IPv4].p_cur_interval * NM_UTILS_NSEC_PER_SEC);
-    tdiff = expiry - now_ns;
+    tdiff  = expiry - now_ns;
 
     _LOGT(LOGD_CONCHECK,
           "connectivity: [IPv%c] periodic-check: %sscheduled in %lld milliseconds (%u seconds "
@@ -6635,7 +6635,7 @@ concheck_periodic_schedule_set(NMDevice *self, int addr_family, ConcheckSchedule
      * the connectivity check. */
     new_expiry = priv->concheck_x[IS_IPv4].p_cur_basetime_ns
                  + (priv->concheck_x[IS_IPv4].p_cur_interval * NM_UTILS_NSEC_PER_SEC);
-    tdiff = NM_MAX(new_expiry - nm_utils_get_monotonic_timestamp_nsec_cached(&now_ns), 0);
+    tdiff      = NM_MAX(new_expiry - nm_utils_get_monotonic_timestamp_nsec_cached(&now_ns), 0);
     priv->concheck_x[IS_IPv4].p_cur_basetime_ns =
         now_ns + tdiff - (priv->concheck_x[IS_IPv4].p_cur_interval * NM_UTILS_NSEC_PER_SEC);
     concheck_periodic_schedule_do(self, addr_family, now_ns);
@@ -7169,12 +7169,12 @@ nm_device_controller_attach_port(NMDevice *self, NMDevice *port, NMConnection *c
         info->cancellable = g_cancellable_new();
         info->port_state  = PORT_STATE_ATTACHING;
         success           = NM_DEVICE_GET_CLASS(self)->attach_port(self,
-                                                         port,
-                                                         connection,
-                                                         configure,
-                                                         info->cancellable,
-                                                         attach_port_cb,
-                                                         port);
+                                                                   port,
+                                                                   connection,
+                                                                   configure,
+                                                                   info->cancellable,
+                                                                   attach_port_cb,
+                                                                   port);
 
         if (success == NM_TERNARY_DEFAULT)
             return;
@@ -12776,12 +12776,12 @@ _commit_mtu(NMDevice *self)
     ({                                                                                         \
         if (!ip6_mtu_sysctl.initialized) {                                                     \
             ip6_mtu_sysctl.value       = nm_device_sysctl_ip_conf_get_int_checked(self,        \
-                                                                            AF_INET6,    \
-                                                                            "mtu",       \
-                                                                            10,          \
-                                                                            0,           \
-                                                                            G_MAXUINT32, \
-                                                                            0);          \
+                                                                                  AF_INET6,    \
+                                                                                  "mtu",       \
+                                                                                  10,          \
+                                                                                  0,           \
+                                                                                  G_MAXUINT32, \
+                                                                                  0);          \
             ip6_mtu_sysctl.initialized = TRUE;                                                 \
         }                                                                                      \
         ip6_mtu_sysctl.value;                                                                  \
@@ -13814,7 +13814,7 @@ _dev_ipshared4_new_l3cd(NMDevice *self, NMConnection *connection, NMPlatformIP4A
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
     NMSettingIPConfig                      *s_ip4;
     NMPlatformIP4Address                    address = {
-                           .addr_source = NM_IP_CONFIG_SOURCE_SHARED,
+        .addr_source = NM_IP_CONFIG_SOURCE_SHARED,
     };
 
     g_return_val_if_fail(self, NULL);
@@ -18684,9 +18684,9 @@ _hw_addr_set(NMDevice         *self,
 
 again:
     r       = nm_platform_link_set_address(nm_device_get_platform(self),
-                                     nm_device_get_ip_ifindex(self),
-                                     addr_bytes,
-                                     addr_len);
+                                           nm_device_get_ip_ifindex(self),
+                                           addr_bytes,
+                                           addr_len);
     success = (r >= 0);
     if (!success) {
         retry_down =
@@ -20379,12 +20379,12 @@ nm_device_class_init(NMDeviceClass *klass)
                                                         FALSE,
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
     obj_properties[PROP_MTU]     = g_param_spec_uint(NM_DEVICE_MTU,
-                                                 "",
-                                                 "",
-                                                 0,
-                                                 G_MAXUINT32,
-                                                 1500,
-                                                 G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+                                                     "",
+                                                     "",
+                                                     0,
+                                                     G_MAXUINT32,
+                                                     1500,
+                                                     G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
     obj_properties[PROP_IP4_ADDRESS] =
         g_param_spec_variant(NM_DEVICE_IP4_ADDRESS,
                              "",
@@ -20453,11 +20453,11 @@ nm_device_class_init(NMDeviceClass *klass)
                           NM_LINK_TYPE_NONE,
                           G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
     obj_properties[PROP_MANAGED]     = g_param_spec_boolean(NM_DEVICE_MANAGED,
-                                                        "",
-                                                        "",
-                                                        FALSE,
-                                                        G_PARAM_READWRITE | /* via D-Bus */
-                                                            G_PARAM_STATIC_STRINGS);
+                                                            "",
+                                                            "",
+                                                            FALSE,
+                                                            G_PARAM_READWRITE | /* via D-Bus */
+                                                                G_PARAM_STATIC_STRINGS);
     obj_properties[PROP_AUTOCONNECT] = g_param_spec_boolean(NM_DEVICE_AUTOCONNECT,
                                                             "",
                                                             "",
@@ -20545,10 +20545,10 @@ nm_device_class_init(NMDeviceClass *klass)
                              NULL,
                              G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
     obj_properties[PROP_REAL]   = g_param_spec_boolean(NM_DEVICE_REAL,
-                                                     "",
-                                                     "",
-                                                     FALSE,
-                                                     G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+                                                       "",
+                                                       "",
+                                                       FALSE,
+                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
     obj_properties[PROP_SLAVES] = g_param_spec_variant(NM_DEVICE_SLAVES,
                                                        "",
                                                        "",
@@ -20556,11 +20556,11 @@ nm_device_class_init(NMDeviceClass *klass)
                                                        NULL,
                                                        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
     obj_properties[PROP_PORTS]  = g_param_spec_variant(NM_DEVICE_PORTS,
-                                                      "",
-                                                      "",
-                                                      G_VARIANT_TYPE("ao"),
-                                                      NULL,
-                                                      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+                                                       "",
+                                                       "",
+                                                       G_VARIANT_TYPE("ao"),
+                                                       NULL,
+                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     obj_properties[PROP_STATISTICS_REFRESH_RATE_MS] =
         g_param_spec_uint(NM_DEVICE_STATISTICS_REFRESH_RATE_MS,

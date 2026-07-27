@@ -1738,9 +1738,9 @@ test_write_wired_8021x_tls_connection_path(void)
 
     /* CA cert */
     tmp  = g_key_file_get_string(keyfile,
-                                NM_SETTING_802_1X_SETTING_NAME,
-                                NM_SETTING_802_1X_CA_CERT,
-                                NULL);
+                                 NM_SETTING_802_1X_SETTING_NAME,
+                                 NM_SETTING_802_1X_CA_CERT,
+                                 NULL);
     tmp2 = get_path(TEST_WIRED_TLS_CA_CERT, relative);
     g_assert_cmpstr(tmp, ==, tmp2);
     g_free(tmp2);
@@ -1748,9 +1748,9 @@ test_write_wired_8021x_tls_connection_path(void)
 
     /* Client cert */
     tmp  = g_key_file_get_string(keyfile,
-                                NM_SETTING_802_1X_SETTING_NAME,
-                                NM_SETTING_802_1X_CLIENT_CERT,
-                                NULL);
+                                 NM_SETTING_802_1X_SETTING_NAME,
+                                 NM_SETTING_802_1X_CLIENT_CERT,
+                                 NULL);
     tmp2 = get_path(TEST_WIRED_TLS_CLIENT_CERT, relative);
     g_assert_cmpstr(tmp, ==, tmp2);
     g_free(tmp2);
@@ -1758,9 +1758,9 @@ test_write_wired_8021x_tls_connection_path(void)
 
     /* Private key */
     tmp  = g_key_file_get_string(keyfile,
-                                NM_SETTING_802_1X_SETTING_NAME,
-                                NM_SETTING_802_1X_PRIVATE_KEY,
-                                NULL);
+                                 NM_SETTING_802_1X_SETTING_NAME,
+                                 NM_SETTING_802_1X_PRIVATE_KEY,
+                                 NULL);
     tmp2 = get_path(TEST_WIRED_TLS_PRIVKEY, relative);
     g_assert_cmpstr(tmp, ==, tmp2);
     g_free(tmp2);

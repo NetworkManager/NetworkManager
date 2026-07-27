@@ -102,11 +102,11 @@ nmt_wireguard_peer_list_init(NmtWireguardPeerList *list)
     NmtNewtGrid                 *grid = NMT_NEWT_GRID(list);
 
     listbox       = g_object_new(NMT_TYPE_NEWT_LISTBOX,
-                           "flags",
-                           NMT_NEWT_LISTBOX_SCROLL | NMT_NEWT_LISTBOX_BORDER,
-                           "skip-null-keys",
-                           TRUE,
-                           NULL);
+                                 "flags",
+                                 NMT_NEWT_LISTBOX_SCROLL | NMT_NEWT_LISTBOX_BORDER,
+                                 "skip-null-keys",
+                                 TRUE,
+                                 NULL);
     priv->listbox = NMT_NEWT_LISTBOX(listbox);
     nmt_newt_grid_add(grid, listbox, 0, 0);
     nmt_newt_grid_set_flags(grid,

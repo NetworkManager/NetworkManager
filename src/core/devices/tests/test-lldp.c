@@ -86,9 +86,9 @@ typedef struct {
 #define TEST_RECV_FRAME_DEFINE(name, _as_variant, ...)        \
     static const guint8        _##name##_v[] = {__VA_ARGS__}; \
     static const TestRecvFrame name          = {              \
-                 .as_variant = _as_variant,                   \
-                 .frame_len  = sizeof(_##name##_v),           \
-                 .frame      = _##name##_v,                   \
+        .as_variant = _as_variant,                            \
+        .frame_len  = sizeof(_##name##_v),                    \
+        .frame      = _##name##_v,                            \
     }
 
 typedef struct {

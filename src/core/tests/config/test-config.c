@@ -527,12 +527,12 @@ test_config_connectivity_check(void)
 
     g_assert(g_file_set_contents(CONFIG_INTERN, "", 0, NULL));
     config       = setup_config(NULL,
-                          TEST_DIR "/NetworkManager.conf",
-                          CONFIG_INTERN,
-                          NULL,
-                          "/no/such/dir",
-                          "",
-                          NULL);
+                                TEST_DIR "/NetworkManager.conf",
+                                CONFIG_INTERN,
+                                NULL,
+                                "/no/such/dir",
+                                "",
+                                NULL);
     connectivity = nm_connectivity_get();
 
     g_assert(nm_connectivity_check_enabled(connectivity));

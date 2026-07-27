@@ -367,7 +367,7 @@ static const GDBusInterfaceInfo iwd_agent_iface_info = NM_DEFINE_GDBUS_INTERFACE
         NM_DEFINE_GDBUS_METHOD_INFO(
             "RequestUserPassword",
             .in_args  = NM_DEFINE_GDBUS_ARG_INFOS(NM_DEFINE_GDBUS_ARG_INFO("network", "o"),
-                                                 NM_DEFINE_GDBUS_ARG_INFO("user", "s"), ),
+                                                  NM_DEFINE_GDBUS_ARG_INFO("user", "s"), ),
             .out_args = NM_DEFINE_GDBUS_ARG_INFOS(NM_DEFINE_GDBUS_ARG_INFO("password", "s"), ), ),
         NM_DEFINE_GDBUS_METHOD_INFO("Cancel",
                                     .in_args = NM_DEFINE_GDBUS_ARG_INFOS(
@@ -1055,13 +1055,13 @@ mirror_connection(NMIwdManager         *self,
 
     new_ssid = g_bytes_new(id->name, ssid_len);
     setting  = g_object_new(NM_TYPE_SETTING_WIRELESS,
-                           NM_SETTING_WIRELESS_SSID,
-                           new_ssid,
-                           NM_SETTING_WIRELESS_MODE,
-                           NM_SETTING_WIRELESS_MODE_INFRA,
-                           NM_SETTING_WIRELESS_HIDDEN,
-                           hidden,
-                           NULL);
+                            NM_SETTING_WIRELESS_SSID,
+                            new_ssid,
+                            NM_SETTING_WIRELESS_MODE,
+                            NM_SETTING_WIRELESS_MODE_INFRA,
+                            NM_SETTING_WIRELESS_HIDDEN,
+                            hidden,
+                            NULL);
     nm_connection_add_setting(connection, setting);
 
     switch (id->security) {

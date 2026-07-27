@@ -211,7 +211,7 @@ guint32     nm_setting_wireless_security_get_wep_tx_keyidx(NMSettingWirelessSecu
 const char *nm_setting_wireless_security_get_auth_alg(NMSettingWirelessSecurity *setting);
 
 NMSettingSecretFlags
-             nm_setting_wireless_security_get_wep_key_flags(NMSettingWirelessSecurity *setting);
+nm_setting_wireless_security_get_wep_key_flags(NMSettingWirelessSecurity *setting);
 NMWepKeyType nm_setting_wireless_security_get_wep_key_type(NMSettingWirelessSecurity *setting);
 
 NM_AVAILABLE_IN_1_10

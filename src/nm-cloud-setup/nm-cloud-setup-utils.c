@@ -532,7 +532,7 @@ nmcs_device_get_applied_connection(NMDevice     *device,
 {
     nm_auto_unref_gmainloop GMainLoop *main_loop = g_main_loop_new(NULL, FALSE);
     DeviceGetAppliedConnectionData     data      = {
-                 .main_loop = main_loop,
+        .main_loop = main_loop,
     };
 
     nm_device_get_applied_connection_async(device,
@@ -576,7 +576,7 @@ nmcs_device_reapply(NMDevice     *device,
 {
     nm_auto_unref_gmainloop GMainLoop *main_loop = g_main_loop_new(NULL, FALSE);
     DeviceReapplyData                  data      = {
-                              .main_loop = main_loop,
+        .main_loop = main_loop,
     };
     NMDeviceReapplyFlags reapply_flags = NM_DEVICE_REAPPLY_FLAGS_PRESERVE_EXTERNAL_IP;
 
@@ -643,8 +643,8 @@ nmcs_add_and_activate(NMClient     *client,
 {
     nm_auto_unref_gmainloop GMainLoop *main_loop = g_main_loop_new(NULL, FALSE);
     AddAndActivateData                 data      = {
-                             .main_loop = main_loop,
-                             .error     = error,
+        .main_loop = main_loop,
+        .error     = error,
     };
 
     nm_client_add_and_activate_connection_async(client,

@@ -3946,9 +3946,9 @@ _gendata_hash(NMSetting *setting, gboolean create_if_necessary)
             return NULL;
         priv->gendata         = g_slice_new(GenData);
         priv->gendata->hash   = g_hash_table_new_full(nm_str_hash,
-                                                    g_str_equal,
-                                                    g_free,
-                                                    (GDestroyNotify) g_variant_unref);
+                                                      g_str_equal,
+                                                      g_free,
+                                                      (GDestroyNotify) g_variant_unref);
         priv->gendata->names  = NULL;
         priv->gendata->values = NULL;
     }

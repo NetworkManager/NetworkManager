@@ -1379,10 +1379,10 @@ can_auto_connect(NMDevice *device, NMSettingsConnection *sett_conn, char **speci
 
     /* Always allow autoconnect for AP and non-autoconf Ad-Hoc or Mesh */
     auto4   = nm_streq0(nm_utils_get_ip_config_method(connection, AF_INET),
-                      NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+                        NM_SETTING_IP4_CONFIG_METHOD_AUTO);
     method6 = nm_utils_get_ip_config_method(connection, AF_INET6);
     auto6   = nm_streq0(method6, NM_SETTING_IP6_CONFIG_METHOD_AUTO)
-            || nm_streq0(method6, NM_SETTING_IP6_CONFIG_METHOD_DHCP);
+              || nm_streq0(method6, NM_SETTING_IP6_CONFIG_METHOD_DHCP);
 
     mode = nm_setting_wireless_get_mode(s_wifi);
 
@@ -3176,7 +3176,7 @@ build_supplicant_config(NMDeviceWifi         *self,
         NMSetting8021x *s_8021x;
         const char     *con_uuid = nm_connection_get_uuid(connection);
         guint32         mtu      = nm_platform_link_get_mtu(nm_device_get_platform(NM_DEVICE(self)),
-                                               nm_device_get_ifindex(NM_DEVICE(self)));
+                                                            nm_device_get_ifindex(NM_DEVICE(self)));
 
         g_assert(con_uuid);
 
@@ -3412,23 +3412,23 @@ ensure_hotspot_frequency(NMDeviceWifi *self, NMSettingWireless *s_wifi, NMWifiAP
         ssid      = nm_setting_wireless_get_ssid(s_wifi);
         ssid_data = g_bytes_get_data(ssid, &ssid_len);
         rnd       = c_siphash_hash(NM_HASH_SEED_16(0x9a,
-                                             0xdc,
-                                             0x86,
-                                             0x9a,
-                                             0xa8,
-                                             0xa2,
-                                             0x07,
-                                             0x97,
-                                             0xbe,
-                                             0x6d,
-                                             0xe6,
-                                             0x99,
-                                             0x9f,
-                                             0xa8,
-                                             0x09,
-                                             0x2b),
-                             ssid_data,
-                             ssid_len);
+                                                   0xdc,
+                                                   0x86,
+                                                   0x9a,
+                                                   0xa8,
+                                                   0xa2,
+                                                   0x07,
+                                                   0x97,
+                                                   0xbe,
+                                                   0x6d,
+                                                   0xe6,
+                                                   0x99,
+                                                   0x9f,
+                                                   0xa8,
+                                                   0x09,
+                                                   0x2b),
+                                   ssid_data,
+                                   ssid_len);
     }
 
     if (nm_streq0(band, "a")) {

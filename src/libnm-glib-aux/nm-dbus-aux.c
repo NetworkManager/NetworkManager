@@ -470,8 +470,8 @@ nm_g_bus_get_blocking(GCancellable *cancellable, GError **error)
     gs_unref_object GDBusConnection *dbus_connection = NULL;
     GMainContext                    *main_context    = g_main_context_get_thread_default();
     BusGetData                       data            = {
-                                         .p_dbus_connection = &dbus_connection,
-                                         .p_error           = &local_error,
+        .p_dbus_connection = &dbus_connection,
+        .p_error           = &local_error,
     };
 
     g_bus_get(G_BUS_TYPE_SYSTEM, cancellable, _bus_get_cb, &data);

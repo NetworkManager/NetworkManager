@@ -5364,8 +5364,8 @@ _ctx_integ_source_prepare(GSource *source, int *out_timeout)
                 _CTX_LOG("prepare: add poll fd=%d, events=0x%x", poll_data->fd, poll_data->events);
                 poll_data->registered_events = poll_data->events;
                 poll_data->tag               = g_source_add_unix_fd(&ctx_src->source,
-                                                      poll_data->fd,
-                                                      poll_data->registered_events);
+                                                                    poll_data->fd,
+                                                                    poll_data->registered_events);
                 continue;
             }
             if (poll_data->registered_events != poll_data->events) {
