@@ -128,7 +128,7 @@ NM_AVAILABLE_IN_1_4
 gsize
 nm_vpn_editor_plugin_get_vt(NMVpnEditorPlugin *plugin, NMVpnEditorPluginVT *vt, gsize vt_size);
 
-NMConnection          *
+NMConnection *
 nm_vpn_editor_plugin_import(NMVpnEditorPlugin *plugin, const char *path, GError **error);
 gboolean nm_vpn_editor_plugin_export(NMVpnEditorPlugin *plugin,
                                      const char        *path,

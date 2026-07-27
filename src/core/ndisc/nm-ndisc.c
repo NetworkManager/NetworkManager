@@ -1063,8 +1063,8 @@ announce_router(NMNDisc *ndisc)
         /* Schedule next unsolicited announcement. */
         priv->announcements_left = 1;
         priv->send_ra_id         = g_timeout_add_seconds(NM_NDISC_ROUTER_ADVERT_MAX_INTERVAL,
-                                                 (GSourceFunc) announce_router,
-                                                 ndisc);
+                                                         (GSourceFunc) announce_router,
+                                                         ndisc);
     }
 
     return G_SOURCE_REMOVE;
@@ -2099,20 +2099,20 @@ nm_ndisc_class_init(NMNDiscClass *klass)
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
     signals[CONFIG_RECEIVED]   = g_signal_new(NM_NDISC_CONFIG_RECEIVED,
-                                            G_OBJECT_CLASS_TYPE(klass),
-                                            G_SIGNAL_RUN_FIRST,
-                                            0,
-                                            NULL,
-                                            NULL,
-                                            NULL,
-                                            G_TYPE_NONE,
-                                            3,
-                                            G_TYPE_POINTER
-                                            /* (const NMNDiscData *)rdata */,
-                                            G_TYPE_UINT
-                                            /* (guint) changed_i */,
-                                            G_TYPE_POINTER
-                                            /* (const NML3ConfigData *) l3cd */
+                                              G_OBJECT_CLASS_TYPE(klass),
+                                              G_SIGNAL_RUN_FIRST,
+                                              0,
+                                              NULL,
+                                              NULL,
+                                              NULL,
+                                              G_TYPE_NONE,
+                                              3,
+                                              G_TYPE_POINTER
+                                              /* (const NMNDiscData *)rdata */,
+                                              G_TYPE_UINT
+                                              /* (guint) changed_i */,
+                                              G_TYPE_POINTER
+                                              /* (const NML3ConfigData *) l3cd */
     );
     signals[RA_TIMEOUT_SIGNAL] = g_signal_new(NM_NDISC_RA_TIMEOUT_SIGNAL,
                                               G_OBJECT_CLASS_TYPE(klass),

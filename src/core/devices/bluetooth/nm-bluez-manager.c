@@ -1149,9 +1149,9 @@ _network_server_vt_register_bridge(const NMBtVTableNetworkServer *vtable,
         .callback           = callback,
         .callback_user_data = callback_user_data,
         .ext_cancelled_id   = g_signal_connect(cancellable,
-                                             "cancelled",
-                                             G_CALLBACK(_network_server_register_cancelled_cb),
-                                             bzobj),
+                                               "cancelled",
+                                               G_CALLBACK(_network_server_register_cancelled_cb),
+                                               bzobj),
     };
 
     bzobj->x_network_server.device_br  = g_object_ref(device);

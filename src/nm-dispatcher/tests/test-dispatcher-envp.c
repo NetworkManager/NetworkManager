@@ -491,23 +491,23 @@ test_generic(const char *file, const char *override_vpn_ip_iface)
 
     filename = g_build_filename(TEST_DIR, file, NULL);
     success  = get_dispatcher_file(filename,
-                                  &con_dict,
-                                  &con_props,
-                                  &device_props,
-                                  &device_proxy_props,
-                                  &device_ip4_props,
-                                  &device_ip6_props,
-                                  &device_dhcp4_props,
-                                  &device_dhcp6_props,
-                                  &connectivity_change,
-                                  &vpn_ip_iface,
-                                  &vpn_proxy_props,
-                                  &vpn_ip4_props,
-                                  &vpn_ip6_props,
-                                  &expected_iface,
-                                  &action,
-                                  &expected_env,
-                                  &error);
+                                   &con_dict,
+                                   &con_props,
+                                   &device_props,
+                                   &device_proxy_props,
+                                   &device_ip4_props,
+                                   &device_ip6_props,
+                                   &device_dhcp4_props,
+                                   &device_dhcp6_props,
+                                   &connectivity_change,
+                                   &vpn_ip_iface,
+                                   &vpn_proxy_props,
+                                   &vpn_ip4_props,
+                                   &vpn_ip6_props,
+                                   &expected_iface,
+                                   &action,
+                                   &expected_env,
+                                   &error);
     nmtst_assert_success(success, error);
 
     /* Get the environment from the dispatcher code */

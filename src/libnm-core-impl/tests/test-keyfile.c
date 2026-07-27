@@ -722,9 +722,9 @@ test_user_1(void)
     CLEAR(&con, &keyfile);
 
     con    = nmtst_create_minimal_connection("user-2",
-                                          "8b85fb8d-3070-48ba-93d9-53eee231d9a2",
-                                          NM_SETTING_WIRED_SETTING_NAME,
-                                          NULL);
+                                             "8b85fb8d-3070-48ba-93d9-53eee231d9a2",
+                                             NM_SETTING_WIRED_SETTING_NAME,
+                                             NULL);
     s_user = NM_SETTING_USER(nm_setting_user_new());
 
 #define _USER_SET_DATA(s_user, key, val)                                      \
@@ -804,14 +804,14 @@ test_bridge_vlans(void)
     NMBridgeVlan                   *vlan;
     guint16                         vid, vid_end;
 
-    con      = nmtst_create_connection_from_keyfile("[connection]\n"
-                                                    "id=t\n"
-                                                    "type=bridge\n"
-                                                    "interface-name=br4\n"
-                                                    "\n"
-                                                    "[bridge]\n"
-                                                    "vlans=900 ,  1 pvid  untagged, 100-123 untagged\n"
-                                                    "",
+    con = nmtst_create_connection_from_keyfile("[connection]\n"
+                                               "id=t\n"
+                                               "type=bridge\n"
+                                               "interface-name=br4\n"
+                                               "\n"
+                                               "[bridge]\n"
+                                               "vlans=900 ,  1 pvid  untagged, 100-123 untagged\n"
+                                               "",
                                                "/test_bridge_port/vlans");
     s_bridge = NM_SETTING_BRIDGE(nm_connection_get_setting(con, NM_TYPE_SETTING_BRIDGE));
     g_assert(s_bridge);
@@ -863,7 +863,7 @@ test_bridge_port_vlans(void)
                                                   "[bridge-port]\n"
                                                   "vlans=4094 pvid , 10-20 untagged\n"
                                                   "",
-                                               "/test_bridge_port/vlans");
+                                                  "/test_bridge_port/vlans");
     s_port = NM_SETTING_BRIDGE_PORT(nm_connection_get_setting(con, NM_TYPE_SETTING_BRIDGE_PORT));
     g_assert(s_port);
     g_assert_cmpuint(nm_setting_bridge_port_get_num_vlans(s_port), ==, 2);
@@ -945,10 +945,10 @@ test_invalid_option(void)
 
     data = (InvalidOptionWriteData) {};
     kf   = nm_keyfile_write(con,
-                          NM_KEYFILE_HANDLER_FLAGS_NONE,
-                          _invalid_option_write_handler,
-                          &data,
-                          nmtst_get_rand_bool() ? &error : NULL);
+                            NM_KEYFILE_HANDLER_FLAGS_NONE,
+                            _invalid_option_write_handler,
+                            &data,
+                            nmtst_get_rand_bool() ? &error : NULL);
     nmtst_assert_success(kf, error);
     nm_clear_pointer(&kf, g_key_file_unref);
 
@@ -958,10 +958,10 @@ test_invalid_option(void)
 
     data = (InvalidOptionWriteData) {};
     kf   = nm_keyfile_write(con,
-                          NM_KEYFILE_HANDLER_FLAGS_NONE,
-                          _invalid_option_write_handler,
-                          &data,
-                          nmtst_get_rand_bool() ? &error : NULL);
+                            NM_KEYFILE_HANDLER_FLAGS_NONE,
+                            _invalid_option_write_handler,
+                            &data,
+                            nmtst_get_rand_bool() ? &error : NULL);
     nmtst_assert_success(kf, error);
     nm_clear_pointer(&kf, g_key_file_unref);
 

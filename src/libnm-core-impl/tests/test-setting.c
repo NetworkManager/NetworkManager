@@ -2040,9 +2040,9 @@ test_ethtool_coalesce(void)
     guint32                         u32;
 
     con       = nmtst_create_minimal_connection("ethtool-coalesce",
-                                          NULL,
-                                          NM_SETTING_WIRED_SETTING_NAME,
-                                          &s_con);
+                                                NULL,
+                                                NM_SETTING_WIRED_SETTING_NAME,
+                                                &s_con);
     s_ethtool = NM_SETTING_ETHTOOL(nm_setting_ethtool_new());
     nm_connection_add_setting(con, NM_SETTING(s_ethtool));
 
@@ -2136,9 +2136,9 @@ test_ethtool_ring(void)
     guint32                         out_value;
 
     con       = nmtst_create_minimal_connection("ethtool-ring",
-                                          NULL,
-                                          NM_SETTING_WIRED_SETTING_NAME,
-                                          &s_con);
+                                                NULL,
+                                                NM_SETTING_WIRED_SETTING_NAME,
+                                                &s_con);
     s_ethtool = NM_SETTING_ETHTOOL(nm_setting_ethtool_new());
     nm_connection_add_setting(con, NM_SETTING(s_ethtool));
 
@@ -2230,9 +2230,9 @@ test_ethtool_pause(void)
     gboolean                        out_value;
 
     con       = nmtst_create_minimal_connection("ethtool-pause",
-                                          NULL,
-                                          NM_SETTING_WIRED_SETTING_NAME,
-                                          &s_con);
+                                                NULL,
+                                                NM_SETTING_WIRED_SETTING_NAME,
+                                                &s_con);
     s_ethtool = NM_SETTING_ETHTOOL(nm_setting_ethtool_new());
     nm_connection_add_setting(con, NM_SETTING(s_ethtool));
 
@@ -4182,7 +4182,7 @@ _rr_from_str_get_impl(const char *str, const char *const *aliases)
                 cstr1,
                 NM_IP_ROUTING_RULE_AS_STRING_FLAGS_VALIDATE
                     | (nmtst_get_rand_bool() ? to_string_flags
-                                               : NM_IP_ROUTING_RULE_AS_STRING_FLAGS_NONE),
+                                             : NM_IP_ROUTING_RULE_AS_STRING_FLAGS_NONE),
                 NULL,
                 &error);
             nmtst_assert_success(rr, error);

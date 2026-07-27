@@ -148,7 +148,7 @@ const NMDBusInterfaceInfoExtended nm_interface_info_device_wireless = {
                         NM_DEFINE_GDBUS_ARG_INFO("options", "a{sv}"), ), ),
                 .handle = impl_device_wifi_request_scan, ), ),
         .signals    = NM_DEFINE_GDBUS_SIGNAL_INFOS(&nm_signal_info_wireless_access_point_added,
-                                                &nm_signal_info_wireless_access_point_removed, ),
+                                                   &nm_signal_info_wireless_access_point_removed, ),
         .properties = NM_DEFINE_GDBUS_PROPERTY_INFOS(
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("HwAddress", "s", NM_DEVICE_HW_ADDRESS),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE(

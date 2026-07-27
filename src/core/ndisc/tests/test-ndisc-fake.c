@@ -195,8 +195,8 @@ test_simple(void)
     gs_unref_object NMFakeNDisc       *ndisc    = ndisc_new();
     const gint64                       now_msec = nm_utils_get_monotonic_timestamp_msec();
     TestData                           data     = {
-                                      .loop             = loop,
-                                      .timestamp_msec_1 = now_msec,
+        .loop             = loop,
+        .timestamp_msec_1 = now_msec,
     };
     guint id;
 
@@ -309,8 +309,8 @@ test_everything(void)
     gs_unref_object NMFakeNDisc       *ndisc    = ndisc_new();
     const gint64                       now_msec = nm_utils_get_monotonic_timestamp_msec();
     TestData                           data     = {
-                                      .loop             = loop,
-                                      .timestamp_msec_1 = now_msec,
+        .loop             = loop,
+        .timestamp_msec_1 = now_msec,
     };
     guint id;
 
@@ -413,8 +413,8 @@ test_preference_order(void)
     gs_unref_object NMFakeNDisc       *ndisc    = ndisc_new();
     const gint64                       now_msec = nm_utils_get_monotonic_timestamp_msec();
     TestData                           data     = {
-                                      .loop             = loop,
-                                      .timestamp_msec_1 = now_msec,
+        .loop             = loop,
+        .timestamp_msec_1 = now_msec,
     };
     guint id;
 
@@ -536,8 +536,8 @@ test_preference_changed(void)
     gs_unref_object NMFakeNDisc       *ndisc    = ndisc_new();
     const gint64                       now_msec = nm_utils_get_monotonic_timestamp_msec();
     TestData                           data     = {
-                                      .loop             = loop,
-                                      .timestamp_msec_1 = now_msec,
+        .loop             = loop,
+        .timestamp_msec_1 = now_msec,
     };
     guint id;
 
@@ -617,8 +617,8 @@ test_dns_solicit_loop(void)
     gs_unref_object NMFakeNDisc       *ndisc    = ndisc_new();
     const gint64                       now_msec = nm_utils_get_monotonic_timestamp_msec();
     TestData                           data     = {
-                                      .loop             = loop,
-                                      .timestamp_msec_1 = now_msec,
+        .loop             = loop,
+        .timestamp_msec_1 = now_msec,
     };
     guint id;
 

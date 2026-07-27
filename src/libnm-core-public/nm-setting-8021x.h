@@ -101,7 +101,7 @@ typedef enum /*< underscore_name=nm_setting_802_1x_auth_flags, flags >*/ {
     (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_SETTING_802_1X, NMSetting8021x))
 #define NM_SETTING_802_1X_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_SETTING_802_1X, NMSetting8021xClass))
-#define NM_IS_SETTING_802_1X(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_SETTING_802_1X))
+#define NM_IS_SETTING_802_1X(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_SETTING_802_1X))
 #define NM_IS_SETTING_802_1X_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_SETTING_802_1X))
 #define NM_SETTING_802_1X_GET_CLASS(obj) \
     (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_SETTING_802_1X, NMSetting8021xClass))
@@ -286,8 +286,8 @@ gboolean    nm_setting_802_1x_add_phase2_altsubject_match(NMSetting8021x *settin
                                                           const char     *phase2_altsubject_match);
 void        nm_setting_802_1x_remove_phase2_altsubject_match(NMSetting8021x *setting, guint32 i);
 gboolean
-     nm_setting_802_1x_remove_phase2_altsubject_match_by_value(NMSetting8021x *setting,
-                                                               const char     *phase2_altsubject_match);
+nm_setting_802_1x_remove_phase2_altsubject_match_by_value(NMSetting8021x *setting,
+                                                          const char     *phase2_altsubject_match);
 void nm_setting_802_1x_clear_phase2_altsubject_matches(NMSetting8021x *setting);
 NM_AVAILABLE_IN_1_2
 const char *nm_setting_802_1x_get_phase2_domain_suffix_match(NMSetting8021x *setting);

@@ -630,8 +630,8 @@ test_secret_agent_auto_register(void)
     gs_unref_object NMSecretAgentOld *agent              = NULL;
     GError                           *error              = NULL;
     AutoRegisterData                  auto_register_data = {
-                         .step         = 0,
-                         .invoke_count = 0,
+        .step         = 0,
+        .invoke_count = 0,
     };
     gulong                      signal_id;
     NMTstContextBusyWatcherData watcher_data = {};

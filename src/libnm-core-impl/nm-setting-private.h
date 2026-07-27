@@ -290,7 +290,7 @@ typedef enum NMSettingUpdateSecretResult {
 } NMSettingUpdateSecretResult;
 
 NMSettingUpdateSecretResult
-         _nm_setting_update_secrets(NMSetting *setting, GVariant *secrets, GError **error);
+_nm_setting_update_secrets(NMSetting *setting, GVariant *secrets, GError **error);
 gboolean _nm_setting_clear_secrets(NMSetting                       *setting,
                                    NMSettingClearSecretsWithFlagsFn func,
                                    gpointer                         user_data);
@@ -1042,7 +1042,7 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
         GParamSpec               *spec           = _property_info->param_spec;                 \
         GType                     spec_gtype     = spec ? spec->value_type : G_TYPE_INVALID;   \
                                                                                                \
-        direct_nmtype == NM_VALUE_TYPE_ENUM &&direct_gtype &&G_TYPE_IS_ENUM(direct_gtype)      \
+        direct_nmtype == NM_VALUE_TYPE_ENUM && direct_gtype && G_TYPE_IS_ENUM(direct_gtype)    \
             && NM_IN_SET(spec_gtype, G_TYPE_INT, direct_gtype);                                \
     })
 

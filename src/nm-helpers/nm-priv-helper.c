@@ -352,7 +352,7 @@ _bus_register_service(GlobalData *gl)
     };
     gs_free_error GError            *error = NULL;
     NMDBusConnectionCallBlockingData data  = {
-         .result = NULL,
+        .result = NULL,
     };
     gs_unref_variant GVariant *ret = NULL;
     guint32                    ret_val;

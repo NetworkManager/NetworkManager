@@ -99,7 +99,7 @@ nms_keyfile_reader_from_keyfile(GKeyFile   *key_file,
 {
     NMConnection *connection;
     ReadInfo      read_info = {
-             .verbose = verbose,
+        .verbose = verbose,
     };
     gs_free char *base_dir_free         = NULL;
     gs_free char *profile_filename_free = NULL;

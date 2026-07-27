@@ -230,7 +230,7 @@ do_test_nm_utils_kill_child(void)
         "bash",
         "-c",
         "sleep 15; "
-                 "kill -KILL 0; #watchdog for #" TEST_TOKEN,
+        "kill -KILL 0; #watchdog for #" TEST_TOKEN,
         NULL,
     };
     char *argv1[] = {

@@ -249,8 +249,8 @@ nm_settings_storage_load_sett_flags(NMSettingsStorage            *self,
 
     *sett_flags = NM_SETTINGS_CONNECTION_INT_FLAGS_NONE;
     *sett_mask  = NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED
-                 | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
-                 | NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL;
+                  | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
+                  | NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL;
 
     if (!NMS_IS_KEYFILE_STORAGE(self))
         return;

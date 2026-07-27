@@ -1103,13 +1103,13 @@ _get_fcn_gobject_enum(ARGS_GET_FCN)
         format_numeric_hex = NM_FLAGS_HAS(property_info->property_typ_data->typ_flags,
                                           NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_NUMERIC_HEX);
         format_numeric     = format_numeric_hex
-                         || NM_FLAGS_HAS(property_info->property_typ_data->typ_flags,
-                                         NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_NUMERIC);
-        format_text_l10n = NM_FLAGS_HAS(property_info->property_typ_data->typ_flags,
-                                        NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT_L10N);
-        format_text      = format_text_l10n
-                      || NM_FLAGS_HAS(property_info->property_typ_data->typ_flags,
-                                      NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT);
+                             || NM_FLAGS_HAS(property_info->property_typ_data->typ_flags,
+                                             NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_NUMERIC);
+        format_text_l10n   = NM_FLAGS_HAS(property_info->property_typ_data->typ_flags,
+                                          NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT_L10N);
+        format_text        = format_text_l10n
+                             || NM_FLAGS_HAS(property_info->property_typ_data->typ_flags,
+                                             NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT);
     } else if (property_info->property_typ_data && get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY
                && NM_FLAGS_ANY(property_info->property_typ_data->typ_flags,
                                NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_NUMERIC
@@ -1118,10 +1118,10 @@ _get_fcn_gobject_enum(ARGS_GET_FCN)
         format_numeric_hex = NM_FLAGS_HAS(property_info->property_typ_data->typ_flags,
                                           NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_NUMERIC_HEX);
         format_numeric     = format_numeric
-                         && NM_FLAGS_HAS(property_info->property_typ_data->typ_flags,
-                                         NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_NUMERIC);
-        format_text = NM_FLAGS_HAS(property_info->property_typ_data->typ_flags,
-                                   NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_TEXT);
+                             && NM_FLAGS_HAS(property_info->property_typ_data->typ_flags,
+                                             NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_NUMERIC);
+        format_text        = NM_FLAGS_HAS(property_info->property_typ_data->typ_flags,
+                                          NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_TEXT);
     } else if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY) {
         /* by default, output in format "%u (%s)" (with hex for flags and l10n). */
         format_numeric             = TRUE;

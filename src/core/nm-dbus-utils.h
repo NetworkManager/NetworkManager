@@ -92,7 +92,7 @@ extern const GDBusAnnotationInfo *const _nm_gdbus_annotation_info_list_deprecate
                                   .name      = m_name,                                \
                                   .signature = m_signature,                           \
                                   .flags     = G_DBUS_PROPERTY_INFO_FLAGS_READABLE    \
-                                           | G_DBUS_PROPERTY_INFO_FLAGS_WRITABLE,     \
+                                               | G_DBUS_PROPERTY_INFO_FLAGS_WRITABLE, \
                                   __VA_ARGS__},                                       \
                 .property_name = m_property_name,                                     \
             },                                                                        \

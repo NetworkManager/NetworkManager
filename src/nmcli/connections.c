@@ -933,8 +933,8 @@ _metagen_con_active_general_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
     g_return_val_if_reached(NULL);
 }
 
-const NmcMetaGenericInfo
-    *const metagen_con_active_general[_NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_NUM + 1] = {
+const NmcMetaGenericInfo *const
+    metagen_con_active_general[_NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_NUM + 1] = {
 #define _METAGEN_CON_ACTIVE_GENERAL(type, name) \
     [type] =                                    \
         NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_con_active_general_get_fcn)
@@ -1042,8 +1042,8 @@ arr_out:
     return arr;
 }
 
-const NmcMetaGenericInfo
-    *const metagen_con_active_vpn[_NMC_GENERIC_INFO_TYPE_CON_ACTIVE_VPN_NUM + 1] = {
+const NmcMetaGenericInfo *const
+    metagen_con_active_vpn[_NMC_GENERIC_INFO_TYPE_CON_ACTIVE_VPN_NUM + 1] = {
 #define _METAGEN_CON_ACTIVE_VPN(type, name) \
     [type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_con_active_vpn_get_fcn)
         _METAGEN_CON_ACTIVE_VPN(NMC_GENERIC_INFO_TYPE_CON_VPN_TYPE, "TYPE"),
@@ -2119,9 +2119,9 @@ con_show_get_items(NmCli *nmc, gboolean active_only, gboolean show_active_fields
     MetagenConShowRowData         *row_data;
     guint                          i;
     const ConShowSortInfo          sort_info = {
-                 .nmc                = nmc,
-                 .order              = order,
-                 .show_active_fields = show_active_fields,
+        .nmc                = nmc,
+        .order              = order,
+        .show_active_fields = show_active_fields,
     };
 
     row_hash = g_hash_table_new(nm_direct_hash, NULL);
@@ -2496,10 +2496,10 @@ do_connections_show(const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
             /* Try to find connection by id, uuid or path first */
             connections = nmc_get_connections(nmc);
             con         = nmc_find_connection(connections,
-                                      selector,
-                                      *argv,
-                                      &found_cons,
-                                      argc == 1 && nmc->complete);
+                                              selector,
+                                              *argv,
+                                              &found_cons,
+                                              argc == 1 && nmc->complete);
             if (!con && NM_IN_STRSET(selector, NULL, "apath")) {
                 /* Try apath too */
                 explicit_acon = nmc_find_active_connection(active_cons,
@@ -4177,7 +4177,7 @@ _meta_abstract_complete(const NMMetaAbstractInfo *abstract_info, const char *tex
     const char *const           *values;
     char                       **values_to_free = NULL;
     const NMMetaOperationContext ctx            = {
-                   .connection = nmc_tab_completion.connection,
+        .connection = nmc_tab_completion.connection,
     };
 
     values = nm_meta_abstract_info_complete(abstract_info,
@@ -5136,7 +5136,7 @@ complete_option(NmCli                    *nmc,
     gs_strfreev char           **values_to_free    = NULL;
     gboolean                     complete_filename = FALSE;
     const NMMetaOperationContext ctx               = {
-                      .connection = context_connection,
+        .connection = context_connection,
     };
 
     values = nm_meta_abstract_info_complete(abstract_info,
@@ -8814,9 +8814,9 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                                                               NULL);
 
                     handler_id         = g_signal_connect(rem_con,
-                                                  NM_CONNECTION_CHANGED,
-                                                  G_CALLBACK(editor_connection_changed_cb),
-                                                  &connection_changed);
+                                                          NM_CONNECTION_CHANGED,
+                                                          G_CALLBACK(editor_connection_changed_cb),
+                                                          &connection_changed);
                     connection_changed = FALSE;
                 }
 

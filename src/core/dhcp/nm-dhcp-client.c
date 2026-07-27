@@ -1690,10 +1690,10 @@ maybe_add_option(NMDhcpClient *self, GHashTable *hash, const char *key, GVariant
          * Normalize to always use hex string format. */
         check_val = nm_utils_hexstr2bin_alloc(str_value, FALSE, TRUE, ":", 0, &len);
         hex_str   = nm_utils_bin2hexstr_full(check_val ?: (guint8 *) str_value,
-                                           check_val ? len : strlen(str_value),
-                                           ':',
-                                           FALSE,
-                                           NULL);
+                                             check_val ? len : strlen(str_value),
+                                             ':',
+                                             FALSE,
+                                             NULL);
         g_hash_table_insert(hash, g_strdup_printf("private_%d", priv_opt_num), hex_str);
     }
 }

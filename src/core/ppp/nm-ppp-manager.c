@@ -175,7 +175,7 @@ monitor_cb(gpointer user_data)
     if (ifname) {
         struct ppp_stats stats = {};
         struct ifreq     req   = {
-                  .ifr_data = (caddr_t) &stats,
+            .ifr_data = (caddr_t) &stats,
         };
 
         nm_utils_ifname_cpy(req.ifr_name, ifname);

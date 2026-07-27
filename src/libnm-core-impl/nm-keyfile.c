@@ -996,13 +996,13 @@ ip_address_or_route_parser(KeyfileReaderInfo *info, NMSetting *setting, const ch
 
         s_key = build_list[i_build_list].s_key;
         item  = read_one_ip_address_or_route(info,
-                                            setting_key,
-                                            setting_name,
-                                            s_key,
-                                            is_ipv6,
-                                            is_routes,
-                                            gateway ? NULL : &gateway,
-                                            setting);
+                                             setting_key,
+                                             setting_name,
+                                             s_key,
+                                             is_ipv6,
+                                             is_routes,
+                                             gateway ? NULL : &gateway,
+                                             setting);
         if (item && is_routes) {
             char options_key[128];
 

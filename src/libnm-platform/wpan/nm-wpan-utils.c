@@ -104,14 +104,14 @@ nl802154_send_and_recv(NMWpanUtils   *self,
     int                err;
     int                done = 0;
     const struct nl_cb cb   = {
-          .err_cb     = error_handler,
-          .err_arg    = &done,
-          .finish_cb  = finish_handler,
-          .finish_arg = &done,
-          .ack_cb     = ack_handler,
-          .ack_arg    = &done,
-          .valid_cb   = valid_handler,
-          .valid_arg  = valid_data,
+        .err_cb     = error_handler,
+        .err_arg    = &done,
+        .finish_cb  = finish_handler,
+        .finish_arg = &done,
+        .ack_cb     = ack_handler,
+        .ack_arg    = &done,
+        .valid_cb   = valid_handler,
+        .valid_arg  = valid_data,
     };
 
     g_return_val_if_fail(msg != NULL, -ENOMEM);

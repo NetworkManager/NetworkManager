@@ -37,9 +37,9 @@ void nm_sett_util_storage_by_uuid_head_destroy(NMSettUtilStorageByUuidHead *sbuh
     {                                                                                          \
         ._storage_lst_head = C_LIST_INIT(((storages)._storage_lst_head)),                      \
         .idx_by_filename   = g_hash_table_new_full(nm_str_hash,                                \
-                                                 g_str_equal,                                \
-                                                 NULL,                                       \
-                                                 (GDestroyNotify) storage_destroy_fcn),      \
+                                                   g_str_equal,                                \
+                                                   NULL,                                       \
+                                                   (GDestroyNotify) storage_destroy_fcn),      \
         .idx_by_uuid =                                                                         \
             g_hash_table_new_full(nm_pstr_hash,                                                \
                                   nm_pstr_equal,                                               \

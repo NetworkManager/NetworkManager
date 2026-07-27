@@ -1286,9 +1286,9 @@ nms_keyfile_plugin_init(NMSKeyfilePlugin *plugin)
     priv->dirname_libs[1] = NULL;
     priv->dirname_run     = nm_path_simplify(g_strdup(NM_KEYFILE_PATH_NAME_RUN));
     priv->dirname_etc     = nm_config_data_get_value(NM_CONFIG_GET_DATA_ORIG,
-                                                 NM_CONFIG_KEYFILE_GROUP_KEYFILE,
-                                                 NM_CONFIG_KEYFILE_KEY_KEYFILE_PATH,
-                                                 NM_CONFIG_GET_VALUE_STRIP);
+                                                     NM_CONFIG_KEYFILE_GROUP_KEYFILE,
+                                                     NM_CONFIG_KEYFILE_KEY_KEYFILE_PATH,
+                                                     NM_CONFIG_GET_VALUE_STRIP);
     if (priv->dirname_etc && priv->dirname_etc[0] == '\0') {
         /* special case: configure an empty keyfile path so that NM has no writable keyfile
          * directory. In this case, NM will only honor dirname_libs and dirname_run, meaning

@@ -258,7 +258,7 @@ lease_parse_address(NMDhcpNettools    *self /* for logging context only */,
 
         a_timestamp = ts / NM_UTILS_NSEC_PER_SEC;
         a_lifetime  = NM_MIN(lifetime / NM_UTILS_NSEC_PER_SEC, NM_PLATFORM_LIFETIME_PERMANENT - 1);
-        a_expiry    = time(NULL)
+        a_expiry = time(NULL)
                    + ((lifetime - (nm_utils_clock_gettime_nsec(CLOCK_BOOTTIME) - nettools_basetime))
                       / NM_UTILS_NSEC_PER_SEC);
     }

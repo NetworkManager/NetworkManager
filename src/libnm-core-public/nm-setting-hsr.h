@@ -14,8 +14,8 @@
 
 G_BEGIN_DECLS
 
-#define NM_TYPE_SETTING_HSR            (nm_setting_hsr_get_type())
-#define NM_SETTING_HSR(obj)            (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_SETTING_HSR, NMSettingHsr))
+#define NM_TYPE_SETTING_HSR (nm_setting_hsr_get_type())
+#define NM_SETTING_HSR(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_SETTING_HSR, NMSettingHsr))
 #define NM_IS_SETTING_HSR(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_SETTING_HSR))
 #define NM_IS_SETTING_HSR_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_SETTING_HSR))
 #define NM_SETTING_HSR_GET_CLASS(obj) \

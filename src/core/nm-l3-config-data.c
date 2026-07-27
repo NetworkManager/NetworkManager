@@ -3012,8 +3012,8 @@ nm_l3_config_data_add_dependent_device_routes(NML3ConfigData       *self,
                     plen = 128;
                 } else {
                     a6   = nm_ip6_addr_clear_host_address(&a6_stack,
-                                                        &addr_src->a6.address,
-                                                        addr_src->a6.plen);
+                                                          &addr_src->a6.address,
+                                                          addr_src->a6.plen);
                     plen = addr_src->a6.plen;
                 }
 
@@ -3554,7 +3554,7 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
             const NMPlatformIPAddress *a_src = NMP_OBJECT_CAST_IP_ADDRESS(obj);
             NMPlatformIPXAddress       a;
             NML3ConfigMergeHookResult  hook_result = {
-                 .ip4acd_not_ready = NM_OPTION_BOOL_DEFAULT,
+                .ip4acd_not_ready = NM_OPTION_BOOL_DEFAULT,
             };
 
 #define _ensure_a()                                       \

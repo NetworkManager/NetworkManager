@@ -4145,9 +4145,9 @@ test_connection_diff_different(void)
     gboolean           same;
     const DiffSetting  settings[] = {
         {NM_SETTING_IP4_CONFIG_SETTING_NAME,
-          {
+         {
              {NM_SETTING_IP_CONFIG_METHOD,
-               NM_SETTING_DIFF_RESULT_IN_A | NM_SETTING_DIFF_RESULT_IN_B},
+              NM_SETTING_DIFF_RESULT_IN_A | NM_SETTING_DIFF_RESULT_IN_B},
              {NULL, NM_SETTING_DIFF_RESULT_UNKNOWN},
          }},
     };
@@ -4230,7 +4230,7 @@ test_connection_diff_inferrable(void)
     char                *uuid;
     const DiffSetting    settings[] = {
         {NM_SETTING_CONNECTION_SETTING_NAME,
-            {
+         {
              {NM_SETTING_CONNECTION_INTERFACE_NAME, NM_SETTING_DIFF_RESULT_IN_A},
              {NULL, NM_SETTING_DIFF_RESULT_UNKNOWN},
          }},
@@ -6975,9 +6975,9 @@ test_setting_ip4_gateway(void)
      * entry of ipv4.addresses
      */
     conn  = nmtst_create_minimal_connection("test_setting_ip4_gateway",
-                                           NULL,
-                                           NM_SETTING_WIRED_SETTING_NAME,
-                                           NULL);
+                                            NULL,
+                                            NM_SETTING_WIRED_SETTING_NAME,
+                                            NULL);
     s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new();
     g_object_set(s_ip4,
                  NM_SETTING_IP_CONFIG_METHOD,
@@ -7130,9 +7130,9 @@ test_setting_ip6_gateway(void)
      * entry of ipv6.addresses
      */
     conn  = nmtst_create_minimal_connection("test_setting_ip6_gateway",
-                                           NULL,
-                                           NM_SETTING_WIRED_SETTING_NAME,
-                                           NULL);
+                                            NULL,
+                                            NM_SETTING_WIRED_SETTING_NAME,
+                                            NULL);
     s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new();
     g_object_set(s_ip6,
                  NM_SETTING_IP_CONFIG_METHOD,
@@ -10702,9 +10702,9 @@ test_connection_ovs_ifname(gconstpointer test_data)
     switch (TEST_CASE) {
     case 1:
         con          = nmtst_create_minimal_connection("test_connection_ovs_ifname_bridge",
-                                              NULL,
-                                              NM_SETTING_OVS_BRIDGE_SETTING_NAME,
-                                              &s_con);
+                                                       NULL,
+                                                       NM_SETTING_OVS_BRIDGE_SETTING_NAME,
+                                                       &s_con);
         s_ovs_bridge = nm_connection_get_setting_ovs_bridge(con);
         g_assert(s_ovs_bridge);
         break;
@@ -10726,9 +10726,9 @@ test_connection_ovs_ifname(gconstpointer test_data)
         break;
     case 3:
         con         = nmtst_create_minimal_connection("test_connection_ovs_ifname_interface_patch",
-                                              NULL,
-                                              NM_SETTING_OVS_INTERFACE_SETTING_NAME,
-                                              &s_con);
+                                                      NULL,
+                                                      NM_SETTING_OVS_INTERFACE_SETTING_NAME,
+                                                      &s_con);
         s_ovs_iface = nm_connection_get_setting_ovs_interface(con);
         g_assert(s_ovs_iface);
 
@@ -10795,9 +10795,9 @@ test_connection_ovs_ifname(gconstpointer test_data)
         break;
     case 6:
         con         = nmtst_create_minimal_connection("test_connection_ovs_ifname_interface_dpdk",
-                                              NULL,
-                                              NM_SETTING_OVS_INTERFACE_SETTING_NAME,
-                                              &s_con);
+                                                      NULL,
+                                                      NM_SETTING_OVS_INTERFACE_SETTING_NAME,
+                                                      &s_con);
         s_ovs_iface = nm_connection_get_setting_ovs_interface(con);
         g_assert(s_ovs_iface);
 

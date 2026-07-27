@@ -6423,8 +6423,8 @@ nm_utils_copy_cert_as_user(const char *filename, const char *user, GError **erro
     gs_unref_bytes GBytes *bytes      = NULL;
     char                   dst_path[] = RUN_CERT_DIR "/XXXXXX";
     HelperInfo             info       = {
-                          .child_stdout = -1,
-                          .child_stderr = -1,
+        .child_stdout = -1,
+        .child_stderr = -1,
     };
     GMainContext *context;
     int           fd = -1;

@@ -935,8 +935,8 @@ genl_ctrl_resolve(struct nl_sock *sk, const char *name)
     int                          nmerr;
     gint32                       response_data = -1;
     const struct nl_cb           cb            = {
-                             .valid_cb  = _genl_parse_getfamily,
-                             .valid_arg = &response_data,
+        .valid_cb  = _genl_parse_getfamily,
+        .valid_arg = &response_data,
     };
 
     msg = nlmsg_alloc(0);
@@ -1407,10 +1407,10 @@ nl_send_iovec(struct nl_sock *sk, struct nl_msg *msg, struct iovec *iov, unsigne
     struct sockaddr_nl *dst;
     struct ucred       *creds;
     struct msghdr       hdr = {
-              .msg_name    = (void *) &sk->s_peer,
-              .msg_namelen = sizeof(struct sockaddr_nl),
-              .msg_iov     = iov,
-              .msg_iovlen  = iovlen,
+        .msg_name    = (void *) &sk->s_peer,
+        .msg_namelen = sizeof(struct sockaddr_nl),
+        .msg_iov     = iov,
+        .msg_iovlen  = iovlen,
     };
     char buf[CMSG_SPACE(sizeof(struct ucred))];
 

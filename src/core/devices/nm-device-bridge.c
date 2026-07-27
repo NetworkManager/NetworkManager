@@ -502,8 +502,8 @@ update_connection(NMDevice *device, NMConnection *connection)
         GParamSpec                 *pspec;
 
         str   = nm_platform_sysctl_controller_get_option(nm_device_get_platform(device),
-                                                       ifindex,
-                                                       option->sysname);
+                                                         ifindex,
+                                                         option->sysname);
         pspec = g_object_class_find_property(G_OBJECT_GET_CLASS(s_bridge), option->name);
 
         if (!stp_value && option->only_with_stp)
@@ -855,9 +855,9 @@ _platform_lnk_bridge_init_from_setting(NMSettingBridge *s_bridge, NMPlatformLnkB
         .forward_delay = _DEFAULT_IF_ZERO(nm_setting_bridge_get_forward_delay(s_bridge) * 100u,
                                           NM_BRIDGE_FORWARD_DELAY_DEF_SYS),
         .hello_time    = _DEFAULT_IF_ZERO(nm_setting_bridge_get_hello_time(s_bridge) * 100u,
-                                       NM_BRIDGE_HELLO_TIME_DEF_SYS),
+                                          NM_BRIDGE_HELLO_TIME_DEF_SYS),
         .max_age       = _DEFAULT_IF_ZERO(nm_setting_bridge_get_max_age(s_bridge) * 100u,
-                                    NM_BRIDGE_MAX_AGE_DEF_SYS),
+                                          NM_BRIDGE_MAX_AGE_DEF_SYS),
         .ageing_time   = nm_setting_bridge_get_ageing_time(s_bridge) * 100u,
         .stp_state     = nm_setting_bridge_get_stp(s_bridge),
         .priority      = nm_setting_bridge_get_priority(s_bridge),

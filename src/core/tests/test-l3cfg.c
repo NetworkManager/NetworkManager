@@ -335,7 +335,7 @@ test_l3cfg(gconstpointer test_data)
     gs_unref_object NML3Cfg                       *l3cfg0      = NULL;
     nm_auto_unref_l3cd const NML3ConfigData       *l3cd_a      = NULL;
     TestL3cfgData                                  tdata_stack = {
-                                         .f = NULL,
+        .f = NULL,
     };
     TestL3cfgData *const tdata = &tdata_stack;
 
@@ -363,8 +363,8 @@ test_l3cfg(gconstpointer test_data)
     tdata->acd_timeout_msec_a = NM_IN_SET(f->test_idx, 3, 4) ? ACD_TIMEOUT_BASE_MSEC : 0u;
     tdata->acd_defend_type_a  = NM_IN_SET(f->test_idx, 4)
                                     ? nmtst_rand_select(NM_L3_ACD_DEFEND_TYPE_NEVER,
-                                                       NM_L3_ACD_DEFEND_TYPE_ONCE,
-                                                       NM_L3_ACD_DEFEND_TYPE_ALWAYS)
+                                                        NM_L3_ACD_DEFEND_TYPE_ONCE,
+                                                        NM_L3_ACD_DEFEND_TYPE_ALWAYS)
                                     : NM_L3_ACD_DEFEND_TYPE_NEVER;
 
     if (tdata->has_addr4_101) {
@@ -660,7 +660,7 @@ test_l3_ipv4ll(gconstpointer test_data)
     const TestFixture1                            *f;
     gs_unref_object NML3Cfg                       *l3cfg0      = NULL;
     TestL3IPv4LLData                               tdata_stack = {
-                                      .f = NULL,
+        .f = NULL,
     };
     TestL3IPv4LLData *const                                      tdata          = &tdata_stack;
     NMTstpAcdDefender                                           *acd_defender_1 = NULL;
@@ -955,8 +955,8 @@ test_l3_ipv6ll(gconstpointer test_data)
     nm_auto(_test_fixture_1_teardown) TestFixture1 test_fixture = {};
     gs_unref_object NML3Cfg                       *l3cfg0       = NULL;
     TestL3IPv6LLData                               tdata_stack  = {
-                                       .step       = 0,
-                                       .steps_done = FALSE,
+        .step       = 0,
+        .steps_done = FALSE,
     };
     TestL3IPv6LLData *const tdata = &tdata_stack;
     char                    sbuf1[NM_UTILS_TO_STRING_BUFFER_SIZE];

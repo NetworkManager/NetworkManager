@@ -529,7 +529,7 @@ clat_handle_v4(struct __sk_buff *skb, bool has_eth)
     void           *data     = SKB_DATA(skb);
     struct ipv6hdr *ip6h;
     struct ipv6hdr  dst_hdr = {
-         .version = 6,
+        .version = 6,
     };
     struct iphdr  *iph;
     struct ethhdr *eth;

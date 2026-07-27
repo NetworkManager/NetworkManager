@@ -123,8 +123,8 @@ nmtstc_service_init(void)
         nm_auto_unref_gsource GSource *child_source   = NULL;
         GMainContext                  *context        = g_main_context_new();
         ServiceInitWaitData            data           = {
-                                 .bus      = info->bus,
-                                 .mainloop = g_main_loop_new(context, FALSE),
+            .bus      = info->bus,
+            .mainloop = g_main_loop_new(context, FALSE),
         };
         gboolean had_timeout;
 
@@ -511,8 +511,8 @@ _context_object_new_do(GType       gtype,
     } else {
         nm_auto_unref_gmainloop GMainLoop *loop = NULL;
         NMTstcObjNewData                   d    = {
-                                 .gtype = gtype,
-                                 .loop  = NULL,
+            .gtype = gtype,
+            .loop  = NULL,
         };
         gs_unref_object GObject *obj2 = NULL;
 
@@ -576,10 +576,10 @@ _context_object_new_inside_loop(GType       gtype,
     GMainContext                      *context = g_main_context_get_thread_default();
     nm_auto_unref_gmainloop GMainLoop *loop    = g_main_loop_new(context, FALSE);
     NewSyncInsideDispatchedData        d       = {
-                     .gtype               = gtype,
-                     .first_property_name = first_property_name,
-                     .sync                = sync,
-                     .loop                = loop,
+        .gtype               = gtype,
+        .first_property_name = first_property_name,
+        .sync                = sync,
+        .loop                = loop,
     };
     nm_auto_destroy_and_unref_gsource GSource *source = NULL;
 

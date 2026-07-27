@@ -676,8 +676,8 @@ _fw_nft_call_sync(GBytes *stdin_buf, GError **error)
         nm_g_main_context_push_thread_default(g_main_context_new());
     nm_auto_unref_gmainloop GMainLoop *main_loop = g_main_loop_new(main_context, FALSE);
     FwNftCallSyncData                  data      = (FwNftCallSyncData) {
-                              .loop  = main_loop,
-                              .error = error,
+        .loop  = main_loop,
+        .error = error,
     };
 
     nm_firewall_nft_call(stdin_buf, NULL, _fw_nft_call_sync_done, &data);

@@ -240,14 +240,14 @@ test_lock_bssid(void)
 
     src      = nm_simple_connection_new();
     success  = complete_connection(ssid,
-                                  bssid,
-                                  _NM_802_11_MODE_INFRA,
-                                  NM_802_11_AP_FLAGS_NONE,
-                                  NM_802_11_AP_SEC_NONE,
-                                  NM_802_11_AP_SEC_NONE,
-                                  TRUE,
-                                  src,
-                                  &error);
+                                   bssid,
+                                   _NM_802_11_MODE_INFRA,
+                                   NM_802_11_AP_FLAGS_NONE,
+                                   NM_802_11_AP_SEC_NONE,
+                                   NM_802_11_AP_SEC_NONE,
+                                   TRUE,
+                                   src,
+                                   &error);
     expected = create_basic(ssid, bssid, _NM_802_11_MODE_INFRA);
     COMPARE(src, expected, success, error, 0, 0);
 
@@ -272,14 +272,14 @@ test_open_ap_empty_connection(void)
 
     src      = nm_simple_connection_new();
     success  = complete_connection(ssid,
-                                  bssid,
-                                  _NM_802_11_MODE_INFRA,
-                                  NM_802_11_AP_FLAGS_NONE,
-                                  NM_802_11_AP_SEC_NONE,
-                                  NM_802_11_AP_SEC_NONE,
-                                  FALSE,
-                                  src,
-                                  &error);
+                                   bssid,
+                                   _NM_802_11_MODE_INFRA,
+                                   NM_802_11_AP_FLAGS_NONE,
+                                   NM_802_11_AP_SEC_NONE,
+                                   NM_802_11_AP_SEC_NONE,
+                                   FALSE,
+                                   src,
+                                   &error);
     expected = create_basic(ssid, NULL, _NM_802_11_MODE_INFRA);
     COMPARE(src, expected, success, error, 0, 0);
 

@@ -196,8 +196,8 @@ translate_and_out:
     return value;
 }
 
-static const NmcMetaGenericInfo
-    *const metagen_general_status[_NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_NUM + 1] = {
+static const NmcMetaGenericInfo *const
+    metagen_general_status[_NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_NUM + 1] = {
 #define _METAGEN_GENERAL_STATUS(type, name) \
     [type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_general_status_get_fcn)
         _METAGEN_GENERAL_STATUS(NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_RUNNING, "RUNNING"),
@@ -253,8 +253,8 @@ _metagen_general_permissions_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
     g_return_val_if_reached(NULL);
 }
 
-static const NmcMetaGenericInfo
-    *const metagen_general_permissions[_NMC_GENERIC_INFO_TYPE_GENERAL_PERMISSIONS_NUM + 1] = {
+static const NmcMetaGenericInfo *const
+    metagen_general_permissions[_NMC_GENERIC_INFO_TYPE_GENERAL_PERMISSIONS_NUM + 1] = {
 #define _METAGEN_GENERAL_PERMISSIONS(type, name) \
     [type] =                                     \
         NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_general_permissions_get_fcn)
@@ -293,8 +293,8 @@ _metagen_general_logging_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
         return *d->domains;
 }
 
-static const NmcMetaGenericInfo
-    *const metagen_general_logging[_NMC_GENERIC_INFO_TYPE_GENERAL_LOGGING_NUM + 1] = {
+static const NmcMetaGenericInfo *const
+    metagen_general_logging[_NMC_GENERIC_INFO_TYPE_GENERAL_LOGGING_NUM + 1] = {
 #define _METAGEN_GENERAL_LOGGING(type, name) \
     [type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_general_logging_get_fcn)
         _METAGEN_GENERAL_LOGGING(NMC_GENERIC_INFO_TYPE_GENERAL_LOGGING_LEVEL, "LEVEL"),
@@ -721,8 +721,8 @@ show_general_logging(NmCli *nmc)
     gs_free_error GError *error         = NULL;
     const char           *fields_str    = NULL;
     GetGeneralLoggingData d             = {
-                    .level   = &level_cache,
-                    .domains = &domains_cache,
+        .level   = &level_cache,
+        .domains = &domains_cache,
     };
 
     if (!nmc->required_fields || g_ascii_strcasecmp(nmc->required_fields, "common") == 0) {
@@ -1239,7 +1239,7 @@ networkmanager_running(NMClient *client, GParamSpec *param, NmCli *nmc)
     char    *str;
 
     running = nm_client_get_nm_running(client);
-    str     = nmc_colorize(&nmc->nmc_config,
+    str = nmc_colorize(&nmc->nmc_config,
                        running ? NM_META_COLOR_MANAGER_RUNNING : NM_META_COLOR_MANAGER_STOPPED,
                        running ? _("NetworkManager is running") : _("NetworkManager is stopped"));
     nmc_print("%s\n", str);
@@ -1534,9 +1534,9 @@ nmc_command_func_overview(const NMCCommand *cmd, NmCli *nmc, int argc, const cha
 
         color = nmc_active_connection_state_to_color(ac);
         tmp   = nmc_colorize(&nmc->nmc_config,
-                           color,
-                           _("%s VPN connection"),
-                           nm_active_connection_get_id(ac));
+                             color,
+                             _("%s VPN connection"),
+                             nm_active_connection_get_id(ac));
         nmc_print("%s\n", tmp);
         g_free(tmp);
 

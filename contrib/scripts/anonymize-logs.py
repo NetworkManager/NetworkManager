@@ -7,7 +7,6 @@ import argparse
 import os
 import re
 
-
 domains = []
 
 hosts_sub = {}

@@ -370,9 +370,9 @@ modm_manager_new_cb(GObject *source, GAsyncResult *res, gpointer user_data)
                          G_CALLBACK(modm_handle_name_owner_changed),
                          self);
     priv->modm.handle_object_added_id   = g_signal_connect(priv->modm.manager,
-                                                         "object-added",
-                                                         G_CALLBACK(modm_handle_object_added),
-                                                         self);
+                                                           "object-added",
+                                                           G_CALLBACK(modm_handle_object_added),
+                                                           self);
     priv->modm.handle_object_removed_id = g_signal_connect(priv->modm.manager,
                                                            "object-removed",
                                                            G_CALLBACK(modm_handle_object_removed),

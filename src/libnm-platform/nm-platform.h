@@ -2688,11 +2688,11 @@ gboolean nm_platform_ethtool_get_link_settings(NMPlatform               *self,
 
 NMEthtoolFeatureStates *nm_platform_ethtool_get_features(NMPlatform *self, int ifindex);
 gboolean                nm_platform_ethtool_set_features(
-                   NMPlatform                   *self,
-                   int                           ifindex,
-                   const NMEthtoolFeatureStates *features,
-                   const NMOptionBool *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */,
-                   gboolean            do_set /* or reset */);
+    NMPlatform                   *self,
+    int                           ifindex,
+    const NMEthtoolFeatureStates *features,
+    const NMOptionBool *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */,
+    gboolean            do_set /* or reset */);
 
 gboolean
 nm_platform_ethtool_get_coalesce(NMPlatform *self, int ifindex, NMEthtoolCoalesceState *coalesce);

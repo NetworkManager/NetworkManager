@@ -86,9 +86,9 @@ _entry_lookup_head(const NMDedupMultiIndex   *self,
 {
     NMDedupMultiHeadEntry *head_entry;
     const LookupEntry      stack_entry = {
-             .obj         = obj,
-             .idx_type    = idx_type,
-             .lookup_head = TRUE,
+        .obj         = obj,
+        .idx_type    = idx_type,
+        .lookup_head = TRUE,
     };
 
     ASSERT_idx_type(idx_type);

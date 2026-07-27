@@ -93,12 +93,12 @@ _provider_detect(SigTermData *sigterm_data)
     gs_unref_object GCancellable      *cancellable = g_cancellable_new();
     gs_unref_object NMHttpClient      *http_client = NULL;
     ProviderDetectData                 dd          = {
-                                 .sigterm_data         = sigterm_data,
-                                 .cancellable          = cancellable,
-                                 .main_loop            = main_loop,
-                                 .detect_count         = 0,
-                                 .provider_result      = NULL,
-                                 .any_provider_enabled = FALSE,
+        .sigterm_data         = sigterm_data,
+        .cancellable          = cancellable,
+        .main_loop            = main_loop,
+        .detect_count         = 0,
+        .provider_result      = NULL,
+        .any_provider_enabled = FALSE,
     };
     const GType gtypes[] = {
         NMCS_TYPE_PROVIDER_EC2,
@@ -347,7 +347,7 @@ _get_config(GCancellable *sigterm_cancellable, NMCSProvider *provider, NMClient 
 {
     nm_auto_unref_gmainloop GMainLoop *main_loop = g_main_loop_new(NULL, FALSE);
     GetConfigData                      data      = {
-                                  .main_loop = main_loop,
+        .main_loop = main_loop,
     };
     gs_strfreev char **hwaddrs = NULL;
 

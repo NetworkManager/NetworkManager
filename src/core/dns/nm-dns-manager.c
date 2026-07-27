@@ -1366,12 +1366,12 @@ _collect_resolv_conf_data(NMDnsManager      *self,
 {
     NMDnsManagerPrivate *priv;
     NMResolvConfData     rc = {
-            .nameservers  = g_ptr_array_new(),
-            .searches     = g_ptr_array_new(),
-            .options      = g_ptr_array_new(),
-            .nis_domain   = NULL,
-            .nis_servers  = g_ptr_array_new(),
-            .has_trust_ad = NM_TERNARY_DEFAULT,
+        .nameservers  = g_ptr_array_new(),
+        .searches     = g_ptr_array_new(),
+        .options      = g_ptr_array_new(),
+        .nis_domain   = NULL,
+        .nis_servers  = g_ptr_array_new(),
+        .has_trust_ad = NM_TERNARY_DEFAULT,
     };
     gboolean has_global_dns_section = FALSE;
 
@@ -1953,11 +1953,11 @@ plugin_skip:;
         case NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK:
         case NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE:
             result              = update_resolv_conf(self,
-                                        NM_CAST_STRV_CC(searches),
-                                        NM_CAST_STRV_CC(nameservers),
-                                        NM_CAST_STRV_CC(options),
-                                        p_local_error,
-                                        priv->rc_manager);
+                                                     NM_CAST_STRV_CC(searches),
+                                                     NM_CAST_STRV_CC(nameservers),
+                                                     NM_CAST_STRV_CC(options),
+                                                     p_local_error,
+                                                     priv->rc_manager);
             resolv_conf_updated = TRUE;
             /* If we have ended with no nameservers avoid updating again resolv.conf
              * on stop, as some external changes may be applied to it in the meanwhile */
@@ -1983,11 +1983,11 @@ plugin_skip:;
             _LOGD("update-dns: program not available, writing to resolv.conf");
             g_clear_error(&local_error);
             result              = update_resolv_conf(self,
-                                        NM_CAST_STRV_CC(searches),
-                                        NM_CAST_STRV_CC(nameservers),
-                                        NM_CAST_STRV_CC(options),
-                                        p_local_error,
-                                        NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK);
+                                                     NM_CAST_STRV_CC(searches),
+                                                     NM_CAST_STRV_CC(nameservers),
+                                                     NM_CAST_STRV_CC(options),
+                                                     p_local_error,
+                                                     NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK);
             resolv_conf_updated = TRUE;
         }
     }

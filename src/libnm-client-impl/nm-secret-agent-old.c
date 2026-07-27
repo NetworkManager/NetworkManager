@@ -1585,7 +1585,7 @@ _init_register_object(NMSecretAgentOld *self)
     NMSecretAgentOldPrivate *priv             = NM_SECRET_AGENT_OLD_GET_PRIVATE(self);
     gs_free_error GError    *error            = NULL;
     GDBusInterfaceVTable     interface_vtable = {
-            .method_call = _method_call,
+        .method_call = _method_call,
     };
 
     if (g_cancellable_set_error_if_cancelled(priv->init_data->cancellable, &error)) {
