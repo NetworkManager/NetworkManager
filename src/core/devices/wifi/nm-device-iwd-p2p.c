@@ -666,6 +666,35 @@ p2p_device_name_set_cb(GObject *source, GAsyncResult *result, gpointer user_data
         _LOGD(LOGD_WIFI, "failed to set the P2P device name on IWD: %s", error->message);
 }
 
+/* Push the P2P device name to IWD so that peers see a human-readable name
+ * during discovery and pairing. */
+static void
+apply_device_name(NMDeviceIwdP2P *self)
+{
+    NMDeviceIwdP2PPrivate *priv        = NM_DEVICE_IWD_P2P_GET_PRIVATE(self);
+    gs_free char          *device_name = NULL;
+
+    if (!priv->dbus_p2p_proxy)
+        return;
+
+    device_name = nm_wifi_common_get_p2p_device_name(NM_DEVICE(self));
+    if (!device_name)
+        return;
+
+    nm_clear_g_cancellable(&priv->name_cancellable);
+    priv->name_cancellable = g_cancellable_new();
+
+    g_dbus_proxy_call(
+        priv->dbus_p2p_proxy,
+        DBUS_INTERFACE_PROPERTIES ".Set",
+        g_variant_new("(ssv)", NM_IWD_P2P_INTERFACE, "Name", g_variant_new_string(device_name)),
+        G_DBUS_CALL_FLAGS_NONE,
+        2000,
+        priv->name_cancellable,
+        p2p_device_name_set_cb,
+        self);
+}
+
 static NMActStageReturn
 act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
@@ -674,9 +703,8 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     NMConnection               *connection;
     NMSettingWifiP2P           *s_wifi_p2p;
     NMWifiP2PPeer              *peer;
-    gs_unref_object GDBusProxy *peer_proxy  = NULL;
-    gs_unref_object GDBusProxy *wsc_proxy   = NULL;
-    gs_free char               *device_name = NULL;
+    gs_unref_object GDBusProxy *peer_proxy = NULL;
+    gs_unref_object GDBusProxy *wsc_proxy  = NULL;
 
     if (priv->stage2_ready)
         return NM_ACT_STAGE_RETURN_SUCCESS;
@@ -714,24 +742,8 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
         return NM_ACT_STAGE_RETURN_FAILURE;
     }
 
-    /* Set the P2P device name to the system hostname so that peers can identify this device. */
-    device_name = nm_wifi_common_get_p2p_device_name(device);
-    if (device_name) {
-        nm_clear_g_cancellable(&priv->name_cancellable);
-        priv->name_cancellable = g_cancellable_new();
-
-        g_dbus_proxy_call(priv->dbus_p2p_proxy,
-                          DBUS_INTERFACE_PROPERTIES ".Set",
-                          g_variant_new("(ssv)",
-                                        NM_IWD_P2P_INTERFACE,
-                                        "Name",
-                                        g_variant_new_string(device_name)),
-                          G_DBUS_CALL_FLAGS_NONE,
-                          2000,
-                          priv->name_cancellable,
-                          p2p_device_name_set_cb,
-                          self);
-    }
+    /* Re-assert the P2P device name so that the peer sees it during pairing. */
+    apply_device_name(self);
 
     peer_proxy = nm_iwd_manager_get_dbus_interface(nm_iwd_manager_get(),
                                                    nm_wifi_p2p_peer_get_supplicant_path(peer),
@@ -1135,6 +1147,8 @@ nm_device_iwd_p2p_set_dbus_obj(NMDeviceIwdP2P *self, GDBusObject *obj)
 
     priv->enabled = g_variant_get_boolean(enabled_value);
     _LOGD(LOGD_WIFI, "iniital state is %s", priv->enabled ? "enabled" : "disabled");
+
+    apply_device_name(self);
 
 done:
     nm_device_queue_recheck_available(NM_DEVICE(self),
