@@ -223,6 +223,8 @@ check-tree:
   variables:
     FDO_DISTRIBUTION_VERSION: '{{default_distro.versions[0]}}'
     FDO_DISTRIBUTION_TAG: ${{default_distro.name.upper()}}_TAG
+    # check-commit-message.sh needs all commits in the range being checked.
+    GIT_DEPTH: 0
   needs:
     - "tier{{default_distro.tier}}:{{default_distro.name}}:{{default_distro.versions[0]}}@prep"
   rules:
@@ -235,9 +237,13 @@ check-tree:
   script:
     - date '+%Y%m%d-%H%M%S'; clang-format --version
     - date '+%Y%m%d-%H%M%S'; black --version
-    - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-python-black-format.sh --check
-    - date '+%Y%m%d-%H%M%S'; git ls-files -z -- 'po/*.po' | xargs -0 -n1 msgfmt -vc
+    - date '+%Y%m%d-%H%M%S'; pre-commit --version
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-code-format.sh -n
+    # "nm-clang-format" runs clang-format in a podman container, which is not
+    # available here. nm-code-format.sh checks the same thing with the
+    # clang-format of this image.
+    - date '+%Y%m%d-%H%M%S'; SKIP=nm-clang-format pre-commit run --all-files
+    - date '+%Y%m%d-%H%M%S'; contrib/scripts/check-commit-message.sh --ci
     - date '+%Y%m%d-%H%M%S'; ci-fairy generate-template && git diff --exit-code
     - date '+%Y%m%d-%H%M%S'; meson setup build && [ "$(LANG=C ninja -C build NetworkManager-update-po 2>&1 1>/dev/null | grep -c 'warning:')" = 0 ]
 

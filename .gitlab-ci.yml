@@ -64,12 +64,12 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-09864ad32008'
-  ARCH_TAG:    'tag-ed7f886a4731'
-  CENTOS_TAG:  'tag-3996b69cb9bd'
-  DEBIAN_TAG:  'tag-ec990732d695'
-  FEDORA_TAG:  'tag-3996b69cb9bd'
-  UBUNTU_TAG:  'tag-ec990732d695'
+  ALPINE_TAG:  'tag-bdcfdb25fe36'
+  ARCH_TAG:    'tag-8e27d244762b'
+  CENTOS_TAG:  'tag-13d4dc7be408'
+  DEBIAN_TAG:  'tag-2d9e5dae82af'
+  FEDORA_TAG:  'tag-13d4dc7be408'
+  UBUNTU_TAG:  'tag-2d9e5dae82af'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   ARCH_EXEC:   'bash .gitlab-ci/arch-install.sh'
@@ -674,6 +674,8 @@ check-tree:
   variables:
     FDO_DISTRIBUTION_VERSION: '44'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+    # check-commit-message.sh needs all commits in the range being checked.
+    GIT_DEPTH: 0
   needs:
     - "tier1:fedora:44@prep"
   rules:
@@ -686,9 +688,13 @@ check-tree:
   script:
     - date '+%Y%m%d-%H%M%S'; clang-format --version
     - date '+%Y%m%d-%H%M%S'; black --version
-    - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-python-black-format.sh --check
-    - date '+%Y%m%d-%H%M%S'; git ls-files -z -- 'po/*.po' | xargs -0 -n1 msgfmt -vc
+    - date '+%Y%m%d-%H%M%S'; pre-commit --version
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-code-format.sh -n
+    # "nm-clang-format" runs clang-format in a podman container, which is not
+    # available here. nm-code-format.sh checks the same thing with the
+    # clang-format of this image.
+    - date '+%Y%m%d-%H%M%S'; SKIP=nm-clang-format pre-commit run --all-files
+    - date '+%Y%m%d-%H%M%S'; contrib/scripts/check-commit-message.sh --ci
     - date '+%Y%m%d-%H%M%S'; ci-fairy generate-template && git diff --exit-code
     - date '+%Y%m%d-%H%M%S'; meson setup build && [ "$(LANG=C ninja -C build NetworkManager-update-po 2>&1 1>/dev/null | grep -c 'warning:')" = 0 ]
 

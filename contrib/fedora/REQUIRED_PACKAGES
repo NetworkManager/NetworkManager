@@ -98,6 +98,7 @@ install_ignore_missing \
     libpsl-devel \
     libubsan \
     libvala-devel \
+    pre-commit \
     qt-devel \
     teamd-devel \
     vala-devel \
