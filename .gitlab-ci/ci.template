@@ -215,7 +215,6 @@ check-patch:
   stage: tier1
   script:
     - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh
-  allow_failure: true
 
 check-tree:
   extends:

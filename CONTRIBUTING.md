@@ -242,11 +242,16 @@ guidelines. Following there are a few noteworthy points.
 
 ### Checkpatch
 
-We have a [checkpatch.pl](contrib/scripts/checkpatch.pl) script, which is
-also run in our gitlab-ci. Review the warnings, but as these are just heuristics,
-there might be valid reasons to reject them. There is also a
-[git hook](contrib/scripts/checkpatch-git-post-commit-hook) which you can call
-from `.git/hooks/post-commit`.
+We have a [checkpatch.pl](contrib/scripts/checkpatch.pl) script, which our
+gitlab-ci runs in the "check-patch" job. That job is blocking, so the warnings
+have to be addressed before a merge request can land. They are heuristics and
+there are valid reasons to reject some of them, but the script has no way to
+suppress an individual warning: say so in the merge request and a maintainer
+will decide.
+
+The [pre-commit hooks](#pre-commit-hooks) run it after each commit, or you can
+call the [git hook](contrib/scripts/checkpatch-git-post-commit-hook) from
+`.git/hooks/post-commit` directly.
 
 
 Building from Source

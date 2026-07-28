@@ -64,12 +64,12 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-bdcfdb25fe36'
-  ARCH_TAG:    'tag-8e27d244762b'
-  CENTOS_TAG:  'tag-13d4dc7be408'
-  DEBIAN_TAG:  'tag-2d9e5dae82af'
-  FEDORA_TAG:  'tag-13d4dc7be408'
-  UBUNTU_TAG:  'tag-2d9e5dae82af'
+  ALPINE_TAG:  'tag-adf8339f4537'
+  ARCH_TAG:    'tag-316cbea12e06'
+  CENTOS_TAG:  'tag-b8ad2576b2c5'
+  DEBIAN_TAG:  'tag-3bf0ff1c65ba'
+  FEDORA_TAG:  'tag-b8ad2576b2c5'
+  UBUNTU_TAG:  'tag-3bf0ff1c65ba'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   ARCH_EXEC:   'bash .gitlab-ci/arch-install.sh'
@@ -666,7 +666,6 @@ check-patch:
   stage: tier1
   script:
     - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh
-  allow_failure: true
 
 check-tree:
   extends:
