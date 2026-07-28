@@ -174,7 +174,7 @@ next if $filename =~ /\/nm-[^\/]+-enum-types\.[ch]$/;
 next if $filename =~ /\b(shared|src)\/systemd\//
 	and not $filename =~ /\/sd-adapt\//
 	and not $filename =~ /\/nm-/;
-next if $filename =~ /\/(n-acd|c-list|c-siphash|n-dhcp4)\//;
+next if $filename =~ m{/(c-list|c-rbtree|c-siphash|c-stdaux|linux-headers|n-acd|n-dhcp4)/|/libnm-systemd-(core|shared)/src/};
 
 $expect_spdx = 1 if $line_no == 1;
 $expect_spdx = 0 if $line =~ /SPDX-License-Identifier/;
