@@ -15,6 +15,11 @@ Core:
 
 Wi-Fi:
 * Keep the long background scan interval for a single Wi-Fi 7 AP-MLD.
+* Announce the system hostname as the Wi-Fi P2P device name so that
+  peers can identify this device. The name is pushed as soon as the
+  Wi-Fi P2P device is ready, so that it is visible during discovery and
+  pairing, and can be overridden with the new "wifi-p2p.device-name"
+  key in the [device] section of NetworkManager.conf.
 
 nmtui:
 * Group known and other Wi-Fi networks separately in the "Activate a

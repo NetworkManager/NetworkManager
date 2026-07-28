@@ -25,6 +25,7 @@
 #include "nm-manager.h"
 #include "nm-setting-wifi-p2p.h"
 #include "nm-utils.h"
+#include "nm-wifi-common.h"
 #include "nm-wifi-p2p-peer.h"
 #include "settings/nm-settings.h"
 
@@ -79,6 +80,7 @@ static const GDBusSignalInfo             nm_signal_info_wifi_p2p_peer_removed;
 
 static void supplicant_group_interface_release(NMDeviceWifiP2P *self);
 static void supplicant_interfaces_release(NMDeviceWifiP2P *self, gboolean set_is_waiting);
+static void apply_device_name(NMDeviceWifiP2P *self);
 
 /*****************************************************************************/
 
@@ -451,6 +453,9 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     wfd_ies = nm_setting_wifi_p2p_get_wfd_ies(s_wifi_p2p);
     nm_supplicant_manager_set_wfd_ies(priv->sup_mgr, wfd_ies);
 
+    /* Re-assert the P2P device name so that the peer sees it during pairing. */
+    apply_device_name(self);
+
     /* TODO: Grab secrets if we don't have them yet! */
 
     /* TODO: Fix "pbc" being hardcoded here! */
@@ -695,6 +700,7 @@ supplicant_iface_state_cb(NMSupplicantInterface *iface,
 
     if (old_state == NM_SUPPLICANT_INTERFACE_STATE_STARTING) {
         _LOGD(LOGD_WIFI, "supplicant ready");
+        apply_device_name(self);
         nm_device_queue_recheck_available(device,
                                           NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
                                           NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
@@ -894,6 +900,24 @@ supplicant_group_interface_release(NMDeviceWifiP2P *self)
     nm_supplicant_interface_p2p_disconnect(priv->group_iface);
 
     g_clear_object(&priv->group_iface);
+}
+
+/* Push the P2P device name to wpa_supplicant so that peers see a
+ * human-readable name during discovery and pairing. */
+static void
+apply_device_name(NMDeviceWifiP2P *self)
+{
+    NMDeviceWifiP2PPrivate *priv        = NM_DEVICE_WIFI_P2P_GET_PRIVATE(self);
+    gs_free char           *device_name = NULL;
+
+    if (!priv->mgmt_iface)
+        return;
+
+    device_name = nm_wifi_common_get_p2p_device_name(NM_DEVICE(self));
+    if (!device_name)
+        return;
+
+    nm_supplicant_interface_p2p_set_device_name(priv->mgmt_iface, device_name);
 }
 
 static void
@@ -1194,6 +1218,10 @@ nm_device_wifi_p2p_set_mgmt_iface(NMDeviceWifiP2P *self, NMSupplicantInterface *
                      NM_SUPPLICANT_INTERFACE_GROUP_STARTED,
                      G_CALLBACK(supplicant_iface_group_started_cb),
                      self);
+
+    if (nm_supplicant_interface_state_is_operational(nm_supplicant_interface_get_state(iface)))
+        apply_device_name(self);
+
 done:
     nm_device_queue_recheck_available(NM_DEVICE(self),
                                       NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,

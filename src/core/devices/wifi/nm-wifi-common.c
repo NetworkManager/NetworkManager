@@ -8,6 +8,8 @@
 #include "nm-wifi-common.h"
 
 #include "devices/nm-device.h"
+#include "nm-config.h"
+#include "nm-hostname-manager.h"
 #include "nm-wifi-ap.h"
 #include "nm-device-wifi.h"
 #include "nm-dbus-manager.h"
@@ -171,3 +173,77 @@ const NMDBusInterfaceInfoExtended nm_interface_info_device_wireless = {
                                                            "x",
                                                            NM_DEVICE_WIFI_LAST_SCAN), ), ),
 };
+
+/*****************************************************************************/
+
+/* Make @name usable as a Wi-Fi P2P device name: the WPS "Device Name"
+ * attribute is limited to 32 bytes of valid UTF-8, so cut off anything that
+ * is not valid UTF-8 and truncate at the last character that still fits. */
+static char *
+sanitize_p2p_device_name(const char *name)
+{
+    char       *sanitized;
+    const char *end;
+
+    if (!name || !name[0])
+        return NULL;
+
+    sanitized = g_strdup(name);
+
+    if (!g_utf8_validate(sanitized, -1, &end))
+        sanitized[end - sanitized] = '\0';
+
+    end = sanitized;
+    while (*end) {
+        const char *next = g_utf8_next_char(end);
+
+        if (next - sanitized > 32)
+            break;
+        end = next;
+    }
+    sanitized[end - sanitized] = '\0';
+
+    if (!sanitized[0]) {
+        g_free(sanitized);
+        return NULL;
+    }
+
+    return sanitized;
+}
+
+/**
+ * nm_wifi_common_get_p2p_device_name:
+ * @device: the P2P #NMDevice
+ *
+ * Returns the name with which to identify @device to Wi-Fi P2P peers: the
+ * "wifi-p2p.device-name" value from NetworkManager.conf if one is set for
+ * @device, the current system hostname otherwise. Either way the name is
+ * coerced to valid UTF-8 and truncated to the 32 bytes that the WPS
+ * "Device Name" attribute allows at most.
+ *
+ * Returns: (transfer full): the device name, or %NULL if none is
+ *   configured and the hostname is not known.
+ */
+char *
+nm_wifi_common_get_p2p_device_name(NMDevice *device)
+{
+    NMHostnameManager *hostname_manager;
+    gs_free char      *hostname = NULL;
+    const char        *conf_name;
+    char              *name;
+
+    conf_name = nm_config_data_get_device_config_by_device(
+        NM_CONFIG_GET_DATA,
+        NM_CONFIG_KEYFILE_KEY_DEVICE_WIFI_P2P_DEVICE_NAME,
+        device,
+        NULL);
+    name = sanitize_p2p_device_name(conf_name);
+    if (name)
+        return name;
+
+    hostname_manager = nm_hostname_manager_get();
+    if (!nm_hostname_manager_get_transient_hostname(hostname_manager, &hostname))
+        hostname = g_strdup(nm_hostname_manager_get_static_hostname(hostname_manager));
+
+    return sanitize_p2p_device_name(hostname);
+}

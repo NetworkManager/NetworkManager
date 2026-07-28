@@ -15,6 +15,8 @@ void nm_device_wifi_emit_signal_access_point(NMDevice *device,
                                              NMWifiAP *ap,
                                              gboolean  is_added /* or else is_removed */);
 
+char *nm_wifi_common_get_p2p_device_name(NMDevice *device);
+
 extern const NMDBusInterfaceInfoExtended nm_interface_info_device_wireless;
 extern const GDBusSignalInfo             nm_signal_info_wireless_access_point_added;
 extern const GDBusSignalInfo             nm_signal_info_wireless_access_point_removed;
