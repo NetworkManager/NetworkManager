@@ -103,6 +103,7 @@ typedef struct {
 
     gint64 scan_last_complete_msec;
     gint64 scan_periodic_next_msec;
+    gint64 scan_grace_next_msec;
 
     gint64 scan_last_request_started_at_msec;
 
@@ -393,6 +394,13 @@ nm_device_wifi_scanning_prohibited_track(NMDeviceWifi *self,
         if (!elem)
             return;
         nm_c_list_elem_free(elem);
+        if (c_list_is_empty(&priv->scanning_prohibited_lst_head)) {
+            /* Grace period: the prohibiting device may immediately retry
+             * (and prohibit again) or still be settling. */
+            priv->scan_grace_next_msec =
+                NM_MAX(priv->scan_grace_next_msec,
+                       nm_utils_get_monotonic_timestamp_msec() + (SCAN_INTERVAL_SEC_MIN * 1000));
+        }
     } else {
         if (elem)
             return;
@@ -1821,6 +1829,21 @@ _scan_kickoff(NMDeviceWifi *self)
         nm_clear_g_source_inst(&priv->scan_kickoff_timeout_source);
         priv->scan_kickoff_timeout_source =
             nm_g_timeout_add_source(timeout_msec, _scan_kickoff_timeout_cb, self);
+        return;
+    }
+
+    if (now_msec < priv->scan_grace_next_msec) {
+        _LOGT_scan("kickoff: don't scan (grace period after a scan prohibition for another "
+                   "%d.%03d sec%s)",
+                   (int) ((priv->scan_grace_next_msec - now_msec) / 1000),
+                   (int) ((priv->scan_grace_next_msec - now_msec) % 1000),
+                   !priv->scan_kickoff_timeout_source ? ", schedule timeout" : "");
+        if (!priv->scan_kickoff_timeout_source) {
+            priv->scan_kickoff_timeout_source =
+                nm_g_timeout_add_source(priv->scan_grace_next_msec - now_msec,
+                                        _scan_kickoff_timeout_cb,
+                                        self);
+        }
         return;
     }
 
