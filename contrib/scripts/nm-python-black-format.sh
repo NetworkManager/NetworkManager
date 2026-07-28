@@ -30,8 +30,9 @@ fi
 OLD_IFS="$IFS"
 
 usage() {
-    printf "Usage: %s [OPTION]...\n" "$(basename "$0")"
-    printf "Reformat python source files using python black.\n\n"
+    printf "Usage: %s [OPTION]... [FILE]...\n" "$(basename "$0")"
+    printf "Reformat python source files using python black.\n"
+    printf "Without FILE arguments, all python files of the source tree are used.\n\n"
     printf "OPTIONS:\n"
     printf "    -i                   Reformat files (this is the default)\n"
     printf "    -n|--dry-run|--check Only check the files (contrary to \"-i\")\n"
@@ -41,6 +42,7 @@ usage() {
 
 TEST_ONLY=0
 SHOW_FILENAMES=0
+FILES_ARG=()
 
 while (( $# )); do
     case "$1" in
@@ -63,17 +65,26 @@ while (( $# )); do
             shift
             continue
             ;;
-        *)
+        -*)
             usage
             exit 1
+            ;;
+        *)
+            FILES_ARG+=( "$1" )
+            shift
+            continue
             ;;
     esac
 done
 
 IFS=$'\n'
 FILES=()
-FILES+=( $(git ls-tree --name-only -r HEAD | grep '\.py$') )
-FILES+=( $(git grep -l '#!.*\<p[y]thon3\?\>') )
+if [ "${#FILES_ARG[@]}" -gt 0 ]; then
+    FILES=( "${FILES_ARG[@]}" )
+else
+    FILES+=( $(git ls-tree --name-only -r HEAD | grep '\.py$') )
+    FILES+=( $(git grep -l '#!.*\<p[y]thon3\?\>') )
+fi
 FILES=( $(printf "%s\n" "${FILES[@]}" | sort -u) )
 
 # Filter out paths that are forked from upstream projects and not
@@ -89,6 +100,10 @@ IFS="$OLD_IFS"
 
 if [ $SHOW_FILENAMES = 1 ]; then
     printf '%s\n' "${FILES[@]}"
+    exit 0
+fi
+
+if [ "${#FILES[@]}" -eq 0 ]; then
     exit 0
 fi
 
