@@ -150,13 +150,22 @@ You may integrate clang-formatter in your editor (for [vim](https://github.com/r
 ### pre-commit hooks
 
 A [pre-commit](https://pre-commit.com/) config (`.pre-commit-config.yaml`) is
-provided to catch the two issues that most often fail CI's "check-tree" stage
-before you push:
+provided to catch the issues that most often fail CI's "check-tree" stage
+before you push. On `git commit` it checks:
 
 - clang-format on the C/H files you touched, via
   `contrib/scripts/nm-code-format-container.sh` so it matches CI's clang-format
   version (requires podman);
-- `POTFILES.in` consistency (`src/tests/check-potfile-list.py`).
+- black formatting of the python files you touched
+  (`contrib/scripts/nm-python-black-format.sh`);
+- `POTFILES.in` consistency (`src/tests/check-potfile-list.py`);
+- validity of the `po/*.po` files you touched (`msgfmt --check`);
+- the commit message rules of this document, currently the absence of
+  "Signed-off-by:" lines (`contrib/scripts/check-commit-message.sh`).
+
+After the commit it also runs [checkpatch.pl](contrib/scripts/checkpatch.pl)
+over your branch. Those are heuristics, so it only prints its findings and
+never rejects the commit. Set `NM_HOOK_DISABLED=1` to silence it.
 
 To enable it, install pre-commit (`pip install pre-commit`, or your distro's
 package) and run once in the checkout:
@@ -165,9 +174,14 @@ package) and run once in the checkout:
 $ pre-commit install
 ```
 
-The hooks then run on every `git commit`. Use `git commit --no-verify` to skip
-them for a work-in-progress commit, or `pre-commit run --all-files` to check the
-whole tree.
+Use `git commit --no-verify` to skip the checks for a work-in-progress commit,
+`SKIP=<hook-id>` to skip an individual one, or `pre-commit run --all-files` to
+check the whole tree.
+
+CI's "check-tree" job runs the same `.pre-commit-config.yaml`, so the two do not
+drift apart. It skips the clang-format hook, which needs podman, and checks the
+formatting with the clang-format of its own image instead. The commit messages
+of the merge request it checks with the same script the hook uses.
 
 ### Style
 

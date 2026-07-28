@@ -1,3 +1,10 @@
+default_install_hook_types: [pre-commit, commit-msg, post-commit]
+# Without this, a hook that does not name its stages runs at every installed
+# stage, so the file checks below would repeat on commit-msg and post-commit.
+default_stages: [pre-commit]
+
+minimum_pre_commit_version: '3.2.0'
+
 repos:
   - repo: local
     hooks:
@@ -20,9 +27,37 @@ repos:
             src/n-acd/|
             src/n-dhcp4/
           )
+      - id: nm-black
+        name: python black formatting
+        entry: ./contrib/scripts/nm-python-black-format.sh --check
+        language: script
+        types_or: [python]
+        require_serial: true
       - id: nm-potfiles
         name: POTFILES.in consistency
         entry: src/tests/check-potfile-list.py
         language: script
         pass_filenames: false
         always_run: true
+      # msgfmt concatenates several input files into one catalog, so the files
+      # have to be passed one at a time.
+      - id: nm-po-msgfmt
+        name: po file validity
+        entry: bash -c 'for f; do msgfmt --check --output-file=/dev/null "$f"; done' --
+        language: system
+        files: ^po/.*\.po$
+      - id: nm-commit-message
+        name: commit message rules
+        entry: ./contrib/scripts/check-commit-message.sh
+        language: script
+        stages: [commit-msg]
+      # Runs after the commit, because checkpatch works on a commit and not on
+      # the staged files.
+      - id: nm-checkpatch
+        name: checkpatch.pl (enforced by CI)
+        entry: ./contrib/scripts/checkpatch-git-post-commit-hook
+        language: script
+        stages: [post-commit]
+        pass_filenames: false
+        always_run: true
+        verbose: true
