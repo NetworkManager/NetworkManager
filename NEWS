@@ -13,6 +13,12 @@ Core:
 * Improve the error message returned when a connection activation
   fails because no compatible device is found.
 
+initrd:
+* Add the "rd.net.timeout.ip-required" kernel command line argument
+  to configure, in seconds, the required timeout that "ip=dhcp,dhcp6"
+  uses to wait for both IPv4 and IPv6. It defaults to 20 seconds and
+  can be overridden for use cases that need a different value.
+
 Wi-Fi:
 * Keep the long background scan interval for a single Wi-Fi 7 AP-MLD.
 * Announce the system hostname as the Wi-Fi P2P device name so that
