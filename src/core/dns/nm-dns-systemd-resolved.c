@@ -33,6 +33,11 @@
 #define SYSTEMD_RESOLVED_MANAGER_IFACE "org.freedesktop.resolve1.Manager"
 #define SYSTEMD_RESOLVED_DBUS_PATH     "/org/freedesktop/resolve1"
 
+/* systemd-resolved's DNS stub listener addresses, which resolved rejects
+ * as name servers. Same names and values (native endian) as in systemd. */
+#define INADDR_DNS_STUB       ((in_addr_t) 0x7f000035U) /* 127.0.0.53 */
+#define INADDR_DNS_PROXY_STUB ((in_addr_t) 0x7f000036U) /* 127.0.0.54 */
+
 /* define a variable, so that we can compare the operation with pointer equality. */
 static const char *const DBUS_OP_SET_LINK_DEFAULT_ROUTE = "SetLinkDefaultRoute";
 static const char *const DBUS_OP_SET_LINK_DNS_OVER_TLS  = "SetLinkDNSOverTLS";
@@ -400,6 +405,15 @@ update_add_ip_config(NMDnsSystemdResolved    *self,
         NMDnsServer dns_server;
 
         if (!nm_dns_uri_parse(ip_data->addr_family, strarr[i], &dns_server, NULL))
+            continue;
+
+        /* systemd-resolved rejects the entire request if any of the name
+         * servers is invalid: the unspecified address or resolved's own
+         * DNS stub addresses. */
+        if (nm_ip_addr_is_null(ip_data->addr_family, &dns_server.addr))
+            continue;
+        if (NM_IS_IPv4(ip_data->addr_family)
+            && NM_IN_SET(ntohl(dns_server.addr.addr4), INADDR_DNS_STUB, INADDR_DNS_PROXY_STUB))
             continue;
 
         if (!NM_IN_SET(dns_server.scheme,
