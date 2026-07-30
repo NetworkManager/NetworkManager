@@ -180,6 +180,17 @@ lease_to_ip6_config(NMDhcpSystemd *self, sd_dhcp6_lease *lease, gint32 ts, GErro
         for (i = 0; i < num; i++) {
             nm_inet6_ntop(&dns[i], addr_str);
             g_string_append(nm_gstring_add_space_delimiter(str), addr_str);
+
+            /* the unspecified address is not a valid name server. */
+            if (IN6_IS_ADDR_UNSPECIFIED(&dns[i])) {
+                nm_dhcp_lease_log_invalid_option(config->iface,
+                                                 AF_INET6,
+                                                 NM_DHCP_OPTION_DHCP6_DNS_SERVERS,
+                                                 "address %s is ignored",
+                                                 addr_str);
+                continue;
+            }
+
             nm_l3_config_data_add_nameserver_addr(l3cd, AF_INET6, &dns[i]);
         }
         nm_dhcp_option_add_option(options,
