@@ -62,6 +62,8 @@ nmtui:
   connection" list.
 * Mark protected Wi-Fi networks with a lock in the "Activate a
   connection" list; open networks are left unmarked.
+* The Wi-Fi page supports configuring WPA3 Enterprise Suite-B, PMF and
+  hidden networks.
 
 =============================================
 NetworkManager-1.58
