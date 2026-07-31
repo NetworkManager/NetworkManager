@@ -12,6 +12,9 @@ Overview of changes since NetworkManager-1.56
 * IPv6 interfaces that receive PD via DHCPv6 are considered healthy without a
   non-temporary address. The delegated prefix can be used via an interface
   configured with "ipv6.method: shared"
+* Suppress Wi-Fi scans while a Wi-Fi P2P device on the same radio is
+  activating, so that going off-channel does not disrupt group formation
+  or DHCP on the P2P link.
 
 =============================================
 NetworkManager-1.56.1
