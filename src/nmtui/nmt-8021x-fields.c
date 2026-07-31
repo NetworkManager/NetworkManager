@@ -356,6 +356,85 @@ eap_populate_advanced_tls_settings(EapMethod *method, NmtNewtWidget *subgrid)
     }
 }
 
+static gboolean
+ca_cert_validate(NmtNewtEntry *entry, const char *text, gpointer user_data)
+{
+    NmtNewtWidget *checkbox = user_data;
+
+    if (nmt_newt_checkbox_get_active(NMT_NEWT_CHECKBOX(checkbox)))
+        return TRUE;
+
+    if (*text == '\0')
+        return FALSE;
+
+    return cert_validate(entry, text, NULL);
+}
+
+static void
+ca_cert_checkbox_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
+{
+    NmtNewtWidget *ca_cert     = g_object_get_data(object, "ca-cert");
+    NmtNewtWidget *ca_password = g_object_get_data(object, "ca-password");
+    gboolean       active;
+
+    active = nmt_newt_checkbox_get_active(NMT_NEWT_CHECKBOX(object));
+
+    if (active) {
+        nmt_newt_entry_set_validator(NMT_NEWT_ENTRY(ca_cert),
+                                     ca_cert_validate,
+                                     NMT_NEWT_WIDGET(object));
+        nmt_newt_widget_set_visible(ca_cert, FALSE);
+        nmt_newt_widget_set_visible(ca_password, FALSE);
+    } else {
+        nmt_newt_widget_set_visible(ca_cert, TRUE);
+        nmt_newt_widget_set_visible(ca_password, TRUE);
+        nmt_newt_entry_set_validator(NMT_NEWT_ENTRY(ca_cert),
+                                     ca_cert_validate,
+                                     NMT_NEWT_WIDGET(object));
+    }
+}
+
+static void
+eap_populate_ca_cert_fields(EapMethod *method, NmtNewtWidget *subgrid)
+{
+    NmtNewtWidget *ca_cert_widget;
+    NmtNewtWidget *ca_password_widget;
+    NmtNewtWidget *checkbox;
+
+    checkbox = nmt_newt_checkbox_new(_("No CA certificate is required"));
+
+    ca_cert_widget = nmt_newt_entry_new(40, 0);
+    nmt_editor_grid_append(NMT_EDITOR_GRID(subgrid), _("CA cert"), ca_cert_widget, NULL);
+    nmt_newt_entry_set_validator(NMT_NEWT_ENTRY(ca_cert_widget), ca_cert_validate, checkbox);
+    g_object_bind_property_full(method->setting,
+                                NM_SETTING_802_1X_CA_CERT,
+                                ca_cert_widget,
+                                "text",
+                                G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL,
+                                certificate_to_string,
+                                certificate_from_string,
+                                NULL,
+                                NULL);
+
+    ca_password_widget =
+        nmt_password_fields_new(40,
+                                NMT_PASSWORD_FIELDS_SHOW_PASSWORD | NMT_PASSWORD_FIELDS_NOT_EMPTY);
+    g_object_bind_property(method->setting,
+                           NM_SETTING_802_1X_CA_CERT_PASSWORD,
+                           ca_password_widget,
+                           "password",
+                           G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
+    nmt_editor_grid_append(NMT_EDITOR_GRID(subgrid),
+                           _("CA cert password"),
+                           ca_password_widget,
+                           NULL);
+
+    g_object_set_data(G_OBJECT(checkbox), "ca-cert", ca_cert_widget);
+    g_object_set_data(G_OBJECT(checkbox), "ca-password", ca_password_widget);
+    g_signal_connect(checkbox, "notify::active", G_CALLBACK(ca_cert_checkbox_changed), NULL);
+    nmt_editor_grid_append(NMT_EDITOR_GRID(subgrid), NULL, checkbox, NULL);
+}
+
 static void
 eap_method_populate_tls(EapMethod *method, NmtNewtWidget *subgrid)
 {
@@ -377,28 +456,7 @@ eap_method_populate_tls(EapMethod *method, NmtNewtWidget *subgrid)
                            "text",
                            G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
 
-    widget = nmt_newt_entry_new(40, 0);
-    nmt_editor_grid_append(NMT_EDITOR_GRID(subgrid), _("CA cert"), widget, NULL);
-    nmt_newt_entry_set_validator(NMT_NEWT_ENTRY(widget), cert_validate, NULL);
-    g_object_bind_property_full(method->setting,
-                                NM_SETTING_802_1X_CA_CERT,
-                                widget,
-                                "text",
-                                G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL,
-                                certificate_to_string,
-                                certificate_from_string,
-                                NULL,
-                                NULL);
-
-    widget =
-        nmt_password_fields_new(40,
-                                NMT_PASSWORD_FIELDS_SHOW_PASSWORD | NMT_PASSWORD_FIELDS_NOT_EMPTY);
-    g_object_bind_property(method->setting,
-                           NM_SETTING_802_1X_CA_CERT_PASSWORD,
-                           widget,
-                           "password",
-                           G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
-    nmt_editor_grid_append(NMT_EDITOR_GRID(subgrid), _("CA cert password"), widget, NULL);
+    eap_populate_ca_cert_fields(method, subgrid);
 
     widget = nmt_newt_entry_new(40, NMT_NEWT_ENTRY_NONEMPTY);
     nmt_editor_grid_append(NMT_EDITOR_GRID(subgrid), _("User cert"), widget, NULL);
@@ -468,28 +526,7 @@ eap_method_populate_ttls(EapMethod *method, NmtNewtWidget *subgrid)
                            "text",
                            G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
 
-    widget = nmt_newt_entry_new(40, 0);
-    nmt_editor_grid_append(NMT_EDITOR_GRID(subgrid), _("CA cert"), widget, NULL);
-    nmt_newt_entry_set_validator(NMT_NEWT_ENTRY(widget), cert_validate, NULL);
-    g_object_bind_property_full(method->setting,
-                                NM_SETTING_802_1X_CA_CERT,
-                                widget,
-                                "text",
-                                G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL,
-                                certificate_to_string,
-                                certificate_from_string,
-                                NULL,
-                                NULL);
-
-    widget =
-        nmt_password_fields_new(40,
-                                NMT_PASSWORD_FIELDS_SHOW_PASSWORD | NMT_PASSWORD_FIELDS_NOT_EMPTY);
-    g_object_bind_property(method->setting,
-                           NM_SETTING_802_1X_CA_CERT_PASSWORD,
-                           widget,
-                           "password",
-                           G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
-    nmt_editor_grid_append(NMT_EDITOR_GRID(subgrid), _("CA cert password"), widget, NULL);
+    eap_populate_ca_cert_fields(method, subgrid);
 
     widget              = nmt_newt_popup_new(ttls_inner_methods);
     method->inner_popup = widget;
@@ -566,28 +603,7 @@ eap_method_populate_peap(EapMethod *method, NmtNewtWidget *subgrid)
                            "text",
                            G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
 
-    widget = nmt_newt_entry_new(40, 0);
-    nmt_editor_grid_append(NMT_EDITOR_GRID(subgrid), _("CA cert"), widget, NULL);
-    nmt_newt_entry_set_validator(NMT_NEWT_ENTRY(widget), cert_validate, NULL);
-    g_object_bind_property_full(method->setting,
-                                NM_SETTING_802_1X_CA_CERT,
-                                widget,
-                                "text",
-                                G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL,
-                                certificate_to_string,
-                                certificate_from_string,
-                                NULL,
-                                NULL);
-
-    widget =
-        nmt_password_fields_new(40,
-                                NMT_PASSWORD_FIELDS_SHOW_PASSWORD | NMT_PASSWORD_FIELDS_NOT_EMPTY);
-    g_object_bind_property(method->setting,
-                           NM_SETTING_802_1X_CA_CERT_PASSWORD,
-                           widget,
-                           "password",
-                           G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
-    nmt_editor_grid_append(NMT_EDITOR_GRID(subgrid), _("CA cert password"), widget, NULL);
+    eap_populate_ca_cert_fields(method, subgrid);
 
     widget = nmt_newt_popup_new(peap_version_entries);
     g_object_bind_property(method->setting,
