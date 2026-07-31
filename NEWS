@@ -1,4 +1,13 @@
 ===============================================
+NetworkManager-1.58.2
+Overview of changes since NetworkManager-1.58.1
+===============================================
+
+* Suppress Wi-Fi scans while a Wi-Fi P2P device on the same radio is
+  activating, so that going off-channel does not disrupt group formation
+  or DHCP on the P2P link.
+
+===============================================
 NetworkManager-1.58.1
 Overview of changes since NetworkManager-1.58.0
 ===============================================
