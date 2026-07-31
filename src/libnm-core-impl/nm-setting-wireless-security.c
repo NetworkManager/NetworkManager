@@ -1137,6 +1137,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                                        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
                                        NM_SETTING_WIRELESS_SECURITY_WPS_METHOD,
                                        FALSE,
+                                       FALSE,
                                        error))
         return FALSE;
 

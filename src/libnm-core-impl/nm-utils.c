@@ -4630,9 +4630,14 @@ _nm_utils_wps_method_validate(NMSettingWirelessSecurityWpsMethod wps_method,
                               const char                        *setting_name,
                               const char                        *property_name,
                               gboolean                           wps_required,
+                              gboolean                           allow_pin_display,
                               GError                           **error)
 {
-    if (wps_method > NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN) {
+    /* The PIN-display method is only implemented for Wi-Fi P2P, and it cannot
+     * be combined with any other method. */
+    if (wps_method > NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN
+        && !(allow_pin_display
+             && wps_method == NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN_DISPLAY)) {
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,

@@ -26,6 +26,21 @@ Wi-Fi:
   Wi-Fi P2P device is ready, so that it is visible during discovery and
   pairing, and can be overridden with the new "wifi-p2p.device-name"
   key in the [device] section of NetworkManager.conf.
+* Support WPS PIN enrollment for Wi-Fi P2P (Wi-Fi Direct) connections
+  with both wpa_supplicant and IWD. The new "wifi-p2p.wps-pin" secret
+  (with "wifi-p2p.wps-pin-flags") holds the code that the peer, for
+  example a display-capable Miracast sink, shows and that the user must
+  enter; when it is missing, it is requested from a secret agent, and
+  nmcli and nmtui can now prompt for it. Since peers generate the code
+  anew for every pairing, setting "wifi-p2p.wps-pin-flags" to
+  "not-saved" is recommended.
+* Support the opposite direction as well, with a "wifi-p2p.wps-method"
+  of "pin-display": a PIN that the user enters on the peer is shown on
+  this side instead. The client that sets up the connection provides
+  the PIN in the profile and shows it, or leaves it to a secret agent:
+  the simple agent behind nmcli and nmtui makes up a code and displays
+  it in its prompt. This method is not supported by IWD, whose Wi-Fi
+  P2P implementation only offers the keypad and push-button methods.
 
 nmtui:
 * Group known and other Wi-Fi networks separately in the "Activate a

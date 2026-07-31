@@ -25,6 +25,7 @@
 
 #include "nm-vpn-service-plugin.h"
 #include "nm-vpn-helpers.h"
+#include "libnm-glib-aux/nm-random-utils.h"
 #include "libnm-glib-aux/nm-secret-utils.h"
 
 /*****************************************************************************/
@@ -298,6 +299,23 @@ add_8021x_secrets(RequestData *request, GPtrArray *secrets)
     }
 
     return FALSE;
+}
+
+/* Generate an eight digit WPS PIN: seven random digits followed by the check
+ * digit that the WSC specification defines. */
+static void
+_wps_pin_generate(char (*out_pin)[9])
+{
+    unsigned val   = nm_random_u64_range(0, 10000000u);
+    unsigned accum = 0;
+    unsigned t;
+
+    for (t = val; t > 0; t /= 100) {
+        accum += 3 * (t % 10);
+        accum += (t / 10) % 10;
+    }
+
+    nm_sprintf_buf(*out_pin, "%08u", (val * 10) + ((10 - accum % 10) % 10));
 }
 
 static gboolean
@@ -919,6 +937,44 @@ request_secrets_from_ui(RequestData *request)
 
         if (!add_wireless_secrets(request, secrets))
             goto out_fail;
+    } else if (nm_connection_is_type(request->connection, NM_SETTING_WIFI_P2P_SETTING_NAME)) {
+        NMSettingWifiP2P *s_wifi_p2p = NM_SETTING_WIFI_P2P(
+            nm_connection_get_setting(request->connection, NM_TYPE_SETTING_WIFI_P2P));
+
+        if (!s_wifi_p2p)
+            goto out_fail;
+
+        title = _("WPS PIN required");
+
+        if (nm_setting_wifi_p2p_get_wps_method(s_wifi_p2p)
+            == NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN_DISPLAY) {
+            char pin[9];
+
+            /* We are the one that shows the PIN, so make one up. The user
+             * enters it on the peer and confirms it here. */
+            _wps_pin_generate(&pin);
+
+            msg = g_strdup_printf(_("Enter the WPS PIN on the peer to connect to '%s'"),
+                                  nm_connection_get_id(request->connection));
+
+            secret = _secret_real_new_plain(NM_SECRET_AGENT_SECRET_TYPE_SECRET,
+                                            _("PIN"),
+                                            NM_SETTING(s_wifi_p2p),
+                                            NM_SETTING_WIFI_P2P_WPS_PIN);
+            g_free(secret->value);
+            secret->value      = g_strdup(pin);
+            secret->force_echo = TRUE;
+        } else {
+            msg = g_strdup_printf(_("Enter the WPS PIN displayed by the peer to connect to '%s'"),
+                                  nm_connection_get_id(request->connection));
+
+            secret = _secret_real_new_plain(NM_SECRET_AGENT_SECRET_TYPE_SECRET,
+                                            _("PIN"),
+                                            NM_SETTING(s_wifi_p2p),
+                                            NM_SETTING_WIFI_P2P_WPS_PIN);
+        }
+
+        g_ptr_array_add(secrets, secret);
     } else if (nm_connection_is_type(request->connection, NM_SETTING_WIRED_SETTING_NAME)) {
         title = _("Wired 802.1X authentication");
         msg   = g_strdup_printf(_("Secrets are required to access the wired network '%s'"),

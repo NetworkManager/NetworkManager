@@ -32,12 +32,18 @@
 
 /*****************************************************************************/
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_PEER, PROP_WPS_METHOD, PROP_WFD_IES, );
+NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_PEER,
+                                  PROP_WPS_METHOD,
+                                  PROP_WFD_IES,
+                                  PROP_WPS_PIN,
+                                  PROP_WPS_PIN_FLAGS, );
 
 typedef struct {
     char   *peer;
     GBytes *wfd_ies;
+    char   *wps_pin;
     guint32 wps_method;
+    guint32 wps_pin_flags;
 } NMSettingWifiP2PPrivate;
 
 struct _NMSettingWifiP2P {
@@ -105,6 +111,39 @@ nm_setting_wifi_p2p_get_wfd_ies(NMSettingWifiP2P *setting)
     return NM_SETTING_WIFI_P2P_GET_PRIVATE(setting)->wfd_ies;
 }
 
+/**
+ * nm_setting_wifi_p2p_get_wps_pin:
+ * @setting: the #NMSettingWifiP2P
+ *
+ * Returns: the #NMSettingWifiP2P:wps-pin property of the setting
+ *
+ * Since: 1.60
+ **/
+const char *
+nm_setting_wifi_p2p_get_wps_pin(NMSettingWifiP2P *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_WIFI_P2P(setting), NULL);
+
+    return NM_SETTING_WIFI_P2P_GET_PRIVATE(setting)->wps_pin;
+}
+
+/**
+ * nm_setting_wifi_p2p_get_wps_pin_flags:
+ * @setting: the #NMSettingWifiP2P
+ *
+ * Returns: the #NMSettingSecretFlags pertaining to the
+ * #NMSettingWifiP2P:wps-pin
+ *
+ * Since: 1.60
+ **/
+NMSettingSecretFlags
+nm_setting_wifi_p2p_get_wps_pin_flags(NMSettingWifiP2P *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_WIFI_P2P(setting), NM_SETTING_SECRET_FLAG_NONE);
+
+    return NM_SETTING_WIFI_P2P_GET_PRIVATE(setting)->wps_pin_flags;
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -140,10 +179,36 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                                        NM_SETTING_WIFI_P2P_SETTING_NAME,
                                        NM_SETTING_WIFI_P2P_WPS_METHOD,
                                        TRUE,
+                                       TRUE,
                                        error))
         return FALSE;
 
     return TRUE;
+}
+
+static GPtrArray *
+need_secrets(NMSetting *setting, gboolean check_rerequest)
+{
+    NMSettingWifiP2PPrivate *priv    = NM_SETTING_WIFI_P2P_GET_PRIVATE(setting);
+    GPtrArray               *secrets = NULL;
+
+    /* Only the PIN methods need a secret; PBC and the automatic methods do not.
+     * For the PIN-display method the secret is the code that we show and the
+     * user enters on the peer, so an agent may well make one up. */
+    if (!NM_IN_SET(priv->wps_method,
+                   NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN,
+                   NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN_DISPLAY))
+        return NULL;
+
+    if (!check_rerequest && priv->wps_pin && *priv->wps_pin)
+        return NULL;
+
+    if (!(priv->wps_pin_flags & NM_SETTING_SECRET_FLAG_NOT_REQUIRED)) {
+        secrets = g_ptr_array_sized_new(1);
+        g_ptr_array_add(secrets, NM_SETTING_WIFI_P2P_WPS_PIN);
+    }
+
+    return secrets;
 }
 
 /*****************************************************************************/
@@ -177,7 +242,8 @@ nm_setting_wifi_p2p_class_init(NMSettingWifiP2PClass *setting_wifi_p2p_class)
     object_class->get_property = _nm_setting_property_get_property_direct;
     object_class->set_property = _nm_setting_property_set_property_direct;
 
-    setting_class->verify = verify;
+    setting_class->verify       = verify;
+    setting_class->need_secrets = need_secrets;
 
     /**
      * NMSettingWifiP2P:peer:
@@ -209,8 +275,16 @@ nm_setting_wifi_p2p_class_init(NMSettingWifiP2PClass *setting_wifi_p2p_class)
      *
      * Flags indicating which mode of WPS is to be used.
      *
-     * There's little point in changing the default setting as NetworkManager will
-     * automatically determine the best method to use.
+     * With the default setting, the push-button method
+     * (%NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PBC) is used. For the PIN
+     * method there are two directions: set this to
+     * %NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN to enter the code that
+     * the peer displays (for example a display-capable Miracast sink), or to
+     * %NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN_DISPLAY to instead show a
+     * code that the user enters on the peer. Either way the code is the
+     * #NMSettingWifiP2P:wps-pin property.
+     * %NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN_DISPLAY is not supported
+     * by the IWD backend.
      *
      * Since: 1.16
      */
@@ -244,6 +318,51 @@ nm_setting_wifi_p2p_class_init(NMSettingWifiP2PClass *setting_wifi_p2p_class)
                                              NM_SETTING_PARAM_FUZZY_IGNORE,
                                              NMSettingWifiP2P,
                                              _priv.wfd_ies);
+
+    /**
+     * NMSettingWifiP2P:wps-pin:
+     *
+     * The WPS PIN used by the PIN methods of the #NMSettingWifiP2P:wps-method
+     * property. With %NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN it is the
+     * code that the peer (for example a display-capable Miracast sink)
+     * generates and displays, and that the user then enters on this machine.
+     * With %NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN_DISPLAY it is the
+     * code that the user enters on the peer instead; whoever provides the
+     * code is expected to show it: a client that sets it in the profile, or
+     * otherwise the secret agent that is asked for it, which may simply make
+     * one up.
+     *
+     * When the PIN is not set, NetworkManager asks a secret agent for it; if
+     * enrollment then fails, it asks again for a new one. The code is normally
+     * used only once, in which case saving it is pointless: set the
+     * #NMSettingWifiP2P:wps-pin-flags property to
+     * %NM_SETTING_SECRET_FLAG_NOT_SAVED so that the user is asked every
+     * time.
+     *
+     * Since: 1.60
+     */
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_WIFI_P2P_WPS_PIN,
+                                              PROP_WPS_PIN,
+                                              NM_SETTING_PARAM_SECRET,
+                                              NMSettingWifiP2P,
+                                              _priv.wps_pin,
+                                              .direct_string_allow_empty = TRUE);
+
+    /**
+     * NMSettingWifiP2P:wps-pin-flags:
+     *
+     * Flags indicating how to handle the #NMSettingWifiP2P:wps-pin property.
+     *
+     * Since: 1.60
+     */
+    _nm_setting_property_define_direct_secret_flags(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_WIFI_P2P_WPS_PIN_FLAGS,
+                                                    PROP_WPS_PIN_FLAGS,
+                                                    NMSettingWifiP2P,
+                                                    _priv.wps_pin_flags);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

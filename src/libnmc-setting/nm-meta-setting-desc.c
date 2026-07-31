@@ -8343,6 +8343,13 @@ static const NMMetaPropertyInfo *const property_infos_WIFI_P2P[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIFI_P2P_WFD_IES,
         .property_type =                &_pt_gobject_bytes,
     ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_WIFI_P2P_WPS_PIN,
+        .is_secret =                    TRUE,
+        .property_type =                &_pt_gobject_string,
+    ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_WIFI_P2P_WPS_PIN_FLAGS,
+        .property_type =                &_pt_gobject_secret_flags,
+    ),
     NULL
 };
 
@@ -8846,6 +8853,9 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
             PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
                 .get_gtype =            nm_setting_wireless_security_wps_method_get_type,
+                /* "pin-display" is only implemented for Wi-Fi P2P. */
+                .min =                  NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DEFAULT,
+                .max =                  NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN,
             ),
         ),
     ),
