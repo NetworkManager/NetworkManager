@@ -253,9 +253,10 @@ no-auto-default=*
           <para>
             When set to '<literal>initrd</literal>', NetworkManager does not connect
             to D-Bus and quits after configuring the network. This is an implementation
-            detail how the NetworkManager module of dracut can run NetworkManager.
-            An alternative to this is having NetworkManager as a systemd service
-            with D-Bus in initrd.
+            detail of how the NetworkManager module of dracut can run NetworkManager.
+            The alternative is to run NetworkManager as a systemd service with D-Bus
+            in the initrd, using the units described in
+            <link linkend='nm-initrd-generator'><citerefentry><refentrytitle>nm-initrd-generator</refentrytitle><manvolnum>8</manvolnum></citerefentry></link>.
           </para>
           <para>
             The value '<literal>true</literal>' is unsupported since version 1.36.
