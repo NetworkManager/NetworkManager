@@ -1835,25 +1835,20 @@ _normalize_802_1x_empty_strings(NMConnection *self)
 static gboolean
 _normalize_required_settings(NMConnection *self)
 {
-    NMSettingBluetooth *s_bt = nm_connection_get_setting_bluetooth(self);
-    NMSetting          *s_bridge;
-    gboolean            changed = FALSE;
+    gboolean changed = FALSE;
 
-    if (nm_connection_get_setting_vlan(self) || nm_connection_get_setting_bridge(self)) {
-        if (!nm_connection_get_setting_wired(self)) {
-            nm_connection_add_setting(self, nm_setting_wired_new());
-            changed = TRUE;
-        }
+    if (_nm_connection_get_setting_bluetooth_for_nap(self)
+        && !nm_connection_get_setting_bridge(self)) {
+        nm_connection_add_setting(
+            self,
+            g_object_new(NM_TYPE_SETTING_BRIDGE, NM_SETTING_BRIDGE_STP, FALSE, NULL));
+        changed = TRUE;
     }
-    if (s_bt
-        && nm_streq0(nm_setting_bluetooth_get_connection_type(s_bt),
-                     NM_SETTING_BLUETOOTH_TYPE_NAP)) {
-        if (!nm_connection_get_setting_bridge(self)) {
-            s_bridge = nm_setting_bridge_new();
-            g_object_set(s_bridge, NM_SETTING_BRIDGE_STP, FALSE, NULL);
-            nm_connection_add_setting(self, s_bridge);
-            changed = TRUE;
-        }
+    /* Must run after the NAP block: its synthesized bridge needs a wired setting too. */
+    if ((nm_connection_get_setting_vlan(self) || nm_connection_get_setting_bridge(self))
+        && !nm_connection_get_setting_wired(self)) {
+        nm_connection_add_setting(self, nm_setting_wired_new());
+        changed = TRUE;
     }
     return changed;
 }
