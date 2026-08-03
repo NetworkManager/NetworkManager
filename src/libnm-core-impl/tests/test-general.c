@@ -6571,6 +6571,41 @@ test_connection_normalize_shared_addresses(void)
 }
 
 static void
+test_connection_normalize_bluetooth_nap(void)
+{
+    gs_unref_object NMConnection *con = NULL;
+    NMSettingConnection          *s_con;
+    NMSettingBluetooth           *s_bt;
+
+    con = nmtst_create_minimal_connection("test-bt-nap",
+                                          NULL,
+                                          NM_SETTING_BLUETOOTH_SETTING_NAME,
+                                          &s_con);
+    g_object_set(s_con, NM_SETTING_CONNECTION_INTERFACE_NAME, "btnap0", NULL);
+
+    s_bt = nm_connection_get_setting_bluetooth(con);
+    g_object_set(s_bt, NM_SETTING_BLUETOOTH_TYPE, NM_SETTING_BLUETOOTH_TYPE_NAP, NULL);
+
+    nmtst_assert_connection_verifies_after_normalization(con,
+                                                         NM_CONNECTION_ERROR,
+                                                         NM_CONNECTION_ERROR_INVALID_SETTING);
+    nmtst_connection_normalize(con);
+    nmtst_assert_connection_has_settings(con,
+                                         NM_SETTING_CONNECTION_SETTING_NAME,
+                                         NM_SETTING_BLUETOOTH_SETTING_NAME,
+                                         NM_SETTING_BRIDGE_SETTING_NAME,
+                                         NM_SETTING_WIRED_SETTING_NAME,
+                                         NM_SETTING_IP4_CONFIG_SETTING_NAME,
+                                         NM_SETTING_IP6_CONFIG_SETTING_NAME,
+                                         NM_SETTING_PROXY_SETTING_NAME);
+    g_assert(!nm_setting_bridge_get_stp(nm_connection_get_setting_bridge(con)));
+    g_assert_cmpstr(
+        nm_setting_bluetooth_get_connection_type(nm_connection_get_setting_bluetooth(con)),
+        ==,
+        NM_SETTING_BLUETOOTH_TYPE_NAP);
+}
+
+static void
 test_connection_normalize_ovs_interface_type_system(gconstpointer test_data)
 {
     const guint                   TEST_CASE = GPOINTER_TO_UINT(test_data);
@@ -12073,6 +12108,8 @@ main(int argc, char **argv)
                     test_connection_normalize_may_fail);
     g_test_add_func("/core/general/test_connection_normalize_shared_addresses",
                     test_connection_normalize_shared_addresses);
+    g_test_add_func("/core/general/test_connection_normalize_bluetooth_nap",
+                    test_connection_normalize_bluetooth_nap);
     g_test_add_data_func("/core/general/test_connection_normalize_ovs_interface_type_system/1",
                          GUINT_TO_POINTER(1),
                          test_connection_normalize_ovs_interface_type_system);
