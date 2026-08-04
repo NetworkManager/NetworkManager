@@ -5,7 +5,7 @@ Guidelines for Contributing
 Community
 ---------
 
-Check out website https://networkmanager.dev and our [GNOME page](https://wiki.gnome.org/Projects/NetworkManager).
+Check out our website https://networkmanager.dev.
 
 The release tarballs can be found at [download.gnome.org](https://download.gnome.org/sources/NetworkManager/).
 
@@ -16,7 +16,7 @@ Report issues
 -------------
 
 Report issues or feature requests in our [Gitlab's issue tracker](https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/issues)
-or our maling list.
+or our mailing list.
 
 For bug reports usually NetworkManager's logs will be needed to understand the
 problem. Attach the full logs to the issue. For WiFi related issues, attach also
@@ -297,13 +297,11 @@ Code Structure
 
 `./data`- Contains some configurations and rules.
 
-`./docs`- Contains the generated documentation for libnm and for the D-Bus API.
+`./docs`- Contains generated libnm and D-Bus API documentation, plus hand-written internal architecture notes (`internal/`) and `sandboxing.md`.
 
 `./examples`- Some code examples for basic networking operations and status checking.
 
 `./introspection`- XML docs describing various D-Bus interface and their properties.
-
-`./m4`- Contains M4 macros source files for autoconf.
 
 `./man`- NM manual files.
 

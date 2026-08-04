@@ -32,17 +32,13 @@ How it works
 
 The NetworkManager daemon runs as a privileged service (since it must access
 and control hardware), but provides a D-Bus interface on the system bus to
-allow for fine-grained control of networking.  NetworkManager does not store
-connections or settings, it is only the mechanism by which those connections
-are selected and activated.
+allow for fine-grained control of networking.
 
-To store pre-defined network connections, two separate services, the "system
-settings service" and the "user settings service" store connection information
-and provide these to NetworkManager, also via D-Bus.  Each settings service
-can determine how and where it persistently stores the connection information;
-for example, the GNOME applet stores its configuration in GConf, and the system
-settings service stores its config in distro-specific formats, or in a distro-
-agnostic format, depending on user/administrator preference.
+NetworkManager stores predefined network connections as connection profiles.
+The daemon manages these through its settings plugins: by default the
+distro-agnostic keyfile plugin under `/etc/NetworkManager/system-connections/`,
+with optional plugins for distro-specific formats (ifcfg-rh, ifupdown).
+Profiles are exposed and edited over D-Bus.
 
 A variety of other system services are used by NetworkManager to provide
 network functionality: wpa_supplicant for wireless connections and 802.1x

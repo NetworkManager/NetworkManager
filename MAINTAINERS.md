@@ -260,7 +260,7 @@ Before starting:
 
 When doing a release, follow this process:
 1. Ensure that `NEWS` file is up to date.
-2. Increment the version in `meson.build` or `configure.ac`.
+2. Increment the version in `meson.build`.
 3. Commit and push to the `main` branch.
 4. Check that the Gitlab's pipeline finishes without errors.
 5. Tag the commit with a signed tag. Example: `git tag -s 1.2.8 -m 'Release 1.2.8'`.
