@@ -4166,6 +4166,104 @@ test_ethtool_features_get(void)
 
 /*****************************************************************************/
 
+static void
+assert_link_settings(int ifindex, gboolean autoneg, guint32 speed, NMPlatformLinkDuplexType duplex)
+{
+    gboolean                 c_autoneg;
+    guint32                  c_speed;
+    NMPlatformLinkDuplexType c_duplex;
+
+    g_assert(nm_platform_ethtool_get_link_settings(NM_PLATFORM_GET,
+                                                   ifindex,
+                                                   &c_autoneg,
+                                                   &c_speed,
+                                                   &c_duplex));
+    g_assert_cmpint(c_autoneg, ==, autoneg);
+    g_assert_cmpint(c_speed, ==, speed);
+    g_assert_cmpint(c_duplex, ==, duplex);
+}
+
+static void
+test_ethtool_link_settings(void)
+{
+    const char            *IFACE_VETH0 = "nm-test-lnk0";
+    const char            *IFACE_VETH1 = "nm-test-lnk1";
+    const char            *IFACE_TAP   = "nm-test-tap0";
+    const NMPlatformLnkTun lnk_tun     = {
+        .type    = IFF_TAP,
+        .persist = TRUE,
+    };
+    int ifindex;
+
+    if (nm_platform_genl_get_family_id(NM_PLATFORM_GET, NMP_GENL_FAMILY_TYPE_ETHTOOL) == 0) {
+        g_test_skip("ethtool netlink not supported");
+        return;
+    }
+
+    ifindex = nmtstp_link_veth_add(NM_PLATFORM_GET, -1, IFACE_VETH0, IFACE_VETH1)->ifindex;
+
+    /* fixed values from veth_get_link_ksettings() */
+    assert_link_settings(ifindex, FALSE, 10000, NM_PLATFORM_LINK_DUPLEX_FULL);
+
+    /* veth has no set_link_ksettings(). */
+    g_assert(!nm_platform_ethtool_set_link_settings(NM_PLATFORM_GET,
+                                                    ifindex,
+                                                    TRUE,
+                                                    0,
+                                                    NM_PLATFORM_LINK_DUPLEX_UNKNOWN));
+    g_assert(!nm_platform_ethtool_set_link_settings(NM_PLATFORM_GET,
+                                                    ifindex,
+                                                    FALSE,
+                                                    1000,
+                                                    NM_PLATFORM_LINK_DUPLEX_FULL));
+
+    assert_link_settings(ifindex, FALSE, 10000, NM_PLATFORM_LINK_DUPLEX_FULL);
+
+    nmtstp_link_delete(NULL, -1, ifindex, IFACE_VETH0, TRUE);
+
+    /* TAP stores whatever it is told. */
+    ifindex = nmtstp_link_tun_add(NM_PLATFORM_GET, FALSE, IFACE_TAP, &lnk_tun, NULL)->ifindex;
+
+    g_assert(nm_platform_ethtool_set_link_settings(NM_PLATFORM_GET,
+                                                   ifindex,
+                                                   FALSE,
+                                                   1000,
+                                                   NM_PLATFORM_LINK_DUPLEX_FULL));
+    assert_link_settings(ifindex, FALSE, 1000, NM_PLATFORM_LINK_DUPLEX_FULL);
+
+    g_assert(nm_platform_ethtool_set_link_settings(NM_PLATFORM_GET,
+                                                   ifindex,
+                                                   FALSE,
+                                                   10,
+                                                   NM_PLATFORM_LINK_DUPLEX_HALF));
+    assert_link_settings(ifindex, FALSE, 10, NM_PLATFORM_LINK_DUPLEX_HALF);
+
+    /* TAP has no supported modes to advertise. */
+    g_assert(!nm_platform_ethtool_set_link_settings(NM_PLATFORM_GET,
+                                                    ifindex,
+                                                    TRUE,
+                                                    100,
+                                                    NM_PLATFORM_LINK_DUPLEX_FULL));
+    assert_link_settings(ifindex, FALSE, 10, NM_PLATFORM_LINK_DUPLEX_HALF);
+
+    /* The reset omits speed/duplex, so TAP keeps the stored values. */
+    g_assert(nm_platform_ethtool_set_link_settings(NM_PLATFORM_GET,
+                                                   ifindex,
+                                                   TRUE,
+                                                   0,
+                                                   NM_PLATFORM_LINK_DUPLEX_UNKNOWN));
+    assert_link_settings(ifindex, TRUE, 10, NM_PLATFORM_LINK_DUPLEX_HALF);
+
+    nmtstp_link_delete(NULL, -1, ifindex, IFACE_TAP, TRUE);
+
+    g_assert(!nm_platform_ethtool_get_link_settings(NM_PLATFORM_GET, ifindex, NULL, NULL, NULL));
+    g_assert(!nm_platform_ethtool_set_link_settings(NM_PLATFORM_GET,
+                                                    ifindex,
+                                                    FALSE,
+                                                    1000,
+                                                    NM_PLATFORM_LINK_DUPLEX_FULL));
+}
+
 NMTstpSetupFunc const _nmtstp_setup_platform_func = SETUP;
 
 void
@@ -4273,5 +4371,6 @@ _nmtstp_setup_tests(void)
         g_test_add_func("/general/sysctl/set-async-fail", test_sysctl_set_async_fail);
 
         g_test_add_func("/link/ethtool/features/get", test_ethtool_features_get);
+        g_test_add_func("/link/ethtool/link-settings", test_ethtool_link_settings);
     }
 }
