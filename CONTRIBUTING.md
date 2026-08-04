@@ -125,6 +125,26 @@ Do not use "Signed-off-by:" lines in commits for NetworkManager. It has no
 meaning.
 
 
+AI coding assistants
+--------------------
+
+Authors are responsible for 100% of the code they submit. Do not send a patch
+you cannot explain, and do not send one you have not built and tested yourself.
+
+Write your own commit messages and Merge Request descriptions. Those explain
+why you are making the change, which is the part a tool cannot know.
+
+Respond to review comments yourself. If you cannot discuss your own patch with
+a reviewer, it will not be merged.
+
+Everything in the Legal section applies unchanged. You are the one certifying
+that the contribution can be released under LGPL-2.1-or-later. A tool cannot
+certify that for you.
+
+Large machine-generated Merge Requests that no human has reviewed line by line
+will be closed.
+
+
 Coding Style
 ------------
 
