@@ -14,9 +14,6 @@
 
 const char *nm_platform_link_duplex_type_to_string(NMPlatformLinkDuplexType duplex);
 
-extern const guint8  _nmp_link_mode_all_advertised_modes_bits[79];
-extern const guint32 _nmp_link_mode_all_advertised_modes[3];
-
 /*****************************************************************************/
 
 struct udev_device;
