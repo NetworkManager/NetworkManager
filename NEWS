@@ -19,6 +19,11 @@ Core:
   choose the CA trust store used to validate the authentication server.
   Such profiles must clear those properties and use "ca-cert" or
   "system-ca-certs" instead.
+* Preserve the configured PHY timing role when applying Ethernet link
+  negotiation settings through ethtool netlink (requires Linux 5.6 or newer).
+* With Ethernet autonegotiation enabled, advertise all supported link modes
+  matching the configured speed and duplex, including fibre and backplane
+  modes.
 
 initrd:
 * Add the "rd.net.timeout.ip-required" kernel command line argument

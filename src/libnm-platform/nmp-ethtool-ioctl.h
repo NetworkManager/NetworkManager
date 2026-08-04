@@ -15,15 +15,6 @@ gboolean nmp_ethtool_ioctl_set_wake_on_lan(int                      ifindex,
                                            _NMSettingWiredWakeOnLan wol,
                                            const char              *wol_password);
 
-gboolean nmp_ethtool_ioctl_get_link_settings(int                       ifindex,
-                                             gboolean                 *out_autoneg,
-                                             guint32                  *out_speed,
-                                             NMPlatformLinkDuplexType *out_duplex);
-gboolean nmp_ethtool_ioctl_set_link_settings(int                      ifindex,
-                                             gboolean                 autoneg,
-                                             guint32                  speed,
-                                             NMPlatformLinkDuplexType duplex);
-
 gboolean nmp_ethtool_ioctl_get_permanent_address(int ifindex, guint8 *buf, size_t *length);
 
 gboolean nmp_ethtool_ioctl_get_driver_info(int ifindex, NMPUtilsEthtoolDriverInfo *data);

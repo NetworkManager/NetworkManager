@@ -113,7 +113,8 @@ Requirements
 
 NetworkManager requires:
 
-- Linux kernel >= 5.6 for some ethtool options (pause, eee, ring)
+- Linux kernel >= 5.6 for some ethtool options (pause, eee, ring, link
+  negotiation and speed reporting)
 
 
 Documentation

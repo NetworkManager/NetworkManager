@@ -3570,11 +3570,20 @@ nm_platform_ethtool_set_link_settings(NMPlatform              *self,
                                       guint32                  speed,
                                       NMPlatformLinkDuplexType duplex)
 {
+    const NMEthtoolLinkSettingsState settings = {
+        .autoneg = !!autoneg,
+        .speed   = speed,
+        .duplex  = duplex,
+    };
+
     _CHECK_SELF_NETNS(self, klass, netns, FALSE);
 
     g_return_val_if_fail(ifindex > 0, FALSE);
 
-    return nmp_ethtool_ioctl_set_link_settings(ifindex, autoneg, speed, duplex);
+    if (!klass->ethtool_set_link_settings)
+        return FALSE;
+
+    return klass->ethtool_set_link_settings(self, ifindex, &settings);
 }
 
 gboolean
@@ -3584,11 +3593,24 @@ nm_platform_ethtool_get_link_settings(NMPlatform               *self,
                                       guint32                  *out_speed,
                                       NMPlatformLinkDuplexType *out_duplex)
 {
+    NMEthtoolLinkSettingsState settings = {
+        .duplex = NM_PLATFORM_LINK_DUPLEX_UNKNOWN,
+    };
+
     _CHECK_SELF_NETNS(self, klass, netns, FALSE);
 
     g_return_val_if_fail(ifindex > 0, FALSE);
 
-    return nmp_ethtool_ioctl_get_link_settings(ifindex, out_autoneg, out_speed, out_duplex);
+    if (!klass->ethtool_get_link_settings)
+        return FALSE;
+
+    if (!klass->ethtool_get_link_settings(self, ifindex, &settings))
+        return FALSE;
+
+    NM_SET_OUT(out_autoneg, settings.autoneg);
+    NM_SET_OUT(out_speed, settings.speed);
+    NM_SET_OUT(out_duplex, settings.duplex);
+    return TRUE;
 }
 
 /*****************************************************************************/
