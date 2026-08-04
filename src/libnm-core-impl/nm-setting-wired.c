@@ -1359,11 +1359,8 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * NMSettingWired:speed:
      *
      * When a value greater than 0 is set, configures the device to use
-     * the specified speed. If "auto-negotiate" is "yes" the specified
-     * speed will be the only one advertised during link negotiation:
-     * this works only for BASE-T 802.3 specifications and is useful for
-     * enforcing gigabit speeds, as in this case link negotiation is
-     * mandatory.
+     * the specified speed. If "auto-negotiate" is "yes", only link modes
+     * matching the specified speed and duplex mode will be advertised.
      * If the value is unset (0, the default), the link configuration will be
      * either skipped (if "auto-negotiate" is "no", the default) or will
      * be auto-negotiated (if "auto-negotiate" is "yes") and the local device
@@ -1387,11 +1384,9 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * NMSettingWired:duplex:
      *
      * When a value is set, either "half" or "full", configures the device
-     * to use the specified duplex mode. If "auto-negotiate" is "yes" the
-     * specified duplex mode will be the only one advertised during link
-     * negotiation: this works only for BASE-T 802.3 specifications and is
-     * useful for enforcing gigabits modes, as in these cases link negotiation
-     * is mandatory.
+     * to use the specified duplex mode. If "auto-negotiate" is "yes", only
+     * link modes matching the specified speed and duplex mode will be
+     * advertised.
      * If the value is unset (the default), the link configuration will be
      * either skipped (if "auto-negotiate" is "no", the default) or will
      * be auto-negotiated (if "auto-negotiate" is "yes") and the local device
@@ -1412,11 +1407,9 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * NMSettingWired:auto-negotiate:
      *
      * When %TRUE, enforce auto-negotiation of speed and duplex mode.
-     * If "speed" and "duplex" properties are both specified, only that
-     * single mode will be advertised and accepted during the link
-     * auto-negotiation process: this works only for BASE-T 802.3 specifications
-     * and is useful for enforcing gigabits modes, as in these cases link
-     * negotiation is mandatory.
+     * If "speed" and "duplex" properties are both specified, only link modes
+     * matching both values will be advertised and accepted during the link
+     * auto-negotiation process.
      * When %FALSE, "speed" and "duplex" properties should be both set or
      * link configuration will be skipped.
      **/
