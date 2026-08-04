@@ -56,7 +56,10 @@
     it, since your changes may get overwritten by package
     updates. Instead, you can add additional <literal>.conf</literal>
     files to the <literal>/etc/NetworkManager/conf.d</literal> directory.
-    These will be read in order, with later files overriding earlier ones.
+    Within a directory, the files are merged in asciibetical order of their
+    file names, that is, compared byte by byte (so <literal>10-a.conf</literal>
+    is parsed before <literal>9-a.conf</literal>). If several files set the
+    same key, the value from the file parsed last is used.
     Packages might install further configuration snippets to <literal>/usr/lib/NetworkManager/conf.d</literal>.
     This directory is parsed first, even before <literal>NetworkManager.conf</literal>.
     Scripts can also put per-boot configuration into <literal>/run/NetworkManager/conf.d</literal>.
