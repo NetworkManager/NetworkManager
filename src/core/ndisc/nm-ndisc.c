@@ -835,6 +835,10 @@ nm_ndisc_add_dns_server(NMNDisc *ndisc, const NMNDiscDNSServer *new_item, gint64
     priv  = NM_NDISC_GET_PRIVATE(ndisc);
     rdata = &priv->rdata;
 
+    /* the unspecified address is not a valid name server. */
+    if (IN6_IS_ADDR_UNSPECIFIED(&new_item->address))
+        return FALSE;
+
     for (i = 0; i < rdata->dns_servers->len; i++) {
         NMNDiscDNSServer *item = &nm_g_array_index(rdata->dns_servers, NMNDiscDNSServer, i);
 
