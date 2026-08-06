@@ -174,7 +174,7 @@ next if $filename =~ /\/nm-[^\/]+-enum-types\.[ch]$/;
 next if $filename =~ /\b(shared|src)\/systemd\//
 	and not $filename =~ /\/sd-adapt\//
 	and not $filename =~ /\/nm-/;
-next if $filename =~ /\/(n-acd|c-list|c-siphash|n-dhcp4)\//;
+next if $filename =~ m{/(c-list|c-rbtree|c-siphash|c-stdaux|linux-headers|n-acd|n-dhcp4)/|/libnm-systemd-(core|shared)/src/};
 
 $expect_spdx = 1 if $line_no == 1;
 $expect_spdx = 0 if $line =~ /SPDX-License-Identifier/;
@@ -187,6 +187,7 @@ complain ("Don't use \"$1 $2\" instead of \"$2 $1\"") if $line =~ /\b(char|short
 complain ("Don't use \"unsigned int\" but just use \"unsigned\"") if $line =~ /\b(unsigned) +(int)\b/;
 complain ("Please use LGPL-2.1-or-later SPDX tag for new files") if $is_patch and $line =~ /SPDX-License-Identifier/ and not /LGPL-2.1-or-later/;
 complain ("Use a SPDX-License-Identifier instead of Licensing boilerplate") if $is_patch and $line =~ /under the terms of/;
+complain ("Use C-style comments (/* ... */), not C++-style (//)") if $line =~ m{(^|\s)//([^/]|$)};
 complain ("Don't use space inside elvis operator ?:") if $line =~ /\?[\t ]+:/;
 complain ("Don't add Emacs editor formatting hints to source files") if $line_no == 1 and $line =~ /-\*-.+-\*-/;
 complain ("XXX marker are reserved for development while work-in-progress. Use TODO or FIXME comment instead?") if $line =~ /\bXXX\b/;
@@ -209,6 +210,9 @@ complain ("Use spaces instead of tabs") if $line =~ /\t/;
 complain ("Prefer implementing private pointers via _NM_GET_PRIVATE() or _NM_GET_PRIVATE_PTR() (the latter, if the private data has an opqaue pointer in the header file)") if $line =~ /\b(g_type_class_add_private|G_TYPE_INSTANCE_GET_PRIVATE)\b/;
 complain ("Don't use close()/g_close(). Instead, use nm_close() (or nm_close_with_error()).") if $line =~ /\b(close|g_close)\b *\(/;
 complain ("Use nm_memdup() instead of g_memdup(). The latter has a size argument of type guint") if $line =~ /\bg_memdup\b/;
+complain ("Don't use GDBusProxy or GDBusObjectManager. Use plain GDBusConnection") if $line =~ /\bGDBus(Proxy|ObjectManager)/;
+complain ("Don't use g_warn_if_*(). Use g_return_*() or nm_assert()") if $line =~ /\bg_warn_if_/;
+complain ("Don't use assert() from <assert.h>. Use nm_assert() or g_return_*()") if $line =~ /(?<![_a-zA-Z0-9>.])assert\(/;
 
 # Further on we process stuff without comments.
 $_ = $line;
