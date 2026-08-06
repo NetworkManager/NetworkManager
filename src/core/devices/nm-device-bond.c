@@ -52,11 +52,12 @@
         NM_SETTING_BOND_OPTION_PACKETS_PER_SLAVE, NM_SETTING_BOND_OPTION_PRIMARY_RESELECT, \
         NM_SETTING_BOND_OPTION_RESEND_IGMP, NM_SETTING_BOND_OPTION_USE_CARRIER,            \
         NM_SETTING_BOND_OPTION_XMIT_HASH_POLICY, NM_SETTING_BOND_OPTION_NUM_GRAT_ARP,      \
-        NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY, NM_SETTING_BOND_OPTION_ARP_MISSED_MAX
+        NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY
 
-#define OPTIONS_REAPPLY_FULL                                     \
-    OPTIONS_REAPPLY_SUBSET, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE, \
-        NM_SETTING_BOND_OPTION_ARP_IP_TARGET, NM_SETTING_BOND_OPTION_NS_IP6_TARGET
+#define OPTIONS_REAPPLY_FULL                                                        \
+    OPTIONS_REAPPLY_SUBSET, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE,                    \
+        NM_SETTING_BOND_OPTION_ARP_IP_TARGET, NM_SETTING_BOND_OPTION_NS_IP6_TARGET, \
+        NM_SETTING_BOND_OPTION_ARP_MISSED_MAX
 
 /*****************************************************************************/
 
@@ -501,6 +502,8 @@ _platform_lnk_bond_init_from_setting(NMSettingBond *s_bond, NMPlatformLnkBond *p
     props->lp_interval_has      = props->lp_interval != 1;
     props->tlb_dynamic_lb_has   = NM_IN_SET(props->mode, NM_BOND_MODE_TLB, NM_BOND_MODE_ALB);
     props->lacp_active_has      = NM_IN_SET(props->mode, NM_BOND_MODE_8023AD);
+    props->arp_missed_max_has =
+        !NM_IN_SET(props->mode, NM_BOND_MODE_TLB, NM_BOND_MODE_ALB, NM_BOND_MODE_8023AD);
 }
 
 static void
@@ -907,6 +910,8 @@ reapply_connection(NMDevice *device, NMConnection *con_old, NMConnection *con_ne
     set_bond_arp_ip_targets(device, s_bond);
 
     set_bond_attrs_or_default(device, s_bond, NM_MAKE_STRV(OPTIONS_REAPPLY_SUBSET));
+    if (!NM_IN_SET(mode, NM_BOND_MODE_TLB, NM_BOND_MODE_ALB, NM_BOND_MODE_8023AD))
+        set_bond_attr_or_default(device, s_bond, NM_SETTING_BOND_OPTION_ARP_MISSED_MAX);
 
     _balance_slb_setup(self, con_new);
 }
