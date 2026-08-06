@@ -2217,6 +2217,75 @@ activate_secondary_connections(NMPolicy *self, NMConnection *connection, NMDevic
     return success;
 }
 
+/* The real-root daemon reads nm-initrd-generator's profiles back out of /run so
+ * that switching root does not disturb the network. Marking one volatile makes
+ * NMManager delete it once it stops being active. */
+static void
+device_initrd_connections_cleanup(NMPolicy *self, NMDevice *device, NMSettingsConnection *sett_conn)
+{
+    NMPolicyPrivate             *priv = NM_POLICY_GET_PRIVATE(self);
+    NMSettingsConnection *const *connections;
+    const char                  *value;
+    guint                        i;
+    guint                        len;
+
+    if (!sett_conn || nm_settings_connection_get_unsaved(sett_conn))
+        return;
+
+    value =
+        nm_config_data_get_device_config_by_device(NM_CONFIG_GET_DATA,
+                                                   NM_CONFIG_KEYFILE_KEY_DEVICE_INITRD_CONNECTIONS,
+                                                   device,
+                                                   NULL);
+    if (!nm_streq0(value, "volatile"))
+        return;
+
+    connections = nm_settings_get_connections(priv->settings, &len);
+    for (i = 0; i < len; i++) {
+        NMSettingsConnection *candidate = connections[i];
+        gs_free_error GError *local     = NULL;
+        NMConnection         *connection;
+        NMSettingUser        *s_user;
+
+        if (candidate == sett_conn)
+            continue;
+        if (NM_FLAGS_HAS(nm_settings_connection_get_flags(candidate),
+                         NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE))
+            continue;
+
+        /* Unsaved means /run. The origin tag survives being copied to /etc,
+         * and that copy is the user's own persistent profile. */
+        if (!nm_settings_connection_get_unsaved(candidate))
+            continue;
+
+        connection = nm_settings_connection_get_connection(candidate);
+        s_user     = NM_SETTING_USER(nm_connection_get_setting(connection, NM_TYPE_SETTING_USER));
+        if (!s_user
+            || !nm_streq0(nm_setting_user_get_data(s_user, NM_USER_TAG_ORIGIN),
+                          NM_USER_TAG_ORIGIN_INITRD_GENERATOR))
+            continue;
+
+        /* The compatibility check also enforces "allowed-connections", which
+         * forbids the very profiles this deletes. Only a mismatch for another
+         * reason means the profile is for a different device. */
+        if (!nm_device_check_connection_compatible(device, connection, TRUE, &local)
+            && !g_error_matches(local,
+                                NM_UTILS_ERROR,
+                                NM_UTILS_ERROR_CONNECTION_UNAVAILABLE_DISALLOWED))
+            continue;
+
+        _LOGD(LOGD_DEVICE,
+              "initrd-connections: marking profile \"%s\" (%s) as volatile, %s took over %s",
+              nm_settings_connection_get_id(candidate),
+              nm_settings_connection_get_uuid(candidate),
+              nm_settings_connection_get_id(sett_conn),
+              nm_device_get_iface(device));
+        nm_settings_connection_set_flags(candidate,
+                                         NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE,
+                                         TRUE);
+    }
+}
+
 static void
 device_state_changed(NMDevice           *device,
                      NMDeviceState       new_state,
@@ -2358,6 +2427,8 @@ device_state_changed(NMDevice           *device,
                                                               sett_conn,
                                                               FALSE);
         }
+
+        device_initrd_connections_cleanup(self, device, sett_conn);
 
         /* Since there is no guarantee that device_l3cd_changed() is called
          * again when the device becomes ACTIVATED, we need also to update

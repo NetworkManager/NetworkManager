@@ -1410,6 +1410,39 @@ managed=1
             </para>
           </listitem>
         </varlistentry>
+        <varlistentry id="initrd-connections">
+          <term><varname>initrd-connections</varname></term>
+          <listitem>
+            <para>
+              <link linkend='nm-initrd-generator'><citerefentry><refentrytitle>nm-initrd-generator</refentrytitle><manvolnum>8</manvolnum></citerefentry></link>
+              writes its profiles to
+              <filename>&nmrundir;/system-connections</filename>, and they are
+              still there once the real root has booted. This controls what
+              happens to them after a persistent profile takes over the device.
+            </para>
+            <para>
+              With <literal>keep</literal>, the default, they stay listed until
+              the next boot. With <literal>volatile</literal>, NetworkManager
+              deletes such a profile, and its keyfile, once a persistent profile
+              has activated on the same device and the initrd profile is no
+              longer in use. One that is still carrying the connection is left
+              alone, so a system booted from the network is not interrupted.
+            </para>
+            <para>
+              Only <filename>&nmrundir;</filename> is considered. A copy made
+              persistent under
+              <filename>&sysconfdir;/NetworkManager/system-connections</filename>
+              is never removed.
+            </para>
+            <para>
+              A volatile profile is also deleted if it deactivates for any other
+              reason, such as carrier loss. And because the generator does not
+              bind its profiles to a single interface, on a multi-homed machine
+              the profile marked through one device may be the one another
+              device is using.
+            </para>
+          </listitem>
+        </varlistentry>
         <varlistentry>
           <term><varname>wifi.scan-rand-mac-address</varname></term>
           <listitem>
