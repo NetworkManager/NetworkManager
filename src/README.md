@@ -24,7 +24,7 @@ Read the individual README.md files in the subdirectories for details:
 | [nmcli/](nmcli/)                                     | nmcli application, a command line client for NetworkManager |
 | [nmtui/](nmtui/)                                     | nmtui application, a text UI client for NetworkManager |
 | [nm-cloud-setup/](nm-cloud-setup/)                   | service to automatically configure NetworkManager in cloud environment |
-| [nm-initrd-generator/](nm-initrd-generator/)         | generates NetworkManager configuration by parsing kernel command line options for dracut/initrd |
+| [nm-initrd-generator/](nm-initrd-generator/)         | generates NetworkManager configuration by parsing kernel command line options in the initrd |
 | [nm-dispatcher/](nm-dispatcher/)                     | NetworkManager-dispatcher service to run user scripts |
 | [nm-online/](nm-online/)                             | application which checks whether NetworkManager is done, for implementing NetworkManager-wait-online.service |
 | [nm-priv-helper/](nm-priv-helper/)                   | internal service for privileged operations |

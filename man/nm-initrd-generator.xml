@@ -174,10 +174,121 @@
           </simplelist>
 
           <para>Please consult the <citerefentry><refentrytitle>dracut.cmdline</refentrytitle><manvolnum>7</manvolnum></citerefentry>
-          manual for the documentation of the precise format of the values supported.</para>
+          manual for the documentation of the precise format of the values supported.
+          Note that the values accepted for the configuration method of
+          <option>ip</option> differ from dracut's, see the section below.</para>
         </listitem>
       </varlistentry>
     </variablelist>
+  </refsect1>
+
+  <refsect1 id='running_in_the_initrd'><title>Running NetworkManager in the initrd</title>
+
+    <para><command>nm-initrd-generator</command> only writes configuration; it
+    is a separate NetworkManager instance that applies it. NetworkManager ships
+    the systemd units for that instance, so any systemd-based initramfs can use
+    them, not only <citerefentry><refentrytitle>dracut</refentrytitle><manvolnum>8</manvolnum></citerefentry>.
+    They are:</para>
+
+    <variablelist>
+      <varlistentry>
+        <term><filename>NetworkManager-config-initrd.service</filename></term>
+        <listitem>
+          <para>Runs very early, before
+          <filename>systemd-udevd.service</filename>. It clears any stale
+          profiles from <filename>/run/NetworkManager/system-connections</filename>,
+          runs <command>nm-initrd-generator</command> on the contents of
+          <filename>/proc/cmdline</filename>, creates the flag file
+          <filename>/run/NetworkManager/initrd/neednet</filename> if at least
+          one connection profile exists, and then applies the hostname if one
+          was given.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><filename>NetworkManager-initrd.service</filename></term>
+        <listitem>
+          <para>Runs the NetworkManager daemon with the
+          <literal>initrd</literal> configuration tag enabled. It is a
+          <literal>Type=dbus</literal> unit and requires a running message bus.
+          It is skipped unless the <filename>neednet</filename> flag file exists
+          and at least one profile is present under
+          <filename>/usr/lib</filename>, <filename>/run</filename> or
+          <filename>/etc/NetworkManager/system-connections</filename>.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><filename>NetworkManager-wait-online-initrd.service</filename></term>
+        <listitem>
+          <para>Blocks until startup is complete, using
+          <command>nm-online -s</command>.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+
+    <para>The units carry no <literal>[Install]</literal> section and cannot be
+    enabled with <command>systemctl enable</command>. NetworkManager instead
+    installs a systemd system generator,
+    <filename>nm-initrd-generator.sh</filename>, which wires them into
+    <literal>initrd.target.wants</literal> when
+    <envar>SYSTEMD_IN_INITRD</envar> is <literal>1</literal>, additionally
+    linking <filename>NetworkManager-wait-online-initrd.service</filename> into
+    <literal>network-online.target.wants</literal>, and masks them on the real
+    root. It masks the host units inside the initrd for the same
+    reason: <filename>NetworkManager.service</filename> and
+    <filename>NetworkManager-initrd.service</filename> both claim the
+    <literal>org.freedesktop.NetworkManager</literal> bus name, so only one of
+    them may be active at a time. An initramfs that includes the generator
+    script therefore does not need to create any <literal>.wants</literal>
+    symlinks itself. The script is a bash script and uses arrays, so an image
+    that provides only a minimal <command>sh</command> must include
+    <command>bash</command> as well; systemd skips a generator it cannot
+    execute without reporting an error, and the units then never run. Note that
+    some distributions do not ship the generator or the initrd units, and rely
+    on their own equivalents instead.</para>
+
+    <para>The generated profiles live in
+    <filename>/run/NetworkManager/system-connections</filename>, which systemd
+    carries over into the real root at switch-root. The NetworkManager instance
+    on the real root reads the same directory through its keyfile plugin, so a
+    connection configured in the initrd keeps its UUID and stays active. A
+    profile named <literal>Wired Connection</literal> on a running system
+    normally originates this way.</para>
+
+    <para>An initramfs other than dracut's has to supply the environment these
+    units expect. All three assert
+    <filename>/etc/initrd-release</filename>, so that file has to exist in the
+    image. <filename>NetworkManager-initrd.service</filename> is
+    <literal>Type=dbus</literal> and binds to
+    <filename>dbus.service</filename>: a bus implementation, its configuration
+    and NetworkManager's D-Bus policy file
+    (<filename>org.freedesktop.NetworkManager.conf</filename>) must be present,
+    and the bus must be reachable at the point the unit runs, and not only once
+    a late target such as <literal>sockets.target</literal> has been reached.
+    The image also needs the kernel module for the network interface, and, if
+    an <option>ip</option> argument names an interface, whatever udev link
+    configuration the running system uses to arrive at that name. An initramfs
+    that omits it will present the kernel name instead, which such an
+    <option>ip</option> argument then fails to match.</para>
+
+    <para>None of these units is ordered against the encryption stage. Where
+    the root device is encrypted and the network exists in order to deliver its
+    passphrase, that ordering has to be added, and an ordering dependency alone
+    is not enough:
+    <filename>systemd-cryptsetup@.service</filename> is generated with
+    <literal>After=cryptsetup-pre.target</literal> and nothing pulls that
+    target into the transaction, so a unit that is merely
+    <literal>Before=cryptsetup-pre.target</literal> is ordered against a target
+    that never runs and has no effect. Declare both
+    <literal>Wants=cryptsetup-pre.target</literal> and
+    <literal>Before=cryptsetup-pre.target</literal>, and make sure the target
+    itself is present in the image; a dependency naming a unit the image does
+    not contain is dropped without a diagnostic. Note also that
+    <filename>NetworkManager-wait-online-initrd.service</filename> runs with
+    <envar>NM_ONLINE_TIMEOUT</envar> set to 3600. Once it precedes the
+    encryption stage, an interface that never comes up delays the passphrase
+    prompt for that long, so a shorter timeout is usually wanted.</para>
   </refsect1>
 
   <refsect1 id='differences_from_network_legacy'><title>Differences from the network-legacy dracut module</title>
@@ -188,6 +299,29 @@
     behavior compared to the network-legacy dracut module:</para>
 
     <itemizedlist>
+      <listitem>
+        <para>The configuration method of the <option>ip</option> option is
+        interpreted differently. network-legacy treats an empty or missing
+        method as <literal>dhcp</literal>; NetworkManager treats it as
+        <literal>auto</literal>, because the result also depends on whether
+        addresses were given. The methods understood are
+        <literal>none</literal>, <literal>dhcp</literal>,
+        <literal>dhcp6</literal>, <literal>link6</literal>,
+        <literal>auto</literal> and <literal>ibft</literal>, with
+        <literal>off</literal>, <literal>fw</literal>,
+        <literal>single-dhcp</literal>, <literal>auto6</literal>,
+        <literal>on</literal> and <literal>any</literal> accepted as aliases.
+        network-legacy accepts arbitrary comma-separated combinations of
+        methods; of these NetworkManager gives only
+        <literal>dhcp,dhcp6</literal> a distinct meaning, mapping it to DHCPv4
+        with automatic IPv6. A method it does not recognize is not reported as
+        an error: in the bare
+        <option>ip</option>=<replaceable>METHOD</replaceable> form it silently
+        becomes <literal>auto</literal>, and in the longer forms the field is
+        parsed as part of the address specification instead, which usually
+        yields no connection at all.</para>
+      </listitem>
+
       <listitem>
         <para>When an interface is configured with a static address
         and a gateway, the network-legacy module waits that the
@@ -314,6 +448,7 @@
   <refsect1 id='see_also'><title>See Also</title>
     <para><link linkend='dracut.cmdline'><citerefentry><refentrytitle>dracut.cmdline</refentrytitle><manvolnum>7</manvolnum></citerefentry></link>,
     <link linkend='NetworkManager'><citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry></link>,
+    <link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
     <link linkend='nm-settings-nmcli'><citerefentry><refentrytitle>nm-settings-nmcli</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>.</para>
   </refsect1>
 </refentry>
