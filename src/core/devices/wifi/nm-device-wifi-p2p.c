@@ -58,6 +58,13 @@ typedef struct {
 
     bool is_waiting_for_supplicant : 1;
     bool enabled : 1;
+
+    /* Whether a find is running in wpa_supplicant. Set when we issue Find(),
+     * cleared on FindStopped, StopFind and when the interface goes away. As
+     * Find() is issued without waiting for the reply, this can stay set for a
+     * find that the supplicant refused to start, until one of those clears
+     * it. */
+    bool find_in_progress : 1;
 } NMDeviceWifiP2PPrivate;
 
 struct _NMDeviceWifiP2P {
@@ -390,6 +397,7 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
                 nm_g_timeout_add_seconds_source(10, supplicant_find_timeout_cb, self);
 
             nm_supplicant_interface_p2p_start_find(priv->mgmt_iface, 10);
+            priv->find_in_progress = TRUE;
         }
         return NM_ACT_STAGE_RETURN_POSTPONE;
     }
@@ -1120,6 +1128,7 @@ supplicant_iface_find_stopped_cb(NMSupplicantInterface *iface, NMDeviceWifiP2P *
 
     /* wpa_supplicant runs a single find per P2P device, so whatever was
      * searching is over now, whoever stopped it. */
+    priv->find_in_progress = FALSE;
 
     if (priv->find_peer_timeout_source) {
         /* We are in stage 1 waiting for the peer to show up. Nothing is
@@ -1137,6 +1146,8 @@ supplicant_interfaces_release(NMDeviceWifiP2P *self, gboolean set_is_waiting)
     nm_clear_g_source_inst(&priv->peer_dump_source);
 
     remove_all_peers(self);
+
+    priv->find_in_progress = FALSE;
 
     if (priv->mgmt_iface) {
         _LOGD(LOGD_DEVICE | LOGD_WIFI, "P2P: Releasing WPA supplicant interface.");
@@ -1284,6 +1295,7 @@ p2p_start_find_auth_cb(NMDevice              *device,
     }
 
     nm_supplicant_interface_p2p_start_find(priv->mgmt_iface, timeout);
+    priv->find_in_progress = TRUE;
 
     g_dbus_method_invocation_return_value(invocation, NULL);
 }
@@ -1335,7 +1347,27 @@ p2p_stop_find_auth_cb(NMDevice              *device,
         return;
     }
 
+    /* Same contract as the IWD backend: there has to be a find to stop, and
+     * an activation's peer search is not the caller's to cancel. */
+    if (!priv->find_in_progress) {
+        g_dbus_method_invocation_return_error_literal(invocation,
+                                                      NM_DEVICE_ERROR,
+                                                      NM_DEVICE_ERROR_NOT_ACTIVE,
+                                                      "Find phase is not active.");
+        return;
+    }
+
+    if (nm_device_is_activating(device)) {
+        g_dbus_method_invocation_return_error_literal(
+            invocation,
+            NM_DEVICE_ERROR,
+            NM_DEVICE_ERROR_NOT_ACTIVE,
+            "Stopping the peer search of an ongoing activation is not allowed.");
+        return;
+    }
+
     nm_supplicant_interface_p2p_stop_find(priv->mgmt_iface);
+    priv->find_in_progress = FALSE;
 
     g_dbus_method_invocation_return_value(invocation, NULL);
 }
