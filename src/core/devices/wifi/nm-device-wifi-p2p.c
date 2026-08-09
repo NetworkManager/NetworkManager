@@ -330,15 +330,14 @@ complete_connection(NMDevice            *device,
 }
 
 /*
- * supplicant_find_timeout_cb
+ * peer_search_give_up
  *
  * Called when the supplicant has been unable to find the peer we want to connect to.
  */
-static gboolean
-supplicant_find_timeout_cb(gpointer user_data)
+static void
+peer_search_give_up(NMDeviceWifiP2P *self, const char *reason)
 {
-    NMDevice               *device = NM_DEVICE(user_data);
-    NMDeviceWifiP2P        *self   = NM_DEVICE_WIFI_P2P(user_data);
+    NMDevice               *device = NM_DEVICE(self);
     NMDeviceWifiP2PPrivate *priv   = NM_DEVICE_WIFI_P2P_GET_PRIVATE(self);
 
     nm_clear_g_source_inst(&priv->find_peer_timeout_source);
@@ -347,12 +346,18 @@ supplicant_find_timeout_cb(gpointer user_data)
 
     if (nm_device_is_activating(device)) {
         _LOGW(LOGD_DEVICE | LOGD_WIFI,
-              "Activation: (wifi-p2p) could not find peer, failing activation");
+              "Activation: (wifi-p2p) could not find peer (%s), failing activation",
+              reason);
         nm_device_state_changed(device,
                                 NM_DEVICE_STATE_FAILED,
                                 NM_DEVICE_STATE_REASON_PEER_NOT_FOUND);
     }
+}
 
+static gboolean
+supplicant_find_timeout_cb(gpointer user_data)
+{
+    peer_search_give_up(NM_DEVICE_WIFI_P2P(user_data), "timeout");
     return G_SOURCE_REMOVE;
 }
 
@@ -1109,6 +1114,22 @@ apply_device_name(NMDeviceWifiP2P *self)
 }
 
 static void
+supplicant_iface_find_stopped_cb(NMSupplicantInterface *iface, NMDeviceWifiP2P *self)
+{
+    NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE(self);
+
+    /* wpa_supplicant runs a single find per P2P device, so whatever was
+     * searching is over now, whoever stopped it. */
+
+    if (priv->find_peer_timeout_source) {
+        /* We are in stage 1 waiting for the peer to show up. Nothing is
+         * searching any more, so waiting out the rest of our own timeout
+         * would only delay the failure. */
+        peer_search_give_up(self, "find stopped");
+    }
+}
+
+static void
 supplicant_interfaces_release(NMDeviceWifiP2P *self, gboolean set_is_waiting)
 {
     NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE(self);
@@ -1409,6 +1430,10 @@ nm_device_wifi_p2p_set_mgmt_iface(NMDeviceWifiP2P *self, NMSupplicantInterface *
     g_signal_connect(priv->mgmt_iface,
                      NM_SUPPLICANT_INTERFACE_GROUP_STARTED,
                      G_CALLBACK(supplicant_iface_group_started_cb),
+                     self);
+    g_signal_connect(priv->mgmt_iface,
+                     NM_SUPPLICANT_INTERFACE_FIND_STOPPED,
+                     G_CALLBACK(supplicant_iface_find_stopped_cb),
                      self);
 
     if (nm_supplicant_interface_state_is_operational(nm_supplicant_interface_get_state(iface)))
