@@ -66,6 +66,7 @@ enum {
     WPS_CREDENTIALS, /* WPS credentials received */
     GROUP_STARTED,   /* a new Group (interface) was created */
     GROUP_FINISHED,  /* a Group (interface) has been finished */
+    FIND_STOPPED,    /* the P2P find operation stopped */
     PSK_MISMATCH,    /* supplicant reported incorrect PSK */
     SAE_MISMATCH,    /* supplicant reported incorrect SAE Password */
     LAST_SIGNAL
@@ -3309,6 +3310,15 @@ _signal_handle(NMSupplicantInterface *self,
             return;
         }
 
+        if (nm_streq(signal_name, "FindStopped")) {
+            /* Emitted whenever an in-progress find ends: its timeout expired,
+             * somebody called StopFind, or a connection attempt aborted it.
+             * Not emitted when Find() itself fails, so callers that hold state
+             * for the duration of a find still need their own backstop. */
+            g_signal_emit(self, signals[FIND_STOPPED], 0);
+            return;
+        }
+
         if (nm_streq(signal_name, "GroupStarted")) {
             if (g_variant_is_of_type(parameters, G_VARIANT_TYPE("(a{sv})"))) {
                 gs_unref_variant GVariant             *args  = NULL;
@@ -3915,6 +3925,16 @@ nm_supplicant_interface_class_init(NMSupplicantInterfaceClass *klass)
                                            G_TYPE_NONE,
                                            1,
                                            G_TYPE_STRING);
+
+    signals[FIND_STOPPED] = g_signal_new(NM_SUPPLICANT_INTERFACE_FIND_STOPPED,
+                                         G_OBJECT_CLASS_TYPE(object_class),
+                                         G_SIGNAL_RUN_LAST,
+                                         0,
+                                         NULL,
+                                         NULL,
+                                         NULL,
+                                         G_TYPE_NONE,
+                                         0);
 
     signals[PSK_MISMATCH] = g_signal_new(NM_SUPPLICANT_INTERFACE_PSK_MISMATCH,
                                          G_OBJECT_CLASS_TYPE(object_class),
