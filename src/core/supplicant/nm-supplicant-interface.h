@@ -171,7 +171,16 @@ gboolean nm_supplicant_interface_get_p2p_assigned_addr(NMSupplicantInterface *se
                                                        in_addr_t             *assigned_addr,
                                                        guint8                *plen);
 
-void nm_supplicant_interface_p2p_start_find(NMSupplicantInterface *self, guint timeout);
+typedef void (*NMSupplicantInterfaceP2PStartFindCb)(NMSupplicantInterface *iface,
+                                                    GCancellable          *cancellable,
+                                                    GError                *error,
+                                                    gpointer               user_data);
+
+void nm_supplicant_interface_p2p_start_find(NMSupplicantInterface              *self,
+                                            guint                               timeout,
+                                            GCancellable                       *cancellable,
+                                            NMSupplicantInterfaceP2PStartFindCb callback,
+                                            gpointer                            user_data);
 void nm_supplicant_interface_p2p_stop_find(NMSupplicantInterface *self);
 
 void nm_supplicant_interface_p2p_set_device_name(NMSupplicantInterface *self, const char *name);

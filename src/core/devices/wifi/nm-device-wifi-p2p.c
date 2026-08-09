@@ -56,15 +56,21 @@ typedef struct {
     GSource *peer_dump_source;
     GSource *peer_missing_source;
 
+    /* Cancelled before this device goes away, so that a late reply to Find()
+     * never reaches a freed self. */
+    GCancellable *find_cancellable;
+
     bool is_waiting_for_supplicant : 1;
     bool enabled : 1;
 
     /* Whether a find is running in wpa_supplicant. Set when we issue Find(),
-     * cleared on FindStopped, StopFind and when the interface goes away. As
-     * Find() is issued without waiting for the reply, this can stay set for a
-     * find that the supplicant refused to start, until one of those clears
-     * it. */
+     * cleared when it is rejected, on FindStopped, on StopFind and when the
+     * interface goes away. */
     bool find_in_progress : 1;
+
+    /* Whether the Find() call we are waiting on is an activation's peer
+     * search. Only that one may fail the activation. */
+    bool find_for_activation : 1;
 } NMDeviceWifiP2PPrivate;
 
 struct _NMDeviceWifiP2P {
@@ -91,6 +97,10 @@ static void     supplicant_group_interface_release(NMDeviceWifiP2P *self);
 static void     supplicant_interfaces_release(NMDeviceWifiP2P *self, gboolean set_is_waiting);
 static void     apply_device_name(NMDeviceWifiP2P *self);
 static gboolean handle_wps_pin_fail(NMDeviceWifiP2P *self);
+static void     p2p_start_find_cb(NMSupplicantInterface *iface,
+                                  GCancellable          *cancellable,
+                                  GError                *error,
+                                  gpointer               user_data);
 
 /*****************************************************************************/
 
@@ -396,8 +406,15 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
             priv->find_peer_timeout_source =
                 nm_g_timeout_add_seconds_source(10, supplicant_find_timeout_cb, self);
 
-            nm_supplicant_interface_p2p_start_find(priv->mgmt_iface, 10);
-            priv->find_in_progress = TRUE;
+            nm_clear_g_cancellable(&priv->find_cancellable);
+            priv->find_cancellable = g_cancellable_new();
+            nm_supplicant_interface_p2p_start_find(priv->mgmt_iface,
+                                                   10,
+                                                   priv->find_cancellable,
+                                                   p2p_start_find_cb,
+                                                   self);
+            priv->find_in_progress    = TRUE;
+            priv->find_for_activation = TRUE;
         }
         return NM_ACT_STAGE_RETURN_POSTPONE;
     }
@@ -1121,21 +1138,64 @@ apply_device_name(NMDeviceWifiP2P *self)
     nm_supplicant_interface_p2p_set_device_name(priv->mgmt_iface, device_name);
 }
 
+/* Nothing is searching any more, for whatever reason. Drop everything we
+ * only hold for the duration of a find. */
 static void
-supplicant_iface_find_stopped_cb(NMSupplicantInterface *iface, NMDeviceWifiP2P *self)
+find_ended(NMDeviceWifiP2P *self, const char *reason)
 {
     NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE(self);
 
-    /* wpa_supplicant runs a single find per P2P device, so whatever was
-     * searching is over now, whoever stopped it. */
     priv->find_in_progress = FALSE;
 
     if (priv->find_peer_timeout_source) {
-        /* We are in stage 1 waiting for the peer to show up. Nothing is
-         * searching any more, so waiting out the rest of our own timeout
-         * would only delay the failure. */
-        peer_search_give_up(self, "find stopped");
+        /* We are in stage 1 waiting for the peer to show up. Waiting out the
+         * rest of our own timeout would only delay the failure. */
+        peer_search_give_up(self, reason);
     }
+}
+
+static void
+supplicant_iface_find_stopped_cb(NMSupplicantInterface *iface, NMDeviceWifiP2P *self)
+{
+    /* wpa_supplicant runs a single find per P2P device, so whatever was
+     * searching is over now, whoever stopped it. */
+    find_ended(self, "find stopped");
+}
+
+static void
+p2p_start_find_cb(NMSupplicantInterface *iface,
+                  GCancellable          *cancellable,
+                  GError                *error,
+                  gpointer               user_data)
+{
+    NMDeviceWifiP2P        *self;
+    NMDeviceWifiP2PPrivate *priv;
+
+    /* Do not touch @user_data before this check: on teardown the device
+     * cancels the call and is then free to go away. */
+    if (g_cancellable_is_cancelled(cancellable))
+        return;
+
+    self = NM_DEVICE_WIFI_P2P(user_data);
+    priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE(self);
+
+    g_clear_object(&priv->find_cancellable);
+
+    if (!error)
+        return;
+
+    /* A rejected Find() never enters SEARCH, so no FindStopped will follow. */
+    _LOGW(LOGD_DEVICE | LOGD_WIFI, "P2P: could not start find: %s", error->message);
+
+    if (priv->find_for_activation) {
+        find_ended(self, "find was rejected");
+        return;
+    }
+
+    /* The rejected find was asked for over D-Bus. Whatever an activation has
+     * running is not this caller's to end - leave it to its own timeout. */
+    if (!priv->find_peer_timeout_source)
+        priv->find_in_progress = FALSE;
 }
 
 static void
@@ -1147,7 +1207,9 @@ supplicant_interfaces_release(NMDeviceWifiP2P *self, gboolean set_is_waiting)
 
     remove_all_peers(self);
 
-    priv->find_in_progress = FALSE;
+    nm_clear_g_cancellable(&priv->find_cancellable);
+    priv->find_in_progress    = FALSE;
+    priv->find_for_activation = FALSE;
 
     if (priv->mgmt_iface) {
         _LOGD(LOGD_DEVICE | LOGD_WIFI, "P2P: Releasing WPA supplicant interface.");
@@ -1294,8 +1356,15 @@ p2p_start_find_auth_cb(NMDevice              *device,
         return;
     }
 
-    nm_supplicant_interface_p2p_start_find(priv->mgmt_iface, timeout);
-    priv->find_in_progress = TRUE;
+    nm_clear_g_cancellable(&priv->find_cancellable);
+    priv->find_cancellable = g_cancellable_new();
+    nm_supplicant_interface_p2p_start_find(priv->mgmt_iface,
+                                           timeout,
+                                           priv->find_cancellable,
+                                           p2p_start_find_cb,
+                                           self);
+    priv->find_in_progress    = TRUE;
+    priv->find_for_activation = FALSE;
 
     g_dbus_method_invocation_return_value(invocation, NULL);
 }
