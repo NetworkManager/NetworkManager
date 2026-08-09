@@ -938,6 +938,9 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
         return NM_ACT_STAGE_RETURN_FAILURE;
     }
 
+    nm_clear_g_cancellable(&priv->connect_cancellable);
+    priv->connect_cancellable = g_cancellable_new();
+
     if (wps_method == NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN) {
         /* We have the PIN the peer displayed; enter it via StartPin. */
         g_dbus_proxy_call(wsc_proxy,
