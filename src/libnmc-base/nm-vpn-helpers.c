@@ -216,18 +216,19 @@ _extract_variable_value(char *line, const char *tag, char **value)
 static const struct {
     const char *property;
     const char *cmdline;
+    bool        is_secret;
 } oc_property_args[] = {
-    {NM_OPENCONNECT_KEY_USERCERT, "--certificate"},
-    {NM_OPENCONNECT_KEY_CACERT, "--cafile"},
-    {NM_OPENCONNECT_KEY_PRIVKEY, "--sslkey"},
-    {NM_OPENCONNECT_KEY_KEY_PASS, "--key-password"},
-    {NM_OPENCONNECT_KEY_PROTOCOL, "--protocol"},
-    {NM_OPENCONNECT_KEY_PROXY, "--proxy"},
-    {NM_OPENCONNECT_KEY_USERAGENT, "--useragent"},
-    {NM_OPENCONNECT_KEY_REPORTED_OS, "--os"},
-    {NM_OPENCONNECT_KEY_MCACERT, "--mca-certificate"},
-    {NM_OPENCONNECT_KEY_MCAKEY, "--mca-key"},
-    {NM_OPENCONNECT_KEY_MCA_PASS, "--mca-key-password"},
+    {NM_OPENCONNECT_KEY_USERCERT, "--certificate", FALSE},
+    {NM_OPENCONNECT_KEY_CACERT, "--cafile", FALSE},
+    {NM_OPENCONNECT_KEY_PRIVKEY, "--sslkey", FALSE},
+    {NM_OPENCONNECT_KEY_KEY_PASS, "--key-password", TRUE},
+    {NM_OPENCONNECT_KEY_PROTOCOL, "--protocol", FALSE},
+    {NM_OPENCONNECT_KEY_PROXY, "--proxy", FALSE},
+    {NM_OPENCONNECT_KEY_USERAGENT, "--useragent", FALSE},
+    {NM_OPENCONNECT_KEY_REPORTED_OS, "--os", FALSE},
+    {NM_OPENCONNECT_KEY_MCACERT, "--mca-certificate", FALSE},
+    {NM_OPENCONNECT_KEY_MCAKEY, "--mca-key", FALSE},
+    {NM_OPENCONNECT_KEY_MCA_PASS, "--mca-key-password", TRUE},
 };
 
 /*
@@ -270,6 +271,77 @@ extract_url_port(const char *url)
     return 0;
 }
 
+/*
+ * _oc_config_append:
+ * @config: GString to append configuration lines to
+ * @option: the openconnect long option name (with "--" prefix)
+ * @value: the option value
+ *
+ * Appends an openconnect config file line for the given option.
+ * The config file format uses long option names without the "--" prefix,
+ * with value separated by '='.
+ */
+static void
+_oc_config_append(GString *config, const char *option, const char *value)
+{
+    nm_assert(option && g_str_has_prefix(option, "--"));
+    nm_assert(value);
+
+    /* Config file format: option_name=value (without "--" prefix) */
+    g_string_append(config, &option[2]);
+    g_string_append_c(config, '=');
+    g_string_append(config, value);
+    g_string_append_c(config, '\n');
+}
+
+/*
+ * _oc_write_secrets_config:
+ * @config_contents: the config file contents to write
+ * @out_config_path: (out): returns the path of the created temp file
+ * @error: location to store error
+ *
+ * Writes secret options to a temporary config file that is readable only
+ * by the current user (mode 0600). This avoids exposing secrets in
+ * /proc/<pid>/cmdline when spawning the openconnect process.
+ *
+ * Returns: TRUE on success
+ */
+static gboolean
+_oc_write_secrets_config(const char *config_contents, char **out_config_path, GError **error)
+{
+    nm_auto_close int fd   = -1;
+    gs_free char     *path = NULL;
+    gssize            written;
+    gssize            len;
+
+    path = g_strdup(NMRUNDIR "/openconnect-secrets-XXXXXX");
+
+    fd = g_mkstemp_full(path, O_WRONLY | O_CLOEXEC, 0600);
+    if (fd < 0) {
+        g_set_error(error,
+                    NM_VPN_PLUGIN_ERROR,
+                    NM_VPN_PLUGIN_ERROR_FAILED,
+                    _("failed to create temporary secrets config file: %s"),
+                    g_strerror(errno));
+        return FALSE;
+    }
+
+    len = strlen(config_contents);
+    written = write(fd, config_contents, len);
+    if (written != len) {
+        g_set_error(error,
+                    NM_VPN_PLUGIN_ERROR,
+                    NM_VPN_PLUGIN_ERROR_FAILED,
+                    _("failed to write secrets config file: %s"),
+                    g_strerror(errno));
+        unlink(path);
+        return FALSE;
+    }
+
+    *out_config_path = g_steal_pointer(&path);
+    return TRUE;
+}
+
 gboolean
 nm_vpn_openconnect_authenticate_helper(NMSettingVpn *s_vpn, GPtrArray *secrets, GError **error)
 {
@@ -280,6 +352,7 @@ nm_vpn_openconnect_authenticate_helper(NMSettingVpn *s_vpn, GPtrArray *secrets, 
     gs_free char        *gwcert      = NULL;
     gs_free char        *resolve     = NULL;
     gs_free const char **output_v    = NULL;
+    gs_free char        *config_path = NULL;
     int                  status      = 0;
     const char *const   *iter;
     const char          *path;
@@ -293,11 +366,12 @@ nm_vpn_openconnect_authenticate_helper(NMSettingVpn *s_vpn, GPtrArray *secrets, 
         "/usr/local/bin/",
         NULL,
     };
-    const char *oc_argv[(12 + 2 * G_N_ELEMENTS(oc_property_args))];
+    const char *oc_argv[(14 + 2 * G_N_ELEMENTS(oc_property_args))];
     const char *gw;
     int         port;
     guint       oc_argc = 0;
     guint       i;
+    nm_auto_free_secret char *config_arg = NULL;
 
     /* Get gateway and port */
     gw = nm_setting_vpn_get_data_item(s_vpn, "gateway");
@@ -325,11 +399,56 @@ nm_vpn_openconnect_authenticate_helper(NMSettingVpn *s_vpn, GPtrArray *secrets, 
     oc_argv[oc_argc++] = "--authenticate";
     oc_argv[oc_argc++] = gw;
 
-    for (i = 0; i < G_N_ELEMENTS(oc_property_args); i++) {
-        opt = nm_setting_vpn_get_data_item(s_vpn, oc_property_args[i].property);
+    /* Collect secrets into a config file instead of passing them on the
+     * command line, where they would be visible in /proc/<pid>/cmdline.
+     * Non-secret options are still passed as argv for simplicity. */
+    {
+        nm_auto_clear_secret_ptr NMSecretPtr config_data = {0};
+        nm_auto_free_gstring GString *secrets_config = g_string_new("");
+
+        for (i = 0; i < G_N_ELEMENTS(oc_property_args); i++) {
+            opt = nm_setting_vpn_get_data_item(s_vpn, oc_property_args[i].property);
+            if (!opt)
+                continue;
+            if (oc_property_args[i].is_secret) {
+                _oc_config_append(secrets_config, oc_property_args[i].cmdline, opt);
+            } else {
+                oc_argv[oc_argc++] = oc_property_args[i].cmdline;
+                oc_argv[oc_argc++] = opt;
+            }
+        }
+
+        opt = nm_setting_vpn_get_data_item(s_vpn, NM_OPENCONNECT_KEY_TOKEN_MODE);
         if (opt) {
-            oc_argv[oc_argc++] = oc_property_args[i].cmdline;
-            oc_argv[oc_argc++] = opt;
+            const char *token_secret =
+                nm_setting_vpn_get_data_item(s_vpn, NM_OPENCONNECT_KEY_TOKEN_SECRET);
+            if (nm_streq(opt, "manual") && token_secret) {
+                opt = "rsa";
+            } else if (nm_streq(opt, "stokenrc")) {
+                opt          = "rsa";
+                token_secret = NULL;
+            } else if (!nm_streq(opt, "totp") && !nm_streq(opt, "hotp") && !nm_streq(opt, "yubioath")) {
+                opt = NULL;
+            }
+            if (opt) {
+                oc_argv[oc_argc++] = "--token-mode";
+                oc_argv[oc_argc++] = opt;
+            }
+            if (token_secret) {
+                _oc_config_append(secrets_config, "--token-secret", token_secret);
+            }
+        }
+
+        if (secrets_config->len > 0) {
+            /* We have secrets to pass via config file. Write them out. */
+            config_data.str = g_string_free(g_steal_pointer(&secrets_config), FALSE);
+            config_data.len = strlen(config_data.str);
+
+            if (!_oc_write_secrets_config(config_data.str, &config_path, error))
+                return FALSE;
+
+            config_arg = g_strdup_printf("--config=%s", config_path);
+            oc_argv[oc_argc++] = config_arg;
         }
     }
 
@@ -346,28 +465,6 @@ nm_vpn_openconnect_authenticate_helper(NMSettingVpn *s_vpn, GPtrArray *secrets, 
         }
     }
 
-    opt = nm_setting_vpn_get_data_item(s_vpn, NM_OPENCONNECT_KEY_TOKEN_MODE);
-    if (opt) {
-        const char *token_secret =
-            nm_setting_vpn_get_data_item(s_vpn, NM_OPENCONNECT_KEY_TOKEN_SECRET);
-        if (nm_streq(opt, "manual") && token_secret) {
-            opt = "rsa";
-        } else if (nm_streq(opt, "stokenrc")) {
-            opt          = "rsa";
-            token_secret = NULL;
-        } else if (!nm_streq(opt, "totp") && !nm_streq(opt, "hotp") && !nm_streq(opt, "yubioath")) {
-            opt = NULL;
-        }
-        if (opt) {
-            oc_argv[oc_argc++] = "--token-mode";
-            oc_argv[oc_argc++] = opt;
-        }
-        if (token_secret) {
-            oc_argv[oc_argc++] = "--token-secret";
-            oc_argv[oc_argc++] = token_secret;
-        }
-    }
-
     oc_argv[oc_argc++] = NULL;
 
     nm_assert(oc_argc <= G_N_ELEMENTS(oc_argv));
@@ -381,8 +478,14 @@ nm_vpn_openconnect_authenticate_helper(NMSettingVpn *s_vpn, GPtrArray *secrets, 
                       &output,
                       NULL,
                       &status,
-                      error))
+                      error)) {
+        if (config_path)
+            unlink(config_path);
         return FALSE;
+    }
+
+    if (config_path)
+        unlink(config_path);
 
     if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
         /* The caller will prepend "Error: openconnect failed: " to this */
