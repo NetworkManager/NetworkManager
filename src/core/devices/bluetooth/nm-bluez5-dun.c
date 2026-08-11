@@ -488,10 +488,9 @@ _connect_sdp_search_io_cb(int fd, GIOCondition condition, gpointer user_data)
     }
 
     if (context->cdat->rfcomm_sdp_search_error) {
-        _LOGD(context,
-              "SDP search failed to complete: %s",
-              context->cdat->rfcomm_sdp_search_error->message);
-        _context_invoke_callback_fail_and_free(context, context->cdat->rfcomm_sdp_search_error);
+        error = g_steal_pointer(&context->cdat->rfcomm_sdp_search_error);
+        _LOGD(context, "SDP search failed to complete: %s", error->message);
+        _context_invoke_callback_fail_and_free(context, error);
         return G_SOURCE_REMOVE;
     }
 
