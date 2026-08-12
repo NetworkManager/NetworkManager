@@ -103,6 +103,7 @@ typedef struct {
 
     gint64 scan_last_complete_msec;
     gint64 scan_periodic_next_msec;
+    gint64 scan_grace_next_msec;
 
     gint64 scan_last_request_started_at_msec;
 
@@ -393,6 +394,13 @@ nm_device_wifi_scanning_prohibited_track(NMDeviceWifi *self,
         if (!elem)
             return;
         nm_c_list_elem_free(elem);
+        if (c_list_is_empty(&priv->scanning_prohibited_lst_head)) {
+            /* Grace period: the prohibiting device may immediately retry
+             * (and prohibit again) or still be settling. */
+            priv->scan_grace_next_msec =
+                NM_MAX(priv->scan_grace_next_msec,
+                       nm_utils_get_monotonic_timestamp_msec() + (SCAN_INTERVAL_SEC_MIN * 1000));
+        }
     } else {
         if (elem)
             return;
@@ -1824,6 +1832,21 @@ _scan_kickoff(NMDeviceWifi *self)
         return;
     }
 
+    if (now_msec < priv->scan_grace_next_msec) {
+        _LOGT_scan("kickoff: don't scan (grace period after a scan prohibition for another "
+                   "%d.%03d sec%s)",
+                   (int) ((priv->scan_grace_next_msec - now_msec) / 1000),
+                   (int) ((priv->scan_grace_next_msec - now_msec) % 1000),
+                   !priv->scan_kickoff_timeout_source ? ", schedule timeout" : "");
+        if (!priv->scan_kickoff_timeout_source) {
+            priv->scan_kickoff_timeout_source =
+                nm_g_timeout_add_source(priv->scan_grace_next_msec - now_msec,
+                                        _scan_kickoff_timeout_cb,
+                                        self);
+        }
+        return;
+    }
+
     if (priv->scan_explicit_requested) {
         if (!priv->scan_explicit_allowed) {
             _LOGT_scan(
@@ -2778,6 +2801,40 @@ supplicant_iface_notify_current_bss(NMSupplicantInterface *iface,
     }
 }
 
+static void
+p2p_device_state_changed_cb(NMDeviceWifiP2P    *p2p_device,
+                            NMDeviceState       state,
+                            NMDeviceState       old_state,
+                            NMDeviceStateReason reason,
+                            gpointer            user_data)
+{
+    NMDeviceWifi        *self = user_data;
+    NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE(self);
+
+    /* The P2P device shares the phy: going off-channel to scan can make it
+     * miss group formation or DHCP frames. */
+    nm_device_wifi_scanning_prohibited_track(self,
+                                             &priv->p2p_device,
+                                             state >= NM_DEVICE_STATE_PREPARE
+                                                 && state <= NM_DEVICE_STATE_IP_CONFIG);
+}
+
+static void
+p2p_device_cleanup(NMDeviceWifi *self)
+{
+    NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE(self);
+
+    if (!priv->p2p_device)
+        return;
+
+    g_signal_handlers_disconnect_by_func(priv->p2p_device,
+                                         G_CALLBACK(p2p_device_state_changed_cb),
+                                         self);
+    nm_device_wifi_scanning_prohibited_track(self, &priv->p2p_device, FALSE);
+    g_object_remove_weak_pointer(G_OBJECT(priv->p2p_device), (gpointer *) &priv->p2p_device);
+    nm_device_wifi_p2p_remove(g_steal_pointer(&priv->p2p_device));
+}
+
 /* We bind the existence of the P2P device to a wifi device that is being
  * managed by NetworkManager and is capable of P2P operation.
  * Note that some care must be taken here, because we don't want to re-create
@@ -2806,6 +2863,11 @@ recheck_p2p_availability(NMDeviceWifi *self)
 
         nm_device_wifi_p2p_set_mgmt_iface(priv->p2p_device, priv->sup_iface);
 
+        g_signal_connect(priv->p2p_device,
+                         NM_DEVICE_STATE_CHANGED,
+                         G_CALLBACK(p2p_device_state_changed_cb),
+                         self);
+
         g_signal_emit(self, signals[P2P_DEVICE_CREATED], 0, priv->p2p_device);
         g_object_add_weak_pointer(G_OBJECT(priv->p2p_device), (gpointer *) &priv->p2p_device);
         g_object_unref(priv->p2p_device);
@@ -2819,8 +2881,7 @@ recheck_p2p_availability(NMDeviceWifi *self)
 
     if (!p2p_available && priv->p2p_device) {
         /* Destroy the P2P device. */
-        g_object_remove_weak_pointer(G_OBJECT(priv->p2p_device), (gpointer *) &priv->p2p_device);
-        nm_device_wifi_p2p_remove(g_steal_pointer(&priv->p2p_device));
+        p2p_device_cleanup(self);
         return;
     }
 }
@@ -4013,6 +4074,8 @@ dispose(GObject *object)
     NMDeviceWifi        *self = NM_DEVICE_WIFI(object);
     NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE(self);
 
+    p2p_device_cleanup(self);
+
     nm_assert(c_list_is_empty(&priv->scanning_prohibited_lst_head));
 
     nm_clear_g_source(&priv->periodic_update_id);
@@ -4027,12 +4090,6 @@ dispose(GObject *object)
     g_clear_object(&priv->sup_mgr);
 
     remove_all_aps(self, TRUE);
-
-    if (priv->p2p_device) {
-        /* Destroy the P2P device. */
-        g_object_remove_weak_pointer(G_OBJECT(priv->p2p_device), (gpointer *) &priv->p2p_device);
-        nm_device_wifi_p2p_remove(g_steal_pointer(&priv->p2p_device));
-    }
 
     G_OBJECT_CLASS(nm_device_wifi_parent_class)->dispose(object);
 }

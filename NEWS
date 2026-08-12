@@ -41,6 +41,9 @@ Wi-Fi:
   the simple agent behind nmcli and nmtui makes up a code and displays
   it in its prompt. This method is not supported by IWD, whose Wi-Fi
   P2P implementation only offers the keypad and push-button methods.
+* Suppress Wi-Fi scans while a Wi-Fi P2P device on the same radio is
+  activating, so that going off-channel does not disrupt group formation
+  or DHCP on the P2P link.
 
 nmtui:
 * Group known and other Wi-Fi networks separately in the "Activate a
