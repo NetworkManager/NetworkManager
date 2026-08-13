@@ -59,6 +59,11 @@ Wi-Fi:
 * Suppress Wi-Fi scans while a Wi-Fi P2P device on the same radio is
   activating, so that going off-channel does not disrupt group formation
   or DHCP on the P2P link.
+* The Wi-Fi P2P StopFind D-Bus method now fails when no find is running,
+  and while the device is activating a connection. With the
+  wpa_supplicant backend it used to succeed in both cases and could
+  cancel the peer search of an ongoing activation; the IWD backend
+  already refused it.
 
 nmtui:
 * Group known and other Wi-Fi networks separately in the "Activate a
