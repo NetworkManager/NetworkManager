@@ -65,6 +65,12 @@ Wi-Fi:
   cancel the peer search of an ongoing activation; the IWD backend
   already refused it.
 * Fix lax permissions on newly mirrored IWD profiles.
+* The Wi-Fi P2P peer exposes the WPS configuration methods it
+  advertises (the "WpsConfigMethods" D-Bus property,
+  nm_wifi_p2p_peer_get_wps_config_methods()), so a client can see
+  which WPS methods the peer offers (push-button, display, keypad) and
+  pick the matching "wifi-p2p.wps-method" before connecting instead of
+  always attempting push-button.
 
 nmtui / nmcli:
 * Group known and other Wi-Fi networks separately in the "Activate a
