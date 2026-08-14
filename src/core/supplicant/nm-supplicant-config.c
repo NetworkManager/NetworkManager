@@ -1643,6 +1643,15 @@ nm_supplicant_config_add_setting_8021x(NMSupplicantConfig *self,
     path = nm_setting_802_1x_get_ca_path(setting);
     path = ca_path_override ?: path;
     if (path) {
+        /* A directory cannot be passed as a blob, so private connections are
+         * limited to the system CA store */
+        if (priv->private_user && !ca_path_override) {
+            g_set_error_literal(error,
+                                NM_SUPPLICANT_ERROR,
+                                NM_SUPPLICANT_ERROR_CONFIG,
+                                "ca-path is not supported for private connections");
+            return FALSE;
+        }
         if (!add_string_val(self, path, "ca_path", FALSE, NULL, error))
             return FALSE;
     }
@@ -1651,6 +1660,15 @@ nm_supplicant_config_add_setting_8021x(NMSupplicantConfig *self,
     path = nm_setting_802_1x_get_phase2_ca_path(setting);
     path = ca_path_override ?: path;
     if (path) {
+        /* A directory cannot be passed as a blob, so private connections are
+         * limited to the system CA store */
+        if (priv->private_user && !ca_path_override) {
+            g_set_error_literal(error,
+                                NM_SUPPLICANT_ERROR,
+                                NM_SUPPLICANT_ERROR_CONFIG,
+                                "phase2-ca-path is not supported for private connections");
+            return FALSE;
+        }
         if (!add_string_val(self, path, "ca_path2", FALSE, NULL, error))
             return FALSE;
     }

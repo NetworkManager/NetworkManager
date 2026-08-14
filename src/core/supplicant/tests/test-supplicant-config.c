@@ -914,6 +914,113 @@ test_suppl_cap_mask(void)
 
 /*****************************************************************************/
 
+#define EVIL_CA "/home/user/evil-ca"
+
+static NMSetting8021x *
+generate_8021x_peap_setting(const char *ca_path, const char *phase2_ca_path)
+{
+    NMSetting8021x *s_8021x;
+
+    s_8021x = (NMSetting8021x *) nm_setting_802_1x_new();
+    nm_setting_802_1x_add_eap_method(s_8021x, "peap");
+    g_object_set(s_8021x,
+                 NM_SETTING_802_1X_CA_PATH,
+                 ca_path,
+                 NM_SETTING_802_1X_PHASE2_CA_PATH,
+                 phase2_ca_path,
+                 NULL);
+
+    return s_8021x;
+}
+
+static void
+test_8021x_ca_path_private_connection(void)
+{
+    gs_free char *uuid    = nm_utils_uuid_generate();
+    gpointer      logging = nmtst_logging_disable(TRUE);
+
+    /* A private connection must not pick the CA directory handed to the
+     * supplicant. The GError must be set: callers log error->message
+     * unconditionally when the config fails to build. */
+    {
+        gs_unref_object NMSupplicantConfig *config  = NULL;
+        gs_unref_object NMSetting8021x     *s_8021x = NULL;
+        gs_unref_variant GVariant          *dict    = NULL;
+        gs_unref_bytes GBytes              *evil    = g_bytes_new(EVIL_CA, strlen(EVIL_CA));
+        gs_free_error GError               *error   = NULL;
+
+        s_8021x = generate_8021x_peap_setting(EVIL_CA, NULL);
+        config  = nm_supplicant_config_new(NM_SUPPL_CAP_MASK_NONE, "user");
+        g_assert(
+            !nm_supplicant_config_add_setting_8021x(config, s_8021x, uuid, 0, FALSE, NULL, &error));
+        g_assert_error(error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG);
+
+        dict = nm_supplicant_config_to_variant(config);
+        g_assert(!validate_opt("ca-path", dict, "ca_path", NM_SUPPL_OPT_TYPE_BYTES, evil));
+    }
+
+    {
+        gs_unref_object NMSupplicantConfig *config  = NULL;
+        gs_unref_object NMSetting8021x     *s_8021x = NULL;
+        gs_unref_variant GVariant          *dict    = NULL;
+        gs_unref_bytes GBytes              *evil    = g_bytes_new(EVIL_CA, strlen(EVIL_CA));
+        gs_free_error GError               *error   = NULL;
+
+        s_8021x = generate_8021x_peap_setting(NULL, EVIL_CA);
+        config  = nm_supplicant_config_new(NM_SUPPL_CAP_MASK_NONE, "user");
+        g_assert(
+            !nm_supplicant_config_add_setting_8021x(config, s_8021x, uuid, 0, FALSE, NULL, &error));
+        g_assert_error(error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG);
+
+        dict = nm_supplicant_config_to_variant(config);
+        g_assert(!validate_opt("phase2-ca-path", dict, "ca_path2", NM_SUPPL_OPT_TYPE_BYTES, evil));
+    }
+
+    /* System-wide connections are only modifiable by an authorized user, so
+     * they may still name a directory. */
+    {
+        gs_unref_object NMSupplicantConfig *config  = NULL;
+        gs_unref_object NMSetting8021x     *s_8021x = NULL;
+        gs_unref_variant GVariant          *dict    = NULL;
+        gs_unref_bytes GBytes *dir   = g_bytes_new("/some/ca-dir", NM_STRLEN("/some/ca-dir"));
+        gs_free_error GError  *error = NULL;
+
+        s_8021x = generate_8021x_peap_setting("/some/ca-dir", NULL);
+        config  = nm_supplicant_config_new(NM_SUPPL_CAP_MASK_NONE, NULL);
+        g_assert(
+            nm_supplicant_config_add_setting_8021x(config, s_8021x, uuid, 0, FALSE, NULL, &error));
+        g_assert_no_error(error);
+
+        dict = nm_supplicant_config_to_variant(config);
+        g_assert(validate_opt("ca-path", dict, "ca_path", NM_SUPPL_OPT_TYPE_BYTES, dir));
+    }
+
+    /* system-ca-certs overrides the user's directory instead of failing. */
+    if (!g_file_test(SYSTEM_CA_PATH, G_FILE_TEST_IS_DIR)) {
+        g_test_skip("SYSTEM_CA_PATH is not a directory");
+    } else {
+        gs_unref_object NMSupplicantConfig *config  = NULL;
+        gs_unref_object NMSetting8021x     *s_8021x = NULL;
+        gs_unref_variant GVariant          *dict    = NULL;
+        gs_unref_bytes GBytes *sys   = g_bytes_new(SYSTEM_CA_PATH, NM_STRLEN(SYSTEM_CA_PATH));
+        gs_free_error GError  *error = NULL;
+
+        s_8021x = generate_8021x_peap_setting(EVIL_CA, NULL);
+        g_object_set(s_8021x, NM_SETTING_802_1X_SYSTEM_CA_CERTS, TRUE, NULL);
+        config = nm_supplicant_config_new(NM_SUPPL_CAP_MASK_NONE, "user");
+        g_assert(
+            nm_supplicant_config_add_setting_8021x(config, s_8021x, uuid, 0, FALSE, NULL, &error));
+        g_assert_no_error(error);
+
+        dict = nm_supplicant_config_to_variant(config);
+        g_assert(validate_opt("ca-path", dict, "ca_path", NM_SUPPL_OPT_TYPE_BYTES, sys));
+    }
+
+    nmtst_logging_reenable(logging);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -930,6 +1037,8 @@ main(int argc, char **argv)
     g_test_add_func("/supplicant-config/wifi-sae", test_wifi_sae);
     g_test_add_func("/supplicant-config/test_suppl_cap_mask", test_suppl_cap_mask);
     g_test_add_func("/supplicant-config/wifi-eap-suite-b-192", test_wifi_eap_suite_b_generation);
+    g_test_add_func("/supplicant-config/8021x-ca-path-private-connection",
+                    test_8021x_ca_path_private_connection);
 
     return g_test_run();
 }
