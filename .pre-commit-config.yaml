@@ -10,7 +10,7 @@ repos:
     hooks:
       - id: nm-clang-format
         name: clang-format (CI version, container)
-        entry: ./contrib/scripts/nm-code-format-container.sh -n
+        entry: ./contrib/scripts/nm-code-format-container.sh -i
         language: script
         files: \.[ch]$
         require_serial: true
