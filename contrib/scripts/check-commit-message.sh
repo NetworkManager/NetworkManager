@@ -23,17 +23,29 @@ usage() {
     printf 'Check commit messages against the rules from CONTRIBUTING.md.\n'
 }
 
-check_message() {
+check_trailer() {
     local source="$1"
     local message="$2"
+    local trailer="$3"
+    local reason="$4"
     local hit
 
-    hit="$(printf '%s\n' "$message" | grep -i '^Signed-off-by:')" || return 0
+    hit="$(printf '%s\n' "$message" | grep -i "^$trailer:")" || return 0
 
-    printf '%s: do not use "Signed-off-by:" lines, they have no meaning for NetworkManager (see CONTRIBUTING.md)\n' "$source" >&2
+    printf '%s: do not use "%s:" lines, %s (see CONTRIBUTING.md)\n' "$source" "$trailer" "$reason" >&2
     sed 's/^/> /' <<<"$hit" >&2
     printf '\n' >&2
     return 1
+}
+
+check_message() {
+    local ret=0
+
+    check_trailer "$1" "$2" "Signed-off-by" \
+        "they have no meaning for NetworkManager" || ret=1
+    check_trailer "$1" "$2" "Assisted-by" \
+        "NetworkManager does not record tool assistance in commit messages" || ret=1
+    return "$ret"
 }
 
 get_ci_base() {
