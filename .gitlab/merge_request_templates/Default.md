@@ -6,6 +6,10 @@
 
 (Describe why the merge request is useful, which use cases it addresses, which issue it fixes)
 
+## How was AI used in this MR
+
+(Explain exactly how AI was used in the process, or state that it was not used)
+
 ## Checklist
 
 Please read
@@ -18,3 +22,4 @@ before opening the merge request. In particular, check that:
  - [ ] Any relevant documentation is up to date
  - [ ] You have added unit tests if applicable
  - [ ] The NEWS file is updated when the change deserves to be mentioned, for example for new features, behavior changes, API deprecations, etc.
+ - [ ] The "How was AI used in this MR" section above is filled in truthfully
