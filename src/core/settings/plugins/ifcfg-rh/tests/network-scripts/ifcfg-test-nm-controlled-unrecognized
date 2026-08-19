@@ -1,6 +1,0 @@
-TYPE=IPoAC
-NAME=PigeonNet
-DEVICE=ipoac0
-BOOTPROTO=dhcp
-ONBOOT=yes
-NM_CONTROLLED=no

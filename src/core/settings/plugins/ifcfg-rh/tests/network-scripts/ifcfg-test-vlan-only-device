@@ -1,4 +1,0 @@
-VLAN=yes
-TYPE=Vlan
-DEVICE=eth0.9
-
