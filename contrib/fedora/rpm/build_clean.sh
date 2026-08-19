@@ -211,7 +211,6 @@ if [[ $NO_DIST != 1 ]]; then
         --infodir=/usr/share/info \
         -Ddocs=true \
         -Dintrospection=true \
-        -Difcfg_rh=true \
         -Difupdown=true \
         -Dconfig_logging_backend_default=syslog \
         -Dconfig_wifi_backend_default=wpa_supplicant \

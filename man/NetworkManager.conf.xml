@@ -512,16 +512,6 @@ no-auto-default=*
         </listitem>
       </varlistentry>
 
-      <varlistentry>
-        <term><varname>migrate-ifcfg-rh</varname></term>
-        <listitem><para>Whether NetworkManager tries to automatically convert
-        any connection profile stored in ifcfg-rh format to the keyfile format.
-        Support for ifcfg-rh is deprecated and will be eventually removed. If
-        enabled, the migration is performed at every startup of the daemon.
-        The default value is <literal>&NM_CONFIG_DEFAULT_MAIN_MIGRATE_IFCFG_RH_TEXT;</literal>.
-        </para></listitem>
-      </varlistentry>
-
     </variablelist>
   </refsect1>
 
@@ -1855,23 +1845,6 @@ enable=nm-version-min:1.3,nm-version-min:1.2.6,nm-version-min:1.0.16
             This plugin is always active, and will automatically be
             used to store any connections that aren't supported by any
             other active plugin.
-          </para>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term><varname>ifcfg-rh</varname></term>
-        <listitem>
-          <para>
-            This plugin is now deprecated; it can be used on the
-            Fedora and Red Hat Enterprise Linux distributions to read
-            and write configuration from the standard
-            <filename>/etc/sysconfig/network-scripts/ifcfg-*</filename>
-            files. It currently supports reading Ethernet, Wi-Fi,
-            InfiniBand, VLAN, Bond, Bridge, and Team connections.
-            See <filename>/usr/share/doc/initscripts/sysconfig.txt</filename>
-            and <link linkend='nm-settings-ifcfg-rh'><citerefentry><refentrytitle>nm-settings-ifcfg-rh</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>
-            for more information about the ifcfg file format.
           </para>
         </listitem>
       </varlistentry>

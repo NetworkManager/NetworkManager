@@ -1350,17 +1350,18 @@
           <arg rep='repeat'><replaceable>ID</replaceable></arg>
         </term>
         <listitem>
-	  <para>Migrate connection profiles to a different settings plugin, such
-	  as <literal>keyfile</literal> (default) or <literal>ifcfg-rh</literal>.</para>
+           <para>Migrate connection profiles to a different settings plugin.
+           The only currently supported target is <literal>keyfile</literal>
+           (default).</para>
 
           <para>The connection to be migrated is identified by its name, UUID or D-Bus path.
-	  If <replaceable>ID</replaceable> is ambiguous, a keyword <option>id</option>,
-	  <option>uuid</option> or <option>path</option> can be used. See <command>connection
-	  show</command> above for the description of the
-	  <replaceable>ID</replaceable>-specifying keywords.</para>
+          If <replaceable>ID</replaceable> is ambiguous, a keyword <option>id</option>,
+          <option>uuid</option> or <option>path</option> can be used. See <command>connection
+          show</command> above for the description of the
+          <replaceable>ID</replaceable>-specifying keywords.</para>
 
           <para>If no connections are specified, the command acts on all available
-	  connections. Therefore, with no arguments, the command migrates all connection
+          connections. Therefore, with no arguments, the command migrates all connection
           profiles to the <literal>keyfile</literal> plugin.</para>
 
           <para>If <option>--wait</option> option is not specified, the default timeout will be 10

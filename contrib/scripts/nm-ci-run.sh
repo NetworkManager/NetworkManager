@@ -207,7 +207,6 @@ meson setup build \
     -D netconfig=/bin/nowhere/netconfig \
     -D resolvconf=/bin/nowhere/resolvconf \
     \
-    -D ifcfg_rh=false \
     -D ifupdown=true \
     \
     -D nbft=$_WITH_NBFT \

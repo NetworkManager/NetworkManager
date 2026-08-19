@@ -26,9 +26,6 @@ introspection_mans = [
   ['nm-settings-nmcli',   '5'],
 ]
 
-if enable_ifcfg_rh
-  introspection_mans += [['nm-settings-ifcfg-rh', '5']]
-endif
 
 built_mans = []
 foreach man: mans + introspection_mans
@@ -132,9 +129,6 @@ if enable_introspection and (enable_man or enable_docs)
     ['nm-settings-nmcli',   '5', nm_settings_docs_xml['nmcli']],
   ]
 
-  if enable_ifcfg_rh
-    mans += [['nm-settings-ifcfg-rh', '5', nm_property_infos_xml['ifcfg-rh']]]
-  endif
 
   foreach man: mans
     output = man[0] + '.xml'

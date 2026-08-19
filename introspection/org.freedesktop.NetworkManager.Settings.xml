@@ -106,7 +106,7 @@
         <varlistentry>
           <term><literal>plugin</literal>:</term>
           <listitem><para>The settings plugin the newly added connection will
-          use, such as "keyfile" or "ifcfg-rh".</para>
+          use, such as "keyfile".</para>
           <para role="since">Since 1.38</para></listitem>
         </varlistentry>
         </variablelist>

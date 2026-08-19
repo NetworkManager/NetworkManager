@@ -37,7 +37,7 @@ allow for fine-grained control of networking.
 NetworkManager stores predefined network connections as connection profiles.
 The daemon manages these through its settings plugins: by default the
 distro-agnostic keyfile plugin under `/etc/NetworkManager/system-connections/`,
-with optional plugins for distro-specific formats (ifcfg-rh, ifupdown).
+with optional plugins for distro-specific formats (ifupdown).
 Profiles are exposed and edited over D-Bus.
 
 A variety of other system services are used by NetworkManager to provide

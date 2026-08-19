@@ -150,7 +150,6 @@ P_CC="${CC-$((! command -v gcc && command -v clang) &>/dev/null && echo clang ||
 P_RHEL="${RHEL-}"
 P_FEDORA="${FEDORA-}"
 
-P_CONFIG_PLUGINS_DEFAULT_IFCFG_RH="${CONFIG_PLUGINS_DEFAULT_IFCFG_RH-}"
 P_CRYPTO="${CRYPTO-}"
 P_DBUS_SYS_DIR="${DBUS_SYS_DIR-}"
 P_DHCP_DEFAULT="${DHCP_DEFAULT-}"
@@ -173,7 +172,6 @@ P_WIFI="${WIFI-1}"
 P_WWAN="${WWAN-1}"
 P_TEAM="${TEAM-1}"
 P_BLUETOOTH="${BLUETOOTH-1}"
-P_IFCFG_RH="${IFCFG_RH-0}"
 P_NMTUI="${NMTUI-1}"
 P_NM_CLOUD_SETUP="${NM_CLOUD_SETUP-1}"
 P_OVS="${OVS-1}"
@@ -224,14 +222,6 @@ if [ -z "$P_CRYPTO" ] ; then
         P_CRYPTO=gnutls
     else
         P_CRYPTO=nss
-    fi
-fi
-
-if [ -z "$P_CONFIG_PLUGINS_DEFAULT_IFCFG_RH" ] ; then
-    if [ "$P_FEDORA" -ge 33 -o  "$P_RHEL" -ge 9 ] ; then
-        P_CONFIG_PLUGINS_DEFAULT_IFCFG_RH=0
-    else
-        P_CONFIG_PLUGINS_DEFAULT_IFCFG_RH=1
     fi
 fi
 
@@ -292,10 +282,6 @@ fi
 
 if [ -z "$TEAM" ] && [ "${P_RHEL-0}" -ge 10 ] ; then
     P_TEAM=0
-fi
-
-if [ -z "$IFCFG_RH" ] && [ -n "$P_RHEL" ] && [ "$P_RHEL" -le 9 ] ; then
-    P_IFCFG_RH=1
 fi
 
 if bool "$P_DEBUG" ; then
@@ -406,13 +392,11 @@ meson setup\
     -Ddbus_conf_dir="$P_DBUS_SYS_DIR" \
     -Dtests=yes \
     -Dvalgrind=no \
-    -Difcfg_rh="$(bool_true "$P_IFCFG_RH")" \
     -Difupdown=false \
     $(args_enable "$P_PPP"                    -Dppp=true  -Dpppd="$D_SBINDIR/pppd" -Dpppd_plugin_dir="$D_LIBDIR/pppd/$P_PPP_VERSION") \
     $(args_enable "$(bool_not_true "$P_PPP")" -Dppp=false                                                                           ) \
-    -Dfirewalld_zone="$(bool_true "$P_FIREWALLD_ZONE}")" \
+    -Dfirewalld_zone="$(bool_true "$P_FIREWALLD_ZONE")" \
     -Ddist_version="$P_VERSION-$P_RELEASE" \
-    $(args_enable "$P_CONFIG_PLUGINS_DEFAULT_IFCFG_RH" -Dconfig_plugins_default=ifcfg-rh) \
     -Dresolvconf=no \
     -Dnetconfig=no \
     -Dconfig_dns_rc_manager_default="$P_DNS_RC_MANAGER_DEFAULT" \

@@ -25,15 +25,15 @@
 
     <legalnotice>
       <para>
-	Permission is granted to copy, distribute and/or modify this
-	document under the terms of the <citetitle>GNU Free
-	Documentation License</citetitle>, Version 1.1 or any later
-	version published by the Free Software Foundation with no
-	Invariant Sections, no Front-Cover Texts, and no Back-Cover
-	Texts. You may obtain a copy of the <citetitle>GNU Free
-	Documentation License</citetitle> from the Free Software
-	Foundation by visiting <ulink type="http"
-	url="http://www.fsf.org">their Web site</ulink>.
+        Permission is granted to copy, distribute and/or modify this
+        document under the terms of the <citetitle>GNU Free
+        Documentation License</citetitle>, Version 1.1 or any later
+        version published by the Free Software Foundation with no
+        Invariant Sections, no Front-Cover Texts, and no Back-Cover
+        Texts. You may obtain a copy of the <citetitle>GNU Free
+        Documentation License</citetitle> from the Free Software
+        Foundation by visiting <ulink type="http"
+        url="http://www.fsf.org">their Web site</ulink>.
       </para>
     </legalnotice>
 
@@ -70,7 +70,6 @@
     <xi:include href="../../man/nm-settings-dbus.xml"><xi:fallback /></xi:include>
     <xi:include href="../../man/nm-settings-nmcli.xml"><xi:fallback /></xi:include>
     <xi:include href="../../man/nm-settings-keyfile.xml"><xi:fallback /></xi:include>
-    <xi:include href="../../man/nm-settings-ifcfg-rh.xml"><xi:fallback /></xi:include>
     <xi:include href="../../man/nm-online.xml"/>
     <xi:include href="../../man/nm-initrd-generator.xml"/>
     <xi:include href="../../man/nm-cloud-setup.xml"><xi:fallback /></xi:include>
@@ -88,13 +87,13 @@
     </para>
     <xi:include href="settings-spec.xml">
       <xi:fallback>
-	<chapter>
-	  <title>Configuration Settings</title>
-	  <note><para>
-	    (NetworkManager was built without full introspection support. Setting
-	    documentation is not available.)
-	  </para></note>
-	</chapter>
+    <chapter>
+      <title>Configuration Settings</title>
+      <note><para>
+        (NetworkManager was built without full introspection support. Setting
+        documentation is not available.)
+      </para></note>
+    </chapter>
       </xi:fallback>
     </xi:include>
     <chapter id="secrets-flags">

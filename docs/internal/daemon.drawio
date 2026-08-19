@@ -120,9 +120,6 @@
         <mxCell id="iPdrRtlw78q6A_erutjM-71" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="iPdrRtlw78q6A_erutjM-45" target="iPdrRtlw78q6A_erutjM-46" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="iPdrRtlw78q6A_erutjM-72" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="1" source="iPdrRtlw78q6A_erutjM-45" target="iPdrRtlw78q6A_erutjM-47" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
         <mxCell id="iPdrRtlw78q6A_erutjM-73" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="iPdrRtlw78q6A_erutjM-45" target="iPdrRtlw78q6A_erutjM-48" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
@@ -131,9 +128,6 @@
         </mxCell>
         <mxCell id="iPdrRtlw78q6A_erutjM-46" value="Keyfile" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
           <mxGeometry x="500" y="541" width="90" height="30" as="geometry" />
-        </mxCell>
-        <mxCell id="iPdrRtlw78q6A_erutjM-47" value="Ifcfg-rh" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
-          <mxGeometry x="530" y="585" width="100" height="30" as="geometry" />
         </mxCell>
         <mxCell id="iPdrRtlw78q6A_erutjM-48" value="Ifupdown" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
           <mxGeometry x="566" y="630" width="100" height="30" as="geometry" />

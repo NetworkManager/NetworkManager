@@ -30,7 +30,6 @@ Release: __RELEASE_VERSION__%{?dist}
 %global obsoletes_device_plugins     1:0.9.9.95-1
 %global obsoletes_ppp_plugin         1:1.5.3
 %global obsoletes_initscripts_updown 1:1.36.0-0.6
-%global obsoletes_ifcfg_rh           1:1.36.2
 
 %global nmlibdir %{_prefix}/lib/%{name}
 %global nmplugindir %{_libdir}/%{name}/%{version}-%{release}
@@ -119,34 +118,6 @@ Release: __RELEASE_VERSION__%{?dist}
 %global dns_rc_manager_default symlink
 %endif
 
-%if 0%{?fedora} >= 33 || 0%{?rhel} >= 9
-%bcond_with default_ifcfg_rh
-%else
-%bcond_without default_ifcfg_rh
-%endif
-
-%if 0%{?rhel} >= 10 || 0%{?fedora} >= 41
-%bcond_with ifcfg_rh
-%bcond_with split_ifcfg_rh
-%elif 0%{?fedora} >= 36
-%bcond_without ifcfg_rh
-%bcond_without split_ifcfg_rh
-%else
-%bcond_without ifcfg_rh
-%bcond_with split_ifcfg_rh
-%endif
-
-%if (0%{?fedora} >= 36 && 0%{?fedora} < 39) || 0%{?rhel} == 9
-%bcond_without ifcfg_warning
-%else
-%bcond_with ifcfg_warning
-%endif
-
-%if %{with ifcfg_rh} && 0%{?fedora} >= 39
-%bcond_without ifcfg_migrate
-%else
-%bcond_with ifcfg_migrate
-%endif
 
 # Fedora 33 enables LTO by default by setting CFLAGS="-flto -ffat-lto-objects".
 # However, we also require "-flto -flto-partition=none", so disable Fedora's
@@ -163,8 +134,6 @@ Source4: 20-connectivity-fedora.conf
 Source5: 20-connectivity-redhat.conf
 Source6: 22-wifi-mac-addr.conf
 Source7: 70-nm-connectivity.conf
-Source8: readme-ifcfg-rh.txt
-Source9: readme-ifcfg-rh-migrated.txt
 Source10: 24-clat-auto.conf
 
 #Patch1: 0001-some.patch
@@ -194,24 +163,15 @@ Obsoletes: NetworkManager-wimax < 1:1.2
 Suggests: NetworkManager-initscripts-updown
 %endif
 Obsoletes: NetworkManager < %{obsoletes_initscripts_updown}
-%if %{with split_ifcfg_rh}
-Obsoletes: NetworkManager < %{obsoletes_ifcfg_rh}
-%endif
 
 %if 0%{?rhel} >= 10
 %if 0%{without team}
 Obsoletes: NetworkManager-team < 1:1.47.5-3
 %endif
-Obsoletes: NetworkManager-initscripts-ifcfg-rh < 1:1.47.5-3
-Obsoletes: NetworkManager-dispatcher-routing-rules < 1:1.47.5-3
 %endif
 
 %if 0%{?fedora} >= 41
-%if %{without ifcfg_rh}
-Obsoletes: NetworkManager-initscripts-ifcfg-rh < 1:1.49-3.1
-Obsoletes: NetworkManager-dispatcher-routing-rules < 1:1.49.3-1
 Obsoletes: NetworkManager-initscripts-updown < 1:1.49.3-1
-%endif
 %endif
 
 Conflicts: NetworkManager-vpnc < 1:0.7.0.99-1
@@ -223,7 +183,6 @@ Conflicts: kde-plasma-networkmanagement < 1:0.9-0.49.20110527git.nm09
 %if 0%{without team}
 Conflicts: NetworkManager-team <= 1:1.47.5-3
 %endif
-Conflicts: NetworkManager-initscripts-ifcfg-rh <= 1:1.47.5-3
 Conflicts: NetworkManager-dispatcher-routing-rules <= 1:1.47.5-3
 %endif
 
@@ -488,25 +447,6 @@ This package is intended to be installed by default for server
 deployments.
 
 
-%if %{with ifcfg_rh}
-%package dispatcher-routing-rules
-Summary: NetworkManager dispatcher file for advanced routing rules
-Group: System Environment/Base
-%if %{with split_ifcfg_rh}
-Requires: %{name}-initscripts-ifcfg-rh
-%endif
-Requires: ipcalc
-BuildArch: noarch
-Provides: %{name}-config-routing-rules = %{epoch}:%{version}-%{release}
-Obsoletes: %{name}-config-routing-rules < 1:1.31.0
-
-%description dispatcher-routing-rules
-This adds a NetworkManager dispatcher file to support networking
-configurations using "/etc/sysconfig/network-scripts/rule-NAME" files
-(eg, to do policy-based routing).
-%endif
-
-
 %if %{with nmtui}
 %package tui
 Summary: NetworkManager curses-based UI
@@ -521,19 +461,6 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 %endif
 
 
-%if %{with split_ifcfg_rh}
-%package initscripts-ifcfg-rh
-Summary: NetworkManager plugin for reading and writing connections in ifcfg-rh format
-Group: System Environment/Base
-Requires: %{name} = %{epoch}:%{version}-%{release}
-Obsoletes: NetworkManager < %{obsoletes_ifcfg_rh}
-
-%description initscripts-ifcfg-rh
-Installs a plugin for reading and writing connection profiles using
-the Red Hat ifcfg format in /etc/sysconfig/network-scripts/.
-%endif
-
-
 %if %{with nm_cloud_setup}
 %package cloud-setup
 Summary: Automatically configure NetworkManager in cloud
@@ -545,24 +472,6 @@ Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
 Installs a nm-cloud-setup tool that can automatically configure
 NetworkManager in cloud environment. Only certain cloud providers
 like Aliyun, Azure, EC2, GCP are supported.
-%endif
-
-
-%if %{with ifcfg_rh}
-%package initscripts-updown
-Summary: Legacy ifup/ifdown scripts for NetworkManager that replace initscripts (network-scripts)
-Group: System Environment/Base
-BuildArch: noarch
-Requires: NetworkManager
-Requires: /usr/bin/nmcli
-Requires(post): /usr/sbin/update-alternatives
-Requires(preun): /usr/sbin/update-alternatives
-Obsoletes: NetworkManager < %{obsoletes_initscripts_updown}
-
-%description initscripts-updown
-Installs alternative ifup/ifdown scripts that talk to NetworkManager.
-This is only for backward compatibility with initscripts (network-scripts).
-Preferably use nmcli instead.
 %endif
 
 
@@ -670,11 +579,6 @@ Preferably use nmcli instead.
 	-Ddbus_conf_dir=%{dbus_sys_dir} \
 	-Dtests=yes \
 	-Dvalgrind=no \
-%if %{with ifcfg_rh}
-	-Difcfg_rh=true \
-%else
-	-Difcfg_rh=false \
-%endif
 	-Difupdown=false \
 %if %{with ppp}
 	-Dppp=true \
@@ -684,12 +588,6 @@ Preferably use nmcli instead.
 	-Dppp=false \
 %endif
 	-Ddist_version=%{version}-%{release} \
-%if %{with default_ifcfg_rh}
-	-Dconfig_plugins_default=ifcfg-rh \
-%endif
-%if %{with ifcfg_migrate}
-	-Dconfig_migrate_ifcfg_rh_default=true \
-%endif
 	-Dresolvconf=no \
 	-Dnetconfig=no \
 	-Dconfig_dns_rc_manager_default=%{dns_rc_manager_default} \
@@ -721,18 +619,6 @@ cp %{SOURCE6} %{buildroot}%{nmlibdir}/conf.d/
 cp %{SOURCE10} %{buildroot}%{nmlibdir}/conf.d/
 %endif
 
-%if %{with ifcfg_warning}
-cp %{SOURCE8} %{buildroot}%{_sysconfdir}/sysconfig/network-scripts
-%endif
-%if %{with ifcfg_migrate}
-cp %{SOURCE9} %{buildroot}%{_sysconfdir}/sysconfig/network-scripts/readme-ifcfg-rh.txt
-%endif
-
-%if %{with ifcfg_rh}
-cp examples/dispatcher/10-ifcfg-rh-routes.sh %{buildroot}%{nmlibdir}/dispatcher.d/
-ln -s ../no-wait.d/10-ifcfg-rh-routes.sh %{buildroot}%{nmlibdir}/dispatcher.d/pre-up.d/
-ln -s ../10-ifcfg-rh-routes.sh %{buildroot}%{nmlibdir}/dispatcher.d/no-wait.d/
-%endif
 
 %find_lang %{name}
 
@@ -752,11 +638,6 @@ find %{buildroot}%{_datadir}/gtk-doc -exec touch --reference meson.build '{}' \+
 %if 0%{?__debug_package} && ! 0%{?flatpak}
 mkdir -p %{buildroot}%{_prefix}/src/debug/NetworkManager-%{version_no_tilde}
 cp valgrind.suppressions %{buildroot}%{_prefix}/src/debug/NetworkManager-%{version_no_tilde}
-%endif
-
-%if %{with ifcfg_rh}
-touch %{buildroot}%{_sbindir}/ifup
-touch %{buildroot}%{_sbindir}/ifdown
 %endif
 
 
@@ -789,18 +670,6 @@ fi
 %systemd_post %{systemd_units}
 
 
-%if %{with ifcfg_rh}
-%post initscripts-updown
-if [ -f %{_sbindir}/ifup -a ! -L %{_sbindir}/ifup ]; then
-    # initscripts package too old, won't let us set an alternative
-    /usr/sbin/update-alternatives --remove ifup %{_libexecdir}/nm-ifup >/dev/null 2>&1 || :
-else
-    /usr/sbin/update-alternatives --install %{_sbindir}/ifup ifup %{_libexecdir}/nm-ifup 50 \
-        --slave %{_sbindir}/ifdown ifdown %{_libexecdir}/nm-ifdown
-fi
-%endif
-
-
 %if %{with nm_cloud_setup}
 %post cloud-setup
 %systemd_post %{systemd_units_cloud_setup}
@@ -816,14 +685,6 @@ if [ $1 -eq 0 ]; then
     #/bin/systemctl stop NetworkManager.service >/dev/null 2>&1 || :
 fi
 %systemd_preun NetworkManager-wait-online.service NetworkManager-dispatcher.service nm-priv-helper.service
-
-
-%if %{with ifcfg_rh}
-%preun initscripts-updown
-if [ $1 -eq 0 ]; then
-    /usr/sbin/update-alternatives --remove ifup %{_libexecdir}/nm-ifup >/dev/null 2>&1 || :
-fi
-%endif
 
 
 %if %{with nm_cloud_setup}
@@ -854,9 +715,6 @@ fi
 %{dbus_sys_dir}/org.freedesktop.NetworkManager.conf
 %{dbus_sys_dir}/nm-dispatcher.conf
 %{dbus_sys_dir}/nm-priv-helper.conf
-%if %{with ifcfg_rh} && %{without split_ifcfg_rh}
-%{dbus_sys_dir}/nm-ifcfg-rh.conf
-%endif
 %{_sbindir}/%{name}
 %{_bindir}/nmcli
 %{_datadir}/bash-completion/completions/nmcli
@@ -886,9 +744,6 @@ fi
 %{_libexecdir}/nm-priv-helper
 %dir %{_libdir}/%{name}
 %dir %{nmplugindir}
-%if %{with ifcfg_rh} && %{without split_ifcfg_rh}
-%{nmplugindir}/libnm-settings-plugin-ifcfg-rh.so
-%endif
 %if %{with nmtui}
 %exclude %{_mandir}/man1/nmtui*
 %endif
@@ -908,9 +763,6 @@ fi
 %{_mandir}/man8/NetworkManager-dispatcher.8*
 %{_mandir}/man8/NetworkManager-wait-online.service.8*
 %dir %{_localstatedir}/lib/NetworkManager
-%if %{with ifcfg_rh}
-%dir %{_sysconfdir}/sysconfig/network-scripts
-%endif
 %{_datadir}/dbus-1/system-services/org.freedesktop.nm_dispatcher.service
 %{_datadir}/dbus-1/system-services/org.freedesktop.nm_priv_helper.service
 %{_datadir}/polkit-1/actions/*.policy
@@ -926,9 +778,6 @@ fi
 %{_unitdir}/nm-priv-helper.service
 %dir %{_datadir}/doc/NetworkManager/examples
 %{_datadir}/doc/NetworkManager/examples/server.conf
-%if %{with ifcfg_warning} || %{with ifcfg_migrate}
-%{_sysconfdir}/sysconfig/network-scripts/readme-ifcfg-rh.txt
-%endif
 %doc NEWS AUTHORS README.md CONTRIBUTING.md
 %license COPYING
 %license COPYING.LGPL
@@ -1026,14 +875,6 @@ fi
 %{nmlibdir}/conf.d/00-server.conf
 
 
-%if %{with ifcfg_rh}
-%files dispatcher-routing-rules
-%{nmlibdir}/dispatcher.d/10-ifcfg-rh-routes.sh
-%{nmlibdir}/dispatcher.d/no-wait.d/10-ifcfg-rh-routes.sh
-%{nmlibdir}/dispatcher.d/pre-up.d/10-ifcfg-rh-routes.sh
-%endif
-
-
 %if %{with nmtui}
 %files tui
 %{_bindir}/nmtui
@@ -1041,13 +882,6 @@ fi
 %{_bindir}/nmtui-connect
 %{_bindir}/nmtui-hostname
 %{_mandir}/man1/nmtui*
-%endif
-
-
-%if %{with split_ifcfg_rh}
-%files initscripts-ifcfg-rh
-%{nmplugindir}/libnm-settings-plugin-ifcfg-rh.so
-%{dbus_sys_dir}/nm-ifcfg-rh.conf
 %endif
 
 
@@ -1060,15 +894,6 @@ fi
 %{nmlibdir}/dispatcher.d/no-wait.d/90-nm-cloud-setup.sh
 %{nmlibdir}/dispatcher.d/pre-up.d/90-nm-cloud-setup.sh
 %{_mandir}/man8/nm-cloud-setup.8*
-%endif
-
-
-%if %{with ifcfg_rh}
-%files initscripts-updown
-%{_libexecdir}/nm-ifup
-%ghost %attr(755, root, root) %{_sbindir}/ifup
-%{_libexecdir}/nm-ifdown
-%ghost %attr(755, root, root) %{_sbindir}/ifdown
 %endif
 
 
