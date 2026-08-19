@@ -1346,12 +1346,6 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * Interface), "bnc" (Thin Ethernet) or "mii" (Media Independent Interface).
      * If the device supports only one port type, this setting is ignored.
      **/
-    /* ---ifcfg-rh---
-     * property: port
-     * variable: (none)
-     * description: The property is not saved by the plugin.
-     * ---end---
-     */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
                                               NM_SETTING_WIRED_PORT,
@@ -1378,13 +1372,6 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * Must be set together with the "duplex" property when non-zero.
      * Before specifying a speed value be sure your device supports it.
      **/
-    /* ---ifcfg-rh---
-     * property: speed
-     * variable: ETHTOOL_OPTS
-     * description: Fixed speed for the ethernet link. It is added as "speed"
-     *    parameter in the ETHTOOL_OPTS variable.
-     * ---end---
-     */
     _nm_setting_property_define_direct_uint32(properties_override,
                                               obj_properties,
                                               NM_SETTING_WIRED_SPEED,
@@ -1412,13 +1399,6 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * Must be set together with the "speed" property if specified.
      * Before specifying a duplex mode be sure your device supports it.
      **/
-    /* ---ifcfg-rh---
-     * property: duplex
-     * variable: ETHTOOL_OPTS
-     * description: Fixed duplex mode for the ethernet link. It is added as
-     *    "duplex" parameter in the ETHOOL_OPTS variable.
-     * ---end---
-     */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
                                               NM_SETTING_WIRED_DUPLEX,
@@ -1440,14 +1420,6 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * When %FALSE, "speed" and "duplex" properties should be both set or
      * link configuration will be skipped.
      **/
-    /* ---ifcfg-rh---
-     * property: auto-negotiate
-     * variable: ETHTOOL_OPTS
-     * description: Whether link speed and duplex autonegotiation is enabled.
-     *    It is not saved only if disabled and no values are provided for the
-     *    "speed" and "duplex" parameters (skips link configuration).
-     * ---end---
-     */
     _nm_setting_property_define_direct_boolean(properties_override,
                                                obj_properties,
                                                NM_SETTING_WIRED_AUTO_NEGOTIATE,
@@ -1471,16 +1443,6 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * description: MAC address in traditional hex-digits-and-colons notation
      *   (e.g. 00:22:68:12:79:A2), or semicolon separated list of 6 bytes (obsolete)
      *   (e.g. 0;34;104;18;121;162)
-     * ---end---
-     */
-    /* ---ifcfg-rh---
-     * property: mac-address
-     * variable: HWADDR
-     * description: Hardware address of the device in traditional hex-digits-and-colons
-     *    notation (e.g. 00:22:68:14:5A:05).
-     *    Note that for initscripts this is the current MAC address of the device as found
-     *    during ifup. For NetworkManager this is the permanent MAC address. Or in case no
-     *    permanent MAC address exists, the MAC address initially configured on the device.
      * ---end---
      */
     _nm_setting_property_define_direct_mac_address(properties_override,
@@ -1520,13 +1482,6 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * description: Cloned MAC address in traditional hex-digits-and-colons notation
      *   (e.g. 00:22:68:12:79:B2), or semicolon separated list of 6 bytes (obsolete)
      *   (e.g. 0;34;104;18;121;178).
-     * ---end---
-     */
-    /* ---ifcfg-rh---
-     * property: cloned-mac-address
-     * variable: MACADDR
-     * description: Cloned (spoofed) MAC address in traditional hex-digits-and-colons
-     *    notation (e.g. 00:22:68:14:5A:99).
      * ---end---
      */
     /* ---dbus---
@@ -1602,13 +1557,6 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * will create a fully scrambled MAC address, randomly locally or globally
      * administered.
      **/
-    /* ---ifcfg-rh---
-     * property: generate-mac-address-mask
-     * variable: GENERATE_MAC_ADDRESS_MASK(+)
-     * description: the MAC address mask for generating randomized and stable
-     *   cloned-mac-address.
-     * ---end---
-     */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
                                               NM_SETTING_WIRED_GENERATE_MAC_ADDRESS_MASK,
@@ -1631,14 +1579,6 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * format: list of MACs (separated with semicolons)
      * description: MAC address blacklist.
      * example: mac-address-blacklist= 00:22:68:12:79:A6;00:22:68:12:79:78
-     * ---end---
-     */
-    /* ---ifcfg-rh---
-     * property: mac-address-blacklist
-     * variable: HWADDR_BLACKLIST(+)
-     * description: It denies usage of the connection for any device whose address
-     *   is listed.
-     * example: HWADDR_BLACKLIST="00:22:68:11:69:08 00:11:22:11:44:55"
      * ---end---
      */
     prop_idx = _nm_setting_property_define_direct_strv(
@@ -1675,14 +1615,6 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * example: mac-address-denylist= 00:22:68:12:79:A6;00:22:68:12:79:78
      * ---end---
      */
-    /* ---ifcfg-rh---
-     * property: mac-address-denylist
-     * variable: HWADDR_BLACKLIST(+)
-     * description: It denies usage of the connection for any device whose address
-     *   is listed.
-     * example: HWADDR_BLACKLIST="00:22:68:11:69:08 00:11:22:11:44:55"
-     * ---end---
-     */
     _nm_setting_property_define_direct_strv(
         properties_override,
         obj_properties,
@@ -1709,12 +1641,6 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * If non-zero, only transmit packets of the specified size or smaller,
      * breaking larger packets up into multiple Ethernet frames.
      **/
-    /* ---ifcfg-rh---
-     * property: mtu
-     * variable: MTU
-     * description: MTU of the interface.
-     * ---end---
-     */
     _nm_setting_property_define_direct_uint32(properties_override,
                                               obj_properties,
                                               NM_SETTING_WIRED_MTU,
@@ -1737,13 +1663,6 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * and each string may only be composed of hexadecimal characters and the
      * period (.) character.
      **/
-    /* ---ifcfg-rh---
-     * property: s390-subchannels
-     * variable: SUBCHANNELS
-     * description: Subchannels for IBM S390 hosts.
-     * example: SUBCHANNELS=0.0.b00a,0.0.b00b,0.0.b00c
-     * ---end---
-     */
     _nm_setting_property_define_gprop_strv_oldstyle(properties_override,
                                                     obj_properties,
                                                     NM_SETTING_WIRED_S390_SUBCHANNELS,
@@ -1756,14 +1675,6 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * s390 network device type; one of "qeth", "lcs", or "ctc", representing
      * the different types of virtual network devices available on s390 systems.
      **/
-    /* ---ifcfg-rh---
-     * property: s390-nettype
-     * variable: NETTYPE
-     * values: "qeth", "lcs" or "ctc"
-     * description: Network type of the S390 host.
-     * example: NETTYPE=qeth
-     * ---end---
-     */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
                                               NM_SETTING_WIRED_S390_NETTYPE,
@@ -1785,13 +1696,6 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * However, s390utils ships a udev rule which parses this information
      * and applies it to the interface.
      **/
-    /* ---ifcfg-rh---
-     * property: s390-options
-     * variable: OPTIONS and PORTNAME, CTCPROTO,
-     * description: S390 device options. All options go to OPTIONS, except for
-     *   "portname" and "ctcprot" that have their own variables.
-     * ---end---
-     */
     obj_properties[PROP_S390_OPTIONS] = g_param_spec_boxed(
         NM_SETTING_WIRED_S390_OPTIONS,
         "",
@@ -1816,15 +1720,6 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      *
      * Since: 1.2
      **/
-    /* ---ifcfg-rh---
-     * property: wake-on-lan
-     * variable: ETHTOOL_OPTS, ETHTOOL_WAKE_ON_LAN
-     * description: Wake on Lan mode for ethernet. The setting "ignore" is expressed
-     * with "ETHTOOL_WAKE_ON_LAN=ignore". Otherwise, the "ETHTOOL_OPTS" variable is set
-     * with the value "wol" and several of the characters "p|u|m|b|a|g|s|f|d" as explained
-     * in the ethtool manual page.
-     * ---end---
-     */
     _nm_setting_property_define_direct_uint32(properties_override,
                                               obj_properties,
                                               NM_SETTING_WIRED_WAKE_ON_LAN,
@@ -1845,14 +1740,6 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      *
      * Since: 1.2
      **/
-    /* ---ifcfg-rh---
-     * property: wake-on-lan-password
-     * variable: ETHTOOL_OPTS
-     * description: Password for secure-on based Wake-on-Lan. It is added as "sopass"
-     *    parameter in the ETHTOOL_OPTS variable.
-     * example: ETHTOOL_OPTS="wol gs sopass 00:11:22:33:44:55"
-     * ---end---
-     */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
                                               NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD,
@@ -1872,12 +1759,6 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      *
      * Since: 1.32
      **/
-    /* ---ifcfg-rh---
-     * property: accept-all-mac-addresses
-     * variable: ACCEPT_ALL_MAC_ADDRESSES
-     * description: Enforce the interface to accept all the packets.
-     * ---end---
-     */
     _nm_setting_property_define_direct_ternary_enum(properties_override,
                                                     obj_properties,
                                                     NM_SETTING_WIRED_ACCEPT_ALL_MAC_ADDRESSES,

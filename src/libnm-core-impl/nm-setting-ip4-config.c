@@ -670,39 +670,12 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
     setting_ip_config_class->is_ipv4        = TRUE;
     setting_ip_config_class->addr_family    = AF_INET;
 
-    /* ---ifcfg-rh---
-     * property: method
-     * variable: BOOTPROTO
-     * format: string
-     * values: none, dhcp (bootp), static, ibft, autoip, shared
-     * default: none
-     * description: Method used for IPv4 protocol configuration.
-     * ---end---
-     */
-
     /* ---keyfile---
      * property: dns
      * variable: dns
      * format: list of DNS IP addresses
      * description: List of DNS servers.
      * example: dns=1.2.3.4;8.8.8.8;8.8.4.4;
-     * ---end---
-     */
-    /* ---ifcfg-rh---
-     * property: dns
-     * variable: DNS1, DNS2, ...
-     * format: string
-     * description: List of DNS servers. Even if NetworkManager supports many DNS
-     *   servers, initscripts and resolver only care about the first three, usually.
-     * example: DNS1=1.2.3.4 DNS2=10.0.0.254 DNS3=8.8.8.8
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: dns-search
-     * variable: DOMAIN
-     * format: string (space-separated domains)
-     * description: List of DNS search domains.
      * ---end---
      */
 
@@ -720,13 +693,6 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      *          address1=192.168.100.100/24,192.168.100.1
      * ---end---
      */
-    /* ---ifcfg-rh---
-     * property: addresses
-     * variable: IPADDR, PREFIX (NETMASK), IPADDR1, PREFIX1 (NETMASK1), ...
-     * description: List of static IP addresses.
-     * example: IPADDR=10.5.5.23 PREFIX=24 IPADDR1=1.1.1.2 PREFIX1=16
-     * ---end---
-     */
 
     /* ---keyfile---
      * property: gateway
@@ -738,13 +704,6 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      *   The value from the "gateway" variable takes precedence over any gateway specified in one
      *   of the "address*" variables.
      * example: gateway=192.168.100.254
-     * ---end---
-     */
-    /* ---ifcfg-rh---
-     * property: gateway
-     * variable: GATEWAY
-     * description: Gateway IP address.
-     * example: GATEWAY=10.5.5.1
      * ---end---
      */
 
@@ -766,13 +725,6 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * example: route1_options=mtu=1000,onlink=true
      * ---end---
      */
-    /* ---ifcfg-rh---
-     * property: routes
-     * variable: ADDRESS1, NETMASK1, GATEWAY1, METRIC1, OPTIONS1, ...
-     * description: List of static routes. They are not stored in ifcfg-* file,
-     *   but in route-* file instead.
-     * ---end---
-     */
 
     /* ---keyfile---
      * property: routing-rules
@@ -782,73 +734,6 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      *    fixed priority. The "lookup" and "table" options don't support a table name,
      *    only a number.
      * example: routing-rule1=priority 5 from 192.167.4.0/24 table 45
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: ignore-auto-routes
-     * variable: PEERROUTES(+)
-     * default: yes
-     * description: PEERROUTES has the opposite meaning as 'ignore-auto-routes' property.
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: ignore-auto-dns
-     * variable: PEERDNS
-     * default: yes
-     * description: PEERDNS has the opposite meaning as 'ignore-auto-dns' property.
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: dhcp-send-hostname
-     * variable: DHCP_SEND_HOSTNAME(+)
-     * default: yes
-     * description: Whether DHCP_HOSTNAME should be sent to the DHCP server.
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: dhcp-hostname
-     * variable: DHCP_HOSTNAME
-     * description: Hostname to send to the DHCP server. When both DHCP_HOSTNAME and
-     *    DHCP_FQDN are specified only the latter is used.
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: never-default
-     * variable: DEFROUTE (GATEWAYDEV in /etc/sysconfig/network)
-     * default: yes
-     * description: DEFROUTE=no tells NetworkManager that this connection
-     *   should not be assigned the default route. DEFROUTE has the opposite
-     *   meaning as 'never-default' property.
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: may-fail
-     * variable: IPV4_FAILURE_FATAL(+)
-     * default: no
-     * description: IPV4_FAILURE_FATAL has the opposite meaning as 'may-fail' property.
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: route-metric
-     * variable: IPV4_ROUTE_METRIC(+)
-     * default: -1
-     * description: IPV4_ROUTE_METRIC is the default IPv4 metric for routes on this connection.
-     *   If set to -1, a default metric based on the device type is used.
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: route-table
-     * variable: IPV4_ROUTE_TABLE(+)
-     * default: 0
-     * description: IPV4_ROUTE_TABLE enables policy-routing and sets the default routing table.
      * ---end---
      */
 
@@ -877,45 +762,6 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      *   added.
      *
      *   The valid "ipv4.dns-options" and "ipv6.dns-options" get merged together.
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: dns-options
-     * variable: RES_OPTIONS(+)
-     * description: List of DNS options to be added to /etc/resolv.conf
-     * example: RES_OPTIONS=ndots:2 timeout:3
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: dns-priority
-     * variable: IPV4_DNS_PRIORITY(+)
-     * description: The priority for DNS servers of this connection. Lower values have higher priority.
-     *    If zero, the default value will be used (50 for VPNs, 100 for other connections).
-     *    A negative value prevents DNS from other connections with greater values to be used.
-     * default: 0
-     * example: IPV4_DNS_PRIORITY=20
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: auto-route-ext-gw
-     * variable: IPV4_AUTO_ROUTE_EXT_GW(+)
-     * default: yes
-     * description: VPN connections will default to add the route automatically unless this
-     *     setting is set to %FALSE.
-     *     For other connection types, adding such an automatic route is currently
-     *     not supported and setting this to %TRUE has no effect.
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: replace-local-rule
-     * variable: IPV4_REPLACE_LOCAL_RULE(+)
-     * default: no
-     * description: Connections will default to keep the autogenerated priority
-     *     0 local rule unless this setting is set to %TRUE.
      * ---end---
      */
 
@@ -960,14 +806,6 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * special-values: mac, perm-mac, duid, ipv6-duid, stable, none
      * ---end---
      */
-    /* ---ifcfg-rh---
-     * property: dhcp-client-id
-     * variable: DHCP_CLIENT_ID(+)
-     * description: A string sent to the DHCP server to identify the local machine.
-     *    A binary value can be specified using hex notation ('aa:bb:cc').
-     * example: DHCP_CLIENT_ID=ax-srv-1; DHCP_CLIENT_ID=01:44:44:44:44:44:44
-     * ---end---
-     */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
                                               NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID,
@@ -976,33 +814,6 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
                                               NMSettingIP4ConfigPrivate,
                                               dhcp_client_id,
                                               .direct_string_allow_empty = TRUE);
-
-    /* ---ifcfg-rh---
-     * property: dad-timeout
-     * variable: ACD_TIMEOUT(+), ARPING_WAIT
-     * default: missing variable means global default (config override or zero)
-     * description: Timeout (in milliseconds for ACD_TIMEOUT or in seconds
-     *   for ARPING_WAIT) for address conflict detection before configuring
-     *   IPv4 addresses. 0 turns off the ACD completely, -1 means default value.
-     * example: ACD_TIMEOUT=2000 or ARPING_WAIT=2
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: dhcp-timeout
-     * variable: IPV4_DHCP_TIMEOUT(+)
-     * description: A timeout after which the DHCP transaction fails in case of no response.
-     * example: IPV4_DHCP_TIMEOUT=10
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: dhcp-hostname-flags
-     * variable: DHCP_HOSTNAME_FLAGS
-     * description: flags for the DHCP hostname and FQDN properties
-     * example: DHCP_HOSTNAME_FLAGS=5
-     * ---end---
-     */
 
     /**
      * NMSettingIP4Config:dhcp-fqdn:
@@ -1013,14 +824,6 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * cannot be set at the same time.
      *
      * Since: 1.2
-     */
-    /* ---ifcfg-rh---
-     * property: dhcp-fqdn
-     * variable: DHCP_FQDN
-     * description: FQDN to send to the DHCP server. When both DHCP_HOSTNAME and
-     *    DHCP_FQDN are specified only the latter is used.
-     * example: DHCP_FQDN=foo.bar.com
-     * ---end---
      */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
@@ -1042,13 +845,6 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * If still unspecified, the DHCP option is not sent to the server.
      *
      * Since: 1.28
-     */
-    /* ---ifcfg-rh---
-     * property: dhcp-vendor-class-identifier
-     * variable: DHCP_VENDOR_CLASS_IDENTIFIER(+)
-     * description: The Vendor Class Identifier DHCP option (60).
-     * example: DHCP_VENDOR_CLASS_IDENTIFIER=foo
-     * ---end---
      */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
@@ -1075,13 +871,6 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * if no other IPv4 address is set.
      *
      * Since: 1.40
-     */
-    /* ---ifcfg-rh---
-     * property: link-local
-     * variable: IPV4_LINK_LOCAL(+)
-     * description: Configure link-local IP address in interaction with method
-     * example: IPV4_LINK_LOCAL=auto
-     * ---end---
      */
     _nm_setting_property_define_direct_int32(properties_override,
                                              obj_properties,

@@ -163,14 +163,6 @@ nm_setting_bond_port_class_init(NMSettingBondPortClass *klass)
      *
      * Since: 1.34
      **/
-    /* ---ifcfg-rh---
-     * property: queue-id
-     * variable: BOND_PORT_QUEUE_ID(+)
-     * values: 0 - 65535
-     * default: 0
-     * description: Queue ID.
-     * ---end---
-     */
     _nm_setting_property_define_direct_uint32(properties_override,
                                               obj_properties,
                                               NM_SETTING_BOND_PORT_QUEUE_ID,
@@ -192,14 +184,6 @@ nm_setting_bond_port_class_init(NMSettingBondPortClass *klass)
      *
      * Since: 1.44
      **/
-    /* ---ifcfg-rh---
-     * property: prio
-     * variable: BOND_PORT_PRIO(+)
-     * values: -2147483648 - 2147483647
-     * default: 0
-     * description: Port priority.
-     * ---end---
-     */
     _nm_setting_property_define_direct_int32(properties_override,
                                              obj_properties,
                                              NM_SETTING_BOND_PORT_PRIO,

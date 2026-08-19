@@ -185,12 +185,6 @@ nm_setting_loopback_class_init(NMSettingLoopbackClass *klass)
      *
      * Since: 1.42
      **/
-    /* ---ifcfg-rh---
-     * property: mtu
-     * variable: MTU
-     * description: MTU of the interface.
-     * ---end---
-     */
     _nm_setting_property_define_direct_uint32(properties_override,
                                               obj_properties,
                                               NM_SETTING_LOOPBACK_MTU,

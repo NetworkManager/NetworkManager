@@ -1303,13 +1303,6 @@ nm_setting_sriov_class_init(NMSettingSriovClass *klass)
      *
      * Since: 1.14
      **/
-    /* ---ifcfg-rh---
-     * property: total-vfs
-     * variable: SRIOV_TOTAL_VFS(+)
-     * description: The total number of virtual functions to create
-     * example: SRIOV_TOTAL_VFS=16
-     * ---end---
-     */
     _nm_setting_property_define_direct_uint32(properties_override,
                                               obj_properties,
                                               NM_SETTING_SRIOV_TOTAL_VFS,
@@ -1353,13 +1346,6 @@ nm_setting_sriov_class_init(NMSettingSriovClass *klass)
 
      * Since: 1.14
      **/
-    /* ---ifcfg-rh---
-     * property: vfs
-     * variable: SRIOV_VF1(+), SRIOV_VF2(+), ...
-     * description: SR-IOV virtual function descriptors
-     * example: SRIOV_VF10="mac=00:11:22:33:44:55", ...
-     * ---end---
-     */
     obj_properties[PROP_VFS] = g_param_spec_boxed(NM_SETTING_SRIOV_VFS,
                                                   "",
                                                   "",
@@ -1391,14 +1377,6 @@ nm_setting_sriov_class_init(NMSettingSriovClass *klass)
      *
      * Since: 1.14
      **/
-    /* ---ifcfg-rh---
-     * property: autoprobe-drivers
-     * variable: SRIOV_AUTOPROBE_DRIVERS(+)
-     * default: missing variable means global default
-     * description: Whether to autoprobe virtual functions by a compatible driver
-     * example: SRIOV_AUTOPROBE_DRIVERS=0,1
-     * ---end---
-     */
     _nm_setting_property_define_direct_ternary_enum(properties_override,
                                                     obj_properties,
                                                     NM_SETTING_SRIOV_AUTOPROBE_DRIVERS,

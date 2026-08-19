@@ -732,37 +732,11 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
     setting_ip_config_class->is_ipv4        = FALSE;
     setting_ip_config_class->addr_family    = AF_INET6;
 
-    /* ---ifcfg-rh---
-     * property: method
-     * variable: IPV6INIT, IPV6FORWARDING, IPV6_AUTOCONF, DHCPV6C, IPV6_DISABLED
-     * default: IPV6INIT=yes; IPV6FORWARDING=no; IPV6_AUTOCONF=!IPV6FORWARDING, DHCPV6=no
-     * description: Method used for IPv6 protocol configuration.
-     *   ignore ~ IPV6INIT=no; auto ~ IPV6_AUTOCONF=yes; dhcp ~ IPV6_AUTOCONF=no and DHCPV6C=yes;
-     *   disabled ~ IPV6_DISABLED=yes
-     * ---end---
-     */
-
     /* ---keyfile---
      * property: dns
      * format: list of DNS IP addresses
      * description: List of DNS servers.
      * example: dns=2001:4860:4860::8888;2001:4860:4860::8844;
-     * ---end---
-     */
-    /* ---ifcfg-rh---
-     * property: dns
-     * variable: DNS1, DNS2, ...
-     * format: string
-     * description: List of DNS servers. NetworkManager uses the variables both
-     *   for IPv4 and IPv6.
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: dns-search
-     * variable: IPV6_DOMAIN(+)
-     * format: string (space-separated domains)
-     * description: List of DNS search domains.
      * ---end---
      */
 
@@ -780,14 +754,6 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      *          address1=fd01::2000/64;fd01::1
      * ---end---
      */
-    /* ---ifcfg-rh---
-     * property: addresses
-     * variable: IPV6ADDR, IPV6ADDR_SECONDARIES
-     * description: List of static IP addresses.
-     * example: IPV6ADDR=ab12:9876::1
-     *   IPV6ADDR_SECONDARIES="ab12:9876::2 ab12:9876::3"
-     * ---end---
-     */
 
     /* ---keyfile---
      * property: gateway
@@ -799,13 +765,6 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      *   The value from the "gateway" variable takes precedence over any gateway specified in one
      *   of the "address*" variables.
      * example: gateway=abbe::1
-     * ---end---
-     */
-    /* ---ifcfg-rh---
-     * property: gateway
-     * variable: IPV6_DEFAULTGW
-     * description: Gateway IP address.
-     * example: IPV6_DEFAULTGW=abbe::1
      * ---end---
      */
 
@@ -826,13 +785,6 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * example: route1_options=mtu=1000,onlink=true
      * ---end---
      */
-    /* ---ifcfg-rh---
-     * property: routes
-     * variable: (none)
-     * description: List of static routes. They are not stored in ifcfg-* file,
-     *   but in route6-* file instead in the form of command line for 'ip route add'.
-     * ---end---
-     */
 
     /* ---keyfile---
      * property: routing-rules
@@ -841,91 +793,6 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * description: Routing rules as defined with `ip rule add`, but with mandatory
      *    fixed priority.
      * example: routing-rule1=priority 5 from 2001:4860:4860::/64 table 45
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: ignore-auto-routes
-     * variable: IPV6_PEERROUTES(+)
-     * default: yes
-     * description: IPV6_PEERROUTES has the opposite meaning as 'ignore-auto-routes' property.
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: ignore-auto-dns
-     * variable: IPV6_PEERDNS(+)
-     * default: yes
-     * description: IPV6_PEERDNS has the opposite meaning as 'ignore-auto-dns' property.
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: dhcp-hostname
-     * variable: DHCPV6_HOSTNAME
-     * description: Hostname to send the DHCP server.
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: dhcp-timeout
-     * variable: IPV6_DHCP_TIMEOUT(+)
-     * description: A timeout after which the DHCP transaction fails in case of no response.
-     * example: IPV6_DHCP_TIMEOUT=10
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: dhcp-hostname-flags
-     * variable: DHCPV6_HOSTNAME_FLAGS
-     * description: flags for the DHCP hostname property
-     * example: DHCPV6_HOSTNAME_FLAGS=5
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: never-default
-     * variable: IPV6_DEFROUTE(+), (and IPV6_DEFAULTGW, IPV6_DEFAULTDEV in /etc/sysconfig/network)
-     * default: IPV6_DEFROUTE=yes (when no variable specified)
-     * description: IPV6_DEFROUTE=no tells NetworkManager that this connection
-     *   should not be assigned the default IPv6 route. IPV6_DEFROUTE has the opposite
-     *   meaning as 'never-default' property.
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: may-fail
-     * variable: IPV6_FAILURE_FATAL(+)
-     * default: no
-     * description: IPV6_FAILURE_FATAL has the opposite meaning as 'may-fail' property.
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: route-metric
-     * variable: IPV6_ROUTE_METRIC(+)
-     * default: -1
-     * description: IPV6_ROUTE_METRIC is the default IPv6 metric for routes on this connection.
-     *   If set to -1, a default metric based on the device type is used.
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: route-table
-     * variable: IPV6_ROUTE_TABLE(+)
-     * default: 0
-     * description: IPV6_ROUTE_TABLE enables policy-routing and sets the default routing table.
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: dns-priority
-     * variable: IPV6_DNS_PRIORITY(+)
-     * description: The priority for DNS servers of this connection. Lower values have higher priority.
-     *    If zero, the default value will be used (50 for VPNs, 100 for other connections).
-     *    A negative value prevents DNS from other connections with greater values to be used.
-     * default: 0
-     * example: IPV6_DNS_PRIORITY=20
      * ---end---
      */
 
@@ -958,34 +825,6 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * ---end---
      */
 
-    /* ---ifcfg-rh---
-     * property: dns-options
-     * variable: IPV6_RES_OPTIONS(+)
-     * description: List of DNS options to be added to /etc/resolv.conf
-     * example: IPV6_RES_OPTIONS=ndots:2 timeout:3
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: auto-route-ext-gw
-     * variable: IPV6_AUTO_ROUTE_EXT_GW(+)
-     * default: yes
-     * description: VPN connections will default to add the route automatically unless this
-     *     setting is set to %FALSE.
-     *     For other connection types, adding such an automatic route is currently
-     *     not supported and setting this to %TRUE has no effect.
-     * ---end---
-     */
-
-    /* ---ifcfg-rh---
-     * property: replace-local-rule
-     * variable: IPV6_REPLACE_LOCAL_RULE(+)
-     * default: no
-     * description: Connections will default to keep the autogenerated priority
-     *     0 local rule unless this setting is set to %TRUE.
-     * ---end---
-     */
-
     /**
      * NMSettingIP6Config:ip6-privacy:
      *
@@ -1005,16 +844,6 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * that can be enabled with the "addr-gen-mode" property's "stable-privacy"
      * setting as another way of avoiding host tracking with IPv6 addresses.
      **/
-    /* ---ifcfg-rh---
-     * property: ip6-privacy
-     * variable: IPV6_PRIVACY, IPV6_PRIVACY_PREFER_PUBLIC_IP(+)
-     * values: IPV6_PRIVACY: no, yes (rfc3041 or rfc4941);
-     *   IPV6_PRIVACY_PREFER_PUBLIC_IP: yes, no
-     * default: no
-     * description: Configure IPv6 Privacy Extensions for SLAAC (RFC4941).
-     * example: IPV6_PRIVACY=rfc3041 IPV6_PRIVACY_PREFER_PUBLIC_IP=yes
-     * ---end---
-     */
     _nm_setting_property_define_direct_real_enum(properties_override,
                                                  obj_properties,
                                                  NM_SETTING_IP6_CONFIG_IP6_PRIVACY,
@@ -1118,15 +947,6 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      *
      * Since: 1.2
      **/
-    /* ---ifcfg-rh---
-     * property: addr-gen-mode
-     * variable: IPV6_ADDR_GEN_MODE
-     * values: IPV6_ADDR_GEN_MODE: default, default-or-eui64, eui64, stable-privacy
-     * default: "default-or-eui64"
-     * description: Configure IPv6 Stable Privacy addressing for SLAAC (RFC7217).
-     * example: IPV6_ADDR_GEN_MODE=stable-privacy
-     * ---end---
-     */
     /* ---nmcli---
      * property: addr-gen-mode
      * format: one of "eui64" (0), "stable-privacy" (1), "default" (3) or "default-or-eui64" (2)
@@ -1189,13 +1009,6 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      *
      * Since: 1.4
      **/
-    /* ---ifcfg-rh---
-     * property: token
-     * variable: IPV6_TOKEN
-     * description: The IPv6 tokenized interface identifier token
-     * example: IPV6_TOKEN=::53
-     * ---end---
-     */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
                                               NM_SETTING_IP6_CONFIG_TOKEN,
@@ -1216,13 +1029,6 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      *
      * Since: 1.24
      **/
-    /* ---ifcfg-rh---
-     * property: ra-timeout
-     * variable: IPV6_RA_TIMEOUT(+)
-     * description: A timeout for waiting Router Advertisements in seconds.
-     * example: IPV6_RA_TIMEOUT=10
-     * ---end---
-     */
     _nm_setting_property_define_direct_int32(properties_override,
                                              obj_properties,
                                              NM_SETTING_IP6_CONFIG_RA_TIMEOUT,
@@ -1288,16 +1094,6 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      *
      * Since: 1.12
      **/
-    /* ---ifcfg-rh---
-     * property: dhcp-duid
-     * variable: DHCPV6_DUID(+)
-     * description: A string sent to the DHCPv6 server to identify the local machine.
-     *   Apart from the special values "lease", "stable-llt", "stable-ll", "stable-uuid",
-     *   "llt" and "ll" a binary value in hex format is expected. An hex string where
-     *   each octet is separated by a colon is also accepted.
-     * example: DHCPV6_DUID=LL; DHCPV6_DUID=0301deadbeef0001; DHCPV6_DUID=03:01:de:ad:be:ef:00:01
-     * ---end---
-     */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
                                               NM_SETTING_IP6_CONFIG_DHCP_DUID,
@@ -1318,14 +1114,6 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      *
      * Since: 1.44
      **/
-    /* ---ifcfg-rh---
-     * property: dhcp-pd-hint
-     * variable: DHCPV6_PD_HINT(+)
-     * description: Hint for DHCPv6 prefix delegation
-     * example: DHCPV6_PD_HINT=2001:db8:1111:2220::/60
-     *          DHCPV6_PD_HINT=::/60
-     * ---end---
-     */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
                                               NM_SETTING_IP6_CONFIG_DHCP_PD_HINT,

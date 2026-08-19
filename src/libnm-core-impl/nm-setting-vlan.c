@@ -689,9 +689,9 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     }
 
     if (connection && !s_wired) {
-        /* technically, a VLAN setting does not require an ethernet setting. However,
-         * the ifcfg-rh reader always adds a ethernet setting when reading a vlan setting.
-         * Thus, in order to be consistent, always add one via normalization. */
+        /* A VLAN setting does not strictly require an ethernet setting,
+         * but in practice it is always useful (e.g. for MAC address or MTU
+         * configuration). Always add one via normalization for consistency. */
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_SETTING_NOT_FOUND,
@@ -860,12 +860,6 @@ nm_setting_vlan_class_init(NMSettingVlanClass *klass)
      * not specified, the connection must contain an #NMSettingWired setting
      * with a #NMSettingWired:mac-address property.
      **/
-    /* ---ifcfg-rh---
-     * property: parent
-     * variable: DEVICE or PHYSDEV
-     * description: Parent interface of the VLAN.
-     * ---end---
-     */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
                                               NM_SETTING_VLAN_PARENT,
@@ -881,15 +875,6 @@ nm_setting_vlan_class_init(NMSettingVlanClass *klass)
      * The VLAN identifier that the interface created by this connection should
      * be assigned. The valid range is from 0 to 4094, without the reserved id 4095.
      **/
-    /* ---ifcfg-rh---
-     * property: id
-     * variable: VLAN_ID, DEVICE.
-     * description: VLAN identifier. If VLAN_ID is not set, it is attempted
-     *   to be detected from the suffix of DEVICE=.
-     *   Note that older versions of NetworkManager had a bug where they would
-     *   prefer the detected ID from the DEVICE over VLAN_ID.
-     * ---end---
-     */
     _nm_setting_property_define_direct_uint32(properties_override,
                                               obj_properties,
                                               NM_SETTING_VLAN_ID,
@@ -916,13 +901,6 @@ nm_setting_vlan_class_init(NMSettingVlanClass *klass)
      * in the D-Bus API continues to be 0 and a missing property on D-Bus
      * is still considered as 0.
      **/
-    /* ---ifcfg-rh---
-     * property: flags
-     * variable: GVRP, MVRP, VLAN_FLAGS
-     * values: "yes or "no" for GVRP and MVRP; "LOOSE_BINDING" and "NO_REORDER_HDR" for VLAN_FLAGS
-     * description: VLAN flags.
-     * ---end---
-     */
     obj_properties[PROP_FLAGS] = g_param_spec_flags(NM_SETTING_VLAN_FLAGS,
                                                     "",
                                                     "",
@@ -950,13 +928,6 @@ nm_setting_vlan_class_init(NMSettingVlanClass *klass)
      *
      * Since: 1.42
      **/
-    /* ---ifcfg-rh---
-     * property: protocol
-     * variable: VLAN_PROTOCOL
-     * description: VLAN protocol.
-     * example: VLAN_PROTOCOL="802.1ad"
-     * ---end---
-     */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
                                               NM_SETTING_VLAN_PROTOCOL,
@@ -974,13 +945,6 @@ nm_setting_vlan_class_init(NMSettingVlanClass *klass)
      * SKB priorities.  The mapping is given in the format "from:to" where both
      * "from" and "to" are unsigned integers, ie "7:3".
      **/
-    /* ---ifcfg-rh---
-     * property: ingress-priority-map
-     * variable: VLAN_INGRESS_PRIORITY_MAP
-     * description: Ingress priority mapping.
-     * example: VLAN_INGRESS_PRIORITY_MAP=4:2,3:5
-     * ---end---
-     */
     _nm_setting_property_define_gprop_strv_oldstyle(properties_override,
                                                     obj_properties,
                                                     NM_SETTING_VLAN_INGRESS_PRIORITY_MAP,
@@ -994,28 +958,12 @@ nm_setting_vlan_class_init(NMSettingVlanClass *klass)
      * 802.1p priorities.  The mapping is given in the format "from:to" where
      * both "from" and "to" are unsigned integers, ie "7:3".
      **/
-    /* ---ifcfg-rh---
-     * property: egress-priority-map
-     * variable: VLAN_EGRESS_PRIORITY_MAP
-     * description: Egress priority mapping.
-     * example: VLAN_EGRESS_PRIORITY_MAP=5:4,4:1,3:7
-     * ---end---
-     */
     _nm_setting_property_define_gprop_strv_oldstyle(properties_override,
                                                     obj_properties,
                                                     NM_SETTING_VLAN_EGRESS_PRIORITY_MAP,
                                                     PROP_EGRESS_PRIORITY_MAP,
                                                     NM_SETTING_PARAM_INFERRABLE);
 
-    /* ---ifcfg-rh---
-     * property: interface-name
-     * variable: PHYSDEV and VLAN_ID, or DEVICE
-     * description: VLAN interface name.
-     *   If all variables are set, parent device from PHYSDEV takes precedence over DEVICE,
-     *   but VLAN id from DEVICE takes precedence over VLAN_ID.
-     * example: PHYSDEV=eth0, VLAN_ID=12; or DEVICE=eth0.12
-     * ---end---
-     */
     /* ---dbus---
      * property: interface-name
      * format: string

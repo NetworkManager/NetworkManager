@@ -244,15 +244,6 @@ nm_setting_proxy_class_init(NMSettingProxyClass *klass)
      *
      * Since: 1.6
      **/
-    /* ---ifcfg-rh---
-     * property: method
-     * variable: PROXY_METHOD(+)
-     * default: none
-     * description: Method for proxy configuration. For "auto", WPAD is used for
-     *   proxy configuration, or set the PAC file via PAC_URL or PAC_SCRIPT.
-     * values: none, auto
-     * ---end---
-     */
     _nm_setting_property_define_direct_int32(properties_override,
                                              obj_properties,
                                              NM_SETTING_PROXY_METHOD,
@@ -271,13 +262,6 @@ nm_setting_proxy_class_init(NMSettingProxyClass *klass)
      *
      * Since: 1.6
      **/
-    /* ---ifcfg-rh---
-     * property: browser-only
-     * variable: BROWSER_ONLY(+)
-     * default: no
-     * description: Whether the proxy configuration is for browser only.
-     * ---end---
-     */
     _nm_setting_property_define_direct_boolean(properties_override,
                                                obj_properties,
                                                NM_SETTING_PROXY_BROWSER_ONLY,
@@ -294,13 +278,6 @@ nm_setting_proxy_class_init(NMSettingProxyClass *klass)
      *
      * Since: 1.6
      **/
-    /* ---ifcfg-rh---
-     * property: pac-url
-     * variable: PAC_URL(+)
-     * description: URL for PAC file.
-     * example: PAC_URL=http://wpad.mycompany.com/wpad.dat
-     * ---end---
-     */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
                                               NM_SETTING_PROXY_PAC_URL,
@@ -325,13 +302,6 @@ nm_setting_proxy_class_init(NMSettingProxyClass *klass)
      *   When setting the property in nmcli, a filename is accepted too. In that case,
      *   nmcli will read the content of the file and set the script. The prefixes "file://" and "js://" are
      *   supported to explicitly differentiate between the two.
-     * ---end---
-     */
-    /* ---ifcfg-rh---
-     * property: pac-script
-     * variable: PAC_SCRIPT(+)
-     * description: The PAC script. This is an UTF-8 encoded javascript code that defines a FindProxyForURL() function.
-     * example: PAC_SCRIPT="function FindProxyForURL (url, host) { return 'PROXY proxy.example.com:8080; DIRECT'; }"
      * ---end---
      */
     _nm_setting_property_define_direct_string(properties_override,
