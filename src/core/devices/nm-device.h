@@ -589,11 +589,8 @@ void nm_device_copy_ip6_dns_config(NMDevice *self, NMDevice *from_device);
  * @NM_UNMANAGED_USER_EXPLICIT: %TRUE when unmanaged by explicit user decision
  *   (e.g. via a D-Bus command)
  * @NM_UNMANAGED_USER_SETTINGS: %TRUE when unmanaged by user decision via
- *   the settings plugin (for example keyfile.unmanaged-devices or ifcfg-rh's
- *   NM_CONTROLLED=no). Although this is user-configuration (provided from
- *   the settings plugins, such as NM_CONTROLLED=no in ifcfg-rh), it cannot
- *   be overruled and is authoritative. That is because users may depend on
- *   dropping a ifcfg-rh file to ensure the device is unmanaged.
+ *   the settings plugin (for example keyfile.unmanaged-devices). Although
+ *   this is user-configuration, it cannot be overruled and is authoritative.
  * @NM_UNMANAGED_USER_CONF: %TRUE when unmanaged by user decision via
  *   the NetworkManager.conf ("unmanaged" in the [device] section).
  *   Contray to @NM_UNMANAGED_USER_SETTINGS, this can be overwritten via
