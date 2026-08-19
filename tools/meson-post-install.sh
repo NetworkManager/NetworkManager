@@ -8,9 +8,8 @@ nm_pkgstatedir="$5"
 nm_mandir="$6"
 nm_sysconfdir="$7"
 enable_man="$8"
-enable_ifcfg_rh="$9"
-enable_nm_cloud_setup="${10}"
-install_systemdunitdir="${11}"
+enable_nm_cloud_setup="$9"
+install_systemdunitdir="${10}"
 
 [ -n "$DESTDIR" ] && DESTDIR="${DESTDIR%%/}/"
 
@@ -48,10 +47,6 @@ if [ "$enable_man" = 1 ]; then
 
     ln -fn "${DESTDIR}${nm_mandir}/man5/NetworkManager.conf.5" "${DESTDIR}${nm_mandir}/man5/nm-system-settings.conf.5"
     ln -fn "${DESTDIR}${nm_mandir}/man5/nm-settings-nmcli.5" "${DESTDIR}${nm_mandir}/man5/nm-settings.5"
-fi
-
-if [ "$enable_ifcfg_rh" = 1 ]; then
-    mkdir -p "${DESTDIR}${nm_sysconfdir}/sysconfig/network-scripts"
 fi
 
 if [ "$enable_nm_cloud_setup" = 1 -a "$install_systemdunitdir" = 1 ]; then

@@ -354,7 +354,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-t",
         "--target",
-        choices=["nmcli", "dbus", "keyfile", "ifcfg-rh"],
+        choices=["nmcli", "dbus", "keyfile"],
         help="target where the output will be used (i.e. nmcli)",
     )
 
