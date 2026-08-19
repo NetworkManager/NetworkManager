@@ -26,7 +26,6 @@ introspection_mans = [
   ['nm-settings-nmcli',   '5'],
 ]
 
-
 built_mans = []
 foreach man: mans + introspection_mans
   name = man[0] + '.' + man[1]

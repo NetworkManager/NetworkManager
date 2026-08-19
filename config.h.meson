@@ -82,9 +82,6 @@
 /* Path to netconfig */
 #mesondefine NETCONFIG_PATH
 
-/* Build with ifcfg-rh settings plugin */
-#mesondefine WITH_CONFIG_PLUGIN_IFCFG_RH
-
 /* Build with ifupdown settings plugin */
 #mesondefine WITH_CONFIG_PLUGIN_IFUPDOWN
 
@@ -103,8 +100,6 @@
 /* Default configuration option for main.plugins setting */
 #mesondefine NM_CONFIG_DEFAULT_MAIN_PLUGINS
 
-/* Default configuration value for main.migrate-ifcfg-rh setting */
-#mesondefine NM_CONFIG_DEFAULT_MAIN_MIGRATE_IFCFG_RH
 
 /* Default value for main.rc-manager setting */
 #mesondefine NM_CONFIG_DEFAULT_MAIN_RC_MANAGER

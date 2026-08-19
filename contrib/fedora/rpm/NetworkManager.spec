@@ -118,7 +118,6 @@ Release: __RELEASE_VERSION__%{?dist}
 %global dns_rc_manager_default symlink
 %endif
 
-
 # Fedora 33 enables LTO by default by setting CFLAGS="-flto -ffat-lto-objects".
 # However, we also require "-flto -flto-partition=none", so disable Fedora's
 # default and use our configure option --with-lto instead.

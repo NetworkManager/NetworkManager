@@ -183,9 +183,6 @@ if enable_introspection
   gen_gir_cmd = files(source_root / 'tools' / 'generate-docs-nm-settings-docs-gir.py')
 
   names = [ 'dbus', 'nmcli', 'keyfile' ]
-  if enable_ifcfg_rh
-    names += [ 'ifcfg-rh' ]
-  endif
   foreach name: names
     t_infos = custom_target(
       'nm-property-infos-' + name + '.xml',
@@ -225,9 +222,6 @@ if enable_introspection
     elif name == 'keyfile'
       nm_property_infos_xml_keyfile = t_infos
       nm_settings_docs_xml_gir_keyfile = t_gir
-    elif name == 'ifcfg-rh'
-      nm_property_infos_xml_ifcfg_rh = t_infos
-      nm_settings_docs_xml_gir_ifcfg_rh = t_gir
     elif name == 'nmcli'
       nm_property_infos_xml_nmcli = t_infos
       nm_settings_docs_xml_gir_nmcli = t_gir
@@ -236,29 +230,14 @@ if enable_introspection
     endif
   endforeach
 
-  if enable_ifcfg_rh
-    nm_property_infos_xml = {
-      'dbus':     nm_property_infos_xml_dbus,
-      'keyfile':  nm_property_infos_xml_keyfile,
-      'nmcli':    nm_property_infos_xml_nmcli,
-      'ifcfg-rh': nm_property_infos_xml_ifcfg_rh,
-    }
-    nm_settings_docs_xml_gir = {
-      'dbus':     nm_settings_docs_xml_gir_dbus,
-      'keyfile':  nm_settings_docs_xml_gir_keyfile,
-      'nmcli':    nm_settings_docs_xml_gir_nmcli,
-      'ifcfg-rh': nm_settings_docs_xml_gir_ifcfg_rh,
-    }
-  else
-    nm_property_infos_xml = {
-      'dbus':    nm_property_infos_xml_dbus,
-      'keyfile': nm_property_infos_xml_keyfile,
-      'nmcli':   nm_property_infos_xml_nmcli,
-    }
-    nm_settings_docs_xml_gir = {
-      'dbus':     nm_settings_docs_xml_gir_dbus,
-      'keyfile':  nm_settings_docs_xml_gir_keyfile,
-      'nmcli':    nm_settings_docs_xml_gir_nmcli,
-    }
-  endif
+  nm_property_infos_xml = {
+    'dbus':    nm_property_infos_xml_dbus,
+    'keyfile': nm_property_infos_xml_keyfile,
+    'nmcli':   nm_property_infos_xml_nmcli,
+  }
+  nm_settings_docs_xml_gir = {
+    'dbus':     nm_settings_docs_xml_gir_dbus,
+    'keyfile':  nm_settings_docs_xml_gir_keyfile,
+    'nmcli':    nm_settings_docs_xml_gir_nmcli,
+  }
 endif
