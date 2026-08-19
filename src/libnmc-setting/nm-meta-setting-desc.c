@@ -8441,8 +8441,7 @@ static const NMMetaPropertyInfo *const property_infos_WIMAX[] = {
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_WIRED
 static const NMMetaPropertyInfo *const property_infos_WIRED[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRED_PORT,
-        /* Do not allow setting 'port' for now. It is not implemented in
-         * NM core, nor in ifcfg-rh plugin. Enable this when it gets done.
+        /* Do not allow setting 'port' for now. It is not yet implemented.
          * wired_valid_ports[] = { "tp", "aui", "bnc", "mii", NULL };
          */
         .property_type =                &_pt_gobject_readonly,

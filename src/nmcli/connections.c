@@ -1468,7 +1468,7 @@ usage_connection_migrate(void)
                    "ARGUMENTS := [--plugin <plugin>] [id | uuid | path] <ID>, ...\n"
                    "\n"
                    "Migrate connection profiles to a different settings plugin,\n"
-                   "such as \"keyfile\" (default) or \"ifcfg-rh\".\n\n"));
+                   "such as \"keyfile\" (default).\n\n"));
 }
 
 static char *
