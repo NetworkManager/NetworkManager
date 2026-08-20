@@ -63,6 +63,12 @@ nmtui:
 * Mark protected Wi-Fi networks with a lock in the "Activate a
   connection" list; open networks are left unmarked.
 
+Deprecations and removals:
+* Remove the ifcfg-rh settings plugin, which has been deprecated since
+  NetworkManager 1.44. Profiles in ifcfg-rh format must be migrated to
+  keyfile format before upgrading, for example using
+  "nmcli connection migrate".
+
 =============================================
 NetworkManager-1.58
 Overview of changes since NetworkManager-1.56
