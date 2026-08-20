@@ -1109,7 +1109,7 @@ _nm_connection_detect_bluetooth_type(NMConnection *self)
 {
     NMSettingBluetooth *s_bt = nm_connection_get_setting_bluetooth(self);
 
-    if (s_bt && nm_setting_bluetooth_get_connection_type(s_bt)) {
+    if (s_bt && !nm_setting_bluetooth_get_connection_type(s_bt)) {
         if (nm_connection_get_setting_gsm(self) || nm_connection_get_setting_cdma(self))
             return NM_SETTING_BLUETOOTH_TYPE_DUN;
         if (nm_connection_get_setting_bridge(self))
