@@ -6606,6 +6606,61 @@ test_connection_normalize_bluetooth_nap(void)
 }
 
 static void
+test_connection_normalize_bluetooth_type(gconstpointer test_data)
+{
+    const guint                   TEST_CASE = GPOINTER_TO_UINT(test_data);
+    gs_unref_object NMConnection *con       = NULL;
+    NMSettingConnection          *s_con;
+    NMSettingBluetooth           *s_bt;
+    const char                   *expected_type;
+
+    con =
+        nmtst_create_minimal_connection("test-bt", NULL, NM_SETTING_BLUETOOTH_SETTING_NAME, &s_con);
+    s_bt = nm_connection_get_setting_bluetooth(con);
+    g_object_set(s_bt, NM_SETTING_BLUETOOTH_BDADDR, "11:22:33:44:55:66", NULL);
+
+    switch (TEST_CASE) {
+    case 1:
+        nm_connection_add_setting(con, nm_setting_gsm_new());
+        g_object_set(nm_connection_get_setting_gsm(con), NM_SETTING_GSM_APN, "internet", NULL);
+        expected_type = NM_SETTING_BLUETOOTH_TYPE_DUN;
+        break;
+    case 2:
+        nm_connection_add_setting(con, nm_setting_cdma_new());
+        g_object_set(nm_connection_get_setting_cdma(con), NM_SETTING_CDMA_NUMBER, "#777", NULL);
+        expected_type = NM_SETTING_BLUETOOTH_TYPE_DUN;
+        break;
+    case 3:
+        g_object_set(s_con, NM_SETTING_CONNECTION_INTERFACE_NAME, "btnap0", NULL);
+        nm_connection_add_setting(con, nm_setting_bridge_new());
+        expected_type = NM_SETTING_BLUETOOTH_TYPE_NAP;
+        break;
+    case 4:
+        expected_type = NM_SETTING_BLUETOOTH_TYPE_PANU;
+        break;
+    /* Cases 5 and 6: an explicit type wins over the one that would be inferred. */
+    case 5:
+        nm_connection_add_setting(con, nm_setting_gsm_new());
+        g_object_set(nm_connection_get_setting_gsm(con), NM_SETTING_GSM_APN, "internet", NULL);
+        g_object_set(s_bt, NM_SETTING_BLUETOOTH_TYPE, NM_SETTING_BLUETOOTH_TYPE_PANU, NULL);
+        expected_type = NM_SETTING_BLUETOOTH_TYPE_PANU;
+        break;
+    case 6:
+        g_object_set(s_con, NM_SETTING_CONNECTION_INTERFACE_NAME, "btnap0", NULL);
+        nm_connection_add_setting(con, nm_setting_bridge_new());
+        g_object_set(s_bt, NM_SETTING_BLUETOOTH_TYPE, NM_SETTING_BLUETOOTH_TYPE_PANU, NULL);
+        expected_type = NM_SETTING_BLUETOOTH_TYPE_PANU;
+        break;
+    default:
+        g_assert_not_reached();
+    }
+
+    nmtst_assert_connection_verifies_and_normalizable(con);
+    nmtst_connection_normalize(con);
+    g_assert_cmpstr(nm_setting_bluetooth_get_connection_type(s_bt), ==, expected_type);
+}
+
+static void
 test_connection_normalize_ovs_interface_type_system(gconstpointer test_data)
 {
     const guint                   TEST_CASE = GPOINTER_TO_UINT(test_data);
@@ -12110,6 +12165,24 @@ main(int argc, char **argv)
                     test_connection_normalize_shared_addresses);
     g_test_add_func("/core/general/test_connection_normalize_bluetooth_nap",
                     test_connection_normalize_bluetooth_nap);
+    g_test_add_data_func("/core/general/test_connection_normalize_bluetooth_type/1",
+                         GUINT_TO_POINTER(1),
+                         test_connection_normalize_bluetooth_type);
+    g_test_add_data_func("/core/general/test_connection_normalize_bluetooth_type/2",
+                         GUINT_TO_POINTER(2),
+                         test_connection_normalize_bluetooth_type);
+    g_test_add_data_func("/core/general/test_connection_normalize_bluetooth_type/3",
+                         GUINT_TO_POINTER(3),
+                         test_connection_normalize_bluetooth_type);
+    g_test_add_data_func("/core/general/test_connection_normalize_bluetooth_type/4",
+                         GUINT_TO_POINTER(4),
+                         test_connection_normalize_bluetooth_type);
+    g_test_add_data_func("/core/general/test_connection_normalize_bluetooth_type/5",
+                         GUINT_TO_POINTER(5),
+                         test_connection_normalize_bluetooth_type);
+    g_test_add_data_func("/core/general/test_connection_normalize_bluetooth_type/6",
+                         GUINT_TO_POINTER(6),
+                         test_connection_normalize_bluetooth_type);
     g_test_add_data_func("/core/general/test_connection_normalize_ovs_interface_type_system/1",
                          GUINT_TO_POINTER(1),
                          test_connection_normalize_ovs_interface_type_system);
