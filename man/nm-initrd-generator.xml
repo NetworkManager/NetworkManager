@@ -440,6 +440,50 @@
     </itemizedlist>
   </refsect1>
 
+  <refsect1 id='real_root'><title>Propagation to the real root</title>
+
+    <para>The profiles are written to
+    <filename>&nmrundir;/system-connections</filename> and are tagged
+    with the <literal>org.freedesktop.NetworkManager.origin</literal> user
+    setting, whose value is <literal>nm-initrd-generator</literal>.</para>
+
+    <para><filename>/run</filename> is carried over when the initrd switches to
+    the real root, so those profiles are still there when the second
+    NetworkManager instance starts. It reads them and keeps the interfaces
+    configured as the initrd left them. This is deliberate: it is what allows a
+    system whose root filesystem is on the network to switch root without
+    interrupting connectivity.</para>
+
+    <para>On a system that boots from local storage the propagation is usually
+    not wanted, because the persistent profiles in
+    <filename>&sysconfdir;/NetworkManager/system-connections</filename> are meant to take over.
+    To suppress it, drop a file in
+    <filename>&sysconfdir;/NetworkManager/conf.d</filename> containing:</para>
+
+<programlisting>
+[device]
+keep-configuration=no
+allowed-connections=except:origin:nm-initrd-generator
+</programlisting>
+
+    <para><literal>keep-configuration=no</literal> stops NetworkManager from
+    adopting the existing interface configuration, so it activates the most
+    suitable persistent profile instead;
+    <literal>allowed-connections</literal> then prevents the initrd profiles
+    from being activated at all. Both keys are described in <link
+    linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>.
+    A <literal>[device]</literal> section without a
+    <literal>match-device</literal> key applies to every device; add one only
+    to restrict the setting to particular interfaces.</para>
+
+    <para>This stops the initrd profiles from being used, but does not remove
+    them. They stay visible as inactive profiles in
+    <command>nmcli connection show</command> until the next boot, since
+    <filename>/run</filename> does not survive a reboot. To remove them
+    earlier, delete them with <command>nmcli connection delete</command>.</para>
+
+  </refsect1>
+
   <refsect1 id='exit_status'><title>Exit Status</title>
     <para><command>nm-initrd-generator</command> exits with status 0. It ignores unrecognized
     options and prints an error message if it encounters a malformed option.</para>
