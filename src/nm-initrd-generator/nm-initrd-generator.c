@@ -54,7 +54,7 @@ output_conn(gpointer key, gpointer value, gpointer user_data)
     nm_connection_add_setting(connection, setting);
     nm_setting_user_set_data(NM_SETTING_USER(setting),
                              NM_USER_TAG_ORIGIN,
-                             "nm-initrd-generator",
+                             NM_USER_TAG_ORIGIN_INITRD_GENERATOR,
                              NULL);
 
     if (!nm_connection_normalize(connection, NULL, NULL, &error))

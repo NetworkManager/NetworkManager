@@ -90,6 +90,8 @@
 
 #define NM_USER_TAG_ORIGIN "org.freedesktop.NetworkManager.origin"
 
+#define NM_USER_TAG_ORIGIN_INITRD_GENERATOR "nm-initrd-generator"
+
 /*****************************************************************************/
 
 /* NM_SETTING_COMPARE_FLAG_INFERRABLE: check whether a device-generated

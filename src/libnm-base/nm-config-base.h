@@ -69,6 +69,7 @@
 #define NM_CONFIG_KEYFILE_KEY_DEVICE_SRIOV_NUM_VFS              "sriov-num-vfs"
 #define NM_CONFIG_KEYFILE_KEY_DEVICE_KEEP_CONFIGURATION         "keep-configuration"
 #define NM_CONFIG_KEYFILE_KEY_DEVICE_ALLOWED_CONNECTIONS        "allowed-connections"
+#define NM_CONFIG_KEYFILE_KEY_DEVICE_INITRD_CONNECTIONS         "initrd-connections"
 #define NM_CONFIG_KEYFILE_KEY_DEVICE_WIFI_BACKEND               "wifi.backend"
 #define NM_CONFIG_KEYFILE_KEY_DEVICE_WIFI_SCAN_RAND_MAC_ADDRESS "wifi.scan-rand-mac-address"
 #define NM_CONFIG_KEYFILE_KEY_DEVICE_WIFI_SCAN_GENERATE_MAC_ADDRESS_MASK \
