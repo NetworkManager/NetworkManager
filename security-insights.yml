@@ -1,0 +1,92 @@
+header:
+  schema-version: 2.0.0
+  last-updated: '2026-08-07'
+  last-reviewed: '2026-08-07'
+  url: https://gitlab.freedesktop.org/NetworkManager/NetworkManager
+  comment: >-
+    OpenSSF Security Insights data for the NetworkManager project. The
+    canonical repository is on gitlab.freedesktop.org; the GitHub repository
+    is a read-only mirror.
+project:
+  name: NetworkManager
+  homepage: https://networkmanager.dev
+  administrators:
+    - name: Beniamino Galvani
+      affiliation: Red Hat
+      primary: true
+    - name: Till Maas
+      affiliation: Red Hat
+      primary: false
+    - name: Vladimír Beneš
+      affiliation: Red Hat
+      primary: false
+  repositories:
+    - name: NetworkManager
+      url: https://gitlab.freedesktop.org/NetworkManager/NetworkManager
+      comment: >-
+        Main repository: daemon, libnm client library, nmcli and nmtui.
+        Mirrored read-only to https://github.com/NetworkManager/NetworkManager.
+    - name: NetworkManager-ci
+      url: https://gitlab.freedesktop.org/NetworkManager/NetworkManager-ci
+      comment: >-
+        Integration test suite that exercises NetworkManager on real
+        distributions.
+  vulnerability-reporting:
+    reports-accepted: true
+    bug-bounty-available: false
+    contact:
+      name: Beniamino Galvani
+      affiliation: Red Hat
+      social: https://matrix.to/#/@bgalvani:matrix.org
+      primary: true
+    security-policy: https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/blob/main/SECURITY.md
+    comment: >-
+      Report vulnerabilities as a confidential issue in the GitLab issue
+      tracker using the Security_Vulnerability template, or privately via
+      Matrix. See SECURITY.md for details and further Matrix contacts.
+  documentation:
+    quickstart-guide: https://networkmanager.dev/docs/
+    detailed-guide: https://networkmanager.dev/docs/api/latest/
+    code-of-conduct: https://www.freedesktop.org/wiki/CodeOfConduct/
+repository:
+  url: https://gitlab.freedesktop.org/NetworkManager/NetworkManager
+  status: active
+  accepts-change-request: true
+  accepts-automated-change-request: false
+  core-team:
+    - name: Josephine Pfeiffer
+      affiliation: Red Hat
+      primary: false
+    - name: Jan Vaclav
+      affiliation: Red Hat
+      primary: false
+    - name: Stanislas Faye
+      affiliation: Red Hat
+      primary: false
+    - name: Branislav Kadlec
+      affiliation: Red Hat
+      primary: false
+    - name: Rahul Rajesh
+      affiliation: Red Hat
+      primary: false
+  license:
+    url: https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/blob/main/RELICENSE.md
+    expression: LGPL-2.1-or-later
+  security:
+    assessments:
+      self:
+        comment: >-
+          NetworkManager is a system daemon written in C that manages network
+          configuration via netlink and exposes a D-Bus API. Continuous
+          integration builds and tests every merge request with multiple
+          compilers and sanitizers, and the project runs periodic Coverity
+          static analysis (see .gitlab-ci).
+  documentation:
+    contributing-guide: https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/blob/main/CONTRIBUTING.md
+    security-policy: https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/blob/main/SECURITY.md
+  release:
+    automated-pipeline: false
+    distribution-points:
+      - uri: https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/releases
+        comment: Release tarballs and sha256 checksums.
+    changelog: https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/blob/{version}/NEWS
