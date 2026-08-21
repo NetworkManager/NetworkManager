@@ -259,16 +259,16 @@ typedef enum {
 static void
 test_nm_strdup_int(void)
 {
-#define _NM_STRDUP_INT_TEST(num, str)   \
-    G_STMT_START                        \
-    {                                   \
+#define _NM_STRDUP_INT_TEST(num, str)  \
+    G_STMT_START                       \
+    {                                  \
         gs_free char *_str = NULL;      \
-                                        \
+                                       \
         _str = nm_strdup_int((num));    \
-                                        \
+                                       \
         g_assert(_str);                 \
         g_assert_cmpstr(_str, ==, str); \
-    }                                   \
+    }                                  \
     G_STMT_END
 
 #define _NM_STRDUP_INT_TEST_TYPED(type, num)         \

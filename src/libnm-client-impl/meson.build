@@ -230,14 +230,14 @@ if enable_introspection
     endif
   endforeach
 
-  nm_property_infos_xml = {
-    'dbus':    nm_property_infos_xml_dbus,
-    'keyfile': nm_property_infos_xml_keyfile,
-    'nmcli':   nm_property_infos_xml_nmcli,
-  }
-  nm_settings_docs_xml_gir = {
-    'dbus':     nm_settings_docs_xml_gir_dbus,
-    'keyfile':  nm_settings_docs_xml_gir_keyfile,
-    'nmcli':    nm_settings_docs_xml_gir_nmcli,
-  }
+    nm_property_infos_xml = {
+      'dbus':    nm_property_infos_xml_dbus,
+      'keyfile': nm_property_infos_xml_keyfile,
+      'nmcli':   nm_property_infos_xml_nmcli,
+    }
+    nm_settings_docs_xml_gir = {
+      'dbus':     nm_settings_docs_xml_gir_dbus,
+      'keyfile':  nm_settings_docs_xml_gir_keyfile,
+      'nmcli':    nm_settings_docs_xml_gir_nmcli,
+    }
 endif

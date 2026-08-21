@@ -46,7 +46,8 @@ connection profiles, such as:
 
 This object handles connection profiles; each profile is represented
 as a *SettingsConnection* object and is persisted to disk using one of
-the existing *SettingsPlugin*s such as keyfile or ifupdown.
+the existing *SettingsPlugin*s such as keyfile or
+ifupdown.
 
 It also controls *SecretAgent*s; an agent is an external service that
 registers to NetworkManager as capable of handling requests for new
@@ -140,7 +141,7 @@ The diagram shows other objects on the right side:
     interfaces and updates the system configuration. Besides directly
     writing `/etc/resolv.conf`, it supports updating
     `systemd-resolved` and `dnsmasq` via plugins.
-
+ 
  - *HostnameManager*: implements reading and updating the system
     hostname; by default it tries to do that by talking to
     [systemd-hostnamed](https://www.freedesktop.org/wiki/Software/systemd/hostnamed/)
@@ -153,14 +154,14 @@ The diagram shows other objects on the right side:
  - *AuthManager*: is used to authenticate the API requests received by
     the daemon. The authentication is done via
     [Polkit](https://www.freedesktop.org/software/polkit/docs/latest/polkit.8.html)
-
+ 
  - *DbusManager*: creates a connection to the system D-Bus instance
     and allows exporting objects
-
+ 
  - *PowerMonitor*: gets notifications for sleep and wake events by
     registering to the available subsystem provided by the distro such
     as systemd-logind or ConsoleKit.
-
+    
  - *SessionMonitor*: tracks which users have an active session by
     using systemd-logind, elogind or ConsoleKit.
 
