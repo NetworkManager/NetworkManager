@@ -10,6 +10,23 @@ Overview of changes since NetworkManager-1.58.0
   choose the CA trust store used to validate the authentication server.
   Such profiles must clear those properties and use "ca-cert" or
   "system-ca-certs" instead.
+* Fix IPv4 forwarding not enabled on modem data interfaces.
+* Log a warning when ignoring DHCPv4 option 3 (Router) due to the
+  presence of option 121/249 (Classless Static Routes) results in no
+  gateway.
+* Set the parent interface by name for NBFT VLAN connections in the
+  initrd generator to avoid race conditions at boot.
+* Perform the connectivity check also when the interface only has
+  an IPv4 link-scope default route.
+* Ignore unspecified addresses as DNS nameservers from RDNSS and
+  DHCPv6, and skip invalid nameservers when configuring
+  systemd-resolved.
+* Fix auto-connect to SAE (WPA3) networks with key-mgmt=wpa-psk
+  profiles.
+* Fix DNS server port number not forwarded to systemd-resolved for
+  DNS URIs.
+* Fix normalization of Bluetooth NAP connections.
+* Fix multiple crashes.
 
 =============================================
 NetworkManager-1.58
