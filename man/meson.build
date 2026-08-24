@@ -9,8 +9,11 @@ mans = [
   ['nmcli-examples', '7'],
   ['nmcli', '1'],
   ['nmtui', '1'],
-  ['nm-initrd-generator', '8'],
 ]
+
+if enable_initrd
+  mans += [['nm-initrd-generator', '8']]
+endif
 
 if enable_ovs
   mans += [['nm-openvswitch', '7']]

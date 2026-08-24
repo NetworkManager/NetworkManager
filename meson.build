@@ -980,8 +980,10 @@ if python.found()
   config_h.set_quoted('TEST_NM_PYTHON', python_path)
 endif
 
+enable_initrd = get_option('initrd')
+
 # libnvme (NBFT support)
-enable_nbft = get_option('nbft')
+enable_nbft = get_option('nbft') and enable_initrd
 if enable_nbft
   libnvme_dep = dependency('libnvme', version: '>= 1.5', required: false)
   assert(libnvme_dep.found(), 'NBFT support was requested, but the libnvme library is not available. Use -Dnbft=false to build without it.')
@@ -1163,6 +1165,7 @@ output += '  clat: ' + enable_clat.to_string() + '\n'
 output += '  nmcli: ' + enable_nmcli.to_string() + '\n'
 output += '  nmtui: ' + enable_nmtui.to_string() + '\n'
 output += '  nm-cloud-setup: ' + enable_nm_cloud_setup.to_string() + '\n'
+output += '  initrd: ' + enable_initrd.to_string() + '\n'
 output += '\nConfiguration_plugins (main.plugins=' + config_plugins_default + ')\n'
 output += '  ifcfg-rh: ' + enable_ifcfg_rh.to_string() + ' (deprecated)\n'
 output += '    default value of main.migrate-ifcfg-rh: ' +  config_migrate_ifcfg_rh_default + '\n'
