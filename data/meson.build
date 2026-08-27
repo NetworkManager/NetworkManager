@@ -13,10 +13,14 @@ if install_systemdunitdir
     'NetworkManager.service',
     'nm-priv-helper.service',
     'NetworkManager-wait-online.service',
-    'NetworkManager-config-initrd.service',
-    'NetworkManager-initrd.service',
-    'NetworkManager-wait-online-initrd.service',
   ]
+  if enable_initrd
+    services += [
+      'NetworkManager-config-initrd.service',
+      'NetworkManager-initrd.service',
+      'NetworkManager-wait-online-initrd.service',
+    ]
+  endif
 
   foreach service: services
     configure_file(

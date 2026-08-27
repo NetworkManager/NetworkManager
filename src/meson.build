@@ -108,7 +108,9 @@ subdir('nm-online')
 if enable_nmtui
   subdir('nmtui')
 endif
-subdir('nm-initrd-generator')
+if enable_initrd
+  subdir('nm-initrd-generator')
+endif
 if enable_nm_cloud_setup
   subdir('nm-cloud-setup')
 endif
@@ -126,7 +128,9 @@ if enable_tests
   subdir('libnmc-base/tests')
   subdir('libnmc-setting/tests')
   subdir('nm-dispatcher/tests')
-  subdir('nm-initrd-generator/tests')
+  if enable_initrd
+    subdir('nm-initrd-generator/tests')
+  endif
   if enable_nm_cloud_setup
     subdir('nm-cloud-setup/tests')
   endif
