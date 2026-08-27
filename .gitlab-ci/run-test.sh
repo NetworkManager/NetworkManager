@@ -118,7 +118,7 @@ fi
 
 if is_run_selected meson+clang; then
     do_clean
-    CC=clang WITH_DOCS=0 contrib/scripts/nm-ci-run.sh || die_with_testlog
+    CC=clang WITH_DOCS=0 WITH_INITRD=0 contrib/scripts/nm-ci-run.sh || die_with_testlog
 fi
 
 if is_run_selected rpm+meson; then
