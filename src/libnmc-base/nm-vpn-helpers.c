@@ -14,6 +14,8 @@
 
 #include <arpa/inet.h>
 #include <net/if.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #include "nm-client-utils.h"
 #include "nm-secret-agent-simple.h"
@@ -273,18 +275,19 @@ extract_url_port(const char *url)
 gboolean
 nm_vpn_openconnect_authenticate_helper(NMSettingVpn *s_vpn, GPtrArray *secrets, GError **error)
 {
-    gs_free char        *output      = NULL;
-    gs_free char        *legacy_host = NULL;
-    gs_free char        *connect_url = NULL;
-    gs_free char        *cookie      = NULL;
-    gs_free char        *gwcert      = NULL;
-    gs_free char        *resolve     = NULL;
-    gs_free const char **output_v    = NULL;
-    int                  status      = 0;
-    const char *const   *iter;
-    const char          *path;
-    const char          *opt;
-    const char *const    DEFAULT_PATHS[] = {
+    nm_auto_free_gstring GString *config      = NULL;
+    gs_free char                 *output      = NULL;
+    gs_free char                 *legacy_host = NULL;
+    gs_free char                 *connect_url = NULL;
+    gs_free char                 *cookie      = NULL;
+    gs_free char                 *gwcert      = NULL;
+    gs_free char                 *resolve     = NULL;
+    gs_free const char          **output_v    = NULL;
+    int                           status      = 0;
+    const char *const            *iter;
+    const char                   *path;
+    const char                   *opt;
+    const char *const             DEFAULT_PATHS[] = {
         "/sbin/",
         "/usr/sbin/",
         "/usr/local/sbin/",
@@ -293,9 +296,14 @@ nm_vpn_openconnect_authenticate_helper(NMSettingVpn *s_vpn, GPtrArray *secrets, 
         "/usr/local/bin/",
         NULL,
     };
-    const char *oc_argv[(12 + 2 * G_N_ELEMENTS(oc_property_args))];
+    const char *oc_argv[6];
     const char *gw;
     int         port;
+    GPid        child_pid = -1;
+    int         stdin_fd  = -1;
+    int         stdout_fd = -1;
+    int         errsv;
+    gsize       offset = 0;
     guint       oc_argc = 0;
     guint       i;
 
@@ -321,29 +329,35 @@ nm_vpn_openconnect_authenticate_helper(NMSettingVpn *s_vpn, GPtrArray *secrets, 
     if (!path)
         return FALSE;
 
-    oc_argv[oc_argc++] = path;
-    oc_argv[oc_argc++] = "--authenticate";
-    oc_argv[oc_argc++] = gw;
+    /*
+     * Pass all options to openconnect through a config file fed on stdin
+     * rather than on the command line. Command-line arguments are readable by
+     * other users via /proc/<pid>/cmdline, so passing secrets (passwords,
+     * token secrets, ...) that way would leak them. openconnect reads the
+     * config from "/dev/stdin", which is the pipe we write to below.
+     *
+     * The config file format is openconnect's long-format options without the
+     * leading "--", one per line (see the "--config" option in openconnect(8)).
+     */
+    config = g_string_new(NULL);
 
     for (i = 0; i < G_N_ELEMENTS(oc_property_args); i++) {
         opt = nm_setting_vpn_get_data_item(s_vpn, oc_property_args[i].property);
         if (opt) {
-            oc_argv[oc_argc++] = oc_property_args[i].cmdline;
-            oc_argv[oc_argc++] = opt;
+            /* "+ 2" skips the leading "--" of the command-line option name. */
+            g_string_append_printf(config, "%s=%s\n", oc_property_args[i].cmdline + 2, opt);
         }
     }
 
     opt = nm_setting_vpn_get_data_item(s_vpn, NM_OPENCONNECT_KEY_PEM_PASSPHRASE_FSID);
     if (opt && nm_streq(opt, "yes"))
-        oc_argv[oc_argc++] = "--key-password-from-fsid";
+        g_string_append(config, "key-password-from-fsid\n");
 
     opt = nm_setting_vpn_get_data_item(s_vpn, NM_OPENCONNECT_KEY_CSD_ENABLE);
     if (opt && nm_streq(opt, "yes")) {
         opt = nm_setting_vpn_get_data_item(s_vpn, NM_OPENCONNECT_KEY_CSD_WRAPPER);
-        if (opt) {
-            oc_argv[oc_argc++] = "--csd-wrapper";
-            oc_argv[oc_argc++] = opt;
-        }
+        if (opt)
+            g_string_append_printf(config, "csd-wrapper=%s\n", opt);
     }
 
     opt = nm_setting_vpn_get_data_item(s_vpn, NM_OPENCONNECT_KEY_TOKEN_MODE);
@@ -358,31 +372,92 @@ nm_vpn_openconnect_authenticate_helper(NMSettingVpn *s_vpn, GPtrArray *secrets, 
         } else if (!nm_streq(opt, "totp") && !nm_streq(opt, "hotp") && !nm_streq(opt, "yubioath")) {
             opt = NULL;
         }
-        if (opt) {
-            oc_argv[oc_argc++] = "--token-mode";
-            oc_argv[oc_argc++] = opt;
-        }
-        if (token_secret) {
-            oc_argv[oc_argc++] = "--token-secret";
-            oc_argv[oc_argc++] = token_secret;
-        }
+        if (opt)
+            g_string_append_printf(config, "token-mode=%s\n", opt);
+        if (token_secret)
+            g_string_append_printf(config, "token-secret=%s\n", token_secret);
     }
 
+    oc_argv[oc_argc++] = path;
+    oc_argv[oc_argc++] = "--authenticate";
+    oc_argv[oc_argc++] = "--config";
+    oc_argv[oc_argc++] = "/dev/stdin";
+    oc_argv[oc_argc++] = gw;
     oc_argv[oc_argc++] = NULL;
 
     nm_assert(oc_argc <= G_N_ELEMENTS(oc_argv));
 
-    if (!g_spawn_sync(NULL,
-                      (char **) oc_argv,
-                      NULL,
-                      G_SPAWN_SEARCH_PATH | G_SPAWN_CHILD_INHERITS_STDIN,
-                      NULL,
-                      NULL,
-                      &output,
-                      NULL,
-                      &status,
-                      error))
+    if (!g_spawn_async_with_pipes(NULL,
+                                  (char **) oc_argv,
+                                  NULL,
+                                  G_SPAWN_SEARCH_PATH | G_SPAWN_DO_NOT_REAP_CHILD,
+                                  NULL,
+                                  NULL,
+                                  &child_pid,
+                                  &stdin_fd,
+                                  &stdout_fd,
+                                  NULL,
+                                  error)) {
+        nm_explicit_bzero(config->str, config->len);
         return FALSE;
+    }
+
+    /* Feed the config (including all secrets) to openconnect via the stdin
+     * pipe, then close it so that openconnect sees EOF. */
+    while (offset < config->len) {
+        gssize n_written;
+
+        n_written = write(stdin_fd, &config->str[offset], config->len - offset);
+        if (n_written < 0) {
+            if (errno == EINTR)
+                continue;
+            errsv = errno;
+            g_set_error(error,
+                        NM_VPN_PLUGIN_ERROR,
+                        NM_VPN_PLUGIN_ERROR_FAILED,
+                        _("failed to write configuration to openconnect: %s"),
+                        nm_strerror_native(errsv));
+            nm_explicit_bzero(config->str, config->len);
+            nm_close(stdin_fd);
+            nm_close(stdout_fd);
+            kill(child_pid, SIGTERM);
+            waitpid(child_pid, NULL, 0);
+            g_spawn_close_pid(child_pid);
+            return FALSE;
+        }
+        offset += (gsize) n_written;
+    }
+
+    nm_explicit_bzero(config->str, config->len);
+    nm_close(stdin_fd);
+    stdin_fd = -1;
+
+    /* Read openconnect's output (COOKIE, HOST, FINGERPRINT, ...). */
+    if (!nm_utils_fd_get_contents(stdout_fd,
+                                  TRUE,
+                                  100 * 1024,
+                                  NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
+                                  &output,
+                                  NULL,
+                                  NULL,
+                                  error)) {
+        kill(child_pid, SIGTERM);
+        waitpid(child_pid, NULL, 0);
+        g_spawn_close_pid(child_pid);
+        return FALSE;
+    }
+
+    if (waitpid(child_pid, &status, 0) < 0) {
+        errsv = errno;
+        g_set_error(error,
+                    NM_VPN_PLUGIN_ERROR,
+                    NM_VPN_PLUGIN_ERROR_FAILED,
+                    _("failed to wait for openconnect: %s"),
+                    nm_strerror_native(errsv));
+        g_spawn_close_pid(child_pid);
+        return FALSE;
+    }
+    g_spawn_close_pid(child_pid);
 
     if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
         /* The caller will prepend "Error: openconnect failed: " to this */
