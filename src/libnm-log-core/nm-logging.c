@@ -502,7 +502,7 @@ _domains_to_string(gboolean          include_level_override,
     return nm_str_buf_finalize(&sbuf, NULL);
 }
 
-static char _all_logging_domains_to_str[273];
+static char _all_logging_domains_to_str[274];
 
 const char *
 nm_logging_all_domains_to_string(void)
@@ -533,7 +533,7 @@ again:
             else if (diter->num == LOGD_IP6)
                 nm_strbuf_append_str(&buf_p, &buf_l, "," LOGD_IP_STRING);
         }
-        nm_strbuf_append_str(&buf_p, &buf_l, LOGD_ALL_STRING);
+        nm_strbuf_append_str(&buf_p, &buf_l, "," LOGD_ALL_STRING);
 
         /* Did you modify the logging domains (or their names)? Adjust the size of
          * _all_logging_domains_to_str buffer above to have the exact size. */

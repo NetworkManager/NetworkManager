@@ -119,10 +119,21 @@ test_nm_utils_ip6_address_clear_host_address(void)
 static void
 test_logging_domains(void)
 {
-    const char *s;
+    gs_free const char **domains = NULL;
+    const char          *s;
+    gsize                i;
 
     s = nm_logging_all_domains_to_string();
     g_assert(s && s[0]);
+
+    /* Every domain that we advertise must also be accepted. */
+    domains = nm_strsplit_set(s, ",");
+    g_assert(domains);
+    for (i = 0; domains[i]; i++) {
+        gs_free_error GError *error = NULL;
+
+        nmtst_assert_success(nm_logging_setup("INFO", domains[i], NULL, &error), error);
+    }
 }
 
 /*****************************************************************************/
