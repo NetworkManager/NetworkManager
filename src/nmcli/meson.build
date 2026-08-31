@@ -89,6 +89,6 @@ else
   gen_metadata_nm_settings_nmcli_xml = configure_file(
     input: 'gen-metadata-nm-settings-nmcli.xml.in',
     output: '@BASENAME@',
-    configuration: configuration_data(),
+    copy: true,
   )
 endif
