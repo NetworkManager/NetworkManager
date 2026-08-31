@@ -351,7 +351,7 @@ nm_device_wifi_request_scan_async(NMDeviceWifi       *device,
 }
 
 /**
- * nm_device_wifi_request_scan_options_async:
+ * nm_device_wifi_request_scan_options_async: (finish-func nm_device_wifi_request_scan_finish)
  * @device: a #NMDeviceWifi
  * @options: dictionary with options for RequestScan(), or %NULL
  * @cancellable: a #GCancellable, or %NULL

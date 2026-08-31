@@ -9060,7 +9060,7 @@ _wait_shutdown_cancelled_cb(GCancellable *cancellable, gpointer user_data)
 }
 
 /**
- * nm_client_wait_shutdown:
+ * nm_client_wait_shutdown: (finish-func nm_client_wait_shutdown_finish)
  * @client: the #NMClient to shutdown.
  * @integrate_maincontext: whether to hook the client's maincontext
  *   in the current thread default. Otherwise, you must ensure
