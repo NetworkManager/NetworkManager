@@ -18,9 +18,7 @@ SETTING_6LOWPAN_*           parent="NM.Setting6Lowpan"              name="SETTIN
 SETTING_802_1X_*            parent="NM.Setting8021x"                name="SETTING_802_1X_(.+)"
 SETTING_ADSL_*              parent="NM.SettingAdsl"                 name="SETTING_ADSL_(.+)"
 SETTING_BLUETOOTH_*         parent="NM.SettingBluetooth"            name="SETTING_BLUETOOTH_(.+)"
-SETTING_BOND_PORT_*         parent="NM.SettingBondPort"             name="SETTING_BOND_PORT_(.+)"
 SETTING_BOND_*              parent="NM.SettingBond"                 name="SETTING_BOND_(.+)"
-SETTING_BRIDGE_PORT_*       parent="NM.SettingBridgePort"           name="SETTING_BRIDGE_PORT_(.+)"
 SETTING_BRIDGE_*            parent="NM.SettingBridge"               name="SETTING_BRIDGE_(.+)"
 SETTING_CDMA_*              parent="NM.SettingCdma"                 name="SETTING_CDMA_(.+)"
 SETTING_CONNECTION_*        parent="NM.SettingConnection"           name="SETTING_CONNECTION_(.+)"
@@ -60,7 +58,6 @@ SETTING_PROXY_*             parent="NM.SettingProxy"                name="SETTIN
 SETTING_SERIAL_*            parent="NM.SettingSerial"               name="SETTING_SERIAL_(.+)"
 SETTING_SRIOV_*             parent="NM.SettingSriov"                name="SETTING_SRIOV_(.+)"
 SETTING_TC_CONFIG_*         parent="NM.SettingTCConfig"             name="SETTING_TC_CONFIG_(.+)"
-SETTING_TEAM_PORT_*         parent="NM.SettingTeamPort"             name="SETTING_TEAM_PORT_(.+)"
 SETTING_TEAM_*              parent="NM.SettingTeam"                 name="SETTING_TEAM_(.+)"
 SETTING_TUN_*               parent="NM.SettingTun"                  name="SETTING_TUN_(.+)"
 SETTING_USER_*              parent="NM.SettingUser"                 name="SETTING_USER_(.+)"
@@ -107,40 +104,13 @@ WIFI_P2P_PEER_*             parent="NM.WifiP2PPeer"                 name="WIFI_P
 WIMAX_NSP_*                 parent="NM.WimaxNsp"                    name="WIMAX_NSP_(.+)"
 WIREGUARD_PEER_ATTR_*       parent="NM.WireguardPeerAttributes"     name="WIREGUARD_PEER_ATTR_(.+)"
 
-DEVICE_6LOWPAN_*            parent="NM.Device6Lowpan"               name="DEVICE_6LOWPAN_(.+)"
-DEVICE_ADSL_*               parent="NM.DeviceAdsl"                  name="DEVICE_ADSL_(.+)"
-DEVICE_BOND_*               parent="NM.DeviceBond"                  name="DEVICE_BOND_(.+)"
-DEVICE_BRIDGE_*             parent="NM.DeviceBridge"                name="DEVICE_BRIDGE_(.+)"
-DEVICE_BT_*                 parent="NM.DeviceBt"                    name="DEVICE_BT_(.+)"
-DEVICE_DUMMY_*              parent="NM.DeviceDummy"                 name="DEVICE_DUMMY_(.+)"
-DEVICE_ETHERNET_*           parent="NM.DeviceEthernet"              name="DEVICE_ETHERNET_(.+)"
-DEVICE_GENERIC_*            parent="NM.DeviceGeneric"               name="DEVICE_GENERIC_(.+)"
-DEVICE_GENEVE_*             parent="NM.DeviceGeneve"                name="DEVICE_GENEVE_(.+)"
-DEVICE_HSR_*                parent="NM.DeviceHsr"                   name="DEVICE_HSR_(.+)"
-DEVICE_INFINIBAND_*         parent="NM.DeviceInfiniband"            name="DEVICE_INFINIBAND_(.+)"
-DEVICE_IP_TUNNEL_*          parent="NM.DeviceIPTunnel"              name="DEVICE_IP_TUNNEL_(.+)"
-DEVICE_IPVLAN_*             parent="NM.DeviceIpvlan"                name="DEVICE_IPVLAN_(.+)"
-DEVICE_LOOPBACK_*           parent="NM.DeviceLoopback"              name="DEVICE_LOOPBACK_(.+)"
-DEVICE_MACSEC_*             parent="NM.DeviceMacsec"                name="DEVICE_MACSEC_(.+)"
-DEVICE_MACVLAN_*            parent="NM.DeviceMacvlan"               name="DEVICE_MACVLAN_(.+)"
-DEVICE_MODEM_*              parent="NM.DeviceModem"                 name="DEVICE_MODEM_(.+)"
-DEVICE_OLPC_MESH_*          parent="NM.DeviceOlpcMesh"              name="DEVICE_OLPC_(.+)"
-DEVICE_OVS_BRIDGE_*         parent="NM.DeviceOvsBridge"             name="DEVICE_OVS_BRIDGE_(.+)"
-DEVICE_OVS_INTERFACE_*      parent="NM.DeviceOvsInterface"          name="DEVICE_OVS_INTERFACE_(.+)"
-DEVICE_OVS_PORT_*           parent="NM.DeviceOvsPort"               name="DEVICE_OVS_PORT_(.+)"
-DEVICE_PPP_*                parent="NM.DevicePpp"                   name="DEVICE_PPP_(.+)"
-DEVICE_TEAM_*               parent="NM.DeviceTeam"                  name="DEVICE_TEAM_(.+)"
-DEVICE_TUN_*                parent="NM.DeviceTun"                   name="DEVICE_TUN_(.+)"
-DEVICE_VETH_*               parent="NM.DeviceVeth"                  name="DEVICE_VETH_(.+)"
-DEVICE_VLAN_*               parent="NM.DeviceVlan"                  name="DEVICE_VLAN_(.+)"
-DEVICE_VRF_*                parent="NM.DeviceVrf"                   name="DEVICE_VRF_(.+)"
-DEVICE_VXLAN_*              parent="NM.DeviceVxlan"                 name="DEVICE_VXLAN_(.+)"
-DEVICE_WIFI_*               parent="NM.DeviceWifi"                  name="DEVICE_WIFI_(.+)"
-DEVICE_WIFI_P2P_*           parent="NM.DeviceWifiP2P"               name="DEVICE_WIFI_P2P_(.+)"
-DEVICE_WIMAX_*              parent="NM.DeviceWimax"                 name="DEVICE_WIMAX_(.+)"
-DEVICE_WIREGUARD_*          parent="NM.DeviceWireGuard"             name="DEVICE_WIREGUARD_(.+)"
-DEVICE_WPAN_*               parent="NM.DeviceWpan"                  name="DEVICE_WPAN_(.+)"
-
+/*
+ * All NM_DEVICE_* constants (including the per-subtype ones like
+ * NM_DEVICE_WIFI_*) are placed on the base NM.Device class by this single
+ * catch-all. vapigen applies metadata rules in order with the last match
+ * winning, so any per-subtype rule listed here would be shadowed by this
+ * one and have no effect (vapigen warns "argument never used" about it).
+ */
 DEVICE_*                    parent="NM.Device"                      name="DEVICE_(.+)"
 
 ETHTOOL_OPTNAME_*           parent="NM.EthtoolOptname"              name="ETHTOOL_OPTNAME_(.+)"
