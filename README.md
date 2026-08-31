@@ -111,10 +111,8 @@ in NetworkManager.
 Requirements
 ------------
 
-NetworkManager requires:
-
-- Linux kernel >= 5.6 for some ethtool options (pause, eee, ring)
-
+NetworkManager requires Linux kernel >= 5.6. Older kernels may work with
+reduced functionality but are not supported.
 
 Documentation
 -------------
