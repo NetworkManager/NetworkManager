@@ -7,19 +7,14 @@ die() {
     exit 1
 }
 
-cd "$(dirname "$(readlink -f "$0")")/.." || die "cannot change to srcdir"
+GENERATED_VAPI="$1"
+test -n "$GENERATED_VAPI" || die "usage: $(basename "$0") <path-to-generated-libnm.vapi>"
+test -f "$GENERATED_VAPI" || die "generated vapi '$GENERATED_VAPI' not found"
 
-VAPI=./vapi/NM-1.0.metadata
-
-for s in $(grep -r -h '#define \+\<NM_SETTING_.*SETTING_NAME\>' -- ./src/libnm-core-public/ \
-           | sed -n 's/^#define \+NM_\(SETTING_[A-Z0-9_]\+\)_SETTING_NAME\> \+.*/\1/p') ; do
-    grep -q "^$s" -- "$VAPI" || die "didn't see '$s' in \"$VAPI\""
-done
-
-for f in ./src/libnm-client-public/nm-device-*.h ; do
-    D=( $(sed -n 's/^#define \+NM_IS_DEVICE_\([A-Z0-9_]\+\)_CLASS\>(.*/\1/p' "$f") )
-    test ${#D[@]} = 1 || die "did not detect device in \"$f\""
-    s="${D[0]}"
-    c="$(grep -c "^DEVICE_${s}_\* *parent=" -- "$VAPI")"
-    test "$c" = 1 || die "didn't see device '$s' in \"$VAPI\""
-done
+# Fail if any NM_SETTING_*/NM_DEVICE_* constant ended up at namespace
+# level (a single leading tab) instead of inside its class: that means
+# a setting or device is missing a rule in vapi/NM-1.0.metadata.
+orphans="$(grep -nP '^\tpublic const string (SETTING|DEVICE)_' -- "$GENERATED_VAPI" || true)"
+test -z "$orphans" || die "constants leaked into the NM namespace in \"$GENERATED_VAPI\"
+(add a rule to vapi/NM-1.0.metadata for the setting/device that owns them):
+$orphans"

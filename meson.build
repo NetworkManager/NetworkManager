@@ -1022,12 +1022,13 @@ subdir('po')
 
 if enable_vapi
   subdir('vapi')
-endif
 
-test(
-  'check-vapi',
-  find_program(join_paths(source_root, 'tools', 'check-vapi.sh')),
-)
+  test(
+    'check-vapi',
+    find_program(join_paths(source_root, 'tools', 'check-vapi.sh')),
+    args: [build_root / 'vapi' / 'libnm.vapi'],
+  )
+endif
 
 test(
   'check-nm-autoptr',
