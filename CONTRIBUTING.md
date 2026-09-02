@@ -203,7 +203,8 @@ before you push. On `git commit` it checks:
 - validity of the `po/*.po` files you touched (`msgfmt --check`);
 - the commit message rules of this document and of
   [AGENTS.md](AGENTS.md): no "Signed-off-by:" lines, no trailers crediting a
-  tool (`contrib/scripts/check-commit-message.sh`).
+  tool, and not the marker that AGENTS.md requires agents to leave
+  (`contrib/scripts/check-commit-message.sh`).
 
 After the commit it also runs [checkpatch.pl](contrib/scripts/checkpatch.pl)
 over your branch. Those are heuristics, so it only prints its findings and

@@ -10,6 +10,10 @@
 
 set -e
 
+# The marker AGENTS.md requires AI agents to emit when they generate
+# contributor communication. Also checked in check-mr-description.sh.
+CANARY='biblioklept'
+
 die() {
     printf '%s\n' "$@" >&2
     exit 1
@@ -42,6 +46,19 @@ check_trailer() {
     return 1
 }
 
+check_canary() {
+    local source="$1"
+    local message="$2"
+    local hit
+
+    hit="$(printf '%s\n' "$message" | grep -iF "$CANARY")" || return 0
+
+    printf '%s: contains the marker that AGENTS.md requires agents to leave, write this message yourself\n' "$source" >&2
+    sed 's/^/> /' <<<"$hit" >&2
+    printf '\n' >&2
+    return 1
+}
+
 check_message() {
     local ret=0
 
@@ -55,6 +72,7 @@ check_message() {
         "a tool is not an author of the change" "$AI_TOOL" || ret=1
     check_trailer "$1" "$2" "Co-developed-by" \
         "a tool is not an author of the change" "$AI_TOOL" || ret=1
+    check_canary "$1" "$2" || ret=1
     return "$ret"
 }
 
