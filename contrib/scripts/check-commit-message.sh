@@ -48,25 +48,20 @@ check_message() {
     return "$ret"
 }
 
-get_ci_base() {
+check_ci() {
     local base
 
+    # Only a merge request pipeline says which commits are under review.
+    # CI_COMMIT_BEFORE_SHA is the previous tip of the branch, which after a
+    # rebase or a force-push spans the upstream commits that came with it.
     base="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-}"
-    if [ -n "$base" ]; then
-        git cat-file -e "$base^{commit}" 2>/dev/null || die "\"$base\" is not a commit"
-        printf '%s\n' "$base"
+    if [ -z "$base" ]; then
+        printf 'not a merge request pipeline, nothing to check\n'
         return
     fi
 
-    base="${CI_COMMIT_BEFORE_SHA:-}"
-    if [ -n "$base" ] && git cat-file -e "$base^{commit}" 2>/dev/null; then
-        printf '%s\n' "$base"
-        return
-    fi
-
-    base="${CI_COMMIT_DEFAULT_BRANCH_BASE_SHA:-HEAD~1}"
     git cat-file -e "$base^{commit}" 2>/dev/null || die "\"$base\" is not a commit"
-    printf '%s\n' "$base"
+    check_range "$base..HEAD"
 }
 
 SUCCESS=0
@@ -89,7 +84,7 @@ case "${1-}" in
         ;;
     --ci)
         test "$#" -eq 1 || die '"--ci" does not take arguments'
-        check_range "$(get_ci_base)..HEAD"
+        check_ci
         ;;
     --range)
         test "$#" -eq 2 || die "\"--range\" requires a git range"
