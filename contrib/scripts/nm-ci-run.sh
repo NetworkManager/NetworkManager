@@ -5,6 +5,7 @@
 #  - CC
 #  - CFLAGS
 #  - WITH_DOCS
+#  - WITH_INITRD
 
 set -ex
 
@@ -58,6 +59,7 @@ _WITH_DOCS="true"
 _WITH_SYSTEMD_LOGIND="true"
 _WITH_NBFT="true"
 _WITH_CLAT="true"
+_WITH_INITRD="true"
 if [ $IS_ALPINE = 1 ]; then
     _WITH_SYSTEMD_LOGIND="false"
 fi
@@ -108,6 +110,14 @@ if [ "$WITH_DOCS" != "" ]; then
         _WITH_DOCS="true"
     else
         _WITH_DOCS="false"
+    fi
+fi
+
+if [ "$WITH_INITRD" != "" ]; then
+    if _is_true "$WITH_INITRD"; then
+        _WITH_INITRD="true"
+    else
+        _WITH_INITRD="false"
     fi
 fi
 
@@ -210,6 +220,7 @@ meson setup build \
     -D ifcfg_rh=false \
     -D ifupdown=true \
     \
+    -D initrd=$_WITH_INITRD \
     -D nbft=$_WITH_NBFT \
     -D clat=$_WITH_CLAT \
     \
