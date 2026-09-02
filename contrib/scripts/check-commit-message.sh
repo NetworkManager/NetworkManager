@@ -23,14 +23,18 @@ usage() {
     printf 'Check commit messages against the rules from CONTRIBUTING.md.\n'
 }
 
+# Trailer values that name a tool rather than a person.
+AI_TOOL='\b(anthropic|openai|copilot|chatgpt|gemini|cursor|codex|aider|windsurf|claude[ -]?(code|opus|sonnet|haiku)|gpt-[0-9])'
+
 check_trailer() {
     local source="$1"
     local message="$2"
     local trailer="$3"
     local reason="$4"
+    local value="${5-}"
     local hit
 
-    hit="$(printf '%s\n' "$message" | grep -i "^$trailer:")" || return 0
+    hit="$(printf '%s\n' "$message" | grep -iE "^$trailer:.*$value")" || return 0
 
     printf '%s: do not use "%s:" lines, %s (see CONTRIBUTING.md)\n' "$source" "$trailer" "$reason" >&2
     sed 's/^/> /' <<<"$hit" >&2
@@ -45,6 +49,12 @@ check_message() {
         "they have no meaning for NetworkManager" || ret=1
     check_trailer "$1" "$2" "Assisted-by" \
         "NetworkManager does not record tool assistance in commit messages" || ret=1
+    check_trailer "$1" "$2" "Generated-by" \
+        "NetworkManager does not record tool assistance in commit messages" || ret=1
+    check_trailer "$1" "$2" "Co-authored-by" \
+        "a tool is not an author of the change" "$AI_TOOL" || ret=1
+    check_trailer "$1" "$2" "Co-developed-by" \
+        "a tool is not an author of the change" "$AI_TOOL" || ret=1
     return "$ret"
 }
 
