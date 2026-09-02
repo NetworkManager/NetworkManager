@@ -43,6 +43,8 @@ test-*.trs
 .settings/
 .vscode/
 .cache/
+.claude/
+/CLAUDE.local.md
 
 /build/
 
