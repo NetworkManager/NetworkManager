@@ -64,12 +64,12 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-adf8339f4537'
-  ARCH_TAG:    'tag-316cbea12e06'
-  CENTOS_TAG:  'tag-b8ad2576b2c5'
-  DEBIAN_TAG:  'tag-3bf0ff1c65ba'
-  FEDORA_TAG:  'tag-b8ad2576b2c5'
-  UBUNTU_TAG:  'tag-3bf0ff1c65ba'
+  ALPINE_TAG:  'tag-92fe02c28802'
+  ARCH_TAG:    'tag-68dc09b9280c'
+  CENTOS_TAG:  'tag-f8627f3a33d3'
+  DEBIAN_TAG:  'tag-dcd11293e749'
+  FEDORA_TAG:  'tag-f8627f3a33d3'
+  UBUNTU_TAG:  'tag-dcd11293e749'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   ARCH_EXEC:   'bash .gitlab-ci/arch-install.sh'
@@ -665,6 +665,7 @@ check-patch:
     - if: $CI_PIPELINE_SOURCE != 'schedule'
   stage: tier1
   script:
+    - date '+%Y%m%d-%H%M%S'; contrib/scripts/check-mr-description.sh
     - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh
 
 check-tree:

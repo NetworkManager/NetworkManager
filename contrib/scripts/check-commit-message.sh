@@ -10,6 +10,10 @@
 
 set -e
 
+# The marker AGENTS.md requires AI agents to emit when they generate
+# contributor communication. Also checked in check-mr-description.sh.
+CANARY='biblioklept'
+
 die() {
     printf '%s\n' "$@" >&2
     exit 1
@@ -23,16 +27,33 @@ usage() {
     printf 'Check commit messages against the rules from CONTRIBUTING.md.\n'
 }
 
+# Trailer values that name a tool rather than a person.
+AI_TOOL='\b(anthropic|openai|copilot|chatgpt|gemini|cursor|codex|aider|windsurf|claude[ -]?(code|opus|sonnet|haiku)|gpt-[0-9])'
+
 check_trailer() {
     local source="$1"
     local message="$2"
     local trailer="$3"
     local reason="$4"
+    local value="${5-}"
     local hit
 
-    hit="$(printf '%s\n' "$message" | grep -i "^$trailer:")" || return 0
+    hit="$(printf '%s\n' "$message" | grep -iE "^$trailer:.*$value")" || return 0
 
     printf '%s: do not use "%s:" lines, %s (see CONTRIBUTING.md)\n' "$source" "$trailer" "$reason" >&2
+    sed 's/^/> /' <<<"$hit" >&2
+    printf '\n' >&2
+    return 1
+}
+
+check_canary() {
+    local source="$1"
+    local message="$2"
+    local hit
+
+    hit="$(printf '%s\n' "$message" | grep -iF "$CANARY")" || return 0
+
+    printf '%s: contains the marker that AGENTS.md requires agents to leave, write this message yourself\n' "$source" >&2
     sed 's/^/> /' <<<"$hit" >&2
     printf '\n' >&2
     return 1
@@ -45,28 +66,30 @@ check_message() {
         "they have no meaning for NetworkManager" || ret=1
     check_trailer "$1" "$2" "Assisted-by" \
         "NetworkManager does not record tool assistance in commit messages" || ret=1
+    check_trailer "$1" "$2" "Generated-by" \
+        "NetworkManager does not record tool assistance in commit messages" || ret=1
+    check_trailer "$1" "$2" "Co-authored-by" \
+        "a tool is not an author of the change" "$AI_TOOL" || ret=1
+    check_trailer "$1" "$2" "Co-developed-by" \
+        "a tool is not an author of the change" "$AI_TOOL" || ret=1
+    check_canary "$1" "$2" || ret=1
     return "$ret"
 }
 
-get_ci_base() {
+check_ci() {
     local base
 
+    # Only a merge request pipeline says which commits are under review.
+    # CI_COMMIT_BEFORE_SHA is the previous tip of the branch, which after a
+    # rebase or a force-push spans the upstream commits that came with it.
     base="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-}"
-    if [ -n "$base" ]; then
-        git cat-file -e "$base^{commit}" 2>/dev/null || die "\"$base\" is not a commit"
-        printf '%s\n' "$base"
+    if [ -z "$base" ]; then
+        printf 'not a merge request pipeline, nothing to check\n'
         return
     fi
 
-    base="${CI_COMMIT_BEFORE_SHA:-}"
-    if [ -n "$base" ] && git cat-file -e "$base^{commit}" 2>/dev/null; then
-        printf '%s\n' "$base"
-        return
-    fi
-
-    base="${CI_COMMIT_DEFAULT_BRANCH_BASE_SHA:-HEAD~1}"
     git cat-file -e "$base^{commit}" 2>/dev/null || die "\"$base\" is not a commit"
-    printf '%s\n' "$base"
+    check_range "$base..HEAD"
 }
 
 SUCCESS=0
@@ -89,7 +112,7 @@ case "${1-}" in
         ;;
     --ci)
         test "$#" -eq 1 || die '"--ci" does not take arguments'
-        check_range "$(get_ci_base)..HEAD"
+        check_ci
         ;;
     --range)
         test "$#" -eq 2 || die "\"--range\" requires a git range"
