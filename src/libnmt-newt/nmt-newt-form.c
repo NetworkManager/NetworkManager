@@ -204,9 +204,9 @@ nmt_newt_form_build(NmtNewtForm *form)
         priv->height = NM_MIN(form_height + 2 * ((gint64) priv->padding), screen_height - 2);
 
     if (!priv->fixed_x)
-        priv->x = (screen_width - form_width) / 2;
+        priv->x = (screen_width - (int) priv->width) / 2;
     if (!priv->fixed_y)
-        priv->y = (screen_height - form_height) / 2;
+        priv->y = (screen_height - (int) priv->height) / 2;
 
     if (priv->fullscreen_horizontal) {
         priv->x     = 2;
