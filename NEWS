@@ -65,6 +65,8 @@ nmtui:
   connection" list.
 * Mark protected Wi-Fi networks with a lock in the "Activate a
   connection" list; open networks are left unmarked.
+* Truncate connection names that are wider than the terminal in the
+  connection lists, instead of drawing rows that run past the screen.
 
 =============================================
 NetworkManager-1.58
