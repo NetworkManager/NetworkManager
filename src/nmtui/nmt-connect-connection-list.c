@@ -70,9 +70,19 @@ nmt_connect_connection_list_new(void)
                         NULL);
 }
 
+static void nmt_connect_connection_list_rebuild(NmtConnectConnectionList *list);
+
+static void
+rebuild_on_screen_resize(gpointer user_data)
+{
+    nmt_connect_connection_list_rebuild(user_data);
+}
+
 static void
 nmt_connect_connection_list_init(NmtConnectConnectionList *list)
-{}
+{
+    nmt_newt_form_add_resize_callback(rebuild_on_screen_resize, list);
+}
 
 static void
 nmt_connect_connection_free(NmtConnectConnection *nmtconn)
@@ -493,6 +503,8 @@ append_section_header(NmtNewtListbox *listbox, const char *label)
     nmt_newt_listbox_append(listbox, header, NULL);
 }
 
+#define NMT_CONNECT_ROW_RESERVE 36
+
 static void
 nmt_connect_connection_list_rebuild(NmtConnectConnectionList *list)
 {
@@ -500,6 +512,7 @@ nmt_connect_connection_list_rebuild(NmtConnectConnectionList *list)
     NmtNewtListbox                  *listbox = NMT_NEWT_LISTBOX(list);
     const GPtrArray                 *devices, *acs, *connections;
     int                              max_width;
+    int                              screen_width, screen_height;
     char                           **names, *row, active_col;
     const char                      *strength_col, *security_col;
     GSList                          *nmt_devices, *diter, *citer;
@@ -537,6 +550,9 @@ nmt_connect_connection_list_rebuild(NmtConnectConnectionList *list)
         }
     }
 
+    newtGetScreenSize(&screen_width, &screen_height);
+    max_width = NM_MIN(max_width, NM_MAX(screen_width - NMT_CONNECT_ROW_RESERVE, 16));
+
     did_group = FALSE;
     for (diter = nmt_devices; diter; diter = diter->next) {
         gboolean show_split;
@@ -565,6 +581,8 @@ nmt_connect_connection_list_rebuild(NmtConnectConnectionList *list)
         did_group = TRUE;
 
         for (citer = nmtdev->conns; citer; citer = citer->next) {
+            gs_free char *name = NULL;
+
             nmtconn = citer->data;
 
             if (!connection_matches(nmtconn, priv->filter_text))
@@ -602,10 +620,12 @@ nmt_connect_connection_list_rebuild(NmtConnectConnectionList *list)
                 security_col = NULL;
             }
 
+            name = nmt_newt_text_truncate(nmtconn->name, max_width);
+
             row = g_strdup_printf("%c %s%-*s%s%s%s%s",
                                   active_col,
-                                  nmtconn->name,
-                                  (int) (max_width - nmt_newt_text_width(nmtconn->name)),
+                                  name,
+                                  (int) (max_width - nmt_newt_text_width(name)),
                                   "",
                                   strength_col ? " " : "",
                                   strength_col ?: "",
@@ -677,6 +697,8 @@ static void
 nmt_connect_connection_list_finalize(GObject *object)
 {
     NmtConnectConnectionListPrivate *priv = NMT_CONNECT_CONNECTION_LIST_GET_PRIVATE(object);
+
+    nmt_newt_form_remove_resize_callback(rebuild_on_screen_resize, object);
 
     g_slist_free_full(priv->nmt_devices, (GDestroyNotify) nmt_connect_device_free);
     nm_clear_g_free(&priv->filter_text);
