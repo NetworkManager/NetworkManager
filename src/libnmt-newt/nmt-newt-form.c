@@ -204,9 +204,9 @@ nmt_newt_form_build(NmtNewtForm *form)
         priv->height = NM_MIN(form_height + 2 * ((gint64) priv->padding), screen_height - 2);
 
     if (!priv->fixed_x)
-        priv->x = (screen_width - form_width) / 2;
+        priv->x = (screen_width - (int) priv->width) / 2;
     if (!priv->fixed_y)
-        priv->y = (screen_height - form_height) / 2;
+        priv->y = (screen_height - (int) priv->height) / 2;
 
     if (priv->fullscreen_horizontal) {
         priv->x     = 2;
@@ -351,6 +351,57 @@ static GSList  *form_stack;
 static GSource *keypress_source;
 static GSource *winch_source;
 
+typedef struct {
+    NmtNewtFormResizeCallback callback;
+    gpointer                  user_data;
+} ResizeCallback;
+
+static GSList *resize_callbacks;
+
+/**
+ * nmt_newt_form_add_resize_callback:
+ * @callback: the function to call when the terminal is resized
+ * @user_data: data to pass to @callback
+ *
+ * Registers @callback to be invoked on terminal resize, after the screen
+ * size is updated but before the forms are rebuilt, so widgets whose
+ * content depends on the screen size can regenerate it.
+ */
+void
+nmt_newt_form_add_resize_callback(NmtNewtFormResizeCallback callback, gpointer user_data)
+{
+    ResizeCallback *rc;
+
+    rc            = g_slice_new(ResizeCallback);
+    rc->callback  = callback;
+    rc->user_data = user_data;
+
+    resize_callbacks = g_slist_append(resize_callbacks, rc);
+}
+
+/**
+ * nmt_newt_form_remove_resize_callback:
+ * @callback: the callback to remove
+ * @user_data: the data it was registered with
+ *
+ * Removes a callback added with nmt_newt_form_add_resize_callback().
+ */
+void
+nmt_newt_form_remove_resize_callback(NmtNewtFormResizeCallback callback, gpointer user_data)
+{
+    GSList *iter;
+
+    for (iter = resize_callbacks; iter; iter = iter->next) {
+        ResizeCallback *rc = iter->data;
+
+        if (rc->callback == callback && rc->user_data == user_data) {
+            resize_callbacks = g_slist_remove(resize_callbacks, rc);
+            g_slice_free(ResizeCallback, rc);
+            return;
+        }
+    }
+}
+
 static gboolean
 nmt_newt_form_keypress_callback(int fd, GIOCondition condition, gpointer user_data)
 {
@@ -385,6 +436,12 @@ nmt_newt_form_resize(void)
     SLtt_get_screen_size();
     SLsmg_reinit_smg();
     newtCls();
+
+    for (iter = resize_callbacks; iter; iter = iter->next) {
+        ResizeCallback *rc = iter->data;
+
+        rc->callback(rc->user_data);
+    }
 
     bottom_up = g_slist_reverse(g_slist_copy(form_stack));
     for (iter = bottom_up; iter; iter = iter->next)

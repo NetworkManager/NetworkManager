@@ -50,4 +50,9 @@ void nmt_newt_form_add_hotkey(NmtNewtForm *form, int key);
 
 void nmt_newt_form_set_stable_width(NmtNewtForm *form);
 
+typedef void (*NmtNewtFormResizeCallback)(gpointer user_data);
+
+void nmt_newt_form_add_resize_callback(NmtNewtFormResizeCallback callback, gpointer user_data);
+void nmt_newt_form_remove_resize_callback(NmtNewtFormResizeCallback callback, gpointer user_data);
+
 #endif /* NMT_NEWT_FORM_H */

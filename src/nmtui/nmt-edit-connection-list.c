@@ -80,6 +80,14 @@ static void edit_search_apply(gpointer list, const char *text);
 static int  edit_search_count(gpointer list);
 static void update_share_sensitive(NmtEditConnectionList *list);
 
+static void nmt_edit_connection_list_rebuild(NmtEditConnectionList *list);
+
+static void
+rebuild_on_screen_resize(gpointer user_data)
+{
+    nmt_edit_connection_list_rebuild(user_data);
+}
+
 static void
 nmt_edit_connection_list_init(NmtEditConnectionList *list)
 {
@@ -87,6 +95,8 @@ nmt_edit_connection_list_init(NmtEditConnectionList *list)
     NmtNewtWidget                *listbox, *buttons, *search_row, *search_label, *search;
     NmtNewtGrid                  *grid = NMT_NEWT_GRID(list);
     NmtNewtGrid                  *search_grid;
+
+    nmt_newt_form_add_resize_callback(rebuild_on_screen_resize, list);
 
     listbox       = g_object_new(NMT_TYPE_NEWT_LISTBOX,
                                  "flags",
@@ -189,6 +199,8 @@ free_connections(NmtEditConnectionList *list)
     priv->connections = NULL;
 }
 
+#define NMT_EDIT_ROW_RESERVE 24
+
 static void
 nmt_edit_connection_list_rebuild(NmtEditConnectionList *list)
 {
@@ -199,6 +211,10 @@ nmt_edit_connection_list_rebuild(NmtEditConnectionList *list)
     NMEditorConnectionTypeData  **types;
     NMConnection                 *conn, *selected_conn;
     int                           i, row, selected_row, n_matches = 0;
+    int                           name_width, screen_width, screen_height;
+
+    newtGetScreenSize(&screen_width, &screen_height);
+    name_width = NM_MAX(screen_width - NMT_EDIT_ROW_RESERVE, 16);
 
     selected_row  = nmt_newt_listbox_get_active(priv->listbox);
     selected_conn = nmt_newt_listbox_get_active_key(priv->listbox);
@@ -227,10 +243,13 @@ nmt_edit_connection_list_rebuild(NmtEditConnectionList *list)
     if (!priv->grouped) {
         /* Just add the connections in order */
         for (iter = priv->connections, row = 0; iter; iter = iter->next) {
+            gs_free char *name = NULL;
+
             conn = iter->data;
             if (!nmt_utils_filter_match(nm_connection_get_id(conn), priv->filter_text))
                 continue;
-            nmt_newt_listbox_append(priv->listbox, nm_connection_get_id(conn), conn);
+            name = nmt_newt_text_truncate(nm_connection_get_id(conn), name_width);
+            nmt_newt_listbox_append(priv->listbox, name, conn);
             if (conn == selected_conn)
                 selected_row = row;
             row++;
@@ -256,8 +275,9 @@ nmt_edit_connection_list_rebuild(NmtEditConnectionList *list)
         did_header = FALSE;
 
         for (iter = priv->connections; iter; iter = iter->next) {
-            NMSetting *setting;
-            char      *indented;
+            NMSetting    *setting;
+            gs_free char *name = NULL;
+            char         *indented;
 
             conn    = iter->data;
             setting = nm_connection_get_setting(conn, types[i]->setting_type);
@@ -280,7 +300,8 @@ nmt_edit_connection_list_rebuild(NmtEditConnectionList *list)
                 did_any = TRUE;
             }
 
-            indented = g_strdup_printf("  %s", nm_connection_get_id(conn));
+            name     = nmt_newt_text_truncate(nm_connection_get_id(conn), name_width - 2);
+            indented = g_strdup_printf("  %s", name);
             nmt_newt_listbox_append(priv->listbox, indented, conn);
             g_free(indented);
 
@@ -445,6 +466,8 @@ static void
 nmt_edit_connection_list_finalize(GObject *object)
 {
     NmtEditConnectionListPrivate *priv = NMT_EDIT_CONNECTION_LIST_GET_PRIVATE(object);
+
+    nmt_newt_form_remove_resize_callback(rebuild_on_screen_resize, object);
 
     free_connections(NMT_EDIT_CONNECTION_LIST(object));
     g_clear_object(&priv->extra);
