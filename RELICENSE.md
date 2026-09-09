@@ -17,8 +17,8 @@ move code around within our source tree is a painful restriction. Possibly we ge
 that wrong sometimes, wrongly moving GPL code as LGPL (either directly or by rewriting
 it based on GPL code).
 
-2) For example keyfile and ifcfg-rh implementations are GPL licensed as they
-are historically part of core. It would be useful to add this functionality
+2) For example the keyfile plugin implementation is GPL licensed as it is
+historically part of core. It would be useful to add this functionality
 to libnm, so that libnm users can handle the file formats directly. That is
 not possible without relicensing.
 

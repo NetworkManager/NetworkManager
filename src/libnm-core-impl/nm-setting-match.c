@@ -815,14 +815,6 @@ nm_setting_match_class_init(NMSettingMatchClass *klass)
      *
      * Since: 1.26
      **/
-    /* ---ifcfg-rh---
-     * property: path
-     * variable: MATCH_PATH
-     * description: space-separated list of paths to match against the udev
-     *   property ID_PATHS of devices
-     * example: MATCH_PATH="pci-0000:01:00.0 pci-0000:0c:00.0"
-     * ---end---
-     */
     _nm_setting_property_define_direct_strv(properties_override,
                                             obj_properties,
                                             NM_SETTING_MATCH_PATH,

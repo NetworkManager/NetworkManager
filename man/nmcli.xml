@@ -1350,8 +1350,9 @@
           <arg rep='repeat'><replaceable>ID</replaceable></arg>
         </term>
         <listitem>
-	  <para>Migrate connection profiles to a different settings plugin, such
-	  as <literal>keyfile</literal> (default) or <literal>ifcfg-rh</literal>.</para>
+          <para>Migrate connection profiles to a different settings plugin.
+          The only currently supported target is <literal>keyfile</literal>
+          (default).</para>
 
           <para>The connection to be migrated is identified by its name, UUID or D-Bus path.
 	  If <replaceable>ID</replaceable> is ambiguous, a keyword <option>id</option>,

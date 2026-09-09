@@ -477,10 +477,9 @@ NM_UTILS_LOOKUP_STR_DEFINE(
     NM_UTILS_LOOKUP_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_USER_EXPLICIT,
                          N_("The device is unmanaged by explicit user decision (e.g. 'nmcli device "
                             "set $DEV managed no')")),
-    NM_UTILS_LOOKUP_ITEM(
-        NM_DEVICE_STATE_REASON_UNMANAGED_USER_SETTINGS,
-        N_("The device is unmanaged by user decision via settings plugin "
-           "(\"unmanaged-devices\" for keyfile or \"NM_CONTROLLED=no\" for ifcfg-rh)")),
+    NM_UTILS_LOOKUP_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_USER_SETTINGS,
+                         N_("The device is unmanaged by user decision via settings plugin "
+                            "(\"unmanaged-devices\" for keyfile)")),
     NM_UTILS_LOOKUP_ITEM(NM_DEVICE_STATE_REASON_UNMANAGED_USER_CONF,
                          N_("The device is unmanaged by user decision in NetworkManager.conf "
                             "('unmanaged' in a [device*] section)")),

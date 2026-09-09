@@ -2515,12 +2515,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * A human readable unique identifier for the connection, like "Work Wi-Fi"
      * or "T-Mobile 3G".
      **/
-    /* ---ifcfg-rh---
-     * property: id
-     * variable: NAME(+)
-     * description: User friendly name for the connection profile.
-     * ---end---
-     */
     _nm_setting_property_define_direct_string_full(
         properties_override,
         obj_properties,
@@ -2563,13 +2557,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *   The UUID cannot be changed, except in offline mode. In that case,
      *   the special values "new", "generate" and "" are allowed to generate
      *   a new random UUID.
-     * ---end---
-     */
-    /* ---ifcfg-rh---
-     * property: uuid
-     * variable: UUID(+)
-     * description: UUID for the connection profile. When missing, NetworkManager
-     *   creates the UUID by hashing the connection filename.
      * ---end---
      */
     /* ---keyfile---
@@ -2632,12 +2619,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Since: 1.4
      **/
-    /* ---ifcfg-rh---
-     * property: stable-id
-     * variable: STABLE_ID(+)
-     * description: Token to generate stable IDs.
-     * ---end---
-     */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
                                               NM_SETTING_CONNECTION_STABLE_ID,
@@ -2662,14 +2643,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * can be used with, and if interface names change or are reordered the
      * connection may be applied to the wrong interface.
      **/
-    /* ---ifcfg-rh---
-     * property: interface-name
-     * variable: DEVICE
-     * description: Interface name of the device this profile is bound to. The variable
-     *   can be left out when the profile should apply for more devices. Note that DEVICE
-     *   can be required for some connection types.
-     * ---end---
-     */
     _nm_setting_property_define_direct_string_full(
         properties_override,
         obj_properties,
@@ -2698,15 +2671,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * non-hardware dependent connections like VPN or otherwise, should contain
      * the setting name of that setting type (ie, "vpn" or "bridge", etc).
      **/
-    /* ---ifcfg-rh---
-     * property: type
-     * variable: TYPE (DEVICETYPE, DEVICE)
-     * values: Ethernet, Wireless, InfiniBand, Bridge, Bond, Vlan, Team, TeamPort
-     * description: Base type of the connection. DEVICETYPE is used for teaming
-     *   connections.
-     * example: TYPE=Ethernet; TYPE=Bond; TYPE=Bridge; DEVICETYPE=TeamPort
-     * ---end---
-     */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
                                               NM_SETTING_CONNECTION_TYPE,
@@ -2732,15 +2696,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * permission refers to, which may not contain the ":" character. Any
      * [reserved] information present must be ignored and is reserved for future
      * use.  All of [type], [id], and [reserved] must be valid UTF-8.
-     */
-    /* ---ifcfg-rh---
-     * property: permissions
-     * variable: USERS(+)
-     * description: Restrict to certain users the access to this connection, and
-     *     allow the connection to be active only when at least one of the
-     *     specified users is logged into an active session.
-     * example: USERS="joe bob"
-     * ---end---
      */
     _nm_setting_property_define_gprop_strv_oldstyle(properties_override,
                                                     obj_properties,
@@ -2773,13 +2728,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * Depending on "connection.multi-connect", a profile can (auto)connect only
      * once at a time or multiple times.
      **/
-    /* ---ifcfg-rh---
-     * property: autoconnect
-     * variable: ONBOOT
-     * default: yes
-     * description: Whether the connection should be autoconnected (not only while booting).
-     * ---end---
-     */
     _nm_setting_property_define_direct_boolean(properties_override,
                                                obj_properties,
                                                NM_SETTING_CONNECTION_AUTOCONNECT,
@@ -2799,16 +2747,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * profile to select for autoconnect. In case of equal priority, the profile
      * used most recently is chosen.
      **/
-    /* ---ifcfg-rh---
-     * property: autoconnect-priority
-     * variable: AUTOCONNECT_PRIORITY(+)
-     * values: -999 to 999
-     * default: 0
-     * description: Connection priority for automatic activation. Connections with
-     *  higher numbers are preferred when selecting profiles for automatic activation.
-     * example: AUTOCONNECT_PRIORITY=20
-     * ---end---
-     */
     _nm_setting_property_define_direct_int32(properties_override,
                                              obj_properties,
                                              NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY,
@@ -2829,15 +2767,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * blocking autoconnect. Note that after a timeout, NetworkManager will try
      * to autoconnect again.
      */
-    /* ---ifcfg-rh---
-     * property: autoconnect-retries
-     * variable: AUTOCONNECT_RETRIES(+)
-     * description: The number of times a connection should be autoactivated
-     * before giving up and switching to the next one.
-     * values: -1 (use global default), 0 (forever) or a positive value
-     * example: AUTOCONNECT_RETRIES=1
-     * ---end---
-     */
     _nm_setting_property_define_direct_int32(properties_override,
                                              obj_properties,
                                              NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES,
@@ -2856,14 +2785,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * moment. The value is of type #NMConnectionMultiConnect.
      *
      * Since: 1.14
-     */
-    /* ---ifcfg-rh---
-     * property: multi-connect
-     * variable: MULTI_CONNECT(+)
-     * description: whether the profile can be active on multiple devices at a given
-     *   moment. The values are numbers corresponding to #NMConnectionMultiConnect enum.
-     * example: MULTI_CONNECT=3
-     * ---end---
      */
     _nm_setting_property_define_direct_int32(properties_override,
                                              obj_properties,
@@ -2932,14 +2853,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * When updating this property on a currently activated connection,
      * the change takes effect immediately.
      **/
-    /* ---ifcfg-rh---
-     * property: zone
-     * variable: ZONE(+)
-     * description: Trust level of this connection. The string is usually used
-     *   for a firewall.
-     * example: ZONE=Work
-     * ---end---
-     */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
                                               NM_SETTING_CONNECTION_ZONE,
@@ -2957,15 +2870,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Deprecated 1.46. Use #NMSettingConnection:controller instead, this is just an alias.
      **/
-    /* ---ifcfg-rh---
-     * property: master
-     * variable: MASTER, MASTER_UUID, TEAM_MASTER, TEAM_MASTER_UUID, BRIDGE, BRIDGE_UUID
-     * description: Reference to controller connection. The variable used depends on
-     *   the connection type and the value. In general, if the *_UUID variant is present,
-     *   the variant without *_UUID is ignored. NetworkManager attempts to write both
-     *   for compatibility with legacy tooling.
-     * ---end---
-     */
     prop_idx = _nm_setting_property_define_direct_string_full(
         properties_override,
         obj_properties,
@@ -3017,16 +2921,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Deprecated 1.46. Use #NMSettingConnection:port-type instead, this is just an alias.
      **/
-    /* ---ifcfg-rh---
-     * property: slave-type
-     * variable: MASTER, MASTER_UUID, TEAM_MASTER, TEAM_MASTER_UUID, DEVICETYPE,
-     *   BRIDGE, BRIDGE_UUID
-     * description: Slave type doesn't map directly to a variable, but it is
-     *   recognized using different variables.  MASTER and MASTER_UUID for bonding,
-     *   TEAM_MASTER, TEAM_MASTER_UUID and DEVICETYPE for teaming, BRIDGE
-     *   and BRIDGE_UUID for bridging.
-     * ---end---
-     */
     prop_idx = _nm_setting_property_define_direct_string_full(
         properties_override,
         obj_properties,
@@ -3091,14 +2985,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Since: 1.2
      **/
-    /* ---ifcfg-rh---
-     * property: autoconnect-slaves
-     * variable: AUTOCONNECT_SLAVES(+)
-     * default: missing variable means global default
-     * description: Whether slaves of this connection should be auto-connected
-     *   when this connection is activated.
-     * ---end---
-     */
     prop_idx = _nm_setting_property_define_direct_real_enum(
         properties_override,
         obj_properties,
@@ -3161,13 +3047,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * connection itself is activated. Currently, only VPN connections are
      * supported.
      **/
-    /* ---ifcfg-rh---
-     * property: secondaries
-     * variable: SECONDARY_UUIDS(+)
-     * description: UUID of VPN connections that should be activated
-     *   together with this connection.
-     * ---end---
-     */
     _nm_setting_property_define_direct_strv(properties_override,
                                             obj_properties,
                                             NM_SETTING_CONNECTION_SECONDARIES,
@@ -3247,15 +3126,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * If greater than zero, delay success of IP addressing until either the
      * timeout is reached, or an IP gateway replies to a ping.
      **/
-    /* ---ifcfg-rh---
-     * property: gateway-ping-timeout
-     * variable: GATEWAY_PING_TIMEOUT(+)
-     * default: 0
-     * description: If greater than zero, the IP connectivity will be checked by
-     *   pinging the gateway and waiting for the specified timeout (in seconds).
-     * example: GATEWAY_PING_TIMEOUT=5
-     * ---end---
-     */
     _nm_setting_property_define_direct_uint32(properties_override,
                                               obj_properties,
                                               NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT,
@@ -3277,14 +3147,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Since: 1.2
      **/
-    /* ---ifcfg-rh---
-     * property: metered
-     * variable: CONNECTION_METERED(+)
-     * values: yes,no,unknown
-     * description: Whether the device is metered
-     * example: CONNECTION_METERED=yes
-     * ---end---
-     */
     _nm_setting_property_define_direct_real_enum(properties_override,
                                                  obj_properties,
                                                  NM_SETTING_CONNECTION_METERED,
@@ -3303,15 +3165,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Since: 1.2
      **/
-    /* ---ifcfg-rh---
-     * property: lldp
-     * variable: LLDP(+)
-     * values: boolean value or 'rx'
-     * default: missing variable means global default
-     * description: whether LLDP is enabled for the connection
-     * example: LLDP=no
-     * ---end---
-     */
     _nm_setting_property_define_direct_int32(properties_override,
                                              obj_properties,
                                              NM_SETTING_CONNECTION_LLDP,
@@ -3333,13 +3186,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Since: 1.10
      **/
-    /* ---ifcfg-rh---
-     * property: auth-retries
-     * variable: AUTH_RETRIES(+)
-     * default: 0
-     * description: Number of retries for authentication.
-     * ---end---
-     */
     _nm_setting_property_define_direct_int32(properties_override,
                                              obj_properties,
                                              NM_SETTING_CONNECTION_AUTH_RETRIES,
@@ -3369,15 +3215,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Since: 1.12
      **/
-    /* ---ifcfg-rh---
-     * property: mdns
-     * variable: MDNS(+)
-     * values: yes,no,resolve
-     * default: missing variable means global default
-     * description: Whether or not mDNS is enabled for the connection
-     * example: MDNS=yes
-     * ---end---
-     */
     _nm_setting_property_define_direct_int32(properties_override,
                                              obj_properties,
                                              NM_SETTING_CONNECTION_MDNS,
@@ -3408,15 +3245,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Since: 1.14
      **/
-    /* ---ifcfg-rh---
-     * property: llmnr
-     * variable: LLMNR(+)
-     * values: yes,no,resolve
-     * default: missing variable means global default
-     * description: Whether or not LLMNR is enabled for the connection
-     * example: LLMNR=yes
-     * ---end---
-     */
     _nm_setting_property_define_direct_int32(properties_override,
                                              obj_properties,
                                              NM_SETTING_CONNECTION_LLMNR,
@@ -3445,14 +3273,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Since: 1.34
      **/
-    /* ---ifcfg-rh---
-     * property: dns-over-tls
-     * variable: DNS_OVER_TLS(+)
-     * values: yes,no,opportunistic
-     * default: missing variable means global default
-     * description: Whether or not DNSOverTls is enabled for the connection
-     * ---end---
-     */
     _nm_setting_property_define_direct_int32(properties_override,
                                              obj_properties,
                                              NM_SETTING_CONNECTION_DNS_OVER_TLS,
@@ -3576,15 +3396,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Since: 1.40
      **/
-    /* ---ifcfg-rh---
-     * property: mptcp-flags
-     * variable: MPTCP_FLAGS(+)
-     * default: missing variable means global default
-     * description: The MPTCP flags that indicate whether MPTCP is enabled
-     *   and which flags to use for the address endpoints.
-     * example: MPTCP_FLAGS="signal,subflow"
-     * ---end---
-     */
     _nm_setting_property_define_direct_uint32(properties_override,
                                               obj_properties,
                                               NM_SETTING_CONNECTION_MPTCP_FLAGS,
@@ -3611,16 +3422,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Since: 1.20
      **/
-    /* ---ifcfg-rh---
-     * property: wait-device-timeout
-     * variable: DEVTIMEOUT(+)
-     * values: timeout in seconds.
-     * description: for initscripts compatibility, this variable must be
-     *   a whole integer. If necessary, NetworkManager stores also a fractional
-     *   component for the milliseconds.
-     * example: DEVTIMEOUT=5
-     * ---end---
-     */
     _nm_setting_property_define_direct_int32(properties_override,
                                              obj_properties,
                                              NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT,
@@ -3646,14 +3447,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Since: 1.26
      **/
-    /* ---ifcfg-rh---
-     * property: mud-url
-     * variable: MUD_URL
-     * values: a valid URL that points to recommended policy for this device
-     * description: MUD_URL to be sent by device (See RFC 8520).
-     * example: https://yourdevice.example.com/model.json
-     * ---end---
-     */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
                                               NM_SETTING_CONNECTION_MUD_URL,
@@ -3674,15 +3467,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Since: 1.40
      **/
-    /* ---ifcfg-rh---
-     * property: wait-activation-delay
-     * variable: WAIT_ACTIVATION_DELAY(+)
-     * values: delay in milliseconds.
-     * description: Time in milliseconds to wait for connection to be considered activated.
-     * The wait will start after the pre-up dispatcher event.
-     * example: WAIT_ACTIVATION_DELAY=5000
-     * ---end---
-     */
     _nm_setting_property_define_direct_int32(properties_override,
                                              obj_properties,
                                              NM_SETTING_CONNECTION_WAIT_ACTIVATION_DELAY,
