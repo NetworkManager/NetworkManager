@@ -42,7 +42,7 @@ else
   settings_docs_source = configure_file(
     input: 'settings-docs.h.in',
     output: '@BASENAME@',
-    configuration: configuration_data(),
+    copy: true,
   )
 endif
 

@@ -912,7 +912,7 @@ else
     enable_vapi = false
   endif
 
-  if enable_vapi and not add_languages('vala', required: false)
+  if enable_vapi and not add_languages('vala', native: false, required: false)
     assert(vapi_opt != 'true', 'vala is required to build. Use -Dvapi=false to disable it')
     enable_vapi = false
   endif
@@ -1022,12 +1022,13 @@ subdir('po')
 
 if enable_vapi
   subdir('vapi')
-endif
 
-test(
-  'check-vapi',
-  find_program(join_paths(source_root, 'tools', 'check-vapi.sh')),
-)
+  test(
+    'check-vapi',
+    find_program(join_paths(source_root, 'tools', 'check-vapi.sh')),
+    args: [build_root / 'vapi' / 'libnm.vapi'],
+  )
+endif
 
 test(
   'check-nm-autoptr',
@@ -1045,7 +1046,7 @@ if enable_qt != 'false'
   # If enable_qt=='yes' we have all the dependencies. If it's 'auto', skip
   # building the Qt examples if any dependency is missing.
   if qt_core_dep.found() and qt_dbus_dep.found() and qt_network_dep.found()
-    add_languages('cpp')
+    add_languages('cpp', native: false)
     subdir('examples/C/qt')
   endif
 endif

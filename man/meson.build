@@ -67,7 +67,7 @@ if enable_introspection and (enable_man or enable_docs)
     '--stringparam', 'man.th.title.max.length', '30',
   ]
 
-  docbook_xls = 'http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl'
+  docbook_xls = files('nm-man.xsl')
 
   mans_xmls = []
 
