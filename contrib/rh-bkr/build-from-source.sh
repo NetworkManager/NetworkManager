@@ -194,6 +194,13 @@ fi
 if [[ "$DO_TEST_BUILD" == yes ]]; then
 
     if [[ $USE_AUTOTOOLS != 1 ]]; then
+        # ifcfg_rh was removed as a meson option once the ifcfg-rh plugin
+        # got dropped; only pass it on older sources that still have it.
+        MESON_IFCFG_RH_ARGS=()
+        if grep -q "option('ifcfg_rh'" meson_options.txt; then
+            MESON_IFCFG_RH_ARGS=(-Difcfg_rh=true)
+        fi
+
         meson setup "./build" \
             -Dwarning_level=2 \
             --prefix=/opt/test \
@@ -204,7 +211,7 @@ if [[ "$DO_TEST_BUILD" == yes ]]; then
             -Dintrospection=true \
             -Dvalgrind=true \
             -Dconcheck=true \
-            -Difcfg_rh=true \
+            "${MESON_IFCFG_RH_ARGS[@]}" \
             -Difupdown=true \
             -Dvapi=true \
             -Dpolkit=true \
