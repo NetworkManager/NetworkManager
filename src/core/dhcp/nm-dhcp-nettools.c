@@ -406,7 +406,8 @@ lease_parse_address_list(NDhcp4ClientLease       *lease,
 }
 
 static void
-lease_parse_routes(NDhcp4ClientLease *lease,
+lease_parse_routes(NMDhcpNettools    *self,
+                   NDhcp4ClientLease *lease,
                    NML3ConfigData    *l3cd,
                    in_addr_t          lease_address,
                    GHashTable        *options,
@@ -418,6 +419,7 @@ lease_parse_routes(NDhcp4ClientLease *lease,
     in_addr_t     gateway;
     uint8_t       plen;
     guint32       m;
+    gboolean      has_router_from_classless   = FALSE;
     gboolean      has_classless               = FALSE;
     guint32       default_route_metric_offset = 0;
     const guint8 *l_data;
@@ -459,7 +461,8 @@ lease_parse_routes(NDhcp4ClientLease *lease,
             if (plen == 0) {
                 /* if there are multiple default routes, we add them with differing
                  * metrics. */
-                m = default_route_metric_offset++;
+                m                         = default_route_metric_offset++;
+                has_router_from_classless = TRUE;
             } else
                 m = 0;
 
@@ -537,10 +540,12 @@ lease_parse_routes(NDhcp4ClientLease *lease,
                 continue;
             }
 
-            if (has_classless) {
-                /* RFC 3442: if the DHCP server returns both a Classless Static Routes
-                 * option and a Router option, the DHCP client MUST ignore the Router
-                 * option. */
+            if (has_router_from_classless) {
+                /* If the DHCP server returns both a Classless Static Routes option and a
+                 * Router option, the DHCP client MUST ignore the Router option [RFC 3442].
+                 *
+                 * Be more lenient and ignore the Router option only if Classless Static
+                 * Routes contain a default gateway (as other DHCP backends do). */
                 continue;
             }
 
@@ -558,6 +563,12 @@ lease_parse_routes(NDhcp4ClientLease *lease,
                                               .metric_any    = TRUE,
                                               .metric        = m,
                                           }));
+        }
+
+        if (has_classless && !has_router_from_classless && sbuf->len > 0) {
+            _LOGW("DHCP server configuration issue detected: classless static routes (option 121) "
+                  "present but without a default route, using router option (option 3) as "
+                  "fallback. The DHCP server should include a 0.0.0.0/0 route in option 121.");
         }
 
         _add_option(options, NM_DHCP_OPTION_DHCP4_ROUTER, nm_str_buf_get_str(sbuf));
@@ -676,7 +687,7 @@ lease_to_ip4_config(NMDhcpNettools *self, NDhcp4ClientLease *lease, GError **err
                                           v_inaddr);
     }
 
-    lease_parse_routes(lease, l3cd, lease_address, options, &sbuf);
+    lease_parse_routes(self, lease, l3cd, lease_address, options, &sbuf);
 
     lease_parse_address_list(lease,
                              l3cd,
