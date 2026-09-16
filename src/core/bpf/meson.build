@@ -149,6 +149,7 @@ cpu_arch_defines = {
   'riscv64'     : ['-D__riscv', '-D__riscv_xlen=64', '-D__TARGET_ARCH_riscv'],
   'x86'         : ['-D__i386__', '-D__TARGET_ARCH_x86'],
   's390x'       : ['-D__s390__', '-D__s390x__', '-D__TARGET_ARCH_s390'],
+  'sparc64'     : ['-D__sparc__', '-D__arch64__', '-D__TARGET_ARCH_sparc'],
 
   # For arm, assume hardware fp is available.
   'arm'         : ['-D__arm__', '-D__ARM_PCS_VFP', '-D__TARGET_ARCH_arm'],
