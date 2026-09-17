@@ -1,4 +1,0 @@
-DEVICE=team0
-ONBOOT=no
-BOOTPROTO=dhcp
-TEAM_CONFIG="{ foobar }x"

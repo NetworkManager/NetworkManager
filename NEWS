@@ -68,6 +68,13 @@ nmtui:
 * Truncate connection names that are wider than the terminal in the
   connection lists, instead of drawing rows that run past the screen.
 
+Deprecations and removals:
+* Remove the ifcfg-rh settings plugin, which has been deprecated since
+  NetworkManager 1.44 and is already disabled in recent Fedora and RHEL
+  releases. Any remaining legacy profiles in the ifcfg-rh format will no
+  longer be loaded and should be migrated to the keyfile format using
+  "nmcli connection migrate" before upgrading.
+
 =============================================
 NetworkManager-1.58
 Overview of changes since NetworkManager-1.56

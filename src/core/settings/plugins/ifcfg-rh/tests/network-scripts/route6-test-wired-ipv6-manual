@@ -1,9 +1,0 @@
-9876::1234/96 via 9876::7777 metric 2
-
-# default route is ignored by ifcfg-rh reader, because NM handles it internally
-default via dead::beaf
-
-# routes without "via" are valid
-abbe::cafe/64 metric 777
-
-aaaa::cccc/64 from 1111::2222/48 via 3333::4444 src 5555::6666 mtu lock 1450 cwnd 13

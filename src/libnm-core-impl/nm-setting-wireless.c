@@ -1596,13 +1596,6 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * example: ssid=Quick Net
      * ---end---
      */
-    /* ---ifcfg-rh---
-     * property: ssid
-     * variable: ESSID
-     * description: SSID of Wi-Fi network.
-     * example: ESSID="Quick Net"
-     * ---end---
-     */
     _nm_setting_property_define_direct_bytes(properties_override,
                                              obj_properties,
                                              NM_SETTING_WIRELESS_SSID,
@@ -1617,13 +1610,6 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * Wi-Fi network mode; one of "infrastructure", "mesh", "adhoc" or "ap".  If blank,
      * infrastructure is assumed.
      **/
-    /* ---ifcfg-rh---
-     * property: mode
-     * variable: MODE
-     * values: Ad-Hoc, Managed (Auto)  [case insensitive]
-     * description: Wi-Fi network mode.
-     * ---end---
-     */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
                                               NM_SETTING_WIRELESS_MODE,
@@ -1644,15 +1630,6 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * compatible.  This setting depends on specific driver capability
      * and may not work with all drivers.
      **/
-    /* ---ifcfg-rh---
-     * property: band
-     * variable: BAND(+)
-     * values: a, bg, 6GHz
-     * description: BAND alone is honored, but CHANNEL overrides BAND since it
-     *   implies a band.
-     * example: BAND=bg
-     * ---end---
-     */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
                                               NM_SETTING_WIRELESS_BAND,
@@ -1670,13 +1647,6 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * channel.  Because channel numbers overlap between bands, this property
      * also requires the "band" property to be set.
      **/
-    /* ---ifcfg-rh---
-     * property: channel
-     * variable: CHANNEL
-     * description: Channel used for the Wi-Fi communication.
-     * example: CHANNEL=6
-     * ---end---
-     */
     _nm_setting_property_define_direct_uint32(properties_override,
                                               obj_properties,
                                               NM_SETTING_WIRELESS_CHANNEL,
@@ -1700,13 +1670,6 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * disable background scanning. That can be useful, if there is only one access
      * point for the SSID.
      **/
-    /* ---ifcfg-rh---
-     * property: bssid
-     * variable: BSSID(+)
-     * description: Restricts association only to a single AP.
-     * example: BSSID=00:1E:BD:64:83:21
-     * ---end---
-     */
     _nm_setting_property_define_direct_mac_address(properties_override,
                                                    obj_properties,
                                                    NM_SETTING_WIRELESS_BSSID,
@@ -1723,12 +1686,6 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      *
      * Deprecated: 1.44: This property is not implemented and has no effect.
      **/
-    /* ---ifcfg-rh---
-     * property: rate
-     * variable: (none)
-     * description: This property is deprecated and not handled by ifcfg-rh plugin.
-     * ---end---
-     */
     _nm_setting_property_define_direct_uint32(properties_override,
                                               obj_properties,
                                               NM_SETTING_WIRELESS_RATE,
@@ -1748,12 +1705,6 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      *
      * Deprecated: 1.44: This property is not implemented and has no effect.
      **/
-    /* ---ifcfg-rh---
-     * property: tx-power
-     * variable: (none)
-     * description: This property is deprecated and not handled by ifcfg-rh plugin.
-     * ---end---
-     */
     _nm_setting_property_define_direct_uint32(properties_override,
                                               obj_properties,
                                               NM_SETTING_WIRELESS_TX_POWER,
@@ -1779,16 +1730,6 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * description: MAC address in traditional hex-digits-and-colons notation
      *   (e.g. 00:22:68:12:79:A2), or semicolon separated list of 6 bytes (obsolete)
      *   (e.g. 0;34;104;18;121;162).
-     * ---end---
-     */
-    /* ---ifcfg-rh---
-     * property: mac-address
-     * variable: HWADDR
-     * description: Hardware address of the device in traditional hex-digits-and-colons
-     *    notation (e.g. 00:22:68:14:5A:05).
-     *    Note that for initscripts this is the current MAC address of the device as found
-     *    during ifup. For NetworkManager this is the permanent MAC address. Or in case no
-     *    permanent MAC address exists, the MAC address initially configured on the device.
      * ---end---
      */
     _nm_setting_property_define_direct_mac_address(properties_override,
@@ -1829,13 +1770,6 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * description: Cloned MAC address in traditional hex-digits-and-colons notation
      *   (e.g. 00:22:68:12:79:B2), or semicolon separated list of 6 bytes (obsolete)
      *   (e.g. 0;34;104;18;121;178).
-     * ---end---
-     */
-    /* ---ifcfg-rh---
-     * property: cloned-mac-address
-     * variable: MACADDR
-     * description: Cloned (spoofed) MAC address in traditional hex-digits-and-colons
-     *    notation (e.g. 00:22:68:14:5A:99).
      * ---end---
      */
     /* ---dbus---
@@ -1912,13 +1846,6 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * will create a fully scrambled MAC address, randomly locally or globally
      * administered.
      **/
-    /* ---ifcfg-rh---
-     * property: generate-mac-address-mask
-     * variable: GENERATE_MAC_ADDRESS_MASK(+)
-     * description: the MAC address mask for generating randomized and stable
-     *   cloned-mac-address.
-     * ---end---
-     */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
                                               NM_SETTING_WIRELESS_GENERATE_MAC_ADDRESS_MASK,
@@ -1940,13 +1867,6 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * format: list of MACs (separated with semicolons)
      * description: MAC address blacklist.
      * example: mac-address-blacklist= 00:22:68:12:79:A6;00:22:68:12:79:78
-     * ---end---
-     */
-    /* ---ifcfg-rh---
-     * property: mac-address-blacklist
-     * variable: HWADDR_BLACKLIST(+)
-     * description: It denies usage of the connection for any device whose address
-     *   is listed.
      * ---end---
      */
     prop_idx = _nm_setting_property_define_direct_strv(
@@ -1980,13 +1900,6 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * format: list of MACs (separated with semicolons)
      * description: MAC address denylist.
      * example: mac-address-denylist= 00:22:68:12:79:A6;00:22:68:12:79:78
-     * ---end---
-     */
-    /* ---ifcfg-rh---
-     * property: mac-address-denylist
-     * variable: HWADDR_BLACKLIST(+)
-     * description: It denies usage of the connection for any device whose address
-     *   is listed.
      * ---end---
      */
     _nm_setting_property_define_direct_strv(
@@ -2024,13 +1937,6 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * NetworkManager automatically sets the seen BSSIDs and tracks them internally
      * in "/var/lib/NetworkManager/seen-bssids" file.
      **/
-    /* ---ifcfg-rh---
-     * property: seen-bssids
-     * variable: (none)
-     * description: This is not a regular property that would be configured by the
-     *   user. It is not handled by ifcfg-rh plugin.
-     * ---end---
-     */
     obj_properties[PROP_SEEN_BSSIDS] = g_param_spec_boxed(
         NM_SETTING_WIRELESS_SEEN_BSSIDS,
         "",
@@ -2051,12 +1957,6 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * If non-zero, only transmit packets of the specified size or smaller,
      * breaking larger packets up into multiple Ethernet frames.
      **/
-    /* ---ifcfg-rh---
-     * property: mtu
-     * variable: MTU
-     * description: MTU of the wireless interface.
-     * ---end---
-     */
     _nm_setting_property_define_direct_uint32(properties_override,
                                               obj_properties,
                                               NM_SETTING_WIRELESS_MTU,
@@ -2086,12 +1986,6 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * probe-scans are distinctly recognizable on the air.
      *
      **/
-    /* ---ifcfg-rh---
-     * property: hidden
-     * variable: SSID_HIDDEN(+)
-     * description: Whether the network hides the SSID.
-     * ---end---
-     */
     _nm_setting_property_define_direct_boolean(properties_override,
                                                obj_properties,
                                                NM_SETTING_WIRELESS_HIDDEN,
@@ -2112,14 +2006,6 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      *
      * Since: 1.2
      **/
-    /* ---ifcfg-rh---
-     * property: powersave
-     * variable: POWERSAVE(+)
-     * values: default, ignore, enable, disable
-     * description: Enables or disables Wi-Fi power saving.
-     * example: POWERSAVE=enable
-     * ---end---
-     */
     _nm_setting_property_define_direct_uint32(properties_override,
                                               obj_properties,
                                               NM_SETTING_WIRELESS_POWERSAVE,
@@ -2143,14 +2029,6 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * Since: 1.2
      * Deprecated: 1.4: Use the #NMSettingWireless:cloned-mac-address property instead.
      **/
-    /* ---ifcfg-rh---
-     * property: mac-address-randomization
-     * variable: MAC_ADDRESS_RANDOMIZATION(+)
-     * values: default, never, always
-     * description: Enables or disables Wi-Fi MAC address randomization.
-     * example: MAC_ADDRESS_RANDOMIZATION=always
-     * ---end---
-     */
     _nm_setting_property_define_direct_uint32(properties_override,
                                               obj_properties,
                                               NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION,
@@ -2229,14 +2107,6 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      *
      * Since: 1.28
      **/
-    /* ---ifcfg-rh---
-     * property: ap-isolation
-     * variable: AP_ISOLATION(+)
-     * values: "yes", "no"
-     * default: missing variable means global default
-     * description: Whether AP isolation is enabled
-     * ---end---
-     */
     _nm_setting_property_define_direct_ternary_enum(properties_override,
                                                     obj_properties,
                                                     NM_SETTING_WIRELESS_AP_ISOLATION,

@@ -281,11 +281,9 @@ UNAVAILABLE. The unmanaged flags are currently:
       (e.g. via a D-Bus command).
 
   - USER_SETTINGS: when unmanaged by user decision via the
-    settings plugin (for example `keyfile.unmanaged-devices` or
-    ifcfg-rh's `NM_CONTROLLED=no`). Although this is
-    user-configuration it cannot be overruled and is
-    authoritative. That is because users may depend on dropping a
-    ifcfg-rh file to ensure the device is unmanaged.
+    settings plugin (for example `keyfile.unmanaged-devices`).
+    Although this is user-configuration it cannot be overruled and is
+    authoritative.
 
   - USER_CONF: when unmanaged by user decision via the
     NetworkManager.conf ("unmanaged" in the [device]

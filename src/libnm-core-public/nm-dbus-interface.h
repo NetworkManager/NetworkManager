@@ -647,7 +647,7 @@ typedef enum {
  * @NM_DEVICE_STATE_REASON_UNMANAGED_USER_EXPLICIT: The device is unmanaged by explicit user
  *   decision (e.g. 'nmcli device set $DEV managed no'). Since: 1.48
  * @NM_DEVICE_STATE_REASON_UNMANAGED_USER_SETTINGS: The device is unmanaged by user decision
- *   via settings plugin ('unmanaged-devices' for keyfile or 'NM_CONTROLLED=no' for ifcfg-rh).
+ *   via settings plugin ('unmanaged-devices' for keyfile).
  *   Since: 1.48
  * @NM_DEVICE_STATE_REASON_UNMANAGED_USER_UDEV: The device is unmanaged via udev rule. Since: 1.48
  * @NM_DEVICE_STATE_REASON_NETWORKING_OFF: NetworkManager was disabled (networking off). Since: 1.56

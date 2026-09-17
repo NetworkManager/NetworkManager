@@ -1,5 +1,0 @@
-FOO=
-#NM: FOO='
-BAR=
-#NM: BAR="
-#NM: '

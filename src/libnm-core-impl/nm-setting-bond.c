@@ -1343,13 +1343,6 @@ nm_setting_bond_class_init(NMSettingBondClass *klass)
      * must be strings. Option names must contain only alphanumeric characters
      * (ie, [a-zA-Z0-9]).
      **/
-    /* ---ifcfg-rh---
-     * property: options
-     * variable: BONDING_OPTS
-     * description: Bonding options.
-     * example: BONDING_OPTS="miimon=100 mode=broadcast"
-     * ---end---
-     */
     obj_properties[PROP_OPTIONS] = g_param_spec_boxed(
         NM_SETTING_BOND_OPTIONS,
         "",

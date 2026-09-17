@@ -46,8 +46,7 @@ connection profiles, such as:
 
 This object handles connection profiles; each profile is represented
 as a *SettingsConnection* object and is persisted to disk using one of
-the existing *SettingsPlugin*s such as keyfile, ifcfg-rh or
-ifupdown.
+the existing *SettingsPlugin*s such as keyfile or ifupdown.
 
 It also controls *SecretAgent*s; an agent is an external service that
 registers to NetworkManager as capable of handling requests for new

@@ -173,14 +173,6 @@ nm_setting_hostname_class_init(NMSettingHostnameClass *klass)
      *
      * Since: 1.30
      **/
-    /* ---ifcfg-rh---
-     * property: priority
-     * variable: HOSTNAME_PRIORITY(+)
-     * default: missing variable means global value or 100
-     * description: hostname priority
-     * example: HOSTNAME_PRIORITY=50
-     * ---end---
-     */
     _nm_setting_property_define_direct_int32(properties_override,
                                              obj_properties,
                                              NM_SETTING_HOSTNAME_PRIORITY,
@@ -204,14 +196,6 @@ nm_setting_hostname_class_init(NMSettingHostnameClass *klass)
      *
      * Since: 1.30
      **/
-    /* ---ifcfg-rh---
-     * property: from-dhcp
-     * variable: HOSTNAME_FROM_DHCP(+)
-     * default: missing variable means global default or 1
-     * description: whether the system hostname can be determined from DHCP
-     * example: HOSTNAME_FROM_DHCP=0,1
-     * ---end---
-     */
     _nm_setting_property_define_direct_ternary_enum(properties_override,
                                                     obj_properties,
                                                     NM_SETTING_HOSTNAME_FROM_DHCP,
@@ -232,15 +216,6 @@ nm_setting_hostname_class_init(NMSettingHostnameClass *klass)
      *
      * Since: 1.30
      **/
-    /* ---ifcfg-rh---
-     * property: from-dns-lookup
-     * variable: HOSTNAME_FROM_DNS_LOOKUP(+)
-     * default: missing variable means global default or 1
-     * description: whether the system hostname can be determined from reverse
-     *    DNS lookup
-     * example: HOSTNAME_FROM_DNS_LOOKUP=0,1
-     * ---end---
-     */
     _nm_setting_property_define_direct_ternary_enum(properties_override,
                                                     obj_properties,
                                                     NM_SETTING_HOSTNAME_FROM_DNS_LOOKUP,
@@ -266,15 +241,6 @@ nm_setting_hostname_class_init(NMSettingHostnameClass *klass)
      *
      * Since: 1.30
      **/
-    /* ---ifcfg-rh---
-     * property: only-best-device
-     * variable: HOSTNAME_ONLY_FROM_DEFAULT(+)
-     * default: missing variable means global default or 1
-     * description: whether the hostname can be determined only from
-     *    devices with the default route
-     * example: HOSTNAME_ONLY_FROM_DEFAULT=0,1
-     * ---end---
-     */
     _nm_setting_property_define_direct_ternary_enum(properties_override,
                                                     obj_properties,
                                                     NM_SETTING_HOSTNAME_ONLY_FROM_DEFAULT,

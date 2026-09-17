@@ -70,7 +70,6 @@
     <xi:include href="../../man/nm-settings-dbus.xml"><xi:fallback /></xi:include>
     <xi:include href="../../man/nm-settings-nmcli.xml"><xi:fallback /></xi:include>
     <xi:include href="../../man/nm-settings-keyfile.xml"><xi:fallback /></xi:include>
-    <xi:include href="../../man/nm-settings-ifcfg-rh.xml"><xi:fallback /></xi:include>
     <xi:include href="../../man/nm-online.xml"/>
     <xi:include href="../../man/nm-initrd-generator.xml"><xi:fallback /></xi:include>
     <xi:include href="../../man/nm-cloud-setup.xml"><xi:fallback /></xi:include>

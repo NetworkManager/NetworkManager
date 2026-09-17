@@ -464,14 +464,6 @@ nm_setting_bridge_port_class_init(NMSettingBridgePortClass *klass)
      *
      * The Spanning Tree Protocol (STP) priority of this bridge port.
      **/
-    /* ---ifcfg-rh---
-     * property: priority
-     * variable: BRIDGING_OPTS: priority=
-     * values: 0 - 63
-     * default: 32
-     * description: STP priority.
-     * ---end---
-     */
     _nm_setting_property_define_direct_uint32(properties_override,
                                               obj_properties,
                                               NM_SETTING_BRIDGE_PORT_PRIORITY,
@@ -489,14 +481,6 @@ nm_setting_bridge_port_class_init(NMSettingBridgePortClass *klass)
      * The Spanning Tree Protocol (STP) port cost for destinations via this
      * port.
      **/
-    /* ---ifcfg-rh---
-     * property: path-cost
-     * variable: BRIDGING_OPTS: path_cost=
-     * values: 1 - 65535
-     * default: 100
-     * description: STP cost.
-     * ---end---
-     */
     _nm_setting_property_define_direct_uint32(properties_override,
                                               obj_properties,
                                               NM_SETTING_BRIDGE_PORT_PATH_COST,
@@ -514,13 +498,6 @@ nm_setting_bridge_port_class_init(NMSettingBridgePortClass *klass)
      * Enables or disables "hairpin mode" for the port, which allows frames to
      * be sent back out through the port the frame was received on.
      **/
-    /* ---ifcfg-rh---
-     * property: hairpin-mode
-     * variable: BRIDGING_OPTS: hairpin_mode=
-     * default: yes
-     * description: Hairpin mode of the bridge port.
-     * ---end---
-     */
     _nm_setting_property_define_direct_boolean(properties_override,
                                                obj_properties,
                                                NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE,
@@ -548,13 +525,6 @@ nm_setting_bridge_port_class_init(NMSettingBridgePortClass *klass)
      *
      * Since: 1.18
      **/
-    /* ---ifcfg-rh---
-     * property: vlans
-     * variable: BRIDGE_PORT_VLANS
-     * description: List of VLANs on the bridge port
-     * example: BRIDGE_PORT_VLANS="1 pvid untagged,20,300-400 untagged"
-     * ---end---
-     */
     obj_properties[PROP_VLANS] = g_param_spec_boxed(NM_SETTING_BRIDGE_PORT_VLANS,
                                                     "",
                                                     "",

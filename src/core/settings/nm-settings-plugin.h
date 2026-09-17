@@ -189,12 +189,4 @@ int nm_settings_plugin_cmp_by_priority(const NMSettingsPlugin *a,
                                        const NMSettingsPlugin *b,
                                        const GSList           *plugin_list);
 
-/*****************************************************************************/
-
-/* forward declare this function from NMSettings. It's used by the ifcfg-rh plugin,
- * but that shouldn't include all "nm-settings.h" header. */
-NMSettings *nm_settings_get(void);
-
-const char *nm_settings_get_dbus_path_for_uuid(NMSettings *self, const char *uuid);
-
 #endif /* __NM_SETTINGS_PLUGIN_H__ */

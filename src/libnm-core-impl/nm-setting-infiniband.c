@@ -351,17 +351,6 @@ nm_setting_infiniband_class_init(NMSettingInfinibandClass *klass)
      * example: mac-address= 80:00:00:6d:fe:80:00:00:00:00:00:00:00:02:55:00:70:33:cf:01
      * ---end---
      */
-    /* ---ifcfg-rh---
-     * property: mac-address
-     * variable: HWADDR
-     * description: IBoIP 20-byte hardware address of the device (in traditional
-     *    hex-digits-and-colons notation).
-     *    Note that for initscripts this is the current MAC address of the device as found
-     *    during ifup. For NetworkManager this is the permanent MAC address. Or in case no
-     *    permanent MAC address exists, the MAC address initially configured on the device.
-     * example: HWADDR=01:02:03:04:05:06:07:08:09:0A:01:02:03:04:05:06:07:08:09:11
-     * ---end---
-     */
     _nm_setting_property_define_direct_mac_address(properties_override,
                                                    obj_properties,
                                                    NM_SETTING_INFINIBAND_MAC_ADDRESS,
@@ -378,12 +367,6 @@ nm_setting_infiniband_class_init(NMSettingInfinibandClass *klass)
      * If non-zero, only transmit packets of the specified size or smaller,
      * breaking larger packets up into multiple frames.
      **/
-    /* ---ifcfg-rh---
-     * property: mtu
-     * variable: MTU
-     * description: MTU of the interface.
-     * ---end---
-     */
     _nm_setting_property_define_direct_uint32(properties_override,
                                               obj_properties,
                                               NM_SETTING_INFINIBAND_MTU,
@@ -401,14 +384,6 @@ nm_setting_infiniband_class_init(NMSettingInfinibandClass *klass)
      * The IP-over-InfiniBand transport mode. Either "datagram" or
      * "connected".
      **/
-    /* ---ifcfg-rh---
-     * property: transport-mode
-     * variable: CONNECTED_MODE
-     * default: CONNECTED_MODE=no
-     * description: CONNECTED_MODE=yes for "connected" mode, CONNECTED_MODE=no for
-     *   "datagram" mode
-     * ---end---
-     */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
                                               NM_SETTING_INFINIBAND_TRANSPORT_MODE,
@@ -433,22 +408,6 @@ nm_setting_infiniband_class_init(NMSettingInfinibandClass *klass)
      * although the interface name does not reflect that. Usually the user
      * would want to configure a full membership p-key with 0x8000 flag set.
      **/
-    /* ---ifcfg-rh---
-     * property: p-key
-     * variable: PKEY_ID or PKEY_ID_NM(*) (requires PKEY=yes)
-     * default: PKEY=no
-     * description: InfiniBand P_Key. The value can be a hex number prefixed with "0x"
-     *   or a decimal number.
-     *   When PKEY_ID is specified, PHYSDEV must be specified.
-     *   Note that ifcfg-rh format will always automatically set the full membership
-     *   flag 0x8000 for the PKEY_ID variable. To express IDs without the full membership
-     *   flag, use PKEY_ID_NM. Note that kernel internally treats the interface as
-     *   having the full membership flag set, this mainly affects the interface name.
-     *   For the ifcfg file to be supported by initscripts' ifup-ib, the DEVICE=
-     *   must always be set. NetworkManager does not require that.
-     * example: PKEY=yes PKEY_ID=2 PHYSDEV=mlx4_ib0 DEVICE=mlx4_ib0.8002
-     * ---end---
-     */
     _nm_setting_property_define_direct_int32(properties_override,
                                              obj_properties,
                                              NM_SETTING_INFINIBAND_P_KEY,
@@ -468,14 +427,6 @@ nm_setting_infiniband_class_init(NMSettingInfinibandClass *klass)
      * specify the base device by setting either this property or
      * #NMSettingInfiniband:mac-address.
      **/
-    /* ---ifcfg-rh---
-     * property: parent
-     * variable: PHYSDEV (PKEY=yes)
-     * default: PKEY=no
-     * description: InfiniBand parent device.
-     * example: PHYSDEV=ib0
-     * ---end---
-     */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
                                               NM_SETTING_INFINIBAND_PARENT,
