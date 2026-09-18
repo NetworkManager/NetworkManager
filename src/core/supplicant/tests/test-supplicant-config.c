@@ -1075,6 +1075,46 @@ test_8021x_ca_path_private_connection(void)
 
 /*****************************************************************************/
 
+static void
+check_8021x_peaplabel_config(const char *peaplabel, const char *expected_phase1)
+{
+    gs_unref_object NMSupplicantConfig *config  = NULL;
+    gs_unref_object NMSetting8021x     *s_8021x = NULL;
+    gs_unref_variant GVariant          *dict    = NULL;
+    gs_free_error GError               *error   = NULL;
+    gs_free char                       *uuid    = nm_utils_uuid_generate();
+
+    s_8021x = generate_8021x_peap_setting("/some/ca-dir", NULL);
+    if (peaplabel)
+        g_object_set(s_8021x, NM_SETTING_802_1X_PHASE1_PEAPLABEL, peaplabel, NULL);
+
+    config = nm_supplicant_config_new(NM_SUPPL_CAP_MASK_NONE, NULL);
+    g_assert(
+        nm_supplicant_config_add_setting_8021x(config, s_8021x, uuid, 1500, FALSE, NULL, &error));
+    g_assert_no_error(error);
+
+    dict = nm_supplicant_config_to_variant(config);
+    if (expected_phase1)
+        g_assert(
+            validate_opt("peaplabel", dict, "phase1", NM_SUPPL_OPT_TYPE_KEYWORD, expected_phase1));
+    else
+        g_assert(!validate_opt("peaplabel", dict, "phase1", NM_SUPPL_OPT_TYPE_KEYWORD, NULL));
+}
+
+static void
+test_8021x_peaplabel(void)
+{
+    gpointer logging = nmtst_logging_disable(TRUE);
+
+    check_8021x_peaplabel_config(NULL, NULL);
+    check_8021x_peaplabel_config("0", "peaplabel=0");
+    check_8021x_peaplabel_config("1", "peaplabel=1");
+
+    nmtst_logging_reenable(logging);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -1094,6 +1134,7 @@ main(int argc, char **argv)
     g_test_add_func("/supplicant-config/wifi-bgscan", test_wifi_bgscan);
     g_test_add_func("/supplicant-config/8021x-ca-path-private-connection",
                     test_8021x_ca_path_private_connection);
+    g_test_add_func("/supplicant-config/8021x-peaplabel", test_8021x_peaplabel);
 
     return g_test_run();
 }
