@@ -13,8 +13,8 @@ msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: https://gitlab.freedesktop.org/NetworkManager/"
 "NetworkManager/issues\n"
-"POT-Creation-Date: 2026-07-22 19:49+0000\n"
-"PO-Revision-Date: 2026-07-23 12:58+0200\n"
+"POT-Creation-Date: 2026-09-16 14:33+0000\n"
+"PO-Revision-Date: 2026-09-20 11:28+0200\n"
 "Last-Translator: Martin Srebotnjak <miles@filmsi.net>\n"
 "Language-Team: Slovenian GNOME Translation Team <gnome-si@googlegroups.com>\n"
 "Language: sl\n"
@@ -205,7 +205,7 @@ msgid "%s %u"
 msgstr "%s %u"
 
 #: src/core/devices/adsl/nm-device-adsl.c:118
-#: src/libnmc-setting/nm-meta-setting-desc.c:9060
+#: src/libnmc-setting/nm-meta-setting-desc.c:9134
 msgid "ADSL connection"
 msgstr "Povezava ADSL"
 
@@ -296,7 +296,7 @@ msgid "Wired connection %d"
 msgstr "Žična povezava %d"
 
 #: src/core/devices/nm-device-ethernet.c:1660
-#: src/libnmc-setting/nm-meta-setting-desc.c:9105
+#: src/libnmc-setting/nm-meta-setting-desc.c:9179
 msgid "Veth connection"
 msgstr "Povezava Veth"
 
@@ -313,7 +313,7 @@ msgid "Geneve connection"
 msgstr "Povezava Geneve"
 
 #: src/core/devices/nm-device-infiniband.c:160
-#: src/libnmc-setting/nm-meta-setting-desc.c:9076
+#: src/libnmc-setting/nm-meta-setting-desc.c:9150
 msgid "InfiniBand connection"
 msgstr "Povezava InfiniBand"
 
@@ -334,17 +334,17 @@ msgid "TUN connection"
 msgstr "Povezava TUN"
 
 #: src/core/devices/nm-device-vlan.c:370
-#: src/libnmc-setting/nm-meta-setting-desc.c:9106
+#: src/libnmc-setting/nm-meta-setting-desc.c:9180
 msgid "VLAN connection"
 msgstr "Povezava VLAN"
 
 #: src/core/devices/nm-device-vrf.c:185
-#: src/libnmc-setting/nm-meta-setting-desc.c:9108
+#: src/libnmc-setting/nm-meta-setting-desc.c:9182
 msgid "VRF connection"
 msgstr "Povezava VRF"
 
 #: src/core/devices/nm-device-vxlan.c:385
-#: src/libnmc-setting/nm-meta-setting-desc.c:9109
+#: src/libnmc-setting/nm-meta-setting-desc.c:9183
 msgid "VXLAN connection"
 msgstr "Povezava VXLAN"
 
@@ -650,32 +650,9 @@ msgstr "Možnosti programa NetworkManager"
 msgid "Show NetworkManager options"
 msgstr "Pokaži možnosti programa NetworkManager"
 
-#: src/core/nm-manager.c:6971 src/libnmc-setting/nm-meta-setting-desc.c:9107
+#: src/core/nm-manager.c:6971 src/libnmc-setting/nm-meta-setting-desc.c:9181
 msgid "VPN connection"
 msgstr "Povezava VPN"
-
-#: src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5660
-#: src/libnm-client-impl/nm-device.c:1847
-#: src/libnm-core-impl/nm-connection.c:3344 src/nmtui/nm-editor-utils.c:204
-msgid "Bond"
-msgstr "Vez"
-
-#: src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5731
-#: src/libnm-client-impl/nm-device.c:1849
-#: src/libnm-core-impl/nm-connection.c:3346 src/nmtui/nm-editor-utils.c:222
-msgid "Team"
-msgstr "Skupina"
-
-#: src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:6068
-#: src/libnm-client-impl/nm-device.c:1851
-#: src/libnm-core-impl/nm-connection.c:3348 src/nmtui/nm-editor-utils.c:213
-msgid "Bridge"
-msgstr "Most"
-
-#: src/core/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh.c:9111
-#: src/libnm-core-impl/nm-team-utils.c:2395
-msgid "invalid json"
-msgstr "Neveljaven JSON"
 
 #: src/libnm-client-impl/nm-client.c:3819
 #, c-format
@@ -957,12 +934,27 @@ msgid "Mobile Broadband"
 msgstr "Mobilni širokopasovni dostop"
 
 #: src/libnm-client-impl/nm-device.c:1845
-#: src/libnm-core-impl/nm-connection.c:3352 src/nmtui/nm-editor-utils.c:177
+#: src/libnm-core-impl/nm-connection.c:3347 src/nmtui/nm-editor-utils.c:177
 msgid "InfiniBand"
 msgstr "InfiniBand"
 
+#: src/libnm-client-impl/nm-device.c:1847
+#: src/libnm-core-impl/nm-connection.c:3339 src/nmtui/nm-editor-utils.c:204
+msgid "Bond"
+msgstr "Vez"
+
+#: src/libnm-client-impl/nm-device.c:1849
+#: src/libnm-core-impl/nm-connection.c:3341 src/nmtui/nm-editor-utils.c:222
+msgid "Team"
+msgstr "Skupina"
+
+#: src/libnm-client-impl/nm-device.c:1851
+#: src/libnm-core-impl/nm-connection.c:3343 src/nmtui/nm-editor-utils.c:213
+msgid "Bridge"
+msgstr "Most"
+
 #: src/libnm-client-impl/nm-device.c:1853
-#: src/libnm-core-impl/nm-connection.c:3350 src/nmtui/nm-editor-utils.c:231
+#: src/libnm-core-impl/nm-connection.c:3345 src/nmtui/nm-editor-utils.c:231
 #: src/nmtui/nmt-page-vlan.c:57
 msgid "VLAN"
 msgstr "VLAN"
@@ -992,7 +984,7 @@ msgid "Tun"
 msgstr "Tun"
 
 #: src/libnm-client-impl/nm-device.c:1867
-#: src/libnm-core-impl/nm-connection.c:3362 src/nmtui/nm-editor-utils.c:152
+#: src/libnm-core-impl/nm-connection.c:3357 src/nmtui/nm-editor-utils.c:152
 msgid "Veth"
 msgstr "Veth"
 
@@ -1018,7 +1010,7 @@ msgid "6LoWPAN"
 msgstr "6LoWPAN"
 
 #: src/libnm-client-impl/nm-device.c:1879
-#: src/libnm-core-impl/nm-connection.c:3358 src/nmtui/nm-editor-utils.c:279
+#: src/libnm-core-impl/nm-connection.c:3353 src/nmtui/nm-editor-utils.c:279
 #: src/nmtui/nmt-page-wireguard.c:57
 msgid "WireGuard"
 msgstr "WireGuard"
@@ -1032,7 +1024,7 @@ msgid "VRF"
 msgstr "VRF"
 
 #: src/libnm-client-impl/nm-device.c:1885
-#: src/libnm-core-impl/nm-connection.c:3364 src/nmtui/nm-editor-utils.c:160
+#: src/libnm-core-impl/nm-connection.c:3359 src/nmtui/nm-editor-utils.c:160
 msgid "Loopback"
 msgstr "Povratna zanka"
 
@@ -1047,7 +1039,7 @@ msgstr "IPVLAN"
 #. TRANSLATORS: Unknown reason for a device state change (NMDeviceStateReason)
 #. TRANSLATORS: Unknown reason for a connection state change (NMActiveConnectionStateReason)
 #: src/libnm-client-impl/nm-device.c:1896 src/libnmc-base/nm-client-utils.c:352
-#: src/libnmc-base/nm-client-utils.c:505 src/nmcli/utils.c:1862
+#: src/libnmc-base/nm-client-utils.c:504 src/nmcli/utils.c:1862
 msgid "Unknown"
 msgstr "Neznano"
 
@@ -1322,36 +1314,36 @@ msgstr "ima UUID, ki zahteva normalizacijo"
 msgid "has duplicate UUIDs"
 msgstr "ima podvojene UUID-je"
 
-#: src/libnm-core-impl/nm-connection.c:1936
+#: src/libnm-core-impl/nm-connection.c:1931
 msgid "setting not found"
 msgstr "nastavitve ni mogoče najti"
 
-#: src/libnm-core-impl/nm-connection.c:1990
-#: src/libnm-core-impl/nm-connection.c:2015
-#: src/libnm-core-impl/nm-connection.c:2040
+#: src/libnm-core-impl/nm-connection.c:1985
+#: src/libnm-core-impl/nm-connection.c:2010
+#: src/libnm-core-impl/nm-connection.c:2035
 msgid "setting is required for non-port connections"
 msgstr "nastavitev je potrebna za povezav mimo vrat"
 
-#: src/libnm-core-impl/nm-connection.c:2003
-#: src/libnm-core-impl/nm-connection.c:2028
-#: src/libnm-core-impl/nm-connection.c:2053
+#: src/libnm-core-impl/nm-connection.c:1998
+#: src/libnm-core-impl/nm-connection.c:2023
+#: src/libnm-core-impl/nm-connection.c:2048
 msgid "setting not allowed in port connection"
 msgstr "Nastavitev ni dovoljena v povezavi vrat"
 
-#: src/libnm-core-impl/nm-connection.c:2166
+#: src/libnm-core-impl/nm-connection.c:2161
 msgid "Unexpected failure to normalize the connection"
 msgstr "Nepričakovana napaka pri normalizaciji povezave"
 
-#: src/libnm-core-impl/nm-connection.c:2227
+#: src/libnm-core-impl/nm-connection.c:2222
 msgid "Unexpected failure to verify the connection"
 msgstr "Nepričakovana napaka pri preverjanju povezave"
 
-#: src/libnm-core-impl/nm-connection.c:2264
+#: src/libnm-core-impl/nm-connection.c:2259
 #, c-format
 msgid "unexpected uuid %s instead of %s"
 msgstr "nepričakovan uuid %s namesto %s"
 
-#: src/libnm-core-impl/nm-connection.c:3193
+#: src/libnm-core-impl/nm-connection.c:3188
 #: src/libnm-core-impl/nm-setting-8021x.c:2641
 #: src/libnm-core-impl/nm-setting-8021x.c:2678
 #: src/libnm-core-impl/nm-setting-8021x.c:2696
@@ -1370,18 +1362,18 @@ msgstr "nepričakovan uuid %s namesto %s"
 #: src/libnm-core-impl/nm-setting-ovs-patch.c:75
 #: src/libnm-core-impl/nm-setting-pppoe.c:144
 #: src/libnm-core-impl/nm-setting-vpn.c:545
-#: src/libnm-core-impl/nm-setting-wifi-p2p.c:119
+#: src/libnm-core-impl/nm-setting-wifi-p2p.c:158
 #: src/libnm-core-impl/nm-setting-wimax.c:106
 #: src/libnm-core-impl/nm-setting-wireless-security.c:912
-#: src/libnm-core-impl/nm-setting-wireless.c:1100
+#: src/libnm-core-impl/nm-setting-wireless.c:1101
 msgid "property is missing"
 msgstr "manjka lastnost"
 
-#: src/libnm-core-impl/nm-connection.c:3356
+#: src/libnm-core-impl/nm-connection.c:3351
 msgid "IP Tunnel"
 msgstr "IP-tunel"
 
-#: src/libnm-core-impl/nm-connection.c:3360
+#: src/libnm-core-impl/nm-connection.c:3355
 msgid "TUN/TAP"
 msgstr "TUN/TAP"
 
@@ -1774,7 +1766,7 @@ msgstr "je mogoče omogočiti samo na žičnih omrežnih povezavah"
 #: src/libnm-core-impl/nm-setting-ip6-config.c:343
 #: src/libnm-core-impl/nm-setting-ip6-config.c:359
 #: src/libnm-core-impl/nm-setting-olpc-mesh.c:135
-#: src/libnm-core-impl/nm-setting-wifi-p2p.c:131
+#: src/libnm-core-impl/nm-setting-wifi-p2p.c:170
 #: src/libnm-core-impl/nm-setting-wimax.c:119
 #: src/libnm-core-impl/nm-setting-wired.c:1028
 #: src/libnm-core-impl/nm-setting-wired.c:1041
@@ -1784,13 +1776,13 @@ msgstr "je mogoče omogočiti samo na žičnih omrežnih povezavah"
 #: src/libnm-core-impl/nm-setting-wireless-security.c:1045
 #: src/libnm-core-impl/nm-setting-wireless-security.c:1058
 #: src/libnm-core-impl/nm-setting-wireless-security.c:1089
-#: src/libnm-core-impl/nm-setting-wireless-security.c:1156
-#: src/libnm-core-impl/nm-setting-wireless-security.c:1205
+#: src/libnm-core-impl/nm-setting-wireless-security.c:1157
+#: src/libnm-core-impl/nm-setting-wireless-security.c:1206
 #: src/libnm-core-impl/nm-setting-wireless.c:1196
 #: src/libnm-core-impl/nm-setting-wireless.c:1208
 #: src/libnm-core-impl/nm-setting-wireless.c:1221
 #: src/libnm-core-impl/nm-setting-wpan.c:164
-#: src/libnm-core-impl/nm-utils.c:4639
+#: src/libnm-core-impl/nm-utils.c:4644
 msgid "property is invalid"
 msgstr "Lastnina je neveljavna"
 
@@ -2840,12 +2832,12 @@ msgid "is empty"
 msgstr "je prazno"
 
 #: src/libnm-core-impl/nm-setting-olpc-mesh.c:110
-#: src/libnm-core-impl/nm-setting-wireless.c:1113
+#: src/libnm-core-impl/nm-setting-wireless.c:1114
 msgid "SSID length is out of range <1-32> bytes"
 msgstr "Dolžina SSID-ja je izven obsega <1-32> bajtov"
 
 #: src/libnm-core-impl/nm-setting-olpc-mesh.c:122
-#: src/libnm-core-impl/nm-setting-wireless.c:1166
+#: src/libnm-core-impl/nm-setting-wireless.c:1167
 #, c-format
 msgid "'%d' is not a valid channel"
 msgstr "»%d« ni veljaven kanal"
@@ -3347,17 +3339,17 @@ msgstr ""
 "pmf je lahko »default« ali »required« samo pri upravljanju ključev »owe«, "
 "»sae« ali »wpa-eap-suite-b-192«"
 
-#: src/libnm-core-impl/nm-setting-wireless.c:1125
+#: src/libnm-core-impl/nm-setting-wireless.c:1126
 #, c-format
 msgid "'%s' is not a valid Wi-Fi mode"
 msgstr "»%s« ni veljaven način Wi-Fi"
 
-#: src/libnm-core-impl/nm-setting-wireless.c:1138
+#: src/libnm-core-impl/nm-setting-wireless.c:1139
 #, c-format
 msgid "'%s' is not a valid band"
 msgstr "»%s« ni veljaven pas"
 
-#: src/libnm-core-impl/nm-setting-wireless.c:1151
+#: src/libnm-core-impl/nm-setting-wireless.c:1152
 #, c-format
 msgid "'%s' requires setting '%s' property"
 msgstr "»%s« zahteva nastavitev lastnosti »%s«"
@@ -3516,6 +3508,10 @@ msgstr "prilagoditev ekipe presega omejitev velikosti"
 #: src/libnm-core-impl/nm-team-utils.c:2384
 msgid "team config is not valid UTF-8"
 msgstr "prilagoditev ekipe ni veljaven UTF-8"
+
+#: src/libnm-core-impl/nm-team-utils.c:2395
+msgid "invalid json"
+msgstr "Neveljaven JSON"
 
 #: src/libnm-core-impl/nm-team-utils.c:2559
 #, c-format
@@ -3725,127 +3721,127 @@ msgstr "skrivne zastavice ne smejo biti »not-required«"
 msgid "unsupported secret flags"
 msgstr "Nepodprte skrivne zastavice"
 
-#: src/libnm-core-impl/nm-utils.c:4649
+#: src/libnm-core-impl/nm-utils.c:4654
 msgid "can't be simultaneously disabled and enabled"
 msgstr "ne more biti hkrati onemogočeno in omogočeno"
 
-#: src/libnm-core-impl/nm-utils.c:4657
+#: src/libnm-core-impl/nm-utils.c:4662
 msgid "WPS is required"
 msgstr "WPS je obvezen"
 
-#: src/libnm-core-impl/nm-utils.c:4725
+#: src/libnm-core-impl/nm-utils.c:4730
 #, c-format
 msgid "not a valid ethernet MAC address for mask at position %lld"
 msgstr "ni veljaven omrežni MAC naslov za masko na položaju %lld"
 
-#: src/libnm-core-impl/nm-utils.c:4744
+#: src/libnm-core-impl/nm-utils.c:4749
 #, c-format
 msgid "not a valid ethernet MAC address #%u at position %lld"
 msgstr "ni veljaven omrežni naslov MAC #%u na položaju %lld"
 
-#: src/libnm-core-impl/nm-utils.c:5401
+#: src/libnm-core-impl/nm-utils.c:5406
 msgid "not valid utf-8"
 msgstr "ni veljaven UTF-8"
 
-#: src/libnm-core-impl/nm-utils.c:5422 src/libnm-core-impl/nm-utils.c:5475
+#: src/libnm-core-impl/nm-utils.c:5427 src/libnm-core-impl/nm-utils.c:5480
 msgid "is not a JSON object"
 msgstr "ni predmet JSON"
 
-#: src/libnm-core-impl/nm-utils.c:5451
+#: src/libnm-core-impl/nm-utils.c:5456
 msgid "value is NULL"
 msgstr "vrednost je NULL"
 
-#: src/libnm-core-impl/nm-utils.c:5451
+#: src/libnm-core-impl/nm-utils.c:5456
 msgid "value is empty"
 msgstr "vrednost je prazna"
 
-#: src/libnm-core-impl/nm-utils.c:5463
+#: src/libnm-core-impl/nm-utils.c:5468
 #, c-format
 msgid "invalid JSON at position %d (%s)"
 msgstr "neveljaven JSON na položaju %d (%s)"
 
-#: src/libnm-core-impl/nm-utils.c:5588 src/libnm-core-impl/nm-utils.c:5608
+#: src/libnm-core-impl/nm-utils.c:5593 src/libnm-core-impl/nm-utils.c:5613
 msgid "unterminated escape sequence"
 msgstr "Nezaključeno ubežno zaporedje"
 
-#: src/libnm-core-impl/nm-utils.c:5634
+#: src/libnm-core-impl/nm-utils.c:5639
 #, c-format
 msgid "unknown attribute '%s'"
 msgstr "neznan atribut »%s«"
 
-#: src/libnm-core-impl/nm-utils.c:5652
+#: src/libnm-core-impl/nm-utils.c:5657
 #, c-format
 msgid "missing key-value separator '%c' after '%s'"
 msgstr "manjkajoče ločilo med ključem in vrednostjo »%c« po »%s«"
 
-#: src/libnm-core-impl/nm-utils.c:5672
+#: src/libnm-core-impl/nm-utils.c:5677
 #, c-format
 msgid "invalid uint32 value '%s' for attribute '%s'"
 msgstr "neveljavna vrednost uint32 »%s« za atribut »%s«"
 
-#: src/libnm-core-impl/nm-utils.c:5686
+#: src/libnm-core-impl/nm-utils.c:5691
 #, c-format
 msgid "invalid int32 value '%s' for attribute '%s'"
 msgstr "neveljavna vrednost int32 »%s« za atribut »%s«"
 
-#: src/libnm-core-impl/nm-utils.c:5699
+#: src/libnm-core-impl/nm-utils.c:5704
 #, c-format
 msgid "invalid uint64 value '%s' for attribute '%s'"
 msgstr "neveljavna vrednost uint64 »%s« za atribut »%s«"
 
-#: src/libnm-core-impl/nm-utils.c:5712
+#: src/libnm-core-impl/nm-utils.c:5717
 #, c-format
 msgid "invalid uint8 value '%s' for attribute '%s'"
 msgstr "neveljavna vrednost uint8 »%s« za atribut »%s«"
 
-#: src/libnm-core-impl/nm-utils.c:5726
+#: src/libnm-core-impl/nm-utils.c:5731
 #, c-format
 msgid "invalid boolean value '%s' for attribute '%s'"
 msgstr "neveljavna logična vrednost »%s« za atribut »%s«"
 
-#: src/libnm-core-impl/nm-utils.c:5740
+#: src/libnm-core-impl/nm-utils.c:5745
 #, c-format
 msgid "unsupported attribute '%s' of type '%s'"
 msgstr "nepodprt atribut »%s« vrste »%s«"
 
-#: src/libnm-core-impl/nm-utils.c:6041
+#: src/libnm-core-impl/nm-utils.c:6046
 #, c-format
 msgid "Bridge VLANs %d and %d are not sorted by ascending vid"
 msgstr "Mostni VLAN-i %d in %d niso razvrščeni po naraščajočem vid-u"
 
-#: src/libnm-core-impl/nm-utils.c:6065
+#: src/libnm-core-impl/nm-utils.c:6070
 #, c-format
 msgid "duplicate bridge VLAN vid %u"
 msgstr "podvojeni most VLAN vid %u"
 
-#: src/libnm-core-impl/nm-utils.c:6077
+#: src/libnm-core-impl/nm-utils.c:6082
 msgid "only one VLAN can be the PVID"
 msgstr "samo en VLAN je lahko PVID"
 
-#: src/libnm-core-impl/nm-utils.c:6220
+#: src/libnm-core-impl/nm-utils.c:6225
 #, c-format
 msgid "unknown flags 0x%x"
 msgstr "neznane zastavice 0x%x"
 
-#: src/libnm-core-impl/nm-utils.c:6232
+#: src/libnm-core-impl/nm-utils.c:6237
 msgid ""
 "'fqdn-no-update' and 'fqdn-serv-update' flags cannot be set at the same time"
 msgstr ""
 "Zastavic »fqdn-no-update« in »fqdn-serv-update« ni mogoče nastaviti hkrati."
 
-#: src/libnm-core-impl/nm-utils.c:6243
+#: src/libnm-core-impl/nm-utils.c:6248
 msgid "'fqdn-clear-flags' flag is incompatible with other FQDN flags"
 msgstr "Zastavica 'fqdn-clear-flags' ni združljiva z drugimi zastavicami FQDN"
 
-#: src/libnm-core-impl/nm-utils.c:6251
+#: src/libnm-core-impl/nm-utils.c:6256
 msgid "DHCPv6 does not support the E (encoded) FQDN flag"
 msgstr "DHCPv6 ne podpira zastavice FQDN E (kodirano)"
 
-#: src/libnm-core-impl/nm-utils.c:6440
+#: src/libnm-core-impl/nm-utils.c:6445
 msgid "This function needs to be called by root"
 msgstr "To funkcijo mora klicati korenski uporabnik (root)"
 
-#: src/libnm-core-impl/nm-utils.c:6515
+#: src/libnm-core-impl/nm-utils.c:6520
 msgid "Failure creating the temporary file"
 msgstr "Napaka pri ustvarjanju začasne datoteke"
 
@@ -4750,16 +4746,15 @@ msgstr ""
 "Naprava ni upravljana z izrecno odločitvijo uporabnika (npr. »nmcli device "
 "set $DEV managed no«)"
 
-#: src/libnmc-base/nm-client-utils.c:482
+#: src/libnmc-base/nm-client-utils.c:481
 msgid ""
 "The device is unmanaged by user decision via settings plugin (\"unmanaged-"
-"devices\" for keyfile or \"NM_CONTROLLED=no\" for ifcfg-rh)"
+"devices\" for keyfile)"
 msgstr ""
 "Naprava ni upravljana z odločitvijo uporabnika prek vstavka za nastavitve "
-"(»unmanaged-devices« za datoteko s ključem ali »NM_CONTROLLED=no« za ifcfg-"
-"rh)"
+"(»unmanaged-devices« za datoteko s ključem)"
 
-#: src/libnmc-base/nm-client-utils.c:485
+#: src/libnmc-base/nm-client-utils.c:484
 msgid ""
 "The device is unmanaged by user decision in NetworkManager.conf ('unmanaged' "
 "in a [device*] section)"
@@ -4767,15 +4762,15 @@ msgstr ""
 "Naprava ni upravljana po odločitvi uporabnika v NetworkManager.conf "
 "(»unmanaged« v razdelku [device*]"
 
-#: src/libnmc-base/nm-client-utils.c:489
+#: src/libnmc-base/nm-client-utils.c:488
 msgid "The device is unmanaged because the device type is unmanaged by default"
 msgstr "Naprava ni upravljana, ker je vrsta naprave privzeto neupravljana"
 
-#: src/libnmc-base/nm-client-utils.c:491
+#: src/libnmc-base/nm-client-utils.c:490
 msgid "The device is unmanaged via udev rule"
 msgstr "Naprava ni upravljana s pravilom udev"
 
-#: src/libnmc-base/nm-client-utils.c:493
+#: src/libnmc-base/nm-client-utils.c:492
 msgid ""
 "The device is unmanaged because it is an external device and is unconfigured "
 "(down or without addresses)"
@@ -4783,102 +4778,102 @@ msgstr ""
 "Naprava ni upravljana, ker je zunanja naprava in ni nastavljena (ne deluje "
 "ali je brez naslovov)"
 
-#: src/libnmc-base/nm-client-utils.c:495
+#: src/libnmc-base/nm-client-utils.c:494
 msgid "Networking was disabled"
 msgstr "Delovanje v omrežjih je onemogočeno"
 
-#: src/libnmc-base/nm-client-utils.c:497
+#: src/libnmc-base/nm-client-utils.c:496
 msgid "The modem didn't have an operator code"
 msgstr "Modem ni imel kode operaterja"
 
-#: src/libnmc-base/nm-client-utils.c:506
+#: src/libnmc-base/nm-client-utils.c:505
 msgid "Unknown reason"
 msgstr "Neznani razlog"
 
-#: src/libnmc-base/nm-client-utils.c:508
+#: src/libnmc-base/nm-client-utils.c:507
 msgid "The connection was disconnected"
 msgstr "Povezava je bila prekinjena"
 
-#: src/libnmc-base/nm-client-utils.c:510
+#: src/libnmc-base/nm-client-utils.c:509
 msgid "Disconnected by user"
 msgstr "Uporabnik je prekinil povezavo"
 
-#: src/libnmc-base/nm-client-utils.c:512
+#: src/libnmc-base/nm-client-utils.c:511
 msgid "The base network connection was interrupted"
 msgstr "Osnovna omrežna povezava je bila prekinjena"
 
-#: src/libnmc-base/nm-client-utils.c:514
+#: src/libnmc-base/nm-client-utils.c:513
 msgid "The VPN service stopped unexpectedly"
 msgstr "Storitev VPN se je nepričakovano ustavila"
 
-#: src/libnmc-base/nm-client-utils.c:516
+#: src/libnmc-base/nm-client-utils.c:515
 msgid "The VPN service returned invalid configuration"
 msgstr "Storitev VPN je vrnila neveljavno prilagoditev"
 
-#: src/libnmc-base/nm-client-utils.c:518
+#: src/libnmc-base/nm-client-utils.c:517
 msgid "The connection attempt timed out"
 msgstr "Časovna omejitev poskusa povezave je potekla"
 
-#: src/libnmc-base/nm-client-utils.c:520
+#: src/libnmc-base/nm-client-utils.c:519
 msgid "The VPN service did not start in time"
 msgstr "Storitev VPN se ni zagnala pravočasno"
 
-#: src/libnmc-base/nm-client-utils.c:522
+#: src/libnmc-base/nm-client-utils.c:521
 msgid "The VPN service failed to start"
 msgstr "Storitev VPN se ni uspela zagnati"
 
-#: src/libnmc-base/nm-client-utils.c:523
+#: src/libnmc-base/nm-client-utils.c:522
 msgid "No valid secrets"
 msgstr "Brez veljavnih skrivnosti"
 
-#: src/libnmc-base/nm-client-utils.c:524
+#: src/libnmc-base/nm-client-utils.c:523
 msgid "Invalid secrets"
 msgstr "Neveljavne skrivnosti"
 
-#: src/libnmc-base/nm-client-utils.c:526
+#: src/libnmc-base/nm-client-utils.c:525
 msgid "The connection was removed"
 msgstr "Povezava je bila odstranjena"
 
-#: src/libnmc-base/nm-client-utils.c:528
+#: src/libnmc-base/nm-client-utils.c:527
 msgid "Master connection failed"
 msgstr "Glavna povezava ni uspela"
 
-#: src/libnmc-base/nm-client-utils.c:530
+#: src/libnmc-base/nm-client-utils.c:529
 msgid "Could not create a software link"
 msgstr "Programske povezave ni bilo mogoče ustvariti"
 
-#: src/libnmc-base/nm-client-utils.c:532
+#: src/libnmc-base/nm-client-utils.c:531
 msgid "The device disappeared"
 msgstr "Naprava je izginila"
 
-#: src/libnmc-base/nm-client-utils.c:1002
+#: src/libnmc-base/nm-client-utils.c:1001
 msgid "missing colon for \"<setting>.<property>:<secret>\" format"
 msgstr "manjkajoče dvopičje za obliko zapisa »<setting>.<property>:<secret>«"
 
-#: src/libnmc-base/nm-client-utils.c:1019
+#: src/libnmc-base/nm-client-utils.c:1018
 msgid "missing dot for \"<setting>.<property>:<secret>\" format"
 msgstr "manjkajoča pika za obliko zapisa »<setting>.<property>:<secret>«"
 
-#: src/libnmc-base/nm-client-utils.c:1025
+#: src/libnmc-base/nm-client-utils.c:1024
 msgid "missing setting for \"<setting>.<property>:<secret>\" format"
 msgstr ""
 "manjkajoča nastavitev za obliko zapisa »<nastavitev>.<lastnost>:<skrivnost>«"
 
-#: src/libnmc-base/nm-client-utils.c:1036
+#: src/libnmc-base/nm-client-utils.c:1035
 msgid "missing property for \"<setting>.<property>:<secret>\" format"
 msgstr ""
 "manjkajoča lastnost za obliko zapisa »<nastavitev>.<lastnost>:<skrivnost>«"
 
-#: src/libnmc-base/nm-client-utils.c:1046
+#: src/libnmc-base/nm-client-utils.c:1045
 msgid "invalid setting name"
 msgstr "Neveljavno ime nastavitve"
 
-#: src/libnmc-base/nm-client-utils.c:1060
+#: src/libnmc-base/nm-client-utils.c:1059
 msgid "property name is not UTF-8"
 msgstr "ime lastnosti ni UTF-8"
 
-#: src/libnmc-base/nm-client-utils.c:1077
-#: src/libnmc-base/nm-client-utils.c:1083
+#: src/libnmc-base/nm-client-utils.c:1076
+#: src/libnmc-base/nm-client-utils.c:1082
 msgid "secret is not UTF-8"
 msgstr "skrivnost ni UTF-8"
 
@@ -4892,13 +4887,13 @@ msgstr "Ni bilo mogoče najti nobenega ID-ja seje za uid %d"
 msgid "Could not retrieve session id: %s"
 msgstr "ID seje ni mogoče pridobiti: %s"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:225
+#: src/libnmc-base/nm-secret-agent-simple.c:226
 #, c-format
 msgid "Preshared-key for %s"
 msgstr "Ključ v skupni rabi za %s"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:274
-#: src/libnmc-base/nm-secret-agent-simple.c:361
+#: src/libnmc-base/nm-secret-agent-simple.c:275
+#: src/libnmc-base/nm-secret-agent-simple.c:379
 #: src/libnmc-setting/nm-meta-setting-desc.c:5245
 #: src/nmtui/nmt-8021x-fields.c:183 src/nmtui/nmt-8021x-fields.c:516
 #: src/nmtui/nmt-8021x-fields.c:622 src/nmtui/nmt-page-dsl.c:51
@@ -4906,13 +4901,13 @@ msgstr "Ključ v skupni rabi za %s"
 msgid "Username"
 msgstr "Uporabniško ime"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:279
-#: src/libnmc-base/nm-secret-agent-simple.c:316
-#: src/libnmc-base/nm-secret-agent-simple.c:339
-#: src/libnmc-base/nm-secret-agent-simple.c:371
-#: src/libnmc-base/nm-secret-agent-simple.c:954
-#: src/libnmc-base/nm-secret-agent-simple.c:989
-#: src/libnmc-base/nm-secret-agent-simple.c:1016
+#: src/libnmc-base/nm-secret-agent-simple.c:280
+#: src/libnmc-base/nm-secret-agent-simple.c:334
+#: src/libnmc-base/nm-secret-agent-simple.c:357
+#: src/libnmc-base/nm-secret-agent-simple.c:389
+#: src/libnmc-base/nm-secret-agent-simple.c:1010
+#: src/libnmc-base/nm-secret-agent-simple.c:1045
+#: src/libnmc-base/nm-secret-agent-simple.c:1072
 #: src/libnmc-base/nm-vpn-helpers.c:144 src/libnmc-base/nm-vpn-helpers.c:148
 #: src/libnmc-base/nm-vpn-helpers.c:154 src/libnmc-base/nm-vpn-helpers.c:159
 #: src/nmcli/devices.c:4874 src/nmtui/nmt-8021x-fields.c:196
@@ -4923,46 +4918,46 @@ msgstr "Uporabniško ime"
 msgid "Password"
 msgstr "Geslo"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:288
+#: src/libnmc-base/nm-secret-agent-simple.c:289
 #: src/nmtui/nmt-8021x-fields.c:365
 msgid "Identity"
 msgstr "Identiteta"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:293
+#: src/libnmc-base/nm-secret-agent-simple.c:294
 msgid "Private key password"
 msgstr "Geslo zasebnega ključa"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:329 src/nmtui/nmt-page-wifi.c:297
+#: src/libnmc-base/nm-secret-agent-simple.c:347 src/nmtui/nmt-page-wifi.c:297
 msgid "Key"
 msgstr "Ključ"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:366 src/nmtui/nmt-page-dsl.c:67
+#: src/libnmc-base/nm-secret-agent-simple.c:384 src/nmtui/nmt-page-dsl.c:67
 msgid "Service"
 msgstr "Storitev"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:500
+#: src/libnmc-base/nm-secret-agent-simple.c:518
 msgid "WireGuard private-key"
 msgstr "Zasebni ključ WireGuard"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:539
+#: src/libnmc-base/nm-secret-agent-simple.c:557
 #, c-format
 msgid "Secrets are required to connect WireGuard VPN '%s'"
 msgstr "Skrivnosti so potrebne za povezavo WireGuard VPN '%s'"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:651
-#: src/libnmc-base/nm-secret-agent-simple.c:950
-#: src/libnmc-base/nm-secret-agent-simple.c:985
-#: src/libnmc-base/nm-secret-agent-simple.c:1012
-#: src/libnmc-base/nm-secret-agent-simple.c:1031
+#: src/libnmc-base/nm-secret-agent-simple.c:669
+#: src/libnmc-base/nm-secret-agent-simple.c:1006
+#: src/libnmc-base/nm-secret-agent-simple.c:1041
+#: src/libnmc-base/nm-secret-agent-simple.c:1068
+#: src/libnmc-base/nm-secret-agent-simple.c:1087
 #, c-format
 msgid "A password is required to connect to '%s'."
 msgstr "Za povezavo s/z »%s« je zahtevano geslo."
 
-#: src/libnmc-base/nm-secret-agent-simple.c:909
+#: src/libnmc-base/nm-secret-agent-simple.c:927
 msgid "Authentication required by wireless network"
 msgstr "Zahtevana je overitev za brezžično omrežje"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:911
+#: src/libnmc-base/nm-secret-agent-simple.c:929
 #, c-format
 msgid ""
 "Push of the WPS button on the router or a password is required to access the "
@@ -4971,7 +4966,7 @@ msgstr ""
 "Za dostop do brezžičnega omrežja »%s« potrebujete pritisk na gumb WPS na "
 "usmerjevalniku ali geslo."
 
-#: src/libnmc-base/nm-secret-agent-simple.c:916
+#: src/libnmc-base/nm-secret-agent-simple.c:934
 #, c-format
 msgid ""
 "Passwords or encryption keys are required to access the wireless network "
@@ -4980,65 +4975,81 @@ msgstr ""
 "Za povezavo v brezžično omrežje »%s« je zahtevano geslo oziroma šifrirni "
 "ključ."
 
-#: src/libnmc-base/nm-secret-agent-simple.c:923
+#: src/libnmc-base/nm-secret-agent-simple.c:947
+msgid "WPS PIN required"
+msgstr "PIN WPS je obvezen"
+
+#: src/libnmc-base/nm-secret-agent-simple.c:957
+#, c-format
+msgid "Enter the WPS PIN on the peer to connect to '%s'"
+msgstr "Vpisati je treba kodo PIN WPS na vrstniku za povezavo s/z »%s«"
+
+#: src/libnmc-base/nm-secret-agent-simple.c:961
+#: src/libnmc-base/nm-secret-agent-simple.c:972
+#: src/libnmc-base/nm-secret-agent-simple.c:1000
+msgid "PIN"
+msgstr "Koda PIN"
+
+#: src/libnmc-base/nm-secret-agent-simple.c:968
+#, c-format
+msgid "Enter the WPS PIN displayed by the peer to connect to '%s'"
+msgstr "Vpišite PIN WPS, prikazan na vrstniku, za povezavo s/z »%s«"
+
+#: src/libnmc-base/nm-secret-agent-simple.c:979
 msgid "Wired 802.1X authentication"
 msgstr "Overitev žičnega 802.1X"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:924
+#: src/libnmc-base/nm-secret-agent-simple.c:980
 #, c-format
 msgid "Secrets are required to access the wired network '%s'"
 msgstr "Skrivnosti so potrebne za dostop do žičnega omrežja »%s«"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:930
+#: src/libnmc-base/nm-secret-agent-simple.c:986
 msgid "DSL authentication"
 msgstr "Overitev DSL"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:931
+#: src/libnmc-base/nm-secret-agent-simple.c:987
 #, c-format
 msgid "Secrets are required for the DSL connection '%s'"
 msgstr "Skrivnosti so potrebne za povezavo DSL »%s«"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:940
+#: src/libnmc-base/nm-secret-agent-simple.c:996
 msgid "PIN code required"
 msgstr "Zahtevana koda PIN"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:941
+#: src/libnmc-base/nm-secret-agent-simple.c:997
 msgid "PIN code is needed for the mobile broadband device"
 msgstr "Za napravo mobilnega širokopasovnega dostopa je zahtevana koda PIN."
 
-#: src/libnmc-base/nm-secret-agent-simple.c:944
-msgid "PIN"
-msgstr "Koda PIN"
-
-#: src/libnmc-base/nm-secret-agent-simple.c:949
-#: src/libnmc-base/nm-secret-agent-simple.c:984
-#: src/libnmc-base/nm-secret-agent-simple.c:1011
+#: src/libnmc-base/nm-secret-agent-simple.c:1005
+#: src/libnmc-base/nm-secret-agent-simple.c:1040
+#: src/libnmc-base/nm-secret-agent-simple.c:1067
 msgid "Mobile broadband network password"
 msgstr "Geslo mobilnega širokopasovnega dostopa"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:962
+#: src/libnmc-base/nm-secret-agent-simple.c:1018
 #, c-format
 msgid "Secrets are required to access the MACsec network '%s'"
 msgstr "Skrivnosti so potrebne za dostop do omrežja MACsec '%s'"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:966
+#: src/libnmc-base/nm-secret-agent-simple.c:1022
 msgid "MACsec PSK authentication"
 msgstr "Preverjanje pristnosti MACsec PSK"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:968
-#: src/libnmc-setting/nm-meta-setting-desc.c:7230
+#: src/libnmc-base/nm-secret-agent-simple.c:1024
+#: src/libnmc-setting/nm-meta-setting-desc.c:7295
 msgid "MKA CAK"
 msgstr "MKA CAK"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:973
+#: src/libnmc-base/nm-secret-agent-simple.c:1029
 msgid "MACsec EAP authentication"
 msgstr "Preverjanje pristnosti MACsec EAP"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:978
+#: src/libnmc-base/nm-secret-agent-simple.c:1034
 msgid "WireGuard VPN secret"
 msgstr "Skrivnost WireGuard VPN"
 
-#: src/libnmc-base/nm-secret-agent-simple.c:1021
+#: src/libnmc-base/nm-secret-agent-simple.c:1077
 msgid "VPN password required"
 msgstr "Zahtevano je geslo VPN"
 
@@ -5651,8 +5662,8 @@ msgstr ""
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:5251
 #: src/libnmc-setting/nm-meta-setting-desc.c:5554
-#: src/libnmc-setting/nm-meta-setting-desc.c:6189
-#: src/libnmc-setting/nm-meta-setting-desc.c:7597
+#: src/libnmc-setting/nm-meta-setting-desc.c:6254
+#: src/libnmc-setting/nm-meta-setting-desc.c:7662
 msgid "Password [none]"
 msgstr "Geslo [brez]"
 
@@ -5670,11 +5681,11 @@ msgid "Port Priority"
 msgstr "Prednost vrat"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:5364
-#: src/libnmc-setting/nm-meta-setting-desc.c:6336
-#: src/libnmc-setting/nm-meta-setting-desc.c:8355
-#: src/libnmc-setting/nm-meta-setting-desc.c:8393
-#: src/libnmc-setting/nm-meta-setting-desc.c:8605
-#: src/libnmc-setting/nm-meta-setting-desc.c:8870
+#: src/libnmc-setting/nm-meta-setting-desc.c:6401
+#: src/libnmc-setting/nm-meta-setting-desc.c:8427
+#: src/libnmc-setting/nm-meta-setting-desc.c:8464
+#: src/libnmc-setting/nm-meta-setting-desc.c:8676
+#: src/libnmc-setting/nm-meta-setting-desc.c:8944
 msgid "MAC [none]"
 msgstr "MAC [brez]"
 
@@ -5728,8 +5739,8 @@ msgid "Hairpin"
 msgstr "Lasnica"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:5548
-#: src/libnmc-setting/nm-meta-setting-desc.c:6183
-#: src/libnmc-setting/nm-meta-setting-desc.c:8200
+#: src/libnmc-setting/nm-meta-setting-desc.c:6248
+#: src/libnmc-setting/nm-meta-setting-desc.c:8265
 msgid "Username [none]"
 msgstr "Uporabniško ime [brez]"
 
@@ -5787,41 +5798,41 @@ msgstr ""
 "'false','no','off', če želite povezavo nastaviti kot ne merjeno,\n"
 "'unknown', da NetworkManager izbere vrednost z uporabo hevristike\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6122
+#: src/libnmc-setting/nm-meta-setting-desc.c:6187
 msgid "GENEVE ID"
 msgstr "GENEVE ID"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6129
-#: src/libnmc-setting/nm-meta-setting-desc.c:7056
-#: src/libnmc-setting/nm-meta-setting-desc.c:8274
+#: src/libnmc-setting/nm-meta-setting-desc.c:6194
+#: src/libnmc-setting/nm-meta-setting-desc.c:7121
+#: src/libnmc-setting/nm-meta-setting-desc.c:8339
 msgid "Remote"
 msgstr "Oddaljeno"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6135
-#: src/libnmc-setting/nm-meta-setting-desc.c:8292
+#: src/libnmc-setting/nm-meta-setting-desc.c:6200
+#: src/libnmc-setting/nm-meta-setting-desc.c:8357
 msgid "Destination port"
 msgstr "Ciljna vrata"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6199
+#: src/libnmc-setting/nm-meta-setting-desc.c:6264
 msgid "APN"
 msgstr "APN"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6284
+#: src/libnmc-setting/nm-meta-setting-desc.c:6349
 msgid "hsr port1"
 msgstr "hsr vrata1"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6291
+#: src/libnmc-setting/nm-meta-setting-desc.c:6356
 msgid "hsr port2"
 msgstr "hsr vrata2"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6297
+#: src/libnmc-setting/nm-meta-setting-desc.c:6362
 msgid "hsr multicast spec"
 msgstr "hsr multicast spec"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6345
-#: src/libnmc-setting/nm-meta-setting-desc.c:7137
-#: src/libnmc-setting/nm-meta-setting-desc.c:8440
-#: src/libnmc-setting/nm-meta-setting-desc.c:8667
+#: src/libnmc-setting/nm-meta-setting-desc.c:6410
+#: src/libnmc-setting/nm-meta-setting-desc.c:7202
+#: src/libnmc-setting/nm-meta-setting-desc.c:8511
+#: src/libnmc-setting/nm-meta-setting-desc.c:8738
 #: src/nmtui/nmt-page-ethernet.c:124 src/nmtui/nmt-page-infiniband.c:81
 #: src/nmtui/nmt-page-ip-tunnel.c:178 src/nmtui/nmt-page-loopback.c:56
 #: src/nmtui/nmt-page-veth.c:80 src/nmtui/nmt-page-vlan.c:100
@@ -5829,15 +5840,15 @@ msgstr "hsr multicast spec"
 msgid "MTU"
 msgstr "MTU"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6364
+#: src/libnmc-setting/nm-meta-setting-desc.c:6429
 msgid "P_KEY [none]"
 msgstr "P_KEY [brez]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6382
+#: src/libnmc-setting/nm-meta-setting-desc.c:6447
 msgid "Parent interface [none]"
 msgstr "Nadrejeni vmesnik [brez]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6411
+#: src/libnmc-setting/nm-meta-setting-desc.c:6476
 msgid ""
 "Enter a list of IPv4 addresses of DNS servers.\n"
 "\n"
@@ -5847,11 +5858,11 @@ msgstr ""
 "\n"
 "Primer: 8.8.8.8, 8.8.4.4\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6461
+#: src/libnmc-setting/nm-meta-setting-desc.c:6526
 msgid "IPv4 address (IP[/plen]) [none]"
 msgstr "Naslov IPv4 (IP[/plen]) [none]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6463
+#: src/libnmc-setting/nm-meta-setting-desc.c:6528
 msgid ""
 "Enter a list of IPv4 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -5865,11 +5876,11 @@ msgstr ""
 "\n"
 "Primer: 192.168.1.5/24, 10.0.0.11/24\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6482
+#: src/libnmc-setting/nm-meta-setting-desc.c:6547
 msgid "IPv4 gateway [none]"
 msgstr "Prehod IPv4 [brez]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6491
+#: src/libnmc-setting/nm-meta-setting-desc.c:6556
 msgid ""
 "Enter a list of IPv4 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -5892,7 +5903,7 @@ msgstr ""
 "Primeri: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
 "          10.1.2.0/24\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6531
+#: src/libnmc-setting/nm-meta-setting-desc.c:6596
 msgid ""
 "Enter a list of IPv4 routing rules formatted as:\n"
 "  priority [prio] [from [src]] [to [dst]], ,...\n"
@@ -5902,7 +5913,7 @@ msgstr ""
 "  priority [prio] [from [vir]] [do [CLJ]], ,...\n"
 "\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6725
+#: src/libnmc-setting/nm-meta-setting-desc.c:6790
 msgid ""
 "Enter a list of IPv6 addresses of DNS servers.  If the IPv6 configuration "
 "method is 'auto' these DNS servers are appended to those (if any) returned "
@@ -5922,11 +5933,11 @@ msgstr ""
 "\n"
 "Primer: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6781
+#: src/libnmc-setting/nm-meta-setting-desc.c:6846
 msgid "IPv6 address (IP[/plen]) [none]"
 msgstr "Naslov IPv6 (IP[/plen]) [brez]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6783
+#: src/libnmc-setting/nm-meta-setting-desc.c:6848
 msgid ""
 "Enter a list of IPv6 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -5940,11 +5951,11 @@ msgstr ""
 "\n"
 "Primer: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6802
+#: src/libnmc-setting/nm-meta-setting-desc.c:6867
 msgid "IPv6 gateway [none]"
 msgstr "Prehod IPv6 [brez]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6811
+#: src/libnmc-setting/nm-meta-setting-desc.c:6876
 msgid ""
 "Enter a list of IPv6 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -5969,7 +5980,7 @@ msgstr ""
 "2001:db8:beef::3 2\n"
 "          abbe::/64 55\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6851
+#: src/libnmc-setting/nm-meta-setting-desc.c:6916
 msgid ""
 "Enter a list of IPv6 routing rules formatted as:\n"
 "  priority [prio] [from [src]] [to [dst]], ,...\n"
@@ -5979,166 +5990,166 @@ msgstr ""
 "  priority [prio] [from [vir]] [to [cilj]], ,...\n"
 "\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7043
-#: src/libnmc-setting/nm-meta-setting-desc.c:8255
+#: src/libnmc-setting/nm-meta-setting-desc.c:7108
+#: src/libnmc-setting/nm-meta-setting-desc.c:8320
 msgid "Parent device [none]"
 msgstr "Nadrejena naprava [brez]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7049
+#: src/libnmc-setting/nm-meta-setting-desc.c:7114
 msgid "Local endpoint [none]"
 msgstr "Krajevna končna točka [brez]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7107
+#: src/libnmc-setting/nm-meta-setting-desc.c:7172
 msgid "IPVLAN parent device or connection UUID"
 msgstr "Nadrejena naprava IPVLAN ali UUID povezave"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7203
+#: src/libnmc-setting/nm-meta-setting-desc.c:7268
 msgid "MACsec parent device or connection UUID"
 msgstr "Nadrejena naprava MACsec ali UUID povezave"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7224
+#: src/libnmc-setting/nm-meta-setting-desc.c:7289
 msgid "Enable encryption"
 msgstr "Omogoči šifriranje"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7240
+#: src/libnmc-setting/nm-meta-setting-desc.c:7305
 msgid "MKA_CKN"
 msgstr "MKA_CKN"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7246
+#: src/libnmc-setting/nm-meta-setting-desc.c:7311
 #: src/nmtui/nmt-page-macsec.c:170
 msgid "SCI port"
 msgstr "Vrata SCI"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7275
+#: src/libnmc-setting/nm-meta-setting-desc.c:7340
 msgid "MACVLAN parent device or connection UUID"
 msgstr "Nadrejena naprava MACVLAN ali UUID povezave"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7296
+#: src/libnmc-setting/nm-meta-setting-desc.c:7361
 msgid "Tap"
 msgstr "Tap"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7367
-#: src/libnmc-setting/nm-meta-setting-desc.c:8565 src/nmtui/nmt-page-wifi.c:215
+#: src/libnmc-setting/nm-meta-setting-desc.c:7432
+#: src/libnmc-setting/nm-meta-setting-desc.c:8636 src/nmtui/nmt-page-wifi.c:215
 #: src/nmtui/nmt-wifi-qr-dialog.c:143
 msgid "SSID"
 msgstr "SSID"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7377
+#: src/libnmc-setting/nm-meta-setting-desc.c:7442
 msgid "OLPC Mesh channel"
 msgstr "Kanal Mreževine OLPC"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7387
+#: src/libnmc-setting/nm-meta-setting-desc.c:7452
 msgid "DHCP anycast MAC address [none]"
 msgstr "Naslov MAC anycast DHCP [none/brez]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7578
+#: src/libnmc-setting/nm-meta-setting-desc.c:7643
 msgid "PPPoE parent device"
 msgstr "Nadrejena naprava PPPoE"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7584
+#: src/libnmc-setting/nm-meta-setting-desc.c:7649
 msgid "Service [none]"
 msgstr "Storitev [brez]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7591
+#: src/libnmc-setting/nm-meta-setting-desc.c:7656
 msgid "PPPoE username"
 msgstr "Uporabniško ime PPPoE"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7640
+#: src/libnmc-setting/nm-meta-setting-desc.c:7705
 msgid "Browser only"
 msgstr "Samo brskalnik"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7646
+#: src/libnmc-setting/nm-meta-setting-desc.c:7711
 msgid "PAC URL"
 msgstr "URL PAC"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7652
+#: src/libnmc-setting/nm-meta-setting-desc.c:7717
 msgid "PAC script"
 msgstr "Skript PAC"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7788
-#: src/libnmc-setting/nm-meta-setting-desc.c:7977
+#: src/libnmc-setting/nm-meta-setting-desc.c:7853
+#: src/libnmc-setting/nm-meta-setting-desc.c:8042
 msgid "Team JSON configuration [none]"
 msgstr "Prilagoditev skupine JSON [none]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8080
+#: src/libnmc-setting/nm-meta-setting-desc.c:8145
 msgid "User ID [none]"
 msgstr "ID uporabnika [brez]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8086
+#: src/libnmc-setting/nm-meta-setting-desc.c:8151
 msgid "Group ID [none]"
 msgstr "ID skupine [brez]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8092
+#: src/libnmc-setting/nm-meta-setting-desc.c:8157
 msgid "Enable PI"
 msgstr "Omogoči PI"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8098
+#: src/libnmc-setting/nm-meta-setting-desc.c:8163
 msgid "Enable VNET header"
 msgstr "Omogoči glavo VNET"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8104
+#: src/libnmc-setting/nm-meta-setting-desc.c:8169
 msgid "Enable multi queue"
 msgstr "Omogoči več čakalnih vrst"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8117
+#: src/libnmc-setting/nm-meta-setting-desc.c:8182
 msgid "veth peer"
 msgstr "veth peer"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8130
+#: src/libnmc-setting/nm-meta-setting-desc.c:8195
 msgid "VLAN parent device or connection UUID"
 msgstr "Nadrejena naprava VLAN ali UUID povezave"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8137
+#: src/libnmc-setting/nm-meta-setting-desc.c:8202
 msgid "VLAN ID (<0-4094>)"
 msgstr "ID VLAN (<0-4094>)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8143
+#: src/libnmc-setting/nm-meta-setting-desc.c:8208
 msgid "VLAN flags (<0-7>) [none]"
 msgstr "Zastavice VLAN (<0-7>) [brez]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8159
+#: src/libnmc-setting/nm-meta-setting-desc.c:8224
 msgid "Ingress priority maps [none]"
 msgstr "Prednostni zemljevidi vnosa [none/brez]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8170
+#: src/libnmc-setting/nm-meta-setting-desc.c:8235
 msgid "Egress priority maps [none]"
 msgstr "Prednostni zemljevidi izhoda [none/brez]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8242
+#: src/libnmc-setting/nm-meta-setting-desc.c:8307
 msgid "Table"
 msgstr "Tabela"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8262
+#: src/libnmc-setting/nm-meta-setting-desc.c:8327
 msgid "VXLAN ID"
 msgstr "ID VXLAN"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8268
+#: src/libnmc-setting/nm-meta-setting-desc.c:8333
 msgid "Local address [none]"
 msgstr "Krajevni naslov [brez]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8280
+#: src/libnmc-setting/nm-meta-setting-desc.c:8345
 msgid "Minimum source port"
 msgstr "Najmanjša izvorna vrata"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8286
+#: src/libnmc-setting/nm-meta-setting-desc.c:8351
 msgid "Maximum source port"
 msgstr "Največja izvorna vrata"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8332 src/nmtui/nmt-page-veth.c:54
+#: src/libnmc-setting/nm-meta-setting-desc.c:8397 src/nmtui/nmt-page-veth.c:54
 #: src/nmtui/nmt-wireguard-peer-editor.c:78
 msgid "Peer"
 msgstr "Soležnik"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8362
+#: src/libnmc-setting/nm-meta-setting-desc.c:8434
 msgid "WiMAX NSP name"
 msgstr "Ime WiMAX NSP"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8399
-#: src/libnmc-setting/nm-meta-setting-desc.c:8610
+#: src/libnmc-setting/nm-meta-setting-desc.c:8470
+#: src/libnmc-setting/nm-meta-setting-desc.c:8681
 msgid "Cloned MAC [none]"
 msgstr "Klonirani MAC [brez]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8448
+#: src/libnmc-setting/nm-meta-setting-desc.c:8519
 msgid ""
 "Enter a list of subchannels (comma or space separated).\n"
 "\n"
@@ -6148,7 +6159,7 @@ msgstr ""
 "\n"
 "Primer: 0.0.0e20 0.0.0e21 0.0.0e22\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8819
+#: src/libnmc-setting/nm-meta-setting-desc.c:8890
 msgid ""
 "Enter the type of WEP keys. The accepted values are: 0 or unknown, 1 or key, "
 "and 2 or passphrase.\n"
@@ -6156,232 +6167,232 @@ msgstr ""
 "Vnesite vrsto ključev WEP. Sprejete vrednosti so: 0 ali neznano, 1 ali ključ "
 "in 2 ali šifrirno geslo.\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8878
+#: src/libnmc-setting/nm-meta-setting-desc.c:8952
 msgid "Short address (<0x0000-0xffff>)"
 msgstr "Kratek naslov (<0x0000-0xffff>)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8894
+#: src/libnmc-setting/nm-meta-setting-desc.c:8968
 msgid "PAN Identifier (<0x0000-0xffff>)"
 msgstr "Identifikator PAN (<0x0000-0xffff>)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8909
+#: src/libnmc-setting/nm-meta-setting-desc.c:8983
 msgid "Page (<default|0-31>)"
 msgstr "Stran (<privzeto|0-31>)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8923
+#: src/libnmc-setting/nm-meta-setting-desc.c:8997
 msgid "Channel (<default|0-26>)"
 msgstr "Kanal (<privzeto|0-26>)"
 
 #. ***************************************************************************
-#: src/libnmc-setting/nm-meta-setting-desc.c:9058
+#: src/libnmc-setting/nm-meta-setting-desc.c:9132
 msgid "6LOWPAN settings"
 msgstr "Nastavitve 6LOWPAN"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9059
+#: src/libnmc-setting/nm-meta-setting-desc.c:9133
 msgid "802-1x settings"
 msgstr "Nastavitve 802-1x"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9061
+#: src/libnmc-setting/nm-meta-setting-desc.c:9135
 msgid "bluetooth connection"
 msgstr "Povezava Bluetooth"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9062
+#: src/libnmc-setting/nm-meta-setting-desc.c:9136
 msgid "Bond device"
 msgstr "Vezna naprava"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9063
+#: src/libnmc-setting/nm-meta-setting-desc.c:9137
 msgid "Bond port"
 msgstr "Vezna vrata"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9064
+#: src/libnmc-setting/nm-meta-setting-desc.c:9138
 msgid "Bridge device"
 msgstr "Naprava mosta"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9065
+#: src/libnmc-setting/nm-meta-setting-desc.c:9139
 msgid "Bridge port"
 msgstr "Vrata mosta"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9066
+#: src/libnmc-setting/nm-meta-setting-desc.c:9140
 msgid "CDMA mobile broadband connection"
 msgstr "Mobilna širokopasovna povezava CDMA"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9067
+#: src/libnmc-setting/nm-meta-setting-desc.c:9141
 msgid "General settings"
 msgstr "Splošne nastavitve"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9068
+#: src/libnmc-setting/nm-meta-setting-desc.c:9142
 msgid "DCB settings"
 msgstr "Nastavitve DCB"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9069
+#: src/libnmc-setting/nm-meta-setting-desc.c:9143
 msgid "Dummy settings"
 msgstr "Nastavitve lažne"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9070
+#: src/libnmc-setting/nm-meta-setting-desc.c:9144
 msgid "Ethtool settings"
 msgstr "Nastavitve Ethtool"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9071
+#: src/libnmc-setting/nm-meta-setting-desc.c:9145
 msgid "Generic settings"
 msgstr "Splošne nastavitve"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9072
+#: src/libnmc-setting/nm-meta-setting-desc.c:9146
 msgid "Geneve settings"
 msgstr "Nastavitve Geneve"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9073
+#: src/libnmc-setting/nm-meta-setting-desc.c:9147
 msgid "GSM mobile broadband connection"
 msgstr "Mobilna širokopasovna povezava GSM"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9074
+#: src/libnmc-setting/nm-meta-setting-desc.c:9148
 msgid "Hostname settings"
 msgstr "Nastavitve imena gostitelja"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9075
+#: src/libnmc-setting/nm-meta-setting-desc.c:9149
 msgid "HSR settings"
 msgstr "Nastavitve HSR"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9077
+#: src/libnmc-setting/nm-meta-setting-desc.c:9151
 msgid "IPv4 protocol"
 msgstr "Protokol IPv4"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9078
+#: src/libnmc-setting/nm-meta-setting-desc.c:9152
 msgid "IPv6 protocol"
 msgstr "Protokol IPv6"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9079
+#: src/libnmc-setting/nm-meta-setting-desc.c:9153
 msgid "IP-tunnel settings"
 msgstr "Nastavitve predora IP"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9080
+#: src/libnmc-setting/nm-meta-setting-desc.c:9154
 msgid "IPVLAN settings"
 msgstr "Nastavitve IPVLAN"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9081
+#: src/libnmc-setting/nm-meta-setting-desc.c:9155
 msgid "Link settings"
 msgstr "Nastavitve povezave"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9082
+#: src/libnmc-setting/nm-meta-setting-desc.c:9156
 msgid "Loopback settings"
 msgstr "Nastavitve povratne zanke"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9083
+#: src/libnmc-setting/nm-meta-setting-desc.c:9157
 msgid "MACsec connection"
 msgstr "Povezava MACsec"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9084
+#: src/libnmc-setting/nm-meta-setting-desc.c:9158
 msgid "macvlan connection"
 msgstr "Povezava MACVLAN"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9085
+#: src/libnmc-setting/nm-meta-setting-desc.c:9159
 msgid "Match"
 msgstr "Se sklada"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9086
+#: src/libnmc-setting/nm-meta-setting-desc.c:9160
 msgid "OLPC Mesh connection"
 msgstr "Povezava Mreževine OLPC"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9087
+#: src/libnmc-setting/nm-meta-setting-desc.c:9161
 msgid "Open vSwitch bridge settings"
 msgstr "Odpri nastavitve mostu vSwitch"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9088
+#: src/libnmc-setting/nm-meta-setting-desc.c:9162
 msgid "Open vSwitch DPDK interface settings"
 msgstr "Odpri nastavitve vmesnika vSwitch DPDK"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9089
+#: src/libnmc-setting/nm-meta-setting-desc.c:9163
 msgid "OVS Other Config"
 msgstr "Druge prilagoditve OVS"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9090
+#: src/libnmc-setting/nm-meta-setting-desc.c:9164
 msgid "OVS External IDs"
 msgstr "Zunanji ID-ji OVS"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9091
+#: src/libnmc-setting/nm-meta-setting-desc.c:9165
 msgid "Open vSwitch interface settings"
 msgstr "Odpri nastavitve vmesnika vSwitch"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9092
+#: src/libnmc-setting/nm-meta-setting-desc.c:9166
 msgid "Open vSwitch patch interface settings"
 msgstr "Odpri nastavitve vmesnika prevezovalnika vSwitch"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9093
+#: src/libnmc-setting/nm-meta-setting-desc.c:9167
 msgid "Open vSwitch port settings"
 msgstr "Odpri nastavitve vrat vSwitch"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9094
+#: src/libnmc-setting/nm-meta-setting-desc.c:9168
 msgid "PPP settings"
 msgstr "Nastavitve PPP"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9095
+#: src/libnmc-setting/nm-meta-setting-desc.c:9169
 msgid "PPPoE"
 msgstr "PPPoE"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9096
+#: src/libnmc-setting/nm-meta-setting-desc.c:9170
 msgid "Prefix delegation settings"
 msgstr "Predpni nastavitve delegiranja"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9097
+#: src/libnmc-setting/nm-meta-setting-desc.c:9171
 msgid "Proxy"
 msgstr "Posr. strežnik"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9098
+#: src/libnmc-setting/nm-meta-setting-desc.c:9172
 msgid "Serial settings"
 msgstr "Serijske nastavitve"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9099
+#: src/libnmc-setting/nm-meta-setting-desc.c:9173
 msgid "SR-IOV settings"
 msgstr "Nastavitve SR-IOV"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9100
+#: src/libnmc-setting/nm-meta-setting-desc.c:9174
 msgid "Traffic controls"
 msgstr "Nadzor prometa"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9101
+#: src/libnmc-setting/nm-meta-setting-desc.c:9175
 msgid "Team device"
 msgstr "Naprava skupine"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9102
+#: src/libnmc-setting/nm-meta-setting-desc.c:9176
 msgid "Team port"
 msgstr "Vrata skupine"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9103
+#: src/libnmc-setting/nm-meta-setting-desc.c:9177
 msgid "Tun device"
 msgstr "Naprava Tun"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9104
+#: src/libnmc-setting/nm-meta-setting-desc.c:9178
 msgid "User settings"
 msgstr "Uporabniške nastavitve"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9110
+#: src/libnmc-setting/nm-meta-setting-desc.c:9184
 msgid "Wi-Fi P2P connection"
 msgstr "Povezava Wi-Fi P2P"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9111
+#: src/libnmc-setting/nm-meta-setting-desc.c:9185
 msgid "WiMAX connection"
 msgstr "Povezava WiMAX"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9112
+#: src/libnmc-setting/nm-meta-setting-desc.c:9186
 msgid "Wired Ethernet"
 msgstr "Žična omrežna povezava"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9113
+#: src/libnmc-setting/nm-meta-setting-desc.c:9187
 msgid "WireGuard VPN settings"
 msgstr "Nastavitve WireGuard VPN"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9114
+#: src/libnmc-setting/nm-meta-setting-desc.c:9188
 msgid "Wi-Fi connection"
 msgstr "Povezava Wi-Fi"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9115
+#: src/libnmc-setting/nm-meta-setting-desc.c:9189
 msgid "Wi-Fi security settings"
 msgstr "Varnostne nastavitve omrežja Wi-Fi"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9116
+#: src/libnmc-setting/nm-meta-setting-desc.c:9190
 msgid "WPAN settings"
 msgstr "Nastavitve WPAN"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:9554
+#: src/libnmc-setting/nm-meta-setting-desc.c:9628
 msgid "name"
 msgstr "ime"
 
@@ -7641,12 +7652,20 @@ msgstr ""
 "Uporabniško ime, uporabljeno za preverjanje pristnosti s storitvijo ADSL."
 
 #: src/libnmc-setting/settings-docs.h.in:93
-msgid "VCI of ADSL connection"
-msgstr "VCI povezave ADSL"
+msgid ""
+"The virtual channel identifier (VCI) of the ATM permanent virtual circuit "
+"(PVC) that carries the ADSL connection."
+msgstr ""
+"Identifikator virtualnega kanala (VCI) stalnega virtualnega kroga ATM (PVC), "
+"po katerem poteka ADSL-povezava."
 
 #: src/libnmc-setting/settings-docs.h.in:94
-msgid "VPI of ADSL connection"
-msgstr "VPI povezave ADSL"
+msgid ""
+"The virtual path identifier (VPI) of the ATM permanent virtual circuit (PVC) "
+"that carries the ADSL connection."
+msgstr ""
+"Identifikator virtualne poti (VPI) stalnega virtualnega kroga ATM (PVC), po "
+"katerem poteka ADSL-povezava."
 
 #: src/libnmc-setting/settings-docs.h.in:95
 msgid "The Bluetooth address of the device."
@@ -10831,15 +10850,54 @@ msgstr ""
 
 #: src/libnmc-setting/settings-docs.h.in:427
 msgid ""
-"Flags indicating which mode of WPS is to be used. There's little point in "
-"changing the default setting as NetworkManager will automatically determine "
-"the best method to use."
+"Flags indicating which mode of WPS is to be used. With the default setting, "
+"the push-button method (\"pbc\" (0x4)) is used. For the PIN method there are "
+"two directions: set this to \"pin\" (0x8) to enter the code that the peer "
+"displays (for example a display-capable Miracast sink), or to \"pin-"
+"display\" (0x10) to instead show a code that the user enters on the peer. "
+"Either way the code is the \"wps-pin\" property. \"pin-display\" (0x10) is "
+"not supported by the IWD backend."
 msgstr ""
-"Zastavice, ki označujejo, kateri način WPS je treba uporabiti. Privzete "
-"nastavitve ni smiselno spreminjati, saj bo NetworkManager samodejno določil "
-"najboljši način za uporabo."
+"Zastavice, ki določajo, kateri način WPS bo uporabljen. Pri privzeti "
+"nastavitvi se uporablja metoda s pritiskom na gumb (\"pbc\" (0x4)). Za "
+"metodo s PIN-kodo sta na voljo dve možnosti: nastavite to na \"pin\" (0x8), "
+"da vnesete kodo, ki jo prikaže naprava (npr. sprejemnik Miracast z možnostjo "
+"prikazovanja), ali na \"pin-display\" (0x10), da se namesto tega prikaže "
+"koda, ki jo uporabnik vnese na napravi. V obeh primerih je koda lastnost "
+"»wps-pin«. »pin-display« (0x10) ni podprt s strani zaledja IWD."
 
 #: src/libnmc-setting/settings-docs.h.in:428
+msgid ""
+"The WPS PIN used by the PIN methods of the \"wps-method\" property. With "
+"\"pin\" (0x8) it is the code that the peer (for example a display-capable "
+"Miracast sink) generates and displays, and that the user then enters on this "
+"machine. With \"pin-display\" (0x10) it is the code that the user enters on "
+"the peer instead; whoever provides the code is expected to show it: a client "
+"that sets it in the profile, or otherwise the secret agent that is asked for "
+"it, which may simply make one up. When the PIN is not set, NetworkManager "
+"asks a secret agent for it; if enrollment then fails, it asks again for a "
+"new one. The code is normally used only once, in which case saving it is "
+"pointless: set the \"wps-pin-flags\" property to \"not-saved\" (0x2) so that "
+"the user is asked every time."
+msgstr ""
+"To je koda PIN WPS, ki jo uporabljajo metode PIN lastnosti »wps-method«. Ta "
+"\"pin\" (0x8) je koda, ki jo ustvari in prikaže oddaljena naprava (npr. "
+"Ponor Miracast z zmogljivostjo prikaza na zaslonu) in jo uporabnik nato "
+"vnese na tej napravi. Pri metodi \"pin-display\" (0x10) pa gre za kodo, ki "
+"jo uporabnik vnese na oddaljeni napravi; od tistega, ki kodo zagotovi, se "
+"pričakuje, da jo tudi prikaže – bodisi odjemalec, ki jo nastavi v profilu, "
+"bodisi agent za skrivnosti, od katerega se zahteva in ki jo lahko preprosto "
+"sam ustvari. Če koda PIN ni nastavljena, jo NetworkManager zahteva od agenta "
+"za skrivnosti; če postopek registracije nato spodleti, jo zahteva znova. "
+"Koda se običajno uporabi le enkrat, zato je njeno shranjevanje nesmiselno: "
+"nastavite lastnost »wps-pin-flags« na \"not-saved\" (0x2), da bo sistem "
+"uporabnika za kodo vprašal ob vsaki uporabi."
+
+#: src/libnmc-setting/settings-docs.h.in:429
+msgid "Flags indicating how to handle the \"wps-pin\" property."
+msgstr "Zastavice, ki označujejo, kako ravnati z lastnostjo »wps-pin«."
+
+#: src/libnmc-setting/settings-docs.h.in:430
 msgid ""
 "If specified, this connection will only apply to the WiMAX device whose MAC "
 "address matches. This property does not change the MAC address of the device "
@@ -10849,7 +10907,7 @@ msgstr ""
 "MAC se ujema. Ta lastnost ne spremeni naslova MAC naprave (znano kot lažno "
 "predstavljanje naslovov MAC)."
 
-#: src/libnmc-setting/settings-docs.h.in:429
+#: src/libnmc-setting/settings-docs.h.in:431
 msgid ""
 "Network Service Provider (NSP) name of the WiMAX network this connection "
 "should use."
@@ -10857,7 +10915,7 @@ msgstr ""
 "Ime ponudnika omrežnih storitev (NSP) omrežja WiMAX, ki ga mora uporabljati "
 "ta povezava."
 
-#: src/libnmc-setting/settings-docs.h.in:430
+#: src/libnmc-setting/settings-docs.h.in:432
 msgid ""
 "When TRUE, setup the interface to accept packets for all MAC addresses. This "
 "is enabling the kernel interface flag IFF_PROMISC. When FALSE, the interface "
@@ -10868,7 +10926,7 @@ msgstr ""
 "tem omogočite zastavico vmesnika jedra IFF_PROMISC. Če je FALSE, vmesnik "
 "sprejme samo pakete s ciljnim naslovom mac vmesnika ali oddajanjem."
 
-#: src/libnmc-setting/settings-docs.h.in:431
+#: src/libnmc-setting/settings-docs.h.in:433
 msgid ""
 "When TRUE, enforce auto-negotiation of speed and duplex mode. If \"speed\" "
 "and \"duplex\" properties are both specified, only that single mode will be "
@@ -10886,7 +10944,7 @@ msgstr ""
 "je treba nastaviti FALSE, lastnosti »speed« in »duplex« ali pa bo "
 "prilagoditev povezave preskočena."
 
-#: src/libnmc-setting/settings-docs.h.in:432
+#: src/libnmc-setting/settings-docs.h.in:434
 msgid ""
 "If specified, request that the device use this MAC address instead. This is "
 "known as MAC cloning or spoofing. Beside explicitly specifying a MAC "
@@ -10917,7 +10975,7 @@ msgstr ""
 "D-Bus je to polje izraženo kot \"assigned-mac-address\" ali zastareli "
 "\"cloned-mac-address\"."
 
-#: src/libnmc-setting/settings-docs.h.in:433
+#: src/libnmc-setting/settings-docs.h.in:435
 msgid ""
 "When a value is set, either \"half\" or \"full\", configures the device to "
 "use the specified duplex mode. If \"auto-negotiate\" is \"yes\" the "
@@ -10943,8 +11001,8 @@ msgstr ""
 "lastnostjo »speed«, če je določena. Preden določite dupleks način, se "
 "prepričajte, da ga vaša naprava podpira."
 
-#: src/libnmc-setting/settings-docs.h.in:434
-#: src/libnmc-setting/settings-docs.h.in:461
+#: src/libnmc-setting/settings-docs.h.in:436
+#: src/libnmc-setting/settings-docs.h.in:463
 msgid ""
 "With \"cloned-mac-address\" setting \"random\" or \"stable\", by default all "
 "bits of the MAC address are scrambled and a locally-administered, unicast "
@@ -10993,7 +11051,7 @@ msgstr ""
 "»02:00:00:00:00:00 00:00:00:00:00:00:00 02:00:00:00:00:00« bo ustvaril "
 "popolnoma kodiran naslov MAC, ki se naključno upravlja krajevno ali globalno."
 
-#: src/libnmc-setting/settings-docs.h.in:435
+#: src/libnmc-setting/settings-docs.h.in:437
 msgid ""
 "If specified, this connection will only apply to the Ethernet device whose "
 "permanent MAC address matches. This property does not change the MAC address "
@@ -11003,8 +11061,8 @@ msgstr ""
 "trajni naslov MAC se ujema. Ta lastnost ne spremeni naslova MAC naprave "
 "(npr. ponarejanje MAC)."
 
-#: src/libnmc-setting/settings-docs.h.in:436
-#: src/libnmc-setting/settings-docs.h.in:437
+#: src/libnmc-setting/settings-docs.h.in:438
+#: src/libnmc-setting/settings-docs.h.in:439
 msgid ""
 "If specified, this connection will never apply to the Ethernet device whose "
 "permanent MAC address matches an address in the list.  Each MAC address is "
@@ -11015,9 +11073,9 @@ msgstr ""
 "standardnem zapisu s šestnajstiškimi števkami in dvopičji "
 "(00:11:22:33:44:55)."
 
-#: src/libnmc-setting/settings-docs.h.in:438
-#: src/libnmc-setting/settings-docs.h.in:468
-#: src/libnmc-setting/settings-docs.h.in:516
+#: src/libnmc-setting/settings-docs.h.in:440
+#: src/libnmc-setting/settings-docs.h.in:470
+#: src/libnmc-setting/settings-docs.h.in:518
 msgid ""
 "If non-zero, only transmit packets of the specified size or smaller, "
 "breaking larger packets up into multiple Ethernet frames."
@@ -11025,7 +11083,7 @@ msgstr ""
 "Če ni nič, prenaša samo pakete določene velikosti ali manjše, pri čemer "
 "razbije večje pakete v več ethernetnih okvirjev."
 
-#: src/libnmc-setting/settings-docs.h.in:439
+#: src/libnmc-setting/settings-docs.h.in:441
 msgid ""
 "Specific port type to use if the device supports multiple attachment "
 "methods.  One of \"tp\" (Twisted Pair), \"aui\" (Attachment Unit Interface), "
@@ -11037,7 +11095,7 @@ msgstr ""
 "priključne enote), \"bnc\" (Thin Ethernet) ali \"mii\" (vmesnik, neodvisen "
 "od medija). Če naprava podpira samo eno vrsto vrat, se ta nastavitev prezre."
 
-#: src/libnmc-setting/settings-docs.h.in:440
+#: src/libnmc-setting/settings-docs.h.in:442
 msgid ""
 "s390 network device type; one of \"qeth\", \"lcs\", or \"ctc\", representing "
 "the different types of virtual network devices available on s390 systems."
@@ -11046,7 +11104,7 @@ msgstr ""
 "predstavlja različne vrste navideznih omrežnih naprav, ki so na voljo v "
 "sistemih s390."
 
-#: src/libnmc-setting/settings-docs.h.in:441
+#: src/libnmc-setting/settings-docs.h.in:443
 msgid ""
 "Dictionary of key/value pairs of s390-specific device options.  Both keys "
 "and values must be strings.  Allowed keys include \"portno\", \"layer2\", "
@@ -11062,7 +11120,7 @@ msgstr ""
 "počne ničesar s temi informacijami. Vendar pa s390utils pošlje pravilo udev, "
 "ki razčleni te informacije in jih uporabi za vmesnik."
 
-#: src/libnmc-setting/settings-docs.h.in:442
+#: src/libnmc-setting/settings-docs.h.in:444
 msgid ""
 "Identifies specific subchannels that this network device uses for "
 "communication with z/VM or s390 host.  Like the \"mac-address\" property for "
@@ -11078,7 +11136,7 @@ msgstr ""
 "mora vsebovati natanko 3 nize, vsak niz pa je lahko sestavljen samo iz "
 "šestnajstiških znakov in znaka pike (.)."
 
-#: src/libnmc-setting/settings-docs.h.in:443
+#: src/libnmc-setting/settings-docs.h.in:445
 msgid ""
 "When a value greater than 0 is set, configures the device to use the "
 "specified speed. If \"auto-negotiate\" is \"yes\" the specified speed will "
@@ -11104,7 +11162,7 @@ msgstr ""
 "lastnostjo »duplex«, če ni ničelno. Preden določite vrednost hitrosti, se "
 "prepričajte, da jo vaša naprava podpira."
 
-#: src/libnmc-setting/settings-docs.h.in:444
+#: src/libnmc-setting/settings-docs.h.in:446
 msgid ""
 "The NMSettingWiredWakeOnLan options to enable. Not all devices support all "
 "options. May be any combination of \"phy\" (0x2), \"unicast\" (0x4), "
@@ -11119,7 +11177,7 @@ msgstr ""
 "»ignore« (0x8000) (za onemogočanje upravljanja funkcije Wake-on-LAN v "
 "programu NetworkManager)."
 
-#: src/libnmc-setting/settings-docs.h.in:445
+#: src/libnmc-setting/settings-docs.h.in:447
 msgid ""
 "If specified, the password used with magic-packet-based Wake-on-LAN, "
 "represented as an Ethernet MAC address.  If NULL, no password will be "
@@ -11129,7 +11187,7 @@ msgstr ""
 "čarobnih paketih, predstavljeno kot ethernetni naslov MAC.  Če je NULL, "
 "geslo ne bo potrebno."
 
-#: src/libnmc-setting/settings-docs.h.in:446
+#: src/libnmc-setting/settings-docs.h.in:448
 msgid ""
 "The use of fwmark is optional and is by default off. Setting it to 0 "
 "disables it. Otherwise, it is a 32-bit fwmark for outgoing packets. Note "
@@ -11141,7 +11199,7 @@ msgstr ""
 "pakete. Upoštevajte, da je »ip4-auto-default-route« ali »ip6-auto-default-"
 "route« omogočeno, pomeni, da samodejno izberete fwmark."
 
-#: src/libnmc-setting/settings-docs.h.in:447
+#: src/libnmc-setting/settings-docs.h.in:449
 msgid ""
 "Whether to enable special handling of the IPv4 default route. If enabled, "
 "the IPv4 default route from wireguard.peer-routes will be placed to a "
@@ -11173,11 +11231,11 @@ msgstr ""
 "tudi vrstnika z /0 dovoljenim ips, tega običajno ni treba izrecno omogočiti. "
 "Lahko pa ga onemogočite, če želite prilagoditi lastno usmerjanje in pravila."
 
-#: src/libnmc-setting/settings-docs.h.in:448
+#: src/libnmc-setting/settings-docs.h.in:450
 msgid "Like ip4-auto-default-route, but for the IPv6 default route."
 msgstr "Kot ip4-auto-default-route, vendar za privzeto pot IPv6."
 
-#: src/libnmc-setting/settings-docs.h.in:449
+#: src/libnmc-setting/settings-docs.h.in:451
 msgid ""
 "The listen-port. If listen-port is not specified, the port will be chosen "
 "randomly when the interface comes up."
@@ -11185,7 +11243,7 @@ msgstr ""
 "Vrata za poslušanje. Če listen-port ni določen, bodo vrata izbrana "
 "naključno, ko se vmesnik prikaže."
 
-#: src/libnmc-setting/settings-docs.h.in:450
+#: src/libnmc-setting/settings-docs.h.in:452
 msgid ""
 "If non-zero, only transmit packets of the specified size or smaller, "
 "breaking larger packets up into multiple fragments. If zero a default MTU is "
@@ -11197,7 +11255,7 @@ msgstr ""
 "Upoštevajte, da v nasprotju z nastavitvijo MTU wg-quick to ne upošteva "
 "trenutnih poti v času aktivacije."
 
-#: src/libnmc-setting/settings-docs.h.in:451
+#: src/libnmc-setting/settings-docs.h.in:453
 msgid ""
 "Whether to automatically add routes for the AllowedIPs ranges of the peers. "
 "If TRUE (the default), NetworkManager will automatically add routes in the "
@@ -11219,7 +11277,7 @@ msgstr ""
 "ipv6.never-default profila, pot vrstnika za tega vrstnika ne bo dodana "
 "samodejno."
 
-#: src/libnmc-setting/settings-docs.h.in:452
+#: src/libnmc-setting/settings-docs.h.in:454
 msgid ""
 "A comma-separated list of WireGuard peers. Each peer has the following "
 "syntax: PUBLIC_KEY [ATTRIBUTE=VALUE [ATTRIBUTE=VALUE]...] The supported "
@@ -11231,15 +11289,15 @@ msgstr ""
 "atributi so: endpoint, allowed-ips, persistent-keepalive, preshared-key, "
 "preshared-key-flags."
 
-#: src/libnmc-setting/settings-docs.h.in:453
+#: src/libnmc-setting/settings-docs.h.in:455
 msgid "The 256 bit private-key in base64 encoding."
 msgstr "256-bitni zasebni ključ, v kodiranju z base64"
 
-#: src/libnmc-setting/settings-docs.h.in:454
+#: src/libnmc-setting/settings-docs.h.in:456
 msgid "Flags indicating how to handle the \"private-key\" property."
 msgstr "Zastavice, ki označujejo, kako ravnati z lastnostjo »private-key«."
 
-#: src/libnmc-setting/settings-docs.h.in:455
+#: src/libnmc-setting/settings-docs.h.in:457
 msgid ""
 "Configures AP isolation, which prevents communication between wireless "
 "devices connected to this AP. This property can be set to a value different "
@@ -11264,7 +11322,7 @@ msgstr ""
 "privzeta vrednost; Če globalno privzeto stanje ni določeno, se domneva, da "
 "je »false« (0)."
 
-#: src/libnmc-setting/settings-docs.h.in:456
+#: src/libnmc-setting/settings-docs.h.in:458
 msgid ""
 "802.11 frequency band of the network.  One of \"a\" for 5GHz, \"bg\" for "
 "2.4GHz or \"6GHz\".  This will lock associations to the Wi-Fi network to the "
@@ -11280,7 +11338,7 @@ msgstr ""
 "je odvisna od določenih zmogljivosti gonilnika in morda ne bo delovala z "
 "vsemi gonilniki."
 
-#: src/libnmc-setting/settings-docs.h.in:457
+#: src/libnmc-setting/settings-docs.h.in:459
 msgid ""
 "If specified, directs the device to only associate with the given access "
 "point.  This capability is highly driver dependent and not supported by all "
@@ -11297,7 +11355,7 @@ msgstr ""
 "onemogočili skeniranje v ozadju. To je lahko koristno, če obstaja samo ena "
 "dostopna točka za SSID."
 
-#: src/libnmc-setting/settings-docs.h.in:458
+#: src/libnmc-setting/settings-docs.h.in:460
 msgid ""
 "Wireless channel to use for the Wi-Fi connection.  The device will only join "
 "(or create for Ad-Hoc networks) a Wi-Fi network on the specified channel.  "
@@ -11309,7 +11367,7 @@ msgstr ""
 "kanalov med pasovi prekrivajo, ta lastnost zahteva tudi nastavitev lastnosti "
 "»band«."
 
-#: src/libnmc-setting/settings-docs.h.in:459
+#: src/libnmc-setting/settings-docs.h.in:461
 msgid ""
 "Specifies width of the wireless channel in Access Point (AP) mode. When set "
 "to \"auto\" (0) (the default), the channel width is automatically "
@@ -11326,7 +11384,7 @@ msgstr ""
 "lahko širina največ 40 MHz. To lastnost lahko nastavite na vrednost, ki se "
 "razlikuje od »auto« (0) samo, če je vmesnik prilagojen v načinu AP."
 
-#: src/libnmc-setting/settings-docs.h.in:460
+#: src/libnmc-setting/settings-docs.h.in:462
 msgid ""
 "If specified, request that the device use this MAC address instead. This is "
 "known as MAC cloning or spoofing. Beside explicitly specifying a MAC "
@@ -11359,7 +11417,7 @@ msgstr ""
 "to polje izraženo kot \"assigned-mac-address\" ali zastareli \"cloned-mac-"
 "address\"."
 
-#: src/libnmc-setting/settings-docs.h.in:462
+#: src/libnmc-setting/settings-docs.h.in:464
 msgid ""
 "If TRUE, indicates that the network is a non-broadcasting network that hides "
 "its SSID. This works both in infrastructure and AP mode. In infrastructure "
@@ -11381,7 +11439,7 @@ msgstr ""
 "zasebnosti za vas (v infrastrukturnem načinu) ali odjemalske postaje (v "
 "načinu AP), saj so eksplicitni pregledi sond jasno prepoznavni v zraku."
 
-#: src/libnmc-setting/settings-docs.h.in:463
+#: src/libnmc-setting/settings-docs.h.in:465
 msgid ""
 "If specified, this connection will only apply to the Wi-Fi device whose "
 "permanent MAC address matches. This property does not change the MAC address "
@@ -11391,8 +11449,8 @@ msgstr ""
 "naslov MAC se ujema. Ta lastnost ne spremeni naslova MAC naprave (npr. "
 "ponarejanje MAC)."
 
-#: src/libnmc-setting/settings-docs.h.in:464
-#: src/libnmc-setting/settings-docs.h.in:465
+#: src/libnmc-setting/settings-docs.h.in:466
+#: src/libnmc-setting/settings-docs.h.in:467
 msgid ""
 "A list of permanent MAC addresses of Wi-Fi devices to which this connection "
 "should never apply.  Each MAC address should be given in the standard hex-"
@@ -11402,7 +11460,7 @@ msgstr ""
 "smela veljati. Vsak naslov MAC mora biti naveden v standardnem zapisu "
 "šestnajstiških števk in dvopičij (npr. »00:11:22:33:44:55«)."
 
-#: src/libnmc-setting/settings-docs.h.in:466
+#: src/libnmc-setting/settings-docs.h.in:468
 msgid ""
 "One of \"default\" (0) (never randomize unless the user has set a global "
 "default to randomize and the supplicant supports randomization),  \"never\" "
@@ -11414,7 +11472,7 @@ msgstr ""
 "naključnost), »never« (1) (nikoli ne naključno določi naslova MAC) ali "
 "»always« (2) (vedno naključno izbere naslov MAC)."
 
-#: src/libnmc-setting/settings-docs.h.in:467
+#: src/libnmc-setting/settings-docs.h.in:469
 msgid ""
 "Wi-Fi network mode; one of \"infrastructure\", \"mesh\", \"adhoc\" or "
 "\"ap\".  If blank, infrastructure is assumed."
@@ -11422,7 +11480,7 @@ msgstr ""
 "Način omrežja Wi-Fi; eden od \"infrastructure\", »mesh«, \"adhoc\" ali "
 "\"ap\".  Če je prazno, se predpostavlja infrastructure."
 
-#: src/libnmc-setting/settings-docs.h.in:469
+#: src/libnmc-setting/settings-docs.h.in:471
 msgid ""
 "One of \"disable\" (2) (disable Wi-Fi power saving), \"enable\" (3) (enable "
 "Wi-Fi power saving), \"ignore\" (1) (don't touch currently configure "
@@ -11434,12 +11492,12 @@ msgstr ""
 "trenutno prilagojene nastavitve) ali »default« (0) (uporabite globalno "
 "prilagojeno vrednost). Vse druge vrednosti so rezervirane."
 
-#: src/libnmc-setting/settings-docs.h.in:470
-#: src/libnmc-setting/settings-docs.h.in:473
+#: src/libnmc-setting/settings-docs.h.in:472
+#: src/libnmc-setting/settings-docs.h.in:475
 msgid "This property is not implemented and has no effect."
 msgstr "Ta lastnost ni implementirana in nima učinka."
 
-#: src/libnmc-setting/settings-docs.h.in:471
+#: src/libnmc-setting/settings-docs.h.in:473
 msgid ""
 "A list of BSSIDs (each BSSID formatted as a MAC address like "
 "\"00:11:22:33:44:55\") that have been detected as part of the Wi-Fi "
@@ -11459,11 +11517,11 @@ msgstr ""
 "BSSID-je in jim interno sledi v datoteki »/var/lib/NetworkManager/seen-"
 "bssids«."
 
-#: src/libnmc-setting/settings-docs.h.in:472
+#: src/libnmc-setting/settings-docs.h.in:474
 msgid "SSID of the Wi-Fi network. Must be specified."
 msgstr "SSID omrežja Wi-Fi. Mora biti naveden."
 
-#: src/libnmc-setting/settings-docs.h.in:474
+#: src/libnmc-setting/settings-docs.h.in:476
 msgid ""
 "The NMSettingWirelessWakeOnWLan options to enable. Not all devices support "
 "all options. May be any combination of \"any\" (0x2), \"disconnect\" (0x4), "
@@ -11480,7 +11538,7 @@ msgstr ""
 "»ignore« (0x8000) (za onemogočanje upravljanja Wake-on-LAN v "
 "NetworkManagerju)."
 
-#: src/libnmc-setting/settings-docs.h.in:475
+#: src/libnmc-setting/settings-docs.h.in:477
 msgid ""
 "When WEP is used (ie, key-mgmt = \"none\" or \"ieee8021x\") indicate the "
 "802.11 authentication algorithm required by the AP here.  One of \"open\" "
@@ -11494,7 +11552,7 @@ msgstr ""
 "LEAP. Pri uporabi Cisco LEAP (tj. key-mgmt = \"ieee8021x\" in auth-alg = "
 "\"leap\") je treba določiti lastnosti \"leap-username\" in \"leap-password\"."
 
-#: src/libnmc-setting/settings-docs.h.in:476
+#: src/libnmc-setting/settings-docs.h.in:478
 msgid ""
 "Indicates whether Fast Initial Link Setup (802.11ai) must be enabled for the "
 "connection.  One of \"default\" (0) (use global default value), \"disable\" "
@@ -11511,7 +11569,7 @@ msgstr ""
 "nastavljena nobena globalna privzeta nastavitev, bo sistem FILS izbirno "
 "omogočen."
 
-#: src/libnmc-setting/settings-docs.h.in:477
+#: src/libnmc-setting/settings-docs.h.in:479
 msgid ""
 "A list of group/broadcast encryption algorithms which prevents connections "
 "to Wi-Fi networks that do not utilize one of the algorithms in the list.  "
@@ -11523,7 +11581,7 @@ msgstr ""
 "največjo združljivost pustite to lastnost prazno. Vsak element seznama je "
 "lahko eden izmed »wep40«, »wep104«, »tkip« ali »ccmp«."
 
-#: src/libnmc-setting/settings-docs.h.in:478
+#: src/libnmc-setting/settings-docs.h.in:480
 msgid ""
 "Key management used for the connection. One of \"none\" (WEP or no password "
 "protection), \"ieee8021x\" (Dynamic WEP), \"owe\" (Opportunistic Wireless "
@@ -11539,7 +11597,7 @@ msgstr ""
 "WPA3 enterprise). Ta lastnost mora biti nastavljena za vsako povezavo Wi-Fi, "
 "ki uporablja varnost."
 
-#: src/libnmc-setting/settings-docs.h.in:479
+#: src/libnmc-setting/settings-docs.h.in:481
 msgid ""
 "The login password for legacy LEAP connections (ie, key-mgmt = \"ieee8021x\" "
 "and auth-alg = \"leap\")."
@@ -11547,11 +11605,11 @@ msgstr ""
 "Geslo za prijavo za podedovane povezave LEAP (tj. key-mgmt = »ieee8021x« in "
 "auth-alg = »leap«)."
 
-#: src/libnmc-setting/settings-docs.h.in:480
+#: src/libnmc-setting/settings-docs.h.in:482
 msgid "Flags indicating how to handle the \"leap-password\" property."
 msgstr "Zastavice, ki označujejo, kako ravnati z lastnostjo »leap-password«."
 
-#: src/libnmc-setting/settings-docs.h.in:481
+#: src/libnmc-setting/settings-docs.h.in:483
 msgid ""
 "The login username for legacy LEAP connections (ie, key-mgmt = \"ieee8021x\" "
 "and auth-alg = \"leap\")."
@@ -11559,7 +11617,7 @@ msgstr ""
 "Uporabniško ime za prijavo za zastarele povezave LEAP (tj. key-mgmt = "
 "\"ieee8021x\" in auth-alg = \"leap\")."
 
-#: src/libnmc-setting/settings-docs.h.in:482
+#: src/libnmc-setting/settings-docs.h.in:484
 msgid ""
 "A list of pairwise encryption algorithms which prevents connections to Wi-Fi "
 "networks that do not utilize one of the algorithms in the list. For maximum "
@@ -11571,7 +11629,7 @@ msgstr ""
 "združljivost pustite to lastnost prazno.  Vsak element seznama je lahko "
 "»tkip« ali »ccmp«."
 
-#: src/libnmc-setting/settings-docs.h.in:483
+#: src/libnmc-setting/settings-docs.h.in:485
 msgid ""
 "Indicates whether Protected Management Frames (802.11w) must be enabled for "
 "the connection.  One of \"default\" (0) (use global default value), "
@@ -11587,7 +11645,7 @@ msgstr ""
 "uspe, če ni podprta). Če je nastavljena na »default« (0) in ni nastavljena "
 "nobena globalna privzeta nastavitev, bo PMF izbirno omogočen."
 
-#: src/libnmc-setting/settings-docs.h.in:484
+#: src/libnmc-setting/settings-docs.h.in:486
 msgid ""
 "List of strings specifying the allowed WPA protocol versions to use. Each "
 "element may be one \"wpa\" (allow WPA) or \"rsn\" (allow WPA2/RSN).  If not "
@@ -11597,7 +11655,7 @@ msgstr ""
 "uporabiti. Vsak element je lahko en »wpa« (dovoli WPA) ali »rsn« (dovoli "
 "WPA2/RSN). Če ni navedeno, so dovoljene povezave WPA in RSN."
 
-#: src/libnmc-setting/settings-docs.h.in:485
+#: src/libnmc-setting/settings-docs.h.in:487
 msgid ""
 "Pre-Shared-Key for WPA networks. For WPA-PSK, it's either an ASCII "
 "passphrase of 8 to 63 characters that is (as specified in the 802.11i "
@@ -11610,11 +11668,11 @@ msgstr ""
 "dejanski ključ, ali ključ v obliki 64 šestnajstiških znakov. Omrežja WPA3-"
 "Personal uporabljajo geslo poljubne dolžine za preverjanje pristnosti SAE."
 
-#: src/libnmc-setting/settings-docs.h.in:486
+#: src/libnmc-setting/settings-docs.h.in:488
 msgid "Flags indicating how to handle the \"psk\" property."
 msgstr "Zastavice, ki označujejo, kako ravnati z lastnostjo »psk«."
 
-#: src/libnmc-setting/settings-docs.h.in:487
+#: src/libnmc-setting/settings-docs.h.in:489
 msgid ""
 "Flags indicating how to handle the \"wep-key0\", \"wep-key1\", \"wep-key2\", "
 "and \"wep-key3\" properties."
@@ -11622,7 +11680,7 @@ msgstr ""
 "Zastavice, ki označujejo, kako ravnati z lastnostmi »wep-key0«, »wep-key1«, "
 "»wep-key2« in »wep-key3«."
 
-#: src/libnmc-setting/settings-docs.h.in:488
+#: src/libnmc-setting/settings-docs.h.in:490
 msgid ""
 "Controls the interpretation of WEP keys.  Allowed values are \"key\" (1), in "
 "which case the key is either a 10- or 26-character hexadecimal string, or a "
@@ -11636,7 +11694,7 @@ msgstr ""
 "in bo razpršeno z uporabo de facto metode MD5, da se izpelje dejanski ključ "
 "WEP."
 
-#: src/libnmc-setting/settings-docs.h.in:489
+#: src/libnmc-setting/settings-docs.h.in:491
 msgid ""
 "Index 0 WEP key.  This is the WEP key used in most networks.  See the \"wep-"
 "key-type\" property for a description of how this key is interpreted."
@@ -11644,7 +11702,7 @@ msgstr ""
 "Ključ WEP z indeksom 0. To je ključ WEP, ki se uporablja v večini omrežij. "
 "Oglejte si lastnost »wep-key-type« za opis interpretacije tega ključa."
 
-#: src/libnmc-setting/settings-docs.h.in:490
+#: src/libnmc-setting/settings-docs.h.in:492
 msgid ""
 "Index 1 WEP key.  This WEP index is not used by most networks.  See the "
 "\"wep-key-type\" property for a description of how this key is interpreted."
@@ -11652,7 +11710,7 @@ msgstr ""
 "Indeks 1 ključa WEP. Tega indeksa WEP ne uporablja večina omrežij. Oglejte "
 "si lastnost »wep-key-type« za opis interpretacije tega ključa."
 
-#: src/libnmc-setting/settings-docs.h.in:491
+#: src/libnmc-setting/settings-docs.h.in:493
 msgid ""
 "Index 2 WEP key.  This WEP index is not used by most networks.  See the "
 "\"wep-key-type\" property for a description of how this key is interpreted."
@@ -11660,7 +11718,7 @@ msgstr ""
 "Indeks 2 ključa WEP. Tega indeksa WEP ne uporablja večina omrežij. Oglejte "
 "si lastnost »wep-key-type« za opis interpretacije tega ključa."
 
-#: src/libnmc-setting/settings-docs.h.in:492
+#: src/libnmc-setting/settings-docs.h.in:494
 msgid ""
 "Index 3 WEP key.  This WEP index is not used by most networks.  See the "
 "\"wep-key-type\" property for a description of how this key is interpreted."
@@ -11668,7 +11726,7 @@ msgstr ""
 "Indeks 3 ključa WEP. Tega indeksa WEP ne uporablja večina omrežij. Oglejte "
 "si lastnost »wep-key-type« za opis interpretacije tega ključa."
 
-#: src/libnmc-setting/settings-docs.h.in:493
+#: src/libnmc-setting/settings-docs.h.in:495
 msgid ""
 "When static WEP is used (ie, key-mgmt = \"none\") and a non-default WEP key "
 "index is used by the AP, put that WEP key index here.  Valid values are 0 "
@@ -11681,7 +11739,7 @@ msgstr ""
 "potrošniške dostopne točke (kot je Linksys WRT54G) oštevilčijo ključe od 1 "
 "do 4."
 
-#: src/libnmc-setting/settings-docs.h.in:494
+#: src/libnmc-setting/settings-docs.h.in:496
 msgid ""
 "Flags indicating which mode of WPS is to be used if any. There's little "
 "point in changing the default setting as NetworkManager will automatically "
@@ -11694,7 +11752,7 @@ msgstr ""
 "ugotovil, ali je mogoče začeti vpis WPS iz zmogljivosti dostopne točke. WPS "
 "lahko onemogočite tako, da to lastnost nastavite na vrednost 1."
 
-#: src/libnmc-setting/settings-docs.h.in:495
+#: src/libnmc-setting/settings-docs.h.in:497
 msgid ""
 "IEEE 802.15.4 channel. A positive integer or -1, meaning \"do not set, use "
 "whatever the device is already set to\"."
@@ -11702,7 +11760,7 @@ msgstr ""
 "Kanal IEEE 802.15.4. Pozitivno celo število ali -1, kar pomeni »ne nastavi, "
 "uporabi tisto, na kar je naprava že nastavljena«."
 
-#: src/libnmc-setting/settings-docs.h.in:496
+#: src/libnmc-setting/settings-docs.h.in:498
 msgid ""
 "If specified, this connection will only apply to the IEEE 802.15.4 (WPAN) "
 "MAC layer device whose permanent MAC address matches."
@@ -11710,7 +11768,7 @@ msgstr ""
 "Če je določeno, bo ta povezava veljala le za napravo plasti MAC IEEE "
 "802.15.4 (WPAN), katere stalni naslov MAC se ujema."
 
-#: src/libnmc-setting/settings-docs.h.in:497
+#: src/libnmc-setting/settings-docs.h.in:499
 msgid ""
 "IEEE 802.15.4 channel page. A positive integer or -1, meaning \"do not set, "
 "use whatever the device is already set to\"."
@@ -11718,15 +11776,15 @@ msgstr ""
 "Stran kanala IEEE 802.15.4. Pozitivno celo število ali -1, kar pomeni »ne "
 "nastavi, uporabi tisto, na kar je naprava že nastavljena«."
 
-#: src/libnmc-setting/settings-docs.h.in:498
+#: src/libnmc-setting/settings-docs.h.in:500
 msgid "IEEE 802.15.4 Personal Area Network (PAN) identifier."
 msgstr "Identifikator osebnega omrežja IEEE 802.15.4 (PAN)."
 
-#: src/libnmc-setting/settings-docs.h.in:499
+#: src/libnmc-setting/settings-docs.h.in:501
 msgid "Short IEEE 802.15.4 address to be used within a restricted environment."
 msgstr "Kratek naslov IEEE 802.15.4 za uporabo v omejenem okolju."
 
-#: src/libnmc-setting/settings-docs.h.in:500
+#: src/libnmc-setting/settings-docs.h.in:502
 msgid ""
 "The port priority for bond active port re-selection during failover. A "
 "higher number means a higher priority in selection. The primary port has the "
@@ -11738,7 +11796,7 @@ msgstr ""
 "najvišjo prednost. Ta možnost je združljiva samo z načini active-backup, "
 "balance-tlb in balance-alb."
 
-#: src/libnmc-setting/settings-docs.h.in:501
+#: src/libnmc-setting/settings-docs.h.in:503
 msgid ""
 "The queue ID of this bond port. The maximum value of queue ID is the number "
 "of TX queues currently active in device."
@@ -11746,7 +11804,7 @@ msgstr ""
 "ID čakalne vrste teh vrat obveznice. Največja vrednost ID-ja čakalne vrste "
 "je število čakalnih vrst, ki so trenutno aktivne v napravi."
 
-#: src/libnmc-setting/settings-docs.h.in:502
+#: src/libnmc-setting/settings-docs.h.in:504
 msgid ""
 "Specifies the UDP destination port to communicate to the remote GENEVE "
 "tunnel endpoint."
@@ -11754,7 +11812,7 @@ msgstr ""
 "Določa ciljna vrata UDP za komunikacijo z oddaljeno končno točko tunela "
 "GENEVE."
 
-#: src/libnmc-setting/settings-docs.h.in:503
+#: src/libnmc-setting/settings-docs.h.in:505
 msgid ""
 "Specifies how the Don't Fragment (DF) flag should be handled in the outer IP "
 "header of GENEVE tunnel packets. \"unset\" (0) (0): Don't set the DF flag, "
@@ -11768,7 +11826,7 @@ msgstr ""
 "nastavi zastavico DF, paketi ne bodo fragmentirani. \"inherit\" (2) (2): "
 "deduje zastavico DF iz notranje glave IP."
 
-#: src/libnmc-setting/settings-docs.h.in:504
+#: src/libnmc-setting/settings-docs.h.in:506
 msgid ""
 "Specifies the GENEVE Network Identifier (or GENEVE Segment Identifier) to "
 "use."
@@ -11776,7 +11834,7 @@ msgstr ""
 "Določa identifikator omrežja GENEVE (ali identifikator segmenta GENEVE), ki "
 "ga želite uporabiti."
 
-#: src/libnmc-setting/settings-docs.h.in:505
+#: src/libnmc-setting/settings-docs.h.in:507
 msgid ""
 "Specifies the unicast destination IP address to use in outgoing packets when "
 "communicating with the remote GENEVE tunnel endpoint."
@@ -11784,7 +11842,7 @@ msgstr ""
 "Določa ciljni naslov IP enovrstnega oddajanja, ki se uporablja v izhodnih "
 "paketih pri komunikaciji z oddaljeno končno točko tunela GENEVE."
 
-#: src/libnmc-setting/settings-docs.h.in:506
+#: src/libnmc-setting/settings-docs.h.in:508
 msgid ""
 "Specifies the TOS value to use in outgoing packets. The special value "
 "\"inherit\" (1) means inherit from outer packet."
@@ -11792,7 +11850,7 @@ msgstr ""
 "Določa vrednost TOS, ki se uporablja v odhodnih paketih. Posebna vrednost "
 "»inherit« (1) pomeni dedovanje iz zunanjega paketa."
 
-#: src/libnmc-setting/settings-docs.h.in:507
+#: src/libnmc-setting/settings-docs.h.in:509
 msgid ""
 "Specifies the time-to-live value to use in outgoing packets. The special "
 "value \"inherit\" (-1) means inherit from outer packet, 0 means auto, 1-255 "
@@ -11802,7 +11860,7 @@ msgstr ""
 "Posebna vrednost \"inherit\" (-1) pomeni dedovanje iz zunanjega paketa, 0 "
 "pomeni samodejno, 1-255 so fiksne vrednosti."
 
-#: src/libnmc-setting/settings-docs.h.in:508
+#: src/libnmc-setting/settings-docs.h.in:510
 msgid ""
 "Whether the system hostname can be determined from DHCP on this connection. "
 "When set to \"default\" (-1), the value from global configuration is used. "
@@ -11814,7 +11872,7 @@ msgstr ""
 "Če lastnost nima vrednosti v globalni prilagoditvi, NetworkManager "
 "predpostavi, da je vrednost »true« (1)."
 
-#: src/libnmc-setting/settings-docs.h.in:509
+#: src/libnmc-setting/settings-docs.h.in:511
 msgid ""
 "Whether the system hostname can be determined from reverse DNS lookup of "
 "addresses on this device. When set to \"default\" (-1), the value from "
@@ -11826,7 +11884,7 @@ msgstr ""
 "iz globalne prilagoditve. Če lastnost nima vrednosti v globalni "
 "prilagoditvi, NetworkManager predpostavi, da je vrednost »true« (1)."
 
-#: src/libnmc-setting/settings-docs.h.in:510
+#: src/libnmc-setting/settings-docs.h.in:512
 msgid ""
 "If set to \"true\" (1), NetworkManager attempts to get the hostname via "
 "DHCPv4/DHCPv6 or reverse DNS lookup on this device only when the device has "
@@ -11844,7 +11902,7 @@ msgstr ""
 "vrednost iz globalne prilagoditve. Če lastnost nima vrednosti v globalni "
 "prilagoditvi, NetworkManager predpostavi, da je vrednost »false« (0)."
 
-#: src/libnmc-setting/settings-docs.h.in:511
+#: src/libnmc-setting/settings-docs.h.in:513
 msgid ""
 "The relative priority of this connection to determine the system hostname. A "
 "lower numerical value is better (higher priority).  A connection with higher "
@@ -11867,7 +11925,7 @@ msgstr ""
 "Torej, v prisotnosti vsaj ene negativne prioritete, bodo za določitev imena "
 "gostitelja uporabljene samo povezave z najnižjo prioritetno vrednostjo."
 
-#: src/libnmc-setting/settings-docs.h.in:512
+#: src/libnmc-setting/settings-docs.h.in:514
 msgid ""
 "The maximum size of a packet built by the Generic Receive Offload stack for "
 "this device. The value must be between 0 and 4294967295. When set to -1, the "
@@ -11877,7 +11935,7 @@ msgstr ""
 "to napravo. Vrednost mora biti med 0 in 4294967295. Če je nastavljena na -1, "
 "se obstoječa vrednost ohrani."
 
-#: src/libnmc-setting/settings-docs.h.in:513
+#: src/libnmc-setting/settings-docs.h.in:515
 msgid ""
 "The maximum segments of a Generic Segment Offload packet the device should "
 "accept. The value must be between 0 and 4294967295. When set to -1, the "
@@ -11887,7 +11945,7 @@ msgstr ""
 "naprava sprejeti. Vrednost mora biti med 0 in 4294967295. Če je nastavljena "
 "na -1, se obstoječa vrednost ohrani."
 
-#: src/libnmc-setting/settings-docs.h.in:514
+#: src/libnmc-setting/settings-docs.h.in:516
 msgid ""
 "The maximum size of a Generic Segment Offload packet the device should "
 "accept. The value must be between 0 and 4294967295. When set to -1, the "
@@ -11897,7 +11955,7 @@ msgstr ""
 "sprejeti. Vrednost mora biti med 0 in 4294967295. Če je nastavljena na -1, "
 "se obstoječa vrednost ohrani."
 
-#: src/libnmc-setting/settings-docs.h.in:515
+#: src/libnmc-setting/settings-docs.h.in:517
 msgid ""
 "The size of the transmit queue for the device, in number of packets. The "
 "value must be between 0 and 4294967295. When set to -1, the existing value "
@@ -11907,11 +11965,11 @@ msgstr ""
 "biti med 0 in 4294967295. Če je nastavljena na -1, se obstoječa vrednost "
 "ohrani."
 
-#: src/libnmc-setting/settings-docs.h.in:517
+#: src/libnmc-setting/settings-docs.h.in:519
 msgid "A dictionary of key/value pairs with external-ids for OVS."
 msgstr "Slovar parov ključ/vrednost z external-id-ji za OVS."
 
-#: src/libnmc-setting/settings-docs.h.in:518
+#: src/libnmc-setting/settings-docs.h.in:520
 msgid ""
 "A dictionary of key/value pairs with other_config settings for OVS. See also "
 "\"other_config\" in the \"ovs-vswitchd.conf.db\" manual for the keys that "
@@ -11921,7 +11979,7 @@ msgstr ""
 "»other_config« v priročniku »ovs-vswitchd.conf.db« za ključe, ki jih podpira "
 "OVS."
 
-#: src/libnmc-setting/settings-docs.h.in:519
+#: src/libnmc-setting/settings-docs.h.in:521
 msgid ""
 "The subnet ID to use on the interface from the prefix delegation received "
 "via an upstream interface. Set to a value between 0 and 0xffffffff (2^32 - "
@@ -11933,7 +11991,7 @@ msgstr ""
 "1), da označite določen ID podomrežja; ali nastavite na -1, da samodejno "
 "izberete ID podomrežja, ki je na voljo."
 
-#: src/libnmc-setting/settings-docs.h.in:520
+#: src/libnmc-setting/settings-docs.h.in:522
 msgid ""
 "This property specifies the peer interface name of the veth. This property "
 "is mandatory."
@@ -12992,7 +13050,7 @@ msgid ""
 "ARGUMENTS := [--plugin <plugin>] [id | uuid | path] <ID>, ...\n"
 "\n"
 "Migrate connection profiles to a different settings plugin,\n"
-"such as \"keyfile\" (default) or \"ifcfg-rh\".\n"
+"such as \"keyfile\" (default).\n"
 "\n"
 msgstr ""
 "Uporaba: nmcli connection migrate { ARGUMENTI | help }\n"
@@ -13000,7 +13058,7 @@ msgstr ""
 "ARGUMENTI := [--plugin <vstavek>] [id | uuid | path] <ID>, ...\n"
 "\n"
 "Preselite profile povezav v drug vstavek z nastavitvami,\n"
-"npr. »keyfile« (privzeto) ali »ifcfg-rh«.\n"
+"npr. \"keyfile\" (privzeto).\n"
 "\n"
 
 #: src/nmcli/connections.c:1549
@@ -15793,7 +15851,7 @@ msgid "controller"
 msgstr "krmilnik"
 
 #: src/nmcli/general.c:1433 src/nmtui/nm-editor-utils.c:263
-#: src/nmtui/nmt-connect-connection-list.c:397
+#: src/nmtui/nmt-connect-connection-list.c:407
 msgid "VPN"
 msgstr "VPN"
 
@@ -16343,11 +16401,11 @@ msgstr "TTLS"
 msgid "PEAP"
 msgstr "PEAP"
 
-#: src/nmtui/nmt-connect-connection-list.c:577
+#: src/nmtui/nmt-connect-connection-list.c:595
 msgid "Known networks"
 msgstr "Znana omrežja"
 
-#: src/nmtui/nmt-connect-connection-list.c:583
+#: src/nmtui/nmt-connect-connection-list.c:601
 msgid "Other networks"
 msgstr "Druga omrežja"
 
@@ -16359,23 +16417,23 @@ msgstr "Ni razpoložljivih naprav"
 msgid "Select..."
 msgstr "Izberi ..."
 
-#: src/nmtui/nmt-edit-connection-list.c:139
+#: src/nmtui/nmt-edit-connection-list.c:149
 #: src/nmtui/nmt-wireguard-peer-list.c:126
 msgid "Add"
 msgstr "Dodaj"
 
-#: src/nmtui/nmt-edit-connection-list.c:142 src/nmtui/nmt-page-ip4.c:163
+#: src/nmtui/nmt-edit-connection-list.c:152 src/nmtui/nmt-page-ip4.c:163
 #: src/nmtui/nmt-page-ip6.c:163 src/nmtui/nmt-page-team-port.c:92
 #: src/nmtui/nmt-page-team.c:145 src/nmtui/nmt-wireguard-peer-list.c:129
 msgid "Edit..."
 msgstr "Uredi ..."
 
-#: src/nmtui/nmt-edit-connection-list.c:145
+#: src/nmtui/nmt-edit-connection-list.c:155
 #: src/nmtui/nmt-wireguard-peer-list.c:132 src/nmtui/nmtui-edit.c:519
 msgid "Delete"
 msgstr "Izbriši"
 
-#: src/nmtui/nmt-edit-connection-list.c:148
+#: src/nmtui/nmt-edit-connection-list.c:158
 msgid "Share QR..."
 msgstr "Deli kodo QR …"
 
