@@ -114,6 +114,7 @@ static const struct Opt opt_table[] = {
     OPT_KEYWORD("phase1",
                 NM_MAKE_STRV("peapver=0",
                              "peapver=1",
+                             "peaplabel=0",
                              "peaplabel=1",
                              "peap_outer_success=0",
                              "include_tls_length=1",
