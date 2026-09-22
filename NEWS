@@ -64,6 +64,7 @@ Wi-Fi:
   wpa_supplicant backend it used to succeed in both cases and could
   cancel the peer search of an ongoing activation; the IWD backend
   already refused it.
+* Fix lax permissions on newly mirrored IWD profiles.
 
 nmtui:
 * Group known and other Wi-Fi networks separately in the "Activate a

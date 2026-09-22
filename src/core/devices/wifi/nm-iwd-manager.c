@@ -674,9 +674,16 @@ iwd_config_write(GKeyFile              *config,
                  const struct timespec *mtime,
                  GError               **error)
 {
-    gsize           length;
-    gs_free char   *data     = g_key_file_to_data(config, &length, NULL);
-    struct timespec times[2] = {{.tv_nsec = UTIME_OMIT}, *mtime};
+    gsize                  length;
+    gs_free char          *data = g_key_file_to_data(config, &length, NULL);
+    struct timespec        times[2];
+    const struct timespec *times_p = NULL;
+
+    if (mtime) {
+        times[0] = (struct timespec) {.tv_nsec = UTIME_OMIT};
+        times[1] = *mtime;
+        times_p  = times;
+    }
 
     /* Atomically write or replace the file with the right permission bits
      * and timestamps set.  We rely on the temporary file created by
@@ -684,7 +691,7 @@ iwd_config_write(GKeyFile              *config,
      * in the last few filename characters -- it cannot end in .open, .psk
      * or .8021x.
      */
-    return nm_utils_file_set_contents(filepath, data, length, 0600, times, NULL, NULL, error);
+    return nm_utils_file_set_contents(filepath, data, length, 0600, times_p, NULL, NULL, error);
 }
 
 static const char *
@@ -1495,7 +1502,7 @@ connection_added(NMSettings *settings, NMSettingsConnection *sett_conn, gpointer
         return;
     }
 
-    if (!g_key_file_save_to_file(iwd_config, full_path, &error)) {
+    if (!iwd_config_write(iwd_config, full_path, NULL, &error)) {
         _LOGD("New Wi-Fi connection %s not mirrored as IWD profile: save error: %s",
               nm_settings_connection_get_id(sett_conn),
               error->message);
