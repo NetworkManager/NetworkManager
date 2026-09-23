@@ -50,21 +50,17 @@ test_wifi_qr_uri_escaping(void)
     /* Each of \ " : ; , is backslash-escaped. */
     _check_uri("a;b:c,d\\e\"f", NULL, NULL, FALSE, "WIFI:T:nopass;S:a\\;b\\:c\\,d\\\\e\\\"f;;");
 
-    /* An all-hex value is wrapped in double quotes (per the MECARD format). */
-    _check_uri("MyNet", "wpa-psk", "deadbeef", FALSE, "WIFI:T:WPA;S:MyNet;P:\"deadbeef\";;");
-
-    /* A 64-hex-character PSK is also quoted. */
+    /* Some scanners treat surrounding quotes as part of the value. */
+    _check_uri("MyNet", "wpa-psk", "deadbeef", FALSE, "WIFI:T:WPA;S:MyNet;P:deadbeef;;");
+    _check_uri("CAFE", "wpa-psk", "ABCD1234", FALSE, "WIFI:T:WPA;S:CAFE;P:ABCD1234;;");
     _check_uri("MyNet",
                "wpa-psk",
                "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
                FALSE,
-               "WIFI:T:WPA;S:MyNet;P:\"0123456789abcdef0123456789abcdef0123456789abcdef012345"
-               "6789abcdef\";;");
+               "WIFI:T:WPA;S:MyNet;P:0123456789abcdef0123456789abcdef0123456789abcdef012345"
+               "6789abcdef;;");
 
-    /* Mixing hex and non-hex disables quoting. */
     _check_uri("MyNet", "wpa-psk", "dead beef", FALSE, "WIFI:T:WPA;S:MyNet;P:dead beef;;");
-
-    /* An empty value is not quoted (it is not "all-hex"). */
     _check_uri("", NULL, NULL, FALSE, "WIFI:T:nopass;S:;;");
 }
 
