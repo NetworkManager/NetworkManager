@@ -1292,11 +1292,20 @@ impl_device_iwd_p2p_stop_find(NMDBusObject                      *obj,
     NMDeviceIwdP2P        *self = NM_DEVICE_IWD_P2P(obj);
     NMDeviceIwdP2PPrivate *priv = NM_DEVICE_IWD_P2P_GET_PRIVATE(self);
 
-    if (!priv->find_peer_timeout_source || nm_device_is_activating(NM_DEVICE(self))) {
+    if (!priv->find_peer_timeout_source) {
         g_dbus_method_invocation_return_error_literal(invocation,
                                                       NM_DEVICE_ERROR,
                                                       NM_DEVICE_ERROR_NOT_ACTIVE,
                                                       "Find phase is not active.");
+        return;
+    }
+
+    if (nm_device_is_activating(NM_DEVICE(self))) {
+        g_dbus_method_invocation_return_error_literal(
+            invocation,
+            NM_DEVICE_ERROR,
+            NM_DEVICE_ERROR_NOT_ACTIVE,
+            "Stopping the peer search of an ongoing activation is not allowed.");
         return;
     }
 

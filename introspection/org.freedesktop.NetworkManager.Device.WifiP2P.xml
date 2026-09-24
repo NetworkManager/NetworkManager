@@ -47,7 +47,9 @@
     <!--
         StopFind:
 
-        Stop an ongoing find operation again.
+        Stop an ongoing find operation again. Fails if no find is running, or
+        while the device is activating a connection: the peer search that an
+        activation runs is not the caller's to cancel.
     -->
     <method name="StopFind">
     </method>
