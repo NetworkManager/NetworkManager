@@ -785,27 +785,18 @@ static void
 _qr_append_mecard(GString *string, const char *tag, const char *text)
 {
     const char *p;
-    bool        is_hex = TRUE;
-    int         start;
 
     if (!text)
         return;
 
     g_string_append(string, tag);
-    start = string->len;
 
     for (p = text; *p; p++) {
-        if (!g_ascii_isxdigit(*p))
-            is_hex = FALSE;
         if (strchr("\\\":;,", *p))
             g_string_append_c(string, '\\');
         g_string_append_c(string, *p);
     }
 
-    if (is_hex && text[0]) {
-        g_string_insert_c(string, start, '\"');
-        g_string_append_c(string, '\"');
-    }
     g_string_append_c(string, ';');
 }
 
