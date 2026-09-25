@@ -489,6 +489,9 @@ like Aliyun, Azure, EC2, GCP are supported.
 %meson \
 	-Db_ndebug=false \
 	--warnlevel 2 \
+%if %{with sanitizer}
+	-Db_sanitize=address \
+%endif
 %if %{with test}
 	--werror \
 %endif
