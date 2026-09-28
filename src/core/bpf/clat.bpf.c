@@ -169,7 +169,11 @@ update_l4_checksum(struct __sk_buff *skb,
         return;
     }
 
-    bpf_l4_csum_replace(skb, offset, 0, csum, flags);
+    if (bpf_l4_csum_replace(skb, offset, 0, csum, flags)) {
+        /* A failure updating the checksum (e.g. packet too short) means we
+         * don't need to update csum_diff below. */
+        return;
+    }
 
     if (csum_diff) {
         *csum_diff = bpf_csum_diff((__be32 *) &csum, sizeof(csum), 0, 0, *csum_diff);
