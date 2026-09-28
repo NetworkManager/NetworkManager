@@ -795,7 +795,7 @@ rewrite_icmpv6_inner(struct __sk_buff *skb, __u32 *csum_diff, bool has_eth)
 
     *icmp = icmp_buf;
     update_icmp_checksum(skb,
-                         (struct ipv6hdr *) (data + L2_H_LEN(has_eth)),
+                         (struct ipv6hdr *) (data + L2_H_LEN(has_eth) + IP6_H_LEN + ICMP6_H_LEN),
                          &icmp6_buf,
                          icmp,
                          has_eth,
