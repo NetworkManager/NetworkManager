@@ -3669,6 +3669,9 @@ nm_platform_ethtool_get_ring(NMPlatform *self, int ifindex, NMEthtoolRingState *
     g_return_val_if_fail(ifindex > 0, FALSE);
     g_return_val_if_fail(ring, FALSE);
 
+    if (!klass->ethtool_get_ring)
+        return FALSE;
+
     return klass->ethtool_get_ring(self, ifindex, ring);
 }
 
@@ -3679,6 +3682,9 @@ nm_platform_ethtool_set_ring(NMPlatform *self, int ifindex, const NMEthtoolRingS
 
     g_return_val_if_fail(ifindex > 0, FALSE);
     g_return_val_if_fail(ring, FALSE);
+
+    if (!klass->ethtool_set_ring)
+        return FALSE;
 
     return klass->ethtool_set_ring(self, ifindex, ring);
 }
@@ -3714,6 +3720,9 @@ nm_platform_ethtool_get_pause(NMPlatform *self, int ifindex, NMEthtoolPauseState
     g_return_val_if_fail(ifindex > 0, FALSE);
     g_return_val_if_fail(pause, FALSE);
 
+    if (!klass->ethtool_get_pause)
+        return FALSE;
+
     return klass->ethtool_get_pause(self, ifindex, pause);
 }
 
@@ -3724,6 +3733,9 @@ nm_platform_ethtool_set_pause(NMPlatform *self, int ifindex, const NMEthtoolPaus
 
     g_return_val_if_fail(ifindex > 0, FALSE);
     g_return_val_if_fail(pause, FALSE);
+
+    if (!klass->ethtool_set_pause)
+        return FALSE;
 
     return klass->ethtool_set_pause(self, ifindex, pause);
 }
@@ -3736,6 +3748,9 @@ nm_platform_ethtool_get_eee(NMPlatform *self, int ifindex, NMEthtoolEEEState *ee
     g_return_val_if_fail(ifindex > 0, FALSE);
     g_return_val_if_fail(eee, FALSE);
 
+    if (!klass->ethtool_get_eee)
+        return FALSE;
+
     return klass->ethtool_get_eee(self, ifindex, eee);
 }
 
@@ -3746,6 +3761,9 @@ nm_platform_ethtool_set_eee(NMPlatform *self, int ifindex, const NMEthtoolEEESta
 
     g_return_val_if_fail(ifindex > 0, FALSE);
     g_return_val_if_fail(eee, FALSE);
+
+    if (!klass->ethtool_set_eee)
+        return FALSE;
 
     return klass->ethtool_set_eee(self, ifindex, eee);
 }
