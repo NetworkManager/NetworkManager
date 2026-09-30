@@ -175,6 +175,11 @@ Obsoletes: NetworkManager-dispatcher-routing-rules < 1:1.49.3-1
 Obsoletes: NetworkManager-initscripts-updown < 1:1.49.3-1
 %endif
 
+%if 0%{?fedora} >= 45
+Obsoletes: NetworkManager-fortisslvpn < 1.4.1-15
+Obsoletes: NetworkManager-vpnc < 1:1.4.0-8
+%endif
+
 Conflicts: NetworkManager-vpnc < 1:0.7.0.99-1
 Conflicts: NetworkManager-openvpn < 1:0.7.0.99-1
 Conflicts: NetworkManager-pptp < 1:0.7.0.99-1
