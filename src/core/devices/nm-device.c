@@ -18252,10 +18252,10 @@ nm_device_state_changed(NMDevice *self, NMDeviceState state, NMDeviceStateReason
 static gboolean
 queued_state_set(gpointer user_data)
 {
-    NMDevice           *self = NM_DEVICE(user_data);
-    NMDevicePrivate    *priv = NM_DEVICE_GET_PRIVATE(self);
-    NMDeviceState       new_state;
-    NMDeviceStateReason new_reason;
+    gs_unref_object NMDevice *self = g_object_ref(NM_DEVICE(user_data));
+    NMDevicePrivate          *priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDeviceState             new_state;
+    NMDeviceStateReason       new_reason;
 
     nm_assert(priv->queued_state.id);
 
