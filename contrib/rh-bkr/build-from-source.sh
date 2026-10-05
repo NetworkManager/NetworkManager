@@ -130,9 +130,6 @@ cd "$BUILD_DIR"
 
 BUILD_REPO_GITLAB="https://gitlab.freedesktop.org/NetworkManager/NetworkManager.git"
 BUILD_REPO_GITHUB="https://github.com/NetworkManager/NetworkManager.git"
-if [ -z "$BUILD_REPO" ]; then
-    BUILD_REPO="$BUILD_REPO_GITLAB"
-fi
 
 rm -rf "./NetworkManager"
 mkdir "./NetworkManager/"
@@ -165,17 +162,22 @@ _git_setup_remote() {
     fi
 }
 
-_git_setup_remote origin "$BUILD_REPO"
-_git_setup_remote github "$BUILD_REPO_GITHUB"
-if [ "$BUILD_REPO" != "$BUILD_REPO_GITLAB" ]; then
-    _git_setup_remote gitlab "$BUILD_REPO_GITLAB"
+if [ -z "$BUILD_REPO" ]; then
+    _git_setup_remote origin "$BUILD_REPO_GITLAB"
+    _git_setup_remote github "$BUILD_REPO_GITHUB"
+else
+    _git_setup_remote origin "$BUILD_REPO"
 fi
 
 git -c user.email=bogus@nowhere.com -c user.name="Nobody Unperson" commit --allow-empty -m dummy-commit
 git checkout HEAD^{}
 
-git fetch github
-git fetch --all --prune
+if [ -z "$BUILD_REPO" ]; then
+    git fetch github
+    git fetch --all --prune
+else
+    git fetch origin --prune
+fi
 
 git show-ref
 

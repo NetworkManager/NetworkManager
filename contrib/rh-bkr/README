@@ -2,6 +2,26 @@ These are utility scripts to interact with the beaker installation
 of Red Hat to run tests of NetworkManager.
 
 
+./build-from-source.sh:
+=======================
+
+A non-empty BUILD_REPO makes the script fetch only that repository. There is
+no fallback if the fetch fails. BUILD_ID selects the branch, tag or commit to
+build; a mirror must retain the refs needed to fetch it.
+
+With BUILD_REPO unset or empty, the script fetches both the freedesktop.org
+repository and its GitHub mirror, including their merge/pull request refs.
+BUILD_REPO does not affect where this script or its build dependencies come
+from.
+
+Run the tests with Python 3.6 or newer and Git:
+
+    python3 contrib/rh-bkr/test-build-from-source.py
+
+The tests use local repositories with only Git's file transport enabled.
+Package installation and builds are disabled.
+
+
 ./bkr.py:
 =========
 
