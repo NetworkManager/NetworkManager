@@ -367,6 +367,25 @@ nmt_page_wifi_constructed(GObject *object)
                                             "active-id",
                                             G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 
+    {
+        static NmtNewtPopupEntry metered_entries[] = {
+            {N_("Automatic"), "unknown"},
+            {N_("Yes"), "yes"},
+            {N_("No"), "no"},
+            {NULL, NULL},
+        };
+        NMSettingConnection *s_con;
+
+        s_con  = nm_connection_get_setting_connection(conn);
+        widget = nmt_newt_popup_new(metered_entries);
+        g_object_bind_property(s_con,
+                               NM_SETTING_CONNECTION_METERED,
+                               widget,
+                               "active",
+                               G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+        nmt_editor_grid_append(grid, _("Metered"), widget, NULL);
+    }
+
     nmt_editor_grid_append(grid, NULL, nmt_newt_separator_new(), NULL);
 
     widget = nmt_mac_entry_new(40, ETH_ALEN, NMT_MAC_ENTRY_TYPE_MAC);
