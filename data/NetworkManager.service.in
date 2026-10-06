@@ -9,6 +9,7 @@ BindsTo=dbus.service
 [Service]
 Type=dbus
 BusName=org.freedesktop.NetworkManager
+ExecCondition=/bin/sh -c '! systemctl is-active --quiet rescue.target emergency.target'
 ExecReload=/usr/bin/busctl call org.freedesktop.NetworkManager /org/freedesktop/NetworkManager org.freedesktop.NetworkManager Reload u 0
 #ExecReload=/bin/kill -HUP $MAINPID
 ExecStart=@sbindir@/NetworkManager --no-daemon
@@ -37,7 +38,7 @@ RestrictSUIDSGID=true
 LimitNOFILE=65536
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=multi-user.target dbus.service
 Also=NetworkManager-dispatcher.service
 
 # We want to enable NetworkManager-wait-online.service whenever this service
