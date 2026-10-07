@@ -677,6 +677,10 @@ fi
 %firewalld_reload
 
 %systemd_post %{systemd_units}
+# This runs on package upgrades
+if [ $1 -gt 1 ] && systemctl -q is-enabled NetworkManager.service; then
+    systemctl --no-reload add-wants dbus.service NetworkManager.service || :
+fi
 
 
 %if %{with nm_cloud_setup}
