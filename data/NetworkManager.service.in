@@ -5,6 +5,7 @@ Wants=network.target
 After=network-pre.target dbus.service
 Before=network.target
 BindsTo=dbus.service
+Conflicts=rescue.target
 
 [Service]
 Type=dbus
