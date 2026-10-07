@@ -677,6 +677,19 @@ fi
 %firewalld_reload
 
 %systemd_post %{systemd_units}
+# This runs on package upgrades.
+# Persistently enabled service gets a persistent Wants= on dbus.service,
+# runtime-enabled a runtime Wants=.
+if [ $1 -gt 1 ]; then
+    case "$(systemctl is-enabled NetworkManager.service 2>/dev/null)" in
+    enabled)
+        systemctl --no-reload add-wants dbus.service NetworkManager.service || :
+        ;;
+    enabled-runtime)
+        systemctl --no-reload add-wants --runtime dbus.service NetworkManager.service || :
+        ;;
+    esac
+fi
 
 
 %if %{with nm_cloud_setup}
