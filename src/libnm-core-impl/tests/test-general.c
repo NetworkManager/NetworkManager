@@ -2157,6 +2157,177 @@ test_setting_vpn_update_secrets(void)
     g_object_unref(connection);
 }
 
+static NMSettingVpn *
+_vpn_setting_new_from_dbus(const char *variant_str)
+{
+    gs_unref_variant GVariant *variant =
+        nmtst_variant_from_string(G_VARIANT_TYPE_VARDICT, variant_str);
+    gs_free_error GError *error = NULL;
+    NMSetting            *setting;
+
+    setting = _nm_setting_new_from_dbus(NM_TYPE_SETTING_VPN,
+                                        variant,
+                                        NULL,
+                                        NM_SETTING_PARSE_FLAGS_STRICT,
+                                        &error);
+    nmtst_assert_success(setting, error);
+    return NM_SETTING_VPN(setting);
+}
+
+static gboolean
+_vpn_update_secrets(NMConnection *connection, const char *variant_str, GError **error)
+{
+    gs_unref_variant GVariant *secrets =
+        nmtst_variant_from_string(NM_VARIANT_TYPE_SETTING, variant_str);
+
+    return nm_connection_update_secrets(connection, NM_SETTING_VPN_SETTING_NAME, secrets, error);
+}
+
+static void
+test_setting_vpn_hint_tag_from_dbus(void)
+{
+    gs_unref_object NMSettingVpn *s_vpn = NULL;
+    gs_free_error GError         *error = NULL;
+    NMSettingSecretFlags          flags;
+
+    /* Secret names from D-Bus may carry a hint-tag prefix. It is stripped
+     * before storing and the flags it implies are merged with the ones
+     * already in vpn.data. Names that are empty or still prefixed after
+     * stripping are dropped. */
+    s_vpn = _vpn_setting_new_from_dbus(
+        "{'service-type': <'org.freedesktop.NetworkManager.openvpn'>,"
+        " 'data': <{'pin-flags': '1'}>,"
+        " 'secrets': <{'x-dynamic-challenge:otp': '123456',"
+        "              'x-dynamic-challenge-echo:pin': '0000',"
+        "              'password': 'wordpass',"
+        "              'x-dynamic-challenge:': 'empty',"
+        "              'x-dynamic-challenge:x-dynamic-challenge:twice': 'v1',"
+        "              'x-dynamic-challenge-echo:x-dynamic-challenge:mixed': 'v2'}>}");
+
+    g_assert_cmpint(nm_setting_vpn_get_num_secrets(s_vpn), ==, 3);
+    g_assert_cmpstr(nm_setting_vpn_get_secret(s_vpn, "otp"), ==, "123456");
+    g_assert_cmpstr(nm_setting_vpn_get_secret(s_vpn, "pin"), ==, "0000");
+    g_assert_cmpstr(nm_setting_vpn_get_secret(s_vpn, "password"), ==, "wordpass");
+    g_assert_cmpstr(nm_setting_vpn_get_secret(s_vpn, "x-dynamic-challenge:otp"), ==, NULL);
+    g_assert_cmpstr(nm_setting_vpn_get_secret(s_vpn, "x-dynamic-challenge-echo:pin"), ==, NULL);
+
+    /* Only "pin-flags" (from D-Bus) and "otp-flags" (implied by the tag). */
+    g_assert_cmpint(nm_setting_vpn_get_num_data_items(s_vpn), ==, 2);
+
+    nmtst_assert_success(nm_setting_get_secret_flags(NM_SETTING(s_vpn), "otp", &flags, &error),
+                         error);
+    g_assert_cmpint(flags, ==, NM_SETTING_SECRET_FLAG_NOT_SAVED);
+
+    nmtst_assert_success(nm_setting_get_secret_flags(NM_SETTING(s_vpn), "pin", &flags, &error),
+                         error);
+    g_assert_cmpint(flags,
+                    ==,
+                    NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED);
+
+    nmtst_assert_success(nm_setting_get_secret_flags(NM_SETTING(s_vpn), "password", &flags, &error),
+                         error);
+    g_assert_cmpint(flags, ==, NM_SETTING_SECRET_FLAG_NONE);
+}
+
+static void
+test_setting_vpn_hint_tag_update_secrets(void)
+{
+    gs_unref_object NMConnection *connection = NULL;
+    gs_free_error GError         *error      = NULL;
+    NMSettingVpn                 *s_vpn;
+    NMSettingSecretFlags          flags;
+    gboolean                      success;
+
+    connection =
+        nmtst_create_minimal_connection("vpn-hint-tag", NULL, NM_SETTING_VPN_SETTING_NAME, NULL);
+    s_vpn = nm_connection_get_setting_vpn(connection);
+    nm_setting_vpn_add_data_item(s_vpn, "otp-flags", "1");
+
+    /* A dict of secrets goes through update_secret_dict(). Invalid names
+     * are skipped without failing the whole update. */
+    success = _vpn_update_secrets(connection,
+                                  "{'secrets': <{"
+                                  "'x-dynamic-challenge:otp': '123456', "
+                                  "'x-dynamic-challenge:': 'empty', "
+                                  "'x-dynamic-challenge:x-dynamic-challenge:twice': 'v1'"
+                                  "}>}",
+                                  &error);
+    nmtst_assert_success(success, error);
+
+    g_assert_cmpint(nm_setting_vpn_get_num_secrets(s_vpn), ==, 1);
+    g_assert_cmpstr(nm_setting_vpn_get_secret(s_vpn, "otp"), ==, "123456");
+    g_assert_cmpint(nm_setting_vpn_get_num_data_items(s_vpn), ==, 1);
+    nmtst_assert_success(nm_setting_get_secret_flags(NM_SETTING(s_vpn), "otp", &flags, &error),
+                         error);
+    g_assert_cmpint(flags,
+                    ==,
+                    NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED);
+
+    /* A single string secret goes through update_secret_string(). */
+    success = _vpn_update_secrets(connection, "{'x-dynamic-challenge-echo:pin': <'0000'>}", &error);
+    nmtst_assert_success(success, error);
+
+    g_assert_cmpint(nm_setting_vpn_get_num_secrets(s_vpn), ==, 2);
+    g_assert_cmpstr(nm_setting_vpn_get_secret(s_vpn, "pin"), ==, "0000");
+    g_assert_cmpint(nm_setting_vpn_get_num_data_items(s_vpn), ==, 2);
+    nmtst_assert_success(nm_setting_get_secret_flags(NM_SETTING(s_vpn), "pin", &flags, &error),
+                         error);
+    g_assert_cmpint(flags, ==, NM_SETTING_SECRET_FLAG_NOT_SAVED);
+
+    /* There, an invalid name fails the update and changes nothing. */
+    success = _vpn_update_secrets(connection, "{'x-dynamic-challenge:': <'empty'>}", &error);
+    nmtst_assert_no_success(success, error);
+    g_assert_error(error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_SETTING);
+    g_clear_error(&error);
+
+    success = _vpn_update_secrets(connection,
+                                  "{'x-dynamic-challenge:x-dynamic-challenge:twice': <'v1'>}",
+                                  &error);
+    nmtst_assert_no_success(success, error);
+    g_assert_error(error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_SETTING);
+    g_clear_error(&error);
+
+    g_assert_cmpint(nm_setting_vpn_get_num_secrets(s_vpn), ==, 2);
+    g_assert_cmpint(nm_setting_vpn_get_num_data_items(s_vpn), ==, 2);
+}
+
+static void
+test_setting_vpn_hint_tag_aggregate(void)
+{
+    gs_unref_object NMConnection *connection = NULL;
+    NMSettingVpn                 *s_vpn;
+
+    /* A hinted secret received from D-Bus used to be stored with its prefix.
+     * get_secret_flags() then could not find it and aggregate() hit
+     * nm_assert_not_reached()
+     */
+
+    connection =
+        nmtst_create_minimal_connection("vpn-hint-tag", NULL, NM_SETTING_VPN_SETTING_NAME, NULL);
+    nm_connection_add_setting(connection,
+                              NM_SETTING(_vpn_setting_new_from_dbus(
+                                  "{'secrets': <{'x-dynamic-challenge:otp': '123456'}>}")));
+    s_vpn = nm_connection_get_setting_vpn(connection);
+
+    g_assert(_nm_connection_aggregate(connection, NM_CONNECTION_AGGREGATE_ANY_SECRETS, NULL));
+
+    /* Must be NOT_SAVED for a prefixed secret, not NONE */
+    g_assert(!_nm_connection_aggregate(connection,
+                                       NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS,
+                                       NULL));
+
+    /* Test for a "-flags" data item whose secret name still carries a
+     * hint tag. aggregate() skips it. */
+    nm_setting_vpn_remove_secret(s_vpn, "otp");
+    nm_setting_vpn_remove_data_item(s_vpn, "otp-flags");
+    nm_setting_vpn_add_data_item(s_vpn, "x-dynamic-challenge:foo-flags", "0");
+
+    g_assert(!_nm_connection_aggregate(connection, NM_CONNECTION_AGGREGATE_ANY_SECRETS, NULL));
+    g_assert(!_nm_connection_aggregate(connection,
+                                       NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS,
+                                       NULL));
+}
+
 #define TO_DEL_NUM 50
 typedef struct {
     NMSettingVpn *s_vpn;
@@ -12052,6 +12223,12 @@ main(int argc, char **argv)
     g_test_add_func("/core/general/test_setting_vpn_items", test_setting_vpn_items);
     g_test_add_func("/core/general/test_setting_vpn_update_secrets",
                     test_setting_vpn_update_secrets);
+    g_test_add_func("/core/general/test_setting_vpn_hint_tag_from_dbus",
+                    test_setting_vpn_hint_tag_from_dbus);
+    g_test_add_func("/core/general/test_setting_vpn_hint_tag_update_secrets",
+                    test_setting_vpn_hint_tag_update_secrets);
+    g_test_add_func("/core/general/test_setting_vpn_hint_tag_aggregate",
+                    test_setting_vpn_hint_tag_aggregate);
     g_test_add_func("/core/general/test_setting_vpn_modify_during_foreach",
                     test_setting_vpn_modify_during_foreach);
     g_test_add_func("/core/general/test_setting_ip4_config_labels", test_setting_ip4_config_labels);
