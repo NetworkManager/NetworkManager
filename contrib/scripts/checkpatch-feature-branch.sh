@@ -26,13 +26,36 @@ else
             "refs/heads/main:$BASE_REF/main" \
             "refs/heads/nm-*:$BASE_REF/nm-*" \
             || die "failure to fetch from https://gitlab.freedesktop.org/NetworkManager/NetworkManager.git"
+    else
+        # A fork's main may contain unpublished commits, so prefer the
+        # canonical repository when choosing which commits to exclude.
+        while IFS= read -r REMOTE; do
+            URL="$(git remote get-url "$REMOTE")" || continue
+            URL="${URL%/}"
+            case "${URL%.git}" in
+                "https://gitlab.freedesktop.org/NetworkManager/NetworkManager"| \
+                "git@gitlab.freedesktop.org:NetworkManager/NetworkManager"| \
+                "git@ssh.gitlab.freedesktop.org:NetworkManager/NetworkManager"| \
+                "ssh://git@gitlab.freedesktop.org/NetworkManager/NetworkManager"| \
+                "ssh://git@ssh.gitlab.freedesktop.org/NetworkManager/NetworkManager")
+                    BASE_REF="refs/remotes/$REMOTE"
+                    break
+                    ;;
+            esac
+        done < <(git remote)
     fi
 
     # the argument is only a single ref (or the default "HEAD").
     # Find all commits that branch off one of the stable branches or main
     # and lead to $HEAD. These are the commits of the feature branch.
 
-    RANGES=( $(git show-ref | sed 's#^\(.*\) '"$BASE_REF/"'\(main\|nm-1-[0-9]\+\)$#\1..'"$HEAD"'#p' -n) )
+    RANGES=()
+    while read -r H REF; do
+        REF="${REF#"$BASE_REF/"}"
+        if [[ "$REF" == main || "$REF" =~ ^nm-1-[0-9]+$ ]]; then
+            RANGES+=( "$H..$HEAD" )
+        fi
+    done < <(git for-each-ref --format='%(objectname) %(refname)' "$BASE_REF/")
 
     [ "${#RANGES[@]}" != 0 ] || die "cannot detect git-ranges (HEAD is $(git rev-parse "$HEAD"))"
 
