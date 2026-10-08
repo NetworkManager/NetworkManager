@@ -132,6 +132,7 @@ update_l4_checksum(struct __sk_buff *skb,
     __u16 offset;
     __u32 csum;
     int   ip_type;
+    bool  is_udp;
 
     if (v4to6) {
         void *from_ptr = &iph->saddr;
@@ -159,9 +160,11 @@ update_l4_checksum(struct __sk_buff *skb,
 
     switch (ip_type) {
     case IPPROTO_TCP:
+        is_udp = false;
         offset += offsetof(struct tcphdr, check);
         break;
     case IPPROTO_UDP:
+        is_udp = true;
         offset += offsetof(struct udphdr, check);
         flags |= BPF_F_MARK_MANGLED_0;
         break;
@@ -176,6 +179,14 @@ update_l4_checksum(struct __sk_buff *skb,
     }
 
     if (csum_diff) {
+        __u16 new_csum;
+
+        /* A zero checksum means that bpf_l4_csum_replace(BPF_F_MARK_MANGLED_0) didn't
+         * change it. No need to update csum_diff. */
+        if (is_udp && !bpf_skb_load_bytes(skb, offset, &new_csum, sizeof(new_csum))
+            && new_csum == 0)
+            return;
+
         *csum_diff = bpf_csum_diff((__be32 *) &csum, sizeof(csum), 0, 0, *csum_diff);
     }
 }
