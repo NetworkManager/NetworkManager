@@ -453,6 +453,31 @@ nm_setting_vpn_foreach_secret(NMSettingVpn *setting, NMVpnIterFunc func, gpointe
 }
 
 static gboolean
+_parse_secret_hint_tag(const char           *secret_name,
+                       const char          **out_secret_name,
+                       NMSettingSecretFlags *out_implied_flags)
+{
+    NMSettingSecretFlags implied_flags = NM_SETTING_SECRET_FLAG_NONE;
+    gboolean             ret           = FALSE;
+
+    nm_assert(secret_name);
+
+    if (g_str_has_prefix(secret_name, NM_SECRET_TAG_DYNAMIC_CHALLENGE)) {
+        secret_name += NM_STRLEN(NM_SECRET_TAG_DYNAMIC_CHALLENGE);
+        implied_flags |= NM_SETTING_SECRET_FLAG_NOT_SAVED;
+        ret = TRUE;
+    } else if (g_str_has_prefix(secret_name, NM_SECRET_TAG_DYNAMIC_CHALLENGE_ECHO)) {
+        secret_name += NM_STRLEN(NM_SECRET_TAG_DYNAMIC_CHALLENGE_ECHO);
+        implied_flags |= NM_SETTING_SECRET_FLAG_NOT_SAVED;
+        ret = TRUE;
+    }
+
+    NM_SET_OUT(out_secret_name, secret_name);
+    NM_SET_OUT(out_implied_flags, implied_flags);
+    return ret;
+}
+
+static gboolean
 aggregate(NMSetting *setting, int type_i, gpointer arg)
 {
     NMSettingVpnPrivate      *priv = NM_SETTING_VPN_GET_PRIVATE(setting);
@@ -497,6 +522,13 @@ aggregate(NMSetting *setting, int type_i, gpointer arg)
                     continue;
                 secret_name = g_strndup(key_name, strlen(key_name) - NM_STRLEN("-flags"));
                 if (secret_name[0] == '\0')
+                    continue;
+                /* If the derived secret name still carries a hint-tag prefix
+                 * (e.g. "x-dynamic-challenge:foo-flags" in vpn.data yields
+                 * "x-dynamic-challenge:foo" here), skip it. get_secret_flags()
+                 * would strip the tag a second time and look up a key that does
+                 * not exist, which hits nm_assert_not_reached() below. */
+                if (_parse_secret_hint_tag(secret_name, NULL, NULL))
                     continue;
                 if (!nm_setting_get_secret_flags(NM_SETTING(setting),
                                                  secret_name,
@@ -577,31 +609,6 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     return TRUE;
 }
 
-static gboolean
-_parse_secret_hint_tag(const char           *secret_name,
-                       const char          **out_secret_name,
-                       NMSettingSecretFlags *out_implied_flags)
-{
-    NMSettingSecretFlags implied_flags = NM_SETTING_SECRET_FLAG_NONE;
-    gboolean             ret           = FALSE;
-
-    nm_assert(secret_name);
-
-    if (g_str_has_prefix(secret_name, NM_SECRET_TAG_DYNAMIC_CHALLENGE)) {
-        secret_name += NM_STRLEN(NM_SECRET_TAG_DYNAMIC_CHALLENGE);
-        implied_flags |= NM_SETTING_SECRET_FLAG_NOT_SAVED;
-        ret = TRUE;
-    } else if (g_str_has_prefix(secret_name, NM_SECRET_TAG_DYNAMIC_CHALLENGE_ECHO)) {
-        secret_name += NM_STRLEN(NM_SECRET_TAG_DYNAMIC_CHALLENGE_ECHO);
-        implied_flags |= NM_SETTING_SECRET_FLAG_NOT_SAVED;
-        ret = TRUE;
-    }
-
-    NM_SET_OUT(out_secret_name, secret_name);
-    NM_SET_OUT(out_implied_flags, implied_flags);
-    return ret;
-}
-
 static NMSettingUpdateSecretResult
 update_secret_string(NMSetting *setting, const char *key, const char *value, GError **error)
 {
@@ -614,9 +621,24 @@ update_secret_string(NMSetting *setting, const char *key, const char *value, GEr
     /* If the name is prefixed with a hint tag, process it before saving:
      * remove the prefix and apply the flags that it implies */
     _parse_secret_hint_tag(key, &key, &hint_implied_flags);
+
+    /* After stripping, reject names that are empty (like
+     * "x-dynamic-challenge:") or that still carry a second hint-tag prefix
+     * (like "x-dynamic-challenge:x-dynamic-challenge:foo"). */
+    if (!key[0] || _parse_secret_hint_tag(key, NULL, NULL)) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_SETTING,
+                            _("secret name is not valid after removing the hint-tag prefix"));
+        g_prefix_error(error, "%s: ", NM_SETTING_VPN_SETTING_NAME);
+        return NM_SETTING_UPDATE_SECRET_ERROR;
+    }
+
     if (hint_implied_flags) {
-        nm_setting_get_secret_flags(setting, key, &flags, NULL);
-        nm_setting_set_secret_flags(setting, key, flags | hint_implied_flags, NULL);
+        if (!nm_setting_get_secret_flags(setting, key, &flags, NULL))
+            flags = NM_SETTING_SECRET_FLAG_NONE;
+        if (!nm_setting_set_secret_flags(setting, key, flags | hint_implied_flags, NULL))
+            return NM_SETTING_UPDATE_SECRET_ERROR;
     }
 
     if (nm_streq0(nm_g_hash_table_lookup(priv->secrets, key), value))
@@ -656,9 +678,20 @@ update_secret_dict(NMSetting *setting, GVariant *secrets, GError **error)
         /* If the name is prefixed with a hint tag, process it before saving:
          * remove the prefix and apply the flags that it implies */
         _parse_secret_hint_tag(name, &name, &hint_implied_flags);
+
+        /* After stripping, reject names that are empty (like
+        * "x-dynamic-challenge:") or that still carry a second hint-tag prefix
+        * (like "x-dynamic-challenge:x-dynamic-challenge:foo"). */
+        if (!name[0] || _parse_secret_hint_tag(name, NULL, NULL))
+            continue;
+
         if (hint_implied_flags) {
-            nm_setting_get_secret_flags(setting, name, &flags, NULL);
-            nm_setting_set_secret_flags(setting, name, flags | hint_implied_flags, NULL);
+            /* The secret may not exist yet, so get_secret_flags() can
+             * legitimately return FALSE. Fall back to NONE and merge. */
+            if (!nm_setting_get_secret_flags(setting, name, &flags, NULL))
+                flags = NM_SETTING_SECRET_FLAG_NONE;
+            if (!nm_setting_set_secret_flags(setting, name, flags | hint_implied_flags, NULL))
+                continue;
         }
 
         if (nm_streq0(nm_g_hash_table_lookup(priv->secrets, name), value))
@@ -956,6 +989,8 @@ vpn_secrets_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
     GVariantIter                   iter;
     const char                    *key;
     const char                    *val;
+    NMSettingSecretFlags           hint_implied_flags;
+    NMSettingSecretFlags           flags;
 
     hash_free = g_steal_pointer(&priv->secrets);
 
@@ -963,6 +998,23 @@ vpn_secrets_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
     while (g_variant_iter_next(&iter, "{&s&s}", &key, &val)) {
         if (!key[0])
             continue;
+
+        /* If the name is prefixed with a hint tag, process it before saving:
+         * remove the prefix and get the flags that it implies */
+        _parse_secret_hint_tag(key, &key, &hint_implied_flags);
+
+        /* In the case of receiving an empty secret name or a double prefixed
+         * secret name, ignore them.*/
+        if (!key[0] || _parse_secret_hint_tag(key, NULL, NULL))
+            continue;
+
+        if (hint_implied_flags) {
+            if (!nm_setting_get_secret_flags(setting, key, &flags, NULL))
+                flags = NM_SETTING_SECRET_FLAG_NONE;
+            if (!nm_setting_set_secret_flags(setting, key, flags | hint_implied_flags, NULL))
+                continue;
+        }
+
         g_hash_table_insert(_ensure_strdict(&priv->secrets, TRUE), g_strdup(key), g_strdup(val));
     }
 
