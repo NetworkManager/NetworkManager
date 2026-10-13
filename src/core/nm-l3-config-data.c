@@ -1332,9 +1332,26 @@ append_force_and_out:
     return FALSE;
 }
 
+static guint
+_rt_pref_to_priority(guint rt_pref)
+{
+    switch (rt_pref) {
+    case NM_ICMPV6_ROUTER_PREF_LOW:
+        return 1;
+    case NM_ICMPV6_ROUTER_PREF_HIGH:
+        return 3;
+    default:
+        return 2;
+    }
+}
+
 static const NMPObject *
 _l3_config_best_default_route_find_better(const NMPObject *obj_cur, const NMPObject *obj_cmp)
 {
+    guint32 metric_cur;
+    guint32 metric_cmp;
+    int     c;
+
     nm_assert(!obj_cur
               || NM_IN_SET(NMP_OBJECT_GET_TYPE(obj_cur),
                            NMP_OBJECT_TYPE_IP4_ROUTE,
@@ -1349,37 +1366,53 @@ _l3_config_best_default_route_find_better(const NMPObject *obj_cur, const NMPObj
 
     /* assumes that @obj_cur is already the best default route (or NULL). It checks whether
      * @obj_cmp is also a default route and returns the best of both. */
-    if (obj_cmp && nmp_object_ip_route_is_best_default_route(obj_cmp)) {
-        guint32 metric_cur, metric_cmp;
 
-        if (!obj_cur)
+    if (!obj_cmp || !nmp_object_ip_route_is_best_default_route(obj_cmp))
+        return obj_cur;
+
+    if (!obj_cur)
+        return obj_cmp;
+
+    if (obj_cur == obj_cmp)
+        return obj_cmp;
+
+    metric_cur = NMP_OBJECT_CAST_IP_ROUTE(obj_cur)->metric;
+    metric_cmp = NMP_OBJECT_CAST_IP_ROUTE(obj_cmp)->metric;
+
+    if (metric_cmp < metric_cur)
+        return obj_cmp;
+    else if (metric_cur < metric_cmp)
+        return obj_cur;
+
+    /* Routes have the same metric */
+
+    if (NMP_OBJECT_GET_TYPE(obj_cmp) == NMP_OBJECT_TYPE_IP6_ROUTE) {
+        const NMPlatformIP6Route *r6_cur = NMP_OBJECT_CAST_IP6_ROUTE(obj_cur);
+        const NMPlatformIP6Route *r6_cmp = NMP_OBJECT_CAST_IP6_ROUTE(obj_cmp);
+        guint                     rt_prio_cur;
+        guint                     rt_prio_cmp;
+
+        /* For IPv6 routes also consider the preference */
+        rt_prio_cur = _rt_pref_to_priority(r6_cur->rt_pref);
+        rt_prio_cmp = _rt_pref_to_priority(r6_cmp->rt_pref);
+
+        if (rt_prio_cmp > rt_prio_cur)
             return obj_cmp;
-
-        if (obj_cur == obj_cmp)
-            return obj_cmp;
-
-        metric_cur = NMP_OBJECT_CAST_IP_ROUTE(obj_cur)->metric;
-        metric_cmp = NMP_OBJECT_CAST_IP_ROUTE(obj_cmp)->metric;
-
-        if (metric_cmp < metric_cur)
-            return obj_cmp;
-
-        if (metric_cmp == metric_cur) {
-            int c;
-
-            /* Routes have the same metric. We still want to deterministically
-             * prefer one or the other. It's important to consistently choose one
-             * or the other, so that the order doesn't matter how routes are added
-             * (and merged). */
-            c = nmp_object_cmp(obj_cur, obj_cmp);
-            if (c != 0)
-                return c < 0 ? obj_cur : obj_cmp;
-
-            /* as last resort, compare pointers. */
-            if (((uintptr_t) ((void *) (obj_cmp))) < ((uintptr_t) ((void *) (obj_cur))))
-                return obj_cmp;
-        }
+        else if (rt_prio_cur > rt_prio_cmp)
+            return obj_cur;
     }
+
+    /* We still want to deterministically prefer one or the other. It's important
+     * to consistently choose one or the other, so that the order doesn't matter
+     * how routes are added (and merged). */
+    c = nmp_object_cmp(obj_cur, obj_cmp);
+    if (c != 0)
+        return c < 0 ? obj_cur : obj_cmp;
+
+    /* as last resort, compare pointers. */
+    if (((uintptr_t) ((void *) (obj_cmp))) < ((uintptr_t) ((void *) (obj_cur))))
+        return obj_cmp;
+
     return obj_cur;
 }
 
