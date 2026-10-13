@@ -1484,6 +1484,47 @@ _vt_cmd_obj_cmp_lnk_wireguard(const NMPObject *obj1, const NMPObject *obj2, gboo
     return 0;
 }
 
+/**
+ * nmp_object_ip_route_cmp_best_default_route:
+ * @obj1: an IPv4 or IPv6 default route
+ * @obj2: a default route of the same type as @obj1
+ *
+ * Compares two default routes to determine which one is the best.
+ * A lower metric wins. For IPv6, with the same metric, the route
+ * with the higher router preference (RFC 4191) wins, as in the kernel.
+ * If they are still equal, the result is deterministic, so that
+ * the choice doesn't depend on the order in which the routes are
+ * seen.
+ *
+ * Returns: a negative value if @obj1 is better than @obj2, a positive
+ *   value if @obj2 is better, and zero only if they are the same object.
+ */
+int
+nmp_object_ip_route_cmp_best_default_route(const NMPObject *obj1, const NMPObject *obj2)
+{
+    nm_assert(
+        NM_IN_SET(NMP_OBJECT_GET_TYPE(obj1), NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
+    nm_assert(NMP_OBJECT_GET_TYPE(obj1) == NMP_OBJECT_GET_TYPE(obj2));
+    nm_assert(NM_PLATFORM_IP_ROUTE_IS_DEFAULT(NMP_OBJECT_CAST_IP_ROUTE(obj1)));
+    nm_assert(NM_PLATFORM_IP_ROUTE_IS_DEFAULT(NMP_OBJECT_CAST_IP_ROUTE(obj2)));
+
+    NM_CMP_SELF(obj1, obj2);
+
+    NM_CMP_DIRECT(NMP_OBJECT_CAST_IP_ROUTE(obj1)->metric, NMP_OBJECT_CAST_IP_ROUTE(obj2)->metric);
+
+    if (NMP_OBJECT_GET_TYPE(obj1) == NMP_OBJECT_TYPE_IP6_ROUTE) {
+        NM_CMP_DIRECT(nm_icmpv6_router_pref_to_priority(NMP_OBJECT_CAST_IP6_ROUTE(obj2)->rt_pref),
+                      nm_icmpv6_router_pref_to_priority(NMP_OBJECT_CAST_IP6_ROUTE(obj1)->rt_pref));
+    }
+
+    NM_CMP_RETURN(nmp_object_cmp(obj1, obj2));
+
+    /* as last resort, compare pointers. */
+    NM_CMP_DIRECT_PTR(obj1, obj2);
+
+    return 0;
+}
+
 /* @src is a const object, which is not entirely correct for link types, where
  * we increase the ref count for src->_link.udev.device.
  * Hence, nmp_object_copy() can violate the const promise of @src.

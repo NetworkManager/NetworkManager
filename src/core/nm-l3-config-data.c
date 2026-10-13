@@ -1349,38 +1349,14 @@ _l3_config_best_default_route_find_better(const NMPObject *obj_cur, const NMPObj
 
     /* assumes that @obj_cur is already the best default route (or NULL). It checks whether
      * @obj_cmp is also a default route and returns the best of both. */
-    if (obj_cmp && nmp_object_ip_route_is_best_default_route(obj_cmp)) {
-        guint32 metric_cur, metric_cmp;
 
-        if (!obj_cur)
-            return obj_cmp;
+    if (!obj_cmp || !nmp_object_ip_route_is_best_default_route(obj_cmp))
+        return obj_cur;
 
-        if (obj_cur == obj_cmp)
-            return obj_cmp;
+    if (!obj_cur)
+        return obj_cmp;
 
-        metric_cur = NMP_OBJECT_CAST_IP_ROUTE(obj_cur)->metric;
-        metric_cmp = NMP_OBJECT_CAST_IP_ROUTE(obj_cmp)->metric;
-
-        if (metric_cmp < metric_cur)
-            return obj_cmp;
-
-        if (metric_cmp == metric_cur) {
-            int c;
-
-            /* Routes have the same metric. We still want to deterministically
-             * prefer one or the other. It's important to consistently choose one
-             * or the other, so that the order doesn't matter how routes are added
-             * (and merged). */
-            c = nmp_object_cmp(obj_cur, obj_cmp);
-            if (c != 0)
-                return c < 0 ? obj_cur : obj_cmp;
-
-            /* as last resort, compare pointers. */
-            if (((uintptr_t) ((void *) (obj_cmp))) < ((uintptr_t) ((void *) (obj_cur))))
-                return obj_cmp;
-        }
-    }
-    return obj_cur;
+    return nmp_object_ip_route_cmp_best_default_route(obj_cmp, obj_cur) < 0 ? obj_cmp : obj_cur;
 }
 
 gboolean
@@ -1465,13 +1441,35 @@ nm_l3_config_data_add_route_full(NML3ConfigData          *self,
                                 add_flags,
                                 &obj_old,
                                 &obj_new_2)) {
-        if (self->best_default_route_x[IS_IPv4] == obj_old && obj_old != obj_new_2) {
+        if (obj_old && self->best_default_route_x[IS_IPv4] == obj_old && obj_old != obj_new_2) {
+            /* The best default route was replaced by an object with the same ID. */
             changed_best_default_route = TRUE;
-            nm_clear_nmp_object(&self->best_default_route_x[IS_IPv4]);
-        }
+            if (!IS_IPv4
+                && nm_icmpv6_router_pref_to_priority(NMP_OBJECT_CAST_IP6_ROUTE(obj_new_2)->rt_pref)
+                       < nm_icmpv6_router_pref_to_priority(
+                           NMP_OBJECT_CAST_IP6_ROUTE(obj_old)->rt_pref)) {
+                NMDedupMultiIter iter;
+                const NMPObject *obj;
 
-        if (_l3_config_best_default_route_merge(&self->best_default_route_x[IS_IPv4], obj_new_2))
+                /* The router preference is not part of the ID and it went
+                 * down. Another route may be better now. Look at all the
+                 * routes again. */
+                nm_clear_nmp_object(&self->best_default_route_x[IS_IPv4]);
+                nm_l3_config_data_iter_obj_for_each (&iter,
+                                                     self,
+                                                     &obj,
+                                                     NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4)) {
+                    _l3_config_best_default_route_merge(&self->best_default_route_x[IS_IPv4], obj);
+                }
+            } else {
+                /* The route did not get worse, so it is still the best one.
+                 * Replace the old object, which is no longer in the index. */
+                nmp_object_ref_set(&self->best_default_route_x[IS_IPv4], obj_new_2);
+            }
+        } else if (_l3_config_best_default_route_merge(&self->best_default_route_x[IS_IPv4],
+                                                       obj_new_2)) {
             changed_best_default_route = TRUE;
+        }
 
         changed = TRUE;
     }

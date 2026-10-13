@@ -993,7 +993,7 @@ _handle_platform_change(NMIPConfig *self, guint64 obj_type_flags, gboolean is_in
                     continue;
 
                 if (!best_default_route
-                    || NMP_OBJECT_CAST_IP_ROUTE(best_default_route)->metric > r->rx.metric)
+                    || nmp_object_ip_route_cmp_best_default_route(obj, best_default_route) < 0)
                     best_default_route = obj;
             }
         }

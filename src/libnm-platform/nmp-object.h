@@ -840,6 +840,8 @@ typedef enum {
 
 int nmp_object_cmp_full(const NMPObject *obj1, const NMPObject *obj2, NMPObjectCmpFlags flags);
 
+int nmp_object_ip_route_cmp_best_default_route(const NMPObject *obj1, const NMPObject *obj2);
+
 static inline int
 nmp_object_cmp(const NMPObject *obj1, const NMPObject *obj2)
 {
