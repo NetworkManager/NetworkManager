@@ -993,8 +993,19 @@ _handle_platform_change(NMIPConfig *self, guint64 obj_type_flags, gboolean is_in
                     continue;
 
                 if (!best_default_route
-                    || NMP_OBJECT_CAST_IP_ROUTE(best_default_route)->metric > r->rx.metric)
+                    || NMP_OBJECT_CAST_IP_ROUTE(best_default_route)->metric > r->rx.metric) {
                     best_default_route = obj;
+                } else if (!IS_IPv4) {
+                    const NMPlatformIP6Route *best6 = NMP_OBJECT_CAST_IP6_ROUTE(best_default_route);
+
+                    /* For IPv6, export the default route with the highest preference */
+
+                    if (best6->metric == r->rx.metric
+                        && nm_icmpv6_router_pref_to_priority(r->r6.rt_pref)
+                               > nm_icmpv6_router_pref_to_priority(best6->rt_pref)) {
+                        best_default_route = obj;
+                    }
+                }
             }
         }
 
