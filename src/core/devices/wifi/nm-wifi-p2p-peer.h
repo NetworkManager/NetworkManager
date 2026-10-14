@@ -20,16 +20,17 @@
 #define NM_WIFI_P2P_PEER_GET_CLASS(obj) \
     (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_WIFI_P2P_PEER, NMWifiP2PPeerClass))
 
-#define NM_WIFI_P2P_PEER_FLAGS        "flags"
-#define NM_WIFI_P2P_PEER_NAME         "name"
-#define NM_WIFI_P2P_PEER_MANUFACTURER "manufacturer"
-#define NM_WIFI_P2P_PEER_MODEL        "model"
-#define NM_WIFI_P2P_PEER_MODEL_NUMBER "model-number"
-#define NM_WIFI_P2P_PEER_SERIAL       "serial"
-#define NM_WIFI_P2P_PEER_WFD_IES      "wfd-ies"
-#define NM_WIFI_P2P_PEER_HW_ADDRESS   "hw-address"
-#define NM_WIFI_P2P_PEER_STRENGTH     "strength"
-#define NM_WIFI_P2P_PEER_LAST_SEEN    "last-seen"
+#define NM_WIFI_P2P_PEER_FLAGS              "flags"
+#define NM_WIFI_P2P_PEER_NAME               "name"
+#define NM_WIFI_P2P_PEER_MANUFACTURER       "manufacturer"
+#define NM_WIFI_P2P_PEER_MODEL              "model"
+#define NM_WIFI_P2P_PEER_MODEL_NUMBER       "model-number"
+#define NM_WIFI_P2P_PEER_SERIAL             "serial"
+#define NM_WIFI_P2P_PEER_WFD_IES            "wfd-ies"
+#define NM_WIFI_P2P_PEER_WPS_CONFIG_METHODS "wps-config-methods"
+#define NM_WIFI_P2P_PEER_HW_ADDRESS         "hw-address"
+#define NM_WIFI_P2P_PEER_STRENGTH           "strength"
+#define NM_WIFI_P2P_PEER_LAST_SEEN          "last-seen"
 
 typedef struct {
     NMDBusObject                  parent;
@@ -70,6 +71,9 @@ gboolean    nm_wifi_p2p_peer_set_serial(NMWifiP2PPeer *peer, const char *serial)
 
 GBytes  *nm_wifi_p2p_peer_get_wfd_ies(const NMWifiP2PPeer *peer);
 gboolean nm_wifi_p2p_peer_set_wfd_ies(NMWifiP2PPeer *peer, GBytes *bytes);
+
+guint16  nm_wifi_p2p_peer_get_wps_config_methods(const NMWifiP2PPeer *peer);
+gboolean nm_wifi_p2p_peer_set_wps_config_methods(NMWifiP2PPeer *peer, guint16 wps_config_methods);
 
 const char *const *nm_wifi_p2p_peer_get_groups(const NMWifiP2PPeer *peer);
 

@@ -446,6 +446,53 @@ typedef enum { /*< underscore_name=nm_802_11_mode >*/
 } NM80211Mode;
 
 /**
+ * NMWpsConfigMethods:
+ * @NM_WPS_CONFIG_METHOD_UNKNOWN: the configuration methods are not known
+ * @NM_WPS_CONFIG_METHOD_USBA: USB flash drive
+ * @NM_WPS_CONFIG_METHOD_ETHERNET: Ethernet
+ * @NM_WPS_CONFIG_METHOD_LABEL: the device has a PIN printed on a label
+ * @NM_WPS_CONFIG_METHOD_DISPLAY: the device can show a PIN on a display
+ * @NM_WPS_CONFIG_METHOD_EXTERNAL_NFC_TOKEN: external NFC token
+ * @NM_WPS_CONFIG_METHOD_INTEGRATED_NFC_TOKEN: integrated NFC token
+ * @NM_WPS_CONFIG_METHOD_NFC_INTERFACE: NFC interface
+ * @NM_WPS_CONFIG_METHOD_PUSH_BUTTON: the device has a push button
+ * @NM_WPS_CONFIG_METHOD_KEYPAD: the device has a keypad to enter a PIN
+ * @NM_WPS_CONFIG_METHOD_VIRTUAL_PUSH_BUTTON: the push button is a virtual one,
+ *   in software. Includes the %NM_WPS_CONFIG_METHOD_PUSH_BUTTON bit.
+ * @NM_WPS_CONFIG_METHOD_PHYSICAL_PUSH_BUTTON: the push button is a physical
+ *   one. Includes the %NM_WPS_CONFIG_METHOD_PUSH_BUTTON bit.
+ * @NM_WPS_CONFIG_METHOD_P2PS: Wi-Fi Peer-to-Peer Services (P2PS)
+ * @NM_WPS_CONFIG_METHOD_VIRTUAL_DISPLAY: the display is a virtual one, in
+ *   software. Includes the %NM_WPS_CONFIG_METHOD_DISPLAY bit.
+ * @NM_WPS_CONFIG_METHOD_PHYSICAL_DISPLAY: the display is a physical one.
+ *   Includes the %NM_WPS_CONFIG_METHOD_DISPLAY bit.
+ *
+ * The WPS configuration methods that a Wi-Fi device supports. These are the
+ * values of the "Config Methods" attribute of the Wi-Fi Simple Configuration
+ * Technical Specification. NetworkManager passes them on as the Wi-Fi backend
+ * reports them.
+ *
+ * Since: 1.60
+ */
+typedef enum /*< flags >*/ {
+    NM_WPS_CONFIG_METHOD_UNKNOWN              = 0,
+    NM_WPS_CONFIG_METHOD_USBA                 = 0x0001,
+    NM_WPS_CONFIG_METHOD_ETHERNET             = 0x0002,
+    NM_WPS_CONFIG_METHOD_LABEL                = 0x0004,
+    NM_WPS_CONFIG_METHOD_DISPLAY              = 0x0008,
+    NM_WPS_CONFIG_METHOD_EXTERNAL_NFC_TOKEN   = 0x0010,
+    NM_WPS_CONFIG_METHOD_INTEGRATED_NFC_TOKEN = 0x0020,
+    NM_WPS_CONFIG_METHOD_NFC_INTERFACE        = 0x0040,
+    NM_WPS_CONFIG_METHOD_PUSH_BUTTON          = 0x0080,
+    NM_WPS_CONFIG_METHOD_KEYPAD               = 0x0100,
+    NM_WPS_CONFIG_METHOD_VIRTUAL_PUSH_BUTTON  = 0x0280,
+    NM_WPS_CONFIG_METHOD_PHYSICAL_PUSH_BUTTON = 0x0480,
+    NM_WPS_CONFIG_METHOD_P2PS                 = 0x1000,
+    NM_WPS_CONFIG_METHOD_VIRTUAL_DISPLAY      = 0x2008,
+    NM_WPS_CONFIG_METHOD_PHYSICAL_DISPLAY     = 0x4008,
+} NMWpsConfigMethods;
+
+/**
  * NMBluetoothCapabilities:
  * @NM_BT_CAPABILITY_NONE: device has no usable capabilities
  * @NM_BT_CAPABILITY_DUN: device provides Dial-Up Networking capability

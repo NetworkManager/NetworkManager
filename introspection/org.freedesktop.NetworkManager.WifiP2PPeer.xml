@@ -65,6 +65,21 @@
     <property name="WfdIEs" type="ay" access="read"/>
 
     <!--
+        WpsConfigMethods:
+
+        The WPS configuration methods that the Wi-Fi P2P peer advertises: the
+        values of the "Config Methods" attribute of the Wi-Fi Simple
+        Configuration Technical Specification. It is 0 when the methods are not
+        known: the IWD backend does not report them, and wpa_supplicant does not
+        know them for a group owner that it has only seen in Beacon frames.
+
+        Returns: <link linkend="NMWpsConfigMethods">NMWpsConfigMethods</link>
+
+        Since: 1.60
+    -->
+    <property name="WpsConfigMethods" type="u" access="read"/>
+
+    <!--
         HwAddress:
 
         The hardware address (BSSID) of the access point.

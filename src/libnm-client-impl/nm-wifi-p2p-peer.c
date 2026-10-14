@@ -23,6 +23,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_FLAGS,
                                   PROP_MODEL_NUMBER,
                                   PROP_SERIAL,
                                   PROP_WFD_IES,
+                                  PROP_WPS_CONFIG_METHODS,
                                   PROP_HW_ADDRESS,
                                   PROP_STRENGTH,
                                   PROP_LAST_SEEN, );
@@ -37,6 +38,7 @@ typedef struct {
     char   *hw_address;
     gint32  last_seen;
     guint32 flags;
+    guint32 wps_config_methods;
     guint8  strength;
 } NMWifiP2PPeerPrivate;
 
@@ -186,6 +188,30 @@ nm_wifi_p2p_peer_get_wfd_ies(NMWifiP2PPeer *peer)
         return NULL;
 
     return priv->wfd_ies;
+}
+
+/**
+ * nm_wifi_p2p_peer_get_wps_config_methods:
+ * @peer: a #NMWifiP2PPeer
+ *
+ * Gets the WPS configuration methods that the P2P peer advertises. This can
+ * be used to decide whether the peer expects PIN or push-button pairing.
+ *
+ * The methods are not always known: the IWD backend does not report them, and
+ * wpa_supplicant does not know them for a group owner that it has only seen
+ * in Beacon frames.
+ *
+ * Returns: the #NMWpsConfigMethods of the peer, or
+ *   %NM_WPS_CONFIG_METHOD_UNKNOWN if they are not known.
+ *
+ * Since: 1.60
+ **/
+NMWpsConfigMethods
+nm_wifi_p2p_peer_get_wps_config_methods(NMWifiP2PPeer *peer)
+{
+    g_return_val_if_fail(NM_IS_WIFI_P2P_PEER(peer), NM_WPS_CONFIG_METHOD_UNKNOWN);
+
+    return NM_WIFI_P2P_PEER_GET_PRIVATE(peer)->wps_config_methods;
 }
 
 /**
@@ -359,6 +385,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_WFD_IES:
         g_value_set_boxed(value, nm_wifi_p2p_peer_get_wfd_ies(peer));
         break;
+    case PROP_WPS_CONFIG_METHODS:
+        g_value_set_flags(value, nm_wifi_p2p_peer_get_wps_config_methods(peer));
+        break;
     case PROP_HW_ADDRESS:
         g_value_set_string(value, nm_wifi_p2p_peer_get_hw_address(peer));
         break;
@@ -423,7 +452,11 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_wifip2ppeer = NML_DBUS_META_IFACE
         NML_DBUS_META_PROPERTY_INIT_S("Name", PROP_NAME, NMWifiP2PPeer, _priv.name),
         NML_DBUS_META_PROPERTY_INIT_S("Serial", PROP_SERIAL, NMWifiP2PPeer, _priv.serial),
         NML_DBUS_META_PROPERTY_INIT_Y("Strength", PROP_STRENGTH, NMWifiP2PPeer, _priv.strength),
-        NML_DBUS_META_PROPERTY_INIT_AY("WfdIEs", PROP_WFD_IES, NMWifiP2PPeer, _priv.wfd_ies), ), );
+        NML_DBUS_META_PROPERTY_INIT_AY("WfdIEs", PROP_WFD_IES, NMWifiP2PPeer, _priv.wfd_ies),
+        NML_DBUS_META_PROPERTY_INIT_U("WpsConfigMethods",
+                                      PROP_WPS_CONFIG_METHODS,
+                                      NMWifiP2PPeer,
+                                      _priv.wps_config_methods), ), );
 
 static void
 nm_wifi_p2p_peer_class_init(NMWifiP2PPeerClass *klass)
@@ -526,6 +559,23 @@ nm_wifi_p2p_peer_class_init(NMWifiP2PPeerClass *klass)
                                                       "",
                                                       G_TYPE_BYTES,
                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
+    /**
+     * NMWifiP2PPeer:wps-config-methods:
+     *
+     * The WPS configuration methods that the P2P peer advertises, or
+     * %NM_WPS_CONFIG_METHOD_UNKNOWN if they are not known.
+     *
+     * Since: 1.60
+     **/
+    obj_properties[PROP_WPS_CONFIG_METHODS] =
+        g_param_spec_flags(NM_WIFI_P2P_PEER_WPS_CONFIG_METHODS,
+                           "",
+                           "",
+                           NM_TYPE_WPS_CONFIG_METHODS,
+                           NM_WPS_CONFIG_METHOD_UNKNOWN,
+                           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
     /**
      * NMWifiP2PPeer:hw-address:
      *

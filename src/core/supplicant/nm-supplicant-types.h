@@ -223,6 +223,8 @@ typedef struct _NMSupplicantPeerInfo {
 
     gint64 last_seen_msec;
 
+    guint16 config_methods;
+
     guint8 address[6 /* ETH_ALEN */];
 
     gint8 signal_percent;
