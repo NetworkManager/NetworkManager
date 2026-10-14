@@ -2138,6 +2138,7 @@ global:
 
 libnm_1_60_0 {
 global:
+	nm_setting_802_1x_get_server_cert_hash;
 	nm_setting_bridge_port_get_bpdu_guard;
 	nm_setting_bridge_port_get_broadcast_flood;
 	nm_setting_bridge_port_get_fast_leave;

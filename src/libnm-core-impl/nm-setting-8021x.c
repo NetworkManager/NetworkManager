@@ -93,6 +93,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSetting8021x,
                              PROP_CA_CERT_PASSWORD,
                              PROP_CA_CERT_PASSWORD_FLAGS,
                              PROP_CA_PATH,
+                             PROP_SERVER_CERT_HASH,
                              PROP_SUBJECT_MATCH,
                              PROP_ALTSUBJECT_MATCHES,
                              PROP_DOMAIN_SUFFIX_MATCH,
@@ -142,6 +143,7 @@ typedef struct {
     GBytes *ca_cert;
     char   *ca_cert_password;
     char   *ca_path;
+    char   *server_cert_hash;
     char   *subject_match;
     GSList *altsubject_matches;
     char   *domain_suffix_match;
@@ -927,6 +929,22 @@ nm_setting_802_1x_get_ca_path(NMSetting8021x *setting)
     g_return_val_if_fail(NM_IS_SETTING_802_1X(setting), NULL);
 
     return NM_SETTING_802_1X_GET_PRIVATE(setting)->ca_path;
+}
+
+/**
+ * nm_setting_802_1x_get_server_cert_hash:
+ * @setting: the #NMSetting8021x
+ *
+ * Returns: the #NMSetting8021x:server-cert-hash property, or %NULL if unset
+ *
+ * Since: 1.60
+ **/
+const char *
+nm_setting_802_1x_get_server_cert_hash(NMSetting8021x *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_802_1X(setting), NULL);
+
+    return NM_SETTING_802_1X_GET_PRIVATE(setting)->server_cert_hash;
 }
 
 /**
@@ -2801,6 +2819,65 @@ static const EAPMethodsTable eap_methods_table[] = {
     {"external", NULL, NULL},
     {NULL, NULL, NULL}};
 
+/* Accepts only 32 colon-separated hex pairs (a SHA-256 hash), either
+ * letter case - no bare/space-separated input allowed.  The validator
+ * below uppercases a value already in this shape via g_ascii_strup(); it
+ * leaves anything else untouched so this validator can reject it with a
+ * proper error. */
+static gboolean
+_server_cert_hash_valid(const char *value)
+{
+    gsize len = strlen(value);
+    gsize i;
+
+    /* 32 hex pairs joined by 31 colons: "AA:BB:...:FF" */
+    if (len != 32 * 2 + 31)
+        return FALSE;
+
+    for (i = 0; i < len; i++) {
+        if (i % 3 == 2) {
+            if (value[i] != ':')
+                return FALSE;
+        } else if (!g_ascii_isxdigit(value[i]))
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
+/* See _server_cert_hash_valid() above for the accepted shape. Only case
+ * gets normalized here; anything not already in that shape is returned
+ * unchanged so the validator rejects it instead of silently reformatting
+ * bad input. */
+static char *
+_server_cert_hash_canonical_or_invalid(const char *value)
+{
+    if (!value)
+        return NULL;
+
+    if (!_server_cert_hash_valid(value))
+        return g_strdup(value);
+
+    return g_ascii_strup(value, -1);
+}
+
+static gboolean
+_set_string_fcn_server_cert_hash(const NMSettInfoSetting  *sett_info,
+                                 const NMSettInfoProperty *property_info,
+                                 NMSetting                *setting,
+                                 const char               *str)
+{
+    NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE(setting);
+    gs_free char *new           = _server_cert_hash_canonical_or_invalid(str);
+
+    if (nm_streq0(new, priv->server_cert_hash))
+        return FALSE;
+
+    g_free(priv->server_cert_hash);
+    priv->server_cert_hash = g_steal_pointer(&new);
+    return TRUE;
+}
+
 static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
@@ -3004,6 +3081,32 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                        "%s.%s: ",
                        NM_SETTING_802_1X_SETTING_NAME,
                        NM_SETTING_802_1X_PHASE2_AUTHEAP);
+        return FALSE;
+    }
+
+    if (priv->server_cert_hash && !_server_cert_hash_valid(priv->server_cert_hash)) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("must be 32 colon-separated hex pairs (a SHA-256 hash)"));
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_802_1X_SETTING_NAME,
+                       NM_SETTING_802_1X_SERVER_CERT_HASH);
+        return FALSE;
+    }
+
+    if (priv->server_cert_hash && (priv->ca_cert || priv->ca_path || priv->system_ca_certs)) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("cannot be set together with the \"ca-cert\", "
+                              "\"system-ca-certs\" or \"ca-path\" properties, "
+                              "as they are alternative ways to verify the Authentication Server"));
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_802_1X_SETTING_NAME,
+                       NM_SETTING_802_1X_SERVER_CERT_HASH);
         return FALSE;
     }
 
@@ -3465,6 +3568,32 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               NM_SETTING_PARAM_NONE,
                                               NMSetting8021xPrivate,
                                               ca_path,
+                                              .direct_string_allow_empty = TRUE);
+
+    /**
+     * NMSetting8021x:server-cert-hash:
+     *
+     * Pins the authentication server's certificate by its SHA-256 hash,
+     * bypassing the need for a CA certificate to validate the incoming
+     * server certificate. 32 colon-separated hex pairs (the server leaf
+     * certificate's SHA-256 fingerprint); either letter case is accepted,
+     * but the value is canonicalized to uppercase.
+     *
+     * Do not set this property together with #NMSetting8021x:ca-cert,
+     * #NMSetting8021x:system-ca-certs, or #NMSetting8021x:ca-path, as
+     * these provide alternative ways to validate the authentication server.
+     *
+     * Since: 1.60
+     **/
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_802_1X_SERVER_CERT_HASH,
+                                              PROP_SERVER_CERT_HASH,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSetting8021xPrivate,
+                                              server_cert_hash,
+                                              .direct_data.set_string =
+                                                  _set_string_fcn_server_cert_hash,
                                               .direct_string_allow_empty = TRUE);
 
     /**
