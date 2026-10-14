@@ -31,6 +31,7 @@ typedef struct {
     GHashTable *options;
     GArray     *links;
     GHashTable *nexthops;
+    bool        nexthop_unsupported : 1;
 } NMFakePlatformPrivate;
 
 struct _NMFakePlatform {
@@ -1162,6 +1163,9 @@ ip_nexthop_add(NMPlatform *platform, NMPNlmFlags flags, NMPObject *obj_stack, ch
                         NMP_OBJECT_TYPE_IP6_NEXTHOP));
     nm_assert(!out_extack_msg || !*out_extack_msg);
 
+    if (priv->nexthop_unsupported)
+        return -EOPNOTSUPP;
+
     /* Only single nexthops with explicit IDs and add/replace are supported. */
     nm_assert(id > 0);
 
@@ -1216,6 +1220,9 @@ ip_nexthop_get(NMPlatform *platform, guint32 nh_id, NMPObject **out_obj)
 {
     NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE(platform);
     const NMPObject       *obj;
+
+    if (priv->nexthop_unsupported)
+        return -EOPNOTSUPP;
 
     obj = g_hash_table_lookup(priv->nexthops, GUINT_TO_POINTER(nh_id));
     if (!obj)
@@ -1502,6 +1509,14 @@ nm_fake_platform_setup(void)
     link_add(platform, NM_LINK_TYPE_ETHERNET, "eth0", 0, NULL, 0, 0, NULL, NULL);
     link_add(platform, NM_LINK_TYPE_ETHERNET, "eth1", 0, NULL, 0, 0, NULL, NULL);
     link_add(platform, NM_LINK_TYPE_ETHERNET, "eth2", 0, NULL, 0, 0, NULL, NULL);
+}
+
+void
+nm_fake_platform_set_nexthop_unsupported(NMPlatform *platform, gboolean unsupported)
+{
+    g_return_if_fail(NM_IS_FAKE_PLATFORM(platform));
+
+    NM_FAKE_PLATFORM_GET_PRIVATE(platform)->nexthop_unsupported = unsupported;
 }
 
 static void
