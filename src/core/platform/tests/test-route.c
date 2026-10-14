@@ -2977,9 +2977,9 @@ _nmtstp_setup_tests(void)
     if (nmtstp_is_root_test()) {
         add_test_func_with_if2("/route/nexthop/dump", test_nexthop_dump);
         add_test_func_with_if2("/route/nexthop/ip4-route", test_nexthop_ip4_route);
-        add_test_func("/route/nexthop/add", test_nexthop_add);
-        add_test_func("/route/nexthop/sync", test_nexthop_sync);
     }
+    add_test_func("/route/nexthop/add", test_nexthop_add);
+    add_test_func("/route/nexthop/sync", test_nexthop_sync);
 
     if (nmtstp_is_root_test()) {
         add_test_func_data_with_if2("/route/test_cache_consistency_routes/1",
