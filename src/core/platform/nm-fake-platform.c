@@ -30,6 +30,7 @@ typedef struct {
 typedef struct {
     GHashTable *options;
     GArray     *links;
+    GHashTable *nexthops;
 } NMFakePlatformPrivate;
 
 struct _NMFakePlatform {
@@ -465,6 +466,8 @@ link_delete(NMPlatform *platform, int ifindex)
     nm_auto_nmpobj const NMPObject *obj_old  = NULL;
     nm_auto_nmpobj const NMPObject *obj_old2 = NULL;
     NMPCacheOpsType                 cache_op;
+    GHashTableIter                  iter;
+    gpointer                        value;
 
     if (!device)
         return FALSE;
@@ -492,6 +495,12 @@ link_delete(NMPlatform *platform, int ifindex)
     ipx_address_delete(platform, AF_INET6, ifindex, NULL, NULL, NULL);
     ipx_route_delete(platform, AF_INET, ifindex, NULL);
     ipx_route_delete(platform, AF_INET6, ifindex, NULL);
+
+    g_hash_table_iter_init(&iter, priv->nexthops);
+    while (g_hash_table_iter_next(&iter, NULL, &value)) {
+        if (NMP_OBJECT_CAST_IP_NEXTHOP(value)->ifindex == ifindex)
+            g_hash_table_iter_remove(&iter);
+    }
 
     nm_platform_cache_update_emit_signal(platform, cache_op, obj_old2, NULL);
     return TRUE;
@@ -1126,6 +1135,83 @@ ip6_address_delete(NMPlatform *platform, int ifindex, struct in6_addr addr, guin
 
 /*****************************************************************************/
 
+static int
+ip_nexthop_add(NMPlatform *platform, NMPNlmFlags flags, NMPObject *obj_stack, char **out_extack_msg)
+{
+    NMFakePlatformPrivate    *priv = NM_FAKE_PLATFORM_GET_PRIVATE(platform);
+    nm_auto_nmpobj NMPObject *obj  = NULL;
+    guint32                   id   = obj_stack->ip_nexthop.id;
+
+    nm_assert(NM_IN_SET(NMP_OBJECT_GET_TYPE(obj_stack),
+                        NMP_OBJECT_TYPE_IP4_NEXTHOP,
+                        NMP_OBJECT_TYPE_IP6_NEXTHOP));
+    nm_assert(!out_extack_msg || !*out_extack_msg);
+
+    /* Only single nexthops with explicit IDs and add/replace are supported. */
+    nm_assert(id > 0);
+
+    flags = NM_FLAGS_UNSET(flags, NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE);
+    nm_assert(NM_IN_SET(flags, NMP_NLM_FLAG_ADD, NMP_NLM_FLAG_REPLACE));
+
+    if (flags == NMP_NLM_FLAG_ADD && g_hash_table_contains(priv->nexthops, GUINT_TO_POINTER(id)))
+        return -EEXIST;
+
+    obj = nmp_object_clone(obj_stack, FALSE);
+    obj->ip_nexthop.nh_source =
+        nmp_utils_ip_config_source_round_trip_rtprot(obj->ip_nexthop.nh_source);
+    g_hash_table_replace(priv->nexthops, GUINT_TO_POINTER(id), g_steal_pointer(&obj));
+    return 0;
+}
+
+static int
+_ip_nexthop_cmp(gconstpointer a, gconstpointer b)
+{
+    const NMPObject *obj_a = *((const NMPObject *const *) a);
+    const NMPObject *obj_b = *((const NMPObject *const *) b);
+
+    NM_CMP_FIELD(obj_a, obj_b, ip_nexthop.id);
+    return 0;
+}
+
+static GPtrArray *
+ip_nexthop_dump(NMPlatform *platform, int addr_family, int ifindex)
+{
+    NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE(platform);
+    GPtrArray             *result;
+    GHashTableIter         iter;
+    gpointer               value;
+
+    result = g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
+    g_hash_table_iter_init(&iter, priv->nexthops);
+    while (g_hash_table_iter_next(&iter, NULL, &value)) {
+        const NMPObject *obj = value;
+
+        if (NMP_OBJECT_GET_ADDR_FAMILY(obj) != addr_family
+            || (ifindex > 0 && obj->ip_nexthop.ifindex != ifindex))
+            continue;
+
+        g_ptr_array_add(result, nmp_object_clone(obj, FALSE));
+    }
+    g_ptr_array_sort(result, _ip_nexthop_cmp);
+    return result;
+}
+
+static int
+ip_nexthop_get(NMPlatform *platform, guint32 nh_id, NMPObject **out_obj)
+{
+    NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE(platform);
+    const NMPObject       *obj;
+
+    obj = g_hash_table_lookup(priv->nexthops, GUINT_TO_POINTER(nh_id));
+    if (!obj)
+        return -NME_PL_NOT_FOUND;
+
+    NM_SET_OUT(out_obj, nmp_object_clone(obj, FALSE));
+    return 0;
+}
+
+/*****************************************************************************/
+
 static gboolean
 ipx_route_delete(NMPlatform *platform, int addr_family, int ifindex, const NMPObject *obj)
 {
@@ -1187,11 +1273,21 @@ ipx_route_delete(NMPlatform *platform, int addr_family, int ifindex, const NMPOb
 static gboolean
 object_delete(NMPlatform *platform, const NMPObject *obj)
 {
-    g_assert(NM_IS_FAKE_PLATFORM(platform));
-    g_assert(
-        NM_IN_SET(NMP_OBJECT_GET_TYPE(obj), NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
+    NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE(platform);
 
-    return ipx_route_delete(platform, AF_UNSPEC, -1, obj);
+    g_assert(NM_IS_FAKE_PLATFORM(platform));
+
+    switch (NMP_OBJECT_GET_TYPE(obj)) {
+    case NMP_OBJECT_TYPE_IP4_NEXTHOP:
+    case NMP_OBJECT_TYPE_IP6_NEXTHOP:
+        g_hash_table_remove(priv->nexthops, GUINT_TO_POINTER(obj->ip_nexthop.id));
+        return TRUE;
+    case NMP_OBJECT_TYPE_IP4_ROUTE:
+    case NMP_OBJECT_TYPE_IP6_ROUTE:
+        return ipx_route_delete(platform, AF_UNSPEC, -1, obj);
+    default:
+        g_return_val_if_reached(FALSE);
+    }
 }
 
 static int
@@ -1374,6 +1470,8 @@ nm_fake_platform_init(NMFakePlatform *fake_platform)
 
     priv->options = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_free);
     priv->links   = g_array_new(TRUE, TRUE, sizeof(NMFakePlatformLink));
+    priv->nexthops =
+        g_hash_table_new_full(nm_direct_hash, NULL, NULL, (GDestroyNotify) nmp_object_unref);
 }
 
 void
@@ -1398,6 +1496,7 @@ finalize(GObject *object)
     int                    i;
 
     g_hash_table_unref(priv->options);
+    g_hash_table_unref(priv->nexthops);
     for (i = 0; i < priv->links->len; i++) {
         NMFakePlatformLink *device = &nm_g_array_index(priv->links, NMFakePlatformLink, i);
 
@@ -1466,6 +1565,10 @@ nm_fake_platform_class_init(NMFakePlatformClass *klass)
     platform_class->ip6_address_add    = ip6_address_add;
     platform_class->ip4_address_delete = ip4_address_delete;
     platform_class->ip6_address_delete = ip6_address_delete;
+
+    platform_class->ip_nexthop_add  = ip_nexthop_add;
+    platform_class->ip_nexthop_dump = ip_nexthop_dump;
+    platform_class->ip_nexthop_get  = ip_nexthop_get;
 
     platform_class->ip_route_add  = ip_route_add;
     platform_class->object_delete = object_delete;
