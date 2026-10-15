@@ -1073,6 +1073,76 @@ test_8021x_ca_path_private_connection(void)
     nmtst_logging_reenable(logging);
 }
 
+static void
+test_8021x_server_cert_hash(void)
+{
+    gs_free char *uuid    = nm_utils_uuid_generate();
+    gpointer      logging = nmtst_logging_disable(TRUE);
+
+    /* A valid, mixed-case colon-pair hash is accepted and canonicalized
+     * (uppercased) on the property; what reaches wpa_supplicant's ca_cert
+     * must be bare lowercase hex, matching its hash:// syntax. */
+    {
+        gs_unref_object NMSupplicantConfig *config   = NULL;
+        gs_unref_object NMSetting8021x     *s_8021x  = NULL;
+        gs_unref_variant GVariant          *dict     = NULL;
+        gs_unref_bytes GBytes              *expected = g_bytes_new(
+            "hash://server/sha256/"
+            "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+            NM_STRLEN("hash://server/sha256/"
+                      "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff"));
+        gs_free_error GError *error = NULL;
+
+        s_8021x = (NMSetting8021x *) nm_setting_802_1x_new();
+        nm_setting_802_1x_add_eap_method(s_8021x, "peap");
+        g_object_set(s_8021x,
+                     NM_SETTING_802_1X_SERVER_CERT_HASH,
+                     "00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:"
+                     "00:11:22:33:44:55:66:77:88:99:aa:bb:cc:dd:ee:ff",
+                     NULL);
+
+        config = nm_supplicant_config_new(NM_SUPPL_CAP_MASK_NONE, NULL);
+        g_assert(
+            nm_supplicant_config_add_setting_8021x(config, s_8021x, uuid, 0, FALSE, NULL, &error));
+        g_assert_no_error(error);
+
+        dict = nm_supplicant_config_to_variant(config);
+        g_assert(
+            validate_opt("server-cert-hash", dict, "ca_cert", NM_SUPPL_OPT_TYPE_BYTES, expected));
+    }
+
+    /* With a real ca-cert set instead, server-cert-hash plays no part -
+     * NMSetting8021x.verify() already refuses a connection with both set,
+     * so supplicant-config never has to choose between them; this just
+     * confirms the ordinary ca-cert path is untouched by its presence. */
+    {
+        gs_unref_object NMSupplicantConfig *config  = NULL;
+        gs_unref_object NMSetting8021x     *s_8021x = NULL;
+        gs_unref_variant GVariant          *dict    = NULL;
+        gs_unref_bytes GBytes *expected = g_bytes_new(TEST_CERT_DIR "/test-ca-cert.pem",
+                                                      NM_STRLEN(TEST_CERT_DIR "/test-ca-cert.pem"));
+        gs_free_error GError  *error    = NULL;
+
+        s_8021x = (NMSetting8021x *) nm_setting_802_1x_new();
+        nm_setting_802_1x_add_eap_method(s_8021x, "peap");
+        g_assert(nm_setting_802_1x_set_ca_cert(s_8021x,
+                                               TEST_CERT_DIR "/test-ca-cert.pem",
+                                               NM_SETTING_802_1X_CK_SCHEME_PATH,
+                                               NULL,
+                                               NULL));
+
+        config = nm_supplicant_config_new(NM_SUPPL_CAP_MASK_NONE, NULL);
+        g_assert(
+            nm_supplicant_config_add_setting_8021x(config, s_8021x, uuid, 0, FALSE, NULL, &error));
+        g_assert_no_error(error);
+
+        dict = nm_supplicant_config_to_variant(config);
+        g_assert(validate_opt("ca-cert", dict, "ca_cert", NM_SUPPL_OPT_TYPE_BYTES, expected));
+    }
+
+    nmtst_logging_reenable(logging);
+}
+
 /*****************************************************************************/
 
 static void
@@ -1134,6 +1204,7 @@ main(int argc, char **argv)
     g_test_add_func("/supplicant-config/wifi-bgscan", test_wifi_bgscan);
     g_test_add_func("/supplicant-config/8021x-ca-path-private-connection",
                     test_8021x_ca_path_private_connection);
+    g_test_add_func("/supplicant-config/8021x-server-cert-hash", test_8021x_server_cert_hash);
     g_test_add_func("/supplicant-config/8021x-peaplabel", test_8021x_peaplabel);
 
     return g_test_run();

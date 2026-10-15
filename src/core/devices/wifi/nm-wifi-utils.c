@@ -1085,6 +1085,18 @@ eap_certs_to_iwd_config(GKeyFile       *file,
      * nm_crypto_* / wpa_supplicant so we need no conversions here.
      */
 
+    if (nm_setting_802_1x_get_server_cert_hash(s_8021x)) {
+        /* IWD has no equivalent of pinning the server certificate by hash;
+         * silently ignoring it here would let the connection proceed with
+         * no certificate verification at all, degrading security instead of
+         * providing the pinning the user asked for. */
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            "The server-cert-hash property is not supported with iwd");
+        return FALSE;
+    }
+
     if (nm_setting_802_1x_get_system_ca_certs(s_8021x)) {
         /* Either overrides or is added to the certificates in (phase2-)ca-cert
          * and ca-path depending on whether it points to a file or a directory.
