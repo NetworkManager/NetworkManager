@@ -29,10 +29,23 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_BRIDGE_PORT_SETTING_NAME "bridge-port"
 
-#define NM_SETTING_BRIDGE_PORT_PRIORITY     "priority"
-#define NM_SETTING_BRIDGE_PORT_PATH_COST    "path-cost"
-#define NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE "hairpin-mode"
-#define NM_SETTING_BRIDGE_PORT_VLANS        "vlans"
+#define NM_SETTING_BRIDGE_PORT_PRIORITY             "priority"
+#define NM_SETTING_BRIDGE_PORT_PATH_COST            "path-cost"
+#define NM_SETTING_BRIDGE_PORT_BROADCAST_FLOOD      "broadcast-flood"
+#define NM_SETTING_BRIDGE_PORT_FAST_LEAVE           "fast-leave"
+#define NM_SETTING_BRIDGE_PORT_FLOOD                "flood"
+#define NM_SETTING_BRIDGE_PORT_GUARD                "guard"
+#define NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE         "hairpin-mode"
+#define NM_SETTING_BRIDGE_PORT_ISOLATED             "isolated"
+#define NM_SETTING_BRIDGE_PORT_LEARNING             "learning"
+#define NM_SETTING_BRIDGE_PORT_LOCKED               "locked"
+#define NM_SETTING_BRIDGE_PORT_MULTICAST_FLOOD      "multicast-flood"
+#define NM_SETTING_BRIDGE_PORT_MULTICAST_TO_UNICAST "multicast-to-unicast"
+#define NM_SETTING_BRIDGE_PORT_NEIGH_SUPPRESS       "neigh-suppress"
+#define NM_SETTING_BRIDGE_PORT_NEIGH_VLAN_SUPPRESS  "neigh-vlan-suppress"
+#define NM_SETTING_BRIDGE_PORT_ROOT_BLOCK           "root-block"
+#define NM_SETTING_BRIDGE_PORT_VLAN_TUNNEL          "vlan-tunnel"
+#define NM_SETTING_BRIDGE_PORT_VLANS                "vlans"
 
 typedef struct _NMSettingBridgePortClass NMSettingBridgePortClass;
 
@@ -44,7 +57,46 @@ guint16 nm_setting_bridge_port_get_priority(NMSettingBridgePort *setting);
 
 guint16 nm_setting_bridge_port_get_path_cost(NMSettingBridgePort *setting);
 
+NM_AVAILABLE_IN_1_60
+gboolean nm_setting_bridge_port_get_broadcast_flood(NMSettingBridgePort *setting);
+
+NM_AVAILABLE_IN_1_60
+gboolean nm_setting_bridge_port_get_fast_leave(NMSettingBridgePort *setting);
+
+NM_AVAILABLE_IN_1_60
+gboolean nm_setting_bridge_port_get_flood(NMSettingBridgePort *setting);
+
+NM_AVAILABLE_IN_1_60
+gboolean nm_setting_bridge_port_get_guard(NMSettingBridgePort *setting);
+
 gboolean nm_setting_bridge_port_get_hairpin_mode(NMSettingBridgePort *setting);
+
+NM_AVAILABLE_IN_1_60
+gboolean nm_setting_bridge_port_get_isolated(NMSettingBridgePort *setting);
+
+NM_AVAILABLE_IN_1_60
+gboolean nm_setting_bridge_port_get_learning(NMSettingBridgePort *setting);
+
+NM_AVAILABLE_IN_1_60
+gboolean nm_setting_bridge_port_get_locked(NMSettingBridgePort *setting);
+
+NM_AVAILABLE_IN_1_60
+gboolean nm_setting_bridge_port_get_multicast_flood(NMSettingBridgePort *setting);
+
+NM_AVAILABLE_IN_1_60
+gboolean nm_setting_bridge_port_get_multicast_to_unicast(NMSettingBridgePort *setting);
+
+NM_AVAILABLE_IN_1_60
+gboolean nm_setting_bridge_port_get_neigh_suppress(NMSettingBridgePort *setting);
+
+NM_AVAILABLE_IN_1_60
+gboolean nm_setting_bridge_port_get_neigh_vlan_suppress(NMSettingBridgePort *setting);
+
+NM_AVAILABLE_IN_1_60
+gboolean nm_setting_bridge_port_get_root_block(NMSettingBridgePort *setting);
+
+NM_AVAILABLE_IN_1_60
+gboolean nm_setting_bridge_port_get_vlan_tunnel(NMSettingBridgePort *setting);
 
 NM_AVAILABLE_IN_1_18
 void nm_setting_bridge_port_add_vlan(NMSettingBridgePort *setting, NMBridgeVlan *vlan);

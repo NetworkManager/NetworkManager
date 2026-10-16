@@ -731,7 +731,51 @@
     <setting name="bridge-port"
              gtype="NMSettingBridgePort"
              >
+        <property name="broadcast-flood"
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
+        <property name="fast-leave"
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
+        <property name="flood"
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
+        <property name="guard"
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="hairpin-mode"
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
+        <property name="isolated"
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
+        <property name="learning"
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
+        <property name="locked"
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
+        <property name="multicast-flood"
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
+        <property name="multicast-to-unicast"
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
+        <property name="neigh-suppress"
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
+        <property name="neigh-vlan-suppress"
                   dbus-type="b"
                   gprop-type="gboolean"
                   />
@@ -742,6 +786,14 @@
         <property name="priority"
                   dbus-type="u"
                   gprop-type="guint"
+                  />
+        <property name="root-block"
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
+        <property name="vlan-tunnel"
+                  dbus-type="b"
+                  gprop-type="gboolean"
                   />
         <property name="vlans"
                   dbus-type="aa{sv}"
