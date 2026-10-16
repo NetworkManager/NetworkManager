@@ -2135,3 +2135,20 @@ global:
 	nm_utils_wifi_freq_to_band;
 	nm_wifi_band_get_type;
 } libnm_1_56_0;
+
+libnm_1_58_2 {
+global:
+	nm_setting_bridge_port_get_bpdu_guard;
+	nm_setting_bridge_port_get_broadcast_flood;
+	nm_setting_bridge_port_get_fast_leave;
+	nm_setting_bridge_port_get_isolated;
+	nm_setting_bridge_port_get_learning;
+	nm_setting_bridge_port_get_locked;
+	nm_setting_bridge_port_get_multicast_flood;
+	nm_setting_bridge_port_get_multicast_to_unicast;
+	nm_setting_bridge_port_get_neighbor_suppress;
+	nm_setting_bridge_port_get_neighbor_vlan_suppress;
+	nm_setting_bridge_port_get_root_block;
+	nm_setting_bridge_port_get_unicast_flood;
+	nm_setting_bridge_port_get_vlan_tunnel;
+} libnm_1_58_0;
