@@ -721,11 +721,26 @@ link_change(NMPlatform                   *platform,
         link_set_obj(platform, device, obj_tmp);
         return TRUE;
     case NM_PORT_KIND_BRIDGE:
-        obj_tmp                                  = nmp_object_clone(device->obj, FALSE);
-        obj_tmp->link.port_kind                  = NM_PORT_KIND_BRIDGE;
-        obj_tmp->link.port_data.bridge.path_cost = port_data->bridge.path_cost;
-        obj_tmp->link.port_data.bridge.priority  = port_data->bridge.priority;
-        obj_tmp->link.port_data.bridge.hairpin   = port_data->bridge.hairpin;
+        obj_tmp                                        = nmp_object_clone(device->obj, FALSE);
+        obj_tmp->link.port_kind                        = NM_PORT_KIND_BRIDGE;
+        obj_tmp->link.port_data.bridge.path_cost       = port_data->bridge.path_cost;
+        obj_tmp->link.port_data.bridge.priority        = port_data->bridge.priority;
+        obj_tmp->link.port_data.bridge.bpdu_guard      = port_data->bridge.bpdu_guard;
+        obj_tmp->link.port_data.bridge.broadcast_flood = port_data->bridge.broadcast_flood;
+        obj_tmp->link.port_data.bridge.fast_leave      = port_data->bridge.fast_leave;
+        obj_tmp->link.port_data.bridge.hairpin         = port_data->bridge.hairpin;
+        obj_tmp->link.port_data.bridge.isolated        = port_data->bridge.isolated;
+        obj_tmp->link.port_data.bridge.learning        = port_data->bridge.learning;
+        obj_tmp->link.port_data.bridge.locked          = port_data->bridge.locked;
+        obj_tmp->link.port_data.bridge.multicast_flood = port_data->bridge.multicast_flood;
+        obj_tmp->link.port_data.bridge.multicast_to_unicast =
+            port_data->bridge.multicast_to_unicast;
+        obj_tmp->link.port_data.bridge.neighbor_suppress = port_data->bridge.neighbor_suppress;
+        obj_tmp->link.port_data.bridge.neighbor_vlan_suppress =
+            port_data->bridge.neighbor_vlan_suppress;
+        obj_tmp->link.port_data.bridge.root_block    = port_data->bridge.root_block;
+        obj_tmp->link.port_data.bridge.unicast_flood = port_data->bridge.unicast_flood;
+        obj_tmp->link.port_data.bridge.vlan_tunnel   = port_data->bridge.vlan_tunnel;
         link_set_obj(platform, device, obj_tmp);
         return TRUE;
     case NM_PORT_KIND_NONE:
