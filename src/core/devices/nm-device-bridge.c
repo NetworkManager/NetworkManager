@@ -463,16 +463,30 @@ commit_port_options(NMDevice *device, NMSettingBridgePort *setting)
     if (priority == 0)
         priority = NM_BRIDGE_PORT_PRIORITY_DEF;
 
-    nm_platform_link_change(nm_device_get_platform(device),
-                            nm_device_get_ifindex(device),
-                            NULL,
-                            NULL,
-                            &((NMPlatformLinkBridgePort) {
-                                .path_cost = path_cost,
-                                .priority  = priority,
-                                .hairpin   = nm_setting_bridge_port_get_hairpin_mode(setting),
-                            }),
-                            0);
+    nm_platform_link_change(
+        nm_device_get_platform(device),
+        nm_device_get_ifindex(device),
+        NULL,
+        NULL,
+        &((NMPlatformLinkBridgePort) {
+            .path_cost              = path_cost,
+            .priority               = priority,
+            .bpdu_guard             = nm_setting_bridge_port_get_bpdu_guard(setting),
+            .broadcast_flood        = nm_setting_bridge_port_get_broadcast_flood(setting),
+            .fast_leave             = nm_setting_bridge_port_get_fast_leave(setting),
+            .hairpin                = nm_setting_bridge_port_get_hairpin_mode(setting),
+            .isolated               = nm_setting_bridge_port_get_isolated(setting),
+            .learning               = nm_setting_bridge_port_get_learning(setting),
+            .locked                 = nm_setting_bridge_port_get_locked(setting),
+            .multicast_flood        = nm_setting_bridge_port_get_multicast_flood(setting),
+            .multicast_to_unicast   = nm_setting_bridge_port_get_multicast_to_unicast(setting),
+            .neighbor_suppress      = nm_setting_bridge_port_get_neighbor_suppress(setting),
+            .neighbor_vlan_suppress = nm_setting_bridge_port_get_neighbor_vlan_suppress(setting),
+            .root_block             = nm_setting_bridge_port_get_root_block(setting),
+            .unicast_flood          = nm_setting_bridge_port_get_unicast_flood(setting),
+            .vlan_tunnel            = nm_setting_bridge_port_get_vlan_tunnel(setting),
+        }),
+        0);
 }
 
 static void
@@ -594,14 +608,36 @@ controller_update_port_connection(NMDevice     *device,
         g_object_set(s_port,
                      NM_SETTING_BRIDGE_PORT_PATH_COST,
                      pllink->port_data.bridge.path_cost,
-                     NULL);
-        g_object_set(s_port,
                      NM_SETTING_BRIDGE_PORT_PRIORITY,
                      pllink->port_data.bridge.priority,
-                     NULL);
-        g_object_set(s_port,
+                     NM_SETTING_BRIDGE_PORT_BROADCAST_FLOOD,
+                     pllink->port_data.bridge.broadcast_flood,
+                     NM_SETTING_BRIDGE_PORT_FAST_LEAVE,
+                     pllink->port_data.bridge.fast_leave,
+                     NM_SETTING_BRIDGE_PORT_BPDU_GUARD,
+                     pllink->port_data.bridge.bpdu_guard,
                      NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE,
                      pllink->port_data.bridge.hairpin,
+                     NM_SETTING_BRIDGE_PORT_ISOLATED,
+                     pllink->port_data.bridge.isolated,
+                     NM_SETTING_BRIDGE_PORT_LEARNING,
+                     pllink->port_data.bridge.learning,
+                     NM_SETTING_BRIDGE_PORT_LOCKED,
+                     pllink->port_data.bridge.locked,
+                     NM_SETTING_BRIDGE_PORT_MULTICAST_FLOOD,
+                     pllink->port_data.bridge.multicast_flood,
+                     NM_SETTING_BRIDGE_PORT_MULTICAST_TO_UNICAST,
+                     pllink->port_data.bridge.multicast_to_unicast,
+                     NM_SETTING_BRIDGE_PORT_NEIGHBOR_SUPPRESS,
+                     pllink->port_data.bridge.neighbor_suppress,
+                     NM_SETTING_BRIDGE_PORT_NEIGHBOR_VLAN_SUPPRESS,
+                     pllink->port_data.bridge.neighbor_vlan_suppress,
+                     NM_SETTING_BRIDGE_PORT_ROOT_BLOCK,
+                     pllink->port_data.bridge.root_block,
+                     NM_SETTING_BRIDGE_PORT_UNICAST_FLOOD,
+                     pllink->port_data.bridge.unicast_flood,
+                     NM_SETTING_BRIDGE_PORT_VLAN_TUNNEL,
+                     pllink->port_data.bridge.vlan_tunnel,
                      NULL);
     }
 

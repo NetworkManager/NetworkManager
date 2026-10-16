@@ -28,6 +28,10 @@ Core:
   configuration fails, for example on a parse error, instead of only
   logging the failure and reporting success. "nmcli general reload" and
   "systemctl reload NetworkManager" fail in that case too.
+* Support new properties for bridge ports: bpdu-guard, broadcast-flood,
+  fast-leave, isolated, learning, locked, multicast-flood,
+  multicast-to-unicast, neighbor-suppress, neighbor-vlan-suppress,
+  root-block, unicast-flood, vlan-tunnel.
 
 initrd:
 * Add the "rd.net.timeout.ip-required" kernel command line argument
