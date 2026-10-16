@@ -2138,6 +2138,19 @@ global:
 
 libnm_1_60_0 {
 global:
+	nm_setting_bridge_port_get_bpdu_guard;
+	nm_setting_bridge_port_get_broadcast_flood;
+	nm_setting_bridge_port_get_fast_leave;
+	nm_setting_bridge_port_get_isolated;
+	nm_setting_bridge_port_get_learning;
+	nm_setting_bridge_port_get_locked;
+	nm_setting_bridge_port_get_multicast_flood;
+	nm_setting_bridge_port_get_multicast_to_unicast;
+	nm_setting_bridge_port_get_neighbor_suppress;
+	nm_setting_bridge_port_get_neighbor_vlan_suppress;
+	nm_setting_bridge_port_get_root_block;
+	nm_setting_bridge_port_get_unicast_flood;
+	nm_setting_bridge_port_get_vlan_tunnel;
 	nm_setting_wifi_p2p_get_wps_pin;
 	nm_setting_wifi_p2p_get_wps_pin_flags;
 	nm_wifi_p2p_peer_get_wps_config_methods;
