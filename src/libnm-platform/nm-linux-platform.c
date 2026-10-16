@@ -188,6 +188,11 @@ G_STATIC_ASSERT(RTA_MAX == (__RTA_MAX - 1));
 
 #define IFLA_PERM_ADDRESS 54
 
+/* Added in kernel 5.18, dated May 22, 2022 */
+#define IFLA_BRPORT_LOCKED 39
+/* Added in kernel 6.4, dated June 25, 2023 */
+#define IFLA_BRPORT_NEIGH_VLAN_SUPPRESS 43
+
 /*****************************************************************************/
 
 /* Added in kernel 5.19, dated July 31, 2022 */
@@ -3607,9 +3612,22 @@ _new_from_nl_link(NMPlatform            *platform,
             };
             struct nlattr                 *bp[G_N_ELEMENTS(policy_bond_port)];
             static const struct nla_policy policy_bridge_port[] = {
-                [IFLA_BRPORT_COST]     = {.type = NLA_U32},
-                [IFLA_BRPORT_PRIORITY] = {.type = NLA_U16},
-                [IFLA_BRPORT_MODE]     = {.type = NLA_U8},
+                [IFLA_BRPORT_COST]                = {.type = NLA_U32},
+                [IFLA_BRPORT_PRIORITY]            = {.type = NLA_U16},
+                [IFLA_BRPORT_BCAST_FLOOD]         = {.type = NLA_U8},
+                [IFLA_BRPORT_FAST_LEAVE]          = {.type = NLA_U8},
+                [IFLA_BRPORT_UNICAST_FLOOD]       = {.type = NLA_U8},
+                [IFLA_BRPORT_GUARD]               = {.type = NLA_U8},
+                [IFLA_BRPORT_MODE]                = {.type = NLA_U8},
+                [IFLA_BRPORT_ISOLATED]            = {.type = NLA_U8},
+                [IFLA_BRPORT_LEARNING]            = {.type = NLA_U8},
+                [IFLA_BRPORT_LOCKED]              = {.type = NLA_U8},
+                [IFLA_BRPORT_MCAST_FLOOD]         = {.type = NLA_U8},
+                [IFLA_BRPORT_MCAST_TO_UCAST]      = {.type = NLA_U8},
+                [IFLA_BRPORT_NEIGH_SUPPRESS]      = {.type = NLA_U8},
+                [IFLA_BRPORT_NEIGH_VLAN_SUPPRESS] = {.type = NLA_U8},
+                [IFLA_BRPORT_PROTECT]             = {.type = NLA_U8},
+                [IFLA_BRPORT_VLAN_TUNNEL]         = {.type = NLA_U8},
             };
             struct nlattr *brp[G_N_ELEMENTS(policy_bridge_port)];
 
@@ -3641,14 +3659,74 @@ _new_from_nl_link(NMPlatform            *platform,
                 if (nla_parse_nested_arr(brp, li[IFLA_INFO_PORT_DATA], policy_bridge_port) < 0)
                     return NULL;
 
+                /* On the first message, detect support for attributes that require a recent
+                 * kernel. If supported, the attribute is present in all messages. */
+                if (!_nm_platform_kernel_support_detected(
+                        NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BRPORT_LOCKED)) {
+                    _nm_platform_kernel_support_init(
+                        NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BRPORT_LOCKED,
+                        brp[IFLA_BRPORT_LOCKED] ? 1 : -1);
+                }
+                if (!_nm_platform_kernel_support_detected(
+                        NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BRPORT_NEIGH_VLAN_SUPPRESS)) {
+                    _nm_platform_kernel_support_init(
+                        NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BRPORT_NEIGH_VLAN_SUPPRESS,
+                        brp[IFLA_BRPORT_NEIGH_VLAN_SUPPRESS] ? 1 : -1);
+                }
+
                 if (brp[IFLA_BRPORT_COST])
                     obj->link.port_data.bridge.path_cost = nla_get_u32(brp[IFLA_BRPORT_COST]);
 
                 if (brp[IFLA_BRPORT_PRIORITY])
                     obj->link.port_data.bridge.priority = nla_get_u16(brp[IFLA_BRPORT_PRIORITY]);
 
+                if (brp[IFLA_BRPORT_BCAST_FLOOD])
+                    obj->link.port_data.bridge.broadcast_flood =
+                        nla_get_u8(brp[IFLA_BRPORT_BCAST_FLOOD]);
+
+                if (brp[IFLA_BRPORT_FAST_LEAVE])
+                    obj->link.port_data.bridge.fast_leave = nla_get_u8(brp[IFLA_BRPORT_FAST_LEAVE]);
+
+                if (brp[IFLA_BRPORT_UNICAST_FLOOD])
+                    obj->link.port_data.bridge.flood = nla_get_u8(brp[IFLA_BRPORT_UNICAST_FLOOD]);
+
+                if (brp[IFLA_BRPORT_GUARD])
+                    obj->link.port_data.bridge.guard = nla_get_u8(brp[IFLA_BRPORT_GUARD]);
+
                 if (brp[IFLA_BRPORT_MODE])
                     obj->link.port_data.bridge.hairpin = nla_get_u8(brp[IFLA_BRPORT_MODE]);
+
+                if (brp[IFLA_BRPORT_ISOLATED])
+                    obj->link.port_data.bridge.isolated = nla_get_u8(brp[IFLA_BRPORT_ISOLATED]);
+
+                if (brp[IFLA_BRPORT_LEARNING])
+                    obj->link.port_data.bridge.learning = nla_get_u8(brp[IFLA_BRPORT_LEARNING]);
+
+                if (brp[IFLA_BRPORT_LOCKED])
+                    obj->link.port_data.bridge.locked = nla_get_u8(brp[IFLA_BRPORT_LOCKED]);
+
+                if (brp[IFLA_BRPORT_MCAST_FLOOD])
+                    obj->link.port_data.bridge.multicast_flood =
+                        nla_get_u8(brp[IFLA_BRPORT_MCAST_FLOOD]);
+
+                if (brp[IFLA_BRPORT_MCAST_TO_UCAST])
+                    obj->link.port_data.bridge.multicast_to_unicast =
+                        nla_get_u8(brp[IFLA_BRPORT_MCAST_TO_UCAST]);
+
+                if (brp[IFLA_BRPORT_NEIGH_SUPPRESS])
+                    obj->link.port_data.bridge.neigh_suppress =
+                        nla_get_u8(brp[IFLA_BRPORT_NEIGH_SUPPRESS]);
+
+                if (brp[IFLA_BRPORT_NEIGH_VLAN_SUPPRESS])
+                    obj->link.port_data.bridge.neigh_vlan_suppress =
+                        nla_get_u8(brp[IFLA_BRPORT_NEIGH_VLAN_SUPPRESS]);
+
+                if (brp[IFLA_BRPORT_PROTECT])
+                    obj->link.port_data.bridge.root_block = nla_get_u8(brp[IFLA_BRPORT_PROTECT]);
+
+                if (brp[IFLA_BRPORT_VLAN_TUNNEL])
+                    obj->link.port_data.bridge.vlan_tunnel =
+                        nla_get_u8(brp[IFLA_BRPORT_VLAN_TUNNEL]);
                 break;
             case NM_PORT_KIND_NONE:
                 break;
@@ -9021,7 +9099,20 @@ link_change(NMPlatform                   *platform,
 
         NLA_PUT_U32(nlmsg, IFLA_BRPORT_COST, port_data->bridge.path_cost);
         NLA_PUT_U16(nlmsg, IFLA_BRPORT_PRIORITY, port_data->bridge.priority);
+        NLA_PUT_U8(nlmsg, IFLA_BRPORT_BCAST_FLOOD, port_data->bridge.broadcast_flood);
+        NLA_PUT_U8(nlmsg, IFLA_BRPORT_FAST_LEAVE, port_data->bridge.fast_leave);
+        NLA_PUT_U8(nlmsg, IFLA_BRPORT_UNICAST_FLOOD, port_data->bridge.flood);
+        NLA_PUT_U8(nlmsg, IFLA_BRPORT_GUARD, port_data->bridge.guard);
         NLA_PUT_U8(nlmsg, IFLA_BRPORT_MODE, port_data->bridge.hairpin);
+        NLA_PUT_U8(nlmsg, IFLA_BRPORT_ISOLATED, port_data->bridge.isolated);
+        NLA_PUT_U8(nlmsg, IFLA_BRPORT_LEARNING, port_data->bridge.learning);
+        NLA_PUT_U8(nlmsg, IFLA_BRPORT_LOCKED, port_data->bridge.locked);
+        NLA_PUT_U8(nlmsg, IFLA_BRPORT_MCAST_FLOOD, port_data->bridge.multicast_flood);
+        NLA_PUT_U8(nlmsg, IFLA_BRPORT_MCAST_TO_UCAST, port_data->bridge.multicast_to_unicast);
+        NLA_PUT_U8(nlmsg, IFLA_BRPORT_NEIGH_SUPPRESS, port_data->bridge.neigh_suppress);
+        NLA_PUT_U8(nlmsg, IFLA_BRPORT_NEIGH_VLAN_SUPPRESS, port_data->bridge.neigh_vlan_suppress);
+        NLA_PUT_U8(nlmsg, IFLA_BRPORT_PROTECT, port_data->bridge.root_block);
+        NLA_PUT_U8(nlmsg, IFLA_BRPORT_VLAN_TUNNEL, port_data->bridge.vlan_tunnel);
 
         nla_nest_end(nlmsg, nl_port_data);
         nla_nest_end(nlmsg, nl_info);

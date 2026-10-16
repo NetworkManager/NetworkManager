@@ -353,16 +353,42 @@ test_port(int controller, int port_type, SignalData *controller_changed, guint t
             switch (test_num) {
             case 1:
                 bridge_port = (NMPlatformLinkBridgePort) {
-                    .path_cost = NM_BRIDGE_PORT_PATH_COST_DEF,
-                    .priority  = 614,
-                    .hairpin   = FALSE,
+                    .path_cost            = NM_BRIDGE_PORT_PATH_COST_DEF,
+                    .priority             = 614,
+                    .broadcast_flood      = FALSE,
+                    .fast_leave           = TRUE,
+                    .flood                = FALSE,
+                    .guard                = TRUE,
+                    .hairpin              = FALSE,
+                    .isolated             = TRUE,
+                    .learning             = FALSE,
+                    .locked               = TRUE,
+                    .multicast_flood      = FALSE,
+                    .multicast_to_unicast = TRUE,
+                    .neigh_suppress       = TRUE,
+                    .neigh_vlan_suppress  = TRUE,
+                    .root_block           = TRUE,
+                    .vlan_tunnel          = TRUE,
                 };
                 break;
             case 2:
                 bridge_port = (NMPlatformLinkBridgePort) {
-                    .path_cost = 200,
-                    .priority  = NM_BRIDGE_PORT_PRIORITY_DEF,
-                    .hairpin   = TRUE,
+                    .path_cost            = 200,
+                    .priority             = NM_BRIDGE_PORT_PRIORITY_DEF,
+                    .broadcast_flood      = TRUE,
+                    .fast_leave           = FALSE,
+                    .flood                = TRUE,
+                    .guard                = FALSE,
+                    .hairpin              = TRUE,
+                    .isolated             = FALSE,
+                    .learning             = TRUE,
+                    .locked               = FALSE,
+                    .multicast_flood      = TRUE,
+                    .multicast_to_unicast = FALSE,
+                    .neigh_suppress       = FALSE,
+                    .neigh_vlan_suppress  = FALSE,
+                    .root_block           = FALSE,
+                    .vlan_tunnel          = FALSE,
                 };
                 break;
             default:
@@ -384,12 +410,48 @@ test_port(int controller, int port_type, SignalData *controller_changed, guint t
             case 1:
                 g_assert_cmpint(link->port_data.bridge.path_cost, ==, NM_BRIDGE_PORT_PATH_COST_DEF);
                 g_assert_cmpint(link->port_data.bridge.priority, ==, 614);
+                g_assert_cmpint(link->port_data.bridge.broadcast_flood, ==, FALSE);
+                g_assert_cmpint(link->port_data.bridge.fast_leave, ==, TRUE);
+                g_assert_cmpint(link->port_data.bridge.flood, ==, FALSE);
+                g_assert_cmpint(link->port_data.bridge.guard, ==, TRUE);
                 g_assert_cmpint(link->port_data.bridge.hairpin, ==, FALSE);
+                g_assert_cmpint(link->port_data.bridge.isolated, ==, TRUE);
+                g_assert_cmpint(link->port_data.bridge.learning, ==, FALSE);
+                g_assert_cmpint(link->port_data.bridge.multicast_flood, ==, FALSE);
+                g_assert_cmpint(link->port_data.bridge.multicast_to_unicast, ==, TRUE);
+                g_assert_cmpint(link->port_data.bridge.neigh_suppress, ==, TRUE);
+                g_assert_cmpint(link->port_data.bridge.root_block, ==, TRUE);
+                g_assert_cmpint(link->port_data.bridge.vlan_tunnel, ==, TRUE);
+
+                if (nm_platform_kernel_support_get(
+                        NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BRPORT_LOCKED))
+                    g_assert_cmpint(link->port_data.bridge.locked, ==, TRUE);
+                if (nm_platform_kernel_support_get(
+                        NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BRPORT_NEIGH_VLAN_SUPPRESS))
+                    g_assert_cmpint(link->port_data.bridge.neigh_vlan_suppress, ==, TRUE);
                 break;
             case 2:
                 g_assert_cmpint(link->port_data.bridge.path_cost, ==, 200);
                 g_assert_cmpint(link->port_data.bridge.priority, ==, NM_BRIDGE_PORT_PRIORITY_DEF);
+                g_assert_cmpint(link->port_data.bridge.broadcast_flood, ==, TRUE);
+                g_assert_cmpint(link->port_data.bridge.fast_leave, ==, FALSE);
+                g_assert_cmpint(link->port_data.bridge.flood, ==, TRUE);
+                g_assert_cmpint(link->port_data.bridge.guard, ==, FALSE);
                 g_assert_cmpint(link->port_data.bridge.hairpin, ==, TRUE);
+                g_assert_cmpint(link->port_data.bridge.isolated, ==, FALSE);
+                g_assert_cmpint(link->port_data.bridge.learning, ==, TRUE);
+                g_assert_cmpint(link->port_data.bridge.multicast_flood, ==, TRUE);
+                g_assert_cmpint(link->port_data.bridge.multicast_to_unicast, ==, FALSE);
+                g_assert_cmpint(link->port_data.bridge.neigh_suppress, ==, FALSE);
+                g_assert_cmpint(link->port_data.bridge.root_block, ==, FALSE);
+                g_assert_cmpint(link->port_data.bridge.vlan_tunnel, ==, FALSE);
+
+                if (nm_platform_kernel_support_get(
+                        NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BRPORT_LOCKED))
+                    g_assert_cmpint(link->port_data.bridge.locked, ==, FALSE);
+                if (nm_platform_kernel_support_get(
+                        NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BRPORT_NEIGH_VLAN_SUPPRESS))
+                    g_assert_cmpint(link->port_data.bridge.neigh_vlan_suppress, ==, FALSE);
                 break;
             default:
                 g_assert_not_reached();

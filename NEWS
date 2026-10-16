@@ -24,6 +24,10 @@ Core:
 * With Ethernet autonegotiation enabled, advertise all supported link modes
   matching the configured speed and duplex, including fibre and backplane
   modes.
+* Support new properties for bridge ports: broadcast-flood, fast-leave,
+  flood, guard, isolated, learning, locked, multicast-flood,
+  multicast-to-unicast, neigh-suppress, neigh-vlan-suppress, root-block,
+  vlan-tunnel.
 
 initrd:
 * Add the "rd.net.timeout.ip-required" kernel command line argument
