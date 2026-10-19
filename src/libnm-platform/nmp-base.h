@@ -132,6 +132,12 @@ typedef struct {
     bool enabled : 1;
 } NMEthtoolEEEState;
 
+typedef struct {
+    guint32                  speed; /* Mbit/s, 0 means unknown/not-set */
+    NMPlatformLinkDuplexType duplex;
+    bool                     autoneg : 1;
+} NMEthtoolLinkSettingsState;
+
 /*****************************************************************************/
 
 typedef struct _NMPNetns                 NMPNetns;

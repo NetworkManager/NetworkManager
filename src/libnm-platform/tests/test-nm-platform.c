@@ -2,10 +2,13 @@
 
 #include "libnm-glib-aux/nm-default-glib-i18n-prog.h"
 
+#include "libnm-std-aux/nm-linux-compat.h"
+
 #include "libnm-log-core/nm-logging.h"
 #include "libnm-platform/nm-netlink.h"
 #include "libnm-platform/nmp-netns.h"
 #include "libnm-platform/nm-platform-utils.h"
+#include "libnm-platform/nmp-ethtool.h"
 #include "libnm-platform/nmp-object.h"
 
 #include "libnm-glib-aux/nm-test-utils.h"
@@ -153,41 +156,112 @@ test_use_symbols(void)
 /*****************************************************************************/
 
 static void
-test_nmp_link_mode_all_advertised_modes_bits(void)
+test_ethtool_link_mode_params(void)
 {
-    guint32 flags[(SCHAR_MAX + 1) / 32];
-    guint   max_bit;
-    int     i;
+    /* Missing speed entries would be treated as capabilities and remain advertised. */
+    static const guint capability_bits[] = {
+        ETHTOOL_LINK_MODE_Autoneg_BIT,
+        ETHTOOL_LINK_MODE_TP_BIT,
+        ETHTOOL_LINK_MODE_AUI_BIT,
+        ETHTOOL_LINK_MODE_MII_BIT,
+        ETHTOOL_LINK_MODE_FIBRE_BIT,
+        ETHTOOL_LINK_MODE_BNC_BIT,
+        ETHTOOL_LINK_MODE_Pause_BIT,
+        ETHTOOL_LINK_MODE_Asym_Pause_BIT,
+        ETHTOOL_LINK_MODE_Backplane_BIT,
+        ETHTOOL_LINK_MODE_FEC_NONE_BIT,
+        ETHTOOL_LINK_MODE_FEC_RS_BIT,
+        ETHTOOL_LINK_MODE_FEC_BASER_BIT,
+        ETHTOOL_LINK_MODE_FEC_LLRS_BIT,
+    };
+    guint i;
+    guint j;
 
-    memset(flags, 0, sizeof(flags));
+    for (i = 0; i < __ETHTOOL_LINK_MODE_MASK_NBITS; i++) {
+        gboolean is_capability = FALSE;
 
-    max_bit = 0;
-    for (i = 0; i < (int) G_N_ELEMENTS(_nmp_link_mode_all_advertised_modes_bits); i++) {
-        if (i > 0) {
-            g_assert_cmpint(_nmp_link_mode_all_advertised_modes_bits[i - 1],
-                            <,
-                            _nmp_link_mode_all_advertised_modes_bits[i]);
-        }
-        g_assert_cmpint(_nmp_link_mode_all_advertised_modes_bits[i], <, SCHAR_MAX);
-        g_assert_cmpint(_nmp_link_mode_all_advertised_modes_bits[i] / 32, <, G_N_ELEMENTS(flags));
-        flags[_nmp_link_mode_all_advertised_modes_bits[i] / 32] |=
-            (1u << (_nmp_link_mode_all_advertised_modes_bits[i] % 32u));
-        max_bit = NM_MAX(max_bit, _nmp_link_mode_all_advertised_modes_bits[i]);
-    }
+        for (j = 0; j < G_N_ELEMENTS(capability_bits); j++)
+            is_capability |= (capability_bits[j] == i);
 
-    g_assert_cmpint((max_bit + 31u) / 32u, ==, G_N_ELEMENTS(_nmp_link_mode_all_advertised_modes));
-
-    for (i = 0; i < (int) G_N_ELEMENTS(_nmp_link_mode_all_advertised_modes); i++) {
-        if (flags[i] != _nmp_link_mode_all_advertised_modes[i]) {
-            NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER
-            g_error("_nmp_link_mode_all_advertised_modes[%d] should be 0x%0x but is 0x%0x "
-                    "(according to the bits in _nmp_link_mode_all_advertised_modes_bits)",
+        if (_nmp_ethtool_link_mode_has_speed(i) == is_capability)
+            g_error("link mode bit %u: %s",
                     i,
-                    flags[i],
-                    _nmp_link_mode_all_advertised_modes[i]);
-            NM_PRAGMA_WARNING_REENABLE
-        }
+                    is_capability ? "has an unexpected speed" : "has no speed");
     }
+}
+
+static void
+test_ethtool_link_modes_mask_restrict(void)
+{
+    const guint32           capabilities = NM_BIT(6) | NM_BIT(7) | NM_BIT(13) | NM_BIT(14);
+    NMPEthtoolLinkModesMask mask;
+
+    /* 10baseT/Half (bit 0), 1000baseT/Full (5), 10000baseT/Full (12),
+     * 1000baseT1/Full (68), Autoneg/TP/Pause/Asym_Pause, FEC_RS (50),
+     * and a mode unknown to the table (bit 100). */
+    mask = (NMPEthtoolLinkModesMask) {
+        .bits  = 128,
+        .len   = 16,
+        .modes = {NM_BIT(0) | NM_BIT(5) | NM_BIT(12) | capabilities,
+                  NM_BIT(50 - 32),
+                  NM_BIT(68 - 64),
+                  NM_BIT(100 - 96)},
+    };
+    g_assert_cmpint(_nmp_ethtool_link_modes_mask_restrict(&mask, 1000, DUPLEX_FULL),
+                    ==,
+                    NM_OPTION_BOOL_TRUE);
+    g_assert_cmpint(mask.len, ==, 16);
+    g_assert_cmpint(mask.modes[0], ==, NM_BIT(5) | capabilities);
+    g_assert_cmpint(mask.modes[1], ==, NM_BIT(50 - 32));
+    g_assert_cmpint(mask.modes[2], ==, NM_BIT(68 - 64));
+    g_assert_cmpint(mask.modes[3], ==, 0);
+
+    g_assert_cmpint(_nmp_ethtool_link_modes_mask_restrict(&mask, 1000, DUPLEX_HALF),
+                    ==,
+                    NM_OPTION_BOOL_FALSE);
+    g_assert_cmpint(mask.len, ==, 0);
+
+    /* Bits 2 and 90 are 100baseT/Half and 100baseFX/Half.
+     * modes[3] is a sentinel past mask.len. */
+    mask = (NMPEthtoolLinkModesMask) {
+        .bits  = 92,
+        .len   = 12,
+        .modes = {NM_BIT(0) | NM_BIT(2) | NM_BIT(5), 0, NM_BIT(90 - 64), NM_BIT(0)},
+    };
+    g_assert_cmpint(_nmp_ethtool_link_modes_mask_restrict(&mask, 100, DUPLEX_HALF),
+                    ==,
+                    NM_OPTION_BOOL_TRUE);
+    g_assert_cmpint(mask.len, ==, 12);
+    g_assert_cmpint(mask.modes[0], ==, NM_BIT(2));
+    g_assert_cmpint(mask.modes[1], ==, 0);
+    g_assert_cmpint(mask.modes[2], ==, NM_BIT(90 - 64));
+    g_assert_cmpint(mask.modes[3], ==, NM_BIT(0));
+
+    mask = (NMPEthtoolLinkModesMask) {
+        .bits  = 128,
+        .len   = 16,
+        .modes = {NM_BIT(5) | capabilities, 0, 0, NM_BIT(100 - 96)},
+    };
+    g_assert_cmpint(_nmp_ethtool_link_modes_mask_restrict(&mask, 1000, DUPLEX_HALF),
+                    ==,
+                    NM_OPTION_BOOL_DEFAULT);
+    g_assert_cmpint(mask.len, ==, 0);
+
+    mask = (NMPEthtoolLinkModesMask) {
+        .bits  = 128,
+        .len   = 16,
+        .modes = {capabilities},
+    };
+    g_assert_cmpint(_nmp_ethtool_link_modes_mask_restrict(&mask, 1000, DUPLEX_HALF),
+                    ==,
+                    NM_OPTION_BOOL_FALSE);
+    g_assert_cmpint(mask.len, ==, 0);
+
+    mask = (NMPEthtoolLinkModesMask) {.bits = 128, .len = 16};
+    g_assert_cmpint(_nmp_ethtool_link_modes_mask_restrict(&mask, 100, DUPLEX_FULL),
+                    ==,
+                    NM_OPTION_BOOL_FALSE);
+    g_assert_cmpint(mask.len, ==, 0);
 }
 
 /*****************************************************************************/
@@ -484,8 +558,9 @@ main(int argc, char **argv)
     nmtst_init(&argc, &argv, TRUE);
 
     g_test_add_func("/nm-platform/test_use_symbols", test_use_symbols);
-    g_test_add_func("/nm-platform/test_nmp_link_mode_all_advertised_modes_bits",
-                    test_nmp_link_mode_all_advertised_modes_bits);
+    g_test_add_func("/nm-platform/test_ethtool_link_mode_params", test_ethtool_link_mode_params);
+    g_test_add_func("/nm-platform/test_ethtool_link_modes_mask_restrict",
+                    test_ethtool_link_modes_mask_restrict);
     g_test_add_func("/nm-platform/test_nmpclass_consistency", test_nmpclass_consistency);
     g_test_add_func("/nm-platform/test_nmp_utils_bridge_vlans_normalize",
                     test_nmp_utils_bridge_vlans_normalize);

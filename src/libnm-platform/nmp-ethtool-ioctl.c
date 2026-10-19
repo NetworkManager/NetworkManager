@@ -13,7 +13,6 @@
 #include <linux/if.h>
 #include <linux/mii.h>
 #include <linux/sockios.h>
-#include <linux/version.h>
 #include <sys/ioctl.h>
 
 #define ONOFF(bool_val) ((bool_val) ? "on" : "off")
@@ -237,21 +236,17 @@ static NM_UTILS_ENUM2STR_DEFINE(_ethtool_cmd_to_string,
                                 NM_UTILS_ENUM2STR(ETHTOOL_GDRVINFO, "ETHTOOL_GDRVINFO"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_GFEATURES, "ETHTOOL_GFEATURES"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_GLINK, "ETHTOOL_GLINK"),
-                                NM_UTILS_ENUM2STR(ETHTOOL_GLINKSETTINGS, "ETHTOOL_GLINKSETTINGS"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_GPERMADDR, "ETHTOOL_GPERMADDR"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_GRINGPARAM, "ETHTOOL_GRINGPARAM"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_GPAUSEPARAM, "ETHTOOL_GPAUSEPARAM"),
-                                NM_UTILS_ENUM2STR(ETHTOOL_GSET, "ETHTOOL_GSET"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_GSSET_INFO, "ETHTOOL_GSSET_INFO"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_GSTATS, "ETHTOOL_GSTATS"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_GSTRINGS, "ETHTOOL_GSTRINGS"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_GWOL, "ETHTOOL_GWOL"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_SCOALESCE, "ETHTOOL_SCOALESCE"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_SFEATURES, "ETHTOOL_SFEATURES"),
-                                NM_UTILS_ENUM2STR(ETHTOOL_SLINKSETTINGS, "ETHTOOL_SLINKSETTINGS"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_SRINGPARAM, "ETHTOOL_SRINGPARAM"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_SPAUSEPARAM, "ETHTOOL_SPAUSEPARAM"),
-                                NM_UTILS_ENUM2STR(ETHTOOL_SSET, "ETHTOOL_SSET"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_SWOL, "ETHTOOL_SWOL"), );
 
 static const char *
@@ -265,17 +260,6 @@ _ethtool_edata_to_string(gpointer edata, gsize edata_size, char *sbuf, gsize sbu
 }
 
 /*****************************************************************************/
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27)
-#define ethtool_cmd_speed(pedata) ((pedata)->speed)
-
-#define ethtool_cmd_speed_set(pedata, speed) \
-    G_STMT_START                             \
-    {                                        \
-        (pedata)->speed = (guint16) (speed); \
-    }                                        \
-    G_STMT_END
-#endif
 
 static int
 _ethtool_call_handle(SocketHandle *shandle, gpointer edata, gsize edata_size)
@@ -1254,277 +1238,6 @@ nmp_ethtool_ioctl_set_wake_on_lan(int                      ifindex,
 }
 
 /*****************************************************************************/
-
-gboolean
-nmp_ethtool_ioctl_get_link_settings(int                       ifindex,
-                                    gboolean                 *out_autoneg,
-                                    guint32                  *out_speed,
-                                    NMPlatformLinkDuplexType *out_duplex)
-{
-    struct ethtool_cmd edata = {
-        .cmd = ETHTOOL_GSET,
-    };
-
-    g_return_val_if_fail(ifindex > 0, FALSE);
-
-    if (_ethtool_call_once(ifindex, &edata, sizeof(edata)) < 0)
-        return FALSE;
-
-    NM_SET_OUT(out_autoneg, (edata.autoneg == AUTONEG_ENABLE));
-
-    if (out_speed) {
-        guint32 speed;
-
-        speed = ethtool_cmd_speed(&edata);
-        if (speed == G_MAXUINT16 || speed == G_MAXUINT32)
-            speed = 0;
-
-        *out_speed = speed;
-    }
-
-    if (out_duplex) {
-        switch (edata.duplex) {
-        case DUPLEX_HALF:
-            *out_duplex = NM_PLATFORM_LINK_DUPLEX_HALF;
-            break;
-        case DUPLEX_FULL:
-            *out_duplex = NM_PLATFORM_LINK_DUPLEX_FULL;
-            break;
-        default: /* DUPLEX_UNKNOWN */
-            *out_duplex = NM_PLATFORM_LINK_DUPLEX_UNKNOWN;
-            break;
-        }
-    }
-
-    return TRUE;
-}
-
-#define ADVERTISED_INVALID 0
-
-static guint32
-get_baset_mode(guint32 speed, NMPlatformLinkDuplexType duplex)
-{
-    if (duplex == NM_PLATFORM_LINK_DUPLEX_UNKNOWN)
-        return ADVERTISED_INVALID;
-
-    if (duplex == NM_PLATFORM_LINK_DUPLEX_HALF) {
-        switch (speed) {
-        case 10:
-            return ADVERTISED_10baseT_Half;
-        case 100:
-            return ADVERTISED_100baseT_Half;
-        case 1000:
-            return ADVERTISED_1000baseT_Half;
-        default:
-            return ADVERTISED_INVALID;
-        }
-    } else {
-        switch (speed) {
-        case 10:
-            return ADVERTISED_10baseT_Full;
-        case 100:
-            return ADVERTISED_100baseT_Full;
-        case 1000:
-            return ADVERTISED_1000baseT_Full;
-        case 10000:
-            return ADVERTISED_10000baseT_Full;
-        default:
-            return ADVERTISED_INVALID;
-        }
-    }
-}
-
-static gboolean
-platform_link_duplex_type_to_native(NMPlatformLinkDuplexType duplex_type, guint8 *out_native)
-{
-    switch (duplex_type) {
-    case NM_PLATFORM_LINK_DUPLEX_HALF:
-        *out_native = DUPLEX_HALF;
-        return TRUE;
-    case NM_PLATFORM_LINK_DUPLEX_FULL:
-        *out_native = DUPLEX_FULL;
-        return TRUE;
-    case NM_PLATFORM_LINK_DUPLEX_UNKNOWN:
-        return FALSE;
-    default:
-        g_return_val_if_reached(FALSE);
-    }
-}
-
-static NMOptionBool
-set_link_settings_new(SocketHandle            *shandle,
-                      gboolean                 autoneg,
-                      guint32                  speed,
-                      NMPlatformLinkDuplexType duplex)
-{
-    struct ethtool_link_settings          edata0;
-    gs_free struct ethtool_link_settings *edata = NULL;
-    gsize                                 edata_size;
-    guint                                 nwords;
-    guint                                 i;
-
-    edata0 = (struct ethtool_link_settings) {
-        .cmd                    = ETHTOOL_GLINKSETTINGS,
-        .link_mode_masks_nwords = 0,
-    };
-
-    /* perform the handshake to find the size of masks */
-    if (_ethtool_call_handle(shandle, &edata0, sizeof(edata0)) < 0
-        || edata0.link_mode_masks_nwords >= 0) {
-        /* new API not supported */
-        return NM_OPTION_BOOL_DEFAULT;
-    }
-
-    nwords                        = -edata0.link_mode_masks_nwords;
-    edata_size                    = sizeof(*edata) + sizeof(guint32) * nwords * 3;
-    edata                         = g_malloc0(edata_size);
-    edata->cmd                    = ETHTOOL_GLINKSETTINGS;
-    edata->link_mode_masks_nwords = nwords;
-
-    /* retrieve first current settings */
-    if (_ethtool_call_handle(shandle, edata, edata_size) < 0)
-        return FALSE;
-
-    /* then change the needed ones */
-    edata->cmd = ETHTOOL_SLINKSETTINGS;
-
-    {
-        const guint32 *v_map_supported      = &edata->link_mode_masks[0];
-        guint32       *v_map_advertising    = &edata->link_mode_masks[nwords];
-        guint32       *v_map_lp_advertising = &edata->link_mode_masks[2 * nwords];
-
-        memcpy(v_map_advertising, v_map_supported, sizeof(guint32) * nwords);
-        (void) v_map_lp_advertising;
-
-        if (speed != 0) {
-            guint32 mode;
-
-            mode = get_baset_mode(speed, duplex);
-
-            if (mode == ADVERTISED_INVALID) {
-                if (!autoneg)
-                    goto set_autoneg;
-                nm_log_trace(LOGD_PLATFORM,
-                             "ethtool[%d]: %uBASE-T %s duplex mode cannot be advertised",
-                             shandle->ifindex,
-                             speed,
-                             nm_platform_link_duplex_type_to_string(duplex));
-                return FALSE;
-            }
-
-            if (!(v_map_supported[0] & mode)) {
-                if (!autoneg)
-                    goto set_autoneg;
-                nm_log_trace(LOGD_PLATFORM,
-                             "ethtool[%d]: device does not support %uBASE-T %s duplex mode",
-                             shandle->ifindex,
-                             speed,
-                             nm_platform_link_duplex_type_to_string(duplex));
-                return FALSE;
-            }
-
-            for (i = 0; i < (guint) G_N_ELEMENTS(_nmp_link_mode_all_advertised_modes); i++)
-                v_map_advertising[i] &= ~_nmp_link_mode_all_advertised_modes[i];
-            v_map_advertising[0] |= mode;
-        }
-    }
-
-set_autoneg:
-    if (autoneg)
-        edata->autoneg = AUTONEG_ENABLE;
-    else {
-        edata->autoneg = AUTONEG_DISABLE;
-
-        if (speed)
-            edata->speed = speed;
-
-        platform_link_duplex_type_to_native(duplex, &edata->duplex);
-    }
-
-    return _ethtool_call_handle(shandle, edata, edata_size) >= 0;
-}
-
-gboolean
-nmp_ethtool_ioctl_set_link_settings(int                      ifindex,
-                                    gboolean                 autoneg,
-                                    guint32                  speed,
-                                    NMPlatformLinkDuplexType duplex)
-{
-    nm_auto_socket_handle SocketHandle shandle = SOCKET_HANDLE_INIT(ifindex);
-    struct ethtool_cmd                 edata   = {
-        .cmd = ETHTOOL_GSET,
-    };
-    NMOptionBool ret;
-
-    g_return_val_if_fail(ifindex > 0, FALSE);
-    g_return_val_if_fail((speed && duplex != NM_PLATFORM_LINK_DUPLEX_UNKNOWN)
-                             || (!speed && duplex == NM_PLATFORM_LINK_DUPLEX_UNKNOWN),
-                         FALSE);
-
-    nm_log_trace(LOGD_PLATFORM,
-                 "ethtool[%d]: set link: autoneg=%d, speed=%d, duplex=%s",
-                 ifindex,
-                 autoneg,
-                 speed,
-                 nm_platform_link_duplex_type_to_string(duplex));
-
-    ret = set_link_settings_new(&shandle, autoneg, speed, duplex);
-    if (ret != NM_OPTION_BOOL_DEFAULT)
-        return ret;
-
-    /* new ETHTOOL_GLINKSETTINGS API not supported, fall back to GSET */
-
-    /* retrieve first current settings */
-    if (_ethtool_call_handle(&shandle, &edata, sizeof(edata)) < 0)
-        return FALSE;
-
-    /* then change the needed ones */
-    edata.cmd = ETHTOOL_SSET;
-
-    edata.advertising = edata.supported;
-    if (speed != 0) {
-        guint32 mode;
-
-        mode = get_baset_mode(speed, duplex);
-
-        if (mode == ADVERTISED_INVALID) {
-            if (!autoneg)
-                goto set_autoneg;
-            nm_log_trace(LOGD_PLATFORM,
-                         "ethtool[%d]: %uBASE-T %s duplex mode cannot be advertised",
-                         ifindex,
-                         speed,
-                         nm_platform_link_duplex_type_to_string(duplex));
-            return FALSE;
-        }
-        if (!(edata.supported & mode)) {
-            if (!autoneg)
-                goto set_autoneg;
-            nm_log_trace(LOGD_PLATFORM,
-                         "ethtool[%d]: device does not support %uBASE-T %s duplex mode",
-                         ifindex,
-                         speed,
-                         nm_platform_link_duplex_type_to_string(duplex));
-            return FALSE;
-        }
-        edata.advertising &= ~_nmp_link_mode_all_advertised_modes[0];
-        edata.advertising |= mode;
-    }
-
-set_autoneg:
-    if (autoneg)
-        edata.autoneg = AUTONEG_ENABLE;
-    else {
-        edata.autoneg = AUTONEG_DISABLE;
-
-        if (speed)
-            ethtool_cmd_speed_set(&edata, speed);
-
-        platform_link_duplex_type_to_native(duplex, &edata.duplex);
-    }
-
-    return _ethtool_call_handle(&shandle, &edata, sizeof(edata)) >= 0;
-}
 
 gboolean
 nmp_mii_ioctl_supports_carrier_detect(int ifindex)
