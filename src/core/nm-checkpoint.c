@@ -261,8 +261,14 @@ find_settings_connection(NMCheckpoint                    *self,
         *need_update = TRUE;
     }
 
-    /* Check if the active state changed */
+    /* Check if the active state changed. A deactivating connection still
+     * carries the version id saved in the checkpoint. */
     nm_manager_for_each_active_connection (priv->manager, active, tmp_clist) {
+        if (!dev_checkpoint->device
+            || nm_active_connection_get_device(active) != dev_checkpoint->device
+            || nm_active_connection_get_state(active) >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING)
+            continue;
+
         ac_uuid =
             nm_settings_connection_get_uuid(nm_active_connection_get_settings_connection(active));
         if (nm_streq(uuid, ac_uuid)) {
@@ -426,15 +432,16 @@ restore_and_activate_connection(NMCheckpoint *self, DeviceCheckpoint *dev_checkp
          * the manager prevents the reactivation of the same connection by
          * an internal subject. */
         if (nm_device_get_state(dev_checkpoint->device) > NM_DEVICE_STATE_DISCONNECTED
-            && nm_device_get_state(dev_checkpoint->device) < NM_DEVICE_STATE_DEACTIVATING) {
+            && nm_device_get_state(dev_checkpoint->device) <= NM_DEVICE_STATE_DEACTIVATING) {
             if (!NM_FLAGS_HAS(priv->flags, NM_CHECKPOINT_CREATE_FLAG_NO_PRESERVE_EXTERNAL_PORTS)) {
                 nm_device_activation_state_set_preserve_external_ports(dev_checkpoint->device,
                                                                        TRUE);
             }
 
-            nm_device_state_changed(dev_checkpoint->device,
-                                    NM_DEVICE_STATE_DEACTIVATING,
-                                    NM_DEVICE_STATE_REASON_NEW_ACTIVATION);
+            if (nm_device_get_state(dev_checkpoint->device) < NM_DEVICE_STATE_DEACTIVATING)
+                nm_device_state_changed(dev_checkpoint->device,
+                                        NM_DEVICE_STATE_DEACTIVATING,
+                                        NM_DEVICE_STATE_REASON_NEW_ACTIVATION);
         }
 
         if (!nm_manager_activate_connection(
