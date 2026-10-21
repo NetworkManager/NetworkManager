@@ -9,6 +9,7 @@ apk add \
     'autoconf' \
     'bash' \
     'bpftool' \
+    'bubblewrap' \
     'clang' \
     'curl-dev' \
     'dbus' \

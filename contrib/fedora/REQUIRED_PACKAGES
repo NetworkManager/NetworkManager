@@ -50,6 +50,7 @@ install \
     audit-libs-devel \
     bluez-libs-devel \
     bpftool \
+    bubblewrap \
     clang \
     dbus-devel \
     dbus-x11 \
@@ -62,6 +63,7 @@ install \
     gnutls-devel \
     gobject-introspection-devel \
     gtk-doc \
+    iproute \
     iptables \
     jansson-devel \
     jq \

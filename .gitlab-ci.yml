@@ -64,12 +64,12 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-92fe02c28802'
-  ARCH_TAG:    'tag-68dc09b9280c'
-  CENTOS_TAG:  'tag-f8627f3a33d3'
-  DEBIAN_TAG:  'tag-dcd11293e749'
-  FEDORA_TAG:  'tag-f8627f3a33d3'
-  UBUNTU_TAG:  'tag-dcd11293e749'
+  ALPINE_TAG:  'tag-6c5371f2b7f8'
+  ARCH_TAG:    'tag-165636cba9d1'
+  CENTOS_TAG:  'tag-3f4b24b6ca92'
+  DEBIAN_TAG:  'tag-70e67dd3d328'
+  FEDORA_TAG:  'tag-3f4b24b6ca92'
+  UBUNTU_TAG:  'tag-70e67dd3d328'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   ARCH_EXEC:   'bash .gitlab-ci/arch-install.sh'

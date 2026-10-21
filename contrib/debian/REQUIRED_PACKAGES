@@ -32,6 +32,7 @@ install_ignore_missing() {
 
 install \
     \
+    bubblewrap \
     clang \
     dbus \
     dbus-x11 \
