@@ -32,6 +32,9 @@ Core:
   fast-leave, isolated, learning, locked, multicast-flood,
   multicast-to-unicast, neighbor-suppress, neighbor-vlan-suppress,
   root-block, unicast-flood, vlan-tunnel.
+* Checkpoint rollback reactivates connections that are still being
+  deactivated, keeping external bridge ports attached, and no longer
+  reactivates unchanged activations of a multi-connect profile.
 
 initrd:
 * Add the "rd.net.timeout.ip-required" kernel command line argument
