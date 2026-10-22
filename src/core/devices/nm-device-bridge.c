@@ -837,7 +837,7 @@ merge_bridge_vlan_default_pvid(NMPlatformBridgeVlan *vlans, guint *num_vlans, gu
 }
 
 void
-nm_device_reapply_bridge_port_vlans(NMDevice *device)
+nm_device_reapply_bridge_port_properties(NMDevice *device)
 {
     NMDevice                     *self = device; /* for logging */
     NMSettingBridgePort          *s_bridge_port;
@@ -859,6 +859,8 @@ nm_device_reapply_bridge_port_vlans(NMDevice *device)
     controller = nm_device_get_controller(device);
     if (!controller)
         return;
+
+    commit_port_options(device, s_bridge_port);
 
     s_bridge = nm_device_get_applied_setting(controller, NM_TYPE_SETTING_BRIDGE);
     if (!s_bridge)
