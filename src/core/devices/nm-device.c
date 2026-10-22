@@ -14487,6 +14487,22 @@ can_reapply_change(NMDevice   *self,
         return nm_device_hash_check_invalid_keys(diffs,
                                                  NM_SETTING_BRIDGE_PORT_SETTING_NAME,
                                                  error,
+                                                 NM_SETTING_BRIDGE_PORT_PRIORITY,
+                                                 NM_SETTING_BRIDGE_PORT_PATH_COST,
+                                                 NM_SETTING_BRIDGE_PORT_BPDU_GUARD,
+                                                 NM_SETTING_BRIDGE_PORT_BROADCAST_FLOOD,
+                                                 NM_SETTING_BRIDGE_PORT_FAST_LEAVE,
+                                                 NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE,
+                                                 NM_SETTING_BRIDGE_PORT_ISOLATED,
+                                                 NM_SETTING_BRIDGE_PORT_LEARNING,
+                                                 NM_SETTING_BRIDGE_PORT_LOCKED,
+                                                 NM_SETTING_BRIDGE_PORT_MULTICAST_FLOOD,
+                                                 NM_SETTING_BRIDGE_PORT_MULTICAST_TO_UNICAST,
+                                                 NM_SETTING_BRIDGE_PORT_NEIGHBOR_SUPPRESS,
+                                                 NM_SETTING_BRIDGE_PORT_NEIGHBOR_VLAN_SUPPRESS,
+                                                 NM_SETTING_BRIDGE_PORT_ROOT_BLOCK,
+                                                 NM_SETTING_BRIDGE_PORT_UNICAST_FLOOD,
+                                                 NM_SETTING_BRIDGE_PORT_VLAN_TUNNEL,
                                                  NM_SETTING_BRIDGE_PORT_VLANS);
     }
 
@@ -14770,7 +14786,7 @@ check_and_reapply_connection(NMDevice            *self,
     if (priv->state >= NM_DEVICE_STATE_ACTIVATED)
         nm_device_update_metered(self);
 
-    nm_device_reapply_bridge_port_vlans(self);
+    nm_device_reapply_bridge_port_properties(self);
 
     sett_conn = nm_device_get_settings_connection(self);
     if (sett_conn) {
