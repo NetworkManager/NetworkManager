@@ -450,10 +450,18 @@ setting_vlans_to_platform(GPtrArray *array, guint *out_len)
     return arr;
 }
 
-static void
+static gboolean
 commit_port_options(NMDevice *device, NMSettingBridgePort *setting)
 {
-    guint32 path_cost, priority;
+    NMDevice                       *self = device; /* for logging */
+    NMPlatform                     *platform;
+    guint32                         path_cost, priority;
+    const NMPlatformLink           *pllink;
+    const NMPlatformLinkBridgePort *port;
+    int                             ifindex;
+
+    platform = nm_device_get_platform(device);
+    ifindex  = nm_device_get_ifindex(device);
 
     path_cost = nm_setting_bridge_port_get_path_cost(setting);
     if (path_cost == 0)
@@ -464,8 +472,8 @@ commit_port_options(NMDevice *device, NMSettingBridgePort *setting)
         priority = NM_BRIDGE_PORT_PRIORITY_DEF;
 
     nm_platform_link_change(
-        nm_device_get_platform(device),
-        nm_device_get_ifindex(device),
+        platform,
+        ifindex,
         NULL,
         NULL,
         &((NMPlatformLinkBridgePort) {
@@ -487,6 +495,26 @@ commit_port_options(NMDevice *device, NMSettingBridgePort *setting)
             .vlan_tunnel            = nm_setting_bridge_port_get_vlan_tunnel(setting),
         }),
         0);
+
+    /* The "locked" attribute requires a recent kernel, and a failure to set it would silently
+     * degrade the security of the system. Fail the activation when it is not supported. */
+    if (nm_setting_bridge_port_get_locked(setting)) {
+        pllink = nm_platform_link_get(platform, ifindex);
+        if (!pllink || pllink->port_kind != NM_PORT_KIND_BRIDGE) {
+            _LOGW(LOGD_BRIDGE, "failure reading the bridge port options after setting them");
+            return FALSE;
+        }
+
+        port = &pllink->port_data.bridge;
+        if (!port->locked) {
+            _LOGW(LOGD_BRIDGE,
+                  "failed to set the bridge port as locked, possibly because of missing kernel "
+                  "support");
+            return FALSE;
+        }
+    }
+
+    return TRUE;
 }
 
 static void
@@ -1114,7 +1142,8 @@ attach_port(NMDevice                  *device,
                 return FALSE;
         }
 
-        commit_port_options(port, s_port);
+        if (!commit_port_options(port, s_port))
+            return FALSE;
 
         _LOGI(LOGD_BRIDGE, "attached bridge port %s", nm_device_get_ip_iface(port));
     } else {
