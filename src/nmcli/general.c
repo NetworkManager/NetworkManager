@@ -196,8 +196,8 @@ translate_and_out:
     return value;
 }
 
-static const NmcMetaGenericInfo
-    *const metagen_general_status[_NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_NUM + 1] = {
+static const NmcMetaGenericInfo *const
+    metagen_general_status[_NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_NUM + 1] = {
 #define _METAGEN_GENERAL_STATUS(type, name) \
     [type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_general_status_get_fcn)
         _METAGEN_GENERAL_STATUS(NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_RUNNING, "RUNNING"),
@@ -253,8 +253,8 @@ _metagen_general_permissions_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
     g_return_val_if_reached(NULL);
 }
 
-static const NmcMetaGenericInfo
-    *const metagen_general_permissions[_NMC_GENERIC_INFO_TYPE_GENERAL_PERMISSIONS_NUM + 1] = {
+static const NmcMetaGenericInfo *const
+    metagen_general_permissions[_NMC_GENERIC_INFO_TYPE_GENERAL_PERMISSIONS_NUM + 1] = {
 #define _METAGEN_GENERAL_PERMISSIONS(type, name) \
     [type] =                                     \
         NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_general_permissions_get_fcn)
@@ -293,8 +293,8 @@ _metagen_general_logging_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
         return *d->domains;
 }
 
-static const NmcMetaGenericInfo
-    *const metagen_general_logging[_NMC_GENERIC_INFO_TYPE_GENERAL_LOGGING_NUM + 1] = {
+static const NmcMetaGenericInfo *const
+    metagen_general_logging[_NMC_GENERIC_INFO_TYPE_GENERAL_LOGGING_NUM + 1] = {
 #define _METAGEN_GENERAL_LOGGING(type, name) \
     [type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_general_logging_get_fcn)
         _METAGEN_GENERAL_LOGGING(NMC_GENERIC_INFO_TYPE_GENERAL_LOGGING_LEVEL, "LEVEL"),

@@ -929,8 +929,8 @@ _metagen_con_active_general_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
     g_return_val_if_reached(NULL);
 }
 
-const NmcMetaGenericInfo
-    *const metagen_con_active_general[_NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_NUM + 1] = {
+const NmcMetaGenericInfo *const
+    metagen_con_active_general[_NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_NUM + 1] = {
 #define _METAGEN_CON_ACTIVE_GENERAL(type, name) \
     [type] =                                    \
         NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_con_active_general_get_fcn)
@@ -1036,8 +1036,8 @@ arr_out:
     return arr;
 }
 
-const NmcMetaGenericInfo
-    *const metagen_con_active_vpn[_NMC_GENERIC_INFO_TYPE_CON_ACTIVE_VPN_NUM + 1] = {
+const NmcMetaGenericInfo *const
+    metagen_con_active_vpn[_NMC_GENERIC_INFO_TYPE_CON_ACTIVE_VPN_NUM + 1] = {
 #define _METAGEN_CON_ACTIVE_VPN(type, name) \
     [type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_con_active_vpn_get_fcn)
         _METAGEN_CON_ACTIVE_VPN(NMC_GENERIC_INFO_TYPE_CON_VPN_TYPE, "TYPE"),
