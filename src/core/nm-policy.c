@@ -2413,6 +2413,7 @@ device_state_changed(NMDevice           *device,
                 }
             }
         }
+        ip6_remove_device_prefix_delegations(self, device);
         break;
     case NM_DEVICE_STATE_ACTIVATED:
         if (nm_device_get_device_type(device) == NM_DEVICE_TYPE_OVS_INTERFACE) {
