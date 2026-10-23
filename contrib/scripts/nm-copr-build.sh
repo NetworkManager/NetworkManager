@@ -78,7 +78,7 @@ get_nm_git_bundle() {
     fi
     mkdir nm-git-bundle
     pushd nm-git-bundle
-    if ! time curl --fail -o nm-git-bundle.rpm "$NM_GIT_BUNDLE"; then
+    if ! time curl -L --fail -o nm-git-bundle.rpm "$NM_GIT_BUNDLE"; then
         # The bundle is only a fetch speed-up; fall back to the git fetch below.
         echo "nm-git-bundle unavailable at $NM_GIT_BUNDLE, falling back to upstream git fetch" >&2
         popd
