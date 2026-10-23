@@ -74,7 +74,7 @@ get_nm_git_bundle() {
         if [ -n "${NM_GIT_BUNDLE+x}" ]; then
             return 0
         fi
-        NM_GIT_BUNDLE='https://download.copr.fedorainfracloud.org/results/networkmanager/NetworkManager-main/fedora-41-x86_64/08367599-nm-git-bundle/nm-git-bundle-20241209-150540.noarch.rpm'
+        NM_GIT_BUNDLE='https://download.copr.fedorainfracloud.org/results/networkmanager/NetworkManager-main/fedora-44-x86_64/11196814-nm-git-bundle/nm-git-bundle-20261023-094245.noarch.rpm'
     fi
     mkdir nm-git-bundle
     pushd nm-git-bundle
