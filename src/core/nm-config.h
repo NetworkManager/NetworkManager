@@ -98,7 +98,10 @@ NMConfig *
 nm_config_new(const NMConfigCmdLineOptions *cli, char **atomic_section_prefixes, GError **error);
 NMConfig *
 nm_config_setup(const NMConfigCmdLineOptions *cli, char **atomic_section_prefixes, GError **error);
-void nm_config_reload(NMConfig *config, NMConfigChangeFlags reload_flags, gboolean emit_warnings);
+gboolean nm_config_reload(NMConfig           *config,
+                          NMConfigChangeFlags reload_flags,
+                          gboolean            emit_warnings,
+                          GError            **error);
 
 const NMConfigState *nm_config_state_get(NMConfig *config);
 

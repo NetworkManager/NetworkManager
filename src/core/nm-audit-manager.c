@@ -42,6 +42,8 @@ typedef struct {
 typedef struct {
     NMConfig *config;
     int       auditd_fd;
+    guint     config_freeze_count;
+    bool      config_pending;
 } NMAuditManagerPrivate;
 
 struct _NMAuditManager {
@@ -439,10 +441,41 @@ config_changed_cb(NMConfig           *config,
                   NMConfigData       *old_data,
                   NMAuditManager     *self)
 {
-    if (NM_FLAGS_HAS(changes, NM_CONFIG_CHANGE_VALUES))
-        init_auditd(self);
+    NMAuditManagerPrivate *priv = NM_AUDIT_MANAGER_GET_PRIVATE(self);
+
+    if (NM_FLAGS_HAS(changes, NM_CONFIG_CHANGE_VALUES)) {
+        if (priv->config_freeze_count > 0)
+            priv->config_pending = TRUE;
+        else
+            init_auditd(self);
+    }
 }
 #endif
+
+void
+nm_audit_manager_config_freeze(NMAuditManager *self)
+{
+#if HAVE_LIBAUDIT
+    NMAuditManagerPrivate *priv = NM_AUDIT_MANAGER_GET_PRIVATE(self);
+
+    priv->config_freeze_count++;
+#endif
+}
+
+void
+nm_audit_manager_config_thaw(NMAuditManager *self)
+{
+#if HAVE_LIBAUDIT
+    NMAuditManagerPrivate *priv = NM_AUDIT_MANAGER_GET_PRIVATE(self);
+
+    nm_assert(priv->config_freeze_count > 0);
+
+    if (--priv->config_freeze_count == 0 && priv->config_pending) {
+        priv->config_pending = FALSE;
+        init_auditd(self);
+    }
+#endif
+}
 
 /*****************************************************************************/
 

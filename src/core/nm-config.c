@@ -3028,11 +3028,14 @@ nm_config_device_state_get(NMConfig *self, int ifindex)
 
 /*****************************************************************************/
 
-void
-nm_config_reload(NMConfig *self, NMConfigChangeFlags reload_flags, gboolean emit_warnings)
+gboolean
+nm_config_reload(NMConfig           *self,
+                 NMConfigChangeFlags reload_flags,
+                 gboolean            emit_warnings,
+                 GError            **error)
 {
     NMConfigPrivate             *priv;
-    GError                      *error = NULL;
+    gs_free_error GError        *local = NULL;
     GKeyFile                    *keyfile, *keyfile_intern;
     NMConfigData                *new_data                    = NULL;
     char                        *config_main_file            = NULL;
@@ -3042,18 +3045,19 @@ nm_config_reload(NMConfig *self, NMConfigChangeFlags reload_flags, gboolean emit
     gs_unref_ptrarray GPtrArray *warnings                    = NULL;
     guint                        i;
 
-    g_return_if_fail(NM_IS_CONFIG(self));
-    g_return_if_fail(reload_flags && !NM_FLAGS_ANY(reload_flags, ~NM_CONFIG_CHANGE_CAUSES)
-                     && !NM_FLAGS_ANY(reload_flags,
-                                      NM_CONFIG_CHANGE_CAUSE_NO_AUTO_DEFAULT
-                                          | NM_CONFIG_CHANGE_CAUSE_SET_VALUES));
+    g_return_val_if_fail(NM_IS_CONFIG(self), FALSE);
+    g_return_val_if_fail(reload_flags && !NM_FLAGS_ANY(reload_flags, ~NM_CONFIG_CHANGE_CAUSES)
+                             && !NM_FLAGS_ANY(reload_flags,
+                                              NM_CONFIG_CHANGE_CAUSE_NO_AUTO_DEFAULT
+                                                  | NM_CONFIG_CHANGE_CAUSE_SET_VALUES),
+                         FALSE);
 
     priv = NM_CONFIG_GET_PRIVATE(self);
 
     if (!NM_FLAGS_ANY(reload_flags, NM_CONFIG_CHANGE_CAUSE_SIGHUP | NM_CONFIG_CHANGE_CAUSE_CONF)) {
         /* unless SIGHUP is specified, we don't reload the configuration from disc. */
         _set_config_data(self, NULL, reload_flags);
-        return;
+        return TRUE;
     }
 
     warnings = g_ptr_array_new_with_free_func(g_free);
@@ -3068,12 +3072,12 @@ nm_config_reload(NMConfig *self, NMConfigChangeFlags reload_flags, gboolean emit
                                  &config_main_file,
                                  &config_description,
                                  warnings,
-                                 &error);
+                                 &local);
     if (!keyfile) {
-        _LOGE("Failed to reload the configuration: %s", error->message);
-        g_clear_error(&error);
+        _LOGE("Failed to reload the configuration: %s", local->message);
         _set_config_data(self, NULL, reload_flags);
-        return;
+        g_propagate_error(error, g_steal_pointer(&local));
+        return FALSE;
     }
 
     no_auto_default = no_auto_default_from_file(priv->no_auto_default_file);
@@ -3116,6 +3120,7 @@ nm_config_reload(NMConfig *self, NMConfigChangeFlags reload_flags, gboolean emit
         g_key_file_unref(keyfile_intern);
 
     _set_config_data(self, new_data, reload_flags);
+    return TRUE;
 }
 
 NM_UTILS_FLAGS2STR_DEFINE(nm_config_change_flags_to_string,

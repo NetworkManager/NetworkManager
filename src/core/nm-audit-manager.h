@@ -55,6 +55,9 @@ GType           nm_audit_manager_get_type(void);
 NMAuditManager *nm_audit_manager_get(void);
 gboolean        nm_audit_manager_audit_enabled(NMAuditManager *self);
 
+void nm_audit_manager_config_freeze(NMAuditManager *self);
+void nm_audit_manager_config_thaw(NMAuditManager *self);
+
 #define nm_audit_log_connection_op(op, connection, result, args, subject_context, reason) \
     G_STMT_START                                                                          \
     {                                                                                     \

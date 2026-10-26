@@ -32,6 +32,10 @@
         to DNS setting also cause a DNS update (0x02). However, (0x01) does not involve restarting
         the DNS plugin (0x04) or update resolv.conf (0x02), unless the DNS related configuration
         changes in NetworkManager.conf.
+
+        Since 1.60, the method returns an error when reading the configuration from disk fails,
+        for example due to a parse error. The previous configuration then stays in use, and the
+        other updates requested by @flags are still performed.
     -->
     <method name="Reload">
       <arg name="flags" type="u" direction="in"/>
