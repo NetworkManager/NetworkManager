@@ -135,8 +135,8 @@ _metagen_device_status_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
     g_return_val_if_reached(NULL);
 }
 
-const NmcMetaGenericInfo
-    *const metagen_device_status[_NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_NUM + 1] = {
+const NmcMetaGenericInfo *const
+    metagen_device_status[_NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_NUM + 1] = {
 #define _METAGEN_DEVICE_STATUS(type, name) \
     [type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_device_status_get_fcn)
         _METAGEN_DEVICE_STATUS(NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_DEVICE, "DEVICE"),
@@ -254,8 +254,8 @@ _metagen_device_detail_general_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
     g_return_val_if_reached(NULL);
 }
 
-const NmcMetaGenericInfo
-    *const metagen_device_detail_general[_NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_NUM + 1] = {
+const NmcMetaGenericInfo *const
+    metagen_device_detail_general[_NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_NUM + 1] = {
 #define _METAGEN_DEVICE_DETAIL_GENERAL(type, name) \
     [type] = NMC_META_GENERIC(name,                \
                               .info_type = type,   \
@@ -494,9 +494,9 @@ _metagen_device_detail_capabilities_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
     g_return_val_if_reached(NULL);
 }
 
-const NmcMetaGenericInfo
-    *const metagen_device_detail_capabilities[_NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_CAPABILITIES_NUM
-                                              + 1] = {
+const NmcMetaGenericInfo *const
+    metagen_device_detail_capabilities[_NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_CAPABILITIES_NUM
+                                       + 1] = {
 #define _METAGEN_DEVICE_DETAIL_CAPABILITIES(type, name) \
     [type] = NMC_META_GENERIC(name,                     \
                               .info_type = type,        \
