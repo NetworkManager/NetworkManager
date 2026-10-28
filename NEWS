@@ -9,6 +9,9 @@ Overview of changes since NetworkManager-1.56
   and ipv6.never-default properties when DHCPv6 was not restarted (for example
   when the IPv6 DNS came from a DHCPv6 lease), so that DHCPv6-provided DNS and
   routes are now correctly suppressed on reapply without a connection restart.
+* IPv6 interfaces that receive PD via DHCPv6 are considered healthy without a
+  non-temporary address. The delegated prefix can be used via an interface
+  configured with "ipv6.method: shared"
 
 =============================================
 NetworkManager-1.56.1
