@@ -501,8 +501,8 @@ typedef struct _NMDevicePrivate {
     char                *firmware_version;
     bool                 firmware_missing : 1;
     bool                 nm_plugin_missing : 1;
-    bool
-        hw_addr_perm_fake : 1; /* whether the permanent HW address could not be read and is a fake */
+    bool                 hw_addr_perm_fake
+        : 1; /* whether the permanent HW address could not be read and is a fake */
 
     guint8 in_state_changed : 4;
 
