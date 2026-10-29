@@ -224,7 +224,7 @@ test_link_changed_signal_cb(NMPlatform               *platform,
 }
 
 static void
-test_port(int controller, int port_type, SignalData *controller_changed)
+test_port(int controller, int port_type, SignalData *controller_changed, guint test_num)
 {
     int         ifindex_port;
     SignalData *link_added = add_signal_ifname(NM_PLATFORM_SIGNAL_LINK_CHANGED,
@@ -237,6 +237,14 @@ test_port(int controller, int port_type, SignalData *controller_changed)
     gboolean    test_link_changed_signal_arg2;
 
     g_assert(NM_IN_SET(controller_type, NM_LINK_TYPE_TEAM, NM_LINK_TYPE_BOND, NM_LINK_TYPE_BRIDGE));
+
+    if (test_num > 1) {
+        /* The previous run left the controller up. Bring it back down so that
+         * this run starts from the same state as the first one, generating the
+         * same number of signals. */
+        g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, controller, IFF_UP, FALSE) >= 0);
+        accept_signals(controller_changed, 0, 2);
+    }
 
     g_assert(software_add(port_type, PORT_NAME));
     ifindex_port = nm_platform_link_get_ifindex(NM_PLATFORM_GET, PORT_NAME);
@@ -276,7 +284,6 @@ test_port(int controller, int port_type, SignalData *controller_changed)
 
     if (NM_IN_SET(controller_type, NM_LINK_TYPE_BOND)) {
         NMPlatformLinkBondPort   bond_port;
-        gboolean                 prio_has;
         gboolean                 prio_supported;
         const NMPlatformLink    *link;
         const NMPlatformLnkBond *lnk;
@@ -289,21 +296,47 @@ test_port(int controller, int port_type, SignalData *controller_changed)
 
         g_assert(NM_IN_SET(lnk->mode, 3, 1));
         prio_supported = (lnk->mode == 1);
-        prio_has       = nmtst_get_rand_bool() && prio_supported;
 
-        bond_port = (NMPlatformLinkBondPort) {
-            .queue_id = 5,
-            .prio_has = prio_has,
-            .prio     = prio_has ? 6 : 0,
-        };
+        switch (test_num) {
+        case 1:
+            bond_port = (NMPlatformLinkBondPort) {
+                .queue_id = 5,
+                .prio_has = prio_supported,
+                .prio     = prio_supported ? 6 : 0,
+            };
+
+            break;
+        case 2:
+            bond_port = (NMPlatformLinkBondPort) {
+                .queue_id = 1,
+                .prio_has = 0,
+                .prio     = 0,
+            };
+            break;
+        default:
+            g_assert_not_reached();
+        }
 
         g_assert(nm_platform_link_change(NM_PLATFORM_GET, ifindex_port, NULL, &bond_port, NULL, 0));
         accept_signals(link_changed, 1, 3);
 
         link = nmtstp_link_get(NM_PLATFORM_GET, ifindex_port, PORT_NAME);
         g_assert(link);
-        g_assert_cmpint(link->port_data.bond.queue_id, ==, 5);
-        g_assert(link->port_data.bond.prio_has || link->port_data.bond.prio == 0);
+
+        switch (test_num) {
+        case 1:
+            g_assert_cmpint(link->port_data.bond.queue_id, ==, 5);
+            g_assert_cmpint(link->port_data.bond.prio,
+                            ==,
+                            prio_supported && link->port_data.bond.prio_has ? 6 : 0);
+            break;
+        case 2:
+            g_assert_cmpint(link->port_data.bond.queue_id, ==, 1);
+            g_assert_cmpint(link->port_data.bond.prio, ==, 0);
+            break;
+        default:
+            g_assert_not_reached();
+        }
     } else if (controller_type == NM_LINK_TYPE_BRIDGE) {
         /* Skip this part for nm-fake-platform */
         if (nmtstp_is_root_test() && nmtstp_is_sysfs_writable()) {
@@ -317,11 +350,50 @@ test_port(int controller, int port_type, SignalData *controller_changed)
             lnk = nm_platform_link_get_lnk_bridge(NM_PLATFORM_GET, controller, NULL);
             g_assert(lnk);
 
-            bridge_port = (NMPlatformLinkBridgePort) {
-                .path_cost = 100,
-                .priority  = 614,
-                .hairpin   = 0,
-            };
+            switch (test_num) {
+            case 1:
+                bridge_port = (NMPlatformLinkBridgePort) {
+                    .path_cost              = NM_BRIDGE_PORT_PATH_COST_DEF,
+                    .priority               = 614,
+                    .bpdu_guard             = TRUE,
+                    .broadcast_flood        = FALSE,
+                    .fast_leave             = TRUE,
+                    .hairpin                = FALSE,
+                    .isolated               = TRUE,
+                    .learning               = FALSE,
+                    .locked                 = TRUE,
+                    .multicast_flood        = FALSE,
+                    .multicast_to_unicast   = TRUE,
+                    .neighbor_suppress      = TRUE,
+                    .neighbor_vlan_suppress = TRUE,
+                    .root_block             = TRUE,
+                    .unicast_flood          = FALSE,
+                    .vlan_tunnel            = TRUE,
+                };
+                break;
+            case 2:
+                bridge_port = (NMPlatformLinkBridgePort) {
+                    .path_cost              = 200,
+                    .priority               = NM_BRIDGE_PORT_PRIORITY_DEF,
+                    .bpdu_guard             = FALSE,
+                    .broadcast_flood        = TRUE,
+                    .fast_leave             = FALSE,
+                    .hairpin                = TRUE,
+                    .isolated               = FALSE,
+                    .learning               = TRUE,
+                    .locked                 = FALSE,
+                    .multicast_flood        = TRUE,
+                    .multicast_to_unicast   = FALSE,
+                    .neighbor_suppress      = FALSE,
+                    .neighbor_vlan_suppress = FALSE,
+                    .root_block             = FALSE,
+                    .unicast_flood          = TRUE,
+                    .vlan_tunnel            = FALSE,
+                };
+                break;
+            default:
+                g_assert_not_reached();
+            }
 
             g_assert(nm_platform_link_change(NM_PLATFORM_GET,
                                              ifindex_port,
@@ -333,84 +405,135 @@ test_port(int controller, int port_type, SignalData *controller_changed)
 
             link = nmtstp_link_get(NM_PLATFORM_GET, ifindex_port, PORT_NAME);
             g_assert(link);
-            g_assert_cmpint(link->port_data.bridge.path_cost, ==, 100);
-            g_assert_cmpint(link->port_data.bridge.priority, ==, 614);
-            g_assert_cmpint(link->port_data.bridge.hairpin, ==, 0);
+
+            switch (test_num) {
+            case 1:
+                g_assert_cmpint(link->port_data.bridge.path_cost, ==, NM_BRIDGE_PORT_PATH_COST_DEF);
+                g_assert_cmpint(link->port_data.bridge.priority, ==, 614);
+                g_assert_cmpint(link->port_data.bridge.broadcast_flood, ==, FALSE);
+                g_assert_cmpint(link->port_data.bridge.fast_leave, ==, TRUE);
+                g_assert_cmpint(link->port_data.bridge.bpdu_guard, ==, TRUE);
+                g_assert_cmpint(link->port_data.bridge.hairpin, ==, FALSE);
+                g_assert_cmpint(link->port_data.bridge.isolated, ==, TRUE);
+                g_assert_cmpint(link->port_data.bridge.learning, ==, FALSE);
+                g_assert_cmpint(link->port_data.bridge.multicast_flood, ==, FALSE);
+                g_assert_cmpint(link->port_data.bridge.multicast_to_unicast, ==, TRUE);
+                g_assert_cmpint(link->port_data.bridge.neighbor_suppress, ==, TRUE);
+                g_assert_cmpint(link->port_data.bridge.root_block, ==, TRUE);
+                g_assert_cmpint(link->port_data.bridge.unicast_flood, ==, FALSE);
+                g_assert_cmpint(link->port_data.bridge.vlan_tunnel, ==, TRUE);
+
+                if (nm_platform_kernel_support_get(
+                        NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BRPORT_LOCKED))
+                    g_assert_cmpint(link->port_data.bridge.locked, ==, TRUE);
+                if (nm_platform_kernel_support_get(
+                        NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BRPORT_NEIGH_VLAN_SUPPRESS))
+                    g_assert_cmpint(link->port_data.bridge.neighbor_vlan_suppress, ==, TRUE);
+                break;
+            case 2:
+                g_assert_cmpint(link->port_data.bridge.path_cost, ==, 200);
+                g_assert_cmpint(link->port_data.bridge.priority, ==, NM_BRIDGE_PORT_PRIORITY_DEF);
+                g_assert_cmpint(link->port_data.bridge.broadcast_flood, ==, TRUE);
+                g_assert_cmpint(link->port_data.bridge.fast_leave, ==, FALSE);
+                g_assert_cmpint(link->port_data.bridge.bpdu_guard, ==, FALSE);
+                g_assert_cmpint(link->port_data.bridge.hairpin, ==, TRUE);
+                g_assert_cmpint(link->port_data.bridge.isolated, ==, FALSE);
+                g_assert_cmpint(link->port_data.bridge.learning, ==, TRUE);
+                g_assert_cmpint(link->port_data.bridge.multicast_flood, ==, TRUE);
+                g_assert_cmpint(link->port_data.bridge.multicast_to_unicast, ==, FALSE);
+                g_assert_cmpint(link->port_data.bridge.neighbor_suppress, ==, FALSE);
+                g_assert_cmpint(link->port_data.bridge.root_block, ==, FALSE);
+                g_assert_cmpint(link->port_data.bridge.unicast_flood, ==, TRUE);
+                g_assert_cmpint(link->port_data.bridge.vlan_tunnel, ==, FALSE);
+
+                if (nm_platform_kernel_support_get(
+                        NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BRPORT_LOCKED))
+                    g_assert_cmpint(link->port_data.bridge.locked, ==, FALSE);
+                if (nm_platform_kernel_support_get(
+                        NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BRPORT_NEIGH_VLAN_SUPPRESS))
+                    g_assert_cmpint(link->port_data.bridge.neighbor_vlan_suppress, ==, FALSE);
+                break;
+            default:
+                g_assert_not_reached();
+            }
         }
     }
 
-    test_link_changed_signal_arg1 = FALSE;
-    test_link_changed_signal_arg2 = FALSE;
-    g_signal_connect(NM_PLATFORM_GET,
-                     NM_PLATFORM_SIGNAL_LINK_CHANGED,
-                     G_CALLBACK(test_link_changed_signal_cb),
-                     &test_link_changed_signal_arg1);
-    g_signal_connect(NM_PLATFORM_GET,
-                     NM_PLATFORM_SIGNAL_LINK_CHANGED,
-                     G_CALLBACK(test_link_changed_signal_cb),
-                     &test_link_changed_signal_arg2);
+    if (test_num == 1) {
+        test_link_changed_signal_arg1 = FALSE;
+        test_link_changed_signal_arg2 = FALSE;
+        g_signal_connect(NM_PLATFORM_GET,
+                         NM_PLATFORM_SIGNAL_LINK_CHANGED,
+                         G_CALLBACK(test_link_changed_signal_cb),
+                         &test_link_changed_signal_arg1);
+        g_signal_connect(NM_PLATFORM_GET,
+                         NM_PLATFORM_SIGNAL_LINK_CHANGED,
+                         G_CALLBACK(test_link_changed_signal_cb),
+                         &test_link_changed_signal_arg2);
 
-    /* Set controller up */
-    g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, controller, IFF_UP, TRUE) >= 0);
-    g_assert(nm_platform_link_is_up(NM_PLATFORM_GET, controller));
-    accept_signals(controller_changed, 1, 3);
+        /* Set controller up */
+        g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, controller, IFF_UP, TRUE) >= 0);
+        g_assert(nm_platform_link_is_up(NM_PLATFORM_GET, controller));
+        accept_signals(controller_changed, 1, 3);
 
-    g_signal_handlers_disconnect_by_func(NM_PLATFORM_GET,
-                                         G_CALLBACK(test_link_changed_signal_cb),
-                                         &test_link_changed_signal_arg1);
-    g_signal_handlers_disconnect_by_func(NM_PLATFORM_GET,
-                                         G_CALLBACK(test_link_changed_signal_cb),
-                                         &test_link_changed_signal_arg2);
-    g_assert(test_link_changed_signal_arg1);
-    g_assert(test_link_changed_signal_arg2);
+        g_signal_handlers_disconnect_by_func(NM_PLATFORM_GET,
+                                             G_CALLBACK(test_link_changed_signal_cb),
+                                             &test_link_changed_signal_arg1);
+        g_signal_handlers_disconnect_by_func(NM_PLATFORM_GET,
+                                             G_CALLBACK(test_link_changed_signal_cb),
+                                             &test_link_changed_signal_arg2);
+        g_assert(test_link_changed_signal_arg1);
+        g_assert(test_link_changed_signal_arg2);
 
-    /* Master with a disconnected port is disconnected
-     *
-     * For some reason, bonding and teaming ports are automatically set up. We
-     * need to set them back down for this test.
-     */
-    switch (nm_platform_link_get_type(NM_PLATFORM_GET, controller)) {
-    case NM_LINK_TYPE_BOND:
-    case NM_LINK_TYPE_TEAM:
-        g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, ifindex_port, IFF_UP, FALSE) >= 0);
-        accept_signal(link_changed);
+        /* Master with a disconnected port is disconnected
+         *
+         * For some reason, bonding and teaming ports are automatically set up. We
+         * need to set them back down for this test.
+         */
+        switch (nm_platform_link_get_type(NM_PLATFORM_GET, controller)) {
+        case NM_LINK_TYPE_BOND:
+        case NM_LINK_TYPE_TEAM:
+            g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, ifindex_port, IFF_UP, FALSE)
+                     >= 0);
+            accept_signal(link_changed);
+            accept_signals(controller_changed, 0, 3);
+            break;
+        default:
+            break;
+        }
+        g_assert(!nm_platform_link_is_up(NM_PLATFORM_GET, ifindex_port));
+        g_assert(!nm_platform_link_is_connected(NM_PLATFORM_GET, ifindex_port));
+        if (nmtstp_is_root_test() && nm_platform_link_is_connected(NM_PLATFORM_GET, controller)) {
+            if (nm_platform_link_get_type(NM_PLATFORM_GET, controller) == NM_LINK_TYPE_TEAM) {
+                /* Older team versions (e.g. Fedora 17) have a bug that team controller stays
+                 * IFF_LOWER_UP even if its port is down. Double check it with iproute2 and if
+                 * `ip link` also claims controller to be up, accept it. */
+                char *stdout_str = NULL;
+
+                nmtst_spawn_sync(NULL,
+                                 &stdout_str,
+                                 NULL,
+                                 0,
+                                 "/sbin/ip",
+                                 "link",
+                                 "show",
+                                 "dev",
+                                 nm_platform_link_get_name(NM_PLATFORM_GET, controller));
+
+                g_assert(strstr(stdout_str, "LOWER_UP"));
+                g_free(stdout_str);
+            } else
+                g_assert_not_reached();
+        }
+
+        /* Set port up and see if controller gets up too */
+        g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, ifindex_port, IFF_UP, TRUE) >= 0);
+        g_assert(nm_platform_link_is_connected(NM_PLATFORM_GET, ifindex_port));
+        g_assert(nm_platform_link_is_connected(NM_PLATFORM_GET, controller));
+        accept_signals(link_changed, 1, 3);
+        /* NM running, can cause additional change of addrgenmode */
         accept_signals(controller_changed, 0, 3);
-        break;
-    default:
-        break;
     }
-    g_assert(!nm_platform_link_is_up(NM_PLATFORM_GET, ifindex_port));
-    g_assert(!nm_platform_link_is_connected(NM_PLATFORM_GET, ifindex_port));
-    if (nmtstp_is_root_test() && nm_platform_link_is_connected(NM_PLATFORM_GET, controller)) {
-        if (nm_platform_link_get_type(NM_PLATFORM_GET, controller) == NM_LINK_TYPE_TEAM) {
-            /* Older team versions (e.g. Fedora 17) have a bug that team controller stays
-             * IFF_LOWER_UP even if its port is down. Double check it with iproute2 and if
-             * `ip link` also claims controller to be up, accept it. */
-            char *stdout_str = NULL;
-
-            nmtst_spawn_sync(NULL,
-                             &stdout_str,
-                             NULL,
-                             0,
-                             "/sbin/ip",
-                             "link",
-                             "show",
-                             "dev",
-                             nm_platform_link_get_name(NM_PLATFORM_GET, controller));
-
-            g_assert(strstr(stdout_str, "LOWER_UP"));
-            g_free(stdout_str);
-        } else
-            g_assert_not_reached();
-    }
-
-    /* Set port up and see if controller gets up too */
-    g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, ifindex_port, IFF_UP, TRUE) >= 0);
-    g_assert(nm_platform_link_is_connected(NM_PLATFORM_GET, ifindex_port));
-    g_assert(nm_platform_link_is_connected(NM_PLATFORM_GET, controller));
-    accept_signals(link_changed, 1, 3);
-    /* NM running, can cause additional change of addrgenmode */
-    accept_signals(controller_changed, 0, 3);
 
     /* Attach port again
      *
@@ -558,7 +681,8 @@ test_software(NMLinkType link_type, const char *link_typename)
     case NM_LINK_TYPE_BOND:
     case NM_LINK_TYPE_TEAM:
         link_changed->ifindex = ifindex;
-        test_port(ifindex, NM_LINK_TYPE_DUMMY, link_changed);
+        test_port(ifindex, NM_LINK_TYPE_DUMMY, link_changed, 1);
+        test_port(ifindex, NM_LINK_TYPE_DUMMY, link_changed, 2);
         link_changed->ifindex = 0;
         break;
     default:
