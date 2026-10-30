@@ -1,7 +1,8 @@
-=============================================
+===============================================
 NetworkManager-1.56.2
-Overview of changes since NetworkManager-1.56
-=============================================
+Overview of changes since NetworkManager-1.56.1
+===============================================
+
 * Validate hostnames and MUD URLs before pasting them into the dhclient
   configuration file, rejecting characters that could alter the config
   syntax (CVE-2026-10805).
@@ -16,10 +17,10 @@ Overview of changes since NetworkManager-1.56
   activating, so that going off-channel does not disrupt group formation
   or DHCP on the P2P link.
 
-=============================================
+===============================================
 NetworkManager-1.56.1
-Overview of changes since NetworkManager-1.56
-=============================================
+Overview of changes since NetworkManager-1.56.0
+===============================================
 
 * Add support for GENEVE interface.
 * Allow persisting the managed state across reboots from nmcli and the D-Bus API.
