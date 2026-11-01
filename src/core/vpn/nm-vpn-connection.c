@@ -1444,9 +1444,8 @@ _check_complete(NMVpnConnection *self, gboolean success)
         }
     }
 
-    nm_clear_g_source_inst(&priv->connect_timeout_source);
-
     if (!success) {
+        nm_clear_g_source_inst(&priv->connect_timeout_source);
         _LOGW("did not receive valid IP config information");
         _set_vpn_state(self,
                        STATE_FAILED,
@@ -1462,12 +1461,18 @@ _check_complete(NMVpnConnection *self, gboolean success)
     /* We have a defined interface index, but the device is not processed yet.
      * The processing of the new kernel link could be queued in an idle handler,
      * so schedule an idle handler once to check if the device has been processed.
+     * If it is still missing then, give up waiting: the connect timeout (still armed)
+     * fails the activation.
      */
-    if (ifindex > 0 && !device && !priv->check_device_added_idle_source) {
-        priv->check_device_added_idle_source =
-            nm_g_idle_add_source(_check_device_added_idle_cb, self);
+    if (ifindex > 0 && !device) {
+        if (!priv->check_device_added_idle_source) {
+            priv->check_device_added_idle_source =
+                nm_g_idle_add_source(_check_device_added_idle_cb, self);
+        }
         return;
     }
+
+    nm_clear_g_source_inst(&priv->connect_timeout_source);
 
     /* Use nm_device_create_l3_config_data_from_connection here if possible. This ensures that
      * connection properties like mdns, llmnr, dns-over-tls or dnssec are applied to vpn connections
