@@ -331,6 +331,22 @@ NetworkManager = executable(
 )
 
 if enable_tests
+  foreach mode: ['explicit', 'timeout', 'single-explicit', 'single-timeout', 'unchanged', 'external-port', 'recreate']
+    test(
+      'checkpoint-rollback-' + mode,
+      python,
+      args: [
+        files('tests/test-checkpoint.py'),
+        NetworkManager.full_path(),
+        nm_pkgstatedir,
+        nm_pkgrundir,
+        mode,
+      ],
+      depends: NetworkManager,
+      timeout: 120,
+    )
+  endforeach
+
   foreach plugin: core_plugins
     plugin_path = plugin.full_path()
 

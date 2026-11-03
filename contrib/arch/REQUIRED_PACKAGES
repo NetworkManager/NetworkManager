@@ -20,6 +20,7 @@ install \
     audit \
     base-devel \
     bpf \
+    bubblewrap \
     clang \
     curl \
     dbus \
