@@ -29,11 +29,13 @@
             typeof(*self) *const _self   = (self);                                                  \
             const char *const    _ifname = _nm_device_get_iface(_NM_DEVICE_CAST(_self));            \
             const char          *_type   = nm_device_get_type_desc_for_log(_NM_DEVICE_CAST(_self)); \
+            const char *const    _con_uuid =                                                        \
+                _nm_device_get_applied_connection_uuid(_NM_DEVICE_CAST(_self));                     \
                                                                                                     \
             nm_log_obj(_level,                                                                      \
                        _domain,                                                                     \
                        _ifname,                                                                     \
-                       NULL,                                                                        \
+                       _con_uuid,                                                                   \
                        _self,                                                                       \
                        "device",                                                                    \
                        "%s%s%s%s%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),                         \

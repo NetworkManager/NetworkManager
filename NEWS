@@ -35,6 +35,8 @@ Core:
 * Checkpoint rollback reactivates connections that are still being
   deactivated, keeping external bridge ports attached, and no longer
   reactivates unchanged activations of a multi-connect profile.
+* Include the applied connection's UUID in device journal entries for
+  filtering with "journalctl NM_CONNECTION=<uuid>".
 
 initrd:
 * Add the "rd.net.timeout.ip-required" kernel command line argument

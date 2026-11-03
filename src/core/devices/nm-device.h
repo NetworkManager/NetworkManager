@@ -512,6 +512,16 @@ NMConnection         *nm_device_get_settings_connection_get_connection(NMDevice 
 NMConnection         *nm_device_get_applied_connection(NMDevice *dev);
 gboolean nm_device_has_unmodified_applied_connection(NMDevice             *self,
                                                      NMSettingCompareFlags compare_flags);
+
+static inline const char *
+_nm_device_get_applied_connection_uuid(NMDevice *device)
+{
+    NMConnection *connection;
+
+    connection = device ? nm_device_get_applied_connection(device) : NULL;
+    return connection ? nm_connection_get_uuid(connection) : NULL;
+}
+
 NMActivationStateFlags nm_device_get_activation_state_flags(NMDevice *self);
 
 gpointer /* (NMSetting *) */ nm_device_get_applied_setting(NMDevice *dev, GType setting_type);
