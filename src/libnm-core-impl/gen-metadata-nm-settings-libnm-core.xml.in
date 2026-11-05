@@ -458,6 +458,10 @@
                   dbus-type="u"
                   gprop-type="NMSettingSecretFlags"
                   />
+        <property name="server-cert-hash"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="subject-match"
                   is-deprecated="1"
                   dbus-type="s"

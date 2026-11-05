@@ -37,6 +37,9 @@ Core:
   reactivates unchanged activations of a multi-connect profile.
 * Include the applied connection's UUID in device journal entries for
   filtering with "journalctl NM_CONNECTION=<uuid>".
+* Add new property '802-1x.server-cert-hash' to allow authentication server
+  verification by certificate hash, primarily to support Trust On First Use
+  (TOFU).
 
 initrd:
 * Add the "rd.net.timeout.ip-required" kernel command line argument

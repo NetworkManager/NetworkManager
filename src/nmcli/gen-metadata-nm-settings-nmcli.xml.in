@@ -201,6 +201,9 @@
         <property name="ca-path"
                   nmcli-description="UTF-8 encoded path to a directory containing PEM or DER formatted certificates to be added to the verification chain in addition to the certificate specified in the &quot;ca-cert&quot; property. If NMSetting8021x:system-ca-certs is enabled and the built-in CA path is an existing directory, then this setting is ignored."
                   format="string" />
+        <property name="server-cert-hash"
+                  nmcli-description="Pins the authentication server&apos;s certificate by its SHA-256 hash, bypassing the need for a CA certificate to validate the incoming server certificate. 32 colon-separated hex pairs (the server leaf certificate&apos;s SHA-256 fingerprint); either letter case is accepted, but the value is canonicalized to uppercase. Do not set this property together with &quot;ca-cert&quot;, &quot;system-ca-certs&quot;, or &quot;ca-path&quot;, as these provide alternative ways to validate the authentication server."
+                  format="string" />
         <property name="subject-match"
                   nmcli-description="Substring to be matched against the subject of the certificate presented by the authentication server. When unset, no verification of the authentication server certificate&apos;s subject is performed. This property provides little security, if any, and should not be used."
                   format="string" />

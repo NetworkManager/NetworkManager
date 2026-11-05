@@ -116,6 +116,7 @@ typedef enum /*< underscore_name=nm_setting_802_1x_auth_flags, flags >*/ {
 #define NM_SETTING_802_1X_CA_CERT_PASSWORD                  "ca-cert-password"
 #define NM_SETTING_802_1X_CA_CERT_PASSWORD_FLAGS            "ca-cert-password-flags"
 #define NM_SETTING_802_1X_CA_PATH                           "ca-path"
+#define NM_SETTING_802_1X_SERVER_CERT_HASH                  "server-cert-hash"
 #define NM_SETTING_802_1X_SUBJECT_MATCH                     "subject-match"
 #define NM_SETTING_802_1X_ALTSUBJECT_MATCHES                "altsubject-matches"
 #define NM_SETTING_802_1X_DOMAIN_SUFFIX_MATCH               "domain-suffix-match"
@@ -214,6 +215,9 @@ gboolean    nm_setting_802_1x_set_ca_cert(NMSetting8021x         *setting,
                                           NMSetting8021xCKScheme  scheme,
                                           NMSetting8021xCKFormat *out_format,
                                           GError                **error);
+
+NM_AVAILABLE_IN_1_60
+const char *nm_setting_802_1x_get_server_cert_hash(NMSetting8021x *setting);
 
 NM_AVAILABLE_IN_1_8
 const char *nm_setting_802_1x_get_ca_cert_password(NMSetting8021x *setting);

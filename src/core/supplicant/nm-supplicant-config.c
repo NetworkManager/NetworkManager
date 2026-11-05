@@ -1419,6 +1419,23 @@ add_pkcs11_uri_with_pin(NMSupplicantConfig        *self,
     return add_string_val(self, tmp, name, FALSE, tmp_log, error);
 }
 
+/* 802-1x.server-cert-hash accepts colons as separators and either
+ * hex case. Normalize a server certificate hash by removing colons
+ * and converting hexadecimal characters to lowercase. */
+static char *
+_server_cert_hash_to_hex(const char *value)
+{
+    GString *hex = g_string_sized_new(64);
+
+    for (; *value; value++) {
+        if (*value == ':')
+            continue;
+        g_string_append_c(hex, g_ascii_tolower(*value));
+    }
+
+    return g_string_free(hex, FALSE);
+}
+
 gboolean
 nm_supplicant_config_add_setting_8021x(NMSupplicantConfig *self,
                                        NMSetting8021x     *setting,
@@ -1717,6 +1734,19 @@ nm_supplicant_config_add_setting_8021x(NMSupplicantConfig *self,
         g_return_val_if_fail(ca_cert_override || !priv->private_user, FALSE);
         if (!add_string_val(self, path, "ca_cert", FALSE, NULL, error))
             return FALSE;
+    } else {
+        /* Configuration validation ensures that ca-cert and server-cert-hash
+         * cannot both be set together, so server-cert-hash can be passed as
+         * the ca_cert value here. */
+        const char *server_cert_hash = nm_setting_802_1x_get_server_cert_hash(setting);
+
+        if (server_cert_hash) {
+            gs_free char *hex      = _server_cert_hash_to_hex(server_cert_hash);
+            gs_free char *hash_uri = g_strdup_printf("hash://server/sha256/%s", hex);
+
+            if (!add_string_val(self, hash_uri, "ca_cert", FALSE, NULL, error))
+                return FALSE;
+        }
     }
 
     /* Phase 2 CA certificate */
