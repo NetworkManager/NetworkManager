@@ -268,7 +268,7 @@ rewrite_icmp(struct __sk_buff *skb, const struct ipv6hdr *ip6h, bool has_eth)
     icmp6     = (void *) icmp;
     icmp6_buf = *icmp6;
 
-    /* These translations are defined in RFC6145 section 4.2 */
+    /* These translations are defined in RFC 7915 section 4.2 */
     switch (icmp->type) {
     case ICMP_ECHO:
         icmp6_buf.icmp6_type = ICMPV6_ECHO_REQUEST;
@@ -301,8 +301,8 @@ rewrite_icmp(struct __sk_buff *skb, const struct ipv6hdr *ip6h, bool has_eth)
             icmp6_buf.icmp6_type = ICMPV6_PKT_TOOBIG;
             icmp6_buf.icmp6_code = 0;
             mtu                  = bpf_ntohs(icmp->un.frag.mtu) + 20;
-            /* RFC6145 section 6, "second approach" - should not be
-             * necessary, but might as well do this
+            /* RFC 7915 section 4.2: the MTU must not be set to a
+             * value smaller than the minimum IPv6 MTU
              */
             if (mtu < 1280)
                 mtu = 1280;
@@ -324,7 +324,7 @@ rewrite_icmp(struct __sk_buff *skb, const struct ipv6hdr *ip6h, bool has_eth)
         icmp6_buf.icmp6_type = ICMPV6_PARAMPROB;
         icmp6_buf.icmp6_code = ICMPV6_HDR_FIELD;
         /* The pointer field not defined in the Linux header. This
-         * translation is from Figure 3 of RFC6145.
+         * translation is from Figure 3 of RFC 7915.
          */
         switch (icmp->un.reserved[0]) {
         case 0: /* version/IHL */
@@ -691,7 +691,7 @@ translate_ipv6_header(const struct ipv6hdr *ip6, struct iphdr *ip, __be32 saddr,
 static __always_inline int
 translate_icmpv6_header(const struct icmp6hdr *icmp6, struct icmphdr *icmp)
 {
-    /* These translations are defined in RFC6145 section 5.2 */
+    /* These translations are defined in RFC 7915 section 5.2 */
     switch (icmp6->icmp6_type) {
     case ICMPV6_ECHO_REQUEST:
         icmp->type = ICMP_ECHO;
@@ -743,7 +743,7 @@ translate_icmpv6_header(const struct icmp6hdr *icmp6, struct icmphdr *icmp)
             icmp->code = 0;
 
             ptr = bpf_ntohl(icmp6->icmp6_pointer);
-            /* Figure 6 in RFC6145 - using if statements b/c of
+            /* Figure 6 in RFC 7915 - using if statements b/c of
              * range at the bottom
              */
             if (ptr == 0 || ptr == 1)
@@ -1059,7 +1059,7 @@ clat_handle_v6(struct __sk_buff *skb, bool has_eth)
 
         ip6h = data + L2_H_LEN(has_eth);
 
-        /* Translate into an IPv4 fragmented packet, RFC 6145 5.1.1 */
+        /* Translate into an IPv4 fragmented packet, RFC 7915 5.1.1 */
 
         tot_len = bpf_ntohs(ip6h->payload_len) + IP_H_LEN - IP6_FRAG_H_LEN;
 
@@ -1121,7 +1121,8 @@ clat_handle_v6(struct __sk_buff *skb, bool has_eth)
     }
 
     /* rewrite_icmpv6() can change the payload length when it rewrites the content of
-     * an ICMPv6 error packet. Update the length and the checksum. */
+     * an ICMPv6 error packet. Update the length, the fields that depend on it, and
+     * the checksum. */
     if (length_diff != 0) {
         data     = SKB_DATA(skb);
         data_end = SKB_DATA_END(skb);
