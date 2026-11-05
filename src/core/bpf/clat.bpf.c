@@ -595,7 +595,7 @@ clat_handle_v4(struct __sk_buff *skb, bool has_eth)
     dst_hdr.nexthdr   = iph->protocol;
     dst_hdr.hop_limit = iph->ttl;
     /* weird definition in ipv6hdr */
-    dst_hdr.priority    = (iph->tos & 0x70) >> 4;
+    dst_hdr.priority    = iph->tos >> 4;
     dst_hdr.flow_lbl[0] = iph->tos << 4;
     dst_hdr.payload_len = bpf_htons(bpf_ntohs(iph->tot_len) - IP_H_LEN);
 
