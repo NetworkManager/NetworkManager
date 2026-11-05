@@ -675,6 +675,20 @@ v6addr_equal(const struct in6_addr *a, const struct in6_addr *b)
 }
 
 static __always_inline void
+update_ipv4_df_and_id(struct iphdr *ip)
+{
+    /* RFC 7915 section 5.1: clear DF on packets of up to 1260 bytes.
+     * When DF is cleared, the fragmentation id should also be generated.
+     * The use of `bpf_get_prandom_u32` is insufficient for RFC compliance due
+     * to collision possibilities, but is good enough for now.
+     */
+    if (bpf_ntohs(ip->tot_len) <= 1260) {
+        ip->frag_off = 0;
+        ip->id       = (__u16) bpf_get_prandom_u32();
+    }
+}
+
+static __always_inline void
 translate_ipv6_header(const struct ipv6hdr *ip6, struct iphdr *ip, __be32 saddr, __be32 daddr)
 {
     *ip = (struct iphdr) {
@@ -688,6 +702,8 @@ translate_ipv6_header(const struct ipv6hdr *ip6, struct iphdr *ip, __be32 saddr,
         .daddr    = daddr,
         .tot_len  = bpf_htons(bpf_ntohs(ip6->payload_len) + IP_H_LEN),
     };
+
+    update_ipv4_df_and_id(ip);
 
     ip->check = csum_fold_helper(bpf_csum_diff((__be32 *) ip, 0, (__be32 *) ip, IP_H_LEN, 0));
 }
@@ -1135,6 +1151,8 @@ clat_handle_v6(struct __sk_buff *skb, bool has_eth)
             goto out;
 
         dst_hdr.tot_len = bpf_htons(bpf_ntohs(ip6h->payload_len) + length_diff + IP_H_LEN);
+
+        update_ipv4_df_and_id(&dst_hdr);
 
         dst_hdr.check = 0;
         dst_hdr.check = csum_fold_helper(
