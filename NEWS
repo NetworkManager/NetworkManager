@@ -6,6 +6,10 @@ Overview of changes since NetworkManager-1.58.1
 * Suppress Wi-Fi scans while a Wi-Fi P2P device on the same radio is
   activating, so that going off-channel does not disrupt group formation
   or DHCP on the P2P link.
+* Support new properties for bridge ports: bpdu-guard, broadcast-flood,
+  fast-leave, isolated, learning, locked, multicast-flood,
+  multicast-to-unicast, neighbor-suppress, neighbor-vlan-suppress,
+  root-block, unicast-flood, vlan-tunnel.
 
 ===============================================
 NetworkManager-1.58.1
