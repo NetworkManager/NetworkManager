@@ -234,24 +234,6 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex        *multi_idx,
 
 /*****************************************************************************/
 
-static guint8
-_preference_to_priority(NMIcmpv6RouterPref pref)
-{
-    switch (pref) {
-    case NM_ICMPV6_ROUTER_PREF_LOW:
-        return 1;
-    case NM_ICMPV6_ROUTER_PREF_MEDIUM:
-        return 2;
-    case NM_ICMPV6_ROUTER_PREF_HIGH:
-        return 3;
-    case NM_ICMPV6_ROUTER_PREF_INVALID:
-        break;
-    }
-    return 0;
-}
-
-/*****************************************************************************/
-
 static gboolean
 expiry_next(gint64 now_msec, gint64 expiry_msec, gint64 *next_msec)
 {
@@ -363,8 +345,8 @@ _ASSERT_data_gateways(const NMNDiscDataInternal *data)
         }
 
         if (i > 0) {
-            nm_assert(_preference_to_priority(item_prev->preference)
-                      >= _preference_to_priority(item->preference));
+            nm_assert(nm_icmpv6_router_pref_to_priority(item_prev->preference)
+                      >= nm_icmpv6_router_pref_to_priority(item->preference));
         }
 
         item_prev = item;
@@ -491,8 +473,8 @@ nm_ndisc_add_gateway(NMNDisc *ndisc, const NMNDiscGateway *new_item, gint64 now_
         }
 
         /* Put before less preferable gateways. */
-        if (_preference_to_priority(item->preference)
-                < _preference_to_priority(new_item->preference)
+        if (nm_icmpv6_router_pref_to_priority(item->preference)
+                < nm_icmpv6_router_pref_to_priority(new_item->preference)
             && insert_idx == G_MAXUINT)
             insert_idx = i;
 
@@ -752,8 +734,8 @@ nm_ndisc_add_route(NMNDisc *ndisc, const NMNDiscRoute *new_item, gint64 now_msec
         }
 
         /* Put before less preferable routes. */
-        if (_preference_to_priority(item->preference)
-                < _preference_to_priority(new_item->preference)
+        if (nm_icmpv6_router_pref_to_priority(item->preference)
+                < nm_icmpv6_router_pref_to_priority(new_item->preference)
             && insert_idx == G_MAXUINT)
             insert_idx = i;
 
@@ -804,8 +786,8 @@ nm_ndisc_add_pref64(NMNDisc *ndisc, const NMNDiscPref64 *new_item, gint64 now_ms
         }
 
         /* Put before less preferable gateways. */
-        if (_preference_to_priority(item->gateway_preference)
-                < _preference_to_priority(new_item->gateway_preference)
+        if (nm_icmpv6_router_pref_to_priority(item->gateway_preference)
+                < nm_icmpv6_router_pref_to_priority(new_item->gateway_preference)
             && insert_idx == G_MAXUINT)
             insert_idx = i;
 
