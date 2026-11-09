@@ -417,6 +417,25 @@ typedef enum _nm_packed {
 
 const char *nm_icmpv6_router_pref_to_string(NMIcmpv6RouterPref pref, char *buf, gsize len);
 
+static inline guint8
+nm_icmpv6_router_pref_to_priority(NMIcmpv6RouterPref pref)
+{
+    switch (pref) {
+    case NM_ICMPV6_ROUTER_PREF_LOW:
+        return 1;
+    case NM_ICMPV6_ROUTER_PREF_MEDIUM:
+        return 2;
+    case NM_ICMPV6_ROUTER_PREF_HIGH:
+        return 3;
+    case NM_ICMPV6_ROUTER_PREF_INVALID:
+        /* RFC 4191 2.2: If the Reserved (10) value is received, the receiver MUST
+         * treat the value as if it were (00).*/
+        return 2;
+    }
+
+    return 0;
+}
+
 /*****************************************************************************/
 
 #endif /* __NM_INET_UTILS_H__ */
