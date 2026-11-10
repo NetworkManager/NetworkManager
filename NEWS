@@ -54,6 +54,8 @@ initrd:
 * Add the "-Dinitrd=false" meson option to disable NetworkManager's
   initrd integration at build time (including the relevant systemd
   units, generator, man page, etc)
+* nm-initrd-generator reads the NBFT with libnvme 3 (nvme-cli 3),
+  which is preferred at build time over libnvme 1.
 
 Wi-Fi:
 * Keep the long background scan interval for a single Wi-Fi 7 AP-MLD.

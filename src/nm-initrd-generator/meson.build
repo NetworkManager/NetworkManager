@@ -14,6 +14,7 @@ libnmi_core = static_library(
   ],
   dependencies: [
     libnm_core_public_dep,
+    libnvme_headers_dep,
   ],
 )
 
