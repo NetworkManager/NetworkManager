@@ -1255,6 +1255,25 @@ _supports_addr_family(NMConnection *self, int family)
 }
 
 static gboolean
+_ip_config_default_disabled(NMConnection *self)
+{
+    NMSettingOvsInterface *s_ovs_iface;
+
+    if (NM_IN_STRSET(nm_connection_get_connection_type(self),
+                     NM_SETTING_WIREGUARD_SETTING_NAME,
+                     NM_SETTING_DUMMY_SETTING_NAME))
+        return TRUE;
+
+    /* An OVS interface that is kept administratively down requires
+     * IP configuration to be disabled. */
+    s_ovs_iface = nm_connection_get_setting_ovs_interface(self);
+    if (s_ovs_iface && nm_streq0(nm_setting_ovs_interface_get_admin_state(s_ovs_iface), "down"))
+        return TRUE;
+
+    return FALSE;
+}
+
+static gboolean
 _normalize_ip_config(NMConnection *self, GHashTable *parameters)
 {
     NMSettingIPConfig *s_ip4, *s_ip6;
@@ -1278,11 +1297,7 @@ _normalize_ip_config(NMConnection *self, GHashTable *parameters)
                                         NM_CONNECTION_NORMALIZE_PARAM_IP4_CONFIG_METHOD);
             }
             if (!default_ip4_method) {
-                const char *type = nm_connection_get_connection_type(self);
-
-                if (NM_IN_STRSET(type,
-                                 NM_SETTING_WIREGUARD_SETTING_NAME,
-                                 NM_SETTING_DUMMY_SETTING_NAME))
+                if (_ip_config_default_disabled(self))
                     default_ip4_method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
                 else
                     default_ip4_method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
@@ -1346,11 +1361,7 @@ _normalize_ip_config(NMConnection *self, GHashTable *parameters)
                                         NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD);
             }
             if (!default_ip6_method) {
-                const char *type = nm_connection_get_connection_type(self);
-
-                if (NM_IN_STRSET(type,
-                                 NM_SETTING_WIREGUARD_SETTING_NAME,
-                                 NM_SETTING_DUMMY_SETTING_NAME))
+                if (_ip_config_default_disabled(self))
                     default_ip6_method = NM_SETTING_IP6_CONFIG_METHOD_DISABLED;
                 else
                     default_ip6_method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;

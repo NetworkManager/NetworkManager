@@ -463,6 +463,16 @@ can_unmanaged_external_down(NMDevice *self)
     return FALSE;
 }
 
+static gboolean
+keep_admin_down(NMDevice *device)
+{
+    NMSettingOvsInterface *s_ovs_iface;
+
+    s_ovs_iface = nm_device_get_applied_setting(device, NM_TYPE_SETTING_OVS_INTERFACE);
+
+    return s_ovs_iface && nm_streq0(nm_setting_ovs_interface_get_admin_state(s_ovs_iface), "down");
+}
+
 static void
 deactivate(NMDevice *device)
 {
@@ -733,6 +743,7 @@ nm_device_ovs_interface_class_init(NMDeviceOvsInterfaceClass *klass)
     device_class->act_stage3_ip_config          = act_stage3_ip_config;
     device_class->ready_for_ip_config           = ready_for_ip_config;
     device_class->can_unmanaged_external_down   = can_unmanaged_external_down;
+    device_class->keep_admin_down               = keep_admin_down;
     device_class->set_platform_mtu              = set_platform_mtu;
     device_class->get_configured_mtu            = nm_device_get_configured_mtu_for_wired;
     device_class->can_reapply_change            = can_reapply_change;

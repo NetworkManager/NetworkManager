@@ -275,6 +275,10 @@ typedef struct _NMDeviceClass {
     /* Hardware state (IFF_UP) */
     gboolean (*can_unmanaged_external_down)(NMDevice *self);
 
+    /* Whether NetworkManager must not set the link IFF_UP, because the
+     * applied connection wants it administratively down. */
+    gboolean (*keep_admin_down)(NMDevice *self);
+
     /* Carrier state (IFF_LOWER_UP) */
     void (*carrier_changed_notify)(NMDevice *, gboolean carrier);
 

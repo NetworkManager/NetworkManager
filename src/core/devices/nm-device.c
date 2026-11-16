@@ -5396,6 +5396,14 @@ nm_device_get_ip_ifindex(const NMDevice *self)
     return priv->ip_iface ? priv->ip_ifindex : priv->ifindex;
 }
 
+static gboolean
+_keep_admin_down(NMDevice *self)
+{
+    NMDeviceClass *klass = NM_DEVICE_GET_CLASS(self);
+
+    return klass->keep_admin_down && klass->keep_admin_down(self);
+}
+
 static void
 _set_ip_ifindex(NMDevice *self, int ifindex, const char *ifname)
 {
@@ -5435,7 +5443,7 @@ _set_ip_ifindex(NMDevice *self, int ifindex, const char *ifname)
                                                  priv->ip_ifindex,
                                                  NM_IN6_ADDR_GEN_MODE_NONE);
 
-        if (!nm_platform_link_is_up(platform, priv->ip_ifindex))
+        if (!nm_platform_link_is_up(platform, priv->ip_ifindex) && !_keep_admin_down(self))
             nm_platform_link_change_flags(platform, priv->ip_ifindex, IFF_UP, TRUE);
     }
 
@@ -16138,6 +16146,17 @@ nm_device_bring_up_full(NMDevice *self,
     }
 
     ifindex = nm_device_get_ip_ifindex(self);
+
+    if (_keep_admin_down(self)) {
+        _LOGD(LOGD_PLATFORM, "bringing up device %d skipped: kept administratively down", ifindex);
+
+        /* A link that is kept down never gets carrier. Stop a carrier wait
+         * that was started before the connection was applied. */
+        nm_clear_g_source_inst(&NM_DEVICE_GET_PRIVATE(self)->carrier_wait_source);
+        nm_device_remove_pending_action(self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
+        return TRUE;
+    }
+
     _LOGD(LOGD_PLATFORM, "bringing up device %d", ifindex);
     if (ifindex <= 0) {
         /* assume success. */
