@@ -1971,6 +1971,10 @@
                   nmcli-description="Open vSwitch openflow port number. Defaults to zero which means that port number will not be specified and it will be chosen randomly by ovs. OpenFlow ports are the network interfaces for passing packets between OpenFlow processing and the rest of the network. OpenFlow switches connect logically to each other via their OpenFlow ports."
                   format="integer"
                   values="0 - 65279" />
+        <property name="admin-state"
+                  nmcli-description="The administrative state of the interface. Either &quot;up&quot;, &quot;down&quot; or empty. Empty means &quot;up&quot;. When &quot;down&quot;, the interface is attached to its port and the connection activates, but NetworkManager does not set the kernel link up. This is only supported for interfaces of type &quot;internal&quot;, and requires the &quot;ipv4.method&quot; and &quot;ipv6.method&quot; properties to be &quot;disabled&quot;. If the link is set up by other means, NetworkManager does not set it down again."
+                  format="string"
+                  values="up, down" />
     </setting>
     <setting name="ovs-other-config" >
     </setting>

@@ -34,6 +34,8 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_OVS_INTERFACE_OFPORT_REQUEST "ofport-request"
 
+#define NM_SETTING_OVS_INTERFACE_ADMIN_STATE "admin-state"
+
 typedef struct _NMSettingOvsInterfaceClass NMSettingOvsInterfaceClass;
 
 NM_AVAILABLE_IN_1_10
@@ -46,6 +48,9 @@ const char *nm_setting_ovs_interface_get_interface_type(NMSettingOvsInterface *s
 
 NM_AVAILABLE_IN_1_42
 guint32 nm_setting_ovs_interface_get_ofport_request(NMSettingOvsInterface *self);
+
+NM_AVAILABLE_IN_1_60
+const char *nm_setting_ovs_interface_get_admin_state(NMSettingOvsInterface *self);
 
 G_END_DECLS
 

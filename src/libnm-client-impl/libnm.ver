@@ -2156,6 +2156,7 @@ global:
 
 libnm_1_60_0 {
 global:
+	nm_setting_ovs_interface_get_admin_state;
 	nm_setting_wifi_p2p_get_wps_pin;
 	nm_setting_wifi_p2p_get_wps_pin_flags;
 	nm_wifi_p2p_peer_get_wps_config_methods;

@@ -7557,6 +7557,12 @@ static const NMMetaPropertyInfo *const property_infos_OVS_INTERFACE[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_INTERFACE_OFPORT_REQUEST,
           .property_type = &_pt_gobject_int,
     ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_INTERFACE_ADMIN_STATE,
+        .property_type =                &_pt_gobject_string,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+            .values_static =            NM_MAKE_STRV ("up", "down"),
+        ),
+    ),
     NULL
 };
 

@@ -140,6 +140,16 @@ check_connection_compatible(NMDevice     *device,
 }
 
 static gboolean
+keep_admin_down(NMDevice *device)
+{
+    NMSettingOvsInterface *s_ovs_iface;
+
+    s_ovs_iface = nm_device_get_applied_setting(device, NM_TYPE_SETTING_OVS_INTERFACE);
+
+    return s_ovs_iface && nm_streq0(nm_setting_ovs_interface_get_admin_state(s_ovs_iface), "down");
+}
+
+static gboolean
 check_waiting_for_link(NMDevice *device, const char *from)
 {
     NMDeviceOvsInterface        *self     = NM_DEVICE_OVS_INTERFACE(device);
@@ -154,6 +164,11 @@ check_waiting_for_link(NMDevice *device, const char *from)
 
     nm_assert(priv->wait_link.cloned_mac_evaluated);
     ip_ifindex = nm_device_get_ip_ifindex(device);
+
+    /* A tap that is kept down is not set as ip-ifindex, because that would
+     * set it up. Check the tap seen by _netdev_tun_link_cb() instead. */
+    if (ip_ifindex <= 0 && keep_admin_down(device))
+        ip_ifindex = priv->wait_link.tun_ifindex;
 
     if (ip_ifindex <= 0) {
         reason = "no ifindex";
@@ -195,7 +210,8 @@ link_changed(NMDevice *device, const NMPlatformLink *pllink)
     _LOGT(LOGD_CORE, "ovs-wait-link: link is ready after link changed event");
 
     nm_device_link_properties_set(device, FALSE);
-    nm_device_bring_up(device);
+    if (!keep_admin_down(device))
+        nm_device_bring_up(device);
 
     nm_device_devip_set_state(device, AF_INET, NM_DEVICE_IP_STATE_PENDING, NULL);
     nm_device_devip_set_state(device, AF_INET6, NM_DEVICE_IP_STATE_PENDING, NULL);
@@ -271,7 +287,7 @@ _netdev_tun_link_cb_in_idle(gpointer user_data)
     NMDeviceOvsInterface        *self   = NM_DEVICE_OVS_INTERFACE(device);
     NMDeviceOvsInterfacePrivate *priv   = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
 
-    if (nm_device_get_ip_ifindex(device) <= 0) {
+    if (nm_device_get_ip_ifindex(device) <= 0 && !keep_admin_down(device)) {
         _LOGT(LOGD_CORE,
               "ovs-wait-link: setting ip-ifindex %d from tun link",
               priv->wait_link.tun_ifindex);
@@ -285,7 +301,8 @@ _netdev_tun_link_cb_in_idle(gpointer user_data)
 
     _LOGT(LOGD_CORE, "ovs-wait-link: tun link is ready");
     nm_device_link_properties_set(device, FALSE);
-    nm_device_bring_up(device);
+    if (!keep_admin_down(device))
+        nm_device_bring_up(device);
 
     nm_device_devip_set_state(device, AF_INET, NM_DEVICE_IP_STATE_PENDING, NULL);
     nm_device_devip_set_state(device, AF_INET6, NM_DEVICE_IP_STATE_PENDING, NULL);
@@ -400,6 +417,11 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
         return;
     }
 
+    /* A link that is kept down never gets carrier. Don't let the carrier
+     * wait started by NMDevice delay startup-complete. */
+    if (keep_admin_down(device))
+        nm_device_remove_pending_action(device, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
+
     /*
     * If a ovs interface has the cloned-mac-address property set, we pass the desired MAC
     * to ovsdb when creating the db entry, and openvswitch will eventually assign it to
@@ -446,7 +468,8 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
      * IP configuration without the needed allocated resources like DHCP client.
      */
     if (old_wait_link) {
-        nm_device_bring_up(device);
+        if (!keep_admin_down(device))
+            nm_device_bring_up(device);
         nm_device_activate_schedule_stage3_ip_config(device, TRUE);
         return;
     }

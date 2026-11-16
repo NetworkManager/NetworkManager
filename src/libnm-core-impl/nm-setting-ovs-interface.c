@@ -21,7 +21,7 @@
 
 /*****************************************************************************/
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_TYPE, PROP_OFPORT_REQUEST, );
+NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_TYPE, PROP_OFPORT_REQUEST, PROP_ADMIN_STATE, );
 
 /**
  * NMSettingOvsInterface:
@@ -32,6 +32,7 @@ struct _NMSettingOvsInterface {
     NMSetting parent;
 
     char   *type;
+    char   *admin_state;
     guint32 ofport_request;
 };
 
@@ -73,6 +74,22 @@ nm_setting_ovs_interface_get_ofport_request(NMSettingOvsInterface *self)
     g_return_val_if_fail(NM_IS_SETTING_OVS_INTERFACE(self), 0);
 
     return self->ofport_request;
+}
+
+/**
+ * nm_setting_ovs_interface_get_admin_state:
+ * @self: the #NMSettingOvsInterface
+ *
+ * Returns: the #NMSettingOvsInterface:admin-state property of the setting
+ *
+ * Since: 1.60
+ **/
+const char *
+nm_setting_ovs_interface_get_admin_state(NMSettingOvsInterface *self)
+{
+    g_return_val_if_fail(NM_IS_SETTING_OVS_INTERFACE(self), NULL);
+
+    return self->admin_state;
 }
 
 /*****************************************************************************/
@@ -292,8 +309,12 @@ normalize:
 static int
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
-    NMSettingOvsInterface *self  = NM_SETTING_OVS_INTERFACE(setting);
-    NMSettingConnection   *s_con = NULL;
+    NMSettingOvsInterface *self       = NM_SETTING_OVS_INTERFACE(setting);
+    NMSettingConnection   *s_con      = NULL;
+    gs_free_error GError  *type_error = NULL;
+    const char            *normalized_type;
+    int                    ret;
+    int                    IS_IPv4;
 
     if (connection) {
         const char *port_type;
@@ -339,13 +360,98 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }
     }
 
-    return _nm_setting_ovs_interface_verify_interface_type(self,
-                                                           self->type,
-                                                           connection,
-                                                           FALSE,
-                                                           NULL,
-                                                           NULL,
-                                                           error);
+    ret = _nm_setting_ovs_interface_verify_interface_type(self,
+                                                          self->type,
+                                                          connection,
+                                                          FALSE,
+                                                          NULL,
+                                                          &normalized_type,
+                                                          &type_error);
+    if (ret == NM_SETTING_VERIFY_ERROR) {
+        g_propagate_error(error, g_steal_pointer(&type_error));
+        return NM_SETTING_VERIFY_ERROR;
+    }
+
+    if (!NM_IN_STRSET(self->admin_state, "up", "down", NULL)) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("'%s' is not a valid admin state"),
+                    self->admin_state);
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_OVS_INTERFACE_SETTING_NAME,
+                       NM_SETTING_OVS_INTERFACE_ADMIN_STATE);
+        return NM_SETTING_VERIFY_ERROR;
+    }
+
+    if (nm_streq0(self->admin_state, "down")) {
+        /* Only internal interfaces have a kernel link whose
+         * administrative state could be kept down. Without a connection
+         * and without an explicit type, we cannot know the type yet. */
+        if ((connection || normalized_type) && !nm_streq0(normalized_type, "internal")) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("can only be \"down\" for interfaces of type \"internal\""));
+            g_prefix_error(error,
+                           "%s.%s: ",
+                           NM_SETTING_OVS_INTERFACE_SETTING_NAME,
+                           NM_SETTING_OVS_INTERFACE_ADMIN_STATE);
+            return NM_SETTING_VERIFY_ERROR;
+        }
+
+        /* The kernel removes IPv6 addresses and all routes from a link that
+         * is administratively down, so IP configuration cannot work. A missing
+         * IP setting is an error too, normalization would add one with the
+         * method "auto". */
+        for (IS_IPv4 = 1; connection && IS_IPv4 >= 0; IS_IPv4--) {
+            NMSettingIPConfig *s_ip;
+            const char        *method;
+
+            s_ip = nm_connection_get_setting_ip_config(connection, IS_IPv4 ? AF_INET : AF_INET6);
+            if (!s_ip) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_MISSING_SETTING,
+                            _("setting is required with method \"disabled\" when %s.%s is "
+                              "\"down\""),
+                            NM_SETTING_OVS_INTERFACE_SETTING_NAME,
+                            NM_SETTING_OVS_INTERFACE_ADMIN_STATE);
+                g_prefix_error(error,
+                               "%s: ",
+                               IS_IPv4 ? NM_SETTING_IP4_CONFIG_SETTING_NAME
+                                       : NM_SETTING_IP6_CONFIG_SETTING_NAME);
+                return NM_SETTING_VERIFY_ERROR;
+            }
+
+            method = nm_setting_ip_config_get_method(s_ip);
+            if (!method
+                || nm_streq(method,
+                            IS_IPv4 ? NM_SETTING_IP4_CONFIG_METHOD_DISABLED
+                                    : NM_SETTING_IP6_CONFIG_METHOD_DISABLED))
+                continue;
+
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("method \"%s\" is not allowed when %s.%s is \"down\", "
+                          "it must be \"disabled\""),
+                        method,
+                        NM_SETTING_OVS_INTERFACE_SETTING_NAME,
+                        NM_SETTING_OVS_INTERFACE_ADMIN_STATE);
+            g_prefix_error(error,
+                           "%s.%s: ",
+                           IS_IPv4 ? NM_SETTING_IP4_CONFIG_SETTING_NAME
+                                   : NM_SETTING_IP6_CONFIG_SETTING_NAME,
+                           NM_SETTING_IP_CONFIG_METHOD);
+            return NM_SETTING_VERIFY_ERROR;
+        }
+    }
+
+    if (ret != NM_SETTING_VERIFY_SUCCESS)
+        g_propagate_error(error, g_steal_pointer(&type_error));
+    return ret;
 }
 
 /*****************************************************************************/
@@ -417,6 +523,30 @@ nm_setting_ovs_interface_class_init(NMSettingOvsInterfaceClass *klass)
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingOvsInterface,
                                               ofport_request);
+
+    /**
+     * NMSettingOvsInterface:admin-state:
+     *
+     * The administrative state of the interface. Either "up", "down" or
+     * empty. Empty means "up".
+     *
+     * When "down", the interface is attached to its port and the connection
+     * activates, but NetworkManager does not set the kernel link up. This is
+     * only supported for interfaces of type "internal", and requires the
+     * "ipv4.method" and "ipv6.method" properties to be "disabled". If the
+     * link is set up by other means, NetworkManager does not set it down
+     * again.
+     *
+     * Since: 1.60
+     **/
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_OVS_INTERFACE_ADMIN_STATE,
+                                              PROP_ADMIN_STATE,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingOvsInterface,
+                                              admin_state,
+                                              .direct_string_allow_empty = TRUE);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
