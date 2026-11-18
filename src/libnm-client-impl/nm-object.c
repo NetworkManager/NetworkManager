@@ -32,8 +32,6 @@ G_DEFINE_ABSTRACT_TYPE(NMObject, nm_object, G_TYPE_OBJECT);
 
 #define NM_OBJECT_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR(self, NMObject, NM_IS_OBJECT)
 
-static NMObjectClass *_nm_object_class = NULL;
-
 /*****************************************************************************/
 
 static gpointer
@@ -288,8 +286,6 @@ static void
 nm_object_class_init(NMObjectClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
-
-    _nm_object_class = klass;
 
     g_type_class_add_private(klass, sizeof(NMObjectPrivate));
 
