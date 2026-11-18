@@ -1962,9 +1962,9 @@ _properties_changed_main(NMSupplicantInterface *self, GVariant *properties)
     gboolean                      do_set_state          = FALSE;
     gboolean                      do_notify_current_bss = FALSE;
 
-    nm_assert(properties || g_variant_is_of_type(properties, G_VARIANT_TYPE("a{sv}")));
+    nm_assert(!properties || g_variant_is_of_type(properties, G_VARIANT_TYPE("a{sv}")));
 
-    v_v = g_variant_lookup_value(properties, "Capabilities", G_VARIANT_TYPE_VARDICT);
+    v_v = nm_g_variant_lookup_value(properties, "Capabilities", G_VARIANT_TYPE_VARDICT);
     if (v_v) {
         parse_capabilities(self, v_v);
         g_variant_unref(v_v);
