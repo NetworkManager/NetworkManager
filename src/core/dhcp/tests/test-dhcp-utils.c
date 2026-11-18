@@ -240,6 +240,13 @@ test_parse_search_list(void)
     g_assert_cmpstr(domains[0], ==, "okay");
     g_strfreev(domains);
 
+    data    = (guint8[]) {0x04, 't', 'e', 0x12, 't', 0x00};
+    domains = nm_dhcp_lease_data_parse_search_list(data, 6, NULL, 0, 0);
+    g_assert(domains);
+    g_assert_cmpint(g_strv_length(domains), ==, 1);
+    g_assert_cmpstr(domains[0], ==, "te\\018t");
+    g_strfreev(domains);
+
     /* Test that the message compression works when the offset uses both bytes */
     data = (guint8[]) {
         /* clang-format off */
