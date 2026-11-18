@@ -2200,7 +2200,7 @@ disconnect_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 
     res = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), result, &error);
 
-    if (!res && !strstr(error->message, "fi.w1.wpa_supplicant1.NotConnected")) {
+    if (!res && nm_dbus_error_is(error, "fi.w1.wpa_supplicant1.NotConnected")) {
         /* an already disconnected interface is not an error*/
         g_clear_error(&error);
     }
