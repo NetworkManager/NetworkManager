@@ -4971,7 +4971,7 @@ nm_wifi_utils_parse_ies(const guint8 *bytes,
                 get_bandwidth_vht(bytes, elem_len, out_bandwidth);
             break;
         case WLAN_EID_VENDOR_SPECIFIC:
-            if (len == 8 && bytes[0] == 0x00 /* OUI: Microsoft */
+            if (elem_len == 8 && bytes[0] == 0x00 /* OUI: Microsoft */
                 && bytes[1] == 0x50 && bytes[2] == 0xf2
                 && bytes[3] == 0x11) /* OUI type: Network cost */
             {
