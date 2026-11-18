@@ -164,7 +164,7 @@
 
     <!--
         Controller:
-        @Since: 1.44
+        @since: 1.44
 
         The path to the controller device if the connection is a port. This
         property replaces the deprecated 'Master' property.

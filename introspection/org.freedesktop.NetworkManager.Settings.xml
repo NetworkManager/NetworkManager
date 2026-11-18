@@ -190,11 +190,10 @@
 
     <!--
         VersionId:
+        @since: 1.44
 
         The version of the settings. This is incremented whenever the profile
         changes and can be used to detect concurrent modifications.
-
-        Since: 1.44
     -->
     <property name="VersionId" type="t" access="read"/>
 

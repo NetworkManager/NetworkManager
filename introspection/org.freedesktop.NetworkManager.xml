@@ -462,6 +462,7 @@
 
     <!--
         VersionInfo:
+        @since: 1.42
 
         NetworkManager version and capabilities.
 
@@ -471,8 +472,6 @@
 
         The following elements are a bitfield of static capabilities of the daemon. See
         #NMVersionInfoCapability for the available capability numbers.
-
-        Since: 1.42
     -->
     <property name="VersionInfo" type="au" access="read"/>
 

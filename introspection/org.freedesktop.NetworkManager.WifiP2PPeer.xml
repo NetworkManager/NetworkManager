@@ -66,6 +66,7 @@
 
     <!--
         WpsConfigMethods:
+        @since: 1.60
 
         The WPS configuration methods that the Wi-Fi P2P peer advertises: the
         values of the "Config Methods" attribute of the Wi-Fi Simple
@@ -74,8 +75,6 @@
         know them for a group owner that it has only seen in Beacon frames.
 
         Returns: <link linkend="NMWpsConfigMethods">NMWpsConfigMethods</link>
-
-        Since: 1.60
     -->
     <property name="WpsConfigMethods" type="u" access="read"/>
 
