@@ -845,6 +845,59 @@ test_bridge_vlans(void)
 }
 
 static void
+test_ovs_link_state(gconstpointer user_data)
+{
+    const char   *state   = user_data;
+    gs_free char *profile = g_strdup_printf("[connection]\n"
+                                            "id=local\ninterface-name=br0\ntype=ovs-interface\n"
+                                            "controller=port0\nport-type=ovs-port\n"
+                                            "[ovs-interface]\n%s%s\n",
+                                            state ? "admin-state=" : "",
+                                            state ?: "");
+    gs_unref_object NMConnection *con =
+        nmtst_create_connection_from_keyfile(profile, "/test/local");
+    NMSettingOvsInterface          *setting = nm_connection_get_setting_ovs_interface(con);
+    nm_auto_unref_keyfile GKeyFile *saved   = _nm_keyfile_write(con, NULL, NULL);
+    gs_free char *saved_state = g_key_file_get_string(saved, "ovs-interface", "admin-state", NULL);
+    gs_unref_variant GVariant *dbus = nm_connection_to_dbus(con, NM_CONNECTION_SERIALIZE_ALL);
+    gs_unref_variant GVariant *ovs =
+        g_variant_lookup_value(dbus, "ovs-interface", G_VARIANT_TYPE_VARDICT);
+    const char *dbus_state = NULL;
+    const char *method     = nm_streq0(state, "down") ? "disabled" : "auto";
+
+    g_assert_cmpstr(nm_setting_ovs_interface_get_admin_state(setting), ==, state);
+    g_assert_cmpstr(saved_state, ==, state);
+    g_assert(ovs);
+    g_assert_cmpint(g_variant_lookup(ovs, "admin-state", "&s", &dbus_state), ==, !!state);
+    g_assert_cmpstr(dbus_state, ==, state);
+    g_assert_cmpstr(nm_setting_ip_config_get_method(nm_connection_get_setting_ip4_config(con)),
+                    ==,
+                    method);
+    g_assert_cmpstr(nm_setting_ip_config_get_method(nm_connection_get_setting_ip6_config(con)),
+                    ==,
+                    method);
+    if (nm_streq0(state, "down")) {
+        g_object_set(setting, NM_SETTING_OVS_INTERFACE_TYPE, "dpdk", NULL);
+        nmtst_assert_connection_unnormalizable(con,
+                                               NM_CONNECTION_ERROR,
+                                               NM_CONNECTION_ERROR_INVALID_PROPERTY);
+        g_object_set(setting, NM_SETTING_OVS_INTERFACE_TYPE, "internal", NULL);
+        g_object_set(nm_connection_get_setting_ip6_config(con),
+                     NM_SETTING_IP_CONFIG_METHOD,
+                     "auto",
+                     NULL);
+        nmtst_assert_connection_unnormalizable(con,
+                                               NM_CONNECTION_ERROR,
+                                               NM_CONNECTION_ERROR_INVALID_PROPERTY);
+    } else {
+        g_object_set(setting, NM_SETTING_OVS_INTERFACE_ADMIN_STATE, "unknown", NULL);
+        nmtst_assert_connection_unnormalizable(con,
+                                               NM_CONNECTION_ERROR,
+                                               NM_CONNECTION_ERROR_INVALID_PROPERTY);
+    }
+}
+
+static void
 test_bridge_port_vlans(void)
 {
     nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
@@ -1000,6 +1053,9 @@ main(int argc, char **argv)
     g_test_add_func("/core/keyfile/test_vpn/1", test_vpn_1);
     g_test_add_func("/core/keyfile/bridge/vlans", test_bridge_vlans);
     g_test_add_func("/core/keyfile/bridge-port/vlans", test_bridge_port_vlans);
+    g_test_add_data_func("/core/keyfile/ovs/link-state/default", NULL, test_ovs_link_state);
+    g_test_add_data_func("/core/keyfile/ovs/link-state/up", "up", test_ovs_link_state);
+    g_test_add_data_func("/core/keyfile/ovs/link-state/down", "down", test_ovs_link_state);
     g_test_add_func("/core/keyfile/invalid-option", test_invalid_option);
 
     return g_test_run();

@@ -5435,7 +5435,9 @@ _set_ip_ifindex(NMDevice *self, int ifindex, const char *ifname)
                                                  priv->ip_ifindex,
                                                  NM_IN6_ADDR_GEN_MODE_NONE);
 
-        if (!nm_platform_link_is_up(platform, priv->ip_ifindex))
+        /* An OVS TAP can receive frames if this step sets IFF_UP. */
+        if (!NM_DEVICE_GET_CLASS(self)->stage3_controls_link
+            && !nm_platform_link_is_up(platform, priv->ip_ifindex))
             nm_platform_link_change_flags(platform, priv->ip_ifindex, IFF_UP, TRUE);
     }
 
@@ -13704,7 +13706,7 @@ activate_stage3_ip_config(NMDevice *self)
         nm_device_state_changed(self, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 
         /* Device should be up before we can do anything with it */
-        if (!nm_device_managed_type_is_external(self) && ifindex > 0
+        if (!klass->stage3_controls_link && !nm_device_managed_type_is_external(self) && ifindex > 0
             && !nm_platform_link_is_up(nm_device_get_platform(self), ifindex))
             _LOGW(LOGD_DEVICE,
                   "interface %s not up for IP configuration",
@@ -16137,6 +16139,11 @@ nm_device_bring_up_full(NMDevice *self,
         return FALSE;
     }
 
+    /* A down OVS link can survive a daemon restart. Keep its state until stage 3. */
+    if (NM_DEVICE_GET_CLASS(self)->stage3_controls_link
+        && nm_device_get_state(self) < NM_DEVICE_STATE_IP_CONFIG)
+        return TRUE;
+
     ifindex = nm_device_get_ip_ifindex(self);
     _LOGD(LOGD_PLATFORM, "bringing up device %d", ifindex);
     if (ifindex <= 0) {
@@ -18043,7 +18050,8 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
              * have been brought up very recently and it might one of
              * those who take time to detect carrier.
              */
-            carrier_detect_wait(self);
+            if (!NM_DEVICE_GET_CLASS(self)->stage3_controls_link)
+                carrier_detect_wait(self);
         }
 
         if (priv->managed_type == NM_DEVICE_MANAGED_TYPE_FULL) {

@@ -40,6 +40,10 @@ Core:
 * Add new property '802-1x.server-cert-hash' to allow authentication server
   verification by certificate hash, primarily to support Trust On First Use
   (TOFU).
+* Add "ovs-interface.admin-state" for Open vSwitch internal interfaces.
+  Set it to "down" to keep the Linux link down without detaching the
+  interface from its port. Use this to prevent host traffic through that
+  interface on OVS-DPDK bridges. The default is "up".
 
 initrd:
 * Add the "rd.net.timeout.ip-required" kernel command line argument

@@ -2260,6 +2260,10 @@
     <setting name="ovs-interface"
              gtype="NMSettingOvsInterface"
              >
+        <property name="admin-state"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="ofport-request"
                   dbus-type="u"
                   gprop-type="guint"

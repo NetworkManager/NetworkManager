@@ -209,6 +209,9 @@ typedef struct _NMDeviceClass {
 
     bool act_stage1_prepare_set_hwaddr_ethernet : 1;
 
+    /* The subclass configures IFF_UP once its backing link is ready in stage 3. */
+    bool stage3_controls_link : 1;
+
     bool allow_autoconnect_on_external : 1;
 
     NMRfkillType rfkill_type : 4;

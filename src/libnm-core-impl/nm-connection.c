@@ -1257,22 +1257,29 @@ _supports_addr_family(NMConnection *self, int family)
 static gboolean
 _normalize_ip_config(NMConnection *self, GHashTable *parameters)
 {
-    NMSettingIPConfig *s_ip4, *s_ip6;
-    NMSettingProxy    *s_proxy;
-    NMSetting         *setting;
-    gboolean           changed = FALSE;
-    guint              num, i;
-    int                dhcp_send_hostname_v2;
+    NMSettingOvsInterface *ovs_iface;
+    gboolean               ovs_link_down;
+    NMSettingIPConfig     *s_ip4, *s_ip6;
+    NMSettingProxy        *s_proxy;
+    NMSetting             *setting;
+    gboolean               changed = FALSE;
+    guint                  num, i;
+    int                    dhcp_send_hostname_v2;
 
-    s_ip4   = nm_connection_get_setting_ip4_config(self);
-    s_ip6   = nm_connection_get_setting_ip6_config(self);
-    s_proxy = nm_connection_get_setting_proxy(self);
+    s_ip4     = nm_connection_get_setting_ip4_config(self);
+    s_ip6     = nm_connection_get_setting_ip6_config(self);
+    s_proxy   = nm_connection_get_setting_proxy(self);
+    ovs_iface = nm_connection_get_setting_ovs_interface(self);
+    ovs_link_down =
+        ovs_iface && nm_streq0(nm_setting_ovs_interface_get_admin_state(ovs_iface), "down");
 
     if (_supports_addr_family(self, AF_INET)) {
         if (!s_ip4) {
             const char *default_ip4_method = NULL;
 
-            if (parameters) {
+            if (ovs_link_down)
+                default_ip4_method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
+            else if (parameters) {
                 default_ip4_method =
                     g_hash_table_lookup(parameters,
                                         NM_CONNECTION_NORMALIZE_PARAM_IP4_CONFIG_METHOD);
@@ -1340,7 +1347,9 @@ _normalize_ip_config(NMConnection *self, GHashTable *parameters)
         if (!s_ip6) {
             const char *default_ip6_method = NULL;
 
-            if (parameters) {
+            if (ovs_link_down)
+                default_ip6_method = NM_SETTING_IP6_CONFIG_METHOD_DISABLED;
+            else if (parameters) {
                 default_ip6_method =
                     g_hash_table_lookup(parameters,
                                         NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD);

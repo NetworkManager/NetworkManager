@@ -143,6 +143,17 @@ Connection 'ovs-interface-iface0' (3640d2a1-a2fd-4718-92f1-cffadb5b6cdc) success
       <command>ovs-vsctl show</command>.</para>
     </example>
 
+    <example><title>Keeping the local internal interface down</title>
+<screen><prompt>$ </prompt><userinput>nmcli con add type ovs-bridge ifname br0 con-name switch0 ovs-bridge.datapath-type netdev</userinput>
+<prompt>$ </prompt><userinput>nmcli con add type ovs-port ifname br0 con-name port-local controller switch0</userinput>
+<prompt>$ </prompt><userinput>nmcli con add type ovs-interface ifname br0 con-name if-local controller port-local \
+  ovs-interface.admin-state down</userinput>
+<prompt>$ </prompt><userinput>nmcli con up if-local</userinput></screen>
+      <para>The bridge and port remain active, but the Linux link named br0
+      has no UP flag. To create another down interface, add a port and an
+      interface with a different interface name on the same bridge.</para>
+    </example>
+
     <example><title>Adding a Linux interface to a Bridge</title>
 <screen><prompt>$ </prompt><userinput>nmcli conn add type ovs-port conn.interface port1 controller bridge0</userinput>
 Connection 'ovs-port-port1' (67d041eb-8e7b-4458-afee-a1d07c9c4552) successfully added.

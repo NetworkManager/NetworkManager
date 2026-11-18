@@ -1967,6 +1967,10 @@
                   nmcli-description="The interface type. Either &quot;internal&quot;, &quot;system&quot;, &quot;patch&quot;, &quot;dpdk&quot;, or empty."
                   format="string"
                   values="internal, system, patch, dpdk" />
+        <property name="admin-state"
+                  nmcli-description="Whether to bring the kernel link &quot;up&quot; (the default) or leave it &quot;down&quot; when activating an internal interface. A down link remains attached to its OVS port. IP configuration must be disabled; omitted IPv4 and IPv6 settings default to disabled in this case."
+                  format="string"
+                  values="up, down" />
         <property name="ofport-request"
                   nmcli-description="Open vSwitch openflow port number. Defaults to zero which means that port number will not be specified and it will be chosen randomly by ovs. OpenFlow ports are the network interfaces for passing packets between OpenFlow processing and the rest of the network. OpenFlow switches connect logically to each other via their OpenFlow ports."
                   format="integer"

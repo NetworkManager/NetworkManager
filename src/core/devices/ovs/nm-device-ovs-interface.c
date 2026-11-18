@@ -7,6 +7,8 @@
 
 #include "nm-device-ovs-interface.h"
 
+#include <linux/if.h>
+
 #include "nm-device-ovs-bridge.h"
 #include "nm-ovsdb.h"
 
@@ -140,7 +142,25 @@ check_connection_compatible(NMDevice     *device,
 }
 
 static gboolean
-check_waiting_for_link(NMDevice *device, const char *from)
+configure_internal_link(NMDevice *device, int ifindex)
+{
+    NMSettingOvsInterface *setting =
+        nm_device_get_applied_setting(device, NM_TYPE_SETTING_OVS_INTERFACE);
+    NMPlatform *platform  = nm_device_get_platform(device);
+    gboolean requested_up = !nm_streq0(nm_setting_ovs_interface_get_admin_state(setting), "down");
+
+    /* OVS can create the link after stage 2. Apply the link properties
+     * even if the link must stay down. */
+    nm_device_link_properties_set(device, FALSE);
+    if (nm_platform_link_is_up(platform, ifindex) == requested_up)
+        return TRUE;
+    if (requested_up)
+        return nm_device_bring_up(device);
+    return nm_platform_link_change_flags(platform, ifindex, IFF_UP, FALSE) >= 0;
+}
+
+static gboolean
+wait_for_internal_link(NMDevice *device, const char *from)
 {
     NMDeviceOvsInterface        *self     = NM_DEVICE_OVS_INTERFACE(device);
     NMDeviceOvsInterfacePrivate *priv     = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
@@ -169,6 +189,12 @@ check_waiting_for_link(NMDevice *device, const char *from)
         reason = "cloned MAC address is not set yet";
     } else {
         priv->wait_link.waiting = FALSE;
+        if (!configure_internal_link(device, ip_ifindex)) {
+            nm_device_queue_state(device,
+                                  NM_DEVICE_STATE_FAILED,
+                                  NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+            return TRUE;
+        }
     }
 
     if (priv->wait_link.waiting)
@@ -189,13 +215,10 @@ link_changed(NMDevice *device, const NMPlatformLink *pllink)
     if (nm_device_get_state(device) != NM_DEVICE_STATE_IP_CONFIG)
         return;
 
-    if (check_waiting_for_link(device, "link-changed"))
+    if (wait_for_internal_link(device, "link-changed"))
         return;
 
     _LOGT(LOGD_CORE, "ovs-wait-link: link is ready after link changed event");
-
-    nm_device_link_properties_set(device, FALSE);
-    nm_device_bring_up(device);
 
     nm_device_devip_set_state(device, AF_INET, NM_DEVICE_IP_STATE_PENDING, NULL);
     nm_device_devip_set_state(device, AF_INET6, NM_DEVICE_IP_STATE_PENDING, NULL);
@@ -278,14 +301,12 @@ _netdev_tun_link_cb_in_idle(gpointer user_data)
         nm_device_set_ip_ifindex(device, priv->wait_link.tun_ifindex);
     }
 
-    if (check_waiting_for_link(device, "tun-link-changed")) {
+    if (wait_for_internal_link(device, "tun-link-changed")) {
         nm_clear_g_source_inst(&priv->wait_link.tun_link_idle_source);
         return G_SOURCE_CONTINUE;
     }
 
     _LOGT(LOGD_CORE, "ovs-wait-link: tun link is ready");
-    nm_device_link_properties_set(device, FALSE);
-    nm_device_bring_up(device);
 
     nm_device_devip_set_state(device, AF_INET, NM_DEVICE_IP_STATE_PENDING, NULL);
     nm_device_devip_set_state(device, AF_INET6, NM_DEVICE_IP_STATE_PENDING, NULL);
@@ -421,7 +442,7 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
 
     old_wait_link           = priv->wait_link.waiting;
     priv->wait_link.waiting = TRUE;
-    if (check_waiting_for_link(device, addr_family == AF_INET ? "stage3-ipv4" : "stage3-ipv6")) {
+    if (wait_for_internal_link(device, addr_family == AF_INET ? "stage3-ipv4" : "stage3-ipv6")) {
         nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_PENDING, NULL);
         if (nm_device_get_ip_ifindex(device) <= 0 && priv->wait_link.tun_link_signal_id == 0
             && priv->wait_link.tun_ifindex <= 0 && ovs_interface_is_netdev_datapath(self)) {
@@ -446,14 +467,12 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
      * IP configuration without the needed allocated resources like DHCP client.
      */
     if (old_wait_link) {
-        nm_device_bring_up(device);
         nm_device_activate_schedule_stage3_ip_config(device, TRUE);
         return;
     }
     nm_clear_g_source_inst(&priv->wait_link.tun_link_idle_source);
     nm_clear_g_signal_handler(nm_device_get_platform(device), &priv->wait_link.tun_link_signal_id);
 
-    nm_device_link_properties_set(device, FALSE);
     nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_READY, NULL);
 }
 
@@ -643,6 +662,12 @@ can_reapply_change(NMDevice   *device,
 {
     NMDeviceClass *device_class = NM_DEVICE_CLASS(nm_device_ovs_interface_parent_class);
 
+    if (nm_streq(setting_name, NM_SETTING_OVS_INTERFACE_SETTING_NAME))
+        return nm_device_hash_check_invalid_keys(diffs,
+                                                 setting_name,
+                                                 error,
+                                                 NM_SETTING_OVS_INTERFACE_ADMIN_STATE);
+
     if (NM_IN_STRSET(setting_name,
                      NM_SETTING_OVS_EXTERNAL_IDS_SETTING_NAME,
                      NM_SETTING_OVS_OTHER_CONFIG_SETTING_NAME)) {
@@ -731,6 +756,7 @@ nm_device_ovs_interface_class_init(NMDeviceOvsInterfaceClass *klass)
     device_class->check_connection_compatible   = check_connection_compatible;
     device_class->link_changed                  = link_changed;
     device_class->act_stage3_ip_config          = act_stage3_ip_config;
+    device_class->stage3_controls_link          = TRUE;
     device_class->ready_for_ip_config           = ready_for_ip_config;
     device_class->can_unmanaged_external_down   = can_unmanaged_external_down;
     device_class->set_platform_mtu              = set_platform_mtu;

@@ -21,7 +21,7 @@
 
 /*****************************************************************************/
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_TYPE, PROP_OFPORT_REQUEST, );
+NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_TYPE, PROP_ADMIN_STATE, PROP_OFPORT_REQUEST, );
 
 /**
  * NMSettingOvsInterface:
@@ -32,6 +32,7 @@ struct _NMSettingOvsInterface {
     NMSetting parent;
 
     char   *type;
+    char   *admin_state;
     guint32 ofport_request;
 };
 
@@ -57,6 +58,22 @@ nm_setting_ovs_interface_get_interface_type(NMSettingOvsInterface *self)
     g_return_val_if_fail(NM_IS_SETTING_OVS_INTERFACE(self), NULL);
 
     return self->type;
+}
+
+/**
+ * nm_setting_ovs_interface_get_admin_state:
+ * @self: an #NMSettingOvsInterface
+ *
+ * Returns: (nullable): the requested link state, or %NULL for the default
+ *   behavior of bringing the interface up.
+ *
+ * Since: 1.60
+ */
+const char *
+nm_setting_ovs_interface_get_admin_state(NMSettingOvsInterface *self)
+{
+    g_return_val_if_fail(NM_IS_SETTING_OVS_INTERFACE(self), NULL);
+    return self->admin_state;
 }
 
 /**
@@ -256,9 +273,9 @@ _nm_setting_ovs_interface_verify_interface_type(NMSettingOvsInterface *self,
     else
         type = "system";
 
-    NM_SET_OUT(out_normalized_type, type);
-
 normalize:
+    /* Validation needs the inferred type before normalization sets it in the profile. */
+    NM_SET_OUT(out_normalized_type, type);
     if (!normalize) {
         if (!self) {
             g_set_error(error,
@@ -294,7 +311,20 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
     NMSettingOvsInterface *self  = NM_SETTING_OVS_INTERFACE(setting);
     NMSettingConnection   *s_con = NULL;
+    const char            *type;
+    int                    result;
 
+    if (self->admin_state && !NM_IN_STRSET(self->admin_state, "down", "up")) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("expected \"up\" or \"down\""));
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_OVS_INTERFACE_SETTING_NAME,
+                       NM_SETTING_OVS_INTERFACE_ADMIN_STATE);
+        return FALSE;
+    }
     if (connection) {
         const char *port_type;
 
@@ -339,13 +369,52 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }
     }
 
-    return _nm_setting_ovs_interface_verify_interface_type(self,
-                                                           self->type,
-                                                           connection,
-                                                           FALSE,
-                                                           NULL,
-                                                           NULL,
-                                                           error);
+    result = _nm_setting_ovs_interface_verify_interface_type(self,
+                                                             self->type,
+                                                             connection,
+                                                             FALSE,
+                                                             NULL,
+                                                             &type,
+                                                             error);
+    if (result == NM_SETTING_VERIFY_ERROR || !nm_streq0(self->admin_state, "down"))
+        return result;
+
+    if (type && !nm_streq(type, "internal")) {
+        g_clear_error(error);
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("only internal interfaces can be activated with their link down"));
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_OVS_INTERFACE_SETTING_NAME,
+                       NM_SETTING_OVS_INTERFACE_ADMIN_STATE);
+        return FALSE;
+    }
+    if (connection) {
+        NMSettingIPConfig *families[] = {nm_connection_get_setting_ip4_config(connection),
+                                         nm_connection_get_setting_ip6_config(connection)};
+        guint              i;
+
+        /* Stage 3 can start IP configuration on a down link. */
+        for (i = 0; i < G_N_ELEMENTS(families); i++) {
+            if (families[i]
+                && !nm_streq0(nm_setting_ip_config_get_method(families[i]), "disabled")) {
+                g_clear_error(error);
+                g_set_error_literal(
+                    error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("IP must be disabled on an administratively down OVS interface"));
+                g_prefix_error(error,
+                               "%s.%s: ",
+                               nm_setting_get_name(NM_SETTING(families[i])),
+                               NM_SETTING_IP_CONFIG_METHOD);
+                return FALSE;
+            }
+        }
+    }
+    return result;
 }
 
 /*****************************************************************************/
@@ -396,6 +465,23 @@ nm_setting_ovs_interface_class_init(NMSettingOvsInterfaceClass *klass)
                                               NMSettingOvsInterface,
                                               type,
                                               .direct_string_allow_empty = TRUE);
+    /**
+     * NMSettingOvsInterface:admin-state:
+     *
+     * Whether to bring the kernel link "up" (the default) or leave it
+     * "down" when activating an internal interface. A down link remains
+     * attached to its OVS port. IP configuration must be disabled; omitted
+     * IPv4 and IPv6 settings default to disabled in this case.
+     *
+     * Since: 1.60
+     **/
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_OVS_INTERFACE_ADMIN_STATE,
+                                              PROP_ADMIN_STATE,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingOvsInterface,
+                                              admin_state);
     /**
      * NMSettingOvsInterface:ofport-request:
      *
