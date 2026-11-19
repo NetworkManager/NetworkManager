@@ -2153,7 +2153,7 @@ _l3_acd_data_defendconflict_warning_ratelimited(AcdData *acd_data, gint64 *p_now
 
     if (acd_data->last_defendconflict_timestamp_msec == 0
         || acd_data->last_defendconflict_timestamp_msec
-               > *p_now_msec - ACD_DEFENDCONFLICT_INFO_RATELIMIT_MSEC) {
+               <= *p_now_msec - ACD_DEFENDCONFLICT_INFO_RATELIMIT_MSEC) {
         acd_data->last_defendconflict_timestamp_msec = *p_now_msec;
         return FALSE;
     }
