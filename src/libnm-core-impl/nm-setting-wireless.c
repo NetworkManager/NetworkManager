@@ -919,7 +919,7 @@ _to_dbus_fcn_seen_bssids(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 gboolean
 _nm_setting_wireless_mac_blacklist_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
-    const gchar **mac_blacklist;
+    gs_free const char **mac_blacklist = NULL;
 
     if (!_nm_setting_use_legacy_property(setting,
                                          connection_dict,
@@ -937,7 +937,7 @@ _nm_setting_wireless_mac_blacklist_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_AR
 gboolean
 _nm_setting_wireless_mac_denylist_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
-    const gchar **mac_blacklist;
+    gs_free const char **mac_denylist = NULL;
 
     if (!_nm_setting_use_legacy_property(setting,
                                          connection_dict,
@@ -946,9 +946,9 @@ _nm_setting_wireless_mac_denylist_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARG
         *out_is_modified = FALSE;
         return TRUE;
     }
-    mac_blacklist = g_variant_get_strv(value, NULL);
+    mac_denylist = g_variant_get_strv(value, NULL);
 
-    g_object_set(setting, NM_SETTING_WIRELESS_MAC_ADDRESS_DENYLIST, mac_blacklist, NULL);
+    g_object_set(setting, NM_SETTING_WIRELESS_MAC_ADDRESS_DENYLIST, mac_denylist, NULL);
     return TRUE;
 }
 
