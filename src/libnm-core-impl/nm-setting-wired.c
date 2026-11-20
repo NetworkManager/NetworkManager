@@ -571,7 +571,7 @@ nm_setting_wired_clear_mac_blacklist_items(NMSettingWired *setting)
 gboolean
 _nm_setting_wired_mac_blacklist_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
-    const gchar **mac_blacklist;
+    gs_free const char **mac_blacklist = NULL;
 
     if (!_nm_setting_use_legacy_property(setting,
                                          connection_dict,
@@ -589,7 +589,7 @@ _nm_setting_wired_mac_blacklist_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS 
 gboolean
 _nm_setting_wired_mac_denylist_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
-    const gchar **mac_denylist;
+    gs_free const char **mac_denylist = NULL;
 
     if (!_nm_setting_use_legacy_property(setting,
                                          connection_dict,
