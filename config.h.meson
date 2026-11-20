@@ -280,6 +280,9 @@
 /* Define if NBFT support is enabled */
 #mesondefine WITH_NBFT
 
+/* Define if NBFT support uses libnvme 3 (else libnvme 1) */
+#mesondefine WITH_NBFT_LIBNVME3
+
 /* Define to 1 if dlvsym() is available */
 #mesondefine HAVE_DLVSYM
 

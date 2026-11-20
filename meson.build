@@ -975,11 +975,23 @@ enable_initrd = get_option('initrd')
 
 # libnvme (NBFT support)
 enable_nbft = get_option('nbft') and enable_initrd
+enable_nbft_libnvme3 = false
 if enable_nbft
-  libnvme_dep = dependency('libnvme', version: '>= 1.5', required: false)
+  # libnvme 3 (nvme-cli 3) renamed the library, its API and the NBFT
+  # structures; prefer it, and fall back to libnvme 1 (nvme-cli 2).
+  libnvme_dep = dependency('libnvme3', required: false)
+  enable_nbft_libnvme3 = libnvme_dep.found()
+  if not enable_nbft_libnvme3
+    libnvme_dep = dependency('libnvme', version: '>= 1.5', required: false)
+  endif
   assert(libnvme_dep.found(), 'NBFT support was requested, but the libnvme library is not available. Use -Dnbft=false to build without it.')
+  # Only its headers: the initrd generator loads libnvme at runtime
+  libnvme_headers_dep = libnvme_dep.partial_dependency(compile_args: true, includes: true)
+else
+  libnvme_headers_dep = dependency('', required: false)
 endif
 config_h.set10('WITH_NBFT', enable_nbft)
+config_h.set10('WITH_NBFT_LIBNVME3', enable_nbft_libnvme3)
 
 data_conf = configuration_data()
 data_conf.set('NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT',    config_default_logging_audit)
@@ -1155,6 +1167,11 @@ output += '  nmcli: ' + enable_nmcli.to_string() + '\n'
 output += '  nmtui: ' + enable_nmtui.to_string() + '\n'
 output += '  nm-cloud-setup: ' + enable_nm_cloud_setup.to_string() + '\n'
 output += '  initrd: ' + enable_initrd.to_string() + '\n'
+output += '  nbft: ' + enable_nbft.to_string()
+if enable_nbft
+  output += ' (' + libnvme_dep.name() + ' ' + libnvme_dep.version() + ')'
+endif
+output += '\n'
 output += '\nConfiguration_plugins (main.plugins=' + config_plugins_default + ')\n'
 output += '  ifupdown: ' + enable_ifupdown.to_string() + '\n'
 output += '\nHandlers for /etc/resolv.conf:\n' + resolv_conf_summary

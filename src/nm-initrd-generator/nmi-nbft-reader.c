@@ -9,7 +9,16 @@
 
 #if WITH_NBFT
 
+#if WITH_NBFT_LIBNVME3
+/*
+ * libnvme.h of libnvme 3 pulls in the whole command set, but not the NBFT
+ * parser.  Include only what is needed here.
+ */
+#include <nvme/lib.h>
+#include <nvme/nbft.h>
+#else
 #include <libnvme.h>
+#endif
 #include <dlfcn.h>
 
 #include "libnm-log-core/nm-logging.h"
@@ -33,18 +42,98 @@ is_valid_addr(int family, const char *addr)
             && nm_utils_ipaddr_valid(family, addr));
 }
 
+/*
+ * libnvme is loaded at runtime, so that the initrd generator works without
+ * it when there is no NBFT. libnvme 3 (nvme-cli 3) renamed the library
+ * (libnvme3.so.1), its API, which takes a library context, and the NBFT
+ * structures, and reports the HFI Transport Flags (HFITFLAGS) as they are
+ * instead of single members for some of them. NM is built for one of the
+ * two and loads that one.
+ */
+#if WITH_NBFT_LIBNVME3
+
+typedef struct libnbft_info nmi_nbft_info;
+typedef struct libnbft_hfi  nmi_nbft_hfi;
+
+#define LIBNVME_SONAME "libnvme3.so.1"
+
+static struct libnvme_global_ctx *(*_nvme_create_global_ctx)(void);
+static void (*_nvme_free_global_ctx)(struct libnvme_global_ctx *ctx);
+static int (*_nvme_read_nbft)(struct libnvme_global_ctx *ctx,
+                              struct libnbft_info      **nbft,
+                              const char                *filename);
+static void (*_nvme_free_nbft)(struct libnvme_global_ctx *ctx, struct libnbft_info *nbft);
+static struct libnvme_global_ctx *_nvme_ctx;
+
+static gboolean
+hfi_dhcp_override(nmi_nbft_hfi *hfi)
+{
+    return NM_FLAGS_HAS(hfi->tcp_info.flags, NBFT_HFI_INFO_TCP_DHCP_OVERRIDE);
+}
+
+static gboolean
+nbft_lib_resolve(void *handle)
+{
+#if HAVE_DLVSYM
+    _nvme_create_global_ctx = dlvsym(handle, "libnvme_create_global_ctx", "LIBNVME_3");
+    _nvme_free_global_ctx   = dlvsym(handle, "libnvme_free_global_ctx", "LIBNVME_3");
+    _nvme_read_nbft         = dlvsym(handle, "libnvmf_read_nbft", "LIBNVMF_3");
+    _nvme_free_nbft         = dlvsym(handle, "libnvmf_free_nbft", "LIBNVMF_3");
+#else
+    /* no dlvsym() in musl */
+    _nvme_create_global_ctx = dlsym(handle, "libnvme_create_global_ctx");
+    _nvme_free_global_ctx   = dlsym(handle, "libnvme_free_global_ctx");
+    _nvme_read_nbft         = dlsym(handle, "libnvmf_read_nbft");
+    _nvme_free_nbft         = dlsym(handle, "libnvmf_free_nbft");
+#endif
+    if (!_nvme_create_global_ctx || !_nvme_free_global_ctx || !_nvme_read_nbft || !_nvme_free_nbft)
+        return FALSE;
+
+    _nvme_ctx = _nvme_create_global_ctx();
+    return _nvme_ctx != NULL;
+}
+
+static void
+nbft_lib_unload(void *handle)
+{
+    if (_nvme_ctx) {
+        _nvme_free_global_ctx(_nvme_ctx);
+        _nvme_ctx = NULL;
+    }
+    dlclose(handle);
+}
+
+static int
+nbft_read(nmi_nbft_info **nbft, const char *filename)
+{
+    return _nvme_read_nbft(_nvme_ctx, nbft, filename);
+}
+
+static void
+nbft_free(nmi_nbft_info *nbft)
+{
+    _nvme_free_nbft(_nvme_ctx, nbft);
+}
+
+#else /* WITH_NBFT_LIBNVME3 */
+
+typedef struct nbft_info     nmi_nbft_info;
+typedef struct nbft_info_hfi nmi_nbft_hfi;
+
+#define LIBNVME_SONAME "libnvme.so.1"
+
 static int (*_nvme_nbft_read)(struct nbft_info **nbft, const char *filename);
 static void (*_nvme_nbft_free)(struct nbft_info *nbft);
 
-static void *
-load_libnvme(void)
+static gboolean
+hfi_dhcp_override(nmi_nbft_hfi *hfi)
 {
-    void *handle;
+    return hfi->tcp_info.dhcp_override;
+}
 
-    handle = dlopen("libnvme.so.1", RTLD_LAZY);
-    if (!handle)
-        return NULL;
-
+static gboolean
+nbft_lib_resolve(void *handle)
+{
 #if HAVE_DLVSYM
     _nvme_nbft_read = dlvsym(handle, "nvme_nbft_read", "LIBNVME_1_5");
     _nvme_nbft_free = dlvsym(handle, "nvme_nbft_free", "LIBNVME_1_5");
@@ -53,16 +142,53 @@ load_libnvme(void)
     _nvme_nbft_read = dlsym(handle, "nvme_nbft_read");
     _nvme_nbft_free = dlsym(handle, "nvme_nbft_free");
 #endif
+    return _nvme_nbft_read && _nvme_nbft_free;
+}
 
-    if (!_nvme_nbft_read || !_nvme_nbft_free) {
-        dlclose(handle);
+static void
+nbft_lib_unload(void *handle)
+{
+    dlclose(handle);
+}
+
+static int
+nbft_read(nmi_nbft_info **nbft, const char *filename)
+{
+    /* libnvme 1 returns 1 and sets errno, libnvme 3 returns -errno */
+    if (_nvme_nbft_read(nbft, filename))
+        return -errno;
+    return 0;
+}
+
+static void
+nbft_free(nmi_nbft_info *nbft)
+{
+    _nvme_nbft_free(nbft);
+}
+
+#endif /* WITH_NBFT_LIBNVME3 */
+
+static void *
+load_libnvme(void)
+{
+    void *handle;
+
+    handle = dlopen(LIBNVME_SONAME, RTLD_LAZY);
+    if (!handle) {
+        _LOGW(LOGD_CORE, "NBFT: failed to load %s: %s", LIBNVME_SONAME, dlerror());
+        return NULL;
+    }
+
+    if (!nbft_lib_resolve(handle)) {
+        _LOGW(LOGD_CORE, "NBFT: failed to initialize %s", LIBNVME_SONAME);
+        nbft_lib_unload(handle);
         return NULL;
     }
     return handle;
 }
 
 static char *
-format_conn_name(const char *table_name, struct nbft_info_hfi *hfi, gboolean is_vlan)
+format_conn_name(const char *table_name, nmi_nbft_hfi *hfi, gboolean is_vlan)
 {
     if (is_vlan) {
         nm_assert(hfi->tcp_info.vlan > 0);
@@ -95,13 +221,13 @@ find_conn_for_wired_mac(GPtrArray *a, const char *hwaddr)
 }
 
 static gboolean
-hfi_is_dhcp(struct nbft_info_hfi *hfi, int family)
+hfi_is_dhcp(nmi_nbft_hfi *hfi, int family)
 {
     /* There are several flags that may indicate the HFI is set for DHCP
-     * per NVM Express® Boot Specification, Revision 1.3. As the HFI
-     * Transport Flags (HFITFLAGS) are not publicly exposed by the libnvme
-     * API, only the DHCP Override (DHCPO) flag and the IP Origin (IPORIG)
-     * value is available.
+     * per NVM Express® Boot Specification, Revision 1.3. libnvme 1 only
+     * exposes the DHCP Override (DHCPO) flag of the HFI Transport Flags
+     * (HFITFLAGS), and the IP Origin (IPORIG) value; libnvme 3 has all
+     * flags, of which DHCPO is the one used here.
      *
      * The bit 03 of the HFI Transport Flags (HFITFLAGS) is about an advanced
      * stateless mechanism - IPv6-SLAAC and IPv6-ND, stating that "the DHCP
@@ -117,15 +243,12 @@ hfi_is_dhcp(struct nbft_info_hfi *hfi, int family)
      * IP Address was acquired through DHCP, and the IP Address specified
      * in this HFI should not be reused by the OS."
      */
-    return hfi->tcp_info.dhcp_override || hfi->tcp_info.ip_origin == 3 /* IpPrefixOriginDhcp */
+    return hfi_dhcp_override(hfi) || hfi->tcp_info.ip_origin == 3 /* IpPrefixOriginDhcp */
            || is_valid_addr(family, hfi->tcp_info.dhcp_server_ipaddr);
 }
 
 static NMConnection *
-create_wired_conn(struct nbft_info_hfi *hfi,
-                  const char           *conn_name,
-                  const char           *hwaddr,
-                  gboolean              is_vlan)
+create_wired_conn(nmi_nbft_hfi *hfi, const char *conn_name, const char *hwaddr, gboolean is_vlan)
 {
     NMConnection *connection;
     NMSetting    *s_connection;
@@ -155,7 +278,7 @@ create_wired_conn(struct nbft_info_hfi *hfi,
 }
 
 static void
-parse_hfi(GPtrArray *a, struct nbft_info_hfi *hfi, const char *table_name, char **hostname)
+parse_hfi(GPtrArray *a, nmi_nbft_hfi *hfi, const char *table_name, char **hostname)
 {
     gs_unref_object NMConnection         *connection = NULL;
     NMConnection                         *parent_connection;
@@ -365,8 +488,8 @@ parse_hfi(GPtrArray *a, struct nbft_info_hfi *hfi, const char *table_name, char 
      *         hfi->tcp_info.pci_sbdf
      *         hfi->tcp_info.ip_origin
      *         hfi->tcp_info.dhcp_server_ipaddr
-     *         hfi->tcp_info.this_hfi_is_default_route
-     *         hfi->tcp_info.dhcp_override
+     *         the default route and DHCP override flags (libnvme 1:
+     *         this_hfi_is_default_route, dhcp_override; libnvme 3: flags)
      */
 
     if (!nm_connection_normalize(connection, NULL, NULL, &error)) {
@@ -397,10 +520,10 @@ nmi_nbft_reader_parse(const char *sysfs_dir, char **hostname)
     a = g_ptr_array_new();
 
     while ((entry_name = g_dir_read_name(dir))) {
-        gs_free char          *entry_path = NULL;
-        struct nbft_info      *nbft;
-        struct nbft_info_hfi **hfi;
-        int                    ret;
+        gs_free char  *entry_path = NULL;
+        nmi_nbft_info *nbft;
+        nmi_nbft_hfi **hfi;
+        int            ret;
 
         if (!g_str_has_prefix(entry_name, "NBFT"))
             continue;
@@ -412,9 +535,12 @@ nmi_nbft_reader_parse(const char *sysfs_dir, char **hostname)
         }
 
         entry_path = g_build_filename(path, entry_name, NULL);
-        ret        = _nvme_nbft_read(&nbft, entry_path);
+        ret        = nbft_read(&nbft, entry_path);
         if (ret) {
-            _LOGW(LOGD_CORE, "Error parsing NBFT table %s: %m", entry_path);
+            _LOGW(LOGD_CORE,
+                  "Error parsing NBFT table %s: %s",
+                  entry_path,
+                  nm_strerror_native(-ret));
             continue;
         }
 
@@ -430,12 +556,12 @@ nmi_nbft_reader_parse(const char *sysfs_dir, char **hostname)
             parse_hfi(a, *hfi, entry_name, hostname);
         }
 
-        _nvme_nbft_free(nbft);
+        nbft_free(nbft);
     }
 
     g_dir_close(dir);
     if (libnvme_handle)
-        dlclose(libnvme_handle);
+        nbft_lib_unload(libnvme_handle);
     g_ptr_array_add(a, NULL); /* trailing NULL-delimiter */
     return (NMConnection **) g_ptr_array_free(g_steal_pointer(&a), FALSE);
 }

@@ -64,7 +64,7 @@ if [ $IS_ALPINE = 1 ]; then
     _WITH_SYSTEMD_LOGIND="false"
 fi
 
-if ! pkgconf 'libnvme >= 1.5'; then
+if ! pkgconf 'libnvme3' && ! pkgconf 'libnvme >= 1.5'; then
     _WITH_NBFT="false"
 fi
 
