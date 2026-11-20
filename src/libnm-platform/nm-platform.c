@@ -4856,6 +4856,121 @@ next_plat:;
     return success;
 }
 
+/**
+ * nm_platform_ip_nexthop_sync:
+ * @self: platform instance
+ * @addr_family: the address family AF_INET or AF_INET6.
+ * @nexthops_known: (nullable): list of the known nexthops to be configured.
+ * @nexthops_prune: (nullable): the list of nexthops to delete.
+ *   If platform has such a nexthop configured, it will be deleted. Nexthops
+ *   that are both contained in @nexthops_known and @nexthops_prune
+ *   will be configured.
+ * @nexthops_platform: (nullable): the list of the nexthops on the interface in
+ *   platform.
+ * @out_nexthops_delete_failed: (nullable): on return, a list of nexthops that
+ *   failed to be deleted.
+ *
+ * A convenience function to synchronize nexthops for a specific interface.
+ * It removes nexthops that are not listed and adds nexthops that are. All the
+ * input and output nexthop lists contain NMPObject pointers.
+ *
+ * Returns: %TRUE on success.
+ */
+gboolean
+nm_platform_ip_nexthop_sync(NMPlatform *self,
+                            int         addr_family,
+                            GPtrArray  *nexthops_known,
+                            GPtrArray  *nexthops_prune,
+                            GPtrArray  *nexthops_platform,
+                            GPtrArray **out_nexthops_delete_failed)
+{
+    gs_unref_hashtable GHashTable *nexthops_known_idx    = NULL;
+    gs_unref_hashtable GHashTable *nexthops_platform_idx = NULL;
+    const int                      IS_IPv4               = NM_IS_IPv4(addr_family);
+    guint                          i;
+    gboolean                       success = TRUE;
+
+    nm_assert(!out_nexthops_delete_failed || !*out_nexthops_delete_failed);
+
+    if (nexthops_known && nexthops_known->len > 0) {
+        nexthops_known_idx = g_hash_table_new(nm_direct_hash, NULL);
+        for (i = 0; i < nexthops_known->len; i++) {
+            const NMPObject *nh = nexthops_known->pdata[i];
+
+            nm_assert(NMP_OBJECT_GET_TYPE(nh) == NMP_OBJECT_TYPE_IP_NEXTHOP(IS_IPv4));
+            g_hash_table_add(nexthops_known_idx,
+                             GUINT_TO_POINTER(NMP_OBJECT_CAST_IP_NEXTHOP(nh)->id));
+        }
+    }
+
+    if (nexthops_platform && nexthops_platform->len > 0) {
+        nexthops_platform_idx = g_hash_table_new(nm_direct_hash, NULL);
+        for (i = 0; i < nexthops_platform->len; i++) {
+            const NMPObject *nh = nexthops_platform->pdata[i];
+
+            nm_assert(NMP_OBJECT_GET_TYPE(nh) == NMP_OBJECT_TYPE_IP_NEXTHOP(IS_IPv4));
+            g_hash_table_insert(nexthops_platform_idx,
+                                GUINT_TO_POINTER(NMP_OBJECT_CAST_IP_NEXTHOP(nh)->id),
+                                (gpointer) nh);
+        }
+    }
+
+    if (nexthops_prune) {
+        for (i = 0; i < nexthops_prune->len; i++) {
+            const NMPObject *prune_o = nexthops_prune->pdata[i];
+            guint32          nh_id;
+
+            nm_assert(NMP_OBJECT_GET_TYPE(prune_o) == NMP_OBJECT_TYPE_IP_NEXTHOP(IS_IPv4));
+
+            nh_id = NMP_OBJECT_CAST_IP_NEXTHOP(prune_o)->id;
+
+            if (nm_g_hash_table_contains(nexthops_known_idx, GUINT_TO_POINTER(nh_id)))
+                continue;
+
+            if (!nm_platform_object_delete(self, prune_o)) {
+                if (out_nexthops_delete_failed
+                    && nm_platform_ip_nexthop_get(self, nh_id, NULL) != -NME_PL_NOT_FOUND) {
+                    /* The nexthop may still exist in the kernel. Report it so that
+                     * the caller can retry the deletion on the next sync. */
+                    if (!*out_nexthops_delete_failed) {
+                        *out_nexthops_delete_failed =
+                            g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
+                    }
+                    g_ptr_array_add(*out_nexthops_delete_failed,
+                                    (gpointer) nmp_object_ref(prune_o));
+                }
+            }
+        }
+    }
+
+    if (nexthops_known) {
+        for (i = 0; i < nexthops_known->len; i++) {
+            const NMPObject *nh = nexthops_known->pdata[i];
+            const NMPObject *candidate;
+
+            candidate =
+                nm_g_hash_table_lookup(nexthops_platform_idx,
+                                       GUINT_TO_POINTER(NMP_OBJECT_CAST_IP_NEXTHOP(nh)->id));
+            if (candidate
+                && (IS_IPv4
+                        ? nm_platform_ip4_nexthop_cmp(&nh->ip4_nexthop,
+                                                      &candidate->ip4_nexthop,
+                                                      NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_SEMANTICALLY)
+                        : nm_platform_ip6_nexthop_cmp(&nh->ip6_nexthop,
+                                                      &candidate->ip6_nexthop,
+                                                      NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_SEMANTICALLY))
+                       == 0) {
+                continue;
+            }
+
+            if (nm_platform_ip_nexthop_add(self, NMP_NLM_FLAG_REPLACE, nh, NULL) != 0)
+                success = FALSE;
+        }
+    }
+
+    return success;
+}
+
 gboolean
 nm_platform_ip_address_flush(NMPlatform *self, int addr_family, int ifindex)
 {
@@ -5450,6 +5565,116 @@ nm_platform_ip_route_flush(NMPlatform *self, int addr_family, int ifindex)
     return success;
 }
 
+/**
+ * nm_platform_ip_nexthop_dump:
+ * @self: the platform
+ * @addr_family: AF_INET or AF_INET6 for single nexthops, AF_UNSPEC for groups
+ * @ifindex: the interface index, or zero for all interfaces. Must be zero for groups.
+ *
+ * Returns: (transfer full): the nexthops with a tracked protocol, or NULL on error.
+ * Group nexthops only expose their ID, without the member IDs.
+ */
+GPtrArray *
+nm_platform_ip_nexthop_dump(NMPlatform *self, int addr_family, int ifindex)
+{
+    _CHECK_SELF(self, klass, NULL);
+
+    nm_assert(NM_IN_SET(addr_family, AF_UNSPEC, AF_INET, AF_INET6));
+    nm_assert(ifindex >= 0);
+    nm_assert(addr_family != AF_UNSPEC || ifindex == 0);
+
+    if (klass->ip_nexthop_dump) {
+        return klass->ip_nexthop_dump(self, addr_family, ifindex);
+    } else {
+        return NULL;
+    }
+}
+
+int
+nm_platform_ip_nexthop_get(NMPlatform *self, guint32 nh_id, NMPObject **out_obj)
+{
+    char                      sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+    nm_auto_nmpobj NMPObject *obj = NULL;
+    int                       result;
+
+    _CHECK_SELF(self, klass, -NME_BUG);
+
+    g_return_val_if_fail(nh_id > 0, -NME_BUG);
+
+    _LOGT("nexthop: get id %u", nh_id);
+
+    if (klass->ip_nexthop_get) {
+        result = klass->ip_nexthop_get(self, nh_id, &obj);
+    } else {
+        result = -NME_PL_OPNOTSUPP;
+    }
+
+    if (result < 0) {
+        nm_assert(!obj);
+        if (result == -NME_PL_NOT_FOUND)
+            _LOGT("nexthop: get id %u: not found", nh_id);
+        else
+            _LOGD("nexthop: get id %u failed with %s", nh_id, nm_strerror(result));
+    } else {
+        nm_assert(NM_IN_SET(NMP_OBJECT_GET_TYPE(obj),
+                            NMP_OBJECT_TYPE_IP4_NEXTHOP,
+                            NMP_OBJECT_TYPE_IP6_NEXTHOP,
+                            NMP_OBJECT_TYPE_GROUP_NEXTHOP));
+        _LOGD("nexthop: get id %u succeeded: %s",
+              nh_id,
+              nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
+        NM_SET_OUT(out_obj, g_steal_pointer(&obj));
+    }
+
+    return result;
+}
+
+/**
+ * nm_platform_ip_nexthop_flush:
+ * @self: the platform
+ * @addr_family: AF_INET, AF_INET6 or AF_UNSPEC
+ * @ifindex: the interface index
+ *
+ * Flushes the nexthops for the given address family (AF_INET or AF_INET6). When
+ * @addr_family is AF_UNSPEC, both IPv4 and IPv6 nexthops are flushed.
+ *
+ * This function doesn't flush group nexthops. It fails if the current
+ * nexthops can't be retrieved from the kernel.
+ *
+ * Returns: %TRUE on success, %FALSE on failure
+ */
+gboolean
+nm_platform_ip_nexthop_flush(NMPlatform *self, int addr_family, int ifindex)
+{
+    gboolean success = TRUE;
+
+    _CHECK_SELF(self, klass, FALSE);
+
+    nm_assert(NM_IN_SET(addr_family, AF_INET, AF_INET6, AF_UNSPEC));
+    g_return_val_if_fail(ifindex > 0, FALSE);
+
+    if (NM_IN_SET(addr_family, AF_INET, AF_UNSPEC)) {
+        gs_unref_ptrarray GPtrArray *nexthops_prune = NULL;
+
+        nexthops_prune = nm_platform_ip_nexthop_dump(self, AF_INET, ifindex);
+        if (!nexthops_prune)
+            success = FALSE;
+        else
+            success &= nm_platform_ip_nexthop_sync(self, AF_INET, NULL, nexthops_prune, NULL, NULL);
+    }
+    if (NM_IN_SET(addr_family, AF_INET6, AF_UNSPEC)) {
+        gs_unref_ptrarray GPtrArray *nexthops_prune = NULL;
+
+        nexthops_prune = nm_platform_ip_nexthop_dump(self, AF_INET6, ifindex);
+        if (!nexthops_prune)
+            success = FALSE;
+        else
+            success &=
+                nm_platform_ip_nexthop_sync(self, AF_INET6, NULL, nexthops_prune, NULL, NULL);
+    }
+    return success;
+}
+
 /*****************************************************************************/
 
 static guint8
@@ -5703,6 +5928,39 @@ nm_platform_ip6_route_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformI
     return _ip_route_add(self, flags, &obj, NULL);
 }
 
+int
+nm_platform_ip_nexthop_add(NMPlatform      *self,
+                           NMPNlmFlags      flags,
+                           const NMPObject *obj,
+                           char           **out_extack_msg)
+{
+    NMPObject obj_stack;
+    char      sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+    int       ifindex; /* for logging */
+
+    _CHECK_SELF(self, klass, -NME_BUG);
+
+    nm_assert(NM_IN_SET(NMP_OBJECT_GET_TYPE(obj),
+                        NMP_OBJECT_TYPE_IP4_NEXTHOP,
+                        NMP_OBJECT_TYPE_IP6_NEXTHOP));
+    g_return_val_if_fail(obj->ip_nexthop.id > 0, -NME_BUG);
+
+    nmp_object_stackinit(&obj_stack, NMP_OBJECT_GET_TYPE(obj), &obj->ip_nexthop);
+
+    ifindex = obj_stack.ip_nexthop.ifindex;
+
+    _LOG3D("nexthop: %-10s IPv%c nexthop: %s",
+           _nmp_nlm_flag_to_string(flags & NMP_NLM_FLAG_FMASK),
+           nm_utils_addr_family_to_char(NMP_OBJECT_GET_ADDR_FAMILY(&obj_stack)),
+           nmp_object_to_string(&obj_stack, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
+
+    if (klass->ip_nexthop_add) {
+        return klass->ip_nexthop_add(self, flags, &obj_stack, out_extack_msg);
+    } else {
+        return -NME_PL_OPNOTSUPP;
+    }
+}
+
 gboolean
 nm_platform_object_delete(NMPlatform *self, const NMPObject *obj)
 {
@@ -5721,6 +5979,8 @@ nm_platform_object_delete(NMPlatform *self, const NMPObject *obj)
             break;
         case NMP_OBJECT_TYPE_IP4_ROUTE:
         case NMP_OBJECT_TYPE_IP6_ROUTE:
+        case NMP_OBJECT_TYPE_IP4_NEXTHOP:
+        case NMP_OBJECT_TYPE_IP6_NEXTHOP:
         case NMP_OBJECT_TYPE_QDISC:
         case NMP_OBJECT_TYPE_TFILTER:
             ifindex = NMP_OBJECT_CAST_OBJ_WITH_IFINDEX(obj)->ifindex;
@@ -7541,6 +7801,7 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
     char s_pref_src[INET6_ADDRSTRLEN];
     char s_src_all[INET6_ADDRSTRLEN + 40];
     char s_src[INET6_ADDRSTRLEN];
+    char s_nexthop[30];
     char str_type[30];
     char str_table[30];
     char str_pref[40];
@@ -7562,6 +7823,12 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
 
     inet_ntop(AF_INET6, &route->network, s_network, sizeof(s_network));
 
+    if (route->nhid) {
+        g_snprintf(s_nexthop, sizeof(s_nexthop), " nhid %u", route->nhid);
+    } else {
+        s_nexthop[0] = '\0';
+    }
+
     if (IN6_IS_ADDR_UNSPECIFIED(&route->gateway))
         s_gateway[0] = '\0';
     else
@@ -7578,6 +7845,7 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
         "type %s " /* type */
         "%s"       /* table */
         "%s/%d"
+        "%s"   /* nexthop */
         "%s%s" /* gateway */
         "%s"
         " metric %s"
@@ -7606,6 +7874,7 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
                    : ""),
         s_network,
         route->plen,
+        s_nexthop,
         s_gateway[0] ? " via " : "",
         s_gateway,
         _to_string_dev(str_dev, route->ifindex),
@@ -9447,7 +9716,8 @@ nm_platform_ip6_route_hash_update(const NMPlatformIP6Route *obj,
             NM_HASH_COMBINE_BOOLS(guint8, obj->metric_any, obj->table_any),
             /* on top of WEAK_ID: */
             obj->ifindex,
-            obj->gateway);
+            obj->gateway,
+            obj->nhid);
         break;
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
         nm_hash_update_vals(
@@ -9458,6 +9728,7 @@ nm_platform_ip6_route_hash_update(const NMPlatformIP6Route *obj,
             *nm_ip6_addr_clear_host_address(&a1, &obj->network, obj->plen),
             obj->plen,
             obj->metric,
+            obj->nhid,
             obj->gateway,
             obj->pref_src,
             *nm_ip6_addr_clear_host_address(&a2, &obj->src, obj->src_plen),
@@ -9490,6 +9761,7 @@ nm_platform_ip6_route_hash_update(const NMPlatformIP6Route *obj,
                             obj->ifindex,
                             obj->network,
                             obj->metric,
+                            obj->nhid,
                             obj->gateway,
                             obj->pref_src,
                             obj->src,
@@ -9542,6 +9814,7 @@ nm_platform_ip6_route_cmp(const NMPlatformIP6Route *a,
         if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) {
             NM_CMP_FIELD(a, b, ifindex);
             NM_CMP_FIELD(a, b, type_coerced);
+            NM_CMP_FIELD(a, b, nhid);
             NM_CMP_FIELD_IN6ADDR(a, b, gateway);
         }
         break;
@@ -9562,6 +9835,7 @@ nm_platform_ip6_route_cmp(const NMPlatformIP6Route *a,
         NM_CMP_FIELD(a, b, plen);
         NM_CMP_FIELD_UNSAFE(a, b, metric_any);
         NM_CMP_FIELD(a, b, metric);
+        NM_CMP_FIELD(a, b, nhid);
         NM_CMP_FIELD_IN6ADDR(a, b, gateway);
         NM_CMP_FIELD_IN6ADDR(a, b, pref_src);
         if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {

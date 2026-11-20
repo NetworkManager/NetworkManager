@@ -94,6 +94,9 @@ static NM_UTILS_LOOKUP_STR_DEFINE(_rtnl_type_to_str,
                                   NM_UTILS_LOOKUP_STR_ITEM(RTM_GETRULE, "RTM_GETRULE"),
                                   NM_UTILS_LOOKUP_STR_ITEM(RTM_NEWRULE, "RTM_NEWRULE"),
                                   NM_UTILS_LOOKUP_STR_ITEM(RTM_DELRULE, "RTM_DELRULE"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(RTM_GETNEXTHOP, "RTM_GETNEXTHOP"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(RTM_NEWNEXTHOP, "RTM_NEWNEXTHOP"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(RTM_DELNEXTHOP, "RTM_DELNEXTHOP"),
                                   NM_UTILS_LOOKUP_STR_ITEM(RTM_GETQDISC, "RTM_GETQDISC"),
                                   NM_UTILS_LOOKUP_STR_ITEM(RTM_NEWQDISC, "RTM_NEWQDISC"),
                                   NM_UTILS_LOOKUP_STR_ITEM(RTM_DELQDISC, "RTM_DELQDISC"),
@@ -220,6 +223,7 @@ nl_nlmsghdr_to_str(int                    netlink_protocol,
         case RTM_NEWLINK:
         case RTM_NEWADDR:
         case RTM_NEWROUTE:
+        case RTM_NEWNEXTHOP:
         case RTM_NEWQDISC:
         case RTM_NEWTFILTER:
             _F(NLM_F_REPLACE, "replace");
@@ -230,6 +234,7 @@ nl_nlmsghdr_to_str(int                    netlink_protocol,
         case RTM_GETLINK:
         case RTM_GETADDR:
         case RTM_GETROUTE:
+        case RTM_GETNEXTHOP:
         case RTM_DELQDISC:
         case RTM_DELTFILTER:
             _F(NLM_F_DUMP, "dump");

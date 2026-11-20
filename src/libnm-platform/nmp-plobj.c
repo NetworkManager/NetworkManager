@@ -605,6 +605,176 @@ nm_platform_ip_address_match(int                        addr_family,
 
 /*****************************************************************************/
 
+void
+nm_platform_ip4_nexthop_hash_update(const NMPlatformIP4NextHop *obj,
+                                    NMPlatformIPNextHopCmpType  cmp_type,
+                                    NMHashState                *h)
+{
+    switch (cmp_type) {
+    case NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_ID:
+        nm_hash_update_vals(h, obj->id);
+        break;
+    case NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_SEMANTICALLY:
+        nm_hash_update_vals(h,
+                            obj->id,
+                            obj->ifindex,
+                            nmp_utils_ip_config_source_round_trip_rtprot(obj->nh_source),
+                            obj->gateway);
+        break;
+    case NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_FULL:
+        nm_hash_update_vals(h, obj->id, obj->ifindex, obj->nh_source, obj->gateway);
+        break;
+    }
+}
+
+int
+nm_platform_ip4_nexthop_cmp(const NMPlatformIP4NextHop *a,
+                            const NMPlatformIP4NextHop *b,
+                            NMPlatformIPNextHopCmpType  cmp_type)
+{
+    NM_CMP_SELF(a, b);
+
+    NM_CMP_FIELD(a, b, id);
+
+    switch (cmp_type) {
+    case NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_ID:
+        return 0;
+    case NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_SEMANTICALLY:
+        NM_CMP_FIELD(a, b, ifindex);
+        NM_CMP_DIRECT(nmp_utils_ip_config_source_round_trip_rtprot(a->nh_source),
+                      nmp_utils_ip_config_source_round_trip_rtprot(b->nh_source));
+        NM_CMP_FIELD(a, b, gateway);
+        return 0;
+    case NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_FULL:
+        NM_CMP_FIELD(a, b, ifindex);
+        NM_CMP_FIELD(a, b, nh_source);
+        NM_CMP_FIELD(a, b, gateway);
+        return 0;
+    }
+    return nm_assert_unreachable_val(0);
+}
+
+void
+nm_platform_ip6_nexthop_hash_update(const NMPlatformIP6NextHop *obj,
+                                    NMPlatformIPNextHopCmpType  cmp_type,
+                                    NMHashState                *h)
+{
+    switch (cmp_type) {
+    case NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_ID:
+        nm_hash_update_vals(h, obj->id);
+        break;
+    case NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_SEMANTICALLY:
+        nm_hash_update_vals(h,
+                            obj->id,
+                            obj->ifindex,
+                            nmp_utils_ip_config_source_round_trip_rtprot(obj->nh_source),
+                            obj->gateway);
+        break;
+    case NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_FULL:
+        nm_hash_update_vals(h, obj->id, obj->ifindex, obj->nh_source, obj->gateway);
+        break;
+    }
+}
+
+int
+nm_platform_ip6_nexthop_cmp(const NMPlatformIP6NextHop *a,
+                            const NMPlatformIP6NextHop *b,
+                            NMPlatformIPNextHopCmpType  cmp_type)
+{
+    NM_CMP_SELF(a, b);
+
+    NM_CMP_FIELD(a, b, id);
+
+    switch (cmp_type) {
+    case NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_ID:
+        return 0;
+    case NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_SEMANTICALLY:
+        NM_CMP_FIELD(a, b, ifindex);
+        NM_CMP_DIRECT(nmp_utils_ip_config_source_round_trip_rtprot(a->nh_source),
+                      nmp_utils_ip_config_source_round_trip_rtprot(b->nh_source));
+        NM_CMP_FIELD_IN6ADDR(a, b, gateway);
+        return 0;
+    case NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_FULL:
+        NM_CMP_FIELD(a, b, ifindex);
+        NM_CMP_FIELD(a, b, nh_source);
+        NM_CMP_FIELD_IN6ADDR(a, b, gateway);
+        return 0;
+    }
+    return nm_assert_unreachable_val(0);
+}
+
+static const char *
+_ip_nexthop_to_string(int                        addr_family,
+                      const NMPlatformIPNextHop *nexthop,
+                      gconstpointer              gateway,
+                      char                      *buf,
+                      gsize                      len)
+{
+    char s_gateway[NM_INET_ADDRSTRLEN];
+    char str_dev[30];
+    char s_source[50];
+
+    if (nm_ip_addr_is_null(addr_family, gateway))
+        s_gateway[0] = '\0';
+    else
+        nm_inet_ntop(addr_family, gateway, s_gateway);
+
+    nmp_utils_ip_config_source_to_string(nexthop->nh_source, s_source, sizeof(s_source));
+
+    g_snprintf(buf,
+               len,
+               "id %u"
+               "%s"   /* dev */
+               "%s%s" /* gateway */
+               " rt-src %s",
+               nexthop->id,
+               _to_string_dev(str_dev, nexthop->ifindex),
+               s_gateway[0] ? " via " : "",
+               s_gateway,
+               s_source);
+
+    return buf;
+}
+
+const char *
+nm_platform_ip4_nexthop_to_string(const NMPlatformIP4NextHop *nexthop, char *buf, gsize len)
+{
+    if (!nm_utils_to_string_buffer_init_null(nexthop, &buf, &len))
+        return buf;
+
+    return _ip_nexthop_to_string(AF_INET,
+                                 NM_PLATFORM_IP_NEXTHOP_CAST(nexthop),
+                                 &nexthop->gateway,
+                                 buf,
+                                 len);
+}
+
+const char *
+nm_platform_ip6_nexthop_to_string(const NMPlatformIP6NextHop *nexthop, char *buf, gsize len)
+{
+    if (!nm_utils_to_string_buffer_init_null(nexthop, &buf, &len))
+        return buf;
+
+    return _ip_nexthop_to_string(AF_INET6,
+                                 NM_PLATFORM_IP_NEXTHOP_CAST(nexthop),
+                                 &nexthop->gateway,
+                                 buf,
+                                 len);
+}
+
+const char *
+nm_platform_group_nexthop_to_string(const NMPlatformGroupNextHop *nexthop, char *buf, gsize len)
+{
+    if (!nm_utils_to_string_buffer_init_null(nexthop, &buf, &len))
+        return buf;
+
+    g_snprintf(buf, len, "id %u", nexthop->id);
+
+    return buf;
+}
+
+/*****************************************************************************/
+
 const _NMPlatformVTableAddressUnion nm_platform_vtable_address = {
     .v4 =
         {

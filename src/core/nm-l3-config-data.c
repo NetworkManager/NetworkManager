@@ -44,6 +44,14 @@ struct _NML3ConfigData {
 
     union {
         struct {
+            DedupMultiIdxType idx_nexthops_6;
+            DedupMultiIdxType idx_nexthops_4;
+        };
+        DedupMultiIdxType idx_nexthops_x[2];
+    };
+
+    union {
+        struct {
             const NMPObject *best_default_route_6;
             const NMPObject *best_default_route_4;
         };
@@ -455,6 +463,18 @@ nm_l3_config_data_log(const NML3ConfigData *self,
             i++;
         }
 
+        i = 0;
+        nm_l3_config_data_iter_obj_for_each (&iter,
+                                             self,
+                                             &obj,
+                                             NMP_OBJECT_TYPE_IP_NEXTHOP(IS_IPv4)) {
+            _L("nexthop%c[%u]: %s",
+               nm_utils_addr_family_to_char(addr_family),
+               i,
+               nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
+            i++;
+        }
+
         if (self->route_table_sync_x[IS_IPv4] != NM_IP_ROUTE_TABLE_SYNC_MODE_NONE) {
             _L("route-table-sync-mode%c: %d",
                nm_utils_addr_family_to_char(addr_family),
@@ -777,6 +797,8 @@ nm_l3_config_data_new(NMDedupMultiIndex *multi_idx, int ifindex, NMIPConfigSourc
     _idx_type_init(&self->idx_addresses_6, NMP_OBJECT_TYPE_IP6_ADDRESS);
     _idx_type_init(&self->idx_routes_4, NMP_OBJECT_TYPE_IP4_ROUTE);
     _idx_type_init(&self->idx_routes_6, NMP_OBJECT_TYPE_IP6_ROUTE);
+    _idx_type_init(&self->idx_nexthops_4, NMP_OBJECT_TYPE_IP4_NEXTHOP);
+    _idx_type_init(&self->idx_nexthops_6, NMP_OBJECT_TYPE_IP6_NEXTHOP);
 
     return self;
 }
@@ -844,6 +866,8 @@ nm_l3_config_data_unref(const NML3ConfigData *self)
     nm_dedup_multi_index_remove_idx(mutable->multi_idx, &mutable->idx_addresses_6.parent);
     nm_dedup_multi_index_remove_idx(mutable->multi_idx, &mutable->idx_routes_4.parent);
     nm_dedup_multi_index_remove_idx(mutable->multi_idx, &mutable->idx_routes_6.parent);
+    nm_dedup_multi_index_remove_idx(mutable->multi_idx, &mutable->idx_nexthops_4.parent);
+    nm_dedup_multi_index_remove_idx(mutable->multi_idx, &mutable->idx_nexthops_6.parent);
 
     nmp_object_unref(mutable->best_default_route_4);
     nmp_object_unref(mutable->best_default_route_6);
@@ -952,6 +976,10 @@ nm_l3_config_data_lookup_index(const NML3ConfigData *self, NMPObjectType obj_typ
         return &self->idx_routes_4.parent;
     case NMP_OBJECT_TYPE_IP6_ROUTE:
         return &self->idx_routes_6.parent;
+    case NMP_OBJECT_TYPE_IP4_NEXTHOP:
+        return &self->idx_nexthops_4.parent;
+    case NMP_OBJECT_TYPE_IP6_NEXTHOP:
+        return &self->idx_nexthops_6.parent;
     default:
         return nm_assert_unreachable_val(NULL);
     }
@@ -1168,7 +1196,9 @@ _l3_config_data_add_obj(NMDedupMultiIndex      *multi_idx,
                         NMP_OBJECT_TYPE_IP4_ADDRESS,
                         NMP_OBJECT_TYPE_IP4_ROUTE,
                         NMP_OBJECT_TYPE_IP6_ADDRESS,
-                        NMP_OBJECT_TYPE_IP6_ROUTE));
+                        NMP_OBJECT_TYPE_IP6_ROUTE,
+                        NMP_OBJECT_TYPE_IP4_NEXTHOP,
+                        NMP_OBJECT_TYPE_IP6_NEXTHOP));
     nm_assert((!!obj_new) != (!!pl_new));
 
     if (NM_IN_SET(idx_type->obj_type, NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE)) {
@@ -1258,6 +1288,9 @@ _l3_config_data_add_obj(NMDedupMultiIndex      *multi_idx,
                 }
 
                 break;
+            case NMP_OBJECT_TYPE_IP4_NEXTHOP:
+            case NMP_OBJECT_TYPE_IP6_NEXTHOP:
+                break;
             default:
                 nm_assert_not_reached();
                 break;
@@ -1316,38 +1349,14 @@ _l3_config_best_default_route_find_better(const NMPObject *obj_cur, const NMPObj
 
     /* assumes that @obj_cur is already the best default route (or NULL). It checks whether
      * @obj_cmp is also a default route and returns the best of both. */
-    if (obj_cmp && nmp_object_ip_route_is_best_default_route(obj_cmp)) {
-        guint32 metric_cur, metric_cmp;
 
-        if (!obj_cur)
-            return obj_cmp;
+    if (!obj_cmp || !nmp_object_ip_route_is_best_default_route(obj_cmp))
+        return obj_cur;
 
-        if (obj_cur == obj_cmp)
-            return obj_cmp;
+    if (!obj_cur)
+        return obj_cmp;
 
-        metric_cur = NMP_OBJECT_CAST_IP_ROUTE(obj_cur)->metric;
-        metric_cmp = NMP_OBJECT_CAST_IP_ROUTE(obj_cmp)->metric;
-
-        if (metric_cmp < metric_cur)
-            return obj_cmp;
-
-        if (metric_cmp == metric_cur) {
-            int c;
-
-            /* Routes have the same metric. We still want to deterministically
-             * prefer one or the other. It's important to consistently choose one
-             * or the other, so that the order doesn't matter how routes are added
-             * (and merged). */
-            c = nmp_object_cmp(obj_cur, obj_cmp);
-            if (c != 0)
-                return c < 0 ? obj_cur : obj_cmp;
-
-            /* as last resort, compare pointers. */
-            if (((uintptr_t) ((void *) (obj_cmp))) < ((uintptr_t) ((void *) (obj_cur))))
-                return obj_cmp;
-        }
-    }
-    return obj_cur;
+    return nmp_object_ip_route_cmp_best_default_route(obj_cmp, obj_cur) < 0 ? obj_cmp : obj_cur;
 }
 
 gboolean
@@ -1432,13 +1441,35 @@ nm_l3_config_data_add_route_full(NML3ConfigData          *self,
                                 add_flags,
                                 &obj_old,
                                 &obj_new_2)) {
-        if (self->best_default_route_x[IS_IPv4] == obj_old && obj_old != obj_new_2) {
+        if (obj_old && self->best_default_route_x[IS_IPv4] == obj_old && obj_old != obj_new_2) {
+            /* The best default route was replaced by an object with the same ID. */
             changed_best_default_route = TRUE;
-            nm_clear_nmp_object(&self->best_default_route_x[IS_IPv4]);
-        }
+            if (!IS_IPv4
+                && nm_icmpv6_router_pref_to_priority(NMP_OBJECT_CAST_IP6_ROUTE(obj_new_2)->rt_pref)
+                       < nm_icmpv6_router_pref_to_priority(
+                           NMP_OBJECT_CAST_IP6_ROUTE(obj_old)->rt_pref)) {
+                NMDedupMultiIter iter;
+                const NMPObject *obj;
 
-        if (_l3_config_best_default_route_merge(&self->best_default_route_x[IS_IPv4], obj_new_2))
+                /* The router preference is not part of the ID and it went
+                 * down. Another route may be better now. Look at all the
+                 * routes again. */
+                nm_clear_nmp_object(&self->best_default_route_x[IS_IPv4]);
+                nm_l3_config_data_iter_obj_for_each (&iter,
+                                                     self,
+                                                     &obj,
+                                                     NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4)) {
+                    _l3_config_best_default_route_merge(&self->best_default_route_x[IS_IPv4], obj);
+                }
+            } else {
+                /* The route did not get worse, so it is still the best one.
+                 * Replace the old object, which is no longer in the index. */
+                nmp_object_ref_set(&self->best_default_route_x[IS_IPv4], obj_new_2);
+            }
+        } else if (_l3_config_best_default_route_merge(&self->best_default_route_x[IS_IPv4],
+                                                       obj_new_2)) {
             changed_best_default_route = TRUE;
+        }
 
         changed = TRUE;
     }
@@ -1446,6 +1477,33 @@ nm_l3_config_data_add_route_full(NML3ConfigData          *self,
     NM_SET_OUT(out_obj_new, nmp_object_ref(obj_new_2));
     NM_SET_OUT(out_changed_best_default_route, changed_best_default_route);
     return changed;
+}
+
+gboolean
+nm_l3_config_data_add_nexthop(NML3ConfigData            *self,
+                              int                        addr_family,
+                              const NMPObject           *obj_new,
+                              const NMPlatformIPNextHop *pl_new)
+{
+    const int IS_IPv4 = NM_IS_IPv4(addr_family);
+
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
+    nm_assert_addr_family(addr_family);
+    /* Only IPv6 nexthops are supported for now. A nexthop is kept during a merge
+     * only if a route references it via "nhid", and NMPlatformIP4Route has no
+     * "nhid" field. IPv4 nexthops would silently disappear. */
+    nm_assert(addr_family == AF_INET6);
+    nm_assert((!pl_new) != (!obj_new));
+    nm_assert(!obj_new || (NMP_OBJECT_GET_ADDR_FAMILY(obj_new) == addr_family));
+
+    return _l3_config_data_add_obj(self->multi_idx,
+                                   &self->idx_nexthops_x[IS_IPv4],
+                                   self->ifindex,
+                                   obj_new,
+                                   (const NMPlatformObject *) pl_new,
+                                   NM_L3_CONFIG_ADD_FLAGS_MERGE,
+                                   NULL,
+                                   NULL);
 }
 
 const NMPObject *
@@ -2451,7 +2509,9 @@ _dedup_multi_index_cmp(const NML3ConfigData *a,
                         NMP_OBJECT_TYPE_IP4_ADDRESS,
                         NMP_OBJECT_TYPE_IP6_ADDRESS,
                         NMP_OBJECT_TYPE_IP4_ROUTE,
-                        NMP_OBJECT_TYPE_IP6_ROUTE));
+                        NMP_OBJECT_TYPE_IP6_ROUTE,
+                        NMP_OBJECT_TYPE_IP4_NEXTHOP,
+                        NMP_OBJECT_TYPE_IP6_NEXTHOP));
 
     NM_CMP_SELF(h_a, h_b);
 
@@ -2518,6 +2578,10 @@ _dedup_multi_index_cmp(const NML3ConfigData *a,
                     nm_ip6_addr_same_prefix_cmp(&ra.network, &rb.network, ra.plen));
                 break;
             }
+            case NMP_OBJECT_TYPE_IP4_NEXTHOP:
+            case NMP_OBJECT_TYPE_IP6_NEXTHOP:
+                NM_CMP_DIRECT(obj_a->ipx_nexthop.nhx.id, obj_b->ipx_nexthop.nhx.id);
+                break;
             default:
                 nm_assert_not_reached();
             }
@@ -2562,6 +2626,8 @@ nm_l3_config_data_cmp_full(const NML3ConfigData *a,
         flags |= NM_L3_CONFIG_CMP_FLAGS_ADDRESSES_ID;
     if (NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_ROUTES))
         flags |= NM_L3_CONFIG_CMP_FLAGS_ROUTES_ID;
+    if (NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_NEXTHOPS))
+        flags |= NM_L3_CONFIG_CMP_FLAGS_NEXTHOPS_ID;
 
     if (!a)
         a = get_empty_l3cd();
@@ -2598,6 +2664,19 @@ nm_l3_config_data_cmp_full(const NML3ConfigData *a,
                                              NMP_OBJECT_TYPE_IP6_ROUTE,
                                              NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_IFINDEX),
                                              NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_ROUTES)));
+    }
+
+    if (NM_FLAGS_ANY(flags, NM_L3_CONFIG_CMP_FLAGS_NEXTHOPS | NM_L3_CONFIG_CMP_FLAGS_NEXTHOPS_ID)) {
+        NM_CMP_RETURN(_dedup_multi_index_cmp(a,
+                                             b,
+                                             NMP_OBJECT_TYPE_IP4_NEXTHOP,
+                                             NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_IFINDEX),
+                                             NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_NEXTHOPS)));
+        NM_CMP_RETURN(_dedup_multi_index_cmp(a,
+                                             b,
+                                             NMP_OBJECT_TYPE_IP6_NEXTHOP,
+                                             NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_IFINDEX),
+                                             NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_NEXTHOPS)));
     }
 
     for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
@@ -2914,6 +2993,7 @@ nm_l3_config_data_add_dependent_onlink_routes(NML3ConfigData *self, int addr_fam
             new_r->r6.network = route_src->r6.gateway;
             new_r->r6.plen    = 128;
             new_r->r6.gateway = in6addr_any;
+            new_r->r6.nhid    = 0;
         }
 
         /* we cannot add the route right away, because that invalidates the iteration. */
@@ -3546,6 +3626,7 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
         const int                addr_family = IS_IPv4 ? AF_INET : AF_INET6;
         const NML3ConfigDatFlags has_dns_priority_flag =
             NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY(IS_IPv4);
+        gs_unref_hashtable GHashTable *nexthop_ids_used = NULL;
 
         nm_l3_config_data_iter_obj_for_each (&iter,
                                              src,
@@ -3666,9 +3747,45 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
                                                  NM_L3_CONFIG_ADD_FLAGS_EXCLUSIVE,
                                                  NULL,
                                                  NULL);
+
+                if (!IS_IPv4) {
+                    guint32 nhid = NMP_OBJECT_CAST_IP6_ROUTE(obj)->nhid;
+
+                    /* Nexthops added by NM are currently always associated to routes (IPv6 routes).
+                     * If the merge flags (e.g. NO_ROUTES, NO_DEFAULT_ROUTES) exclude all or some
+                     * routes, also the related nexthops must be excluded. Track the used ids. */
+                    if (nhid != 0) {
+                        if (!nexthop_ids_used)
+                            nexthop_ids_used = g_hash_table_new(nm_direct_hash, NULL);
+                        g_hash_table_add(nexthop_ids_used, GUINT_TO_POINTER(nhid));
+                    }
+                }
             }
 
 #undef _ensure_r
+        }
+
+        if (nexthop_ids_used || NM_FLAGS_HAS(merge_flags, NM_L3_CONFIG_MERGE_FLAGS_CLONE)) {
+            nm_l3_config_data_iter_obj_for_each (&iter,
+                                                 src,
+                                                 &obj,
+                                                 NMP_OBJECT_TYPE_IP_NEXTHOP(IS_IPv4)) {
+                if (!NM_FLAGS_HAS(merge_flags, NM_L3_CONFIG_MERGE_FLAGS_CLONE)
+                    && !g_hash_table_contains(
+                        nexthop_ids_used,
+                        GUINT_TO_POINTER(NMP_OBJECT_CAST_IP_NEXTHOP(obj)->id)))
+                    continue;
+
+                /* _l3_config_data_add_obj() sets the ifindex of the nexthop to self->ifindex. */
+                _l3_config_data_add_obj(self->multi_idx,
+                                        &self->idx_nexthops_x[IS_IPv4],
+                                        self->ifindex,
+                                        obj,
+                                        NULL,
+                                        NM_L3_CONFIG_ADD_FLAGS_EXCLUSIVE,
+                                        NULL,
+                                        NULL);
+            }
         }
 
         if (!NM_FLAGS_HAS(merge_flags, NM_L3_CONFIG_MERGE_FLAGS_NO_DNS))

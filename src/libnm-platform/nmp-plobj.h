@@ -141,6 +141,39 @@ typedef union {
 
 /*****************************************************************************/
 
+typedef struct {
+    __NMPlatformObjWithIfindex_COMMON;
+    guint32          id;
+    NMIPConfigSource nh_source;
+} _nm_alignas(NMPlatformObject) NMPlatformIPNextHop;
+
+struct _NMPlatformIP4NextHop {
+    __NMPlatformObjWithIfindex_COMMON;
+    guint32          id;
+    NMIPConfigSource nh_source;
+    in_addr_t        gateway;
+} _nm_alignas(NMPlatformObject);
+
+struct _NMPlatformIP6NextHop {
+    __NMPlatformObjWithIfindex_COMMON;
+    guint32          id;
+    NMIPConfigSource nh_source;
+    struct in6_addr  gateway;
+} _nm_alignas(NMPlatformObject);
+
+typedef union {
+    NMPlatformIPNextHop  nhx;
+    NMPlatformIP4NextHop nh4;
+    NMPlatformIP6NextHop nh6;
+} NMPlatformIPXNextHop;
+
+struct _NMPlatformGroupNextHop {
+    /* Only the ID is parsed; it's used to detect that a nexthop ID is in use. */
+    guint32 id;
+} _nm_alignas(NMPlatformObject);
+
+/*****************************************************************************/
+
 typedef enum {
     NM_PLATFORM_IP_ADDRESS_CMP_TYPE_ID,
 
@@ -159,6 +192,25 @@ typedef enum {
 #define NM_PLATFORM_IP4_ADDRESS_INIT(...) (&((const NMPlatformIP4Address) {__VA_ARGS__}))
 
 #define NM_PLATFORM_IP6_ADDRESS_INIT(...) (&((const NMPlatformIP6Address) {__VA_ARGS__}))
+
+/*****************************************************************************/
+
+typedef enum {
+    NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_ID,
+    NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_SEMANTICALLY,
+    NM_PLATFORM_IP_NEXTHOP_CMP_TYPE_FULL,
+} NMPlatformIPNextHopCmpType;
+
+#define NM_PLATFORM_IP4_NEXTHOP_INIT(...) (&((const NMPlatformIP4NextHop) {__VA_ARGS__}))
+
+#define NM_PLATFORM_IP6_NEXTHOP_INIT(...) (&((const NMPlatformIP6NextHop) {__VA_ARGS__}))
+
+#define NM_PLATFORM_IP_NEXTHOP_CAST(nexthop) \
+    NM_CONSTCAST(NMPlatformIPNextHop,        \
+                 (nexthop),                  \
+                 NMPlatformIPXNextHop,       \
+                 NMPlatformIP4NextHop,       \
+                 NMPlatformIP6NextHop)
 
 /*****************************************************************************/
 
@@ -298,6 +350,29 @@ typedef enum {
 gboolean nm_platform_ip_address_match(int                        addr_family,
                                       const NMPlatformIPAddress *addr,
                                       NMPlatformMatchFlags       match_flag);
+
+void nm_platform_ip4_nexthop_hash_update(const NMPlatformIP4NextHop *obj,
+                                         NMPlatformIPNextHopCmpType  cmp_type,
+                                         NMHashState                *h);
+
+int nm_platform_ip4_nexthop_cmp(const NMPlatformIP4NextHop *a,
+                                const NMPlatformIP4NextHop *b,
+                                NMPlatformIPNextHopCmpType  cmp_type);
+
+void nm_platform_ip6_nexthop_hash_update(const NMPlatformIP6NextHop *obj,
+                                         NMPlatformIPNextHopCmpType  cmp_type,
+                                         NMHashState                *h);
+
+int nm_platform_ip6_nexthop_cmp(const NMPlatformIP6NextHop *a,
+                                const NMPlatformIP6NextHop *b,
+                                NMPlatformIPNextHopCmpType  cmp_type);
+
+const char *
+nm_platform_ip4_nexthop_to_string(const NMPlatformIP4NextHop *nexthop, char *buf, gsize len);
+const char *
+nm_platform_ip6_nexthop_to_string(const NMPlatformIP6NextHop *nexthop, char *buf, gsize len);
+const char *
+nm_platform_group_nexthop_to_string(const NMPlatformGroupNextHop *nexthop, char *buf, gsize len);
 
 /*****************************************************************************/
 

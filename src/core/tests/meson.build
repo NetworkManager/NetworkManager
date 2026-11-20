@@ -8,6 +8,8 @@ test_units = [
   'test-dcb',
   'test-netns',
   'test-l3cfg',
+  'test-l3cfg-nexthop',
+  'test-l3-config-data',
   'test-utils',
   'test-wired-defname',
 ]

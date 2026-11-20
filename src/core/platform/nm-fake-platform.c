@@ -28,8 +28,11 @@ typedef struct {
 } NMFakePlatformLink;
 
 typedef struct {
+    bool        nexthop_delete_fail : 1;
     GHashTable *options;
     GArray     *links;
+    GHashTable *nexthops;
+    bool        nexthop_unsupported : 1;
 } NMFakePlatformPrivate;
 
 struct _NMFakePlatform {
@@ -465,6 +468,8 @@ link_delete(NMPlatform *platform, int ifindex)
     nm_auto_nmpobj const NMPObject *obj_old  = NULL;
     nm_auto_nmpobj const NMPObject *obj_old2 = NULL;
     NMPCacheOpsType                 cache_op;
+    GHashTableIter                  iter;
+    gpointer                        value;
 
     if (!device)
         return FALSE;
@@ -492,6 +497,12 @@ link_delete(NMPlatform *platform, int ifindex)
     ipx_address_delete(platform, AF_INET6, ifindex, NULL, NULL, NULL);
     ipx_route_delete(platform, AF_INET, ifindex, NULL);
     ipx_route_delete(platform, AF_INET6, ifindex, NULL);
+
+    g_hash_table_iter_init(&iter, priv->nexthops);
+    while (g_hash_table_iter_next(&iter, NULL, &value)) {
+        if (NMP_OBJECT_CAST_IP_NEXTHOP(value)->ifindex == ifindex)
+            g_hash_table_iter_remove(&iter);
+    }
 
     nm_platform_cache_update_emit_signal(platform, cache_op, obj_old2, NULL);
     return TRUE;
@@ -1141,6 +1152,111 @@ ip6_address_delete(NMPlatform *platform, int ifindex, struct in6_addr addr, guin
 
 /*****************************************************************************/
 
+static int
+ip_nexthop_add(NMPlatform *platform, NMPNlmFlags flags, NMPObject *obj_stack, char **out_extack_msg)
+{
+    NMFakePlatformPrivate    *priv = NM_FAKE_PLATFORM_GET_PRIVATE(platform);
+    nm_auto_nmpobj NMPObject *obj  = NULL;
+    guint32                   id   = obj_stack->ip_nexthop.id;
+    NMFakePlatformLink       *device;
+    gboolean                  is_ipv4;
+    gboolean                  has_gateway;
+
+    nm_assert(NM_IN_SET(NMP_OBJECT_GET_TYPE(obj_stack),
+                        NMP_OBJECT_TYPE_IP4_NEXTHOP,
+                        NMP_OBJECT_TYPE_IP6_NEXTHOP));
+    nm_assert(!out_extack_msg || !*out_extack_msg);
+
+    if (priv->nexthop_unsupported)
+        return -EOPNOTSUPP;
+
+    /* Only single nexthops with explicit IDs and add/replace are supported. */
+    nm_assert(id > 0);
+
+    flags = NM_FLAGS_UNSET(flags, NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE);
+    nm_assert(NM_IN_SET(flags, NMP_NLM_FLAG_ADD, NMP_NLM_FLAG_REPLACE));
+
+    device = obj_stack->ip_nexthop.ifindex > 0 ? link_get(platform, obj_stack->ip_nexthop.ifindex)
+                                               : NULL;
+    if (!device)
+        return -EINVAL;
+
+    if (!NM_FLAGS_HAS(device->obj->link.n_ifi_flags, IFF_UP) || !device->obj->link.connected)
+        return -ENETDOWN;
+
+    is_ipv4 = NMP_OBJECT_GET_TYPE(obj_stack) == NMP_OBJECT_TYPE_IP4_NEXTHOP;
+    if (is_ipv4)
+        has_gateway = obj_stack->ip4_nexthop.gateway != INADDR_ANY;
+    else
+        has_gateway = !IN6_IS_ADDR_UNSPECIFIED(&obj_stack->ip6_nexthop.gateway);
+
+    /* Kernel refuses IPv6 gateways on loopback. For IPv4, the gateway lookup
+     * is restricted to routes via loopback, which normally finds none. */
+    if (has_gateway && device->obj->link.type == NM_LINK_TYPE_LOOPBACK)
+        return is_ipv4 ? -ENETUNREACH : -EINVAL;
+
+    if (flags == NMP_NLM_FLAG_ADD && g_hash_table_contains(priv->nexthops, GUINT_TO_POINTER(id)))
+        return -EEXIST;
+
+    obj = nmp_object_clone(obj_stack, FALSE);
+    obj->ip_nexthop.nh_source =
+        nmp_utils_ip_config_source_round_trip_rtprot(obj->ip_nexthop.nh_source);
+    g_hash_table_replace(priv->nexthops, GUINT_TO_POINTER(id), g_steal_pointer(&obj));
+    return 0;
+}
+
+static int
+_ip_nexthop_cmp(gconstpointer a, gconstpointer b)
+{
+    const NMPObject *obj_a = *((const NMPObject *const *) a);
+    const NMPObject *obj_b = *((const NMPObject *const *) b);
+
+    NM_CMP_FIELD(obj_a, obj_b, ip_nexthop.id);
+    return 0;
+}
+
+static GPtrArray *
+ip_nexthop_dump(NMPlatform *platform, int addr_family, int ifindex)
+{
+    NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE(platform);
+    GPtrArray             *result;
+    GHashTableIter         iter;
+    gpointer               value;
+
+    result = g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
+    g_hash_table_iter_init(&iter, priv->nexthops);
+    while (g_hash_table_iter_next(&iter, NULL, &value)) {
+        const NMPObject *obj = value;
+
+        if (NMP_OBJECT_GET_ADDR_FAMILY(obj) != addr_family
+            || (ifindex > 0 && obj->ip_nexthop.ifindex != ifindex))
+            continue;
+
+        g_ptr_array_add(result, nmp_object_clone(obj, FALSE));
+    }
+    g_ptr_array_sort(result, _ip_nexthop_cmp);
+    return result;
+}
+
+static int
+ip_nexthop_get(NMPlatform *platform, guint32 nh_id, NMPObject **out_obj)
+{
+    NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE(platform);
+    const NMPObject       *obj;
+
+    if (priv->nexthop_unsupported)
+        return -EOPNOTSUPP;
+
+    obj = g_hash_table_lookup(priv->nexthops, GUINT_TO_POINTER(nh_id));
+    if (!obj)
+        return -NME_PL_NOT_FOUND;
+
+    NM_SET_OUT(out_obj, nmp_object_clone(obj, FALSE));
+    return 0;
+}
+
+/*****************************************************************************/
+
 static gboolean
 ipx_route_delete(NMPlatform *platform, int addr_family, int ifindex, const NMPObject *obj)
 {
@@ -1199,19 +1315,77 @@ ipx_route_delete(NMPlatform *platform, int addr_family, int ifindex, const NMPOb
     return TRUE;
 }
 
+/* Delete the routes that reference the nexthop. Only IPv6 routes can have
+ * a nexthop ID. Nexthop IDs are global, so for an IPv4 nexthop this finds
+ * no routes and does nothing. */
+static void
+ip_route_delete_by_nhid(NMPlatform *platform, guint32 nhid)
+{
+    gs_unref_ptrarray GPtrArray *objs =
+        g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
+    NMDedupMultiIter iter;
+    const NMPObject *o;
+    guint            i;
+
+    nmp_cache_iter_for_each (&iter,
+                             nm_platform_lookup_obj_type(platform, NMP_OBJECT_TYPE_IP6_ROUTE),
+                             &o) {
+        const NMPObject *obj_old = NULL;
+
+        if (NMP_OBJECT_CAST_IP6_ROUTE(o)->nhid != nhid)
+            continue;
+
+        if (nmp_cache_remove(nm_platform_get_cache(platform), o, TRUE, FALSE, &obj_old)
+            != NMP_CACHE_OPS_REMOVED)
+            nm_assert_not_reached();
+        nm_assert(obj_old);
+        g_ptr_array_add(objs, (gpointer) obj_old);
+    }
+
+    for (i = 0; i < objs->len; i++) {
+        nm_platform_cache_update_emit_signal(platform, NMP_CACHE_OPS_REMOVED, objs->pdata[i], NULL);
+    }
+}
+
+static int
+mptcp_addr_update(NMPlatform *platform, NMOptionBool add, const NMPlatformMptcpAddr *addr)
+{
+    return -EOPNOTSUPP;
+}
+
+static GPtrArray *
+mptcp_addrs_dump(NMPlatform *platform)
+{
+    return NULL;
+}
+
 static gboolean
 object_delete(NMPlatform *platform, const NMPObject *obj)
 {
-    g_assert(NM_IS_FAKE_PLATFORM(platform));
-    g_assert(
-        NM_IN_SET(NMP_OBJECT_GET_TYPE(obj), NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
+    NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE(platform);
 
-    return ipx_route_delete(platform, AF_UNSPEC, -1, obj);
+    g_assert(NM_IS_FAKE_PLATFORM(platform));
+
+    switch (NMP_OBJECT_GET_TYPE(obj)) {
+    case NMP_OBJECT_TYPE_IP4_NEXTHOP:
+    case NMP_OBJECT_TYPE_IP6_NEXTHOP:
+        if (priv->nexthop_delete_fail)
+            return FALSE;
+        if (g_hash_table_remove(priv->nexthops, GUINT_TO_POINTER(obj->ip_nexthop.id)))
+            ip_route_delete_by_nhid(platform, obj->ip_nexthop.id);
+        return TRUE;
+    case NMP_OBJECT_TYPE_IP4_ROUTE:
+    case NMP_OBJECT_TYPE_IP6_ROUTE:
+        return ipx_route_delete(platform, AF_UNSPEC, -1, obj);
+    default:
+        g_return_val_if_reached(FALSE);
+    }
 }
 
 static int
 ip_route_add(NMPlatform *platform, NMPNlmFlags flags, NMPObject *obj_stack, char **out_extack_msg)
 {
+    NMFakePlatformPrivate          *priv = NM_FAKE_PLATFORM_GET_PRIVATE(platform);
     NMDedupMultiIter                iter;
     nm_auto_nmpobj NMPObject       *obj = NULL;
     NMPCacheOpsType                 cache_op;
@@ -1238,8 +1412,8 @@ ip_route_add(NMPlatform *platform, NMPNlmFlags flags, NMPObject *obj_stack, char
 
     flags = NM_FLAGS_UNSET(flags, NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE);
 
-    /* currently, only replace is implemented. */
-    g_assert(flags == NMP_NLM_FLAG_REPLACE);
+    /* currently, only replace and append are implemented. */
+    nm_assert(NM_IN_SET(flags, NMP_NLM_FLAG_REPLACE, NMP_NLM_FLAG_APPEND));
 
     if (NMP_OBJECT_GET_TYPE(obj_stack) == NMP_OBJECT_TYPE_IP4_ROUTE
         && obj_stack->ip4_route.n_nexthops == 0 && obj_stack->ip4_route.ifindex > 0)
@@ -1257,8 +1431,21 @@ ip_route_add(NMPlatform *platform, NMPNlmFlags flags, NMPObject *obj_stack, char
         break;
     case AF_INET6:
         r6 = NMP_OBJECT_CAST_IP6_ROUTE(obj);
-        if (!IN6_IS_ADDR_UNSPECIFIED(&r6->gateway))
+        if (r6->nhid != 0) {
+            const NMPObject *nh;
+
+            /* The gateway comes from the nexthop, which was validated when added. */
+            nh = g_hash_table_lookup(priv->nexthops, GUINT_TO_POINTER(r6->nhid));
+            if (!nh || NMP_OBJECT_GET_TYPE(nh) != NMP_OBJECT_TYPE_IP6_NEXTHOP)
+                return -EINVAL;
+
+            /* Like the kernel, take the ifindex and the gateway from the
+             * nexthop and ignore what the caller passed. */
+            r6->ifindex = nh->ip6_nexthop.ifindex;
+            r6->gateway = nh->ip6_nexthop.gateway;
+        } else if (!IN6_IS_ADDR_UNSPECIFIED(&r6->gateway)) {
             has_gateway = TRUE;
+        }
         break;
     default:
         nm_assert_not_reached();
@@ -1340,6 +1527,9 @@ ip_route_add(NMPlatform *platform, NMPNlmFlags flags, NMPObject *obj_stack, char
         case NMP_NLM_FLAG_REPLACE:
             nlmsgflags = NLM_F_REPLACE;
             break;
+        case NMP_NLM_FLAG_APPEND:
+            nlmsgflags = NLM_F_CREATE | NLM_F_APPEND;
+            break;
         default:
             g_assert_not_reached();
             break;
@@ -1389,6 +1579,16 @@ nm_fake_platform_init(NMFakePlatform *fake_platform)
 
     priv->options = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_free);
     priv->links   = g_array_new(TRUE, TRUE, sizeof(NMFakePlatformLink));
+    priv->nexthops =
+        g_hash_table_new_full(nm_direct_hash, NULL, NULL, (GDestroyNotify) nmp_object_unref);
+}
+
+void
+nm_fake_platform_set_nexthop_delete_fail(NMPlatform *platform, gboolean fail)
+{
+    g_return_if_fail(NM_IS_FAKE_PLATFORM(platform));
+
+    NM_FAKE_PLATFORM_GET_PRIVATE(platform)->nexthop_delete_fail = fail;
 }
 
 void
@@ -1406,6 +1606,14 @@ nm_fake_platform_setup(void)
     link_add(platform, NM_LINK_TYPE_ETHERNET, "eth2", 0, NULL, 0, 0, NULL, NULL);
 }
 
+void
+nm_fake_platform_set_nexthop_unsupported(NMPlatform *platform, gboolean unsupported)
+{
+    g_return_if_fail(NM_IS_FAKE_PLATFORM(platform));
+
+    NM_FAKE_PLATFORM_GET_PRIVATE(platform)->nexthop_unsupported = unsupported;
+}
+
 static void
 finalize(GObject *object)
 {
@@ -1413,6 +1621,7 @@ finalize(GObject *object)
     int                    i;
 
     g_hash_table_unref(priv->options);
+    g_hash_table_unref(priv->nexthops);
     for (i = 0; i < priv->links->len; i++) {
         NMFakePlatformLink *device = &nm_g_array_index(priv->links, NMFakePlatformLink, i);
 
@@ -1481,6 +1690,13 @@ nm_fake_platform_class_init(NMFakePlatformClass *klass)
     platform_class->ip6_address_add    = ip6_address_add;
     platform_class->ip4_address_delete = ip4_address_delete;
     platform_class->ip6_address_delete = ip6_address_delete;
+
+    platform_class->ip_nexthop_add  = ip_nexthop_add;
+    platform_class->ip_nexthop_dump = ip_nexthop_dump;
+    platform_class->ip_nexthop_get  = ip_nexthop_get;
+
+    platform_class->mptcp_addr_update = mptcp_addr_update;
+    platform_class->mptcp_addrs_dump  = mptcp_addrs_dump;
 
     platform_class->ip_route_add  = ip_route_add;
     platform_class->object_delete = object_delete;

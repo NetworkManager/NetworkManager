@@ -16,6 +16,7 @@ struct _NMNDiscDataInternal {
     GArray *addresses;
     GArray *pref64;
     GArray *routes;
+    GArray *nexthops;
     GArray *dns_servers;
     GArray *dns_domains;
 };

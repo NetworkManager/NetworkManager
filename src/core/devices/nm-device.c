@@ -13471,12 +13471,17 @@ activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family)
                      * is activated on the device, the link-local address
                      * remains configured. The IP configuration of an activated
                      * port should not depend on the previous state. Flush
-                     * addresses and routes on activation.
+                     * addresses, routes and nexthops on activation. Note that
+                     * this removes all of them from the interface, including
+                     * the ones not added by NetworkManager.
                      */
                     if (ip_ifindex > 0) {
                         nm_platform_ip_route_flush(nm_device_get_platform(self),
                                                    AF_INET6,
                                                    ip_ifindex);
+                        nm_platform_ip_nexthop_flush(nm_device_get_platform(self),
+                                                     AF_INET6,
+                                                     ip_ifindex);
                         nm_platform_ip_address_flush(nm_device_get_platform(self),
                                                      AF_INET6,
                                                      ip_ifindex);

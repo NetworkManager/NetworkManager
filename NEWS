@@ -40,6 +40,15 @@ Core:
 * Add new property '802-1x.server-cert-hash' to allow authentication server
   verification by certificate hash, primarily to support Trust On First Use
   (TOFU).
+* IPv6 routes generated from Router Advertisements (default routes and
+  routes from Route Information Options) now use nexthop objects to
+  prevent the kernel from merging routes from different routers into a
+  single multipath (ECMP) route. This requires kernel nexthop support
+  and "net.ipv4.nexthop_compat_mode" enabled (the default); otherwise
+  NetworkManager logs a warning and adds plain routes, which the kernel
+  may merge.
+* NetworkManager now requires Linux kernel 5.6 or newer. Older kernels
+  may work with reduced functionality but are not supported.
 
 initrd:
 * Add the "rd.net.timeout.ip-required" kernel command line argument

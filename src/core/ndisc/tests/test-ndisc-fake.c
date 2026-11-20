@@ -11,6 +11,7 @@
 #include "ndisc/nm-fake-ndisc.h"
 
 #include "platform/nm-fake-platform.h"
+#include "nm-l3-config-data.h"
 #include "nm-netns.h"
 
 #include "platform/tests/test-common.h"
@@ -22,7 +23,7 @@ ndisc_new(void)
 {
     gs_unref_object NML3Cfg *l3cfg = NULL;
     NMNDisc                 *ndisc;
-    const int                ifindex = 1;
+    const int                ifindex = nm_platform_link_get_ifindex(NM_PLATFORM_GET, "eth0");
     NMUtilsIPv6IfaceId       iid;
 
     l3cfg = nm_netns_l3cfg_acquire(NM_NETNS_GET, ifindex);
@@ -659,20 +660,583 @@ test_dns_solicit_loop(void)
 
 /*****************************************************************************/
 
+typedef struct {
+    /* Borrowed from NDisc, valid until its next configuration update. */
+    const NMNDiscData    *rdata;
+    const NML3ConfigData *l3cd;
+    guint                 counter;
+} NexthopTestData;
+
+static void
+nexthop_config_changed_cb(NMNDisc              *ndisc,
+                          const NMNDiscData    *rdata,
+                          guint                 changed,
+                          const NML3ConfigData *l3cd,
+                          NexthopTestData      *data)
+{
+    data->rdata = rdata;
+    data->l3cd  = l3cd;
+    data->counter++;
+}
+
+static guint
+nexthop_add_router(NMFakeNDisc *ndisc, const char *gateway, NMIcmpv6RouterPref preference)
+{
+    guint ra_id;
+
+    ra_id = nm_fake_ndisc_add_ra(ndisc, 0, NM_NDISC_DHCP_LEVEL_NONE, 64, 1500);
+    nm_fake_ndisc_add_gateway(ndisc, ra_id, gateway, NM_NDISC_EXPIRY_INFINITY, preference);
+    return ra_id;
+}
+
+static void
+nexthop_receive_ras(NMFakeNDisc *ndisc, NexthopTestData *data)
+{
+    g_signal_connect(ndisc, NM_NDISC_CONFIG_RECEIVED, G_CALLBACK(nexthop_config_changed_cb), data);
+    nm_ndisc_start(NM_NDISC(ndisc));
+    nmtst_main_context_iterate_until_assert(NULL, 3000, nm_fake_ndisc_done(ndisc));
+    g_assert(data->rdata);
+    g_assert(data->l3cd);
+}
+
+static void
+assert_nexthop(NMNDisc               *ndisc,
+               const NML3ConfigData  *l3cd,
+               const struct in6_addr *gateway,
+               guint32                nexthop_id)
+{
+    guint i;
+    guint n_found = 0;
+
+    g_assert(NM_FLAGS_ALL(nexthop_id, NM_NEXTHOP_ID_NM_OWNED_BIT));
+    g_assert(nm_netns_nexthop_id_is_reserved(NM_NETNS_GET, nexthop_id));
+
+    for (i = 0; i < nm_l3_config_data_get_num_nexthops(l3cd, AF_INET6); i++) {
+        const NMPlatformIP6NextHop *nh;
+
+        nh = nmtst_l3_config_data_get_nexthop_at_6(l3cd, i);
+        if (nh->id != nexthop_id)
+            continue;
+        n_found++;
+        g_assert_cmpint(nh->ifindex, ==, nm_ndisc_get_ifindex(ndisc));
+        g_assert_cmpint(nh->nh_source, ==, NM_IP_CONFIG_SOURCE_NDISC);
+        g_assert(IN6_ARE_ADDR_EQUAL(&nh->gateway, gateway));
+    }
+    g_assert_cmpuint(n_found, ==, 1);
+}
+
+static void
+assert_gateway_default_route(NMNDisc *ndisc, const NML3ConfigData *l3cd, const NMNDiscGateway *gw)
+{
+    guint i;
+    guint n_found = 0;
+
+    /* Find the default route by nexthop ID, independently of its position in the
+     * L3 config. Routes from RIOs via the same router share the nexthop ID. */
+    for (i = 0; i < nm_l3_config_data_get_num_routes(l3cd, AF_INET6); i++) {
+        const NMPlatformIP6Route *route;
+
+        route = nmtst_l3_config_data_get_route_at_6(l3cd, i);
+        if (route->plen != 0 || route->nhid != gw->nexthop_id)
+            continue;
+        n_found++;
+        g_assert_cmpint(route->ifindex, ==, nm_ndisc_get_ifindex(ndisc));
+        g_assert_cmpint(route->rt_source, ==, NM_IP_CONFIG_SOURCE_NDISC);
+        g_assert(IN6_IS_ADDR_UNSPECIFIED(&route->network));
+        g_assert(IN6_ARE_ADDR_EQUAL(&route->gateway, &gw->address));
+        g_assert_cmpint(route->rt_pref, ==, gw->preference);
+        g_assert(route->metric_any);
+        g_assert_cmpuint(route->metric, ==, 0);
+    }
+    g_assert_cmpuint(n_found, ==, 1);
+}
+
+static void
+assert_rio_route(NMNDisc *ndisc, const NML3ConfigData *l3cd, const NMNDiscRoute *ndisc_route)
+{
+    guint i;
+    guint n_found = 0;
+
+    assert_nexthop(ndisc, l3cd, &ndisc_route->gateway, ndisc_route->nexthop_id);
+
+    for (i = 0; i < nm_l3_config_data_get_num_routes(l3cd, AF_INET6); i++) {
+        const NMPlatformIP6Route *route;
+
+        route = nmtst_l3_config_data_get_route_at_6(l3cd, i);
+        if (route->plen != ndisc_route->plen
+            || !IN6_ARE_ADDR_EQUAL(&route->network, &ndisc_route->network)
+            || !IN6_ARE_ADDR_EQUAL(&route->gateway, &ndisc_route->gateway))
+            continue;
+        n_found++;
+        g_assert_cmpuint(route->nhid, ==, ndisc_route->nexthop_id);
+        g_assert_cmpint(route->rt_pref, ==, ndisc_route->preference);
+    }
+    g_assert_cmpuint(n_found, ==, 1);
+}
+
+static void
+assert_nexthop_config(NMNDisc *ndisc, const NexthopTestData *data, guint n_routers)
+{
+    const NMNDiscData *rdata = data->rdata;
+    guint              i;
+    guint              j;
+
+    g_assert_cmpuint(data->counter, ==, n_routers);
+    g_assert_cmpuint(rdata->gateways_n, ==, n_routers);
+    g_assert_cmpuint(rdata->nexthops_n, ==, n_routers);
+    g_assert_cmpuint(nm_l3_config_data_get_num_nexthops(data->l3cd, AF_INET6), ==, n_routers);
+    g_assert_cmpuint(nm_l3_config_data_get_num_routes(data->l3cd, AF_INET6),
+                     ==,
+                     n_routers + rdata->routes_n);
+
+    /* Each router must have its own nexthop and default route. */
+    for (i = 0; i < n_routers; i++) {
+        const NMNDiscGateway *gw = &rdata->gateways[i];
+
+        for (j = 0; j < i; j++)
+            g_assert_cmpuint(gw->nexthop_id, !=, rdata->gateways[j].nexthop_id);
+        assert_nexthop(ndisc, data->l3cd, &gw->address, gw->nexthop_id);
+        assert_gateway_default_route(ndisc, data->l3cd, gw);
+    }
+
+    /* Routes from RIOs use the nexthop of their router. */
+    for (i = 0; i < rdata->routes_n; i++)
+        assert_rio_route(ndisc, data->l3cd, &rdata->routes[i]);
+}
+
+static void
+assert_no_nexthop_config(const NexthopTestData *data, guint n_routers)
+{
+    guint i;
+    guint n_default_routes = 0;
+
+    g_assert_cmpuint(data->rdata->gateways_n, ==, n_routers);
+    g_assert_cmpuint(data->rdata->nexthops_n, ==, 0);
+    g_assert_cmpuint(nm_l3_config_data_get_num_nexthops(data->l3cd, AF_INET6), ==, 0);
+
+    for (i = 0; i < n_routers; i++)
+        g_assert_cmpuint(data->rdata->gateways[i].nexthop_id, ==, 0);
+    for (i = 0; i < data->rdata->routes_n; i++)
+        g_assert_cmpuint(data->rdata->routes[i].nexthop_id, ==, 0);
+
+    for (i = 0; i < nm_l3_config_data_get_num_routes(data->l3cd, AF_INET6); i++) {
+        const NMPlatformIP6Route *route;
+
+        route = nmtst_l3_config_data_get_route_at_6(data->l3cd, i);
+        g_assert_cmpuint(route->nhid, ==, 0);
+        if (route->plen == 0)
+            n_default_routes++;
+    }
+    g_assert_cmpuint(n_default_routes, ==, n_routers);
+}
+
+static void
+test_nexthop_single_router(void)
+{
+    gs_unref_object NMFakeNDisc *ndisc = ndisc_new();
+    NexthopTestData              data  = {};
+    guint                        ra_id;
+    guint                        i;
+    guint                        n_prefix_routes = 0;
+
+    /* Even a single router needs a nexthop: another profile can have a default
+     * route with the same metric. The default route and the route from the RIO
+     * share the nexthop. */
+    ra_id = nexthop_add_router(ndisc, "fe80::1", NM_ICMPV6_ROUTER_PREF_MEDIUM);
+    nm_fake_ndisc_add_prefix(ndisc,
+                             ra_id,
+                             "2001:db8:1::",
+                             80,
+                             "fe80::1",
+                             NM_NDISC_EXPIRY_INFINITY,
+                             NM_NDISC_EXPIRY_INFINITY,
+                             NM_ICMPV6_ROUTER_PREF_MEDIUM);
+
+    nexthop_receive_ras(ndisc, &data);
+    g_assert_cmpuint(data.rdata->routes_n, ==, 1);
+    assert_nexthop_config(NM_NDISC(ndisc), &data, 1);
+    match_gateway(data.rdata, 0, "fe80::1", NM_NDISC_EXPIRY_INFINITY, NM_ICMPV6_ROUTER_PREF_MEDIUM);
+
+    for (i = 0; i < nm_l3_config_data_get_num_routes(data.l3cd, AF_INET6); i++) {
+        const NMPlatformIP6Route *route;
+
+        route = nmtst_l3_config_data_get_route_at_6(data.l3cd, i);
+        if (route->plen == 0)
+            continue;
+        n_prefix_routes++;
+        g_assert_cmpuint(route->nhid, ==, data.rdata->gateways[0].nexthop_id);
+        nmtst_assert_ip6_address(&route->network, "2001:db8:1::");
+        g_assert_cmpuint(route->plen, ==, 80);
+        nmtst_assert_ip6_address(&route->gateway, "fe80::1");
+        g_assert_cmpint(route->rt_pref, ==, NM_ICMPV6_ROUTER_PREF_MEDIUM);
+    }
+    g_assert_cmpuint(n_prefix_routes, ==, 1);
+}
+
+static void
+test_nexthop_equal_preference(void)
+{
+    gs_unref_object NMFakeNDisc *ndisc = ndisc_new();
+    NexthopTestData              data  = {};
+
+    /* Equal-preference default routes have the same metric, but must remain
+     * separate routes by referencing three distinct nexthop IDs. */
+    nexthop_add_router(ndisc, "fe80::1", NM_ICMPV6_ROUTER_PREF_MEDIUM);
+    nexthop_add_router(ndisc, "fe80::2", NM_ICMPV6_ROUTER_PREF_MEDIUM);
+    nexthop_add_router(ndisc, "fe80::3", NM_ICMPV6_ROUTER_PREF_MEDIUM);
+
+    nexthop_receive_ras(ndisc, &data);
+    g_assert_cmpuint(data.rdata->routes_n, ==, 0);
+    assert_nexthop_config(NM_NDISC(ndisc), &data, 3);
+    match_gateway(data.rdata, 0, "fe80::1", NM_NDISC_EXPIRY_INFINITY, NM_ICMPV6_ROUTER_PREF_MEDIUM);
+    match_gateway(data.rdata, 1, "fe80::2", NM_NDISC_EXPIRY_INFINITY, NM_ICMPV6_ROUTER_PREF_MEDIUM);
+    match_gateway(data.rdata, 2, "fe80::3", NM_NDISC_EXPIRY_INFINITY, NM_ICMPV6_ROUTER_PREF_MEDIUM);
+}
+
+static void
+test_nexthop_different_preference(void)
+{
+    gs_unref_object NMFakeNDisc *ndisc = ndisc_new();
+    NexthopTestData              data  = {};
+
+    /* Advertise out of preference order. Sorting the gateways must preserve
+     * each router's association with its nexthop and default-route preference. */
+    nexthop_add_router(ndisc, "fe80::1", NM_ICMPV6_ROUTER_PREF_LOW);
+    nexthop_add_router(ndisc, "fe80::2", NM_ICMPV6_ROUTER_PREF_HIGH);
+    nexthop_add_router(ndisc, "fe80::3", NM_ICMPV6_ROUTER_PREF_MEDIUM);
+
+    nexthop_receive_ras(ndisc, &data);
+    g_assert_cmpuint(data.rdata->routes_n, ==, 0);
+    assert_nexthop_config(NM_NDISC(ndisc), &data, 3);
+    match_gateway(data.rdata, 0, "fe80::2", NM_NDISC_EXPIRY_INFINITY, NM_ICMPV6_ROUTER_PREF_HIGH);
+    match_gateway(data.rdata, 1, "fe80::3", NM_NDISC_EXPIRY_INFINITY, NM_ICMPV6_ROUTER_PREF_MEDIUM);
+    match_gateway(data.rdata, 2, "fe80::1", NM_NDISC_EXPIRY_INFINITY, NM_ICMPV6_ROUTER_PREF_LOW);
+}
+
+static void
+nexthop_add_rio(NMFakeNDisc *ndisc, guint ra_id, const char *gateway, gint64 expiry_msec)
+{
+    nm_fake_ndisc_add_prefix(ndisc,
+                             ra_id,
+                             "2001:db8:1::",
+                             48,
+                             gateway,
+                             expiry_msec,
+                             expiry_msec,
+                             NM_ICMPV6_ROUTER_PREF_MEDIUM);
+}
+
+static void
+nexthop_emit_ras(NMFakeNDisc *ndisc)
+{
+    nm_fake_ndisc_emit_new_ras(ndisc);
+    nmtst_main_context_iterate_until_assert(NULL, 3000, nm_fake_ndisc_done(ndisc));
+}
+
+static void
+test_nexthop_rio_two_routers(void)
+{
+    gs_unref_object NMFakeNDisc *ndisc = ndisc_new();
+    NexthopTestData              data  = {};
+    guint                        ra_id;
+    guint                        i;
+    guint                        j;
+
+    /* Two routers announce a route to the same prefix. The two routes have the
+     * same metric, and without nexthops the kernel would merge them into a single
+     * ECMP route. Each route must use the nexthop of its router, which is shared
+     * with the default route of the router. */
+    ra_id = nexthop_add_router(ndisc, "fe80::1", NM_ICMPV6_ROUTER_PREF_MEDIUM);
+    nexthop_add_rio(ndisc, ra_id, "fe80::1", NM_NDISC_EXPIRY_INFINITY);
+    ra_id = nexthop_add_router(ndisc, "fe80::2", NM_ICMPV6_ROUTER_PREF_MEDIUM);
+    nexthop_add_rio(ndisc, ra_id, "fe80::2", NM_NDISC_EXPIRY_INFINITY);
+
+    nexthop_receive_ras(ndisc, &data);
+    g_assert_cmpuint(data.rdata->routes_n, ==, 2);
+    assert_nexthop_config(NM_NDISC(ndisc), &data, 2);
+    g_assert_cmpuint(data.rdata->routes[0].nexthop_id, !=, data.rdata->routes[1].nexthop_id);
+
+    for (i = 0; i < data.rdata->routes_n; i++) {
+        const NMNDiscRoute *route = &data.rdata->routes[i];
+
+        for (j = 0; j < data.rdata->gateways_n; j++) {
+            if (IN6_ARE_ADDR_EQUAL(&data.rdata->gateways[j].address, &route->gateway))
+                break;
+        }
+        g_assert_cmpuint(j, <, data.rdata->gateways_n);
+        g_assert_cmpuint(route->nexthop_id, ==, data.rdata->gateways[j].nexthop_id);
+    }
+}
+
+static void
+test_nexthop_rio_lifetime(void)
+{
+    gs_unref_object NMFakeNDisc *ndisc = ndisc_new();
+    NexthopTestData              data  = {};
+    guint                        ra_id;
+    guint                        counter;
+    guint32                      nexthop_id;
+
+    ra_id = nexthop_add_router(ndisc, "fe80::1", NM_ICMPV6_ROUTER_PREF_MEDIUM);
+    nexthop_add_rio(ndisc, ra_id, "fe80::1", NM_NDISC_EXPIRY_INFINITY);
+    nexthop_receive_ras(ndisc, &data);
+    assert_nexthop_config(NM_NDISC(ndisc), &data, 1);
+    nexthop_id = data.rdata->gateways[0].nexthop_id;
+    g_assert_cmpuint(data.rdata->routes[0].nexthop_id, ==, nexthop_id);
+
+    /* The router is no longer a default router (router lifetime 0), but it
+     * still announces the route. The route keeps the same nexthop. */
+    counter = data.counter;
+    ra_id   = nm_fake_ndisc_add_ra(ndisc, 0, NM_NDISC_DHCP_LEVEL_NONE, 64, 1500);
+    nm_fake_ndisc_add_gateway(ndisc,
+                              ra_id,
+                              "fe80::1",
+                              nm_utils_get_monotonic_timestamp_msec(),
+                              NM_ICMPV6_ROUTER_PREF_MEDIUM);
+    nexthop_add_rio(ndisc, ra_id, "fe80::1", NM_NDISC_EXPIRY_INFINITY);
+    nexthop_emit_ras(ndisc);
+    g_assert_cmpuint(data.counter, ==, counter + 1);
+    g_assert_cmpuint(data.rdata->gateways_n, ==, 0);
+    g_assert_cmpuint(data.rdata->routes_n, ==, 1);
+    g_assert_cmpuint(data.rdata->nexthops_n, ==, 1);
+    g_assert_cmpuint(data.rdata->routes[0].nexthop_id, ==, nexthop_id);
+    g_assert_cmpuint(nm_l3_config_data_get_num_nexthops(data.l3cd, AF_INET6), ==, 1);
+    g_assert_cmpuint(nm_l3_config_data_get_num_routes(data.l3cd, AF_INET6), ==, 1);
+    assert_rio_route(NM_NDISC(ndisc), data.l3cd, &data.rdata->routes[0]);
+
+    /* The route is withdrawn too. The nexthop id is released. */
+    counter = data.counter;
+    ra_id   = nm_fake_ndisc_add_ra(ndisc, 0, NM_NDISC_DHCP_LEVEL_NONE, 64, 1500);
+    nexthop_add_rio(ndisc, ra_id, "fe80::1", nm_utils_get_monotonic_timestamp_msec());
+    nexthop_emit_ras(ndisc);
+    g_assert_cmpuint(data.counter, ==, counter + 1);
+    g_assert_cmpuint(data.rdata->routes_n, ==, 0);
+    g_assert_cmpuint(data.rdata->nexthops_n, ==, 0);
+    g_assert_cmpuint(nm_l3_config_data_get_num_nexthops(data.l3cd, AF_INET6), ==, 0);
+    g_assert_cmpuint(nm_l3_config_data_get_num_routes(data.l3cd, AF_INET6), ==, 0);
+    g_assert(!nm_netns_nexthop_id_is_reserved(NM_NETNS_GET, nexthop_id));
+}
+
+static guint32
+nexthop_id_probe(void)
+{
+    gs_unref_object NMFakeNDisc *ndisc = ndisc_new();
+    NexthopTestData              data  = {};
+    guint32                      nexthop_id;
+
+    /* Learn the stable initial candidate without copying NDisc's hash function.
+     * Destroying this instance releases the id for the tests below. */
+    nexthop_add_router(ndisc, "fe80::1", NM_ICMPV6_ROUTER_PREF_MEDIUM);
+    nexthop_receive_ras(ndisc, &data);
+    assert_nexthop_config(NM_NDISC(ndisc), &data, 1);
+    nexthop_id = data.rdata->gateways[0].nexthop_id;
+
+    g_clear_object(&ndisc);
+    g_assert(!nm_netns_nexthop_id_is_reserved(NM_NETNS_GET, nexthop_id));
+    g_assert_cmpint(nm_platform_ip_nexthop_get(NM_PLATFORM_GET, nexthop_id, NULL),
+                    ==,
+                    -NME_PL_NOT_FOUND);
+    return nexthop_id;
+}
+
+static void
+test_nexthop_reuse(void)
+{
+    const guint32                nexthop_id = nexthop_id_probe();
+    gs_unref_object NMFakeNDisc *ndisc      = ndisc_new();
+    nm_auto_nmpobj NMPObject    *existing   = NULL;
+    nm_auto_nmpobj NMPObject    *obj_get    = NULL;
+    NexthopTestData              data       = {};
+    NMPObject                    obj;
+
+    /* Simulate a nexthop left behind after NM restarts. Unlike a user nexthop,
+     * an RA nexthop with the same interface and gateway should be reused. */
+    nmp_object_stackinit(&obj, NMP_OBJECT_TYPE_IP6_NEXTHOP, NULL);
+    obj.ip6_nexthop = (NMPlatformIP6NextHop) {
+        .id        = nexthop_id,
+        .ifindex   = nm_ndisc_get_ifindex(NM_NDISC(ndisc)),
+        .nh_source = NM_IP_CONFIG_SOURCE_NDISC,
+        .gateway   = nmtst_inet6_from_string("fe80::1"),
+    };
+    g_assert_cmpint(nm_platform_ip_nexthop_add(NM_PLATFORM_GET, NMP_NLM_FLAG_ADD, &obj, NULL),
+                    ==,
+                    0);
+    g_assert_cmpint(nm_platform_ip_nexthop_get(NM_PLATFORM_GET, nexthop_id, &existing), ==, 0);
+    g_assert_cmpint(existing->ip6_nexthop.nh_source, ==, NM_IP_CONFIG_SOURCE_RTPROT_RA);
+    g_assert(!nm_netns_nexthop_id_is_reserved(NM_NETNS_GET, nexthop_id));
+
+    nexthop_add_router(ndisc, "fe80::1", NM_ICMPV6_ROUTER_PREF_MEDIUM);
+    nexthop_receive_ras(ndisc, &data);
+    g_assert_cmpuint(data.rdata->routes_n, ==, 0);
+    assert_nexthop_config(NM_NDISC(ndisc), &data, 1);
+    match_gateway(data.rdata, 0, "fe80::1", NM_NDISC_EXPIRY_INFINITY, NM_ICMPV6_ROUTER_PREF_MEDIUM);
+    g_assert_cmpuint(data.rdata->gateways[0].nexthop_id, ==, nexthop_id);
+
+    /* Releasing the reservation must leave the existing platform object intact. */
+    g_clear_object(&ndisc);
+    g_assert(!nm_netns_nexthop_id_is_reserved(NM_NETNS_GET, nexthop_id));
+    g_assert_cmpint(nm_platform_ip_nexthop_get(NM_PLATFORM_GET, nexthop_id, &obj_get), ==, 0);
+    g_assert(nmp_object_equal(existing, obj_get));
+    g_assert(nm_platform_object_delete(NM_PLATFORM_GET, existing));
+}
+
+static void
+test_nexthop_collision(void)
+{
+    const guint32                blocked_id = nexthop_id_probe();
+    gs_unref_object NMFakeNDisc *ndisc      = ndisc_new();
+    nm_auto_nmpobj NMPObject    *existing   = NULL;
+    nm_auto_nmpobj NMPObject    *obj_get    = NULL;
+    NexthopTestData              data       = {};
+    NMPObject                    obj;
+    guint32                      nexthop_id;
+
+    /* Test a id collision by adding a nexthop manually that matches the
+     * id generated by the NDisc. */
+    nmp_object_stackinit(&obj, NMP_OBJECT_TYPE_IP6_NEXTHOP, NULL);
+    obj.ip6_nexthop = (NMPlatformIP6NextHop) {
+        .id        = blocked_id,
+        .ifindex   = nm_ndisc_get_ifindex(NM_NDISC(ndisc)),
+        .nh_source = NM_IP_CONFIG_SOURCE_USER,
+        .gateway   = nmtst_inet6_from_string("fe80::1234"),
+    };
+    g_assert_cmpint(nm_platform_ip_nexthop_add(NM_PLATFORM_GET, NMP_NLM_FLAG_ADD, &obj, NULL),
+                    ==,
+                    0);
+    g_assert_cmpint(nm_platform_ip_nexthop_get(NM_PLATFORM_GET, blocked_id, &existing), ==, 0);
+
+    nexthop_add_router(ndisc, "fe80::1", NM_ICMPV6_ROUTER_PREF_MEDIUM);
+    nexthop_receive_ras(ndisc, &data);
+    g_assert_cmpuint(data.rdata->routes_n, ==, 0);
+    assert_nexthop_config(NM_NDISC(ndisc), &data, 1);
+    match_gateway(data.rdata, 0, "fe80::1", NM_NDISC_EXPIRY_INFINITY, NM_ICMPV6_ROUTER_PREF_MEDIUM);
+    nexthop_id = data.rdata->gateways[0].nexthop_id;
+    g_assert_cmpuint(nexthop_id, !=, blocked_id);
+    g_assert(!nm_netns_nexthop_id_is_reserved(NM_NETNS_GET, blocked_id));
+    g_assert_cmpint(nm_platform_ip_nexthop_get(NM_PLATFORM_GET, blocked_id, &obj_get), ==, 0);
+    g_assert(nmp_object_equal(existing, obj_get));
+
+    /* NDisc releases its reservation without changing or deleting the manual nexthop. */
+    g_clear_object(&ndisc);
+    g_assert(!nm_netns_nexthop_id_is_reserved(NM_NETNS_GET, nexthop_id));
+    nm_clear_nmp_object(&obj_get);
+    g_assert_cmpint(nm_platform_ip_nexthop_get(NM_PLATFORM_GET, blocked_id, &obj_get), ==, 0);
+    g_assert(nmp_object_equal(existing, obj_get));
+    g_assert(nm_platform_object_delete(NM_PLATFORM_GET, existing));
+}
+
+static void
+test_nexthop_compat_mode_disabled(void)
+{
+    const guint32                nexthop_id = nexthop_id_probe();
+    gs_unref_object NMFakeNDisc *ndisc      = NULL;
+    NexthopTestData              data       = {};
+
+    /* With sysctl net.ipv4.nexthop_compat_mode disabled, NDisc must not use
+     * nexthops. The sysctl is read when the instance is created, so it must be
+     * set before creating the NDisc. */
+    g_assert(
+        nm_platform_sysctl_set(NM_PLATFORM_GET,
+                               NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv4/nexthop_compat_mode"),
+                               "0"));
+
+    ndisc = ndisc_new();
+
+    nexthop_add_router(ndisc, "fe80::1", NM_ICMPV6_ROUTER_PREF_MEDIUM);
+    nexthop_add_router(ndisc, "fe80::2", NM_ICMPV6_ROUTER_PREF_MEDIUM);
+
+    nexthop_receive_ras(ndisc, &data);
+    g_assert_cmpuint(data.rdata->routes_n, ==, 0);
+    assert_no_nexthop_config(&data, 2);
+    match_gateway(data.rdata, 0, "fe80::1", NM_NDISC_EXPIRY_INFINITY, NM_ICMPV6_ROUTER_PREF_MEDIUM);
+    match_gateway(data.rdata, 1, "fe80::2", NM_NDISC_EXPIRY_INFINITY, NM_ICMPV6_ROUTER_PREF_MEDIUM);
+    g_assert(!nm_netns_nexthop_id_is_reserved(NM_NETNS_GET, nexthop_id));
+
+    /* Restore the default so that later tests sharing the platform are not
+     * affected. The fake platform cannot delete the option, but "1" behaves
+     * the same as unset. */
+    g_clear_object(&ndisc);
+    g_assert(
+        nm_platform_sysctl_set(NM_PLATFORM_GET,
+                               NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv4/nexthop_compat_mode"),
+                               "1"));
+}
+
+static void
+test_nexthop_unsupported(void)
+{
+    const guint32                nexthop_id = nexthop_id_probe();
+    gs_unref_object NMFakeNDisc *ndisc      = ndisc_new();
+    NexthopTestData              data       = {};
+    guint                        ra_id;
+    guint                        counter;
+
+    nm_fake_platform_set_nexthop_unsupported(NM_PLATFORM_GET, TRUE);
+
+    nexthop_add_router(ndisc, "fe80::1", NM_ICMPV6_ROUTER_PREF_MEDIUM);
+    nexthop_add_router(ndisc, "fe80::2", NM_ICMPV6_ROUTER_PREF_MEDIUM);
+
+    nexthop_receive_ras(ndisc, &data);
+    g_assert_cmpuint(data.rdata->routes_n, ==, 0);
+    assert_no_nexthop_config(&data, 2);
+    g_assert(!nm_netns_nexthop_id_is_reserved(NM_NETNS_GET, nexthop_id));
+
+    /* A real kernel cannot gain nexthop support at runtime; re-enable it only
+     * to check that NDisc doesn't look again. */
+    nm_fake_platform_set_nexthop_unsupported(NM_PLATFORM_GET, FALSE);
+
+    /* Send another RA for fe80::1 with a different lifetime, so that
+     * nm_ndisc_add_gateway() reports a change and the configuration is
+     * regenerated. Without the disabled flag, the retry in
+     * nexthops_sync() would now allocate a nexthop id. */
+    counter = data.counter;
+    ra_id   = nm_fake_ndisc_add_ra(ndisc, 0, NM_NDISC_DHCP_LEVEL_NONE, 64, 1500);
+    nm_fake_ndisc_add_gateway(ndisc,
+                              ra_id,
+                              "fe80::1",
+                              nm_utils_get_monotonic_timestamp_msec() + 3600 * 1000,
+                              NM_ICMPV6_ROUTER_PREF_MEDIUM);
+    nm_fake_ndisc_emit_new_ras(ndisc);
+    nmtst_main_context_iterate_until_assert(NULL, 3000, nm_fake_ndisc_done(ndisc));
+
+    g_assert_cmpuint(data.counter, >, counter);
+    assert_no_nexthop_config(&data, 2);
+    g_assert(!nm_netns_nexthop_id_is_reserved(NM_NETNS_GET, nexthop_id));
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
 main(int argc, char **argv)
 {
+    int ifindex;
+
     nmtst_init_with_logging(&argc, &argv, NULL, "DEFAULT");
 
+    nm_fake_platform_setup();
+
+    /* Nexthops with a gateway need an interface that is up and not loopback. */
+    ifindex = nm_platform_link_get_ifindex(NM_PLATFORM_GET, "eth0");
+    g_assert_cmpint(nm_platform_link_change_flags(NM_PLATFORM_GET, ifindex, IFF_UP, TRUE), ==, 0);
+
+    g_test_add_func("/ndisc/nexthop/routes/single", test_nexthop_single_router);
+    g_test_add_func("/ndisc/nexthop/routes/equal-preference", test_nexthop_equal_preference);
+    g_test_add_func("/ndisc/nexthop/routes/different-preference",
+                    test_nexthop_different_preference);
+    g_test_add_func("/ndisc/nexthop/routes/rio-two-routers", test_nexthop_rio_two_routers);
+    g_test_add_func("/ndisc/nexthop/routes/rio-lifetime", test_nexthop_rio_lifetime);
+    g_test_add_func("/ndisc/nexthop/reuse", test_nexthop_reuse);
+    g_test_add_func("/ndisc/nexthop/collision", test_nexthop_collision);
+    g_test_add_func("/ndisc/nexthop/compat-mode-disabled", test_nexthop_compat_mode_disabled);
+    g_test_add_func("/ndisc/nexthop/unsupported", test_nexthop_unsupported);
+
     if (nmtst_test_quick()) {
-        g_print("Skipping test: don't run long running test %s (NMTST_DEBUG=slow)\n",
+        g_print("Skipping long-running tests in %s (NMTST_DEBUG=slow)\n",
                 g_get_prgname() ?: "test-ndisc-fake");
         return g_test_run();
     }
-
-    nm_fake_platform_setup();
 
     g_test_add_func("/ndisc/simple", test_simple);
     g_test_add_func("/ndisc/everything-changed", test_everything);
