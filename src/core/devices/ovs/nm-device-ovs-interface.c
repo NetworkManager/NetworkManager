@@ -7,12 +7,15 @@
 
 #include "nm-device-ovs-interface.h"
 
+#include <linux/if.h>
+
 #include "nm-device-ovs-bridge.h"
 #include "nm-ovsdb.h"
 
 #include "devices/nm-device-private.h"
 #include "nm-active-connection.h"
 #include "nm-setting-connection.h"
+#include "nm-setting-link.h"
 #include "nm-setting-ovs-bridge.h"
 #include "nm-setting-ovs-interface.h"
 #include "nm-setting-ovs-port.h"
@@ -142,12 +145,23 @@ check_connection_compatible(NMDevice     *device,
 static gboolean
 configure_internal_link(NMDevice *device, int ifindex)
 {
-    /* OVS can create the link after stage 2, so the link properties
-     * are applied here. */
+    NMDeviceOvsInterface *self     = NM_DEVICE_OVS_INTERFACE(device);
+    NMSettingLink        *s_link   = nm_device_get_applied_setting(device, NM_TYPE_SETTING_LINK);
+    NMPlatform           *platform = nm_device_get_platform(device);
+    gboolean              up;
+
+    up = !s_link || nm_setting_link_get_admin_state(s_link) != NM_SETTING_LINK_ADMIN_STATE_DOWN;
+
+    /* OVS may create the link after stage 2. Apply link properties even
+     * when the link stays down. */
     nm_device_link_properties_set(device, FALSE);
-    if (nm_platform_link_is_up(nm_device_get_platform(device), ifindex))
+    if (nm_platform_link_is_up(platform, ifindex) == up)
         return TRUE;
-    return nm_device_bring_up(device);
+    if (up)
+        return nm_device_bring_up(device);
+
+    _LOGD(LOGD_DEVICE, "ovs-wait-link: taking the link down as requested by link.admin-state");
+    return nm_platform_link_change_flags(platform, ifindex, IFF_UP, FALSE) >= 0;
 }
 
 static gboolean
