@@ -1005,6 +1005,117 @@ test_link_admin_state(gconstpointer user_data)
 }
 
 static void
+test_link_admin_state_restricted(void)
+{
+#define _PROFILE_HEADER \
+    "[connection]\n"    \
+    "id=t\n"            \
+    "uuid=8f3a4b8e-6c2d-4d7e-9a51-4c3e2b1d0f6a\n"
+#define _OVS_PORT        \
+    "controller=port0\n" \
+    "port-type=ovs-port\n"
+    static const struct {
+        const char *name;
+        const char *profile;
+        bool        valid;
+    } cases[] = {
+        {
+            .name    = "ethernet",
+            .profile = _PROFILE_HEADER "type=ethernet\n"
+                                       "interface-name=eth0\n"
+                                       "[ipv4]\nmethod=disabled\n"
+                                       "[ipv6]\nmethod=disabled\n"
+                                       "[link]\nadmin-state=1\n",
+        },
+        {
+            .name    = "ovs-system",
+            .profile = _PROFILE_HEADER "type=ethernet\n"
+                                       "interface-name=eth0\n" _OVS_PORT "[ovs-interface]\n"
+                                       "type=system\n"
+                                       "[link]\nadmin-state=1\n",
+        },
+        {
+            .name    = "ovs-dpdk",
+            .profile = _PROFILE_HEADER "type=ovs-interface\n"
+                                       "interface-name=dpdk0\n" _OVS_PORT "[ovs-interface]\n"
+                                       "type=dpdk\n"
+                                       "[ovs-dpdk]\ndevargs=0000:01:00.0\n"
+                                       "[link]\nadmin-state=1\n",
+        },
+        {
+            /* ovs-interface.type is unset and inferred from the ovs-patch
+             * setting. It must be rejected before normalization sets it. */
+            .name    = "ovs-patch-inferred",
+            .profile = _PROFILE_HEADER "type=ovs-interface\n"
+                                       "interface-name=patch0\n" _OVS_PORT "[ovs-interface]\n"
+                                       "[ovs-patch]\n"
+                                       "peer=patch1\n"
+                                       "[link]\nadmin-state=1\n",
+        },
+        {
+            /* ovs-interface.type is unset and inferred as "internal". */
+            .name    = "ovs-internal-inferred",
+            .profile = _PROFILE_HEADER "type=ovs-interface\n"
+                                       "interface-name=br0\n" _OVS_PORT "[ovs-interface]\n"
+                                       "[link]\nadmin-state=1\n",
+            .valid   = TRUE,
+        },
+        {
+            /* Only "down" is restricted. */
+            .name    = "ethernet-up",
+            .profile = _PROFILE_HEADER "type=ethernet\n"
+                                       "interface-name=eth0\n"
+                                       "[link]\nadmin-state=0\n",
+            .valid   = TRUE,
+        },
+    };
+#undef _PROFILE_HEADER
+#undef _OVS_PORT
+    guint i;
+
+    for (i = 0; i < G_N_ELEMENTS(cases); i++) {
+        nm_auto_unref_keyfile GKeyFile *keyfile = g_key_file_new();
+        gs_unref_object NMConnection   *con     = NULL;
+        gs_free_error GError           *error   = NULL;
+
+        g_test_message("case %s", cases[i].name);
+
+        g_assert(g_key_file_load_from_data(keyfile, cases[i].profile, -1, G_KEY_FILE_NONE, &error));
+        g_assert_no_error(error);
+        con = nm_keyfile_read(keyfile, "/test", NM_KEYFILE_HANDLER_FLAGS_NONE, NULL, NULL, &error);
+        nmtst_assert_success(con, error);
+
+        if (!cases[i].valid) {
+            g_assert(!nm_connection_verify(con, &error));
+            g_assert(g_str_has_prefix(error->message,
+                                      NM_SETTING_LINK_SETTING_NAME "." NM_SETTING_LINK_ADMIN_STATE
+                                                                   ": "));
+            nmtst_assert_connection_unnormalizable(con,
+                                                   NM_CONNECTION_ERROR,
+                                                   NM_CONNECTION_ERROR_INVALID_PROPERTY);
+            continue;
+        }
+
+        nmtst_connection_normalize(con);
+        nmtst_assert_connection_verifies_without_normalization(con);
+        if (nm_connection_is_type(con, NM_SETTING_OVS_INTERFACE_SETTING_NAME)) {
+            g_assert_cmpstr(nm_setting_ovs_interface_get_interface_type(
+                                nm_connection_get_setting_ovs_interface(con)),
+                            ==,
+                            "internal");
+            g_assert_cmpstr(
+                nm_setting_ip_config_get_method(nm_connection_get_setting_ip4_config(con)),
+                ==,
+                NM_SETTING_IP4_CONFIG_METHOD_DISABLED);
+            g_assert_cmpstr(
+                nm_setting_ip_config_get_method(nm_connection_get_setting_ip6_config(con)),
+                ==,
+                NM_SETTING_IP6_CONFIG_METHOD_DISABLED);
+        }
+    }
+}
+
+static void
 test_bridge_port_vlans(void)
 {
     nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
@@ -1163,6 +1274,7 @@ main(int argc, char **argv)
     g_test_add_data_func("/core/keyfile/link/admin-state/unset", NULL, test_link_admin_state);
     g_test_add_data_func("/core/keyfile/link/admin-state/up", "0", test_link_admin_state);
     g_test_add_data_func("/core/keyfile/link/admin-state/down", "1", test_link_admin_state);
+    g_test_add_func("/core/keyfile/link/admin-state/restricted", test_link_admin_state_restricted);
     g_test_add_func("/core/keyfile/invalid-option", test_invalid_option);
 
     return g_test_run();

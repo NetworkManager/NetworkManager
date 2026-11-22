@@ -7,8 +7,10 @@
 
 #include "nm-setting-link.h"
 
+#include "nm-connection-private.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
+#include "nm-setting-ovs-interface.h"
 #include "nm-setting-private.h"
 #include "nm-utils-private.h"
 
@@ -161,6 +163,38 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     }
 
     if (self->admin_state == NM_SETTING_LINK_ADMIN_STATE_DOWN && connection) {
+        const char *ovs_type = NULL;
+
+        /* Check the inferred OVS interface type before normalization. */
+        if (nm_connection_is_type(connection, NM_SETTING_OVS_INTERFACE_SETTING_NAME)) {
+            NMSettingOvsInterface *s_ovs = nm_connection_get_setting_ovs_interface(connection);
+
+            if (_nm_setting_ovs_interface_verify_interface_type(
+                    s_ovs,
+                    s_ovs ? nm_setting_ovs_interface_get_interface_type(s_ovs) : NULL,
+                    connection,
+                    FALSE,
+                    NULL,
+                    &ovs_type,
+                    NULL)
+                == NM_SETTING_VERIFY_ERROR) {
+                /* The ovs-interface setting reports its own error. */
+                return TRUE;
+            }
+        }
+        if (!nm_streq0(ovs_type, "internal")) {
+            g_set_error_literal(
+                error,
+                NM_CONNECTION_ERROR,
+                NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                _("\"down\" is only supported for Open vSwitch internal interfaces"));
+            g_prefix_error(error,
+                           "%s.%s: ",
+                           NM_SETTING_LINK_SETTING_NAME,
+                           NM_SETTING_LINK_ADMIN_STATE);
+            return FALSE;
+        }
+
         /* The "disabled" method alone does not exclude routes or routing rules. */
         for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
             NMSettingIPConfig *s_ip =
@@ -327,6 +361,12 @@ nm_setting_link_class_init(NMSettingLinkClass *klass)
      * With %NM_SETTING_LINK_ADMIN_STATE_DOWN, both IP methods must be "disabled".
      * Omitted IP settings default to "disabled". Static routes and routing rules
      * are not allowed.
+     *
+     * Currently, only Open vSwitch internal interfaces support the down state.
+     * This includes the bridge's local interface and additional internal
+     * interfaces. The interface stays attached to its OVS port. On OVS-DPDK bridges,
+     * keeping the link down avoids traffic between the datapath and the host
+     * kernel that can overload the ovs-vswitchd main thread.
      *
      * Use "down" in nmcli and "admin-state=1" in the [link] section of a keyfile.
      *

@@ -1811,7 +1811,7 @@
     </setting>
     <setting name="link" >
         <property name="admin-state"
-                  nmcli-description="The administrative state to apply to the link on activation or reapply. The default is &quot;up&quot; (0). With &quot;down&quot; (1), both IP methods must be &quot;disabled&quot;. Omitted IP settings default to &quot;disabled&quot;. Static routes and routing rules are not allowed. Use &quot;down&quot; in nmcli and &quot;admin-state=1&quot; in the [link] section of a keyfile."
+                  nmcli-description="The administrative state to apply to the link on activation or reapply. The default is &quot;up&quot; (0). With &quot;down&quot; (1), both IP methods must be &quot;disabled&quot;. Omitted IP settings default to &quot;disabled&quot;. Static routes and routing rules are not allowed. Currently, only Open vSwitch internal interfaces support the down state. This includes the bridge&apos;s local interface and additional internal interfaces. The interface stays attached to its OVS port. On OVS-DPDK bridges, keeping the link down avoids traffic between the datapath and the host kernel that can overload the ovs-vswitchd main thread. Use &quot;down&quot; in nmcli and &quot;admin-state=1&quot; in the [link] section of a keyfile."
                   format="choice (NMSettingLinkAdminState)"
                   values="up (0), down (1)" />
         <property name="gso-max-segments"

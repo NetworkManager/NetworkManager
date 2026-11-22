@@ -256,9 +256,9 @@ _nm_setting_ovs_interface_verify_interface_type(NMSettingOvsInterface *self,
     else
         type = "system";
 
-    NM_SET_OUT(out_normalized_type, type);
-
 normalize:
+    /* Report the inferred type even when not normalizing. */
+    NM_SET_OUT(out_normalized_type, type);
     if (!normalize) {
         if (!self) {
             g_set_error(error,
