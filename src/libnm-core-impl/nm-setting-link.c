@@ -7,6 +7,7 @@
 
 #include "nm-setting-link.h"
 
+#include "nm-connection-private.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-setting-private.h"
@@ -161,6 +162,19 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     }
 
     if (self->admin_state == NM_SETTING_LINK_ADMIN_STATE_DOWN && connection) {
+        if (!_nm_connection_supports_link_admin_state(connection)) {
+            g_set_error_literal(
+                error,
+                NM_CONNECTION_ERROR,
+                NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                _("\"down\" is only supported for Open vSwitch internal interfaces"));
+            g_prefix_error(error,
+                           "%s.%s: ",
+                           NM_SETTING_LINK_SETTING_NAME,
+                           NM_SETTING_LINK_ADMIN_STATE);
+            return FALSE;
+        }
+
         for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
             NMSettingIPConfig *s_ip =
                 nm_connection_get_setting_ip_config(connection, IS_IPv4 ? AF_INET : AF_INET6);
@@ -313,6 +327,12 @@ nm_setting_link_class_init(NMSettingLinkClass *klass)
      *
      * With %NM_SETTING_LINK_ADMIN_STATE_DOWN, both IP methods must be "disabled".
      * Omitted IP settings default to "disabled".
+     *
+     * Currently, only Open vSwitch internal interfaces support the down state.
+     * This includes the bridge's local interface and additional internal
+     * interfaces. The interface stays attached to its OVS port. On OVS-DPDK bridges,
+     * keeping the link down avoids traffic between the datapath and the host
+     * kernel that can overload the ovs-vswitchd main thread.
      *
      * Use "down" in nmcli and "admin-state=0" in the [link] section of a keyfile.
      *

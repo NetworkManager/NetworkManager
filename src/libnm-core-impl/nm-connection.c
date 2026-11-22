@@ -1694,6 +1694,37 @@ _normalize_ovs_interface_type(NMConnection *self)
     return modified;
 }
 
+/* Returns FALSE only when @connection cannot use the down link state:
+ * It is not an ovs-interface connection, or its OVS interface type
+ * (inferred if unset) is not "internal". Returns TRUE when the type is
+ * "internal", and also when the type cannot be determined.
+ */
+gboolean
+_nm_connection_supports_link_admin_state(NMConnection *connection)
+{
+    NMSettingOvsInterface *s_ovs;
+    const char            *ovs_type = NULL;
+
+    nm_assert(NM_IS_CONNECTION(connection));
+
+    if (!nm_connection_is_type(connection, NM_SETTING_OVS_INTERFACE_SETTING_NAME))
+        return FALSE;
+
+    s_ovs = nm_connection_get_setting_ovs_interface(connection);
+    if (_nm_setting_ovs_interface_verify_interface_type(
+            s_ovs,
+            s_ovs ? nm_setting_ovs_interface_get_interface_type(s_ovs) : NULL,
+            connection,
+            FALSE,
+            NULL,
+            &ovs_type,
+            NULL)
+        == NM_SETTING_VERIFY_ERROR)
+        return TRUE;
+
+    return nm_streq0(ovs_type, "internal");
+}
+
 static gboolean
 _normalize_ip_tunnel_wired_setting(NMConnection *self)
 {

@@ -43,4 +43,6 @@ int _nm_setting_ovs_interface_verify_interface_type(NMSettingOvsInterface *self,
                                                     const char           **out_normalized_type,
                                                     GError               **error);
 
+gboolean _nm_connection_supports_link_admin_state(NMConnection *connection);
+
 #endif /* __NM_CONNECTION_PRIVATE_H__ */
