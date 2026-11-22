@@ -209,6 +209,10 @@ typedef struct _NMDeviceClass {
 
     bool act_stage1_prepare_set_hwaddr_ethernet : 1;
 
+    /* Defer bring-up on this device until stage 3. At startup there may be
+     * no applied profile; during activation the backing link may not exist yet. */
+    bool stage3_controls_link : 1;
+
     bool allow_autoconnect_on_external : 1;
 
     NMRfkillType rfkill_type : 4;
