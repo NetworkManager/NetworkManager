@@ -844,6 +844,166 @@ test_bridge_vlans(void)
     CLEAR(&con, &keyfile);
 }
 
+/* Adds the route or the routing rule (taking ownership) to @s_ip, checks that
+ * @con is rejected with an error for @prefix, then removes it again. */
+static void
+_link_admin_state_assert_rejected(NMConnection      *con,
+                                  NMSettingIPConfig *s_ip,
+                                  NMIPRoute         *route,
+                                  NMIPRoutingRule   *rule,
+                                  const char        *prefix)
+{
+    gs_free_error GError *error = NULL;
+
+    g_assert(!!route != !!rule);
+    if (route) {
+        nm_setting_ip_config_add_route(s_ip, route);
+        nm_ip_route_unref(route);
+    } else {
+        nm_setting_ip_config_add_routing_rule(s_ip, rule);
+        nm_ip_routing_rule_unref(rule);
+    }
+
+    g_assert(!nm_connection_verify(con, &error));
+    g_assert_error(error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+    g_assert(g_str_has_prefix(error->message, prefix));
+    nmtst_assert_connection_unnormalizable(con,
+                                           NM_CONNECTION_ERROR,
+                                           NM_CONNECTION_ERROR_INVALID_PROPERTY);
+
+    nm_setting_ip_config_clear_routes(s_ip);
+    nm_setting_ip_config_clear_routing_rules(s_ip);
+    nmtst_assert_connection_verifies_without_normalization(con);
+}
+
+static void
+test_link_admin_state(gconstpointer user_data)
+{
+    const char                   *state   = user_data;
+    gs_free char                 *profile = g_strdup_printf("[connection]\n"
+                                                            "id=local\n"
+                                                            "interface-name=br0\n"
+                                                            "type=ovs-interface\n"
+                                                            "controller=port0\n"
+                                                            "port-type=ovs-port\n"
+                                                            "[ovs-interface]\n"
+                                                            "type=internal\n"
+                                                            "%s%s\n",
+                                                            state ? "[link]\nadmin-state=" : "",
+                                                            state ?: "");
+    gs_unref_object NMConnection *con =
+        nmtst_create_connection_from_keyfile(profile, "/test/local");
+    NMSettingLink                  *s_link = _nm_connection_get_setting(con, NM_TYPE_SETTING_LINK);
+    nm_auto_unref_keyfile GKeyFile *saved  = _nm_keyfile_write(con, NULL, NULL);
+    gs_free char *saved_state       = g_key_file_get_string(saved, "link", "admin-state", NULL);
+    gs_unref_variant GVariant *dbus = nm_connection_to_dbus(con, NM_CONNECTION_SERIALIZE_ALL);
+    gs_unref_variant GVariant *dbus_link =
+        g_variant_lookup_value(dbus, NM_SETTING_LINK_SETTING_NAME, G_VARIANT_TYPE_VARDICT);
+    gboolean    down       = nm_streq0(state, "1");
+    const char *method     = down ? "disabled" : "auto";
+    gint32      dbus_state = -1;
+
+    /* Unset and "up" (0, the default) are not serialized. */
+    g_assert_cmpint(!!s_link, ==, !!state);
+    if (s_link)
+        g_assert_cmpint(nm_setting_link_get_admin_state(s_link),
+                        ==,
+                        down ? NM_SETTING_LINK_ADMIN_STATE_DOWN : NM_SETTING_LINK_ADMIN_STATE_UP);
+    g_assert_cmpstr(saved_state, ==, down ? "1" : NULL);
+    g_assert_cmpint(!!dbus_link, ==, !!state);
+    if (dbus_link)
+        g_assert_cmpint(g_variant_lookup(dbus_link, NM_SETTING_LINK_ADMIN_STATE, "i", &dbus_state),
+                        ==,
+                        down);
+    g_assert_cmpint(dbus_state, ==, down ? NM_SETTING_LINK_ADMIN_STATE_DOWN : -1);
+
+    /* Missing IP settings are normalized to "disabled" on a down link. */
+    g_assert_cmpstr(nm_setting_ip_config_get_method(nm_connection_get_setting_ip4_config(con)),
+                    ==,
+                    method);
+    g_assert_cmpstr(nm_setting_ip_config_get_method(nm_connection_get_setting_ip6_config(con)),
+                    ==,
+                    method);
+
+    if (down) {
+        NMIPAddress *address;
+
+        /* Explicit IP configuration is rejected on a down link. */
+        g_object_set(nm_connection_get_setting_ip6_config(con),
+                     NM_SETTING_IP_CONFIG_METHOD,
+                     NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+                     NULL);
+        nmtst_assert_connection_unnormalizable(con,
+                                               NM_CONNECTION_ERROR,
+                                               NM_CONNECTION_ERROR_INVALID_PROPERTY);
+        g_object_set(nm_connection_get_setting_ip6_config(con),
+                     NM_SETTING_IP_CONFIG_METHOD,
+                     NM_SETTING_IP6_CONFIG_METHOD_DISABLED,
+                     NULL);
+        nmtst_assert_connection_verifies_without_normalization(con);
+
+        /* The "disabled" method allows static routes and routing rules, a
+         * down link does not. */
+        _link_admin_state_assert_rejected(
+            con,
+            nm_connection_get_setting_ip4_config(con),
+            nm_ip_route_new(AF_INET, "198.51.100.0", 24, NULL, -1, NULL),
+            NULL,
+            "ipv4.routes: ");
+        _link_admin_state_assert_rejected(
+            con,
+            nm_connection_get_setting_ip6_config(con),
+            nm_ip_route_new(AF_INET6, "2001:db8::", 64, NULL, -1, NULL),
+            NULL,
+            "ipv6.routes: ");
+        _link_admin_state_assert_rejected(
+            con,
+            nm_connection_get_setting_ip4_config(con),
+            NULL,
+            nm_ip_routing_rule_from_string("priority 5 from 198.51.100.0/24 table 100",
+                                           NM_IP_ROUTING_RULE_AS_STRING_FLAGS_NONE,
+                                           NULL,
+                                           NULL),
+            "ipv4.routing-rules: ");
+        _link_admin_state_assert_rejected(
+            con,
+            nm_connection_get_setting_ip6_config(con),
+            NULL,
+            nm_ip_routing_rule_from_string("priority 5 from 2001:db8::/64 table 100",
+                                           NM_IP_ROUTING_RULE_AS_STRING_FLAGS_NONE,
+                                           NULL,
+                                           NULL),
+            "ipv6.routing-rules: ");
+
+        g_object_set(nm_connection_get_setting_ip4_config(con),
+                     NM_SETTING_IP_CONFIG_METHOD,
+                     NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+                     NULL);
+        address = nm_ip_address_new(AF_INET, "192.0.2.1", 24, NULL);
+        nm_setting_ip_config_add_address(nm_connection_get_setting_ip4_config(con), address);
+        nm_ip_address_unref(address);
+        nmtst_assert_connection_unnormalizable(con,
+                                               NM_CONNECTION_ERROR,
+                                               NM_CONNECTION_ERROR_INVALID_PROPERTY);
+    } else if (state) {
+        gs_unref_variant GVariant    *dict  = g_variant_ref(dbus);
+        gs_free_error GError         *error = NULL;
+        gs_unref_object NMConnection *con2  = NULL;
+
+        /* Values outside the enum are rejected. */
+        NMTST_VARIANT_EDITOR(dict,
+                             NMTST_VARIANT_ADD_PROPERTY(NM_SETTING_LINK_SETTING_NAME,
+                                                        NM_SETTING_LINK_ADMIN_STATE,
+                                                        "i",
+                                                        5););
+        con2 = nm_simple_connection_new_from_dbus(dict, &error);
+        g_assert(!con2);
+        g_assert(error);
+        g_assert(
+            strstr(error->message, NM_SETTING_LINK_SETTING_NAME "." NM_SETTING_LINK_ADMIN_STATE));
+    }
+}
+
 static void
 test_bridge_port_vlans(void)
 {
@@ -1000,6 +1160,9 @@ main(int argc, char **argv)
     g_test_add_func("/core/keyfile/test_vpn/1", test_vpn_1);
     g_test_add_func("/core/keyfile/bridge/vlans", test_bridge_vlans);
     g_test_add_func("/core/keyfile/bridge-port/vlans", test_bridge_port_vlans);
+    g_test_add_data_func("/core/keyfile/link/admin-state/unset", NULL, test_link_admin_state);
+    g_test_add_data_func("/core/keyfile/link/admin-state/up", "0", test_link_admin_state);
+    g_test_add_data_func("/core/keyfile/link/admin-state/down", "1", test_link_admin_state);
     g_test_add_func("/core/keyfile/invalid-option", test_invalid_option);
 
     return g_test_run();

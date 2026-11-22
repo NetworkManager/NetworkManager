@@ -7253,6 +7253,9 @@ static const NMMetaPropertyInfo *const property_infos_LOOPBACK[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_LINK
 static const NMMetaPropertyInfo *const property_infos_LINK[] = {
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_LINK_ADMIN_STATE,
+        .property_type =                &_pt_gobject_enum,
+    ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_LINK_GSO_MAX_SEGMENTS,
         .property_type =                &_pt_gobject_int,
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
