@@ -7,6 +7,8 @@
 
 #include "nm-setting-link.h"
 
+#include "nm-setting-ip4-config.h"
+#include "nm-setting-ip6-config.h"
 #include "nm-setting-private.h"
 #include "nm-utils-private.h"
 
@@ -22,7 +24,8 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingLink,
                              PROP_TX_QUEUE_LENGTH,
                              PROP_GSO_MAX_SIZE,
                              PROP_GSO_MAX_SEGMENTS,
-                             PROP_GRO_MAX_SIZE, );
+                             PROP_GRO_MAX_SIZE,
+                             PROP_ADMIN_STATE, );
 
 /**
  * NMSettingLink:
@@ -37,6 +40,7 @@ struct _NMSettingLink {
     gint64    gso_max_size;
     gint64    gso_max_segments;
     gint64    gro_max_size;
+    int       admin_state;
 };
 
 struct _NMSettingLinkClass {
@@ -121,6 +125,74 @@ nm_setting_link_get_gro_max_size(NMSettingLink *setting)
     return setting->gro_max_size;
 }
 
+/**
+ * nm_setting_link_get_admin_state:
+ * @setting: the #NMSettingLink
+ *
+ * Returns: the requested administrative state of the link
+ *
+ * Since: 1.60
+ **/
+NMSettingLinkAdminState
+nm_setting_link_get_admin_state(NMSettingLink *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_LINK(setting), NM_SETTING_LINK_ADMIN_STATE_UP);
+
+    return setting->admin_state;
+}
+
+/*****************************************************************************/
+
+static gboolean
+verify(NMSetting *setting, NMConnection *connection, GError **error)
+{
+    NMSettingLink *self = NM_SETTING_LINK(setting);
+    int            IS_IPv4;
+
+    if (!NM_IN_SET(self->admin_state,
+                   NM_SETTING_LINK_ADMIN_STATE_UP,
+                   NM_SETTING_LINK_ADMIN_STATE_DOWN)) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("invalid value"));
+        g_prefix_error(error, "%s.%s: ", NM_SETTING_LINK_SETTING_NAME, NM_SETTING_LINK_ADMIN_STATE);
+        return FALSE;
+    }
+
+    if (self->admin_state == NM_SETTING_LINK_ADMIN_STATE_DOWN && connection) {
+        for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
+            NMSettingIPConfig *s_ip =
+                nm_connection_get_setting_ip_config(connection, IS_IPv4 ? AF_INET : AF_INET6);
+            const char *method;
+
+            if (!s_ip)
+                continue;
+
+            method = nm_setting_ip_config_get_method(s_ip);
+            if (!nm_streq0(method,
+                           IS_IPv4 ? NM_SETTING_IP4_CONFIG_METHOD_DISABLED
+                                   : NM_SETTING_IP6_CONFIG_METHOD_DISABLED)) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("method must be \"%s\" when %s.%s is \"down\""),
+                            IS_IPv4 ? NM_SETTING_IP4_CONFIG_METHOD_DISABLED
+                                    : NM_SETTING_IP6_CONFIG_METHOD_DISABLED,
+                            NM_SETTING_LINK_SETTING_NAME,
+                            NM_SETTING_LINK_ADMIN_STATE);
+                g_prefix_error(error,
+                               "%s.%s: ",
+                               nm_setting_get_name(NM_SETTING(s_ip)),
+                               NM_SETTING_IP_CONFIG_METHOD);
+                return FALSE;
+            }
+        }
+    }
+
+    return TRUE;
+}
+
 /*****************************************************************************/
 
 static void
@@ -151,6 +223,8 @@ nm_setting_link_class_init(NMSettingLinkClass *klass)
 
     object_class->get_property = _nm_setting_property_get_property_direct;
     object_class->set_property = _nm_setting_property_set_property_direct;
+
+    setting_class->verify = verify;
 
     /**
      * NMSettingLink:tx-queue-length
@@ -230,6 +304,30 @@ nm_setting_link_class_init(NMSettingLinkClass *klass)
                                              NM_SETTING_PARAM_NONE,
                                              NMSettingLink,
                                              gro_max_size);
+
+    /**
+     * NMSettingLink:admin-state
+     *
+     * The administrative state to apply to the link on activation or reapply.
+     * The default is %NM_SETTING_LINK_ADMIN_STATE_UP.
+     *
+     * With %NM_SETTING_LINK_ADMIN_STATE_DOWN, both IP methods must be "disabled".
+     * Omitted IP settings default to "disabled".
+     *
+     * Use "down" in nmcli and "admin-state=0" in the [link] section of a keyfile.
+     *
+     * Since: 1.60
+     **/
+    _nm_setting_property_define_direct_enum(properties_override,
+                                            obj_properties,
+                                            NM_SETTING_LINK_ADMIN_STATE,
+                                            PROP_ADMIN_STATE,
+                                            NM_TYPE_SETTING_LINK_ADMIN_STATE,
+                                            NM_SETTING_LINK_ADMIN_STATE_UP,
+                                            NM_SETTING_PARAM_NONE,
+                                            NULL,
+                                            NMSettingLink,
+                                            admin_state);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

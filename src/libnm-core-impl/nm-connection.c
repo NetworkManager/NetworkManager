@@ -1259,20 +1259,28 @@ _normalize_ip_config(NMConnection *self, GHashTable *parameters)
 {
     NMSettingIPConfig *s_ip4, *s_ip6;
     NMSettingProxy    *s_proxy;
+    NMSettingLink     *s_link;
     NMSetting         *setting;
     gboolean           changed = FALSE;
+    gboolean           link_down;
     guint              num, i;
     int                dhcp_send_hostname_v2;
 
     s_ip4   = nm_connection_get_setting_ip4_config(self);
     s_ip6   = nm_connection_get_setting_ip6_config(self);
     s_proxy = nm_connection_get_setting_proxy(self);
+    s_link  = _nm_connection_get_setting(self, NM_TYPE_SETTING_LINK);
+
+    link_down =
+        s_link && nm_setting_link_get_admin_state(s_link) == NM_SETTING_LINK_ADMIN_STATE_DOWN;
 
     if (_supports_addr_family(self, AF_INET)) {
         if (!s_ip4) {
             const char *default_ip4_method = NULL;
 
-            if (parameters) {
+            if (link_down)
+                default_ip4_method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
+            else if (parameters) {
                 default_ip4_method =
                     g_hash_table_lookup(parameters,
                                         NM_CONNECTION_NORMALIZE_PARAM_IP4_CONFIG_METHOD);
@@ -1340,7 +1348,9 @@ _normalize_ip_config(NMConnection *self, GHashTable *parameters)
         if (!s_ip6) {
             const char *default_ip6_method = NULL;
 
-            if (parameters) {
+            if (link_down)
+                default_ip6_method = NM_SETTING_IP6_CONFIG_METHOD_DISABLED;
+            else if (parameters) {
                 default_ip6_method =
                     g_hash_table_lookup(parameters,
                                         NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD);

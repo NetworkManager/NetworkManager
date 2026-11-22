@@ -2090,6 +2090,10 @@
     <setting name="link"
              gtype="NMSettingLink"
              >
+        <property name="admin-state"
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="gro-max-size"
                   dbus-type="x"
                   gprop-type="gint64"

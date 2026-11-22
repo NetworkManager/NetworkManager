@@ -845,6 +845,101 @@ test_bridge_vlans(void)
 }
 
 static void
+test_link_admin_state(gconstpointer user_data)
+{
+    const char                   *state   = user_data;
+    gs_free char                 *profile = g_strdup_printf("[connection]\n"
+                                                            "id=local\n"
+                                                            "interface-name=br0\n"
+                                                            "type=ovs-interface\n"
+                                                            "controller=port0\n"
+                                                            "port-type=ovs-port\n"
+                                                            "[ovs-interface]\n"
+                                                            "type=internal\n"
+                                                            "%s%s\n",
+                                                            state ? "[link]\nadmin-state=" : "",
+                                                            state ?: "");
+    gs_unref_object NMConnection *con =
+        nmtst_create_connection_from_keyfile(profile, "/test/local");
+    NMSettingLink                  *s_link = _nm_connection_get_setting(con, NM_TYPE_SETTING_LINK);
+    nm_auto_unref_keyfile GKeyFile *saved  = _nm_keyfile_write(con, NULL, NULL);
+    gs_free char *saved_state       = g_key_file_get_string(saved, "link", "admin-state", NULL);
+    gs_unref_variant GVariant *dbus = nm_connection_to_dbus(con, NM_CONNECTION_SERIALIZE_ALL);
+    gs_unref_variant GVariant *dbus_link =
+        g_variant_lookup_value(dbus, NM_SETTING_LINK_SETTING_NAME, G_VARIANT_TYPE_VARDICT);
+    gboolean    down       = nm_streq0(state, "0");
+    const char *method     = down ? "disabled" : "auto";
+    gint32      dbus_state = -1;
+
+    /* Unset and "up" (1, the default) are not serialized. */
+    g_assert_cmpint(!!s_link, ==, !!state);
+    if (s_link)
+        g_assert_cmpint(nm_setting_link_get_admin_state(s_link),
+                        ==,
+                        down ? NM_SETTING_LINK_ADMIN_STATE_DOWN : NM_SETTING_LINK_ADMIN_STATE_UP);
+    g_assert_cmpstr(saved_state, ==, down ? "0" : NULL);
+    g_assert_cmpint(!!dbus_link, ==, !!state);
+    if (dbus_link)
+        g_assert_cmpint(g_variant_lookup(dbus_link, NM_SETTING_LINK_ADMIN_STATE, "i", &dbus_state),
+                        ==,
+                        down);
+    g_assert_cmpint(dbus_state, ==, down ? NM_SETTING_LINK_ADMIN_STATE_DOWN : -1);
+
+    /* Missing IP settings are normalized to "disabled" on a down link. */
+    g_assert_cmpstr(nm_setting_ip_config_get_method(nm_connection_get_setting_ip4_config(con)),
+                    ==,
+                    method);
+    g_assert_cmpstr(nm_setting_ip_config_get_method(nm_connection_get_setting_ip6_config(con)),
+                    ==,
+                    method);
+
+    if (down) {
+        NMIPAddress *address;
+
+        /* Explicit IP configuration is rejected on a down link. */
+        g_object_set(nm_connection_get_setting_ip6_config(con),
+                     NM_SETTING_IP_CONFIG_METHOD,
+                     NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+                     NULL);
+        nmtst_assert_connection_unnormalizable(con,
+                                               NM_CONNECTION_ERROR,
+                                               NM_CONNECTION_ERROR_INVALID_PROPERTY);
+        g_object_set(nm_connection_get_setting_ip6_config(con),
+                     NM_SETTING_IP_CONFIG_METHOD,
+                     NM_SETTING_IP6_CONFIG_METHOD_DISABLED,
+                     NULL);
+        nmtst_assert_connection_verifies_without_normalization(con);
+
+        g_object_set(nm_connection_get_setting_ip4_config(con),
+                     NM_SETTING_IP_CONFIG_METHOD,
+                     NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+                     NULL);
+        address = nm_ip_address_new(AF_INET, "192.0.2.1", 24, NULL);
+        nm_setting_ip_config_add_address(nm_connection_get_setting_ip4_config(con), address);
+        nm_ip_address_unref(address);
+        nmtst_assert_connection_unnormalizable(con,
+                                               NM_CONNECTION_ERROR,
+                                               NM_CONNECTION_ERROR_INVALID_PROPERTY);
+    } else if (state) {
+        gs_unref_variant GVariant    *dict  = g_variant_ref(dbus);
+        gs_free_error GError         *error = NULL;
+        gs_unref_object NMConnection *con2  = NULL;
+
+        /* Values outside the enum are rejected. */
+        NMTST_VARIANT_EDITOR(dict,
+                             NMTST_VARIANT_ADD_PROPERTY(NM_SETTING_LINK_SETTING_NAME,
+                                                        NM_SETTING_LINK_ADMIN_STATE,
+                                                        "i",
+                                                        5););
+        con2 = nm_simple_connection_new_from_dbus(dict, &error);
+        g_assert(!con2);
+        g_assert(error);
+        g_assert(
+            strstr(error->message, NM_SETTING_LINK_SETTING_NAME "." NM_SETTING_LINK_ADMIN_STATE));
+    }
+}
+
+static void
 test_bridge_port_vlans(void)
 {
     nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
@@ -1000,6 +1095,9 @@ main(int argc, char **argv)
     g_test_add_func("/core/keyfile/test_vpn/1", test_vpn_1);
     g_test_add_func("/core/keyfile/bridge/vlans", test_bridge_vlans);
     g_test_add_func("/core/keyfile/bridge-port/vlans", test_bridge_port_vlans);
+    g_test_add_data_func("/core/keyfile/link/admin-state/unset", NULL, test_link_admin_state);
+    g_test_add_data_func("/core/keyfile/link/admin-state/up", "1", test_link_admin_state);
+    g_test_add_data_func("/core/keyfile/link/admin-state/down", "0", test_link_admin_state);
     g_test_add_func("/core/keyfile/invalid-option", test_invalid_option);
 
     return g_test_run();

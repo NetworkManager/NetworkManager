@@ -30,6 +30,21 @@ G_BEGIN_DECLS
 #define NM_SETTING_LINK_GSO_MAX_SIZE     "gso-max-size"
 #define NM_SETTING_LINK_GSO_MAX_SEGMENTS "gso-max-segments"
 #define NM_SETTING_LINK_GRO_MAX_SIZE     "gro-max-size"
+#define NM_SETTING_LINK_ADMIN_STATE      "admin-state"
+
+/**
+ * NMSettingLinkAdminState:
+ * @NM_SETTING_LINK_ADMIN_STATE_DOWN: configure the link down
+ * @NM_SETTING_LINK_ADMIN_STATE_UP: bring the link up (the default)
+ *
+ * Requested administrative state of the link.
+ *
+ * Since: 1.60
+ */
+typedef enum {
+    NM_SETTING_LINK_ADMIN_STATE_DOWN = 0,
+    NM_SETTING_LINK_ADMIN_STATE_UP   = 1,
+} NMSettingLinkAdminState;
 
 typedef struct _NMSettingLinkClass NMSettingLinkClass;
 
@@ -46,6 +61,9 @@ NM_AVAILABLE_IN_1_44
 gint64 nm_setting_link_get_gso_max_segments(NMSettingLink *setting);
 NM_AVAILABLE_IN_1_44
 gint64 nm_setting_link_get_gro_max_size(NMSettingLink *setting);
+
+NM_AVAILABLE_IN_1_60
+NMSettingLinkAdminState nm_setting_link_get_admin_state(NMSettingLink *setting);
 
 G_END_DECLS
 
