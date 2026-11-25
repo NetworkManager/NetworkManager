@@ -24,6 +24,12 @@
 
 /*****************************************************************************/
 
+typedef enum {
+    LINK_STATE_INIT,
+    LINK_STATE_WAITING,
+    LINK_STATE_READY,
+} LinkState;
+
 typedef struct {
     NMOvsdb *ovsdb;
 
@@ -40,8 +46,7 @@ typedef struct {
         /* Whether we have determined the cloned MAC */
         bool cloned_mac_evaluated : 1;
 
-        /* Whether we are waiting for the kernel link */
-        bool waiting : 1;
+        LinkState state;
     } wait_link;
 } NMDeviceOvsInterfacePrivate;
 
@@ -139,8 +144,8 @@ check_connection_compatible(NMDevice     *device,
     return TRUE;
 }
 
-static gboolean
-check_waiting_for_link(NMDevice *device, const char *from)
+static void
+update_wait_for_link_state(NMDevice *device, const char *from)
 {
     NMDeviceOvsInterface        *self     = NM_DEVICE_OVS_INTERFACE(device);
     NMDeviceOvsInterfacePrivate *priv     = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
@@ -149,8 +154,8 @@ check_waiting_for_link(NMDevice *device, const char *from)
     int                          ip_ifindex;
     const char                  *reason = NULL;
 
-    if (!priv->wait_link.waiting)
-        return FALSE;
+    if (priv->wait_link.state != LINK_STATE_WAITING)
+        return;
 
     nm_assert(priv->wait_link.cloned_mac_evaluated);
     ip_ifindex = nm_device_get_ip_ifindex(device);
@@ -168,13 +173,11 @@ check_waiting_for_link(NMDevice *device, const char *from)
                                            pllink->l_address.len)) {
         reason = "cloned MAC address is not set yet";
     } else {
-        priv->wait_link.waiting = FALSE;
+        priv->wait_link.state = LINK_STATE_READY;
+        return;
     }
 
-    if (priv->wait_link.waiting)
-        _LOGT(LOGD_DEVICE, "ovs-wait-link(%s): not ready: %s", from, reason);
-
-    return priv->wait_link.waiting;
+    _LOGT(LOGD_DEVICE, "ovs-wait-link(%s): not ready: %s", from, reason);
 }
 
 static void
@@ -183,13 +186,14 @@ link_changed(NMDevice *device, const NMPlatformLink *pllink)
     NMDeviceOvsInterface        *self = NM_DEVICE_OVS_INTERFACE(device);
     NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
 
-    if (!pllink || !priv->wait_link.waiting)
+    if (!pllink || priv->wait_link.state != LINK_STATE_WAITING)
         return;
 
     if (nm_device_get_state(device) != NM_DEVICE_STATE_IP_CONFIG)
         return;
 
-    if (check_waiting_for_link(device, "link-changed"))
+    update_wait_for_link_state(device, "link-changed");
+    if (priv->wait_link.state == LINK_STATE_WAITING)
         return;
 
     _LOGT(LOGD_CORE, "ovs-wait-link: link is ready after link changed event");
@@ -261,7 +265,7 @@ ready_for_ip_config(NMDevice *device, gboolean is_manual)
 {
     NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(device);
 
-    return nm_device_get_ip_ifindex(device) > 0 && !priv->wait_link.waiting;
+    return nm_device_get_ip_ifindex(device) > 0 && priv->wait_link.state != LINK_STATE_WAITING;
 }
 
 static gboolean
@@ -278,7 +282,8 @@ _netdev_tun_link_cb_in_idle(gpointer user_data)
         nm_device_set_ip_ifindex(device, priv->wait_link.tun_ifindex);
     }
 
-    if (check_waiting_for_link(device, "tun-link-changed")) {
+    update_wait_for_link_state(device, "tun-link-changed");
+    if (priv->wait_link.state == LINK_STATE_WAITING) {
         nm_clear_g_source_inst(&priv->wait_link.tun_link_idle_source);
         return G_SOURCE_CONTINUE;
     }
@@ -365,7 +370,7 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
 {
     NMDeviceOvsInterface        *self = NM_DEVICE_OVS_INTERFACE(device);
     NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
-    bool                         old_wait_link;
+    LinkState                    old_state;
 
     /*
      * When the ovs-interface device enters stage3, it becomes eligible to be attached to
@@ -419,9 +424,10 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
         priv->wait_link.cloned_mac_evaluated = TRUE;
     }
 
-    old_wait_link           = priv->wait_link.waiting;
-    priv->wait_link.waiting = TRUE;
-    if (check_waiting_for_link(device, addr_family == AF_INET ? "stage3-ipv4" : "stage3-ipv6")) {
+    old_state             = priv->wait_link.state;
+    priv->wait_link.state = LINK_STATE_WAITING;
+    update_wait_for_link_state(device, addr_family == AF_INET ? "stage3-ipv4" : "stage3-ipv6");
+    if (priv->wait_link.state == LINK_STATE_WAITING) {
         nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_PENDING, NULL);
         if (nm_device_get_ip_ifindex(device) <= 0 && priv->wait_link.tun_link_signal_id == 0
             && priv->wait_link.tun_ifindex <= 0 && ovs_interface_is_netdev_datapath(self)) {
@@ -437,7 +443,6 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
           "ovs-wait-link: link is ready, IPv%c can proceed",
           nm_utils_addr_family_to_char(addr_family));
 
-    priv->wait_link.waiting = FALSE;
     /*
      * It is possible we detect the link is ready before link_changed event does. It could happen
      * because another stage3_ip_config scheduled happened right after the link is ready.
@@ -445,7 +450,7 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
      * we schedule a sync. stage3_ip_config. Otherwise, it could happen that we proceed with
      * IP configuration without the needed allocated resources like DHCP client.
      */
-    if (old_wait_link) {
+    if (old_state == LINK_STATE_WAITING) {
         nm_device_bring_up(device);
         nm_device_activate_schedule_stage3_ip_config(device, TRUE);
         return;
@@ -470,7 +475,7 @@ deactivate(NMDevice *device)
     NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
 
     priv->wait_link.tun_ifindex          = -1;
-    priv->wait_link.waiting              = FALSE;
+    priv->wait_link.state                = LINK_STATE_INIT;
     priv->wait_link.cloned_mac_evaluated = FALSE;
     nm_clear_g_free(&priv->wait_link.cloned_mac);
     nm_clear_g_signal_handler(nm_device_get_platform(device), &priv->wait_link.tun_link_signal_id);
@@ -596,7 +601,7 @@ deactivate_async(NMDevice                  *device,
         .callback_user_data = callback_user_data,
     };
 
-    if (!priv->wait_link.waiting
+    if (priv->wait_link.state != LINK_STATE_WAITING
         && !nm_platform_link_get_by_ifname(nm_device_get_platform(device),
                                            nm_device_get_iface(device))) {
         _LOGT(LOGD_CORE, "deactivate: link not present, proceeding");
@@ -605,7 +610,7 @@ deactivate_async(NMDevice                  *device,
         return;
     }
 
-    if (priv->wait_link.waiting) {
+    if (priv->wait_link.state == LINK_STATE_WAITING) {
         /* Here we have issued an INSERT and a DELETE command for the interface to ovsdb,
          * and must wait with a timeout. */
         data->link_timeout_id = g_timeout_add(6000, deactivate_link_timeout, data);
@@ -613,7 +618,7 @@ deactivate_async(NMDevice                  *device,
     } else
         _LOGT(LOGD_DEVICE, "deactivate: waiting for link to disappear");
 
-    priv->wait_link.waiting = FALSE;
+    priv->wait_link.state = LINK_STATE_INIT;
     data->cancelled_id =
         g_cancellable_connect(cancellable, G_CALLBACK(deactivate_cancelled_cb), data, NULL);
     data->link_changed_id = g_signal_connect(nm_device_get_platform(device),
@@ -688,7 +693,7 @@ dispose(GObject *object)
     NMDeviceOvsInterface        *self = NM_DEVICE_OVS_INTERFACE(object);
     NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
 
-    nm_assert(!priv->wait_link.waiting);
+    nm_assert(priv->wait_link.state != LINK_STATE_WAITING);
     nm_assert(priv->wait_link.tun_link_signal_id == 0);
     nm_assert(!priv->wait_link.tun_link_idle_source);
 
