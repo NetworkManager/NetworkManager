@@ -209,6 +209,15 @@ typedef struct _NMDeviceClass {
 
     bool act_stage1_prepare_set_hwaddr_ethernet : 1;
 
+    /* Flag for devices that bring the link up (or keep it down) from
+     * act_stage3_ip_config(). Used by OVS internal interfaces, whose link
+     * only appears after the OVSDB insert and may have to stay down
+     * (link.admin-state). With it set, NMDevice skips IFF_UP in
+     * _set_ip_ifindex(), makes nm_device_bring_up() a no-op before IP_CONFIG,
+     * skips the carrier wait on UNMANAGED->UNAVAILABLE and suppresses the
+     * "not up" warning in stage 3. */
+    bool stage3_controls_link : 1;
+
     bool allow_autoconnect_on_external : 1;
 
     NMRfkillType rfkill_type : 4;
