@@ -591,10 +591,10 @@ _nm_setting_wired_mac_denylist_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _
 {
     gs_free const char **mac_denylist = NULL;
 
-    if (!_nm_setting_use_legacy_property(setting,
-                                         connection_dict,
-                                         NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST,
-                                         NM_SETTING_WIRED_MAC_ADDRESS_DENYLIST)) {
+    if (_nm_setting_use_legacy_property(setting,
+                                        connection_dict,
+                                        NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST,
+                                        NM_SETTING_WIRED_MAC_ADDRESS_DENYLIST)) {
         *out_is_modified = FALSE;
         return TRUE;
     }
