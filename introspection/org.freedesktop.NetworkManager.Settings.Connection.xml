@@ -220,5 +220,14 @@
     -->
     <property name="Filename" type="s" access="read"/>
 
+    <!--
+        VersionId:
+        @since: 1.44
+
+        The version of the settings. This is incremented whenever the profile
+        changes and can be used to detect concurrent modifications.
+    -->
+    <property name="VersionId" type="t" access="read"/>
+
   </interface>
 </node>

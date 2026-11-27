@@ -1962,9 +1962,9 @@ _properties_changed_main(NMSupplicantInterface *self, GVariant *properties)
     gboolean                      do_set_state          = FALSE;
     gboolean                      do_notify_current_bss = FALSE;
 
-    nm_assert(properties || g_variant_is_of_type(properties, G_VARIANT_TYPE("a{sv}")));
+    nm_assert(!properties || g_variant_is_of_type(properties, G_VARIANT_TYPE("a{sv}")));
 
-    v_v = g_variant_lookup_value(properties, "Capabilities", G_VARIANT_TYPE_VARDICT);
+    v_v = nm_g_variant_lookup_value(properties, "Capabilities", G_VARIANT_TYPE_VARDICT);
     if (v_v) {
         parse_capabilities(self, v_v);
         g_variant_unref(v_v);
@@ -2200,7 +2200,7 @@ disconnect_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 
     res = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), result, &error);
 
-    if (!res && !strstr(error->message, "fi.w1.wpa_supplicant1.NotConnected")) {
+    if (!res && nm_dbus_error_is(error, "fi.w1.wpa_supplicant1.NotConnected")) {
         /* an already disconnected interface is not an error*/
         g_clear_error(&error);
     }

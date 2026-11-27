@@ -2906,6 +2906,68 @@ test_wifi_utils_parse_ies_mld(void)
     }
 }
 
+static void
+test_wifi_utils_parse_ies_network_cost(void)
+{
+    gboolean metered;
+
+    /* Microsoft Network Cost IE with cost level 2 ("fixed", i.e. metered),
+     * followed by an SSID element. The IE is not the last one in the
+     * buffer. */
+    {
+        const guint8 ies[] = {0xdd,
+                              0x08,
+                              0x00,
+                              0x50,
+                              0xf2,
+                              0x11, /* OUI Microsoft, type Network cost */
+                              0x02, /* cost level */
+                              0x00,
+                              0x00,
+                              0x00,
+                              0x00,
+                              0x03,
+                              'a',
+                              'b',
+                              'c'};
+
+        nm_wifi_utils_parse_ies(ies, sizeof(ies), NULL, NULL, &metered, NULL, NULL, NULL);
+        g_assert(metered);
+    }
+
+    /* Same IE as the last element of the buffer. */
+    {
+        const guint8 ies[] = {0xdd, 0x08, 0x00, 0x50, 0xf2, 0x11, 0x02, 0x00, 0x00, 0x00};
+
+        nm_wifi_utils_parse_ies(ies, sizeof(ies), NULL, NULL, &metered, NULL, NULL, NULL);
+        g_assert(metered);
+    }
+
+    /* Cost level 1 ("unrestricted"): not metered. */
+    {
+        const guint8 ies[] = {0xdd, 0x08, 0x00, 0x50, 0xf2, 0x11, 0x01, 0x00, 0x00, 0x00};
+
+        nm_wifi_utils_parse_ies(ies, sizeof(ies), NULL, NULL, &metered, NULL, NULL, NULL);
+        g_assert(!metered);
+    }
+
+    /* Same OUI, but not the Network Cost type. */
+    {
+        const guint8 ies[] = {0xdd, 0x08, 0x00, 0x50, 0xf2, 0x10, 0x02, 0x00, 0x00, 0x00};
+
+        nm_wifi_utils_parse_ies(ies, sizeof(ies), NULL, NULL, &metered, NULL, NULL, NULL);
+        g_assert(!metered);
+    }
+
+    /* Network Cost OUI and type, but a different element length. */
+    {
+        const guint8 ies[] = {0xdd, 0x07, 0x00, 0x50, 0xf2, 0x11, 0x02, 0x00, 0x00};
+
+        nm_wifi_utils_parse_ies(ies, sizeof(ies), NULL, NULL, &metered, NULL, NULL, NULL);
+        g_assert(!metered);
+    }
+}
+
 /*****************************************************************************/
 
 NMTST_DEFINE();
@@ -2987,6 +3049,8 @@ main(int argc, char **argv)
     g_test_add_func("/core/general/test_icmp6_checksum", test_icmp6_checksum);
 
     g_test_add_func("/core/general/test_wifi_utils_parse_ies_mld", test_wifi_utils_parse_ies_mld);
+    g_test_add_func("/core/general/test_wifi_utils_parse_ies_network_cost",
+                    test_wifi_utils_parse_ies_network_cost);
 
     return g_test_run();
 }
