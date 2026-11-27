@@ -2094,6 +2094,22 @@ libnm_1_54_3 {
 	#nm_vpn_plugin_info_supports_safe_private_file_access@libnm_1_54_3;
 } libnm_1_54_2;
 
+libnm_1_54_5 {
+	#nm_setting_bridge_port_get_bpdu_guard@libnm_1_54_5;
+	#nm_setting_bridge_port_get_broadcast_flood@libnm_1_54_5;
+	#nm_setting_bridge_port_get_fast_leave@libnm_1_54_5;
+	#nm_setting_bridge_port_get_isolated@libnm_1_54_5;
+	#nm_setting_bridge_port_get_learning@libnm_1_54_5;
+	#nm_setting_bridge_port_get_locked@libnm_1_54_5;
+	#nm_setting_bridge_port_get_multicast_flood@libnm_1_54_5;
+	#nm_setting_bridge_port_get_multicast_to_unicast@libnm_1_54_5;
+	#nm_setting_bridge_port_get_neighbor_suppress@libnm_1_54_5;
+	#nm_setting_bridge_port_get_neighbor_vlan_suppress@libnm_1_54_5;
+	#nm_setting_bridge_port_get_root_block@libnm_1_54_5;
+	#nm_setting_bridge_port_get_unicast_flood@libnm_1_54_5;
+	#nm_setting_bridge_port_get_vlan_tunnel@libnm_1_54_5;
+} libnm_1_54_3;
+
 libnm_1_56_0 {
 global:
 	nm_dns_server_validate;
@@ -2103,6 +2119,22 @@ global:
 	nm_utils_copy_cert_as_user;
 	nm_vpn_plugin_info_supports_safe_private_file_access;
 } libnm_1_54_0;
+
+libnm_1_56_2 {
+	#nm_setting_bridge_port_get_bpdu_guard@libnm_1_56_2;
+	#nm_setting_bridge_port_get_broadcast_flood@libnm_1_56_2;
+	#nm_setting_bridge_port_get_fast_leave@libnm_1_56_2;
+	#nm_setting_bridge_port_get_isolated@libnm_1_56_2;
+	#nm_setting_bridge_port_get_learning@libnm_1_56_2;
+	#nm_setting_bridge_port_get_locked@libnm_1_56_2;
+	#nm_setting_bridge_port_get_multicast_flood@libnm_1_56_2;
+	#nm_setting_bridge_port_get_multicast_to_unicast@libnm_1_56_2;
+	#nm_setting_bridge_port_get_neighbor_suppress@libnm_1_56_2;
+	#nm_setting_bridge_port_get_neighbor_vlan_suppress@libnm_1_56_2;
+	#nm_setting_bridge_port_get_root_block@libnm_1_56_2;
+	#nm_setting_bridge_port_get_unicast_flood@libnm_1_56_2;
+	#nm_setting_bridge_port_get_vlan_tunnel@libnm_1_56_2;
+} libnm_1_56_0;
 
 libnm_1_58_0 {
 global:

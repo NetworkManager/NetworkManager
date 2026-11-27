@@ -60,6 +60,7 @@
 #include "nm-object-private.h"
 #include "nm-remote-connection.h"
 #include "nm-utils.h"
+#include "nm-setting-bridge-port.h"
 #include "nm-setting-ethtool.h"
 #include "nm-vpn-connection.h"
 
@@ -9364,3 +9365,159 @@ NM_BACKPORT_SYMBOL(libnm_1_54_3,
                    nm_vpn_plugin_info_supports_safe_private_file_access,
                    (NMVpnPluginInfo * self),
                    (self));
+
+NM_BACKPORT_SYMBOL(libnm_1_54_5,
+                   gboolean,
+                   nm_setting_bridge_port_get_bpdu_guard,
+                   (NMSettingBridgePort * setting),
+                   (setting));
+
+NM_BACKPORT_SYMBOL(libnm_1_54_5,
+                   gboolean,
+                   nm_setting_bridge_port_get_broadcast_flood,
+                   (NMSettingBridgePort * setting),
+                   (setting));
+
+NM_BACKPORT_SYMBOL(libnm_1_54_5,
+                   gboolean,
+                   nm_setting_bridge_port_get_fast_leave,
+                   (NMSettingBridgePort * setting),
+                   (setting));
+
+NM_BACKPORT_SYMBOL(libnm_1_54_5,
+                   gboolean,
+                   nm_setting_bridge_port_get_isolated,
+                   (NMSettingBridgePort * setting),
+                   (setting));
+
+NM_BACKPORT_SYMBOL(libnm_1_54_5,
+                   gboolean,
+                   nm_setting_bridge_port_get_learning,
+                   (NMSettingBridgePort * setting),
+                   (setting));
+
+NM_BACKPORT_SYMBOL(libnm_1_54_5,
+                   gboolean,
+                   nm_setting_bridge_port_get_locked,
+                   (NMSettingBridgePort * setting),
+                   (setting));
+
+NM_BACKPORT_SYMBOL(libnm_1_54_5,
+                   gboolean,
+                   nm_setting_bridge_port_get_multicast_flood,
+                   (NMSettingBridgePort * setting),
+                   (setting));
+
+NM_BACKPORT_SYMBOL(libnm_1_54_5,
+                   gboolean,
+                   nm_setting_bridge_port_get_multicast_to_unicast,
+                   (NMSettingBridgePort * setting),
+                   (setting));
+
+NM_BACKPORT_SYMBOL(libnm_1_54_5,
+                   gboolean,
+                   nm_setting_bridge_port_get_neighbor_suppress,
+                   (NMSettingBridgePort * setting),
+                   (setting));
+
+NM_BACKPORT_SYMBOL(libnm_1_54_5,
+                   gboolean,
+                   nm_setting_bridge_port_get_neighbor_vlan_suppress,
+                   (NMSettingBridgePort * setting),
+                   (setting));
+
+NM_BACKPORT_SYMBOL(libnm_1_54_5,
+                   gboolean,
+                   nm_setting_bridge_port_get_root_block,
+                   (NMSettingBridgePort * setting),
+                   (setting));
+
+NM_BACKPORT_SYMBOL(libnm_1_54_5,
+                   gboolean,
+                   nm_setting_bridge_port_get_unicast_flood,
+                   (NMSettingBridgePort * setting),
+                   (setting));
+
+NM_BACKPORT_SYMBOL(libnm_1_54_5,
+                   gboolean,
+                   nm_setting_bridge_port_get_vlan_tunnel,
+                   (NMSettingBridgePort * setting),
+                   (setting));
+
+NM_BACKPORT_SYMBOL(libnm_1_56_2,
+                   gboolean,
+                   nm_setting_bridge_port_get_bpdu_guard,
+                   (NMSettingBridgePort * setting),
+                   (setting));
+
+NM_BACKPORT_SYMBOL(libnm_1_56_2,
+                   gboolean,
+                   nm_setting_bridge_port_get_broadcast_flood,
+                   (NMSettingBridgePort * setting),
+                   (setting));
+
+NM_BACKPORT_SYMBOL(libnm_1_56_2,
+                   gboolean,
+                   nm_setting_bridge_port_get_fast_leave,
+                   (NMSettingBridgePort * setting),
+                   (setting));
+
+NM_BACKPORT_SYMBOL(libnm_1_56_2,
+                   gboolean,
+                   nm_setting_bridge_port_get_isolated,
+                   (NMSettingBridgePort * setting),
+                   (setting));
+
+NM_BACKPORT_SYMBOL(libnm_1_56_2,
+                   gboolean,
+                   nm_setting_bridge_port_get_learning,
+                   (NMSettingBridgePort * setting),
+                   (setting));
+
+NM_BACKPORT_SYMBOL(libnm_1_56_2,
+                   gboolean,
+                   nm_setting_bridge_port_get_locked,
+                   (NMSettingBridgePort * setting),
+                   (setting));
+
+NM_BACKPORT_SYMBOL(libnm_1_56_2,
+                   gboolean,
+                   nm_setting_bridge_port_get_multicast_flood,
+                   (NMSettingBridgePort * setting),
+                   (setting));
+
+NM_BACKPORT_SYMBOL(libnm_1_56_2,
+                   gboolean,
+                   nm_setting_bridge_port_get_multicast_to_unicast,
+                   (NMSettingBridgePort * setting),
+                   (setting));
+
+NM_BACKPORT_SYMBOL(libnm_1_56_2,
+                   gboolean,
+                   nm_setting_bridge_port_get_neighbor_suppress,
+                   (NMSettingBridgePort * setting),
+                   (setting));
+
+NM_BACKPORT_SYMBOL(libnm_1_56_2,
+                   gboolean,
+                   nm_setting_bridge_port_get_neighbor_vlan_suppress,
+                   (NMSettingBridgePort * setting),
+                   (setting));
+
+NM_BACKPORT_SYMBOL(libnm_1_56_2,
+                   gboolean,
+                   nm_setting_bridge_port_get_root_block,
+                   (NMSettingBridgePort * setting),
+                   (setting));
+
+NM_BACKPORT_SYMBOL(libnm_1_56_2,
+                   gboolean,
+                   nm_setting_bridge_port_get_unicast_flood,
+                   (NMSettingBridgePort * setting),
+                   (setting));
+
+NM_BACKPORT_SYMBOL(libnm_1_56_2,
+                   gboolean,
+                   nm_setting_bridge_port_get_vlan_tunnel,
+                   (NMSettingBridgePort * setting),
+                   (setting));
